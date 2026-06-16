@@ -64,10 +64,10 @@ function processMaterial() {
 
 function processIndex() {
 	var hex = document.querySelector("#hex");
-	hex.src = "https://airspeak.academy/wp-content/uploads/asa-hex-" + the_index.level.toLowerCase() + ".png";
+	hex.src = "asa-hex-" + the_index.level.toLowerCase() + ".png";
 
 	var flag = document.querySelector("#lesson-flag");
-	flag.src = "https://airspeak.academy/wp-content/uploads/" + the_index.language + ".png"
+	flag.src = "" + the_index.language + ".png"
 	var langSpan = document.querySelector("#lesson-lang");
 	langSpan.innerHTML = the_index.language.toUpperCase();
 
@@ -149,11 +149,11 @@ function processIndexLesson(container, lesson, sectionNumber, lessonNumber) {
 
 function processClass(builder) {
 	var hex = document.querySelector("#hex");
-	hex.src = "https://airspeak.academy/wp-content/uploads/asa-hex-" + the_class.level.toLowerCase() + ".png";
+	hex.src = "asa-hex-" + the_class.level.toLowerCase() + ".png";
 	document.querySelector("#hex").parentElement.href = "?lang=" + the_class.language + "&course=" + the_class.course + "&level=" + the_class.level + "&class=000&index";
 
 	var flag = document.querySelector("#lesson-flag");
-	flag.src = "https://airspeak.academy/wp-content/uploads/" + the_class.language + ".png"
+	flag.src = "" + the_class.language + ".png"
 	var langSpan = document.querySelector("#lesson-lang");
 	langSpan.innerHTML = the_class.language.toUpperCase();
 
@@ -844,13 +844,13 @@ function processClassEntry(container, entry, stageNumber, entryNumber) {
 			languagebanner.className = "tl-banner";
 			var languagepic1 = document.createElement("img");
 			languagepic1.className = "tl-pic"
-			languagepic1.src = "https://airspeak.academy/wp-content/uploads/asa-header-logo.png";
+			languagepic1.src = "asa-header-logo.png";
 			var languagetitle = document.createElement("h2")
 			languagetitle.className = "tl-title";
 			languagetitle.innerHTML = entry.title;
 			var languagepic2 = document.createElement("img");
 			languagepic2.className = "tl-pic"
-			languagepic2.src = "https://airspeak.academy/wp-content/uploads/asa-header-logo.png";
+			languagepic2.src = "asa-header-logo.png";
 			languagepic2.setAttribute("style", "transform:rotateX(180)");
 			languagebanner.append(languagepic1, languagetitle, languagepic2);
 			languagebox.append(languagebanner)
@@ -2012,7 +2012,7 @@ function loadClass() {
 	var classcourse = toolbar.querySelectorAll("input")[1].value.toLowerCase();
 	var classlevel = toolbar.querySelectorAll("input")[2].value.toLowerCase();
 	var classnumber = toolbar.querySelectorAll("input")[3].value.toString().padStart(3, "0");
-	window.location = "https://airspeak.academy/class.html?lang=" + classlang + "&course=" +
+	window.location = "index.html?lang=" + classlang + "&course=" +
 		classcourse + "&level=" + classlevel + "&class=" + classnumber;
 };
 
