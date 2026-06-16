@@ -1,8 +1,8 @@
 var pageurl = new URL(window.location);
 
-//~var jsurl = "https://airspeak.academy/materials/" + pageurl.searchParams.get("lang").toLowerCase() + "/" + pageurl.searchParams.get("course").toLowerCase() + "/" + pageurl.searchParams.get("level").toLowerCase() + "/class" + pageurl.searchParams.get("class") + ".js"
+var jsurl = pageurl.searchParams.get("lang").toLowerCase() + "_" + pageurl.searchParams.get("course").toLowerCase() + "_" + pageurl.searchParams.get("level").toLowerCase() + "_" + pageurl.searchParams.get("class") + ".js"
 
-var jsurl = pageurl.searchParams.get("class") + ".js"
+//var jsurl = pageurl.searchParams.get("class") + ".js"
 
 
 //"sampleclass.js";
