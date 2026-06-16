@@ -1,0 +1,119 @@
+<head><meta charset="UTF-8">
+<style>
+  .gap { display:inline-block; border:none; border-bottom:2px solid var(--color-border-primary); width:90px; font-size:15px; font-family:var(--font-sans); color:var(--color-text-primary); background:transparent; text-align:center; outline:none; padding:0 2px; vertical-align:baseline; line-height:1.7; }
+  .gap:focus { border-bottom-color:#185FA5; }
+  .gap.correct { border-bottom-color:#3B6D11; color:#3B6D11; }
+  .gap.wrong { border-bottom-color:#A32D2D; color:#A32D2D; }
+  .word-btn { border:0.5px solid var(--color-border-secondary); border-radius:var(--border-radius-md); padding:5px 12px; font-size:14px; cursor:pointer; background:var(--color-background-primary); color:var(--color-text-primary); }
+  .word-btn:hover { background:var(--color-background-secondary); }
+  .word-btn.used { opacity:0.35; pointer-events:none; text-decoration:line-through; }
+  .answer-row { display:flex; align-items:center; gap:10px; padding:7px 0; border-bottom:0.5px solid var(--color-border-tertiary); font-size:14px; }
+  .answer-row:last-child { border-bottom:none; }
+  .ans-num { color:var(--color-text-secondary); min-width:18px; }
+  .ans-word { font-weight:500; color:#185FA5; min-width:70px; }
+  .ans-rule { color:var(--color-text-secondary); }
+</style>
+</head>
+
+<div style="padding:1.25rem 0;">
+
+  <div style="font-size:13px; color:var(--color-text-secondary); margin-bottom:1rem;">Choose a word from the box and type it in each gap. Then check your answers.</div>
+
+  <div style="background:var(--color-background-secondary); border:0.5px solid var(--color-border-tertiary); border-radius:var(--border-radius-lg); padding:1rem 1.25rem; line-height:2.2; font-size:15px; margin-bottom:1.25rem;" id="paragraph">
+    Ben is a student. He <input class="gap" id="g1" placeholder="?" autocomplete="off"> to school by bus. He <input class="gap" id="g2" placeholder="?" autocomplete="off"> at seven every morning. His teacher is Mrs. Park. She <input class="gap" id="g3" placeholder="?" autocomplete="off"> English. She <input class="gap" id="g4" placeholder="?" autocomplete="off"> to school by car. Ben's mom is also a teacher. She <input class="gap" id="g5" placeholder="?" autocomplete="off"> at a school near their home. She <input class="gap" id="g6" placeholder="?" autocomplete="off"> at six thirty in the morning. Ben's dad works at home. He <input class="gap" id="g7" placeholder="?" autocomplete="off"> to an office. He <input class="gap" id="g8" placeholder="?" autocomplete="off"> at nine and finishes at six. He <input class="gap" id="g9" placeholder="?" autocomplete="off"> dinner for the family every evening. Ben's sister is five years old. She <input class="gap" id="g10" placeholder="?" autocomplete="off"> to school yet — she stays at home with their grandma.
+  </div>
+
+  <div style="margin-bottom:1.25rem;">
+    <div style="font-size:12px; font-weight:500; color:var(--color-text-secondary); letter-spacing:0.05em; margin-bottom:8px;">WORD BANK</div>
+    <div style="display:flex; flex-wrap:wrap; gap:8px;" id="word-bank"></div>
+  </div>
+
+  <div style="display:flex; gap:8px; margin-bottom:1.5rem;">
+    <button onclick="checkAnswers()" style="padding:7px 18px; font-size:14px;">Check answers</button>
+    <button onclick="resetAll()" style="padding:7px 18px; font-size:14px;">↺ Reset</button>
+    <span id="score-msg" style="font-size:14px; color:var(--color-text-secondary); align-self:center;"></span>
+  </div>
+
+  <details style="border:0.5px solid var(--color-border-tertiary); border-radius:var(--border-radius-md); overflow:hidden;">
+    <summary style="padding:10px 14px; cursor:pointer; font-size:14px; font-weight:500; list-style:none; display:flex; justify-content:space-between; align-items:center; background:var(--color-background-secondary);">
+      Answer key <i class="ti ti-chevron-down" aria-hidden="true" style="font-size:16px; color:var(--color-text-secondary);"></i>
+    </summary>
+    <div style="padding:10px 14px;" id="answer-key"></div>
+  </details>
+
+</div>
+
+<script>
+const answers = [
+  { id:"g1",  word:"goes",       rule:"go → goes (3rd person singular)" },
+  { id:"g2",  word:"wakes up",   rule:"wake up → wakes up" },
+  { id:"g3",  word:"teaches",    rule:"teach → teaches (-es ending)" },
+  { id:"g4",  word:"drives",     rule:"drive → drives" },
+  { id:"g5",  word:"works",      rule:"work → works" },
+  { id:"g6",  word:"wakes up",   rule:"wake up → wakes up" },
+  { id:"g7",  word:"doesn't go", rule:"negative: doesn't + base verb" },
+  { id:"g8",  word:"starts",     rule:"start → starts" },
+  { id:"g9",  word:"cooks",      rule:"cook → cooks" },
+  { id:"g10", word:"doesn't go", rule:"negative: doesn't + base verb" },
+];
+
+const bankWords = ["goes","wakes up","teaches","drives","works","doesn't go","starts","cooks"];
+
+function buildBank() {
+  const el = document.getElementById('word-bank');
+  el.innerHTML = '';
+  bankWords.forEach(w => {
+    const btn = document.createElement('button');
+    btn.className = 'word-btn';
+    btn.textContent = w;
+    btn.onclick = () => insertWord(w, btn);
+    el.appendChild(btn);
+  });
+}
+
+function insertWord(w, btn) {
+  const focused = document.querySelector('.gap:focus');
+  if (focused) {
+    focused.value = w;
+    focused.classList.remove('correct','wrong');
+  }
+}
+
+function checkAnswers() {
+  let correct = 0;
+  answers.forEach(a => {
+    const el = document.getElementById(a.id);
+    const val = el.value.trim().toLowerCase();
+    el.classList.remove('correct','wrong');
+    if (val === a.word) { el.classList.add('correct'); correct++; }
+    else if (val !== '') { el.classList.add('wrong'); }
+  });
+  const total = answers.length;
+  const msg = document.getElementById('score-msg');
+  if (correct === total) msg.textContent = '🎉 All correct!';
+  else msg.textContent = correct + ' / ' + total + ' correct';
+}
+
+function resetAll() {
+  answers.forEach(a => {
+    const el = document.getElementById(a.id);
+    el.value = '';
+    el.classList.remove('correct','wrong');
+  });
+  document.getElementById('score-msg').textContent = '';
+  buildBank();
+}
+
+function buildKey() {
+  const el = document.getElementById('answer-key');
+  answers.forEach((a, i) => {
+    const row = document.createElement('div');
+    row.className = 'answer-row';
+    row.innerHTML = `<span class="ans-num">${i+1}.</span><span class="ans-word">${a.word}</span><span class="ans-rule">${a.rule}</span>`;
+    el.appendChild(row);
+  });
+}
+
+buildBank();
+buildKey();
+</script>
