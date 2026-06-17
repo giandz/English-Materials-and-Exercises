@@ -1,0 +1,152 @@
+<head><meta charset="UTF-8">
+
+<style>
+  .card{border:1.5px solid var(--color-border-secondary);border-radius:var(--border-radius-md);padding:9px 12px;font-size:14px;font-weight:500;cursor:pointer;background:var(--color-background-primary);color:var(--color-text-primary);text-align:center;transition:background 0.15s,border-color 0.15s;user-select:none;}
+  .card:hover{background:var(--color-background-secondary);border-color:var(--color-border-primary);}
+  .card.selected{border-color:#185fa5;background:#e6f1fb;color:#0c447c;}
+  .card.done{border-color:#3b6d11;background:#eaf3de;color:#27500a;pointer-events:none;}
+  .card.wrong{border-color:#a32d2d;background:#fcebeb;color:#791f1f;animation:shake 0.3s;}
+  @keyframes shake{0%,100%{transform:translateX(0)}25%{transform:translateX(-5px)}75%{transform:translateX(5px)}}
+  .col-label{font-size:11px;font-weight:500;color:var(--color-text-secondary);letter-spacing:0.05em;margin-bottom:8px;}
+</style>
+
+ <link rel="stylesheet" href="general.css">
+</head>
+<body class="exercise-page">
+<div style="padding:1.25rem 0;">
+  <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:1.25rem;flex-wrap:wrap;gap:8px;">
+    <div style="font-size:14px;color:var(--color-text-secondary);">Click a compound noun, then click its definition.</div>
+    <div style="display:flex;gap:8px;align-items:center;">
+      <span id="score-label" style="font-size:14px;color:var(--color-text-secondary);">0 / 12 matched</span>
+      <button onclick="resetGame()">↺ Restart</button>
+    </div>
+  </div>
+
+  <div style="display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr);gap:20px;">
+    <div>
+      <div class="col-label">Compound nouns</div>
+      <div id="nouns-col" style="display:flex;flex-direction:column;gap:7px;"></div>
+    </div>
+    <div>
+      <div class="col-label">Definitions</div>
+      <div id="defs-col" style="display:flex;flex-direction:column;gap:7px;"></div>
+    </div>
+  </div>
+
+  <div id="feedback" style="margin-top:1rem;min-height:24px;font-size:14px;text-align:center;color:var(--color-text-secondary);"></div>
+
+  <details style="margin-top:1.25rem;border:0.5px solid var(--color-border-tertiary);border-radius:var(--border-radius-md);overflow:hidden;">
+    <summary style="padding:9px 14px;cursor:pointer;font-size:14px;font-weight:500;background:var(--color-background-secondary);list-style:none;display:flex;justify-content:space-between;align-items:center;">Answer key <i class="ti ti-chevron-down" aria-hidden="true" style="font-size:15px;color:var(--color-text-secondary);"></i></summary>
+    <div style="padding:10px 14px;display:flex;flex-direction:column;gap:4px;" id="answer-key"></div>
+  </details>
+</div>
+
+<script>
+const pairs = [
+  { noun:"bus stop",    def:"where you wait for the bus" },
+  { noun:"living room", def:"the main room in a house" },
+  { noun:"school bag",  def:"the bag you carry to school" },
+  { noun:"lunch box",   def:"the box with food for lunch" },
+  { noun:"alarm clock", def:"a clock that wakes you up" },
+  { noun:"post office", def:"where you send letters and parcels" },
+  { noun:"car park",    def:"where you leave your car" },
+  { noun:"phone call",  def:"when you ring someone" },
+  { noun:"bus driver",  def:"the person who drives the bus" },
+  { noun:"school day",  def:"a day when you go to school" },
+  { noun:"coffee shop", def:"a place where you buy coffee" },
+  { noun:"dinner table",def:"the table where you eat dinner" },
+];
+
+let selected={noun:null,def:null};
+let matched=new Set();
+let wrongTimeout=null;
+
+function shuffle(a){const b=[...a];for(let i=b.length-1;i>0;i--){const j=Math.floor(Math.random()*(i+1));[b[i],b[j]]=[b[j],b[i]];}return b;}
+
+function setFeedback(msg,color){
+  const el=document.getElementById('feedback');
+  el.textContent=msg;
+  el.style.color=color||'var(--color-text-secondary)';
+}
+
+function updateScore(){
+  document.getElementById('score-label').textContent=matched.size+' / '+pairs.length+' matched';
+}
+
+function selectCard(type,value,el){
+  if(wrongTimeout||el.classList.contains('done'))return;
+  const prev=selected[type];
+  if(prev!==null){
+    const prevEl=document.querySelector(`[data-type="${type}"][data-value="${CSS.escape(prev)}"]`);
+    if(prevEl&&!prevEl.classList.contains('done'))prevEl.classList.remove('selected');
+  }
+  if(selected[type]===value){selected[type]=null;el.classList.remove('selected');return;}
+  selected[type]=value;
+  el.classList.add('selected');
+  if(selected.noun!==null&&selected.def!==null)checkMatch();
+}
+
+function checkMatch(){
+  const n=selected.noun,d=selected.def;
+  const key=n+'|||'+d;
+  const valid=pairs.find(p=>p.noun===n&&p.def===d);
+  const nEl=document.querySelector(`[data-type="noun"][data-value="${CSS.escape(n)}"]`);
+  const dEl=document.querySelector(`[data-type="def"][data-value="${CSS.escape(d)}"]`);
+
+  if(valid&&!matched.has(key)){
+    matched.add(key);
+    if(nEl){nEl.classList.remove('selected');nEl.classList.add('done');}
+    if(dEl){dEl.classList.remove('selected');dEl.classList.add('done');}
+    updateScore();
+    setFeedback('Correct! "'+n+'" = '+d,'#3b6d11');
+    if(matched.size===pairs.length)setTimeout(()=>setFeedback('All matched! Well done!','#185fa5'),400);
+    selected={noun:null,def:null};
+  } else {
+    if(nEl){nEl.classList.remove('selected');nEl.classList.add('wrong');}
+    if(dEl){dEl.classList.remove('selected');dEl.classList.add('wrong');}
+    setFeedback('Try again!','#a32d2d');
+    wrongTimeout=setTimeout(()=>{
+      if(nEl&&!nEl.classList.contains('done'))nEl.classList.remove('wrong');
+      if(dEl&&!dEl.classList.contains('done'))dEl.classList.remove('wrong');
+      wrongTimeout=null;setFeedback('');
+    },700);
+    selected={noun:null,def:null};
+  }
+}
+
+function buildGame(){
+  const nc=document.getElementById('nouns-col');
+  const dc=document.getElementById('defs-col');
+  nc.innerHTML='';dc.innerHTML='';
+  shuffle(pairs).forEach(p=>{
+    const d=document.createElement('div');
+    d.className='card';d.dataset.type='noun';d.dataset.value=p.noun;
+    d.textContent=p.noun;d.onclick=()=>selectCard('noun',p.noun,d);
+    nc.appendChild(d);
+  });
+  shuffle(pairs).forEach(p=>{
+    const d=document.createElement('div');
+    d.className='card';d.dataset.type='def';d.dataset.value=p.def;
+    d.textContent=p.def;d.onclick=()=>selectCard('def',p.def,d);
+    dc.appendChild(d);
+  });
+}
+
+function buildKey(){
+  const el=document.getElementById('answer-key');
+  pairs.forEach((p,i)=>{
+    const row=document.createElement('div');
+    row.style.cssText='font-size:13px;display:flex;gap:8px;padding:4px 0;border-bottom:0.5px solid var(--color-border-tertiary);';
+    row.innerHTML='<span style="color:var(--color-text-secondary);min-width:20px;">'+(i+1)+'.</span><span style="font-weight:500;min-width:110px;color:#185fa5;">'+p.noun+'</span><span style="color:var(--color-text-secondary);">'+p.def+'</span>';
+    el.appendChild(row);
+  });
+  const last=el.lastChild;if(last)last.style.borderBottom='none';
+}
+
+function resetGame(){
+  selected={noun:null,def:null};matched=new Set();wrongTimeout=null;
+  updateScore();setFeedback('');buildGame();
+}
+
+buildGame();buildKey();
+</script>

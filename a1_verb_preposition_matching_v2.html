@@ -1,0 +1,234 @@
+<head><meta charset="UTF-8">
+<style>
+  .card { border: 1.5px solid var(--color-border-secondary); border-radius: var(--border-radius-md); padding: 9px 12px; font-size: 14px; font-weight: 500; cursor: pointer; background: var(--color-background-primary); color: var(--color-text-primary); text-align: center; transition: background 0.15s, border-color 0.15s; user-select: none; }
+  .card:hover { background: var(--color-background-secondary); border-color: var(--color-border-primary); }
+  .card.selected { border-color: #185FA5; background: #E6F1FB; color: #0C447C; }
+  .card.done { border-color: #3B6D11; background: #EAF3DE; color: #27500A; pointer-events: none; }
+  .card.wrong { border-color: #A32D2D; background: #FCEBEB; color: #791F1F; animation: shake 0.3s; }
+  @keyframes shake { 0%,100%{transform:translateX(0)} 25%{transform:translateX(-5px)} 75%{transform:translateX(5px)} }
+  .col-label { font-size: 11px; font-weight: 500; color: var(--color-text-secondary); letter-spacing: 0.05em; margin-bottom: 8px; }
+</style>
+<link rel="stylesheet" href="general.css">
+</head>
+<body class="exercise-page">
+
+<div style="padding:1.25rem 0;">
+
+  <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:1.25rem; flex-wrap:wrap; gap:8px;">
+    <div style="font-size:14px; color:var(--color-text-secondary);">Click a verb, then click a preposition. Some cards have more than one match.</div>
+    <div style="display:flex; gap:8px; align-items:center;">
+      <span id="score-label" style="font-size:14px; color:var(--color-text-secondary);">0 / 16 matched</span>
+      <button onclick="resetGame()">↺ Restart</button>
+    </div>
+  </div>
+
+  <div style="display:grid; grid-template-columns:minmax(0,1fr) minmax(0,1fr); gap:20px;">
+    <div>
+      <div class="col-label">Verbs</div>
+      <div id="verbs-col" style="display:flex; flex-direction:column; gap:7px;"></div>
+    </div>
+    <div>
+      <div class="col-label">Prepositions</div>
+      <div id="preps-col" style="display:flex; flex-direction:column; gap:7px;"></div>
+    </div>
+  </div>
+
+  <div id="feedback" style="margin-top:1rem; min-height:24px; font-size:14px; text-align:center; color:var(--color-text-secondary);"></div>
+
+  <details style="margin-top:1.25rem; border:0.5px solid var(--color-border-tertiary); border-radius:var(--border-radius-md); overflow:hidden;">
+    <summary style="padding:9px 14px; cursor:pointer; font-size:14px; font-weight:500; background:var(--color-background-secondary); list-style:none; display:flex; justify-content:space-between; align-items:center;">Answer key <i class="ti ti-chevron-down" aria-hidden="true" style="font-size:15px; color:var(--color-text-secondary);"></i></summary>
+    <div style="padding:10px 14px; display:flex; flex-direction:column; gap:4px;" id="answer-key"></div>
+  </details>
+</div>
+
+<script>
+const pairs = [
+  { verb:"live",    prep:"in",    example:"I live in Mexico." },
+  { verb:"be",      prep:"from",  example:"She is from Brazil." },
+  { verb:"be",      prep:"at",    example:"He is at school." },
+  { verb:"go",      prep:"to",    example:"They go to school." },
+  { verb:"travel",  prep:"by",    example:"He travels by bus." },
+  { verb:"travel",  prep:"to",    example:"We don't travel to Canada." },
+  { verb:"start",   prep:"at",    example:"Class starts at nine." },
+  { verb:"finish",  prep:"at",    example:"Work finishes at two." },
+  { verb:"wake up", prep:"at",    example:"She wakes up at seven." },
+  { verb:"work",    prep:"in",    example:"Do you work in that building?" },
+  { verb:"work",    prep:"for",   example:"He works for a company." },
+  { verb:"study",   prep:"at",    example:"She studies at university." },
+  { verb:"study",   prep:"for",   example:"I didn't study for the test." },
+  { verb:"listen",  prep:"to",    example:"I listen to music." },
+  { verb:"talk",    prep:"to",    example:"We talk to our friends." },
+  { verb:"talk",    prep:"about", example:"They talk about school." },
+  { verb:"think",   prep:"about", example:"He thinks about his family." },
+  { verb:"wait",    prep:"for",   example:"I wait for the bus." },
+  { verb:"pay",     prep:"for",   example:"She pays for lunch." },
+  { verb:"ask",     prep:"for",   example:"He asks for help." },
+];
+
+const uniqueVerbs = [...new Set(pairs.map(p => p.verb))];
+const uniquePreps = [...new Set(pairs.map(p => p.prep))];
+
+let selected = { verb: null, prep: null };
+let matchedPairs = new Set();
+let wrongTimeout = null;
+
+function verbTotal(v)  { return pairs.filter(p => p.verb === v).length; }
+function prepTotal(p)  { return pairs.filter(p2 => p2.prep === p).length; }
+function verbDone(v)   { return [...matchedPairs].filter(k => k.startsWith(v + '|')).length; }
+function prepDone(p)   { return [...matchedPairs].filter(k => k.endsWith('|' + p)).length; }
+
+function shuffle(arr) {
+  const a = [...arr];
+  for (let i = a.length-1; i > 0; i--) { const j = Math.floor(Math.random()*(i+1)); [a[i],a[j]]=[a[j],a[i]]; }
+  return a;
+}
+
+function setFeedback(msg, color) {
+  const el = document.getElementById('feedback');
+  el.textContent = msg;
+  el.style.color = color || 'var(--color-text-secondary)';
+}
+
+function updateScore() {
+  document.getElementById('score-label').textContent = matchedPairs.size + ' / ' + pairs.length + ' matched';
+}
+
+function refreshCardStates() {
+  uniqueVerbs.forEach(v => {
+    const el = document.querySelector(`[data-type="verb"][data-value="${CSS.escape(v)}"]`);
+    if (!el) return;
+    const remaining = verbTotal(v) - verbDone(v);
+    const countSpan = el.querySelector('.count');
+    if (countSpan) countSpan.textContent = remaining > 1 ? '×' + remaining : '';
+    if (remaining === 0) { el.classList.add('done'); el.classList.remove('selected'); }
+    else { el.classList.remove('done'); }
+  });
+  uniquePreps.forEach(p => {
+    const el = document.querySelector(`[data-type="prep"][data-value="${CSS.escape(p)}"]`);
+    if (!el) return;
+    const remaining = prepTotal(p) - prepDone(p);
+    const countSpan = el.querySelector('.count');
+    if (countSpan) countSpan.textContent = remaining > 1 ? '×' + remaining : '';
+    if (remaining === 0) { el.classList.add('done'); el.classList.remove('selected'); }
+    else { el.classList.remove('done'); }
+  });
+}
+
+function selectCard(type, value, el) {
+  if (wrongTimeout) return;
+  if (el.classList.contains('done')) return;
+
+  const prev = selected[type];
+  if (prev !== null) {
+    const prevEl = document.querySelector(`[data-type="${type}"][data-value="${CSS.escape(prev)}"]`);
+    if (prevEl && !prevEl.classList.contains('done')) prevEl.classList.remove('selected');
+  }
+
+  if (selected[type] === value) {
+    selected[type] = null;
+    el.classList.remove('selected');
+    return;
+  }
+
+  selected[type] = value;
+  el.classList.add('selected');
+
+  if (selected.verb !== null && selected.prep !== null) checkMatch();
+}
+
+function checkMatch() {
+  const v = selected.verb, p = selected.prep;
+  const key = v + '|' + p;
+  const validPair = pairs.find(pair => pair.verb === v && pair.prep === p);
+  const alreadyMatched = matchedPairs.has(key);
+
+  const vEl = document.querySelector(`[data-type="verb"][data-value="${CSS.escape(v)}"]`);
+  const pEl = document.querySelector(`[data-type="prep"][data-value="${CSS.escape(p)}"]`);
+
+  if (validPair && !alreadyMatched) {
+    matchedPairs.add(key);
+    if (vEl) vEl.classList.remove('selected');
+    if (pEl) pEl.classList.remove('selected');
+    updateScore();
+    refreshCardStates();
+    setFeedback('Correct! e.g. "' + validPair.example + '"', '#3B6D11');
+    if (matchedPairs.size === pairs.length) setTimeout(() => setFeedback('All matched! Great work!', '#185FA5'), 400);
+    selected = { verb: null, prep: null };
+  } else {
+    if (vEl) { vEl.classList.remove('selected'); vEl.classList.add('wrong'); }
+    if (pEl) { pEl.classList.remove('selected'); pEl.classList.add('wrong'); }
+    const reason = alreadyMatched ? 'Already matched! Try another combination.' : 'Try again!';
+    setFeedback(reason, '#A32D2D');
+    wrongTimeout = setTimeout(() => {
+      if (vEl && !vEl.classList.contains('done')) vEl.classList.remove('wrong');
+      if (pEl && !pEl.classList.contains('done')) pEl.classList.remove('wrong');
+      wrongTimeout = null; setFeedback('');
+    }, 700);
+    selected = { verb: null, prep: null };
+  }
+}
+
+function buildGame() {
+  const vc = document.getElementById('verbs-col');
+  const pc = document.getElementById('preps-col');
+  vc.innerHTML = ''; pc.innerHTML = '';
+
+  shuffle(uniqueVerbs).forEach(v => {
+    const total = verbTotal(v);
+    const d = document.createElement('div');
+    d.className = 'card';
+    d.dataset.type = 'verb';
+    d.dataset.value = v;
+    d.innerHTML = v + (total > 1 ? ' <span class="count" style="font-size:11px;font-weight:400;color:var(--color-text-secondary);">×' + total + '</span>' : '<span class="count"></span>');
+    d.onclick = () => selectCard('verb', v, d);
+    vc.appendChild(d);
+  });
+
+  shuffle(uniquePreps).forEach(p => {
+    const total = prepTotal(p);
+    const d = document.createElement('div');
+    d.className = 'card';
+    d.dataset.type = 'prep';
+    d.dataset.value = p;
+    d.innerHTML = p + (total > 1 ? ' <span class="count" style="font-size:11px;font-weight:400;color:var(--color-text-secondary);">×' + total + '</span>' : '<span class="count"></span>');
+    d.onclick = () => selectCard('prep', p, d);
+    pc.appendChild(d);
+  });
+}
+
+function buildKey() {
+  const el = document.getElementById('answer-key');
+  const categories = [
+    { label:'Being & living',   verbs:['live','be'] },
+    { label:'Movement & travel',verbs:['go','travel'] },
+    { label:'Time & schedules', verbs:['start','finish','wake up'] },
+    { label:'Work & study',     verbs:['work','study'] },
+    { label:'Likes & feelings', verbs:['listen','talk','think'] },
+    { label:'Other',            verbs:['wait','pay','ask'] },
+  ];
+  categories.forEach(cat => {
+    const heading = document.createElement('div');
+    heading.style.cssText = 'font-size:11px;font-weight:500;color:var(--color-text-secondary);letter-spacing:0.05em;margin-top:8px;margin-bottom:2px;';
+    heading.textContent = cat.label.toUpperCase();
+    el.appendChild(heading);
+    pairs.filter(p => cat.verbs.includes(p.verb)).forEach(item => {
+      const row = document.createElement('div');
+      row.style.cssText = 'font-size:13px;display:flex;gap:8px;padding:3px 0;';
+      row.innerHTML = '<span style="font-weight:500;min-width:90px;color:var(--color-text-primary);">' + item.verb + ' <span style="color:#185FA5;">' + item.prep + '</span></span><span style="color:var(--color-text-secondary);">' + item.example + '</span>';
+      el.appendChild(row);
+    });
+  });
+}
+
+function resetGame() {
+  selected = { verb: null, prep: null };
+  matchedPairs = new Set();
+  wrongTimeout = null;
+  updateScore(); setFeedback('');
+  buildGame();
+}
+
+buildGame();
+buildKey();
+</script>
+</body>
