@@ -1,0 +1,299 @@
+  <!DOCTYPE html>
+<html lang="en">
+	<head><meta charset="UTF-8">
+<h2 class="sr-only">Introduction activity: read each situation and choose the most natural response. Six scenarios each with three options, covering modal verbs can, could, should, may, might, and would.</h2>
+
+<style>
+  .hdr { padding: 1rem 0 1.25rem; border-bottom: 0.5px solid var(--color-border-tertiary); margin-bottom: 1.5rem; }
+  .hdr-label { font-size: 11px; font-weight: 500; letter-spacing: 0.07em; text-transform: uppercase; color: var(--color-text-secondary); margin-bottom: 5px; }
+  .hdr-title { font-size: 20px; font-weight: 500; color: var(--color-text-primary); margin-bottom: 4px; }
+  .hdr-sub   { font-size: 14px; color: var(--color-text-secondary); }
+
+  .progress-bar { height: 4px; background: var(--color-border-tertiary); border-radius: 2px; margin-bottom: 1.5rem; overflow: hidden; }
+  .progress-fill { height: 100%; background: var(--color-text-primary); border-radius: 2px; transition: width 0.3s; }
+
+  .scene-box { background: var(--color-background-secondary); border-radius: var(--border-radius-lg); padding: 1rem 1.25rem; margin-bottom: 1.25rem; }
+  .scene-eyebrow { font-size: 11px; font-weight: 500; letter-spacing: 0.06em; text-transform: uppercase; color: var(--color-text-tertiary); margin-bottom: 6px; }
+  .scene-speakers { display: flex; flex-direction: column; gap: 10px; }
+  .bubble-row { display: flex; gap: 8px; align-items: flex-end; }
+  .bubble-row.right { flex-direction: row-reverse; }
+  .av { width: 28px; height: 28px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 11px; font-weight: 500; flex-shrink: 0; }
+  .av-a { background: #e6f1fb; color: #0c447c; }
+  .av-b { background: #eeedfe; color: #26215c; }
+  .bubble { max-width: 80%; padding: 8px 12px; border-radius: 14px; font-size: 14px; line-height: 1.5; border: 0.5px solid var(--color-border-tertiary); }
+  .bubble.left  { background: var(--color-background-primary); border-bottom-left-radius: 4px; color: var(--color-text-primary); }
+  .bubble.right { background: #eeedfe; border-bottom-right-radius: 4px; color: #26215c; border-color: #afa9ec; }
+
+  .options-label { font-size: 11px; font-weight: 500; letter-spacing: 0.06em; text-transform: uppercase; color: var(--color-text-secondary); margin-bottom: 10px; }
+  .opt-cards { display: flex; flex-direction: column; gap: 8px; }
+  .opt-card {
+    border: 1px solid var(--color-border-secondary);
+    border-radius: var(--border-radius-md);
+    padding: 12px 14px;
+    cursor: pointer;
+    background: var(--color-background-primary);
+    display: flex; gap: 12px; align-items: flex-start;
+    transition: border-color 0.12s, background 0.12s;
+    text-align: left; width: 100%;
+  }
+  .opt-card:hover:not(:disabled) { background: var(--color-background-secondary); border-color: var(--color-border-primary); }
+  .opt-letter { font-size: 12px; font-weight: 500; width: 22px; height: 22px; border-radius: 50%; border: 1px solid var(--color-border-secondary); display: flex; align-items: center; justify-content: center; flex-shrink: 0; color: var(--color-text-secondary); margin-top: 1px; }
+  .opt-text { font-size: 14px; color: var(--color-text-primary); line-height: 1.5; flex: 1; }
+  .opt-card.correct  { border-color: #97c459; background: #eaf3de; }
+  .opt-card.correct .opt-letter { background: #3b6d11; border-color: #3b6d11; color: #fff; }
+  .opt-card.correct .opt-text { color: #27500a; }
+  .opt-card.wrong    { border-color: #f09595; background: #fcebeb; animation: shake 0.3s; }
+  .opt-card.wrong .opt-letter { background: #a32d2d; border-color: #a32d2d; color: #fff; }
+  .opt-card.wrong .opt-text { color: #791f1f; }
+  .opt-card.dimmed   { opacity: 0.45; }
+  .opt-card:disabled { cursor: default; }
+  @keyframes shake { 0%,100%{transform:translateX(0)} 25%{transform:translateX(-5px)} 75%{transform:translateX(5px)} }
+
+  .feedback-box { margin-top: 1rem; padding: 12px 14px; border-radius: var(--border-radius-md); font-size: 13px; line-height: 1.5; display: none; }
+  .feedback-box.show { display: block; }
+  .feedback-box.fb-ok  { background: #eaf3de; color: #27500a; border: 0.5px solid #97c459; }
+  .feedback-box.fb-err { background: #fcebeb; color: #791f1f; border: 0.5px solid #f09595; }
+  .feedback-box strong { font-weight: 500; }
+
+  .modal-tag { display: inline-block; font-size: 11px; padding: 2px 8px; border-radius: 20px; border: 1px solid transparent; font-family: var(--font-mono, monospace); margin-top: 6px; }
+  .tag-can    { background:#e6f1fb; color:#0c447c; border-color:#85b7eb; }
+  .tag-could  { background:#e1f5ee; color:#085041; border-color:#5dcaa5; }
+  .tag-should { background:#eaf3de; color:#27500a; border-color:#97c459; }
+  .tag-may    { background:#faeeda; color:#633806; border-color:#ef9f27; }
+  .tag-might  { background:#faece7; color:#4a1b0c; border-color:#f0997b; }
+  .tag-would  { background:#eeedfe; color:#26215c; border-color:#afa9ec; }
+
+  .nav-row { display: flex; justify-content: space-between; align-items: center; margin-top: 1.25rem; }
+  .nav-counter { font-size: 13px; color: var(--color-text-secondary); }
+  .nav-btn { font-size: 13px; padding: 6px 16px; display: flex; align-items: center; gap: 5px; }
+  .nav-btn:disabled { opacity: 0.35; cursor: default; }
+
+  .summary-box { padding: 1rem 0; }
+  .summary-score { font-size: 32px; font-weight: 500; color: var(--color-text-primary); margin-bottom: 4px; }
+  .summary-sub { font-size: 14px; color: var(--color-text-secondary); margin-bottom: 1.25rem; }
+  .summary-list { display: flex; flex-direction: column; gap: 6px; margin-bottom: 1.25rem; }
+  .summary-item { display: flex; gap: 10px; align-items: center; padding: 8px 12px; border-radius: var(--border-radius-md); background: var(--color-background-secondary); font-size: 13px; }
+  .si-icon { font-size: 15px; flex-shrink: 0; }
+  .si-text { color: var(--color-text-primary); flex: 1; }
+  .si-tag  { font-size: 11px; margin-left: auto; }
+</style>
+<link rel="stylesheet" href="general.css">
+</head>
+<body class="exercise-page">
+<div class="hdr">
+  <p class="hdr-label">speaking activity · modals</p>
+  <p class="hdr-title">What would you say?</p>
+  <p class="hdr-sub">Read each situation and choose the most natural response.</p>
+</div>
+
+<div class="progress-bar"><div class="progress-fill" id="progress" style="width:0%"></div></div>
+
+<div id="main"></div>
+
+<script>
+const scenarios = [
+  {
+    modal: "can", tag: "tag-can", fn: "ability",
+    setting: "🏫 First day at a new school",
+    setup: [
+      { who:"a", text:"Hi! I'm Ben. Nice to meet you! Do you play any sports?" }
+    ],
+    options: [
+      { letter:"A", text:"I can play football and I can swim, but I can't ride a bike.", correct: true },
+      { letter:"B", text:"I should play football tomorrow.", correct: false },
+      { letter:"C", text:"I would play football if I had time.", correct: false },
+    ],
+    why: "We use <strong>can</strong> to talk about ability — things we know how to do now. <em>\"I can play football\"</em> is the natural answer here.",
+    whyWrong: "<strong>Should</strong> gives advice, and <strong>would</strong> talks about hypothetical situations — neither fits a question about current ability.",
+  },
+  {
+    modal: "could", tag: "tag-could", fn: "past ability",
+    setting: "☕ At a coffee shop",
+    setup: [
+      { who:"a", text:"My little sister is three and she already reads books!" },
+    ],
+    options: [
+      { letter:"A", text:"Wow! I couldn't read until I was six. Could you read early too?", correct: true },
+      { letter:"B", text:"Wow! I shouldn't read until I was six.", correct: false },
+      { letter:"C", text:"Wow! I may not read until I was six.", correct: false },
+    ],
+    why: "We use <strong>could</strong> and <strong>couldn't</strong> to talk about past ability — things we were or weren't able to do before.",
+    whyWrong: "<strong>Shouldn't</strong> gives advice and <strong>may not</strong> talks about possibility — neither works for past ability.",
+  },
+  {
+    modal: "should", tag: "tag-should", fn: "advice",
+    setting: "🚌 On the school bus",
+    setup: [
+      { who:"a", text:"I always feel tired at school. I don't know why!" },
+    ],
+    options: [
+      { letter:"A", text:"You might be tired because of the weather.", correct: false },
+      { letter:"B", text:"You should go to bed earlier and you shouldn't skip breakfast.", correct: true },
+      { letter:"C", text:"You may go to bed earlier tonight.", correct: false },
+    ],
+    why: "We use <strong>should</strong> to give advice — it's the most direct and natural way to say <em>\"this is a good idea for you.\"</em>",
+    whyWrong: "<strong>Might</strong> speculates about a reason but gives no advice. <strong>May</strong> here sounds like permission, not a recommendation.",
+  },
+  {
+    modal: "may", tag: "tag-may", fn: "formal permission",
+    setting: "📚 In the classroom",
+    setup: [
+      { who:"b", text:"Good morning, everyone. Please take a seat." },
+      { who:"a", text:"…" },
+    ],
+    options: [
+      { letter:"A", text:"Can I go to the bathroom? I need to go now.", correct: false },
+      { letter:"B", text:"I might go to the bathroom soon.", correct: false },
+      { letter:"C", text:"May I go to the bathroom, please?", correct: true },
+    ],
+    why: "In a formal situation like a classroom, <strong>May I…?</strong> is the most polite and appropriate way to ask for permission.",
+    whyWrong: "<strong>Can I…?</strong> is more informal. <strong>I might…</strong> doesn't ask for permission — it just states a possibility.",
+  },
+  {
+    modal: "might", tag: "tag-might", fn: "weak possibility",
+    setting: "🎂 At a birthday party",
+    setup: [
+      { who:"a", text:"Are you coming to my birthday party on Saturday?" },
+    ],
+    options: [
+      { letter:"A", text:"Yes, I can come. I'm sure!", correct: false },
+      { letter:"B", text:"I might come — I'm not sure yet. I might have plans with my family.", correct: true },
+      { letter:"C", text:"I should come. It sounds fun!", correct: false },
+    ],
+    why: "We use <strong>might</strong> when we are not sure about something — it's perfect for uncertain plans.",
+    whyWrong: "<strong>Can</strong> is too certain here. <strong>Should</strong> sounds like an obligation or recommendation, not an uncertain plan.",
+  },
+  {
+    modal: "would", tag: "tag-would", fn: "polite offer",
+     setting: "🍕 At a friend's dinner table",
+    setup: [
+      { who:"b", text:"Welcome! Please sit down. We're about to have dinner." },
+    ],
+    options: [
+      { letter:"A", text:"Thank you! I may have some water, please.", correct: false },
+      { letter:"B", text:"Thank you! I should have some water.", correct: false },
+      { letter:"C", text:"Thank you! I'd like some water, please. Would you like me to help with anything?", correct: true },
+    ],
+    why: "<strong>I'd like</strong> (= I would like) is the polite and natural way to make a request. <strong>Would you like…?</strong> is the natural way to make a polite offer.",
+    whyWrong: "<strong>May I have</strong> is grammatically fine but <em>\"I may have\"</em> sounds like permission, not a request. <strong>I should have</strong> implies obligation.",
+  }
+];
+
+let current = 0;
+let results  = [];
+let shuffled = [];
+
+function shuffle(a) {
+  const b = [...a];
+  for (let i=b.length-1; i>0; i--) { const j=Math.floor(Math.random()*(i+1)); [b[i],b[j]]=[b[j],b[i]]; }
+  return b;
+}
+
+function setProgress(n, total) {
+  document.getElementById('progress').style.width = Math.round((n/total)*100) + '%';
+}
+
+function renderQuestion(idx) {
+  const q = shuffled[idx];
+  const total = shuffled.length;
+  setProgress(idx, total);
+
+  const opts = shuffle(q.options.map((o,i)=>({...o, origIdx:i})));
+  const letters = ['A','B','C'];
+
+  let bubblesHtml = q.setup.map(b => `
+    <div class="bubble-row ${b.who==='b'?'right':''}">
+      <div class="av av-${b.who}">${b.who.toUpperCase()}</div>
+      <div class="bubble ${b.who==='b'?'right':'left'}">${b.text}</div>
+    </div>`).join('');
+
+  let optsHtml = opts.map((o,i) => `
+    <button class="opt-card" data-correct="${o.correct}" data-idx="${i}">
+      <span class="opt-letter">${letters[i]}</span>
+      <span class="opt-text">${o.text}</span>
+    </button>`).join('');
+
+  document.getElementById('main').innerHTML = `
+    <div class="scene-box">
+      <div class="scene-eyebrow">${q.setting} &nbsp;·&nbsp; ${idx+1} of ${total}</div>
+      <div class="scene-speakers">${bubblesHtml}</div>
+    </div>
+    <p class="options-label">How do you respond?</p>
+    <div class="opt-cards">${optsHtml}</div>
+    <div class="feedback-box" id="fb"></div>
+    <div class="nav-row">
+      <span class="nav-counter" id="answered-count"></span>
+      <button class="nav-btn" id="next-btn" disabled>
+        ${idx < total-1 ? 'Next <i class="ti ti-arrow-right" aria-hidden="true"></i>' : 'See results <i class="ti ti-check" aria-hidden="true"></i>'}
+      </button>
+    </div>
+  `;
+
+  document.querySelectorAll('.opt-card').forEach(btn => {
+    btn.addEventListener('click', () => handleChoice(btn, q, idx));
+  });
+}
+
+function handleChoice(btn, q, idx) {
+  const isCorrect = btn.dataset.correct === 'true';
+  document.querySelectorAll('.opt-card').forEach(b => {
+    b.disabled = true;
+    if (b.dataset.correct === 'true') b.classList.add('correct');
+    else if (b === btn && !isCorrect) b.classList.add('wrong');
+    else b.classList.add('dimmed');
+  });
+
+  const fb = document.getElementById('fb');
+  if (isCorrect) {
+    fb.innerHTML = `<i class="ti ti-circle-check" aria-hidden="true" style="font-size:15px;margin-right:4px;"></i> <strong>Correct!</strong> ${q.why}<br><span class="modal-tag ${q.tag}">${q.modal}</span>`;
+    fb.className = 'feedback-box show fb-ok';
+  } else {
+    fb.innerHTML = `<i class="ti ti-circle-x" aria-hidden="true" style="font-size:15px;margin-right:4px;"></i> <strong>Not quite.</strong> ${q.whyWrong} ${q.why}<br><span class="modal-tag ${q.tag}">${q.modal}</span>`;
+    fb.className = 'feedback-box show fb-err';
+  }
+
+  results[idx] = { correct: isCorrect, modal: q.modal, fn: q.fn, tag: q.tag };
+  document.getElementById('next-btn').disabled = false;
+
+  document.getElementById('next-btn').addEventListener('click', () => {
+    current++;
+    if (current < shuffled.length) renderQuestion(current);
+    else renderSummary();
+  }, { once: true });
+}
+
+function renderSummary() {
+  setProgress(shuffled.length, shuffled.length);
+  const score = results.filter(r=>r.correct).length;
+  const total = shuffled.length;
+  const pct   = Math.round((score/total)*100);
+  let msg = pct===100 ? 'Perfect! Great work.' : pct>=83 ? 'Well done!' : pct>=50 ? 'Good effort — review the feedback.' : 'Keep practising!';
+
+  const items = results.map((r,i) => `
+    <div class="summary-item">
+      <i class="ti ${r.correct ? 'ti-circle-check' : 'ti-circle-x'} si-icon" aria-hidden="true" style="color:${r.correct?'#3b6d11':'#a32d2d'}"></i>
+      <span class="si-text">Situation ${i+1}</span>
+      <span class="modal-tag ${r.tag} si-tag">${r.modal} — ${r.fn}</span>
+    </div>`).join('');
+
+  document.getElementById('main').innerHTML = `
+    <div class="summary-box">
+      <div class="summary-score">${score} / ${total}</div>
+      <div class="summary-sub">${msg}</div>
+      <div class="summary-list">${items}</div>
+      <button class="nav-btn" id="restart-btn">↺ Try again</button>
+    </div>
+  `;
+  document.getElementById('restart-btn').addEventListener('click', init);
+}
+
+function init() {
+  current = 0;
+  results = [];
+  shuffled = shuffle(scenarios);
+  renderQuestion(0);
+}
+
+init();
+</script>
+</body>

@@ -1,0 +1,595 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Modal verbs — can, could, should, may, might, would</title>
+  <link rel="stylesheet" href="general.css">
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@tabler/icons-webfont@latest/tabler-icons.min.css">
+  <style>
+    .page-title    { font-size: 20px; font-weight: 500; margin-bottom: 0.2rem; }
+    .page-subtitle { font-size: 14px; color: var(--color-text-secondary); margin-bottom: 1.75rem; }
+
+    .section-divider {
+      font-size: 11px; font-weight: 500; letter-spacing: 0.06em;
+      color: var(--color-text-tertiary); text-transform: uppercase;
+      display: flex; align-items: center; gap: 8px; margin: 2rem 0 1rem;
+    }
+    .section-divider::before,
+    .section-divider::after { content:''; flex:1; height:0.5px; background:var(--color-border-tertiary); }
+
+    /* modal colour tokens */
+    .badge-can    { background:#e6f1fb; color:#0c447c;  border-color:#b5d4f4; }
+    .badge-could  { background:#ddf0fb; color:#0a4f6e;  border-color:#89d3f0; }
+    .badge-should { background:#eaf3de; color:#27500a;  border-color:#97c459; }
+    .badge-may    { background:#faeeda; color:#633806;  border-color:#ef9f27; }
+    .badge-might  { background:#fde8cc; color:#7a3d00;  border-color:#f4a84a; }
+    .badge-would  { background:#eeedfe; color:#3c3489;  border-color:#afa9ec; }
+
+    .hl-can    { color:#185fa5; }
+    .hl-could  { color:#0a7ca8; }
+    .hl-should { color:#3b6d11; }
+    .hl-may    { color:#8a5000; }
+    .hl-might  { color:#8a4400; }
+    .hl-would  { color:#3c3489; }
+
+    /* reference cards */
+    .modal-card { border:0.5px solid var(--color-border-tertiary); border-radius:var(--border-radius-lg); overflow:hidden; margin-bottom:1rem; }
+    .modal-card-header { display:flex; align-items:baseline; gap:12px; padding:10px 14px; border-bottom:0.5px solid var(--color-border-tertiary); }
+    .modal-badge { font-size:15px; font-weight:600; padding:2px 12px; border-radius:20px; border:1px solid transparent; flex-shrink:0; }
+    .modal-meaning { font-size:13px; color:var(--color-text-secondary); }
+    .modal-card-body { padding:0; }
+    .example-row { display:grid; grid-template-columns:1fr 1fr; border-bottom:0.5px solid var(--color-border-tertiary); }
+    .example-row:last-child { border-bottom:none; }
+    .ex-affirm, .ex-negative { font-size:13.5px; padding:7px 14px; line-height:1.5; }
+    .ex-affirm  { border-right:0.5px solid var(--color-border-tertiary); }
+    .ex-negative { color:var(--color-text-secondary); }
+    .modal-highlight { font-weight:600; }
+
+    /* sorting */
+    .sort-area { background:var(--color-background-secondary); border-radius:var(--border-radius-lg); padding:1.25rem; margin-bottom:1rem; }
+    .sort-grid-6 { display: flex;
+    grid-template-columns: repeat(6, minmax(0, 1fr));
+    gap: 8px;
+    margin-top: 14px;
+    flex-direction: row;
+    flex-wrap: wrap;
+    align-content: stretch;
+    justify-content: center;
+    align-items: flex-end;}
+    .sort-grid-5 { display:grid; grid-template-columns:repeat(5,minmax(0,1fr)); gap:8px; margin-top:14px; }
+    .sort-col-label { font-size:11px; font-weight:600; text-align:center; padding:4px 4px; border-radius:var(--border-radius-md); margin-bottom:6px; border:1px solid transparent; }
+    .drop-zone { min-height:70px; border:1.5px dashed var(--color-border-secondary); border-radius:var(--border-radius-md); padding:4px; display:flex; flex-direction:column; gap:4px; transition:background 0.15s; }
+    .drop-zone.over { background:var(--color-background-tertiary); }
+    .drag-chip { font-size:12.5px; padding:5px 7px; border-radius:var(--border-radius-md); background:var(--color-background-primary); border:0.5px solid var(--color-border-secondary); cursor:grab; user-select:none; color:var(--color-text-primary); text-align:center; line-height:1.4; }
+    .drag-chip:active { cursor:grabbing; opacity:0.7; }
+    .drag-chip.correct { border-color:#97c459; background:#eaf3de; color:#27500a; }
+    .drag-chip.wrong   { border-color:#f09595; background:#fcebeb; color:#791f1f; animation:shake 0.3s; }
+    @keyframes shake { 0%,100%{transform:translateX(0)} 25%{transform:translateX(-4px)} 75%{transform:translateX(4px)} }
+    .word-bank { display:flex; flex-wrap:wrap; justify-content: center; gap:6px; margin-top:10px; }
+
+    /* gap-fill */
+    .gap-para { background:var(--color-background-primary); border:0.5px solid var(--color-border-tertiary); border-radius:var(--border-radius-lg); padding:1rem 1.25rem; font-size:15px; line-height:2.3; margin-bottom:1rem; }
+    input.gap { display:inline-block; border:none; border-bottom:2px solid var(--color-border-primary); border-radius:0; width:80px; font-size:14px; font-family:var(--font-sans); color:var(--color-text-primary); background:transparent; text-align:center; outline:none; padding:0 2px; vertical-align:baseline; }
+    input.gap:focus   { border-bottom-color:#185fa5; }
+    input.gap.correct { border-bottom-color:#3b6d11; color:#27500a; }
+    input.gap.wrong   { border-bottom-color:#a32d2d; color:#791f1f; }
+
+    /* answer key */
+    .answer-key-body { padding:10px 14px; }
+    .ak-row { display:flex; align-items:baseline; gap:10px; padding:5px 0; border-bottom:0.5px solid var(--color-border-tertiary); font-size:13px; }
+    .ak-row:last-child { border-bottom:none; }
+    .ak-num  { color:var(--color-text-secondary); min-width:20px; }
+    .ak-word { font-weight:600; min-width:90px; }
+    .ak-note { color:var(--color-text-secondary); }
+    details summary { user-select:none; }
+    details summary::-webkit-details-marker { display:none; }
+
+    .ex-bar { display:flex; gap:8px; align-items:center; margin-top:12px; flex-wrap:wrap; }
+    .score-msg { font-size:13px; color:var(--color-text-secondary); }
+
+    /* function classify */
+    .fn-badge { display:inline-block; font-size:11px; font-weight:500; padding:2px 9px; border-radius:20px; border:1px solid transparent; }
+    .fn-ability      { background:#e6f1fb; color:#0c447c;  border-color:#b5d4f4; }
+    .fn-possibility  { background:#faeeda; color:#633806;  border-color:#ef9f27; }
+    .fn-advice       { background:#eaf3de; color:#27500a;  border-color:#97c459; }
+    .fn-permission   { background:#fde8cc; color:#7a3d00;  border-color:#f4a84a; }
+    .fn-polite       { background:#eeedfe; color:#3c3489;  border-color:#afa9ec; }
+
+    .fn-grid { display:grid; grid-template-columns:repeat(5,minmax(0,1fr)); gap:8px; margin-top:14px; }
+
+    @media (max-width:640px) {
+      .sort-grid-6, .sort-grid-5, .fn-grid { grid-template-columns:repeat(2,1fr); }
+      .example-row { grid-template-columns:1fr; }
+      .ex-affirm { border-right:none; border-bottom:0.5px solid var(--color-border-tertiary); }
+    }
+  </style>
+</head>
+<body class="exercise-page">
+
+  <p class="page-title">Modal verbs</p>
+  <p class="page-subtitle">can &nbsp;·&nbsp; could &nbsp;·&nbsp; should &nbsp;·&nbsp; may &nbsp;·&nbsp; might &nbsp;·&nbsp; would</p>
+
+  <!-- ══════════ REFERENCE ══════════ -->
+  <div class="section-divider">grammar reference</div>
+
+  <div style="font-size:12px;color:var(--color-text-secondary);margin-bottom:10px;font-family:var(--font-mono);">
+    subject &nbsp;+&nbsp; modal &nbsp;+&nbsp; base verb &nbsp;&nbsp;(no -s · no -ed · no to)
+  </div>
+
+  <!-- CAN -->
+  <div class="modal-card">
+    <div class="modal-card-header">
+      <span class="modal-badge badge-can">can</span>
+      <span class="modal-meaning">ability &nbsp;·&nbsp; possibility &nbsp;·&nbsp; informal permission</span>
+    </div>
+    <div class="modal-card-body">
+      <div class="example-row">
+        <div class="ex-affirm">She <span class="modal-highlight hl-can">can</span> drive a car.</div>
+        <div class="ex-negative">She <span class="modal-highlight hl-can">can't</span> drive a bus.</div>
+      </div>
+      <div class="example-row">
+        <div class="ex-affirm">He <span class="modal-highlight hl-can">can</span> speak English.</div>
+        <div class="ex-negative">He <span class="modal-highlight hl-can">can't</span> speak French.</div>
+      </div>
+      <div class="example-row">
+        <div class="ex-affirm"><span class="modal-highlight hl-can">Can</span> I sit here?</div>
+        <div class="ex-negative">You <span class="modal-highlight hl-can">can't</span> park here.</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- COULD -->
+  <div class="modal-card">
+    <div class="modal-card-header">
+      <span class="modal-badge badge-could">could</span>
+      <span class="modal-meaning">past ability &nbsp;·&nbsp; polite requests &nbsp;·&nbsp; weaker possibility</span>
+    </div>
+    <div class="modal-card-body">
+      <div class="example-row">
+        <div class="ex-affirm">She <span class="modal-highlight hl-could">could</span> swim at age five.</div>
+        <div class="ex-negative">He <span class="modal-highlight hl-could">couldn't</span> walk yet.</div>
+      </div>
+      <div class="example-row">
+        <div class="ex-affirm"><span class="modal-highlight hl-could">Could</span> you open the door, please?</div>
+        <div class="ex-negative">I <span class="modal-highlight hl-could">couldn't</span> do that, sorry.</div>
+      </div>
+      <div class="example-row">
+        <div class="ex-affirm">It <span class="modal-highlight hl-could">could</span> be at the bus stop.</div>
+        <div class="ex-negative">That <span class="modal-highlight hl-could">couldn't</span> be right.</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- SHOULD -->
+  <div class="modal-card">
+    <div class="modal-card-header">
+      <span class="modal-badge badge-should">should</span>
+      <span class="modal-meaning">advice &nbsp;·&nbsp; recommendation</span>
+    </div>
+    <div class="modal-card-body">
+      <div class="example-row">
+        <div class="ex-affirm">You <span class="modal-highlight hl-should">should</span> eat breakfast.</div>
+        <div class="ex-negative">You <span class="modal-highlight hl-should">shouldn't</span> skip meals.</div>
+      </div>
+      <div class="example-row">
+        <div class="ex-affirm">She <span class="modal-highlight hl-should">should</span> see a doctor.</div>
+        <div class="ex-negative">He <span class="modal-highlight hl-should">shouldn't</span> work so late.</div>
+      </div>
+      <div class="example-row">
+        <div class="ex-affirm">You <span class="modal-highlight hl-should">should</span> go to bed early.</div>
+        <div class="ex-negative">You <span class="modal-highlight hl-should">shouldn't</span> watch TV all day.</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- MAY -->
+  <div class="modal-card">
+    <div class="modal-card-header">
+      <span class="modal-badge badge-may">may</span>
+      <span class="modal-meaning">formal permission &nbsp;·&nbsp; possibility (50 %)</span>
+    </div>
+    <div class="modal-card-body">
+      <div class="example-row">
+        <div class="ex-affirm"><span class="modal-highlight hl-may">May</span> I open the window?</div>
+        <div class="ex-negative">You <span class="modal-highlight hl-may">may</span> not leave early.</div>
+      </div>
+      <div class="example-row">
+        <div class="ex-affirm">It <span class="modal-highlight hl-may">may</span> rain today.</div>
+        <div class="ex-negative">It <span class="modal-highlight hl-may">may</span> not be open.</div>
+      </div>
+      <div class="example-row">
+        <div class="ex-affirm">She <span class="modal-highlight hl-may">may</span> come to the party.</div>
+        <div class="ex-negative">He <span class="modal-highlight hl-may">may</span> not have time.</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- MIGHT -->
+  <div class="modal-card">
+    <div class="modal-card-header">
+      <span class="modal-badge badge-might">might</span>
+      <span class="modal-meaning">weaker possibility (30 %) &nbsp;·&nbsp; tentative suggestion</span>
+    </div>
+    <div class="modal-card-body">
+      <div class="example-row">
+        <div class="ex-affirm">It <span class="modal-highlight hl-might">might</span> snow tomorrow.</div>
+        <div class="ex-negative">It <span class="modal-highlight hl-might">might</span> not be cold.</div>
+      </div>
+      <div class="example-row">
+        <div class="ex-affirm">She <span class="modal-highlight hl-might">might</span> come to class.</div>
+        <div class="ex-negative">He <span class="modal-highlight hl-might">might</span> not finish on time.</div>
+      </div>
+      <div class="example-row">
+        <div class="ex-affirm">You <span class="modal-highlight hl-might">might</span> like the coffee shop.</div>
+        <div class="ex-negative">I <span class="modal-highlight hl-might">might</span> not have time today.</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- WOULD -->
+  <div class="modal-card">
+    <div class="modal-card-header">
+      <span class="modal-badge badge-would">would</span>
+      <span class="modal-meaning">polite requests &nbsp;·&nbsp; offers &nbsp;·&nbsp; preferences</span>
+    </div>
+    <div class="modal-card-body">
+      <div class="example-row">
+        <div class="ex-affirm"><span class="modal-highlight hl-would">Would</span> you like some coffee?</div>
+        <div class="ex-negative">I <span class="modal-highlight hl-would">wouldn't</span> like sugar, thanks.</div>
+      </div>
+      <div class="example-row">
+        <div class="ex-affirm">I'<span class="modal-highlight hl-would">d</span> like a window seat.</div>
+        <div class="ex-negative">She <span class="modal-highlight hl-would">wouldn't</span> like that.</div>
+      </div>
+      <div class="example-row">
+        <div class="ex-affirm"><span class="modal-highlight hl-would">Would</span> you help me, please?</div>
+        <div class="ex-negative">I <span class="modal-highlight hl-would">wouldn't</span> do that.</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ══════════ EXERCISE 1 — sort by modal ══════════ -->
+  <div class="section-divider">exercise 1 — sort by function</div>
+
+  <div class="sort-area">
+    <div style="font-size:14px;color:var(--color-text-secondary);">Drag each sentence into the correct column.</div>
+    <div id="wb1" class="word-bank"></div>
+    <div class="sort-grid-6" id="sort1-grid">
+      <div><div class="sort-col-label badge-can">ability &nbsp;·&nbsp; possibility &nbsp;·&nbsp; informal permission</div><div class="drop-zone" id="z1-can"    data-key="can"></div></div>
+      <div><div class="sort-col-label badge-could">past ability &nbsp;·&nbsp; polite requests &nbsp;·&nbsp; weaker possibility</div><div class="drop-zone" id="z1-could"  data-key="could"></div></div>
+      <div><div class="sort-col-label badge-should">advice &nbsp;·&nbsp; recommendation</div><div class="drop-zone" id="z1-should" data-key="should"></div></div>
+      <div><div class="sort-col-label badge-may">formal permission &nbsp;·&nbsp; possibility (50 %)</div><div class="drop-zone" id="z1-may"    data-key="may"></div></div>
+      <div><div class="sort-col-label badge-might">weaker possibility (30 %) &nbsp;·&nbsp; tentative suggestion</div><div class="drop-zone" id="z1-might"  data-key="might"></div></div>
+      <div><div class="sort-col-label badge-would">polite requests &nbsp;·&nbsp; offers &nbsp;·&nbsp; preferences</div><div class="drop-zone" id="z1-would"  data-key="would"></div></div>
+    </div>
+    <div class="ex-bar">
+      <button id="reset-s1">↺ Reset</button>
+      <span class="score-msg" id="fb-s1"></span>
+    </div>
+  </div>
+
+  <!-- ══════════ EXERCISE 2 — gap-fill ══════════ -->
+  <div class="section-divider">exercise 2 — gap-fill</div>
+  <div style="font-size:14px;color:var(--color-text-secondary);margin-bottom:10px;">
+    Complete each sentence with the correct modal: <strong>can</strong>, <strong>could</strong>, <strong>should</strong>, <strong>may</strong>, <strong>might</strong>, or <strong>would</strong>.
+  </div>
+
+  <div class="gap-para">
+    1. Anna is tired. She <input class="gap" id="g1" autocomplete="off" placeholder="?"> go to bed early.<br>
+    2. <input class="gap" id="g2" autocomplete="off" placeholder="?"> I use your phone, please?<br>
+    3. I <input class="gap" id="g3" autocomplete="off" placeholder="?"> like a cup of tea, please.<br>
+    4. Tom <input class="gap" id="g4" autocomplete="off" placeholder="?"> speak three languages when he was ten.<br>
+    5. It is very cloudy. It <input class="gap" id="g5" autocomplete="off" placeholder="?"> rain — but I'm not sure.<br>
+    6. You <input class="gap" id="g6" autocomplete="off" placeholder="?"> eat so much sugar. It is not good for you.<br>
+    7. <input class="gap" id="g7" autocomplete="off" placeholder="?"> you like to sit by the window?<br>
+    8. She <input class="gap" id="g8" autocomplete="off" placeholder="?"> not come to the party. She is probably busy.<br>
+    9. <input class="gap" id="g9" autocomplete="off" placeholder="?"> you swim? — Yes, I <input class="gap" id="g9b" autocomplete="off" placeholder="?"> swim very well.<br>
+    10. Students <input class="gap" id="g10" autocomplete="off" placeholder="?"> not use their phones in class.<br>
+    11. <input class="gap" id="g11" autocomplete="off" placeholder="?"> you pass me the salt, please?<br>
+    12. It <input class="gap" id="g12" autocomplete="off" placeholder="?"> be expensive — I am not sure about the price.
+  </div>
+
+  <div class="ex-bar">
+    <button id="check-gap">Check answers</button>
+    <button id="reset-gap">↺ Reset</button>
+    <span class="score-msg" id="fb-gap"></span>
+  </div>
+
+  <details style="margin-top:1.25rem;border:0.5px solid var(--color-border-tertiary);border-radius:var(--border-radius-md);overflow:hidden;">
+    <summary style="padding:9px 14px;cursor:pointer;font-size:14px;font-weight:500;background:var(--color-background-secondary);display:flex;justify-content:space-between;align-items:center;">
+      Answer key — exercise 2 <i class="ti ti-chevron-down" aria-hidden="true" style="font-size:15px;color:var(--color-text-secondary);"></i>
+    </summary>
+    <div class="answer-key-body">
+      <div class="ak-row"><span class="ak-num">1.</span><span class="ak-word hl-should">should</span><span class="ak-note">advice</span></div>
+      <div class="ak-row"><span class="ak-num">2.</span><span class="ak-word hl-can">Can / Could</span><span class="ak-note">permission request (could = more polite)</span></div>
+      <div class="ak-row"><span class="ak-num">3.</span><span class="ak-word hl-would">would</span><span class="ak-note">polite preference (I'd like)</span></div>
+      <div class="ak-row"><span class="ak-num">4.</span><span class="ak-word hl-could">could</span><span class="ak-note">past ability</span></div>
+      <div class="ak-row"><span class="ak-num">5.</span><span class="ak-word hl-might">might</span><span class="ak-note">weak possibility (not sure)</span></div>
+      <div class="ak-row"><span class="ak-num">6.</span><span class="ak-word hl-should">shouldn't</span><span class="ak-note">advice (negative)</span></div>
+      <div class="ak-row"><span class="ak-num">7.</span><span class="ak-word hl-would">Would</span><span class="ak-note">polite offer</span></div>
+      <div class="ak-row"><span class="ak-num">8.</span><span class="ak-word hl-may">may / might</span><span class="ak-note">possibility (negative)</span></div>
+      <div class="ak-row"><span class="ak-num">9.</span><span class="ak-word hl-can">Can / can</span><span class="ak-note">ability — question and short answer</span></div>
+      <div class="ak-row"><span class="ak-num">10.</span><span class="ak-word hl-may">may</span><span class="ak-note">formal prohibition</span></div>
+      <div class="ak-row"><span class="ak-num">11.</span><span class="ak-word hl-could">Could</span><span class="ak-note">polite request (more formal than can)</span></div>
+      <div class="ak-row"><span class="ak-num">12.</span><span class="ak-word hl-might">might / may</span><span class="ak-note">possibility (uncertain)</span></div>
+    </div>
+  </details>
+
+  <!-- ══════════ EXERCISE 3 — classify by function ══════════ -->
+  <div class="section-divider">exercise 3 — sort by function</div>
+
+  <div class="sort-area">
+    <div style="font-size:14px;color:var(--color-text-secondary);">
+      Drag each sentence into the correct function column. Look at the <em>meaning</em>, not just the modal word.
+    </div>
+    <div id="wb3" class="word-bank"></div>
+    <div class="fn-grid" id="sort3-grid">
+      <div>
+        <div class="sort-col-label fn-ability">Ability</div>
+        <div class="drop-zone" id="z3-ability" data-key="ability"></div>
+      </div>
+      <div>
+        <div class="sort-col-label fn-possibility">Possibility</div>
+        <div class="drop-zone" id="z3-possibility" data-key="possibility"></div>
+      </div>
+      <div>
+        <div class="sort-col-label fn-advice">Advice</div>
+        <div class="drop-zone" id="z3-advice" data-key="advice"></div>
+      </div>
+      <div>
+        <div class="sort-col-label fn-permission">Permission</div>
+        <div class="drop-zone" id="z3-permission" data-key="permission"></div>
+      </div>
+      <div>
+        <div class="sort-col-label fn-polite">Polite request / offer</div>
+        <div class="drop-zone" id="z3-polite" data-key="polite"></div>
+      </div>
+    </div>
+    <div class="ex-bar">
+      <button id="reset-s3">↺ Reset</button>
+      <span class="score-msg" id="fb-s3"></span>
+    </div>
+  </div>
+
+  <details style="margin-top:0.5rem;border:0.5px solid var(--color-border-tertiary);border-radius:var(--border-radius-md);overflow:hidden;">
+    <summary style="padding:9px 14px;cursor:pointer;font-size:14px;font-weight:500;background:var(--color-background-secondary);display:flex;justify-content:space-between;align-items:center;">
+      Answer key — exercise 3 <i class="ti ti-chevron-down" aria-hidden="true" style="font-size:15px;color:var(--color-text-secondary);"></i>
+    </summary>
+    <div class="answer-key-body" id="fn-answer-key"></div>
+  </details>
+
+  <script>
+    /* ── helpers ── */
+    let dragging = null;
+
+    function shuffle(a) {
+      for (let i = a.length-1; i > 0; i--) {
+        const j = Math.floor(Math.random()*(i+1)); [a[i],a[j]]=[a[j],a[i]];
+      }
+      return a;
+    }
+
+    function makeChip(text, key, dataAttr) {
+      const c = document.createElement('div');
+      c.className = 'drag-chip';
+      c.setAttribute('draggable','true');
+      c.dataset[dataAttr] = key;
+      c.textContent = text;
+      c.addEventListener('dragstart', () => { dragging = c; });
+      c.addEventListener('dragend',   () => { dragging = null; });
+      return c;
+    }
+
+    function wireZones(zones, dataAttr, feedbackId, total) {
+      zones.forEach(zone => {
+        zone.addEventListener('dragover',  e => { e.preventDefault(); zone.classList.add('over'); });
+        zone.addEventListener('dragleave', ()  => zone.classList.remove('over'));
+        zone.addEventListener('drop', e => {
+          e.preventDefault(); zone.classList.remove('over');
+          if (!dragging) return;
+          const chipKey = dragging.dataset[dataAttr];
+          const zoneKey = zone.dataset.key;
+          dragging.classList.remove('wrong');
+          if (chipKey === zoneKey) {
+            dragging.classList.add('correct');
+            dragging.setAttribute('draggable','false');
+            zone.appendChild(dragging);
+            const done = document.querySelectorAll(`#${zone.closest('[id$="-grid"]') ? zone.closest('[id]').id : 'body'} .drag-chip.correct, .drag-chip.correct`).length;
+            updateFeedback(feedbackId, total);
+          } else {
+            dragging.classList.add('wrong');
+            const d = dragging;
+            setTimeout(() => d.classList.remove('wrong'), 600);
+          }
+          dragging = null;
+        });
+      });
+    }
+
+    function countCorrect(bankId, zoneIds) {
+      let n = 0;
+      zoneIds.forEach(id => {
+        n += document.getElementById(id).querySelectorAll('.drag-chip.correct').length;
+      });
+      n += document.getElementById(bankId).querySelectorAll('.drag-chip.correct').length;
+      return n;
+    }
+
+    function updateFeedback(fbId, total) {
+      // count all correct chips visible anywhere on page that belong to this exercise
+    }
+
+    /* ── Exercise 1: sort by modal ── */
+    const s1Items = [
+      { text:"She can cook well.",               key:"can"    },
+      { text:"Could you help me?",               key:"could"  },
+      { text:"You should drink water.",           key:"should" },
+      { text:"May I come in?",                   key:"may"    },
+      { text:"It might snow tomorrow.",           key:"might"  },
+      { text:"Would you like some cake?",         key:"would"  },
+      { text:"He can't ride a bike.",             key:"can"    },
+      { text:"She couldn't walk at age one.",     key:"could"  },
+      { text:"You shouldn't eat so late.",        key:"should" },
+      { text:"It may be cold tomorrow.",          key:"may"    },
+      { text:"She might not finish on time.",     key:"might"  },
+      { text:"I'd like a window seat.",           key:"would"  },
+    ];
+    const s1Zones = ['z1-can','z1-could','z1-should','z1-may','z1-might','z1-would'];
+
+    function buildS1() {
+      const bank = document.getElementById('wb1');
+      bank.innerHTML = '';
+      s1Zones.forEach(id => document.getElementById(id).innerHTML = '');
+      document.getElementById('fb-s1').textContent = '';
+      shuffle([...s1Items]).forEach(item => bank.appendChild(makeChip(item.text, item.key, 'modal')));
+      wireZones(s1Zones.map(id => document.getElementById(id)), 'modal', 'fb-s1', s1Items.length);
+      // patch drop handlers to update feedback correctly
+      s1Zones.forEach(zid => {
+        const zone = document.getElementById(zid);
+        zone.addEventListener('drop', () => {
+          setTimeout(() => {
+            const done = s1Zones.reduce((acc, id) => acc + document.getElementById(id).querySelectorAll('.drag-chip.correct').length, 0);
+            const fb = document.getElementById('fb-s1');
+            fb.textContent = done === s1Items.length ? 'All sorted correctly!' : done + ' / ' + s1Items.length + ' sorted';
+            fb.style.color = done === s1Items.length ? '#27500a' : 'var(--color-text-secondary)';
+          }, 50);
+        });
+      });
+    }
+    document.getElementById('reset-s1').addEventListener('click', buildS1);
+
+    /* ── Exercise 2: gap-fill ── */
+    const gapData = [
+      { id:'g1',  answers:['should'] },
+      { id:'g2',  answers:['can','could','may'] },
+      { id:'g3',  answers:['would'] },
+      { id:'g4',  answers:['could'] },
+      { id:'g5',  answers:['might','may'] },
+      { id:'g6',  answers:["shouldn't","should not"] },
+      { id:'g7',  answers:['would'] },
+      { id:'g8',  answers:['may','might'] },
+      { id:'g9',  answers:['can','could'] },
+      { id:'g9b', answers:['can'] },
+      { id:'g10', answers:['may'] },
+      { id:'g11', answers:['could','can','would'] },
+      { id:'g12', answers:['might','may','could'] },
+    ];
+
+    function checkGap() {
+      let correct = 0, filled = 0;
+      gapData.forEach(item => {
+        const el  = document.getElementById(item.id);
+        const val = el.value.trim().toLowerCase();
+        el.classList.remove('correct','wrong');
+        if (val === '') return;
+        filled++;
+        if (item.answers.includes(val)) { el.classList.add('correct'); correct++; }
+        else el.classList.add('wrong');
+      });
+      const fb = document.getElementById('fb-gap');
+      if (filled === 0) { fb.textContent = ''; return; }
+      fb.textContent = correct === gapData.length ? 'All correct!' : correct + ' / ' + gapData.length + ' correct';
+      fb.style.color = correct === gapData.length ? '#27500a' : 'var(--color-text-secondary)';
+    }
+
+    function resetGap() {
+      gapData.forEach(item => {
+        const el = document.getElementById(item.id);
+        el.value = ''; el.classList.remove('correct','wrong');
+      });
+      document.getElementById('fb-gap').textContent = '';
+    }
+
+    document.getElementById('check-gap').addEventListener('click', checkGap);
+    document.getElementById('reset-gap').addEventListener('click', resetGap);
+    gapData.forEach(item => {
+      document.getElementById(item.id).addEventListener('keydown', e => { if (e.key==='Enter') checkGap(); });
+    });
+
+    /* ── Exercise 3: sort by function ── */
+    const s3Items = [
+      { text:"She can play the piano.",              key:"ability"     },
+      { text:"He could swim at age four.",           key:"ability"     },
+      { text:"It might rain this afternoon.",        key:"possibility" },
+      { text:"They may be at the train station.",    key:"possibility" },
+      { text:"It could be in your school bag.",      key:"possibility" },
+      { text:"You should go to bed earlier.",        key:"advice"      },
+      { text:"You shouldn't skip breakfast.",        key:"advice"      },
+      { text:"May I open the window?",               key:"permission"  },
+      { text:"Can I leave the classroom?",           key:"permission"  },
+      { text:"Could you pass me the lunch box?",     key:"polite"      },
+      { text:"Would you like some coffee?",          key:"polite"      },
+      { text:"I'd like a table by the window.",      key:"polite"      },
+      { text:"It may snow — bring a coat.",          key:"possibility" },
+      { text:"She should see a doctor.",             key:"advice"      },
+      { text:"Would you help me with this, please?", key:"polite"      },
+    ];
+    const s3Zones = ['z3-ability','z3-possibility','z3-advice','z3-permission','z3-polite'];
+
+    const fnLabels = {
+      ability:'Ability', possibility:'Possibility', advice:'Advice',
+      permission:'Permission', polite:'Polite request / offer'
+    };
+
+    function buildS3() {
+      const bank = document.getElementById('wb3');
+      bank.innerHTML = '';
+      s3Zones.forEach(id => document.getElementById(id).innerHTML = '');
+      document.getElementById('fb-s3').textContent = '';
+      shuffle([...s3Items]).forEach(item => bank.appendChild(makeChip(item.text, item.key, 'fn')));
+      s3Zones.forEach(zid => {
+        const zone = document.getElementById(zid);
+        zone.addEventListener('dragover',  e => { e.preventDefault(); zone.classList.add('over'); });
+        zone.addEventListener('dragleave', ()  => zone.classList.remove('over'));
+        zone.addEventListener('drop', e => {
+          e.preventDefault(); zone.classList.remove('over');
+          if (!dragging) return;
+          const chipKey = dragging.dataset.fn;
+          const zoneKey = zone.dataset.key;
+          dragging.classList.remove('wrong');
+          if (chipKey === zoneKey) {
+            dragging.classList.add('correct');
+            dragging.setAttribute('draggable','false');
+            zone.appendChild(dragging);
+          } else {
+            dragging.classList.add('wrong');
+            const d = dragging;
+            setTimeout(() => d.classList.remove('wrong'), 600);
+          }
+          dragging = null;
+          setTimeout(() => {
+            const done = s3Zones.reduce((acc,id) => acc + document.getElementById(id).querySelectorAll('.drag-chip.correct').length, 0);
+            const fb = document.getElementById('fb-s3');
+            fb.textContent = done === s3Items.length ? 'All sorted correctly!' : done + ' / ' + s3Items.length + ' sorted';
+            fb.style.color = done === s3Items.length ? '#27500a' : 'var(--color-text-secondary)';
+          }, 50);
+        });
+      });
+    }
+    document.getElementById('reset-s3').addEventListener('click', buildS3);
+
+    // build function answer key
+    const akEl = document.getElementById('fn-answer-key');
+    const byFn = {};
+    s3Items.forEach(item => { (byFn[item.key] = byFn[item.key]||[]).push(item.text); });
+    Object.keys(fnLabels).forEach(fn => {
+      const h = document.createElement('div');
+      h.style.cssText = 'font-size:11px;font-weight:600;letter-spacing:0.05em;text-transform:uppercase;color:var(--color-text-secondary);margin-top:10px;margin-bottom:3px;';
+      h.textContent = fnLabels[fn];
+      akEl.appendChild(h);
+      (byFn[fn]||[]).forEach(txt => {
+        const row = document.createElement('div');
+        row.className = 'ak-row';
+        row.innerHTML = '<span class="ak-note">'+txt+'</span>';
+        akEl.appendChild(row);
+      });
+    });
+
+    /* ── init ── */
+    buildS1();
+    buildS3();
+  </script>
+
+</body>
+</html>
