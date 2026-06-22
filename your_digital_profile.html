@@ -1,0 +1,359 @@
+<html>
+	<head><meta charset="UTF-8">
+
+<style>
+  .survey-wrap { padding: 0.75rem 0 1rem; }
+  .progress-bar { height: 4px; background: var(--color-border-tertiary); border-radius: 2px; margin-bottom: 1.5rem; overflow: hidden; }
+  .progress-fill { height: 100%; background: var(--color-text-primary); border-radius: 2px; transition: width 0.35s ease; }
+  .q-block { display: none; }
+  .q-block.active { display: block; }
+  .q-num { font-size: 11px; font-weight: 500; letter-spacing: 0.07em; text-transform: uppercase; color: var(--color-text-secondary); margin-bottom: 6px; }
+  .q-text { font-size: 16px; font-weight: 500; color: var(--color-text-primary); margin-bottom: 1.25rem; line-height: 1.5; }
+  .q-note { font-size: 13px; color: var(--color-text-secondary); margin-top: -0.9rem; margin-bottom: 1.1rem; font-style: italic; }
+  .opt-list { display: flex; flex-direction: column; gap: 8px; margin-bottom: 1.25rem; }
+  .opt-btn {
+    display: flex; align-items: flex-start; gap: 12px;
+    padding: 11px 14px; border-radius: var(--border-radius-lg);
+    border: 0.5px solid var(--color-border-secondary);
+    background: var(--color-background-primary);
+    cursor: pointer; text-align: left; width: 100%;
+    transition: border-color 0.12s, background 0.12s;
+  }
+  .opt-btn:hover { background: var(--color-background-secondary); border-color: var(--color-border-primary); }
+  .opt-btn.selected { border-color: #185fa5; background: #e6f1fb; }
+  .opt-btn.selected .opt-label { color: #0c447c; }
+  .opt-letter { font-size: 12px; font-weight: 500; width: 22px; height: 22px; border-radius: 50%; border: 1px solid var(--color-border-secondary); display: flex; align-items: center; justify-content: center; flex-shrink: 0; color: var(--color-text-secondary); margin-top: 1px; }
+  .opt-btn.selected .opt-letter { background: #185fa5; border-color: #185fa5; color: #fff; }
+  .opt-label { font-size: 14px; color: var(--color-text-primary); line-height: 1.5; }
+  .opt-label em { color: var(--color-text-secondary); font-style: normal; font-size: 13px; display: block; margin-top: 2px; }
+  .nav-row { display: flex; justify-content: space-between; align-items: center; }
+  .nav-counter { font-size: 13px; color: var(--color-text-secondary); }
+  .nav-btn { padding: 7px 18px; font-size: 14px; }
+  .nav-btn:disabled { opacity: 0.35; cursor: default; }
+
+  .result-wrap { display: none; }
+  .result-wrap.show { display: block; }
+  .result-header { margin-bottom: 1.5rem; }
+  .result-title { font-size: 20px; font-weight: 500; color: var(--color-text-primary); margin-bottom: 4px; }
+  .result-type { font-size: 13px; color: var(--color-text-secondary); margin-bottom: 1rem; }
+  .result-badge { display: inline-block; font-size: 13px; font-weight: 500; padding: 4px 14px; border-radius: 20px; margin-bottom: 1rem; }
+  .stat-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(130px, 1fr)); gap: 10px; margin-bottom: 1.5rem; }
+  .stat-card { background: var(--color-background-secondary); border-radius: var(--border-radius-md); padding: 12px 14px; }
+  .stat-label { font-size: 12px; color: var(--color-text-secondary); margin-bottom: 4px; }
+  .stat-value { font-size: 22px; font-weight: 500; color: var(--color-text-primary); }
+  .skill-bar-wrap { margin-bottom: 1.25rem; }
+  .skill-bar-label { display: flex; justify-content: space-between; font-size: 13px; margin-bottom: 4px; }
+  .skill-bar-label span:first-child { color: var(--color-text-secondary); }
+  .skill-bar-label span:last-child { font-weight: 500; color: var(--color-text-primary); }
+  .skill-bar-track { height: 8px; background: var(--color-background-secondary); border-radius: 4px; overflow: hidden; }
+  .skill-bar-fill { height: 100%; border-radius: 4px; transition: width 0.6s ease; }
+  .section-divider { font-size: 11px; font-weight: 500; letter-spacing: 0.06em; text-transform: uppercase; color: var(--color-text-tertiary); display: flex; align-items: center; gap: 8px; margin: 1.5rem 0 1rem; }
+  .section-divider::before,.section-divider::after { content:''; flex:1; height:0.5px; background:var(--color-border-tertiary); }
+  .finding-list { display: flex; flex-direction: column; gap: 8px; margin-bottom: 1.5rem; }
+  .finding-row { display: flex; gap: 10px; align-items: flex-start; font-size: 13px; color: var(--color-text-secondary); line-height: 1.5; padding: 8px 12px; background: var(--color-background-secondary); border-radius: var(--border-radius-md); }
+  .finding-row i { flex-shrink: 0; margin-top: 2px; font-size: 15px; }
+  .finding-row strong { color: var(--color-text-primary); font-weight: 500; }
+  .restart-btn { font-size: 14px; padding: 7px 18px; }
+</style>
+<link rel="stylesheet" href="general.css">
+
+</head>
+<body class="exercise-page">
+<div class="survey-wrap">
+  <div class="progress-bar"><div class="progress-fill" id="prog" style="width:0%"></div></div>
+  <div id="survey-body"></div>
+  <div class="result-wrap" id="result-wrap"></div>
+</div>
+
+<script>
+const questions = [
+  {
+    id: "q1",
+    text: "Which device do you use most often every day?",
+    note: null,
+    options: [
+      { text: "I use my smartphone for almost everything.", sub: "calls, messages, social media, videos", score: { mobility: 3, skill: 1, variety: 1 } },
+      { text: "I use my laptop for working and studying.", sub: "documents, emails, research", score: { mobility: 1, skill: 2, variety: 2 } },
+      { text: "I use a desktop computer for heavy tasks.", sub: "editing, programming, gaming", score: { mobility: 0, skill: 3, variety: 2 } },
+      { text: "I use a tablet for reading and watching videos.", sub: "leisure, casual browsing", score: { mobility: 2, skill: 1, variety: 1 } },
+    ]
+  },
+  {
+    id: "q2",
+    text: "What do you mainly use the internet for?",
+    note: "I use the internet for… / I go online to…",
+    options: [
+      { text: "I use it for watching videos and listening to music.", sub: "streaming, entertainment", score: { mobility: 2, skill: 1, variety: 1 } },
+      { text: "I use it to work, study, and send emails.", sub: "productivity, communication", score: { mobility: 1, skill: 3, variety: 2 } },
+      { text: "I use it for shopping and banking online.", sub: "e-commerce, finance", score: { mobility: 1, skill: 2, variety: 2 } },
+      { text: "I use it to stay in touch with friends and family.", sub: "social media, messaging apps", score: { mobility: 2, skill: 1, variety: 1 } },
+    ]
+  },
+  {
+    id: "q3",
+    text: "Have you used any of these recently?",
+    note: "Present perfect: I have used… / I have never tried…",
+    options: [
+      { text: "I have used spreadsheets or word processors.", sub: "Excel, Word, Google Docs", score: { mobility: 0, skill: 3, variety: 2 } },
+      { text: "I have set up a new app or account by myself.", sub: "without help from others", score: { mobility: 1, skill: 2, variety: 2 } },
+      { text: "I have mostly just used apps that were already there.", sub: "pre-installed, familiar apps only", score: { mobility: 1, skill: 1, variety: 1 } },
+      { text: "I have fixed a small problem on my device alone.", sub: "restarted, cleared cache, updated", score: { mobility: 0, skill: 3, variety: 2 } },
+    ]
+  },
+  {
+    id: "q4",
+    text: "How do you mainly use your email?",
+    note: "I use email for… / I have received…",
+    options: [
+      { text: "I have received many work or study emails this week.", sub: "I check it several times a day", score: { mobility: 0, skill: 3, variety: 2 } },
+      { text: "I use email mainly for receiving offers and notifications.", sub: "newsletters, alerts, online shopping", score: { mobility: 1, skill: 1, variety: 1 } },
+      { text: "I hardly ever use email — I prefer messaging apps.", sub: "WhatsApp, Telegram, Instagram DM", score: { mobility: 3, skill: 1, variety: 1 } },
+      { text: "I use email to keep in touch with family and friends.", sub: "personal messages, photos", score: { mobility: 1, skill: 1, variety: 2 } },
+    ]
+  },
+  {
+    id: "q5",
+    text: "What have you done when something went wrong with your device?",
+    note: "I have tried… / I always ask… / I usually…",
+    options: [
+      { text: "I have searched online to find a solution by myself.", sub: "tutorials, forums, YouTube", score: { mobility: 1, skill: 3, variety: 2 } },
+      { text: "I have asked a friend or family member to help me.", sub: "someone who knows more than me", score: { mobility: 1, skill: 1, variety: 1 } },
+      { text: "I have taken it to a shop or called technical support.", sub: "professional help", score: { mobility: 0, skill: 1, variety: 1 } },
+      { text: "I have just restarted it and hoped for the best!", sub: "classic solution", score: { mobility: 1, skill: 2, variety: 1 } },
+    ]
+  },
+  {
+    id: "q6",
+    text: "Do you use your devices for creative activities?",
+    note: "I use my device to create… / I have tried…",
+    options: [
+      { text: "I use it to edit photos or make videos.", sub: "Canva, CapCut, Photoshop, Premiere", score: { mobility: 2, skill: 3, variety: 3 } },
+      { text: "I have written a blog, story, or document for fun.", sub: "creative writing, journalling", score: { mobility: 1, skill: 2, variety: 3 } },
+      { text: "I use it mainly to consume content, not to create.", sub: "watching, reading, browsing", score: { mobility: 2, skill: 1, variety: 1 } },
+      { text: "I have tried coding, design, or music production.", sub: "technical or artistic creation", score: { mobility: 0, skill: 4, variety: 3 } },
+    ]
+  },
+  {
+    id: "q7",
+    text: "How do you usually store your files and photos?",
+    note: "I use… for storing… / I have saved…",
+    options: [
+      { text: "I use cloud storage to keep everything online.", sub: "Google Drive, iCloud, OneDrive", score: { mobility: 3, skill: 2, variety: 2 } },
+      { text: "I save everything on my device and back it up manually.", sub: "local storage, external drive", score: { mobility: 0, skill: 2, variety: 2 } },
+      { text: "I have never really organised my files.", sub: "they are just saved wherever they go", score: { mobility: 1, skill: 1, variety: 1 } },
+      { text: "I use my phone's gallery and share things on social media.", sub: "photos shared directly to apps", score: { mobility: 3, skill: 1, variety: 1 } },
+    ]
+  },
+  {
+    id: "q8",
+    text: "Have you used any of these tools for learning or work?",
+    note: "I have used… / I use… to learn…",
+    options: [
+      { text: "I have used video calls for meetings or online classes.", sub: "Zoom, Google Meet, Teams", score: { mobility: 2, skill: 2, variety: 2 } },
+      { text: "I use apps to learn languages or new skills.", sub: "Duolingo, Coursera, YouTube tutorials", score: { mobility: 2, skill: 2, variety: 3 } },
+      { text: "I have used AI tools to help me write or find information.", sub: "ChatGPT, Claude, Gemini", score: { mobility: 1, skill: 3, variety: 3 } },
+      { text: "I mainly use my device to read news and social media.", sub: "passive information", score: { mobility: 2, skill: 1, variety: 1 } },
+    ]
+  }
+];
+
+const profiles = [
+  {
+    id: "power",
+    label: "Power user",
+    badge: { bg: "#e6f1fb", color: "#0c447c", border: "#85b7eb" },
+    bar: "#185fa5",
+    minSkill: 18,
+    desc: "You are very comfortable with technology. You use your devices for a wide range of tasks — from work and study to creative projects and problem-solving. You have tried many tools and you are not afraid to explore new ones.",
+    tips: [
+      { icon: "ti-rocket", text: "You have already used advanced tools. Try learning a new skill — coding, video editing, or AI prompting could be a great next step." },
+      { icon: "ti-users", text: "You could help others around you learn to use technology more confidently." },
+    ]
+  },
+  {
+    id: "productive",
+    label: "Productive user",
+    badge: { bg: "#eaf3de", color: "#27500a", border: "#97c459" },
+    bar: "#3b6d11",
+    minSkill: 13,
+    desc: "You use technology mainly for work, study, and communication. You are organised and efficient with your devices. You have used most common tools and you know how to solve basic problems when they appear.",
+    tips: [
+      { icon: "ti-bulb", text: "You are good at the essentials. Exploring creative tools — like photo editing or simple video production — could add a new dimension to your digital life." },
+      { icon: "ti-shield-check", text: "Have you thought about digital security? Learning about strong passwords and backups is a great next step." },
+    ]
+  },
+  {
+    id: "social",
+    label: "Social user",
+    badge: { bg: "#eeedfe", color: "#26215c", border: "#afa9ec" },
+    bar: "#534ab7",
+    minSkill: 8,
+    desc: "You mainly use your devices for communication and entertainment — staying in touch with friends and family, watching videos, and browsing social media. You prefer simple, familiar apps and you are most comfortable on your smartphone.",
+    tips: [
+      { icon: "ti-arrow-right", text: "Try using your device for one new thing this week — an online course, a budgeting app, or a productivity tool. You might be surprised!" },
+      { icon: "ti-device-mobile", text: "Your mobile skills are strong. Cloud storage and video calling apps could make your digital life even easier." },
+    ]
+  },
+  {
+    id: "casual",
+    label: "Casual user",
+    badge: { bg: "#faeeda", color: "#633806", border: "#ef9f27" },
+    bar: "#b06000",
+    minSkill: 0,
+    desc: "You use technology for basic, everyday tasks. You are not always confident with new tools, but you manage well with the things you know. There is a lot of room to grow — and that is exciting!",
+    tips: [
+      { icon: "ti-device-laptop", text: "Start with one small goal: learn to use a new app or tool this month. YouTube tutorials are a great, free way to begin." },
+      { icon: "ti-help", text: "Don't be afraid to ask for help or search online when something goes wrong. Every expert was once a beginner." },
+    ]
+  }
+];
+
+let current = 0;
+let answers = [];
+let totals = { skill: 0, mobility: 0, variety: 0 };
+
+function setProgress(n) {
+  document.getElementById('prog').style.width = Math.round((n / questions.length) * 100) + '%';
+}
+
+function renderQ(idx) {
+  const q = questions[idx];
+  const body = document.getElementById('survey-body');
+  body.innerHTML = `
+    <div class="q-block active">
+      <div class="q-num">Question ${idx + 1} of ${questions.length}</div>
+      <div class="q-text">${q.text}</div>
+      ${q.note ? `<div class="q-note"><i class="ti ti-quote" aria-hidden="true" style="font-size:13px;margin-right:4px;"></i>${q.note}</div>` : ''}
+      <div class="opt-list" id="opt-list"></div>
+      <div class="nav-row">
+        <span class="nav-counter" id="sel-count" style="font-size:13px;color:var(--color-text-secondary);"></span>
+        <button class="nav-btn" id="next-btn" disabled>
+          ${idx < questions.length - 1 ? 'Next <i class="ti ti-arrow-right" aria-hidden="true" style="font-size:14px;vertical-align:-1px;"></i>' : 'See my results <i class="ti ti-check" aria-hidden="true" style="font-size:14px;vertical-align:-1px;"></i>'}
+        </button>
+      </div>
+    </div>`;
+
+  const letters = ['A','B','C','D'];
+  const list = document.getElementById('opt-list');
+  q.options.forEach((opt, i) => {
+    const btn = document.createElement('button');
+    btn.className = 'opt-btn';
+    btn.dataset.idx = i;
+    btn.innerHTML = `<span class="opt-letter">${letters[i]}</span><span class="opt-label">${opt.text}<em>${opt.sub}</em></span>`;
+    btn.addEventListener('click', () => {
+      list.querySelectorAll('.opt-btn').forEach(b => b.classList.remove('selected'));
+      btn.classList.add('selected');
+      answers[idx] = i;
+      document.getElementById('next-btn').disabled = false;
+      document.getElementById('sel-count').textContent = '';
+    });
+    list.appendChild(btn);
+  });
+
+  document.getElementById('next-btn').addEventListener('click', () => {
+    if (answers[idx] === undefined) return;
+    const s = q.options[answers[idx]].score;
+    totals.skill    += s.skill;
+    totals.mobility += s.mobility;
+    totals.variety  += s.variety;
+    current++;
+    setProgress(current);
+    if (current < questions.length) renderQ(current);
+    else showResult();
+  });
+
+  if (answers[idx] !== undefined) {
+    list.querySelectorAll('.opt-btn')[answers[idx]].classList.add('selected');
+    document.getElementById('next-btn').disabled = false;
+  }
+}
+
+function showResult() {
+  document.getElementById('survey-body').innerHTML = '';
+  const rw = document.getElementById('result-wrap');
+  rw.classList.add('show');
+
+  const maxSkill    = questions.length * 4;
+  const maxMobility = questions.length * 3;
+  const maxVariety  = questions.length * 3;
+
+  const skillPct    = Math.round((totals.skill    / maxSkill)    * 100);
+  const mobilityPct = Math.round((totals.mobility / maxMobility) * 100);
+  const varietyPct  = Math.round((totals.variety  / maxVariety)  * 100);
+
+  const profile = profiles.find(p => totals.skill >= p.minSkill) || profiles[profiles.length - 1];
+
+  const mobileLabel  = mobilityPct > 60 ? "On the go" : mobilityPct > 35 ? "Balanced" : "Desktop-first";
+  const varietyLabel = varietyPct  > 60 ? "Wide range" : varietyPct  > 35 ? "Moderate"  : "Focused";
+
+  rw.innerHTML = `
+    <div class="result-header">
+      <div class="result-title">Your digital profile</div>
+      <div class="result-type">Based on your answers:</div>
+      <span class="result-badge" style="background:${profile.badge.bg};color:${profile.badge.color};border:1px solid ${profile.badge.border};">
+        <i class="ti ti-device-laptop" aria-hidden="true" style="font-size:13px;margin-right:5px;vertical-align:-1px;"></i>${profile.label}
+      </span>
+      <div style="font-size:14px;color:var(--color-text-secondary);line-height:1.6;">${profile.desc}</div>
+    </div>
+
+    <div class="section-divider">your scores</div>
+    <div class="stat-grid">
+      <div class="stat-card">
+        <div class="stat-label">Technical skill</div>
+        <div class="stat-value">${skillPct}%</div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-label">Mobility</div>
+        <div class="stat-value">${mobileLabel}</div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-label">Variety of use</div>
+        <div class="stat-value">${varietyLabel}</div>
+      </div>
+    </div>
+
+    <div class="skill-bar-wrap">
+      <div class="skill-bar-label"><span>Technical skill</span><span>${skillPct}%</span></div>
+      <div class="skill-bar-track"><div class="skill-bar-fill" style="width:0%;background:${profile.bar};" data-target="${skillPct}"></div></div>
+    </div>
+    <div class="skill-bar-wrap">
+      <div class="skill-bar-label"><span>Mobility</span><span>${mobilityPct}%</span></div>
+      <div class="skill-bar-track"><div class="skill-bar-fill" style="width:0%;background:#534ab7;" data-target="${mobilityPct}"></div></div>
+    </div>
+    <div class="skill-bar-wrap">
+      <div class="skill-bar-label"><span>Variety of use</span><span>${varietyPct}%</span></div>
+      <div class="skill-bar-track"><div class="skill-bar-fill" style="width:0%;background:#3b6d11;" data-target="${varietyPct}"></div></div>
+    </div>
+
+    <div class="section-divider">suggestions for you</div>
+    <div class="finding-list">
+      ${profile.tips.map(t => `
+        <div class="finding-row">
+          <i class="ti ${t.icon}" aria-hidden="true" style="color:var(--color-text-tertiary);"></i>
+          <span>${t.text}</span>
+        </div>`).join('')}
+    </div>
+
+    <button class="restart-btn" id="restart-btn">↺ Take the survey again</button>
+  `;
+
+  setTimeout(() => {
+    document.querySelectorAll('.skill-bar-fill').forEach(bar => {
+      bar.style.width = bar.dataset.target + '%';
+    });
+  }, 100);
+
+  document.getElementById('restart-btn').addEventListener('click', () => {
+    current = 0; answers = []; totals = { skill: 0, mobility: 0, variety: 0 };
+    rw.classList.remove('show');
+    rw.innerHTML = '';
+    setProgress(0);
+    renderQ(0);
+  });
+}
+
+setProgress(0);
+renderQ(0);
+</script>
+</body>
+</html>
