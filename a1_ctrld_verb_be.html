@@ -1,0 +1,229 @@
+<html>
+	<head><meta charset="UTF-8">
+<style>
+  .sr-only{position:absolute;width:1px;height:1px;padding:0;margin:-1px;overflow:hidden;clip:rect(0,0,0,0);white-space:nowrap;border:0;}
+  .prog-bar{height:4px;background:var(--color-border-tertiary);border-radius:2px;margin-bottom:1.5rem;overflow:hidden;}
+  .prog-fill{height:100%;background:var(--color-text-primary);border-radius:2px;transition:width .35s;}
+  .q-num{font-size:11px;font-weight:500;letter-spacing:.07em;text-transform:uppercase;color:var(--color-text-secondary);margin-bottom:8px;}
+  .build-zone{min-height:52px;border:1.5px dashed var(--color-border-secondary);border-radius:var(--border-radius-lg);padding:10px 12px;display:flex;flex-wrap:wrap;gap:7px;align-items:center;margin-bottom:14px;background:var(--color-background-secondary);transition:border-color .15s;}
+  .build-zone.correct-zone{border-color:#3b6d11;background:#eaf3de;}
+  .build-zone.wrong-zone{border-color:#a32d2d;background:#fcebeb;animation:shake .3s;}
+  .build-placeholder{font-size:13px;color:var(--color-text-tertiary);font-style:italic;user-select:none;}
+  .word-pool{display:flex;flex-wrap:wrap;gap:7px;margin-bottom:1.25rem;min-height:44px;}
+  .word-chip{font-size:15px;padding:7px 14px;border-radius:var(--border-radius-md);border:1px solid var(--color-border-secondary);background:var(--color-background-primary);color:var(--color-text-primary);cursor:pointer;user-select:none;-webkit-user-select:none;transition:background .12s,border-color .12s,opacity .12s;}
+  .word-chip:hover{background:var(--color-background-secondary);border-color:var(--color-border-primary);}
+  .word-chip.in-zone{background:#e6f1fb;border-color:#85b7eb;color:#0c447c;}
+  .word-chip.locked{pointer-events:none;}
+  .word-chip.correct-chip{background:#eaf3de;border-color:#97c459;color:#27500a;}
+  .word-chip.wrong-chip{background:#fcebeb;border-color:#f09595;color:#791f1f;}
+  .fb-row{min-height:24px;font-size:13px;margin-bottom:1rem;display:flex;align-items:center;gap:6px;}
+  .fb-ok{color:var(--color-text-success);}
+  .fb-err{color:var(--color-text-danger);}
+  .nav-row{display:flex;justify-content:space-between;align-items:center;gap:8px;flex-wrap:wrap;}
+  .score-chip{font-size:13px;color:var(--color-text-secondary);}
+  .summary{padding:.5rem 0;}
+  .summary-score{font-size:32px;font-weight:500;color:var(--color-text-primary);margin-bottom:4px;}
+  .summary-sub{font-size:14px;color:var(--color-text-secondary);margin-bottom:1.25rem;}
+  .summary-list{display:flex;flex-direction:column;gap:6px;margin-bottom:1.25rem;}
+  .sum-item{display:flex;align-items:center;gap:10px;padding:8px 12px;border-radius:var(--border-radius-md);background:var(--color-background-secondary);font-size:13px;}
+  .sum-sentence{color:var(--color-text-primary);flex:1;}
+  .sum-icon{font-size:15px;flex-shrink:0;}
+  @keyframes shake{0%,100%{transform:translateX(0)}25%{transform:translateX(-5px)}75%{transform:translateX(5px)}}
+</style>
+<link rel="stylesheet" href="general.css">
+
+</head>
+<body class="exercise-page">
+<div style="padding:.75rem 0 1rem;">
+  <div class="prog-bar"><div class="prog-fill" id="prog" style="width:0%"></div></div>
+  <div id="main"></div>
+</div>
+
+<script>
+const sentences=[
+  {words:["I","am","a","student."],      hint:"I __"},
+  {words:["She","is","my","sister."],    hint:"She __"},
+  {words:["He","is","a","teacher."],     hint:"He __"},
+  {words:["We","are","friends."],        hint:"We __"},
+  {words:["It","is","a","cat."],         hint:"It __"},
+  {words:["They","are","my","parents."], hint:"They __"},
+  {words:["You","are","very","kind."],   hint:"You __"},
+  {words:["I","am","not","tired."],      hint:"I am not __"},
+  {words:["She","is","not","here."],     hint:"She is not __"},
+  {words:["They","are","not","students."],hint:"They are not __"},
+];
+
+let current=0;
+let results=[];
+let built=[];
+
+function shuffle(a){const b=[...a];for(let i=b.length-1;i>0;i--){const j=Math.floor(Math.random()*(i+1));[b[i],b[j]]=[b[j],b[i]];}return b;}
+
+function setProgress(n){
+  document.getElementById('prog').style.width=Math.round((n/sentences.length)*100)+'%';
+}
+
+function renderQ(idx){
+  const q=sentences[idx];
+  built=[];
+  const pool=shuffle([...q.words]);
+  const main=document.getElementById('main');
+
+  main.innerHTML=`
+    <div class="q-num">Sentence ${idx+1} of ${sentences.length}</div>
+    <div style="font-size:13px;color:var(--color-text-secondary);margin-bottom:10px;">
+      Tap the words, make a sentence.
+    </div>
+    <div class="build-zone" id="build-zone">
+      <span class="build-placeholder" id="placeholder">Tap a word to start…</span>
+    </div>
+    <div class="word-pool" id="pool"></div>
+    <div class="fb-row" id="fb"></div>
+    <div class="nav-row">
+      <button id="clear-btn" style="font-size:13px;">
+        <i class="ti ti-refresh" aria-hidden="true" style="font-size:14px;vertical-align:-1px;margin-right:4px;"></i>Clear
+      </button>
+      <div style="display:flex;gap:8px;align-items:center;">
+        <span class="score-chip" id="score-chip">${results.filter(r=>r).length} / ${sentences.length}</span>
+        <button id="check-btn">Check</button>
+      </div>
+    </div>
+  `;
+
+  const poolEl=document.getElementById('pool');
+  pool.forEach((word,i)=>{
+    const chip=document.createElement('button');
+    chip.className='word-chip';
+    chip.textContent=word;
+    chip.dataset.word=word;
+    chip.dataset.poolIdx=i;
+    chip.addEventListener('click',()=>pickWord(chip,word,i));
+    poolEl.appendChild(chip);
+  });
+
+  document.getElementById('clear-btn').addEventListener('click',()=>clearBuilt(q));
+  document.getElementById('check-btn').addEventListener('click',()=>checkAnswer(q,idx));
+}
+
+function pickWord(chip,word,poolIdx){
+  if(chip.classList.contains('in-zone')){
+    removeFromBuilt(chip,word,poolIdx);
+  } else {
+    addToBuilt(chip,word,poolIdx);
+  }
+}
+
+function addToBuilt(chip,word,poolIdx){
+  built.push({word,poolIdx,chip});
+  chip.classList.add('in-zone');
+  const zone=document.getElementById('build-zone');
+  const ph=document.getElementById('placeholder');
+  if(ph)ph.style.display='none';
+  const zChip=document.createElement('span');
+  zChip.className='word-chip in-zone locked';
+  zChip.textContent=word;
+  zChip.dataset.poolIdx=poolIdx;
+  zChip.style.cursor='pointer';
+  zChip.classList.remove('locked');
+  zChip.addEventListener('click',()=>{
+    removeFromBuilt(chip,word,poolIdx);
+  });
+  zone.appendChild(zChip);
+  document.getElementById('fb').textContent='';
+  document.getElementById('build-zone').classList.remove('correct-zone','wrong-zone');
+}
+
+function removeFromBuilt(chip,word,poolIdx){
+  built=built.filter(b=>!(b.poolIdx===poolIdx&&b.word===word));
+  chip.classList.remove('in-zone');
+  const zone=document.getElementById('build-zone');
+  const zChips=[...zone.querySelectorAll('.word-chip')];
+  const target=zChips.find(c=>c.dataset.poolIdx==poolIdx&&c.textContent===word);
+  if(target)target.remove();
+  if(built.length===0){
+    const ph=document.getElementById('placeholder');
+    if(ph)ph.style.display='';
+  }
+}
+
+function clearBuilt(q){
+  built=[];
+  document.getElementById('build-zone').innerHTML='<span class="build-placeholder" id="placeholder">Tap a word to start…</span>';
+  document.getElementById('build-zone').classList.remove('correct-zone','wrong-zone');
+  document.querySelectorAll('.word-chip').forEach(c=>c.classList.remove('in-zone','correct-chip','wrong-chip'));
+  document.getElementById('fb').textContent='';
+}
+
+function checkAnswer(q,idx){
+  if(built.length===0)return;
+  const attempt=built.map(b=>b.word).join(' ');
+  const correct=q.words.join(' ');
+  const zone=document.getElementById('build-zone');
+  const fb=document.getElementById('fb');
+  const isCorrect=attempt===correct;
+  results[idx]=isCorrect;
+
+  zone.querySelectorAll('.word-chip').forEach(c=>{
+    c.style.pointerEvents='none';
+    c.classList.add(isCorrect?'correct-chip':'wrong-chip');
+  });
+  document.querySelectorAll('#pool .word-chip').forEach(c=>c.style.pointerEvents='none');
+  document.getElementById('clear-btn').disabled=true;
+  document.getElementById('check-btn').disabled=true;
+
+  if(isCorrect){
+    zone.classList.add('correct-zone');
+    fb.innerHTML='<i class="ti ti-circle-check" aria-hidden="true" style="font-size:15px;"></i><span class="fb-ok">Correct!</span>';
+  } else {
+    zone.classList.add('wrong-zone');
+    fb.innerHTML=`<i class="ti ti-circle-x" aria-hidden="true" style="font-size:15px;"></i><span class="fb-err">Not quite. The correct order is: <strong style="color:var(--color-text-primary);">${correct}</strong></span>`;
+  }
+
+  setProgress(idx+1);
+
+  const nav=document.getElementById('nav-row')||document.getElementById('check-btn').parentElement.parentElement;
+  const nextBtn=document.createElement('button');
+  nextBtn.style.marginLeft='8px';
+  nextBtn.innerHTML=idx<sentences.length-1
+    ?'Next <i class="ti ti-arrow-right" aria-hidden="true" style="font-size:14px;vertical-align:-1px;"></i>'
+    :'Results <i class="ti ti-check" aria-hidden="true" style="font-size:14px;vertical-align:-1px;"></i>';
+  nextBtn.addEventListener('click',()=>{
+    current++;
+    if(current<sentences.length)renderQ(current);
+    else renderSummary();
+  });
+  document.getElementById('check-btn').insertAdjacentElement('afterend',nextBtn);
+}
+
+function renderSummary(){
+  setProgress(sentences.length);
+  const score=results.filter(Boolean).length;
+  const total=sentences.length;
+  const pct=Math.round((score/total)*100);
+  const msg=pct===100?'Perfect score!':pct>=70?'Well done!':pct>=50?'Good effort!':'Keep practising!';
+  const items=sentences.map((q,i)=>`
+    <div class="sum-item">
+      <i class="ti ${results[i]?'ti-circle-check':'ti-circle-x'} sum-icon" aria-hidden="true"
+         style="color:${results[i]?'#3b6d11':'#a32d2d'};"></i>
+      <span class="sum-sentence">${q.words.join(' ')}</span>
+    </div>`).join('');
+
+  document.getElementById('main').innerHTML=`
+    <div class="summary">
+      <div class="summary-score">${score} / ${total}</div>
+      <div class="summary-sub">${msg}</div>
+      <div class="summary-list">${items}</div>
+      <button id="restart-btn">
+        <i class="ti ti-refresh" aria-hidden="true" style="font-size:14px;vertical-align:-1px;margin-right:4px;"></i>Try again
+      </button>
+    </div>`;
+  document.getElementById('restart-btn').addEventListener('click',()=>{
+    current=0;results=[];built=[];setProgress(0);renderQ(0);
+  });
+}
+
+setProgress(0);
+renderQ(0);
+</script>
+</body>
+</html>
