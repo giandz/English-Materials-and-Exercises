@@ -1,5 +1,3 @@
-
-(function () {
   const btn  = document.getElementById('theme-toggle');
   const icon = document.getElementById('theme-icon');
   const root = document.documentElement;
@@ -41,4 +39,3 @@
   window.matchMedia('(prefers-color-scheme: dark)').addEventListener('change', function (e) {
     if (!getSaved()) applyTheme(e.matches ? 'dark' : 'light');
   });
-})();
