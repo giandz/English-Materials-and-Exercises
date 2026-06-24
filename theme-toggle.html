@@ -1,0 +1,80 @@
+<!-- ── theme toggle ── drop this block anywhere in <body> ── -->
+<div id="theme-toggle-wrap">
+  <button id="theme-toggle" aria-label="Toggle light/dark mode" title="Toggle light/dark mode">
+    <span id="theme-icon">☀️</span>
+  </button>
+</div>
+
+<style>
+  #theme-toggle-wrap {
+    position: fixed;
+    top: 1rem;
+    right: 1rem;
+    z-index: 9999;
+  }
+  #theme-toggle {
+    width: 40px;
+    height: 40px;
+    border-radius: 50%;
+    border: 0.5px solid var(--color-border-secondary, rgba(26,25,23,.3));
+    background: var(--color-background-primary, #fff);
+    cursor: pointer;
+    font-size: 18px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    box-shadow: 0 1px 4px rgba(0,0,0,.08);
+    transition: background 0.2s, border-color 0.2s;
+    padding: 0;
+  }
+  #theme-toggle:hover {
+    background: var(--color-background-secondary, #f5f4f0);
+  }
+</style>
+
+<script>
+(function () {
+  const btn  = document.getElementById('theme-toggle');
+  const icon = document.getElementById('theme-icon');
+  const root = document.documentElement;
+
+  /* Read saved preference, or fall back to system preference */
+  function getSaved() {
+    return localStorage.getItem('theme');
+  }
+
+  function getSystem() {
+    return window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light';
+  }
+
+  function applyTheme(theme) {
+    if (theme === 'dark') {
+      root.setAttribute('data-theme', 'dark');
+      root.classList.add('dark');
+      icon.textContent = '🌙';
+    } else {
+      root.setAttribute('data-theme', 'light');
+      root.classList.remove('dark');
+      icon.textContent = '☀️';
+    }
+  }
+
+  /* Initialise */
+  const initial = getSaved() || getSystem();
+  applyTheme(initial);
+
+  /* Toggle on click */
+  btn.addEventListener('click', function () {
+    const current = root.classList.contains('dark') ? 'dark' : 'light';
+    const next    = current === 'dark' ? 'light' : 'dark';
+    localStorage.setItem('theme', next);
+    applyTheme(next);
+  });
+
+  /* Follow system changes when no manual preference is saved */
+  window.matchMedia('(prefers-color-scheme: dark)').addEventListener('change', function (e) {
+    if (!getSaved()) applyTheme(e.matches ? 'dark' : 'light');
+  });
+})();
+</script>
+<!-- ── end theme toggle ── -->
