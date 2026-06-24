@@ -1,0 +1,325 @@
+<html>
+	<head><meta charset="UTF-8">
+<style>
+  .sr-only{position:absolute;width:1px;height:1px;padding:0;margin:-1px;overflow:hidden;clip:rect(0,0,0,0);white-space:nowrap;border:0;}
+  .sec-div{font-size:11px;font-weight:500;letter-spacing:.06em;text-transform:uppercase;color:var(--color-text-tertiary);display:flex;align-items:center;gap:8px;margin:1.75rem 0 1rem;}
+  .sec-div::before,.sec-div::after{content:'';flex:1;height:.5px;background:var(--color-border-tertiary);}
+  .struct-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(180px,1fr));gap:10px;margin-bottom:1.25rem;}
+  .struct-card{border:.5px solid var(--color-border-tertiary);border-radius:var(--border-radius-lg);overflow:hidden;}
+  .struct-head{padding:10px 14px 8px;border-bottom:.5px solid var(--color-border-tertiary);}
+  .struct-formula{font-size:14px;font-weight:500;font-family:var(--font-mono);margin-bottom:3px;}
+  .struct-meaning{font-size:12px;color:var(--color-text-secondary);}
+  .struct-body{padding:10px 14px 12px;display:flex;flex-direction:column;gap:5px;}
+  .struct-ex{font-size:13px;color:var(--color-text-primary);line-height:1.5;}
+  .struct-ex span{font-weight:500;}
+  .hl-for{color:#0c447c;}
+  .hl-to{color:#27500a;}
+  .hl-by{color:#633806;}
+  .f-for{background:#e6f1fb;border-color:#85b7eb;}
+  .f-for .struct-formula{color:#0c447c;}
+  .f-to{background:#eaf3de;border-color:#97c459;}
+  .f-to .struct-formula{color:#27500a;}
+  .f-by{background:#faeeda;border-color:#ef9f27;}
+  .f-by .struct-formula{color:#633806;}
+  .contrast-box{border:.5px solid var(--color-border-tertiary);border-radius:var(--border-radius-lg);overflow:hidden;margin-bottom:1rem;}
+  .contrast-head{padding:8px 14px;border-bottom:.5px solid var(--color-border-tertiary);font-size:12px;font-weight:500;color:var(--color-text-secondary);background:var(--color-background-secondary);}
+  .contrast-body{padding:10px 14px;display:flex;flex-direction:column;gap:6px;}
+  .contrast-row{display:grid;grid-template-columns:auto 1fr;gap:8px;align-items:baseline;font-size:13px;line-height:1.5;}
+  .c-label{font-size:11px;font-weight:500;padding:2px 8px;border-radius:20px;border:1px solid transparent;white-space:nowrap;font-family:var(--font-mono);}
+  .c-for{background:#e6f1fb;color:#0c447c;border-color:#85b7eb;}
+  .c-to{background:#eaf3de;color:#27500a;border-color:#97c459;}
+  .c-by{background:#faeeda;color:#633806;border-color:#ef9f27;}
+  .gap-para{background:var(--color-background-primary);border:.5px solid var(--color-border-tertiary);border-radius:var(--border-radius-lg);padding:1rem 1.25rem;font-size:14px;line-height:2.5;margin-bottom:1rem;}
+  input.gap{display:inline-block;border:none;border-bottom:2px solid var(--color-border-primary);border-radius:0;width:110px;font-size:14px;font-family:var(--font-sans);color:var(--color-text-primary);background:transparent;text-align:center;outline:none;padding:0 2px;vertical-align:baseline;}
+  input.gap:focus{border-bottom-color:#185fa5;}
+  input.gap.correct{border-bottom-color:#3b6d11;color:#3b6d11;}
+  input.gap.wrong{border-bottom-color:#a32d2d;color:#a32d2d;}
+  .ex-bar{display:flex;gap:8px;align-items:center;margin-top:10px;flex-wrap:wrap;}
+  .score-msg{font-size:13px;color:var(--color-text-secondary);}
+  .mcq-block{border:.5px solid var(--color-border-tertiary);border-radius:var(--border-radius-lg);overflow:hidden;margin-bottom:10px;}
+  .mcq-top{padding:10px 14px;border-bottom:.5px solid var(--color-border-tertiary);background:var(--color-background-secondary);}
+  .mcq-qnum{font-size:11px;color:var(--color-text-tertiary);margin-bottom:3px;}
+  .mcq-q{font-size:14px;color:var(--color-text-primary);line-height:1.5;}
+  .mcq-opts{padding:10px 14px;display:flex;flex-direction:column;gap:6px;}
+  .opt-btn{display:flex;align-items:center;gap:10px;padding:8px 12px;border-radius:var(--border-radius-md);border:.5px solid var(--color-border-secondary);background:var(--color-background-primary);cursor:pointer;text-align:left;width:100%;font-size:13px;color:var(--color-text-primary);transition:background .12s,border-color .12s;}
+  .opt-btn:hover:not(:disabled){background:var(--color-background-secondary);border-color:var(--color-border-primary);}
+  .opt-letter{font-size:11px;font-weight:500;width:20px;height:20px;border-radius:50%;border:.5px solid var(--color-border-secondary);display:flex;align-items:center;justify-content:center;flex-shrink:0;color:var(--color-text-secondary);}
+  .opt-btn.correct-opt{border-color:#97c459;background:#eaf3de;color:#27500a;}
+  .opt-btn.correct-opt .opt-letter{background:#3b6d11;border-color:#3b6d11;color:#fff;}
+  .opt-btn.wrong-opt{border-color:#f09595;background:#fcebeb;color:#791f1f;animation:shake .3s;}
+  .opt-btn.wrong-opt .opt-letter{background:#a32d2d;border-color:#a32d2d;color:#fff;}
+  .opt-btn.dimmed{opacity:.4;}
+  .opt-btn:disabled{cursor:default;}
+  .mcq-fb{padding:0 14px 10px;font-size:13px;display:none;align-items:center;gap:6px;line-height:1.5;}
+  .mcq-fb.show{display:flex;}
+  .fb-ok{color:#27500a;}
+  .fb-err{color:#791f1f;}
+  .ak-body{padding:10px 14px;display:flex;flex-direction:column;gap:3px;}
+  .ak-row{display:flex;gap:10px;align-items:baseline;padding:4px 0;border-bottom:.5px solid var(--color-border-tertiary);font-size:13px;}
+  .ak-row:last-child{border-bottom:none;}
+  .ak-num{color:var(--color-text-secondary);min-width:18px;}
+  .ak-ans{font-weight:500;min-width:120px;}
+  .ak-note{color:var(--color-text-secondary);}
+  details summary{user-select:none;list-style:none;}
+  details summary::-webkit-details-marker{display:none;}
+  @keyframes shake{0%,100%{transform:translateX(0)}25%{transform:translateX(-4px)}75%{transform:translateX(4px)}}
+</style>
+<link rel="stylesheet" href="general.css">
+
+</head>
+<body class="exercise-page">
+<div style="padding:.75rem 0 1rem;">
+
+  <div class="sec-div">the three structures</div>
+
+  <div class="struct-grid">
+    <div class="struct-card f-for">
+      <div class="struct-head">
+        <div class="struct-formula">for + verb-ing</div>
+        <div class="struct-meaning">purpose of a thing or action</div>
+      </div>
+      <div class="struct-body">
+        <div class="struct-ex">I use my phone <span class="hl-for">for checking</span> emails.</div>
+        <div class="struct-ex">This app is <span class="hl-for">for storing</span> passwords.</div>
+        <div class="struct-ex">A laptop is useful <span class="hl-for">for working</span> remotely.</div>
+      </div>
+    </div>
+    <div class="struct-card f-to">
+      <div class="struct-head">
+        <div class="struct-formula">to + infinitive</div>
+        <div class="struct-meaning">purpose of an action or decision</div>
+      </div>
+      <div class="struct-body">
+        <div class="struct-ex">I use my phone <span class="hl-to">to check</span> emails.</div>
+        <div class="struct-ex">She bought a tablet <span class="hl-to">to watch</span> videos.</div>
+        <div class="struct-ex">He opened the app <span class="hl-to">to send</span> a file.</div>
+      </div>
+    </div>
+    <div class="struct-card f-by">
+      <div class="struct-head">
+        <div class="struct-formula">by + verb-ing</div>
+        <div class="struct-meaning">how something is done — the method</div>
+      </div>
+      <div class="struct-body">
+        <div class="struct-ex">I fixed it <span class="hl-by">by restarting</span> the device.</div>
+        <div class="struct-ex">Save battery <span class="hl-by">by turning off</span> the screen.</div>
+        <div class="struct-ex">She learned <span class="hl-by">by watching</span> tutorials.</div>
+      </div>
+    </div>
+  </div>
+
+  <div class="contrast-box">
+    <div class="contrast-head">for + ing vs to + infinitive — same meaning, different focus</div>
+    <div class="contrast-body">
+      <div class="contrast-row">
+        <span class="c-label c-for">for+ing</span>
+        <span>I use Dropbox <span class="hl-for" style="font-weight:500;">for storing</span> files. <span style="font-size:12px;color:var(--color-text-secondary);">(describes what the tool is used for)</span></span>
+      </div>
+      <div class="contrast-row">
+        <span class="c-label c-to">to+inf</span>
+        <span>I opened Dropbox <span class="hl-to" style="font-weight:500;">to store</span> a file. <span style="font-size:12px;color:var(--color-text-secondary);">(describes why I did something)</span></span>
+      </div>
+      <div class="contrast-row">
+        <span class="c-label c-by">by+ing</span>
+        <span>I saved space <span class="hl-by" style="font-weight:500;">by deleting</span> old files. <span style="font-size:12px;color:var(--color-text-secondary);">(describes the method used)</span></span>
+      </div>
+    </div>
+  </div>
+
+  <div class="sec-div">exercise 1 — gap-fill</div>
+
+  <div style="font-size:13px;color:var(--color-text-secondary);margin-bottom:10px;">Complete each sentence with the correct structure. Use the verb in brackets.</div>
+
+  <div class="gap-para">
+    1. I use my laptop <input class="gap" id="g1" autocomplete="off" placeholder="?"> videos online. (watch)<br>
+    2. She fixed the problem <input class="gap" id="g2" autocomplete="off" placeholder="?"> the software. (update)<br>
+    3. This button is <input class="gap" id="g3" autocomplete="off" placeholder="?"> the screen brightness. (adjust)<br>
+    4. He bought a new keyboard <input class="gap" id="g4" autocomplete="off" placeholder="?"> more comfortably. (type)<br>
+    5. You can save battery <input class="gap" id="g5" autocomplete="off" placeholder="?"> the Wi-Fi off. (turn)<br>
+    6. I downloaded the app <input class="gap" id="g6" autocomplete="off" placeholder="?"> my files. (organise)<br>
+    7. A VPN is useful <input class="gap" id="g7" autocomplete="off" placeholder="?"> your connection. (secure)<br>
+    8. She learned to code <input class="gap" id="g8" autocomplete="off" placeholder="?"> free tutorials. (follow)<br>
+    9. He plugged in the charger <input class="gap" id="g9" autocomplete="off" placeholder="?"> the battery. (charge)<br>
+    10. You can free up space <input class="gap" id="g10" autocomplete="off" placeholder="?"> unused apps. (delete)
+  </div>
+
+  <div class="ex-bar">
+    <button id="check-gap">Check answers</button>
+    <button id="reset-gap">↺ Reset</button>
+    <span class="score-msg" id="gap-fb"></span>
+  </div>
+
+  <details style="margin-top:1.25rem;border:.5px solid var(--color-border-tertiary);border-radius:var(--border-radius-md);overflow:hidden;">
+    <summary style="padding:9px 14px;cursor:pointer;font-size:14px;font-weight:500;background:var(--color-background-secondary);display:flex;justify-content:space-between;align-items:center;">
+      Answer key — exercise 1 <i class="ti ti-chevron-down" aria-hidden="true" style="font-size:15px;color:var(--color-text-secondary);"></i>
+    </summary>
+    <div class="ak-body">
+      <div class="ak-row"><span class="ak-num">1.</span><span class="ak-ans hl-to">to watch</span><span class="ak-note">or: for watching — both correct here</span></div>
+      <div class="ak-row"><span class="ak-num">2.</span><span class="ak-ans hl-by">by updating</span><span class="ak-note">method — how she fixed it</span></div>
+      <div class="ak-row"><span class="ak-num">3.</span><span class="ak-ans hl-for">for adjusting</span><span class="ak-note">purpose of the button (a thing)</span></div>
+      <div class="ak-row"><span class="ak-num">4.</span><span class="ak-ans hl-to">to type</span><span class="ak-note">reason he bought it — action/decision</span></div>
+      <div class="ak-row"><span class="ak-num">5.</span><span class="ak-ans hl-by">by turning</span><span class="ak-note">method — how to save battery</span></div>
+      <div class="ak-row"><span class="ak-num">6.</span><span class="ak-ans hl-to">to organise</span><span class="ak-note">reason he downloaded it</span></div>
+      <div class="ak-row"><span class="ak-num">7.</span><span class="ak-ans hl-for">for securing</span><span class="ak-note">purpose of a VPN (a thing)</span></div>
+      <div class="ak-row"><span class="ak-num">8.</span><span class="ak-ans hl-by">by following</span><span class="ak-note">method — how she learned</span></div>
+      <div class="ak-row"><span class="ak-num">9.</span><span class="ak-ans hl-to">to charge</span><span class="ak-note">reason he plugged it in</span></div>
+      <div class="ak-row"><span class="ak-num">10.</span><span class="ak-ans hl-by">by deleting</span><span class="ak-note">method — how to free up space</span></div>
+    </div>
+  </details>
+
+  <div class="sec-div">exercise 2 — multiple choice</div>
+
+  <div style="font-size:13px;color:var(--color-text-secondary);margin-bottom:1rem;">Choose the correct option to complete each sentence.</div>
+
+  <div id="mcq-container"></div>
+
+  <div class="ex-bar" style="margin-top:.5rem;">
+    <span class="score-msg" id="mcq-score">0 / 8 correct</span>
+  </div>
+
+</div>
+
+<script>
+const gapData=[
+  {id:'g1', answers:['to watch','for watching']},
+  {id:'g2', answers:['by updating']},
+  {id:'g3', answers:['for adjusting']},
+  {id:'g4', answers:['to type']},
+  {id:'g5', answers:['by turning']},
+  {id:'g6', answers:['to organise','to organize']},
+  {id:'g7', answers:['for securing']},
+  {id:'g8', answers:['by following']},
+  {id:'g9', answers:['to charge']},
+  {id:'g10',answers:['by deleting']},
+];
+
+function checkGap(){
+  let correct=0,filled=0;
+  gapData.forEach(item=>{
+    const el=document.getElementById(item.id);
+    if(!el)return;
+    const val=el.value.trim().toLowerCase();
+    el.classList.remove('correct','wrong');
+    if(!val)return;
+    filled++;
+    if(item.answers.includes(val)){el.classList.add('correct');correct++;}
+    else el.classList.add('wrong');
+  });
+  const fb=document.getElementById('gap-fb');
+  if(!filled){fb.textContent='';return;}
+  fb.textContent=correct===gapData.length?'All correct!':correct+' / '+gapData.length+' correct';
+  fb.style.color=correct===gapData.length?'var(--color-text-success)':'var(--color-text-secondary)';
+}
+
+function resetGap(){
+  gapData.forEach(item=>{const el=document.getElementById(item.id);if(el){el.value='';el.classList.remove('correct','wrong');}});
+  document.getElementById('gap-fb').textContent='';
+}
+
+document.getElementById('check-gap').addEventListener('click',checkGap);
+document.getElementById('reset-gap').addEventListener('click',resetGap);
+gapData.forEach(item=>{const el=document.getElementById(item.id);if(el)el.addEventListener('keydown',e=>{if(e.key==='Enter')checkGap();});});
+
+const mcqData=[
+  {
+    q:'I use a password manager _____ my login details.',
+    opts:['for storing','to storing','by store'],
+    answer:0,
+    why:'for + ing describes the purpose of a tool or thing.'
+  },
+  {
+    q:'She connected to the VPN _____ her data on public Wi-Fi.',
+    opts:['for protect','to protect','by protection'],
+    answer:1,
+    why:'to + infinitive describes why she did something — the reason for the action.'
+  },
+  {
+    q:'You can speed up your computer _____ the cache.',
+    opts:['to clear','for clear','by clearing'],
+    answer:2,
+    why:'by + ing describes the method — how you do something.'
+  },
+  {
+    q:'He uses his second monitor _____ more productive.',
+    opts:['for being','to be','by be'],
+    answer:1,
+    why:'to + infinitive follows action verbs like "use" when giving a reason.'
+  },
+  {
+    q:'This shortcut is _____ between open windows quickly.',
+    opts:['to switching','for switching','by switch'],
+    answer:1,
+    why:'for + ing describes what a feature or thing is used for.'
+  },
+  {
+    q:'She improved her typing speed _____ every day.',
+    opts:['to practice','by practicing','for practice'],
+    answer:1,
+    why:'by + ing describes how she improved — the method.'
+  },
+  {
+    q:'I opened the settings _____ the display resolution.',
+    opts:['for changing','by change','to change'],
+    answer:2,
+    why:'to + infinitive explains the reason for opening the settings.'
+  },
+  {
+    q:'Cloud storage is useful _____ files from any device.',
+    opts:['by accessing','to accessing','for accessing'],
+    answer:2,
+    why:'for + ing describes the purpose of a thing — what it is useful for.'
+  },
+];
+
+let mcqCorrect=0;
+const letters=['A','B','C'];
+
+function updateMcqScore(){
+  document.getElementById('mcq-score').textContent=mcqCorrect+' / '+mcqData.length+' correct';
+  document.getElementById('mcq-score').style.color=mcqCorrect===mcqData.length?'var(--color-text-success)':'var(--color-text-secondary)';
+}
+
+const container=document.getElementById('mcq-container');
+mcqData.forEach((q,qi)=>{
+  const block=document.createElement('div');
+  block.className='mcq-block';
+  block.innerHTML=`
+    <div class="mcq-top">
+      <div class="mcq-qnum">Question ${qi+1}</div>
+      <div class="mcq-q">${q.q}</div>
+    </div>
+    <div class="mcq-opts" id="opts-${qi}"></div>
+    <div class="mcq-fb" id="fb-${qi}"></div>`;
+  container.appendChild(block);
+
+  const optsDiv=block.querySelector(`#opts-${qi}`);
+  q.opts.forEach((opt,oi)=>{
+    const btn=document.createElement('button');
+    btn.className='opt-btn';
+    btn.innerHTML=`<span class="opt-letter">${letters[oi]}</span><span>${opt}</span>`;
+    btn.addEventListener('click',()=>{
+      optsDiv.querySelectorAll('.opt-btn').forEach(b=>{b.disabled=true;});
+      const isCorrect=oi===q.answer;
+      if(isCorrect){
+        btn.classList.add('correct-opt');
+        mcqCorrect++;
+        updateMcqScore();
+      } else {
+        btn.classList.add('wrong-opt');
+        optsDiv.querySelectorAll('.opt-btn')[q.answer].classList.add('correct-opt');
+      }
+      optsDiv.querySelectorAll('.opt-btn').forEach((b,bi)=>{
+        if(!b.classList.contains('correct-opt')&&!b.classList.contains('wrong-opt'))b.classList.add('dimmed');
+      });
+      const fb=document.getElementById(`fb-${qi}`);
+      fb.className='mcq-fb show';
+      fb.innerHTML=isCorrect
+        ?`<i class="ti ti-circle-check" aria-hidden="true" style="font-size:15px;flex-shrink:0;"></i><span class="fb-ok">${q.why}</span>`
+        :`<i class="ti ti-circle-x" aria-hidden="true" style="font-size:15px;flex-shrink:0;"></i><span class="fb-err">Not quite. ${q.why}</span>`;
+    });
+    optsDiv.appendChild(btn);
+  });
+});
+</script>
+</body>
+</html>
