@@ -1,0 +1,148 @@
+<html>
+	<head><meta charset="UTF-8">
+<style>
+  .sec-div{font-size:11px;font-weight:500;letter-spacing:.06em;text-transform:uppercase;color:var(--color-text-muted);display:flex;align-items:center;gap:8px;margin:1.75rem 0 1rem;}
+  .sec-div::before,.sec-div::after{content:'';flex:1;height:.5px;background:var(--border);}
+  .setting-chip{display:inline-flex;align-items:center;gap:5px;font-size:12px;padding:3px 10px;border-radius:20px;background:var(--surface-1);border:.5px solid var(--border);color:var(--color-text-secondary);margin-bottom:1rem;}
+  .bubble-wrap{display:flex;gap:10px;align-items:flex-end;margin-bottom:14px;}
+  .bubble-wrap.right{flex-direction:row-reverse;}
+  .avatar{width:34px;height:34px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:18px;flex-shrink:0;}
+  .av-a{background:var(--bg-accent);}
+  .av-b{background:var(--bg-pro);}
+  .bubble{max-width:76%;padding:9px 13px;border-radius:15px;font-size:14px;line-height:1.65;border:.5px solid var(--border);}
+  .bubble.left{background:var(--surface-2);border-bottom-left-radius:4px;color:var(--color-text-primary);}
+  .bubble.right{background:var(--bg-pro);border-bottom-right-radius:4px;color:var(--color-text-pro);border-color:var(--border-pro);}
+  .bname{font-size:11px;font-weight:500;color:var(--color-text-muted);margin-bottom:3px;padding:0 2px;}
+  .bname.right{text-align:right;}
+  .hl-prep{font-weight:500;color:var(--color-text-accent);}
+  .hl-obj{font-weight:500;color:var(--color-text-success);}
+
+  /* matching */
+  .match-grid{display:grid;grid-template-columns:1fr 1fr;gap:16px;margin-bottom:1rem;}
+  .match-col-label{font-size:11px;font-weight:500;text-transform:uppercase;letter-spacing:.05em;color:var(--color-text-muted);margin-bottom:8px;}
+  .sentence-list{display:flex;flex-direction:column;gap:7px;}
+  .sentence-btn{font-size:13px;padding:8px 12px;border-radius:var(--radius);border:.5px solid var(--border);background:var(--surface-2);color:var(--color-text-primary);cursor:pointer;text-align:left;transition:border-color .12s,background .12s;line-height:1.4;}
+  .sentence-btn:hover:not(:disabled){background:var(--surface-1);border-color:var(--color-border-strong);}
+  .sentence-btn.selected{border-color:var(--color-border-accent);background:var(--bg-accent);color:var(--color-text-accent);}
+  .sentence-btn.correct{border: 4px solid var(--color-border-success);background:var(--color-bg-success);color:var(--color-text-success);pointer-events:none;}
+  .sentence-btn.wrong{border-color:var(--border-danger);background:var(--bg-danger);color:var(--color-text-danger);animation:shake .3s;}
+  .img-card{border:.5px solid var(--border);border-radius:12px;overflow:hidden;cursor:pointer;transition:border-color .12s;}
+  .img-card:hover{border-color:var(--border-strong);}
+  .img-card.selected{border-color:var(--border-accent);}
+  .img-card.correct{border: 4px solid var(--color-border-success);pointer-events:none;}
+  .img-card.wrong{border-color:var(--color-border-danger);animation:shake .3s;}
+  .img-slot{height:80px;background:var(--surface-1);display:flex;flex-direction:column;align-items:center;justify-content:center;gap:4px;border-bottom:.5px solid var(--border);}
+  .img-slot img{width:100%;height:100%;object-fit:contain;padding:6px;display:none;}
+  .img-slot .ph-icon{font-size:22px;color:var(--color-text-muted);}
+  .img-slot .ph-name{font-size:10px;color:var(--color-text-muted);font-family:var(--font-mono);}
+  .img-label{font-size:12px;font-weight:500;text-align:center;padding:6px 8px;color:var(--color-text-secondary);}
+  .img-grid-wrap{display:flex;flex-direction:column;gap:7px;}
+
+  /* gap fill */
+  .gap-para{background:var(--surface-2);border:.5px solid var(--border);border-radius:12px;padding:1rem 1.25rem;font-size:14px;line-height:2.5;margin-bottom:1rem;}
+  input.gap{display:inline-block;border:none;border-bottom:2px solid var(--border-strong);border-radius:0;width:80px;font-size:14px;font-family:inherit;color:var(--color-text-primary);background:transparent;text-align:center;outline:none;padding:0 2px;vertical-align:baseline;}
+  input.gap:focus{border-bottom-color:var(--border-accent);}
+  input.gap.correct{border-bottom-color:var(--color-border-success);color:var(--color-text-success);}
+  input.gap.wrong{border-bottom-color:var(--color-border-danger);color:var(--color-text-danger);}
+  .bank{display:flex;flex-wrap:wrap;gap:6px;margin-bottom:1rem;}
+  .bank-chip{font-size:13px;padding:4px 11px;border-radius:20px;background:var(--surface-1);border:.5px solid var(--border);color:var(--color-text-secondary);}
+  .ex-bar{display:flex;gap:8px;align-items:center;flex-wrap:wrap;}
+  .score-msg{font-size:13px;color:var(--color-text-secondary);}
+  .ak-body{padding:10px 14px;display:flex;flex-direction:column;gap:2px;}
+  .ak-row{display:flex;gap:10px;align-items:baseline;padding:4px 0;border-bottom:.5px solid var(--border);font-size:13px;}
+  .ak-row:last-child{border-bottom:none;}
+  .ak-num{color:var(--color-text-muted);min-width:20px;}
+  .ak-ans{font-weight:500;color:var(--color-text-accent);min-width:80px;}
+  .ak-note{color:var(--color-text-muted);}
+  details summary{user-select:none;list-style:none;display:flex;justify-content:space-between;align-items:center;}
+  details summary::-webkit-details-marker{display:none;}
+  @keyframes shake{0%,100%{transform:translateX(0)}25%{transform:translateX(-5px)}75%{transform:translateX(5px)}}
+  @media(max-width:480px){.match-grid{grid-template-columns:1fr;}}
+</style>
+<link rel="stylesheet" href="general.css">
+
+</head>
+<body class="exercise-page">
+<div style="padding:.75rem 0 1rem;">
+
+<!-- ══ CONVERSATION ══ -->
+<div class="sec-div">conversation</div>
+<div class="setting-chip">🏠 looking for things around the house</div>
+
+<div class="bubble-wrap left">
+  <div class="avatar av-a">👩</div>
+  <div><div class="bname">A</div>
+  <div class="bubble left">Have you seen my keys? I can't find them anywhere!</div></div>
+</div>
+
+<div class="bubble-wrap right">
+  <div class="avatar av-b">👨</div>
+  <div><div class="bname right">B</div>
+  <div class="bubble right">Did you look <span class="hl-prep">on</span> the <span class="hl-obj">table</span>? I think I saw them there.</div></div>
+</div>
+
+<div class="bubble-wrap left">
+  <div class="avatar av-a">👩</div>
+  <div><div class="bname">A</div>
+  <div class="bubble left">Yes, I looked <span class="hl-prep">on</span> the <span class="hl-obj">table</span> and <span class="hl-prep">under</span> the <span class="hl-obj">sofa</span>. Nothing!</div></div>
+</div>
+
+<div class="bubble-wrap right">
+  <div class="avatar av-b">👨</div>
+  <div><div class="bname right">B</div>
+  <div class="bubble right">What about <span class="hl-prep">next to</span> the <span class="hl-obj">lamp</span>? Or <span class="hl-prep">behind</span> the <span class="hl-obj">armchair</span>?</div></div>
+</div>
+
+<div class="bubble-wrap left">
+  <div class="avatar av-a">👩</div>
+  <div><div class="bname">A</div>
+  <div class="bubble left">Oh wait — the cat! She always hides things. Where is she?</div></div>
+</div>
+
+<div class="bubble-wrap right">
+  <div class="avatar av-b">👨</div>
+  <div><div class="bname right">B</div>
+  <div class="bubble right">She's <span class="hl-prep">on</span> the <span class="hl-obj">sofa</span>, <span class="hl-prep">between</span> the <span class="hl-obj">cushions</span>. Ha!</div></div>
+</div>
+
+<div class="bubble-wrap left">
+  <div class="avatar av-a">👩</div>
+  <div><div class="bname">A</div>
+  <div class="bubble left">Found the keys! They were <span class="hl-prep">under</span> the <span class="hl-obj">cushion</span> — right <span class="hl-prep">next to</span> the cat!</div></div>
+</div>
+
+<div class="bubble-wrap right">
+  <div class="avatar av-b">👨</div>
+  <div><div class="bname right">B</div>
+  <div class="bubble right">What's that <span class="hl-prep">in</span> the <span class="hl-obj">basket</span> <span class="hl-prep">in front of</span> the <span class="hl-obj">shelf</span>?</div></div>
+</div>
+
+<div class="bubble-wrap left">
+  <div class="avatar av-a">👩</div>
+  <div><div class="bname">A</div>
+  <div class="bubble left">My phone charger! And look — my book is <span class="hl-prep">behind</span> the <span class="hl-obj">plant</span> <span class="hl-prep">on</span> the <span class="hl-obj">shelf</span>.</div></div>
+</div>
+
+<div class="bubble-wrap right">
+  <div class="avatar av-b">👨</div>
+  <div><div class="bname right">B</div>
+  <div class="bubble right">The cat is <span class="hl-prep">above</span> the <span class="hl-obj">fridge</span> now. She moved fast!</div></div>
+</div>
+
+<div class="bubble-wrap left">
+  <div class="avatar av-a">👩</div>
+  <div><div class="bname">A</div>
+  <div class="bubble left">She loves it up there. There's a blanket <span class="hl-prep">on top of</span> the <span class="hl-obj">fridge</span> — it's her favourite spot!</div></div>
+</div>
+
+
+
+<div id="theme-toggle-wrap">
+  <button id="theme-toggle" aria-label="Toggle light/dark mode" title="Toggle light/dark mode">
+    <span id="theme-icon">☀️</span>
+  </button>
+</div>
+<script src="theme-toggle-behavior.js"></script>
+
+</body>
+</html>

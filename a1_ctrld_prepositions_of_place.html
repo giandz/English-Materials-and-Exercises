@@ -1,0 +1,177 @@
+<html>
+	<head><meta charset="UTF-8">
+<style>
+  .sec-div{font-size:11px;font-weight:500;letter-spacing:.06em;text-transform:uppercase;color:var(--color-text-muted);display:flex;align-items:center;gap:8px;margin:1.75rem 0 1rem;}
+  .sec-div::before,.sec-div::after{content:'';flex:1;height:.5px;background:var(--border);}
+  .setting-chip{display:inline-flex;align-items:center;gap:5px;font-size:12px;padding:3px 10px;border-radius:20px;background:var(--surface-1);border:.5px solid var(--border);color:var(--color-text-secondary);margin-bottom:1rem;}
+  .bubble-wrap{display:flex;gap:10px;align-items:flex-end;margin-bottom:14px;}
+  .bubble-wrap.right{flex-direction:row-reverse;}
+  .avatar{width:34px;height:34px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:18px;flex-shrink:0;}
+  .av-a{background:var(--bg-accent);}
+  .av-b{background:var(--bg-pro);}
+  .bubble{max-width:76%;padding:9px 13px;border-radius:15px;font-size:14px;line-height:1.65;border:.5px solid var(--border);}
+  .bubble.left{background:var(--surface-2);border-bottom-left-radius:4px;color:var(--color-text-primary);}
+  .bubble.right{background:var(--bg-pro);border-bottom-right-radius:4px;color:var(--color-text-pro);border-color:var(--border-pro);}
+  .bname{font-size:11px;font-weight:500;color:var(--color-text-muted);margin-bottom:3px;padding:0 2px;}
+  .bname.right{text-align:right;}
+  .hl-prep{font-weight:500;color:var(--color-text-accent);}
+  .hl-obj{font-weight:500;color:var(--color-text-success);}
+
+  /* matching */
+  .match-grid{display:grid;grid-template-columns:1fr 1fr;gap:16px;margin-bottom:1rem;}
+  .match-col-label{font-size:11px;font-weight:500;text-transform:uppercase;letter-spacing:.05em;color:var(--color-text-muted);margin-bottom:8px;}
+  .sentence-list{display:flex;flex-direction:column;gap:7px;}
+  .sentence-btn{font-size:13px;padding:8px 12px;border-radius:var(--radius);border:.5px solid var(--border);background:var(--surface-2);color:var(--color-text-primary);cursor:pointer;text-align:left;transition:border-color .12s,background .12s;line-height:1.4;}
+  .sentence-btn:hover:not(:disabled){background:var(--surface-1);border-color:var(--color-border-strong);}
+  .sentence-btn.selected{border-color:var(--color-border-accent);background:var(--bg-accent);color:var(--color-text-accent);}
+  .sentence-btn.correct{border: 4px solid var(--color-border-success);background:var(--color-bg-success);color:var(--color-text-success);pointer-events:none;}
+  .sentence-btn.wrong{border-color:var(--border-danger);background:var(--bg-danger);color:var(--color-text-danger);animation:shake .3s;}
+  .img-card{border:.5px solid var(--border);border-radius:12px;overflow:hidden;cursor:pointer;transition:border-color .12s;}
+  .img-card:hover{border-color:var(--border-strong);}
+  .img-card.selected{border-color:var(--border-accent);}
+  .img-card.correct{border: 4px solid var(--color-border-success);pointer-events:none;}
+  .img-card.wrong{border-color:var(--color-border-danger);animation:shake .3s;}
+  .img-slot{height:80px;background:var(--surface-1);display:flex;flex-direction:column;align-items:center;justify-content:center;gap:4px;border-bottom:.5px solid var(--border);}
+  .img-slot img{width:100%;height:100%;object-fit:contain;padding:6px;display:none;}
+  .img-slot .ph-icon{font-size:22px;color:var(--color-text-muted);}
+  .img-slot .ph-name{font-size:10px;color:var(--color-text-muted);font-family:var(--font-mono);}
+  .img-label{font-size:12px;font-weight:500;text-align:center;padding:6px 8px;color:var(--color-text-secondary);}
+  .img-grid-wrap{display:flex;flex-direction:column;gap:7px;}
+
+  /* gap fill */
+  .gap-para{background:var(--surface-2);border:.5px solid var(--border);border-radius:12px;padding:1rem 1.25rem;font-size:14px;line-height:2.5;margin-bottom:1rem;}
+  input.gap{display:inline-block;border:none;border-bottom:2px solid var(--border-strong);border-radius:0;width:80px;font-size:14px;font-family:inherit;color:var(--color-text-primary);background:transparent;text-align:center;outline:none;padding:0 2px;vertical-align:baseline;}
+  input.gap:focus{border-bottom-color:var(--border-accent);}
+  input.gap.correct{border-bottom-color:var(--color-border-success);color:var(--color-text-success);}
+  input.gap.wrong{border-bottom-color:var(--color-border-danger);color:var(--color-text-danger);}
+  .bank{display:flex;flex-wrap:wrap;gap:6px;margin-bottom:1rem;}
+  .bank-chip{font-size:13px;padding:4px 11px;border-radius:20px;background:var(--surface-1);border:.5px solid var(--border);color:var(--color-text-secondary);}
+  .ex-bar{display:flex;gap:8px;align-items:center;flex-wrap:wrap;}
+  .score-msg{font-size:13px;color:var(--color-text-secondary);}
+  .ak-body{padding:10px 14px;display:flex;flex-direction:column;gap:2px;}
+  .ak-row{display:flex;gap:10px;align-items:baseline;padding:4px 0;border-bottom:.5px solid var(--border);font-size:13px;}
+  .ak-row:last-child{border-bottom:none;}
+  .ak-num{color:var(--color-text-muted);min-width:20px;}
+  .ak-ans{font-weight:500;color:var(--color-text-accent);min-width:80px;}
+  .ak-note{color:var(--color-text-muted);}
+  details summary{user-select:none;list-style:none;display:flex;justify-content:space-between;align-items:center;}
+  details summary::-webkit-details-marker{display:none;}
+  @keyframes shake{0%,100%{transform:translateX(0)}25%{transform:translateX(-5px)}75%{transform:translateX(5px)}}
+  @media(max-width:480px){.match-grid{grid-template-columns:1fr;}}
+</style>
+<link rel="stylesheet" href="general.css">
+
+</head>
+<body class="exercise-page">
+
+<!-- ══ GAP-FILL ══ -->
+<div class="sec-div">exercise 2 — gap-fill</div>
+<div style="font-size:13px;color:var(--color-text-secondary);margin-bottom:8px;">Complete each sentence with the correct preposition.</div>
+<div style="font-size:13px;color:var(--color-text-secondary);margin-bottom:8px;">See the arrows (⬇️👀) for help.</div>
+<div class="bank">
+  <span class="bank-chip">on</span>
+  <span class="bank-chip">under</span>
+  <span class="bank-chip">next to</span>
+  <span class="bank-chip">behind</span>
+  <span class="bank-chip">between</span>
+  <span class="bank-chip">in</span>
+  <span class="bank-chip">in front of</span>
+  <span class="bank-chip">above</span>
+  <span class="bank-chip">on top of</span>
+</div>
+
+<div class="gap-para">
+  1. The cat is <input class="gap" id="g1" autocomplete="off" placeholder="?"> the sofa. (🔼)<br>
+  2. The keys are <input class="gap" id="g2" autocomplete="off" placeholder="?"> the cushion. (🔽)<br>
+  3. The lamp is <input class="gap" id="g3" autocomplete="off" placeholder="?"> the armchair. (◀️)<br>
+  4. The book is <input class="gap" id="g4" autocomplete="off" placeholder="?"> the plant on the shelf. (🔀)<br>
+  5. The cat is sitting <input class="gap" id="g5" autocomplete="off" placeholder="?"> the two cushions. (↔️)<br>
+  6. The charger is <input class="gap" id="g6" autocomplete="off" placeholder="?"> the basket. (📥)<br>
+  7. The basket is <input class="gap" id="g7" autocomplete="off" placeholder="?"> the shelf. (↪️)<br>
+  8. The blanket is <input class="gap" id="g8" autocomplete="off" placeholder="?"> the fridge. (⬆️)<br>
+  9. The cat jumped <input class="gap" id="g9" autocomplete="off" placeholder="?"> the fridge — she's very high up! (⏫)<br>
+  10. There is a rug <input class="gap" id="g10" autocomplete="off" placeholder="?"> the sofa. (🔽)
+</div>
+
+<div class="ex-bar">
+  <button id="check-gap">Check answers</button>
+  <button id="reset-gap">↺ Reset</button>
+  <span class="score-msg" id="gap-fb"></span>
+</div>
+
+<details style="margin-top:1.25rem;border:.5px solid var(--border);border-radius:var(--radius);overflow:hidden;">
+  <summary style="padding:9px 14px;cursor:pointer;font-size:14px;font-weight:500;background:var(--surface-1);">
+    Answer key — exercise 2 <i class="ti ti-chevron-down" aria-hidden="true" style="font-size:15px;color:var(--color-text-muted);"></i>
+  </summary>
+  <div class="ak-body">
+    <div class="ak-row"><span class="ak-num">1.</span><span class="ak-ans">on</span><span class="ak-note">surface contact — the cat sits on top of the sofa</span></div>
+    <div class="ak-row"><span class="ak-num">2.</span><span class="ak-ans">under</span><span class="ak-note">lower position — beneath the cushion</span></div>
+    <div class="ak-row"><span class="ak-num">3.</span><span class="ak-ans">next to</span><span class="ak-note">beside, at the side of</span></div>
+    <div class="ak-row"><span class="ak-num">4.</span><span class="ak-ans">behind</span><span class="ak-note">at the back of the plant</span></div>
+    <div class="ak-row"><span class="ak-num">5.</span><span class="ak-ans">between</span><span class="ak-note">in the middle of two things</span></div>
+    <div class="ak-row"><span class="ak-num">6.</span><span class="ak-ans">in</span><span class="ak-note">inside a container</span></div>
+    <div class="ak-row"><span class="ak-num">7.</span><span class="ak-ans">in front of</span><span class="ak-note">facing — before the shelf</span></div>
+    <div class="ak-row"><span class="ak-num">8.</span><span class="ak-ans">on top of</span><span class="ak-note">on the upper surface — same as on but more emphatic</span></div>
+    <div class="ak-row"><span class="ak-num">9.</span><span class="ak-ans">above</span><span class="ak-note">higher than, not touching</span></div>
+    <div class="ak-row"><span class="ak-num">10.</span><span class="ak-ans">under</span><span class="ak-note">beneath — the rug goes under the sofa</span></div>
+  </div>
+</details>
+
+</div>
+
+<script>
+
+/* gap-fill */
+const gapAnswers = {
+  g1:['on'],
+  g2:['under'],
+  g3:['next to'],
+  g4:['behind'],
+  g5:['between'],
+  g6:['in'],
+  g7:['in front of'],
+  g8:['on top of'],
+  g9:['above'],
+  g10:['under'],
+};
+const TOTAL = Object.keys(gapAnswers).length;
+
+function checkGap(){
+  let correct=0,filled=0;
+  Object.entries(gapAnswers).forEach(([id,ans])=>{
+    const el=document.getElementById(id);if(!el)return;
+    const val=el.value.trim().toLowerCase();
+    el.classList.remove('correct','wrong');
+    if(!val)return;
+    filled++;
+    if(ans.includes(val)){el.classList.add('correct');correct++;}
+    else el.classList.add('wrong');
+  });
+  const fb=document.getElementById('gap-fb');
+  if(!filled){fb.textContent='';return;}
+  fb.textContent=correct===TOTAL?'All correct!':correct+' / '+TOTAL+' correct';
+  fb.style.color=correct===TOTAL?'var(--color-text-success)':'var(--color-text-secondary)';
+}
+
+function resetGap(){
+  Object.keys(gapAnswers).forEach(id=>{const el=document.getElementById(id);if(el){el.value='';el.classList.remove('correct','wrong');}});
+  document.getElementById('gap-fb').textContent='';
+}
+
+document.getElementById('check-gap').addEventListener('click',checkGap);
+document.getElementById('reset-gap').addEventListener('click',resetGap);
+Object.keys(gapAnswers).forEach(id=>{
+  const el=document.getElementById(id);
+  if(el)el.addEventListener('keydown',e=>{if(e.key==='Enter')checkGap();});
+});
+</script>
+
+<div id="theme-toggle-wrap">
+  <button id="theme-toggle" aria-label="Toggle light/dark mode" title="Toggle light/dark mode">
+    <span id="theme-icon">☀️</span>
+  </button>
+</div>
+<script src="theme-toggle-behavior.js"></script>
+
+</body>
+</html>
