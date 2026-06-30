@@ -1,0 +1,148 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>Wh-Questions Drag and Drop</title>
+<style>
+  .sr-only{position:absolute;width:1px;height:1px;padding:0;margin:-1px;overflow:hidden;clip:rect(0,0,0,0);white-space:nowrap;border:0;}
+  .activity-bar{display:flex;justify-content:space-between;align-items:center;margin-bottom:1.25rem;flex-wrap:wrap;gap:8px;}
+  .activity-hint{font-size:13px;color:var(--color-text-secondary);}
+  .score-pill{font-size:13px;color:var(--color-text-secondary);}
+  .bank-label{font-size:11px;font-weight:500;letter-spacing:.06em;text-transform:uppercase;color:var(--color-text-secondary);margin-bottom:10px;}
+  .bank,.dropzone{display:flex;flex-wrap:wrap;gap:8px;margin-bottom:1.5rem;min-height:56px;padding:10px 12px;background:var(--color-background-secondary);border-radius:var(--border-radius-lg);border:.5px solid var(--color-border-tertiary);}
+  .dropzone{border-width:1px;border-style:dashed;}
+  .drop-label{padding:7px 10px;min-height:36px;font-size:12px;color:var(--color-text-secondary);line-height:1.4;align-items:center;}
+  .drop-label.placed-correct{color:var(--color-text-success);font-weight:500;}
+  .reset-row{display:flex;gap:8px;align-items:center;margin-top:1.25rem;}
+  .word{background-color: var(--color-background-primary);border: 1px solid var(--color-text-primary);border-radius: 25px;min-width: 60px;display: inline-flex;justify-content: center;align-items: center;user-select: none;-webkit-user-select: none;}
+  @keyframes shake{0%,100%{transform:translateX(0)}25%{transform:translateX(-5px)}75%{transform:translateX(5px)}}
+</style>
+<link rel="stylesheet" href="general.css">
+</head>
+<body class="exercise-page">
+<div class="wrap">
+  <h1>Drag the words to make the sentence</h1>
+  <p>Drag each word into the answer box, then click Check.</p>
+
+  <div id="quiz" class="quiz"></div>
+</div>
+
+<script>
+const items = [
+  { sentence: "what's your name?", words: ["what","is","your","name","?"], dialogue: "" },
+  { sentence: "my name is Ana.", words: ["my","name","is","Ana"], dialogue: "A: What's your name? B: My name is Ana." },
+  
+  { sentence: "how are you?", words: ["how","are","you","?"], dialogue: "" },
+  { sentence: "I'm fine, thanks.", words: ["I","am","fine", "thanks"], dialogue: "A: How are you? B: I'm fine, thanks." },
+  
+  { sentence: "where are you from?", words: ["where","are","you","from","?"], dialogue: "" },
+  { sentence: "I'm from Lima, Peru.", words: ["I","am","from","Lima","Peru"], dialogue: "A: Where are you from? B: I'm from Lima, Peru." },
+  
+  { sentence: "who is that?", words: ["who","is","that","?"], dialogue: "" },
+  { sentence: "that's my brother", words: ["that","is","my","brother"], dialogue: "A: Who's that? B: That's my brother." },
+
+  { sentence: "what's his name?", words: ["what","is","his","name","?"], dialogue: "" },
+  { sentence: "he's Leo.", words: ["he","is","Leo"], dialogue: "A: What's your name? B: He's Leo." },
+  
+  { sentence: "how old is he?", words: ["how","old","is","he","?"], dialogue: "" },
+  { sentence: "he's ten years old.", words: ["he","is","ten","years","old"], dialogue: "A: How old is he? B: He's ten years old." },
+  
+  { sentence: "what's he like?", words: ["what","is","he","like","?"], dialogue: "" },
+  { sentence: "he's very smart", words: ["he","is","very","smart"], dialogue: "A: What's he like? B: He's very smart." },
+  
+  { sentence: "who are they?", words: ["who","are","they","?"], dialogue: "" },
+  { sentence: "they're my parents", words: ["they","are","my","parents"], dialogue: "A: Who are they? B: They're my parents." },
+];
+
+const quiz = document.getElementById('quiz');
+
+items.forEach((item, idx) => {
+  const card = document.createElement('div');
+  card.className = 'card';
+  card.innerHTML = `
+    <!--<div class="prompt">${idx + 1}. Make the sentence:</div>-->
+    <div class="bank" id="bank-${idx}"></div>
+    <div class="dropzone" id="drop-${idx}" aria-label="answer box"></div>
+    <div class="controls">
+      <button class="check" id="check-${idx}">Check answer</button>
+      <button class="reset" id="reset-${idx}">Reset</button>
+    </div>
+    <div class="result" id="result-${idx}"></div>
+    <div class="dialogue" id="dialogue-${idx}"></div>
+    <!--<div class="small">Target: ${item.sentence}</div>-->
+  `;
+  quiz.appendChild(card);
+
+  const bank = card.querySelector(`#bank-${idx}`);
+  const drop = card.querySelector(`#drop-${idx}`);
+  const result = card.querySelector(`#result-${idx}`);
+  const dialogue = card.querySelector(`#dialogue-${idx}`);
+  const words = [...item.words].sort(() => Math.random() - 0.5);
+
+  function makeWord(w) {
+    const el = document.createElement('div');
+    el.className = 'word';
+    el.textContent = w;
+    el.draggable = true;
+    el.addEventListener('dragstart', e => {
+      e.dataTransfer.setData('text/plain', w);
+      e.dataTransfer.setData('source', el.parentElement.id);
+      el.classList.add('dragging');
+    });
+    el.addEventListener('dragend', () => el.classList.remove('dragging'));
+    return el;
+  }
+
+  words.forEach(w => bank.appendChild(makeWord(w)));
+
+  [bank, drop].forEach(zone => {
+    zone.addEventListener('dragover', e => e.preventDefault());
+    zone.addEventListener('drop', e => {
+      e.preventDefault();
+      const w = e.dataTransfer.getData('text/plain');
+      const sourceId = e.dataTransfer.getData('source');
+      const source = document.getElementById(sourceId);
+      const wordEl = [...source.children].find(x => x.textContent === w && !x.classList.contains('used'));
+      if (wordEl) {
+        wordEl.classList.add('used');
+        wordEl.style.display = 'inline-flex';
+        drop.appendChild(wordEl);
+      }
+    });
+  });
+
+  card.querySelector(`#check-${idx}`).addEventListener('click', () => {
+    const answer = [...drop.querySelectorAll('.word')].map(x => x.textContent).join(' ');
+    if (answer === item.words.join(' ')) {
+      result.textContent = 'Correct!';
+      result.style.color = '#16a34a';
+      dialogue.style.display = 'block';
+      dialogue.textContent = item.dialogue;
+    } else {
+      result.textContent = 'Try again.';
+      result.style.color = '#dc2626';
+      dialogue.style.display = 'none';
+    }
+  });
+
+  card.querySelector(`#reset-${idx}`).addEventListener('click', () => {
+    result.textContent = '';
+    dialogue.style.display = 'none';
+    [...drop.querySelectorAll('.word')].forEach(w => {
+      w.classList.remove('used');
+      w.style.display = 'inline-flex';
+      bank.appendChild(w);
+    });
+  });
+});
+</script>
+<div id="theme-toggle-wrap">
+  <button id="theme-toggle" aria-label="Toggle light/dark mode" title="Toggle light/dark mode">
+    <span id="theme-icon">☀️</span>
+  </button>
+</div>
+<script src="theme-toggle-behavior.js"></script>
+
+</body>
+</html>
