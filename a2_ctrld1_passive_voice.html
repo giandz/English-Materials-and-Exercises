@@ -1,0 +1,249 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<style>
+  .ex-intro{font-size:13px;color:var(--color-text-secondary);line-height:1.6;margin-bottom:1.25rem;}
+  .sec-div{font-size:11px;font-weight:500;letter-spacing:.06em;text-transform:uppercase;color:var(--color-text-tertiary);display:flex;align-items:center;gap:8px;margin:1.5rem 0 1rem;}
+  .sec-div::before,.sec-div::after{content:'';flex:1;height:.5px;background:var(--color-border-tertiary);}
+  .q-block{border:.5px solid var(--color-border-tertiary);border-radius:var(--border-radius-lg);overflow:hidden;margin-bottom:10px;}
+  .q-top{padding:10px 14px;border-bottom:.5px solid var(--color-border-tertiary);background:var(--color-background-secondary);}
+  .q-num{font-size:11px;color:var(--color-text-tertiary);margin-bottom:4px;}
+  .q-sentence{font-size:14px;color:var(--color-text-primary);line-height:1.6;}
+  .q-blank{display:inline-block;border-bottom:2px solid var(--color-border-primary);min-width:160px;text-align:center;font-weight:500;color:var(--color-text-primary);vertical-align:baseline;}
+  .q-blank.filled-correct{border-bottom-color:#3b6d11;color:#3b6d11;}
+  .q-blank.filled-wrong{border-bottom-color:#a32d2d;color:#a32d2d;}
+  .q-opts{padding:10px 14px;display:flex;gap:8px;flex-wrap:wrap;}
+  .opt-btn{font-size:13px;padding:7px 16px;border-radius:20px;border:1px solid var(--color-border-secondary);background:var(--color-background-primary);color:var(--color-text-primary);cursor:pointer;transition:background .12s,border-color .12s;font-family:inherit;}
+  .opt-btn:hover:not(:disabled){background:var(--color-background-secondary);border-color:var(--color-border-primary);}
+  .opt-btn.correct{background:#eaf3de;border-color:#97c459;color:#27500a;}
+  .opt-btn.wrong{background:#fcebeb;border-color:#f09595;color:#791f1f;animation:shake .3s;}
+  .opt-btn.reveal{background:#eaf3de;border-color:#97c459;color:#27500a;opacity:.55;}
+  .opt-btn:disabled{cursor:default;}
+  .q-fb{padding:0 14px 12px;font-size:13px;display:none;align-items:flex-start;gap:6px;line-height:1.5;}
+  .q-fb.show{display:flex;}
+  .fb-ok{color:#27500a;}
+  .fb-err{color:#791f1f;}
+  .q-label{display:inline-block;font-size:11px;padding:2px 8px;border-radius:20px;border:1px solid transparent;margin-left:6px;vertical-align:middle;}
+  .label-active{background:var(--color-background-info);color:var(--color-text-info);border-color:var(--color-border-info);}
+  .label-passive{background:var(--color-background-secondary);color:var(--color-text-secondary);border-color:var(--color-border-secondary);}
+  .score-bar{display:flex;justify-content:space-between;align-items:center;margin-top:1.25rem;padding:10px 14px;background:var(--color-background-secondary);border-radius:var(--border-radius-lg);flex-wrap:wrap;gap:8px;}
+  .score-label{font-size:13px;color:var(--color-text-secondary);}
+  .score-num{font-size:20px;font-weight:500;color:var(--color-text-primary);}
+  .score-msg{font-size:13px;color:var(--color-text-secondary);}
+  @keyframes shake{0%,100%{transform:translateX(0)}25%{transform:translateX(-4px)}75%{transform:translateX(4px)}}
+</style>
+<link rel="stylesheet" href="general.css">
+</head>
+<body class="exercise-page">
+<div style="padding:.75rem 0 1rem;">
+  <div class="ex-intro">Read each sentence and choose the correct form. Think about whether the action or the doer is the focus.</div>
+
+  <!-- ══ PRESENT SIMPLE ══ -->
+  <div class="sec-div">present simple</div>
+
+  <div class="q-block" id="q1-block">
+    <div class="q-top">
+      <div class="q-num">Question 1</div>
+      <div class="q-sentence">Thousands of tourists <span class="q-blank" id="q1-blank">___</span> the museum every year.</div>
+    </div>
+    <div class="q-opts">
+      <button class="opt-btn" data-q="1" data-val="visit" data-correct="true">visit</button>
+      <button class="opt-btn" data-q="1" data-val="is visited" data-correct="false">is visited</button>
+    </div>
+    <div class="q-fb" id="q1-fb"></div>
+  </div>
+
+  <div class="q-block" id="q2-block">
+    <div class="q-top">
+      <div class="q-num">Question 2</div>
+      <div class="q-sentence">Gold <span class="q-blank" id="q2-blank">___</span> in South Africa and other countries.</div>
+    </div>
+    <div class="q-opts">
+      <button class="opt-btn" data-q="2" data-val="mines" data-correct="false">mines</button>
+      <button class="opt-btn" data-q="2" data-val="is mined" data-correct="true">is mined</button>
+    </div>
+    <div class="q-fb" id="q2-fb"></div>
+  </div>
+
+  <div class="q-block" id="q3-block">
+    <div class="q-top">
+      <div class="q-num">Question 3</div>
+      <div class="q-sentence">The company <span class="q-blank" id="q3-blank">___</span> its products in over fifty countries.</div>
+    </div>
+    <div class="q-opts">
+      <button class="opt-btn" data-q="3" data-val="sells" data-correct="true">sells</button>
+      <button class="opt-btn" data-q="3" data-val="are sold" data-correct="false">are sold</button>
+    </div>
+    <div class="q-fb" id="q3-fb"></div>
+  </div>
+
+  <!-- ══ PAST SIMPLE ══ -->
+  <div class="sec-div">past simple</div>
+
+  <div class="q-block" id="q4-block">
+    <div class="q-top">
+      <div class="q-num">Question 4</div>
+      <div class="q-sentence">The letter <span class="q-blank" id="q4-blank">___</span> to the wrong address.</div>
+    </div>
+    <div class="q-opts">
+      <button class="opt-btn" data-q="4" data-val="sent" data-correct="false">sent</button>
+      <button class="opt-btn" data-q="4" data-val="was sent" data-correct="true">was sent</button>
+    </div>
+    <div class="q-fb" id="q4-fb"></div>
+  </div>
+
+  <div class="q-block" id="q5-block">
+    <div class="q-top">
+      <div class="q-num">Question 5</div>
+      <div class="q-sentence">Shakespeare <span class="q-blank" id="q5-blank">___</span> many plays in his lifetime.</div>
+    </div>
+    <div class="q-opts">
+      <button class="opt-btn" data-q="5" data-val="wrote" data-correct="true">wrote</button>
+      <button class="opt-btn" data-q="5" data-val="was written" data-correct="false">was written</button>
+    </div>
+    <div class="q-fb" id="q5-fb"></div>
+  </div>
+
+  <div class="q-block" id="q6-block">
+    <div class="q-top">
+      <div class="q-num">Question 6</div>
+      <div class="q-sentence">The old paintings <span class="q-blank" id="q6-blank">___</span> during the fire.</div>
+    </div>
+    <div class="q-opts">
+      <button class="opt-btn" data-q="6" data-val="destroyed" data-correct="false">destroyed</button>
+      <button class="opt-btn" data-q="6" data-val="were destroyed" data-correct="true">were destroyed</button>
+    </div>
+    <div class="q-fb" id="q6-fb"></div>
+  </div>
+
+  <!-- ══ PRESENT PERFECT ══ -->
+  <div class="sec-div">present perfect</div>
+
+  <div class="q-block" id="q7-block">
+    <div class="q-top">
+      <div class="q-num">Question 7</div>
+      <div class="q-sentence">Scientists <span class="q-blank" id="q7-blank">___</span> a new treatment for the disease.</div>
+    </div>
+    <div class="q-opts">
+      <button class="opt-btn" data-q="7" data-val="have developed" data-correct="true">have developed</button>
+      <button class="opt-btn" data-q="7" data-val="has been developed" data-correct="false">has been developed</button>
+    </div>
+    <div class="q-fb" id="q7-fb"></div>
+  </div>
+
+  <div class="q-block" id="q8-block">
+    <div class="q-top">
+      <div class="q-num">Question 8</div>
+      <div class="q-sentence">The new bridge <span class="q-blank" id="q8-blank">___</span> to the public yet.</div>
+    </div>
+    <div class="q-opts">
+      <button class="opt-btn" data-q="8" data-val="hasn't opened" data-correct="false">hasn't opened</button>
+      <button class="opt-btn" data-q="8" data-val="hasn't been opened" data-correct="true">hasn't been opened</button>
+    </div>
+    <div class="q-fb" id="q8-fb"></div>
+  </div>
+
+  <div class="q-block" id="q9-block">
+    <div class="q-top">
+      <div class="q-num">Question 9</div>
+      <div class="q-sentence">The suspect <span class="q-blank" id="q9-blank">___</span> three times this year.</div>
+    </div>
+    <div class="q-opts">
+      <button class="opt-btn" data-q="9" data-val="has arrested" data-correct="false">has arrested</button>
+      <button class="opt-btn" data-q="9" data-val="has been arrested" data-correct="true">has been arrested</button>
+    </div>
+    <div class="q-fb" id="q9-fb"></div>
+  </div>
+
+  <div class="score-bar">
+    <div>
+      <div class="score-label">Score</div>
+      <div class="score-num"><span id="score">0</span> / 9</div>
+    </div>
+    <div>
+      <div class="score-msg" id="score-msg">Answer all questions to finish.</div>
+      <button id="reset-btn" style="margin-top:6px;">↺ Start again</button>
+    </div>
+  </div>
+
+</div>
+
+<script>
+const feedback = {
+  1: { ok:"Correct! The doer (tourists) is the subject and is important here — active is natural.", err:"Not quite. The doer (tourists) is the clear subject — active voice is the right choice here." },
+  2: { ok:"Correct! We don't focus on who mines it — passive puts the focus on gold itself.", err:"Not quite. We don't focus on who does the mining — passive voice (is mined) is better here." },
+  3: { ok:"Correct! The company is the doer and the clear subject — active is right.", err:"Not quite. The company is the subject doing the action — use active voice here." },
+  4: { ok:"Correct! We don't know (or care) who sent it — passive voice focuses on what happened to the letter.", err:"Not quite. Sent alone is just a past participle — we need was sent to make a full passive sentence." },
+  5: { ok:"Correct! Shakespeare is the famous doer — active puts the focus on him.", err:"Not quite. Shakespeare is the important subject here — active voice (wrote) is more natural." },
+  6: { ok:"Correct! No one deliberately destroyed the paintings — passive focuses on what happened to them.", err:"Not quite. Destroyed needs a subject doing the action. Here we don't state who did it — use were destroyed." },
+  7: { ok:"Correct! Scientists are the clear subject doing the action — active voice is right.", err:"Not quite. Scientists are the specific people doing the action — use active voice (have developed)." },
+  8: { ok:"Correct! The bridge doesn't open itself — it needs to be opened by someone. Passive is correct.", err:"Not quite. A bridge can't open itself — it is opened by people. Use hasn't been opened." },
+  9: { ok:"Correct! The suspect is arrested by someone else — this is a classic passive structure.", err:"Not quite. The suspect doesn't do the arresting — they are arrested. Use has been arrested." },
+};
+
+let answered = 0;
+let correct  = 0;
+
+document.querySelectorAll('.opt-btn').forEach(btn => {
+  btn.addEventListener('click', () => {
+    const q   = btn.dataset.q;
+    const isCorrect = btn.dataset.correct === 'true';
+    const block = document.getElementById('q' + q + '-block');
+    const blank = document.getElementById('q' + q + '-blank');
+    const fb    = document.getElementById('q' + q + '-fb');
+    const opts  = block.querySelectorAll('.opt-btn');
+
+    opts.forEach(b => b.disabled = true);
+    blank.textContent = btn.dataset.val;
+
+    if (isCorrect) {
+      btn.classList.add('correct');
+      blank.classList.add('filled-correct');
+      fb.innerHTML = '<i class="ti ti-circle-check" aria-hidden="true" style="font-size:15px;flex-shrink:0;margin-top:1px;color:#3b6d11;"></i><span class="fb-ok">' + feedback[q].ok + '</span>';
+      correct++;
+      document.getElementById('score').textContent = correct;
+    } else {
+      btn.classList.add('wrong');
+      blank.classList.add('filled-wrong');
+      opts.forEach(b => { if (b.dataset.correct === 'true') b.classList.add('reveal'); });
+      fb.innerHTML = '<i class="ti ti-circle-x" aria-hidden="true" style="font-size:15px;flex-shrink:0;margin-top:1px;color:#a32d2d;"></i><span class="fb-err">' + feedback[q].err + '</span>';
+    }
+
+    fb.classList.add('show');
+    answered++;
+
+    if (answered === 9) {
+      const pct = Math.round((correct / 9) * 100);
+      const msg = pct === 100 ? 'Perfect score!' : pct >= 78 ? 'Well done!' : pct >= 55 ? 'Good effort — review the feedback above.' : 'Keep practising!';
+      const el = document.getElementById('score-msg');
+      el.textContent = pct + '% — ' + msg;
+      el.style.color = pct === 100 ? 'var(--color-text-success)' : 'var(--color-text-secondary)';
+    }
+  });
+});
+
+document.getElementById('reset-btn').addEventListener('click', () => {
+  answered = 0; correct = 0;
+  document.getElementById('score').textContent = '0';
+  document.getElementById('score-msg').textContent = 'Answer all questions to finish.';
+  document.getElementById('score-msg').style.color = 'var(--color-text-secondary)';
+  document.querySelectorAll('.opt-btn').forEach(b => {
+    b.disabled = false;
+    b.classList.remove('correct','wrong','reveal');
+  });
+  document.querySelectorAll('.q-blank').forEach(b => {
+    b.textContent = '___'; b.classList.remove('filled-correct','filled-wrong');
+  });
+  document.querySelectorAll('.q-fb').forEach(f => { f.className = 'q-fb'; f.innerHTML = ''; });
+});
+</script>
+<div id="theme-toggle-wrap">
+  <button id="theme-toggle" aria-label="Toggle light/dark mode" title="Toggle light/dark mode">
+    <span id="theme-icon">☀️</span>
+  </button>
+</div>
+<script src="theme-toggle-behavior.js"></script>
+
+</body>
+</html>
