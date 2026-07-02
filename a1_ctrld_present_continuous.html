@@ -1,0 +1,196 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<style>
+  .intro{font-size:13px;color:var(--color-text-secondary);line-height:1.6;margin-bottom:1rem;}
+  .bank-label{font-size:11px;font-weight:500;letter-spacing:.06em;text-transform:uppercase;color:var(--color-text-secondary);margin-bottom:8px;}
+  .bank{display:flex;flex-wrap:wrap;gap:6px;margin-bottom:1.5rem;}
+  .bank-chip{font-size:13px;padding:4px 11px;border-radius:20px;background:var(--color-background-secondary);border:.5px solid var(--color-border-secondary);color:var(--color-text-primary);}
+  .bank-chip.used{text-decoration:line-through;opacity:.45;}
+  .bank-chip:hover{border-color:var(--color-border-primary);}
+  .sec-div{font-size:11px;font-weight:500;letter-spacing:.06em;text-transform:uppercase;color:var(--color-text-tertiary);display:flex;align-items:center;gap:8px;margin:1.25rem 0 .75rem;}
+  .sec-div::before,.sec-div::after{content:'';flex:1;height:.5px;background:var(--color-border-tertiary);}
+  .gap-block{border:.5px solid var(--color-border-tertiary);border-radius:var(--border-radius-lg);overflow:hidden;margin-bottom:10px;}
+  .gap-block-head{padding:6px 14px;background:var(--color-background-secondary);border-bottom:.5px solid var(--color-border-tertiary);font-size:11px;font-weight:500;text-transform:uppercase;letter-spacing:.05em;color:var(--color-text-tertiary);}
+  .gap-body{padding:10px 14px;display:flex;flex-direction:column;gap:10px;}
+  .gap-row{font-size:14px;color:var(--color-text-primary);line-height:2;display:flex;gap:8px;align-items:baseline;}
+  .gap-num{font-size:12px;color:var(--color-text-tertiary);min-width:20px;flex-shrink:0;}
+  .gap-text{flex:1;}
+  input.gap{display:inline-block;border:none;border-bottom:2px solid var(--color-border-primary);border-radius:0;width:130px;font-size:14px;font-family:inherit;color:var(--color-text-primary);background:transparent;text-align:center;outline:none;padding:0 2px;vertical-align:baseline;}
+  input.gap:focus{border-bottom-color:#185fa5;}
+  input.gap.correct{border-bottom-color:#3b6d11;color:#3b6d11;}
+  input.gap.wrong{border-bottom-color:#a32d2d;color:#a32d2d;}
+  .hint{font-size:12px;color:var(--color-text-tertiary);font-style:italic;}
+  .ex-bar{display:flex;gap:8px;align-items:center;flex-wrap:wrap;margin-top:1.25rem;}
+  .score-msg{font-size:13px;color:var(--color-text-secondary);}
+  .ak-body{padding:10px 14px;display:flex;flex-direction:column;gap:2px;}
+  .ak-row{display:flex;gap:10px;align-items:baseline;padding:4px 0;border-bottom:.5px solid var(--color-border-tertiary);font-size:13px;}
+  .ak-row:last-child{border-bottom:none;}
+  .ak-num{color:var(--color-text-secondary);min-width:20px;}
+  .ak-ans{font-weight:500;color:#185fa5;min-width:150px;}
+  .ak-note{color:var(--color-text-secondary);}
+  details summary{user-select:none;list-style:none;display:flex;justify-content:space-between;align-items:center;}
+  details summary::-webkit-details-marker{display:none;}
+</style>
+<link rel="stylesheet" href="general.css">
+</head>
+<body class="exercise-page">
+<div style="padding:.75rem 0 1rem;">
+
+  <div class="intro">Complete each sentence with the correct present continuous form of the verb in brackets. Remember: <strong>am / is / are + verb-ing</strong>.</div>
+
+  <div class="bank-label">Verb bank</div>
+  <div class="bank" id="bank">
+  </div>
+
+  <!-- affirmative -->
+  <div class="sec-div">affirmative</div>
+  <div class="gap-block">
+    <div class="gap-block-head">am / is / are + verb-ing</div>
+    <div class="gap-body">
+      <div class="gap-row"><span class="gap-num">1.</span><span class="gap-text">She <input class="gap" id="g1" autocomplete="off" placeholder="?"> dinner in the kitchen. <span class="hint">(cook)</span></span></div>
+      <div class="gap-row"><span class="gap-num">2.</span><span class="gap-text">They <input class="gap" id="g2" autocomplete="off" placeholder="?"> for their exams in the library. <span class="hint">(study)</span></span></div>
+      <div class="gap-row"><span class="gap-num">3.</span><span class="gap-text">He <input class="gap" id="g3" autocomplete="off" placeholder="?"> a blue jacket and a red scarf. <span class="hint">(wear)</span></span></div>
+      <div class="gap-row"><span class="gap-num">4.</span><span class="gap-text">The sun <input class="gap" id="g4" autocomplete="off" placeholder="?"> and it's very warm today. <span class="hint">(shine)</span></span></div>
+      <div class="gap-row"><span class="gap-num">5.</span><span class="gap-text">I <input class="gap" id="g5" autocomplete="off" placeholder="?"> to music while I clean. <span class="hint">(listen)</span></span></div>
+      <div class="gap-row"><span class="gap-num">6.</span><span class="gap-text">Dad <input class="gap" id="g6" autocomplete="off" placeholder="?"> from home today. <span class="hint">(work)</span></span></div>
+    </div>
+  </div>
+
+  <!-- negative -->
+  <div class="sec-div">negative</div>
+  <div class="gap-block">
+    <div class="gap-block-head">am / is / are + not + verb-ing</div>
+    <div class="gap-body">
+      <div class="gap-row"><span class="gap-num">7.</span><span class="gap-text">It <input class="gap" id="g7" autocomplete="off" placeholder="?"> today — the sky is clear. <span class="hint">(not / rain)</span></span></div>
+      <div class="gap-row"><span class="gap-num">8.</span><span class="gap-text">They <input class="gap" id="g8" autocomplete="off" placeholder="?"> TV — they are reading. <span class="hint">(not / watch)</span></span></div>
+      <div class="gap-row"><span class="gap-num">9.</span><span class="gap-text">She <input class="gap" id="g9" autocomplete="off" placeholder="?"> a bag — her hands are free. <span class="hint">(not / carry)</span></span></div>
+      <div class="gap-row"><span class="gap-num">10.</span><span class="gap-text">I <input class="gap" id="g10" autocomplete="off" placeholder="?"> — I'm taking the bus. <span class="hint">(not / walk)</span></span></div>
+    </div>
+  </div>
+
+  <!-- questions -->
+  <div class="sec-div">questions</div>
+  <div class="gap-block">
+    <div class="gap-block-head">am / is / are + subject + verb-ing?</div>
+    <div class="gap-body">
+      <div class="gap-row"><span class="gap-num">11.</span><span class="gap-text"><input class="gap" id="g11" autocomplete="off" placeholder="?"> she <input class="gap" id="g11b" autocomplete="off" placeholder="?"> on the phone? <span class="hint">(talk)</span></span></div>
+      <div class="gap-row"><span class="gap-num">12.</span><span class="gap-text"><input class="gap" id="g12" autocomplete="off" placeholder="?"> they <input class="gap" id="g12b" autocomplete="off" placeholder="?"> coffee in the kitchen? <span class="hint">(have)</span></span></div>
+      <div class="gap-row"><span class="gap-num">13.</span><span class="gap-text"><input class="gap" id="g13" autocomplete="off" placeholder="?"> you <input class="gap" id="g13b" autocomplete="off" placeholder="?"> to work today? <span class="hint">(run)</span></span></div>
+      <div class="gap-row"><span class="gap-num">14.</span><span class="gap-text">What <input class="gap" id="g14" autocomplete="off" placeholder="?"> he <input class="gap" id="g14b" autocomplete="off" placeholder="?"> on the sofa? <span class="hint">(read)</span></span></div>
+    </div>
+  </div>
+
+  <div class="ex-bar">
+    <button id="check-btn">Check answers</button>
+    <button id="reset-btn">↺ Reset</button>
+    <span class="score-msg" id="fb"></span>
+  </div>
+
+  <details style="margin-top:1.25rem;border:.5px solid var(--color-border-tertiary);border-radius:var(--border-radius-md);overflow:hidden;">
+    <summary style="padding:9px 14px;cursor:pointer;font-size:14px;font-weight:500;background:var(--color-background-secondary);">
+      Answer key <i class="ti ti-chevron-down" aria-hidden="true" style="font-size:15px;color:var(--color-text-secondary);"></i>
+    </summary>
+    <div class="ak-body">
+      <div class="ak-row"><span class="ak-num">1.</span><span class="ak-ans">is cooking</span><span class="ak-note">she → is + cook+ing</span></div>
+      <div class="ak-row"><span class="ak-num">2.</span><span class="ak-ans">are studying</span><span class="ak-note">they → are + study+ing (y→ying)</span></div>
+      <div class="ak-row"><span class="ak-num">3.</span><span class="ak-ans">is wearing</span><span class="ak-note">he → is + wear+ing</span></div>
+      <div class="ak-row"><span class="ak-num">4.</span><span class="ak-ans">is shining</span><span class="ak-note">the sun → is + shine→shining (drop e)</span></div>
+      <div class="ak-row"><span class="ak-num">5.</span><span class="ak-ans">am listening</span><span class="ak-note">I → am + listen+ing</span></div>
+      <div class="ak-row"><span class="ak-num">6.</span><span class="ak-ans">is working</span><span class="ak-note">dad → is + work+ing</span></div>
+      <div class="ak-row"><span class="ak-num">7.</span><span class="ak-ans">isn't raining</span><span class="ak-note">it → is not + rain+ing</span></div>
+      <div class="ak-row"><span class="ak-num">8.</span><span class="ak-ans">aren't watching</span><span class="ak-note">they → are not + watch+ing</span></div>
+      <div class="ak-row"><span class="ak-num">9.</span><span class="ak-ans">isn't carrying</span><span class="ak-note">she → is not + carry→carrying (y→ying)</span></div>
+      <div class="ak-row"><span class="ak-num">10.</span><span class="ak-ans">am not walking</span><span class="ak-note">I → am not + walk+ing</span></div>
+      <div class="ak-row"><span class="ak-num">11.</span><span class="ak-ans">Is / talking</span><span class="ak-note">Is + she + talking?</span></div>
+      <div class="ak-row"><span class="ak-num">12.</span><span class="ak-ans">Are / having</span><span class="ak-note">Are + they + having? (drop e)</span></div>
+      <div class="ak-row"><span class="ak-num">13.</span><span class="ak-ans">Are / running</span><span class="ak-note">Are + you + running? (double n)</span></div>
+      <div class="ak-row"><span class="ak-num">14.</span><span class="ak-ans">is / reading</span><span class="ak-note">What is + he + reading?</span></div>
+    </div>
+  </details>
+
+</div>
+
+<script>
+/* ── word bank: shuffle + toggle ── */
+const bankWords = ['cook','study','walk','watch','rain','wear','listen','carry','run','have','work','read','talk','shine'];
+
+function shuffle(a){const b=[...a];for(let i=b.length-1;i>0;i--){const j=Math.floor(Math.random()*(i+1));[b[i],b[j]]=[b[j],b[i]];}return b;}
+
+function buildBank(){
+  const bank = document.getElementById('bank');
+  bank.innerHTML = '';
+  shuffle(bankWords).forEach(word => {
+    const chip = document.createElement('span');
+    chip.className = 'bank-chip';
+    chip.textContent = word;
+    chip.addEventListener('click', () => chip.classList.toggle('used'));
+    chip.addEventListener('touchend', e => { e.preventDefault(); chip.classList.toggle('used'); });
+    bank.appendChild(chip);
+  });
+}
+
+/* ── gap-fill check / reset ── */
+const answers = {
+  g1:  ['is cooking'],
+  g2:  ['are studying'],
+  g3:  ['is wearing'],
+  g4:  ['is shining'],
+  g5:  ['am listening'],
+  g6:  ['is working'],
+  g7:  ["isn't raining","is not raining"],
+  g8:  ["aren't watching","are not watching"],
+  g9:  ["isn't carrying","is not carrying"],
+  g10: ['am not walking'],
+  g11: ['is','Is'],
+  g11b:['talking'],
+  g12: ['are','Are'],
+  g12b:['having'],
+  g13: ['are','Are'],
+  g13b:['running'],
+  g14: ['is'],
+  g14b:['reading'],
+};
+const TOTAL = Object.keys(answers).length;
+
+function check(){
+  let correct=0,filled=0;
+  Object.entries(answers).forEach(([id,ans])=>{
+    const el=document.getElementById(id);if(!el)return;
+    const val=el.value.trim().toLowerCase();
+    el.classList.remove('correct','wrong');
+    if(!val)return;filled++;
+    if(ans.map(a=>a.toLowerCase()).includes(val)){el.classList.add('correct');correct++;}
+    else el.classList.add('wrong');
+  });
+  const fb=document.getElementById('fb');
+  if(!filled){fb.textContent='';return;}
+  fb.textContent=correct===TOTAL?'All correct!':correct+' / '+TOTAL+' correct';
+  fb.style.color=correct===TOTAL?'var(--color-text-success)':'var(--color-text-secondary)';
+}
+
+function reset(){
+  Object.keys(answers).forEach(id=>{const el=document.getElementById(id);if(el){el.value='';el.classList.remove('correct','wrong');}});
+  document.getElementById('fb').textContent='';
+  buildBank(); /* reshuffle on reset */
+}
+
+document.getElementById('check-btn').addEventListener('click',check);
+document.getElementById('reset-btn').addEventListener('click',reset);
+Object.keys(answers).forEach(id=>{
+  const el=document.getElementById(id);
+  if(el)el.addEventListener('keydown',e=>{if(e.key==='Enter')check();});
+});
+
+buildBank();
+</script>
+<div id="theme-toggle-wrap">
+  <button id="theme-toggle" aria-label="Toggle light/dark mode" title="Toggle light/dark mode">
+    <span id="theme-icon">☀️</span>
+  </button>
+</div>
+<script src="theme-toggle-behavior.js"></script>
+
+</body>
+</html>
