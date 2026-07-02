@@ -1,0 +1,226 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<style>
+  .sec-div{font-size:11px;font-weight:500;letter-spacing:.06em;text-transform:uppercase;color:var(--color-text-tertiary);display:flex;align-items:center;gap:8px;margin:1.5rem 0 1rem;}
+  .sec-div::before,.sec-div::after{content:'';flex:1;height:.5px;background:var(--color-border-tertiary);}
+
+  /* ── vocab grid ── */
+  .vocab-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(130px,1fr));gap:8px;margin-bottom:.5rem;}
+  .vocab-chip{display:flex;flex-direction:column;align-items:center;gap:4px;padding:10px 8px;border:.5px solid var(--color-border-tertiary);border-radius:var(--border-radius-lg);background:var(--color-background-primary);text-align:center;}
+  .vc-emoji{font-size:26px;line-height:1;}
+  .vc-word{font-size:17px;font-weight:500;color:var(--color-text-primary);line-height:1.3;}
+  .vc-ex{font-size:11px;color:var(--color-text-secondary);font-style:italic;line-height:1.3;}
+  .group-label{font-size:11px;font-weight:500;text-transform:uppercase;letter-spacing:.05em;color:var(--color-text-secondary);margin-bottom:8px;margin-top:1.25rem;}
+
+  /* ── matching ── */
+  .match-hint{font-size:13px;color:var(--color-text-secondary);margin-bottom:1rem;}
+  .bank-label{font-size:11px;font-weight:500;text-transform:uppercase;letter-spacing:.06em;color:var(--color-text-secondary);margin-bottom:8px;}
+  .bank{display:flex;flex-wrap:wrap;gap:7px;padding:10px 12px;background:var(--color-background-secondary);border-radius:var(--border-radius-lg);border:.5px solid var(--color-border-tertiary);margin-bottom:1.25rem;min-height:50px;}
+  .act-chip{font-size:13px;font-weight:500;padding:6px 12px;border-radius:var(--border-radius-md);border:1px solid var(--color-border-secondary);background:var(--color-background-primary);color:var(--color-text-primary);cursor:grab;user-select:none;-webkit-user-select:none;touch-action:none;white-space:nowrap;}
+  .act-chip:active{cursor:grabbing;opacity:.7;}
+  .act-chip.dragging{opacity:.4;}
+  .def-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(220px,1fr));gap:8px;}
+  .def-card{border:.5px solid var(--color-border-tertiary);border-radius:var(--border-radius-lg);overflow:hidden;}
+  .def-slot{min-height:36px;padding:6px 10px;background:var(--color-background-secondary);border-bottom:.5px solid var(--color-border-tertiary);display:flex;align-items:center;transition:background .12s;}
+  .def-slot.over{background:var(--color-background-info);}
+  .def-slot.matched{background:var(--color-background-success);}
+  .def-slot.wrong-flash{animation:shake .3s;}
+  .def-text{padding:7px 10px;font-size:13px;color:var(--color-text-secondary);line-height:1.4;display:flex;align-items:center;gap:6px;}
+  .def-emoji{font-size:18px;flex-shrink:0;}
+  .placed-word{font-size:13px;font-weight:500;color:var(--color-text-success);}
+  .act-bar{display:flex;gap:8px;align-items:center;margin-top:1.25rem;flex-wrap:wrap;}
+  .score-msg{font-size:13px;color:var(--color-text-secondary);}
+  @keyframes shake{0%,100%{transform:translateX(0)}25%{transform:translateX(-5px)}75%{transform:translateX(5px)}}
+</style>
+<link rel="stylesheet" href="general.css">
+</head>
+<body class="exercise-page">
+<div style="padding:.75rem 0 1rem;">
+
+  <!-- ══ VOCAB ══ -->
+  <div class="sec-div">vocabulary reference</div>
+
+  <div class="group-label">🏠 at home</div>
+  <div class="vocab-grid">
+    <div class="vocab-chip"><span class="vc-emoji">🍳</span><span class="vc-word">cook</span><span class="vc-ex">She's cooking dinner.</span></div>
+    <div class="vocab-chip"><span class="vc-emoji">🧹</span><span class="vc-word">clean</span><span class="vc-ex">He's cleaning the kitchen.</span></div>
+    <div class="vocab-chip"><span class="vc-emoji">🛌</span><span class="vc-word">sleep</span><span class="vc-ex">The girl is sleeping.</span></div>
+    <div class="vocab-chip"><span class="vc-emoji">📺</span><span class="vc-word">watch TV</span><span class="vc-ex">They're watching TV.</span></div>
+    <div class="vocab-chip"><span class="vc-emoji">🎵</span><span class="vc-word">listen to music</span><span class="vc-ex">I'm listening to music.</span></div>
+    <div class="vocab-chip"><span class="vc-emoji">🚿</span><span class="vc-word">take a shower</span><span class="vc-ex">She's taking a shower.</span></div>
+    <div class="vocab-chip"><span class="vc-emoji">👖👖🧺</span><span class="vc-word">do the laundry</span><span class="vc-ex">He's doing the laundry.</span></div>
+    <div class="vocab-chip"><span class="vc-emoji">📖</span><span class="vc-word">read</span><span class="vc-ex">I'm reading a book.</span></div>
+  </div>
+
+  <div class="group-label">🏙️ out and about</div>
+  <div class="vocab-grid">
+    <div class="vocab-chip"><span class="vc-emoji">🚶</span><span class="vc-word">walk</span><span class="vc-ex">She's walking to school.</span></div>
+    <div class="vocab-chip"><span class="vc-emoji">🚌</span><span class="vc-word">take the bus</span><span class="vc-ex">He's taking the bus.</span></div>
+    <div class="vocab-chip"><span class="vc-emoji">🛍️</span><span class="vc-word">go shopping</span><span class="vc-ex">They're going shopping.</span></div>
+    <div class="vocab-chip"><span class="vc-emoji">☕</span><span class="vc-word">have coffee</span><span class="vc-ex">We're having some coffee.</span></div>
+    <div class="vocab-chip"><span class="vc-emoji">🏃</span><span class="vc-word">run</span><span class="vc-ex">She's running in the park.</span></div>
+    <div class="vocab-chip"><span class="vc-emoji">🦮</span><span class="vc-word">walk the dog</span><span class="vc-ex">He's walking the dog.</span></div>
+    <div class="vocab-chip"><span class="vc-emoji">🅿️</span><span class="vc-word">park the car</span><span class="vc-ex">She's parking the car.</span></div>
+    <div class="vocab-chip"><span class="vc-emoji">🍽️</span><span class="vc-word">eat out</span><span class="vc-ex">We're eating out tonight.</span></div>
+  </div>
+
+  <div class="group-label">💼 work and study</div>
+  <div class="vocab-grid">
+    <div class="vocab-chip"><span class="vc-emoji">💻</span><span class="vc-word">work</span><span class="vc-ex">She's working from home.</span></div>
+    <div class="vocab-chip"><span class="vc-emoji">📚</span><span class="vc-word">study</span><span class="vc-ex">He's studying for an exam.</span></div>
+    <div class="vocab-chip"><span class="vc-emoji">📧</span><span class="vc-word">send emails</span><span class="vc-ex">I'm sending emails.</span></div>
+    <div class="vocab-chip"><span class="vc-emoji">📞</span><span class="vc-word">make a call</span><span class="vc-ex">She's making a call.</span></div>
+    <div class="vocab-chip"><span class="vc-emoji">✏️</span><span class="vc-word">write</span><span class="vc-ex">He's writing a report.</span></div>
+    <div class="vocab-chip"><span class="vc-emoji">🧑‍💼👩‍💼👨‍💼</span><span class="vc-word">have a meeting</span><span class="vc-ex">They're having a meeting.</span></div>
+    <div class="vocab-chip"><span class="vc-emoji">📝</span><span class="vc-word">take notes</span><span class="vc-ex">I'm taking some notes.</span></div>
+    <div class="vocab-chip"><span class="vc-emoji">🔍</span><span class="vc-word">search online</span><span class="vc-ex">She's searching online.</span></div>
+  </div>
+
+  <!-- ══ MATCHING ══ -->
+  <div class="sec-div">matching exercise</div>
+  <div class="match-hint">Drag each activity from the bank onto the correct definition.</div>
+
+  <div class="bank-label">Activity bank</div>
+  <div class="bank" id="bank"></div>
+  <div class="def-grid" id="def-grid"></div>
+
+  <div class="act-bar">
+    <button id="reset-btn">↺ Reset</button>
+    <span class="score-msg" id="match-fb"></span>
+  </div>
+
+</div>
+
+<script>
+const matchItems = [
+  { id:"cook",       word:"cook",             emoji:"🍳", def:"to prepare food using heat"                         },
+  { id:"clean",      word:"clean",            emoji:"🧹", def:"to remove dirt and make something tidy"             },
+  { id:"read",       word:"read",             emoji:"📖", def:"to look at words in a book or on a screen"          },
+  { id:"run",        word:"run",              emoji:"🏃", def:"to move fast on foot"                               },
+  { id:"study",      word:"study",            emoji:"📚", def:"to learn about a subject, often for an exam"        },
+  { id:"walk",       word:"walk",             emoji:"🚶", def:"to move on foot at a normal speed"                  },
+  { id:"sleep",      word:"sleep",            emoji:"🛏️", def:"to rest with your eyes closed"                      },
+  { id:"work",       word:"work",             emoji:"🪏", def:"to do a job, often for money"                       },
+  { id:"write",      word:"write",            emoji:"✏️", def:"to put words on paper or a screen"                  },
+  { id:"shop",       word:"go shopping",      emoji:"🛍️", def:"to visit shops and buy things"                      },
+  { id:"call",       word:"make a call",      emoji:"📞", def:"to contact someone by phone"                        },
+  { id:"eat-out",    word:"eat out",   		  emoji:"🍽️", def:"to go to a restaurant ant eat food there"     },
+];
+
+const TOTAL = matchItems.length;
+let matched = 0;
+let dragging = null;
+let touchClone = null;
+
+function shuffle(a){const b=[...a];for(let i=b.length-1;i>0;i--){const j=Math.floor(Math.random()*(i+1));[b[i],b[j]]=[b[j],b[i]];}return b;}
+
+function makeDraggable(chip){
+  chip.setAttribute('draggable','true');
+  chip.addEventListener('dragstart',e=>{dragging=chip;chip.classList.add('dragging');e.dataTransfer.effectAllowed='move';});
+  chip.addEventListener('dragend',()=>{chip.classList.remove('dragging');dragging=null;});
+  chip.addEventListener('touchstart',e=>{
+    e.preventDefault();dragging=chip;chip.classList.add('dragging');
+    const r=chip.getBoundingClientRect();
+    touchClone=chip.cloneNode(true);
+    touchClone.style.cssText=`position:fixed;left:${r.left}px;top:${r.top}px;width:${r.width}px;pointer-events:none;opacity:.85;z-index:9999;margin:0;touch-action:none;`;
+    document.body.appendChild(touchClone);
+  },{passive:false});
+  chip.addEventListener('touchmove',e=>{
+    e.preventDefault();if(!touchClone)return;
+    const t=e.touches[0];const r=touchClone.getBoundingClientRect();
+    touchClone.style.left=(t.clientX-r.width/2)+'px';
+    touchClone.style.top=(t.clientY-r.height/2)+'px';
+    touchClone.style.display='none';
+    const el=document.elementFromPoint(t.clientX,t.clientY);
+    touchClone.style.display='';
+    document.querySelectorAll('.def-slot').forEach(z=>z.classList.remove('over'));
+    const zone=el?el.closest('.def-slot'):null;
+    if(zone&&!zone.dataset.matched)zone.classList.add('over');
+  },{passive:false});
+  chip.addEventListener('touchend',e=>{
+    e.preventDefault();
+    if(touchClone){touchClone.remove();touchClone=null;}
+    if(dragging)dragging.classList.remove('dragging');
+    document.querySelectorAll('.def-slot').forEach(z=>z.classList.remove('over'));
+    const t=e.changedTouches[0];
+    const el=document.elementFromPoint(t.clientX,t.clientY);
+    const zone=el?el.closest('.def-slot'):null;
+    if(zone){const item=matchItems.find(i=>i.id===zone.dataset.id);handleDrop(zone,item);}
+    dragging=null;
+  },{passive:false});
+}
+
+function handleDrop(zone,item){
+  if(!dragging||!zone||!item||zone.dataset.matched)return;
+  const chipId=dragging.dataset.id;
+  if(chipId===item.id){
+    zone.dataset.matched='true';
+    zone.classList.add('matched');
+    zone.innerHTML=`<span class="placed-word">✓ ${dragging.textContent}</span>`;
+    dragging.remove();
+    matched++;
+    const fb=document.getElementById('match-fb');
+    fb.textContent=matched===TOTAL?'All matched! Well done!':matched+' / '+TOTAL+' matched';
+    fb.style.color=matched===TOTAL?'var(--color-text-success)':'var(--color-text-secondary)';
+  } else {
+    zone.classList.add('wrong-flash');
+    const d=dragging;
+    setTimeout(()=>zone.classList.remove('wrong-flash'),500);
+  }
+  dragging=null;
+}
+
+function wireZones(){
+  document.querySelectorAll('.def-slot').forEach(zone=>{
+    zone.addEventListener('dragover',e=>{e.preventDefault();if(!zone.dataset.matched)zone.classList.add('over');});
+    zone.addEventListener('dragleave',()=>zone.classList.remove('over'));
+    zone.addEventListener('drop',e=>{
+      e.preventDefault();zone.classList.remove('over');
+      const item=matchItems.find(i=>i.id===zone.dataset.id);
+      handleDrop(zone,item);
+    });
+  });
+}
+
+function build(){
+  matched=0;dragging=null;
+  if(touchClone){touchClone.remove();touchClone=null;}
+  document.getElementById('match-fb').textContent='';
+
+  const bank=document.getElementById('bank');
+  bank.innerHTML='';
+  shuffle([...matchItems]).forEach(item=>{
+    const chip=document.createElement('div');
+    chip.className='act-chip';chip.dataset.id=item.id;
+    chip.textContent=item.word;
+    bank.appendChild(chip);makeDraggable(chip);
+  });
+
+  const grid=document.getElementById('def-grid');
+  grid.innerHTML='';
+  shuffle([...matchItems]).forEach(item=>{
+    const card=document.createElement('div');card.className='def-card';
+    const slot=document.createElement('div');slot.className='def-slot';slot.dataset.id=item.id;
+    const defRow=document.createElement('div');defRow.className='def-text';
+    defRow.innerHTML=`<span class="def-emoji">${item.emoji}</span><span>${item.def}</span>`;
+    card.appendChild(slot);card.appendChild(defRow);
+    grid.appendChild(card);
+  });
+
+  wireZones();
+}
+
+document.getElementById('reset-btn').addEventListener('click',build);
+build();
+</script>
+<div id="theme-toggle-wrap">
+  <button id="theme-toggle" aria-label="Toggle light/dark mode" title="Toggle light/dark mode">
+    <span id="theme-icon">☀️</span>
+  </button>
+</div>
+<script src="theme-toggle-behavior.js"></script>
+
+</body>
+</html>
