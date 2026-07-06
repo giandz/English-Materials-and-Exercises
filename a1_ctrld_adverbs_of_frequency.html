@@ -1,0 +1,344 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Adverbs of Frequency — Gap Fill</title>
+<style>
+  :root{
+    --color-background-primary: #ffffff;
+    --color-background-secondary: #f7f7f8;
+    --color-text-primary: #1a1a1a;
+    --color-text-secondary: #5b5b60;
+    --color-text-tertiary: #8b8b90;
+    --color-border-secondary: #e3e3e6;
+    --color-border-tertiary: #ebebee;
+    --border-radius-lg: 12px;
+    --font-mono: "SF Mono", "JetBrains Mono", monospace;
+
+    --text-primary: var(--color-text-primary);
+    --text-secondary: var(--color-text-secondary);
+    --text-muted: var(--color-text-tertiary);
+    --text-accent: #185fa5;
+    --surface-1: var(--color-background-secondary);
+    --surface-2: var(--color-background-primary);
+    --border: var(--color-border-tertiary);
+    --radius: var(--border-radius-lg);
+    --good: #2f7d3a;
+    --good-bg: #e8f4ea;
+    --bad: #b0392f;
+    --bad-bg: #fbebe9;
+  }
+
+  @media (prefers-color-scheme: dark){
+    :root{
+      --color-background-primary: #1e1e20;
+      --color-background-secondary: #26262a;
+      --color-text-primary: #f0f0f2;
+      --color-text-secondary: #b4b4ba;
+      --color-text-tertiary: #85858c;
+      --color-border-secondary: #3a3a3f;
+      --color-border-tertiary: #34343a;
+      --good-bg: #1d2f1f;
+      --bad-bg: #331e1c;
+    }
+  }
+
+  *{ box-sizing:border-box; }
+  html,body{
+    margin:0;
+    background:var(--color-background-primary);
+    color:var(--color-text-primary);
+    font-family:-apple-system, BlinkMacSystemFont, "Segoe UI", Helvetica, Arial, sans-serif;
+    font-size:15px;
+    line-height:1.6;
+  }
+  .page{ max-width:680px; margin:0 auto; padding:28px 20px 64px; }
+
+  h1{ font-size:1.3rem; font-weight:600; letter-spacing:-0.01em; margin:0 0 4px; }
+  .subtitle{ font-size:13px; color:var(--text-secondary); margin:0 0 4px; }
+
+  .sec-div{font-size:11px;font-weight:500;letter-spacing:.06em;text-transform:uppercase;color:var(--text-muted);display:flex;align-items:center;gap:8px;margin:1.75rem 0 1rem;}
+  .sec-div::before,.sec-div::after{content:'';flex:1;height:.5px;background:var(--border);}
+
+  .rule-box{background:var(--surface-1);border-radius:var(--radius);padding:10px 14px;margin-bottom:1.25rem;font-size:13px;color:var(--text-secondary);line-height:1.7;}
+  .rule-box strong{color:var(--text-primary);font-weight:500;}
+
+  .legend{
+    display:flex;
+    flex-wrap:wrap;
+    gap:6px;
+    margin-bottom:1.25rem;
+  }
+  .legend-pill{
+    font-size:11px;
+    font-weight:500;
+    padding:3px 9px;
+    border-radius:20px;
+    background:var(--surface-1);
+    border:.5px solid var(--border);
+    color:var(--text-secondary);
+    white-space:nowrap;
+  }
+  .legend-pill b{ color:var(--text-primary); font-weight:600; }
+
+  .item{
+    border:.5px solid var(--color-border-tertiary);
+    border-radius:var(--border-radius-lg);
+    padding:14px 16px;
+    margin-bottom:12px;
+    background:var(--surface-2);
+  }
+  .item-top{
+    display:flex;
+    align-items:center;
+    gap:14px;
+    margin-bottom:10px;
+    flex-wrap:wrap;
+  }
+  .emoji-pair{
+    font-size:26px;
+    display:flex;
+    gap:2px;
+  }
+  .x-marks{
+    font-family:var(--font-mono);
+    font-size:17px;
+    font-weight:700;
+    color:var(--text-accent);
+    letter-spacing:2px;
+  }
+  .x-marks .dim{ color:var(--color-border-secondary); }
+  .x-count-label{
+    font-size:11px;
+    color:var(--text-muted);
+    margin-left:auto;
+  }
+
+  .answer-row{
+    display:flex;
+    gap:8px;
+    align-items:center;
+  }
+  .answer-row input[type="text"]{
+    flex:1;
+    font-family:inherit;
+    font-size:14px;
+    padding:8px 12px;
+    border-radius:8px;
+    border:.5px solid var(--color-border-secondary);
+    background:var(--color-background-primary);
+    color:var(--text-primary);
+  }
+  .answer-row input[type="text"]:focus{
+    outline:none;
+    border-color:var(--text-accent);
+  }
+  .check-btn{
+    font-family:inherit;
+    font-size:13px;
+    font-weight:600;
+    padding:8px 14px;
+    border-radius:8px;
+    border:none;
+    background:var(--text-accent);
+    color:#fff;
+    cursor:pointer;
+  }
+  .check-btn:active{ opacity:0.85; }
+
+  .feedback{
+    margin-top:8px;
+    font-size:12.5px;
+    padding:6px 10px;
+    border-radius:6px;
+    display:none;
+  }
+  .feedback.show{ display:block; }
+  .feedback.correct{ background:var(--good-bg); color:var(--good); }
+  .feedback.incorrect{ background:var(--bad-bg); color:var(--bad); }
+
+  .item.correct-state input[type="text"]{ border-color:var(--good); }
+  .item.incorrect-state input[type="text"]{ border-color:var(--bad); }
+
+  .score-bar{
+    display:flex;
+    justify-content:space-between;
+    align-items:center;
+    margin:1.5rem 0 0.5rem;
+    font-size:13px;
+    color:var(--text-secondary);
+  }
+  .score-bar strong{ color:var(--text-primary); }
+  .reveal-all{
+    font-family:inherit;
+    font-size:12px;
+    font-weight:500;
+    padding:5px 12px;
+    border-radius:20px;
+    border:.5px solid var(--border);
+    background:var(--surface-1);
+    color:var(--text-secondary);
+    cursor:pointer;
+  }
+
+  footer{ text-align:center; font-size:12px; color:var(--text-muted); margin-top:2rem; }
+</style>
+</head>
+<body>
+<div class="page">
+
+  <h1>How often? — Emoji Gap Fill</h1>
+  <p class="subtitle">Look at the emojis and the number of X's, then write a full sentence using the matching adverb of frequency.</p>
+
+  <div class="rule-box">
+    <strong>Example:</strong> 👩🧀 XXXXX → <em>She often eats cheese.</em> &nbsp;·&nbsp; 👨🎾 X X → <em>He sometimes plays tennis.</em>
+  </div>
+
+  <div class="legend">
+    <span class="legend-pill"><b>0</b> = never</span>
+    <span class="legend-pill"><b>1</b> = almost never</span>
+    <span class="legend-pill"><b>2</b> = hardly ever / rarely</span>
+    <span class="legend-pill"><b>4</b> = sometimes</span>
+    <span class="legend-pill"><b>5</b> = often / usually</span>
+    <span class="legend-pill"><b>6</b> = almost always</span>
+    <span class="legend-pill"><b>7</b> = always</span>
+  </div>
+
+  <div class="sec-div">Write your sentences</div>
+
+  <div id="items"></div>
+
+  <div class="score-bar">
+    <span>Score: <strong id="scoreLabel">0</strong> / <span id="totalLabel">0</span></span>
+    <button class="reveal-all" id="revealAllBtn">Show all answers</button>
+  </div>
+
+  <footer>Grammar Practice — Adverbs of Frequency</footer>
+</div>
+
+<script>
+const ADVERB_GROUPS = {
+  0: { names: ["never"], label: "never" },
+  1: { names: ["almost never"], label: "almost never" },
+  2: { names: ["hardly ever", "rarely"], label: "hardly ever / rarely" },
+  4: { names: ["sometimes", "occasionally"], label: "sometimes" },
+  5: { names: ["often", "usually"], label: "often / usually" },
+  6: { names: ["almost always"], label: "almost always" },
+  7: { names: ["always"], label: "always" }
+};
+
+const items = [
+  { emojis: "👩🧀", count: 5, subject: "she", verb: "eat", verbBase: "eats", object: "cheese" },
+  { emojis: "👨🎾", count: 2, subject: "he", verb: "play", verbBase: "plays", object: "tennis" },
+  { emojis: "👦📚", count: 7, subject: "he", verb: "read", verbBase: "reads", object: "books" },
+  { emojis: "👧🎨", count: 1, subject: "she", verb: "paint", verbBase: "paints", object: "" },
+  { emojis: "👴☕", count: 6, subject: "he", verb: "drink", verbBase: "drinks", object: "coffee" },
+  { emojis: "👵🚶", count: 4, subject: "she", verb: "walk", verbBase: "walks", object: "" },
+  { emojis: "🧑‍🍳🍳", count: 0, subject: "he", verb: "cook", verbBase: "cooks", object: "" },
+  { emojis: "🧑‍💻💻", count: 7, subject: "she", verb: "work", verbBase: "works", object: "late" },
+  { emojis: "👩‍🎤🎤", count: 2, subject: "she", verb: "sing", verbBase: "sings", object: "" },
+  { emojis: "👨‍🔧🔩", count: 1, subject: "he", verb: "fix", verbBase: "fixes", object: "things" }
+];
+
+const itemsEl = document.getElementById('items');
+const scoreLabel = document.getElementById('scoreLabel');
+const totalLabel = document.getElementById('totalLabel');
+totalLabel.textContent = items.length;
+
+function buildXMarks(count) {
+  let out = "";
+  for (let i = 0; i < 7; i++) {
+    out += i < count ? "X " : '<span class="dim">·</span> ';
+  }
+  return out.trim();
+}
+
+items.forEach((item, idx) => {
+  const wrap = document.createElement('div');
+  wrap.className = 'item';
+  wrap.dataset.idx = idx;
+
+  wrap.innerHTML = `
+    <div class="item-top">
+      <div class="emoji-pair">${item.emojis}</div>
+      <div class="x-marks">${buildXMarks(item.count)}</div>
+      <div class="x-count-label">${item.count}/7</div>
+    </div>
+    <div class="answer-row">
+      <input type="text" placeholder="Write a full sentence..." data-idx="${idx}">
+      <button class="check-btn" data-idx="${idx}">Check</button>
+    </div>
+    <div class="feedback" data-idx="${idx}"></div>
+  `;
+  itemsEl.appendChild(wrap);
+});
+
+let scored = new Set();
+
+function checkAnswer(idx) {
+  const item = items[idx];
+  const input = document.querySelector(`input[data-idx="${idx}"]`);
+  const feedback = document.querySelector(`.feedback[data-idx="${idx}"]`);
+  const wrap = document.querySelector(`.item[data-idx="${idx}"]`);
+  const text = input.value.trim().toLowerCase();
+
+  if (!text) {
+    feedback.textContent = "Type a sentence first.";
+    feedback.className = "feedback show incorrect";
+    return;
+  }
+
+  const group = ADVERB_GROUPS[item.count];
+  const hasAdverb = group.names.some(name => text.includes(name));
+  const hasVerb = text.includes(item.verb) || text.includes(item.verbBase);
+
+  wrap.classList.remove('correct-state', 'incorrect-state');
+
+  if (hasAdverb && hasVerb) {
+    feedback.textContent = "✓ Correct! Well matched.";
+    feedback.className = "feedback show correct";
+    wrap.classList.add('correct-state');
+    if (!scored.has(idx)) { scored.add(idx); updateScore(); }
+  } else {
+    let missing = [];
+    if (!hasAdverb) missing.push(`the adverb (${group.label})`);
+    if (!hasVerb) missing.push(`the verb "${item.verb}"`);
+    feedback.textContent = `✗ Check for: ${missing.join(" and ")}.`;
+    feedback.className = "feedback show incorrect";
+    wrap.classList.add('incorrect-state');
+    scored.delete(idx);
+    updateScore();
+  }
+}
+
+function updateScore() {
+  scoreLabel.textContent = scored.size;
+}
+
+itemsEl.addEventListener('click', (e) => {
+  if (e.target.classList.contains('check-btn')) {
+    checkAnswer(Number(e.target.dataset.idx));
+  }
+});
+
+itemsEl.addEventListener('keydown', (e) => {
+  if (e.key === 'Enter' && e.target.tagName === 'INPUT') {
+    checkAnswer(Number(e.target.dataset.idx));
+  }
+});
+
+document.getElementById('revealAllBtn').addEventListener('click', () => {
+  items.forEach((item, idx) => {
+    const input = document.querySelector(`input[data-idx="${idx}"]`);
+    const group = ADVERB_GROUPS[item.count];
+    const subjectCap = item.subject.charAt(0).toUpperCase() + item.subject.slice(1);
+    const sample = `${subjectCap} ${group.names[0]} ${item.verbBase} ${item.object}`.trim().replace(/\s+/g, ' ') + '.';
+    input.value = sample;
+    input.placeholder = sample;
+  });
+});
+</script>
+
+</body>
+</html>
