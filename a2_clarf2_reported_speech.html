@@ -1,0 +1,485 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<title>Reporting Verbs — Matching Activity</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,500..700&family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;600&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --ink:#1b2430;
+    --paper:#f6f3ec;
+    --panel:#ffffff;
+    --rule:#d9d2c2;
+    --navy:#26364a;
+    --navy-deep:#182230;
+    --amber:#c9722f;
+    --amber-soft:#f0dcc6;
+    --sage:#5a7d68;
+    --sage-soft:#dde8de;
+    --danger:#b6503b;
+    --muted:#6b7280;
+    --radius:10px;
+  }
+  *{box-sizing:border-box; -webkit-tap-highlight-color:transparent;}
+  html,body{
+    margin:0;
+    background:var(--paper);
+    color:var(--ink);
+    font-family:'Inter',sans-serif;
+    touch-action:manipulation;
+    -webkit-user-select:none;
+    user-select:none;
+    overscroll-behavior:none;
+  }
+  .wrap{max-width:1040px;margin:0 auto;padding:28px 20px 60px;}
+
+  header{
+    text-align:center;
+    margin-bottom:22px;
+  }
+  .eyebrow{
+    font-family:'JetBrains Mono', monospace;
+    font-size:12px;
+    letter-spacing:0.14em;
+    text-transform:uppercase;
+    color:var(--amber);
+    margin:0 0 10px;
+  }
+  h1{
+    font-family:'Fraunces', serif;
+    font-size:clamp(1.7rem, 4vw, 2.3rem);
+    font-weight:600;
+    margin:0 0 8px;
+    color:var(--navy-deep);
+  }
+  header p{
+    color:var(--muted);
+    font-size:0.95rem;
+    max-width:560px;
+    margin:0 auto;
+  }
+
+  .status-bar{
+    display:flex;
+    justify-content:center;
+    align-items:center;
+    gap:18px;
+    margin:20px 0 28px;
+    flex-wrap:wrap;
+  }
+  .score{
+    font-family:'JetBrains Mono', monospace;
+    font-size:0.95rem;
+    background:var(--panel);
+    border:1px solid var(--rule);
+    padding:8px 16px;
+    border-radius:100px;
+  }
+  .score strong{color:var(--sage);}
+  button.reset{
+    font-family:'Inter', sans-serif;
+    font-weight:600;
+    font-size:0.88rem;
+    background:var(--navy-deep);
+    color:#f2ede1;
+    border:none;
+    padding:9px 18px;
+    border-radius:100px;
+    cursor:pointer;
+  }
+  button.reset:active{transform:scale(0.97);}
+
+  /* VERB BINS */
+  .bins{
+    display:grid;
+    grid-template-columns:repeat(2, 1fr);
+    gap:14px;
+    margin-bottom:32px;
+  }
+  @media (max-width:680px){
+    .bins{grid-template-columns:1fr;}
+  }
+  .bin{
+    background:var(--panel);
+    border:2px dashed var(--rule);
+    border-radius:var(--radius);
+    padding:14px;
+    transition:border-color 0.2s, background 0.2s;
+    position:relative;
+  }
+  .bin.drag-over{
+    border-color:var(--amber);
+    background:#fbf3e8;
+  }
+  .bin.complete{
+    border-style:solid;
+    border-color:var(--sage);
+    background:var(--sage-soft);
+  }
+  .bin-label{
+    font-family:'Fraunces', serif;
+    font-weight:600;
+    font-size:1.15rem;
+    color:var(--navy-deep);
+    margin-bottom:8px;
+    display:flex;
+    align-items:center;
+    justify-content:space-between;
+  }
+  .bin-label .count{
+    font-family:'JetBrains Mono', monospace;
+    font-size:0.72rem;
+    color:var(--muted);
+    font-weight:400;
+  }
+  .slot-row{
+    display:flex;
+    flex-direction:column;
+    gap:6px;
+    min-height:78px;
+  }
+  .slot{
+    border:1px solid var(--rule);
+    border-radius:8px;
+    min-height:36px;
+    background:#fbf9f5;
+    display:flex;
+    align-items:center;
+    padding:0 4px;
+  }
+  .slot.filled{
+    border:none;
+    background:transparent;
+    padding:0;
+  }
+
+  /* SENTENCE POOL */
+  .pool-heading{
+    font-family:'JetBrains Mono', monospace;
+    font-size:12px;
+    letter-spacing:0.1em;
+    text-transform:uppercase;
+    color:var(--muted);
+    margin:0 0 12px;
+  }
+  .pool{
+    display:flex;
+    flex-wrap:wrap;
+    gap:10px;
+    min-height:60px;
+    padding:14px;
+    background:rgba(217,210,194,0.25);
+    border-radius:var(--radius);
+  }
+
+  .card{
+    background:var(--panel);
+    border:1px solid var(--rule);
+    border-radius:8px;
+    padding:10px 14px;
+    font-size:0.92rem;
+    line-height:1;
+    cursor:grab;
+    box-shadow:0 1px 2px rgba(0,0,0,0.05);
+    max-width:340px;
+    touch-action:none;
+  }
+  .card.placed{
+    width:100%;
+    max-width:none;
+    cursor:default;
+    background:#fff;
+    border-color:var(--sage);
+  }
+  .card.dragging{
+    position:fixed;
+    z-index:999;
+    pointer-events:none;
+    box-shadow:0 8px 24px rgba(0,0,0,0.18);
+    transform:scale(1.03);
+    cursor:grabbing;
+  }
+  .card.wrong{
+    animation:shake 0.4s ease;
+    border-color:var(--danger);
+  }
+  .card.correct-flash{
+    animation:flash 0.5s ease;
+  }
+  @keyframes shake{
+    0%,100%{transform:translateX(0);}
+    20%{transform:translateX(-6px);}
+    40%{transform:translateX(6px);}
+    60%{transform:translateX(-4px);}
+    80%{transform:translateX(4px);}
+  }
+  @keyframes flash{
+    0%{background:var(--sage-soft);}
+    100%{background:#fff;}
+  }
+
+  .win-banner{
+    display:none;
+    text-align:center;
+    margin-top:24px;
+    padding:20px;
+    background:var(--navy-deep);
+    color:#f2ede1;
+    border-radius:var(--radius);
+    font-family:'Fraunces', serif;
+    font-size:1.2rem;
+  }
+  .win-banner.show{display:block;}
+</style>
+<link rel="stylesheet" href="general.css">
+
+</head>
+<body>
+
+<div class="wrap">
+  <header>
+    <p class="eyebrow">Grammar Practice · Reporting Verbs</p>
+    <h1>Match each sentence to its reporting verb</h1>
+    <p>Drag each sentence card into the box for the verb it illustrates. Every verb has exactly two matching sentences.</p>
+  </header>
+
+  <div class="status-bar">
+    <div class="score">Matched: <strong id="matchedCount">0</strong> / 20</div>
+    <button class="reset" id="resetBtn">Reset activity</button>
+  </div>
+	<p class="pool-heading">Answer Pool</p>
+	<div class="pool" id="pool"></div>
+  <div class="bins" id="bins"></div>
+
+ 
+
+  <div class="win-banner" id="winBanner">🎉 All matched! Great work with reporting verbs.</div>
+</div>
+
+<script>
+const data = [
+  { verb: "explain", sentences: [
+    "The bus was cancelled, so I had to walk the whole way here.",
+"You press this button twice and then the green light turns on."
+  ]},
+  { verb: "admit", sentences: [
+    "Okay, fine — I ate the last slice of cake.",
+"I never actually finished reading the book."
+  ]},
+  { verb: "suggest", sentences: [
+    "Why don't we try the new restaurant on Fifth Street?",
+"Maybe we should leave an hour earlier to avoid traffic."
+  ]},
+  { verb: "promise", sentences: [
+    "I'll definitely have the report ready by Monday morning.",
+"I won't tell anyone what you told me."
+  ]},
+  { verb: "warn", sentences: [
+    "Don't touch that pan, it's still really hot.",
+"Be careful on that staircase, the top step is loose."
+  ]},
+  { verb: "ask", sentences: [
+    "Could you pass me the salt, please?",
+"Did you remember to lock the front door?"
+  ]},
+  { verb: "deny", sentences: [
+   "I did not take anything from your desk.",
+"That wasn't me you saw at the mall yesterday."
+  ]},
+  { verb: "complain", sentences: [
+   "This is the third time this month the elevator has been out of service.",
+"The waiter ignored us for twenty minutes before taking our order."
+  ]},
+  { verb: "insist", sentences: [
+    "No, really, let me carry that bag for you.",
+"We have to leave right now, there's no time to waste."
+  ]},
+  { verb: "advise", sentences: [
+    "You should really see a doctor about that cough.",
+"I'd wait a few more weeks before making a decision."
+  ]}
+];
+
+const binsEl = document.getElementById('bins');
+const poolEl = document.getElementById('pool');
+const matchedCountEl = document.getElementById('matchedCount');
+const winBanner = document.getElementById('winBanner');
+
+let allSentences = [];
+data.forEach(entry => {
+  entry.sentences.forEach(s => {
+    allSentences.push({ id: 'c' + Math.random().toString(36).slice(2,9), verb: entry.verb, text: s });
+  });
+});
+
+// shuffle
+for (let i = allSentences.length - 1; i > 0; i--) {
+  const j = Math.floor(Math.random() * (i + 1));
+  [allSentences[i], allSentences[j]] = [allSentences[j], allSentences[i]];
+}
+
+// build bins
+data.forEach(entry => {
+  const bin = document.createElement('div');
+  bin.className = 'bin';
+  bin.dataset.verb = entry.verb;
+  bin.innerHTML = `
+    <div class="bin-label">${entry.verb} <span class="count">(<span class="filled-count">0</span>/2)</span></div>
+    <div class="slot-row">
+      <div class="slot" data-slot="0"></div>
+      <div class="slot" data-slot="1"></div>
+    </div>
+  `;
+  binsEl.appendChild(bin);
+});
+
+// build cards in pool
+allSentences.forEach(s => {
+  const card = document.createElement('div');
+  card.className = 'card';
+  card.id = s.id;
+  card.dataset.verb = s.verb;
+  card.textContent = s.text;
+  poolEl.appendChild(card);
+});
+
+let matched = 0;
+const total = allSentences.length;
+
+let dragState = null;
+
+function getBinAtPoint(x, y) {
+  const els = document.elementsFromPoint(x, y);
+  for (const el of els) {
+    const bin = el.closest('.bin');
+    if (bin) return bin;
+  }
+  return null;
+}
+
+function clearDragOver() {
+  document.querySelectorAll('.bin.drag-over').forEach(b => b.classList.remove('drag-over'));
+}
+
+function onPointerDown(e, card) {
+  if (card.classList.contains('placed')) return;
+  e.preventDefault();
+  const rect = card.getBoundingClientRect();
+  dragState = {
+    card,
+    offsetX: e.clientX - rect.left,
+    offsetY: e.clientY - rect.top,
+    originParent: card.parentElement,
+    originNext: card.nextSibling,
+    startWidth: rect.width,
+    startHeight: rect.height
+  };
+  card.setPointerCapture(e.pointerId);
+  card.classList.add('dragging');
+  card.style.width = rect.width + 'px';
+  document.body.appendChild(card);
+  movePointer(e);
+}
+
+function movePointer(e) {
+  if (!dragState) return;
+  const { card, offsetX, offsetY } = dragState;
+  card.style.left = (e.clientX - offsetX) + 'px';
+  card.style.top = (e.clientY - offsetY) + 'px';
+
+  clearDragOver();
+  const bin = getBinAtPoint(e.clientX, e.clientY);
+  if (bin && !bin.classList.contains('complete')) {
+    bin.classList.add('drag-over');
+  }
+}
+
+function onPointerMove(e) {
+  if (!dragState) return;
+  e.preventDefault();
+  movePointer(e);
+}
+
+function onPointerUp(e) {
+  if (!dragState) return;
+  const { card, originParent, originNext, startWidth } = dragState;
+  clearDragOver();
+  card.classList.remove('dragging');
+  card.style.position = '';
+  card.style.left = '';
+  card.style.top = '';
+  card.style.width = '';
+
+  const bin = getBinAtPoint(e.clientX, e.clientY);
+
+  if (bin) {
+    const binVerb = bin.dataset.verb;
+    if (binVerb === card.dataset.verb && !bin.classList.contains('complete')) {
+      // correct match
+      const emptySlot = bin.querySelector('.slot:not(.filled)');
+      if (emptySlot) {
+        emptySlot.classList.add('filled');
+        card.classList.add('placed', 'correct-flash');
+        emptySlot.appendChild(card);
+        matched++;
+        matchedCountEl.textContent = matched;
+        updateBinCount(bin);
+        if (matched === total) {
+          winBanner.classList.add('show');
+        }
+      } else {
+        returnToOrigin(card, originParent, originNext, startWidth);
+      }
+    } else {
+      // wrong bin — bounce back
+      returnToOrigin(card, originParent, originNext, startWidth);
+      card.classList.add('wrong');
+      setTimeout(() => card.classList.remove('wrong'), 400);
+    }
+  } else {
+    returnToOrigin(card, originParent, originNext, startWidth);
+  }
+
+  dragState = null;
+}
+
+function returnToOrigin(card, parent, nextSibling, width) {
+  card.style.width = '';
+  if (nextSibling && nextSibling.parentElement === parent) {
+    parent.insertBefore(card, nextSibling);
+  } else {
+    parent.appendChild(card);
+  }
+}
+
+function updateBinCount(bin) {
+  const filled = bin.querySelectorAll('.slot.filled').length;
+  bin.querySelector('.filled-count').textContent = filled;
+  if (filled === 2) {
+    bin.classList.add('complete');
+  }
+}
+
+function attachCardEvents(card) {
+  card.addEventListener('pointerdown', (e) => onPointerDown(e, card));
+}
+
+document.querySelectorAll('.card').forEach(attachCardEvents);
+document.addEventListener('pointermove', onPointerMove, { passive: false });
+document.addEventListener('pointerup', onPointerUp);
+document.addEventListener('pointercancel', onPointerUp);
+
+document.getElementById('resetBtn').addEventListener('click', () => {
+  location.reload();
+});
+</script>
+<div id="theme-toggle-wrap">
+  <button id="theme-toggle" aria-label="Toggle light/dark mode" title="Toggle light/dark mode">
+    <span id="theme-icon">☀️</span>
+  </button>
+</div>
+<script src="theme-toggle-behavior.js"></script>
+</body>
+</html>
