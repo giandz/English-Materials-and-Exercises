@@ -1,0 +1,237 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Reported Speech Gap-Fill</title>
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      background: #f7f8fc;
+      color: #1f2937;
+      margin: 0;
+      padding: 24px;
+    }
+    .card {
+      max-width: 950px;
+      margin: 0 auto;
+      background: #fff;
+      border: 1px solid #e5e7eb;
+      border-radius: 16px;
+      padding: 24px;
+      box-shadow: 0 2px 10px rgba(0,0,0,0.05);
+    }
+    h1 {
+      margin-top: 0;
+      color: #1d4ed8;
+    }
+    .instructions {
+      margin-bottom: 14px;
+      color: #4b5563;
+    }
+    .pool-box {
+      background: #eef2ff;
+      border: 2px dashed #818cf8;
+      border-radius: 14px;
+      padding: 16px;
+      margin-bottom: 22px;
+    }
+    .pool-title {
+      font-weight: 700;
+      margin-bottom: 10px;
+    }
+    .pool {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 10px;
+      min-height: 48px;
+    }
+    .choice {
+      padding: 9px 13px;
+      border: 1px solid #cbd5e1;
+      border-radius: 999px;
+      background: #fff;
+      cursor: grab;
+      user-select: none;
+      font-size: 14px;
+      font-weight: 600;
+    }
+    .choice.used {
+      opacity: 0.35;
+      pointer-events: none;
+    }
+    .item {
+      display: grid;
+      gap: 10px;
+      margin: 14px 0;
+      padding: 14px;
+      border: 1px solid #e5e7eb;
+      border-radius: 12px;
+      background: #f9fafb;
+    }
+    .sentence {
+      font-size: 16px;
+      line-height: 1.5;
+    }
+    input {
+      width: 170px;
+      padding: 8px 10px;
+      border: 1px solid #cbd5e1;
+      border-radius: 8px;
+      font-size: 16px;
+    }
+    .item-feedback {
+      font-weight: 700;
+      min-height: 20px;
+    }
+    .correct { color: #16a34a; }
+    .wrong { color: #dc2626; }
+    .button-row {
+      margin-top: 18px;
+      display: flex;
+      gap: 10px;
+      flex-wrap: wrap;
+    }
+    button.main, button.secondary {
+      padding: 10px 16px;
+      border: none;
+      border-radius: 10px;
+      color: #fff;
+      font-weight: 700;
+      cursor: pointer;
+    }
+    button.main { background: #2563eb; }
+    button.main:hover { background: #1d4ed8; }
+    button.secondary { background: #6b7280; }
+    button.secondary:hover { background: #4b5563; }
+    .overall {
+      margin-top: 14px;
+      font-weight: 700;
+      min-height: 20px;
+    }
+  </style>
+  <link rel="stylesheet" href="general.css">
+</head>
+<body>
+  <div class="card">
+    <h1>Reported Speech</h1>
+    <div class="instructions">Drag a word from the pool into the correct blank. Then click Check all.</div>
+
+    <div class="pool-box">
+      <div class="pool-title">Answer Pool</div>
+      <div id="pool" class="pool"></div>
+    </div>
+
+    <div id="quiz"></div>
+
+    <div class="button-row">
+      <button class="main" onclick="checkAll()">Check all</button>
+      <button class="secondary" onclick="resetAll()">Reset</button>
+    </div>
+
+    <div id="overallFeedback" class="overall"></div>
+  </div>
+
+  <script>
+    const items = [
+      { text: "She said that she ___ tired.", answer: "was" },
+      { text: "He said that he ___ to the party.", answer: "went" },
+      { text: "They said that they ___ English.", answer: "studied" },
+      { text: "Mary said that she ___ her homework.", answer: "had finished" },
+      { text: "Tom said that he ___ late.", answer: "was" },
+      { text: "Anna said that she ___ a new bike.", answer: "had bought" },
+      { text: "He said that he ___ the answer.", answer: "knew" },
+      { text: "Lucy said that she ___ her friend.", answer: "had called" },
+      { text: "The teacher said that the lesson ___.", answer: "had started" },
+      { text: "We said that we ___ happy.", answer: "were" }
+    ];
+
+    const answerPool = ["was", "were", "went", "studied", "had finished", "had bought", "knew", "had called", "had started"];
+
+    function shuffle(array) {
+      return [...array].sort(() => Math.random() - 0.5);
+    }
+
+    function renderPool() {
+      const pool = document.getElementById("pool");
+      pool.innerHTML = "";
+      shuffle(answerPool).forEach(word => {
+        const span = document.createElement("span");
+        span.className = "choice";
+        span.draggable = true;
+        span.textContent = word;
+        span.id = "choice-" + word.replace(/\s+/g, "-");
+
+        span.addEventListener("dragstart", e => {
+          e.dataTransfer.setData("text/plain", word);
+        });
+
+        pool.appendChild(span);
+      });
+    }
+
+    function renderQuiz() {
+      const quiz = document.getElementById("quiz");
+      quiz.innerHTML = "";
+      items.forEach((item, index) => {
+        const div = document.createElement("div");
+        div.className = "item";
+        div.innerHTML = `
+          <div class="sentence">${index + 1}. ${item.text}</div>
+          <input type="text" id="input-${index}" placeholder="Drop or type" />
+          <div class="item-feedback" id="feedback-${index}"></div>
+        `;
+
+        const input = div.querySelector(`#input-${index}`);
+        input.addEventListener("dragover", e => e.preventDefault());
+        input.addEventListener("drop", e => {
+          e.preventDefault();
+          const word = e.dataTransfer.getData("text/plain");
+          input.value = word;
+          const choice = document.querySelectorAll(".choice");
+          choice.forEach(c => {
+            if (c.textContent === word && !c.classList.contains("used")) {
+              c.classList.add("used");
+            }
+          });
+        });
+
+        quiz.appendChild(div);
+      });
+    }
+
+    function checkAll() {
+      let correct = 0;
+      items.forEach((item, index) => {
+        const input = document.getElementById(`input-${index}`);
+        const fb = document.getElementById(`feedback-${index}`);
+        const value = input.value.trim().toLowerCase();
+        if (value === item.answer.toLowerCase()) {
+          fb.textContent = "Correct!";
+          fb.className = "item-feedback correct";
+          correct++;
+        } else {
+          fb.textContent = "Try again.";
+          fb.className = "item-feedback wrong";
+        }
+      });
+      const overall = document.getElementById("overallFeedback");
+      overall.textContent = `${correct}/${items.length} correct.`;
+      overall.className = correct === items.length ? "overall correct" : "overall wrong";
+    }
+
+    function resetAll() {
+      document.querySelectorAll("input").forEach(input => input.value = "");
+      document.querySelectorAll(".item-feedback").forEach(fb => {
+        fb.textContent = "";
+        fb.className = "item-feedback";
+      });
+      document.getElementById("overallFeedback").textContent = "";
+      renderPool();
+    }
+
+    renderPool();
+    renderQuiz();
+  </script>
+</body>
+</html>
