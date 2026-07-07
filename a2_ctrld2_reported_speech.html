@@ -1,237 +1,321 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Reported Speech Gap-Fill</title>
-  <style>
-    body {
-      font-family: Arial, sans-serif;
-      background: #f7f8fc;
-      color: #1f2937;
-      margin: 0;
-      padding: 24px;
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Reported Speech — Gap Fill</title>
+<style>
+  :root{
+    --color-background-primary: #ffffff;
+    --color-background-secondary: #f7f7f8;
+    --color-text-primary: #1a1a1a;
+    --color-text-secondary: #5b5b60;
+    --color-text-tertiary: #8b8b90;
+    --color-border-secondary: #e3e3e6;
+    --color-border-tertiary: #ebebee;
+    --border-radius-lg: 12px;
+    --font-mono: "SF Mono", "JetBrains Mono", monospace;
+
+    --text-primary: var(--color-text-primary);
+    --text-secondary: var(--color-text-secondary);
+    --text-muted: var(--color-text-tertiary);
+    --text-accent: #185fa5;
+    --surface-1: var(--color-background-secondary);
+    --surface-2: var(--color-background-primary);
+    --border: var(--color-border-tertiary);
+    --radius: var(--border-radius-lg);
+    --good: #2f7d3a;
+    --good-bg: #e8f4ea;
+    --bad: #b0392f;
+    --bad-bg: #fbebe9;
+  }
+
+  @media (prefers-color-scheme: dark){
+    :root{
+      --color-background-primary: #1e1e20;
+      --color-background-secondary: #26262a;
+      --color-text-primary: #f0f0f2;
+      --color-text-secondary: #b4b4ba;
+      --color-text-tertiary: #85858c;
+      --color-border-secondary: #3a3a3f;
+      --color-border-tertiary: #34343a;
+      --good-bg: #1d2f1f;
+      --bad-bg: #331e1c;
     }
-    .card {
-      max-width: 950px;
-      margin: 0 auto;
-      background: #fff;
-      border: 1px solid #e5e7eb;
-      border-radius: 16px;
-      padding: 24px;
-      box-shadow: 0 2px 10px rgba(0,0,0,0.05);
-    }
-    h1 {
-      margin-top: 0;
-      color: #1d4ed8;
-    }
-    .instructions {
-      margin-bottom: 14px;
-      color: #4b5563;
-    }
-    .pool-box {
-      background: #eef2ff;
-      border: 2px dashed #818cf8;
-      border-radius: 14px;
-      padding: 16px;
-      margin-bottom: 22px;
-    }
-    .pool-title {
-      font-weight: 700;
-      margin-bottom: 10px;
-    }
-    .pool {
-      display: flex;
-      flex-wrap: wrap;
-      gap: 10px;
-      min-height: 48px;
-    }
-    .choice {
-      padding: 9px 13px;
-      border: 1px solid #cbd5e1;
-      border-radius: 999px;
-      background: #fff;
-      cursor: grab;
-      user-select: none;
-      font-size: 14px;
-      font-weight: 600;
-    }
-    .choice.used {
-      opacity: 0.35;
-      pointer-events: none;
-    }
-    .item {
-      display: grid;
-      gap: 10px;
-      margin: 14px 0;
-      padding: 14px;
-      border: 1px solid #e5e7eb;
-      border-radius: 12px;
-      background: #f9fafb;
-    }
-    .sentence {
-      font-size: 16px;
-      line-height: 1.5;
-    }
-    input {
-      width: 170px;
-      padding: 8px 10px;
-      border: 1px solid #cbd5e1;
-      border-radius: 8px;
-      font-size: 16px;
-    }
-    .item-feedback {
-      font-weight: 700;
-      min-height: 20px;
-    }
-    .correct { color: #16a34a; }
-    .wrong { color: #dc2626; }
-    .button-row {
-      margin-top: 18px;
-      display: flex;
-      gap: 10px;
-      flex-wrap: wrap;
-    }
-    button.main, button.secondary {
-      padding: 10px 16px;
-      border: none;
-      border-radius: 10px;
-      color: #fff;
-      font-weight: 700;
-      cursor: pointer;
-    }
-    button.main { background: #2563eb; }
-    button.main:hover { background: #1d4ed8; }
-    button.secondary { background: #6b7280; }
-    button.secondary:hover { background: #4b5563; }
-    .overall {
-      margin-top: 14px;
-      font-weight: 700;
-      min-height: 20px;
-    }
-  </style>
-  <link rel="stylesheet" href="general.css">
+  }
+
+  *{ box-sizing:border-box; }
+  html,body{
+    margin:0;
+    background:var(--color-background-primary);
+    color:var(--color-text-primary);
+    font-family:-apple-system, BlinkMacSystemFont, "Segoe UI", Helvetica, Arial, sans-serif;
+    font-size:15px;
+    line-height:1.6;
+  }
+  .page{ max-width:720px; margin:0 auto; padding:28px 20px 60px; }
+
+  .cefr-tag{
+    display:inline-block;
+    font-size:11px;
+    font-weight:700;
+    letter-spacing:.04em;
+    background:#e6f1fb;
+    color:#185fa5;
+    padding:3px 10px;
+    border-radius:20px;
+    margin-bottom:10px;
+  }
+  h1{
+    font-size:1.3rem;
+    font-weight:600;
+    letter-spacing:-0.01em;
+    margin:0 0 6px;
+  }
+  .subtitle{
+    font-size:13px;
+    color:var(--text-secondary);
+    margin:0 0 4px;
+  }
+
+  .sec-div{font-size:11px;font-weight:500;letter-spacing:.06em;text-transform:uppercase;color:var(--text-muted);display:flex;align-items:center;gap:8px;margin:1.75rem 0 1rem;}
+  .sec-div::before,.sec-div::after{content:'';flex:1;height:.5px;background:var(--border);}
+
+  .rule-box{background:var(--surface-1);border-radius:var(--radius);padding:10px 14px;margin-bottom:1.25rem;font-size:13px;color:var(--text-secondary);line-height:1.7;}
+  .rule-box strong{color:var(--text-primary);font-weight:500;}
+
+  /* Answer pool */
+  .pool{
+    display:flex;
+    flex-wrap:wrap;
+    gap:8px;
+    min-height:48px;
+    padding:14px;
+    background:var(--surface-1);
+    border:1.5px dashed var(--border);
+    border-radius:var(--radius);
+    margin-bottom:1.5rem;
+  }
+  .choice{
+    padding:7px 14px;
+    border:.5px solid var(--border);
+    border-radius:999px;
+    background:var(--surface-2);
+    cursor:grab;
+    user-select:none;
+    font-size:13px;
+    font-weight:600;
+    color:var(--text-primary);
+  }
+  .choice.used{
+    opacity:0.3;
+    pointer-events:none;
+  }
+
+  /* Gap-fill items */
+  .gf-item{
+    border:.5px solid var(--color-border-tertiary);
+    border-radius:var(--border-radius-lg);
+    padding:13px 15px;
+    margin-bottom:10px;
+    background:var(--surface-2);
+  }
+  .gf-sentence{
+    font-size:14px;
+    margin-bottom:9px;
+  }
+  .gf-item input{
+    font-family:inherit;
+    font-size:13.5px;
+    width:160px;
+    padding:6px 10px;
+    border-radius:6px;
+    border:1px solid var(--color-border-secondary);
+    background:var(--color-background-primary);
+    color:var(--text-primary);
+  }
+  .gf-item input:focus{
+    outline:none;
+    border-color:var(--text-accent);
+  }
+  .gf-feedback{
+    font-size:12px;
+    font-weight:600;
+    margin-top:7px;
+    min-height:16px;
+  }
+  .gf-feedback.correct{ color:var(--good); }
+  .gf-feedback.wrong{ color:var(--bad); }
+
+  .button-row{
+    margin-top:1.25rem;
+    display:flex;
+    gap:10px;
+    flex-wrap:wrap;
+  }
+  button.main, button.secondary{
+    font-family:inherit;
+    padding:9px 18px;
+    border:none;
+    border-radius:100px;
+    font-weight:600;
+    font-size:13.5px;
+    cursor:pointer;
+  }
+  button.main{ background:var(--text-accent); color:#fff; }
+  button.secondary{
+    background:var(--surface-1);
+    color:var(--text-secondary);
+    border:.5px solid var(--border);
+  }
+
+  .overall{
+    margin-top:14px;
+    font-weight:600;
+    font-size:13.5px;
+    min-height:20px;
+  }
+  .overall.correct{ color:var(--good); }
+  .overall.wrong{ color:var(--bad); }
+
+  footer{ text-align:center; font-size:12px; color:var(--text-muted); margin-top:2rem; }
+</style>
+<link rel="stylesheet" href="general.css">
 </head>
 <body>
-  <div class="card">
-    <h1>Reported Speech</h1>
-    <div class="instructions">Drag a word from the pool into the correct blank. Then click Check all.</div>
+<div class="page">
 
-    <div class="pool-box">
-      <div class="pool-title">Answer Pool</div>
-      <div id="pool" class="pool"></div>
-    </div>
+  <span class="cefr-tag">A2 · Grammar Practice</span>
+  <h1>Reported Speech — Gap Fill</h1>
+  <p class="subtitle">Drag a word from the pool into the correct blank, then check your answers.</p>
 
-    <div id="quiz"></div>
-
-    <div class="button-row">
-      <button class="main" onclick="checkAll()">Check all</button>
-      <button class="secondary" onclick="resetAll()">Reset</button>
-    </div>
-
-    <div id="overallFeedback" class="overall"></div>
+  <div class="rule-box">
+    <strong>Tip:</strong> when the reporting verb is in the past (<em>said</em>), the verb inside usually shifts one tense back.
   </div>
 
-  <script>
-    const items = [
-      { text: "She said that she ___ tired.", answer: "was" },
-      { text: "He said that he ___ to the party.", answer: "went" },
-      { text: "They said that they ___ English.", answer: "studied" },
-      { text: "Mary said that she ___ her homework.", answer: "had finished" },
-      { text: "Tom said that he ___ late.", answer: "was" },
-      { text: "Anna said that she ___ a new bike.", answer: "had bought" },
-      { text: "He said that he ___ the answer.", answer: "knew" },
-      { text: "Lucy said that she ___ her friend.", answer: "had called" },
-      { text: "The teacher said that the lesson ___.", answer: "had started" },
-      { text: "We said that we ___ happy.", answer: "were" }
-    ];
+  <div class="sec-div">Answer pool</div>
+  <div id="pool" class="pool"></div>
 
-    const answerPool = ["was", "were", "went", "studied", "had finished", "had bought", "knew", "had called", "had started"];
+  <div class="sec-div">Sentences</div>
+  <div id="quiz"></div>
 
-    function shuffle(array) {
-      return [...array].sort(() => Math.random() - 0.5);
-    }
+  <div class="button-row">
+    <button class="main" onclick="checkAll()">Check all</button>
+    <button class="secondary" onclick="resetAll()">Reset</button>
+  </div>
 
-    function renderPool() {
-      const pool = document.getElementById("pool");
-      pool.innerHTML = "";
-      shuffle(answerPool).forEach(word => {
-        const span = document.createElement("span");
-        span.className = "choice";
-        span.draggable = true;
-        span.textContent = word;
-        span.id = "choice-" + word.replace(/\s+/g, "-");
+  <div id="overallFeedback" class="overall"></div>
 
-        span.addEventListener("dragstart", e => {
-          e.dataTransfer.setData("text/plain", word);
+  <footer>Grammar Practice — Reported Speech</footer>
+</div>
+
+<script>
+  const items = [
+    { text: "She said that she ___ tired.", answer: "was" },
+    { text: "He said that he ___ to the party.", answer: "had been" },
+    { text: "They said that they ___ English.", answer: "had been studying" },
+    { text: "Mary said that she ___ her homework.", answer: "had finished" },
+    { text: "Tom said that he ___ a hurry.", answer: "was in" },
+    { text: "Anna said that she ___ a new bike.", answer: "had bought" },
+    { text: "He said that he ___ the answer.", answer: "knew" },
+    { text: "Lucy said that she ___ her friend.", answer: "had called" },
+    { text: "The teacher said that the lesson ___.", answer: "had started" },
+    { text: "We said that we ___ happy.", answer: "were" }
+  ];
+
+  const answerPool = ["was", "had been", "was in", "went", "had been studying", "had finished", "had bought", "knew", "had called", "had started"];
+
+  function shuffle(array) {
+    return [...array].sort(() => Math.random() - 0.5);
+  }
+
+  function renderPool() {
+    const pool = document.getElementById("pool");
+    pool.innerHTML = "";
+    shuffle(answerPool).forEach(word => {
+      const span = document.createElement("span");
+      span.className = "choice";
+      span.draggable = true;
+      span.textContent = word;
+      span.id = "choice-" + word.replace(/\s+/g, "-");
+
+      span.addEventListener("dragstart", e => {
+        e.dataTransfer.setData("text/plain", word);
+      });
+
+      pool.appendChild(span);
+    });
+  }
+
+  function renderQuiz() {
+    const quiz = document.getElementById("quiz");
+    quiz.innerHTML = "";
+    items.forEach((item, index) => {
+      const div = document.createElement("div");
+      div.className = "gf-item";
+      div.innerHTML = `
+        <div class="gf-sentence">${index + 1}. ${item.text}</div>
+        <input type="text" id="input-${index}" placeholder="Drop or type" />
+        <div class="gf-feedback" id="feedback-${index}"></div>
+      `;
+
+      const input = div.querySelector(`#input-${index}`);
+      input.addEventListener("dragover", e => e.preventDefault());
+      input.addEventListener("drop", e => {
+        e.preventDefault();
+        const word = e.dataTransfer.getData("text/plain");
+        input.value = word;
+        const choice = document.querySelectorAll(".choice");
+        choice.forEach(c => {
+          if (c.textContent === word && !c.classList.contains("used")) {
+            c.classList.add("used");
+          }
         });
-
-        pool.appendChild(span);
       });
-    }
 
-    function renderQuiz() {
-      const quiz = document.getElementById("quiz");
-      quiz.innerHTML = "";
-      items.forEach((item, index) => {
-        const div = document.createElement("div");
-        div.className = "item";
-        div.innerHTML = `
-          <div class="sentence">${index + 1}. ${item.text}</div>
-          <input type="text" id="input-${index}" placeholder="Drop or type" />
-          <div class="item-feedback" id="feedback-${index}"></div>
-        `;
+      quiz.appendChild(div);
+    });
+  }
 
-        const input = div.querySelector(`#input-${index}`);
-        input.addEventListener("dragover", e => e.preventDefault());
-        input.addEventListener("drop", e => {
-          e.preventDefault();
-          const word = e.dataTransfer.getData("text/plain");
-          input.value = word;
-          const choice = document.querySelectorAll(".choice");
-          choice.forEach(c => {
-            if (c.textContent === word && !c.classList.contains("used")) {
-              c.classList.add("used");
-            }
-          });
-        });
+  function checkAll() {
+    let correct = 0;
+    items.forEach((item, index) => {
+      const input = document.getElementById(`input-${index}`);
+      const fb = document.getElementById(`feedback-${index}`);
+      const value = input.value.trim().toLowerCase();
+      if (value === item.answer.toLowerCase()) {
+        fb.textContent = "Correct!";
+        fb.className = "gf-feedback correct";
+        correct++;
+      } else {
+        fb.textContent = "Try again.";
+        fb.className = "gf-feedback wrong";
+      }
+    });
+    const overall = document.getElementById("overallFeedback");
+    overall.textContent = `${correct}/${items.length} correct.`;
+    overall.className = correct === items.length ? "overall correct" : "overall wrong";
+  }
 
-        quiz.appendChild(div);
-      });
-    }
-
-    function checkAll() {
-      let correct = 0;
-      items.forEach((item, index) => {
-        const input = document.getElementById(`input-${index}`);
-        const fb = document.getElementById(`feedback-${index}`);
-        const value = input.value.trim().toLowerCase();
-        if (value === item.answer.toLowerCase()) {
-          fb.textContent = "Correct!";
-          fb.className = "item-feedback correct";
-          correct++;
-        } else {
-          fb.textContent = "Try again.";
-          fb.className = "item-feedback wrong";
-        }
-      });
-      const overall = document.getElementById("overallFeedback");
-      overall.textContent = `${correct}/${items.length} correct.`;
-      overall.className = correct === items.length ? "overall correct" : "overall wrong";
-    }
-
-    function resetAll() {
-      document.querySelectorAll("input").forEach(input => input.value = "");
-      document.querySelectorAll(".item-feedback").forEach(fb => {
-        fb.textContent = "";
-        fb.className = "item-feedback";
-      });
-      document.getElementById("overallFeedback").textContent = "";
-      renderPool();
-    }
-
+  function resetAll() {
+    document.querySelectorAll("input").forEach(input => input.value = "");
+    document.querySelectorAll(".gf-feedback").forEach(fb => {
+      fb.textContent = "";
+      fb.className = "gf-feedback";
+    });
+    document.getElementById("overallFeedback").textContent = "";
+    document.getElementById("overallFeedback").className = "overall";
     renderPool();
-    renderQuiz();
-  </script>
+  }
+
+  renderPool();
+  renderQuiz();
+</script>
+<div id="theme-toggle-wrap">
+  <button id="theme-toggle" aria-label="Toggle light/dark mode" title="Toggle light/dark mode">
+    <span id="theme-icon">☀️</span>
+  </button>
+</div>
+<script src="theme-toggle-behavior.js"></script>
 </body>
 </html>
