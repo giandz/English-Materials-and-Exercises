@@ -192,7 +192,7 @@
   <p class="subtitle">Look at the emojis and the number of X's, then write a full sentence using the matching adverb of frequency.</p>
 
   <div class="rule-box">
-    <strong>Example:</strong> 👩🧀 XXXXX → <em>She often eats cheese.</em> &nbsp;·&nbsp; 👨🎾 X X → <em>He rarely  plays tennis.</em>
+    <strong>Example:</strong> 👩🧀 XXXXX → <em>She often eats cheese.</em> &nbsp;·&nbsp; 👨🎾 X X → <em>He rarely plays tennis.</em>
   </div>
 
   <div class="legend">
@@ -218,27 +218,30 @@
 </div>
 
 <script>
+// Each adverb group lists accepted phrases as arrays of words (for multi-word phrases)
 const ADVERB_GROUPS = {
-  0: { names: ["never"], label: "never" },
-  1: { names: ["almost never"], label: "almost never" },
-  2: { names: ["hardly ever", "rarely"], label: "hardly ever / rarely" },
-  4: { names: ["sometimes", "occasionally"], label: "sometimes" },
-  5: { names: ["often", "usually"], label: "often / usually" },
-  6: { names: ["almost always"], label: "almost always" },
-  7: { names: ["always"], label: "always" }
+  0: { phrases: [["never"]], label: "never" },
+  1: { phrases: [["almost", "never"]], label: "almost never" },
+  2: { phrases: [["hardly", "ever"], ["rarely"]], label: "hardly ever / rarely" },
+  4: { phrases: [["sometimes"], ["occasionally"]], label: "sometimes" },
+  5: { phrases: [["often"], ["usually"]], label: "often / usually" },
+  6: { phrases: [["almost", "always"]], label: "almost always" },
+  7: { phrases: [["always"]], label: "always" }
 };
 
+// verbBase = correct 3rd person singular (he/she) form required in the answer
+// verbWrong = the bare/base form (no -s), used to detect the common student error
 const items = [
-  { emojis: "👩🧀", count: 5, subject: "she", verb: "eat", verbBase: "eats", object: "cheese" },
-  { emojis: "👨🎾", count: 2, subject: "he", verb: "play", verbBase: "plays", object: "tennis" },
-  { emojis: "👦📚", count: 7, subject: "he", verb: "read", verbBase: "reads", object: "books" },
-  { emojis: "👧🎨", count: 1, subject: "she", verb: "paint", verbBase: "paints", object: "" },
-  { emojis: "👴☕", count: 6, subject: "he", verb: "drink", verbBase: "drinks", object: "coffee" },
-  { emojis: "👵🚶", count: 4, subject: "she", verb: "walk", verbBase: "walks", object: "" },
-  { emojis: "🧑‍🍳🍳", count: 0, subject: "he", verb: "cook", verbBase: "cooks", object: "" },
-  { emojis: "🧑‍💻💻", count: 7, subject: "she", verb: "work", verbBase: "works", object: "late" },
-  { emojis: "👩‍🎤🎤", count: 2, subject: "she", verb: "sing", verbBase: "sings", object: "" },
-  { emojis: "👨‍🔧🔩", count: 1, subject: "he", verb: "fix", verbBase: "fixes", object: "things" }
+  { emojis: "👩🧀", count: 5, subject: "she", verbBase: "eats", verbWrong: "eat", object: "cheese" },
+  { emojis: "👨🎾", count: 2, subject: "he", verbBase: "plays", verbWrong: "play", object: "tennis" },
+  { emojis: "👦📚", count: 7, subject: "he", verbBase: "reads", verbWrong: "read", object: "books" },
+  { emojis: "👧🎨", count: 1, subject: "she", verbBase: "paints", verbWrong: "paint", object: "" },
+  { emojis: "👴☕", count: 6, subject: "he", verbBase: "drinks", verbWrong: "drink", object: "coffee" },
+  { emojis: "👵🚶", count: 4, subject: "she", verbBase: "walks", verbWrong: "walk", object: "" },
+  { emojis: "🧑‍🍳🍳", count: 0, subject: "he", verbBase: "cooks", verbWrong: "cook", object: "" },
+  { emojis: "👱‍♀️️💻", count: 7, subject: "she", verbBase: "works", verbWrong: "work", object: "late" },
+  { emojis: "👩‍🎤🎤", count: 2, subject: "she", verbBase: "sings", verbWrong: "sing", object: "" },
+  { emojis: "👨‍🔧🔩", count: 1, subject: "he", verbBase: "fixes", verbWrong: "fix", object: "things" }
 ];
 
 const itemsEl = document.getElementById('items');
@@ -276,35 +279,95 @@ items.forEach((item, idx) => {
 
 let scored = new Set();
 
+// Tokenize into lowercase words, stripping punctuation
+function tokenize(text) {
+  return text
+    .toLowerCase()
+    .replace(/[.,!?;:]/g, "")
+    .split(/\s+/)
+    .filter(Boolean);
+}
+
+// Find the index of a (possibly multi-word) phrase inside a token array.
+// Returns { start, end } (end = index after last word) or null if not found.
+function findPhrase(tokens, phraseWords) {
+  for (let i = 0; i <= tokens.length - phraseWords.length; i++) {
+    let match = true;
+    for (let j = 0; j < phraseWords.length; j++) {
+      if (tokens[i + j] !== phraseWords[j]) { match = false; break; }
+    }
+    if (match) return { start: i, end: i + phraseWords.length };
+  }
+  return null;
+}
+
 function checkAnswer(idx) {
   const item = items[idx];
   const input = document.querySelector(`input[data-idx="${idx}"]`);
   const feedback = document.querySelector(`.feedback[data-idx="${idx}"]`);
   const wrap = document.querySelector(`.item[data-idx="${idx}"]`);
-  const text = input.value.trim().toLowerCase();
+  const raw = input.value.trim();
+  wrap.classList.remove('correct-state', 'incorrect-state');
 
-  if (!text) {
+  if (!raw) {
     feedback.textContent = "Type a sentence first.";
     feedback.className = "feedback show incorrect";
     return;
   }
 
+  const tokens = tokenize(raw);
   const group = ADVERB_GROUPS[item.count];
-  const hasAdverb = group.names.some(name => text.includes(name));
-  const hasVerb = text.includes(item.verb) || text.includes(item.verbBase);
 
-  wrap.classList.remove('correct-state', 'incorrect-state');
+  // Find subject pronoun
+  const subjectPos = tokens.indexOf(item.subject);
 
-  if (hasAdverb && hasVerb) {
+  // Find the best-matching adverb phrase (try each accepted phrasing)
+  let adverbMatch = null;
+  for (const phrase of group.phrases) {
+    const found = findPhrase(tokens, phrase);
+    if (found) { adverbMatch = found; break; }
+  }
+
+  // Find verb: correct -s form vs. the common bare-form mistake
+  const correctVerbPos = tokens.indexOf(item.verbBase);
+  const wrongVerbPos = tokens.indexOf(item.verbWrong);
+  const hasCorrectVerb = correctVerbPos !== -1;
+  const hasWrongVerb = !hasCorrectVerb && wrongVerbPos !== -1;
+
+  const problems = [];
+
+  if (!adverbMatch) {
+    problems.push(`the adverb "${group.label}"`);
+  }
+
+  if (!hasCorrectVerb && !hasWrongVerb) {
+    problems.push(`the verb "${item.verbBase}"`);
+  } else if (hasWrongVerb) {
+    problems.push(`the -s ending — use "${item.verbBase}", not "${item.verbWrong}" (3rd person singular)`);
+  }
+
+  if (subjectPos === -1) {
+    problems.push(`the subject "${item.subject}"`);
+  }
+
+  // Word order check: only run if subject, adverb, and verb were all found
+  const verbPos = hasCorrectVerb ? correctVerbPos : wrongVerbPos;
+  if (problems.length === 0 || (adverbMatch && verbPos !== -1 && subjectPos !== -1 && problems.every(p => p.includes('-s ending')))) {
+    if (adverbMatch && verbPos !== -1 && subjectPos !== -1) {
+      const orderCorrect = subjectPos < adverbMatch.start && adverbMatch.end <= verbPos;
+      if (!orderCorrect) {
+        problems.push(`word order — the adverb goes before the verb (subject → adverb → verb)`);
+      }
+    }
+  }
+
+  if (problems.length === 0) {
     feedback.textContent = "✓ Correct! Well matched.";
     feedback.className = "feedback show correct";
     wrap.classList.add('correct-state');
     if (!scored.has(idx)) { scored.add(idx); updateScore(); }
   } else {
-    let missing = [];
-    if (!hasAdverb) missing.push(`the adverb (${group.label})`);
-    if (!hasVerb) missing.push(`the verb "${item.verb}"`);
-    feedback.textContent = `✗ Check for: ${missing.join(" and ")}.`;
+    feedback.textContent = `✗ Check: ${problems.join("; ")}.`;
     feedback.className = "feedback show incorrect";
     wrap.classList.add('incorrect-state');
     scored.delete(idx);
@@ -333,7 +396,8 @@ document.getElementById('revealAllBtn').addEventListener('click', () => {
     const input = document.querySelector(`input[data-idx="${idx}"]`);
     const group = ADVERB_GROUPS[item.count];
     const subjectCap = item.subject.charAt(0).toUpperCase() + item.subject.slice(1);
-    const sample = `${subjectCap} ${group.names[0]} ${item.verbBase} ${item.object}`.trim().replace(/\s+/g, ' ') + '.';
+    const adverbText = group.phrases[0].join(" ");
+    const sample = `${subjectCap} ${adverbText} ${item.verbBase} ${item.object}`.trim().replace(/\s+/g, ' ') + '.';
     input.value = sample;
     input.placeholder = sample;
   });
