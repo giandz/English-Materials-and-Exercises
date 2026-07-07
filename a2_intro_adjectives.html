@@ -1,0 +1,404 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<title>Opposites — Describing Places to Live</title>
+<link rel="stylesheet" href="general.css">
+<style>
+  :root{
+    --color-background-primary: #ffffff;
+    --color-background-secondary: #f7f7f8;
+    --color-text-primary: #1a1a1a;
+    --color-text-secondary: #5b5b60;
+    --color-text-tertiary: #8b8b90;
+    --color-border-secondary: #e3e3e6;
+    --color-border-tertiary: #ebebee;
+    --border-radius-lg: 12px;
+    --font-mono: "SF Mono", "JetBrains Mono", monospace;
+
+    --text-primary: var(--color-text-primary);
+    --text-secondary: var(--color-text-secondary);
+    --text-muted: var(--color-text-tertiary);
+    --text-accent: #185fa5;
+    --surface-1: var(--color-background-secondary);
+    --surface-2: var(--color-background-primary);
+    --border: var(--color-border-tertiary);
+    --radius: var(--border-radius-lg);
+    --good: #2f7d3a;
+    --good-bg: #e8f4ea;
+    --bad: #b0392f;
+  }
+
+  @media (prefers-color-scheme: dark){
+    :root{
+      --color-background-primary: #1e1e20;
+      --color-background-secondary: #26262a;
+      --color-text-primary: #f0f0f2;
+      --color-text-secondary: #b4b4ba;
+      --color-text-tertiary: #85858c;
+      --color-border-secondary: #3a3a3f;
+      --color-border-tertiary: #34343a;
+      --good-bg: #1d2f1f;
+    }
+  }
+
+  *{ box-sizing:border-box; -webkit-tap-highlight-color:transparent; }
+  html,body{
+    margin:0;
+    background:var(--color-background-primary);
+    color:var(--color-text-primary);
+    font-family:-apple-system, BlinkMacSystemFont, "Segoe UI", Helvetica, Arial, sans-serif;
+    font-size:15px;
+    line-height:1.6;
+    touch-action:manipulation;
+    -webkit-user-select:none;
+    user-select:none;
+    overscroll-behavior:none;
+  }
+  .page{ max-width:680px; margin:0 auto; padding:28px 20px 60px; }
+
+  h1{ font-size:1.3rem; font-weight:600; letter-spacing:-0.01em; margin:0 0 4px; }
+  .subtitle{ font-size:13px; color:var(--text-secondary); margin:0 0 4px; }
+
+  .rule-box{background:var(--surface-1);border-radius:var(--radius);padding:10px 14px;margin:14px 0 1.25rem;font-size:13px;color:var(--text-secondary);line-height:1.7;}
+  .rule-box strong{color:var(--text-primary);font-weight:500;}
+
+  .status-bar{
+    display:flex;
+    justify-content:space-between;
+    align-items:center;
+    margin-bottom:1rem;
+    flex-wrap:wrap;
+    gap:10px;
+  }
+  .score-pill{
+    font-family:var(--font-mono);
+    font-size:13px;
+    background:var(--surface-1);
+    border:.5px solid var(--border);
+    padding:5px 13px;
+    border-radius:20px;
+  }
+  .score-pill strong{ color:var(--good); }
+  .reset-btn{
+    font-family:inherit;
+    font-size:12.5px;
+    font-weight:600;
+    background:var(--text-accent);
+    color:#fff;
+    border:none;
+    padding:6px 14px;
+    border-radius:20px;
+    cursor:pointer;
+  }
+
+  .board{
+    display:grid;
+    grid-template-columns:1fr 1fr;
+    gap:22px;
+  }
+  @media (max-width:520px){
+    .board{ grid-template-columns:1fr; gap:14px; }
+  }
+
+  .col-label{
+    font-size:11px;
+    font-weight:600;
+    letter-spacing:.06em;
+    text-transform:uppercase;
+    color:var(--text-muted);
+    margin-bottom:8px;
+  }
+
+  .bin{
+    display:flex;
+    align-items:center;
+    gap:10px;
+    border:1.5px dashed var(--border);
+    border-radius:10px;
+    padding:11px 13px;
+    margin-bottom:8px;
+    background:var(--surface-2);
+    min-height:22px;
+    transition:border-color .15s, background .15s;
+  }
+  .bin.drag-over{
+    border-color:var(--text-accent);
+    background:var(--surface-1);
+  }
+  .bin.complete{
+    border-style:solid;
+    border-color:var(--good);
+    background:var(--good-bg);
+  }
+  .bin-word{
+    font-weight:600;
+    font-size:14px;
+    color:var(--text-primary);
+    white-space:nowrap;
+  }
+  .bin-slot{
+    flex:1;
+    min-height:30px;
+    display:flex;
+    align-items:center;
+  }
+
+  .pool{
+    display:flex;
+    flex-direction:column;
+    gap:8px;
+  }
+
+  .card{
+    background:var(--surface-2);
+    border:.5px solid var(--border);
+    border-radius:8px;
+    padding:9px 13px;
+    font-size:14px;
+    font-weight:500;
+    cursor:grab;
+    box-shadow:0 1px 2px rgba(0,0,0,0.04);
+    touch-action:none;
+    text-align:center;
+  }
+  .card.placed{
+    cursor:default;
+    width:100%;
+    background:transparent;
+    border:none;
+    box-shadow:none;
+    color:var(--good);
+    text-align:left;
+  }
+  .card.dragging{
+    position:fixed;
+    z-index:999;
+    pointer-events:none;
+    box-shadow:0 8px 20px rgba(0,0,0,0.16);
+    transform:scale(1.03);
+    cursor:grabbing;
+  }
+  .card.wrong{
+    animation:shake .4s ease;
+    border-color:var(--bad);
+  }
+  @keyframes shake{
+    0%,100%{transform:translateX(0);}
+    20%{transform:translateX(-5px);}
+    40%{transform:translateX(5px);}
+    60%{transform:translateX(-3px);}
+    80%{transform:translateX(3px);}
+  }
+
+  .win-banner{
+    display:none;
+    text-align:center;
+    margin-top:22px;
+    padding:16px;
+    background:var(--surface-1);
+    border:.5px solid var(--good);
+    color:var(--good);
+    border-radius:var(--radius);
+    font-weight:600;
+    font-size:14px;
+  }
+  .win-banner.show{ display:block; }
+
+  footer{ text-align:center; font-size:12px; color:var(--text-muted); margin-top:2rem; }
+</style>
+</head>
+<body>
+<div class="page">
+
+  <h1>Opposites: describing places to live</h1>
+  <p class="subtitle">Drag each adjective on the right to its opposite on the left.</p>
+
+  <div class="rule-box">
+    <strong>Example:</strong> <em>quiet</em> ↔ <em>noisy</em>
+  </div>
+
+  <div class="status-bar">
+    <div class="score-pill">Matched: <strong id="matchedCount">0</strong> / 10</div>
+    <button class="reset-btn" id="resetBtn">Reset</button>
+  </div>
+
+  <div class="board">
+    <div>
+      <div class="col-label">Adjective</div>
+      <div id="bins"></div>
+    </div>
+    <div>
+      <div class="col-label">Drag from here</div>
+      <div class="pool" id="pool"></div>
+    </div>
+  </div>
+
+  <div class="win-banner" id="winBanner">🎉 All matched! You know your opposites.</div>
+
+  <footer>Vocabulary Practice — Describing Places</footer>
+</div>
+
+<script>
+const pairs = [
+  { word: "quiet", opposite: "noisy" },
+  { word: "safe", opposite: "dangerous" },
+  { word: "affordable", opposite: "expensive" },
+  { word: "spacious", opposite: "cramped" },
+  { word: "clean", opposite: "dirty" },
+  { word: "modern", opposite: "old-fashioned" },
+  { word: "central", opposite: "remote" },
+  { word: "lively", opposite: "dull" },
+  { word: "peaceful", opposite: "chaotic" },
+  { word: "friendly", opposite: "unwelcoming" }
+];
+
+const binsEl = document.getElementById('bins');
+const poolEl = document.getElementById('pool');
+const matchedCountEl = document.getElementById('matchedCount');
+const winBanner = document.getElementById('winBanner');
+
+// Build bins (left column, fixed order)
+pairs.forEach(p => {
+  const bin = document.createElement('div');
+  bin.className = 'bin';
+  bin.dataset.word = p.word;
+  bin.innerHTML = `
+    <div class="bin-word">${p.word}</div>
+    <div class="bin-slot"></div>
+  `;
+  binsEl.appendChild(bin);
+});
+
+// Build shuffled opposite cards (right column pool)
+let opposites = pairs.map(p => ({ id: 'c' + Math.random().toString(36).slice(2,9), word: p.word, text: p.opposite }));
+for (let i = opposites.length - 1; i > 0; i--) {
+  const j = Math.floor(Math.random() * (i + 1));
+  [opposites[i], opposites[j]] = [opposites[j], opposites[i]];
+}
+
+opposites.forEach(o => {
+  const card = document.createElement('div');
+  card.className = 'card';
+  card.id = o.id;
+  card.dataset.word = o.word;
+  card.textContent = o.text;
+  poolEl.appendChild(card);
+});
+
+let matched = 0;
+const total = pairs.length;
+let dragState = null;
+
+function getBinAtPoint(x, y) {
+  const els = document.elementsFromPoint(x, y);
+  for (const el of els) {
+    const bin = el.closest('.bin');
+    if (bin) return bin;
+  }
+  return null;
+}
+
+function clearDragOver() {
+  document.querySelectorAll('.bin.drag-over').forEach(b => b.classList.remove('drag-over'));
+}
+
+function onPointerDown(e, card) {
+  if (card.classList.contains('placed')) return;
+  e.preventDefault();
+  const rect = card.getBoundingClientRect();
+  dragState = {
+    card,
+    offsetX: e.clientX - rect.left,
+    offsetY: e.clientY - rect.top,
+    originParent: card.parentElement,
+    originNext: card.nextSibling,
+    startWidth: rect.width
+  };
+  card.setPointerCapture(e.pointerId);
+  card.classList.add('dragging');
+  card.style.width = rect.width + 'px';
+  document.body.appendChild(card);
+  movePointer(e);
+}
+
+function movePointer(e) {
+  if (!dragState) return;
+  const { card, offsetX, offsetY } = dragState;
+  card.style.left = (e.clientX - offsetX) + 'px';
+  card.style.top = (e.clientY - offsetY) + 'px';
+
+  clearDragOver();
+  const bin = getBinAtPoint(e.clientX, e.clientY);
+  if (bin && !bin.classList.contains('complete')) {
+    bin.classList.add('drag-over');
+  }
+}
+
+function onPointerMove(e) {
+  if (!dragState) return;
+  e.preventDefault();
+  movePointer(e);
+}
+
+function onPointerUp(e) {
+  if (!dragState) return;
+  const { card, originParent, originNext } = dragState;
+  clearDragOver();
+  card.classList.remove('dragging');
+  card.style.position = '';
+  card.style.left = '';
+  card.style.top = '';
+  card.style.width = '';
+
+  const bin = getBinAtPoint(e.clientX, e.clientY);
+
+  if (bin && !bin.classList.contains('complete')) {
+    if (bin.dataset.word === card.dataset.word) {
+      const slot = bin.querySelector('.bin-slot');
+      card.classList.add('placed');
+      slot.appendChild(card);
+      bin.classList.add('complete');
+      matched++;
+      matchedCountEl.textContent = matched;
+      if (matched === total) winBanner.classList.add('show');
+    } else {
+      returnToOrigin(card, originParent, originNext);
+      card.classList.add('wrong');
+      setTimeout(() => card.classList.remove('wrong'), 400);
+    }
+  } else {
+    returnToOrigin(card, originParent, originNext);
+  }
+
+  dragState = null;
+}
+
+function returnToOrigin(card, parent, nextSibling) {
+  card.style.width = '';
+  if (nextSibling && nextSibling.parentElement === parent) {
+    parent.insertBefore(card, nextSibling);
+  } else {
+    parent.appendChild(card);
+  }
+}
+
+document.querySelectorAll('.card').forEach(card => {
+  card.addEventListener('pointerdown', (e) => onPointerDown(e, card));
+});
+document.addEventListener('pointermove', onPointerMove, { passive: false });
+document.addEventListener('pointerup', onPointerUp);
+document.addEventListener('pointercancel', onPointerUp);
+
+document.getElementById('resetBtn').addEventListener('click', () => location.reload());
+</script>
+<div id="theme-toggle-wrap">
+  <button id="theme-toggle" aria-label="Toggle light/dark mode" title="Toggle light/dark mode">
+    <span id="theme-icon">☀️</span>
+  </button>
+</div>
+<script src="theme-toggle-behavior.js"></script>
+
+</body>
+</html>
