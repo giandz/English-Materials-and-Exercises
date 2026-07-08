@@ -1,0 +1,430 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Used to / Would — Practice</title>
+<link rel="stylesheet" href="general.css">
+<style>
+  :root{
+    --color-background-primary: #ffffff;
+    --color-background-secondary: #f7f7f8;
+    --color-text-primary: #1a1a1a;
+    --color-text-secondary: #5b5b60;
+    --color-text-tertiary: #8b8b90;
+    --color-border-secondary: #e3e3e6;
+    --color-border-tertiary: #ebebee;
+    --border-radius-lg: 12px;
+    --font-mono: "SF Mono", "JetBrains Mono", monospace;
+
+    --text-primary: var(--color-text-primary);
+    --text-secondary: var(--color-text-secondary);
+    --text-muted: var(--color-text-tertiary);
+    --text-accent: #185fa5;
+    --surface-1: var(--color-background-secondary);
+    --surface-2: var(--color-background-primary);
+    --border: var(--color-border-tertiary);
+    --radius: var(--border-radius-lg);
+    --good: #2f7d3a;
+    --good-bg: #e8f4ea;
+    --bad: #b0392f;
+    --bad-bg: #fbebe9;
+  }
+
+  @media (prefers-color-scheme: dark){
+    :root{
+      --color-background-primary: #1e1e20;
+      --color-background-secondary: #26262a;
+      --color-text-primary: #f0f0f2;
+      --color-text-secondary: #b4b4ba;
+      --color-text-tertiary: #85858c;
+      --color-border-secondary: #3a3a3f;
+      --color-border-tertiary: #34343a;
+      --good-bg: #1d2f1f;
+      --bad-bg: #331e1c;
+    }
+  }
+
+  *{ box-sizing:border-box; }
+  html,body{
+    margin:0;
+    background:var(--color-background-primary);
+    color:var(--color-text-primary);
+    font-family:-apple-system, BlinkMacSystemFont, "Segoe UI", Helvetica, Arial, sans-serif;
+    font-size:15px;
+    line-height:1.6;
+  }
+  .page{ max-width:680px; margin:0 auto; padding:28px 20px 60px; }
+
+  h1{ font-size:1.3rem; font-weight:600; letter-spacing:-0.01em; margin:0 0 4px; }
+  .subtitle{ font-size:13px; color:var(--text-secondary); margin:0 0 4px; }
+  .cefr-tag{
+    display:inline-block;
+    font-size:11px;
+    font-weight:700;
+    letter-spacing:.04em;
+    background:#e6f1fb;
+    color:#185fa5;
+    padding:3px 10px;
+    border-radius:20px;
+    margin-bottom:10px;
+  }
+
+  .sec-div{font-size:11px;font-weight:500;letter-spacing:.06em;text-transform:uppercase;color:var(--text-muted);display:flex;align-items:center;gap:8px;margin:1.75rem 0 1rem;}
+  .sec-div::before,.sec-div::after{content:'';flex:1;height:.5px;background:var(--border);}
+
+  .rule-box{background:var(--surface-1);border-radius:var(--radius);padding:10px 14px;margin-bottom:1.25rem;font-size:13px;color:var(--text-secondary);line-height:1.7;}
+  .rule-box strong{color:var(--text-primary);font-weight:500;}
+
+  .score-bar{
+    display:flex;
+    justify-content:space-between;
+    align-items:center;
+    margin-bottom:1rem;
+    font-size:13px;
+    color:var(--text-secondary);
+    flex-wrap:wrap;
+    gap:8px;
+  }
+  .score-bar strong{ color:var(--good); }
+  .reveal-btn{
+    font-family:inherit;
+    font-size:12px;
+    font-weight:500;
+    padding:5px 12px;
+    border-radius:20px;
+    border:.5px solid var(--border);
+    background:var(--surface-1);
+    color:var(--text-secondary);
+    cursor:pointer;
+  }
+
+  /* PART 1: multiple choice */
+  .mc-item{
+    border:.5px solid var(--color-border-tertiary);
+    border-radius:var(--border-radius-lg);
+    padding:13px 15px;
+    margin-bottom:10px;
+    background:var(--surface-2);
+  }
+  .mc-sentence{
+    font-size:14px;
+    margin-bottom:10px;
+  }
+  .mc-sentence .blank{
+    display:inline-block;
+    min-width:90px;
+    border-bottom:1.5px dashed var(--border);
+    text-align:center;
+  }
+  .mc-options{
+    display:flex;
+    gap:8px;
+    flex-wrap:wrap;
+  }
+  .mc-btn{
+    font-family:inherit;
+    font-size:13px;
+    font-weight:500;
+    padding:7px 14px;
+    border-radius:8px;
+    border:1px solid var(--border);
+    background:var(--surface-1);
+    color:var(--text-primary);
+    cursor:pointer;
+  }
+  .mc-btn.correct{ border-color:var(--good); background:var(--good-bg); color:var(--good); }
+  .mc-btn.incorrect{ border-color:var(--bad); background:var(--bad-bg); color:var(--bad); }
+  .mc-feedback{ font-size:12px; margin-top:7px; display:none; }
+  .mc-feedback.show{ display:block; }
+  .mc-feedback.correct{ color:var(--good); }
+  .mc-feedback.incorrect{ color:var(--bad); }
+
+  /* PART 2: gap fill */
+  .gf-item{
+    border:.5px solid var(--color-border-tertiary);
+    border-radius:var(--border-radius-lg);
+    padding:13px 15px;
+    margin-bottom:10px;
+    background:var(--surface-2);
+  }
+  .gf-sentence{
+    font-size:14px;
+    margin-bottom:9px;
+    line-height:1.9;
+  }
+  .gap-wrap{
+    display:inline-flex;
+    flex-direction:column;
+    align-items:center;
+    gap:2px;
+    vertical-align:bottom;
+    margin:0 3px;
+  }
+  .gap-clue{
+    font-size:10.5px;
+    font-style:italic;
+    color:var(--text-muted);
+    line-height:1;
+  }
+  .gf-sentence input{
+    font-family:inherit;
+    font-size:13.5px;
+    width:120px;
+    padding:5px 8px;
+    border-radius:6px;
+    border:1px solid var(--color-border-secondary);
+    background:var(--color-background-primary);
+    color:var(--text-primary);
+    text-align:center;
+  }
+  .gf-sentence input:focus{ outline:none; border-color:var(--text-accent); }
+  .gf-check{
+    font-family:inherit;
+    font-size:12.5px;
+    font-weight:600;
+    padding:6px 13px;
+    border-radius:8px;
+    border:none;
+    background:var(--text-accent);
+    color:#fff;
+    cursor:pointer;
+  }
+  .gf-feedback{
+    font-size:12px;
+    margin-top:7px;
+    padding:5px 9px;
+    border-radius:6px;
+    display:none;
+  }
+  .gf-feedback.show{ display:block; }
+  .gf-feedback.correct{ background:var(--good-bg); color:var(--good); }
+  .gf-feedback.incorrect{ background:var(--bad-bg); color:var(--bad); }
+
+  footer{ text-align:center; font-size:12px; color:var(--text-muted); margin-top:2rem; }
+</style>
+</head>
+<body>
+<div class="page">
+
+  <span class="cefr-tag">A2 · Elementary</span>
+  <h1>Used to / Would — Practice</h1>
+  <p class="subtitle">Choose the correct form, then complete the sentences.</p>
+
+  <div class="rule-box">
+    <strong>Remember:</strong> <em>used to</em> works for actions and states. <em>Would</em> only works for repeated actions — never for states like <em>be, have, like, know</em>.
+  </div>
+
+  <div class="sec-div">Part 1 — Choose the correct option</div>
+
+  <div class="score-bar">
+    <span>Score: <strong id="mcScore">0</strong> / <span id="mcTotal">0</span></span>
+  </div>
+
+  <div id="mcItems"></div>
+
+  <div class="sec-div">Part 2 — Fill in the gaps</div>
+
+  <div class="score-bar">
+    <span>Score: <strong id="gfScore">0</strong> / <span id="gfTotal">0</span></span>
+    <button class="reveal-btn" id="revealGf">Show all answers</button>
+  </div>
+
+  <div id="gfItems"></div>
+
+  <footer>Grammar Practice — Used to / Would (A2)</footer>
+</div>
+
+<script>
+/* ---------- PART 1: MULTIPLE CHOICE (3 options) ---------- */
+const mcData = [
+  { before: "She", after: "live in Paris when she was young.", options: ["use to", "used to", "uses to"], answer: "used to" },
+  { before: "", after: "you use to play an instrument?", options: ["Did", "Does", "Do"], answer: "Did" },
+  { before: "I", after: "to be afraid of the dark, now I need the lights on at night.", options: ["didn't use", "doesn't use", "don't use"], answer: "didn't use" },
+  { before: "Every summer, we", after: "visit our grandparents.", options: ["would", "would to", "would used"], answer: "would" },
+  { before: "He", after: "have long hair in college, but cut it short when he graduated.", options: ["used to", "use to", "used"], answer: "used to" },
+  { before: "My mom", after: "give me money for school, she prepared lunch instead.", options: ["never used to", "wouldn't", "never use to"], answer: "never used to" },
+  { before: "", after: "she use to play sports?", options: ["Did", "Was", "Would"], answer: "Did" },
+  { before: "They", after: "eat meat, but now they're vegetarian.", options: ["used to", "would to", "didn't use to"], answer: "used to" }
+];
+
+const mcItemsEl = document.getElementById('mcItems');
+const mcScoreEl = document.getElementById('mcScore');
+const mcTotalEl = document.getElementById('mcTotal');
+mcTotalEl.textContent = mcData.length;
+let mcScored = new Set();
+
+mcData.forEach((item, idx) => {
+  const wrap = document.createElement('div');
+  wrap.className = 'mc-item';
+  wrap.innerHTML = `
+    <div class="mc-sentence">${item.before} <span class="blank" data-blank="${idx}">___</span> ${item.after}</div>
+    <div class="mc-options" data-idx="${idx}">
+      ${item.options.map(opt => `<button class="mc-btn" data-value="${opt}">${opt}</button>`).join('')}
+    </div>
+    <div class="mc-feedback" data-idx="${idx}"></div>
+  `;
+  mcItemsEl.appendChild(wrap);
+});
+
+mcItemsEl.addEventListener('click', (e) => {
+  if (!e.target.classList.contains('mc-btn')) return;
+  const optionsWrap = e.target.closest('.mc-options');
+  const idx = Number(optionsWrap.dataset.idx);
+  const item = mcData[idx];
+  const chosen = e.target.dataset.value;
+  const blank = document.querySelector(`.blank[data-blank="${idx}"]`);
+  const feedback = document.querySelector(`.mc-feedback[data-idx="${idx}"]`);
+
+  optionsWrap.querySelectorAll('.mc-btn').forEach(btn => btn.classList.remove('correct', 'incorrect'));
+
+  if (chosen === item.answer) {
+    e.target.classList.add('correct');
+    blank.textContent = item.answer;
+    feedback.textContent = "✓ Correct!";
+    feedback.className = "mc-feedback show correct";
+    if (!mcScored.has(idx)) { mcScored.add(idx); mcScoreEl.textContent = mcScored.size; }
+  } else {
+    e.target.classList.add('incorrect');
+    feedback.textContent = `✗ Not quite. Correct answer: "${item.answer}".`;
+    feedback.className = "mc-feedback show incorrect";
+    mcScored.delete(idx);
+    mcScoreEl.textContent = mcScored.size;
+  }
+});
+
+/* ---------- PART 2: PROGRESSIVE GAP FILL ---------- */
+const gfData = [
+  {
+    template: "When I was young, I used {0} outside all day.",
+    hints: ["play"], accepted: [["to play"]]
+  },
+  {
+    template: "My grandmother {0} cookies every Sunday.",
+    hints: ["bake"], accepted: [["would bake", "used to bake"]]
+  },
+  {
+    template: "{0} you use to eat breakfast before school?",
+    hints: ["do"], accepted: [["did"]]
+  },
+  {
+    template: "I {0} drink coffee, but now I love it.",
+    hints: ["not / use to"], accepted: [["didn't use to", "did not use to", "never used to"]]
+  },
+  {
+    template: "We {0} shy as kids, but not anymore.",
+    hints: ["be"], accepted: [["used to be"]]
+  },
+  {
+    template: "I {0} a dog when I was a kid.",
+    hints: ["have"], accepted: [["used to have"]]
+  },
+  {
+    template: "Every winter, my family {0}, and we {1} in a small cabin.",
+    hints: ["go skiing", "stay"], accepted: [["would go skiing", "used to go skiing"], ["used to stay", "would stay"]]
+  },
+  {
+    template: "A: {0} your brother {1} to play any instruments? <br> B: He {2} every day after school.",
+    hints: ["do", "use", "practice"], accepted: [["did"], ["use"], ["would practice", "used to practice"]]
+  }
+];
+
+const gfItemsEl = document.getElementById('gfItems');
+const gfScoreEl = document.getElementById('gfScore');
+const gfTotalEl = document.getElementById('gfTotal');
+
+let gfTotalGaps = 0;
+gfData.forEach(item => gfTotalGaps += item.accepted.length);
+gfTotalEl.textContent = gfTotalGaps;
+
+let gfScored = new Set();
+
+gfData.forEach((item, idx) => {
+  let sentenceHtml = item.template;
+  item.hints.forEach((hint, gapIdx) => {
+	  
+    const inputHtml = `<span class="gap-wrap"><input type="text" data-idx="${idx}" data-gap="${gapIdx}"><span class="gap-clue">(${hint})</span></span>`;
+    sentenceHtml = sentenceHtml.replace(`{${gapIdx}}`, inputHtml);
+
+  });
+
+  const wrap = document.createElement('div');
+  wrap.className = 'gf-item';
+  wrap.innerHTML = `
+    <div class="gf-sentence">${sentenceHtml}</div>
+    <button class="gf-check" data-idx="${idx}">Check</button>
+    <div class="gf-feedback" data-idx="${idx}"></div>
+  `;
+  gfItemsEl.appendChild(wrap);
+});
+
+function normalize(str) {
+  return str.trim().toLowerCase().replace(/\s+/g, ' ').replace(/[.,!?]/g, '');
+}
+
+function checkGf(idx) {
+  const item = gfData[idx];
+  const feedback = document.querySelector(`.gf-feedback[data-idx="${idx}"]`);
+  const inputs = document.querySelectorAll(`input[data-idx="${idx}"]`);
+  const problems = [];
+
+  inputs.forEach(input => {
+    const gapIdx = Number(input.dataset.gap);
+    const userVal = normalize(input.value);
+    const accepted = item.accepted[gapIdx].map(normalize);
+    const key = `${idx}-${gapIdx}`;
+
+    input.style.borderColor = '';
+    if (accepted.includes(userVal)) {
+      input.style.borderColor = 'var(--good)';
+      gfScored.add(key);
+    } else {
+      input.style.borderColor = 'var(--bad)';
+      gfScored.delete(key);
+      problems.push(`expected "${item.accepted[gapIdx][0]}"`);
+    }
+  });
+
+  if (problems.length === 0) {
+    feedback.textContent = "✓ Correct!";
+    feedback.className = "gf-feedback show correct";
+  } else {
+    feedback.textContent = `✗ ${problems.join('; ')}.`;
+    feedback.className = "gf-feedback show incorrect";
+  }
+
+  gfScoreEl.textContent = gfScored.size;
+}
+
+gfItemsEl.addEventListener('click', (e) => {
+  if (e.target.classList.contains('gf-check')) {
+    checkGf(Number(e.target.dataset.idx));
+  }
+});
+
+gfItemsEl.addEventListener('keydown', (e) => {
+  if (e.key === 'Enter' && e.target.tagName === 'INPUT') {
+    checkGf(Number(e.target.dataset.idx));
+  }
+});
+
+document.getElementById('revealGf').addEventListener('click', () => {
+  gfData.forEach((item, idx) => {
+    item.accepted.forEach((accList, gapIdx) => {
+      const input = document.querySelector(`input[data-idx="${idx}"][data-gap="${gapIdx}"]`);
+      input.value = accList[0];
+      input.style.borderColor = 'var(--good)';
+      gfScored.add(`${idx}-${gapIdx}`);
+    });
+  });
+  gfScoreEl.textContent = gfScored.size;
+});
+</script>
+<div id="theme-toggle-wrap">
+  <button id="theme-toggle" aria-label="Toggle light/dark mode" title="Toggle light/dark mode">
+    <span id="theme-icon">☀️</span>
+  </button>
+</div>
+<script src="theme-toggle-behavior.js"></script>
+</body>
+</html>
