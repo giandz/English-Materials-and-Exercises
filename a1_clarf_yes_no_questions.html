@@ -1,0 +1,262 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Grammar Focus — Yes/No Questions</title>
+<style>
+  :root{
+    --color-background-primary: #ffffff;
+    --color-background-secondary: #f7f7f8;
+    --color-text-primary: #1a1a1a;
+    --color-text-secondary: #5b5b60;
+    --color-text-tertiary: #8b8b90;
+    --color-border-secondary: #e3e3e6;
+    --color-border-tertiary: #ebebee;
+    --border-radius-lg: 12px;
+    --font-mono: "SF Mono", "JetBrains Mono", monospace;
+
+    --text-primary: var(--color-text-primary);
+    --text-secondary: var(--color-text-secondary);
+    --text-muted: var(--color-text-tertiary);
+    --text-accent: #185fa5;
+    --surface-1: var(--color-background-secondary);
+    --surface-2: var(--color-background-primary);
+    --border: var(--color-border-tertiary);
+    --radius: var(--border-radius-lg);
+
+    --q-color: #8a6d00;
+    --q-bg: #fdf3d0;
+    --neg-color: #a32d2d;
+    --neg-bg: #fce8e8;
+    --pos-color: #27500a;
+    --pos-bg: #eaf3de;
+  }
+
+  @media (prefers-color-scheme: dark){
+    :root{
+      --color-background-primary: #1e1e20;
+      --color-background-secondary: #26262a;
+      --color-text-primary: #f0f0f2;
+      --color-text-secondary: #b4b4ba;
+      --color-text-tertiary: #85858c;
+      --color-border-secondary: #3a3a3f;
+      --color-border-tertiary: #34343a;
+
+      --q-color: #e8c94a;
+      --q-bg: #3a3115;
+      --neg-color: #e2827a;
+      --neg-bg: #3a201e;
+      --pos-color: #9ed17a;
+      --pos-bg: #1f3014;
+    }
+  }
+
+  *{ box-sizing:border-box; }
+  html,body{
+    margin:0;
+    background:var(--color-background-primary);
+    color:var(--color-text-primary);
+    font-family:-apple-system, BlinkMacSystemFont, "Segoe UI", Helvetica, Arial, sans-serif;
+    font-size:15px;
+    line-height:1.6;
+  }
+  .page{ max-width:720px; margin:0 auto; padding:28px 20px 56px; }
+
+  h1{ font-size:1.3rem; font-weight:600; letter-spacing:-0.01em; margin:0 0 4px; }
+  .subtitle{ font-size:13px; color:var(--text-secondary); margin:0; }
+  .cefr-tag{
+    display:inline-block;
+    font-size:11px;
+    font-weight:700;
+    letter-spacing:.04em;
+    background:#e6f1fb;
+    color:#185fa5;
+    padding:3px 10px;
+    border-radius:20px;
+    margin-bottom:10px;
+  }
+
+  .sec-div{font-size:11px;font-weight:500;letter-spacing:.06em;text-transform:uppercase;color:var(--text-muted);display:flex;align-items:center;gap:8px;margin:1.75rem 0 1rem;}
+  .sec-div::before,.sec-div::after{content:'';flex:1;height:.5px;background:var(--border);}
+
+  .rule-box{background:var(--surface-1);border-radius:var(--radius);padding:10px 14px;margin-bottom:1.25rem;font-size:13px;color:var(--text-secondary);line-height:1.7;}
+  .rule-box strong{color:var(--text-primary);font-weight:500;}
+
+  /* Color legend */
+  .legend{
+    display:flex;
+    flex-wrap:wrap;
+    gap:8px;
+    margin-bottom:1.25rem;
+  }
+  .legend-pill{
+    font-size:12px;
+    font-weight:600;
+    padding:4px 12px;
+    border-radius:20px;
+    display:inline-flex;
+    align-items:center;
+    gap:6px;
+  }
+  .legend-pill.q{ background:var(--q-bg); color:var(--q-color); }
+  .legend-pill.neg{ background:var(--neg-bg); color:var(--neg-color); }
+  .legend-pill.pos{ background:var(--pos-bg); color:var(--pos-color); }
+
+  .q{ color:var(--q-color); font-weight:700; background:var(--q-bg); padding:1px 5px; border-radius:4px; }
+  .neg{ color:var(--neg-color); font-weight:700; background:var(--neg-bg); padding:1px 5px; border-radius:4px; }
+  .pos{ color:var(--pos-color); font-weight:700; background:var(--pos-bg); padding:1px 5px; border-radius:4px; }
+
+  /* Form cards */
+  .tense-grid{
+    display:grid;
+    grid-template-columns:1fr 1fr;
+    gap:12px;
+    margin-bottom:1.5rem;
+  }
+  @media (max-width:560px){
+    .tense-grid{ grid-template-columns:1fr; }
+  }
+  .tense-card{
+    border:.5px solid var(--color-border-tertiary);
+    border-radius:var(--border-radius-lg);
+    overflow:hidden;
+  }
+  .tense-head{
+    padding:11px 14px;
+    font-weight:700;
+    font-size:14.5px;
+    color:#fff;
+    background:#185fa5;
+  }
+  .form-block{
+    padding:10px 14px;
+    border-bottom:.5px solid var(--color-border-tertiary);
+  }
+  .form-block:last-child{ border-bottom:none; }
+  .form-label{
+    font-size:10.5px;
+    font-weight:700;
+    letter-spacing:.05em;
+    text-transform:uppercase;
+    color:var(--text-muted);
+    margin-bottom:5px;
+  }
+  .form-line{
+    font-size:13.5px;
+    margin-bottom:5px;
+  }
+
+  .short-answers{
+    display:flex;
+    gap:10px;
+    flex-wrap:wrap;
+    margin-top:4px;
+  }
+  .short-answers span{
+    font-size:13px;
+  }
+
+  footer{ text-align:center; font-size:12px; color:var(--text-muted); margin-top:2rem; }
+</style>
+</head>
+<body>
+<div class="page">
+
+  <span class="cefr-tag">A1 · Beginner</span>
+  <h1>Yes/No Questions</h1>
+  <p class="subtitle">How to ask questions that answer "yes" or "no" — with <em>be</em> and with other verbs.</p>
+
+  <div class="legend">
+    <span class="legend-pill q">●&nbsp; question word/auxiliary</span>
+    <span class="legend-pill neg">●&nbsp; negative</span>
+    <span class="legend-pill pos">●&nbsp; positive</span>
+  </div>
+
+  <div class="rule-box">
+    A yes/no question puts a verb (<em>be</em>) or an auxiliary (<em>do/does</em>) <strong>before</strong> the subject. The answer is short: <span class="pos">Yes, ...</span> or <span class="neg">No, ...</span>.
+  </div>
+
+  <div class="sec-div">Questions with "be"</div>
+
+  <div class="rule-box">
+    With <em>be</em>, there's no extra auxiliary — <em>be</em> itself moves to the front of the sentence.
+  </div>
+
+  <div class="tense-card">
+    <div class="tense-head">be — am / is / are</div>
+    <div class="form-block">
+      <div class="form-label">Statement → Question</div>
+      <div class="form-line">I am ready. → <span class="q">Am</span> I ready?</div>
+      <div class="form-line">She <strong>is</strong> tired. → <span class="q">Is</span> she tired? <em>(3rd person singular)</em></div>
+      <div class="form-line">They are here. → <span class="q">Are</span> they here?</div>
+    </div>
+    <div class="form-block">
+      <div class="form-label">Short answers</div>
+      <div class="short-answers">
+        <span><span class="pos">Yes, I am.</span></span>
+        <span><span class="neg">No, I'm not.</span></span>
+      </div>
+      <div class="short-answers">
+        <span><span class="pos">Yes, she is.</span></span>
+        <span><span class="neg">No, she isn't.</span></span>
+      </div>
+      <div class="short-answers">
+        <span><span class="pos">Yes, they are.</span></span>
+        <span><span class="neg">No, they aren't.</span></span>
+      </div>
+    </div>
+  </div>
+
+  <div class="sec-div">Questions with other verbs</div>
+
+  <div class="rule-box">
+    With other verbs (<em>work, like, play...</em>), we add <span class="q">Do</span> or <span class="q">Does</span> before the subject. The main verb goes back to its base form — <strong>no -s</strong>, even for he/she/it.
+  </div>
+
+  <div class="tense-card">
+    <div class="tense-head">do / does + base verb</div>
+    <div class="form-block">
+      <div class="form-label">Statement → Question</div>
+      <div class="form-line">You work here. → <span class="q">Do</span> you work here?</div>
+      <div class="form-line">He <strong>works</strong> here. → <span class="q">Does</span> he <strong>work</strong> here? <em>(3rd person singular: works → work)</em></div>
+      <div class="form-line">They like coffee. → <span class="q">Do</span> they like coffee?</div>
+    </div>
+    <div class="form-block">
+      <div class="form-label">Short answers</div>
+      <div class="short-answers">
+        <span><span class="pos">Yes, I do.</span></span>
+        <span><span class="neg">No, I don't.</span></span>
+      </div>
+      <div class="short-answers">
+        <span><span class="pos">Yes, he does.</span></span>
+        <span><span class="neg">No, he doesn't.</span></span>
+      </div>
+      <div class="short-answers">
+        <span><span class="pos">Yes, they do.</span></span>
+        <span><span class="neg">No, they don't.</span></span>
+      </div>
+    </div>
+  </div>
+
+  <div class="sec-div">Side by side</div>
+
+  <div class="rule-box">
+    <span class="q">Is</span> she a teacher? <span class="pos">Yes, she is.</span><br>
+    <span class="q">Does</span> she teach English? <span class="pos">Yes, she does.</span><br>
+    <span class="q">Is</span> he busy today? <span class="neg">No, he isn't.</span><br>
+    <span class="q">Does</span> he work on Sundays? <span class="neg">No, he doesn't.</span>
+  </div>
+
+  <div class="sec-div">Common mistake</div>
+
+  <div class="rule-box">
+    ✗ <em>Does she works here?</em> — wrong, don't add -s twice.<br>
+    ✓ <span class="q">Does</span> she work here? — the -s only goes on <span class="q">does</span>, not on the main verb.
+  </div>
+
+  <footer>Grammar Focus — Yes/No Questions (A1)</footer>
+
+</div>
+</body>
+</html>

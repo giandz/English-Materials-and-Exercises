@@ -1,0 +1,301 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Question Generator — Yes/No Questions</title>
+<link rel="stylesheet" href="general.css">s
+<style>
+  :root{
+    --color-background-primary: #ffffff;
+    --color-background-secondary: #f7f7f8;
+    --color-text-primary: #1a1a1a;
+    --color-text-secondary: #5b5b60;
+    --color-text-tertiary: #8b8b90;
+    --color-border-secondary: #e3e3e6;
+    --color-border-tertiary: #ebebee;
+    --border-radius-lg: 12px;
+    --font-mono: "SF Mono", "JetBrains Mono", monospace;
+
+    --text-primary: var(--color-text-primary);
+    --text-secondary: var(--color-text-secondary);
+    --text-muted: var(--color-text-tertiary);
+    --text-accent: #185fa5;
+    --surface-1: var(--color-background-secondary);
+    --surface-2: var(--color-background-primary);
+    --border: var(--color-border-tertiary);
+    --radius: var(--border-radius-lg);
+  }
+
+  @media (prefers-color-scheme: dark){
+    :root{
+      --color-background-primary: #1e1e20;
+      --color-background-secondary: #26262a;
+      --color-text-primary: #f0f0f2;
+      --color-text-secondary: #b4b4ba;
+      --color-text-tertiary: #85858c;
+      --color-border-secondary: #3a3a3f;
+      --color-border-tertiary: #34343a;
+    }
+  }
+
+  *{ box-sizing:border-box; }
+  html,body{
+    margin:0;
+    background:var(--color-background-primary);
+    color:var(--color-text-primary);
+    font-family:-apple-system, BlinkMacSystemFont, "Segoe UI", Helvetica, Arial, sans-serif;
+    font-size:15px;
+    line-height:1.6;
+  }
+  .page{ max-width:600px; margin:0 auto; padding:28px 20px 60px; text-align:center; }
+
+  .cefr-tag{
+    display:inline-block;
+    font-size:11px;
+    font-weight:700;
+    letter-spacing:.04em;
+    background:#e6f1fb;
+    color:#185fa5;
+    padding:3px 10px;
+    border-radius:20px;
+    margin-bottom:10px;
+  }
+  h1{ font-size:1.3rem; font-weight:600; letter-spacing:-0.01em; margin:0 0 4px; }
+  .subtitle{ font-size:13px; color:var(--text-secondary); margin:0 0 1.5rem; }
+
+  .rule-box{
+    background:var(--surface-1);
+    border-radius:var(--radius);
+    padding:10px 14px;
+    margin-bottom:1.5rem;
+    font-size:13px;
+    color:var(--text-secondary);
+    line-height:1.7;
+    text-align:left;
+  }
+  .rule-box strong{ color:var(--text-primary); font-weight:500; }
+
+  /* Question card */
+  .q-card{
+    border:.5px solid var(--color-border-tertiary);
+    border-radius:var(--border-radius-lg);
+    background:var(--surface-2);
+    padding:36px 24px;
+    margin-bottom:1.5rem;
+    min-height:140px;
+    display:flex;
+    flex-direction:column;
+    align-items:center;
+    justify-content:center;
+    gap:12px;
+    transition:transform 0.15s ease;
+  }
+  .q-card.roll{
+    animation:pop 0.35s ease;
+  }
+  @keyframes pop{
+    0%{ transform:scale(0.96); opacity:0.5; }
+    60%{ transform:scale(1.02); }
+    100%{ transform:scale(1); opacity:1; }
+  }
+  .q-topic{
+    font-size:10.5px;
+    font-weight:700;
+    letter-spacing:.06em;
+    text-transform:uppercase;
+    color:var(--text-accent);
+    background:#e6f1fb;
+    padding:3px 11px;
+    border-radius:20px;
+  }
+  .q-text{
+    font-size:19px;
+    font-weight:600;
+    color:var(--text-primary);
+    line-height:1.4;
+  }
+  .q-placeholder{
+    font-size:14px;
+    color:var(--text-muted);
+  }
+
+  .dice-btn{
+    font-family:inherit;
+    font-size:34px;
+    background:var(--surface-1);
+    border:1.5px solid var(--border);
+    border-radius:50%;
+    width:78px;
+    height:78px;
+    cursor:pointer;
+    display:flex;
+    align-items:center;
+    justify-content:center;
+    margin:0 auto 1rem;
+    transition:transform 0.15s ease, background 0.15s ease;
+  }
+  .dice-btn:hover{ background:var(--color-background-secondary); }
+  .dice-btn:active{ transform:scale(0.92) rotate(-8deg); }
+
+  .roll-count{
+    font-family:var(--font-mono);
+    font-size:12px;
+    color:var(--text-muted);
+    margin-bottom:1.5rem;
+  }
+  .roll-count strong{ color:var(--text-primary); }
+
+  .topic-legend{
+    display:flex;
+    flex-wrap:wrap;
+    justify-content:center;
+    gap:6px;
+    margin-top:1rem;
+  }
+  .topic-pill{
+    font-size:11px;
+    font-weight:500;
+    padding:3px 10px;
+    border-radius:20px;
+    background:var(--surface-1);
+    border:.5px solid var(--border);
+    color:var(--text-secondary);
+  }
+
+  footer{ text-align:center; font-size:12px; color:var(--text-muted); margin-top:2rem; }
+</style>
+</head>
+<body>
+<div class="page">
+
+  <span class="cefr-tag">A1–A2 · Speaking Practice</span>
+  <h1>Yes/No Question Generator</h1>
+  <p class="subtitle">Click the dice to get a random question, then ask a partner!</p>
+
+  <div class="rule-box">
+    <strong>How to play:</strong> click 🎲, read the question out loud to your partner, and let them answer with a short answer. Then it's their turn to roll.
+  </div>
+
+  <div class="q-card" id="qCard">
+    <span class="q-placeholder" id="qPlaceholder">Click the dice to generate a question</span>
+  </div>
+
+  <button class="dice-btn" id="diceBtn" aria-label="Generate question">🎲</button>
+
+  <div class="roll-count">Questions asked: <strong id="rollCount">0</strong></div>
+
+  <div class="topic-legend">
+    <span class="topic-pill">🪪 identification</span>
+    <span class="topic-pill">🎂 age</span>
+    <span class="topic-pill">🌍 origin</span>
+    <span class="topic-pill">😎 status</span>
+    <span class="topic-pill">👤 description</span>
+    <span class="topic-pill">🚗 transportation</span>
+    <span class="topic-pill">🍽️ meals</span>
+  </div>
+
+  <footer>Speaking Practice — Yes/No Questions (A1–A2)</footer>
+</div>
+
+<script>
+  const SUBJECTS = [
+    { label: "you", be: "Are", do: "Do", possessive: "your" },
+    { label: "your brother", be: "Is", do: "Does", possessive: "your brother's" },
+    { label: "your sister", be: "Is", do: "Does", possessive: "your sister's" },
+    { label: "your mother", be: "Is", do: "Does", possessive: "your mother's" },
+    { label: "your best friend", be: "Is", do: "Does", possessive: "your best friend's" }
+  ];
+
+  const TOPICS = {
+    identification: {
+      icon: "🪪",
+      complements: ["Sandra", "Marco", "Elena", "David", "Sofia"],
+      build: (subject, complement) => {
+        if (subject.label === "you") {
+          return `Are you ${complement}?`;
+        }
+        return `Is ${subject.possessive} name ${complement}?`;
+      }
+    },
+    age: {
+      icon: "🎂",
+      complements: ["20 years old", "25 years old", "30 years old", "18 years old", "40 years old"],
+      build: (subject, complement) => `${subject.be} ${subject.label} ${complement}?`
+    },
+    origin: {
+      icon: "🌍",
+      complements: ["from China", "Colombian", "Japanese", "from Italy", "from Mexico", "from Canada"],
+      build: (subject, complement) => `${subject.be} ${subject.label} ${complement}?`
+    },
+    status: {
+      icon: "😎",
+      complements: ["happy today", "tired today", "busy this week", "hungry right now", "sad today"],
+      build: (subject, complement) => `${subject.be} ${subject.label} ${complement}?`
+    },
+    description: {
+      icon: "👤",
+      complements: ["tall", "funny", "organized", "thin", "short"],
+      build: (subject, complement) => `${subject.be} ${subject.label} ${complement}?`
+    },
+    transportation: {
+      icon: "🚗",
+      complements: ["drive to work", "take the bus to school", "walk to work", "ride a bike to school", "take the train to work"],
+      build: (subject, complement) => `${subject.do} ${subject.label} ${complement}?`
+    },
+    meals: {
+      icon: "🍽️",
+      complements: ["eat pizza for dinner", "drink coffee in the morning", "eat breakfast every day", "cook dinner at home", "eat vegetables every day"],
+      build: (subject, complement) => `${subject.do} ${subject.label} ${complement}?`
+    }
+  };
+
+  const topicKeys = Object.keys(TOPICS);
+  const qCard = document.getElementById('qCard');
+  const diceBtn = document.getElementById('diceBtn');
+  const rollCountEl = document.getElementById('rollCount');
+  let rollCount = 0;
+  let lastQuestion = "";
+
+  function randomItem(arr) {
+    return arr[Math.floor(Math.random() * arr.length)];
+  }
+
+  function generateQuestion() {
+    let question, topicKey;
+    // avoid immediate repeat
+    let attempts = 0;
+    do {
+      topicKey = randomItem(topicKeys);
+      const topic = TOPICS[topicKey];
+      const subject = randomItem(SUBJECTS);
+      const complement = randomItem(topic.complements);
+      question = topic.build(subject, complement);
+      attempts++;
+    } while (question === lastQuestion && attempts < 8);
+
+    lastQuestion = question;
+    const topic = TOPICS[topicKey];
+
+    qCard.innerHTML = `
+      <span class="q-topic">${topic.icon} ${topicKey}</span>
+      <span class="q-text">${question}</span>
+    `;
+    qCard.classList.remove('roll');
+    void qCard.offsetWidth; // restart animation
+    qCard.classList.add('roll');
+
+    rollCount++;
+    rollCountEl.textContent = rollCount;
+  }
+
+  diceBtn.addEventListener('click', generateQuestion);
+</script>
+<div id="theme-toggle-wrap">
+  <button id="theme-toggle" aria-label="Toggle light/dark mode" title="Toggle light/dark mode">
+    <span id="theme-icon">☀️</span>
+  </button>
+</div>
+<script src="theme-toggle-behavior.js"></script>
+</body>
+</html>

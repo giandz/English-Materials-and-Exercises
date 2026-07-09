@@ -1,0 +1,262 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Yes/No Questions — Conversation</title>
+<link rel="stylesheet" href="general.css">
+<style>
+  :root{
+    --color-background-primary: #ffffff;
+    --color-background-secondary: #f7f7f8;
+    --color-text-primary: #1a1a1a;
+    --color-text-secondary: #5b5b60;
+    --color-text-tertiary: #8b8b90;
+    --color-border-secondary: #e3e3e6;
+    --color-border-tertiary: #ebebee;
+    --border-radius-lg: 12px;
+    --font-mono: "SF Mono", "JetBrains Mono", monospace;
+
+    --text-primary: var(--color-text-primary);
+    --text-secondary: var(--color-text-secondary);
+    --text-muted: var(--color-text-tertiary);
+    --text-accent: #185fa5;
+    --surface-1: var(--color-background-secondary);
+    --surface-2: var(--color-background-primary);
+    --border: var(--color-border-tertiary);
+    --radius: var(--border-radius-lg);
+    --bg-accent: #e6f1fb;
+    --bg-pro: #eeedfe;
+    --text-pro: #26215c;
+    --border-pro: #afa9ec;
+
+    --q-color: #8a6d00;
+    --q-bg: #fdf3d0;
+    --neg-color: #a32d2d;
+    --neg-bg: #fce8e8;
+    --pos-color: #27500a;
+    --pos-bg: #eaf3de;
+  }
+
+  @media (prefers-color-scheme: dark){
+    :root{
+      --color-background-primary: #1e1e20;
+      --color-background-secondary: #26262a;
+      --color-text-primary: #f0f0f2;
+      --color-text-secondary: #b4b4ba;
+      --color-text-tertiary: #85858c;
+      --color-border-secondary: #3a3a3f;
+      --color-border-tertiary: #34343a;
+      --bg-accent: #1c2e40;
+      --bg-pro: #2a2650;
+      --text-pro: #d7d3ff;
+      --border-pro: #4c447f;
+
+      --q-color: #e8c94a;
+      --q-bg: #3a3115;
+      --neg-color: #e2827a;
+      --neg-bg: #3a201e;
+      --pos-color: #9ed17a;
+      --pos-bg: #1f3014;
+    }
+  }
+
+  *{ box-sizing:border-box; }
+  html,body{
+    margin:0;
+    background:var(--color-background-primary);
+    color:var(--color-text-primary);
+    font-family:-apple-system, BlinkMacSystemFont, "Segoe UI", Helvetica, Arial, sans-serif;
+    font-size:15px;
+    line-height:1.6;
+  }
+  .page{ max-width:640px; margin:0 auto; padding:28px 20px 56px; }
+
+  h1{ font-size:1.3rem; font-weight:600; letter-spacing:-0.01em; margin:0 0 4px; }
+  .subtitle{ font-size:13px; color:var(--text-secondary); margin:0 0 4px; }
+  .cefr-tag{
+    display:inline-block;
+    font-size:11px;
+    font-weight:700;
+    letter-spacing:.04em;
+    background:#e6f1fb;
+    color:#185fa5;
+    padding:3px 10px;
+    border-radius:20px;
+    margin-bottom:10px;
+  }
+
+  .sec-div{font-size:11px;font-weight:500;letter-spacing:.06em;text-transform:uppercase;color:var(--text-muted);display:flex;align-items:center;gap:8px;margin:1.75rem 0 1rem;}
+  .sec-div::before,.sec-div::after{content:'';flex:1;height:.5px;background:var(--border);}
+
+  .setting-chip{display:inline-flex;align-items:center;gap:5px;font-size:12px;padding:3px 10px;border-radius:20px;background:var(--surface-1);border:.5px solid var(--border);color:var(--text-secondary);margin-bottom:1rem;}
+
+  .legend{
+    display:flex;
+    flex-wrap:wrap;
+    gap:8px;
+    margin-bottom:1.25rem;
+  }
+  .legend-pill{
+    font-size:12px;
+    font-weight:600;
+    padding:4px 12px;
+    border-radius:20px;
+    display:inline-flex;
+    align-items:center;
+    gap:6px;
+  }
+  .legend-pill.q{ background:var(--q-bg); color:var(--q-color); }
+  .legend-pill.neg{ background:var(--neg-bg); color:var(--neg-color); }
+  .legend-pill.pos{ background:var(--pos-bg); color:var(--pos-color); }
+
+  .q{ color:var(--q-color); font-weight:700; background:var(--q-bg); padding:1px 5px; border-radius:4px; }
+  .neg{ color:var(--neg-color); font-weight:700; background:var(--neg-bg); padding:1px 5px; border-radius:4px; }
+  .pos{ color:var(--pos-color); font-weight:700; background:var(--pos-bg); padding:1px 5px; border-radius:4px; }
+
+  .bubble-wrap{display:flex;gap:10px;align-items:flex-end;margin-bottom:14px;}
+  .bubble-wrap.right{flex-direction:row-reverse;}
+  .avatar{width:34px;height:34px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:18px;flex-shrink:0;}
+  .av-a{background:var(--bg-accent);}
+  .av-b{background:var(--bg-pro);}
+  .bubble{max-width:80%;padding:9px 13px;border-radius:15px;font-size:14px;line-height:1.65;border:.5px solid var(--border);}
+  .bubble.left{background:var(--surface-2);border-bottom-left-radius:4px;color:var(--text-primary);}
+  .bubble.right{background:var(--bg-pro);border-bottom-right-radius:4px;color:var(--text-pro);border-color:var(--border-pro);}
+  .bname{font-size:11px;font-weight:500;color:var(--text-muted);margin-bottom:3px;padding:0 2px;}
+  .bname.right{text-align:right;}
+
+  .rule-box{background:var(--surface-1);border-radius:var(--radius);padding:10px 14px;margin-bottom:1.25rem;font-size:13px;color:var(--text-secondary);line-height:1.7;}
+  .rule-box strong{color:var(--text-primary);font-weight:500;}
+
+  footer{ text-align:center; font-size:12px; color:var(--text-muted); margin-top:2rem; }
+</style>
+</head>
+<body>
+<div class="page">
+
+  <span class="cefr-tag">A1 · Beginner</span>
+  <h1>Are you free this weekend?</h1>
+  <p class="subtitle">A conversation using yes/no questions with "be" and other verbs.</p>
+  <div class="setting-chip">💬 two classmates, Friday afternoon</div>
+
+  <div class="legend">
+    <span class="legend-pill q">●&nbsp; question</span>
+    <span class="legend-pill neg">●&nbsp; negative</span>
+    <span class="legend-pill pos">●&nbsp; positive</span>
+  </div>
+
+  <div class="sec-div">Conversation</div>
+
+  <div class="bubble-wrap left">
+    <div class="avatar av-a">👨‍🦲</div>
+    <div>
+      <div class="bname">Jae</div>
+      <div class="bubble left"><span class="q">Are</span> you free this weekend?</div>
+    </div>
+  </div>
+
+  <div class="bubble-wrap right">
+    <div class="avatar av-b">👩‍🦱</div>
+    <div>
+      <div class="bname right">Lily</div>
+      <div class="bubble right"><span class="neg">No, I'm not.</span> I have a family lunch on Saturday.</div>
+    </div>
+  </div>
+
+  <div class="bubble-wrap left">
+    <div class="avatar av-a">👨‍🦲</div>
+    <div>
+      <div class="bname">Jae</div>
+      <div class="bubble left">Ah, okay. <span class="q">Does</span> your family live nearby?</div>
+    </div>
+  </div>
+
+  <div class="bubble-wrap right">
+    <div class="avatar av-b">👩‍🦱</div>
+    <div>
+      <div class="bname right">Lily</div>
+      <div class="bubble right"><span class="neg">No, they don't.</span> They live two hours away, so I need to drive there.</div>
+    </div>
+  </div>
+
+  <div class="bubble-wrap left">
+    <div class="avatar av-a">👨‍🦲</div>
+    <div>
+      <div class="bname">Jae</div>
+      <div class="bubble left">That's far! <span class="q">Are</span> you tired of the drive?</div>
+    </div>
+  </div>
+
+  <div class="bubble-wrap right">
+    <div class="avatar av-b">👩‍🦱</div>
+    <div>
+      <div class="bname right">Lily</div>
+      <div class="bubble right"><span class="pos">Yes, I am.</span> But it's worth it — I love seeing my grandparents.</div>
+    </div>
+  </div>
+
+  <div class="bubble-wrap left">
+    <div class="avatar av-a">👨‍🦲</div>
+    <div>
+      <div class="bname">Jae</div>
+      <div class="bubble left">That's nice. <span class="q">Does</span> your grandmother cook?</div>
+    </div>
+  </div>
+
+  <div class="bubble-wrap right">
+    <div class="avatar av-b">👩‍🦱</div>
+    <div>
+      <div class="bname right">Lily</div>
+      <div class="bubble right"><span class="pos">Yes, she does.</span> She makes the best soup in the world.</div>
+    </div>
+  </div>
+
+  <div class="bubble-wrap left">
+    <div class="avatar av-a">👨‍🦲</div>
+    <div>
+      <div class="bname">Jae</div>
+      <div class="bubble left">Sounds great. Well, what about Sunday? <span class="q">Are</span> you busy then too?</div>
+    </div>
+  </div>
+
+  <div class="bubble-wrap right">
+    <div class="avatar av-b">👩‍🦱</div>
+    <div>
+      <div class="bname right">Lily</div>
+      <div class="bubble right"><span class="neg">No, I'm not.</span> Sunday is free. <span class="q">Do</span> you want to study together?</div>
+    </div>
+  </div>
+
+  <div class="bubble-wrap left">
+    <div class="avatar av-a">👨‍🦲</div>
+    <div>
+      <div class="bname">Jae</div>
+      <div class="bubble left"><span class="pos">Yes, I do!</span> Let's meet at the library at 3pm.</div>
+    </div>
+  </div>
+
+  <div class="bubble-wrap right">
+    <div class="avatar av-b">👩‍🦱</div>
+    <div>
+      <div class="bname right">Lily</div>
+      <div class="bubble right">Perfect. See you then!</div>
+    </div>
+  </div>
+
+  <div class="sec-div">Quick reference</div>
+
+  <div class="rule-box">
+    A short answer alone can sound abrupt. Adding <strong>extra information</strong> after a <span class="neg">negative</span> answer makes it more natural and polite: "<em><span class="neg">No, I'm not.</span> I have a family lunch on Saturday.</em>"
+  </div>
+
+  <footer>Conversation Practice — Yes/No Questions (A1)</footer>
+
+</div>
+<div id="theme-toggle-wrap">
+  <button id="theme-toggle" aria-label="Toggle light/dark mode" title="Toggle light/dark mode">
+    <span id="theme-icon">☀️</span>
+  </button>
+</div>
+<script src="theme-toggle-behavior.js"></script>
+</body>
+</html>
