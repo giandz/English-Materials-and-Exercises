@@ -1,0 +1,272 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Explain Yourself! — Past Perfect Generator</title>
+<link rel="stylesheet" href="general.css">
+<style>
+  :root{
+    --color-background-primary: #ffffff;
+    --color-background-secondary: #f7f7f8;
+    --color-text-primary: #1a1a1a;
+    --color-text-secondary: #5b5b60;
+    --color-text-tertiary: #8b8b90;
+    --color-border-secondary: #e3e3e6;
+    --color-border-tertiary: #ebebee;
+    --border-radius-lg: 12px;
+    --font-mono: "SF Mono", "JetBrains Mono", monospace;
+
+    --text-primary: var(--color-text-primary);
+    --text-secondary: var(--color-text-secondary);
+    --text-muted: var(--color-text-tertiary);
+    --text-accent: #185fa5;
+    --surface-1: var(--color-background-secondary);
+    --surface-2: var(--color-background-primary);
+    --border: var(--color-border-tertiary);
+    --radius: var(--border-radius-lg);
+  }
+
+  @media (prefers-color-scheme: dark){
+    :root{
+      --color-background-primary: #1e1e20;
+      --color-background-secondary: #26262a;
+      --color-text-primary: #f0f0f2;
+      --color-text-secondary: #b4b4ba;
+      --color-text-tertiary: #85858c;
+      --color-border-secondary: #3a3a3f;
+      --color-border-tertiary: #34343a;
+    }
+  }
+
+  *{ box-sizing:border-box; }
+  html,body{
+    margin:0;
+    background:var(--color-background-primary);
+    color:var(--color-text-primary);
+    font-family:-apple-system, BlinkMacSystemFont, "Segoe UI", Helvetica, Arial, sans-serif;
+    font-size:15px;
+    line-height:1.6;
+  }
+  .page{ max-width:600px; margin:0 auto; padding:28px 20px 60px; text-align:center; }
+
+  .cefr-tag{
+    display:inline-block;
+    font-size:11px;
+    font-weight:700;
+    letter-spacing:.04em;
+    background:#f3effe;
+    color:#7c3aed;
+    padding:3px 10px;
+    border-radius:20px;
+    margin-bottom:10px;
+  }
+  h1{ font-size:1.3rem; font-weight:600; letter-spacing:-0.01em; margin:0 0 4px; }
+  .subtitle{ font-size:13px; color:var(--text-secondary); margin:0 0 1.5rem; }
+
+  .rule-box{
+    background:var(--surface-1);
+    border-radius:var(--radius);
+    padding:10px 14px;
+    margin-bottom:1.5rem;
+    font-size:13px;
+    color:var(--text-secondary);
+    line-height:1.7;
+    text-align:left;
+  }
+  .rule-box strong{ color:var(--text-primary); font-weight:500; }
+  .rule-box em{ color:var(--text-primary); font-style:normal; font-weight:600; }
+
+  /* Story card */
+  .q-card{
+    border:.5px solid var(--color-border-tertiary);
+    border-radius:var(--border-radius-lg);
+    background:var(--surface-2);
+    padding:30px 24px;
+    margin-bottom:1.5rem;
+    min-height:160px;
+    display:flex;
+    flex-direction:column;
+    align-items:center;
+    justify-content:center;
+    gap:10px;
+  }
+  .q-card.roll{
+    animation:pop 0.35s ease;
+  }
+  @keyframes pop{
+    0%{ transform:scale(0.96); opacity:0.5; }
+    60%{ transform:scale(1.02); }
+    100%{ transform:scale(1); opacity:1; }
+  }
+  .q-emoji{
+    font-size:34px;
+    margin-bottom:4px;
+  }
+  .q-lines{
+    text-align:left;
+    max-width:420px;
+  }
+  .q-line{
+    font-size:15.5px;
+    line-height:1.6;
+    margin-bottom:4px;
+  }
+  .q-line .hl{
+    font-weight:700;
+    color:#7c3aed;
+  }
+  .q-prompt{
+    font-size:14.5px;
+    font-weight:600;
+    color:var(--text-primary);
+    margin-top:8px;
+  }
+  .q-placeholder{
+    font-size:14px;
+    color:var(--text-muted);
+  }
+
+  .dice-btn{
+    font-family:inherit;
+    font-size:34px;
+    background:var(--surface-1);
+    border:1.5px solid var(--border);
+    border-radius:50%;
+    width:78px;
+    height:78px;
+    cursor:pointer;
+    display:flex;
+    align-items:center;
+    justify-content:center;
+    margin:0 auto 1rem;
+    transition:transform 0.15s ease, background 0.15s ease;
+  }
+  .dice-btn:hover{ background:var(--color-background-secondary); }
+  .dice-btn:active{ transform:scale(0.92) rotate(-8deg); }
+
+  .roll-count{
+    font-family:var(--font-mono);
+    font-size:12px;
+    color:var(--text-muted);
+    margin-bottom:1rem;
+  }
+  .roll-count strong{ color:var(--text-primary); }
+
+  footer{ text-align:center; font-size:12px; color:var(--text-muted); margin-top:2rem; }
+</style>
+</head>
+<body>
+<div class="page">
+
+  <span class="cefr-tag">B1 · Speaking Practice</span>
+  <h1>Explain Yourself!</h1>
+  <p class="subtitle">Click the dice for a strange situation, then explain it using the past perfect.</p>
+
+  <div class="rule-box">
+    <strong>How to play:</strong> click 🎲, read the situation to your partner, and answer with a past perfect explanation. Example: <em>"I had just come from a costume party!"</em>
+  </div>
+
+  <div class="q-card" id="qCard">
+    <span class="q-placeholder">Click the dice to generate a situation</span>
+  </div>
+
+  <button class="dice-btn" id="diceBtn" aria-label="Generate situation">🎲</button>
+
+  <div class="roll-count">Situations generated: <strong id="rollCount">0</strong></div>
+
+  <footer>Speaking Practice — Past Perfect (B1)</footer>
+</div>
+
+<script>
+  const TIMES = ["yesterday", "last week", "this morning", "last night", "on Sunday"];
+
+  const PLACES = ["at the train station", "at the post office", "outside the supermarket", "at the gym", "in the park", "at the bus stop", "outside your building", "at the library"];
+
+  // Each verb group: 5 unusual-but-lighthearted complements
+  const VERB_GROUPS = [
+    {
+      verb: "carrying",
+      icon: "🎒",
+      items: ["a big sack", "a life-size cardboard cutout", "three pizza boxes", "a ladder", "a huge bunch of balloons"]
+    },
+    {
+      verb: "wearing",
+      icon: "🤡",
+      items: ["a clown costume", "a full suit of armor", "pajamas and a tie", "sunglasses at night", "a superhero cape"]
+    },
+    {
+      verb: "holding",
+      icon: "🐍",
+      items: ["a snake", "a microphone", "a giant teddy bear", "an umbrella on a sunny day", "a chicken"]
+    },
+    {
+      verb: "eating",
+      icon: "🍕",
+      items: ["an entire pizza by yourself", "ice cream in the rain", "a sandwich with chopsticks", "cereal from a mixing bowl", "popcorn at 8am"]
+    },
+    {
+      verb: "talking to",
+      icon: "🗣️",
+      items: ["a parrot", "a statue", "yourself in a mirror", "a group of tourists in French", "a dog wearing sunglasses"]
+    }
+  ];
+
+  const PROMPTS = [
+    "Can you explain?",
+    "What was going on?",
+    "How come?",
+    "What's the story there?",
+    "I'm curious — what happened?"
+  ];
+
+  const qCard = document.getElementById('qCard');
+  const diceBtn = document.getElementById('diceBtn');
+  const rollCountEl = document.getElementById('rollCount');
+  let rollCount = 0;
+  let lastKey = "";
+
+  function randomItem(arr) {
+    return arr[Math.floor(Math.random() * arr.length)];
+  }
+
+  function generateSituation() {
+    let time, place, group, item, prompt, key;
+    let attempts = 0;
+    do {
+      time = randomItem(TIMES);
+      place = randomItem(PLACES);
+      group = randomItem(VERB_GROUPS);
+      item = randomItem(group.items);
+      prompt = randomItem(PROMPTS);
+      key = `${time}-${place}-${group.verb}-${item}`;
+      attempts++;
+    } while (key === lastKey && attempts < 8);
+    lastKey = key;
+
+    qCard.innerHTML = `
+      <span class="q-emoji">${group.icon}</span>
+      <div class="q-lines">
+        <div class="q-line">I saw you <span class="hl">${time}</span> <span class="hl">${place}</span>.</div>
+        <div class="q-line">You were <span class="hl">${group.verb}</span> <span class="hl">${item}</span>.</div>
+        <div class="q-prompt">${prompt} 🤔</div>
+      </div>
+    `;
+    qCard.classList.remove('roll');
+    void qCard.offsetWidth;
+    qCard.classList.add('roll');
+
+    rollCount++;
+    rollCountEl.textContent = rollCount;
+  }
+
+  diceBtn.addEventListener('click', generateSituation);
+</script>
+<div id="theme-toggle-wrap">
+  <button id="theme-toggle" aria-label="Toggle light/dark mode" title="Toggle light/dark mode">
+    <span id="theme-icon">☀️</span>
+  </button>
+</div>
+<script src="theme-toggle-behavior.js"></script>
+</body>
+</html>
