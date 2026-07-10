@@ -1,0 +1,255 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>A Busy Day — Conversation</title>
+<style>
+  :root{
+    --color-background-primary: #ffffff;
+    --color-background-secondary: #f7f7f8;
+    --color-text-primary: #1a1a1a;
+    --color-text-secondary: #5b5b60;
+    --color-text-tertiary: #8b8b90;
+    --color-border-secondary: #e3e3e6;
+    --color-border-tertiary: #ebebee;
+    --border-radius-lg: 12px;
+    --font-mono: "SF Mono", "JetBrains Mono", monospace;
+
+    --text-primary: var(--color-text-primary);
+    --text-secondary: var(--color-text-secondary);
+    --text-muted: var(--color-text-tertiary);
+    --text-accent: #185fa5;
+    --surface-1: var(--color-background-secondary);
+    --surface-2: var(--color-background-primary);
+    --border: var(--color-border-tertiary);
+    --radius: var(--border-radius-lg);
+    --bg-accent: #e6f1fb;
+    --bg-pro: #eeedfe;
+    --text-pro: #26215c;
+    --border-pro: #afa9ec;
+
+    --ps-color: #185fa5;
+    --ps-bg: #e6f1fb;
+    --pc-color: #27500a;
+    --pc-bg: #eaf3de;
+    --pp-color: #7c3aed;
+    --pp-bg: #f3effe;
+  }
+
+  @media (prefers-color-scheme: dark){
+    :root{
+      --color-background-primary: #1e1e20;
+      --color-background-secondary: #26262a;
+      --color-text-primary: #f0f0f2;
+      --color-text-secondary: #b4b4ba;
+      --color-text-tertiary: #85858c;
+      --color-border-secondary: #3a3a3f;
+      --color-border-tertiary: #34343a;
+      --bg-accent: #1c2e40;
+      --bg-pro: #2a2650;
+      --text-pro: #d7d3ff;
+      --border-pro: #4c447f;
+
+      --ps-color: #7fb2e0;
+      --ps-bg: #16283a;
+      --pc-color: #9ed17a;
+      --pc-bg: #1f3014;
+      --pp-color: #b79aff;
+      --pp-bg: #2a2145;
+    }
+  }
+
+  *{ box-sizing:border-box; }
+  html,body{
+    margin:0;
+    background:var(--color-background-primary);
+    color:var(--color-text-primary);
+    font-family:-apple-system, BlinkMacSystemFont, "Segoe UI", Helvetica, Arial, sans-serif;
+    font-size:15px;
+    line-height:1.6;
+  }
+  .page{ max-width:640px; margin:0 auto; padding:28px 20px 56px; }
+
+  h1{ font-size:1.3rem; font-weight:600; letter-spacing:-0.01em; margin:0 0 4px; }
+  .subtitle{ font-size:13px; color:var(--text-secondary); margin:0 0 4px; }
+  .cefr-tag{
+    display:inline-block;
+    font-size:11px;
+    font-weight:700;
+    letter-spacing:.04em;
+    background:#e6f1fb;
+    color:#185fa5;
+    padding:3px 10px;
+    border-radius:20px;
+    margin-bottom:10px;
+  }
+
+  .sec-div{font-size:11px;font-weight:500;letter-spacing:.06em;text-transform:uppercase;color:var(--text-muted);display:flex;align-items:center;gap:8px;margin:1.75rem 0 1rem;}
+  .sec-div::before,.sec-div::after{content:'';flex:1;height:.5px;background:var(--border);}
+
+  .setting-chip{display:inline-flex;align-items:center;gap:5px;font-size:12px;padding:3px 10px;border-radius:20px;background:var(--surface-1);border:.5px solid var(--border);color:var(--text-secondary);margin-bottom:1rem;}
+
+  .legend{
+    display:flex;
+    flex-wrap:wrap;
+    gap:8px;
+    margin-bottom:1.25rem;
+  }
+  .legend-pill{
+    font-size:12px;
+    font-weight:600;
+    padding:4px 12px;
+    border-radius:20px;
+    display:inline-flex;
+    align-items:center;
+    gap:6px;
+  }
+  .legend-pill.ps{ background:var(--ps-bg); color:var(--ps-color); }
+  .legend-pill.pc{ background:var(--pc-bg); color:var(--pc-color); }
+  .legend-pill.pp{ background:var(--pp-bg); color:var(--pp-color); }
+
+  .ps{ color:var(--ps-color); font-weight:700; background:var(--ps-bg); padding:1px 5px; border-radius:4px; }
+  .pc{ color:var(--pc-color); font-weight:700; background:var(--pc-bg); padding:1px 5px; border-radius:4px; }
+  .pp{ color:var(--pp-color); font-weight:700; background:var(--pp-bg); padding:1px 5px; border-radius:4px; }
+
+  .bubble-wrap{display:flex;gap:10px;align-items:flex-end;margin-bottom:14px;}
+  .bubble-wrap.right{flex-direction:row-reverse;}
+  .avatar{width:34px;height:34px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:18px;flex-shrink:0;}
+  .av-a{background:var(--bg-accent);}
+  .av-b{background:var(--bg-pro);}
+  .bubble{max-width:80%;padding:9px 13px;border-radius:15px;font-size:14px;line-height:1.65;border:.5px solid var(--border);}
+  .bubble.left{background:var(--surface-2);border-bottom-left-radius:4px;color:var(--text-primary);}
+  .bubble.right{background:var(--bg-pro);border-bottom-right-radius:4px;color:var(--text-pro);border-color:var(--border-pro);}
+  .bname{font-size:11px;font-weight:500;color:var(--text-muted);margin-bottom:3px;padding:0 2px;}
+  .bname.right{text-align:right;}
+
+  .rule-box{background:var(--surface-1);border-radius:var(--radius);padding:10px 14px;margin-bottom:1.25rem;font-size:13px;color:var(--text-secondary);line-height:1.7;}
+  .rule-box strong{color:var(--text-primary);font-weight:500;}
+
+  footer{ text-align:center; font-size:12px; color:var(--text-muted); margin-top:2rem; }
+</style>
+</head>
+<body>
+<div class="page">
+
+  <span class="cefr-tag">B1 · Intermediate</span>
+  <h1>I saw you yesterday!</h1>
+  <p class="subtitle">Ana ran into Ben at the station and asks about his busy day.</p>
+  <div class="setting-chip">🚉 train station, evening</div>
+
+  <div class="legend">
+    <span class="legend-pill ps">●&nbsp; past simple</span>
+    <span class="legend-pill pc">●&nbsp; past continuous</span>
+    <span class="legend-pill pp">●&nbsp; past perfect</span>
+  </div>
+
+  <div class="sec-div">Conversation</div>
+
+  <div class="bubble-wrap left">
+    <div class="avatar av-a">👩‍🦰</div>
+    <div>
+      <div class="bname">Ana</div>
+      <div class="bubble left">Hey Ben! I <span class="ps">saw</span> you yesterday at the coffee shop, but you <span class="pc">were talking</span> on the phone, so I didn't want to interrupt.</div>
+    </div>
+  </div>
+
+  <div class="bubble-wrap right">
+    <div class="avatar av-b">🧔‍♂️</div>
+    <div>
+      <div class="bname right">Ben</div>
+      <div class="bubble right">Oh, that was you! Sorry, yesterday <span class="ps">was</span> such a busy day. By the time I <span class="pp">got</span> to the coffee shop, I <span class="pp">had already missed</span> two meetings.</div>
+    </div>
+  </div>
+
+  <div class="bubble-wrap left">
+    <div class="avatar av-a">👩‍🦰</div>
+    <div>
+      <div class="bname">Ana</div>
+      <div class="bubble left">Oh no! What <span class="ps">happened</span>?</div>
+    </div>
+  </div>
+
+  <div class="bubble-wrap right">
+    <div class="avatar av-b">🧔‍♂️</div>
+    <div>
+      <div class="bname right">Ben</div>
+      <div class="bubble right">Well, while I <span class="pc">was driving</span> to the office, my car <span class="ps">broke down</span>. I <span class="pp">hadn't checked</span> the oil in months, so I wasn't surprised.</div>
+    </div>
+  </div>
+
+  <div class="bubble-wrap left">
+    <div class="avatar av-a">👩‍🦰</div>
+    <div>
+      <div class="bname">Ana</div>
+      <div class="bubble left">That's rough. So <span class="ps">did</span> you <span class="ps">walk</span> the rest of the way?</div>
+    </div>
+  </div>
+
+  <div class="bubble-wrap right">
+    <div class="avatar av-b">🧔‍♂️</div>
+    <div>
+      <div class="bname right">Ben</div>
+      <div class="bubble right">Yes. And while I <span class="pc">was walking</span>, it <span class="ps">started</span> raining. Of course, I <span class="pp">had left</span> my umbrella at home.</div>
+    </div>
+  </div>
+
+  <div class="bubble-wrap left">
+    <div class="avatar av-a">👩‍🦰</div>
+    <div>
+      <div class="bname">Ana</div>
+      <div class="bubble left">😂 Poor you! So when you finally <span class="ps">arrived</span> at the coffee shop, what <span class="pc">were</span> you <span class="pc">doing</span> on the phone?</div>
+    </div>
+  </div>
+
+  <div class="bubble-wrap right">
+    <div class="avatar av-b">🧔‍♂️</div>
+    <div>
+      <div class="bname right">Ben</div>
+      <div class="bubble right">I <span class="pc">was explaining</span> everything to my boss. She <span class="ps">wasn't</span> happy, because I <span class="pp">had already rescheduled</span> that meeting once before.</div>
+    </div>
+  </div>
+
+  <div class="bubble-wrap left">
+    <div class="avatar av-a">👩‍🦰</div>
+    <div>
+      <div class="bname">Ana</div>
+      <div class="bubble left">Wow. Did things <span class="ps">get</span> better after that?</div>
+    </div>
+  </div>
+
+  <div class="bubble-wrap right">
+    <div class="avatar av-b">🧔‍♂️</div>
+    <div>
+      <div class="bname right">Ben</div>
+      <div class="bubble right">A little. By the time I <span class="ps">got</span> home, I <span class="pp">had already forgotten</span> about the whole thing. I just <span class="ps">made</span> dinner and <span class="ps">went</span> to bed early.</div>
+    </div>
+  </div>
+
+  <div class="bubble-wrap left">
+    <div class="avatar av-a">👩‍🦰</div>
+    <div>
+      <div class="bname">Ana</div>
+      <div class="bubble left">Well, I hope today is calmer! Was your car still broken down when you <span class="ps">left</span> for work this morning?</div>
+    </div>
+  </div>
+
+  <div class="bubble-wrap right">
+    <div class="avatar av-b">🧔‍♂️</div>
+    <div>
+      <div class="bname right">Ben</div>
+      <div class="bubble right">No, luckily. The mechanic <span class="pp">had already fixed</span> it by the time I <span class="ps">woke up</span>. Today <span class="ps">was</span> much better.</div>
+    </div>
+  </div>
+
+  <div class="sec-div">Quick reference</div>
+
+  <div class="rule-box">
+    <span class="ps">Past simple</span> tells the main events in order. <span class="pc">Past continuous</span> sets the scene or shows an action in progress when something else happened. <span class="pp">Past perfect</span> shows what happened <strong>before</strong> another past event — usually with words like <em>already, by the time...</em>
+  </div>
+
+  <footer>Conversation Practice — Past Simple, Past Continuous & Past Perfect (B1)</footer>
+
+</div>
+</body>
+</html>
