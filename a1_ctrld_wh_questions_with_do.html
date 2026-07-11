@@ -317,52 +317,52 @@ mcItemsEl.addEventListener('click', (e) => {
 /* ---------- PART 2: PROGRESSIVE GAP FILL ---------- */
 const gfData = [
   {
-    category: "location",
+    category: ["location"],
     template: "{0} do you go to school?",
     hints: ["where"], accepted: [["where"]]
   },
   {
-    category: "option",
+    category: ["option"],
     template: "What sports {0} you play?",
     hints: ["do"], accepted: [["do"]]
   },
   {
-    category: "spectime",
+    category: ["spectime"],
     template: "{0} does he go to work?",
     hints: ["what time"], accepted: [["what time"]]
   },
   {
-    category: "frequency",
+    category: ["frequency"],
     template: "How often {0} you clean your room?",
     hints: ["do"], accepted: [["do"]]
   },
   {
-    category: "company",
+    category: ["company"],
     template: "{0} do you do your homework with?",
     hints: ["who"], accepted: [["who"]]
   },
   {
-    category: "gentime",
+    category: ["gentime"],
     template: "{0} does your family usually have dinner?",
     hints: ["when"], accepted: [["when"]]
   },
   {
-    category: "option",
+    category: ["option"],
     template: "What movies {0} she like?",
     hints: ["does"], accepted: [["does"]]
   },
   {
-    category: "frequency",
+    category: ["frequency"],
     template: "{0} often {1} you visit your grandparents?",
     hints: ["how", "do"], accepted: [["how"], ["do"]]
   },
   {
-    category: "company",
+    category: ["company", "spectime"],
     template: "{0} do you practice with, and {1} time do you finish?",
     hints: ["who", "what"], accepted: [["who"], ["what"]]
   },
   {
-    category: "location",
+    category: ["location", "frequency"],
     template: "{0} does your brother study, and {1} does he usually go there?",
     hints: ["where", "how often"], accepted: [["where"], ["how often"]]
   }
@@ -387,8 +387,10 @@ gfData.forEach((item, idx) => {
 
   const wrap = document.createElement('div');
   wrap.className = 'gf-item';
-  wrap.innerHTML = `
-    <span class="cat-tag cat-${item.category}">${CAT_LABELS[item.category]}</span>
+    for(ii = 0 ; ii < item.category.length; ii++) {
+		wrap.innerHTML += `<span class="cat-tag cat-${item.category[ii]}">${CAT_LABELS[item.category[ii]]}</span>`;
+	};
+	wrap.innerHTML += `
     <div class="gf-sentence">${sentenceHtml}</div>
     <button class="gf-check" data-idx="${idx}">Check</button>
     <div class="gf-feedback" data-idx="${idx}"></div>
