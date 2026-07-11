@@ -98,7 +98,31 @@
     cursor:pointer;
   }
 
-  /* PART 1: multiple choice */
+  .cat-tag{
+    display:inline-block;
+    font-size:10px;
+    font-weight:700;
+    letter-spacing:.03em;
+    text-transform:uppercase;
+    padding:2px 9px;
+    border-radius:20px;
+    margin-bottom:8px;
+  }
+  .cat-option{ background:#e6f1fb; color:#185fa5; }
+  .cat-company{ background:#faeeda; color:#b45309; }
+  .cat-location{ background:#f3effe; color:#7c3aed; }
+  .cat-frequency{ background:#eaf3de; color:#27500a; }
+  .cat-gentime{ background:#e8faf6; color:#0f766e; }
+  .cat-spectime{ background:#fce8e8; color:#a32d2d; }
+
+  @media (prefers-color-scheme: dark){
+    .cat-option{ background:#16283a; color:#7fb2e0; }
+    .cat-company{ background:#3a2c14; color:#e0a95c; }
+    .cat-location{ background:#2a2145; color:#b79aff; }
+    .cat-frequency{ background:#1f3014; color:#9ed17a; }
+    .cat-gentime{ background:#0f2b28; color:#5cd6c4; }
+    .cat-spectime{ background:#3a201e; color:#e2827a; }
+  }
   .mc-item{
     border:.5px solid var(--color-border-tertiary);
     border-radius:var(--border-radius-lg);
@@ -223,16 +247,16 @@
 <script>
 /* ---------- PART 1: MULTIPLE CHOICE (3 options) ---------- */
 const mcData = [
-  { before: "", after: "sports do you play?", options: ["What", "Who", "When"], answer: "What" },
-  { before: "Who do you live", after: "?", options: ["from", "with", "at"], answer: "with" },
-  { before: "", after: "does she work?", options: ["Where", "What time", "Who"], answer: "Where" },
-  { before: "How often", after: "you exercise?", options: ["do", "does", "are"], answer: "do" },
-  { before: "", after: "does the movie start?", options: ["How often", "What time", "Where"], answer: "What time" },
-  { before: "", after: "do you usually eat dinner?", options: ["When", "What time", "How often"], answer: "When" },
-  { before: "What music", after: "he listen to?", options: ["do", "does", "is"], answer: "does" },
-  { before: "", after: "does your sister study with?", options: ["Who", "What", "Where"], answer: "Who" },
-  { before: "How often", after: "your parents travel?", options: ["do", "does", "did"], answer: "do" },
-  { before: "", after: "do you go to the gym?", options: ["Who", "How often", "What"], answer: "How often" }
+  { category: "option", before: "", after: "sports do you play?", options: ["What", "Who", "When"], answer: "What" },
+  { category: "company", before: "Who do you live", after: "?", options: ["from", "with", "at"], answer: "with" },
+  { category: "location", before: "", after: "does she work?", options: ["Where", "What time", "Who"], answer: "Where" },
+  { category: "frequency", before: "How often", after: "you exercise?", options: ["do", "does", "are"], answer: "do" },
+  { category: "spectime", before: "", after: "does the movie start?", options: ["How often", "What time", "Where"], answer: "What time" },
+  { category: "gentime", before: "", after: "do you usually eat dinner?", options: ["When", "What time", "How often"], answer: "When" },
+  { category: "option", before: "What music", after: "he listen to?", options: ["do", "does", "is"], answer: "does" },
+  { category: "company", before: "", after: "does your sister study with?", options: ["Who", "What", "Where"], answer: "Who" },
+  { category: "frequency", before: "How often", after: "your parents travel?", options: ["do", "does", "did"], answer: "do" },
+  { category: "frequency", before: "", after: "do you go to the gym?", options: ["Who", "How often", "What"], answer: "How often" }
 ];
 
 const mcItemsEl = document.getElementById('mcItems');
@@ -241,10 +265,20 @@ const mcTotalEl = document.getElementById('mcTotal');
 mcTotalEl.textContent = mcData.length;
 let mcScored = new Set();
 
+const CAT_LABELS = {
+  option: "🎛️ option",
+  company: "🧑‍🤝‍🧑 company",
+  location: "📍 location",
+  frequency: "🗓️ frequency",
+  gentime: "🌄 general time",
+  spectime: "⌚ specific time"
+};
+
 mcData.forEach((item, idx) => {
   const wrap = document.createElement('div');
   wrap.className = 'mc-item';
   wrap.innerHTML = `
+    <span class="cat-tag cat-${item.category}">${CAT_LABELS[item.category]}</span>
     <div class="mc-prompt">${item.before} <span class="blank" data-blank="${idx}">___</span> ${item.after}</div>
     <div class="mc-options" data-idx="${idx}">
       ${item.options.map(opt => `<button class="mc-btn" data-value="${opt}">${opt}</button>`).join('')}
@@ -283,42 +317,52 @@ mcItemsEl.addEventListener('click', (e) => {
 /* ---------- PART 2: PROGRESSIVE GAP FILL ---------- */
 const gfData = [
   {
+    category: "location",
     template: "{0} do you go to school?",
     hints: ["where"], accepted: [["where"]]
   },
   {
+    category: "option",
     template: "What sports {0} you play?",
     hints: ["do"], accepted: [["do"]]
   },
   {
+    category: "spectime",
     template: "{0} does he go to work?",
     hints: ["what time"], accepted: [["what time"]]
   },
   {
+    category: "frequency",
     template: "How often {0} you clean your room?",
     hints: ["do"], accepted: [["do"]]
   },
   {
+    category: "company",
     template: "{0} do you do your homework with?",
     hints: ["who"], accepted: [["who"]]
   },
   {
+    category: "gentime",
     template: "{0} does your family usually have dinner?",
     hints: ["when"], accepted: [["when"]]
   },
   {
+    category: "option",
     template: "What movies {0} she like?",
     hints: ["does"], accepted: [["does"]]
   },
   {
+    category: "frequency",
     template: "{0} often {1} you visit your grandparents?",
     hints: ["how", "do"], accepted: [["how"], ["do"]]
   },
   {
+    category: "company",
     template: "{0} do you practice with, and {1} time do you finish?",
     hints: ["who", "what"], accepted: [["who"], ["what"]]
   },
   {
+    category: "location",
     template: "{0} does your brother study, and {1} does he usually go there?",
     hints: ["where", "how often"], accepted: [["where"], ["how often"]]
   }
@@ -344,6 +388,7 @@ gfData.forEach((item, idx) => {
   const wrap = document.createElement('div');
   wrap.className = 'gf-item';
   wrap.innerHTML = `
+    <span class="cat-tag cat-${item.category}">${CAT_LABELS[item.category]}</span>
     <div class="gf-sentence">${sentenceHtml}</div>
     <button class="gf-check" data-idx="${idx}">Check</button>
     <div class="gf-feedback" data-idx="${idx}"></div>
