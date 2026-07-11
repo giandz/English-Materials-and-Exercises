@@ -1,0 +1,412 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>What's Your Favorite? — Questionnaire</title>
+<style>
+  :root{
+    --color-background-primary: #ffffff;
+    --color-background-secondary: #f7f7f8;
+    --color-text-primary: #1a1a1a;
+    --color-text-secondary: #5b5b60;
+    --color-text-tertiary: #8b8b90;
+    --color-border-secondary: #e3e3e6;
+    --color-border-tertiary: #ebebee;
+    --border-radius-lg: 12px;
+    --font-mono: "SF Mono", "JetBrains Mono", monospace;
+
+    --text-primary: var(--color-text-primary);
+    --text-secondary: var(--color-text-secondary);
+    --text-muted: var(--color-text-tertiary);
+    --text-accent: #185fa5;
+    --surface-1: var(--color-background-secondary);
+    --surface-2: var(--color-background-primary);
+    --border: var(--color-border-tertiary);
+    --radius: var(--border-radius-lg);
+    --good: #2f7d3a;
+    --good-bg: #e8f4ea;
+  }
+
+  @media (prefers-color-scheme: dark){
+    :root{
+      --color-background-primary: #1e1e20;
+      --color-background-secondary: #26262a;
+      --color-text-primary: #f0f0f2;
+      --color-text-secondary: #b4b4ba;
+      --color-text-tertiary: #85858c;
+      --color-border-secondary: #3a3a3f;
+      --color-border-tertiary: #34343a;
+      --good-bg: #1d2f1f;
+    }
+  }
+
+  *{ box-sizing:border-box; }
+  html,body{
+    margin:0;
+    background:var(--color-background-primary);
+    color:var(--color-text-primary);
+    font-family:-apple-system, BlinkMacSystemFont, "Segoe UI", Helvetica, Arial, sans-serif;
+    font-size:15px;
+    line-height:1.6;
+  }
+  .page{ max-width:680px; margin:0 auto; padding:28px 20px 60px; }
+
+  h1{ font-size:1.3rem; font-weight:600; letter-spacing:-0.01em; margin:0 0 4px; }
+  .subtitle{ font-size:13px; color:var(--text-secondary); margin:0 0 4px; }
+  .cefr-tag{
+    display:inline-block;
+    font-size:11px;
+    font-weight:700;
+    letter-spacing:.04em;
+    background:#e6f1fb;
+    color:#185fa5;
+    padding:3px 10px;
+    border-radius:20px;
+    margin-bottom:10px;
+  }
+
+  .sec-div{font-size:11px;font-weight:500;letter-spacing:.06em;text-transform:uppercase;color:var(--text-muted);display:flex;align-items:center;gap:8px;margin:1.75rem 0 1rem;}
+  .sec-div::before,.sec-div::after{content:'';flex:1;height:.5px;background:var(--border);}
+
+  .rule-box{background:var(--surface-1);border-radius:var(--radius);padding:10px 14px;margin-bottom:1.25rem;font-size:13px;color:var(--text-secondary);line-height:1.7;}
+  .rule-box strong{color:var(--text-primary);font-weight:500;}
+
+  .q-block{
+    border:.5px solid var(--color-border-tertiary);
+    border-radius:var(--border-radius-lg);
+    padding:14px 16px;
+    margin-bottom:12px;
+    background:var(--surface-2);
+  }
+  .q-head{
+    display:flex;
+    align-items:center;
+    gap:9px;
+    margin-bottom:10px;
+  }
+  .q-emoji{
+    font-size:20px;
+    width:36px;
+    height:36px;
+    display:flex;
+    align-items:center;
+    justify-content:center;
+    background:var(--surface-1);
+    border-radius:50%;
+    flex-shrink:0;
+  }
+  .q-text{
+    font-size:14.5px;
+    font-weight:600;
+    color:var(--text-primary);
+  }
+  .options{
+    display:flex;
+    flex-direction:column;
+    gap:6px;
+  }
+  .option-label{
+    display:flex;
+    align-items:center;
+    gap:9px;
+    padding:8px 12px;
+    border:1px solid var(--border);
+    border-radius:8px;
+    font-size:13.5px;
+    cursor:pointer;
+    transition:border-color .15s, background .15s;
+  }
+  .option-label:hover{
+    border-color:var(--text-accent);
+  }
+  .option-label.none-option{
+    color:var(--text-muted);
+    font-style:italic;
+  }
+  .option-label input{
+    accent-color:var(--text-accent);
+    flex-shrink:0;
+  }
+  .option-label.checked{
+    border-color:var(--good);
+    background:var(--good-bg);
+  }
+
+  .summary{
+    display:none;
+    border:.5px solid var(--good);
+    background:var(--good-bg);
+    border-radius:var(--radius);
+    padding:16px;
+    margin-top:1.5rem;
+  }
+  .summary.show{ display:block; }
+  .summary h2{
+    font-size:14px;
+    margin:0 0 10px;
+    color:var(--good);
+  }
+  .summary ul{
+    margin:0;
+    padding-left:18px;
+    font-size:13.5px;
+    color:var(--text-primary);
+  }
+  .summary li{ margin-bottom:4px; }
+
+  .button-row{
+    margin-top:1.5rem;
+    display:flex;
+    gap:10px;
+    flex-wrap:wrap;
+  }
+  button.main, button.secondary{
+    font-family:inherit;
+    padding:9px 18px;
+    border:none;
+    border-radius:100px;
+    font-weight:600;
+    font-size:13.5px;
+    cursor:pointer;
+  }
+  button.main{ background:var(--text-accent); color:#fff; }
+  button.secondary{
+    background:var(--surface-1);
+    color:var(--text-secondary);
+    border:.5px solid var(--border);
+  }
+
+  footer{ text-align:center; font-size:12px; color:var(--text-muted); margin-top:2rem; }
+</style>
+</head>
+<body>
+<div class="page">
+
+  <span class="cefr-tag">A2 · Vocabulary & Speaking</span>
+  <h1>What's Your Favorite?</h1>
+  <p class="subtitle">Answer each question, then compare your answers with a partner.</p>
+
+  <div class="rule-box">
+    <strong>Tip:</strong> after filling this in, ask your partner the same questions using <em>"What kind of ... is your favorite?"</em>
+  </div>
+
+  <form id="quizForm">
+
+    <div class="q-block">
+      <div class="q-head"><span class="q-emoji">🎵</span><span class="q-text">What genre of music is your favorite?</span></div>
+      <div class="options" data-question="music">
+        <label class="option-label"><input type="radio" name="music" value="pop music"> Pop</label>
+        <label class="option-label"><input type="radio" name="music" value="rock music"> Rock</label>
+        <label class="option-label"><input type="radio" name="music" value="hip-hop music"> Hip-hop</label>
+        <label class="option-label"><input type="radio" name="music" value="classical music"> Classical</label>
+        <label class="option-label"><input type="radio" name="music" value="jazz music"> Jazz</label>
+        <label class="option-label none-option"><input type="radio" name="music" value="I don't like any"> I don't like any</label>
+      </div>
+    </div>
+
+    <div class="q-block">
+      <div class="q-head"><span class="q-emoji">🎬</span><span class="q-text">What kind of movies is your favorite?</span></div>
+      <div class="options" data-question="movies">
+        <label class="option-label"><input type="radio" name="movies" value="comedy movies"> Comedy</label>
+        <label class="option-label"><input type="radio" name="movies" value="horror movies"> Horror</label>
+        <label class="option-label"><input type="radio" name="movies" value="action movies"> Action</label>
+        <label class="option-label"><input type="radio" name="movies" value="romance movies"> Romance</label>
+        <label class="option-label"><input type="radio" name="movies" value="documentaries"> Documentary</label>
+        <label class="option-label none-option"><input type="radio" name="movies" value="I don't like any"> I don't like any</label>
+      </div>
+    </div>
+
+    <div class="q-block">
+      <div class="q-head"><span class="q-emoji">⚽</span><span class="q-text">What sport is your favorite?</span></div>
+      <div class="options" data-question="sports">
+        <label class="option-label"><input type="radio" name="sports" value="soccer"> Soccer</label>
+        <label class="option-label"><input type="radio" name="sports" value="basketball"> Basketball</label>
+        <label class="option-label"><input type="radio" name="sports" value="tennis"> Tennis</label>
+        <label class="option-label"><input type="radio" name="sports" value="swimming"> Swimming</label>
+        <label class="option-label"><input type="radio" name="sports" value="volleyball"> Volleyball</label>
+        <label class="option-label none-option"><input type="radio" name="sports" value="I don't like any"> I don't like any</label>
+      </div>
+    </div>
+
+    <div class="q-block">
+      <div class="q-head"><span class="q-emoji">🍽️</span><span class="q-text">What type of food is your favorite?</span></div>
+      <div class="options" data-question="food">
+        <label class="option-label"><input type="radio" name="food" value="Italian food"> Italian</label>
+        <label class="option-label"><input type="radio" name="food" value="Mexican food"> Mexican</label>
+        <label class="option-label"><input type="radio" name="food" value="Japanese food"> Japanese</label>
+        <label class="option-label"><input type="radio" name="food" value="Indian food"> Indian</label>
+        <label class="option-label"><input type="radio" name="food" value="Fast food"> Fast food</label>
+        <label class="option-label none-option"><input type="radio" name="food" value="I don't like any"> I don't like any</label>
+      </div>
+    </div>
+
+    <div class="q-block">
+      <div class="q-head"><span class="q-emoji">📚</span><span class="q-text">What genre of books is your favorite?</span></div>
+      <div class="options" data-question="books">
+        <label class="option-label"><input type="radio" name="books" value="mystery books"> Mystery</label>
+        <label class="option-label"><input type="radio" name="books" value="fantasy books"> Fantasy</label>
+        <label class="option-label"><input type="radio" name="books" value="romance books"> Romance</label>
+        <label class="option-label"><input type="radio" name="books" value="science fiction books"> Science fiction</label>
+        <label class="option-label"><input type="radio" name="books" value="biography books"> Biography</label>
+        <label class="option-label none-option"><input type="radio" name="books" value="I don't like any"> I don't like any</label>
+      </div>
+    </div>
+
+    <div class="q-block">
+      <div class="q-head"><span class="q-emoji">🎮</span><span class="q-text">What kind of video games is your favorite?</span></div>
+      <div class="options" data-question="games">
+        <label class="option-label"><input type="radio" name="games" value="puzzle games"> Puzzle</label>
+        <label class="option-label"><input type="radio" name="games" value="adventure games"> Adventure</label>
+        <label class="option-label"><input type="radio" name="games" value="sports games"> Sports</label>
+        <label class="option-label"><input type="radio" name="games" value="strategy games"> Strategy</label>
+        <label class="option-label"><input type="radio" name="games" value="racing games"> Racing</label>
+        <label class="option-label none-option"><input type="radio" name="games" value="I don't like any"> I don't like any</label>
+      </div>
+    </div>
+
+    <div class="q-block">
+      <div class="q-head"><span class="q-emoji">🎨</span><span class="q-text">What kind of art is your favorite?</span></div>
+      <div class="options" data-question="art">
+        <label class="option-label"><input type="radio" name="art" value="painting"> Painting</label>
+        <label class="option-label"><input type="radio" name="art" value="photography"> Photography</label>
+        <label class="option-label"><input type="radio" name="art" value="sculpture"> Sculpture</label>
+        <label class="option-label"><input type="radio" name="art" value="street art"> Street art</label>
+        <label class="option-label"><input type="radio" name="art" value="digital art"> Digital art</label>
+        <label class="option-label none-option"><input type="radio" name="art" value="I don't like any"> I don't like any</label>
+      </div>
+    </div>
+
+    <div class="q-block">
+      <div class="q-head"><span class="q-emoji">📺</span><span class="q-text">What type of TV shows is your favorite?</span></div>
+      <div class="options" data-question="tv">
+        <label class="option-label"><input type="radio" name="tv" value="sitcoms"> Sitcoms</label>
+        <label class="option-label"><input type="radio" name="tv" value="crime dramas"> Crime dramas</label>
+        <label class="option-label"><input type="radio" name="tv" value="reality shows"> Reality shows</label>
+        <label class="option-label"><input type="radio" name="tv" value="cartoons"> Cartoons</label>
+        <label class="option-label"><input type="radio" name="tv" value="talk shows"> Talk shows</label>
+        <label class="option-label none-option"><input type="radio" name="tv" value="I don't like any"> I don't like any</label>
+      </div>
+    </div>
+
+    <div class="q-block">
+      <div class="q-head"><span class="q-emoji">🏖️</span><span class="q-text">What kind of vacation is your favorite?</span></div>
+      <div class="options" data-question="vacation">
+        <label class="option-label"><input type="radio" name="vacation" value="the beach"> Beach</label>
+        <label class="option-label"><input type="radio" name="vacation" value="the mountains"> Mountains</label>
+        <label class="option-label"><input type="radio" name="vacation" value="a city trip"> City trip</label>
+        <label class="option-label"><input type="radio" name="vacation" value="camping"> Camping</label>
+        <label class="option-label"><input type="radio" name="vacation" value="a cruise"> Cruise</label>
+        <label class="option-label none-option"><input type="radio" name="vacation" value="I don't like any"> I don't like any</label>
+      </div>
+    </div>
+
+    <div class="q-block">
+      <div class="q-head"><span class="q-emoji">🍰</span><span class="q-text">What type of dessert is your favorite?</span></div>
+      <div class="options" data-question="dessert">
+        <label class="option-label"><input type="radio" name="dessert" value="ice cream"> Ice cream</label>
+        <label class="option-label"><input type="radio" name="dessert" value="cake"> Cake</label>
+        <label class="option-label"><input type="radio" name="dessert" value="cookies"> Cookies</label>
+        <label class="option-label"><input type="radio" name="dessert" value="chocolate"> Chocolate</label>
+        <label class="option-label"><input type="radio" name="dessert" value="fruit"> Fruit</label>
+        <label class="option-label none-option"><input type="radio" name="dessert" value="I don't like any"> I don't like any</label>
+      </div>
+    </div>
+
+    <div class="button-row">
+      <button type="button" class="main" id="submitBtn">See my answers</button>
+      <button type="button" class="secondary" id="resetBtn">Reset</button>
+    </div>
+  </form>
+
+  <div class="summary" id="summary">
+    <h2>Your favorites</h2>
+    <ul id="summaryList"></ul>
+    <p style="font-size:11px;color:var(--text-muted);margin:10px 0 0;font-style:italic;">Percentages are rough, illustrative estimates for classroom fun — not real survey data.</p>
+  </div>
+
+  <footer>Vocabulary & Speaking Practice — Favorites Questionnaire (A2)</footer>
+</div>
+
+<script>
+  const QUESTIONS = [
+    { key: "music", label: "🎵 Music" },
+    { key: "movies", label: "🎬 Movies" },
+    { key: "sports", label: "⚽ Sport" },
+    { key: "food", label: "🍽️ Food" },
+    { key: "books", label: "📚 Books" },
+    { key: "games", label: "🎮 Video games" },
+    { key: "art", label: "🎨 Art" },
+    { key: "tv", label: "📺 TV shows" },
+    { key: "vacation", label: "🏖️ Vacation" },
+    { key: "dessert", label: "🍰 Dessert" }
+  ];
+
+  // Rough, best-guess estimates for how popular each option is worldwide (not scientific data)
+  const POPULARITY = {
+    music: { "pop music": 32, "rock music": 22, "hip-hop music": 20, "classical music": 8, "jazz music": 6, "I don't like any": 3 },
+    movies: { "comedy movies": 27, "action movies": 25, "horror movies": 12, "romance movies": 15, "documentaries": 9, "I don't like any": 4 },
+    sports: { "soccer": 40, "basketball": 15, "tennis": 8, "swimming": 10, "volleyball": 7, "I don't like any": 10 },
+    food: { "Italian food": 24, "Mexican food": 14, "Japanese food": 16, "Indian food": 12, "Fast food": 20, "I don't like any": 2 },
+    books: { "mystery books": 18, "fantasy books": 22, "romance books": 20, "science fiction books": 15, "biography books": 9, "I don't like any": 12 },
+    games: { "puzzle games": 20, "adventure games": 19, "sports games": 14, "strategy games": 13, "racing games": 12, "I don't like any": 15 },
+    art: { "painting": 26, "photography": 22, "sculpture": 8, "street art": 14, "digital art": 17, "I don't like any": 8 },
+    tv: { "sitcoms": 24, "crime dramas": 21, "reality shows": 18, "cartoons": 13, "talk shows": 9, "I don't like any": 6 },
+    vacation: { "the beach": 34, "the mountains": 16, "a city trip": 22, "camping": 12, "a cruise": 9, "I don't like any": 3 },
+    dessert: { "ice cream": 28, "cake": 21, "cookies": 15, "chocolate": 24, "fruit": 9, "I don't like any": 2 }
+  };
+
+  const form = document.getElementById('quizForm');
+  const summary = document.getElementById('summary');
+  const summaryList = document.getElementById('summaryList');
+
+  form.addEventListener('change', (e) => {
+    if (e.target.type === 'radio') {
+      const group = document.querySelectorAll(`input[name="${e.target.name}"]`);
+      group.forEach(input => {
+        input.closest('.option-label').classList.toggle('checked', input.checked);
+      });
+    }
+  });
+
+  const APPROX_WORDS = ["around", "roughly", "approximately", "about"];
+  const POPULATION_WORDS = ["the world population", "humanity", "the people in the world", "people worldwide"];
+
+  function randomItem(arr) {
+    return arr[Math.floor(Math.random() * arr.length)];
+  }
+
+  document.getElementById('submitBtn').addEventListener('click', () => {
+    summaryList.innerHTML = '';
+
+    QUESTIONS.forEach(q => {
+      const selected = document.querySelector(`input[name="${q.key}"]:checked`);
+      const li = document.createElement('li');
+      if (selected) {
+        const pct = POPULARITY[q.key][selected.value];
+        const approx = randomItem(APPROX_WORDS);
+        const population = randomItem(POPULATION_WORDS);
+        if (selected.value === "I don't like any") {
+          li.textContent = `${q.label}: you don't like any of these — the same as ${approx} ${pct}% of ${population}.`;
+        } else {
+          li.textContent = `${q.label}: you prefer ${selected.value}, like ${approx} ${pct}% of ${population}.`;
+        }
+      } else {
+        li.textContent = `${q.label}: (not answered)`;
+      }
+      summaryList.appendChild(li);
+    });
+
+    summary.classList.add('show');
+    summary.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+  });
+
+  document.getElementById('resetBtn').addEventListener('click', () => {
+    form.reset();
+    document.querySelectorAll('.option-label').forEach(label => label.classList.remove('checked'));
+    summary.classList.remove('show');
+  });
+</script>
+
+</body>
+</html>
