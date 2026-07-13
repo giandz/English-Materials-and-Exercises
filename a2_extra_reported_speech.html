@@ -1,0 +1,584 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Reported Speech — Gap Fill</title>
+
+<link rel="stylesheet" href="general.css">
+
+<style>
+  :root{
+    --color-background-primary: #ffffff;
+    --color-background-secondary: #f7f7f8;
+    --color-text-primary: #1a1a1a;
+    --color-text-secondary: #5b5b60;
+    --color-text-tertiary: #8b8b90;
+    --color-border-secondary: #e3e3e6;
+    --color-border-tertiary: #ebebee;
+    --border-radius-lg: 12px;
+    --font-mono: "SF Mono", "JetBrains Mono", monospace;
+
+    --text-primary: var(--color-text-primary);
+    --text-secondary: var(--color-text-secondary);
+    --text-muted: var(--color-text-tertiary);
+    --text-accent: #185fa5;
+    --surface-1: var(--color-background-secondary);
+    --surface-2: var(--color-background-primary);
+    --border: var(--color-border-tertiary);
+    --radius: var(--border-radius-lg);
+  }
+
+  @media (prefers-color-scheme: dark){
+    :root{
+      --color-background-primary: #1e1e20;
+      --color-background-secondary: #26262a;
+      --color-text-primary: #f0f0f2;
+      --color-text-secondary: #b4b4ba;
+      --color-text-tertiary: #85858c;
+      --color-border-secondary: #3a3a3f;
+      --color-border-tertiary: #34343a;
+    }
+  }
+
+  *{ box-sizing:border-box; }
+  html,body{
+    margin:0;
+    background:var(--color-background-primary);
+    color:var(--color-text-primary);
+    font-family:-apple-system, BlinkMacSystemFont, "Segoe UI", Helvetica, Arial, sans-serif;
+    font-size:15px;
+    line-height:1.6;
+  }
+  .page{ max-width:700px; margin:0 auto; padding:28px 20px 60px; }
+
+  h1{ font-size:1.3rem; font-weight:600; letter-spacing:-0.01em; margin:0 0 4px; }
+  .subtitle{ font-size:13px; color:var(--text-secondary); margin:0 0 4px; }
+  .cefr-tag{
+    display:inline-block;
+    font-size:11px;
+    font-weight:700;
+    letter-spacing:.04em;
+    background:#e6f1fb;
+    color:#185fa5;
+    padding:3px 10px;
+    border-radius:20px;
+    margin-bottom:10px;
+  }
+
+  .sec-div{font-size:11px;font-weight:500;letter-spacing:.06em;text-transform:uppercase;color:var(--text-muted);display:flex;align-items:center;gap:8px;margin:1.75rem 0 1rem;}
+  .sec-div::before,.sec-div::after{content:'';flex:1;height:.5px;background:var(--border);}
+
+  .rule-box{background:var(--surface-1);border-radius:var(--radius);padding:10px 14px;margin-bottom:1.25rem;font-size:13px;color:var(--text-secondary);line-height:1.7;}
+  .rule-box strong{color:var(--text-primary);font-weight:500;}
+
+  .cat-tag{
+    display:inline-block;
+    font-size:10px;
+    font-weight:700;
+    letter-spacing:.03em;
+    text-transform:uppercase;
+    padding:2px 9px;
+    border-radius:20px;
+    margin-bottom:9px;
+    background:var(--surface-1);
+    color:var(--text-secondary);
+    border:.5px solid var(--border);
+  }
+
+  .item{
+    border:.5px solid var(--color-border-tertiary);
+    border-radius:var(--border-radius-lg);
+    padding:14px 16px;
+    margin-bottom:14px;
+    background:var(--surface-2);
+  }
+  .direct{
+    font-size:12.5px;
+    color:var(--text-muted);
+    font-style:italic;
+    margin-bottom:8px;
+  }
+  .sentence{
+    font-size:14.5px;
+    line-height:2.1;
+  }
+
+  .rs-gap-wrap{
+    display:inline-flex;
+    flex-direction:column;
+    align-items:center;
+    gap:3px;
+    vertical-align:bottom;
+    margin: 0.1em 0.2em;
+    
+  }
+  .bar-track{
+    display:inline-block;
+    width:84px;
+    height:5px;
+    background:var(--color-border-secondary);
+    border-radius:3px;
+    overflow:hidden;
+  }
+  .bar-fill{
+    display:block;
+    height:100%;
+    width:0%;
+    background:hsl(0deg 100% 50%);
+    transition:width 0.12s linear, background 0.12s linear;
+  }
+  .bar-pct{
+    font-family:var(--font-mono);
+    font-size:9.5px;
+    color:var(--text-muted);
+    min-width:30px;
+    text-align:center;
+  }
+  .rs-gap-input{
+    font-family:inherit;
+    font-size:14.5px;
+    width:130px;
+    padding:5px 8px;
+    border-radius:6px;
+    border:1px solid var(--color-border-secondary);
+    background:var(--color-background-primary);
+    color:var(--text-primary);
+    text-align:center;
+  }
+  .rs-gap-input:focus{
+    outline:none;
+    border-color:var(--text-accent);
+  }
+
+  footer{ text-align:center; font-size:12px; color:var(--text-muted); margin-top:2rem; }
+    .rs-ref .sec-div{font-size:11px;font-weight:500;letter-spacing:.06em;text-transform:uppercase;color:var(--text-muted);display:flex;align-items:center;gap:8px;margin:1.75rem 0 1rem;}
+  .rs-ref .sec-div::before,.rs-ref .sec-div::after{content:'';flex:1;height:.5px;background:var(--border);}
+
+  .rs-legend{
+    display:flex;
+    flex-wrap:wrap;
+    gap:8px;
+    margin-bottom:1.25rem;
+  }
+  .rs-legend-pill{
+    font-size:11px;
+    font-weight:600;
+    padding:3px 10px;
+    border-radius:20px;
+    display:inline-flex;
+    align-items:center;
+    gap:5px;
+  }
+
+  .rs-tense-orig{ color:#185fa5; font-weight:700; background:#e6f1fb; padding:1px 5px; border-radius:4px; }
+  .rs-tense-rep{ color:#7c3aed; font-weight:700; background:#f3effe; padding:1px 5px; border-radius:4px; }
+  .rs-pronoun{ color:#b45309; font-weight:700; background:#faeeda; padding:1px 5px; border-radius:4px; }
+  .rs-time{ color:#27500a; font-weight:700; background:#eaf3de; padding:1px 5px; border-radius:4px; }
+  .rs-link{ color:#a32d2d; font-weight:700; background:#fce8e8; padding:1px 5px; border-radius:4px; }
+
+  .rs-legend-pill.orig{ background:#e6f1fb; color:#185fa5; }
+  .rs-legend-pill.rep{ background:#f3effe; color:#7c3aed; }
+  .rs-legend-pill.pron{ background:#faeeda; color:#b45309; }
+  .rs-legend-pill.time{ background:#eaf3de; color:#27500a; }
+  .rs-legend-pill.link{ background:#fce8e8; color:#a32d2d; }
+
+  @media (prefers-color-scheme: dark){
+    .rs-tense-orig, .rs-legend-pill.orig{ background:#16283a; color:#7fb2e0; }
+    .rs-tense-rep, .rs-legend-pill.rep{ background:#2a2145; color:#b79aff; }
+    .rs-pronoun, .rs-legend-pill.pron{ background:#3a2c14; color:#e0a95c; }
+    .rs-time, .rs-legend-pill.time{ background:#1f3014; color:#9ed17a; }
+    .rs-link, .rs-legend-pill.link{ background:#3a201e; color:#e2827a; }
+  }
+
+  .rs-card{
+    border:.5px solid var(--color-border-tertiary);
+    border-radius:var(--border-radius-lg);
+    padding:13px 15px;
+    margin-bottom:10px;
+    background:var(--surface-2);
+  }
+  .rs-cat{
+    font-size:13px;
+    font-weight:700;
+    color:var(--text-primary);
+    margin-bottom:8px;
+  }
+  .rs-row{
+    display:flex;
+    gap:9px;
+    align-items:flex-start;
+    margin-bottom:6px;
+  }
+  .rs-avatar{
+    font-size:18px;
+    flex-shrink:0;
+    line-height:1.6;
+  }
+  .rs-line{
+    font-size:13.5px;
+    line-height:1.7;
+  }
+  .rs-direct{ color:var(--text-secondary); }
+  .rs-arrow{
+    color:var(--text-muted);
+    font-size:12px;
+    margin:0 2px 0 32px;
+  }
+</style>
+</head>
+<body>
+<div class="page">
+
+  <span class="cefr-tag">B1 · Grammar Practice</span>
+  <h1>Reported Speech — Gap Fill</h1>
+  <p class="subtitle">Fill in each gap. The bar above shows how close your answer is — it updates as you type.</p>
+
+  <div class="rule-box">
+    <strong>Tip:</strong> the bar turns from red to green 🔴→🟠→🟡→🟢 as your answer gets closer to being correct. 100% green means it's exactly right.
+  </div>
+<div class="rs-ref">
+
+  <div class="sec-div">quick reference: reported speech</div>
+
+  <div class="rs-legend">
+    <span class="rs-legend-pill orig">●&nbsp; original tense</span>
+    <span class="rs-legend-pill rep">●&nbsp; backshifted tense</span>
+    <span class="rs-legend-pill pron">●&nbsp; pronoun / possessive</span>
+    <span class="rs-legend-pill time">●&nbsp; time / place expression</span>
+    <span class="rs-legend-pill link">●&nbsp; linking word</span>
+  </div>
+
+  <div class="rs-card">
+    <div class="cat-tag">Statement</div>
+    <div class="rs-row">
+      <span class="rs-avatar">👩‍🦱</span>
+      <span class="rs-line direct">"<span class="rs-pronoun">I</span> <span class="rs-tense-orig">will send</span> <span class="rs-pronoun">you</span> the report <span class="rs-time">tomorrow</span>."</span>
+    </div>
+    <div class="rs-line" style="margin-left:32px;">→ She said (that) <span class="rs-pronoun">she</span> <span class="rs-tense-rep">would send</span> <span class="rs-pronoun">me</span> the report <span class="rs-time">the next day</span>.</div>
+  </div>
+
+  <div class="rs-card">
+    <div class="cat-tag">Request</div>
+    <div class="rs-row">
+      <span class="rs-avatar">🧑</span>
+      <span class="rs-line direct">"Can <span class="rs-pronoun">you</span> open <span class="rs-pronoun">my</span> window?"</span>
+    </div>
+    <div class="rs-line" style="margin-left:32px;">→ He asked <span class="rs-pronoun">her</span> <span class="rs-link">to</span> open <span class="rs-pronoun">his</span> window.</div>
+  </div>
+
+  <div class="rs-card">
+    <div class="cat-tag">Command</div>
+    <div class="rs-row">
+      <span class="rs-avatar">👩‍🦳</span>
+      <span class="rs-line direct">"Don't touch <span class="rs-pronoun">my</span> desk <span class="rs-time">today</span>,"</span>
+    </div>
+    <div class="rs-line" style="margin-left:32px;">→ She told him <span class="rs-link">not to</span> touch <span class="rs-pronoun">her</span> desk <span class="rs-time">that day</span>.</div>
+  </div>
+
+  <div class="rs-card">
+    <div class="cat-tag">Yes-No Question</div>
+    <div class="rs-row">
+      <span class="rs-avatar">👧</span>
+      <span class="rs-line direct">"<span class="rs-tense-orig">Are</span> <span class="rs-pronoun">you</span> <span class="rs-tense-orig">coming</span> <span class="rs-time">tonight</span>?"</span>
+    </div>
+    <div class="rs-line" style="margin-left:32px;">→ She asked <span class="rs-link">if / whether</span> <span class="rs-pronoun">I</span> <span class="rs-tense-rep">was coming</span> <span class="rs-time">that night</span>.</div>
+    <br>
+    <span class="rs-avatar">🧑</span>
+      <span class="rs-line direct">"<span class="rs-tense-orig">Does</span> the bus <span class="rs-tense-orig">stop</span> near <span class="rs-pronoun">your</span> house?"</span>
+    <div class="rs-line" style="margin-left:32px;">→ He asked <span class="rs-link">if / whether</span> the bus <span class="rs-tense-rep">stopped</span> near <span class="rs-pronoun">my</span> house.</div>
+  </div>
+
+  <div class="rs-card">
+    <div class="cat-tag">Wh-Question</div>
+    <div class="rs-row">
+      <span class="rs-avatar">👩‍🦳</span>
+      <span class="rs-line direct">"<span class="rs-link">What time</span> <span class="rs-tense-orig">is</span> the meeting <span class="rs-time">tomorrow</span>?"</span>
+    </div>
+    <div class="rs-line" style="margin-left:32px;">→ She asked <span class="rs-link">what time</span> the meeting <span class="rs-tense-rep">was</span> <span class="rs-time">the following day</span>.</div>
+	<br>
+    <div class="rs-row">
+      <span class="rs-avatar">👴</span>
+      <span class="rs-line direct">"<span class="rs-link">Where</span> <span class="rs-tense-orig">do</span> <span class="rs-pronoun">you</span> <span class="rs-tense-orig">live</span> <span class="rs-time">now</span>?"</span>
+    </div>
+    <div class="rs-line" style="margin-left:32px;">→ He asked <span class="rs-link">where</span> <span class="rs-pronoun">I</span> <span class="rs-tense-rep">lived</span> <span class="rs-time">then</span>.</div>
+  </div>
+
+</div>
+  <div class="sec-div">Sentences</div>
+
+  <div id="items"></div>
+
+  <footer>Grammar Practice — Reported Speech (B1)</footer>
+</div>
+
+<script>
+  /* ---------- Damerau–Levenshtein distance ---------- */
+  function damerauLevenshtein(a, b) {
+    a = a.toLowerCase();
+    b = b.toLowerCase();
+    const al = a.length, bl = b.length;
+    if (al === 0) return bl;
+    if (bl === 0) return al;
+
+    const d = Array.from({ length: al + 1 }, () => new Array(bl + 1).fill(0));
+    for (let i = 0; i <= al; i++) d[i][0] = i;
+    for (let j = 0; j <= bl; j++) d[0][j] = j;
+
+    for (let i = 1; i <= al; i++) {
+      for (let j = 1; j <= bl; j++) {
+        const cost = a[i - 1] === b[j - 1] ? 0 : 1;
+        d[i][j] = Math.min(
+          d[i - 1][j] + 1,      // deletion
+          d[i][j - 1] + 1,      // insertion
+          d[i - 1][j - 1] + cost // substitution
+        );
+        if (i > 1 && j > 1 && a[i - 1] === b[j - 2] && a[i - 2] === b[j - 1]) {
+          d[i][j] = Math.min(d[i][j], d[i - 2][j - 2] + cost); // transposition
+        }
+      }
+    }
+    return d[al][bl];
+  }
+
+  function bestAccuracy(input, acceptedList) {
+    if (!input) return 0;
+    let best = 0;
+    acceptedList.forEach(answer => {
+      const dist = damerauLevenshtein(input, answer);
+      const maxLen = Math.max(input.length, answer.length);
+      const pct = maxLen === 0 ? 100 : Math.max(0, (1 - dist / maxLen) * 100);
+      if (pct > best) best = pct;
+    });
+    return best;
+  }
+
+  function pctToColor(pct) {
+    const hue = (pct / 100) * 120; // 0 = red, 120 = green
+    return `hsl(${hue}deg 100% 40%)`;
+  }
+
+  /* ---------- Exercise data ---------- */
+  const items = [
+    // ---- statements (5) ----
+    {
+      category: "statement",
+      direct: '👧: "I am sleepy"',
+      template: "She said (that) she {0}.",
+      hints: [{ accepted: ["was sleepy"] }]
+    },
+    {
+      category: "statement",
+      direct: '👨: "I have finished my homework"',
+      template: "He said (that) he had already {0}.",
+      hints: [{ accepted: ["finished his homework", "done his homework"] }]
+    },
+    {
+      category: "statement",
+      direct: '👨‍🦰: "I will help you"',
+      template: "He said (that) he {0}.",
+      hints: [{ accepted: ["would help me"] }]
+    },
+    {
+      category: "statement",
+      direct: '👩‍🦰: "I like this song"',
+      template: "She said (that) she {0}.",
+      hints: [{ accepted: ["liked that song"] }]
+    },
+    {
+      category: "statement",
+      direct: '🧔‍♂️: "I went to Spain last year"',
+      template: "He said (that) he had {0}.",
+      hints: [{ accepted: ["gone to Spain the year before", "been to Spain the year before", "gone to Spain the previous year", "been to Spain the previous year"] }]
+    },
+
+    // ---- requests (5) ----
+    {
+      category: "request",
+      direct: '👧: "Can you open the window?"',
+      template: "She asked him {0}.",
+      hints: [{ accepted: ["to open the window"] }]
+    },
+    {
+      category: "request",
+      direct: '👱‍♀️: "Please don\'t be late"',
+      template: "She asked him {0}.",
+      hints: [{ accepted: ["not to be late"] }]
+    },
+    {
+      category: "request",
+      direct: '👨‍🦳: "Could you pass the salt?"',
+      template: "He asked her {0}.",
+      hints: [{ accepted: ["to pass the salt"] }]
+    },
+    {
+      category: "request",
+      direct: '🧕: "Please wait here"',
+      template: "She asked us {0} .",
+      hints: [{ accepted: ["to wait there"] }]
+    },
+    {
+      category: "request",
+      direct: '👴: "Can you help me carry my bag?"',
+      template: "He asked me {0}.",
+      hints: [{ accepted: ["to help him carry his bag"] }]
+    },
+
+    // ---- commands (5) ----
+    {
+      category: "command",
+      direct: '👨‍🏫: "Sit down!"',
+      template: "The teacher told the students {0}.",
+      hints: [{ accepted: ["to sit down"] }]
+    },
+    {
+      category: "command",
+      direct: '🙅‍♀️: "Don\'t touch that book"',
+      template: "She told him {0} .",
+      hints: [{ accepted: ["not to touch that book"] }]
+    },
+    {
+      category: "command",
+      direct: '💁‍♂️: "Close the door"',
+      template: "He told me {0}.",
+      hints: [{ accepted: ["to close the door"] }]
+    },
+    {
+      category: "command",
+      direct: '👩‍🏫: "Don\'t run in the hallway"',
+      template: "The teacher told us {0}.",
+      hints: [{ accepted: ["not to run in the hallway"] }]
+    },
+    {
+      category: "command",
+      direct: '👩‍💼: "Turn off your phone"',
+      template: "She told him {0}.",
+      hints: [{ accepted: ["to turn off his phone"] }]
+    },
+
+    // ---- yes-no questions (5) ----
+    {
+      category: "yes-no question",
+      direct: '👨‍🍳: "Are you hungry?"',
+      template: "He asked me {0}.",
+      hints: [{ accepted: ["if I was hungry", "whether I was hungry"] }]
+    },
+    {
+      category: "yes-no question",
+      direct: '👩‍⚕️: "Did you call her?"',
+      template: "She asked me {0}.",
+      hints: [{ accepted: ["if I had called her", "whether I had called her"] }]
+    },
+    {
+      category: "yes-no question",
+      direct: '👮‍♂️: "Do you like coffee?"',
+      template: "He asked her {0}.",
+      hints: [{ accepted: ["if she liked coffee", "whether she liked coffee"] }]
+    },
+    {
+      category: "yes-no question",
+      direct: '(you): "Is she coming tonight?"',
+      template: "I asked them {0}.",
+      hints: [{ accepted: ["if she was coming that night", "whether she was coming that night"] }]
+    },
+    {
+      category: "yes-no question",
+      direct: '👧: "Will you be there?"',
+      template: "She asked me {0}.",
+      hints: [{ accepted: ["if I would be there", "whether I would be there"] }]
+    },
+
+    // ---- wh-questions (5) ----
+    {
+      category: "wh-question",
+      direct: '👩‍🦳: "Where is the station?"',
+      template: "She asked me {0}.",
+      hints: [{ accepted: ["where the station was"] }]
+    },
+    {
+      category: "wh-question",
+      direct: '👩‍🦱: "What time does the movie start?"',
+      template: "She asked us {0}.",
+      hints: [{ accepted: ["what time the movie started"] }]
+    },
+    {
+      category: "wh-question",
+      direct: '🧑‍🏫: "Why are you crying?"',
+      template: "He asked her {0}.",
+      hints: [{ accepted: ["why she was crying"] }]
+    },
+    {
+      category: "wh-question",
+      direct: '👮‍♀️: "How old are you?"',
+      template: "She asked me {0}.",
+      hints: [{ accepted: ["how old I was"] }]
+    },
+    {
+      category: "wh-question",
+      direct: '🤷‍♂️: "What do you want?"',
+      template: "He asked me {0}.",
+      hints: [{ accepted: ["what I wanted"] }]
+    }
+  ];
+
+  const itemsEl = document.getElementById('items');
+
+  const CAT_LABELS = {
+    "statement": "statement",
+    "request": "request",
+    "command": "command",
+    "yes-no question": "yes-no question",
+    "wh-question": "wh-question"
+  };
+
+  items.forEach((item, idx) => {
+    let sentenceHtml = item.template;
+    item.hints.forEach((gap, gapIdx) => {
+      const gapId = `${idx}-${gapIdx}`;
+      const gapHtml = `
+        <span class="rs-gap-wrap">
+          <span class="bar-track"><span class="bar-fill" id="bar-${gapId}"></span></span>
+          <span class="bar-pct" id="pct-${gapId}">0%</span>
+          <input type="text" style="width:${items[idx].hints[0].accepted[0].length * 0.75 + 'em'}" class="rs-gap-input" id="input-${gapId}" data-idx="${idx}" data-gap="${gapIdx}" autocomplete="off" spellcheck="false">
+        </span>`;
+      sentenceHtml = sentenceHtml.replace(`{${gapIdx}}`, gapHtml);
+    });
+
+    const wrap = document.createElement('div');
+    wrap.className = 'item';
+    wrap.innerHTML = `
+      <span class="cat-tag">${CAT_LABELS[item.category]}</span>
+      <div class="direct">${item.direct}</div>
+      <div class="sentence">${sentenceHtml}</div>
+    `;
+    itemsEl.appendChild(wrap);
+  });
+
+  itemsEl.addEventListener('input', (e) => {
+    if (!e.target.classList.contains('rs-gap-input')) return;
+    const idx = Number(e.target.dataset.idx);
+    const gapIdx = Number(e.target.dataset.gap);
+    const gapId = `${idx}-${gapIdx}`;
+    const item = items[idx];
+    const accepted = item.hints[gapIdx].accepted;
+
+    const value = e.target.value.trim();
+    const pct = bestAccuracy(value, accepted);
+    const color = pctToColor(pct);
+
+    const bar = document.getElementById(`bar-${gapId}`);
+    const pctLabel = document.getElementById(`pct-${gapId}`);
+    bar.style.width = pct + '%';
+    bar.style.background = color;
+    pctLabel.textContent = Math.round(pct) + '%';
+    pctLabel.style.color = color;
+  });
+</script>
+<div id="theme-toggle-wrap">
+  <button id="theme-toggle" aria-label="Toggle light/dark mode" title="Toggle light/dark mode">
+    <span id="theme-icon">☀️</span>
+  </button>
+</div>
+<script src="theme-toggle-behavior.js"></script>
+</body>
+</html>
