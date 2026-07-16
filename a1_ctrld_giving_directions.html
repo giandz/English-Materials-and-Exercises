@@ -181,6 +181,12 @@
     cursor:pointer;
     margin:4px 0 1.5rem;
   }
+    .vert {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+}
+.hint{ color:var(--text-secondary); }
 
   footer{ text-align:center; font-size:12px; color:var(--text-muted); margin-top:2rem; }
 </style>
@@ -542,7 +548,7 @@ const conv2 = [
   { side: "left", avatar: "🛺", name: "Driver", parts: ["Hi! I have your pizza, but I can’t find your building."] },
   { side: "right", avatar: "🏠", name: "Customer", parts: ["No problem! Where are you now?"] },
   { side: "left", avatar: "🛺", name: "Driver", parts: ["I’m at the gas station on Oak Street."] },
-  { side: "right", avatar: "🏠", name: "Customer", parts: ["Good. ", { gap: "Turn left", hint: "turn ___" }, " and ", { gap: "walk along", hint: "___ the park" }, " the park."] },
+  { side: "right", avatar: "🏠", name: "Customer", parts: ["Good. ", { gap: "Make a left", hint: "___ ___ left" }, " and ", { gap: "walk along", hint: "___ along ___ park" }, " the park."] },
   { side: "left", avatar: "🛺", name: "Driver", parts: ["Turn left, walk along the park. Okay."] },
   { side: "right", avatar: "🏠", name: "Customer", parts: ["My building is ", { gap: "between", hint: "___ two shops" }, " two shops."] },
   { side: "left", avatar: "🛺", name: "Driver", parts: ["Between two shops. I see it!"] },
@@ -567,7 +573,7 @@ function renderConversation(containerId, data) {
         bubbleHtml += part;
       } else {
         const gapId = `${containerId}-${gapCounter}`;
-        bubbleHtml += `<input type="text" class="gap-input" id="${gapId}" data-answer="${part.gap.toLowerCase()}" placeholder="${part.hint}">`;
+        bubbleHtml += `<div class="vert"><input type="text" class="gap-input" id="${gapId}" data-answer="${part.gap.toLowerCase()}"><span class="hint">(${part.hint})</span></div>`;
         gapCounter++;
       }
     });
