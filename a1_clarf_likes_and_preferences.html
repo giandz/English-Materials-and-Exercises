@@ -1,0 +1,391 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Grammar Focus — Likes & Preferences</title>
+<link rel="stylesheet" href="general.css">
+<style>
+  :root{
+    --color-background-primary: #ffffff;
+    --color-background-secondary: #f7f7f8;
+    --color-text-primary: #1a1a1a;
+    --color-text-secondary: #5b5b60;
+    --color-text-tertiary: #8b8b90;
+    --color-border-secondary: #e3e3e6;
+    --color-border-tertiary: #ebebee;
+    --border-radius-lg: 12px;
+    --font-mono: "SF Mono", "JetBrains Mono", monospace;
+
+    --text-primary: var(--color-text-primary);
+    --text-secondary: var(--color-text-secondary);
+    --text-muted: var(--color-text-tertiary);
+    --text-accent: #185fa5;
+    --surface-1: var(--color-background-secondary);
+    --surface-2: var(--color-background-primary);
+    --border: var(--color-border-tertiary);
+    --radius: var(--border-radius-lg);
+  }
+
+  @media (prefers-color-scheme: dark){
+    :root{
+      --color-background-primary: #1e1e20;
+      --color-background-secondary: #26262a;
+      --color-text-primary: #f0f0f2;
+      --color-text-secondary: #b4b4ba;
+      --color-text-tertiary: #85858c;
+      --color-border-secondary: #3a3a3f;
+      --color-border-tertiary: #34343a;
+    }
+  }
+
+  *{ box-sizing:border-box; }
+  html,body{
+    margin:0;
+    background:var(--color-background-primary);
+    color:var(--color-text-primary);
+    font-family:-apple-system, BlinkMacSystemFont, "Segoe UI", Helvetica, Arial, sans-serif;
+    font-size:15px;
+    line-height:1.6;
+  }
+  .page{ max-width:700px; margin:0 auto; padding:28px 20px 56px; }
+
+  h1{ font-size:1.3rem; font-weight:600; letter-spacing:-0.01em; margin:0 0 4px; }
+  .subtitle{ font-size:13px; color:var(--text-secondary); margin:0; }
+  .cefr-tag{
+    display:inline-block;
+    font-size:11px;
+    font-weight:700;
+    letter-spacing:.04em;
+    background:#e6f1fb;
+    color:#185fa5;
+    padding:3px 10px;
+    border-radius:20px;
+    margin-bottom:10px;
+  }
+
+  .sec-div{font-size:11px;font-weight:500;letter-spacing:.06em;text-transform:uppercase;color:var(--text-muted);display:flex;align-items:center;gap:8px;margin:1.75rem 0 1rem;}
+  .sec-div::before,.sec-div::after{content:'';flex:1;height:.5px;background:var(--border);}
+
+  .rule-box{background:var(--surface-1);border-radius:var(--radius);padding:10px 14px;margin-bottom:1.25rem;font-size:13px;color:var(--text-secondary);line-height:1.7;}
+  .rule-box strong{color:var(--text-primary);font-weight:500;}
+
+  /* Vertical scale */
+  .scale{
+    display:flex;
+    flex-direction:column;
+    gap:8px;
+    margin-bottom:1.5rem;
+  }
+  .scale-row{
+    display:flex;
+    align-items:center;
+    gap:12px;
+    padding:10px 14px;
+    border-radius:10px;
+    border:.5px solid var(--color-border-tertiary);
+  }
+  .scale-emoji{
+    font-size:22px;
+    width:34px;
+    text-align:center;
+    flex-shrink:0;
+  }
+  .scale-text{
+    font-size:14px;
+  }
+  .scale-text strong{ font-weight:700; }
+  .scale-example{
+    font-size:11.5px;
+    color:var(--text-secondary);
+    margin-top:2px;
+  }
+
+  .s-love{ background:hsl(120deg 75% 75%) }
+  .s-rlike{ background:hsl(105deg 75% 75%) }
+  .s-like{ background:hsl(90deg 75% 75%) }
+  .s-okwth{ background:hsl(75deg 75% 75%) }
+  .s-dmind{ background:hsl(60deg 75% 75%) }
+  .s-nbfan{ background:hsl(45deg 75% 75%) }
+  .s-dlike{ background:hsl(30deg 75% 75%) }
+  .s-rdlike{ background:hsl(15deg 75% 75%) }
+  .s-hate{ background:hsl(0deg 75% 75%) }
+
+  @media (prefers-color-scheme: dark){
+	.s-love{ background:hsl(120deg 75% 20%) }
+	.s-rlike{ background:hsl(105deg 75% 20%) }
+	.s-like{ background:hsl(90deg 75% 20%) }
+	.s-okwth{ background:hsl(75deg 75% 20%) }
+	.s-dmind{ background:hsl(60deg 75% 20%) }
+	.s-nbfan{ background:hsl(45deg 75% 20%) }
+	.s-dlike{ background:hsl(30deg 75% 20%) }
+	.s-rdlike{ background:hsl(15deg 75% 20%) }
+	.s-hate{ background:hsl(0deg 75% 20%) }
+  }
+
+	.dark .s-love{ background:hsl(120deg 75% 25%) }
+	.dark .s-rlike{ background:hsl(105deg 75% 25%) }
+	.dark .s-like{ background:hsl(90deg 75% 25%) }
+	.dark .s-okwth{ background:hsl(75deg 75% 25%) }
+	.dark .s-dmind{ background:hsl(60deg 75% 25%) }
+	.dark .s-nbfan{ background:hsl(45deg 75% 25%) }
+	.dark .s-dlike{ background:hsl(30deg 75% 25%) }
+	.dark .s-rdlike{ background:hsl(15deg 75% 25%) }
+	.dark .s-hate{ background:hsl(0deg 75% 25%) }
+
+  /* Compound nouns / gerunds */
+  .word-grid{
+    display:flex;
+    flex-wrap:wrap;
+    gap:8px;
+    margin-bottom:1.25rem;
+  }
+  .word-chip{
+    font-size:12.5px;
+    font-weight:500;
+    padding:5px 12px;
+    border-radius:20px;
+    background:var(--surface-1);
+    border:.5px solid var(--border);
+    color:var(--text-primary);
+  }
+
+  .tense-card{
+    border:.5px solid var(--color-border-tertiary);
+    border-radius:var(--border-radius-lg);
+    overflow:hidden;
+    margin-bottom:14px;
+  }
+  .tense-head{
+    padding:10px 14px;
+    font-weight:700;
+    font-size:13.5px;
+    color:#fff;
+    background:#185fa5;
+  }
+  .form-block{
+    padding:10px 14px;
+    border-bottom:.5px solid var(--color-border-tertiary);
+  }
+  .form-block:last-child{ border-bottom:none; }
+  .form-label{
+    font-size:10.5px;
+    font-weight:700;
+    letter-spacing:.05em;
+    text-transform:uppercase;
+    color:var(--text-muted);
+    margin-bottom:5px;
+  }
+  .form-line{ font-size:13.5px; margin-bottom:5px; }
+  .form-line .noun{ color:#185fa5; font-weight:700; }
+  .form-line .ger{ color:#7c3aed; font-weight:700; }
+
+  .prefer-card{
+    border:.5px solid var(--color-border-tertiary);
+    border-radius:var(--border-radius-lg);
+    padding:14px 16px;
+    margin-bottom:1.25rem;
+    background:var(--surface-2);
+  }
+  .gauge-row{
+    display:flex;
+    align-items:center;
+    gap:10px;
+    margin-bottom:8px;
+  }
+  .gauge-emoji{ font-size:20px; width:26px; text-align:center; }
+  .gauge-bar{ font-size:15px; letter-spacing:2px; }
+  .prefer-sentence{
+    font-size:14px;
+    margin-top:10px;
+    padding-top:10px;
+    border-top:.5px solid var(--color-border-tertiary);
+  }
+  .prefer-sentence .hl{ font-weight:700; color:var(--text-accent); }
+
+  footer{ text-align:center; font-size:12px; color:var(--text-muted); margin-top:2rem; }
+</style>
+</head>
+<body>
+<div class="page">
+
+  <span class="cefr-tag">A1 · Beginner</span>
+  <h1>Likes & Preferences</h1>
+  <p class="subtitle">How much do you like it? From love to hate.</p>
+
+  <div class="sec-div">the scale</div>
+
+  <div class="scale">
+    <div class="scale-row s-love">
+      <span class="scale-emoji">❤️</span>
+      <div>
+        <div class="scale-text"><strong>I love...</strong></div>
+        <div class="scale-example">I love mushroom pizza.</div>
+      </div>
+    </div>
+    <div class="scale-row s-rlike">
+      <span class="scale-emoji">🤩</span>
+      <div>
+        <div class="scale-text"><strong>I really like... / I'm crazy about...</strong></div>
+        <div class="scale-example">I really like salsa music.</div>
+      </div>
+    </div>
+    <div class="scale-row s-like">
+      <span class="scale-emoji">👍</span>
+      <div>
+        <div class="scale-text"><strong>I like...</strong></div>
+        <div class="scale-example">I like playing soccer.</div>
+      </div>
+    </div>
+    <div class="scale-row s-okwth">
+      <span class="scale-emoji">🙂</span>
+      <div>
+        <div class="scale-text"><strong>I'm OK with...</strong></div>
+        <div class="scale-example">I'm OK with pineapple pizza.</div>
+      </div>
+    </div>
+    <div class="scale-row s-dmind">
+      <span class="scale-emoji">😐</span>
+      <div>
+        <div class="scale-text"><strong>I don't mind...</strong></div>
+        <div class="scale-example">I don't mind rainy days.</div>
+      </div>
+    </div>
+    <div class="scale-row s-nbfan">
+      <span class="scale-emoji">🫤</span>
+      <div>
+        <div class="scale-text"><strong>I'm not a (big) fan of...</strong></div>
+        <div class="scale-example">I'm not a fan of spicy food.</div>
+      </div>
+    </div>
+    <div class="scale-row s-dlike">
+      <span class="scale-emoji">👎</span>
+      <div>
+        <div class="scale-text"><strong>I don't like... / I dislike...</strong></div>
+        <div class="scale-example">I really don't like horror films.</div>
+      </div>
+    </div>
+    <div class="scale-row s-rdlike">
+      <span class="scale-emoji">😖</span>
+      <div>
+        <div class="scale-text"><strong>I really don't like...</strong></div>
+        <div class="scale-example">I really don't like horror films.</div>
+      </div>
+    </div>
+    <div class="scale-row s-hate">
+      <span class="scale-emoji">💀</span>
+      <div>
+        <div class="scale-text"><strong>I can't stand... / I hate...</strong></div>
+        <div class="scale-example">I can't stand loud music.</div>
+      </div>
+    </div>
+  </div>
+
+  <div class="sec-div">compound nouns</div>
+
+  <div class="rule-box">
+    A <strong>compound noun</strong> is two words that go together as one thing: <em>mushroom</em> + <em>pizza</em> = <em>mushroom pizza</em>.
+  </div>
+
+  <div class="word-grid">
+    <span class="word-chip">salsa music</span>
+    <span class="word-chip">mushroom pizza</span>
+    <span class="word-chip">action movies</span>
+    <span class="word-chip">horror films</span>
+    <span class="word-chip">chocolate cake</span>
+    <span class="word-chip">rainy days</span>
+    <span class="word-chip">video games</span>
+    <span class="word-chip">rock music</span>
+  </div>
+
+  <div class="sec-div">gerunds (verb + -ing)</div>
+
+  <div class="rule-box">
+    After <strong>like / love / hate</strong>, a verb often takes <strong>-ing</strong>: <em>play → playing</em>.
+  </div>
+
+  <div class="word-grid">
+    <span class="word-chip">playing soccer</span>
+    <span class="word-chip">going for walks</span>
+    <span class="word-chip">watching TV</span>
+    <span class="word-chip">cooking dinner</span>
+    <span class="word-chip">reading books</span>
+    <span class="word-chip">dancing</span>
+    <span class="word-chip">swimming</span>
+    <span class="word-chip">traveling</span>
+  </div>
+
+  <div class="sec-div">grammar: sentence patterns</div>
+
+  <div class="tense-card">
+    <div class="tense-head">like / love / hate + noun or gerund</div>
+    <div class="form-block">
+      <div class="form-label">+ noun (or compound noun)</div>
+      <div class="form-line">I love <span class="noun">mushroom pizza</span>.</div>
+      <div class="form-line">She likes <span class="noun">salsa music</span>.</div>
+    </div>
+    <div class="form-block">
+      <div class="form-label">+ gerund (verb + -ing)</div>
+      <div class="form-line">I like <span class="ger">playing soccer</span>.</div>
+      <div class="form-line">He hates <span class="ger">waking up</span> early.</div>
+    </div>
+    <div class="form-block">
+      <div class="form-label">negative</div>
+      <div class="form-line">I don't like <span class="noun">horror films</span>.</div>
+      <div class="form-line">She doesn't like <span class="ger">cooking</span>.</div>
+    </div>
+  </div>
+
+  <div class="rule-box">
+    <strong>Remember:</strong> with <em>he / she / it</em>, the verb gets <strong>-s</strong>: <em>likes, loves, hates</em>. The word after stays the same (noun or -ing form).
+  </div>
+
+  <div class="sec-div">reference: prefer</div>
+
+  <div class="rule-box">
+    <strong>Prefer</strong> compares two or more things. We say <strong><span class="prefer-sentence hl">prefer</span> 🫴🟢<sub>1</sub> (<span class="prefer-sentence hl">to</span> 🫳🟢<sub>2</sub> <span class="prefer-sentence hl">or</span> 🫳🟢<sub>3</sub></strong>).
+  </div>
+
+  <div class="prefer-card">
+    <div class="gauge-row">
+      <span class="gauge-emoji">🍕</span>
+      <span class="gauge-bar">🟩🟩◼️◼️◼️</span>
+    </div>
+    <div class="gauge-row">
+      <span class="gauge-emoji">🍔</span>
+      <span class="gauge-bar">🟩🟩🟩🟩◼️</span>
+    </div>
+    <div class="gauge-row">
+      <span class="gauge-emoji">🍝</span>
+      <span class="gauge-bar">🟩🟩◼️◼️◼️</span>
+    </div>
+    <div class="prefer-sentence">I <span class="hl">prefer</span> hamburgers <span class="hl">to</span> pizza <span class="hl">or</span> pasta.</div>
+  </div>
+
+  <div class="prefer-card">
+    <div class="gauge-row">
+      <span class="gauge-emoji">🎬</span>
+      <span class="gauge-bar">🟩🟩🟩◼️◼️</span>
+    </div>
+    <div class="gauge-row">
+      <span class="gauge-emoji">📺</span>
+      <span class="gauge-bar">🟩🟩🟩🟩🟩</span>
+    </div>
+    <div class="prefer-sentence">I <span class="hl">prefer</span> watching TV shows <span class="hl">to</span> watching movies.</div>
+  </div>
+
+  <div class="rule-box">
+    <strong>Note:</strong> after <em>prefer</em>, use a noun or a gerund (<em>-ing</em>) — not <em>than</em>. ✗ <em>I prefer tea than coffee.</em> → ✓ I prefer tea <strong>to</strong> coffee.
+  </div>
+
+  <footer>Grammar Focus — Likes & Preferences (A1)</footer>
+
+</div>
+<div id="theme-toggle-wrap">
+  <button id="theme-toggle" aria-label="Toggle light/dark mode" title="Toggle light/dark mode">
+    <span id="theme-icon">☀️</span>
+  </button>
+</div>
+<script src="theme-toggle-behavior.js"></script>
+</body>
+</html>
