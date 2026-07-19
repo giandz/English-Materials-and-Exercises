@@ -1,0 +1,918 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<title>Word Order — Conversations</title>
+<link rel="stylesheet" href="general.css">
+<style>
+  :root{
+    --color-background-primary: #ffffff;
+    --color-background-secondary: #f7f7f8;
+    --color-text-primary: #1a1a1a;
+    --color-text-secondary: #5b5b60;
+    --color-text-tertiary: #8b8b90;
+    --color-border-secondary: #e3e3e6;
+    --color-border-tertiary: #ebebee;
+    --border-radius-lg: 12px;
+    --font-mono: "SF Mono", "JetBrains Mono", monospace;
+
+    --text-primary: var(--color-text-primary);
+    --text-secondary: var(--color-text-secondary);
+    --text-muted: var(--color-text-tertiary);
+    --text-accent: #185fa5;
+    --surface-1: var(--color-background-secondary);
+    --surface-2: var(--color-background-primary);
+    --border: var(--color-border-tertiary);
+    --radius: var(--border-radius-lg);
+    --good: #2f7d3a;
+    --good-bg: #e8f4ea;
+    --bad: #b0392f;
+
+    --pos-wh: #2563eb;
+    --pos-verb: #f59e0b;
+    --pos-subject: #10b981;
+    --pos-object: #8b5cf6;
+    --pos-aux: #f915f9;;
+    --pos-neg: #6b7280;
+    --pos-wh-bg: #dbeafe;
+    --pos-verb-bg: #fef3c7;
+    --pos-subject-bg: #d1fae5;
+    --pos-object-bg: #ede9fe;
+    --pos-aux-bg: #ffd6ff;
+    --pos-neg-bg: #e5e7eb;
+  }
+
+  @media (prefers-color-scheme: dark){
+    :root{
+      --color-background-primary: #1e1e20;
+      --color-background-secondary: #26262a;
+      --color-text-primary: #f0f0f2;
+      --color-text-secondary: #b4b4ba;
+      --color-text-tertiary: #85858c;
+      --color-border-secondary: #3a3a3f;
+      --color-border-tertiary: #34343a;
+      --good-bg: #1d2f1f;
+
+      --pos-wh-bg: #172554;
+      --pos-verb-bg: #422006;
+      --pos-subject-bg: #064e3b;
+      --pos-object-bg: #312e81;
+      --pos-aux-bg: #431407;
+      --pos-neg-bg: #374151;
+    }
+  }
+
+  *{ box-sizing:border-box; -webkit-tap-highlight-color:transparent; }
+  html,body{
+    margin:0;
+    background:var(--color-background-primary);
+    color:var(--color-text-primary);
+    font-family:-apple-system, BlinkMacSystemFont, "Segoe UI", Helvetica, Arial, sans-serif;
+    font-size:15px;
+    line-height:1.6;
+    touch-action:manipulation;
+    -webkit-user-select:none;
+    user-select:none;
+    overscroll-behavior:none;
+  }
+  .page{ max-width:680px; margin:0 auto; padding:28px 20px 60px; }
+
+  h1{ font-size:1.3rem; font-weight:600; letter-spacing:-0.01em; margin:0 0 4px; }
+  .subtitle{ font-size:13px; color:var(--text-secondary); margin:0 0 4px; }
+  .cefr-tag{
+    display:inline-block;
+    font-size:11px;
+    font-weight:700;
+    letter-spacing:.04em;
+    background:#e6f1fb;
+    color:#185fa5;
+    padding:3px 10px;
+    border-radius:20px;
+    margin-bottom:10px;
+  }
+
+  .sec-div{font-size:11px;font-weight:500;letter-spacing:.06em;text-transform:uppercase;color:var(--text-muted);display:flex;align-items:center;gap:8px;margin:1.75rem 0 1rem;}
+  .sec-div::before,.sec-div::after{content:'';flex:1;height:.5px;background:var(--border);}
+
+  .rule-box{background:var(--surface-1);border-radius:var(--radius);padding:10px 14px;margin-bottom:1.25rem;font-size:13px;color:var(--text-secondary);line-height:1.7;}
+  .rule-box strong{color:var(--text-primary);font-weight:500;}
+
+  .reference-grid{
+  display:grid;
+  grid-template-columns:repeat(2, minmax(0, 1fr));
+  gap:14px;
+  margin-bottom:10px;
+}
+
+.reference-column{
+  display:flex;
+  flex-direction:column;
+  gap:10px;
+}
+
+.reference-column-title{
+  font-size:12px;
+  font-weight:700;
+  letter-spacing:.05em;
+  text-transform:uppercase;
+  color:var(--text-muted);
+  margin-bottom:2px;
+}
+
+.ref-card{
+  background:var(--surface-2);
+  border:1px solid var(--border);
+  border-radius:10px;
+  padding:10px 10px 9px;
+}
+
+.ref-label{
+  font-size:11px;
+  font-weight:700;
+  letter-spacing:.04em;
+  text-transform:uppercase;
+  color:var(--text-muted);
+  margin-bottom:6px;
+}
+
+.ref-card p{
+  margin:0;
+  font-size:12.5px;
+  line-height:1.5;
+  color:var(--text-secondary);
+}
+
+  .pos-legend{
+    display:flex;
+    flex-wrap:wrap;
+    gap:8px 12px;
+  }
+  .legend-item{
+    display:inline-flex;
+    align-items:center;
+    gap:6px;
+    font-size:12px;
+    color:var(--text-secondary);
+    white-space:nowrap;
+  }
+  .legend-swatch{
+    width:10px;
+    height:10px;
+    border-radius:999px;
+    display:inline-block;
+  }
+  .legend-wh{ background:var(--pos-wh); }
+  .legend-verb{ background:var(--pos-verb); }
+  .legend-subject{ background:var(--pos-subject); }
+  .legend-object{ background:var(--pos-object); }
+  .legend-aux{ background:var(--pos-aux); }
+  .legend-neg{ background:var(--pos-neg); }
+
+  .setting-chip{display:inline-flex;align-items:center;gap:5px;font-size:12px;padding:3px 10px;border-radius:20px;background:var(--surface-1);border:.5px solid var(--border);color:var(--text-secondary);margin-bottom:1rem;}
+
+  .score-bar{
+    display:flex;
+    justify-content:space-between;
+    align-items:center;
+    margin-bottom:1rem;
+    font-size:13px;
+    color:var(--text-secondary);
+    flex-wrap:wrap;
+    gap:8px;
+  }
+  .score-bar strong{ color:var(--good); }
+
+  .item{
+    border:.5px solid var(--color-border-tertiary);
+    border-radius:var(--border-radius-lg);
+    padding:14px 15px;
+    margin-bottom:14px;
+    background:var(--surface-2);
+  }
+  .item-speaker{
+    display:flex;
+    align-items:center;
+    gap:7px;
+    font-size:12px;
+    font-weight:600;
+    color:var(--text-muted);
+    margin-bottom:8px;
+  }
+  .item-speaker .avatar-mini{ font-size:16px; }
+
+  .target-zone{
+    display:flex;
+    flex-wrap:wrap;
+    gap:6px;
+    min-height:68px;
+    padding:8px;
+    border:1.5px dashed var(--border);
+    border-radius:9px;
+    margin-bottom:8px;
+    align-items:center;
+  }s
+  .target-zone.drag-over{
+    border-color:var(--text-accent);
+    background:var(--surface-1);
+  }
+  .target-zone.correct{
+    border-style:solid;
+    border-color:var(--good);
+    background:var(--good-bg);
+  }
+  .target-zone.wrong{
+    border-style:solid;
+    border-color:var(--bad);
+  }
+  .target-placeholder{
+    font-size:12.5px;
+    color:var(--text-muted);
+    font-style:italic;
+  }
+
+  .pool-zone{
+    display:flex;
+    flex-wrap:wrap;
+    gap:6px;
+    min-height:38px;
+    padding:8px;
+    background:var(--surface-1);
+    border-radius:9px;
+  }
+
+  .word-chip{
+    padding:6px 12px;
+    border-radius:8px;
+    border:.5px solid var(--border);
+    background:var(--surface-2);
+    font-size:13.5px;
+    font-weight:500;
+    cursor:grab;
+    touch-action:none;
+    user-select:none;
+  }
+  .word-chip.in-target{
+    background:var(--color-background-primary);
+    border-color:var(--text-accent);
+  }
+  .word-chip.dragging{
+    position:fixed;
+    z-index:999;
+    pointer-events:none;
+    box-shadow:0 8px 20px rgba(0,0,0,0.18);
+    transform:scale(1.05);
+    cursor:grabbing;
+  }
+  .word-chip.chip-correct{
+    background:var(--good-bg);
+    border-color:var(--good);
+    color:var(--good);
+  }
+  .word-chip.chip-wrong{
+    background:#fbebe9;
+    border-color:var(--bad);
+    color:var(--bad);
+  }
+
+  .word-chip.pos-wh,
+  .final-chip.pos-wh{
+    background:var(--pos-wh-bg);
+    color:var(--pos-wh);
+    border-color:var(--pos-wh);
+  }
+  .word-chip.pos-verb,
+  .final-chip.pos-verb{
+    background:var(--pos-verb-bg);
+    color:var(--pos-verb);
+    border-color:var(--pos-verb);
+  }
+  .word-chip.pos-subject,
+  .final-chip.pos-subject{
+    background:var(--pos-subject-bg);
+    color:var(--pos-subject);
+    border-color:var(--pos-subject);
+  }
+  .word-chip.pos-object,
+  .final-chip.pos-object{
+    background:var(--pos-object-bg);
+    color:var(--pos-object);
+    border-color:var(--pos-object);
+  }
+  .word-chip.pos-aux,
+  .final-chip.pos-aux{
+    background:var(--pos-aux-bg);
+    color:var(--pos-aux);
+    border-color:var(--pos-aux);
+  }
+  .word-chip.pos-neg,
+  .final-chip.pos-neg{
+    background:var(--pos-neg-bg);
+    color:var(--pos-neg);
+    border-color:var(--pos-neg);
+  }
+
+  .drop-indicator{
+	margin: 0 10px;
+    width:2px;
+    height:48px;
+    background:var(--text-accent);
+    border-radius:1px;
+    pointer-events:none;
+    flex:0 0 auto;
+  }
+
+  .item-feedback{
+    font-size:12px;
+    margin-top:4px;
+    min-height:16px;
+  }
+  .item-feedback.correct{ color:var(--good); }
+  .item-feedback.wrong{ color:var(--bad); }
+
+  .check-btn{
+    font-family:inherit;
+    font-size:12.5px;
+    font-weight:600;
+    padding:6px 14px;
+    border-radius:8px;
+    border:none;
+    background:var(--text-accent);
+    color:#fff;
+    cursor:pointer;
+    margin-top:2px;
+  }
+  .reference-grid{
+  display:grid;
+  grid-template-columns:repeat(2, minmax(0, 1fr));
+  gap:10px;
+  margin-bottom:10px;
+}
+
+.ref-card{
+  background:var(--surface-2);
+  border:1px solid var(--border);
+  border-radius:10px;
+  padding:10px 10px 9px;
+}
+
+.ref-label{
+  font-size:11px;
+  font-weight:700;
+  letter-spacing:.04em;
+  text-transform:uppercase;
+  color:var(--text-muted);
+  margin-bottom:6px;
+}
+
+.ref-card p{
+  margin:0;
+  font-size:12.5px;
+  line-height:1.5;
+  color:var(--text-secondary);
+}
+
+.pos{
+  padding:0 2px;
+  border-radius:4px;
+}
+
+.pos-wh{ color:var(--pos-wh); background-color:var(--pos-wh-bg); }
+.pos-verb{ color:var(--pos-verb); background-color:var(--pos-verb-bg);}
+.pos-subject{ color:var(--pos-subject); background-color:var(--pos-subject-bg);}
+.pos-object{ color:var(--pos-object); background-color:var(--pos-object-bg);}
+.pos-aux{ color:var(--pos-aux); background-color:var(--pos-aux-bg);}
+.pos-neg{ color:var(--pos-neg); background-color:var(--pos-neg-bg);}
+.pos-none{color: #8b8b90; background: transparent; border-color: #d1d5db;}
+
+
+
+
+.word-chip.pos-hidden{
+  background:var(--surface-2);
+  color:var(--text-primary);
+  border-color:var(--border);
+}
+
+  footer{ text-align:center; font-size:12px; color:var(--text-muted); margin-top:2rem; }
+
+  @media (prefers-color-scheme: dark){
+    .word-chip.chip-wrong{ background:#331e1c; }
+  }
+</style>
+</head>
+<body>
+<div class="page">
+
+  <span class="cefr-tag">A1 · Beginner</span>
+  <h1>Put the words in order</h1>
+  <p class="subtitle">Click or drag the words to build each line of the conversation.</p>
+
+ <div class="reference-box" aria-labelledby="reference-title">
+  <div class="reference-title" id="reference-title">Quick reference</div>
+
+  <div class="reference-grid">
+  <div class="reference-column">
+    <div class="reference-column-title">Be</div>
+
+    <div class="ref-card">
+      <div class="ref-label">Affirmative with be</div>
+      <p><strong><span class="pos pos-subject">She</span> <span class="pos pos-verb">is</span> <span class="pos pos-object">happy</span>.</strong></p>
+    </div>
+
+    <div class="ref-card">
+      <div class="ref-label">Negative with be</div>
+      <p><strong><span class="pos pos-subject">She</span> <span class="pos pos-verb">is</span> <span class="pos pos-neg">not</span> <span class="pos pos-object">happy</span>.</strong></p>
+    </div>
+
+    <div class="ref-card">
+      <div class="ref-label">WH question with be</div>
+      <p><strong><span class="pos pos-wh">Where</span> <span class="pos pos-verb">is</span> <span class="pos pos-subject">she</span> <span class="pos pos-object">from</span>?</strong></p>
+    </div>
+
+    <div class="ref-card">
+      <div class="ref-label">Yes-no question with be</div>
+      <p><strong><span class="pos pos-verb">Is</span> <span class="pos pos-subject">she</span> <span class="pos pos-object">happy</span>?</strong></p>
+    </div>
+  </div>
+
+  <div class="reference-column">
+    <div class="reference-column-title">Other verbs / do</div>
+
+    <div class="ref-card">
+      <div class="ref-label">Affirmative with other verb</div>
+      <p><strong><span class="pos pos-subject">She</span> <span class="pos pos-verb">likes</span> <span class="pos pos-object">pizza</span>.</strong></p>
+    </div>
+
+    <div class="ref-card">
+      <div class="ref-label">Negative with other verb</div>
+      <p><strong><span class="pos pos-subject">She</span> <span class="pos pos-aux">does</span> <span class="pos pos-neg">not</span> <span class="pos pos-verb">like</span> <span class="pos pos-object">pizza</span>.</strong></p>
+    </div>
+
+    <div class="ref-card">
+      <div class="ref-label">WH question with do</div>
+      <p><strong><span class="pos pos-wh">What</span> <span class="pos pos-aux">do</span> <span class="pos pos-subject">you</span> <span class="pos pos-verb">do</span>?</strong></p>
+    </div>
+
+    <div class="ref-card">
+      <div class="ref-label">Yes-no question with do</div>
+      <p><strong><span class="pos pos-aux">Do</span> <span class="pos pos-subject">you</span> <span class="pos pos-verb">like</span> <span class="pos pos-object">pizza</span>?</strong></p>
+    </div>
+  </div>
+</div>
+
+  <div class="pos-legend" aria-label="Part of speech legend">
+    <span class="legend-item"><span class="legend-swatch legend-wh"></span>Wh-word</span>
+    <span class="legend-item"><span class="legend-swatch legend-verb"></span>Verb / be</span>
+    <span class="legend-item"><span class="legend-swatch legend-subject"></span>Subject</span>
+    <span class="legend-item"><span class="legend-swatch legend-object"></span>Object / complement</span>
+    <span class="legend-item"><span class="legend-swatch legend-aux"></span>Auxiliary</span>
+    <span class="legend-item"><span class="legend-swatch legend-neg"></span>Negation</span>
+  </div>
+</div>
+
+  <div class="rule-box">
+    <strong>How to play:</strong> tap a word in the pool to add it to the line. Tap a word in the line to send it back. You can also drag words — drop between two words to insert it there.
+  </div>
+
+  <div class="sec-div">Conversation 1 — meeting someone new</div>
+  <div class="setting-chip">🙋 Ana and Ben, first day of class</div>
+  <div class="score-bar">
+    <span>Correct: <strong id="beScore">0</strong> / <span id="beTotal">0</span></span>
+  </div>
+  <div id="beItems"></div>
+
+  <div class="sec-div">Conversation 2 — talking about routines</div>
+  <div class="setting-chip">☕ Sara and Leo, weekend chat</div>
+  <div class="score-bar">
+    <span>Correct: <strong id="doScore">0</strong> / <span id="doTotal">0</span></span>
+  </div>
+  <div id="doItems"></div>
+
+  <footer>Grammar Practice — Word Order with "be" & "do" (A1)</footer>
+</div>
+
+<script>
+const BE_ITEMS = [
+  {
+    speaker: "Ana",
+    avatar: "🙋",
+    text: "What / is / your / name / ?",
+    pos: ["wh", "verb", "subject", "object", "none"]
+  },
+  {
+    speaker: "Marco",
+    avatar: "🧑",
+    text: "My / name / is / Marco / .",
+    pos: ["subject", "object", "verb", "object", "none"]
+  },
+  {
+    speaker: "Ana",
+    avatar: "🙋",
+    text: "Where / are / you / from / ?",
+    pos: ["wh", "verb", "subject", "object", "none"]
+  },
+  {
+    speaker: "Marco",
+    avatar: "🧑",
+    text: "I / am / from / Italy / .",
+    pos: ["subject", "verb", "object", "object", "none"]
+  },
+  {
+    speaker: "Ana",
+    avatar: "🙋",
+    text: "Are / you / a / student / ?",
+    pos: ["verb", "subject", "object", "object", "none"]
+  },
+  {
+    speaker: "Marco",
+    avatar: "🧑",
+    text: "No / , / I / am / not / a / student / .",
+    pos: ["neg", "none", "subject", "verb", "neg", "object", "object", "none"]
+  },
+  {
+    speaker: "Ana",
+    avatar: "🙋",
+    text: "How / old / are / you / ?",
+    pos: ["wh", "object", "verb", "subject", "none"]
+  },
+  {
+    speaker: "Marco",
+    avatar: "🧑",
+    text: "I / am / twenty / years / old / .",
+    pos: ["subject", "verb", "object", "object", "object", "none"]
+  }
+];
+
+const DO_ITEMS = [
+  {
+    speaker: "Sara",
+    avatar: "👩",
+    text: "Do / you / like / pizza / ?",
+    pos: ["aux", "subject", "verb", "object", "none"]
+  },
+  {
+    speaker: "Leo",
+    avatar: "🧑‍🦱",
+    text: "I / really / like / pizza / .",
+    pos: ["subject", "object", "verb", "object", "none"]
+  },
+  {
+    speaker: "Sara",
+    avatar: "👩",
+    text: "What / do / you / do / on / weekends / ?",
+    pos: ["wh", "aux", "subject", "verb", "object", "object", "none"]
+  },
+  {
+    speaker: "Leo",
+    avatar: "🧑‍🦱",
+    text: "I / usually / play / soccer / .",
+    pos: ["subject", "object", "verb", "object", "none"]
+  },
+  {
+    speaker: "Sara",
+    avatar: "👩",
+    text: "Does / your / sister / like / music / ?",
+    pos: ["aux", "subject", "subject", "verb", "object", "none"]
+  },
+  {
+    speaker: "Leo",
+    avatar: "🧑‍🦱",
+    text: "She / doesn't / like / music / much / .",
+    pos: ["subject", "neg", "verb", "object", "object", "none"]
+  },
+  {
+    speaker: "Sara",
+    avatar: "👩",
+    text: "Where / does / she / work / ?",
+    pos: ["wh", "aux", "subject", "verb", "none"]
+  },
+  {
+    speaker: "Leo",
+    avatar: "🧑‍🦱",
+    text: "She / works / at / a / bank / .",
+    pos: ["subject", "verb", "object", "object", "object", "none"]
+  }
+];
+
+const POS_CLASSES = {
+  wh: 'pos-wh',
+  verb: 'pos-verb',
+  subject: 'pos-subject',
+  object: 'pos-object',
+  aux: 'pos-aux',
+  neg: 'pos-neg',
+  none: 'pos-none'
+};
+
+  function parseItem(str) {
+    return str.split(" / ").map(w => w.trim());
+  }
+
+  function shuffleArr(arr) {
+    const a = [...arr];
+    for (let i = a.length - 1; i > 0; i--) {
+      const j = Math.floor(Math.random() * (i + 1));
+      [a[i], a[j]] = [a[j], a[i]];
+    }
+    return a;
+  }
+
+  function normalizeWord(word) {
+    return String(word).toLowerCase();
+  }
+
+function chipPosClass(chip) {
+  return POS_CLASSES[chip.dataset.pos] || '';
+}
+
+  let globalScore = { be: new Set(), do: new Set() };
+
+  function buildExercise(containerId, items, groupKey, scoreElId, totalElId) {
+    const container = document.getElementById(containerId);
+    document.getElementById(totalElId).textContent = items.length;
+
+    items.forEach((entry, idx) => {
+      const words = parseItem(entry.text);
+      let correctOrder = [...words];
+      let pool = shuffleArr(words);
+      let tries = 0;
+      while (JSON.stringify(pool) === JSON.stringify(correctOrder) && tries < 5) {
+        pool = shuffleArr(words);
+        tries++;
+      }
+
+      const itemEl = document.createElement('div');
+      itemEl.className = 'item';
+      itemEl.dataset.idx = idx;
+      itemEl.innerHTML = `
+        <div class="item-speaker"><span class="avatar-mini">${entry.avatar}</span> ${entry.speaker}</div>
+        <div class="target-zone" data-role="target"><span class="target-placeholder">Tap words below to build the sentence</span></div>
+        <div class="pool-zone" data-role="pool"></div>
+        <div class="item-feedback" data-role="feedback"></div>
+        <button class="check-btn" data-role="check">Check</button>
+      `;
+      container.appendChild(itemEl);
+
+      const targetZone = itemEl.querySelector('[data-role="target"]');
+      const poolZone = itemEl.querySelector('[data-role="pool"]');
+      const feedback = itemEl.querySelector('[data-role="feedback"]');
+      const checkBtn = itemEl.querySelector('[data-role="check"]');
+      const indicator = document.createElement('span');
+      indicator.className = 'drop-indicator';
+
+pool.forEach((word, wIdx) => {
+  const chip = document.createElement('span');
+  chip.className = 'word-chip';
+  chip.textContent = word;
+  chip.dataset.word = word;
+  chip.dataset.uid = `${idx}-${wIdx}-${Math.random().toString(36).slice(2,6)}`;
+  chip.dataset.pos = entry.pos[wIdx] || '';
+  attachChipEvents(chip, targetZone, poolZone, feedback, itemEl, indicator);
+  poolZone.appendChild(chip);
+});
+
+
+      checkBtn.addEventListener('click', () => {
+        const targetChips = Array.from(targetZone.querySelectorAll('.word-chip'));
+        const currentWords = targetChips.map(c => c.dataset.word);
+        const isCorrect = JSON.stringify(currentWords) === JSON.stringify(correctOrder) && currentWords.length === correctOrder.length;
+
+        targetZone.classList.remove('correct', 'wrong');
+
+        if (currentWords.length === 0) {
+          feedback.textContent = "Add some words first.";
+          feedback.className = "item-feedback wrong";
+          return;
+        }
+
+        targetChips.forEach((chip, i) => {
+          chip.classList.remove('chip-correct', 'chip-wrong');
+          if (chip.dataset.word === correctOrder[i]) {
+            chip.classList.add('chip-correct');
+          } else {
+            chip.classList.add('chip-wrong');
+          }
+        });
+
+if (isCorrect) {
+  targetZone.classList.add('correct');
+  feedback.textContent = "✓ Correct!";
+  feedback.className = "item-feedback correct";
+  globalScore[groupKey].add(idx);
+  applyPosHighlighting(targetZone, entry.pos);
+} else {
+  targetZone.classList.add('wrong');
+  feedback.textContent = "✗ Not quite — try again.";
+  feedback.className = "item-feedback wrong";
+  globalScore[groupKey].delete(idx);
+}
+      });
+
+      updatePlaceholder(targetZone);
+    });
+  }
+
+  function updatePlaceholder(targetZone) {
+    const hasChips = targetZone.querySelector('.word-chip');
+    let placeholder = targetZone.querySelector('.target-placeholder');
+    if (!hasChips) {
+      if (!placeholder) {
+        placeholder = document.createElement('span');
+        placeholder.className = 'target-placeholder';
+        placeholder.textContent = 'Tap words below to build the sentence';
+        targetZone.appendChild(placeholder);
+      }
+    } else if (placeholder) {
+      placeholder.remove();
+    }
+  }
+
+  function moveChipToTarget(chip, targetZone, poolZone) {
+    chip.classList.add('in-target');
+    targetZone.appendChild(chip);
+    updatePlaceholder(targetZone);
+    updatePlaceholder(poolZone);
+  }
+
+  function moveChipToPool(chip, targetZone, poolZone) {
+    chip.classList.remove('in-target');
+    poolZone.appendChild(chip);
+    updatePlaceholder(targetZone);
+    updatePlaceholder(poolZone);
+  }
+
+  function getDropSpot(zone, x, y) {
+    const chips = Array.from(zone.querySelectorAll('.word-chip:not(.dragging)'));
+    if (chips.length === 0) return null;
+    let closest = null;
+    let closestDist = Infinity;
+    chips.forEach(c => {
+      const rect = c.getBoundingClientRect();
+      const cx = rect.left + rect.width / 2;
+      const cy = rect.top + rect.height / 2;
+      const dist = Math.hypot(x - cx, y - cy);
+      if (dist < closestDist) { closestDist = dist; closest = { chip: c, rect }; }
+    });
+    const before = x < closest.rect.left + closest.rect.width / 2;
+    return { chip: closest.chip, before };
+  }
+
+  function placeIndicator(zone, indicator, x, y) {
+    const spot = getDropSpot(zone, x, y);
+    if (!spot) {
+      zone.appendChild(indicator);
+    } else if (spot.before) {
+      zone.insertBefore(indicator, spot.chip);
+    } else {
+      zone.insertBefore(indicator, spot.chip.nextSibling);
+    }
+  }
+
+  function attachChipEvents(chip, targetZone, poolZone, feedback, itemEl, indicator) {
+    let dragState = null;
+    let moved = false;
+
+    chip.addEventListener('pointerdown', (e) => {
+  e.preventDefault();
+
+  if (targetZone.classList.contains('correct')) {
+    clearPosHighlighting(targetZone);
+    targetZone.classList.remove('correct');
+  }
+
+  moved = false;
+  const rect = chip.getBoundingClientRect();
+  dragState = {
+    offsetX: e.clientX - rect.left,
+    offsetY: e.clientY - rect.top,
+    originParent: chip.parentElement
+  };
+  chip.setPointerCapture(e.pointerId);
+
+  itemEl.querySelectorAll('.word-chip').forEach(c =>
+    c.classList.remove('chip-correct', 'chip-wrong')
+  );
+  targetZone.classList.remove('wrong');
+  feedback.textContent = "";
+  feedback.className = "item-feedback";
+});
+
+    chip.addEventListener('pointermove', (e) => {
+      if (!dragState) return;
+      if (!moved) {
+        moved = true;
+        chip.classList.add('dragging');
+        chip.style.width = chip.getBoundingClientRect().width + 'px';
+      }
+      chip.style.left = (e.clientX - dragState.offsetX) + 'px';
+      chip.style.top = (e.clientY - dragState.offsetY) + 'px';
+
+      targetZone.classList.remove('drag-over');
+      poolZone.classList.remove('drag-over');
+      const els = document.elementsFromPoint(e.clientX, e.clientY);
+      const overTarget = els.some(el => el.closest && el.closest('[data-role="target"]') === targetZone);
+      const overPool = els.some(el => el.closest && el.closest('[data-role="pool"]') === poolZone);
+
+      if (overTarget) {
+        targetZone.classList.add('drag-over');
+        placeIndicator(targetZone, indicator, e.clientX, e.clientY);
+      } else {
+        indicator.remove();
+        if (overPool) poolZone.classList.add('drag-over');
+      }
+    });
+
+    chip.addEventListener('pointerup', (e) => {
+      if (!dragState) return;
+      targetZone.classList.remove('drag-over');
+      poolZone.classList.remove('drag-over');
+      targetZone.classList.remove('correct', 'wrong');
+      feedback.textContent = "";
+      feedback.className = "item-feedback";
+
+      if (moved) {
+        chip.classList.remove('dragging');
+        chip.style.position = '';
+        chip.style.left = '';
+        chip.style.top = '';
+        chip.style.width = '';
+
+        if (indicator.parentElement === targetZone) {
+          targetZone.insertBefore(chip, indicator);
+          chip.classList.add('in-target');
+          indicator.remove();
+          updatePlaceholder(targetZone);
+          updatePlaceholder(poolZone);
+        } else {
+          indicator.remove();
+          const els = document.elementsFromPoint(e.clientX, e.clientY);
+          const overPool = els.some(el => el.closest && el.closest('[data-role="pool"]') === poolZone);
+          if (overPool) {
+            moveChipToPool(chip, targetZone, poolZone);
+          } else if (dragState.originParent === targetZone) {
+            moveChipToTarget(chip, targetZone, poolZone);
+          } else {
+            moveChipToPool(chip, targetZone, poolZone);
+          }
+        }
+      } else {
+        targetZone.classList.remove('correct', 'wrong');
+        if (chip.parentElement === poolZone) {
+          moveChipToTarget(chip, targetZone, poolZone);
+        } else {
+          moveChipToPool(chip, targetZone, poolZone);
+        }
+      }
+
+      dragState = null;
+    });
+
+    chip.addEventListener('pointercancel', () => {
+      indicator.remove();
+      if (dragState && moved) {
+        chip.classList.remove('dragging');
+        chip.style.position = '';
+        chip.style.left = '';
+        chip.style.top = '';
+        chip.style.width = '';
+        if (dragState.originParent === targetZone) {
+          moveChipToTarget(chip, targetZone, poolZone);
+        } else {
+          moveChipToPool(chip, targetZone, poolZone);
+        }
+      }
+      dragState = null;
+    });
+  }
+function applyPosHighlighting(targetZone, posArray) {
+  const chips = Array.from(targetZone.querySelectorAll('.word-chip'));
+  chips.forEach((chip, i) => {
+    const pos = posArray[i] || 'none';
+    chip.className = `word-chip ${POS_CLASSES[pos] || 'pos-none'}`;
+  });
+}
+function clearPosHighlighting(targetZone) {
+  targetZone.querySelectorAll('.word-chip').forEach((chip) => {
+    chip.classList.remove(
+      'pos-wh',
+      'pos-verb',
+      'pos-subject',
+      'pos-object',
+      'pos-aux',
+      'pos-neg',
+      'pos-none'
+    );
+  });
+}
+  buildExercise('beItems', BE_ITEMS, 'be', 'beScore', 'beTotal');
+  buildExercise('doItems', DO_ITEMS, 'do', 'doScore', 'doTotal');
+</script>
+<div id="theme-toggle-wrap">
+  <button id="theme-toggle" aria-label="Toggle light/dark mode" title="Toggle light/dark mode">
+    <span id="theme-icon">☀️</span>
+  </button>
+</div>
+<script src="theme-toggle-behavior.js"></script>
+</body>
+</html>
