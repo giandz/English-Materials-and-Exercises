@@ -1,0 +1,341 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Celebrations — Matching</title>
+<link rel="stylesheet" href="general.css">
+<style>
+  :root{
+    --color-background-primary: #ffffff;
+    --color-background-secondary: #f7f7f8;
+    --color-text-primary: #1a1a1a;
+    --color-text-secondary: #5b5b60;
+    --color-text-tertiary: #8b8b90;
+    --color-border-secondary: #e3e3e6;
+    --color-border-tertiary: #ebebee;
+    --border-radius-lg: 12px;
+    --font-mono: "SF Mono", "JetBrains Mono", monospace;
+
+    --text-primary: var(--color-text-primary);
+    --text-secondary: var(--color-text-secondary);
+    --text-muted: var(--color-text-tertiary);
+    --text-accent: #185fa5;
+    --surface-1: var(--color-background-secondary);
+    --surface-2: var(--color-background-primary);
+    --border: var(--color-border-tertiary);
+    --radius: var(--border-radius-lg);
+
+    --good: #2f7d3a;
+    --good-bg: #e8f4ea;
+    --bad: #b0392f;
+    --bad-bg: #fbebe9;
+    --sel-bg: #e6f1fb;
+    --sel-border: #185fa5;
+  }
+
+  @media (prefers-color-scheme: dark){
+    :root{
+      --color-background-primary: #1e1e20;
+      --color-background-secondary: #26262a;
+      --color-text-primary: #f0f0f2;
+      --color-text-secondary: #b4b4ba;
+      --color-text-tertiary: #85858c;
+      --color-border-secondary: #3a3a3f;
+      --color-border-tertiary: #34343a;
+      --good-bg: #1d2f1f;
+      --bad-bg: #3a201e;
+      --sel-bg: #16283a;
+    }
+  }
+
+  *{ box-sizing:border-box; -webkit-tap-highlight-color:transparent; }
+  html,body{
+    margin:0;
+    background:var(--color-background-primary);
+    color:var(--color-text-primary);
+    font-family:-apple-system, BlinkMacSystemFont, "Segoe UI", Helvetica, Arial, sans-serif;
+    font-size:15px;
+    line-height:1.6;
+    user-select:none;
+  }
+  .page{ max-width:680px; margin:0 auto; padding:28px 20px 60px; }
+
+  h1{ font-size:1.3rem; font-weight:600; letter-spacing:-0.01em; margin:0 0 4px; }
+  .subtitle{ font-size:13px; color:var(--text-secondary); margin:0 0 4px; }
+  .cefr-tag{
+    display:inline-block;
+    font-size:11px;
+    font-weight:700;
+    letter-spacing:.04em;
+    background:#e6f1fb;
+    color:#185fa5;
+    padding:3px 10px;
+    border-radius:20px;
+    margin-bottom:10px;
+  }
+  @media (prefers-color-scheme: dark){
+    .cefr-tag{ background:#1c2e40; color:#7fb2e0; }
+  }
+
+  .sec-div{font-size:11px;font-weight:500;letter-spacing:.06em;text-transform:uppercase;color:var(--text-muted);display:flex;align-items:center;gap:8px;margin:1.75rem 0 1rem;}
+  .sec-div::before,.sec-div::after{content:'';flex:1;height:.5px;background:var(--border);}
+
+  .rule-box{background:var(--surface-1);border-radius:var(--radius);padding:10px 14px;margin-bottom:1.25rem;font-size:13px;color:var(--text-secondary);line-height:1.7;}
+  .rule-box strong{color:var(--text-primary);font-weight:500;}
+
+  .score-bar{
+    display:flex;
+    justify-content:space-between;
+    align-items:center;
+    margin-bottom:.8rem;
+    font-size:13px;
+    color:var(--text-secondary);
+    flex-wrap:wrap;
+    gap:8px;
+  }
+  .score-bar strong{ color:var(--good); }
+  .reset-btn{
+    font-family:inherit;
+    font-size:12px;
+    font-weight:600;
+    padding:4px 12px;
+    border-radius:999px;
+    border:1px solid var(--border);
+    background:var(--surface-2);
+    color:var(--text-secondary);
+    cursor:pointer;
+  }
+  .reset-btn:hover{ border-color:var(--text-accent); color:var(--text-accent); }
+
+  .match-grid{
+    display:grid;
+    grid-template-columns:1fr 1fr;
+    gap:10px 14px;
+    margin-bottom:1.5rem;
+  }
+  @media (max-width:480px){
+    .match-grid{ gap:8px 8px; }
+  }
+
+  .match-col-label{
+    font-size:11px;
+    font-weight:700;
+    text-transform:uppercase;
+    letter-spacing:.04em;
+    color:var(--text-muted);
+    margin-bottom:6px;
+  }
+
+  .match-card{
+    display:flex;
+    align-items:center;
+    gap:9px;
+    border:1.5px solid var(--border);
+    border-radius:12px;
+    padding:10px 12px;
+    background:var(--surface-2);
+    cursor:pointer;
+    font-size:13.5px;
+    font-weight:500;
+    line-height:1.35;
+    transition:border-color .12s, background .12s, transform .08s;
+  }
+  .match-card:active{ transform:scale(0.98); }
+  .match-card .emoji{ font-size:20px; flex-shrink:0; }
+
+  .match-card.selected{
+    border-color:var(--sel-border);
+    background:var(--sel-bg);
+  }
+  .match-card.matched{
+    border-color:var(--good);
+    background:var(--good-bg);
+    color:var(--good);
+    cursor:default;
+  }
+  .match-card.matched .emoji{ opacity:0.9; }
+  .match-card.wrong{
+    border-color:var(--bad);
+    background:var(--bad-bg);
+    animation:shake .3s;
+  }
+
+  @keyframes shake{
+    0%,100%{ transform:translateX(0); }
+    25%{ transform:translateX(-4px); }
+    75%{ transform:translateX(4px); }
+  }
+
+  .win-msg{
+    text-align:center;
+    font-size:14px;
+    font-weight:600;
+    color:var(--good);
+    padding:10px;
+    border-radius:var(--radius);
+    background:var(--good-bg);
+    margin-bottom:1.25rem;
+    display:none;
+  }
+  .win-msg.show{ display:block; }
+
+  footer{ text-align:center; font-size:12px; color:var(--text-muted); margin-top:2rem; }
+</style>
+</head>
+<body>
+<div class="page">
+
+  <span class="cefr-tag">A1 · Beginner</span>
+  <h1>Celebrations — What Do We Do?</h1>
+  <p class="subtitle">Match each celebration to the activity people do during it.</p>
+
+  <div class="rule-box">
+    <strong>How to play:</strong> tap a celebration on the left, then tap the activity on the right that matches it. Correct pairs turn green and lock in place.
+  </div>
+
+  <div class="sec-div">Match the pairs</div>
+
+  <div class="score-bar">
+    <span>Matched: <strong id="score">0</strong> / <span id="total">0</span></span>
+    <button class="reset-btn" id="resetBtn">🔄 Shuffle again</button>
+  </div>
+
+  <div class="win-msg" id="winMsg">🎉 Great job! You matched them all!</div>
+
+  <div class="match-grid">
+    <div>
+      <div class="match-col-label">Celebration</div>
+      <div id="leftCol"></div>
+    </div>
+    <div>
+      <div class="match-col-label">Activity</div>
+      <div id="rightCol"></div>
+    </div>
+  </div>
+
+  <footer>Vocabulary Practice — Celebrations & Activities (A1)</footer>
+</div>
+
+<script>
+  const PAIRS = [
+    { id: "xmas",  left: "Christmas",   leftEmoji: "🎄", right: "Decorate a Christmas tree", rightEmoji: "🌲" },
+    { id: "ny",    left: "New Year",    leftEmoji: "🎆", right: "Watch the fireworks",        rightEmoji: "🎇" },
+    { id: "hall",  left: "Halloween",   leftEmoji: "🎃", right: "Dress up in a costume",      rightEmoji: "👻" },
+    { id: "bday",  left: "Birthday",    leftEmoji: "🎂", right: "Blow out the candles",       rightEmoji: "🕯️" },
+    { id: "wed",   left: "Wedding",     leftEmoji: "💍", right: "Throw the bouquet",          rightEmoji: "💐" },
+    { id: "thx",   left: "Thanksgiving",leftEmoji: "🦃", right: "Have a big family dinner",   rightEmoji: "🍽️" },
+    { id: "east",  left: "Easter",      leftEmoji: "🐣", right: "Hunt for eggs",              rightEmoji: "🥚" },
+    { id: "grad",  left: "Graduation",  leftEmoji: "🎓", right: "Throw your cap in the air",  rightEmoji: "🧢" }
+  ];
+
+  const leftCol = document.getElementById('leftCol');
+  const rightCol = document.getElementById('rightCol');
+  const scoreEl = document.getElementById('score');
+  const totalEl = document.getElementById('total');
+  const winMsg = document.getElementById('winMsg');
+  const resetBtn = document.getElementById('resetBtn');
+
+  totalEl.textContent = PAIRS.length;
+
+  let matchedCount = 0;
+  let selectedLeft = null;
+  let selectedRight = null;
+
+  function shuffleArr(arr) {
+    const a = [...arr];
+    for (let i = a.length - 1; i > 0; i--) {
+      const j = Math.floor(Math.random() * (i + 1));
+      [a[i], a[j]] = [a[j], a[i]];
+    }
+    return a;
+  }
+
+  function render() {
+    leftCol.innerHTML = '';
+    rightCol.innerHTML = '';
+    matchedCount = 0;
+    selectedLeft = null;
+    selectedRight = null;
+    scoreEl.textContent = 0;
+    winMsg.classList.remove('show');
+
+    const leftOrder = shuffleArr(PAIRS);
+    const rightOrder = shuffleArr(PAIRS);
+
+    leftOrder.forEach(pair => {
+      const card = document.createElement('div');
+      card.className = 'match-card';
+      card.dataset.id = pair.id;
+      card.dataset.side = 'left';
+      card.innerHTML = `<span class="emoji">${pair.leftEmoji}</span><span>${pair.left}</span>`;
+      card.addEventListener('click', () => onCardClick(card));
+      leftCol.appendChild(card);
+    });
+
+    rightOrder.forEach(pair => {
+      const card = document.createElement('div');
+      card.className = 'match-card';
+      card.dataset.id = pair.id;
+      card.dataset.side = 'right';
+      card.innerHTML = `<span class="emoji">${pair.rightEmoji}</span><span>${pair.right}</span>`;
+      card.addEventListener('click', () => onCardClick(card));
+      rightCol.appendChild(card);
+    });
+  }
+
+  function onCardClick(card) {
+    if (card.classList.contains('matched')) return;
+
+    if (card.dataset.side === 'left') {
+      if (selectedLeft) selectedLeft.classList.remove('selected');
+      selectedLeft = card;
+      card.classList.add('selected');
+    } else {
+      if (selectedRight) selectedRight.classList.remove('selected');
+      selectedRight = card;
+      card.classList.add('selected');
+    }
+
+    if (selectedLeft && selectedRight) {
+      const isMatch = selectedLeft.dataset.id === selectedRight.dataset.id;
+
+      if (isMatch) {
+        selectedLeft.classList.remove('selected');
+        selectedRight.classList.remove('selected');
+        selectedLeft.classList.add('matched');
+        selectedRight.classList.add('matched');
+        matchedCount++;
+        scoreEl.textContent = matchedCount;
+        selectedLeft = null;
+        selectedRight = null;
+        if (matchedCount === PAIRS.length) {
+          winMsg.classList.add('show');
+        }
+      } else {
+        const wrongLeft = selectedLeft;
+        const wrongRight = selectedRight;
+        wrongLeft.classList.add('wrong');
+        wrongRight.classList.add('wrong');
+        setTimeout(() => {
+          wrongLeft.classList.remove('selected', 'wrong');
+          wrongRight.classList.remove('selected', 'wrong');
+        }, 400);
+        selectedLeft = null;
+        selectedRight = null;
+      }
+    }
+  }
+
+  resetBtn.addEventListener('click', render);
+
+  render();
+</script>
+<div id="theme-toggle-wrap">
+  <button id="theme-toggle" aria-label="Toggle light/dark mode" title="Toggle light/dark mode">
+    <span id="theme-icon">☀️</span>
+  </button>
+</div>
+<script src="theme-toggle-behavior.js"></script>
+</body>
+</html>
