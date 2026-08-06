@@ -1,0 +1,358 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>There is / There are — Count & Noncount Nouns</title>
+<link rel="stylesheet" href="general.css">
+<style>
+  :root {
+    --color-background-primary: #ffffff;
+    --color-background-secondary: #f6f7f9;
+    --color-text-primary: #1a1d23;
+    --color-text-secondary: #4b5261;
+    --color-text-tertiary: #8a8f9c;
+    --color-border-secondary: #e2e5ea;
+    --color-border-tertiary: #ececef;
+    --border-radius-lg: 14px;
+    --font-mono: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+
+    --text-primary: var(--color-text-primary);
+    --text-secondary: var(--color-text-secondary);
+    --text-muted: var(--color-text-tertiary);
+    --text-accent: #2563eb;
+    --surface-1: var(--color-background-primary);
+    --surface-2: var(--color-background-secondary);
+    --border: var(--color-border-secondary);
+    --radius: var(--border-radius-lg);
+
+    --pos-subject: #1a7f37;      --pos-subject-bg: #e6f6ea;
+    --pos-verb: #b3690a;         --pos-verb-bg: #fdf1e0;
+    --pos-object: #7a3fc0;       --pos-object-bg: #f2e9fb;
+    --pos-aux: #c03a7a;          --pos-aux-bg: #fbe6f1;
+    --pos-neg: #5c6270;          --pos-neg-bg: #e7e8eb;
+    --pos-wh: #1d6fd8;           --pos-wh-bg: #e3edfd;
+
+    --pos-yes: #1a7f37;          --pos-yes-bg: #e6f6ea;
+    --pos-no: #c03434;           --pos-no-bg: #fbe7e7;
+  }
+
+  @media (prefers-color-scheme: dark) {
+    :root {
+      --color-background-primary: #16181d;
+      --color-background-secondary: #1d2026;
+      --color-text-primary: #eef0f3;
+      --color-text-secondary: #b7bcc6;
+      --color-text-tertiary: #838995;
+      --color-border-secondary: #2c303a;
+      --color-border-tertiary: #262a33;
+
+      --text-accent: #6ea8fe;
+      --surface-1: var(--color-background-primary);
+      --surface-2: var(--color-background-secondary);
+      --border: var(--color-border-secondary);
+
+      --pos-subject: #6fd08c;      --pos-subject-bg: #163524;
+      --pos-verb: #e3a655;         --pos-verb-bg: #3a2c14;
+      --pos-object: #b98af0;       --pos-object-bg: #2c2140;
+      --pos-aux: #ec86bb;          --pos-aux-bg: #3a1f2c;
+      --pos-neg: #a3a8b4;          --pos-neg-bg: #2a2d34;
+      --pos-wh: #7cb0f7;           --pos-wh-bg: #1c2b42;
+
+      --pos-yes: #6fd08c;          --pos-yes-bg: #163524;
+      --pos-no: #f08a8a;           --pos-no-bg: #3a1c1c;
+    }
+  }
+
+  * { box-sizing: border-box; }
+  body {
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Helvetica, Arial, sans-serif;
+    font-size: 15px;
+    color: var(--text-primary);
+    background: var(--surface-1);
+    margin: 0;
+    line-height: 1.55;
+  }
+  .page { max-width: 760px; margin: 0 auto; padding: 28px 20px 64px; }
+
+  h1 { font-size: 1.3rem; margin: 4px 0 2px; }
+  h2 { font-size: 1.05rem; margin: 0 0 10px; }
+  .subtitle { color: var(--text-secondary); margin: 0 0 14px; font-size: 0.95rem; }
+
+  .cefr-tag {
+    display: inline-block;
+    font-size: 0.72rem;
+    font-weight: 700;
+    letter-spacing: 0.04em;
+    padding: 3px 10px;
+    border-radius: 999px;
+    background: var(--pos-wh-bg);
+    color: var(--pos-wh);
+    text-transform: uppercase;
+  }
+
+  .sec-div {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    margin: 30px 0 14px;
+    color: var(--text-muted);
+    font-size: 0.72rem;
+    font-weight: 700;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+  }
+  .sec-div::before, .sec-div::after {
+    content: "";
+    flex: 1;
+    height: 1px;
+    background: var(--border);
+  }
+
+  .rule-box {
+    background: var(--surface-2);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    padding: 16px 18px;
+    margin: 6px 0;
+  }
+  .rule-box p { margin: 0 0 8px; }
+  .rule-box p:last-child { margin-bottom: 0; }
+  .rule-box strong { color: var(--text-accent); }
+
+  .legend {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+    margin: 10px 0 4px;
+  }
+  .legend-pill {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    font-size: 0.75rem;
+    padding: 4px 10px 4px 8px;
+    border-radius: 999px;
+    border: 1px solid var(--border);
+    background: var(--surface-2);
+    color: var(--text-secondary);
+  }
+  .legend-dot { width: 9px; height: 9px; border-radius: 50%; flex: none; }
+
+  .pos { padding: 1px 5px; border-radius: 5px; font-weight: 600; }
+  .pos-subject { color: var(--pos-subject); background: var(--pos-subject-bg); }
+  .pos-verb    { color: var(--pos-verb); background: var(--pos-verb-bg); }
+  .pos-object  { color: var(--pos-object); background: var(--pos-object-bg); }
+  .pos-neg     { color: var(--pos-neg); background: var(--pos-neg-bg); }
+
+  .card-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+    gap: 12px;
+    margin: 6px 0 4px;
+  }
+  .ex-card {
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    padding: 14px 16px;
+    background: var(--surface-1);
+  }
+  .ex-card.yes { border-color: var(--pos-yes-bg); }
+  .ex-card.no  { border-color: var(--pos-no-bg); }
+
+  .ex-emoji {
+    font-size: 1.5rem;
+    margin-bottom: 8px;
+    letter-spacing: 2px;
+  }
+  .ex-sentence { font-size: 0.97rem; margin: 0 0 4px; }
+  .ex-alt { font-size: 0.85rem; color: var(--text-muted); margin: 0; }
+
+  .noun-tag {
+    display: inline-block;
+    font-size: 0.68rem;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.04em;
+    padding: 2px 8px;
+    border-radius: 999px;
+    margin-bottom: 8px;
+  }
+  .noun-tag.count { background: var(--pos-wh-bg); color: var(--pos-wh); }
+  .noun-tag.noncount { background: var(--pos-object-bg); color: var(--pos-object); }
+
+  table.neg-table {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: 0.9rem;
+    margin: 6px 0;
+  }
+  table.neg-table th, table.neg-table td {
+    text-align: left;
+    padding: 9px 10px;
+    border-bottom: 1px solid var(--border);
+    vertical-align: top;
+  }
+  table.neg-table th {
+    color: var(--text-muted);
+    font-size: 0.72rem;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    font-weight: 700;
+  }
+
+  .note {
+    font-size: 0.85rem;
+    color: var(--text-muted);
+    margin-top: 4px;
+  }
+
+</style>
+</head>
+<body>
+<div class="page">
+
+  <span class="cefr-tag">A1</span>
+  <h1>There is / There are</h1>
+  <p class="subtitle">Talking about what exists — count and noncount nouns</p>
+
+  <div class="rule-box">
+    <p>We use <strong>there is</strong> / <strong>there are</strong> to say what exists or what we can see in a place.</p>
+    <p><strong>Count nouns</strong> (things we can number: 1 apple, 2 apples) use <strong>is</strong> for one thing and <strong>are</strong> for more than one.</p>
+    <p><strong>Noncount nouns</strong> (things we don't number: meat, water, rice) always use <strong>is</strong>, usually with <strong>some</strong> or <strong>any</strong>.</p>
+  </div>
+
+  <div class="legend">
+    <span class="legend-pill"><span class="legend-dot" style="background:var(--pos-subject)"></span>there</span>
+    <span class="legend-pill"><span class="legend-dot" style="background:var(--pos-verb)"></span>is / are</span>
+    <span class="legend-pill"><span class="legend-dot" style="background:var(--pos-object)"></span>noun</span>
+    <span class="legend-pill"><span class="legend-dot" style="background:var(--pos-neg)"></span>negation</span>
+  </div>
+
+  <div class="sec-div">Affirmative — Count Nouns</div>
+
+  <div class="card-grid">
+    <div class="ex-card yes">
+      <span class="noun-tag count">singular</span>
+      <div class="ex-emoji">🍎</div>
+      <p class="ex-sentence"><span class="pos pos-subject">There</span> <span class="pos pos-verb">is</span> <span class="pos pos-object">an apple</span>.</p>
+    </div>
+    <div class="ex-card yes">
+      <span class="noun-tag count">plural</span>
+      <div class="ex-emoji">🍎×2</div>
+      <p class="ex-sentence"><span class="pos pos-subject">There</span> <span class="pos pos-verb">are</span> <span class="pos pos-object">two apples</span>.</p>
+    </div>
+    <div class="ex-card yes">
+      <span class="noun-tag count">plural</span>
+      <div class="ex-emoji">🐟×3</div>
+      <p class="ex-sentence"><span class="pos pos-subject">There</span> <span class="pos pos-verb">are</span> <span class="pos pos-object">three fish</span>.</p>
+    </div>
+  </div>
+
+  <div class="sec-div">Affirmative — Noncount Nouns</div>
+
+  <div class="card-grid">
+    <div class="ex-card yes">
+      <span class="noun-tag noncount">noncount</span>
+      <div class="ex-emoji">🥩☑️</div>
+      <p class="ex-sentence"><span class="pos pos-subject">There</span> <span class="pos pos-verb">is</span> <span class="pos pos-object">some meat</span>.</p>
+    </div>
+    <div class="ex-card yes">
+      <span class="noun-tag noncount">noncount</span>
+      <div class="ex-emoji">💧☑️</div>
+      <p class="ex-sentence"><span class="pos pos-subject">There</span> <span class="pos pos-verb">is</span> <span class="pos pos-object">some water</span>.</p>
+    </div>
+    <div class="ex-card yes">
+      <span class="noun-tag noncount">noncount</span>
+      <div class="ex-emoji">🍚☑️</div>
+      <p class="ex-sentence"><span class="pos pos-subject">There</span> <span class="pos pos-verb">is</span> <span class="pos pos-object">some rice</span>.</p>
+    </div>
+  </div>
+  <p class="note">In affirmative sentences, noncount and plural nouns usually take <strong>some</strong>.</p>
+
+  <div class="sec-div">Negative — "not" form</div>
+
+  <div class="card-grid">
+    <div class="ex-card no">
+      <span class="noun-tag count">singular</span>
+      <div class="ex-emoji">🍎❌</div>
+      <p class="ex-sentence"><span class="pos pos-subject">There</span> <span class="pos pos-verb">isn't</span> <span class="pos pos-object">an apple</span>.</p>
+    </div>
+    <div class="ex-card no">
+      <span class="noun-tag count">plural</span>
+      <div class="ex-emoji">🐟🐟❌</div>
+      <p class="ex-sentence"><span class="pos pos-subject">There</span> <span class="pos pos-verb">aren't</span> <span class="pos pos-neg">any</span> <span class="pos pos-object">fish</span>.</p>
+    </div>
+    <div class="ex-card no">
+      <span class="noun-tag noncount">noncount</span>
+      <div class="ex-emoji">🥦❌</div>
+      <p class="ex-sentence"><span class="pos pos-subject">There</span> <span class="pos pos-verb">isn't</span> <span class="pos pos-neg">any</span> <span class="pos pos-object">broccoli</span>.</p>
+    </div>
+  </div>
+
+  <div class="sec-div">Negative — "no" form</div>
+
+  <div class="card-grid">
+    <div class="ex-card no">
+      <span class="noun-tag count">singular</span>
+      <div class="ex-emoji">🍎❌</div>
+      <p class="ex-sentence"><span class="pos pos-subject">There</span>'s <span class="pos pos-neg">no</span> <span class="pos pos-object">apple</span>.</p>
+    </div>
+    <div class="ex-card no">
+      <span class="noun-tag count">plural</span>
+      <div class="ex-emoji">🐟🐟❌</div>
+      <p class="ex-sentence"><span class="pos pos-subject">There</span> <span class="pos pos-verb">are</span> <span class="pos pos-neg">no</span> <span class="pos pos-object">fish</span>.</p>
+    </div>
+    <div class="ex-card no">
+      <span class="noun-tag noncount">noncount</span>
+      <div class="ex-emoji">🥦❌</div>
+      <p class="ex-sentence"><span class="pos pos-subject">There</span>'s <span class="pos pos-neg">no</span> <span class="pos pos-object">broccoli</span>.</p>
+    </div>
+  </div>
+
+  <div class="rule-box">
+    <p><strong>Two ways to say the same negative sentence</strong> — both are correct and mean the same thing:</p>
+    <table class="neg-table">
+      <tr><th>with "not" + any</th><th>with "no"</th></tr>
+      <tr><td>There isn't <strong>an</strong> apple.</td><td>There's <strong>no</strong> apple.</td></tr>
+      <tr><td>There aren't <strong>any</strong> apples.</td><td>There are <strong>no</strong> apples.</td></tr>
+      <tr><td>There isn't <strong>any</strong> meat.</td><td>There's <strong>no</strong> meat.</td></tr>
+    </table>
+    <p class="note">"No" replaces "any" and goes directly before the noun. It never uses isn't/aren't — the verb stays positive: <strong>There's no</strong>, <strong>There are no</strong>.</p>
+  </div>
+
+  <div class="sec-div">Quick Reference</div>
+
+  <table class="neg-table">
+    <tr>
+      <th></th>
+      <th>Singular count</th>
+      <th>Plural count</th>
+      <th>Noncount</th>
+    </tr>
+    <tr>
+      <td><strong>Affirmative</strong></td>
+      <td>There is a/an ___.</td>
+      <td>There are (number) ___s.</td>
+      <td>There is some ___.</td>
+    </tr>
+    <tr>
+      <td><strong>Negative (not)</strong></td>
+      <td>There isn't a/an ___.</td>
+      <td>There aren't any ___s.</td>
+      <td>There isn't any ___.</td>
+    </tr>
+    <tr>
+      <td><strong>Negative (no)</strong></td>
+      <td>There's no ___.</td>
+      <td>There are no ___s.</td>
+      <td>There's no ___.</td>
+    </tr>
+  </table>
+
+</div>
+
+<div id="theme-toggle-wrap"><button id="theme-toggle" aria-label="Toggle light/dark mode" title="Toggle light/dark mode"><span id="theme-icon">☀️</span></button></div>
+<script src="theme-toggle-behavior.js"></script>
+</body>
+</html>

@@ -1,0 +1,370 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Food Vocabulary — Matching</title>
+<link rel="stylesheet" href="general.css">
+<style>
+  :root {
+    --color-background-primary: #ffffff;
+    --color-background-secondary: #f6f7f9;
+    --color-text-primary: #1a1d23;
+    --color-text-secondary: #4b5261;
+    --color-text-tertiary: #8a8f9c;
+    --color-border-secondary: #e2e5ea;
+    --color-border-tertiary: #ececef;
+    --border-radius-lg: 14px;
+    --font-mono: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+
+    --text-primary: var(--color-text-primary);
+    --text-secondary: var(--color-text-secondary);
+    --text-muted: var(--color-text-tertiary);
+    --text-accent: #2563eb;
+    --surface-1: var(--color-background-primary);
+    --surface-2: var(--color-background-secondary);
+    --border: var(--color-border-secondary);
+    --radius: var(--border-radius-lg);
+
+    --pos-wh: #1d6fd8;           --pos-wh-bg: #e3edfd;
+    --pos-yes: #1a7f37;          --pos-yes-bg: #e6f6ea;
+    --pos-no: #c03434;           --pos-no-bg: #fbe7e7;
+  }
+
+  @media (prefers-color-scheme: dark) {
+    :root {
+      --color-background-primary: #16181d;
+      --color-background-secondary: #1d2026;
+      --color-text-primary: #eef0f3;
+      --color-text-secondary: #b7bcc6;
+      --color-text-tertiary: #838995;
+      --color-border-secondary: #2c303a;
+      --color-border-tertiary: #262a33;
+
+      --text-accent: #6ea8fe;
+      --surface-1: var(--color-background-primary);
+      --surface-2: var(--color-background-secondary);
+      --border: var(--color-border-secondary);
+
+      --pos-wh: #7cb0f7;           --pos-wh-bg: #1c2b42;
+      --pos-yes: #6fd08c;          --pos-yes-bg: #163524;
+      --pos-no: #f08a8a;           --pos-no-bg: #3a1c1c;
+    }
+  }
+
+  * { box-sizing: border-box; }
+  body {
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Helvetica, Arial, sans-serif;
+    font-size: 15px;
+    color: var(--text-primary);
+    background: var(--surface-1);
+    margin: 0;
+    line-height: 1.55;
+  }
+  .page { max-width: 820px; margin: 0 auto; padding: 28px 20px 64px; }
+
+  h1 { font-size: 1.3rem; margin: 4px 0 2px; }
+  .subtitle { color: var(--text-secondary); margin: 0 0 14px; font-size: 0.95rem; }
+
+  .cefr-tag {
+    display: inline-block;
+    font-size: 0.72rem;
+    font-weight: 700;
+    letter-spacing: 0.04em;
+    padding: 3px 10px;
+    border-radius: 999px;
+    background: var(--pos-wh-bg);
+    color: var(--pos-wh);
+    text-transform: uppercase;
+  }
+
+  .sec-div {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    margin: 30px 0 6px;
+    color: var(--text-muted);
+    font-size: 0.72rem;
+    font-weight: 700;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+  }
+  .sec-div::before, .sec-div::after {
+    content: "";
+    flex: 1;
+    height: 1px;
+    background: var(--border);
+  }
+
+  .score-bar-wrap { display: flex; align-items: center; gap: 12px; margin: 10px 0 14px; }
+  .score-bar { flex: 1; height: 8px; border-radius: 999px; background: var(--surface-2); overflow: hidden; }
+  .score-fill { height: 100%; width: 0%; background: var(--pos-yes); transition: width .3s; }
+  .score-label { font-size: 0.8rem; color: var(--text-secondary); white-space: nowrap; }
+
+  .board-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+    gap: 14px;
+    margin: 4px 0 6px;
+  }
+  .board {
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    padding: 12px 14px;
+    background: var(--surface-1);
+  }
+  .board-label {
+    font-size: 0.78rem;
+    font-weight: 700;
+    color: var(--text-secondary);
+    margin-bottom: 10px;
+    display: flex;
+    align-items: center;
+    gap: 6px;
+  }
+
+  .anchor-row { display: flex; flex-wrap: wrap; gap: 8px; margin-bottom: 10px; }
+  .anchor-slot {
+    padding: 8px 14px;
+    border: 2px dashed var(--border);
+    border-radius: 8px;
+    background: var(--surface-2);
+    font-weight: 600;
+    font-size: 0.9rem;
+    min-width: 56px;
+    text-align: center;
+    transition: background .2s, border-color .2s, color .2s;
+  }
+  .anchor-slot.fused {
+    border-style: solid;
+    border-color: var(--pos-yes);
+    background: var(--pos-yes-bg);
+    color: var(--pos-yes);
+    animation: fusePulse .35s ease;
+  }
+  @keyframes fusePulse {
+    0% { transform: scale(1); }
+    50% { transform: scale(1.14); }
+    100% { transform: scale(1); }
+  }
+
+  .chip-pool { display: flex; flex-wrap: wrap; gap: 8px; padding-top: 8px; border-top: 1px dashed var(--border); }
+
+  .pair-chip {
+    touch-action: none;
+    user-select: none;
+    cursor: grab;
+    padding: 6px 12px;
+    border-radius: 8px;
+    background: var(--surface-1);
+    border: 1px solid var(--border);
+    font-size: 1rem;
+    font-weight: 600;
+  }
+  .pair-chip.dragging { cursor: grabbing; box-shadow: 0 4px 10px rgba(0,0,0,0.15); z-index: 1000; }
+  .pair-chip.shake {
+    animation: shakeX .4s ease;
+    background: var(--pos-no-bg);
+    color: var(--pos-no);
+    border-color: var(--pos-no);
+  }
+  @keyframes shakeX {
+    0%, 100% { transform: translateX(0); }
+    20% { transform: translateX(-8px); }
+    40% { transform: translateX(8px); }
+    60% { transform: translateX(-6px); }
+    80% { transform: translateX(6px); }
+  }
+
+  .match-feedback { font-size: 0.82rem; margin: 8px 0 0; font-weight: 600; min-height: 1.1em; }
+  .match-feedback.ok { color: var(--pos-yes); }
+</style>
+</head>
+<body>
+<div class="page">
+
+  <span class="cefr-tag">A1</span>
+  <h1>Food Vocabulary — Matching</h1>
+  <p class="subtitle">Drag each chip onto its pair. Correct pairs fuse together; wrong ones shake and go back to the pool.</p>
+
+  <div class="sec-div">Ingredients</div>
+
+  <div class="score-bar-wrap">
+    <div class="score-bar"><div class="score-fill" id="ingScoreFill"></div></div>
+    <div class="score-label"><span id="ingScore">0</span>/<span id="ingTotal">0</span> paired</div>
+  </div>
+
+  <div class="board-grid" id="ingBoards"></div>
+  <p class="match-feedback" id="ingFeedback"></p>
+
+  <div class="sec-div">Meals</div>
+
+  <div class="score-bar-wrap">
+    <div class="score-bar"><div class="score-fill" id="mealScoreFill"></div></div>
+    <div class="score-label"><span id="mealScore">0</span>/<span id="mealTotal">0</span> paired</div>
+  </div>
+
+  <div class="board-grid" id="mealBoards"></div>
+  <p class="match-feedback" id="mealFeedback"></p>
+
+</div>
+
+<div id="theme-toggle-wrap"><button id="theme-toggle" aria-label="Toggle light/dark mode" title="Toggle light/dark mode"><span id="theme-icon">☀️</span></button></div>
+<script src="theme-toggle-behavior.js"></script>
+
+<script>
+const ingredientData = [
+  { category: "meats", icon: "🥩", label: "Meats", items: [
+    { emoji: "🥩", name: "beef" }, { emoji: "🍗", name: "chicken" }, { emoji: "🥓", name: "bacon" }, { emoji: "🍖", name: "pork" }
+  ]},
+  { category: "dairy", icon: "🧀", label: "Dairy & Eggs", items: [
+    { emoji: "🥛", name: "milk" }, { emoji: "🧀", name: "cheese" }, { emoji: "🧈", name: "butter" }, { emoji: "🥚", name: "egg" }
+  ]},
+  { category: "fruits", icon: "🍎", label: "Fruits", items: [
+    { emoji: "🍎", name: "apple" }, { emoji: "🍌", name: "banana" }, { emoji: "🍇", name: "grapes" }, { emoji: "🍓", name: "strawberry" }
+  ]},
+  { category: "vegetables", icon: "🥕", label: "Vegetables", items: [
+    { emoji: "🥦", name: "broccoli" }, { emoji: "🥕", name: "carrot" }, { emoji: "🌽", name: "corn" }, { emoji: "🥔", name: "potato" }
+  ]}
+];
+
+const mealData = [
+  { category: "appetizer", icon: "🍲", label: "Appetizer", items: [
+    { emoji: "🍲", name: "soup" }, { emoji: "🥟", name: "dumplings" }, { emoji: "🍤", name: "shrimp cocktail" }, { emoji: "🧆", name: "falafel" }
+  ]},
+  { category: "main", icon: "🍔", label: "Main Course", items: [
+    { emoji: "🍔", name: "hamburger" }, { emoji: "🍕", name: "pizza" }, { emoji: "🍝", name: "spaghetti" }, { emoji: "🌮", name: "taco" }
+  ]},
+  { category: "side", icon: "🍟", label: "Side Dish", items: [
+    { emoji: "🍟", name: "fries" }, { emoji: "🍚", name: "rice" }, { emoji: "🥖", name: "bread" }, { emoji: "🥗", name: "salad" }
+  ]},
+  { category: "dessert", icon: "🍰", label: "Dessert", items: [
+    { emoji: "🍰", name: "cake" }, { emoji: "🍨", name: "ice cream" }, { emoji: "🍪", name: "cookie" }, { emoji: "🥧", name: "pie" }
+  ]}
+];
+
+function shuffle(arr) {
+  const a = arr.slice();
+  for (let i = a.length - 1; i > 0; i--) {
+    const j = Math.floor(Math.random() * (i + 1));
+    [a[i], a[j]] = [a[j], a[i]];
+  }
+  return a;
+}
+
+function makeDraggable(chip, onDrop) {
+  chip.addEventListener("pointerdown", (e) => {
+    if (chip.dataset.fused) return;
+    chip.setPointerCapture(e.pointerId);
+    chip.classList.add("dragging");
+    const startParent = chip.parentElement;
+    const move = (ev) => {
+      chip.style.position = "fixed";
+      chip.style.left = (ev.clientX - 30) + "px";
+      chip.style.top = (ev.clientY - 16) + "px";
+    };
+    const up = (ev) => {
+      chip.classList.remove("dragging");
+      chip.style.position = "";
+      chip.style.left = "";
+      chip.style.top = "";
+      document.removeEventListener("pointermove", move);
+      document.removeEventListener("pointerup", up);
+      const dropEl = document.elementFromPoint(ev.clientX, ev.clientY);
+      const anchor = dropEl && dropEl.closest(".anchor-slot");
+      onDrop(chip, anchor, startParent);
+    };
+    document.addEventListener("pointermove", move);
+    document.addEventListener("pointerup", up);
+  });
+}
+
+function buildBoard(group, sectionState) {
+  const board = document.createElement("div");
+  board.className = "board";
+  board.innerHTML = `<div class="board-label">${group.icon} ${group.label}</div>
+    <div class="anchor-row"></div>
+    <div class="chip-pool"></div>`;
+  const anchorRow = board.querySelector(".anchor-row");
+  const pool = board.querySelector(".chip-pool");
+
+  group.items.forEach((item, i) => {
+    const key = group.category + "-" + i;
+    const showEmojiOnAnchor = Math.random() < 0.5;
+
+    const anchor = document.createElement("div");
+    anchor.className = "anchor-slot";
+    anchor.dataset.key = key;
+    anchor.dataset.emoji = item.emoji;
+    anchor.dataset.name = item.name;
+    anchor.textContent = showEmojiOnAnchor ? item.emoji : item.name;
+    anchorRow.appendChild(anchor);
+
+    const chip = document.createElement("span");
+    chip.className = "pair-chip";
+    chip.dataset.key = key;
+    chip.textContent = showEmojiOnAnchor ? item.name : item.emoji;
+    makeDraggable(chip, (draggedChip, anchorEl, startParent) => {
+      if (anchorEl && anchorEl.dataset.key === draggedChip.dataset.key && !anchorEl.dataset.fused) {
+        anchorEl.textContent = `${anchorEl.dataset.emoji} ${anchorEl.dataset.name}`;
+        anchorEl.classList.add("fused");
+        anchorEl.dataset.fused = "1";
+        draggedChip.remove();
+        sectionState.correct++;
+        sectionState.update();
+      } else if (anchorEl && anchorEl.dataset.fused) {
+        pool.appendChild(draggedChip);
+      } else if (anchorEl) {
+        draggedChip.classList.add("shake");
+        setTimeout(() => draggedChip.classList.remove("shake"), 400);
+        pool.appendChild(draggedChip);
+      } else {
+        startParent.appendChild(draggedChip);
+      }
+    });
+    pool.appendChild(chip);
+  });
+
+  // shuffle pool chip order visually
+  shuffle([...pool.children]).forEach((c) => pool.appendChild(c));
+
+  return board;
+}
+
+function buildSection(data, boardsEl, scoreFillEl, scoreEl, totalEl, feedbackEl) {
+  const total = data.reduce((sum, g) => sum + g.items.length, 0);
+  totalEl.textContent = total;
+  const sectionState = {
+    correct: 0,
+    update() {
+      scoreEl.textContent = this.correct;
+      scoreFillEl.style.width = (this.correct / total * 100) + "%";
+      if (this.correct === total) {
+        feedbackEl.textContent = "All paired — great job!";
+        feedbackEl.className = "match-feedback ok";
+      }
+    }
+  };
+  data.forEach((group) => boardsEl.appendChild(buildBoard(group, sectionState)));
+}
+
+buildSection(
+  ingredientData,
+  document.getElementById("ingBoards"),
+  document.getElementById("ingScoreFill"),
+  document.getElementById("ingScore"),
+  document.getElementById("ingTotal"),
+  document.getElementById("ingFeedback")
+);
+
+buildSection(
+  mealData,
+  document.getElementById("mealBoards"),
+  document.getElementById("mealScoreFill"),
+  document.getElementById("mealScore"),
+  document.getElementById("mealTotal"),
+  document.getElementById("mealFeedback")
+);
+</script>
+</body>
+</html>

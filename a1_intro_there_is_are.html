@@ -1,0 +1,328 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>There is / There are — Conversation</title>
+<link rel="stylesheet" href="general.css">
+<style>
+  :root {
+    --color-background-primary: #ffffff;
+    --color-background-secondary: #f6f7f9;
+    --color-text-primary: #1a1d23;
+    --color-text-secondary: #4b5261;
+    --color-text-tertiary: #8a8f9c;
+    --color-border-secondary: #e2e5ea;
+    --color-border-tertiary: #ececef;
+    --border-radius-lg: 14px;
+    --font-mono: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+
+    --text-primary: var(--color-text-primary);
+    --text-secondary: var(--color-text-secondary);
+    --text-muted: var(--color-text-tertiary);
+    --text-accent: #2563eb;
+    --surface-1: var(--color-background-primary);
+    --surface-2: var(--color-background-secondary);
+    --border: var(--color-border-secondary);
+    --radius: var(--border-radius-lg);
+
+    --pos-subject: #1a7f37;      --pos-subject-bg: #e6f6ea;
+    --pos-verb: #b3690a;         --pos-verb-bg: #fdf1e0;
+    --pos-object: #7a3fc0;       --pos-object-bg: #f2e9fb;
+    --pos-neg: #5c6270;          --pos-neg-bg: #e7e8eb;
+    --pos-wh: #1d6fd8;           --pos-wh-bg: #e3edfd;
+  }
+
+  @media (prefers-color-scheme: dark) {
+    :root {
+      --color-background-primary: #16181d;
+      --color-background-secondary: #1d2026;
+      --color-text-primary: #eef0f3;
+      --color-text-secondary: #b7bcc6;
+      --color-text-tertiary: #838995;
+      --color-border-secondary: #2c303a;
+      --color-border-tertiary: #262a33;
+
+      --text-accent: #6ea8fe;
+      --surface-1: var(--color-background-primary);
+      --surface-2: var(--color-background-secondary);
+      --border: var(--color-border-secondary);
+
+      --pos-subject: #6fd08c;      --pos-subject-bg: #163524;
+      --pos-verb: #e3a655;         --pos-verb-bg: #3a2c14;
+      --pos-object: #b98af0;       --pos-object-bg: #2c2140;
+      --pos-neg: #a3a8b4;          --pos-neg-bg: #2a2d34;
+      --pos-wh: #7cb0f7;           --pos-wh-bg: #1c2b42;
+    }
+  }
+
+  * { box-sizing: border-box; }
+  body {
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Helvetica, Arial, sans-serif;
+    font-size: 15px;
+    color: var(--text-primary);
+    background: var(--surface-1);
+    margin: 0;
+    line-height: 1.55;
+  }
+  .page { max-width: 720px; margin: 0 auto; padding: 28px 20px 64px; }
+
+  h1 { font-size: 1.3rem; margin: 4px 0 2px; }
+  .subtitle { color: var(--text-secondary); margin: 0 0 14px; font-size: 0.95rem; }
+
+  .cefr-tag {
+    display: inline-block;
+    font-size: 0.72rem;
+    font-weight: 700;
+    letter-spacing: 0.04em;
+    padding: 3px 10px;
+    border-radius: 999px;
+    background: var(--pos-wh-bg);
+    color: var(--pos-wh);
+    text-transform: uppercase;
+  }
+
+  .setting-chip {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    font-size: 0.82rem;
+    font-weight: 600;
+    padding: 5px 12px;
+    border-radius: 999px;
+    background: var(--surface-2);
+    border: 1px solid var(--border);
+    color: var(--text-secondary);
+    margin: 8px 0 18px;
+  }
+
+  .sec-div {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    margin: 30px 0 14px;
+    color: var(--text-muted);
+    font-size: 0.72rem;
+    font-weight: 700;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+  }
+  .sec-div::before, .sec-div::after {
+    content: "";
+    flex: 1;
+    height: 1px;
+    background: var(--border);
+  }
+
+  .legend {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+    margin: 4px 0 18px;
+  }
+  .legend-pill {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    font-size: 0.75rem;
+    padding: 4px 10px 4px 8px;
+    border-radius: 999px;
+    border: 1px solid var(--border);
+    background: var(--surface-2);
+    color: var(--text-secondary);
+  }
+  .legend-dot { width: 9px; height: 9px; border-radius: 50%; flex: none; }
+
+  .pos { padding: 1px 5px; border-radius: 5px; font-weight: 600; }
+  .pos-subject { color: var(--pos-subject); background: var(--pos-subject-bg); }
+  .pos-verb    { color: var(--pos-verb); background: var(--pos-verb-bg); }
+  .pos-object  { color: var(--pos-object); background: var(--pos-object-bg); }
+  .pos-neg     { color: var(--pos-neg); background: var(--pos-neg-bg); }
+
+  .bubble-wrap { display: flex; align-items: flex-end; gap: 10px; margin: 0 0 14px; }
+  .bubble-wrap.right { flex-direction: row-reverse; }
+  .avatar {
+    width: 34px; height: 34px; border-radius: 50%;
+    background: var(--surface-2); display: flex; align-items: center; justify-content: center;
+    font-size: 1.1rem; flex: none;
+  }
+  .bubble-col { max-width: 78%; }
+  .bubble-wrap.right .bubble-col { align-items: flex-end; display: flex; flex-direction: column; }
+  .bname { font-size: 0.72rem; color: var(--text-muted); margin: 0 0 3px 4px; font-weight: 700; }
+  .bubble-wrap.right .bname { margin: 0 4px 3px 0; }
+  .bubble {
+    background: var(--surface-2);
+    border: 1px solid var(--border);
+    border-radius: 16px 16px 16px 4px;
+    padding: 9px 14px;
+    font-size: 0.95rem;
+  }
+  .bubble-wrap.right .bubble { border-radius: 16px 16px 4px 16px; }
+
+  .rule-box {
+    background: var(--surface-2);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    padding: 16px 18px;
+    margin: 6px 0;
+  }
+  .example-list { list-style: none; margin: 0; padding: 0; }
+  .example-list li {
+    padding: 9px 0;
+    border-bottom: 1px solid var(--border-tertiary, var(--border));
+    font-size: 0.95rem;
+  }
+  .example-list li:last-child { border-bottom: none; }
+  .example-topic {
+    display: inline-block;
+    font-size: 0.68rem;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.04em;
+    color: var(--text-muted);
+    margin-bottom: 8px;
+  }
+</style>
+</head>
+<body>
+<div class="page">
+
+  <span class="cefr-tag">A1</span>
+  <h1>There is / There are — Conversation</h1>
+  <p class="subtitle">Count and noncount nouns in everyday talk</p>
+  <div class="setting-chip">🛒 Ava and Leo are checking the kitchen before a picnic</div>
+
+  <div class="legend">
+    <span class="legend-pill"><span class="legend-dot" style="background:var(--pos-subject)"></span>there</span>
+    <span class="legend-pill"><span class="legend-dot" style="background:var(--pos-verb)"></span>is / are</span>
+    <span class="legend-pill"><span class="legend-dot" style="background:var(--pos-object)"></span>noun</span>
+    <span class="legend-pill"><span class="legend-dot" style="background:var(--pos-neg)"></span>negation</span>
+  </div>
+
+  <div class="bubble-wrap left">
+    <span class="avatar">👱‍♀️</span>
+    <div class="bubble-col">
+      <p class="bname">Ava</p>
+      <p class="bubble">Let's make sandwiches for the picnic. What do we have?</p>
+    </div>
+  </div>
+
+  <div class="bubble-wrap right">
+    <span class="avatar">👨‍🦰</span>
+    <div class="bubble-col">
+      <p class="bname">Leo</p>
+      <p class="bubble"><span class="pos pos-subject">There</span>'s <span class="pos pos-object">some bread</span> on the counter.</p>
+    </div>
+  </div>
+
+  <div class="bubble-wrap left">
+    <span class="avatar">👱‍♀️</span>
+    <div class="bubble-col">
+      <p class="bname">Ava</p>
+      <p class="bubble">Good. <span class="pos pos-wh">Is</span> <span class="pos pos-subject">there</span> any cheese in the fridge?</p>
+    </div>
+  </div>
+
+  <div class="bubble-wrap right">
+    <span class="avatar">👨‍🦰</span>
+    <div class="bubble-col">
+      <p class="bname">Leo</p>
+      <p class="bubble">Yes, <span class="pos pos-subject">there</span> <span class="pos pos-verb">is</span>. And <span class="pos pos-subject">there</span> <span class="pos pos-verb">are</span> <span class="pos pos-object">three eggs</span> too.</p>
+    </div>
+  </div>
+
+  <div class="bubble-wrap left">
+    <span class="avatar">👱‍♀️</span>
+    <div class="bubble-col">
+      <p class="bname">Ava</p>
+      <p class="bubble">Perfect. What about vegetables? <span class="pos pos-wh">Are</span> <span class="pos pos-subject">there</span> any tomatoes?</p>
+    </div>
+  </div>
+
+  <div class="bubble-wrap right">
+    <span class="avatar">👨‍🦰</span>
+    <div class="bubble-col">
+      <p class="bname">Leo</p>
+      <p class="bubble">Hmm... <span class="pos pos-subject">there</span> <span class="pos pos-verb">aren't</span> <span class="pos pos-neg">any</span> tomatoes, but <span class="pos pos-subject">there</span>'s <span class="pos pos-object">some lettuce</span>.</p>
+    </div>
+  </div>
+
+  <div class="bubble-wrap left">
+    <span class="avatar">👱‍♀️</span>
+    <div class="bubble-col">
+      <p class="bname">Ava</p>
+      <p class="bubble">That's fine. <span class="pos pos-subject">There</span>'s <span class="pos pos-neg">no</span> mayonnaise, right? I checked yesterday.</p>
+    </div>
+  </div>
+
+  <div class="bubble-wrap right">
+    <span class="avatar">👨‍🦰</span>
+    <div class="bubble-col">
+      <p class="bname">Leo</p>
+      <p class="bubble">Actually, <span class="pos pos-subject">there</span> <span class="pos pos-verb">is</span> <span class="pos pos-object">some</span> — I bought a new jar.</p>
+    </div>
+  </div>
+
+  <div class="bubble-wrap left">
+    <span class="avatar">👱‍♀️</span>
+    <div class="bubble-col">
+      <p class="bname">Ava</p>
+      <p class="bubble">Great! And for dessert — <span class="pos pos-subject">there</span> <span class="pos pos-verb">are</span> <span class="pos pos-object">some strawberries</span> in the bowl, aren't there?</p>
+    </div>
+  </div>
+
+  <div class="bubble-wrap right">
+    <span class="avatar">👨‍🦰</span>
+    <div class="bubble-col">
+      <p class="bname">Leo</p>
+      <p class="bubble">Yes, and <span class="pos pos-subject">there</span> <span class="pos pos-verb">is</span> <span class="pos pos-object">some chocolate</span> in the drawer too!</p>
+    </div>
+  </div>
+
+  <div class="bubble-wrap left">
+    <span class="avatar">👱‍♀️</span>
+    <div class="bubble-col">
+      <p class="bname">Ava</p>
+      <p class="bubble">One more thing — <span class="pos pos-subject">there</span> <span class="pos pos-verb">isn't</span> <span class="pos pos-neg">any</span> water in the bottles. Can you fill them?</p>
+    </div>
+  </div>
+
+  <div class="bubble-wrap right">
+    <span class="avatar">👨‍🦰</span>
+    <div class="bubble-col">
+      <p class="bname">Leo</p>
+      <p class="bubble">Sure! <span class="pos pos-subject">There</span> <span class="pos pos-verb">are</span> <span class="pos pos-object">two bottles</span> here — I'll fill them now.</p>
+    </div>
+  </div>
+
+  <div class="sec-div">More Examples — Other Topics</div>
+  <p class="subtitle">The same grammar with furniture and places in a city</p>
+
+  <div class="rule-box">
+    <p class="example-topic">🛋️ Furniture</p>
+    <ul class="example-list">
+      <li><span class="pos pos-subject">There</span>'s <span class="pos pos-object">a sofa</span> next to the window.</li>
+      <li><span class="pos pos-subject">There</span> <span class="pos pos-verb">are</span> <span class="pos pos-object">two chairs</span> at the table.</li>
+      <li><span class="pos pos-subject">There</span> <span class="pos pos-verb">isn't</span> <span class="pos pos-neg">a</span> lamp in the bedroom.</li>
+      <li><span class="pos pos-subject">There</span> <span class="pos pos-verb">aren't</span> <span class="pos pos-neg">any</span> shelves in the hallway.</li>
+      <li><span class="pos pos-subject">There</span>'s <span class="pos pos-neg">no</span> furniture in the new office yet.</li>
+    </ul>
+  </div>
+
+  <div class="rule-box">
+    <p class="example-topic">🏙️ Places in a City</p>
+    <ul class="example-list">
+      <li><span class="pos pos-subject">There</span>'s <span class="pos pos-object">a park</span> near my house.</li>
+      <li><span class="pos pos-subject">There</span> <span class="pos pos-verb">are</span> <span class="pos pos-object">many restaurants</span> downtown.</li>
+      <li><span class="pos pos-subject">There</span> <span class="pos pos-verb">isn't</span> <span class="pos pos-neg">a</span> train station in this town.</li>
+      <li><span class="pos pos-subject">There</span> <span class="pos pos-verb">aren't</span> <span class="pos pos-neg">any</span> tall buildings here.</li>
+      <li><span class="pos pos-subject">There</span>'s <span class="pos pos-neg">no</span> traffic on Sunday mornings.</li>
+    </ul>
+  </div>
+
+</div>
+
+<div id="theme-toggle-wrap"><button id="theme-toggle" aria-label="Toggle light/dark mode" title="Toggle light/dark mode"><span id="theme-icon">☀️</span></button></div>
+<script src="theme-toggle-behavior.js"></script>
+</body>
+</html>
