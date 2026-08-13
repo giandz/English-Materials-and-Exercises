@@ -1,0 +1,937 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>A1 Conversations: At the Places</title>
+
+  <style>
+    :root {
+      --color-background-primary: #ffffff;
+      --color-background-secondary: #f7f7f8;
+      --color-text-primary: #1a1a1a;
+      --color-text-secondary: #5b5b60;
+      --color-text-tertiary: #8b8b90;
+      --color-border-secondary: #e3e3e6;
+      --color-border-tertiary: #ebebee;
+      --border-radius-lg: 12px;
+
+      --text-primary: var(--color-text-primary);
+      --text-secondary: var(--color-text-secondary);
+      --text-muted: var(--color-text-tertiary);
+      --text-accent: #185fa5;
+      --surface-1: var(--color-background-secondary);
+      --surface-2: var(--color-background-primary);
+      --border: var(--color-border-tertiary);
+      --radius: var(--border-radius-lg);
+
+      --bg-accent: #e6f1fb;
+      --bg-pro: #eeedfe;
+      --text-pro: #26215c;
+      --border-pro: #afa9ec;
+
+      --bg-place: #eaf3de;
+      --text-place: #27500a;
+      --bg-phrase: #fdf1da;
+      --text-phrase: #8a5a10;
+    }
+
+    html[data-theme="dark"] {
+      --color-background-primary: #1e1e20;
+      --color-background-secondary: #26262a;
+      --color-text-primary: #f0f0f2;
+      --color-text-secondary: #b4b4ba;
+      --color-text-tertiary: #85858c;
+      --color-border-secondary: #3a3a3f;
+      --color-border-tertiary: #34343a;
+
+      --text-accent: #7fb2e0;
+      --surface-1: var(--color-background-secondary);
+      --surface-2: var(--color-background-primary);
+      --border: var(--color-border-tertiary);
+
+      --bg-accent: #1c2e40;
+      --bg-pro: #2a2650;
+      --text-pro: #d7d3ff;
+      --border-pro: #4c447f;
+
+      --bg-place: #1f3014;
+      --text-place: #9ed17a;
+      --bg-phrase: #3a2c10;
+      --text-phrase: #e0b95c;
+    }
+
+    * {
+      box-sizing: border-box;
+    }
+
+    html,
+    body {
+      margin: 0;
+      background: var(--color-background-primary);
+      color: var(--text-primary);
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Helvetica, Arial, sans-serif;
+      font-size: 15px;
+      line-height: 1.6;
+    }
+
+    .page {
+      max-width: 680px;
+      margin: 0 auto;
+      padding: 28px 20px 56px;
+    }
+
+    h1 {
+      margin: 0 0 4px;
+      font-size: 1.3rem;
+      font-weight: 600;
+      letter-spacing: -0.01em;
+    }
+
+    .subtitle {
+      margin: 0 0 4px;
+      color: var(--text-secondary);
+      font-size: 13px;
+    }
+
+    .cefr-tag {
+      display: inline-block;
+      margin-bottom: 10px;
+      padding: 3px 10px;
+      border-radius: 20px;
+      background: var(--bg-accent);
+      color: var(--text-accent);
+      font-size: 11px;
+      font-weight: 700;
+      letter-spacing: 0.04em;
+    }
+
+    .sec-div {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      margin: 1.75rem 0 1rem;
+      color: var(--text-muted);
+      font-size: 11px;
+      font-weight: 500;
+      letter-spacing: 0.06em;
+      text-transform: uppercase;
+    }
+
+    .sec-div::before,
+    .sec-div::after {
+      content: "";
+      flex: 1;
+      height: 0.5px;
+      background: var(--border);
+    }
+
+    .setting-chip {
+      display: inline-flex;
+      align-items: center;
+      gap: 5px;
+      margin-bottom: 1rem;
+      padding: 3px 10px;
+      border: 0.5px solid var(--border);
+      border-radius: 20px;
+      background: var(--surface-1);
+      color: var(--text-secondary);
+      font-size: 12px;
+    }
+
+    .legend {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 8px;
+      margin-bottom: 1.25rem;
+    }
+
+    .legend-pill {
+      padding: 3px 11px;
+      border-radius: 20px;
+      font-size: 11.5px;
+      font-weight: 600;
+    }
+
+    .legend-pill.place {
+      background: var(--bg-place);
+      color: var(--text-place);
+    }
+
+    .legend-pill.phrase {
+      background: var(--bg-phrase);
+      color: var(--text-phrase);
+    }
+
+    .place-word {
+      padding: 1px 5px;
+      border-radius: 4px;
+      background: var(--bg-place);
+      color: var(--text-place);
+      font-weight: 700;
+    }
+
+    .key-phrase {
+      padding: 1px 5px;
+      border-radius: 4px;
+      background: var(--bg-phrase);
+      color: var(--text-phrase);
+      font-weight: 700;
+    }
+
+    .bubble-wrap {
+      display: flex;
+      align-items: flex-end;
+      gap: 10px;
+      margin-bottom: 14px;
+    }
+
+    .bubble-wrap.right {
+      flex-direction: row-reverse;
+    }
+
+    .avatar {
+      display: flex;
+      width: 34px;
+      height: 34px;
+      flex-shrink: 0;
+      align-items: center;
+      justify-content: center;
+      border-radius: 50%;
+      font-size: 18px;
+    }
+
+    .av-a {
+      background: var(--bg-accent);
+    }
+
+    .av-b {
+      background: var(--bg-pro);
+    }
+
+    .bubble-column {
+      max-width: 80%;
+    }
+
+    .bubble {
+      padding: 9px 13px;
+      border: 0.5px solid var(--border);
+      border-radius: 15px;
+      font-size: 14px;
+      line-height: 1.65;
+    }
+
+    .bubble.left {
+      border-bottom-left-radius: 4px;
+      background: var(--surface-2);
+      color: var(--text-primary);
+    }
+
+    .bubble.right {
+      border-color: var(--border-pro);
+      border-bottom-right-radius: 4px;
+      background: var(--bg-pro);
+      color: var(--text-pro);
+    }
+
+    .bname {
+      margin-bottom: 3px;
+      padding: 0 2px;
+      color: var(--text-muted);
+      font-size: 11px;
+      font-weight: 500;
+    }
+
+    .bname.right {
+      text-align: right;
+    }
+
+    .rule-box {
+      margin-bottom: 1.25rem;
+      padding: 10px 14px;
+      border-radius: var(--radius);
+      background: var(--surface-1);
+      color: var(--text-secondary);
+      font-size: 13px;
+      line-height: 1.7;
+    }
+
+    .rule-box strong {
+      color: var(--text-primary);
+      font-weight: 600;
+    }
+
+    footer {
+      margin-top: 2rem;
+      color: var(--text-muted);
+      font-size: 12px;
+      text-align: center;
+    }
+
+    #theme-toggle-wrap {
+      position: fixed;
+      right: 18px;
+      bottom: 18px;
+    }
+
+    #theme-toggle {
+      display: flex;
+      width: 40px;
+      height: 40px;
+      align-items: center;
+      justify-content: center;
+      border: 0.5px solid var(--border);
+      border-radius: 50%;
+      cursor: pointer;
+      background: var(--surface-2);
+      color: var(--text-primary);
+      font-size: 18px;
+    }
+  </style>
+</head>
+
+<body>
+  <div class="page">
+    <span class="cefr-tag">A1 · Beginners</span>
+
+    <h1>At the Places</h1>
+
+    <p class="subtitle">
+      Nine short conversations using common phrases for different places in town.
+    </p>
+
+    <div class="legend">
+      <span class="legend-pill place">Place vocabulary</span>
+      <span class="legend-pill phrase">Useful phrase</span>
+    </div>
+
+    <div class="sec-div">At the airport ✈️</div>
+
+    <div class="setting-chip">A passenger is going through airport security.</div>
+
+    <div class="bubble-wrap left">
+      <div class="avatar av-a">🧳</div>
+      <div class="bubble-column">
+        <div class="bname">Passenger</div>
+        <div class="bubble left">
+          Excuse me. <span class="key-phrase">Where is gate 12?</span>
+        </div>
+      </div>
+    </div>
+
+    <div class="bubble-wrap right">
+      <div class="avatar av-b">🛂</div>
+      <div class="bubble-column">
+        <div class="bname right">Airport worker</div>
+        <div class="bubble right">
+          It is at the end of this hall.
+        </div>
+      </div>
+    </div>
+
+    <div class="bubble-wrap left">
+      <div class="avatar av-a">🧳</div>
+      <div class="bubble-column">
+        <div class="bname">Passenger</div>
+        <div class="bubble left">
+          Thank you.
+        </div>
+      </div>
+    </div>
+
+    <div class="bubble-wrap right">
+      <div class="avatar av-b">🛂</div>
+      <div class="bubble-column">
+        <div class="bname right">Security officer</div>
+        <div class="bubble right">
+          <span class="key-phrase">Can I see your boarding pass?</span>
+        </div>
+      </div>
+    </div>
+
+    <div class="bubble-wrap left">
+      <div class="avatar av-a">🧳</div>
+      <div class="bubble-column">
+        <div class="bname">Passenger</div>
+        <div class="bubble left">
+          Yes, here it is.
+        </div>
+      </div>
+    </div>
+
+    <div class="bubble-wrap right">
+      <div class="avatar av-b">🛂</div>
+      <div class="bubble-column">
+        <div class="bname right">Security officer</div>
+        <div class="bubble right">
+          Thank you. <span class="key-phrase">Please put your liquids in this tray.</span>
+        </div>
+      </div>
+    </div>
+
+    <div class="sec-div">At the museum 🏛️</div>
+
+    <div class="setting-chip">A visitor is talking to a museum guide.</div>
+
+    <div class="bubble-wrap left">
+      <div class="avatar av-a">👩</div>
+      <div class="bubble-column">
+        <div class="bname">Visitor</div>
+        <div class="bubble left">
+          This painting is beautiful.
+        </div>
+      </div>
+    </div>
+
+    <div class="bubble-wrap right">
+      <div class="avatar av-b">🧑‍🏫</div>
+      <div class="bubble-column">
+        <div class="bname right">Museum guide</div>
+        <div class="bubble right">
+          Thank you. <span class="key-phrase">This painting is from 1890.</span>
+        </div>
+      </div>
+    </div>
+
+    <div class="bubble-wrap left">
+      <div class="avatar av-a">👩</div>
+      <div class="bubble-column">
+        <div class="bname">Visitor</div>
+        <div class="bubble left">
+          Can I take a photo?
+        </div>
+      </div>
+    </div>
+
+    <div class="bubble-wrap right">
+      <div class="avatar av-b">🧑‍🏫</div>
+      <div class="bubble-column">
+        <div class="bname right">Museum guide</div>
+        <div class="bubble right">
+          Yes, but <span class="key-phrase">you can’t use flash photography here.</span>
+        </div>
+      </div>
+    </div>
+
+    <div class="bubble-wrap left">
+      <div class="avatar av-a">👩</div>
+      <div class="bubble-column">
+        <div class="bname">Visitor</div>
+        <div class="bubble left">
+          Okay. Where is the dinosaur exhibition?
+        </div>
+      </div>
+    </div>
+
+    <div class="bubble-wrap right">
+      <div class="avatar av-b">🧑‍🏫</div>
+      <div class="bubble-column">
+        <div class="bname right">Museum guide</div>
+        <div class="bubble right">
+          <span class="key-phrase">The dinosaur exhibition is upstairs.</span>
+        </div>
+      </div>
+    </div>
+
+    <div class="sec-div">At the library 📚</div>
+
+    <div class="setting-chip">A student wants to borrow some books.</div>
+
+    <div class="bubble-wrap left">
+      <div class="avatar av-a">🧑</div>
+      <div class="bubble-column">
+        <div class="bname">Student</div>
+        <div class="bubble left">
+          Excuse me. <span class="key-phrase">Where is the children’s section?</span>
+        </div>
+      </div>
+    </div>
+
+    <div class="bubble-wrap right">
+      <div class="avatar av-b">👩‍💼</div>
+      <div class="bubble-column">
+        <div class="bname right">Librarian</div>
+        <div class="bubble right">
+          It is on the first floor.
+        </div>
+      </div>
+    </div>
+
+    <div class="bubble-wrap left">
+      <div class="avatar av-a">🧑</div>
+      <div class="bubble-column">
+        <div class="bname">Student</div>
+        <div class="bubble left">
+          Can I borrow these books?
+        </div>
+      </div>
+    </div>
+
+    <div class="bubble-wrap right">
+      <div class="avatar av-b">👩‍💼</div>
+      <div class="bubble-column">
+        <div class="bname right">Librarian</div>
+        <div class="bubble right">
+          Yes, but <span class="key-phrase">you need a library card to borrow books.</span>
+        </div>
+      </div>
+    </div>
+
+    <div class="bubble-wrap left">
+      <div class="avatar av-a">🧑</div>
+      <div class="bubble-column">
+        <div class="bname">Student</div>
+        <div class="bubble left">
+          I have my card.
+        </div>
+      </div>
+    </div>
+
+    <div class="bubble-wrap right">
+      <div class="avatar av-b">👩‍💼</div>
+      <div class="bubble-column">
+        <div class="bname right">Librarian</div>
+        <div class="bubble right">
+          Great. <span class="key-phrase">Please return this book by Friday.</span>
+        </div>
+      </div>
+    </div>
+
+    <div class="sec-div">At the restaurant 🍽️</div>
+
+    <div class="setting-chip">A customer is having dinner.</div>
+
+    <div class="bubble-wrap left">
+      <div class="avatar av-a">🧑‍🍳</div>
+      <div class="bubble-column">
+        <div class="bname">Waiter</div>
+        <div class="bubble left">
+          Good evening. <span class="key-phrase">Would you like to see the menu?</span>
+        </div>
+      </div>
+    </div>
+
+    <div class="bubble-wrap right">
+      <div class="avatar av-b">👩</div>
+      <div class="bubble-column">
+        <div class="bname right">Customer</div>
+        <div class="bubble right">
+          Yes, please.
+        </div>
+      </div>
+    </div>
+
+    <div class="bubble-wrap left">
+      <div class="avatar av-a">🧑‍🍳</div>
+      <div class="bubble-column">
+        <div class="bname">Waiter</div>
+        <div class="bubble left">
+          Here you are. <span class="key-phrase">What would you like to order?</span>
+        </div>
+      </div>
+    </div>
+
+    <div class="bubble-wrap right">
+      <div class="avatar av-b">👩</div>
+      <div class="bubble-column">
+        <div class="bname right">Customer</div>
+        <div class="bubble right">
+          I’d like the chicken and rice, please.
+        </div>
+      </div>
+    </div>
+
+    <div class="bubble-wrap left">
+      <div class="avatar av-a">🧑‍🍳</div>
+      <div class="bubble-column">
+        <div class="bname">Waiter</div>
+        <div class="bubble left">
+          Of course.
+        </div>
+      </div>
+    </div>
+
+    <div class="bubble-wrap right">
+      <div class="avatar av-b">👩</div>
+      <div class="bubble-column">
+        <div class="bname right">Customer</div>
+        <div class="bubble right">
+          Excuse me. Can I pay, please?
+        </div>
+      </div>
+    </div>
+
+    <div class="bubble-wrap left">
+      <div class="avatar av-a">🧑‍🍳</div>
+      <div class="bubble-column">
+        <div class="bname">Waiter</div>
+        <div class="bubble left">
+          Certainly. <span class="key-phrase">Here is your bill.</span>
+        </div>
+      </div>
+    </div>
+
+    <div class="sec-div">At the hospital 🏥</div>
+
+    <div class="setting-chip">A patient has an appointment with a doctor.</div>
+
+    <div class="bubble-wrap left">
+      <div class="avatar av-a">👩‍💼</div>
+      <div class="bubble-column">
+        <div class="bname">Receptionist</div>
+        <div class="bubble left">
+          Hello. <span class="key-phrase">What is your date of birth?</span>
+        </div>
+      </div>
+    </div>
+
+    <div class="bubble-wrap right">
+      <div class="avatar av-b">🤒</div>
+      <div class="bubble-column">
+        <div class="bname right">Patient</div>
+        <div class="bubble right">
+          It is 12 May 2001.
+        </div>
+      </div>
+    </div>
+
+    <div class="bubble-wrap left">
+      <div class="avatar av-a">👩‍💼</div>
+      <div class="bubble-column">
+        <div class="bname">Receptionist</div>
+        <div class="bubble left">
+          Thank you. <span class="key-phrase">Please wait in the waiting room.</span>
+        </div>
+      </div>
+    </div>
+
+    <div class="bubble-wrap right">
+      <div class="avatar av-b">🤒</div>
+      <div class="bubble-column">
+        <div class="bname right">Patient</div>
+        <div class="bubble right">
+          Okay.
+        </div>
+      </div>
+    </div>
+
+    <div class="bubble-wrap left">
+      <div class="avatar av-a">👨‍⚕️</div>
+      <div class="bubble-column">
+        <div class="bname">Doctor</div>
+        <div class="bubble left">
+          Hello, Maria. <span class="key-phrase">The doctor will see you now.</span>
+        </div>
+      </div>
+    </div>
+
+    <div class="bubble-wrap right">
+      <div class="avatar av-b">🤒</div>
+      <div class="bubble-column">
+        <div class="bname right">Patient</div>
+        <div class="bubble right">
+          Thank you.
+        </div>
+      </div>
+    </div>
+
+    <div class="sec-div">At the supermarket 🛒</div>
+
+    <div class="setting-chip">A customer is shopping for food.</div>
+
+    <div class="bubble-wrap left">
+      <div class="avatar av-a">👩</div>
+      <div class="bubble-column">
+        <div class="bname">Customer</div>
+        <div class="bubble left">
+          Excuse me. Where can I find bread?
+        </div>
+      </div>
+    </div>
+
+    <div class="bubble-wrap right">
+      <div class="avatar av-b">🧑‍💼</div>
+      <div class="bubble-column">
+        <div class="bname right">Worker</div>
+        <div class="bubble right">
+          <span class="key-phrase">The bread is in aisle five.</span>
+        </div>
+      </div>
+    </div>
+
+    <div class="bubble-wrap left">
+      <div class="avatar av-a">👩</div>
+      <div class="bubble-column">
+        <div class="bname">Customer</div>
+        <div class="bubble left">
+          Thank you. And <span class="key-phrase">where is the checkout?</span>
+        </div>
+      </div>
+    </div>
+
+    <div class="bubble-wrap right">
+      <div class="avatar av-b">🧑‍💼</div>
+      <div class="bubble-column">
+        <div class="bname right">Worker</div>
+        <div class="bubble right">
+          It is near the entrance.
+        </div>
+      </div>
+    </div>
+
+    <div class="bubble-wrap left">
+      <div class="avatar av-a">👩‍💼</div>
+      <div class="bubble-column">
+        <div class="bname">Cashier</div>
+        <div class="bubble left">
+          Hello. <span class="key-phrase">Do you need a shopping bag?</span>
+        </div>
+      </div>
+    </div>
+
+    <div class="bubble-wrap right">
+      <div class="avatar av-b">👩</div>
+      <div class="bubble-column">
+        <div class="bname right">Customer</div>
+        <div class="bubble right">
+          Yes, please.
+        </div>
+      </div>
+    </div>
+
+    <div class="sec-div">At the cinema 🎬</div>
+
+    <div class="setting-chip">A customer is going to watch a film.</div>
+
+    <div class="bubble-wrap left">
+      <div class="avatar av-a">👨</div>
+      <div class="bubble-column">
+        <div class="bname">Customer</div>
+        <div class="bubble left">
+          Hello. What time does the film start?
+        </div>
+      </div>
+    </div>
+
+    <div class="bubble-wrap right">
+      <div class="avatar av-b">🎟️</div>
+      <div class="bubble-column">
+        <div class="bname right">Cinema worker</div>
+        <div class="bubble right">
+          <span class="key-phrase">The film starts at 7:30.</span>
+        </div>
+      </div>
+    </div>
+
+    <div class="bubble-wrap left">
+      <div class="avatar av-a">👨</div>
+      <div class="bubble-column">
+        <div class="bname">Customer</div>
+        <div class="bubble left">
+          Great. Where is Screen 4?
+        </div>
+      </div>
+    </div>
+
+    <div class="bubble-wrap right">
+      <div class="avatar av-b">🎟️</div>
+      <div class="bubble-column">
+        <div class="bname right">Cinema worker</div>
+        <div class="bubble right">
+          <span class="key-phrase">Screen 4 is on the left.</span>
+        </div>
+      </div>
+    </div>
+
+    <div class="bubble-wrap left">
+      <div class="avatar av-a">👨</div>
+      <div class="bubble-column">
+        <div class="bname">Customer</div>
+        <div class="bubble left">
+          Thank you. <span class="key-phrase">A large popcorn, please.</span>
+        </div>
+      </div>
+    </div>
+
+    <div class="bubble-wrap right">
+      <div class="avatar av-b">🎟️</div>
+      <div class="bubble-column">
+        <div class="bname right">Cinema worker</div>
+        <div class="bubble right">
+          Sure. That is five dollars.
+        </div>
+      </div>
+    </div>
+
+    <div class="sec-div">At the hotel 🏨</div>
+
+    <div class="setting-chip">A guest is checking in at a hotel.</div>
+
+    <div class="bubble-wrap left">
+      <div class="avatar av-a">👩‍💼</div>
+      <div class="bubble-column">
+        <div class="bname">Receptionist</div>
+        <div class="bubble left">
+          Welcome to the hotel. <span class="key-phrase">Here is your room key.</span>
+        </div>
+      </div>
+    </div>
+
+    <div class="bubble-wrap right">
+      <div class="avatar av-b">🧳</div>
+      <div class="bubble-column">
+        <div class="bname right">Guest</div>
+        <div class="bubble right">
+          Thank you. What time is breakfast?
+        </div>
+      </div>
+    </div>
+
+    <div class="bubble-wrap left">
+      <div class="avatar av-a">👩‍💼</div>
+      <div class="bubble-column">
+        <div class="bname">Receptionist</div>
+        <div class="bubble left">
+          <span class="key-phrase">Breakfast is served from 7:00 to 10:00.</span>
+        </div>
+      </div>
+    </div>
+
+    <div class="bubble-wrap right">
+      <div class="avatar av-b">🧳</div>
+      <div class="bubble-column">
+        <div class="bname right">Guest</div>
+        <div class="bubble right">
+          Great.
+        </div>
+      </div>
+    </div>
+
+    <div class="bubble-wrap left">
+      <div class="avatar av-a">👩‍💼</div>
+      <div class="bubble-column">
+        <div class="bname">Receptionist</div>
+        <div class="bubble left">
+          <span class="key-phrase">What time would you like to check out?</span>
+        </div>
+      </div>
+    </div>
+
+    <div class="bubble-wrap right">
+      <div class="avatar av-b">🧳</div>
+      <div class="bubble-column">
+        <div class="bname right">Guest</div>
+        <div class="bubble right">
+          At 10:00, please.
+        </div>
+      </div>
+    </div>
+
+    <div class="sec-div">At the pharmacy 💊</div>
+
+    <div class="setting-chip">A customer needs medicine for a headache.</div>
+
+    <div class="bubble-wrap left">
+      <div class="avatar av-a">👩</div>
+      <div class="bubble-column">
+        <div class="bname">Customer</div>
+        <div class="bubble left">
+          Hello. <span class="key-phrase">Do you have anything for a headache?</span>
+        </div>
+      </div>
+    </div>
+
+    <div class="bubble-wrap right">
+      <div class="avatar av-b">🧑‍⚕️</div>
+      <div class="bubble-column">
+        <div class="bname right">Pharmacist</div>
+        <div class="bubble right">
+          Yes. These tablets can help.
+        </div>
+      </div>
+    </div>
+
+    <div class="bubble-wrap left">
+      <div class="avatar av-a">👩</div>
+      <div class="bubble-column">
+        <div class="bname">Customer</div>
+        <div class="bubble left">
+          How do I take them?
+        </div>
+      </div>
+    </div>
+
+    <div class="bubble-wrap right">
+      <div class="avatar av-b">🧑‍⚕️</div>
+      <div class="bubble-column">
+        <div class="bname right">Pharmacist</div>
+        <div class="bubble right">
+          <span class="key-phrase">Take these tablets after food.</span>
+        </div>
+      </div>
+    </div>
+
+    <div class="bubble-wrap left">
+      <div class="avatar av-a">👩</div>
+      <div class="bubble-column">
+        <div class="bname">Customer</div>
+        <div class="bubble left">
+          Can I buy this stronger medicine too?
+        </div>
+      </div>
+    </div>
+
+    <div class="bubble-wrap right">
+      <div class="avatar av-b">🧑‍⚕️</div>
+      <div class="bubble-column">
+        <div class="bname right">Pharmacist</div>
+        <div class="bubble right">
+          <span class="key-phrase">You need a prescription for this medicine.</span>
+        </div>
+      </div>
+    </div>
+
+    <div class="sec-div">Quick reference</div>
+
+    <div class="rule-box">
+      <strong>Study tip:</strong> Read each conversation aloud with a partner.
+      Then change one detail: the gate number, the food order, the film time,
+      the medicine, or the room number.
+    </div>
+
+    <footer>
+      Conversation Practice · At the Places · A1
+    </footer>
+  </div>
+
+  <div id="theme-toggle-wrap">
+    <button
+      id="theme-toggle"
+      aria-label="Toggle light and dark mode"
+      title="Toggle light and dark mode"
+    >◐</button>
+  </div>
+
+  <script>
+    const themeToggle = document.getElementById("theme-toggle");
+
+    function applySavedTheme() {
+      const savedTheme = localStorage.getItem("places-conversations-theme");
+
+      if (savedTheme) {
+        document.documentElement.dataset.theme = savedTheme;
+      }
+    }
+
+    themeToggle.addEventListener("click", () => {
+      const currentTheme = document.documentElement.dataset.theme;
+      const nextTheme = currentTheme === "dark" ? "light" : "dark";
+
+      document.documentElement.dataset.theme = nextTheme;
+      localStorage.setItem("places-conversations-theme", nextTheme);
+    });
+
+    applySavedTheme();
+  </script>
+</body>
+</html>

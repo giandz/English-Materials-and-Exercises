@@ -1,0 +1,1178 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
+  <title>Places and Phrases Review</title>
+
+  <style>
+    :root {
+      --color-background-primary: #ffffff;
+      --color-background-secondary: #f7f7f8;
+      --color-text-primary: #1a1a1a;
+      --color-text-secondary: #5b5b60;
+      --color-text-tertiary: #8b8b90;
+      --color-border-secondary: #e3e3e6;
+      --color-border-tertiary: #ebebee;
+      --border-radius-lg: 12px;
+      --font-mono: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+
+      --text-primary: var(--color-text-primary);
+      --text-secondary: var(--color-text-secondary);
+      --text-muted: var(--color-text-tertiary);
+      --text-accent: #185fa5;
+      --surface-1: var(--color-background-secondary);
+      --surface-2: var(--color-background-primary);
+      --border: var(--color-border-tertiary);
+      --radius: var(--border-radius-lg);
+
+      --good: #2f7d3a;
+      --good-bg: #e8f4ea;
+      --bad: #b0392f;
+
+      --bg-place: #eaf3de;
+      --text-place: #27500a;
+      --bg-phrase: #fdf1da;
+      --text-phrase: #8a5a10;
+    }
+
+    html[data-theme="dark"] {
+      --color-background-primary: #1e1e20;
+      --color-background-secondary: #26262a;
+      --color-text-primary: #f0f0f2;
+      --color-text-secondary: #b4b4ba;
+      --color-text-tertiary: #85858c;
+      --color-border-secondary: #3a3a3f;
+      --color-border-tertiary: #34343a;
+
+      --text-accent: #7fb2e0;
+      --surface-1: var(--color-background-secondary);
+      --surface-2: var(--color-background-primary);
+      --border: var(--color-border-tertiary);
+
+      --good: #79c985;
+      --good-bg: #1d2f1f;
+      --bad: #e2827a;
+
+      --bg-place: #1f3014;
+      --text-place: #9ed17a;
+      --bg-phrase: #3a2c10;
+      --text-phrase: #e0b95c;
+    }
+
+    * {
+      box-sizing: border-box;
+      -webkit-tap-highlight-color: transparent;
+    }
+
+    html,
+    body {
+      margin: 0;
+      background: var(--color-background-primary);
+      color: var(--text-primary);
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Helvetica, Arial, sans-serif;
+      font-size: 15px;
+      line-height: 1.5;
+      touch-action: manipulation;
+      user-select: none;
+      overscroll-behavior: none;
+    }
+
+    .page {
+      max-width: 700px;
+      margin: 0 auto;
+      padding: 20px 14px 40px;
+    }
+
+    h1 {
+      margin: 0 0 2px;
+      font-size: 1.28rem;
+      font-weight: 600;
+      letter-spacing: -0.01em;
+    }
+
+    .subtitle {
+      margin: 0 0 8px;
+      color: var(--text-secondary);
+      font-size: 12.5px;
+    }
+
+    .cefr-tag {
+      display: inline-block;
+      margin-bottom: 8px;
+      padding: 3px 10px;
+      border-radius: 20px;
+      background: #e6f1fb;
+      color: #185fa5;
+      font-size: 11px;
+      font-weight: 700;
+      letter-spacing: 0.04em;
+    }
+
+    html[data-theme="dark"] .cefr-tag {
+      background: #1c2e40;
+      color: #7fb2e0;
+    }
+
+    .sec-div {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      margin: 1.6rem 0 0.7rem;
+      color: var(--text-muted);
+      font-size: 11px;
+      font-weight: 500;
+      letter-spacing: 0.06em;
+      text-transform: uppercase;
+    }
+
+    .sec-div::before,
+    .sec-div::after {
+      content: "";
+      flex: 1;
+      height: 0.5px;
+      background: var(--border);
+    }
+
+    .rule-box,
+    .reference-box {
+      margin-bottom: 0.9rem;
+      padding: 10px 12px;
+      border: 1px solid var(--border);
+      border-radius: 16px;
+      background: var(--surface-1);
+      color: var(--text-secondary);
+      font-size: 13px;
+      line-height: 1.55;
+    }
+
+    .rule-box strong,
+    .reference-title {
+      color: var(--text-primary);
+      font-weight: 600;
+    }
+
+    .reference-title {
+      margin-bottom: 8px;
+      font-size: 13px;
+    }
+
+    .legend {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 8px;
+    }
+
+    .legend-pill {
+      padding: 3px 11px;
+      border-radius: 20px;
+      font-size: 11.5px;
+      font-weight: 600;
+    }
+
+    .legend-pill.place {
+      background: var(--bg-place);
+      color: var(--text-place);
+    }
+
+    .legend-pill.phrase {
+      background: var(--bg-phrase);
+      color: var(--text-phrase);
+    }
+
+    .setting-chip {
+      display: inline-flex;
+      align-items: center;
+      gap: 5px;
+      margin-bottom: 0.6rem;
+      padding: 3px 10px;
+      border: 0.5px solid var(--border);
+      border-radius: 20px;
+      background: var(--surface-1);
+      color: var(--text-secondary);
+      font-size: 12px;
+    }
+
+    .score-bar {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      gap: 8px;
+      margin-bottom: 0.55rem;
+      color: var(--text-secondary);
+      font-size: 13px;
+    }
+
+    .score-bar strong {
+      color: var(--good);
+    }
+
+    .wo-item {
+      margin-bottom: 10px;
+      padding: 10px 10px 9px;
+      border: 0.5px solid var(--color-border-tertiary);
+      border-radius: 18px;
+      background: var(--surface-2);
+      box-shadow: 0 1px 0 rgba(0, 0, 0, 0.03);
+    }
+
+    .item-speaker {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      margin-bottom: 6px;
+      color: var(--text-muted);
+      font-size: 11.5px;
+      font-weight: 600;
+    }
+
+    .avatar-mini {
+      width: 20px;
+      flex: 0 0 auto;
+      font-size: 16px;
+      line-height: 1;
+      text-align: center;
+    }
+
+    .item-context {
+      margin-bottom: 6px;
+      color: var(--text-muted);
+      font-size: 12px;
+      font-style: italic;
+    }
+
+    .target-zone {
+      display: flex;
+      min-height: 48px;
+      flex-wrap: wrap;
+      align-items: center;
+      gap: 5px;
+      margin-bottom: 6px;
+      padding: 7px;
+      border: 1.5px dashed var(--border);
+      border-radius: 14px;
+      background: var(--surface-2);
+    }
+
+    .target-zone.drag-over {
+      border-color: var(--text-accent);
+      background: var(--surface-1);
+    }
+
+    .target-zone.correct {
+      border-style: solid;
+      border-color: var(--good);
+      background: var(--good-bg);
+    }
+
+    .target-zone.wrong {
+      border-style: solid;
+      border-color: var(--bad);
+    }
+
+    .target-placeholder {
+      color: var(--text-muted);
+      font-size: 12px;
+      font-style: italic;
+    }
+
+    .pool-zone {
+      display: flex;
+      min-height: 34px;
+      flex-wrap: wrap;
+      gap: 5px;
+      padding: 7px;
+      border-radius: 14px;
+      background: rgba(0, 0, 0, 0.03);
+    }
+
+    html[data-theme="dark"] .pool-zone {
+      background: rgba(255, 255, 255, 0.04);
+    }
+
+    .word-chip {
+      padding: 5px 10px;
+      border: 0.5px solid var(--border);
+      border-radius: 999px;
+      cursor: grab;
+      background: var(--surface-2);
+      color: var(--text-primary);
+      font-size: 13px;
+      font-weight: 500;
+      line-height: 1.2;
+      touch-action: none;
+      user-select: none;
+    }
+
+    .word-chip.in-target {
+      border-color: var(--text-accent);
+      background: var(--color-background-primary);
+    }
+
+    .word-chip.dragging {
+      position: fixed;
+      z-index: 999;
+      pointer-events: none;
+      cursor: grabbing;
+      transform: scale(1.05);
+      box-shadow: 0 8px 20px rgba(0, 0, 0, 0.18);
+    }
+
+    .word-chip.chip-correct {
+      border-color: var(--good);
+      background: var(--good-bg);
+      color: var(--good);
+    }
+
+    .word-chip.chip-wrong {
+      border-color: var(--bad);
+      background: #fbebe9;
+      color: var(--bad);
+    }
+
+    html[data-theme="dark"] .word-chip.chip-wrong {
+      background: #3a201e;
+    }
+
+    .drop-indicator {
+      width: 2px;
+      height: 28px;
+      flex: 0 0 auto;
+      border-radius: 1px;
+      background: var(--text-accent);
+      pointer-events: none;
+    }
+
+    .item-feedback {
+      min-height: 14px;
+      margin-top: 2px;
+      font-size: 11.5px;
+    }
+
+    .item-feedback.correct {
+      color: var(--good);
+    }
+
+    .item-feedback.wrong {
+      color: var(--bad);
+    }
+
+    .check-btn {
+      margin-top: 4px;
+      padding: 5px 12px;
+      border: none;
+      border-radius: 999px;
+      cursor: pointer;
+      background: var(--text-accent);
+      color: #ffffff;
+      font-family: inherit;
+      font-size: 12.5px;
+      font-weight: 600;
+    }
+
+    .gf-item {
+      margin-bottom: 14px;
+      padding: 14px 16px;
+      border: 0.5px solid var(--color-border-tertiary);
+      border-radius: var(--border-radius-lg);
+      background: var(--surface-2);
+    }
+
+    .direct {
+      margin-bottom: 8px;
+      color: var(--text-muted);
+      font-size: 12.5px;
+      font-style: italic;
+    }
+
+    .sentence {
+      font-size: 14.5px;
+      line-height: 2.1;
+    }
+
+    .gf-gap-wrap {
+      display: inline-flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 3px;
+      margin: 0.1em 0.2em;
+      vertical-align: baseline;
+    }
+
+    .bar-track {
+      display: inline-block;
+      width: 110px;
+      height: 5px;
+      overflow: hidden;
+      border-radius: 3px;
+      background: var(--color-border-secondary);
+    }
+
+    .bar-fill {
+      display: block;
+      width: 0;
+      height: 100%;
+      background: hsl(0deg 100% 50%);
+      transition: width 0.12s linear, background 0.12s linear;
+    }
+
+    .bar-pct {
+      min-width: 30px;
+      color: var(--text-muted);
+      font-family: var(--font-mono);
+      font-size: 9.5px;
+      text-align: center;
+    }
+
+    .gf-gap-input {
+      width: 150px;
+      padding: 5px 8px;
+      border: 1px solid var(--color-border-secondary);
+      border-radius: 6px;
+      background: var(--color-background-primary);
+      color: var(--text-primary);
+      font-family: inherit;
+      font-size: 14.5px;
+      text-align: center;
+      transition: border-color 0.12s linear, background 0.12s linear, color 0.12s linear;
+    }
+
+    .gf-gap-input:focus {
+      outline: none;
+      border-color: var(--text-accent);
+    }
+
+    .gf-gap-input.gap-correct {
+      border-color: var(--good);
+      background: var(--good-bg);
+      color: var(--good);
+      font-weight: 600;
+    }
+
+    footer {
+      margin-top: 1.4rem;
+      color: var(--text-muted);
+      font-size: 12px;
+      text-align: center;
+    }
+
+    #theme-toggle-wrap {
+      position: fixed;
+      right: 18px;
+      bottom: 18px;
+    }
+
+    #theme-toggle {
+      display: flex;
+      width: 40px;
+      height: 40px;
+      align-items: center;
+      justify-content: center;
+      border: 0.5px solid var(--border);
+      border-radius: 50%;
+      cursor: pointer;
+      background: var(--surface-2);
+      color: var(--text-primary);
+      font-size: 18px;
+    }
+  </style>
+</head>
+
+<body>
+  <div class="page">
+    <span class="cefr-tag">A1 · Beginner</span>
+
+    <h1>Places and Phrases Review</h1>
+
+    <p class="subtitle">
+      Word order and gap-fill practice with useful phrases for places in town.
+    </p>
+
+    <div class="sec-div">Useful places</div>
+
+    <div class="reference-box">
+      <div class="reference-title">At the...</div>
+
+      <div class="legend">
+        <span class="legend-pill place">✈️ airport</span>
+        <span class="legend-pill place">🏛️ museum</span>
+        <span class="legend-pill place">📚 library</span>
+        <span class="legend-pill place">🍽️ restaurant</span>
+        <span class="legend-pill place">🏥 hospital</span>
+        <span class="legend-pill place">🛒 supermarket</span>
+        <span class="legend-pill place">🎬 cinema</span>
+        <span class="legend-pill place">🏨 hotel</span>
+        <span class="legend-pill place">💊 pharmacy</span>
+      </div>
+    </div>
+
+    <div class="sec-div">Practice · Drag the words</div>
+
+    <div class="rule-box">
+      <strong>How to play:</strong> tap a word in the pool to add it to the line.
+      Tap a word in the line to send it back. You can also drag words and drop
+      them between two words. Put the phrase in the correct order.
+    </div>
+
+    <div class="setting-chip">Build useful phrases for different places.</div>
+
+    <div class="score-bar">
+      <span>
+        Correct: <strong id="woScore">0</strong> / <span id="woTotal">0</span>
+      </span>
+    </div>
+
+    <div id="woItems"></div>
+
+    <div class="sec-div">Practice · Gap fill</div>
+
+    <div class="rule-box">
+      <strong>Tip:</strong> read the place clue first. The bar turns from red to green 🔴→🟠→🟡→🟢 as your answer gets closer to being correct. When a gap turns fully green, it's exactly right.
+    </div>
+
+    <div id="gfItems"></div>
+
+    <footer>
+      Places and Phrases Review · A1
+    </footer>
+  </div>
+
+  <div id="theme-toggle-wrap">
+    <button
+      id="theme-toggle"
+      aria-label="Toggle light and dark mode"
+      title="Toggle light and dark mode"
+    >☀️</button>
+  </div>
+
+  <script>
+    const WOITEMS = [
+      {
+        speaker: "Security officer",
+        avatar: "🛂",
+        context: "At the airport",
+        text: "Please put your liquids in this tray.",
+        pos: ["verb", "verb", "subject", "object", "object", "object", "none"]
+      },
+      {
+        speaker: "Museum guide",
+        avatar: "🏛️",
+        context: "At the museum",
+        text: "You can’t use flash photography here.",
+        pos: ["subject", "aux", "verb", "object", "object", "adverb"]
+      },
+      {
+        speaker: "Librarian",
+        avatar: "📚",
+        context: "At the library",
+        text: "You need a library card to borrow books.",
+        pos: ["subject", "verb", "object", "object", "object", "aux", "verb", "none"]
+      },
+      {
+        speaker: "Waiter",
+        avatar: "🍽️",
+        context: "At the restaurant",
+        text: "What would you like to order?",
+        pos: ["wh", "aux", "subject", "verb", "aux", "verb"]
+      },
+      {
+        speaker: "Cinema worker",
+        avatar: "🎬",
+        context: "At the cinema",
+        text: "Screen 4 is on the left.",
+        pos: ["subject", "none", "verb", "object", "object", "none"]
+      },
+      {
+        speaker: "Receptionist",
+        avatar: "🏨",
+        context: "At the hotel",
+        text: "Here is your room key.",
+        pos: ["adverb", "verb", "object", "object", "none"]
+      }
+    ];
+
+    const POSCLASSES = {
+      wh: "pos-wh",
+      verb: "pos-verb",
+      subject: "pos-subject",
+      object: "pos-object",
+      aux: "pos-aux",
+      neg: "pos-neg",
+      adverb: "pos-adverb",
+      none: "pos-none"
+    };
+
+    function parseItem(str) {
+      return str.split(" ").map(word => word.trim()).filter(Boolean);
+    }
+
+    function shuffleArr(arr) {
+      const a = [...arr];
+
+      for (let i = a.length - 1; i > 0; i--) {
+        const j = Math.floor(Math.random() * (i + 1));
+        [a[i], a[j]] = [a[j], a[i]];
+      }
+
+      return a;
+    }
+
+    let correctSet = new Set();
+
+    function updatePlaceholder(targetZone) {
+      const hasChips = targetZone.querySelector(".word-chip");
+      let placeholder = targetZone.querySelector(".target-placeholder");
+
+      if (!hasChips && !placeholder) {
+        placeholder = document.createElement("span");
+        placeholder.className = "target-placeholder";
+        placeholder.textContent = "Tap words below to build the phrase";
+        targetZone.appendChild(placeholder);
+      }
+
+      if (hasChips && placeholder) {
+        placeholder.remove();
+      }
+    }
+
+    function getDropSpot(zone, x, y) {
+      const chips = Array.from(
+        zone.querySelectorAll(".word-chip:not(.dragging)")
+      );
+
+      if (!chips.length) return null;
+
+      let closest = null;
+      let closestDistance = Infinity;
+
+      chips.forEach(chip => {
+        const rect = chip.getBoundingClientRect();
+        const centerX = rect.left + rect.width / 2;
+        const centerY = rect.top + rect.height / 2;
+        const distance = Math.hypot(x - centerX, y - centerY);
+
+        if (distance < closestDistance) {
+          closestDistance = distance;
+          closest = { chip, rect };
+        }
+      });
+
+      return {
+        chip: closest.chip,
+        before: x < closest.rect.left + closest.rect.width / 2
+      };
+    }
+
+    function placeIndicator(zone, indicator, x, y) {
+      const spot = getDropSpot(zone, x, y);
+
+      if (!spot) {
+        zone.appendChild(indicator);
+      } else if (spot.before) {
+        zone.insertBefore(indicator, spot.chip);
+      } else {
+        zone.insertBefore(indicator, spot.chip.nextSibling);
+      }
+    }
+
+    function clearPosHighlighting(targetZone) {
+      targetZone.querySelectorAll(".word-chip").forEach(chip => {
+        chip.classList.remove(
+          "pos-wh",
+          "pos-verb",
+          "pos-subject",
+          "pos-object",
+          "pos-aux",
+          "pos-neg",
+          "pos-adverb",
+          "pos-none"
+        );
+      });
+    }
+
+    function applyPosHighlighting(targetZone, posArray) {
+      const chips = Array.from(targetZone.querySelectorAll(".word-chip"));
+
+      chips.forEach((chip, index) => {
+        const pos = posArray[index] || "none";
+        chip.className = `word-chip ${POSCLASSES[pos] || "pos-none"}`;
+      });
+    }
+
+    function moveChipToTarget(chip, targetZone, poolZone) {
+      chip.classList.add("in-target");
+      targetZone.appendChild(chip);
+      updatePlaceholder(targetZone);
+      updatePlaceholder(poolZone);
+    }
+
+    function moveChipToPool(chip, targetZone, poolZone) {
+      chip.classList.remove("in-target");
+      poolZone.appendChild(chip);
+      updatePlaceholder(targetZone);
+      updatePlaceholder(poolZone);
+    }
+
+    function attachChipEvents(chip, targetZone, poolZone, feedback, itemEl, indicator) {
+      let dragState = null;
+      let moved = false;
+
+      chip.addEventListener("pointerdown", event => {
+        event.preventDefault();
+
+        if (targetZone.classList.contains("correct")) {
+          clearPosHighlighting(targetZone);
+          targetZone.classList.remove("correct");
+        }
+
+        itemEl.querySelectorAll(".word-chip").forEach(wordChip => {
+          wordChip.classList.remove("chip-correct", "chip-wrong");
+        });
+
+        targetZone.classList.remove("wrong");
+        feedback.textContent = "";
+        feedback.className = "item-feedback";
+
+        const rect = chip.getBoundingClientRect();
+
+        dragState = {
+          pointerId: event.pointerId,
+          offsetX: event.clientX - rect.left,
+          offsetY: event.clientY - rect.top,
+          originParent: chip.parentElement
+        };
+
+        moved = false;
+        chip.setPointerCapture(event.pointerId);
+      });
+
+      chip.addEventListener("pointermove", event => {
+        if (!dragState || event.pointerId !== dragState.pointerId) return;
+
+        if (!moved) {
+          moved = true;
+          chip.classList.add("dragging");
+          chip.style.width = `${chip.getBoundingClientRect().width}px`;
+        }
+
+        chip.style.left = `${event.clientX - dragState.offsetX}px`;
+        chip.style.top = `${event.clientY - dragState.offsetY}px`;
+
+        targetZone.classList.remove("drag-over");
+        poolZone.classList.remove("drag-over");
+
+        const elements = document.elementsFromPoint(event.clientX, event.clientY);
+
+        const overTarget = elements.some(element => {
+          return element.closest &&
+            element.closest("[data-role='target']") === targetZone;
+        });
+
+        const overPool = elements.some(element => {
+          return element.closest &&
+            element.closest("[data-role='pool']") === poolZone;
+        });
+
+        if (overTarget) {
+          targetZone.classList.add("drag-over");
+          placeIndicator(targetZone, indicator, event.clientX, event.clientY);
+        } else {
+          indicator.remove();
+        }
+
+        if (overPool) {
+          poolZone.classList.add("drag-over");
+        }
+      });
+
+      chip.addEventListener("pointerup", event => {
+        if (!dragState || event.pointerId !== dragState.pointerId) return;
+
+        targetZone.classList.remove("drag-over");
+        poolZone.classList.remove("drag-over");
+
+        if (moved) {
+          chip.classList.remove("dragging");
+          chip.style.position = "";
+          chip.style.left = "";
+          chip.style.top = "";
+          chip.style.width = "";
+
+          if (indicator.parentElement === targetZone) {
+            targetZone.insertBefore(chip, indicator);
+            chip.classList.add("in-target");
+            indicator.remove();
+
+            updatePlaceholder(targetZone);
+            updatePlaceholder(poolZone);
+          } else {
+            indicator.remove();
+
+            const elements = document.elementsFromPoint(event.clientX, event.clientY);
+
+            const overPool = elements.some(element => {
+              return element.closest &&
+                element.closest("[data-role='pool']") === poolZone;
+            });
+
+            if (overPool) {
+              moveChipToPool(chip, targetZone, poolZone);
+            } else if (dragState.originParent === targetZone) {
+              moveChipToTarget(chip, targetZone, poolZone);
+            } else {
+              moveChipToPool(chip, targetZone, poolZone);
+            }
+          }
+        } else {
+          if (chip.parentElement === poolZone) {
+            moveChipToTarget(chip, targetZone, poolZone);
+          } else {
+            moveChipToPool(chip, targetZone, poolZone);
+          }
+        }
+
+        dragState = null;
+      });
+
+      chip.addEventListener("pointercancel", () => {
+        indicator.remove();
+
+        if (dragState && moved) {
+          chip.classList.remove("dragging");
+          chip.style.position = "";
+          chip.style.left = "";
+          chip.style.top = "";
+          chip.style.width = "";
+
+          if (dragState.originParent === targetZone) {
+            moveChipToTarget(chip, targetZone, poolZone);
+          } else {
+            moveChipToPool(chip, targetZone, poolZone);
+          }
+        }
+
+        dragState = null;
+      });
+    }
+
+    function buildExercise(containerId, items, scoreElId, totalElId) {
+      const container = document.getElementById(containerId);
+      container.innerHTML = "";
+
+      document.getElementById(totalElId).textContent = items.length;
+
+      items.forEach((entry, index) => {
+        const words = parseItem(entry.text);
+        const correctOrder = [...words];
+
+        let pool = shuffleArr(words);
+        let tries = 0;
+
+        while (
+          JSON.stringify(pool) === JSON.stringify(correctOrder) &&
+          tries < 5
+        ) {
+          pool = shuffleArr(words);
+          tries++;
+        }
+
+        const itemEl = document.createElement("div");
+        itemEl.className = "wo-item";
+        itemEl.dataset.idx = index;
+
+        itemEl.innerHTML = `
+          <div class="item-speaker">
+            <span class="avatar-mini">${entry.avatar}</span>
+            <span>${entry.speaker}</span>
+          </div>
+          <div class="item-context">${entry.context}</div>
+          <div class="target-zone" data-role="target">
+            <span class="target-placeholder">Tap words below to build the phrase</span>
+          </div>
+          <div class="pool-zone" data-role="pool"></div>
+          <div class="item-feedback" data-role="feedback"></div>
+          <button class="check-btn" data-role="check">Check</button>
+        `;
+
+        container.appendChild(itemEl);
+
+        const targetZone = itemEl.querySelector("[data-role='target']");
+        const poolZone = itemEl.querySelector("[data-role='pool']");
+        const feedback = itemEl.querySelector("[data-role='feedback']");
+        const checkButton = itemEl.querySelector("[data-role='check']");
+        const indicator = document.createElement("span");
+
+        indicator.className = "drop-indicator";
+
+        pool.forEach((word, wordIndex) => {
+          const chip = document.createElement("span");
+
+          chip.className = "word-chip";
+          chip.textContent = word;
+          chip.dataset.word = word;
+          chip.dataset.uid = `${index}-${wordIndex}-${Math.random().toString(36).slice(2, 6)}`;
+
+          attachChipEvents(
+            chip,
+            targetZone,
+            poolZone,
+            feedback,
+            itemEl,
+            indicator
+          );
+
+          poolZone.appendChild(chip);
+        });
+
+        checkButton.addEventListener("click", () => {
+          const targetChips = Array.from(
+            targetZone.querySelectorAll(".word-chip")
+          );
+
+          const currentWords = targetChips.map(chip => chip.dataset.word);
+
+          const isCorrect =
+            JSON.stringify(currentWords) === JSON.stringify(correctOrder) &&
+            currentWords.length === correctOrder.length;
+
+          targetZone.classList.remove("correct", "wrong");
+
+          if (!currentWords.length) {
+            feedback.textContent = "Add some words first.";
+            feedback.className = "item-feedback wrong";
+            targetZone.classList.add("wrong");
+            correctSet.delete(index);
+            document.getElementById(scoreElId).textContent = correctSet.size;
+            return;
+          }
+
+          targetChips.forEach((chip, chipIndex) => {
+            chip.classList.remove("chip-correct", "chip-wrong");
+
+            if (chip.dataset.word === correctOrder[chipIndex]) {
+              chip.classList.add("chip-correct");
+            } else {
+              chip.classList.add("chip-wrong");
+            }
+          });
+
+          if (isCorrect) {
+            targetZone.classList.add("correct");
+            feedback.textContent = "Correct!";
+            feedback.className = "item-feedback correct";
+            correctSet.add(index);
+            applyPosHighlighting(targetZone, entry.pos);
+          } else {
+            targetZone.classList.add("wrong");
+            feedback.textContent = "Not quite. Try again.";
+            feedback.className = "item-feedback wrong";
+            correctSet.delete(index);
+          }
+
+          document.getElementById(scoreElId).textContent = correctSet.size;
+        });
+      });
+    }
+
+    function damerauLevenshtein(a, b) {
+      a = a.toLowerCase();
+      b = b.toLowerCase();
+
+      const aLength = a.length;
+      const bLength = b.length;
+
+      if (aLength === 0) return bLength;
+      if (bLength === 0) return aLength;
+
+      const matrix = Array.from(
+        { length: aLength + 1 },
+        () => new Array(bLength + 1).fill(0)
+      );
+
+      for (let i = 0; i <= aLength; i++) matrix[i][0] = i;
+      for (let j = 0; j <= bLength; j++) matrix[0][j] = j;
+
+      for (let i = 1; i <= aLength; i++) {
+        for (let j = 1; j <= bLength; j++) {
+          const cost = a[i - 1] === b[j - 1] ? 0 : 1;
+
+          matrix[i][j] = Math.min(
+            matrix[i - 1][j] + 1,
+            matrix[i][j - 1] + 1,
+            matrix[i - 1][j - 1] + cost
+          );
+
+          if (
+            i > 1 &&
+            j > 1 &&
+            a[i - 1] === b[j - 2] &&
+            a[i - 2] === b[j - 1]
+          ) {
+            matrix[i][j] = Math.min(
+              matrix[i][j],
+              matrix[i - 2][j - 2] + cost
+            );
+          }
+        }
+      }
+
+      return matrix[aLength][bLength];
+    }
+
+    function bestAccuracy(input, acceptedList) {
+      if (!input) return 0;
+
+      let best = 0;
+
+      acceptedList.forEach(answer => {
+        const distance = damerauLevenshtein(input, answer);
+        const maxLength = Math.max(input.length, answer.length);
+
+        const percentage = maxLength === 0
+          ? 100
+          : Math.max(0, (1 - distance / maxLength) * 100);
+
+        if (percentage > best) best = percentage;
+      });
+
+      return best;
+    }
+
+    function pctToColor(pct) {
+      const hue = (pct / 100) * 120;
+      return `hsl(${hue}deg 100% 40%)`;
+    }
+
+    const GFITEMS = [
+      {
+        direct: "✈️ At the airport, a passenger needs to find the correct gate before boarding the plane.",
+        template: "Where is {0} 12?",
+        accepted: ["gate"]
+      },
+      {
+        direct: "🏛️ At the museum, a museum guide explains a rule about taking photographs.",
+        template: "You can’t use {0+ here.",
+        accepted: ["flash photography"]
+      },
+      {
+        direct: "📚 At the library, a librarian explains what students need before borrowing books.",
+        template: "You need a {0} to borrow books.",
+        hints: "Library",
+        accepted: ["library card"]
+      },
+      {
+        direct: "🍽️ At the restaurant, a waiter asks a customer to choose food.",
+        template: "What would you {0}?",
+        accepted: ["like to order"]
+      },
+      {
+        direct: "🏥 At the hospital, a doctor’s assistant tells a patient where to wait.",
+        template: "Please wait in the {0}.",
+        accepted: ["waiting room"]
+      },
+      {
+        direct: "🛒 At the supermarket, a worker tells a customer where they can pay.",
+        template: "Where is the {0}?",
+        accepted: ["checkout"]
+      },
+      {
+        direct: "🎬 At the cinema, a worker tells a customer when the film begins.",
+        template: "The film {0} 7:30.",
+        accepted: ["starts at"]
+      },
+      {
+        direct: "🏨 At the hotel, a receptionist gives something to a guest.",
+        template: "Here is your {0}.",
+        accepted: ["room key"]
+      },
+      {
+        direct: "💊 At the pharmacy, a pharmacist explains when to take medicine.",
+        template: "Take {0} after food.",
+        accepted: ["these tablets"]
+      }
+    ];
+
+    function buildGapFill() {
+      const container = document.getElementById("gfItems");
+      container.innerHTML = "";
+
+      GFITEMS.forEach(item => {
+        const itemEl = document.createElement("div");
+        itemEl.className = "gf-item";
+
+        const parts = item.template.split("{0}");
+
+        itemEl.innerHTML = `
+          <div class="direct">${item.direct}</div>
+          <div class="sentence">
+            ${parts[0]}
+            <span class="gf-gap-wrap">
+              <input
+                class="gf-gap-input"
+                type="text"
+                autocomplete="off"
+                spellcheck="false"
+                aria-label="Complete the phrase"
+              />
+              <span class="bar-track">
+                <span class="bar-fill"></span>
+              </span>
+              <span class="bar-pct">0%</span>
+            </span>
+            ${parts[1]}
+          </div>
+        `;
+
+        container.appendChild(itemEl);
+
+        const input = itemEl.querySelector(".gf-gap-input");
+        const fill = itemEl.querySelector(".bar-fill");
+        const pct = itemEl.querySelector(".bar-pct");
+
+
+        input.addEventListener("input", () => {
+          const accuracy = bestAccuracy(input.value.trim(), item.accepted);
+          const isCorrect = accuracy === 100;
+
+          fill.style.width = `${accuracy}%`;
+          fill.style.background = pctToColor(accuracy);
+          pct.textContent = `${Math.round(accuracy)}%`;
+
+          input.classList.remove("gap-correct");
+
+          if (isCorrect) {
+            input.classList.add("gap-correct");
+          }
+        });
+      });
+    }
+
+    function applyThemeIcon() {
+      const icon = document.getElementById("theme-toggle");
+      const theme = document.documentElement.dataset.theme;
+
+      icon.textContent = theme === "dark" ? "🌙" : "☀️";
+    }
+
+    document.getElementById("theme-toggle").addEventListener("click", () => {
+      const currentTheme = document.documentElement.dataset.theme;
+      const newTheme = currentTheme === "dark" ? "light" : "dark";
+
+      document.documentElement.dataset.theme = newTheme;
+      localStorage.setItem("places-phrases-theme", newTheme);
+
+      applyThemeIcon();
+    });
+
+    const savedTheme = localStorage.getItem("places-phrases-theme");
+
+    if (savedTheme) {
+      document.documentElement.dataset.theme = savedTheme;
+    }
+
+    buildExercise("woItems", WOITEMS, "woScore", "woTotal");
+    buildGapFill();
+    applyThemeIcon();
+  </script>
+</body>
+</html>

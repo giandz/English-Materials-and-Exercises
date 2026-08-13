@@ -1,0 +1,723 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>A1 Places and Phrases Matching</title>
+
+  <style>
+    :root {
+      --color-background-primary: #ffffff;
+      --color-background-secondary: #f6f7f9;
+      --color-text-primary: #1a1d23;
+      --color-text-secondary: #4b5261;
+      --color-text-tertiary: #8a8f9c;
+      --color-border-secondary: #e2e5ea;
+      --color-border-tertiary: #ececef;
+      --border-radius-lg: 14px;
+
+      --text-primary: var(--color-text-primary);
+      --text-secondary: var(--color-text-secondary);
+      --text-muted: var(--color-text-tertiary);
+      --text-accent: #2563eb;
+      --surface-1: var(--color-background-primary);
+      --surface-2: var(--color-background-secondary);
+      --border: var(--color-border-secondary);
+
+      --pos-wh: #1d6fd8;
+      --pos-wh-bg: #e3edfd;
+      --pos-yes: #1a7f37;
+      --pos-yes-bg: #e6f6ea;
+      --pos-no: #c03434;
+      --pos-no-bg: #fbe7e7;
+    }
+
+    html[data-theme="dark"] {
+      --color-background-primary: #16181d;
+      --color-background-secondary: #1d2026;
+      --color-text-primary: #eef0f3;
+      --color-text-secondary: #b7bcc6;
+      --color-text-tertiary: #838995;
+      --color-border-secondary: #2c303a;
+      --color-border-tertiary: #262a33;
+
+      --text-accent: #6ea8fe;
+      --surface-1: var(--color-background-primary);
+      --surface-2: var(--color-background-secondary);
+      --border: var(--color-border-secondary);
+
+      --pos-wh: #7cb0f7;
+      --pos-wh-bg: #1c2b42;
+      --pos-yes: #6fd08c;
+      --pos-yes-bg: #163524;
+      --pos-no: #f08a8a;
+      --pos-no-bg: #3a1c1c;
+    }
+
+    * {
+      box-sizing: border-box;
+    }
+
+    body {
+      margin: 0;
+      background: var(--surface-1);
+      color: var(--text-primary);
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Helvetica, Arial, sans-serif;
+      font-size: 15px;
+      line-height: 1.55;
+    }
+
+    .page {
+      max-width: 940px;
+      margin: 0 auto;
+      padding: 28px 20px 64px;
+    }
+
+    h1 {
+      margin: 4px 0 2px;
+      font-size: 1.35rem;
+    }
+
+    .subtitle {
+      margin: 0 0 14px;
+      color: var(--text-secondary);
+      font-size: 0.95rem;
+    }
+
+    .cefr-tag {
+      display: inline-block;
+      padding: 3px 10px;
+      border-radius: 999px;
+      background: var(--pos-wh-bg);
+      color: var(--pos-wh);
+      font-size: 0.72rem;
+      font-weight: 700;
+      letter-spacing: 0.04em;
+      text-transform: uppercase;
+    }
+
+    .instructions {
+      margin: 0;
+      padding: 12px 14px;
+      border: 1px solid var(--border);
+      border-radius: 10px;
+      background: var(--surface-2);
+      color: var(--text-secondary);
+      font-size: 0.9rem;
+    }
+
+    .sec-div {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      margin: 30px 0 8px;
+      color: var(--text-muted);
+      font-size: 0.72rem;
+      font-weight: 700;
+      letter-spacing: 0.08em;
+      text-transform: uppercase;
+    }
+
+    .sec-div::before,
+    .sec-div::after {
+      content: "";
+      flex: 1;
+      height: 1px;
+      background: var(--border);
+    }
+
+    .phrase-pool {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 8px;
+      min-height: 90px;
+      padding: 14px;
+      border: 1px solid var(--border);
+      border-radius: var(--border-radius-lg);
+      background: var(--surface-2);
+      position: sticky;
+	  top: 0px;
+    }
+
+    .pair-chip {
+      touch-action: none;
+      user-select: none;
+      cursor: grab;
+      padding: 7px 11px;
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      background: var(--surface-1);
+      color: var(--text-primary);
+      font-size: 0.88rem;
+      font-weight: 600;
+      line-height: 1.35;
+    }
+
+    .pair-chip.dragging {
+      cursor: grabbing;
+      z-index: 1000;
+      opacity: 0.96;
+      box-shadow: 0 5px 15px rgba(0, 0, 0, 0.18);
+    }
+
+    .pair-chip.shake {
+      animation: shakeX 0.4s ease;
+      border-color: var(--pos-no);
+      background: var(--pos-no-bg);
+      color: var(--pos-no);
+    }
+
+    @keyframes shakeX {
+      0%, 100% {
+        transform: translateX(0);
+      }
+
+      20% {
+        transform: translateX(-8px);
+      }
+
+      40% {
+        transform: translateX(8px);
+      }
+
+      60% {
+        transform: translateX(-6px);
+      }
+
+      80% {
+        transform: translateX(6px);
+      }
+    }
+
+    .score-bar-wrap {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      margin: 10px 0 16px;
+    }
+
+    .score-bar {
+      flex: 1;
+      height: 8px;
+      overflow: hidden;
+      border-radius: 999px;
+      background: var(--surface-2);
+    }
+
+    .score-fill {
+      width: 0;
+      height: 100%;
+      background: var(--pos-yes);
+      transition: width 0.3s ease;
+    }
+
+    .score-label {
+      color: var(--text-secondary);
+      font-size: 0.82rem;
+      white-space: nowrap;
+    }
+
+    .board-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(255px, 1fr));
+      gap: 14px;
+      margin-top: 4px;
+    }
+
+    .board {
+      min-height: 190px;
+      padding: 14px;
+      border: 1px solid var(--border);
+      border-radius: var(--border-radius-lg);
+      background: var(--surface-1);
+      transition: border-color 0.2s, background 0.2s, transform 0.2s;
+    }
+
+    .board:hover {
+      border-color: var(--text-accent);
+    }
+
+    .board-label {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      margin-bottom: 11px;
+      color: var(--text-primary);
+      font-size: 1rem;
+      font-weight: 700;
+    }
+
+    .board-label small {
+      margin-left: auto;
+      color: var(--text-secondary);
+      font-size: 0.78rem;
+      font-weight: 600;
+    }
+
+    .drop-slots {
+      display: grid;
+      gap: 8px;
+    }
+
+    .anchor-slot {
+      display: flex;
+      align-items: center;
+      min-height: 43px;
+      padding: 8px 10px;
+      border: 2px dashed var(--border);
+      border-radius: 8px;
+      background: var(--surface-2);
+      color: var(--text-muted);
+      font-size: 0.84rem;
+      transition: background 0.2s, border-color 0.2s, color 0.2s;
+    }
+
+    .anchor-slot.fused {
+      border-style: solid;
+      border-color: var(--pos-yes);
+      background: var(--pos-yes-bg);
+      color: var(--pos-yes);
+      font-weight: 700;
+      animation: fusePulse 0.35s ease;
+    }
+
+    @keyframes fusePulse {
+      0% {
+        transform: scale(1);
+      }
+
+      50% {
+        transform: scale(1.03);
+      }
+
+      100% {
+        transform: scale(1);
+      }
+    }
+
+    .match-feedback {
+      min-height: 1.2em;
+      margin: 12px 0 0;
+      color: var(--text-secondary);
+      font-size: 0.88rem;
+      font-weight: 600;
+    }
+
+    .match-feedback.ok {
+      color: var(--pos-yes);
+    }
+
+    .reset-btn {
+      margin-top: 18px;
+      padding: 8px 14px;
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      cursor: pointer;
+      background: var(--surface-2);
+      color: var(--text-primary);
+      font: inherit;
+      font-size: 0.88rem;
+      font-weight: 700;
+    }
+
+    .reset-btn:hover {
+      border-color: var(--text-accent);
+      color: var(--text-accent);
+    }
+
+    #theme-toggle-wrap {
+      position: fixed;
+      right: 18px;
+      bottom: 18px;
+    }
+
+    #theme-toggle {
+      width: 42px;
+      height: 42px;
+      border: 1px solid var(--border);
+      border-radius: 50%;
+      cursor: pointer;
+      background: var(--surface-1);
+      color: var(--text-primary);
+      font-size: 18px;
+    }
+
+    @media (max-width: 560px) {
+      .page {
+        padding: 22px 14px 58px;
+      }
+
+      .pair-chip {
+        width: 100%;
+      }
+    }
+  </style>
+</head>
+
+<body>
+  <main class="page">
+    <span class="cefr-tag">A1</span>
+
+    <h1>Places and Phrases</h1>
+
+    <p class="subtitle">
+      Match each phrase to the place where people usually say it.
+    </p>
+
+    <p class="instructions">
+      Drag a phrase from the pool and drop it anywhere on the correct place card.
+      Correct answers stay in the card. Wrong answers shake and return to the pool.
+    </p>
+
+    <div class="sec-div">People usually say</div>
+
+    <div class="phrase-pool" id="phrasePool"></div>
+
+    <div class="sec-div">At the...</div>
+
+    <div class="score-bar-wrap">
+      <div class="score-bar">
+        <div class="score-fill" id="scoreFill"></div>
+      </div>
+
+      <div class="score-label">
+        <span id="score">0</span>/<span id="total">27</span> matched
+      </div>
+    </div>
+
+    <section class="board-grid" id="placeBoards"></section>
+
+    <p class="match-feedback" id="feedback"></p>
+
+    <button class="reset-btn" id="resetBtn">Reset exercise</button>
+  </main>
+
+  <div id="theme-toggle-wrap">
+    <button
+      id="theme-toggle"
+      aria-label="Toggle light and dark mode"
+      title="Toggle light and dark mode"
+    >◐</button>
+  </div>
+
+  <script>
+    const placeData = [
+      {
+        id: "airport",
+        emoji: "✈️",
+        place: "airport",
+        phrases: [
+          "Where is gate 12?",
+          "Please put your liquids in this tray.",
+          "Can I see your boarding pass?"
+        ]
+      },
+      {
+        id: "museum",
+        emoji: "🏛️",
+        place: "museum",
+        phrases: [
+          "You can’t use flash photography here.",
+          "This painting is from 1890.",
+          "The dinosaur exhibition is upstairs."
+        ]
+      },
+      {
+        id: "library",
+        emoji: "📚",
+        place: "library",
+        phrases: [
+          "Please return this book by Friday.",
+          "Where is the children’s section?",
+          "You need a library card to borrow books."
+        ]
+      },
+      {
+        id: "restaurant",
+        emoji: "🍽️",
+        place: "restaurant",
+        phrases: [
+          "Would you like to see the menu?",
+          "What would you like to order?",
+          "Here is your bill."
+        ]
+      },
+      {
+        id: "hospital",
+        emoji: "🏥",
+        place: "hospital",
+        phrases: [
+          "The doctor will see you now.",
+          "Please wait in the waiting room.",
+          "What is your date of birth?"
+        ]
+      },
+      {
+        id: "supermarket",
+        emoji: "🛒",
+        place: "supermarket",
+        phrases: [
+          "Where is the checkout?",
+          "Do you need a shopping bag?",
+          "The bread is in aisle five."
+        ]
+      },
+      {
+        id: "cinema",
+        emoji: "🎬",
+        place: "cinema",
+        phrases: [
+          "The film starts at 7:30.",
+          "A large popcorn, please.",
+          "Screen 4 is on the left."
+        ]
+      },
+      {
+        id: "hotel",
+        emoji: "🏨",
+        place: "hotel",
+        phrases: [
+          "Here is your room key.",
+          "Breakfast is served from 7:00 to 10:00.",
+          "What time would you like to check out?"
+        ]
+      },
+      {
+        id: "pharmacy",
+        emoji: "💊",
+        place: "pharmacy",
+        phrases: [
+          "Do you have anything for a headache?",
+          "Take these tablets after food.",
+          "You need a prescription for this medicine."
+        ]
+      }
+    ];
+
+    function shuffle(array) {
+      const copy = [...array];
+
+      for (let i = copy.length - 1; i > 0; i--) {
+        const randomIndex = Math.floor(Math.random() * (i + 1));
+        [copy[i], copy[randomIndex]] = [copy[randomIndex], copy[i]];
+      }
+
+      return copy;
+    }
+
+    function createPhraseChip(item) {
+      const chip = document.createElement("span");
+
+      chip.className = "pair-chip";
+      chip.dataset.placeId = item.placeId;
+      chip.dataset.phraseId = item.phraseId;
+      chip.textContent = item.phrase;
+
+      makeDraggable(chip);
+
+      return chip;
+    }
+
+    function makeDraggable(chip) {
+      let startParent = null;
+      let pointerId = null;
+
+      chip.addEventListener("pointerdown", event => {
+        event.preventDefault();
+
+        pointerId = event.pointerId;
+        startParent = chip.parentElement;
+
+        chip.setPointerCapture(pointerId);
+        chip.classList.add("dragging");
+
+        const rect = chip.getBoundingClientRect();
+
+        chip.style.position = "fixed";
+        chip.style.left = `${event.clientX - rect.width / 2}px`;
+        chip.style.top = `${event.clientY - rect.height / 2}px`;
+        chip.style.width = `${rect.width}px`;
+      });
+
+      chip.addEventListener("pointermove", event => {
+        if (pointerId !== event.pointerId) return;
+
+        chip.style.left = `${event.clientX - chip.offsetWidth / 2}px`;
+        chip.style.top = `${event.clientY - chip.offsetHeight / 2}px`;
+      });
+
+      function finishDrag(event) {
+        if (pointerId !== event.pointerId) return;
+
+        chip.classList.remove("dragging");
+
+        chip.style.pointerEvents = "none";
+
+        const elementBelow = document.elementFromPoint(
+          event.clientX,
+          event.clientY
+        );
+
+        const board = elementBelow
+          ? elementBelow.closest("article.board")
+          : null;
+
+        chip.style.pointerEvents = "";
+        chip.style.position = "";
+        chip.style.left = "";
+        chip.style.top = "";
+        chip.style.width = "";
+
+        handleDrop(chip, board, startParent);
+
+        pointerId = null;
+        startParent = null;
+      }
+
+      chip.addEventListener("pointerup", finishDrag);
+
+      chip.addEventListener("pointercancel", () => {
+        chip.classList.remove("dragging");
+
+        chip.style.position = "";
+        chip.style.left = "";
+        chip.style.top = "";
+        chip.style.width = "";
+
+        if (startParent) {
+          startParent.appendChild(chip);
+        }
+
+        pointerId = null;
+        startParent = null;
+      });
+    }
+
+    function handleDrop(chip, board, startParent) {
+      const pool = document.getElementById("phrasePool");
+
+      if (!board) {
+        startParent.appendChild(chip);
+        return;
+      }
+
+      const isCorrect = board.dataset.placeId === chip.dataset.placeId;
+      const emptySlot = board.querySelector(".anchor-slot:not(.fused)");
+
+      if (isCorrect && emptySlot) {
+        emptySlot.textContent = chip.textContent;
+        emptySlot.classList.add("fused");
+        emptySlot.dataset.fused = "true";
+
+        chip.remove();
+
+        updateScore();
+        return;
+      }
+
+      chip.classList.add("shake");
+
+      setTimeout(() => {
+        chip.classList.remove("shake");
+        pool.appendChild(chip);
+      }, 400);
+    }
+
+    function buildBoards() {
+      const boards = document.getElementById("placeBoards");
+      boards.innerHTML = "";
+
+      placeData.forEach(place => {
+        const board = document.createElement("article");
+
+        board.className = "board";
+        board.dataset.placeId = place.id;
+
+        board.innerHTML = `
+          <div class="board-label">
+            <span>${place.emoji}</span>
+            <span>At the ${place.place}</span>
+            <small>3 phrases</small>
+          </div>
+          <div class="drop-slots"></div>
+        `;
+
+        const slots = board.querySelector(".drop-slots");
+
+        place.phrases.forEach((phrase, index) => {
+          const slot = document.createElement("div");
+
+          slot.className = "anchor-slot";
+          slot.dataset.phraseId = `${place.id}-${index}`;
+          slot.textContent = "Drop a phrase anywhere on this card";
+
+          slots.appendChild(slot);
+        });
+
+        boards.appendChild(board);
+      });
+    }
+
+    function buildPhrasePool() {
+      const pool = document.getElementById("phrasePool");
+      pool.innerHTML = "";
+
+      const allPhrases = [];
+
+      placeData.forEach(place => {
+        place.phrases.forEach((phrase, index) => {
+          allPhrases.push({
+            placeId: place.id,
+            phraseId: `${place.id}-${index}`,
+            phrase
+          });
+        });
+      });
+
+      shuffle(allPhrases).forEach(item => {
+        pool.appendChild(createPhraseChip(item));
+      });
+    }
+
+    function updateScore() {
+      const total = placeData.reduce((sum, place) => {
+        return sum + place.phrases.length;
+      }, 0);
+
+      const correct = document.querySelectorAll(".anchor-slot.fused").length;
+
+      document.getElementById("score").textContent = correct;
+      document.getElementById("total").textContent = total;
+      document.getElementById("scoreFill").style.width =
+        `${(correct / total) * 100}%`;
+
+      const feedback = document.getElementById("feedback");
+
+      if (correct === total) {
+        feedback.textContent = `Excellent! You matched all ${total} phrases.`;
+        feedback.className = "match-feedback ok";
+      } else {
+        feedback.textContent = "";
+        feedback.className = "match-feedback";
+      }
+    }
+
+    function resetExercise() {
+      buildBoards();
+      buildPhrasePool();
+      updateScore();
+    }
+
+    document.getElementById("resetBtn").addEventListener("click", resetExercise);
+
+    document.getElementById("theme-toggle").addEventListener("click", () => {
+      const root = document.documentElement;
+      const currentTheme = root.dataset.theme;
+
+      root.dataset.theme = currentTheme === "dark" ? "light" : "dark";
+    });
+
+    resetExercise();
+  </script>
+</body>
+</html>
