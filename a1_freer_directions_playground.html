@@ -3,9 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-<title>City Playground</title>
-<link rel="stylesheet" href="general.css">
-
+<title>City Playground — 8×8</title>
 <style>
   :root{
     --color-background-primary: #ffffff;
@@ -220,7 +218,6 @@
 
   <div class="pool-heading">Map tools</div>
   <div class="pool tool-pool">
-    <button class="action-btn" id="themeToggle">📄 Switch to paper style</button>
     <button class="action-btn" id="riverToolToggle">🛣️ Direct-draw tool: Road</button>
     <button class="action-btn" id="clearAllBtn">Clear grid</button>
   </div>
@@ -241,6 +238,15 @@
   </div>
   <p class="tool-status" id="pathStatus">Turn on the path tool, then click two place chips to draw a route between them.</p>
 
+  <div class="pool-heading">Label tool</div>
+  <div class="pool tool-pool">
+    <input type="text" class="size-select" id="labelTextInput" placeholder="Street name..." style="flex:1;min-width:140px;">
+    <button class="action-btn" id="labelOrientToggle">↔️ Horizontal</button>
+    <button class="action-btn" id="labelToolToggle">🏷️ Label tool: off</button>
+    <button class="action-btn" id="clearLabelsBtn">Erase all labels</button>
+  </div>
+  <p class="tool-status" id="labelStatus">Turn on the label tool, type a name, then click a square to place it. Click a placed label to remove it, or drag to move it.</p>
+
   <footer>Free Practice — Giving Directions (A1–B1)</footer>
 </div>
 
@@ -252,12 +258,9 @@
 
   const PLACE_CHIPS = [
     "📍", "🏫", "🍞", "🧰", "🌳", "🏦", "☕", "💊", "🧸", "👟", "🍦",
-    "🍫", "🎁", "🎈", "🍰", "🐶", "🏥", "🏠", "🏢", "⛪", "🚉",
-    "🅿️", "🏪", "🍕", "🎮", "💇", "🐟"
+    "🍫", "🎁", "🎈", "🍰", "🧥", "🐶", "🏥", "🏠", "🏢", "⛪", "🚉",
+    "🅿️", "🏪", "🍕", "🎮", "💇", "🐟", "💐", "🛫",
   ];
-
-  let greenTheme = true;
-  const themeToggle = document.getElementById('themeToggle');
 
   let greenBg;
 
@@ -289,26 +292,13 @@
   }
 
   function applyTheme() {
-    greenBg.style.display = greenTheme ? "" : "none";
+    greenBg.style.display = "";
     document.querySelectorAll('.cell-hit').forEach(rect => {
       if (rect.dataset.hasBuilding) return;
-      if (greenTheme) {
-        rect.setAttribute("fill", "transparent");
-        rect.setAttribute("stroke", "none");
-      } else {
-        rect.setAttribute("fill", "var(--color-background-primary)");
-        rect.setAttribute("stroke", "var(--color-border-secondary)");
-        rect.setAttribute("stroke-width", "1.5");
-        rect.setAttribute("stroke-dasharray", "4 4");
-      }
+      rect.setAttribute("fill", "transparent");
+      rect.setAttribute("stroke", "none");
     });
-    themeToggle.textContent = greenTheme ? "📄 Switch to paper style" : "🟩 Switch to city-builder style";
   }
-
-  themeToggle.addEventListener('click', () => {
-    greenTheme = !greenTheme;
-    applyTheme();
-  });
 
   function makeEmptyGrid(rows, cols) {
     const g = [];
@@ -854,14 +844,8 @@
     } else {
       delete rect.dataset.hasBuilding;
       text.textContent = "";
-      if (greenTheme) {
-        rect.setAttribute("fill", "transparent");
-        rect.setAttribute("stroke", "none");
-      } else {
-        rect.setAttribute("fill", "var(--color-background-primary)");
-        rect.setAttribute("stroke", "var(--color-border-secondary)");
-        rect.setAttribute("stroke-dasharray", "4 4");
-      }
+      rect.setAttribute("fill", "transparent");
+      rect.setAttribute("stroke", "none");
     }
 
     if (kind === 'road' || kind === 'special' || kind === 'river') {
@@ -888,6 +872,11 @@
 
       if (pathToolActive) {
         handlePathClick(r, c);
+        return;
+      }
+
+      if (labelToolActive) {
+        placeLabelAtCell(r, c);
         return;
       }
 
@@ -1242,6 +1231,159 @@
   });
 
   let pendingStart = null; // { r, c } of the first clicked building
+
+  /* ═══════════════ LABEL TOOL (street names) ═══════════════ */
+
+  let labelToolActive = false;
+  let labelOrientation = 'h'; // 'h' or 'v'
+  const activeLabels = []; // { group }
+
+  const labelToolBtn = document.getElementById('labelToolToggle');
+  const labelOrientBtn = document.getElementById('labelOrientToggle');
+  const labelTextInput = document.getElementById('labelTextInput');
+  const labelStatus = document.getElementById('labelStatus');
+
+  labelToolBtn.addEventListener('click', () => {
+    labelToolActive = !labelToolActive;
+    labelToolBtn.classList.toggle('active', labelToolActive);
+    labelToolBtn.textContent = labelToolActive ? "🏷️ Label tool: on" : "🏷️ Label tool: off";
+  });
+
+  labelOrientBtn.addEventListener('click', () => {
+    labelOrientation = labelOrientation === 'h' ? 'v' : 'h';
+    labelOrientBtn.textContent = labelOrientation === 'h' ? "↔️ Horizontal" : "↕️ Vertical";
+  });
+
+  function getLabelLayer() {
+    let layer = svg.querySelector('#labelLayer');
+    if (!layer) {
+      layer = document.createElementNS(SVG_NS, "g");
+      layer.setAttribute("id", "labelLayer");
+      svg.appendChild(layer); // appended last, so labels always render on top
+    }
+    return layer;
+  }
+
+  // Converts a pointer event's screen coordinates into the SVG's own
+  // coordinate space, so a dragged label can follow the pointer
+  // exactly regardless of how the SVG is scaled on the page.
+  function screenToSvgPoint(clientX, clientY) {
+    const pt = svg.createSVGPoint();
+    pt.x = clientX; pt.y = clientY;
+    const ctm = svg.getScreenCTM();
+    if (!ctm) return { x: clientX, y: clientY };
+    const svgPt = pt.matrixTransform(ctm.inverse());
+    return { x: svgPt.x, y: svgPt.y };
+  }
+
+  function placeLabelAtCell(r, c) {
+    const text = labelTextInput.value.trim();
+    if (!text) {
+      labelStatus.textContent = "Type a name before placing a label.";
+      return;
+    }
+    const cx = c * CELL + CELL / 2, cy = r * CELL + CELL / 2;
+    createLabel(cx, cy, text, labelOrientation);
+    labelStatus.textContent = "Turn on the label tool, type a name, then click a square to place it. Click a placed label to remove it, or drag to move it.";
+  }
+
+  function createLabel(x, y, text, orientation) {
+    const layer = getLabelLayer();
+    const group = document.createElementNS(SVG_NS, "g");
+
+    const label = document.createElementNS(SVG_NS, "text");
+    label.setAttribute("x", x); label.setAttribute("y", y);
+    label.setAttribute("text-anchor", "middle");
+    label.setAttribute("dominant-baseline", "central");
+    label.setAttribute("font-size", CELL * 0.32);
+    label.setAttribute("font-family", "-apple-system, BlinkMacSystemFont, 'Segoe UI', Helvetica, Arial, sans-serif");
+    label.setAttribute("font-weight", "700");
+    label.setAttribute("fill", "#1a1a1a");
+    label.setAttribute("paint-order", "stroke");
+    label.setAttribute("stroke", "#ffffff");
+    label.setAttribute("stroke-width", "3");
+    label.setAttribute("stroke-linejoin", "round");
+    label.textContent = text;
+    if (orientation === 'v') {
+      label.setAttribute("transform", `rotate(-90, ${x}, ${y})`);
+    }
+    group.appendChild(label);
+    layer.appendChild(group);
+
+    attachLabelDrag(group, label, orientation);
+    activeLabels.push({ group });
+  }
+
+  // Snaps a coordinate to the center of the nearest grid cell along
+  // that axis, clamped so the label can't snap past the edge of the grid.
+  function snapToCellCenter(coord, cellCount) {
+    let index = Math.round((coord - CELL / 2) / CELL);
+    index = Math.max(0, Math.min(cellCount - 1, index));
+    return index * CELL + CELL / 2;
+  }
+
+  function attachLabelDrag(group, label, orientation) {
+    let moved = false, startClientX, startClientY, startSvg, pointerId = null;
+    let startLabelX, startLabelY;
+
+    group.style.cursor = 'grab';
+    group.addEventListener('pointerdown', (e) => {
+      e.preventDefault();
+      e.stopPropagation(); // don't let the underlying cell's own handler fire too
+      moved = false;
+      startClientX = e.clientX; startClientY = e.clientY;
+      startSvg = screenToSvgPoint(e.clientX, e.clientY);
+      startLabelX = Number(label.getAttribute('x'));
+      startLabelY = Number(label.getAttribute('y'));
+      pointerId = e.pointerId;
+      group.setPointerCapture(e.pointerId);
+    });
+
+    group.addEventListener('pointermove', (e) => {
+      if (e.pointerId !== pointerId) return;
+      const dx = e.clientX - startClientX, dy = e.clientY - startClientY;
+      if (!moved && Math.hypot(dx, dy) < 6) return;
+      moved = true;
+      const nowSvg = screenToSvgPoint(e.clientX, e.clientY);
+      // Always compute from the total displacement since the drag
+      // started (not frame-to-frame), so repeated snapping on the
+      // constrained axis never compounds into drift or a laggy feel.
+      let newX = startLabelX + (nowSvg.x - startSvg.x);
+      let newY = startLabelY + (nowSvg.y - startSvg.y);
+      // Horizontal labels move freely left/right but snap to the
+      // vertical center of whichever row they're over; vertical
+      // labels move freely up/down but snap to the horizontal
+      // center of whichever column they're over.
+      if (orientation === 'h') {
+        newY = snapToCellCenter(newY, ROWS);
+      } else {
+        newX = snapToCellCenter(newX, COLS);
+      }
+      label.setAttribute('x', newX); label.setAttribute('y', newY);
+      if (orientation === 'v') {
+        label.setAttribute('transform', `rotate(-90, ${newX}, ${newY})`);
+      }
+    });
+
+    group.addEventListener('pointerup', (e) => {
+      if (e.pointerId !== pointerId) return;
+      pointerId = null;
+      if (!moved) {
+        // simple tap → remove this label
+        group.remove();
+        const idx = activeLabels.findIndex(l => l.group === group);
+        if (idx !== -1) activeLabels.splice(idx, 1);
+      }
+      moved = false;
+    });
+
+    group.addEventListener('pointercancel', () => { pointerId = null; moved = false; });
+  }
+
+  document.getElementById('clearLabelsBtn').addEventListener('click', () => {
+    activeLabels.forEach(l => l.group.remove());
+    activeLabels.length = 0;
+  });
 
   function updatePathStatus() {
     if (!pathToolActive) {
@@ -1603,11 +1745,199 @@
 
   updatePathStatus();
 </script>
-<div id="theme-toggle-wrap">
-  <button id="theme-toggle" aria-label="Toggle light/dark mode" title="Toggle light/dark mode">
-    <span id="theme-icon">☀️</span>
-  </button>
-</div>
-<script src="theme-toggle-behavior.js"></script>
+<!--
+Add this block immediately before the final </body> tag in
+ a1_freer_directions_playground.html.
+It turns the existing Pools / Map tools / Path tool area into an accessible
+hamburger drawer without changing any of the existing control IDs or logic.
+-->
+<style>
+  :root { --controls-drawer-width: 360px; }
+
+  .controls-menu-button {
+    position: fixed;
+    z-index: 1002;
+    left: 20px;
+    top: 20px;
+    display: inline-flex;
+    align-items: center;
+    gap: 9px;
+    min-height: 42px;
+    padding: 9px 13px;
+    border: 1px solid var(--border);
+    border-radius: 999px;
+    background: var(--surface-2);
+    color: var(--text-primary);
+    box-shadow: 0 5px 18px rgba(0, 0, 0, .16);
+    font: 600 13px/1 inherit;
+    cursor: pointer;
+  }
+  .controls-menu-button:hover { border-color: var(--text-accent); }
+  .controls-menu-button:focus-visible,
+  .controls-drawer-close:focus-visible {
+    outline: 3px solid color-mix(in srgb, var(--text-accent) 45%, transparent);
+    outline-offset: 2px;
+  }
+  .controls-menu-icon,
+  .controls-menu-icon::before,
+  .controls-menu-icon::after {
+    display: block;
+    width: 18px;
+    height: 2px;
+    border-radius: 2px;
+    background: currentColor;
+    transition: transform .2s ease, opacity .2s ease;
+  }
+  .controls-menu-icon { position: relative; }
+  .controls-menu-icon::before,
+  .controls-menu-icon::after { content: ""; position: absolute; left: 0; }
+  .controls-menu-icon::before { top: -6px; }
+  .controls-menu-icon::after { top: 6px; }
+  body.controls-drawer-open .controls-menu-icon { background: transparent; }
+  body.controls-drawer-open .controls-menu-icon::before { transform: translateY(6px) rotate(45deg); }
+  body.controls-drawer-open .controls-menu-icon::after { transform: translateY(-6px) rotate(-45deg); }
+
+  .controls-drawer-backdrop {
+    position: fixed;
+    z-index: 1000;
+    inset: 0;
+    background: rgba(0, 0, 0, .34);
+    opacity: 0;
+    pointer-events: none;
+    transition: opacity .24s ease;
+  }
+  .controls-drawer {
+    position: fixed;
+    z-index: 1001;
+    top: 0;
+    left: 0;
+    width: min(var(--controls-drawer-width), calc(100vw - 28px));
+    height: 100dvh;
+    overflow-y: auto;
+    overscroll-behavior: contain;
+    padding: 18px 18px 34px;
+    box-sizing: border-box;
+    background: var(--surface-2);
+    border-right: 1px solid var(--border);
+    box-shadow: 12px 0 34px rgba(0, 0, 0, .18);
+    transform: translateX(calc(-100% - 12px));
+    visibility: hidden;
+    transition: transform .28s ease, visibility 0s linear .28s;
+  }
+  body.controls-drawer-open { overflow: hidden; }
+  body.controls-drawer-open .controls-drawer { transform: translateX(0); visibility: visible; transition-delay: 0s; }
+  body.controls-drawer-open .controls-drawer-backdrop { opacity: 1; pointer-events: auto; }
+  .controls-drawer-header { display: flex; align-items: center; justify-content: space-between; gap: 12px; margin-bottom: 6px; }
+  .controls-drawer-title { margin: 0; font-size: 1.05rem; font-weight: 650; }
+  .controls-drawer-close { border: 0; border-radius: 8px; background: transparent; color: var(--text-secondary); font: 28px/1 sans-serif; cursor: pointer; padding: 3px 8px 6px; }
+  .controls-drawer .pool-heading:first-of-type { margin-top: 1rem; }
+
+  @media (max-width: 640px) {
+    .controls-menu-button { top: auto; bottom: 16px; left: 16px; }
+    .controls-drawer {
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: min(82dvh, 700px);
+      border-right: 0;
+      border-bottom: 1px solid var(--border);
+      border-radius: 0 0 18px 18px;
+      box-shadow: 0 10px 28px rgba(0, 0, 0, .20);
+      transform: translateY(calc(-100% - 12px));
+    }
+    body.controls-drawer-open .controls-drawer { transform: translateY(0); }
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    .controls-menu-icon, .controls-menu-icon::before, .controls-menu-icon::after,
+    .controls-drawer, .controls-drawer-backdrop { transition: none; }
+  }
+</style>
+
+<script>
+(() => {
+  const page = document.querySelector('.page');
+  const mapWrap = document.querySelector('.map-wrap');
+  const placePool = document.getElementById('placePool');
+  const pathStatus = document.getElementById('pathStatus');
+  const labelStatus = document.getElementById('labelStatus');
+
+  if (!page || !mapWrap || !placePool || !pathStatus || !labelStatus) {
+    console.warn('Controls drawer: required page elements were not found.');
+    return;
+  }
+
+  const firstHeading = placePool.previousElementSibling;
+
+  const button = document.createElement('button');
+  button.className = 'controls-menu-button';
+  button.type = 'button';
+  button.setAttribute('aria-controls', 'controlsDrawer');
+  button.setAttribute('aria-expanded', 'false');
+  button.innerHTML =
+    '<span class="controls-menu-icon" aria-hidden="true"></span><span>Controls</span>';
+
+  const backdrop = document.createElement('div');
+  backdrop.className = 'controls-drawer-backdrop';
+  backdrop.setAttribute('aria-hidden', 'true');
+
+  const drawer = document.createElement('aside');
+  drawer.className = 'controls-drawer';
+  drawer.id = 'controlsDrawer';
+  drawer.setAttribute('aria-label', 'Map controls');
+  drawer.innerHTML = `
+    <div class="controls-drawer-header">
+      <h2 class="controls-drawer-title">Map controls</h2>
+      <button class="controls-drawer-close" type="button" aria-label="Close controls">×</button>
+    </div>
+  `;
+
+  const controls = [];
+  let collecting = false;
+
+  for (const child of [...page.children]) {
+    if (child === firstHeading) collecting = true;
+    if (collecting) controls.push(child);
+    if (child === labelStatus) break;
+  }
+
+  if (!controls.length || controls[controls.length - 1] !== labelStatus) {
+    console.warn('Controls drawer: could not identify the complete controls section.');
+    return;
+  }
+
+  controls.forEach(node => drawer.appendChild(node));
+
+  page.insertBefore(button, mapWrap);
+  document.body.append(backdrop, drawer);
+
+  const closeButton = drawer.querySelector('.controls-drawer-close');
+
+  function setOpen(open) {
+    document.body.classList.toggle('controls-drawer-open', open);
+    button.setAttribute('aria-expanded', String(open));
+
+    if (open) closeButton.focus();
+    else button.focus();
+  }
+
+  button.addEventListener('click', () => {
+    setOpen(!document.body.classList.contains('controls-drawer-open'));
+  });
+
+  closeButton.addEventListener('click', () => setOpen(false));
+  backdrop.addEventListener('click', () => setOpen(false));
+
+  document.addEventListener('keydown', event => {
+    if (
+      event.key === 'Escape' &&
+      document.body.classList.contains('controls-drawer-open')
+    ) {
+      setOpen(false);
+    }
+  });
+})();
+</script>
+
 </body>
 </html>
