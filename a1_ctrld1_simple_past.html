@@ -1,0 +1,81 @@
+<!doctype html><html lang="en"><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>A1 Past Tense Gapfill</title><style>
+:root{--bg:#fff;--surface:#f6f7f9;--text:#1a1d23;--muted:#4b5261;--border:#e2e5ea;--accent:#2563eb}
+*{box-sizing:border-box}body{margin:0;background:var(--bg);color:var(--text);font:15px/1.55 -apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif}
+.page{max-width:720px;margin:auto;padding:28px 20px 64px}
+.tag{display:inline-block;padding:3px 10px;border-radius:999px;background:#e3edfd;color:#1d6fd8;font-size:.72rem;font-weight:700}
+h1{font-size:1.3rem;margin:4px 0 2px}
+.subtitle{color:var(--muted);margin:0 0 14px;font-size:.95rem}
+.section{display:flex;gap:10px;align-items:center;margin:30px 0 14px;color:#8a8f9c;font-size:.72rem;font-weight:700;letter-spacing:.08em;text-transform:uppercase}
+.section:before,.section:after{content:"";height:1px;background:var(--border);flex:1}
+.ex{background:var(--surface);border:1px solid var(--border);border-radius:14px;padding:16px 18px;margin:16px 0}
+.ex h3{margin:0 0 10px;font-size:1.05rem}
+.item{margin:14px 0}
+.item p{margin:0 0 8px}
+input[type=text]{font:inherit;padding:6px 9px;border:1px solid var(--border);border-radius:8px;background:var(--bg);color:var(--text);min-width:140px;transition:background .2s ease}
+.bar{height:8px;background:var(--surface);border:1px solid var(--border);border-radius:999px;overflow:hidden;margin:8px 0}
+.fill{height:100%;width:0;transition:width .2s ease,background .2s ease}
+.meta{font-size:.8rem;color:var(--muted)}
+details{margin-top:12px;border-top:1px dashed var(--border);padding-top:12px}
+summary{cursor:pointer;font-weight:600;color:var(--accent)}
+kbd{font:600 .85em ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;padding:2px 6px;border-radius:6px;background:var(--surface);border:1px solid var(--border)}
+#theme{display:block;margin:30px auto 0;padding:7px 14px;border:1px solid var(--border);border-radius:999px;background:var(--surface);color:var(--muted);cursor:pointer}
+html.force-dark{--bg:#16181d;--surface:#1d2026;--text:#eef0f3;--muted:#b7bcc6;--border:#2c303a}
+</style></head><body><main class="page">
+<span class="tag">A1</span><h1>Past Tense Gapfill</h1><p class="subtitle">Three short conversations. Type the correct past-tense verb in each blank.</p>
+<div class="section">Exercise 1 — Regular Verbs</div>
+<div class="ex" id="ex1"></div>
+<div class="section">Exercise 2 — Irregular Verbs</div>
+<div class="ex" id="ex2"></div>
+<div class="section">Exercise 3 — Mixed</div>
+<div class="ex" id="ex3"></div>
+<button id="theme">🌓 Theme</button></main><script>
+function damerauLevenshtein(a,b){a=a.toLowerCase().trim();b=b.toLowerCase().trim();if(a===b)return 0;const m=a.length,n=b.length;const dp=Array.from({length:m+2},()=>Array(n+2).fill(Infinity));for(let i=0;i<=m+1;i++)for(let j=0;j<=n+1;j++)dp[i][j]=i+j;for(let i=1;i<=m;i++)for(let j=1;j<=n;j++){const cost=+(a[i-1]!==b[j-1]);dp[i][j]=Math.min(dp[i-1][j]+1,dp[i][j-1]+1,dp[i-1][j-1]+cost);if(i>1&&j>1&&a[i-1]===b[j-2]&&a[i-2]===b[j-1]){dp[i][j]=Math.min(dp[i][j],dp[i-2][j-2]+cost+(i-2===0?0:1))}}return dp[m][n]}
+function similarity(a,b){const d=damerauLevenshtein(a,b);const maxLen=Math.max(a.length,b.length)||1;return Math.max(0,1-d/maxLen)}
+function renderEx(containerId,title,lines,answers){
+ const host=document.getElementById(containerId);
+ host.innerHTML=`<h3>${title}</h3>`;
+ const wrap=document.createElement('div');wrap.className='box';
+ lines.forEach((txt,i)=>{
+  const item=document.createElement('div');item.className='item';
+  const p=document.createElement('p');
+  const parts=txt.split('___');
+  p.appendChild(document.createTextNode(parts[0]));
+  const inp=document.createElement('input');inp.type='text';inp.dataset.answer=answers[i];inp.autocomplete='off';
+  inp.addEventListener('input',updateItem);
+  p.appendChild(inp);p.appendChild(document.createTextNode(parts[1]||''));
+  const bar=document.createElement('div');bar.className='bar';
+  const fill=document.createElement('div');fill.className='fill';fill.style.width='0%';
+  bar.appendChild(fill);
+  const meta=document.createElement('div');meta.className='meta';meta.textContent='0% correct';
+  item.appendChild(p);item.appendChild(bar);item.appendChild(meta);item._fill=fill;item._meta=meta;item._inp=inp;
+  wrap.appendChild(item);
+ });
+ host.appendChild(wrap);
+ const det=document.createElement('details');
+ det.innerHTML=`<summary>Answer key</summary><ol>${answers.map(a=>`<li><kbd>${a}</kbd></li>`).join('')}</ol>`;
+ host.appendChild(det);
+ function updateItem(e){const inp=e.target;const item=inp.parentElement.parentElement;const ans=inp.dataset.answer.trim();const val=inp.value.trim();const sim=similarity(ans,val);const pct=Math.round(sim*100);const hue=Math.round(pct*1.2);item._fill.style.width=pct+'%';item._fill.style.background=`hsl(${hue}deg, 50%, 50%)`;item._meta.textContent=pct+'% correct';if(pct===100){inp.style.background='hsl(120deg, 50%, 50%)';inp.style.color='#fff'}else{inp.style.background='var(--bg)';inp.style.color='var(--text)'} }
+}
+renderEx('ex1','Regular Verbs (yesterday)',[
+ 'Yesterday I ___ (walk) to the park.',
+ 'She ___ (clean) her room this morning.',
+ 'We ___ (watch) a film last night.',
+ 'They ___ (cook) dinner together.',
+ 'He ___ (stop) at the store.'
+],['walked','cleaned','watched','cooked','stopped']);
+renderEx('ex2','Irregular Verbs (last weekend)',[
+ 'I ___ (go) to the beach.',
+ 'She ___ (have) a great time.',
+ 'We ___ (see) many birds.',
+ 'They ___ (eat) pizza.',
+ 'He ___ (take) many photos.'
+],['went','had','saw','ate','took']);
+renderEx('ex3','Mixed (last vacation)',[
+ 'We ___ (visit) a museum.',
+ 'I ___ (buy) a souvenir.',
+ 'She ___ (like) the tour.',
+ 'They ___ (make) new friends.',
+ 'He ___ (want) to stay longer.'
+],['visited','bought','liked','made','wanted']);
+document.getElementById('theme').onclick=()=>document.documentElement.classList.toggle('force-dark');
+</script></body></html>
