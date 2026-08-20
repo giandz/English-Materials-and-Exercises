@@ -1,0 +1,209 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Supermarket Language — Gap Fill</title>
+<link rel="stylesheet" href="general.css">
+<style>
+  :root {
+    --color-background-primary: #ffffff;
+    --color-background-secondary: #f6f7f9;
+    --color-text-primary: #1a1d23;
+    --color-text-secondary: #4b5261;
+    --color-text-tertiary: #8a8f9c;
+    --color-border-secondary: #e2e5ea;
+    --border-radius-lg: 14px;
+
+    --text-primary: var(--color-text-primary);
+    --text-secondary: var(--color-text-secondary);
+    --text-muted: var(--color-text-tertiary);
+    --text-accent: #2563eb;
+    --surface-1: var(--color-background-primary);
+    --surface-2: var(--color-background-secondary);
+    --border: var(--color-border-secondary);
+    --radius: var(--border-radius-lg);
+
+    --pos-wh: #1d6fd8;           --pos-wh-bg: #e3edfd;
+    --pos-yes: #1a7f37;          --pos-yes-bg: #e6f6ea;
+    --pos-no: #c03434;           --pos-no-bg: #fbe7e7;
+  }
+
+  @media (prefers-color-scheme: dark) {
+    :root {
+      --color-background-primary: #16181d;
+      --color-background-secondary: #1d2026;
+      --color-text-primary: #eef0f3;
+      --color-text-secondary: #b7bcc6;
+      --color-text-tertiary: #838995;
+      --color-border-secondary: #2c303a;
+
+      --text-accent: #6ea8fe;
+      --surface-1: var(--color-background-primary);
+      --surface-2: var(--color-background-secondary);
+      --border: var(--color-border-secondary);
+
+      --pos-wh: #7cb0f7;           --pos-wh-bg: #1c2b42;
+      --pos-yes: #6fd08c;          --pos-yes-bg: #163524;
+      --pos-no: #f08a8a;           --pos-no-bg: #3a1c1c;
+    }
+  }
+
+  * { box-sizing: border-box; }
+  body {
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Helvetica, Arial, sans-serif;
+    font-size: 15px;
+    color: var(--text-primary);
+    background: var(--surface-1);
+    margin: 0;
+    line-height: 1.55;
+  }
+  .page { max-width: 720px; margin: 0 auto; padding: 28px 20px 64px; }
+
+  h1 { font-size: 1.3rem; margin: 4px 0 2px; }
+  .subtitle { color: var(--text-secondary); margin: 0 0 14px; font-size: 0.95rem; }
+
+  .cefr-tag {
+    display: inline-block;
+    font-size: 0.72rem;
+    font-weight: 700;
+    letter-spacing: 0.04em;
+    padding: 3px 10px;
+    border-radius: 999px;
+    background: var(--pos-wh-bg);
+    color: var(--pos-wh);
+    text-transform: uppercase;
+  }
+
+  .gf-item {
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    padding: 14px 16px;
+    margin-bottom: 14px;
+    background: var(--surface-1);
+  }
+  .gf-context { font-size: 1.3rem; margin-bottom: 8px; }
+  .gf-sentence { font-size: 0.97rem; margin-bottom: 8px; }
+  .gf-gap-input {
+    font: inherit; font-weight: 700; text-align: center;
+    border: 1px solid var(--border); border-radius: 6px; padding: 3px 6px;
+    background: var(--surface-2); color: var(--text-primary); width: 8ch;
+  }
+  .gf-gap-input.gap-correct { background: var(--pos-yes-bg); color: var(--pos-yes); border-color: var(--pos-yes); }
+  .bar-track { height: 6px; border-radius: 999px; background: var(--surface-2); overflow: hidden; margin-top: 6px; }
+  .bar-fill { height: 100%; width: 0%; transition: width .25s, background .25s; }
+  .bar-pct { font-size: 0.72rem; color: var(--text-muted); margin-top: 3px; }
+
+  .gf-check {
+    margin-top: 10px; padding: 7px 16px; border-radius: 8px; border: none;
+    background: var(--text-accent); color: #fff; font-weight: 600; font-size: 0.85rem; cursor: pointer;
+  }
+  .gf-feedback { font-size: 0.82rem; margin-top: 8px; font-weight: 600; min-height: 1.1em; }
+  .gf-feedback.ok { color: var(--pos-yes); }
+  .gf-feedback.bad { color: var(--pos-no); }
+</style>
+</head>
+<body>
+<div class="page">
+
+  <span class="cefr-tag">A1</span>
+  <h1>Supermarket Language — Gap Fill</h1>
+  <p class="subtitle">Type the missing word in each gap.</p>
+
+  <div id="gfItems"></div>
+  <button class="gf-check" id="gfCheckAll">Check answers</button>
+  <p class="gf-feedback" id="gfOverallFeedback"></p>
+
+</div>
+
+<div id="theme-toggle-wrap"><button id="theme-toggle" aria-label="Toggle light/dark mode" title="Toggle light/dark mode"><span id="theme-icon">☀️</span></button></div>
+<script src="theme-toggle-behavior.js"></script>
+
+<script>
+function damerauLevenshtein(a, b) {
+  const al = a.length, bl = b.length;
+  const d = [];
+  for (let i = 0; i <= al; i++) d[i] = [i];
+  for (let j = 0; j <= bl; j++) d[0][j] = j;
+  for (let i = 1; i <= al; i++) {
+    for (let j = 1; j <= bl; j++) {
+      const cost = a[i - 1] === b[j - 1] ? 0 : 1;
+      d[i][j] = Math.min(d[i - 1][j] + 1, d[i][j - 1] + 1, d[i - 1][j - 1] + cost);
+      if (i > 1 && j > 1 && a[i - 1] === b[j - 2] && a[i - 2] === b[j - 1]) {
+        d[i][j] = Math.min(d[i][j], d[i - 2][j - 2] + cost);
+      }
+    }
+  }
+  return d[al][bl];
+}
+
+function normalizeApostrophes(str) {
+  return str.replace(/[\u2018\u2019\u02BC\u00B4\u0060]/g, "'");
+}
+
+function bestAccuracy(input, answer) {
+  const a = normalizeApostrophes(input.trim().toLowerCase());
+  const b = normalizeApostrophes(answer.trim().toLowerCase());
+  if (!a) return 0;
+  const dist = damerauLevenshtein(a, b);
+  const maxLen = Math.max(a.length, b.length, 1);
+  return Math.max(0, 1 - dist / maxLen);
+}
+
+function pctToColor(pct) {
+  const r1 = 192, g1 = 52, b1 = 52, r2 = 26, g2 = 127, b2 = 55;
+  const r = Math.round(r1 + (r2 - r1) * pct);
+  const g = Math.round(g1 + (g2 - g1) * pct);
+  const b = Math.round(b1 + (b2 - b1) * pct);
+  return `rgb(${r},${g},${b})`;
+}
+
+const gfData = [
+  { emoji: "🛒", before: "I put the eggs in my shopping", after: ".", answer: "cart" },
+  { emoji: "💳", before: "The", after: "helps me pay for my groceries.", answer: "cashier" },
+  { emoji: "🧾", before: "After I pay, I get a", after: ".", answer: "receipt" },
+  { emoji: "📝", before: "I write milk, bread, and cheese on my shopping", after: ".", answer: "list" },
+  { emoji: "🛍️", before: "I put the apples in a paper", after: ".", answer: "bag" },
+  { emoji: "💵", before: "I need to", after: "for my groceries before I leave.", answer: "pay" },
+  { emoji: "🧺", before: "I only need a few things, so I'll use a", after: ", not a cart.", answer: "basket" },
+  { emoji: "🥖", before: "You can find the bread in the bakery", after: ".", answer: "aisle" },
+  { emoji: "🥛", before: "There isn't any", after: "in the fridge.", answer: "milk" },
+  { emoji: "🏷️", before: "This", after: "gives me a discount on cheese.", answer: "coupon" }
+];
+
+function buildGfItem(data) {
+  const item = document.createElement("div");
+  item.className = "gf-item";
+  item.innerHTML = `
+    <div class="gf-context">${data.emoji}</div>
+    <p class="gf-sentence">${data.before} <input type="text" class="gf-gap-input" size="${Math.max(4, data.answer.length + 2)}"> ${data.after}</p>
+    <div class="bar-track"><div class="bar-fill"></div></div>
+    <div class="bar-pct">0%</div>
+  `;
+  const input = item.querySelector(".gf-gap-input");
+  const barFill = item.querySelector(".bar-fill");
+  const barPct = item.querySelector(".bar-pct");
+  input.addEventListener("input", () => {
+    const pct = bestAccuracy(input.value, data.answer);
+    barFill.style.width = (pct * 100) + "%";
+    barFill.style.background = pctToColor(pct);
+    barPct.textContent = Math.round(pct * 100) + "%";
+    input.classList.toggle("gap-correct", pct === 1);
+  });
+  input.dataset.answer = data.answer;
+  return item;
+}
+
+const gfContainer = document.getElementById("gfItems");
+gfData.forEach((d) => gfContainer.appendChild(buildGfItem(d)));
+
+document.getElementById("gfCheckAll").addEventListener("click", () => {
+  const inputs = [...document.querySelectorAll(".gf-gap-input")];
+  const correct = inputs.filter((i) => bestAccuracy(i.value, i.dataset.answer) === 1).length;
+  const feedback = document.getElementById("gfOverallFeedback");
+  feedback.textContent = `${correct}/${inputs.length} correct.`;
+  feedback.className = correct === inputs.length ? "gf-feedback ok" : "gf-feedback bad";
+});
+</script>
+</body>
+</html>
