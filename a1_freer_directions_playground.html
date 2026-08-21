@@ -76,16 +76,70 @@
   .map-wrap{
     width:100%;
     border-radius:var(--radius);
-    overflow:hidden;
+    /*overflow:hidden;*/
     border:.5px solid var(--color-border-tertiary);
     margin-bottom:1.25rem;
   }
-  #mapSvg{ width:100%; height:auto; display:block; }
+  .tool-badge-row{
+    display:flex;
+    margin-bottom:.5rem;
+  }
+  .tool-badge{
+    display:flex;
+    align-items:center;
+    gap:6px;
+    padding:6px 14px;
+    background:var(--surface-1);
+    border:.5px solid var(--border);
+    border-radius:100px;
+    font-size:12.5px;
+    font-weight:600;
+    color:var(--text-secondary);
+    user-select:none;
+  }
+  .tool-badge-icon{ font-size:15px; line-height:1; }
+  #mapSvg{overflow:visible; width:100%; height:auto; display:block; }
   .building-symbol{ font-size:30px; pointer-events:none; user-select:none; }
+  .pin-symbol{ font-size:64px; pointer-events:none; user-select:none; cursor:pointer; }
+
+  .tool-selector{
+    display:grid;
+    grid-template-columns:repeat(2, 1fr);
+    gap:6px;
+    padding:6px;
+    background:var(--surface-1);
+    border-radius:var(--radius);
+    margin-bottom:.75rem;
+  }
+  button.tool-btn{
+    flex:1 1 auto;
+    display:flex;
+    align-items:center;
+    justify-content:center;
+    gap:6px;
+    font-family:inherit;
+    font-size:12.5px;
+    font-weight:600;
+    padding:9px 14px;
+    border-radius:calc(var(--radius) - 4px);
+    border:.5px solid transparent;
+    cursor:pointer;
+    background:transparent;
+    color:var(--text-secondary);
+    white-space:nowrap;
+  }
+  button.tool-btn .tool-icon{ font-size:15px; }
+  button.tool-btn:hover{ background:var(--surface-2); }
+  button.tool-btn.active{
+    background:var(--text-accent);
+    color:#fff;
+    border-color:var(--text-accent);
+  }
 
   .tool-pool{
     align-items:center;
   }
+  .tool-pool[hidden], .tool-status[hidden]{ display:none; }
   button.action-btn{
     font-family:inherit;
     font-size:12.5px;
@@ -203,7 +257,14 @@
   <p class="subtitle">A free-form map for practicing directions out loud. No scoring — build any city you like!</p>
 
   <div class="rule-box">
-    <strong>How to play:</strong> drag a <strong>place</strong> chip or a <strong>special road tile</strong> from the pools below onto the grid (reusable). To draw plain roads or water directly, <strong>click or drag on the grid</strong> — dragging from an empty square paints, dragging from an existing tile of the same type erases it. Roads and rivers connect automatically into straights, corners, T-junctions, and crossings. Tap a placed building to remove it, or drag it to move it.
+    <strong>How to play:</strong> drag a <strong>place</strong> chip or a <strong>special road tile</strong> from the pools below onto the grid (reusable). To draw plain roads or water directly, <strong>click or drag on the grid</strong> — dragging from an empty square paints, dragging from an existing tile of the same type erases it. Roads and rivers connect automatically into straights, corners, T-junctions, and crossings. A <strong>⚓ ferry terminal</strong> placed next to water grows a dock, and a route that reaches one will sail across connected water to another terminal to continue. A <strong>🚇 subway station</strong> connects straight to any other station, no water needed. Tap a placed building to remove it, or drag it to move it.
+  </div>
+
+  <div class="tool-badge-row">
+    <div class="tool-badge" id="toolBadge">
+      <span class="tool-badge-icon">🛣️</span>
+      <span class="tool-badge-label">Road</span>
+    </div>
   </div>
 
   <div class="map-wrap">
@@ -216,11 +277,10 @@
   <div class="pool-heading">Special road tiles (drag onto the grid, one at a time — reusable)</div>
   <div class="pool" id="stampPool"></div>
 
-  <div class="pool-heading">Map tools</div>
-  <div class="pool tool-pool">
-    <button class="action-btn" id="riverToolToggle">🛣️ Direct-draw tool: Road</button>
-    <button class="action-btn" id="clearAllBtn">Clear grid</button>
-  </div>
+  <div class="pool-heading">Pins (drag onto a placed chip — reusable)</div>
+  <div class="pool" id="pinPool"></div>
+
+  <div class="pool-heading">Grid size</div>
   <div class="pool tool-pool">
     <label class="size-label" for="colsSelect">Columns</label>
     <select class="size-select" id="colsSelect"></select>
@@ -229,23 +289,31 @@
     <button class="action-btn" id="resizeBtn">Apply grid size</button>
   </div>
 
-  <div class="pool-heading">Path tool</div>
-  <div class="pool tool-pool">
-    <button class="action-btn" id="pathToolToggle">🧭 Path tool: off</button>
+  <div class="pool-heading">Tool</div>
+  <div class="tool-selector" id="toolSelector">
+    <button class="tool-btn" data-tool="road"><span class="tool-icon">🛣️</span>Road</button>
+    <button class="tool-btn" data-tool="water"><span class="tool-icon">🌊</span>Water</button>
+    <button class="tool-btn" data-tool="path"><span class="tool-icon">🧭</span>Path</button>
+    <button class="tool-btn" data-tool="label"><span class="tool-icon">🏷️</span>Label</button>
+  </div>
+
+  <div class="pool tool-pool" id="roadWaterOptions">
+    <button class="action-btn" id="clearAllBtn">Clear grid</button>
+  </div>
+
+  <div class="pool tool-pool" id="pathOptions" hidden>
     <label class="size-label" for="pathColorSelect">Color</label>
     <select class="size-select" id="pathColorSelect"></select>
     <button class="action-btn" id="clearPathsBtn">Erase all paths</button>
   </div>
-  <p class="tool-status" id="pathStatus">Turn on the path tool, then click two place chips to draw a route between them.</p>
+  <p class="tool-status" id="pathStatus" hidden>Click a place chip to start a route.</p>
 
-  <div class="pool-heading">Label tool</div>
-  <div class="pool tool-pool">
+  <div class="pool tool-pool" id="labelOptions" hidden>
     <input type="text" class="size-select" id="labelTextInput" placeholder="Street name..." style="flex:1;min-width:140px;">
     <button class="action-btn" id="labelOrientToggle">↔️ Horizontal</button>
-    <button class="action-btn" id="labelToolToggle">🏷️ Label tool: off</button>
     <button class="action-btn" id="clearLabelsBtn">Erase all labels</button>
   </div>
-  <p class="tool-status" id="labelStatus">Turn on the label tool, type a name, then click a square to place it. Click a placed label to remove it, or drag to move it.</p>
+  <p class="tool-status" id="labelStatus" hidden>Type a name, then click a square to place it. Click a placed label to remove it, or drag to move it.</p>
 
   <footer>Free Practice — Giving Directions (A1–B1)</footer>
 </div>
@@ -257,9 +325,31 @@
   const svg = document.getElementById('mapSvg');
 
   const PLACE_CHIPS = [
-    "📍", "🏫", "🍞", "🧰", "🌳", "🏦", "☕", "💊", "🧸", "👟", "🍦",
-    "🍫", "🎁", "🎈", "🍰", "🧥", "🐶", "🏥", "🏠", "🏢", "⛪", "🚉",
-    "🅿️", "🏪", "🍕", "🎮", "💇", "🐟", "💐", "🛫",
+    "🏫", "🍞", "🧰", "🌳", "🏦", "☕", "💊", "🧸", "👟", "🍦",
+    "🍫", "🎁", "🎈", "🍰", "🐶", "🏥", "🏠", "🏢", "⛪", "🚉",
+    "🅿️", "🏪", "🍕", "🎮", "💇", "🐟", "⚓", "🚇"
+  ];
+
+  const FERRY_SYMBOL = "⚓";
+  function isFerryTerminal(cell) {
+    return !!cell && cell.kind === 'building' && cell.symbol === FERRY_SYMBOL;
+  }
+
+  const SUBWAY_SYMBOL = "🚇";
+  function isSubwayStation(cell) {
+    return !!cell && cell.kind === 'building' && cell.symbol === SUBWAY_SYMBOL;
+  }
+
+  const PIN_SYMBOL = "📍";
+  // Six colors of the same pin emoji, made by rotating its hue with
+  // a CSS filter rather than swapping in six different images.
+  const PIN_COLORS = [
+    { key: 'red',    label: 'Red',    rotate: 0   },
+    { key: 'orange', label: 'Orange', rotate: 30  },
+    { key: 'yellow', label: 'Yellow', rotate: 60  },
+    { key: 'green',  label: 'Green',  rotate: 120 },
+    { key: 'blue',   label: 'Blue',   rotate: 210 },
+    { key: 'purple', label: 'Purple', rotate: 270 },
   ];
 
   let greenBg;
@@ -350,6 +440,15 @@
         text.setAttribute("dominant-baseline", "central");
         g.appendChild(text);
 
+        const pin = document.createElementNS(SVG_NS, "text");
+        pin.setAttribute("class", "pin-symbol");
+        pin.setAttribute("x", c * CELL + CELL * 0.5);
+        pin.setAttribute("y", r * CELL + CELL * -0.1);
+        pin.setAttribute("text-anchor", "middle");
+        pin.setAttribute("dominant-baseline", "central");
+        g.appendChild(pin);
+        attachPinInteraction(pin, r, c);
+
         svg.appendChild(g);
         attachCellInteraction(rect);
       }
@@ -367,8 +466,8 @@
   // falls outside the new bounds after this shift is lost.
   function resizeGrid(newCols, newRows) {
     clearAllPaths();
-    newCols = Math.max(3, Math.min(15, newCols));
-    newRows = Math.max(3, Math.min(15, newRows));
+    newCols = Math.max(3, Math.min(24, newCols));
+    newRows = Math.max(3, Math.min(24, newRows));
 
     const frontChangeCols = Math.trunc((newCols - COLS) / 2);
     const frontChangeRows = Math.trunc((newRows - ROWS) / 2);
@@ -380,7 +479,7 @@
         if (cell.kind === null) continue;
         const nr = r + frontChangeRows, nc = c + frontChangeCols;
         if (nr < 0 || nr >= newRows || nc < 0 || nc >= newCols) continue;
-        newGrid[nr][nc] = { kind: cell.kind, symbol: cell.symbol, special: cell.special };
+        newGrid[nr][nc] = { kind: cell.kind, symbol: cell.symbol, special: cell.special, pin: cell.pin };
       }
     }
 
@@ -390,7 +489,10 @@
     for (let r = 0; r < ROWS; r++) {
       for (let c = 0; c < COLS; c++) {
         const cell = grid[r][c];
-        if (cell.kind === 'building') setKind(r, c, 'building', { symbol: cell.symbol });
+        if (cell.kind === 'building') {
+          setKind(r, c, 'building', { symbol: cell.symbol });
+          if (cell.pin) setPin(r, c, cell.pin);
+        }
         else if (cell.kind === 'road' || cell.kind === 'river' || cell.kind === 'special') setKind(r, c, cell.kind, { special: cell.special });
       }
     }
@@ -407,6 +509,9 @@
   }
   function cellText(r, c) {
     return cellGroup(r, c).querySelector('.building-symbol');
+  }
+  function cellPin(r, c) {
+    return cellGroup(r, c).querySelector('.pin-symbol');
   }
 
   // ── Directional connectivity helpers ──
@@ -627,6 +732,62 @@
     }
   }
 
+  const DOCK_COLOR = "#8b5e34";
+  const DOCK_PLANK_COLOR = "#6b4423";
+
+  // Draws a brown dock/pier over the side(s) of a water tile that
+  // touch a ferry terminal, in place of the grass gap that would
+  // otherwise show there. Drawn BEFORE the water arms (drawArmSet),
+  // so any real flowing water on top still reads as water — the dock
+  // only ends up visible in the true "bank" area next to the
+  // terminal, plus a bit further in if there's no other water arm to
+  // cover it, so a terminal on a small pond shows more dock and a
+  // terminal beside a flowing river shows just enough to kill the
+  // green border.
+  function drawFerryDocks(art, r, c, on) {
+    const x0 = c * CELL, y0 = r * CELL;
+    ['N', 'S', 'E', 'W'].forEach(dir => {
+      const [dr, dc] = DIRVEC[dir];
+      const nr = r + dr, nc = c + dc;
+      if (nr < 0 || nr >= ROWS || nc < 0 || nc >= COLS) return;
+      if (!isFerryTerminal(grid[nr][nc])) return;
+
+      // If the water keeps going past this tile (away from the
+      // terminal), let the dock reach a little further in, as if
+      // the pier extends out toward open water instead of always
+      // stopping right at the bank.
+      const continues = !!on[OPPOSITE[dir]];
+      const depth = continues ? CELL * 0.85 : CELL * 0.55;
+
+      const dock = document.createElementNS(SVG_NS, "rect");
+      if (dir === 'N') { dock.setAttribute("x", x0); dock.setAttribute("y", y0); dock.setAttribute("width", CELL); dock.setAttribute("height", depth); }
+      if (dir === 'S') { dock.setAttribute("x", x0); dock.setAttribute("y", y0 + CELL - depth); dock.setAttribute("width", CELL); dock.setAttribute("height", depth); }
+      if (dir === 'W') { dock.setAttribute("x", x0); dock.setAttribute("y", y0); dock.setAttribute("width", depth); dock.setAttribute("height", CELL); }
+      if (dir === 'E') { dock.setAttribute("x", x0 + CELL - depth); dock.setAttribute("y", y0); dock.setAttribute("width", depth); dock.setAttribute("height", CELL); }
+      dock.setAttribute("fill", DOCK_COLOR);
+      art.appendChild(dock);
+
+      // wooden plank lines, running across the dock's length
+      const plankCount = 4;
+      for (let i = 1; i < plankCount; i++) {
+        const t = i / plankCount;
+        const plank = document.createElementNS(SVG_NS, "line");
+        if (dir === 'N' || dir === 'S') {
+          const py = dir === 'N' ? y0 + depth * t : y0 + CELL - depth * t;
+          plank.setAttribute("x1", x0 + 4); plank.setAttribute("x2", x0 + CELL - 4);
+          plank.setAttribute("y1", py); plank.setAttribute("y2", py);
+        } else {
+          const px = dir === 'W' ? x0 + depth * t : x0 + CELL - depth * t;
+          plank.setAttribute("y1", y0 + 4); plank.setAttribute("y2", y0 + CELL - 4);
+          plank.setAttribute("x1", px); plank.setAttribute("x2", px);
+        }
+        plank.setAttribute("stroke", DOCK_PLANK_COLOR);
+        plank.setAttribute("stroke-width", "1.5");
+        art.appendChild(plank);
+      }
+    });
+  }
+
   function drawRoadTile(r, c) {
     const art = cellRoadArt(r, c);
     art.innerHTML = "";
@@ -645,6 +806,7 @@
     if (cell.kind === 'river') {
       const on = riverNeighbors(r, c);
       extendWaterToGridEdges(r, c, on);
+      drawFerryDocks(art, r, c, on);
       drawArmSet(art, cx, cy, r, c, on, RIVER_ARM_W, RIVER_COLOR, { sidewalk: false, laneLines: false, crossings: false, cornerFillKind: 'river' });
       return;
     }
@@ -818,14 +980,7 @@
     return s;
   }
 
-  let riverToolActive = false;
-
-  const riverToolBtn = document.getElementById('riverToolToggle');
-  riverToolBtn.addEventListener('click', () => {
-    riverToolActive = !riverToolActive;
-    riverToolBtn.classList.toggle('active', riverToolActive);
-    riverToolBtn.textContent = riverToolActive ? "🌊 Direct-draw tool: Water" : "🛣️ Direct-draw tool: Road";
-  });
+  let currentTool = 'road'; // 'road' | 'water' | 'path' | 'label'
 
   function setKind(r, c, kind, opts) {
     const cell = grid[r][c];
@@ -846,6 +1001,7 @@
       text.textContent = "";
       rect.setAttribute("fill", "transparent");
       rect.setAttribute("stroke", "none");
+      if (cell.pin) setPin(r, c, null); // a pin can't outlive the chip it sits on
     }
 
     if (kind === 'road' || kind === 'special' || kind === 'river') {
@@ -860,6 +1016,57 @@
     setKind(r, c, null);
   }
 
+  // Sets or clears the small colored pin overlaid on a building.
+  // colorKey must match one of PIN_COLORS' keys, or be falsy to
+  // remove the pin. Pins only make sense sitting on top of an actual
+  // chip, so this doesn't touch grid[r][c].kind at all.
+  function setPin(r, c, colorKey) {
+    const cell = grid[r][c];
+    cell.pin = colorKey || null;
+    const pinEl = cellPin(r, c);
+    if (!pinEl) return;
+    if (cell.pin) {
+      const info = PIN_COLORS.find(p => p.key === cell.pin);
+      pinEl.textContent = PIN_SYMBOL;
+      pinEl.style.filter = info ? `hue-rotate(${info.rotate}deg)` : '';
+      pinEl.style.pointerEvents = 'all';
+    } else {
+      pinEl.textContent = '';
+      pinEl.style.filter = '';
+      pinEl.style.pointerEvents = 'none';
+    }
+  }
+
+  // A pin has its own small, separate hit target layered on top of
+  // the building's own square, so it needs its own light gesture
+  // handling rather than reusing attachCellInteraction: a plain tap
+  // removes just the pin (never the building underneath), while path
+  // or label tool clicks are handed off to the exact same functions
+  // the cell itself would have called, so a pinned chip works as a
+  // path endpoint or label target exactly like an unpinned one.
+  function attachPinInteraction(pinEl, r, c) {
+    let downX, downY, moved = false, pointerId = null;
+    pinEl.addEventListener('pointerdown', (e) => {
+      e.preventDefault();
+      e.stopPropagation();
+      if (currentTool === 'path') { handlePathClick(r, c); return; }
+      if (currentTool === 'label') { placeLabelAtCell(r, c); return; }
+      downX = e.clientX; downY = e.clientY; moved = false;
+      pointerId = e.pointerId;
+      pinEl.setPointerCapture(e.pointerId);
+    });
+    pinEl.addEventListener('pointermove', (e) => {
+      if (e.pointerId !== pointerId) return;
+      if (Math.hypot(e.clientX - downX, e.clientY - downY) > 6) moved = true;
+    });
+    pinEl.addEventListener('pointerup', (e) => {
+      if (e.pointerId !== pointerId) return;
+      pointerId = null;
+      if (!moved) setPin(r, c, null);
+    });
+    pinEl.addEventListener('pointercancel', () => { pointerId = null; });
+  }
+
   function attachCellInteraction(rect) {
     const r = Number(rect.dataset.row), c = Number(rect.dataset.col);
     let mode = null;
@@ -870,12 +1077,12 @@
     rect.addEventListener('pointerdown', (e) => {
       e.preventDefault();
 
-      if (pathToolActive) {
+      if (currentTool === 'path') {
         handlePathClick(r, c);
         return;
       }
 
-      if (labelToolActive) {
+      if (currentTool === 'label') {
         placeLabelAtCell(r, c);
         return;
       }
@@ -886,7 +1093,7 @@
       rect.setPointerCapture(e.pointerId);
 
       const cell = grid[r][c];
-      const paintKind = riverToolActive ? 'river' : 'road';
+      const paintKind = currentTool === 'water' ? 'river' : 'road';
       if (cell.kind === 'building') {
         mode = 'building-drag';
       } else if (cell.kind === 'special') {
@@ -1073,7 +1280,14 @@
 
     chip.addEventListener('pointerup', (e) => {
       if (e.pointerId !== pointerId) return;
-      if (moved && dragGhost) {
+      // Reset before branching so a `return` below can never skip
+      // this — otherwise the stale pointerId lets a later mouse
+      // hover (no button held) be mistaken for a new drag, spawning
+      // a ghost that's abandoned the moment the cursor leaves the chip.
+      pointerId = null;
+      const wasMoved = moved;
+      moved = false;
+      if (wasMoved && dragGhost) {
         const els = document.elementsFromPoint(e.clientX, e.clientY);
         const dropRect = els.find(el => el.classList && el.classList.contains('cell-hit'));
         if (dropRect) {
@@ -1084,14 +1298,13 @@
           }
         }
         dragGhost.remove(); dragGhost = null;
-      } else if (!moved) {
+      } else if (!wasMoved) {
         for (let r = 0; r < ROWS; r++) {
           for (let c = 0; c < COLS; c++) {
             if (grid[r][c].kind === null) { setKind(r, c, 'building', { symbol: chip.dataset.symbol }); return; }
           }
         }
       }
-      pointerId = null; moved = false;
     });
 
     chip.addEventListener('pointercancel', () => {
@@ -1133,7 +1346,11 @@
 
     chip.addEventListener('pointerup', (e) => {
       if (e.pointerId !== pointerId) return;
-      if (moved && dragGhost) {
+      // Reset before branching — see attachPoolChipEvents for why.
+      pointerId = null;
+      const wasMoved = moved;
+      moved = false;
+      if (wasMoved && dragGhost) {
         const els = document.elementsFromPoint(e.clientX, e.clientY);
         const dropRect = els.find(el => el.classList && el.classList.contains('cell-hit'));
         if (dropRect) {
@@ -1143,14 +1360,13 @@
           }
         }
         dragGhost.remove(); dragGhost = null;
-      } else if (!moved) {
+      } else if (!wasMoved) {
         for (let r = 0; r < ROWS; r++) {
           for (let c = 0; c < COLS; c++) {
             if (grid[r][c].kind === null) { setKind(r, c, 'special', { special: chip.dataset.special }); return; }
           }
         }
       }
-      pointerId = null; moved = false;
     });
 
     chip.addEventListener('pointercancel', () => {
@@ -1172,8 +1388,85 @@
     });
   }
 
+  function attachPinChipEvents(chip) {
+    let dragGhost = null, moved = false, startX, startY, offsetX, offsetY, pointerId = null;
+    const colorKey = chip.dataset.pinColor;
+
+    chip.addEventListener('pointerdown', (e) => {
+      e.preventDefault();
+      moved = false;
+      startX = e.clientX; startY = e.clientY;
+      pointerId = e.pointerId;
+      chip.setPointerCapture(e.pointerId);
+    });
+
+    chip.addEventListener('pointermove', (e) => {
+      if (e.pointerId !== pointerId) return;
+      const dx = e.clientX - startX, dy = e.clientY - startY;
+      if (!moved) {
+        if (Math.hypot(dx, dy) < 6) return;
+        moved = true;
+        const rect = chip.getBoundingClientRect();
+        offsetX = startX - rect.left; offsetY = startY - rect.top;
+        dragGhost = chip.cloneNode(true);
+        dragGhost.classList.add('dragging');
+        dragGhost.style.width = rect.width + 'px';
+        dragGhost.style.height = rect.height + 'px';
+        document.body.appendChild(dragGhost);
+      }
+      if (dragGhost) {
+        dragGhost.style.left = (e.clientX - offsetX) + 'px';
+        dragGhost.style.top = (e.clientY - offsetY) + 'px';
+      }
+    });
+
+    chip.addEventListener('pointerup', (e) => {
+      if (e.pointerId !== pointerId) return;
+      // Reset before branching — see attachPoolChipEvents for why.
+      pointerId = null;
+      const wasMoved = moved;
+      moved = false;
+      if (wasMoved && dragGhost) {
+        const els = document.elementsFromPoint(e.clientX, e.clientY);
+        const dropRect = els.find(el => el.classList && el.classList.contains('cell-hit'));
+        if (dropRect) {
+          const r = Number(dropRect.dataset.row), c = Number(dropRect.dataset.col);
+          // pins only make sense stacked on an existing chip
+          if (grid[r][c].kind === 'building') setPin(r, c, colorKey);
+        }
+        dragGhost.remove(); dragGhost = null;
+      } else if (!wasMoved) {
+        for (let r = 0; r < ROWS; r++) {
+          for (let c = 0; c < COLS; c++) {
+            if (grid[r][c].kind === 'building' && !grid[r][c].pin) { setPin(r, c, colorKey); return; }
+          }
+        }
+      }
+    });
+
+    chip.addEventListener('pointercancel', () => {
+      if (dragGhost) { dragGhost.remove(); dragGhost = null; }
+      pointerId = null; moved = false;
+    });
+  }
+
+  function buildPinPool() {
+    const container = document.getElementById('pinPool');
+    PIN_COLORS.forEach(info => {
+      const chip = document.createElement('div');
+      chip.className = 'chip';
+      chip.dataset.pinColor = info.key;
+      chip.title = info.label + ' pin';
+      chip.textContent = PIN_SYMBOL;
+      chip.style.filter = `hue-rotate(${info.rotate}deg)`;
+      attachPinChipEvents(chip);
+      container.appendChild(chip);
+    });
+  }
+
   buildPlacePool();
   buildStampPool();
+  buildPinPool();
 
   document.getElementById('clearAllBtn').addEventListener('click', () => {
     for (let r = 0; r < ROWS; r++) for (let c = 0; c < COLS; c++) clearCell(r, c);
@@ -1182,7 +1475,7 @@
   // Grid resize controls
   const colsSelect = document.getElementById('colsSelect');
   const rowsSelect = document.getElementById('rowsSelect');
-  for (let n = 3; n <= 15; n++) {
+  for (let n = 3; n <= 24; n++) {
     const optC = document.createElement('option'); optC.value = n; optC.textContent = n;
     if (n === COLS) optC.selected = true;
     colsSelect.appendChild(optC);
@@ -1219,35 +1512,18 @@
     pathColorSelect.appendChild(opt);
   });
 
-  let pathToolActive = false;
-  const pathToolBtn = document.getElementById('pathToolToggle');
   const pathStatus = document.getElementById('pathStatus');
-  pathToolBtn.addEventListener('click', () => {
-    pathToolActive = !pathToolActive;
-    pathToolBtn.classList.toggle('active', pathToolActive);
-    pathToolBtn.textContent = pathToolActive ? "🧭 Path tool: on" : "🧭 Path tool: off";
-    pendingStart = null;
-    updatePathStatus();
-  });
 
   let pendingStart = null; // { r, c } of the first clicked building
 
   /* ═══════════════ LABEL TOOL (street names) ═══════════════ */
 
-  let labelToolActive = false;
   let labelOrientation = 'h'; // 'h' or 'v'
   const activeLabels = []; // { group }
 
-  const labelToolBtn = document.getElementById('labelToolToggle');
   const labelOrientBtn = document.getElementById('labelOrientToggle');
   const labelTextInput = document.getElementById('labelTextInput');
   const labelStatus = document.getElementById('labelStatus');
-
-  labelToolBtn.addEventListener('click', () => {
-    labelToolActive = !labelToolActive;
-    labelToolBtn.classList.toggle('active', labelToolActive);
-    labelToolBtn.textContent = labelToolActive ? "🏷️ Label tool: on" : "🏷️ Label tool: off";
-  });
 
   labelOrientBtn.addEventListener('click', () => {
     labelOrientation = labelOrientation === 'h' ? 'v' : 'h';
@@ -1284,7 +1560,7 @@
     }
     const cx = c * CELL + CELL / 2, cy = r * CELL + CELL / 2;
     createLabel(cx, cy, text, labelOrientation);
-    labelStatus.textContent = "Turn on the label tool, type a name, then click a square to place it. Click a placed label to remove it, or drag to move it.";
+    labelStatus.textContent = "Type a name, then click a square to place another. Click a placed label to remove it, or drag to move it.";
   }
 
   function createLabel(x, y, text, orientation) {
@@ -1386,13 +1662,66 @@
   });
 
   function updatePathStatus() {
-    if (!pathToolActive) {
-      pathStatus.textContent = "Turn on the path tool, then click two place chips to draw a route between them.";
-    } else if (!pendingStart) {
-      pathStatus.textContent = "Path tool on — click a place chip to start a route.";
+    if (!pendingStart) {
+      pathStatus.textContent = "Click a place chip to start a route.";
     } else {
       pathStatus.textContent = "Now click a second place chip to complete the route (or the same square to cancel).";
     }
+  }
+
+  // Returns the water (river) cells directly touching (r,c), each
+  // tagged with the compass direction from (r,c) toward that water
+  // cell — i.e. the direction perpendicular to the shore there.
+  function adjacentWaterCells(r, c) {
+    const out = [];
+    ['N', 'S', 'E', 'W'].forEach(dir => {
+      const [dr, dc] = DIRVEC[dir];
+      const nr = r + dr, nc = c + dc;
+      if (nr < 0 || nr >= ROWS || nc < 0 || nc >= COLS) return;
+      if (grid[nr][nc].kind === 'river') out.push({ dir, r: nr, c: nc });
+    });
+    return out;
+  }
+
+  // True if water flows from (r,c) toward its `dir` neighbor, using
+  // the same mutual-agreement rule the renderer uses (riverNeighbors)
+  // — so the water graph a ferry route travels always matches what's
+  // actually drawn as connected water.
+  function waterStep(r, c, dir) {
+    const [dr, dc] = DIRVEC[dir];
+    const nr = r + dr, nc = c + dc;
+    if (nr < 0 || nr >= ROWS || nc < 0 || nc >= COLS) return null;
+    if (!riverConnectsToward(grid[r][c], dir)) return null;
+    if (!riverConnectsToward(grid[nr][nc], OPPOSITE[dir])) return null;
+    return { r: nr, c: nc };
+  }
+
+  // BFS across the connected body of water starting from a single
+  // water cell — returns { dist, parent } where dist is
+  // { "r,c": distance } in water-tile steps and parent is
+  // { "r,c": "parentR,parentC" }, letting us reconstruct the actual
+  // tile-by-tile route between two points (so a drawn ferry crossing
+  // can hug the real shape of the water and steer around any land in
+  // between, rather than cutting straight across it).
+  function waterReachFrom(startR, startC) {
+    const dist = { [cellKey(startR, startC)]: 0 };
+    const parent = {};
+    const queue = [{ r: startR, c: startC }];
+    let qi = 0;
+    while (qi < queue.length) {
+      const cur = queue[qi++];
+      const d = dist[cellKey(cur.r, cur.c)];
+      ['N', 'S', 'E', 'W'].forEach(dir => {
+        const nxt = waterStep(cur.r, cur.c, dir);
+        if (!nxt) return;
+        const k = cellKey(nxt.r, nxt.c);
+        if (k in dist) return;
+        dist[k] = d + 1;
+        parent[k] = cellKey(cur.r, cur.c);
+        queue.push(nxt);
+      });
+    }
+    return { dist, parent };
   }
 
   // Builds an adjacency list over every road-like cell (plain roads
@@ -1464,6 +1793,123 @@
         }
       }
     }
+
+    // Ferry terminals: each one is added as its own graph node, wired
+    // into whatever road network sits next to it, and — separately —
+    // linked directly to every OTHER terminal that shares a
+    // connected body of water, the same way a tunnel pair lets a
+    // route duck underground and re-emerge elsewhere. This lets a
+    // route go start → road → terminal → (sail) → another terminal
+    // → road → destination.
+    const ferryTerminals = [];
+    for (let r = 0; r < ROWS; r++) {
+      for (let c = 0; c < COLS; c++) {
+        if (isFerryTerminal(grid[r][c])) ferryTerminals.push({ r, c });
+      }
+    }
+    ferryTerminals.forEach(t => {
+      const k1 = cellKey(t.r, t.c);
+      ensure(k1);
+
+      ['N', 'S', 'E', 'W'].forEach(dir => {
+        const [dr, dc] = DIRVEC[dir];
+        const nr = t.r + dr, nc = t.c + dc;
+        if (nr < 0 || nr >= ROWS || nc < 0 || nc >= COLS) return;
+        const neighborCell = grid[nr][nc];
+        if (neighborCell.kind !== 'road' && neighborCell.kind !== 'special') return;
+        if (!roadConnectsToward(neighborCell, OPPOSITE[dir])) return;
+        const k2 = cellKey(nr, nc);
+        ensure(k2);
+        adj[k1].push({ to: k2, weight: 1 });
+        adj[k2].push({ to: k1, weight: 1 });
+      });
+    });
+
+    // Ferry-to-ferry water edges: BFS separately from each side of
+    // each terminal that touches water, so that when a pair of
+    // terminals connects, we know exactly which shore each of them
+    // sails from (for a curve that leaves each dock perpendicular to
+    // its shore) and the actual tile-by-tile water route between
+    // them (so the curve can be shaped to hug that route and steer
+    // around any land or islands in between, instead of cutting
+    // straight across the water).
+    const terminalEntries = ferryTerminals.map(t => ({
+      t,
+      entries: adjacentWaterCells(t.r, t.c).map(w => {
+        const { dist, parent } = waterReachFrom(w.r, w.c);
+        return { dir: w.dir, r: w.r, c: w.c, dist, parent };
+      })
+    }));
+    terminalEntries.forEach(({ t, entries }) => {
+      const k1 = cellKey(t.r, t.c);
+      terminalEntries.forEach(({ t: other, entries: otherEntries }) => {
+        if (other === t) return;
+        let best = Infinity, bestFromDir = null, bestToDir = null, bestEntry = null, bestOtherEntry = null;
+        entries.forEach(e => {
+          otherEntries.forEach(oe => {
+            const ok = cellKey(oe.r, oe.c);
+            if (!(ok in e.dist)) return;
+            const total = e.dist[ok] + 2; // +1 dock-to-water on each end
+            if (total < best) { best = total; bestFromDir = e.dir; bestToDir = oe.dir; bestEntry = e; bestOtherEntry = oe; }
+          });
+        });
+        if (best < Infinity) {
+          // Walk the BFS parent chain back from the other terminal's
+          // entry cell to this terminal's entry cell, giving the
+          // ordered list of water tiles the route actually sails
+          // through.
+          const waterPath = [];
+          const startKey = cellKey(bestEntry.r, bestEntry.c);
+          let curKey = cellKey(bestOtherEntry.r, bestOtherEntry.c);
+          while (curKey !== startKey) {
+            const [rr, cc] = curKey.split(',').map(Number);
+            waterPath.unshift({ r: rr, c: cc });
+            curKey = bestEntry.parent[curKey];
+          }
+          waterPath.unshift({ r: bestEntry.r, c: bestEntry.c });
+          adj[k1].push({ to: cellKey(other.r, other.c), weight: best, ferry: true, fromDir: bestFromDir, toDir: bestToDir, waterPath });
+        }
+      });
+    });
+
+    // Subway stations: the same idea as ferry terminals — each one
+    // is its own graph node, wired into whatever road network sits
+    // next to it — but with no medium to detect an entry point
+    // against. A subway tunnels through anything, so instead of
+    // requiring (and BFS-ing across) a connected surface feature
+    // like water, every station simply connects directly to every
+    // other station, weighted by the straight-line grid distance
+    // between them.
+    const subwayStations = [];
+    for (let r = 0; r < ROWS; r++) {
+      for (let c = 0; c < COLS; c++) {
+        if (isSubwayStation(grid[r][c])) subwayStations.push({ r, c });
+      }
+    }
+    subwayStations.forEach(t => {
+      const k1 = cellKey(t.r, t.c);
+      ensure(k1);
+
+      ['N', 'S', 'E', 'W'].forEach(dir => {
+        const [dr, dc] = DIRVEC[dir];
+        const nr = t.r + dr, nc = t.c + dc;
+        if (nr < 0 || nr >= ROWS || nc < 0 || nc >= COLS) return;
+        const neighborCell = grid[nr][nc];
+        if (neighborCell.kind !== 'road' && neighborCell.kind !== 'special') return;
+        if (!roadConnectsToward(neighborCell, OPPOSITE[dir])) return;
+        const k2 = cellKey(nr, nc);
+        ensure(k2);
+        adj[k1].push({ to: k2, weight: 1 });
+        adj[k2].push({ to: k1, weight: 1 });
+      });
+
+      subwayStations.forEach(other => {
+        if (other === t) return;
+        const weight = Math.abs(other.r - t.r) + Math.abs(other.c - t.c);
+        adj[k1].push({ to: cellKey(other.r, other.c), weight, subway: true });
+      });
+    });
+
     return adj;
   }
 
@@ -1473,7 +1919,7 @@
   // path can render that segment as dashed (simple O(V^2) selection;
   // grids here are small enough that a priority queue isn't needed).
   function dijkstra(adj, startKey) {
-    const dist = {}, prev = {}, prevTunnel = {}, visited = {};
+    const dist = {}, prev = {}, prevTunnel = {}, prevFerry = {}, prevFerryMeta = {}, prevSubway = {}, visited = {};
     Object.keys(adj).forEach(k => { dist[k] = Infinity; });
     dist[startKey] = 0;
 
@@ -1489,25 +1935,47 @@
           dist[edge.to] = dist[u] + edge.weight;
           prev[edge.to] = u;
           prevTunnel[edge.to] = !!edge.tunnel;
+          prevFerry[edge.to] = !!edge.ferry;
+          prevFerryMeta[edge.to] = edge.ferry ? { fromDir: edge.fromDir, toDir: edge.toDir, waterPath: edge.waterPath } : null;
+          prevSubway[edge.to] = !!edge.subway;
         }
       });
     }
-    return { dist, prev, prevTunnel };
+    return { dist, prev, prevTunnel, prevFerry, prevFerryMeta, prevSubway };
   }
 
-  // Returns { path, tunnelFlags } where path is the sequence of node
-  // keys and tunnelFlags[i] tells whether the edge from path[i] to
-  // path[i+1] was a tunnel jump (so tunnelFlags.length === path.length - 1).
-  function reconstructPath(prev, prevTunnel, targetKey) {
+  // Returns { path, tunnelFlags, ferryFlags, ferryMeta, subwayFlags }
+  // where path is the sequence of node keys, and
+  // tunnelFlags[i]/ferryFlags[i]/subwayFlags[i] tell whether the
+  // edge from path[i] to path[i+1] was a tunnel jump, a ferry
+  // crossing, or a subway hop; ferryMeta[i] carries { fromDir,
+  // toDir, waterPath } for ferry segments — the shore-perpendicular
+  // directions at each end plus the actual chain of water tiles
+  // sailed through, used to shape the crossing as a curve that hugs
+  // the real water and steers around any land in between — and is
+  // null otherwise. Each array's length is path.length - 1.
+  function reconstructPath(prev, prevTunnel, prevFerry, prevFerryMeta, prevSubway, targetKey) {
     const path = [targetKey];
-    const reversedFlags = [];
+    const reversedTunnelFlags = [];
+    const reversedFerryFlags = [];
+    const reversedFerryMeta = [];
+    const reversedSubwayFlags = [];
     let cur = targetKey;
     while (prev[cur] !== undefined) {
-      reversedFlags.push(!!prevTunnel[cur]);
+      reversedTunnelFlags.push(!!prevTunnel[cur]);
+      reversedFerryFlags.push(!!prevFerry[cur]);
+      reversedFerryMeta.push(prevFerryMeta[cur] || null);
+      reversedSubwayFlags.push(!!prevSubway[cur]);
       cur = prev[cur];
       path.unshift(cur);
     }
-    return { path, tunnelFlags: reversedFlags.reverse() };
+    return {
+      path,
+      tunnelFlags: reversedTunnelFlags.reverse(),
+      ferryFlags: reversedFerryFlags.reverse(),
+      ferryMeta: reversedFerryMeta.reverse(),
+      subwayFlags: reversedSubwayFlags.reverse()
+    };
   }
 
   // Finds a road/special cell orthogonally adjacent to a building.
@@ -1586,21 +2054,27 @@
 
     let points = [];
     let tunnelFlags = []; // tunnelFlags[i] = segment points[i]→points[i+1] is a tunnel jump
+    let ferryFlags = [];  // ferryFlags[i] = segment points[i]→points[i+1] is a ferry crossing
+    let ferryMeta = [];   // ferryMeta[i] = { fromDir, toDir } for ferry segments, else null
+    let subwayFlags = []; // subwayFlags[i] = segment points[i]→points[i+1] is a subway hop
     let reachedEnd = false;
 
     if (startNode && endNode) {
       const adj = buildRoadGraph();
       const startKey = cellKey(startNode.r, startNode.c);
       const endKey = cellKey(endNode.r, endNode.c);
-      const { dist, prev, prevTunnel } = dijkstra(adj, startKey);
+      const { dist, prev, prevTunnel, prevFerry, prevFerryMeta, prevSubway } = dijkstra(adj, startKey);
 
       if (dist[endKey] !== undefined && dist[endKey] < Infinity) {
-        const { path: routeKeys, tunnelFlags: routeFlags } = reconstructPath(prev, prevTunnel, endKey);
+        const { path: routeKeys, tunnelFlags: routeTunnelFlags, ferryFlags: routeFerryFlags, ferryMeta: routeFerryDirs, subwayFlags: routeSubwayFlags } = reconstructPath(prev, prevTunnel, prevFerry, prevFerryMeta, prevSubway, endKey);
         points = routeKeys.map(k => {
           const [rr, cc] = k.split(',').map(Number);
           return cellCenter(rr, cc);
         });
-        tunnelFlags = routeFlags;
+        tunnelFlags = routeTunnelFlags;
+        ferryFlags = routeFerryFlags;
+        ferryMeta = routeFerryDirs;
+        subwayFlags = routeSubwayFlags;
         reachedEnd = true;
       } else {
         // destination unreachable — stop the drawn path at the
@@ -1610,12 +2084,15 @@
           if (dist[k] < Infinity && dist[k] > farthestDist) { farthestDist = dist[k]; farthestKey = k; }
         }
         if (farthestKey) {
-          const { path: routeKeys, tunnelFlags: routeFlags } = reconstructPath(prev, prevTunnel, farthestKey);
+          const { path: routeKeys, tunnelFlags: routeTunnelFlags, ferryFlags: routeFerryFlags, ferryMeta: routeFerryDirs, subwayFlags: routeSubwayFlags } = reconstructPath(prev, prevTunnel, prevFerry, prevFerryMeta, prevSubway, farthestKey);
           points = routeKeys.map(k => {
             const [rr, cc] = k.split(',').map(Number);
             return cellCenter(rr, cc);
           });
-          tunnelFlags = routeFlags;
+          tunnelFlags = routeTunnelFlags;
+          ferryFlags = routeFerryFlags;
+          ferryMeta = routeFerryDirs;
+          subwayFlags = routeSubwayFlags;
         }
       }
     }
@@ -1628,14 +2105,20 @@
       const boundaryPoint = midpoint(cellCenter(start.r, start.c), points[0]);
       points.unshift(boundaryPoint);
       tunnelFlags.unshift(false);
+      ferryFlags.unshift(false);
+      ferryMeta.unshift(null);
+      subwayFlags.unshift(false);
     }
     if (reachedEnd && endNode) {
       const boundaryPoint = midpoint(cellCenter(end.r, end.c), points[points.length - 1]);
       points.push(boundaryPoint);
       tunnelFlags.push(false);
+      ferryFlags.push(false);
+      ferryMeta.push(null);
+      subwayFlags.push(false);
     }
 
-    drawPathVisual(points, tunnelFlags, colorInfo, reachedEnd, start, end, colorName);
+    drawPathVisual(points, tunnelFlags, ferryFlags, ferryMeta, subwayFlags, colorInfo, reachedEnd, start, end, colorName);
   }
 
   function midpoint(a, b) {
@@ -1680,16 +2163,122 @@
     if (other) styleChipForPath(r, c, other.hex);
   }
 
-  function drawPathVisual(points, tunnelFlags, colorInfo, reachedEnd, start, end, colorName) {
+  // Builds an SVG path `d` string for a smooth curve through `pts`
+  // (each {x,y}), where the direction of travel at the very first
+  // and last point is pinned to exitDir/entryDir (unit vectors)
+  // instead of being inferred from the neighboring points — used so
+  // a ferry crossing casts off and lands perpendicular to the shore
+  // at both ends. Interior points use a standard Catmull-Rom tangent
+  // (direction of the chord between their neighbors), which keeps
+  // the curve close to the straight segments between each pair of
+  // waypoints — important here since those waypoints are actual
+  // connected water tiles, so hugging them is what keeps the curve
+  // out of any land or islands in between.
+  function smoothPathThrough(pts, exitDir, entryDir) {
+    const n = pts.length;
+    const dist = (a, b) => Math.hypot(b.x - a.x, b.y - a.y);
+    const m = new Array(n);
+    for (let i = 0; i < n; i++) {
+      if (i === 0) {
+        const len = dist(pts[0], pts[1]);
+        m[i] = { x: exitDir.x * len, y: exitDir.y * len };
+      } else if (i === n - 1) {
+        const len = dist(pts[n - 2], pts[n - 1]);
+        m[i] = { x: entryDir.x * len, y: entryDir.y * len };
+      } else {
+        // Standard Catmull-Rom tangent, but clamped to at most half
+        // the shorter of the two adjacent segment lengths — this
+        // keeps the curve from overshooting past a tight turn (e.g.
+        // rounding a corner around an island) and dipping outside
+        // the water tiles it's meant to hug.
+        const inLen = dist(pts[i - 1], pts[i]);
+        const outLen = dist(pts[i], pts[i + 1]);
+        const tx = (pts[i + 1].x - pts[i - 1].x) / 2;
+        const ty = (pts[i + 1].y - pts[i - 1].y) / 2;
+        const tlen = Math.hypot(tx, ty);
+        const maxLen = Math.min(inLen, outLen) * 0.5;
+        const scale = tlen > 0 ? Math.min(1, maxLen / tlen) : 0;
+        m[i] = { x: tx * scale, y: ty * scale };
+      }
+    }
+    let d = `M ${pts[0].x} ${pts[0].y}`;
+    for (let i = 0; i < n - 1; i++) {
+      const c1 = { x: pts[i].x + m[i].x / 3, y: pts[i].y + m[i].y / 3 };
+      const c2 = { x: pts[i + 1].x - m[i + 1].x / 3, y: pts[i + 1].y - m[i + 1].y / 3 };
+      d += ` C ${c1.x} ${c1.y}, ${c2.x} ${c2.y}, ${pts[i + 1].x} ${pts[i + 1].y}`;
+    }
+    return d;
+  }
+
+  // Splits a straight hop into a subway-map-style "octilinear" route:
+  // a 45° diagonal leg followed by a straight (horizontal or
+  // vertical) leg, the classic schematic-map bend — or just the
+  // original two points if the hop is already purely horizontal,
+  // vertical, or a perfect diagonal.
+  function octilinearPoints(p1, p2) {
+    const dx = p2.x - p1.x, dy = p2.y - p1.y;
+    const adx = Math.abs(dx), ady = Math.abs(dy);
+    if (adx === 0 || ady === 0 || adx === ady) return [p1, p2];
+    const diag = Math.min(adx, ady);
+    const mid = { x: p1.x + Math.sign(dx) * diag, y: p1.y + Math.sign(dy) * diag };
+    return [p1, mid, p2];
+  }
+
+  function drawPathVisual(points, tunnelFlags, ferryFlags, ferryMeta, subwayFlags, colorInfo, reachedEnd, start, end, colorName) {
     const layer = getPathLayer();
     const group = document.createElementNS(SVG_NS, "g");
 
     // Draw one line per segment (rather than a single polyline) so
-    // tunnel-jump segments can be rendered dashed while the rest of
-    // the route stays solid.
+    // tunnel-jump segments can be rendered dashed and ferry
+    // crossings can be rendered as a curve, while the rest of the
+    // route stays a plain straight line.
     for (let i = 0; i < points.length - 1; i++) {
       const p1 = points[i], p2 = points[i + 1];
-      const dashed = !!tunnelFlags[i];
+      const isTunnel = !!tunnelFlags[i];
+      const isFerry = !!ferryFlags[i];
+      const isSubway = !!subwayFlags[i];
+
+      if (isFerry && ferryMeta[i]) {
+        // A ferry crossing is a smooth curve that casts off from its
+        // dock perpendicular to the shore, then hugs the actual
+        // chain of connected water tiles the route sails through
+        // (steering around any land or islands along the way),
+        // before landing perpendicular to the shore at the far
+        // terminal.
+        const { fromDir, toDir, waterPath } = ferryMeta[i];
+        const exitDir = { x: DIRVEC[fromDir][1], y: DIRVEC[fromDir][0] };
+        const entryDir = { x: -DIRVEC[toDir][1], y: -DIRVEC[toDir][0] };
+        const waypoints = (waterPath || []).map(w => cellCenter(w.r, w.c));
+        const pts = [p1, ...waypoints, p2];
+        const curve = document.createElementNS(SVG_NS, "path");
+        curve.setAttribute("d", smoothPathThrough(pts, exitDir, entryDir));
+        curve.setAttribute("fill", "none");
+        curve.setAttribute("stroke", colorInfo.hex);
+        curve.setAttribute("stroke-width", "4");
+        curve.setAttribute("stroke-linecap", "round");
+        curve.setAttribute("stroke-dasharray", "2 7");
+        group.appendChild(curve);
+        continue;
+      }
+
+      if (isSubway) {
+        // A subway hop routes like a schematic transit map: straight
+        // horizontal/vertical/45° runs joined at sharp angles, rather
+        // than one line aimed straight at the far station.
+        const bendPts = octilinearPoints(p1, p2);
+        for (let j = 0; j < bendPts.length - 1; j++) {
+          const a = bendPts[j], b = bendPts[j + 1];
+          const seg = document.createElementNS(SVG_NS, "line");
+          seg.setAttribute("x1", a.x); seg.setAttribute("y1", a.y);
+          seg.setAttribute("x2", b.x); seg.setAttribute("y2", b.y);
+          seg.setAttribute("stroke", colorInfo.hex);
+          seg.setAttribute("stroke-width", "4");
+          seg.setAttribute("stroke-linecap", "round");
+          seg.setAttribute("stroke-dasharray", "5 5");
+          group.appendChild(seg);
+        }
+        continue;
+      }
 
       const line = document.createElementNS(SVG_NS, "line");
       line.setAttribute("x1", p1.x); line.setAttribute("y1", p1.y);
@@ -1697,7 +2286,8 @@
       line.setAttribute("stroke", colorInfo.hex);
       line.setAttribute("stroke-width", "4");
       line.setAttribute("stroke-linecap", "round");
-      if (dashed) line.setAttribute("stroke-dasharray", "10 8");
+      if (isTunnel) line.setAttribute("stroke-dasharray", "10 8");
+      else if (isFerry) line.setAttribute("stroke-dasharray", "2 7");
       group.appendChild(line);
     }
 
@@ -1743,7 +2333,45 @@
 
   document.getElementById('clearPathsBtn').addEventListener('click', clearAllPaths);
 
-  updatePathStatus();
+  /* ═══════════════ TOOL SELECTOR (unified) ═══════════════ */
+  const TOOL_INFO = {
+    road:  { icon: '🛣️', label: 'Road' },
+    water: { icon: '🌊', label: 'Water' },
+    path:  { icon: '🧭', label: 'Path' },
+    label: { icon: '🏷️', label: 'Label' },
+  };
+  const toolButtons = Array.from(document.querySelectorAll('.tool-btn'));
+  const roadWaterOptions = document.getElementById('roadWaterOptions');
+  const pathOptions = document.getElementById('pathOptions');
+  const labelOptions = document.getElementById('labelOptions');
+  const toolBadgeIcon = document.querySelector('#toolBadge .tool-badge-icon');
+  const toolBadgeLabel = document.querySelector('#toolBadge .tool-badge-label');
+
+  function setTool(tool) {
+    currentTool = tool;
+    toolButtons.forEach(btn => btn.classList.toggle('active', btn.dataset.tool === tool));
+    roadWaterOptions.hidden = !(tool === 'road' || tool === 'water');
+    pathOptions.hidden = tool !== 'path';
+    pathStatus.hidden = tool !== 'path';
+    labelOptions.hidden = tool !== 'label';
+    labelStatus.hidden = tool !== 'label';
+    if (tool !== 'path' && pendingStart) {
+      // restore the pending-start highlight, same as a completed/cancelled click would
+      const p = pendingStart;
+      setKind(p.r, p.c, 'building', { symbol: grid[p.r][p.c].symbol });
+      pendingStart = null;
+    }
+    updatePathStatus();
+    toolBadgeIcon.textContent = TOOL_INFO[tool].icon;
+    toolBadgeLabel.textContent = TOOL_INFO[tool].label;
+  }
+
+  toolButtons.forEach(btn => {
+    btn.addEventListener('click', () => setTool(btn.dataset.tool));
+  });
+
+  setTool('road');
+
 </script>
 <!--
 Add this block immediately before the final </body> tag in
