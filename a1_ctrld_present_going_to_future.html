@@ -1,0 +1,392 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Simple Present vs. Going To Future — Practice</title>
+<link rel="stylesheet" href="general.css">
+<style>
+  :root {
+    --color-background-primary: #ffffff;
+    --color-background-secondary: #f6f7f9;
+    --color-text-primary: #1a1d23;
+    --color-text-secondary: #4b5261;
+    --color-text-tertiary: #8a8f9c;
+    --color-border-secondary: #e2e5ea;
+    --border-radius-lg: 14px;
+
+    --text-primary: var(--color-text-primary);
+    --text-secondary: var(--color-text-secondary);
+    --text-muted: var(--color-text-tertiary);
+    --text-accent: #2563eb;
+    --surface-1: var(--color-background-primary);
+    --surface-2: var(--color-background-secondary);
+    --border: var(--color-border-secondary);
+    --radius: var(--border-radius-lg);
+
+    --pos-wh: #1d6fd8;           --pos-wh-bg: #e3edfd;
+    --pos-yes: #1a7f37;          --pos-yes-bg: #e6f6ea;
+    --pos-no: #c03434;           --pos-no-bg: #fbe7e7;
+  }
+
+  @media (prefers-color-scheme: dark) {
+    :root {
+      --color-background-primary: #16181d;
+      --color-background-secondary: #1d2026;
+      --color-text-primary: #eef0f3;
+      --color-text-secondary: #b7bcc6;
+      --color-text-tertiary: #838995;
+      --color-border-secondary: #2c303a;
+
+      --text-accent: #6ea8fe;
+      --surface-1: var(--color-background-primary);
+      --surface-2: var(--color-background-secondary);
+      --border: var(--color-border-secondary);
+
+      --pos-wh: #7cb0f7;           --pos-wh-bg: #1c2b42;
+      --pos-yes: #6fd08c;          --pos-yes-bg: #163524;
+      --pos-no: #f08a8a;           --pos-no-bg: #3a1c1c;
+    }
+  }
+
+  * { box-sizing: border-box; }
+  body {
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Helvetica, Arial, sans-serif;
+    font-size: 15px;
+    color: var(--text-primary);
+    background: var(--surface-1);
+    margin: 0;
+    line-height: 1.55;
+  }
+  .page { max-width: 760px; margin: 0 auto; padding: 28px 20px 64px; }
+
+  h1 { font-size: 1.3rem; margin: 4px 0 2px; }
+  .subtitle { color: var(--text-secondary); margin: 0 0 14px; font-size: 0.95rem; }
+
+  .cefr-tag {
+    display: inline-block;
+    font-size: 0.72rem;
+    font-weight: 700;
+    letter-spacing: 0.04em;
+    padding: 3px 10px;
+    border-radius: 999px;
+    background: var(--pos-wh-bg);
+    color: var(--pos-wh);
+    text-transform: uppercase;
+  }
+
+  .sec-div {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    margin: 30px 0 14px;
+    color: var(--text-muted);
+    font-size: 0.72rem;
+    font-weight: 700;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+  }
+  .sec-div::before, .sec-div::after {
+    content: "";
+    flex: 1;
+    height: 1px;
+    background: var(--border);
+  }
+
+  /* Drag exercise */
+  .score-bar-wrap { display: flex; align-items: center; gap: 12px; margin: 4px 0 18px; }
+  .score-bar { flex: 1; height: 8px; border-radius: 999px; background: var(--surface-2); overflow: hidden; }
+  .score-fill { height: 100%; width: 0%; background: var(--pos-yes); transition: width .3s; }
+  .score-label { font-size: 0.8rem; color: var(--text-secondary); white-space: nowrap; }
+
+  .wo-item {
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    padding: 14px 16px;
+    margin-bottom: 14px;
+    background: var(--surface-1);
+  }
+  .wo-sentence { font-size: 0.97rem; margin: 0 0 10px; }
+  .blank-slot {
+    display: inline-flex;
+    min-width: 90px;
+    min-height: 30px;
+    padding: 3px 10px;
+    border: 2px dashed var(--border);
+    border-radius: 8px;
+    vertical-align: middle;
+    background: var(--surface-2);
+  }
+  .option-pool { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 8px; }
+
+  .word-chip {
+    touch-action: none; user-select: none; cursor: grab;
+    padding: 6px 12px; border-radius: 8px;
+    background: var(--surface-1); border: 1px solid var(--border);
+    font-size: 0.9rem; font-weight: 600;
+  }
+  .word-chip.dragging { cursor: grabbing; box-shadow: 0 4px 10px rgba(0,0,0,0.15); z-index: 1000; }
+  .word-chip.correct { background: var(--pos-yes-bg); color: var(--pos-yes); border-color: var(--pos-yes); }
+  .word-chip.incorrect { background: var(--pos-no-bg); color: var(--pos-no); border-color: var(--pos-no); }
+
+  .wo-check-btn, .gf-check {
+    margin-top: 10px; padding: 7px 16px; border-radius: 8px; border: none;
+    background: var(--text-accent); color: #fff; font-weight: 600; font-size: 0.85rem; cursor: pointer;
+  }
+  .wo-feedback, .gf-feedback { font-size: 0.82rem; margin-top: 8px; font-weight: 600; min-height: 1.1em; }
+  .wo-feedback.ok, .gf-feedback.ok { color: var(--pos-yes); }
+  .wo-feedback.bad, .gf-feedback.bad { color: var(--pos-no); }
+
+  /* Gap-fill exercise */
+  .gf-item {
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    padding: 14px 16px;
+    margin-bottom: 14px;
+    background: var(--surface-1);
+  }
+  .gf-sentence { font-size: 0.97rem; margin-bottom: 8px; }
+  .gf-gap-input {
+    font: inherit; font-weight: 700; text-align: center;
+    border: 1px solid var(--border); border-radius: 6px; padding: 3px 6px;
+    background: var(--surface-2); color: var(--text-primary); width: 8ch;
+  }
+  .gf-gap-input.gap-correct { background: var(--pos-yes-bg); color: var(--pos-yes); border-color: var(--pos-yes); }
+  .bar-track { height: 6px; border-radius: 999px; background: var(--surface-2); overflow: hidden; margin-top: 6px; }
+  .bar-fill { height: 100%; width: 0%; transition: width .25s, background .25s; }
+  .bar-pct { font-size: 0.72rem; color: var(--text-muted); margin-top: 3px; }
+</style>
+</head>
+<body>
+<div class="page">
+
+  <span class="cefr-tag">A1</span>
+  <h1>Simple Present vs. Going To Future</h1>
+  <p class="subtitle">Choose the correct verb, auxiliary, or time expression</p>
+
+  <div class="sec-div">Practice — Drag the Correct Word</div>
+  <p class="subtitle">Drag the correct chip into the blank.</p>
+
+  <div class="score-bar-wrap">
+    <div class="score-bar"><div class="score-fill" id="woScoreFill"></div></div>
+    <div class="score-label"><span id="woScore">0</span>/<span id="woTotal">0</span> correct</div>
+  </div>
+
+  <div id="woItems"></div>
+
+  <div class="sec-div">Practice — Gap Fill</div>
+  <p class="subtitle">Type the missing word in each gap.</p>
+
+  <div id="gfItems"></div>
+  <button class="gf-check" id="gfCheckAll">Check answers</button>
+  <p class="gf-feedback" id="gfOverallFeedback"></p>
+
+</div>
+
+<div id="theme-toggle-wrap"><button id="theme-toggle" aria-label="Toggle light/dark mode" title="Toggle light/dark mode"><span id="theme-icon">☀️</span></button></div>
+<script src="theme-toggle-behavior.js"></script>
+
+<script>
+/* ---------- Drag exercise (2-option choice into a blank) ---------- */
+const woData = [
+  { before: "Every day, she", after: "to work.", correct: "walks", wrong: "is going to walk" },
+  { before: "Tomorrow, I", after: "to the dentist.", correct: "am going to go", wrong: "go" },
+  { before: "He usually", after: "breakfast at 7.", correct: "eats", wrong: "is going to eat" },
+  { before: "Look at those clouds! It", after: "rain.", correct: "is going to", wrong: "rains" },
+  { before: "We", after: "our homework every night.", correct: "do", wrong: "are going to do" },
+  { before: "I", after: "study medicine next year.", correct: "am going to", wrong: "study" },
+  { before: "She", after: "to the gym on Mondays.", correct: "goes", wrong: "is going to go" },
+  { before: "They", after: "a new house next month.", correct: "are going to buy", wrong: "buy" },
+  { before: "My brother", after: "his teeth every morning.", correct: "brushes", wrong: "is going to brush" },
+  { before: "Watch out! You", after: "fall!", correct: "are going to", wrong: "fall" }
+];
+
+function shuffle(arr) {
+  const a = arr.slice();
+  for (let i = a.length - 1; i > 0; i--) {
+    const j = Math.floor(Math.random() * (i + 1));
+    [a[i], a[j]] = [a[j], a[i]];
+  }
+  return a;
+}
+
+const woScoreState = { correct: 0, total: woData.length };
+
+function updateWoScoreBar() {
+  document.getElementById("woScore").textContent = woScoreState.correct;
+  document.getElementById("woTotal").textContent = woScoreState.total;
+  document.getElementById("woScoreFill").style.width = (woScoreState.correct / woScoreState.total * 100) + "%";
+}
+
+function makeDraggable(chip) {
+  chip.addEventListener("pointerdown", (e) => {
+    chip.setPointerCapture(e.pointerId);
+    chip.classList.add("dragging");
+    const startParent = chip.parentElement;
+    const move = (ev) => {
+      chip.style.position = "fixed";
+      chip.style.left = (ev.clientX - 30) + "px";
+      chip.style.top = (ev.clientY - 16) + "px";
+    };
+    const up = (ev) => {
+      chip.classList.remove("dragging");
+      chip.style.position = "";
+      chip.style.left = "";
+      chip.style.top = "";
+      document.removeEventListener("pointermove", move);
+      document.removeEventListener("pointerup", up);
+      const dropEl = document.elementFromPoint(ev.clientX, ev.clientY);
+      const zone = dropEl && dropEl.closest(".blank-slot, .option-pool");
+      if (zone && zone.classList.contains("blank-slot") && zone.children.length && zone.children[0] !== chip) {
+        const pool = chip.closest(".wo-item").querySelector(".option-pool");
+        pool.appendChild(zone.children[0]);
+      }
+      (zone || startParent).appendChild(chip);
+    };
+    document.addEventListener("pointermove", move);
+    document.addEventListener("pointerup", up);
+  });
+}
+
+function buildWoItem(data, index) {
+  const item = document.createElement("div");
+  item.className = "wo-item";
+  item.innerHTML = `
+    <p class="wo-sentence">${data.before} <span class="blank-slot" id="woSlot${index}"></span> ${data.after}</p>
+    <div class="option-pool" id="woPool${index}"></div>
+    <button class="wo-check-btn">Check</button>
+    <p class="wo-feedback"></p>
+  `;
+  const pool = item.querySelector(".option-pool");
+  const options = shuffle([
+    { text: data.correct, correct: true },
+    { text: data.wrong, correct: false }
+  ]);
+  options.forEach((opt) => {
+    const chip = document.createElement("span");
+    chip.className = "word-chip";
+    chip.textContent = opt.text;
+    chip.dataset.correct = opt.correct ? "1" : "0";
+    makeDraggable(chip);
+    pool.appendChild(chip);
+  });
+  item.querySelector(".wo-check-btn").addEventListener("click", () => {
+    const slot = item.querySelector(".blank-slot");
+    const feedback = item.querySelector(".wo-feedback");
+    const chip = slot.firstElementChild;
+    if (!chip) {
+      feedback.textContent = "Drag a word into the blank first.";
+      feedback.className = "wo-feedback bad";
+      return;
+    }
+    chip.classList.remove("correct", "incorrect");
+    if (chip.dataset.correct === "1") {
+      chip.classList.add("correct");
+      feedback.textContent = "Correct!";
+      feedback.className = "wo-feedback ok";
+      if (!item.dataset.solved) {
+        item.dataset.solved = "1";
+        woScoreState.correct++;
+        updateWoScoreBar();
+      }
+    } else {
+      chip.classList.add("incorrect");
+      feedback.textContent = "Not quite — try the other word.";
+      feedback.className = "wo-feedback bad";
+    }
+  });
+  return item;
+}
+
+const woContainer = document.getElementById("woItems");
+woData.forEach((d, i) => woContainer.appendChild(buildWoItem(d, i)));
+updateWoScoreBar();
+
+/* ---------- Gap-fill exercise ---------- */
+function damerauLevenshtein(a, b) {
+  const al = a.length, bl = b.length;
+  const d = [];
+  for (let i = 0; i <= al; i++) d[i] = [i];
+  for (let j = 0; j <= bl; j++) d[0][j] = j;
+  for (let i = 1; i <= al; i++) {
+    for (let j = 1; j <= bl; j++) {
+      const cost = a[i - 1] === b[j - 1] ? 0 : 1;
+      d[i][j] = Math.min(d[i - 1][j] + 1, d[i][j - 1] + 1, d[i - 1][j - 1] + cost);
+      if (i > 1 && j > 1 && a[i - 1] === b[j - 2] && a[i - 2] === b[j - 1]) {
+        d[i][j] = Math.min(d[i][j], d[i - 2][j - 2] + cost);
+      }
+    }
+  }
+  return d[al][bl];
+}
+
+function normalizeApostrophes(str) {
+  return str.replace(/[\u2018\u2019\u02BC\u00B4\u0060]/g, "'");
+}
+
+function bestAccuracy(input, answer) {
+  const a = normalizeApostrophes(input.trim().toLowerCase());
+  const b = normalizeApostrophes(answer.trim().toLowerCase());
+  if (!a) return 0;
+  const dist = damerauLevenshtein(a, b);
+  const maxLen = Math.max(a.length, b.length, 1);
+  return Math.max(0, 1 - dist / maxLen);
+}
+
+function pctToColor(pct) {
+  const r1 = 192, g1 = 52, b1 = 52, r2 = 26, g2 = 127, b2 = 55;
+  const r = Math.round(r1 + (r2 - r1) * pct);
+  const g = Math.round(g1 + (g2 - g1) * pct);
+  const b = Math.round(b1 + (b2 - b1) * pct);
+  return `rgb(${r},${g},${b})`;
+}
+
+const gfData = [
+  { before: "I", middle: "(brush)", after: "my teeth every morning.", answer: "brush" },
+  { before: "She", middle: "(play)", after: "tennis on Saturdays.", answer: "plays" },
+  { before: "He", middle: "(work)", after: "every weekday.", answer: "works" },
+  { before: "I", middle: "", after: "going to call you tomorrow.", answer: "am" },
+  { before: "She", middle: "", after: "going to visit her parents next week.", answer: "is" },
+  { before: "They", middle: "", after: "going to travel to Spain next year.", answer: "are" },
+  { before: "I go to the gym every", middle: "", after: ".", answer: "day" },
+  { before: "We are going to meet them", middle: "", after: "week.", answer: "next" },
+  { before: "She plays tennis", middle: "", after: "Saturdays.", answer: "on" },
+  { before: "They are going to leave in", middle: "", after: "hour.", answer: "an" }
+];
+
+function buildGfItem(data) {
+  const item = document.createElement("div");
+  item.className = "gf-item";
+  const middlePart = data.middle ? ` <span style="color:var(--text-muted); font-size:0.85rem;">${data.middle}</span>` : "";
+  item.innerHTML = `
+    <p class="gf-sentence">${data.before}${middlePart} <input type="text" class="gf-gap-input" size="${Math.max(4, data.answer.length + 2)}"> ${data.after}</p>
+    <div class="bar-track"><div class="bar-fill"></div></div>
+    <div class="bar-pct">0%</div>
+  `;
+  const input = item.querySelector(".gf-gap-input");
+  const barFill = item.querySelector(".bar-fill");
+  const barPct = item.querySelector(".bar-pct");
+  input.addEventListener("input", () => {
+    const pct = bestAccuracy(input.value, data.answer);
+    barFill.style.width = (pct * 100) + "%";
+    barFill.style.background = pctToColor(pct);
+    barPct.textContent = Math.round(pct * 100) + "%";
+    input.classList.toggle("gap-correct", pct === 1);
+  });
+  input.dataset.answer = data.answer;
+  return item;
+}
+
+const gfContainer = document.getElementById("gfItems");
+gfData.forEach((d) => gfContainer.appendChild(buildGfItem(d)));
+
+document.getElementById("gfCheckAll").addEventListener("click", () => {
+  const inputs = [...document.querySelectorAll(".gf-gap-input")];
+  const correct = inputs.filter((i) => bestAccuracy(i.value, i.dataset.answer) === 1).length;
+  const feedback = document.getElementById("gfOverallFeedback");
+  feedback.textContent = `${correct}/${inputs.length} correct.`;
+  feedback.className = correct === inputs.length ? "gf-feedback ok" : "gf-feedback bad";
+});
+</script>
+</body>
+</html>

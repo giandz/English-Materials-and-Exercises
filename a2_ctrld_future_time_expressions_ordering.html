@@ -1,0 +1,302 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Future Time Expressions — Ordering</title>
+<link rel="stylesheet" href="general.css">
+<style>
+  :root {
+    --color-background-primary: #ffffff;
+    --color-background-secondary: #f6f7f9;
+    --color-text-primary: #1a1d23;
+    --color-text-secondary: #4b5261;
+    --color-text-tertiary: #8a8f9c;
+    --color-border-secondary: #e2e5ea;
+    --border-radius-lg: 14px;
+
+    --text-primary: var(--color-text-primary);
+    --text-secondary: var(--color-text-secondary);
+    --text-muted: var(--color-text-tertiary);
+    --text-accent: #2563eb;
+    --surface-1: var(--color-background-primary);
+    --surface-2: var(--color-background-secondary);
+    --border: var(--color-border-secondary);
+    --radius: var(--border-radius-lg);
+
+    --pos-wh: #1d6fd8;           --pos-wh-bg: #e3edfd;
+    --pos-yes: #1a7f37;          --pos-yes-bg: #e6f6ea;
+    --pos-no: #c03434;           --pos-no-bg: #fbe7e7;
+  }
+
+  @media (prefers-color-scheme: dark) {
+    :root {
+      --color-background-primary: #16181d;
+      --color-background-secondary: #1d2026;
+      --color-text-primary: #eef0f3;
+      --color-text-secondary: #b7bcc6;
+      --color-text-tertiary: #838995;
+      --color-border-secondary: #2c303a;
+
+      --text-accent: #6ea8fe;
+      --surface-1: var(--color-background-primary);
+      --surface-2: var(--color-background-secondary);
+      --border: var(--color-border-secondary);
+
+      --pos-wh: #7cb0f7;           --pos-wh-bg: #1c2b42;
+      --pos-yes: #6fd08c;          --pos-yes-bg: #163524;
+      --pos-no: #f08a8a;           --pos-no-bg: #3a1c1c;
+    }
+  }
+
+  * { box-sizing: border-box; }
+  body {
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Helvetica, Arial, sans-serif;
+    font-size: 15px;
+    color: var(--text-primary);
+    background: var(--surface-1);
+    margin: 0;
+    line-height: 1.55;
+  }
+  .page { max-width: 700px; margin: 0 auto; padding: 28px 20px 64px; }
+
+  h1 { font-size: 1.3rem; margin: 4px 0 2px; }
+  .subtitle { color: var(--text-secondary); margin: 0 0 14px; font-size: 0.95rem; }
+
+  .cefr-tag {
+    display: inline-block;
+    font-size: 0.72rem;
+    font-weight: 700;
+    letter-spacing: 0.04em;
+    padding: 3px 10px;
+    border-radius: 999px;
+    background: var(--pos-wh-bg);
+    color: var(--pos-wh);
+    text-transform: uppercase;
+  }
+
+  .timeline-wrap { display: flex; gap: 14px; align-items: stretch; margin: 4px 0 16px; }
+  .timeline-track { display: flex; flex-direction: column; gap: 8px; flex: 1; }
+  .timeline-slot {
+    min-height: 52px;
+    border: 2px dashed var(--border);
+    border-radius: 8px;
+    display: flex;
+    align-items: center;
+    padding: 0 12px;
+    background: var(--surface-2);
+  }
+  .timeline-arrow {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    width: 46px;
+    flex: none;
+  }
+  .arrow-label { font-size: 0.68rem; color: var(--text-muted); text-align: center; font-weight: 700; text-transform: uppercase; letter-spacing: 0.03em; }
+  .arrow-line { flex: 1; width: 2px; background: var(--border); margin: 4px 0; position: relative; }
+  .arrow-line::after {
+    content: "";
+    position: absolute;
+    bottom: -2px;
+    left: 50%;
+    transform: translateX(-50%);
+    border-left: 7px solid transparent;
+    border-right: 7px solid transparent;
+    border-top: 10px solid var(--border);
+  }
+
+  .option-pool { display: flex; flex-wrap: wrap; gap: 8px; margin: 4px 0 10px; padding: 10px; border-radius: 10px; background: var(--surface-2); border: 1px solid var(--border); min-height: 50px; }
+
+  .time-chip {
+    touch-action: none; user-select: none; cursor: grab;
+    padding: 7px 14px; border-radius: 999px;
+    background: var(--surface-1); border: 1px solid var(--border);
+    font-size: 0.88rem; font-weight: 600;
+    color: var(--text-primary);
+  }
+  .time-chip.dragging { cursor: grabbing; box-shadow: 0 4px 10px rgba(0,0,0,0.15); z-index: 1000; }
+  .time-chip.shake {
+    animation: shakeX .4s ease;
+    background: var(--pos-no-bg);
+    color: var(--pos-no);
+    border-color: var(--pos-no);
+  }
+  @keyframes shakeX {
+    0%, 100% { transform: translateX(0); }
+    20% { transform: translateX(-7px); }
+    40% { transform: translateX(7px); }
+    60% { transform: translateX(-5px); }
+    80% { transform: translateX(5px); }
+  }
+  .time-chip.placed { cursor: default; animation: placePulse .3s ease; }
+  @keyframes placePulse {
+    0% { transform: scale(1); }
+    50% { transform: scale(1.12); }
+    100% { transform: scale(1); }
+  }
+
+  .wo-feedback { font-size: 0.82rem; margin-top: 8px; font-weight: 600; min-height: 1.1em; }
+  .wo-feedback.ok { color: var(--pos-yes); }
+
+  .ref-table {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: 0.88rem;
+    margin: 10px 0 18px;
+  }
+  .ref-table th, .ref-table td {
+    text-align: left;
+    padding: 8px 10px;
+    border-bottom: 1px solid var(--border);
+    vertical-align: top;
+  }
+  .ref-table th {
+    color: var(--text-muted);
+    font-size: 0.7rem;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    font-weight: 700;
+  }
+</style>
+</head>
+<body>
+<div class="page">
+
+  <span class="cefr-tag">A2</span>
+  <h1>Future Time Expressions — Ordering</h1>
+
+  <table class="ref-table">
+    <tr><th>Pattern</th><th>Example</th></tr>
+    <tr><td><strong>next</strong> + day / week / month / year</td><td>next week, next month, next year</td></tr>
+    <tr><td><strong>in</strong> + number + time word</td><td>in three months, in five years</td></tr>
+    <tr><td>number + time word + <strong>from now</strong></td><td>ten years from now</td></tr>
+  </table>
+
+  <p class="subtitle">Order these from the soonest to the most distant.</p>
+
+  <div class="timeline-wrap">
+    <div class="timeline-arrow">
+      <span class="arrow-label">Near</span>
+      <div class="arrow-line"></div>
+      <span class="arrow-label">Far</span>
+    </div>
+    <div class="timeline-track" id="futureTrack"></div>
+  </div>
+  <div class="option-pool" id="futurePool"></div>
+  <p class="wo-feedback" id="futureFeedback"></p>
+
+</div>
+
+<div id="theme-toggle-wrap"><button id="theme-toggle" aria-label="Toggle light/dark mode" title="Toggle light/dark mode"><span id="theme-icon">☀️</span></button></div>
+<script src="theme-toggle-behavior.js"></script>
+
+<script>
+const futureItems = ["in a few minutes", "later today", "tomorrow", "next week", "next month", "in three months", "next year", "in five years", "ten years from now"];
+
+function shuffle(arr) {
+  const a = arr.slice();
+  for (let i = a.length - 1; i > 0; i--) {
+    const j = Math.floor(Math.random() * (i + 1));
+    [a[i], a[j]] = [a[j], a[i]];
+  }
+  return a;
+}
+
+function hueFor(index, total) {
+  return Math.round(index * (120 / (total - 1)));
+}
+
+function makeDraggable(chip, poolEl, onSettle) {
+  chip.addEventListener("pointerdown", (e) => {
+    if (chip.dataset.placed) return;
+    chip.setPointerCapture(e.pointerId);
+    chip.classList.add("dragging");
+    const startParent = chip.parentElement;
+    const move = (ev) => {
+      chip.style.position = "fixed";
+      chip.style.left = (ev.clientX - 60) + "px";
+      chip.style.top = (ev.clientY - 16) + "px";
+    };
+    const up = (ev) => {
+      chip.classList.remove("dragging");
+      chip.style.position = "";
+      chip.style.left = "";
+      chip.style.top = "";
+      document.removeEventListener("pointermove", move);
+      document.removeEventListener("pointerup", up);
+      const dropEl = document.elementFromPoint(ev.clientX, ev.clientY);
+      const slot = dropEl && dropEl.closest(".timeline-slot");
+      const pool = dropEl && dropEl.closest(".option-pool");
+      if (slot && !slot.dataset.filled) {
+        if (Number(chip.dataset.correctIndex) === Number(slot.dataset.index)) {
+          slot.appendChild(chip);
+          slot.dataset.filled = "1";
+          onSettle();
+        } else {
+          chip.classList.add("shake");
+          setTimeout(() => chip.classList.remove("shake"), 400);
+          poolEl.appendChild(chip);
+        }
+      } else if (slot && slot.dataset.filled) {
+        chip.classList.add("shake");
+        setTimeout(() => chip.classList.remove("shake"), 400);
+        poolEl.appendChild(chip);
+      } else if (pool) {
+        poolEl.appendChild(chip);
+      } else {
+        startParent.appendChild(chip);
+      }
+    };
+    document.addEventListener("pointermove", move);
+    document.addEventListener("pointerup", up);
+  });
+}
+
+function buildExercise(items, trackEl, poolEl, feedbackEl) {
+  const total = items.length;
+
+  items.forEach((_, i) => {
+    const slot = document.createElement("div");
+    slot.className = "timeline-slot";
+    slot.dataset.index = i;
+    trackEl.appendChild(slot);
+  });
+
+  let placedCount = 0;
+
+  function settleChip(chip, index) {
+    const hue = hueFor(index, total);
+    const color = `hsl(${hue}, 50%, 50%)`;
+    chip.style.background = color;
+    chip.style.borderColor = color;
+    chip.style.color = "#fff";
+    chip.classList.add("placed");
+    chip.dataset.placed = "1";
+    placedCount++;
+    if (placedCount === total) {
+      feedbackEl.textContent = "All in the right order!";
+      feedbackEl.className = "wo-feedback ok";
+    }
+  }
+
+  const order = shuffle(items.map((text, i) => ({ text, i })));
+  order.forEach((it) => {
+    const chip = document.createElement("span");
+    chip.className = "time-chip";
+    chip.textContent = it.text;
+    chip.dataset.correctIndex = it.i;
+    makeDraggable(chip, poolEl, () => settleChip(chip, it.i));
+    poolEl.appendChild(chip);
+  });
+}
+
+buildExercise(
+  futureItems,
+  document.getElementById("futureTrack"),
+  document.getElementById("futurePool"),
+  document.getElementById("futureFeedback")
+);
+</script>
+</body>
+</html>
