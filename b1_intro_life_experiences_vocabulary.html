@@ -1,0 +1,217 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Life Experiences — Vocabulary Matching</title>
+<link rel="stylesheet" href="general.css">
+<style>
+    :root {
+      --color-background-primary: #ffffff;
+      --color-background-secondary: #f7f8fb;
+      --color-text-primary: #1a1a2e;
+      --color-text-secondary: #4a4a68;
+      --color-text-tertiary: #8888a0;
+      --color-border-secondary: #e2e2ec;
+      --color-border-tertiary: #ececf4;
+      --border-radius-lg: 16px;
+      --font-mono: 'SFMono-Regular', Consolas, 'Liberation Mono', monospace;
+      --text-primary: var(--color-text-primary);
+      --text-secondary: var(--color-text-secondary);
+      --text-muted: var(--color-text-tertiary);
+      --text-accent: #4338ca;
+      --surface-1: var(--color-background-primary);
+      --surface-2: var(--color-background-secondary);
+      --border: var(--color-border-secondary);
+      --radius: var(--border-radius-lg);
+      --yes-color: #16a34a; --yes-bg: #dcfce7;
+      --no-color: #dc2626;  --no-bg: #fee2e2;
+    }
+    @media (prefers-color-scheme: dark) {
+      :root {
+        --color-background-primary: #14141f;
+        --color-background-secondary: #1b1b2b;
+        --color-text-primary: #eceef5;
+        --color-text-secondary: #b8b9cc;
+        --color-text-tertiary: #7c7d94;
+        --color-border-secondary: #303049;
+        --color-border-tertiary: #26263b;
+        --text-accent: #a5b4fc;
+        --yes-bg: #123a20; --no-bg: #3a1414;
+      }
+    }
+    * { box-sizing: border-box; }
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Helvetica, Arial, sans-serif;
+      background: var(--surface-2); color: var(--text-primary);
+      margin: 0; padding: 24px 16px 64px; font-size: 15px; line-height: 1.55;
+    }
+    .page { max-width: 720px; margin: 0 auto; }
+    h1 { font-size: 1.3rem; margin: 0 0 4px; }
+    .cefr-tag {
+      display: inline-block; padding: 3px 10px; border-radius: 999px;
+      background: var(--text-accent); color: #fff; font-size: 0.7rem;
+      font-weight: 700; letter-spacing: .04em; text-transform: uppercase;
+      vertical-align: middle; margin-left: 8px;
+    }
+    .subtitle { color: var(--text-secondary); margin: 0 0 18px; font-size: 0.92rem; }
+    .sec-div {
+      display: flex; align-items: center; gap: 10px; margin: 26px 0 14px;
+      font-size: 0.72rem; letter-spacing: .09em; text-transform: uppercase;
+      color: var(--text-muted); font-weight: 700;
+    }
+    .sec-div::before, .sec-div::after { content: ""; flex: 1; height: 1px; background: var(--border); }
+    .rule-box {
+      background: var(--surface-1); border: 1px solid var(--border);
+      border-left: 4px solid var(--text-accent); border-radius: var(--radius);
+      padding: 12px 16px; margin: 12px 0; font-size: 0.9rem;
+    }
+    .score-bar { display: flex; align-items: center; gap: 10px; font-size: 0.85rem; color: var(--text-secondary); margin: 6px 0 18px; }
+    .score-track { flex: 1; height: 8px; border-radius: 4px; background: var(--surface-2); overflow: hidden; border: 1px solid var(--border); }
+    .score-fill { height: 100%; background: var(--yes-color); width: 0%; transition: width .3s; }
+
+    .match-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px 16px; }
+    .match-col { display: flex; flex-direction: column; gap: 8px; }
+    .match-chip {
+      background: var(--surface-1); border: 1.5px solid var(--border); border-radius: 12px;
+      padding: 12px 14px; font-size: 0.92rem; cursor: pointer; user-select: none;
+      transition: border-color .15s, transform .1s, background .15s;
+      display: flex; align-items: center; gap: 8px;
+    }
+    .match-chip:hover { border-color: var(--text-accent); }
+    .match-chip.selected { border-color: var(--text-accent); background: #eef0ff; transform: scale(1.02); }
+    .match-chip.matched { border-color: var(--yes-color); background: var(--yes-bg); color: var(--yes-color); cursor: default; opacity: .85; }
+    .match-chip.wrong { animation: shake .35s; border-color: var(--no-color); background: var(--no-bg); }
+    @media (prefers-color-scheme: dark) { .match-chip.selected { background: #22224a; } }
+    @keyframes shake { 0%,100%{transform:translateX(0);} 25%{transform:translateX(-5px);} 75%{transform:translateX(5px);} }
+    .chip-emoji { font-size: 1.1rem; flex-shrink: 0; }
+    .reset-row { text-align: center; margin-top: 20px; }
+    .btn {
+      display: inline-flex; align-items: center; gap: 6px; padding: 9px 18px;
+      background: var(--text-accent); color: #fff; border: none; border-radius: 10px;
+      font-size: 0.88rem; font-weight: 600; cursor: pointer;
+    }
+    .win-msg { text-align: center; color: var(--yes-color); font-weight: 700; margin-top: 14px; display: none; }
+    footer.credits { text-align: center; font-size: 0.75rem; color: var(--text-muted); margin-top: 40px; }
+</style>
+</head>
+<body>
+<div class="page">
+  <h1>Life Experiences <span class="cefr-tag">B1</span></h1>
+  <p class="subtitle">Vocabulary — match each verb to the experience it goes with.</p>
+
+  <div class="rule-box">Tap a verb on the left, then tap the experience on the right that matches it. These collocations will come back in the conversation and exercises that follow.</div>
+
+  <div class="sec-div">Match the pairs</div>
+  <div class="score-bar">
+    <span id="scoreLabel">0 / 10 matched</span>
+    <div class="score-track"><div class="score-fill" id="scoreFill"></div></div>
+  </div>
+
+  <div class="match-grid">
+    <div class="match-col" id="verbCol"></div>
+    <div class="match-col" id="nounCol"></div>
+  </div>
+
+  <p class="win-msg" id="winMsg">🎉 All matched! Great job — on to the conversation.</p>
+  <div class="reset-row"><button class="btn" id="resetBtn">Shuffle &amp; restart</button></div>
+
+  <footer class="credits">Present Perfect · Life Experiences</footer>
+</div>
+
+<script>
+const pairs = [
+  { id: 1, verb: "ride",  verbEmoji: "🐎", noun: "a horse" },
+  { id: 2, verb: "jump",  verbEmoji: "🪂", noun: "from a plane" },
+  { id: 3, verb: "watch", verbEmoji: "👀", noun: "a live concert" },
+  { id: 4, verb: "eat",   verbEmoji: "🍽️", noun: "sushi" },
+  { id: 5, verb: "see",   verbEmoji: "🌌", noun: "the Northern Lights" },
+  { id: 6, verb: "run",   verbEmoji: "🏃", noun: "a marathon" },
+  { id: 7, verb: "break", verbEmoji: "💔", noun: "a bone" },
+  { id: 8, verb: "climb", verbEmoji: "🧗", noun: "a mountain" },
+  { id: 9, verb: "lose",  verbEmoji: "🤷", noun: "a passport" },
+  { id: 10, verb: "meet", verbEmoji: "⭐", noun: "a celebrity" },
+];
+
+let selectedVerb = null, selectedNoun = null, matchedCount = 0;
+
+function shuffle(arr) {
+  const a = [...arr];
+  for (let i = a.length - 1; i > 0; i--) {
+    const j = Math.floor(Math.random() * (i + 1));
+    [a[i], a[j]] = [a[j], a[i]];
+  }
+  return a;
+}
+
+function render() {
+  matchedCount = 0;
+  selectedVerb = null; selectedNoun = null;
+  document.getElementById('winMsg').style.display = 'none';
+
+  const verbCol = document.getElementById('verbCol');
+  const nounCol = document.getElementById('nounCol');
+  verbCol.innerHTML = ''; nounCol.innerHTML = '';
+
+  pairs.forEach(p => {
+    const v = document.createElement('div');
+    v.className = 'match-chip'; v.dataset.id = p.id; v.dataset.side = 'verb';
+    v.innerHTML = `<span class="chip-emoji">${p.verbEmoji}</span><span>${p.verb}</span>`;
+    v.addEventListener('click', () => selectChip(v, 'verb'));
+    verbCol.appendChild(v);
+  });
+
+  shuffle(pairs).forEach(p => {
+    const n = document.createElement('div');
+    n.className = 'match-chip'; n.dataset.id = p.id; n.dataset.side = 'noun';
+    n.innerHTML = `<span>${p.noun}</span>`;
+    n.addEventListener('click', () => selectChip(n, 'noun'));
+    nounCol.appendChild(n);
+  });
+
+  updateScore();
+}
+
+function selectChip(el, side) {
+  if (el.classList.contains('matched')) return;
+  if (side === 'verb') {
+    if (selectedVerb) selectedVerb.classList.remove('selected');
+    selectedVerb = el; el.classList.add('selected');
+  } else {
+    if (selectedNoun) selectedNoun.classList.remove('selected');
+    selectedNoun = el; el.classList.add('selected');
+  }
+  if (selectedVerb && selectedNoun) checkMatch();
+}
+
+function checkMatch() {
+  const v = selectedVerb, n = selectedNoun;
+  if (v.dataset.id === n.dataset.id) {
+    v.classList.remove('selected'); n.classList.remove('selected');
+    v.classList.add('matched'); n.classList.add('matched');
+    matchedCount++;
+    updateScore();
+    if (matchedCount === pairs.length) {
+      document.getElementById('winMsg').style.display = 'block';
+    }
+  } else {
+    v.classList.add('wrong'); n.classList.add('wrong');
+    setTimeout(() => {
+      v.classList.remove('selected', 'wrong');
+      n.classList.remove('selected', 'wrong');
+    }, 400);
+  }
+  selectedVerb = null; selectedNoun = null;
+}
+
+function updateScore() {
+  document.getElementById('scoreLabel').textContent = `${matchedCount} / ${pairs.length} matched`;
+  document.getElementById('scoreFill').style.width = `${(matchedCount / pairs.length) * 100}%`;
+}
+
+document.getElementById('resetBtn').addEventListener('click', render);
+render();
+</script>
+<div id="theme-toggle-wrap"><button id="theme-toggle" aria-label="Toggle light/dark mode" title="Toggle light/dark mode"><span id="theme-icon">☀️</span></button></div><script src="theme-toggle-behavior.js"></script>
+</body>
+</html>

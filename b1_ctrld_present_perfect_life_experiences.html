@@ -1,0 +1,358 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Present Perfect — Life Experiences: Practice</title>
+<link rel="stylesheet" href="general.css">
+<style>
+    :root {
+      --color-background-primary: #ffffff;
+      --color-background-secondary: #f7f8fb;
+      --color-text-primary: #1a1a2e;
+      --color-text-secondary: #4a4a68;
+      --color-text-tertiary: #8888a0;
+      --color-border-secondary: #e2e2ec;
+      --border-radius-lg: 16px;
+      --font-mono: 'SFMono-Regular', Consolas, 'Liberation Mono', monospace;
+      --text-primary: var(--color-text-primary);
+      --text-secondary: var(--color-text-secondary);
+      --text-muted: var(--color-text-tertiary);
+      --text-accent: #4338ca;
+      --surface-1: var(--color-background-primary);
+      --surface-2: var(--color-background-secondary);
+      --border: var(--color-border-secondary);
+      --radius: var(--border-radius-lg);
+      --pos-subject: #16a34a; --pos-subject-bg: #dcfce7;
+      --pos-verb: #d97706;    --pos-verb-bg: #fef3c7;
+      --pos-object: #9333ea;  --pos-object-bg: #f3e8ff;
+      --pos-aux: #db2777;     --pos-aux-bg: #fce7f3;
+      --pos-neg: #6b7280;     --pos-neg-bg: #f3f4f6;
+      --pos-wh: #2563eb;      --pos-wh-bg: #dbeafe;
+      --pos-adverb: #0891b2;  --pos-adverb-bg: #cffafe;
+      --yes-color: #16a34a; --yes-bg: #dcfce7;
+      --no-color: #dc2626;  --no-bg: #fee2e2;
+    }
+    @media (prefers-color-scheme: dark) {
+      :root {
+        --color-background-primary: #14141f;
+        --color-background-secondary: #1b1b2b;
+        --color-text-primary: #eceef5;
+        --color-text-secondary: #b8b9cc;
+        --color-text-tertiary: #7c7d94;
+        --color-border-secondary: #303049;
+        --text-accent: #a5b4fc;
+        --pos-subject-bg: #12301f; --pos-verb-bg: #3a2a08;
+        --pos-object-bg: #2c1a3d;  --pos-aux-bg: #3a1830;
+        --pos-neg-bg: #24242f;     --pos-wh-bg: #142a4a;
+        --pos-adverb-bg: #0a2e35;
+        --yes-bg: #123a20; --no-bg: #3a1414;
+      }
+    }
+    * { box-sizing: border-box; }
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Helvetica, Arial, sans-serif;
+      background: var(--surface-2); color: var(--text-primary);
+      margin: 0; padding: 24px 16px 64px; font-size: 15px; line-height: 1.55;
+    }
+    .page { max-width: 740px; margin: 0 auto; }
+    h1 { font-size: 1.3rem; margin: 0 0 4px; }
+    .cefr-tag {
+      display: inline-block; padding: 3px 10px; border-radius: 999px;
+      background: var(--text-accent); color: #fff; font-size: 0.7rem;
+      font-weight: 700; letter-spacing: .04em; text-transform: uppercase;
+      vertical-align: middle; margin-left: 8px;
+    }
+    .subtitle { color: var(--text-secondary); margin: 0 0 18px; font-size: 0.92rem; }
+    .sec-div {
+      display: flex; align-items: center; gap: 10px; margin: 30px 0 14px;
+      font-size: 0.72rem; letter-spacing: .09em; text-transform: uppercase;
+      color: var(--text-muted); font-weight: 700;
+    }
+    .sec-div::before, .sec-div::after { content: ""; flex: 1; height: 1px; background: var(--border); }
+    .rule-box {
+      background: var(--surface-1); border: 1px solid var(--border);
+      border-left: 4px solid var(--text-accent); border-radius: var(--radius);
+      padding: 12px 16px; margin: 12px 0; font-size: 0.9rem;
+    }
+    .score-bar { display: flex; align-items: center; gap: 10px; font-size: 0.85rem; color: var(--text-secondary); margin: 6px 0 18px; }
+    .score-track { flex: 1; height: 8px; border-radius: 4px; background: var(--surface-1); overflow: hidden; border: 1px solid var(--border); }
+    .score-fill { height: 100%; background: var(--yes-color); width: 0%; transition: width .3s; }
+
+    /* Word order */
+    .wo-item { background: var(--surface-1); border: 1px solid var(--border); border-radius: var(--radius); padding: 14px; margin-bottom: 14px; }
+    .wo-num { font-size: 0.72rem; color: var(--text-muted); font-weight: 700; margin-bottom: 8px; }
+    .target-zone {
+      display: flex; flex-wrap: wrap; gap: 6px; min-height: 44px;
+      background: var(--surface-2); border: 1.5px dashed var(--border); border-radius: 10px;
+      padding: 8px; margin-bottom: 10px;
+    }
+    .pool-zone { display: flex; flex-wrap: wrap; gap: 6px; min-height: 40px; }
+    .word-chip {
+      background: var(--surface-1); border: 1.5px solid var(--border); border-radius: 8px;
+      padding: 7px 12px; font-size: 0.88rem; cursor: pointer; user-select: none;
+      transition: border-color .15s, background .15s;
+    }
+    .word-chip:hover { border-color: var(--text-accent); }
+    .target-zone .word-chip { background: #eef0ff; border-color: var(--text-accent); }
+    @media (prefers-color-scheme: dark) { .target-zone .word-chip { background: #22224a; } }
+    .wo-item.correct .target-zone { border-color: var(--yes-color); background: var(--yes-bg); }
+    .wo-item.incorrect .target-zone { border-color: var(--no-color); background: var(--no-bg); }
+    .wo-item.correct .pos-subject,.wo-item.correct .word-chip[data-pos="subject"] { color: var(--pos-subject); background: var(--pos-subject-bg); border-color: transparent; }
+    .wo-item.correct .word-chip[data-pos="aux"] { color: var(--pos-aux); background: var(--pos-aux-bg); border-color: transparent; }
+    .wo-item.correct .word-chip[data-pos="verb"] { color: var(--pos-verb); background: var(--pos-verb-bg); border-color: transparent; }
+    .wo-item.correct .word-chip[data-pos="object"] { color: var(--pos-object); background: var(--pos-object-bg); border-color: transparent; }
+    .wo-item.correct .word-chip[data-pos="neg"] { color: var(--pos-neg); background: var(--pos-neg-bg); border-color: transparent; }
+    .wo-item.correct .word-chip[data-pos="wh"] { color: var(--pos-wh); background: var(--pos-wh-bg); border-color: transparent; }
+    .wo-item.correct .word-chip[data-pos="adverb"] { color: var(--pos-adverb); background: var(--pos-adverb-bg); border-color: transparent; }
+    .wo-btn-row { display: flex; gap: 8px; margin-top: 4px; }
+    .btn { display: inline-flex; align-items: center; gap: 6px; padding: 8px 16px; background: var(--text-accent); color: #fff; border: none; border-radius: 10px; font-size: 0.85rem; font-weight: 600; cursor: pointer; }
+    .btn.secondary { background: var(--surface-2); color: var(--text-primary); border: 1px solid var(--border); }
+    .wo-feedback { font-size: 0.82rem; margin-top: 6px; font-weight: 600; }
+    .wo-item.correct .wo-feedback { color: var(--yes-color); }
+    .wo-item.incorrect .wo-feedback { color: var(--no-color); }
+
+    /* Gap fill */
+    .gf-item { background: var(--surface-1); border: 1px solid var(--border); border-radius: var(--radius); padding: 14px; margin-bottom: 14px; }
+    .gf-prompt { font-size: 0.76rem; color: var(--text-muted); margin-bottom: 6px; }
+    .gf-sentence { font-size: 0.95rem; margin-bottom: 8px; }
+    .gf-gap-input {
+      border: 1.5px solid var(--border); border-radius: 6px; padding: 4px 8px;
+      font-size: 0.9rem; font-family: inherit; text-align: center;
+      background: var(--surface-2); color: var(--text-primary); width: 150px;
+    }
+    .gf-gap-input.gap-correct { border-color: var(--yes-color); background: var(--yes-bg); color: var(--yes-color); font-weight: 700; }
+    .bar-track { height: 6px; border-radius: 3px; background: var(--surface-2); overflow: hidden; border: 1px solid var(--border); margin-top: 4px; }
+    .bar-fill { height: 100%; width: 0%; transition: width .25s, background .25s; }
+    .bar-pct { font-size: 0.72rem; color: var(--text-muted); margin-top: 3px; }
+    footer.credits { text-align: center; font-size: 0.75rem; color: var(--text-muted); margin-top: 40px; }
+</style>
+</head>
+<body>
+<div class="page">
+  <h1>Practice: Life Experiences <span class="cefr-tag">B1</span></h1>
+  <p class="subtitle">First build the sentences, then fill in the gaps from memory.</p>
+
+  <div class="sec-div">Part 1 — Build the sentences</div>
+  <div class="rule-box">Tap the words in the pool in the correct order. Tap a word in the answer box to send it back if you change your mind.</div>
+  <div class="score-bar">
+    <span id="woScoreLabel">0 / 5 correct</span>
+    <div class="score-track"><div class="score-fill" id="woScoreFill"></div></div>
+  </div>
+  <div id="woItems"></div>
+
+  <div class="sec-div">Part 2 — Gap fill</div>
+  <div class="rule-box">Type the missing words (auxiliary + adverb + past participle) to complete each sentence.</div>
+  <div id="gfItems"></div>
+
+  <footer class="credits">Present Perfect · Life Experiences</footer>
+</div>
+
+<script>
+/* ---------- PART 1: WORD ORDER ---------- */
+const woData = [
+  { words: [
+      {w:"I", pos:"subject"}, {w:"have", pos:"aux"}, {w:"ridden", pos:"verb"}, {w:"a horse.", pos:"object"}
+    ] },
+  { words: [
+      {w:"She", pos:"subject"}, {w:"has", pos:"aux"}, {w:"never", pos:"adverb"}, {w:"eaten", pos:"verb"}, {w:"sushi.", pos:"object"}
+    ] },
+  { words: [
+      {w:"Have", pos:"wh"}, {w:"you", pos:"subject"}, {w:"ever", pos:"adverb"}, {w:"seen", pos:"verb"}, {w:"the Northern Lights?", pos:"object"}
+    ] },
+  { words: [
+      {w:"We", pos:"subject"}, {w:"haven't", pos:"aux"}, {w:"been", pos:"verb"}, {w:"to Japan", pos:"object"}, {w:"yet.", pos:"adverb"}
+    ] },
+  { words: [
+      {w:"He", pos:"subject"}, {w:"has", pos:"aux"}, {w:"already", pos:"adverb"}, {w:"run", pos:"verb"}, {w:"a marathon.", pos:"object"}
+    ] },
+];
+
+let woCorrectCount = 0;
+const woContainer = document.getElementById('woItems');
+
+function shuffleArr(arr) {
+  const a = [...arr];
+  for (let i = a.length - 1; i > 0; i--) {
+    const j = Math.floor(Math.random() * (i + 1));
+    [a[i], a[j]] = [a[j], a[i]];
+  }
+  return a;
+}
+
+woData.forEach((item, idx) => {
+  const wrap = document.createElement('div');
+  wrap.className = 'wo-item';
+  wrap.dataset.done = 'false';
+
+  const num = document.createElement('div');
+  num.className = 'wo-num';
+  num.textContent = `Sentence ${idx + 1}`;
+  wrap.appendChild(num);
+
+  const target = document.createElement('div');
+  target.className = 'target-zone';
+  wrap.appendChild(target);
+
+  const pool = document.createElement('div');
+  pool.className = 'pool-zone';
+  wrap.appendChild(pool);
+
+  const btnRow = document.createElement('div');
+  btnRow.className = 'wo-btn-row';
+  const checkBtn = document.createElement('button');
+  checkBtn.className = 'btn'; checkBtn.textContent = 'Check';
+  const resetBtn = document.createElement('button');
+  resetBtn.className = 'btn secondary'; resetBtn.textContent = 'Reset';
+  btnRow.appendChild(checkBtn); btnRow.appendChild(resetBtn);
+  wrap.appendChild(btnRow);
+
+  const feedback = document.createElement('div');
+  feedback.className = 'wo-feedback';
+  wrap.appendChild(feedback);
+
+  function buildPool() {
+    target.innerHTML = ''; pool.innerHTML = ''; feedback.textContent = '';
+    wrap.classList.remove('correct', 'incorrect');
+    wrap.dataset.done = 'false';
+    shuffleArr(item.words).forEach(entry => {
+      const chip = document.createElement('span');
+      chip.className = 'word-chip';
+      chip.textContent = entry.w;
+      chip.dataset.pos = entry.pos;
+      chip.addEventListener('click', () => {
+        if (wrap.dataset.done === 'true') return;
+        target.appendChild(chip);
+      });
+      pool.appendChild(chip);
+    });
+  }
+
+  target.addEventListener('click', (e) => {
+    if (wrap.dataset.done === 'true') return;
+    if (e.target.classList.contains('word-chip')) pool.appendChild(e.target);
+  });
+
+  checkBtn.addEventListener('click', () => {
+    const given = [...target.children].map(c => c.textContent).join(' ');
+    const correct = item.words.map(w => w.w).join(' ');
+    wrap.classList.remove('correct', 'incorrect');
+    if (given === correct && given.length > 0) {
+      wrap.classList.add('correct');
+      feedback.textContent = '✓ Correct!';
+      if (wrap.dataset.done !== 'true') { woCorrectCount++; updateWoScore(); }
+      wrap.dataset.done = 'true';
+    } else {
+      wrap.classList.add('incorrect');
+      feedback.textContent = 'Not quite — check the order and try again.';
+    }
+  });
+
+  resetBtn.addEventListener('click', buildPool);
+
+  buildPool();
+  woContainer.appendChild(wrap);
+});
+
+function updateWoScore() {
+  document.getElementById('woScoreLabel').textContent = `${woCorrectCount} / ${woData.length} correct`;
+  document.getElementById('woScoreFill').style.width = `${(woCorrectCount / woData.length) * 100}%`;
+}
+
+/* ---------- PART 2: GAP FILL ---------- */
+function damerauLevenshtein(a, b) {
+  a = a.toLowerCase().trim(); b = b.toLowerCase().trim();
+  const al = a.length, bl = b.length;
+  const d = Array.from({ length: al + 1 }, () => new Array(bl + 1).fill(0));
+  for (let i = 0; i <= al; i++) d[i][0] = i;
+  for (let j = 0; j <= bl; j++) d[0][j] = j;
+  for (let i = 1; i <= al; i++) {
+    for (let j = 1; j <= bl; j++) {
+      const cost = a[i - 1] === b[j - 1] ? 0 : 1;
+      d[i][j] = Math.min(d[i - 1][j] + 1, d[i][j - 1] + 1, d[i - 1][j - 1] + cost);
+      if (i > 1 && j > 1 && a[i - 1] === b[j - 2] && a[i - 2] === b[j - 1]) {
+        d[i][j] = Math.min(d[i][j], d[i - 2][j - 2] + cost);
+      }
+    }
+  }
+  return d[al][bl];
+}
+
+function bestAccuracy(input, answers) {
+  let best = 0;
+  answers.forEach(ans => {
+    const dist = damerauLevenshtein(input, ans);
+    const maxLen = Math.max(input.length, ans.length, 1);
+    const acc = Math.max(0, 1 - dist / maxLen);
+    if (acc > best) best = acc;
+  });
+  return best;
+}
+
+function pctToColor(pct) {
+  if (pct >= 100) return '#16a34a';
+  if (pct >= 60) return '#d97706';
+  return '#dc2626';
+}
+
+const gfData = [
+  { before: "I", cue: "(already / see)", after: "the Aurora Borealis.", answers: ["have already seen"] },
+  { before: "She", cue: "(never / ride)", after: "a horse.", answers: ["has never ridden"] },
+  { before: "Have you", cue: "(ever / try)", after: "sushi?", answers: ["ever tried"] },
+  { before: "We", cue: "(not / run)", after: "a marathon yet.", answers: ["haven't run", "have not run"] },
+  { before: "He", cue: "(already / break)", after: "a bone twice!", answers: ["has already broken"] },
+  { before: "Has she", cue: "(ever / meet)", after: "a celebrity?", answers: ["ever met"] },
+];
+
+const gfContainer = document.getElementById('gfItems');
+
+gfData.forEach((item, idx) => {
+  const wrap = document.createElement('div');
+  wrap.className = 'gf-item';
+
+  const prompt = document.createElement('div');
+  prompt.className = 'gf-prompt';
+  prompt.textContent = `${idx + 1}. cue: ${item.cue}`;
+  wrap.appendChild(prompt);
+
+  const sentence = document.createElement('div');
+  sentence.className = 'gf-sentence';
+  const inputSize = Math.max(item.answers[0].length, 10);
+  sentence.innerHTML = `${item.before} <input type="text" class="gf-gap-input" style="width:${inputSize * 9 + 24}px" placeholder="…"> ${item.after}`;
+  wrap.appendChild(sentence);
+
+  const track = document.createElement('div');
+  track.className = 'bar-track';
+  const fill = document.createElement('div');
+  fill.className = 'bar-fill';
+  track.appendChild(fill);
+  wrap.appendChild(track);
+
+  const pctLabel = document.createElement('div');
+  pctLabel.className = 'bar-pct';
+  pctLabel.textContent = 'Start typing…';
+  wrap.appendChild(pctLabel);
+
+  const input = sentence.querySelector('.gf-gap-input');
+  input.addEventListener('input', () => {
+    const val = input.value.trim();
+    if (!val) {
+      fill.style.width = '0%'; pctLabel.textContent = 'Start typing…';
+      input.classList.remove('gap-correct');
+      return;
+    }
+    const acc = bestAccuracy(val, item.answers);
+    const pct = Math.round(acc * 100);
+    fill.style.width = pct + '%';
+    fill.style.background = pctToColor(pct);
+    pctLabel.textContent = pct + '% match';
+    if (pct === 100) input.classList.add('gap-correct');
+    else input.classList.remove('gap-correct');
+  });
+
+  gfContainer.appendChild(wrap);
+});
+</script>
+<div id="theme-toggle-wrap"><button id="theme-toggle" aria-label="Toggle light/dark mode" title="Toggle light/dark mode"><span id="theme-icon">☀️</span></button></div><script src="theme-toggle-behavior.js"></script>
+</body>
+</html>
