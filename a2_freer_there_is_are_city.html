@@ -1,0 +1,172 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>There Is / There Are — City Discussion</title>
+<link rel="stylesheet" href="general.css">
+<style>
+    :root {
+      --color-background-primary: #ffffff;
+      --color-background-secondary: #f7f8fb;
+      --color-text-primary: #1a1a2e;
+      --color-text-secondary: #4a4a68;
+      --color-text-tertiary: #8888a0;
+      --color-border-secondary: #e2e2ec;
+      --border-radius-lg: 16px;
+      --text-primary: var(--color-text-primary);
+      --text-secondary: var(--color-text-secondary);
+      --text-muted: var(--color-text-tertiary);
+      --text-accent: #4338ca;
+      --surface-1: var(--color-background-primary);
+      --surface-2: var(--color-background-secondary);
+      --border: var(--color-border-secondary);
+      --radius: var(--border-radius-lg);
+      --yes-color: #16a34a; --yes-bg: #dcfce7;
+      --no-color: #dc2626;  --no-bg: #fee2e2;
+    }
+    @media (prefers-color-scheme: dark) {
+      :root {
+        --color-background-primary: #14141f;
+        --color-background-secondary: #1b1b2b;
+        --color-text-primary: #eceef5;
+        --color-text-secondary: #b8b9cc;
+        --color-text-tertiary: #7c7d94;
+        --color-border-secondary: #303049;
+        --text-accent: #a5b4fc;
+        --yes-bg: #123a20; --no-bg: #3a1414;
+      }
+    }
+    * { box-sizing: border-box; }
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Helvetica, Arial, sans-serif;
+      background: var(--surface-2); color: var(--text-primary);
+      margin: 0; padding: 24px 16px 64px; font-size: 15px; line-height: 1.55;
+    }
+    .page { max-width: 740px; margin: 0 auto; }
+    h1 { font-size: 1.3rem; margin: 0 0 4px; }
+    .cefr-tag {
+      display: inline-block; padding: 3px 10px; border-radius: 999px;
+      background: var(--text-accent); color: #fff; font-size: 0.7rem;
+      font-weight: 700; letter-spacing: .04em; text-transform: uppercase;
+      vertical-align: middle; margin-left: 8px;
+    }
+    .subtitle { color: var(--text-secondary); margin: 0 0 18px; font-size: 0.92rem; }
+    .sec-div {
+      display: flex; align-items: center; gap: 10px; margin: 30px 0 14px;
+      font-size: 0.72rem; letter-spacing: .09em; text-transform: uppercase;
+      color: var(--text-muted); font-weight: 700;
+    }
+    .sec-div::before, .sec-div::after { content: ""; flex: 1; height: 1px; background: var(--border); }
+    .rule-box {
+      background: var(--surface-1); border: 1px solid var(--border);
+      border-left: 4px solid var(--text-accent); border-radius: var(--radius);
+      padding: 12px 16px; margin: 12px 0; font-size: 0.9rem;
+    }
+
+    .exp-grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 10px; }
+    @media (max-width: 480px) { .exp-grid { grid-template-columns: 1fr; } }
+    .exp-card {
+      background: var(--surface-1); border: 1.5px solid var(--border); border-radius: 12px;
+      padding: 12px 14px; cursor: pointer; user-select: none; transition: all .15s;
+      display: flex; align-items: center; gap: 10px; font-size: 0.88rem;
+    }
+    .exp-card .emoji { font-size: 1.3rem; flex-shrink: 0; }
+    .exp-card .state { margin-left: auto; font-size: 0.72rem; font-weight: 700; color: var(--text-muted); flex-shrink: 0; }
+    .exp-card[data-state="yes"] { border-color: var(--yes-color); background: var(--yes-bg); }
+    .exp-card[data-state="yes"] .state { color: var(--yes-color); }
+    .exp-card[data-state="no"] { border-color: var(--no-color); background: var(--no-bg); }
+    .exp-card[data-state="no"] .state { color: var(--no-color); }
+
+    .q-list { list-style: none; padding: 0; margin: 0; display: flex; flex-direction: column; gap: 10px; }
+    .q-card {
+      background: var(--surface-1); border: 1px solid var(--border); border-radius: 12px;
+      padding: 12px 16px; display: flex; gap: 12px; align-items: flex-start; font-size: 0.92rem;
+    }
+    .q-num {
+      flex-shrink: 0; width: 26px; height: 26px; border-radius: 50%; background: var(--text-accent);
+      color: #fff; font-size: 0.78rem; font-weight: 700; display: flex; align-items: center; justify-content: center;
+    }
+    .phrase-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; margin-top: 10px; }
+    @media (max-width: 480px) { .phrase-grid { grid-template-columns: 1fr; } }
+    .phrase-chip { background: var(--surface-2); border: 1px solid var(--border); border-radius: 10px; padding: 8px 12px; font-size: 0.85rem; }
+    footer.credits { text-align: center; font-size: 0.75rem; color: var(--text-muted); margin-top: 40px; }
+</style>
+</head>
+<body>
+<div class="page">
+  <h1>Discussion: My City <span class="cefr-tag">A1 / A2</span></h1>
+  <p class="subtitle">Let's talk about where you live!</p>
+
+  <div class="sec-div">Step 1 — Is this true for your area?</div>
+  <div class="rule-box">Tap a card. <strong>Green = true</strong> for your neighborhood. <strong>Red = false</strong>. Tap again to change it.</div>
+  <div class="exp-grid" id="expGrid"></div>
+
+  <div class="sec-div">Step 2 — Talk to a partner</div>
+  <div class="rule-box">Ask your partner the questions. Answer with <em>There's… / There are… / There isn't… / There aren't…</em></div>
+  <ul class="q-list" id="qList"></ul>
+
+  <div class="sec-div">Useful phrases</div>
+  <div class="phrase-grid">
+    <div class="phrase-chip">"In my opinion…"</div>
+    <div class="phrase-chip">"That's true for me too."</div>
+    <div class="phrase-chip">"Not for me — there aren't any near me."</div>
+    <div class="phrase-chip">"I agree. / I don't agree."</div>
+    <div class="phrase-chip">"What about you?"</div>
+    <div class="phrase-chip">"That sounds nice / difficult."</div>
+  </div>
+
+  <footer class="credits">There is / There are · Describing a City</footer>
+</div>
+
+<script>
+const statements = [
+  { emoji: "🚦", text: "There's a lot of traffic." },
+  { emoji: "🌳", text: "There are a lot of parks." },
+  { emoji: "🍽️", text: "There are many restaurants." },
+  { emoji: "🚨", text: "There's a lot of crime." },
+  { emoji: "🏫", text: "There's a good school nearby." },
+  { emoji: "🛍️", text: "There aren't many shops." },
+  { emoji: "🔊", text: "There's a lot of noise at night." },
+  { emoji: "🚌", text: "There's a bus stop near my house." },
+  { emoji: "🏛️", text: "There's a museum in my town." },
+  { emoji: "☕", text: "There are nice cafes nearby." },
+  { emoji: "🗑️", text: "There's a litter problem." },
+  { emoji: "🌆", text: "There's a lot of nightlife." },
+];
+
+const grid = document.getElementById('expGrid');
+statements.forEach(s => {
+  const card = document.createElement('div');
+  card.className = 'exp-card';
+  card.dataset.state = 'none';
+  card.innerHTML = `<span class="emoji">${s.emoji}</span><span>${s.text}</span><span class="state"></span>`;
+  card.addEventListener('click', () => {
+    const cur = card.dataset.state;
+    const next = cur === 'none' ? 'yes' : cur === 'yes' ? 'no' : 'none';
+    card.dataset.state = next;
+    card.querySelector('.state').textContent = next === 'yes' ? 'True' : next === 'no' ? 'False' : '';
+  });
+  grid.appendChild(card);
+});
+
+const questions = [
+  "Is there a lot of traffic where you live?",
+  "Are there many parks near your home?",
+  "What is there too much of in your city?",
+  "What isn't there enough of in your city?",
+  "Describe your dream neighborhood. What is there?",
+  "How is your city different from a big city?",
+];
+
+const qList = document.getElementById('qList');
+questions.forEach((q, i) => {
+  const li = document.createElement('li');
+  li.className = 'q-card';
+  li.innerHTML = `<span class="q-num">${i + 1}</span><span>${q}</span>`;
+  qList.appendChild(li);
+});
+</script>
+<div id="theme-toggle-wrap"><button id="theme-toggle" aria-label="Toggle light/dark mode" title="Toggle light/dark mode"><span id="theme-icon">☀️</span></button></div><script src="theme-toggle-behavior.js"></script>
+</body>
+</html>

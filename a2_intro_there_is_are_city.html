@@ -1,0 +1,227 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>There Is / There Are — City Conversation</title>
+<link rel="stylesheet" href="general.css">
+<style>
+    :root {
+      --color-background-primary: #ffffff;
+      --color-background-secondary: #f7f8fb;
+      --color-text-primary: #1a1a2e;
+      --color-text-secondary: #4a4a68;
+      --color-text-tertiary: #8888a0;
+      --color-border-secondary: #e2e2ec;
+      --border-radius-lg: 16px;
+      --text-primary: var(--color-text-primary);
+      --text-secondary: var(--color-text-secondary);
+      --text-muted: var(--color-text-tertiary);
+      --text-accent: #4338ca;
+      --surface-1: var(--color-background-primary);
+      --surface-2: var(--color-background-secondary);
+      --border: var(--color-border-secondary);
+      --radius: var(--border-radius-lg);
+      --pos-subject: #16a34a; --pos-subject-bg: #dcfce7;
+      --pos-aux: #db2777;     --pos-aux-bg: #fce7f3;
+      --pos-neg: #6b7280;     --pos-neg-bg: #f3f4f6;
+      --pos-wh: #2563eb;      --pos-wh-bg: #dbeafe;
+      --pos-det: #ea580c;     --pos-det-bg: #ffedd5;
+    }
+    @media (prefers-color-scheme: dark) {
+      :root {
+        --color-background-primary: #14141f;
+        --color-background-secondary: #1b1b2b;
+        --color-text-primary: #eceef5;
+        --color-text-secondary: #b8b9cc;
+        --color-text-tertiary: #7c7d94;
+        --color-border-secondary: #303049;
+        --text-accent: #a5b4fc;
+        --pos-subject-bg: #12301f; --pos-aux-bg: #3a1830;
+        --pos-neg-bg: #24242f;     --pos-wh-bg: #142a4a;
+        --pos-det-bg: #3a2408;
+      }
+    }
+    * { box-sizing: border-box; }
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Helvetica, Arial, sans-serif;
+      background: var(--surface-2); color: var(--text-primary);
+      margin: 0; padding: 24px 16px 64px; font-size: 15px; line-height: 1.55;
+    }
+    .page { max-width: 700px; margin: 0 auto; }
+    h1 { font-size: 1.3rem; margin: 0 0 4px; }
+    .cefr-tag {
+      display: inline-block; padding: 3px 10px; border-radius: 999px;
+      background: var(--text-accent); color: #fff; font-size: 0.7rem;
+      font-weight: 700; letter-spacing: .04em; text-transform: uppercase;
+      vertical-align: middle; margin-left: 8px;
+    }
+    .subtitle { color: var(--text-secondary); margin: 0 0 14px; font-size: 0.92rem; }
+    .setting-chip {
+      display: inline-flex; align-items: center; gap: 6px; padding: 5px 12px;
+      background: var(--surface-1); border: 1px solid var(--border);
+      border-radius: 999px; font-size: 0.8rem; color: var(--text-secondary); margin-bottom: 16px;
+    }
+    .toolbar { display: flex; justify-content: space-between; align-items: center; margin: 6px 0 16px; flex-wrap: wrap; gap: 10px; }
+    .btn {
+      display: inline-flex; align-items: center; gap: 6px; padding: 8px 16px;
+      background: var(--text-accent); color: #fff; border: none; border-radius: 10px;
+      font-size: 0.85rem; font-weight: 600; cursor: pointer;
+    }
+    .legend { display: flex; flex-wrap: wrap; gap: 8px; margin: 4px 0 18px; }
+    .legend-pill {
+      display: inline-flex; align-items: center; gap: 6px; padding: 4px 10px;
+      border-radius: 999px; font-size: 0.72rem; font-weight: 600; border: 1px solid var(--border);
+      background: var(--surface-1); color: var(--text-secondary);
+    }
+    .legend-swatch { width: 8px; height: 8px; border-radius: 50%; display: inline-block; }
+
+    .bubble-wrap { display: flex; flex-direction: column; gap: 12px; margin: 10px 0 6px; }
+    .bubble-row { display: flex; align-items: flex-end; gap: 8px; }
+    .bubble-row.right { flex-direction: row-reverse; }
+    .avatar {
+      width: 34px; height: 34px; border-radius: 50%; flex-shrink: 0;
+      display: flex; align-items: center; justify-content: center;
+      background: var(--surface-1); border: 1px solid var(--border); font-size: 1.05rem;
+    }
+    .bubble-col { max-width: 78%; }
+    .bname { font-size: 0.72rem; color: var(--text-muted); margin: 0 0 3px 2px; font-weight: 600; }
+    .bubble {
+      background: var(--surface-1); border: 1px solid var(--border);
+      border-radius: 16px; padding: 10px 14px; font-size: 0.93rem;
+    }
+    .bubble-row.right .bubble { background: #eef0ff; }
+    @media (prefers-color-scheme: dark) { .bubble-row.right .bubble { background: #22224a; } }
+
+    .pos-subject, .pos-aux, .pos-neg, .pos-wh, .pos-det { border-radius: 4px; padding: 1px 4px; transition: color .2s, background .2s; }
+    body.no-highlight .pos-subject, body.no-highlight .pos-aux, body.no-highlight .pos-neg, body.no-highlight .pos-wh, body.no-highlight .pos-det {
+      color: inherit; background: none; padding: 0;
+    }
+    .pos-subject { color: var(--pos-subject); background: var(--pos-subject-bg); }
+    .pos-aux     { color: var(--pos-aux);     background: var(--pos-aux-bg); }
+    .pos-neg     { color: var(--pos-neg);     background: var(--pos-neg-bg); }
+    .pos-wh      { color: var(--pos-wh);      background: var(--pos-wh-bg); }
+    .pos-det     { color: var(--pos-det);     background: var(--pos-det-bg); }
+
+    .rule-box {
+      background: var(--surface-1); border: 1px solid var(--border);
+      border-left: 4px solid var(--text-accent); border-radius: var(--radius);
+      padding: 12px 16px; margin: 24px 0 0; font-size: 0.9rem;
+    }
+    footer.credits { text-align: center; font-size: 0.75rem; color: var(--text-muted); margin-top: 40px; }
+</style>
+</head>
+<body>
+<div class="page">
+  <h1>What's Your Neighborhood Like? <span class="cefr-tag">A1 / A2</span></h1>
+  <p class="subtitle">Read the conversation between Anna and Ben. Notice how Anna describes her new neighborhood.</p>
+  <div class="setting-chip">📍 Ben is asking Anna about her new neighborhood</div>
+
+  <div class="toolbar">
+    <button class="btn" id="toggleBtn">Hide grammar highlighting</button>
+  </div>
+  <div class="legend">
+    <span class="legend-pill"><span class="legend-swatch" style="background:var(--pos-subject)"></span>there</span>
+    <span class="legend-pill"><span class="legend-swatch" style="background:var(--pos-aux)"></span>is / are (+ n't)</span>
+    <span class="legend-pill"><span class="legend-swatch" style="background:var(--pos-det)"></span>determiner (many/much/a lot of…)</span>
+    <span class="legend-pill"><span class="legend-swatch" style="background:var(--pos-wh)"></span>is/are (question)</span>
+  </div>
+
+  <div class="bubble-wrap">
+    <div class="bubble-row left">
+      <div class="avatar">🧔</div>
+      <div class="bubble-col">
+        <p class="bname">Ben</p>
+        <div class="bubble">Hey! What's your new neighborhood like?</div>
+      </div>
+    </div>
+
+    <div class="bubble-row right">
+      <div class="avatar">👩</div>
+      <div class="bubble-col">
+        <p class="bname">Anna</p>
+        <div class="bubble">It's nice, but <span class="pos-subject">there</span>'s <span class="pos-det">a lot of</span> traffic.</div>
+      </div>
+    </div>
+
+    <div class="bubble-row left">
+      <div class="avatar">🧔</div>
+      <div class="bubble-col">
+        <p class="bname">Ben</p>
+        <div class="bubble">Really? <span class="pos-wh">Are</span> <span class="pos-subject">there</span> <span class="pos-det">many</span> parks?</div>
+      </div>
+    </div>
+
+    <div class="bubble-row right">
+      <div class="avatar">👩</div>
+      <div class="bubble-col">
+        <p class="bname">Anna</p>
+        <div class="bubble">Yes, <span class="pos-subject">there</span> <span class="pos-aux">are</span> <span class="pos-det">a few</span> parks nearby, but <span class="pos-subject">there</span> <span class="pos-aux">aren</span><span class="pos-neg">'t</span> <span class="pos-det">many</span> restaurants.</div>
+      </div>
+    </div>
+
+    <div class="bubble-row left">
+      <div class="avatar">🧔</div>
+      <div class="bubble-col">
+        <p class="bname">Ben</p>
+        <div class="bubble"><span class="pos-wh">Is</span> <span class="pos-subject">there</span> <span class="pos-det">much</span> crime?</div>
+      </div>
+    </div>
+
+    <div class="bubble-row right">
+      <div class="avatar">👩</div>
+      <div class="bubble-col">
+        <p class="bname">Anna</p>
+        <div class="bubble">No, <span class="pos-subject">there</span> <span class="pos-aux">isn</span><span class="pos-neg">'t</span> <span class="pos-det">much</span> crime. It's very safe.</div>
+      </div>
+    </div>
+
+    <div class="bubble-row left">
+      <div class="avatar">🧔</div>
+      <div class="bubble-col">
+        <p class="bname">Ben</p>
+        <div class="bubble">That's good! <span class="pos-wh">Is</span> <span class="pos-subject">there</span> a supermarket nearby?</div>
+      </div>
+    </div>
+
+    <div class="bubble-row right">
+      <div class="avatar">👩</div>
+      <div class="bubble-col">
+        <p class="bname">Anna</p>
+        <div class="bubble">Yes, <span class="pos-subject">there</span>'s one supermarket, but <span class="pos-subject">there</span> <span class="pos-aux">isn</span><span class="pos-neg">'t</span> a big shopping center.</div>
+      </div>
+    </div>
+
+    <div class="bubble-row left">
+      <div class="avatar">🧔</div>
+      <div class="bubble-col">
+        <p class="bname">Ben</p>
+        <div class="bubble">Sounds quiet. <span class="pos-wh">Is</span> <span class="pos-subject">there</span> <span class="pos-det">a lot of</span> noise at night?</div>
+      </div>
+    </div>
+
+    <div class="bubble-row right">
+      <div class="avatar">👩</div>
+      <div class="bubble-col">
+        <p class="bname">Anna</p>
+        <div class="bubble">No, <span class="pos-subject">there</span> <span class="pos-aux">isn</span><span class="pos-neg">'t</span> <span class="pos-det">much</span> noise. It's peaceful.</div>
+      </div>
+    </div>
+  </div>
+
+  <div class="rule-box"><strong>Notice:</strong> Anna uses <em>there is / there are</em> to say what exists in a place. With words like <em>traffic</em>, <em>crime</em>, and <em>noise</em> (no plural — <em>noncount</em> nouns) she uses <em>is / much / a lot of</em>. With words like <em>parks</em> and <em>restaurants</em> (plural — <em>count</em> nouns) she uses <em>are / many / a few</em>. Let's look at this more closely.</div>
+
+  <footer class="credits">There is / There are · Describing a City</footer>
+</div>
+
+<script>
+document.getElementById('toggleBtn').addEventListener('click', function () {
+  document.body.classList.toggle('no-highlight');
+  this.textContent = document.body.classList.contains('no-highlight')
+    ? 'Show grammar highlighting'
+    : 'Hide grammar highlighting';
+});
+</script>
+<div id="theme-toggle-wrap"><button id="theme-toggle" aria-label="Toggle light/dark mode" title="Toggle light/dark mode"><span id="theme-icon">☀️</span></button></div><script src="theme-toggle-behavior.js"></script>
+</body>
+</html>

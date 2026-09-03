@@ -1,0 +1,237 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>There Is / There Are — Clarification</title>
+<link rel="stylesheet" href="general.css">
+<style>
+    :root {
+      --color-background-primary: #ffffff;
+      --color-background-secondary: #f7f8fb;
+      --color-text-primary: #1a1a2e;
+      --color-text-secondary: #4a4a68;
+      --color-text-tertiary: #8888a0;
+      --color-border-secondary: #e2e2ec;
+      --border-radius-lg: 16px;
+      --font-mono: 'SFMono-Regular', Consolas, 'Liberation Mono', monospace;
+      --text-primary: var(--color-text-primary);
+      --text-secondary: var(--color-text-secondary);
+      --text-muted: var(--color-text-tertiary);
+      --text-accent: #4338ca;
+      --surface-1: var(--color-background-primary);
+      --surface-2: var(--color-background-secondary);
+      --border: var(--color-border-secondary);
+      --radius: var(--border-radius-lg);
+      --pos-subject: #16a34a; --pos-subject-bg: #dcfce7;
+      --pos-object: #9333ea;  --pos-object-bg: #f3e8ff;
+      --pos-aux: #db2777;     --pos-aux-bg: #fce7f3;
+      --pos-neg: #6b7280;     --pos-neg-bg: #f3f4f6;
+      --pos-wh: #2563eb;      --pos-wh-bg: #dbeafe;
+      --pos-det: #ea580c;     --pos-det-bg: #ffedd5;
+      --count-color: #2563eb; --noncount-color: #9333ea;
+      --yes-color: #16a34a; --yes-bg: #dcfce7; --yes-border: #86efac;
+      --no-color: #dc2626;  --no-bg: #fee2e2;  --no-border: #fca5a5;
+      --q-color: #b45309;   --q-bg: #fef3c7;  --q-border: #fcd34d;
+    }
+    @media (prefers-color-scheme: dark) {
+      :root {
+        --color-background-primary: #14141f;
+        --color-background-secondary: #1b1b2b;
+        --color-text-primary: #eceef5;
+        --color-text-secondary: #b8b9cc;
+        --color-text-tertiary: #7c7d94;
+        --color-border-secondary: #303049;
+        --text-accent: #a5b4fc;
+        --pos-subject-bg: #12301f; --pos-object-bg: #2c1a3d;
+        --pos-aux-bg: #3a1830;     --pos-neg-bg: #24242f;
+        --pos-wh-bg: #142a4a;      --pos-det-bg: #3a2408;
+        --yes-bg: #123a20; --yes-border: #1e6b3a;
+        --no-bg: #3a1414;  --no-border: #7a2424;
+        --q-bg: #3a2c08;   --q-border: #6b5210;
+      }
+    }
+    * { box-sizing: border-box; }
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Helvetica, Arial, sans-serif;
+      background: var(--surface-2); color: var(--text-primary);
+      margin: 0; padding: 24px 16px 64px; font-size: 15px; line-height: 1.55;
+    }
+    .page { max-width: 740px; margin: 0 auto; }
+    h1 { font-size: 1.3rem; margin: 0 0 4px; }
+    h2 { font-size: 1.02rem; margin: 0 0 10px; }
+    .cefr-tag {
+      display: inline-block; padding: 3px 10px; border-radius: 999px;
+      background: var(--text-accent); color: #fff; font-size: 0.7rem;
+      font-weight: 700; letter-spacing: .04em; text-transform: uppercase;
+      vertical-align: middle; margin-left: 8px;
+    }
+    .subtitle { color: var(--text-secondary); margin: 0 0 18px; font-size: 0.92rem; }
+    .sec-div {
+      display: flex; align-items: center; gap: 10px; margin: 30px 0 14px;
+      font-size: 0.72rem; letter-spacing: .09em; text-transform: uppercase;
+      color: var(--text-muted); font-weight: 700;
+    }
+    .sec-div::before, .sec-div::after { content: ""; flex: 1; height: 1px; background: var(--border); }
+    .card {
+      background: var(--surface-1); border: 1px solid var(--border);
+      border-radius: var(--radius); padding: 18px;
+    }
+    .rule-box {
+      background: var(--surface-1); border: 1px solid var(--border);
+      border-left: 4px solid var(--text-accent); border-radius: var(--radius);
+      padding: 12px 16px; margin: 12px 0; font-size: 0.9rem;
+    }
+
+    /* Quantity scale */
+    .scale-wrap { background: var(--surface-1); border: 1px solid var(--border); border-radius: var(--radius); padding: 18px; }
+    .scale-block + .scale-block { margin-top: 22px; }
+    .scale-title { font-size: 0.9rem; font-weight: 700; margin-bottom: 3px; display: flex; align-items: center; gap: 8px; }
+    .scale-title .dot { width: 9px; height: 9px; border-radius: 50%; display: inline-block; }
+    .scale-examples { font-size: 0.78rem; color: var(--text-muted); margin-bottom: 10px; }
+    .scale-track { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 6px; }
+    .scale-seg {
+      border-radius: 10px; padding: 10px 8px; text-align: center; font-size: 0.82rem; font-weight: 600;
+      border: 1px solid var(--border);
+    }
+    .scale-seg.s0 { background: var(--surface-2); color: var(--text-secondary); }
+    .scale-seg.s1 { background: var(--pos-det-bg); color: var(--pos-det); opacity: .55; }
+    .scale-seg.s2 { background: var(--pos-det-bg); color: var(--pos-det); }
+    .scale-caption { text-align: center; font-size: 0.68rem; color: var(--text-muted); margin-top: 4px; }
+    .overlap-note {
+      margin-top: 16px; font-size: 0.85rem; background: var(--surface-2); border: 1px dashed var(--border);
+      border-radius: 10px; padding: 10px 14px;
+    }
+
+    /* Tabs */
+    .tabs { display: flex; gap: 8px; margin-bottom: 14px; flex-wrap: wrap; }
+    .tab-btn {
+      flex: 1; min-width: 100px; padding: 10px 8px; border-radius: 10px; border: 1.5px solid var(--border);
+      background: var(--surface-1); color: var(--text-secondary); font-weight: 700; font-size: 0.85rem;
+      cursor: pointer; text-align: center; transition: all .15s;
+    }
+    .tab-btn.active[data-tab="aff"] { background: var(--yes-bg); border-color: var(--yes-border); color: var(--yes-color); }
+    .tab-btn.active[data-tab="neg"] { background: var(--no-bg); border-color: var(--no-border); color: var(--no-color); }
+    .tab-btn.active[data-tab="q"]   { background: var(--q-bg); border-color: var(--q-border); color: var(--q-color); }
+    .tab-panel { display: none; }
+    .tab-panel.active { display: block; }
+    .formula {
+      font-family: var(--font-mono, monospace); font-size: 0.9rem; text-align: center;
+      background: var(--surface-2); border: 1px dashed var(--border); border-radius: 10px;
+      padding: 12px; margin-bottom: 14px; color: var(--text-primary);
+    }
+    .ex-list { list-style: none; padding: 0; margin: 0; display: flex; flex-direction: column; gap: 10px; }
+    .ex-list li { background: var(--surface-2); border-radius: 10px; padding: 10px 14px; font-size: 0.92rem; }
+    .pos-subject { color: var(--pos-subject); background: var(--pos-subject-bg); border-radius: 4px; padding: 1px 4px; }
+    .pos-object  { color: var(--pos-object);  background: var(--pos-object-bg);  border-radius: 4px; padding: 1px 4px; }
+    .pos-aux     { color: var(--pos-aux);     background: var(--pos-aux-bg);     border-radius: 4px; padding: 1px 4px; }
+    .pos-neg     { color: var(--pos-neg);     background: var(--pos-neg-bg);     border-radius: 4px; padding: 1px 4px; }
+    .pos-wh      { color: var(--pos-wh);      background: var(--pos-wh-bg);      border-radius: 4px; padding: 1px 4px; }
+    .pos-det     { color: var(--pos-det);     background: var(--pos-det-bg);     border-radius: 4px; padding: 1px 4px; }
+    .legend { display: flex; flex-wrap: wrap; gap: 8px; margin: 12px 0 0; }
+    .legend-pill {
+      display: inline-flex; align-items: center; gap: 6px; padding: 4px 10px;
+      border-radius: 999px; font-size: 0.72rem; font-weight: 600; border: 1px solid var(--border);
+      background: var(--surface-1); color: var(--text-secondary);
+    }
+    .legend-swatch { width: 8px; height: 8px; border-radius: 50%; display: inline-block; }
+    footer.credits { text-align: center; font-size: 0.75rem; color: var(--text-muted); margin-top: 40px; }
+</style>
+</head>
+<body>
+<div class="page">
+  <h1>There Is / There Are <span class="cefr-tag">A1 / A2</span></h1>
+  <p class="subtitle">We use <em>there is / there are</em> to say what exists in a place. The word we use for "how much/many" depends on whether the noun is <strong>count</strong> (has a plural) or <strong>noncount</strong> (no plural).</p>
+
+  <div class="sec-div">How much? How many?</div>
+  <div class="scale-wrap">
+    <div class="scale-block">
+      <div class="scale-title"><span class="dot" style="background:var(--count-color)"></span>Count nouns <span style="font-weight:400; color:var(--text-muted)">— there ARE</span></div>
+      <div class="scale-examples">a park → parks · a restaurant → restaurants · a museum → museums</div>
+      <div class="scale-track">
+        <div class="scale-seg s0">no / not any</div>
+        <div class="scale-seg s1">a few / several</div>
+        <div class="scale-seg s2">many / a lot of</div>
+      </div>
+      <div class="scale-caption">zero &rarr; small number &rarr; large number</div>
+    </div>
+
+    <div class="scale-block">
+      <div class="scale-title"><span class="dot" style="background:var(--noncount-color)"></span>Noncount nouns <span style="font-weight:400; color:var(--text-muted)">— there IS</span></div>
+      <div class="scale-examples">traffic · crime · noise · pollution (no plural form)</div>
+      <div class="scale-track">
+        <div class="scale-seg s0">no / not any</div>
+        <div class="scale-seg s1">a little</div>
+        <div class="scale-seg s2">much / a lot of</div>
+      </div>
+      <div class="scale-caption">zero &rarr; small amount &rarr; large amount</div>
+    </div>
+
+    <div class="overlap-note">💡 <strong>Some</strong> and <strong>a lot of</strong> work for BOTH count and noncount nouns: <em>there's some traffic</em> / <em>there are some parks</em> · <em>a lot of noise</em> / <em>a lot of restaurants</em>.</div>
+  </div>
+
+  <div class="sec-div">Affirmative, negative &amp; question forms</div>
+  <div class="card">
+    <div class="tabs">
+      <button class="tab-btn active" data-tab="aff">✅ Affirmative</button>
+      <button class="tab-btn" data-tab="neg">❌ Negative</button>
+      <button class="tab-btn" data-tab="q">❓ Question</button>
+    </div>
+
+    <div class="tab-panel active" data-panel="aff">
+      <div class="formula">There is/are + a/some/a few/a little/many/much/a lot of + noun</div>
+      <ul class="ex-list">
+        <li><span class="pos-subject">There</span>'s <span class="pos-det">a lot of</span> <span class="pos-object">traffic</span>.</li>
+        <li><span class="pos-subject">There</span> <span class="pos-aux">are</span> <span class="pos-det">a few</span> <span class="pos-object">parks</span> nearby.</li>
+        <li><span class="pos-subject">There</span>'s <span class="pos-det">a</span> <span class="pos-object">supermarket</span> on this street.</li>
+      </ul>
+    </div>
+
+    <div class="tab-panel" data-panel="neg">
+      <div class="formula">There isn't/aren't + any/much/many + noun</div>
+      <ul class="ex-list">
+        <li><span class="pos-subject">There</span> <span class="pos-aux">isn</span><span class="pos-neg">'t</span> <span class="pos-det">much</span> <span class="pos-object">crime</span> here.</li>
+        <li><span class="pos-subject">There</span> <span class="pos-aux">aren</span><span class="pos-neg">'t</span> <span class="pos-det">many</span> <span class="pos-object">restaurants</span> around here.</li>
+        <li><span class="pos-subject">There</span> <span class="pos-aux">aren</span><span class="pos-neg">'t</span> <span class="pos-det">any</span> <span class="pos-object">museums</span> in this town.</li>
+      </ul>
+    </div>
+
+    <div class="tab-panel" data-panel="q">
+      <div class="formula">Is/Are there + any/much/many + noun?</div>
+      <ul class="ex-list">
+        <li><span class="pos-wh">Is</span> <span class="pos-subject">there</span> <span class="pos-det">much</span> <span class="pos-object">pollution</span> in your city?</li>
+        <li><span class="pos-wh">Are</span> <span class="pos-subject">there</span> <span class="pos-det">many</span> <span class="pos-object">schools</span> nearby?</li>
+        <li><span class="pos-wh">Is</span> <span class="pos-subject">there</span> <span class="pos-det">a</span> <span class="pos-object">bus stop</span> near here?</li>
+      </ul>
+    </div>
+
+    <div class="legend">
+      <span class="legend-pill"><span class="legend-swatch" style="background:var(--pos-subject)"></span>there</span>
+      <span class="legend-pill"><span class="legend-swatch" style="background:var(--pos-aux)"></span>is/are</span>
+      <span class="legend-pill"><span class="legend-swatch" style="background:var(--pos-det)"></span>determiner</span>
+      <span class="legend-pill"><span class="legend-swatch" style="background:var(--pos-object)"></span>noun</span>
+      <span class="legend-pill"><span class="legend-swatch" style="background:var(--pos-neg)"></span>negation</span>
+      <span class="legend-pill"><span class="legend-swatch" style="background:var(--pos-wh)"></span>is/are (question)</span>
+    </div>
+  </div>
+
+  <div class="rule-box">
+    <strong>Remember:</strong> the noun after <em>there is/are</em> decides the verb — singular/noncount noun &rarr; <b>is</b>, plural noun &rarr; <b>are</b>. This also decides the determiner: <b>much/a little</b> only go with noncount nouns; <b>many/a few</b> only go with count nouns.
+  </div>
+
+  <footer class="credits">There is / There are · Describing a City</footer>
+</div>
+
+<script>
+document.querySelectorAll('.tab-btn').forEach(btn => {
+  btn.addEventListener('click', () => {
+    document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
+    document.querySelectorAll('.tab-panel').forEach(p => p.classList.remove('active'));
+    btn.classList.add('active');
+    document.querySelector(`.tab-panel[data-panel="${btn.dataset.tab}"]`).classList.add('active');
+  });
+});
+</script>
+<div id="theme-toggle-wrap"><button id="theme-toggle" aria-label="Toggle light/dark mode" title="Toggle light/dark mode"><span id="theme-icon">☀️</span></button></div><script src="theme-toggle-behavior.js"></script>
+</body>
+</html>

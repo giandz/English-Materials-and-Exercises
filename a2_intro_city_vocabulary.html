@@ -1,0 +1,236 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Describing a City — Vocabulary Matching</title>
+<link rel="stylesheet" href="general.css">
+<style>
+    :root {
+      --color-background-primary: #ffffff;
+      --color-background-secondary: #f7f8fb;
+      --color-text-primary: #1a1a2e;
+      --color-text-secondary: #4a4a68;
+      --color-text-tertiary: #8888a0;
+      --color-border-secondary: #e2e2ec;
+      --border-radius-lg: 16px;
+      --text-primary: var(--color-text-primary);
+      --text-secondary: var(--color-text-secondary);
+      --text-muted: var(--color-text-tertiary);
+      --text-accent: #4338ca;
+      --surface-1: var(--color-background-primary);
+      --surface-2: var(--color-background-secondary);
+      --border: var(--color-border-secondary);
+      --radius: var(--border-radius-lg);
+      --yes-color: #16a34a; --yes-bg: #dcfce7;
+      --no-color: #dc2626;  --no-bg: #fee2e2;
+      --count-color: #2563eb; --count-bg: #dbeafe;
+      --noncount-color: #9333ea; --noncount-bg: #f3e8ff;
+    }
+    @media (prefers-color-scheme: dark) {
+      :root {
+        --color-background-primary: #14141f;
+        --color-background-secondary: #1b1b2b;
+        --color-text-primary: #eceef5;
+        --color-text-secondary: #b8b9cc;
+        --color-text-tertiary: #7c7d94;
+        --color-border-secondary: #303049;
+        --text-accent: #a5b4fc;
+        --yes-bg: #123a20; --no-bg: #3a1414;
+        --count-bg: #142a4a; --noncount-bg: #2c1a3d;
+      }
+    }
+    * { box-sizing: border-box; }
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Helvetica, Arial, sans-serif;
+      background: var(--surface-2); color: var(--text-primary);
+      margin: 0; padding: 24px 16px 64px; font-size: 15px; line-height: 1.55;
+    }
+    .page { max-width: 720px; margin: 0 auto; }
+    h1 { font-size: 1.3rem; margin: 0 0 4px; }
+    .cefr-tag {
+      display: inline-block; padding: 3px 10px; border-radius: 999px;
+      background: var(--text-accent); color: #fff; font-size: 0.7rem;
+      font-weight: 700; letter-spacing: .04em; text-transform: uppercase;
+      vertical-align: middle; margin-left: 8px;
+    }
+    .subtitle { color: var(--text-secondary); margin: 0 0 18px; font-size: 0.92rem; }
+    .sec-div {
+      display: flex; align-items: center; gap: 10px; margin: 26px 0 14px;
+      font-size: 0.72rem; letter-spacing: .09em; text-transform: uppercase;
+      color: var(--text-muted); font-weight: 700;
+    }
+    .sec-div::before, .sec-div::after { content: ""; flex: 1; height: 1px; background: var(--border); }
+    .rule-box {
+      background: var(--surface-1); border: 1px solid var(--border);
+      border-left: 4px solid var(--text-accent); border-radius: var(--radius);
+      padding: 12px 16px; margin: 12px 0; font-size: 0.9rem;
+    }
+    .score-bar { display: flex; align-items: center; gap: 10px; font-size: 0.85rem; color: var(--text-secondary); margin: 6px 0 18px; }
+    .score-track { flex: 1; height: 8px; border-radius: 4px; background: var(--surface-2); overflow: hidden; border: 1px solid var(--border); }
+    .score-fill { height: 100%; background: var(--yes-color); width: 0%; transition: width .3s; }
+
+    .match-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px 16px; }
+    .match-col { display: flex; flex-direction: column; gap: 8px; }
+    .match-chip {
+      background: var(--surface-1); border: 1.5px solid var(--border); border-radius: 12px;
+      padding: 12px 14px; font-size: 0.92rem; cursor: pointer; user-select: none;
+      transition: border-color .15s, transform .1s, background .15s;
+      display: flex; align-items: center; gap: 8px; flex-wrap: wrap;
+    }
+    .match-chip:hover { border-color: var(--text-accent); }
+    .match-chip.selected { border-color: var(--text-accent); background: #eef0ff; transform: scale(1.02); }
+    .match-chip.matched { border-color: var(--yes-color); background: var(--yes-bg); color: var(--yes-color); cursor: default; opacity: .95; }
+    .match-chip.wrong { animation: shake .35s; border-color: var(--no-color); background: var(--no-bg); }
+    @media (prefers-color-scheme: dark) { .match-chip.selected { background: #22224a; } }
+    @keyframes shake { 0%,100%{transform:translateX(0);} 25%{transform:translateX(-5px);} 75%{transform:translateX(5px);} }
+    .chip-emoji { font-size: 1.1rem; flex-shrink: 0; }
+    .cat-pill {
+      font-size: 0.65rem; font-weight: 700; padding: 2px 7px; border-radius: 999px;
+      margin-left: auto; display: none;
+    }
+    .match-chip.matched .cat-pill { display: inline-block; }
+    .cat-pill.count { background: var(--count-bg); color: var(--count-color); }
+    .cat-pill.noncount { background: var(--noncount-bg); color: var(--noncount-color); }
+    .reset-row { text-align: center; margin-top: 20px; }
+    .btn {
+      display: inline-flex; align-items: center; gap: 6px; padding: 9px 18px;
+      background: var(--text-accent); color: #fff; border: none; border-radius: 10px;
+      font-size: 0.88rem; font-weight: 600; cursor: pointer;
+    }
+    .win-msg { text-align: center; color: var(--yes-color); font-weight: 700; margin-top: 14px; display: none; }
+    .legend { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 16px; }
+    .legend-pill {
+      display: inline-flex; align-items: center; gap: 6px; padding: 4px 10px;
+      border-radius: 999px; font-size: 0.72rem; font-weight: 600; border: 1px solid var(--border);
+      background: var(--surface-1); color: var(--text-secondary);
+    }
+    .legend-swatch { width: 8px; height: 8px; border-radius: 50%; display: inline-block; }
+    footer.credits { text-align: center; font-size: 0.75rem; color: var(--text-muted); margin-top: 40px; }
+</style>
+</head>
+<body>
+<div class="page">
+  <h1>Describing a City <span class="cefr-tag">A1 / A2</span></h1>
+  <p class="subtitle">Vocabulary — match the word to the picture.</p>
+
+  <div class="rule-box">Tap a word on the left, then tap the matching picture on the right. When you match a pair, you'll see if it's a <span class="cat-pill count" style="display:inline-block">count</span> or <span class="cat-pill noncount" style="display:inline-block">noncount</span> noun — remember this for later!</div>
+
+  <div class="sec-div">Match the pairs</div>
+  <div class="score-bar">
+    <span id="scoreLabel">0 / 10 matched</span>
+    <div class="score-track"><div class="score-fill" id="scoreFill"></div></div>
+  </div>
+
+  <div class="match-grid">
+    <div class="match-col" id="wordCol"></div>
+    <div class="match-col" id="picCol"></div>
+  </div>
+
+  <p class="win-msg" id="winMsg">🎉 All matched! Now let's see them in a conversation.</p>
+  <div class="reset-row"><button class="btn" id="resetBtn">Shuffle &amp; restart</button></div>
+
+  <div class="legend">
+    <span class="legend-pill"><span class="legend-swatch" style="background:var(--count-color)"></span>Count noun (a park, two parks)</span>
+    <span class="legend-pill"><span class="legend-swatch" style="background:var(--noncount-color)"></span>Noncount noun (no plural)</span>
+  </div>
+
+  <footer class="credits">There is / There are · Describing a City</footer>
+</div>
+
+<script>
+const pairs = [
+  { id: 1, word: "crime",       emoji: "🚨", cat: "noncount" },
+  { id: 2, word: "traffic",     emoji: "🚗", cat: "noncount" },
+  { id: 3, word: "restaurants", emoji: "🍽️", cat: "count" },
+  { id: 4, word: "parks",       emoji: "🌳", cat: "count" },
+  { id: 5, word: "pollution",   emoji: "🏭", cat: "noncount" },
+  { id: 6, word: "noise",       emoji: "🔊", cat: "noncount" },
+  { id: 7, word: "museums",     emoji: "🏛️", cat: "count" },
+  { id: 8, word: "shops",       emoji: "🛍️", cat: "count" },
+  { id: 9, word: "schools",     emoji: "🏫", cat: "count" },
+  { id: 10, word: "litter",     emoji: "🗑️", cat: "noncount" },
+];
+
+let selectedWord = null, selectedPic = null, matchedCount = 0;
+
+function shuffle(arr) {
+  const a = [...arr];
+  for (let i = a.length - 1; i > 0; i--) {
+    const j = Math.floor(Math.random() * (i + 1));
+    [a[i], a[j]] = [a[j], a[i]];
+  }
+  return a;
+}
+
+function render() {
+  matchedCount = 0;
+  selectedWord = null; selectedPic = null;
+  document.getElementById('winMsg').style.display = 'none';
+
+  const wordCol = document.getElementById('wordCol');
+  const picCol = document.getElementById('picCol');
+  wordCol.innerHTML = ''; picCol.innerHTML = '';
+
+  shuffle(pairs).forEach(p => {
+    const w = document.createElement('div');
+    w.className = 'match-chip'; w.dataset.id = p.id; w.dataset.side = 'word';
+    w.innerHTML = `<span>${p.word}</span>`;
+    w.addEventListener('click', () => selectChip(w, 'word'));
+    wordCol.appendChild(w);
+  });
+
+  shuffle(pairs).forEach(p => {
+    const c = document.createElement('div');
+    c.className = 'match-chip'; c.dataset.id = p.id; c.dataset.side = 'pic';
+    c.innerHTML = `<span class="chip-emoji">${p.emoji}</span><span class="cat-pill ${p.cat}">${p.cat}</span>`;
+    c.addEventListener('click', () => selectChip(c, 'pic'));
+    picCol.appendChild(c);
+  });
+
+  updateScore();
+}
+
+function selectChip(el, side) {
+  if (el.classList.contains('matched')) return;
+  if (side === 'word') {
+    if (selectedWord) selectedWord.classList.remove('selected');
+    selectedWord = el; el.classList.add('selected');
+  } else {
+    if (selectedPic) selectedPic.classList.remove('selected');
+    selectedPic = el; el.classList.add('selected');
+  }
+  if (selectedWord && selectedPic) checkMatch();
+}
+
+function checkMatch() {
+  const w = selectedWord, c = selectedPic;
+  if (w.dataset.id === c.dataset.id) {
+    w.classList.remove('selected'); c.classList.remove('selected');
+    w.classList.add('matched'); c.classList.add('matched');
+    matchedCount++;
+    updateScore();
+    if (matchedCount === pairs.length) {
+      document.getElementById('winMsg').style.display = 'block';
+    }
+  } else {
+    w.classList.add('wrong'); c.classList.add('wrong');
+    setTimeout(() => {
+      w.classList.remove('selected', 'wrong');
+      c.classList.remove('selected', 'wrong');
+    }, 400);
+  }
+  selectedWord = null; selectedPic = null;
+}
+
+function updateScore() {
+  document.getElementById('scoreLabel').textContent = `${matchedCount} / ${pairs.length} matched`;
+  document.getElementById('scoreFill').style.width = `${(matchedCount / pairs.length) * 100}%`;
+}
+
+document.getElementById('resetBtn').addEventListener('click', render);
+render();
+</script>
+<div id="theme-toggle-wrap"><button id="theme-toggle" aria-label="Toggle light/dark mode" title="Toggle light/dark mode"><span id="theme-icon">☀️</span></button></div><script src="theme-toggle-behavior.js"></script>
+</body>
+</html>
