@@ -15,12 +15,6 @@
     --ld-border: var(--border, #ddd);
     --ld-radius: var(--radius, 8px);
     --ld-accent: var(--text-accent, #0969da);
-    --ld-a1: #1f9d55; --ld-a1-bg: #e3f7ea;
-    --ld-a2: #2f855a; --ld-a2-bg: #e1f3e8;
-    --ld-b1: #b7791f; --ld-b1-bg: #fdf0d5;
-    --ld-b2: #c05621; --ld-b2-bg: #fbe6d9;
-    --ld-c1: #b3261e; --ld-c1-bg: #fbe2e0;
-    --ld-c2: #7c2d92; --ld-c2-bg: #f2e2f7;
   }
   @media (prefers-color-scheme: dark) {
     :root {
@@ -117,10 +111,14 @@
 
   .level-pill {
     display: inline-block;
+    min-width: 2.6em;
     padding: 2px 9px;
     border-radius: 999px;
     font-size: 0.78rem;
-    font-weight: 600;
+    font-weight: 700;
+    color: #fff;
+    text-align: center;
+    text-shadow: 0 1px 1px rgba(0, 0, 0, 0.25);
   }
 
   td.topic-cell a {
@@ -186,7 +184,23 @@
     extra: 'Extra Activity'
   };
   const TYPE_ORDER = ['intro', 'clarf', 'ctrld', 'freer', 'extra'];
-  const FILE_PATTERN = /^(a1|a2|b1|b2|c1|c2)_(intro|clarf|ctrld|freer|extra)_(.+)\.html$/i;
+  const LEVEL_TOKEN = 'a1|a2|b1|b2|c1|c2';
+  const FILE_PATTERN = new RegExp(
+    `^((?:${LEVEL_TOKEN}){1,2})_(intro|clarf|ctrld|freer|extra)_(.+)\\.html$`, 'i'
+  );
+  const LEVEL_HUES = { a1: 120, a2: 96, b1: 72, b2: 48, c1: 24, c2: 0 };
+
+  function levelColor(level) {
+    return `hsl(${LEVEL_HUES[level]}deg, 50%, 50%)`;
+  }
+
+  // Single level: solid tint. Transitional level (e.g. a1a2): the pill is
+  // split half-and-half along an oblique edge aligned with the "/" in "A1/A2".
+  function levelBackground(levels) {
+    if (levels.length === 1) return levelColor(levels[0]);
+    const [first, second] = levels.map(levelColor);
+    return `linear-gradient(45deg, ${first} 0%, ${first} 50%, ${second} 50%, ${second} 100%)`;
+  }
 
   const statusBox = document.getElementById('status-box');
   const errorBox = document.getElementById('error-box');
@@ -221,11 +235,14 @@
   function parseFile(item) {
     const match = item.name.match(FILE_PATTERN);
     if (!match) return null;
-    const [, level, type, topicSlug] = match;
+    const [, levelGroup, type, topicSlug] = match;
     const pagesUrl = convertToPagesUrl(item.html_url);
     if (!pagesUrl) return null;
+    const levels = levelGroup.toLowerCase().match(new RegExp(LEVEL_TOKEN, 'g'));
     return {
-      level: level.toLowerCase(),
+      level: levelGroup.toLowerCase(),
+      levels,
+      levelLabel: levels.map(l => l.toUpperCase()).join('/'),
       type: type.toLowerCase(),
       typeLabel: TYPE_LABELS[type.toLowerCase()],
       topic: normaliseTopic(topicSlug),
@@ -290,6 +307,7 @@
     const filtered = rows.filter(r =>
       !query ||
       r.level.includes(query) ||
+      r.levelLabel.toLowerCase().includes(query) ||
       r.typeLabel.toLowerCase().includes(query) ||
       r.topic.toLowerCase().includes(query)
     );
@@ -301,7 +319,7 @@
 
     tableBody.innerHTML = filtered.map(r => `
       <tr>
-        <td><span class="level-pill" style="color:var(--ld-${r.level});background:var(--ld-${r.level}-bg)">${r.level.toUpperCase()}</span></td>
+        <td><span class="level-pill" style="background:${levelBackground(r.levels)}">${r.levelLabel}</span></td>
         <td>${r.typeLabel}</td>
         <td class="topic-cell"><a href="${r.url}" target="_blank" rel="noopener">${r.topic}</a></td>
       </tr>
