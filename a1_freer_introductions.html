@@ -1,0 +1,225 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<title>Introductions — Speaking Activity</title>
+<link rel="stylesheet" href="general.css">
+<style>
+:root{
+  --color-background-primary: #ffffff;
+  --color-background-secondary: #f7f7f8;
+  --color-text-primary: #1a1a1a;
+  --color-text-secondary: #5b5b60;
+  --color-text-tertiary: #8b8b90;
+  --color-border-secondary: #e3e3e6;
+  --color-border-tertiary: #ebebee;
+  --border-radius-lg: 12px;
+
+  --text-primary: var(--color-text-primary);
+  --text-secondary: var(--color-text-secondary);
+  --text-muted: var(--color-text-tertiary);
+  --text-accent: #185fa5;
+  --surface-1: var(--color-background-secondary);
+  --surface-2: var(--color-background-primary);
+  --border: var(--color-border-tertiary);
+  --radius: var(--border-radius-lg);
+  --good: #2f7d3a;
+  --good-bg: #e8f4ea;
+}
+
+@media (prefers-color-scheme: dark){
+  :root{
+    --color-background-primary: #1e1e20;
+    --color-background-secondary: #26262a;
+    --color-text-primary: #f0f0f2;
+    --color-text-secondary: #b4b4ba;
+    --color-text-tertiary: #85858c;
+    --color-border-secondary: #3a3a3f;
+    --color-border-tertiary: #34343a;
+    --good-bg: #1d2f1f;
+  }
+}
+
+*{ box-sizing:border-box; -webkit-tap-highlight-color:transparent; }
+
+html,body{
+  margin:0;
+  background:var(--color-background-primary);
+  color:var(--color-text-primary);
+  font-family:-apple-system, BlinkMacSystemFont, "Segoe UI", Helvetica, Arial, sans-serif;
+  font-size:15px;
+  line-height:1.5;
+  -webkit-user-select:none;
+  user-select:none;
+}
+
+.page{ max-width:700px; margin:0 auto; padding:20px 14px 40px; }
+
+h1{ font-size:1.28rem; font-weight:600; letter-spacing:-0.01em; margin:0 0 2px; }
+.subtitle{ font-size:12.5px; color:var(--text-secondary); margin:0 0 8px; }
+
+.cefr-tag{
+  display:inline-block; font-size:11px; font-weight:700; letter-spacing:.04em;
+  background:#e6f1fb; color:#185fa5; padding:3px 10px; border-radius:20px; margin-bottom:8px;
+}
+@media (prefers-color-scheme: dark){ .cefr-tag{ background:#1c2e40; color:#7fb2e0; } }
+
+.sec-div{
+  font-size:11px; font-weight:500; letter-spacing:.06em; text-transform:uppercase;
+  color:var(--text-muted); display:flex; align-items:center; gap:8px; margin:1.6rem 0 .8rem;
+}
+.sec-div::before,.sec-div::after{ content:''; flex:1; height:.5px; background:var(--border); }
+
+.rule-box{
+  background:var(--surface-1);
+  border-radius:16px;
+  padding:10px 12px;
+  margin-bottom:.9rem;
+  font-size:13px;
+  color:var(--text-secondary);
+  line-height:1.55;
+  border:1px solid var(--border);
+}
+.rule-box strong{ color:var(--text-primary); font-weight:600; }
+
+.setting-chip{
+  display:inline-flex; align-items:center; gap:5px; font-size:12px; padding:3px 10px;
+  border-radius:20px; background:var(--surface-1); border:.5px solid var(--border);
+  color:var(--text-secondary); margin-bottom:.6rem;
+}
+
+/* discussion question cards */
+.q-grid{ display:grid; grid-template-columns:1fr 1fr; gap:8px; }
+@media (max-width:480px){ .q-grid{ grid-template-columns:1fr; } }
+
+.q-card{
+  border:1px solid var(--border);
+  border-radius:14px;
+  padding:12px 12px 10px;
+  background:var(--surface-2);
+  cursor:pointer;
+  transition:background .15s, border-color .15s;
+}
+.q-card .q-num{
+  font-size:10.5px; font-weight:700; color:var(--text-muted); letter-spacing:.04em;
+}
+.q-card .q-text{ font-size:14px; margin-top:4px; line-height:1.4; }
+.q-card .q-done{ font-size:11px; color:var(--good); font-weight:600; margin-top:6px; display:none; }
+.q-card.asked{ background:var(--good-bg); border-color:var(--good); }
+.q-card.asked .q-done{ display:block; }
+
+/* role-play cards */
+.role-wrap{ display:flex; gap:10px; flex-wrap:wrap; margin-bottom:1rem; }
+.role-card{
+  flex:1 1 260px;
+  border:1px solid var(--border);
+  border-radius:16px;
+  padding:14px;
+  background:var(--surface-2);
+}
+.role-card .role-title{
+  font-size:12px; font-weight:700; text-transform:uppercase; letter-spacing:.04em;
+  color:var(--text-accent); margin-bottom:6px;
+}
+.role-card .role-desc{ font-size:13px; color:var(--text-secondary); margin-bottom:10px; }
+.role-card .role-phrases{ font-size:13px; line-height:1.7; }
+.role-card .role-phrases li{ margin-bottom:2px; }
+.role-card ul{ margin:0; padding-left:18px; }
+
+footer{ text-align:center; font-size:12px; color:var(--text-muted); margin-top:1.6rem; }
+
+#theme-toggle-wrap{ position:fixed; top:14px; right:14px; z-index:1000; }
+#theme-toggle{
+  width:38px; height:38px; border-radius:50%;
+  border:1px solid var(--border); background:var(--surface-2); color:var(--text-primary);
+  font-size:16px; display:flex; align-items:center; justify-content:center;
+  cursor:pointer; box-shadow:0 2px 8px rgba(0,0,0,0.12);
+}
+</style>
+</head>
+<body>
+<div class="page">
+
+  <span class="cefr-tag">A1 · Beginner</span>
+  <h1>Let's Talk: Introductions</h1>
+  <p class="subtitle">A short speaking activity</p>
+
+  <div class="sec-div">🗣️ Mingle — ask and answer</div>
+  <div class="rule-box">
+    Talk to three classmates. Ask 2–3 questions from the cards. Tap a card after you ask it.
+  </div>
+  <div class="q-grid" id="qGrid">
+    <div class="q-card"><div class="q-num">1</div><div class="q-text">What's your name?</div><div class="q-done">✓ Asked</div></div>
+    <div class="q-card"><div class="q-num">2</div><div class="q-text">Where are you from?</div><div class="q-done">✓ Asked</div></div>
+    <div class="q-card"><div class="q-num">3</div><div class="q-text">How old are you?</div><div class="q-done">✓ Asked</div></div>
+    <div class="q-card"><div class="q-num">4</div><div class="q-text">What do you do?</div><div class="q-done">✓ Asked</div></div>
+    <div class="q-card"><div class="q-num">5</div><div class="q-text">Do you have any friends here?</div><div class="q-done">✓ Asked</div></div>
+    <div class="q-card"><div class="q-num">6</div><div class="q-text">Can you introduce a friend to me?</div><div class="q-done">✓ Asked</div></div>
+  </div>
+
+  <div class="sec-div">🎭 Role play</div>
+  <div class="rule-box">
+    Work in pairs. Choose a scene and act it out. Then switch roles.
+  </div>
+
+  <div class="setting-chip">😊 Scene A — informal</div>
+  <div class="role-wrap">
+    <div class="role-card">
+      <div class="role-title">Student A</div>
+      <div class="role-desc">It's your first day at a new school. Introduce yourself to a classmate.</div>
+      <ul class="role-phrases">
+        <li>Hi! I'm…</li>
+        <li>What's your name?</li>
+        <li>Where are you from?</li>
+      </ul>
+    </div>
+    <div class="role-card">
+      <div class="role-title">Student B</div>
+      <div class="role-desc">You already go to this school. Introduce your friend to the new student too.</div>
+      <ul class="role-phrases">
+        <li>Nice to meet you!</li>
+        <li>This is my friend, …</li>
+        <li>Welcome to the class!</li>
+      </ul>
+    </div>
+  </div>
+
+  <div class="setting-chip">🤝 Scene B — formal</div>
+  <div class="role-wrap">
+    <div class="role-card">
+      <div class="role-title">New employee</div>
+      <div class="role-desc">It's your first day at a new job. Introduce yourself to your manager.</div>
+      <ul class="role-phrases">
+        <li>My name is…</li>
+        <li>It's a pleasure to meet you.</li>
+        <li>I'm very happy to be here.</li>
+      </ul>
+    </div>
+    <div class="role-card">
+      <div class="role-title">Manager</div>
+      <div class="role-desc">Welcome the new employee, then introduce them to a colleague.</div>
+      <ul class="role-phrases">
+        <li>Good morning. I'm…</li>
+        <li>Let me introduce you to…</li>
+        <li>How do you do?</li>
+      </ul>
+    </div>
+  </div>
+
+  <footer>Introductions — Speaking Activity (A1)</footer>
+</div>
+<script>
+document.getElementById('qGrid').addEventListener('click', (e) => {
+  const card = e.target.closest('.q-card');
+  if (card) card.classList.toggle('asked');
+});
+</script>
+<div id="theme-toggle-wrap">
+  <button id="theme-toggle" aria-label="Toggle light/dark mode" title="Toggle light/dark mode">
+    <span id="theme-icon">☀️</span>
+  </button>
+</div>
+<script src="theme-toggle-behavior.js"></script>
+</body>
+</html>
