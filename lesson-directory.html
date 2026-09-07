@@ -1,0 +1,354 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Lesson Directory</title>
+<link rel="stylesheet" href="general.css">
+<style>
+  :root {
+    --ld-bg: var(--color-background-primary, #fafafa);
+    --ld-surface: var(--surface-1, #fff);
+    --ld-surface-2: var(--surface-2, #f3f3f3);
+    --ld-text: var(--text-primary, #1a1a1a);
+    --ld-text-muted: var(--text-muted, #666);
+    --ld-border: var(--border, #ddd);
+    --ld-radius: var(--radius, 8px);
+    --ld-accent: var(--text-accent, #0969da);
+    --ld-a1: #1f9d55; --ld-a1-bg: #e3f7ea;
+    --ld-a2: #2f855a; --ld-a2-bg: #e1f3e8;
+    --ld-b1: #b7791f; --ld-b1-bg: #fdf0d5;
+    --ld-b2: #c05621; --ld-b2-bg: #fbe6d9;
+    --ld-c1: #b3261e; --ld-c1-bg: #fbe2e0;
+    --ld-c2: #7c2d92; --ld-c2-bg: #f2e2f7;
+  }
+  @media (prefers-color-scheme: dark) {
+    :root {
+      --ld-bg: var(--color-background-primary, #15171a);
+      --ld-surface: var(--surface-1, #1e2126);
+      --ld-surface-2: var(--surface-2, #262a30);
+      --ld-text: var(--text-primary, #eaeaea);
+      --ld-text-muted: var(--text-muted, #9aa0a6);
+      --ld-border: var(--border, #33383e);
+      --ld-accent: var(--text-accent, #6cb6ff);
+    }
+  }
+
+  * { box-sizing: border-box; }
+
+  body {
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Helvetica, Arial, sans-serif;
+    max-width: 900px;
+    margin: 48px auto 96px;
+    padding: 0 20px;
+    color: var(--ld-text);
+    background: var(--ld-bg);
+  }
+
+  h1 {
+    font-size: 1.4rem;
+    margin: 0 0 4px;
+  }
+  p.sub {
+    color: var(--ld-text-muted);
+    margin: 0 0 28px;
+    font-size: 0.95rem;
+  }
+
+  .toolbar {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    margin-bottom: 16px;
+    flex-wrap: wrap;
+  }
+  .toolbar input[type="text"] {
+    flex: 1;
+    min-width: 200px;
+    padding: 9px 12px;
+    font-size: 0.95rem;
+    border: 1px solid var(--ld-border);
+    border-radius: var(--ld-radius);
+    background: var(--ld-surface);
+    color: var(--ld-text);
+  }
+  .count {
+    font-size: 0.85rem;
+    color: var(--ld-text-muted);
+    white-space: nowrap;
+  }
+
+  table {
+    width: 100%;
+    border-collapse: collapse;
+    background: var(--ld-surface);
+    border: 1px solid var(--ld-border);
+    border-radius: var(--ld-radius);
+    overflow: hidden;
+  }
+  thead th {
+    text-align: left;
+    padding: 10px 14px;
+    font-size: 0.85rem;
+    font-weight: 600;
+    background: var(--ld-surface-2);
+    border-bottom: 1px solid var(--ld-border);
+    cursor: pointer;
+    user-select: none;
+    white-space: nowrap;
+  }
+  thead th .arrow {
+    display: inline-block;
+    width: 0.9em;
+    opacity: 0.5;
+    font-size: 0.75em;
+  }
+  thead th.sorted .arrow { opacity: 1; }
+  thead th:hover { background: var(--ld-border); }
+
+  tbody td {
+    padding: 9px 14px;
+    font-size: 0.92rem;
+    border-bottom: 1px solid var(--ld-border);
+    vertical-align: middle;
+  }
+  tbody tr:last-child td { border-bottom: none; }
+  tbody tr:hover td { background: var(--ld-surface-2); }
+
+  .level-pill {
+    display: inline-block;
+    padding: 2px 9px;
+    border-radius: 999px;
+    font-size: 0.78rem;
+    font-weight: 600;
+  }
+
+  td.topic-cell a {
+    color: var(--ld-accent);
+    text-decoration: none;
+  }
+  td.topic-cell a:hover { text-decoration: underline; }
+
+  #status-box {
+    padding: 14px;
+    border-radius: var(--ld-radius);
+    background: var(--ld-surface);
+    border: 1px solid var(--ld-border);
+    color: var(--ld-text-muted);
+    font-size: 0.92rem;
+  }
+  #error-box {
+    padding: 14px;
+    border-radius: var(--ld-radius);
+    background: var(--ld-surface);
+    border: 1px solid #e0a6a1;
+    color: #b3261e;
+    font-size: 0.9rem;
+    margin-bottom: 16px;
+  }
+  .hidden { display: none; }
+</style>
+</head>
+<body>
+
+<h1>Lesson Directory</h1>
+<p class="sub">Auto-generated index of lesson files in this folder.</p>
+
+<div id="error-box" class="hidden"></div>
+
+<div class="toolbar">
+  <input type="text" id="filter-input" placeholder="Filter by level, type, or topic…">
+  <span class="count" id="count-label"></span>
+</div>
+
+<div id="status-box">Loading lesson files…</div>
+
+<table id="lesson-table" class="hidden">
+  <thead>
+    <tr>
+      <th data-col="level">Level <span class="arrow"></span></th>
+      <th data-col="type">Type <span class="arrow"></span></th>
+      <th data-col="topic">Topic <span class="arrow"></span></th>
+    </tr>
+  </thead>
+  <tbody id="table-body"></tbody>
+</table>
+
+<div id="theme-toggle-wrap"><button id="theme-toggle" aria-label="Toggle light/dark mode" title="Toggle light/dark mode"><span id="theme-icon">☀️</span></button></div>
+<script src="theme-toggle-behavior.js"></script>
+
+<script>
+  const TYPE_LABELS = {
+    intro: 'Language Introduction',
+    clarf: 'Clarification',
+    ctrld: 'Controlled Practice',
+    freer: 'Freer Practice',
+    extra: 'Extra Activity'
+  };
+  const TYPE_ORDER = ['intro', 'clarf', 'ctrld', 'freer', 'extra'];
+  const FILE_PATTERN = /^(a1|a2|b1|b2|c1|c2)_(intro|clarf|ctrld|freer|extra)_(.+)\.html$/i;
+
+  const statusBox = document.getElementById('status-box');
+  const errorBox = document.getElementById('error-box');
+  const table = document.getElementById('lesson-table');
+  const tableBody = document.getElementById('table-body');
+  const filterInput = document.getElementById('filter-input');
+  const countLabel = document.getElementById('count-label');
+
+  let rows = [];
+  let sortCol = 'level';
+  let sortDir = 'asc';
+
+  // Same conversion approach as the GitHub → GitHub Pages link converter:
+  // parse a github.com/.../blob/branch/path URL into its github.io equivalent.
+  function convertToPagesUrl(blobUrl) {
+    const match = blobUrl.match(
+      /^https?:\/\/github\.com\/([^\/]+)\/([^\/]+)\/blob\/([^\/]+)\/(.+)$/
+    );
+    if (!match) return null;
+    const [, user, repo, , path] = match;
+    return `https://${user}.github.io/${repo}/${path}`;
+  }
+
+  function normaliseTopic(slug) {
+    return slug
+      .split('_')
+      .filter(Boolean)
+      .map(word => word.charAt(0).toUpperCase() + word.slice(1))
+      .join(' ');
+  }
+
+  function parseFile(item) {
+    const match = item.name.match(FILE_PATTERN);
+    if (!match) return null;
+    const [, level, type, topicSlug] = match;
+    const pagesUrl = convertToPagesUrl(item.html_url);
+    if (!pagesUrl) return null;
+    return {
+      level: level.toLowerCase(),
+      type: type.toLowerCase(),
+      typeLabel: TYPE_LABELS[type.toLowerCase()],
+      topic: normaliseTopic(topicSlug),
+      url: pagesUrl,
+      fileName: item.name
+    };
+  }
+
+  async function fetchContents(owner, repo, dirPath) {
+    const apiPath = dirPath ? `/${dirPath}` : '';
+    const res = await fetch(`https://api.github.com/repos/${owner}/${repo}/contents${apiPath}`);
+    if (!res.ok) {
+      const err = new Error(`GitHub API responded with ${res.status}`);
+      err.status = res.status;
+      throw err;
+    }
+    return res.json();
+  }
+
+  async function loadDirectory() {
+    const owner = location.hostname.split('.')[0];
+    const pathParts = location.pathname.split('/').filter(Boolean);
+
+    const attempts = [];
+    if (pathParts.length > 0) {
+      // Project page: owner.github.io/repo/.../this-file.html
+      attempts.push({ repo: pathParts[0], dir: pathParts.slice(1, -1).join('/') });
+    }
+    // User/org root page: owner.github.io/.../this-file.html
+    attempts.push({ repo: `${owner}.github.io`, dir: pathParts.slice(0, -1).join('/') });
+
+    let items = null;
+    let lastError = null;
+    for (const attempt of attempts) {
+      try {
+        items = await fetchContents(owner, attempt.repo, attempt.dir);
+        break;
+      } catch (e) {
+        lastError = e;
+      }
+    }
+
+    if (!items) {
+      throw lastError || new Error('Could not locate this repository.');
+    }
+
+    return items
+      .filter(item => item.type === 'file' && /\.html?$/i.test(item.name))
+      .map(parseFile)
+      .filter(Boolean);
+  }
+
+  function compareByCol(a, b, col) {
+    if (col === 'type') {
+      return TYPE_ORDER.indexOf(a.type) - TYPE_ORDER.indexOf(b.type);
+    }
+    return a[col].localeCompare(b[col]);
+  }
+
+  function render() {
+    const query = filterInput.value.trim().toLowerCase();
+    const filtered = rows.filter(r =>
+      !query ||
+      r.level.includes(query) ||
+      r.typeLabel.toLowerCase().includes(query) ||
+      r.topic.toLowerCase().includes(query)
+    );
+
+    filtered.sort((a, b) => {
+      const cmp = compareByCol(a, b, sortCol);
+      return sortDir === 'asc' ? cmp : -cmp;
+    });
+
+    tableBody.innerHTML = filtered.map(r => `
+      <tr>
+        <td><span class="level-pill" style="color:var(--ld-${r.level});background:var(--ld-${r.level}-bg)">${r.level.toUpperCase()}</span></td>
+        <td>${r.typeLabel}</td>
+        <td class="topic-cell"><a href="${r.url}" target="_blank" rel="noopener">${r.topic}</a></td>
+      </tr>
+    `).join('');
+
+    countLabel.textContent = `${filtered.length} of ${rows.length} files`;
+
+    document.querySelectorAll('thead th').forEach(th => {
+      const col = th.dataset.col;
+      th.classList.toggle('sorted', col === sortCol);
+      th.querySelector('.arrow').textContent = col === sortCol ? (sortDir === 'asc' ? '▲' : '▼') : '';
+    });
+  }
+
+  document.querySelectorAll('thead th').forEach(th => {
+    th.addEventListener('click', () => {
+      const col = th.dataset.col;
+      if (sortCol === col) {
+        sortDir = sortDir === 'asc' ? 'desc' : 'asc';
+      } else {
+        sortCol = col;
+        sortDir = 'asc';
+      }
+      render();
+    });
+  });
+
+  filterInput.addEventListener('input', render);
+
+  loadDirectory()
+    .then(parsed => {
+      rows = parsed;
+      statusBox.classList.add('hidden');
+      if (rows.length === 0) {
+        errorBox.textContent = 'No matching lesson files were found in this folder.';
+        errorBox.classList.remove('hidden');
+        return;
+      }
+      table.classList.remove('hidden');
+      render();
+    })
+    .catch(err => {
+      statusBox.classList.add('hidden');
+      errorBox.textContent = `Could not load the file list from GitHub (${err.message}). This tool needs to be hosted on GitHub Pages in the same repository and folder as the lesson files.`;
+      errorBox.classList.remove('hidden');
+    });
+</script>
+
+</body>
+</html>
