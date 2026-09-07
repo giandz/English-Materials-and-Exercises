@@ -539,8 +539,36 @@ function attachChipEvents(chip, targetZone, poolZone, feedback, itemEl, indicato
   let dragState = null;
   let moved = false;
 
+  // Shared cleanup used by pointercancel, lostpointercapture, and the window-level
+  // fallbacks below. Mac trackpads/Safari can silently drop pointer capture mid-drag
+  // (e.g. a stray scroll/gesture, or the window losing focus) without ever firing a
+  // matching pointerup or pointercancel — leaving the chip stuck with position:fixed.
+  // Routing every "drag ended unexpectedly" path through this one function guarantees
+  // the chip always gets its inline styles cleared and lands back in a real zone.
+  function forceEndDrag() {
+    indicator.remove();
+    if (dragState && moved) {
+      chip.classList.remove('dragging');
+      chip.style.position = '';
+      chip.style.left = '';
+      chip.style.top = '';
+      chip.style.width = '';
+      if (dragState.originParent === targetZone) {
+        moveChipToTarget(chip, targetZone, poolZone);
+      } else {
+        moveChipToPool(chip, targetZone, poolZone);
+      }
+    }
+    dragState = null;
+    moved = false;
+  }
+
   chip.addEventListener('pointerdown', (e) => {
     e.preventDefault();
+
+    // Defensive: if a previous drag never got a clean pointerup (the freeze bug),
+    // clear it out before starting a new one instead of stacking on top of it.
+    if (dragState) forceEndDrag();
 
     if (targetZone.classList.contains('correct')) {
       clearPosHighlighting(targetZone);
@@ -632,23 +660,23 @@ function attachChipEvents(chip, targetZone, poolZone, feedback, itemEl, indicato
     }
 
     dragState = null;
+    moved = false;
   });
 
-  chip.addEventListener('pointercancel', () => {
-    indicator.remove();
-    if (dragState && moved) {
-      chip.classList.remove('dragging');
-      chip.style.position = '';
-      chip.style.left = '';
-      chip.style.top = '';
-      chip.style.width = '';
-      if (dragState.originParent === targetZone) {
-        moveChipToTarget(chip, targetZone, poolZone);
-      } else {
-        moveChipToPool(chip, targetZone, poolZone);
-      }
-    }
-    dragState = null;
+  chip.addEventListener('pointercancel', forceEndDrag);
+
+  // Fires whenever pointer capture is released for any reason. In the normal flow
+  // pointerup already runs first and clears dragState, so this is a no-op then; it
+  // only does real work when capture was lost WITHOUT a pointerup/pointercancel,
+  // which is the Mac freeze case.
+  chip.addEventListener('lostpointercapture', () => {
+    if (dragState) forceEndDrag();
+  });
+
+  // Last-resort fallback: if the whole window loses focus mid-drag (switching apps,
+  // a trackpad gesture triggering Mission Control/Spaces, etc.) release the chip too.
+  window.addEventListener('blur', () => {
+    if (dragState) forceEndDrag();
   });
 }
 
