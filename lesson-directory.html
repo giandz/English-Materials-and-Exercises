@@ -98,7 +98,29 @@
     font-size: 0.75em;
   }
   thead th.sorted .arrow { opacity: 1; }
-  thead th:hover { background: var(--ld-border); }
+  thead tr.header-row th {
+    cursor: pointer;
+  }
+  thead tr.header-row th:hover { background: var(--ld-border); }
+
+  thead tr.filter-row th {
+    cursor: default;
+    padding: 6px 10px 10px;
+    font-weight: 400;
+  }
+  thead tr.filter-row th:hover { background: var(--ld-surface-2); }
+
+  .filter-row select,
+  .filter-row input[type="text"] {
+    width: 100%;
+    padding: 5px 8px;
+    font-size: 0.82rem;
+    font-weight: 400;
+    border: 1px solid var(--ld-border);
+    border-radius: 6px;
+    background: var(--ld-surface);
+    color: var(--ld-text);
+  }
 
   tbody td {
     padding: 9px 14px;
@@ -163,10 +185,36 @@
 
 <table id="lesson-table" class="hidden">
   <thead>
-    <tr>
+    <tr class="header-row">
       <th data-col="level">Level <span class="arrow"></span></th>
       <th data-col="type">Type <span class="arrow"></span></th>
       <th data-col="topic">Topic <span class="arrow"></span></th>
+    </tr>
+    <tr class="filter-row">
+      <th>
+        <select id="level-filter">
+          <option value="">All levels</option>
+          <option value="a1">A1</option>
+          <option value="a2">A2</option>
+          <option value="b1">B1</option>
+          <option value="b2">B2</option>
+          <option value="c1">C1</option>
+          <option value="c2">C2</option>
+        </select>
+      </th>
+      <th>
+        <select id="type-filter">
+          <option value="">All types</option>
+          <option value="intro">Language Introduction</option>
+          <option value="clarf">Clarification</option>
+          <option value="ctrld">Controlled Practice</option>
+          <option value="freer">Freer Practice</option>
+          <option value="extra">Extra Activity</option>
+        </select>
+      </th>
+      <th>
+        <input type="text" id="topic-filter" placeholder="Filter topic…">
+      </th>
     </tr>
   </thead>
   <tbody id="table-body"></tbody>
@@ -207,6 +255,9 @@
   const table = document.getElementById('lesson-table');
   const tableBody = document.getElementById('table-body');
   const filterInput = document.getElementById('filter-input');
+  const levelFilter = document.getElementById('level-filter');
+  const typeFilter = document.getElementById('type-filter');
+  const topicFilter = document.getElementById('topic-filter');
   const countLabel = document.getElementById('count-label');
 
   let rows = [];
@@ -304,13 +355,22 @@
 
   function render() {
     const query = filterInput.value.trim().toLowerCase();
-    const filtered = rows.filter(r =>
-      !query ||
-      r.level.includes(query) ||
-      r.levelLabel.toLowerCase().includes(query) ||
-      r.typeLabel.toLowerCase().includes(query) ||
-      r.topic.toLowerCase().includes(query)
-    );
+    const levelValue = levelFilter.value;
+    const typeValue = typeFilter.value;
+    const topicQuery = topicFilter.value.trim().toLowerCase();
+
+    const filtered = rows.filter(r => {
+      if (levelValue && !r.levels.includes(levelValue)) return false;
+      if (typeValue && r.type !== typeValue) return false;
+      if (topicQuery && !r.topic.toLowerCase().includes(topicQuery)) return false;
+      if (query &&
+          !(r.level.includes(query) ||
+            r.levelLabel.toLowerCase().includes(query) ||
+            r.typeLabel.toLowerCase().includes(query) ||
+            r.topic.toLowerCase().includes(query))
+      ) return false;
+      return true;
+    });
 
     filtered.sort((a, b) => {
       const cmp = compareByCol(a, b, sortCol);
@@ -327,14 +387,14 @@
 
     countLabel.textContent = `${filtered.length} of ${rows.length} files`;
 
-    document.querySelectorAll('thead th').forEach(th => {
+    document.querySelectorAll('.header-row th').forEach(th => {
       const col = th.dataset.col;
       th.classList.toggle('sorted', col === sortCol);
       th.querySelector('.arrow').textContent = col === sortCol ? (sortDir === 'asc' ? '▲' : '▼') : '';
     });
   }
 
-  document.querySelectorAll('thead th').forEach(th => {
+  document.querySelectorAll('.header-row th').forEach(th => {
     th.addEventListener('click', () => {
       const col = th.dataset.col;
       if (sortCol === col) {
@@ -348,6 +408,9 @@
   });
 
   filterInput.addEventListener('input', render);
+  levelFilter.addEventListener('change', render);
+  typeFilter.addEventListener('change', render);
+  topicFilter.addEventListener('input', render);
 
   loadDirectory()
     .then(parsed => {
