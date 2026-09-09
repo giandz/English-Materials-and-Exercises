@@ -1,18 +1,33 @@
-<head><meta charset="UTF-8">
-
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<title>Compound Nouns — Practice</title>
+<script>
+// Applies the saved/system theme to <html> as early as possible, before the
+// stylesheet below paints anything, so there's no flash of the wrong theme.
+// Self-contained: no dependency on any external script.
+(function(){
+  try{
+    var saved = localStorage.getItem('theme-preference');
+    var theme = (saved === 'light' || saved === 'dark')
+      ? saved
+      : ((window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches) ? 'dark' : 'light');
+    document.documentElement.setAttribute('data-theme', theme);
+  }catch(e){ /* localStorage/matchMedia unavailable — CSS media query still applies */ }
+})();
+</script>
+<link rel="stylesheet" href="house.css">
 <style>
-  .card{border:1.5px solid var(--color-border-secondary);border-radius:var(--border-radius-md);padding:9px 12px;font-size:14px;font-weight:500;cursor:pointer;background:var(--color-background-primary);color:var(--color-text-primary);text-align:center;transition:background 0.15s,border-color 0.15s;user-select:none;}
-  .card:hover{background:var(--color-background-secondary);border-color:var(--color-border-primary);}
-  .card.selected{border-color:#185fa5;background:#e6f1fb;color:#0c447c;}
-  .card.done{border-color:#3b6d11;background:#eaf3de;color:#27500a;pointer-events:none;}
-  .card.wrong{border-color:#a32d2d;background:#fcebeb;color:#791f1f;animation:shake 0.3s;}
-  @keyframes shake{0%,100%{transform:translateX(0)}25%{transform:translateX(-5px)}75%{transform:translateX(5px)}}
-  .col-label{font-size:11px;font-weight:500;color:var(--color-text-secondary);letter-spacing:0.05em;margin-bottom:8px;}
+@keyframes shake{0%,100%{transform:translateX(0)}25%{transform:translateX(-5px)}75%{transform:translateX(5px)}}
 </style>
-
- <link rel="stylesheet" href="general.css">
 </head>
-<body class="exercise-page">
+<body>
+<div class="page" id="page">
+  <span class="cefr-tag cefr-a1">A1 · Beginner</span>
+
+
 <div style="padding:1.25rem 0;">
   <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:1.25rem;flex-wrap:wrap;gap:8px;">
     <div style="font-size:14px;color:var(--color-text-secondary);">Click a compound noun, then click its definition.</div>
@@ -41,6 +56,16 @@
   </details>
 </div>
 
+
+
+</div>
+
+<div id="theme-toggle-wrap">
+  <button id="theme-toggle" aria-label="Toggle light/dark mode" title="Toggle light/dark mode">
+    <span id="theme-icon">☀️</span>
+  </button>
+</div>
+<script src="house.js"></script>
 <script>
 const pairs = [
   { noun:"bus stop",    def:"where you wait for the bus" },
@@ -150,3 +175,5 @@ function resetGame(){
 
 buildGame();buildKey();
 </script>
+</body>
+</html>
