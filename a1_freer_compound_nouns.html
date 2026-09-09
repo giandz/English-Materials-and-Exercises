@@ -1,0 +1,223 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<title>Question Generator — Compound Nouns</title>
+<script>
+// Applies the saved/system theme to <html> as early as possible, before the
+// stylesheet below paints anything, so there's no flash of the wrong theme.
+// Self-contained: no dependency on any external script.
+(function(){
+  try{
+    var saved = localStorage.getItem('theme-preference');
+    var theme = (saved === 'light' || saved === 'dark')
+      ? saved
+      : ((window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches) ? 'dark' : 'light');
+    document.documentElement.setAttribute('data-theme', theme);
+  }catch(e){ /* localStorage/matchMedia unavailable — CSS media query still applies */ }
+})();
+</script>
+<link rel="stylesheet" href="house.css">
+<style>
+h1{ font-size:1.3rem; font-weight:600; letter-spacing:-0.01em; margin:0 0 4px; }
+
+  /* Question card */
+  .q-card{
+    border:.5px solid var(--color-border-tertiary);
+    border-radius:var(--border-radius-lg);
+    background:var(--surface-2);
+    padding:36px 24px;
+    margin-bottom:1.5rem;
+    min-height:140px;
+    display:flex;
+    flex-direction:column;
+    align-items:center;
+    justify-content:center;
+    gap:12px;
+    transition:transform 0.15s ease;
+  }
+  .q-card.roll{
+    animation:pop 0.35s ease;
+  }
+  @keyframes pop{
+    0%{ transform:scale(0.96); opacity:0.5; }
+    60%{ transform:scale(1.02); }
+    100%{ transform:scale(1); opacity:1; }
+  }
+  .q-topic{
+    font-size:10.5px;
+    font-weight:700;
+    letter-spacing:.06em;
+    text-transform:uppercase;
+    color:var(--text-accent);
+    background:#e6f1fb;
+    padding:3px 11px;
+    border-radius:20px;
+  }
+  .q-text{
+    font-size:19px;
+    font-weight:600;
+    color:var(--text-primary);
+    line-height:1.4;
+    text-align:center;
+  }
+  .q-placeholder{
+    font-size:14px;
+    color:var(--text-muted);
+  }
+
+  .dice-btn{
+    font-family:inherit;
+    font-size:34px;
+    background:var(--surface-1);
+    border:1.5px solid var(--border);
+    border-radius:50%;
+    width:78px;
+    height:78px;
+    cursor:pointer;
+    display:flex;
+    align-items:center;
+    justify-content:center;
+    margin:0 auto 1rem;
+    transition:transform 0.15s ease, background 0.15s ease;
+  }
+  .dice-btn:hover{ background:var(--color-background-secondary); }
+  .dice-btn:active{ transform:scale(0.92) rotate(-8deg); }
+
+  .roll-count{
+    font-family:var(--font-mono);
+    font-size:12px;
+    color:var(--text-muted);
+    margin-bottom:1.5rem;
+  }
+  .roll-count strong{ color:var(--text-primary); }
+
+  .topic-legend{
+    display:flex;
+    flex-wrap:wrap;
+    justify-content:center;
+    gap:6px;
+    margin-top:1rem;
+  }
+  .topic-pill{
+    font-size:11px;
+    font-weight:500;
+    padding:3px 10px;
+    border-radius:20px;
+    background:var(--surface-1);
+    border:.5px solid var(--border);
+    color:var(--text-secondary);
+  }
+
+  footer{ text-align:center; font-size:12px; color:var(--text-muted); margin-top:2rem; }
+</style>
+</head>
+<body>
+<div class="page" id="page">
+
+  <span class="cefr-tag cefr-a1">A1 · Beginner</span>
+  <h1>Question Generator — Compound Nouns</h1>
+  <p class="subtitle">Click the dice to get a question, then talk about it with a partner!</p>
+
+  <div class="rule-box">
+    <strong>How to play:</strong> click 🎲, read the question out loud to your partner, and let them answer. Then it's their turn to roll.
+  </div>
+
+  <div class="q-card" id="qCard">
+    <span class="q-placeholder" id="qPlaceholder">Click the dice to generate a question</span>
+  </div>
+
+  <button class="dice-btn" id="diceBtn" aria-label="Generate question">🎲</button>
+
+  <div class="roll-count">Questions asked: <strong id="rollCount">0</strong></div>
+
+  <div class="topic-legend">
+    <span class="topic-pill">🚌 bus stop</span>
+    <span class="topic-pill">🛋️ living room</span>
+    <span class="topic-pill">🎒 school bag</span>
+    <span class="topic-pill">🍱 lunch box</span>
+    <span class="topic-pill">⏰ alarm clock</span>
+    <span class="topic-pill">📮 post office</span>
+    <span class="topic-pill">🅿️ car park</span>
+    <span class="topic-pill">📞 phone call</span>
+    <span class="topic-pill">🚍 bus driver</span>
+    <span class="topic-pill">📅 school day</span>
+    <span class="topic-pill">☕ coffee shop</span>
+    <span class="topic-pill">🍽️ dinner table</span>
+    <span class="topic-pill">🐶 dog</span>
+    <span class="topic-pill">🎵 music</span>
+    <span class="topic-pill">🎬 movies</span>
+    <span class="topic-pill">🍔 food</span>
+    <span class="topic-pill">📚 books</span>
+    <span class="topic-pill">⚽ sports</span>
+  </div>
+
+  <footer>Speaking Practice — Compound Nouns (A1)</footer>
+</div>
+
+<div id="theme-toggle-wrap">
+  <button id="theme-toggle" aria-label="Toggle light/dark mode" title="Toggle light/dark mode">
+    <span id="theme-icon">☀️</span>
+  </button>
+</div>
+<script src="house.js"></script>
+<script>
+const QUESTIONS = [
+  { noun: "bus stop",     icon: "🚌", question: "Tell me about a bus stop near your home. What is it like?" },
+  { noun: "living room",  icon: "🛋️", question: "Describe your living room. What furniture do you have there?" },
+  { noun: "school bag",   icon: "🎒", question: "What do you usually carry in your school bag?" },
+  { noun: "lunch box",    icon: "🍱", question: "Do you use a lunch box? What is your favorite thing to put in it?" },
+  { noun: "alarm clock",  icon: "⏰", question: "What time does your alarm clock ring on weekdays?" },
+  { noun: "post office",  icon: "📮", question: "When was the last time you went to the post office? Why?" },
+  { noun: "car park",     icon: "🅿️", question: "Is it easy to find a car park near your home or work?" },
+  { noun: "phone call",   icon: "📞", question: "Do you prefer a phone call or a text message? Why?" },
+  { noun: "bus driver",   icon: "🚍", question: "What skills does a good bus driver need?" },
+  { noun: "school day",   icon: "📅", question: "Describe a typical school day for you." },
+  { noun: "coffee shop",  icon: "☕", question: "What do you like to order at a coffee shop?" },
+  { noun: "dinner table", icon: "🍽️", question: "What do you usually talk about at the dinner table?" },
+  { noun: "dog",    icon: "🐶", question: "What kind of dog is your favorite?" },
+  { noun: "music",  icon: "🎵", question: "What kind of music do you like?" },
+  { noun: "movies", icon: "🎬", question: "What kind of movies do you like?" },
+  { noun: "food",   icon: "🍔", question: "What kind of food do you like?" },
+  { noun: "books",  icon: "📚", question: "What type of books do you like?" },
+  { noun: "sports", icon: "⚽", question: "What kind of sports do you like?" }
+];
+
+const qCard = document.getElementById('qCard');
+const diceBtn = document.getElementById('diceBtn');
+const rollCountEl = document.getElementById('rollCount');
+let rollCount = 0;
+let lastNoun = "";
+
+function randomItem(arr) {
+  return arr[Math.floor(Math.random() * arr.length)];
+}
+
+function generateQuestion() {
+  let item;
+  // avoid immediate repeat
+  let attempts = 0;
+  do {
+    item = randomItem(QUESTIONS);
+    attempts++;
+  } while (item.noun === lastNoun && attempts < 8);
+
+  lastNoun = item.noun;
+
+  qCard.innerHTML = `
+    <span class="q-topic">${item.icon} ${item.noun}</span>
+    <span class="q-text">${item.question}</span>
+  `;
+  qCard.classList.remove('roll');
+  void qCard.offsetWidth; // restart animation
+  qCard.classList.add('roll');
+
+  rollCount++;
+  rollCountEl.textContent = rollCount;
+}
+
+diceBtn.addEventListener('click', generateQuestion);
+</script>
+</body>
+</html>
