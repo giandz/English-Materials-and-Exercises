@@ -1,0 +1,221 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<title>Match the Activity — Everyday Activities</title>
+<script>
+// Applies the saved/system theme to <html> as early as possible, before the
+// stylesheet below paints anything, so there's no flash of the wrong theme.
+// Self-contained: no dependency on any external script.
+(function(){
+  try{
+    var saved = localStorage.getItem('theme-preference');
+    var theme = (saved === 'light' || saved === 'dark')
+      ? saved
+      : ((window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches) ? 'dark' : 'light');
+    document.documentElement.setAttribute('data-theme', theme);
+  }catch(e){ /* localStorage/matchMedia unavailable — CSS media query still applies */ }
+})();
+</script>
+<link rel="stylesheet" href="house.css">
+<style>
+.sec-head{ display:flex; align-items:center; margin-bottom:6px; }
+.eyebrow-num{
+  display:inline-flex; align-items:center; justify-content:center;
+  width:28px; height:28px; border-radius:50%;
+  background:var(--text-accent); color:#fff; font-weight:700; font-size:.92rem;
+  margin-right:10px; flex:none;
+}
+.sec-head h2{ font-size:1.2rem; margin:0; }
+.sec-sub{ color:var(--text-secondary); margin:0 0 18px 38px; font-size:.95rem; }
+
+.match-progress{ margin:0 0 16px; font-weight:700; color:var(--text-primary); }
+
+.match-wrap{ display:grid; grid-template-columns:1fr 1fr; gap:28px; }
+.match-col h4{ font-size:.82rem; color:var(--text-secondary); margin:0 0 12px; font-weight:700; text-transform:uppercase; letter-spacing:.04em; }
+.match-grid{ display:grid; grid-template-columns:repeat(2,1fr); gap:12px; }
+
+.match-item{
+  aspect-ratio:1/1; display:flex; flex-direction:column; align-items:center; justify-content:center;
+  gap:6px; background:var(--surface-2); border:1.5px solid var(--color-border-secondary); border-radius:14px;
+  cursor:pointer; transition:border-color .15s, background .15s, transform .1s;
+  padding:8px; text-align:center; color:var(--text-primary);
+}
+.match-item:active{ transform:translateY(2px); }
+.match-item.word{ font-weight:600; font-size:.95rem; line-height:1.25; padding:6px; }
+.match-item .badge{ width:88px; height:88px; border-radius:50%; display:flex; align-items:center; justify-content:center; }
+.match-item .badge .emoji-icon{ font-size:42px; line-height:1; }
+.badge.morning{ background:var(--pos-verb-bg); }
+.badge.day{ background:var(--pos-wh-bg); }
+.badge.evening{ background:var(--pos-object-bg); }
+
+.match-item.selected{ border-color:var(--text-accent); background:var(--color-background-info); color:var(--color-text-info); }
+.match-item.matched{ border-color:var(--good); background:var(--good-bg); color:var(--good); cursor:default; opacity:.85; }
+.match-item.wrong-flash{ border-color:var(--bad); background:var(--bad-bg); color:var(--bad); animation:shake .3s; }
+@keyframes shake{ 0%,100%{ transform:translateX(0); } 25%{ transform:translateX(-5px); } 75%{ transform:translateX(5px); } }
+
+.reveal-row{ margin-bottom:14px; }
+.reveal-row:last-child{ margin-bottom:0; }
+.reveal-word{ font-weight:700; color:var(--text-accent); }
+.reveal-ex{ font-size:.85rem; font-style:italic; color:var(--text-secondary); margin-top:2px; }
+
+@media(max-width:520px){
+  .match-wrap{ grid-template-columns:1fr; }
+  .match-grid{ grid-template-columns:repeat(3,1fr); }
+}
+</style>
+</head>
+<body>
+<div class="page" id="page">
+
+  <span class="cefr-tag cefr-a1a2">A1/A2 · Beginner–Elementary</span>
+  <h1>Everyday Activities</h1>
+  <p class="subtitle">Match each activity to its picture, then check the meaning.</p>
+
+  <section id="matching">
+    <div class="sec-head"><span class="eyebrow-num">1</span><h2>Match the activity to the picture</h2></div>
+    <p class="sec-sub">Tap a card on the left, then tap its picture on the right.</p>
+    <div class="exercise-card">
+      <div class="match-progress" id="progress">0 / 12 matched</div>
+      <div class="match-wrap">
+        <div class="match-col">
+          <h4>Activities</h4>
+          <div class="match-grid" id="wordCol"></div>
+        </div>
+        <div class="match-col">
+          <h4>Pictures</h4>
+          <div class="match-grid" id="picCol"></div>
+        </div>
+      </div>
+      <div style="margin-top:16px;">
+        <button onclick="resetMatch()">↺ Reset</button>
+      </div>
+      <div id="doneMsg" style="margin-top:10px; font-weight:600; font-size:.92rem; color:var(--good);"></div>
+    </div>
+  </section>
+
+  <section id="reveal">
+    <div class="sec-head"><span class="eyebrow-num">2</span><h2>Now check the meaning</h2></div>
+    <p class="sec-sub">Once a pair is matched, its meaning and example appear here.</p>
+    <div class="exercise-card" id="revealCard">
+      <p style="color:var(--text-secondary); margin:0;">Match all 12 pairs above to reveal every definition and example sentence here.</p>
+    </div>
+  </section>
+
+  <footer>Everyday Activities — Vocabulary Matching (A1/A2)</footer>
+</div>
+
+<div id="theme-toggle-wrap">
+  <button id="theme-toggle" aria-label="Toggle light/dark mode" title="Toggle light/dark mode">
+    <span id="theme-icon">☀️</span>
+  </button>
+</div>
+<script src="house.js"></script>
+<script>
+const ACTIVITIES = [
+  { k: "wake up",            grp: "morning", emoji: "🌅", def: "to stop sleeping",                              ex: "I wake up at seven o'clock." },
+  { k: "brush your teeth",   grp: "morning", emoji: "🪥", def: "to clean your teeth",                           ex: "I brush my teeth every morning." },
+  { k: "take a shower",      grp: "morning", emoji: "🚿", def: "to wash your body with water",                  ex: "He takes a shower before breakfast." },
+  { k: "get dressed",        grp: "morning", emoji: "👕", def: "to put on your clothes",                        ex: "She gets dressed quickly." },
+  { k: "have breakfast",     grp: "morning", emoji: "🍳", def: "to eat food in the morning",                    ex: "We have breakfast at eight." },
+  { k: "go to work",         grp: "day",     emoji: "💼", def: "to travel to your job",                         ex: "He goes to work by bus." },
+  { k: "do homework",        grp: "day",     emoji: "📓", def: "to study or do school tasks at home",           ex: "I do my homework after school." },
+  { k: "walk the dog",       grp: "day",     emoji: "🐕", def: "to take a dog outside for exercise",            ex: "I walk the dog every evening." },
+  { k: "cook dinner",        grp: "evening", emoji: "🍲", def: "to prepare food in the evening",                ex: "My mom cooks dinner every night." },
+  { k: "watch TV",           grp: "evening", emoji: "📺", def: "to look at television",                         ex: "We watch TV after dinner." },
+  { k: "clean the house",    grp: "evening", emoji: "🧹", def: "to make your home tidy",                        ex: "They clean the house on Saturdays." },
+  { k: "go to bed",          grp: "evening", emoji: "🛏️", def: "to get into bed to sleep",                      ex: "I go to bed at ten o'clock." }
+];
+
+function shuffle(arr){
+  const a = [...arr];
+  for(let i=a.length-1;i>0;i--){
+    const j = Math.floor(Math.random()*(i+1));
+    [a[i],a[j]] = [a[j],a[i]];
+  }
+  return a;
+}
+
+const wordOrder = shuffle(ACTIVITIES);
+const picOrder = shuffle(ACTIVITIES);
+
+const wordCol = document.getElementById('wordCol');
+const picCol = document.getElementById('picCol');
+
+wordOrder.forEach(v => {
+  const el = document.createElement('div');
+  el.className = 'match-item word';
+  el.dataset.key = v.k;
+  el.textContent = v.k;
+  el.addEventListener('click', () => onPick(el, 'word', v.k));
+  wordCol.appendChild(el);
+});
+
+picOrder.forEach(v => {
+  const el = document.createElement('div');
+  el.className = 'match-item pic';
+  el.dataset.key = v.k;
+  el.innerHTML = `<div class="badge ${v.grp}"><span class="emoji-icon">${v.emoji}</span></div>`;
+  el.addEventListener('click', () => onPick(el, 'pic', v.k));
+  picCol.appendChild(el);
+});
+
+let selectedWord = null;
+let matchedCount = 0;
+
+function onPick(el, type, key){
+  if(el.classList.contains('matched')) return;
+  if(type === 'word'){
+    document.querySelectorAll('.match-item.word').forEach(w => w.classList.remove('selected'));
+    el.classList.add('selected');
+    selectedWord = {el, key};
+    return;
+  }
+  if(!selectedWord) return;
+  if(selectedWord.key === key){
+    selectedWord.el.classList.remove('selected');
+    selectedWord.el.classList.add('matched');
+    el.classList.add('matched');
+    matchedCount++;
+    updateProgress();
+    revealDef(key);
+    selectedWord = null;
+  } else {
+    el.classList.add('wrong-flash');
+    selectedWord.el.classList.add('wrong-flash');
+    setTimeout(() => {
+      el.classList.remove('wrong-flash');
+      selectedWord.el.classList.remove('wrong-flash');
+      selectedWord.el.classList.remove('selected');
+      selectedWord = null;
+    }, 500);
+  }
+}
+
+function updateProgress(){
+  document.getElementById('progress').textContent = matchedCount + ' / 12 matched';
+  if(matchedCount === 12){
+    document.getElementById('doneMsg').textContent = 'Well done! All 12 activities matched.';
+  }
+}
+
+function revealDef(key){
+  const v = ACTIVITIES.find(x => x.k === key);
+  const card = document.getElementById('revealCard');
+  if(card.dataset.started !== 'yes'){
+    card.innerHTML = '';
+    card.dataset.started = 'yes';
+  }
+  const row = document.createElement('div');
+  row.className = 'reveal-row';
+  row.innerHTML = `<span class="reveal-word">${key}</span> &mdash; ${v.def}<div class="reveal-ex">"${v.ex}"</div>`;
+  card.appendChild(row);
+}
+
+function resetMatch(){
+  location.reload();
+}
+</script>
+</body>
+</html>

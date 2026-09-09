@@ -1,0 +1,222 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<title>Exact Frequency — Conversation</title>
+<script>
+// Applies the saved/system theme to <html> as early as possible, before the
+// stylesheet below paints anything, so there's no flash of the wrong theme.
+// Self-contained: no dependency on any external script.
+(function(){
+  try{
+    var saved = localStorage.getItem('theme-preference');
+    var theme = (saved === 'light' || saved === 'dark')
+      ? saved
+      : ((window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches) ? 'dark' : 'light');
+    document.documentElement.setAttribute('data-theme', theme);
+  }catch(e){ /* localStorage/matchMedia unavailable — CSS media query still applies */ }
+})();
+</script>
+<link rel="stylesheet" href="house.css">
+<style>
+.freq{font-weight:600;color:var(--text-accent);}
+
+  .freq-scale{
+    display:flex;
+    justify-content:space-between;
+    gap:4px;
+    margin:10px 0 0;
+    flex-wrap:wrap;
+  }
+  .freq-pill{
+    font-size:11px;
+    font-weight:600;
+    padding:3px 9px;
+    border-radius:20px;
+    background:var(--surface-2);
+    border:.5px solid var(--border);
+    color:var(--text-secondary);
+  }
+</style>
+</head>
+<body>
+<div class="page" id="page">
+  <span class="cefr-tag cefr-a1">A1 · Beginner</span>
+
+  <h1>How often...? — Exact answers</h1>
+  <p class="subtitle">A short conversation using exact frequency expressions like "once a week" and "every day".</p>
+    <div class="sec-div">Before you read</div>
+  <p class="subtitle">Read these three questions first, then look for the answers in the conversation.</p>
+  <div id="preQuestions" class="prequiz"></div>
+
+  <button id="grammarToggle" class="grammar-toggle-btn">🎨 Show Grammar</button>
+  <div class="pos-legend"></div>
+<div class="setting-chip">☕ two coworkers, Monday morning, coffee break</div>
+
+  <div class="sec-div">Conversation</div>
+
+  <div class="bubble-wrap left">
+    <div class="avatar av-a">👨‍🦱</div>
+    <div>
+      <div class="bname">Sam</div>
+      <div class="bubble left">Morning, Ana! <span class="pos-hl pos-wh">How</span> <span class="freq">often</span> <span class="pos-hl pos-aux">do</span> <span class="pos-hl pos-subject">you</span> <span class="pos-hl pos-verb">go</span> <span class="pos-hl pos-prep">to</span> <span class="pos-hl pos-object">the gym</span>?</div>
+    </div>
+  </div>
+
+  <div class="bubble-wrap right">
+    <div class="avatar av-b">🙋</div>
+    <div>
+      <div class="bname right">Ana</div>
+      <div class="bubble right"><span class="pos-hl pos-subject">I</span> <span class="pos-hl pos-verb">go</span> <span class="freq">three times a week</span> — <span class="pos-hl pos-time">Monday, Wednesday, and Friday</span>.</div>
+    </div>
+  </div>
+
+  <div class="bubble-wrap left">
+    <div class="avatar av-a">👨‍🦱</div>
+    <div>
+      <div class="bname">Sam</div>
+      <div class="bubble left">Wow, <span class="pos-hl pos-subject">that</span><span class="pos-hl pos-verb">'s</span> <span class="pos-hl pos-complement">a lot</span>! <span class="pos-hl pos-subject">I</span> only <span class="pos-hl pos-verb">go</span> <span class="freq">once a week</span>.</div>
+    </div>
+  </div>
+
+  <div class="bubble-wrap right">
+    <div class="avatar av-b">🙋</div>
+    <div>
+      <div class="bname right">Ana</div>
+      <div class="bubble right"><span class="pos-hl pos-subject">That</span><span class="pos-hl pos-verb">'s</span> still <span class="pos-hl pos-complement">good</span>! <span class="pos-hl pos-aux">Do</span> <span class="pos-hl pos-subject">you</span> <span class="pos-hl pos-verb">exercise</span> <span class="pos-hl pos-prep">on</span> <span class="pos-hl pos-object">other days</span>?</div>
+    </div>
+  </div>
+
+  <div class="bubble-wrap left">
+    <div class="avatar av-a">👨‍🦱</div>
+    <div>
+      <div class="bname">Sam</div>
+      <div class="bubble left">Not really. <span class="pos-hl pos-subject">I</span> <span class="pos-hl pos-verb">go</span> <span class="pos-hl pos-prep">for</span> <span class="pos-hl pos-object">a walk</span> <span class="freq">every day</span>, though. <span class="pos-hl pos-subject">It</span><span class="pos-hl pos-verb">'s</span> <span class="pos-hl pos-complement">easy and free</span>.</div>
+    </div>
+  </div>
+
+  <div class="bubble-wrap right">
+    <div class="avatar av-b">🙋</div>
+    <div>
+      <div class="bname right">Ana</div>
+      <div class="bubble right"><span class="freq">Every day</span>? <span class="pos-hl pos-subject">That</span><span class="pos-hl pos-verb">'s</span> <span class="pos-hl pos-complement">great</span>. <span class="pos-hl pos-subject">I</span> <span class="pos-hl pos-verb">walk</span> <span class="pos-hl pos-object">my dog</span> <span class="freq">once every two days</span>.</div>
+    </div>
+  </div>
+
+  <div class="bubble-wrap left">
+    <div class="avatar av-a">👨‍🦱</div>
+    <div>
+      <div class="bname">Sam</div>
+      <div class="bubble left"><span class="pos-hl pos-wh">How</span> <span class="freq">often</span> <span class="pos-hl pos-aux">do</span> <span class="pos-hl pos-subject">you</span> <span class="pos-hl pos-verb">see</span> <span class="pos-hl pos-object">your family</span>?</div>
+    </div>
+  </div>
+
+  <div class="bubble-wrap right">
+    <div class="avatar av-b">🙋</div>
+    <div>
+      <div class="bname right">Ana</div>
+      <div class="bubble right"><span class="pos-hl pos-subject">I</span> <span class="pos-hl pos-verb">call</span> <span class="pos-hl pos-object">my parents</span> <span class="freq">every day</span>, but <span class="pos-hl pos-subject">I</span> <span class="pos-hl pos-verb">visit</span> <span class="pos-hl pos-object">them</span> <span class="freq">once a month</span>.</div>
+    </div>
+  </div>
+
+  <div class="bubble-wrap left">
+    <div class="avatar av-a">👨‍🦱</div>
+    <div>
+      <div class="bname">Sam</div>
+      <div class="bubble left"><span class="pos-hl pos-subject">I</span> <span class="pos-hl pos-verb">visit</span> <span class="pos-hl pos-object">mine</span> <span class="freq">twice a year</span>. <span class="pos-hl pos-subject">They</span> <span class="pos-hl pos-verb">live</span> <span class="pos-hl pos-complement">far away</span>.</div>
+    </div>
+  </div>
+
+  <div class="bubble-wrap right">
+    <div class="avatar av-b">🙋</div>
+    <div>
+      <div class="bname right">Ana</div>
+      <div class="bubble right"><span class="pos-hl pos-subject">That</span> <span class="pos-hl pos-verb">must be</span> <span class="pos-hl pos-complement">hard</span>. <span class="pos-hl pos-aux">Do</span> <span class="pos-hl pos-subject">you</span> <span class="pos-hl pos-verb">call</span> <span class="pos-hl pos-object">them</span> <span class="pos-hl pos-adverb">often</span>?</div>
+    </div>
+  </div>
+
+  <div class="bubble-wrap left">
+    <div class="avatar av-a">👨‍🦱</div>
+    <div>
+      <div class="bname">Sam</div>
+      <div class="bubble left"><span class="pos-hl pos-subject">I</span> <span class="pos-hl pos-verb">call</span> <span class="pos-hl pos-object">them</span> <span class="freq">once a week</span>, <span class="pos-hl pos-adverb">usually</span> <span class="pos-hl pos-prep">on</span> <span class="pos-hl pos-object">Sundays</span>.</div>
+    </div>
+  </div>
+
+  <div class="bubble-wrap right">
+    <div class="avatar av-b">🙋</div>
+    <div>
+      <div class="bname right">Ana</div>
+      <div class="bubble right"><span class="pos-hl pos-subject">That</span><span class="pos-hl pos-verb">'s</span> <span class="pos-hl pos-complement">a nice routine</span>!</div>
+    </div>
+  </div>
+  <div class="sec-div">Check your answers</div>
+  <p class="subtitle">The same three questions — now choose the correct answer.</p>
+  <div id="quiz"></div>
+
+  <div class="sec-div">Quick reference</div>
+
+  <div class="rule-box">
+    <strong>Exact frequency expressions</strong> (like <em>once a week</em> or <em>every day</em>) usually go at the <strong>end</strong> of the sentence: I go to the gym <em>three times a week</em>. This is different from adverbs like <em>usually</em> or <em>always</em>, which go before the main verb.
+  </div>
+
+  <div class="freq-scale">
+    <span class="freq-pill">once a week</span>
+    <span class="freq-pill">twice a week</span>
+    <span class="freq-pill">three times a week</span>
+    <span class="freq-pill">every day</span>
+    <span class="freq-pill">once every two days</span>
+    <span class="freq-pill">once a month</span>
+    <span class="freq-pill">twice a year</span>
+  </div>
+
+  <footer>Grammar Practice — Exact Frequency Expressions</footer>
+
+</div>
+
+<div id="theme-toggle-wrap">
+  <button id="theme-toggle" aria-label="Toggle light/dark mode" title="Toggle light/dark mode">
+    <span id="theme-icon">☀️</span>
+  </button>
+</div>
+<script src="house.js"></script>
+<script>
+/* The same three questions run before and after the conversation:
+   as a plain list first (setting a purpose for reading), then with
+   three options each once the text has been read. */
+const CQ_ITEMS = [
+  {
+    "q": "How often does Ana go to the gym?",
+    "opts": [
+      "Once a week",
+      "Three times a week",
+      "Every day"
+    ],
+    "correct": 1
+  },
+  {
+    "q": "How often does Sam go for a walk?",
+    "opts": [
+      "Once a week",
+      "Once every two days",
+      "Every day"
+    ],
+    "correct": 2
+  },
+  {
+    "q": "How often does Ana visit her parents?",
+    "opts": [
+      "Once a month",
+      "Every day",
+      "Twice a year"
+    ],
+    "correct": 0
+  }
+];
+
+HouseComprehension.build({ pre: 'preQuestions', quiz: 'quiz', items: CQ_ITEMS });
+HouseGrammar.init();
+</script>
+</body>
+</html>
