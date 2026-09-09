@@ -1,8 +1,26 @@
-<html>
-	<head><meta charset="UTF-8">
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<title>Verb Be — Practice</title>
+<script>
+// Applies the saved/system theme to <html> as early as possible, before the
+// stylesheet below paints anything, so there's no flash of the wrong theme.
+// Self-contained: no dependency on any external script.
+(function(){
+  try{
+    var saved = localStorage.getItem('theme-preference');
+    var theme = (saved === 'light' || saved === 'dark')
+      ? saved
+      : ((window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches) ? 'dark' : 'light');
+    document.documentElement.setAttribute('data-theme', theme);
+  }catch(e){ /* localStorage/matchMedia unavailable — CSS media query still applies */ }
+})();
+</script>
+<link rel="stylesheet" href="house.css">
 <style>
-  .sr-only{position:absolute;width:1px;height:1px;padding:0;margin:-1px;overflow:hidden;clip:rect(0,0,0,0);white-space:nowrap;border:0;}
-  .prog-bar{height:4px;background:var(--color-border-tertiary);border-radius:2px;margin-bottom:1.5rem;overflow:hidden;}
+.prog-bar{height:4px;background:var(--color-border-tertiary);border-radius:2px;margin-bottom:1.5rem;overflow:hidden;}
   .prog-fill{height:100%;background:var(--color-text-primary);border-radius:2px;transition:width .35s;}
   .q-num{font-size:11px;font-weight:500;letter-spacing:.07em;text-transform:uppercase;color:var(--color-text-secondary);margin-bottom:8px;}
   .build-zone{min-height:52px;border:1.5px dashed var(--color-border-secondary);border-radius:var(--border-radius-lg);padding:10px 12px;display:flex;flex-wrap:wrap;gap:7px;align-items:center;margin-bottom:14px;background:var(--color-background-secondary);transition:border-color .15s;}
@@ -10,12 +28,6 @@
   .build-zone.wrong-zone{border-color:#a32d2d;background:#fcebeb;animation:shake .3s;}
   .build-placeholder{font-size:13px;color:var(--color-text-tertiary);font-style:italic;user-select:none;}
   .word-pool{display:flex;flex-wrap:wrap;gap:7px;margin-bottom:1.25rem;min-height:44px;}
-  .word-chip{font-size:15px;padding:7px 14px;border-radius:var(--border-radius-md);border:1px solid var(--color-border-secondary);background:var(--color-background-primary);color:var(--color-text-primary);cursor:pointer;user-select:none;-webkit-user-select:none;transition:background .12s,border-color .12s,opacity .12s;}
-  .word-chip:hover{background:var(--color-background-secondary);border-color:var(--color-border-primary);}
-  .word-chip.in-zone{background:#e6f1fb;border-color:#85b7eb;color:#0c447c;}
-  .word-chip.locked{pointer-events:none;}
-  .word-chip.correct-chip{background:#eaf3de;border-color:#97c459;color:#27500a;}
-  .word-chip.wrong-chip{background:#fcebeb;border-color:#f09595;color:#791f1f;}
   .fb-row{min-height:24px;font-size:13px;margin-bottom:1rem;display:flex;align-items:center;gap:6px;}
   .fb-ok{color:var(--color-text-success);}
   .fb-err{color:var(--color-text-danger);}
@@ -30,15 +42,20 @@
   .sum-icon{font-size:15px;flex-shrink:0;}
   @keyframes shake{0%,100%{transform:translateX(0)}25%{transform:translateX(-5px)}75%{transform:translateX(5px)}}
 </style>
-<link rel="stylesheet" href="general.css">
-
 </head>
-<body class="exercise-page">
+<body class="exercise-page" id="page">
+<span class="cefr-tag cefr-a1">A1 · Beginner</span>
 <div style="padding:.75rem 0 1rem;">
   <div class="prog-bar"><div class="prog-fill" id="prog" style="width:0%"></div></div>
   <div id="main"></div>
 </div>
 
+<div id="theme-toggle-wrap">
+  <button id="theme-toggle" aria-label="Toggle light/dark mode" title="Toggle light/dark mode">
+    <span id="theme-icon">☀️</span>
+  </button>
+</div>
+<script src="house.js"></script>
 <script>
 const sentences=[
   {words:["I","am","a","student."],      hint:"I __"},
