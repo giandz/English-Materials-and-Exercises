@@ -1,8 +1,26 @@
-<html>
-	<head><meta charset="UTF-8">
-
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<title>Subject Pronouns — Clarification</title>
+<script>
+// Applies the saved/system theme to <html> as early as possible, before the
+// stylesheet below paints anything, so there's no flash of the wrong theme.
+// Self-contained: no dependency on any external script.
+(function(){
+  try{
+    var saved = localStorage.getItem('theme-preference');
+    var theme = (saved === 'light' || saved === 'dark')
+      ? saved
+      : ((window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches) ? 'dark' : 'light');
+    document.documentElement.setAttribute('data-theme', theme);
+  }catch(e){ /* localStorage/matchMedia unavailable — CSS media query still applies */ }
+})();
+</script>
+<link rel="stylesheet" href="house.css">
 <style>
-  .activity-bar { display:flex; justify-content:space-between; align-items:center; margin-bottom:1.25rem; flex-wrap:wrap; gap:8px; }
+.activity-bar { display:flex; justify-content:space-between; align-items:center; margin-bottom:1.25rem; flex-wrap:wrap; gap:8px; }
   .activity-hint { font-size:13px; color:var(--color-text-secondary); }
   .score-pill { font-size:13px; color:var(--color-text-secondary); }
   .bank-label { font-size:11px; font-weight:500; letter-spacing:0.06em; text-transform:uppercase; color:var(--color-text-secondary); margin-bottom:10px; }
@@ -41,10 +59,9 @@
   .reset-row { display:flex; gap:8px; align-items:center; margin-top:1.25rem; }
   @keyframes shake { 0%,100%{transform:translateX(0)} 25%{transform:translateX(-5px)} 75%{transform:translateX(5px)} }
 </style>
-<link rel="stylesheet" href="general.css">
-
 </head>
-<body class="exercise-page">
+<body class="exercise-page" id="page">
+<span class="cefr-tag cefr-a1">A1 · Beginner</span>
 	
 <div style="padding:0.75rem 0;">
   <div class="activity-bar">
@@ -60,6 +77,12 @@
   </div>
 </div>
 
+<div id="theme-toggle-wrap">
+  <button id="theme-toggle" aria-label="Toggle light/dark mode" title="Toggle light/dark mode">
+    <span id="theme-icon">☀️</span>
+  </button>
+</div>
+<script src="house.js"></script>
 <script>
 const items = [
   { pronoun:"I",    file:"pronoun_i.png",      label:"pronoun I",        id:"i_1"    },
@@ -255,11 +278,5 @@ function build() {
 document.getElementById('reset-btn').addEventListener('click', build);
 build();
 </script>
-		<div id="theme-toggle-wrap">
-  		<button id="theme-toggle" aria-label="Toggle light/dark mode" title="Toggle light/dark mode">
-    		<span id="theme-icon">☀️</span>
-  		</button>
-	</div>
-	<script src="theme-toggle-behavior.js"></script>
 </body>
 </html>
