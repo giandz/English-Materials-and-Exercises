@@ -1,0 +1,376 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<title>I Am, You Are — The Verb "Be"</title>
+<link rel="stylesheet" href="general.css">
+<script>
+// Applies the saved/system theme to <html> as early as possible, before the
+// stylesheet below paints anything, so there's no flash of the wrong theme.
+// Self-contained: no dependency on any external script.
+(function(){
+  try{
+    var saved = localStorage.getItem('theme-preference');
+    var theme = (saved === 'light' || saved === 'dark')
+      ? saved
+      : ((window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches) ? 'dark' : 'light');
+    document.documentElement.setAttribute('data-theme', theme);
+  }catch(e){ /* localStorage/matchMedia unavailable — CSS media query still applies */ }
+})();
+</script>
+<style>
+:root{
+  --color-background-primary: #ffffff;
+  --color-background-secondary: #f7f7f8;
+  --color-text-primary: #1a1a1a;
+  --color-text-secondary: #5b5b60;
+  --color-text-tertiary: #8b8b90;
+  --color-border-secondary: #e3e3e6;
+  --color-border-tertiary: #ebebee;
+  --border-radius-lg: 12px;
+
+  --text-primary: var(--color-text-primary);
+  --text-secondary: var(--color-text-secondary);
+  --text-muted: var(--color-text-tertiary);
+  --text-accent: #185fa5;
+  --surface-1: var(--color-background-secondary);
+  --surface-2: var(--color-background-primary);
+  --border: var(--color-border-tertiary);
+  --radius: var(--border-radius-lg);
+  --cefr-text: #000000;
+}
+
+@media (prefers-color-scheme: dark){
+  :root{
+    --color-background-primary: #1e1e20;
+    --color-background-secondary: #26262a;
+    --color-text-primary: #f0f0f2;
+    --color-text-secondary: #b4b4ba;
+    --color-text-tertiary: #85858c;
+    --color-border-secondary: #3a3a3f;
+    --color-border-tertiary: #34343a;
+    --cefr-text: #ffffff;
+  }
+}
+
+html[data-theme="light"]{
+  --color-background-primary: #ffffff;
+  --color-background-secondary: #f7f7f8;
+  --color-text-primary: #1a1a1a;
+  --color-text-secondary: #5b5b60;
+  --color-text-tertiary: #8b8b90;
+  --color-border-secondary: #e3e3e6;
+  --color-border-tertiary: #ebebee;
+  --cefr-text: #000000;
+}
+html[data-theme="dark"]{
+  --color-background-primary: #1e1e20;
+  --color-background-secondary: #26262a;
+  --color-text-primary: #f0f0f2;
+  --color-text-secondary: #b4b4ba;
+  --color-text-tertiary: #85858c;
+  --color-border-secondary: #3a3a3f;
+  --color-border-tertiary: #34343a;
+  --cefr-text: #ffffff;
+}
+
+*{ box-sizing:border-box; -webkit-tap-highlight-color:transparent; }
+
+html,body{
+  margin:0;
+  background:var(--color-background-primary);
+  color:var(--color-text-primary);
+  font-family:-apple-system, BlinkMacSystemFont, "Segoe UI", Helvetica, Arial, sans-serif;
+  font-size:15px;
+  line-height:1.5;
+}
+
+.page{ max-width:700px; margin:0 auto; padding:20px 14px 40px; }
+
+h1{ font-size:1.28rem; font-weight:600; letter-spacing:-0.01em; margin:0 0 2px; }
+.subtitle{ font-size:12.5px; color:var(--text-secondary); margin:0 0 8px; }
+
+.cefr-tag{
+  display:inline-block; font-size:11px; font-weight:700; letter-spacing:.04em;
+  background:hsl(120deg 50% 50%); color:var(--cefr-text); padding:3px 10px; border-radius:20px; margin-bottom:8px;
+}
+
+.sec-div{
+  font-size:11px; font-weight:500; letter-spacing:.06em; text-transform:uppercase;
+  color:var(--text-muted); display:flex; align-items:center; gap:8px; margin:1.6rem 0 .9rem;
+}
+.sec-div::before,.sec-div::after{ content:''; flex:1; height:.5px; background:var(--border); }
+.section-icon{ font-size:15px; }
+
+.setting-chip{
+  display:inline-flex; align-items:center; gap:5px; font-size:12px; padding:3px 10px;
+  border-radius:20px; background:var(--surface-1); border:.5px solid var(--border);
+  color:var(--text-secondary); margin-bottom:1rem;
+}
+
+.bubble-wrap{ display:flex; gap:10px; align-items:flex-end; margin-bottom:12px; }
+.bubble-wrap.right{ flex-direction:row-reverse; }
+.avatar{
+  width:34px; height:34px; border-radius:50%;
+  display:flex; align-items:center; justify-content:center;
+  font-size:16px; flex-shrink:0;
+}
+.av-a{ background:#e6f1fb; color:#0c447c; }
+.av-b{ background:#eeedfe; color:#26215c; }
+
+.bubble-col{ display:flex; flex-direction:column; align-items:flex-start; max-width:82%; }
+.bubble-wrap.right .bubble-col{ align-items:flex-end; }
+
+.bubble{
+  padding:9px 13px;
+  border-radius:15px;
+  font-size:14px;
+  line-height:1.55;
+  border:.5px solid var(--border);
+}
+.bubble.left{ background:var(--surface-2); border-bottom-left-radius:4px; color:var(--text-primary); }
+.bubble.right{ background:#eeedfe; border-bottom-right-radius:4px; color:#26215c; border-color:#afa9ec; }
+@media (prefers-color-scheme: dark){
+  .bubble.right{ background:#2a2850; color:#c9c5f5; border-color:#4a4590; }
+}
+html[data-theme="dark"] .bubble.right{ background:#2a2850; color:#c9c5f5; border-color:#4a4590; }
+
+.bname{ font-size:11px; font-weight:500; color:var(--text-muted); margin-bottom:3px; padding:0 2px; }
+.bname.right{ text-align:right; }
+
+.emoji-aid{
+  display:inline-flex; align-items:center; gap:3px;
+  font-size:19px; line-height:1;
+  background:var(--surface-1);
+  border:1px solid var(--border);
+  border-radius:10px;
+  padding:5px 9px;
+  margin-top:5px;
+}
+
+.vocab-box{
+  background:var(--surface-1);
+  border-radius:var(--radius);
+  padding:12px 14px;
+  margin-top:1.6rem;
+  border:1px solid var(--border);
+}
+.vocab-title{
+  font-size:11px; font-weight:700; letter-spacing:.06em; text-transform:uppercase;
+  color:var(--text-muted); margin-bottom:8px;
+}
+.vocab-grid{ display:grid; grid-template-columns:1fr 1fr; gap:4px 20px; }
+.vocab-row{ font-size:13px; color:var(--text-primary); padding:5px 0; border-bottom:.5px solid var(--border); }
+.vocab-row:last-child, .vocab-row:nth-last-child(2){ border-bottom:none; }
+.v-phrase{ font-weight:600; }
+.v-note{ color:var(--text-secondary); font-size:12px; }
+
+footer{ text-align:center; font-size:12px; color:var(--text-muted); margin-top:1.6rem; }
+
+#theme-toggle-wrap{ position:fixed; top:14px; right:14px; z-index:1000; }
+#theme-toggle{
+  width:38px; height:38px; border-radius:50%;
+  border:1px solid var(--border); background:var(--surface-2); color:var(--text-primary);
+  font-size:16px; display:flex; align-items:center; justify-content:center;
+  cursor:pointer; box-shadow:0 2px 8px rgba(0,0,0,0.12);
+}
+</style>
+</head>
+<body>
+<div class="page">
+
+  <span class="cefr-tag">A1 · Beginner</span>
+  <h1>I Am, You Are…</h1>
+  <p class="subtitle">Meet the verb "be": am, is, are</p>
+
+  <div class="sec-div"><span class="section-icon">🐶</span> Mia and Leo</div>
+  <div class="setting-chip">🏞️ In the park — meeting a friend's dog</div>
+
+  <div class="bubble-wrap left">
+    <div class="avatar av-a">🙋‍♀️</div>
+    <div class="bubble-col">
+      <div class="bname">Mia</div>
+      <div class="bubble left">Hi! I am Mia. What is your name?</div>
+      <div class="emoji-aid">👉🙋‍♀️❓</div>
+    </div>
+  </div>
+
+  <div class="bubble-wrap right">
+    <div class="avatar av-b">🙋‍♂️</div>
+    <div class="bubble-col">
+      <div class="bname right">Leo</div>
+      <div class="bubble right">Hi Mia! I am Leo. Nice to meet you!</div>
+      <div class="emoji-aid">👉🙋‍♂️😊</div>
+    </div>
+  </div>
+
+  <div class="bubble-wrap left">
+    <div class="avatar av-a">🙋‍♀️</div>
+    <div class="bubble-col">
+      <div class="bname">Mia</div>
+      <div class="bubble left">Nice to meet you too! Is this your dog?</div>
+      <div class="emoji-aid">👉🐶❓</div>
+    </div>
+  </div>
+
+  <div class="bubble-wrap right">
+    <div class="avatar av-b">🙋‍♂️</div>
+    <div class="bubble-col">
+      <div class="bname right">Leo</div>
+      <div class="bubble right">Yes, this is my dog. He is very friendly.</div>
+      <div class="emoji-aid">👉🐶😊</div>
+    </div>
+  </div>
+
+  <div class="bubble-wrap left">
+    <div class="avatar av-a">🙋‍♀️</div>
+    <div class="bubble-col">
+      <div class="bname">Mia</div>
+      <div class="bubble left">Oh, is he happy today?</div>
+      <div class="emoji-aid">🐶😊❓</div>
+    </div>
+  </div>
+
+  <div class="bubble-wrap right">
+    <div class="avatar av-b">🙋‍♂️</div>
+    <div class="bubble-col">
+      <div class="bname right">Leo</div>
+      <div class="bubble right">Yes, he is very happy today.</div>
+      <div class="emoji-aid">🐶😊✅</div>
+    </div>
+  </div>
+
+  <div class="bubble-wrap left">
+    <div class="avatar av-a">🙋‍♀️</div>
+    <div class="bubble-col">
+      <div class="bname">Mia</div>
+      <div class="bubble left">Is he sad sometimes?</div>
+      <div class="emoji-aid">🐶😢❓</div>
+    </div>
+  </div>
+
+  <div class="bubble-wrap right">
+    <div class="avatar av-b">🙋‍♂️</div>
+    <div class="bubble-col">
+      <div class="bname right">Leo</div>
+      <div class="bubble right">No, he is never sad. He is a happy dog.</div>
+      <div class="emoji-aid">🐶🚫😢</div>
+    </div>
+  </div>
+
+  <div class="bubble-wrap left">
+    <div class="avatar av-a">🙋‍♀️</div>
+    <div class="bubble-col">
+      <div class="bname">Mia</div>
+      <div class="bubble left">What color is he? Is he black?</div>
+      <div class="emoji-aid">🐶❓🎨</div>
+    </div>
+  </div>
+
+  <div class="bubble-wrap right">
+    <div class="avatar av-b">🙋‍♂️</div>
+    <div class="bubble-col">
+      <div class="bname right">Leo</div>
+      <div class="bubble right">No, he is not black. He is brown.</div>
+      <div class="emoji-aid">🐶🟤</div>
+    </div>
+  </div>
+
+  <div class="bubble-wrap left">
+    <div class="avatar av-a">🙋‍♀️</div>
+    <div class="bubble-col">
+      <div class="bname">Mia</div>
+      <div class="bubble left">I am hungry now. Are you hungry too?</div>
+      <div class="emoji-aid">🙋‍♀️🍔❓</div>
+    </div>
+  </div>
+
+  <div class="bubble-wrap right">
+    <div class="avatar av-b">🙋‍♂️</div>
+    <div class="bubble-col">
+      <div class="bname right">Leo</div>
+      <div class="bubble right">Yes, I am hungry too. Let's get some food!</div>
+      <div class="emoji-aid">🙋‍♂️🍔✅</div>
+    </div>
+  </div>
+
+  <div class="bubble-wrap left">
+    <div class="avatar av-a">🙋‍♀️</div>
+    <div class="bubble-col">
+      <div class="bname">Mia</div>
+      <div class="bubble left">Great! We are good friends now.</div>
+      <div class="emoji-aid">🙋‍♀️🙋‍♂️❤️</div>
+    </div>
+  </div>
+
+  <div class="vocab-box">
+    <div class="vocab-title">Key words</div>
+    <div class="vocab-grid">
+      <div class="vocab-row"><span class="v-phrase">I am / I'm</span><br><span class="v-note">with I</span></div>
+      <div class="vocab-row"><span class="v-phrase">You are / You're</span><br><span class="v-note">with you</span></div>
+      <div class="vocab-row"><span class="v-phrase">He is / She is / It is</span><br><span class="v-note">with he, she, it</span></div>
+      <div class="vocab-row"><span class="v-phrase">We are / They are</span><br><span class="v-note">with we, they</span></div>
+      <div class="vocab-row"><span class="v-phrase">…is not / isn't</span><br><span class="v-note">saying no</span></div>
+      <div class="vocab-row"><span class="v-phrase">…are not / aren't</span><br><span class="v-note">saying no</span></div>
+      <div class="vocab-row"><span class="v-phrase">Is…? / Are…?</span><br><span class="v-note">asking a question</span></div>
+      <div class="vocab-row"><span class="v-phrase">Am I…?</span><br><span class="v-note">asking about yourself</span></div>
+    </div>
+  </div>
+
+  <footer>The Verb "Be" (A1)</footer>
+</div>
+<div id="theme-toggle-wrap">
+  <button id="theme-toggle" aria-label="Toggle light/dark mode" title="Toggle light/dark mode">
+    <span id="theme-icon">☀️</span>
+  </button>
+</div>
+<script>
+// Self-contained theme toggle — no external CSS or JS required. Uses plain
+// getElementById/addEventListener/localStorage so it runs on the widest possible
+// range of browsers and devices (desktop, mobile, older Safari included), and
+// degrades gracefully (falls back to the OS theme) if storage is blocked.
+(function(){
+  var root = document.documentElement;
+  var STORAGE_KEY = 'theme-preference';
+
+  function getStored(){
+    try{ return localStorage.getItem(STORAGE_KEY); }catch(e){ return null; }
+  }
+  function setStored(theme){
+    try{ localStorage.setItem(STORAGE_KEY, theme); }catch(e){ /* private mode, etc. — ignore */ }
+  }
+  function systemPrefersDark(){
+    return !!(window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches);
+  }
+  function currentTheme(){
+    var saved = getStored();
+    return (saved === 'light' || saved === 'dark') ? saved : (systemPrefersDark() ? 'dark' : 'light');
+  }
+  function applyTheme(theme){
+    root.setAttribute('data-theme', theme);
+    var icon = document.getElementById('theme-icon');
+    if (icon) icon.textContent = theme === 'dark' ? '🌙' : '☀️';
+  }
+
+  applyTheme(currentTheme());
+
+  var btn = document.getElementById('theme-toggle');
+  if (btn){
+    btn.addEventListener('click', function(){
+      var next = currentTheme() === 'dark' ? 'light' : 'dark';
+      setStored(next);
+      applyTheme(next);
+    });
+  }
+
+  if (window.matchMedia){
+    var mql = window.matchMedia('(prefers-color-scheme: dark)');
+    var onSystemChange = function(){ if (!getStored()) applyTheme(currentTheme()); };
+    if (mql.addEventListener) mql.addEventListener('change', onSystemChange);
+    else if (mql.addListener) mql.addListener(onSystemChange); // older Safari
+  }
+})();
+</script>
+</body>
+</html>
