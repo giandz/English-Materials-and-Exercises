@@ -403,24 +403,84 @@ input[type="text"]:focus,input[type="search"]:focus{ border-color:var(--text-acc
 .cards-grid{ display:grid; grid-template-columns:minmax(0,1fr) minmax(0,1fr); gap:20px; }
 .cards-col{ display:flex; flex-direction:column; gap:7px; }
 
-/* ── Dialogue bubbles ──────────────────────────────────────────────────── */
+/* ── Dialogue bubbles ──────────────────────────────────────────────────────
+   The column between the avatar and the bubble is an unnamed <div> in most
+   lesson markup. It has to carry the width cap: putting `max-width:76%` on
+   `.bubble` alone resolves that percentage against the column, and the column
+   itself shrink-to-fits to the text's max-content — which for any long line is
+   the full row. The bubble then sits at 76% of a full-width column, so a
+   right-hand bubble floats away from the right edge instead of hugging it.
+   Capping the column and aligning its children fixes both sides for good. */
 .bubble-wrap{ display:flex; gap:10px; align-items:flex-end; margin-bottom:14px; }
 .bubble-wrap.right{ flex-direction:row-reverse; }
+
+.bubble-wrap > *:not(.avatar){ min-width:0; max-width:78%; }
+.bubble-wrap > div:not(.avatar):not(.bubble){
+  display:flex; flex-direction:column; align-items:flex-start;
+}
+.bubble-wrap.right > div:not(.avatar):not(.bubble){ align-items:flex-end; }
+/* Some pages name that column explicitly; others leave it an unnamed <div>. */
+.bubble-col{ display:flex; flex-direction:column; }
+.bubble-wrap.right .bubble-col{ align-items:flex-end; }
+
 .avatar{
   width:34px; height:34px; border-radius:50%; display:flex; align-items:center;
   justify-content:center; font-size:18px; flex-shrink:0;
 }
 .av-a{ background:var(--color-background-info); color:var(--color-text-info); }
 .av-b{ background:var(--bg-cel); color:var(--text-cel); }
+.av-c{ background:var(--bg-pos); color:var(--text-pos); }
+.av-d{ background:var(--bg-q); color:var(--text-q); }
 .bubble{
-  max-width:76%; padding:9px 13px; border-radius:15px; font-size:14px; line-height:1.65;
+  max-width:100%; padding:9px 13px; border-radius:15px; font-size:14px; line-height:1.75;
   border:.5px solid var(--color-border-tertiary);
   background:var(--surface-2); color:var(--text-primary);
 }
 .bubble.left{ border-bottom-left-radius:4px; }
-.bubble.right{ background:var(--bg-cel); color:var(--text-cel); border-bottom-right-radius:4px; border-color:transparent; }
+.bubble.right,.bubble.green{ border-bottom-right-radius:4px; border-color:transparent; }
+.bubble.right{ background:var(--bg-cel); color:var(--text-cel); }
+.bubble.green{ background:var(--bg-pos); color:var(--text-pos); border-bottom-right-radius:15px; border-bottom-left-radius:4px; }
 .bname,.bubble-name{ font-size:11px; font-weight:500; color:var(--text-secondary); margin-bottom:3px; padding:0 2px; }
 .bname.right,.bubble-name.right-name{ text-align:right; }
+
+/* Scene-setting chip above a conversation ("🏫 First day at school"). */
+.setting-chip{
+  display:inline-flex; align-items:center; gap:5px; font-size:12px;
+  padding:3px 10px; border-radius:20px; background:var(--surface-1);
+  border:.5px solid var(--color-border-secondary); color:var(--text-secondary);
+  margin-bottom:1rem;
+}
+.section-icon{ font-size:14px; }
+
+/* ══ COMPREHENSION QUESTIONS ════════════════════════════════════════════
+   The same three questions run twice: once before the conversation with no
+   options at all (they set a purpose for reading — schemata activation, so
+   showing choices there would give the answers away), and once after with
+   three options each. */
+.prequiz{
+  background:var(--surface-1); border:1px solid var(--border);
+  border-radius:var(--border-radius-lg); padding:12px 16px 12px 8px; margin-bottom:1rem;
+}
+.prequiz ol{ margin:0; padding-left:1.6rem; }
+.prequiz li{ font-size:14px; color:var(--text-primary); margin-bottom:7px; line-height:1.5; }
+.prequiz li:last-child{ margin-bottom:0; }
+
+.quiz-q{
+  border:.5px solid var(--color-border-tertiary); border-radius:var(--border-radius-lg);
+  background:var(--surface-2); padding:14px 16px 12px; margin-bottom:12px;
+}
+.quiz-q .q-text{ font-size:14px; font-weight:600; color:var(--text-primary); margin-bottom:10px; line-height:1.45; }
+.quiz-q .opt{
+  display:block; width:100%; text-align:left; margin-bottom:6px;
+  border-radius:var(--border-radius-md); font-size:14px; font-weight:400;
+  padding:9px 12px; line-height:1.4; background:var(--surface-2);
+}
+.quiz-q .opt:disabled{ cursor:default; opacity:1; }
+.quiz-q .opt.correct{ border-color:var(--good); background:var(--good-bg); color:var(--good); font-weight:600; }
+.quiz-q .opt.incorrect{ border-color:var(--bad); background:var(--bad-bg); color:var(--bad); }
+.q-feedback{ font-size:13px; min-height:17px; margin-top:5px; color:var(--text-secondary); }
+.q-feedback.correct{ color:var(--good); }
+.q-feedback.incorrect{ color:var(--bad); }
 
 /* ── Feedback ──────────────────────────────────────────────────────────── */
 .feedback{ min-height:24px; font-size:14px; text-align:center; color:var(--text-secondary); margin-top:1rem; }
@@ -615,7 +675,8 @@ input.gap.wrong{ border-bottom-color:var(--bad); color:var(--bad); }
 }
 .pos-legend{ display:flex; flex-wrap:wrap; gap:8px 12px; margin-bottom:1rem; }
 .legend-item{ display:inline-flex; align-items:center; gap:6px; font-size:12px; color:var(--text-secondary); white-space:nowrap; }
-.legend-swatch{ width:10px; height:10px; border-radius:999px; display:inline-block; }
+.legend-swatch,
+.legend-dot{ width:10px; height:10px; border-radius:999px; display:inline-block; }
 .legend-wh{ background:var(--pos-wh); }
 .legend-aux{ background:var(--pos-aux); }
 .legend-verb{ background:var(--pos-verb); }

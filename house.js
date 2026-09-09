@@ -6,6 +6,7 @@
      · HouseWordOrder — the tap/drag sentence-builder engine
      · HouseGapFill   — the Damerau-Levenshtein accuracy-bar gap fill
      · HouseGrammar   — the part-of-speech highlighting toggle
+     · HouseComprehension — the before/after reading questions
 
    Load it once at the end of <body>, before the page's own script.
    ══════════════════════════════════════════════════════════════════════════ */
@@ -769,4 +770,84 @@
   }
 
   global.HouseGrammar = { init: init, POS_ORDER: POS_ORDER };
+})(window);
+
+
+/* ══════════════════════════════════════════════════════════════════════════
+   HOUSE COMPREHENSION QUESTIONS
+   The same three questions bracket every conversation. Before it they appear
+   as a plain numbered list with no options — the point there is to set a
+   purpose for reading, and showing choices would hand over the answers.
+   After it the learner picks from three options: the right answer and two
+   distractors drawn from the text, so a wrong pick means a genuine misreading
+   rather than a guess.
+
+   One shared data array drives both, so the wording can never drift apart:
+
+     HouseComprehension.build({
+       pre:  'preQuestions',    // element id for the before-reading list
+       quiz: 'quiz',            // element id for the after-reading questions
+       items: CQ_ITEMS          // [{q, opts:[…], correct: <index>}]
+     });
+
+   Answering locks that question, marks the chosen option, and reveals the
+   correct one if the pick was wrong.
+   ══════════════════════════════════════════════════════════════════════════ */
+(function (global) {
+  'use strict';
+
+  function build(opts) {
+    var items = opts.items || [];
+
+    var preEl = typeof opts.pre === 'string' ? document.getElementById(opts.pre) : opts.pre;
+    if (preEl) {
+      var ol = document.createElement('ol');
+      items.forEach(function (item) {
+        var li = document.createElement('li');
+        li.textContent = item.q;
+        ol.appendChild(li);
+      });
+      preEl.classList.add('prequiz');
+      preEl.innerHTML = '';
+      preEl.appendChild(ol);
+    }
+
+    var quizEl = typeof opts.quiz === 'string' ? document.getElementById(opts.quiz) : opts.quiz;
+    if (!quizEl) return;
+
+    items.forEach(function (item, qi) {
+      var block = document.createElement('div');
+      block.className = 'quiz-q';
+      var html = '<div class="q-text">' + (qi + 1) + '. ' + item.q + '</div>';
+      item.opts.forEach(function (o, oi) {
+        html += '<button class="opt" data-q="' + qi + '" data-o="' + oi + '">' + o + '</button>';
+      });
+      html += '<div class="q-feedback" id="' + quizEl.id + '-fb-' + qi + '"></div>';
+      block.innerHTML = html;
+      quizEl.appendChild(block);
+    });
+
+    quizEl.addEventListener('click', function (e) {
+      if (!e.target.classList.contains('opt')) return;
+      var qi = Number(e.target.dataset.q);
+      var oi = Number(e.target.dataset.o);
+      var correctIdx = items[qi].correct;
+      var buttons = quizEl.querySelectorAll('.opt[data-q="' + qi + '"]');
+      buttons.forEach(function (b) { b.disabled = true; });
+
+      var fb = document.getElementById(quizEl.id + '-fb-' + qi);
+      if (oi === correctIdx) {
+        e.target.classList.add('correct');
+        fb.textContent = '✓ Correct!';
+        fb.className = 'q-feedback correct';
+      } else {
+        e.target.classList.add('incorrect');
+        buttons[correctIdx].classList.add('correct');
+        fb.textContent = '✗ Not quite — the correct answer is highlighted.';
+        fb.className = 'q-feedback incorrect';
+      }
+    });
+  }
+
+  global.HouseComprehension = { build: build };
 })(window);
