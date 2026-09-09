@@ -184,6 +184,7 @@ h1{ font-size:1.28rem; font-weight:600; letter-spacing:-0.01em; margin:0 0 2px; 
 }
 .word-chip.chip-correct{ background:var(--good-bg); border-color:var(--good); color:var(--good); }
 .word-chip.chip-wrong{ background:#fbebe9; border-color:var(--bad); color:var(--bad); }
+.word-chip.chip-emphasis{ font-weight:700; box-shadow:inset 0 0 0 1.5px currentColor; }
 
 .word-chip.pos-wh{ background:var(--pos-wh-bg); color:var(--pos-wh); border-color:var(--pos-wh); }
 .word-chip.pos-verb{ background:var(--pos-verb-bg); color:var(--pos-verb); border-color:var(--pos-verb); }
@@ -196,16 +197,16 @@ h1{ font-size:1.28rem; font-weight:600; letter-spacing:-0.01em; margin:0 0 2px; 
 .word-chip.pos-adverb{ background:var(--pos-adverb-bg); color:var(--pos-adverb); border-color:var(--pos-adverb); }
 .word-chip.pos-none{ background:var(--pos-none-bg); color:var(--pos-none); border-color:#d1d5db; }
 
-.drop-indicator{ width:2px; height:28px; background:var(--text-accent); border-radius:1px; pointer-events:none; flex:0 0 auto; }
+.drop-indicator{
+  border-radius:999px; border:1.5px dashed var(--text-accent);
+  background:rgba(24,95,165,0.1);
+  flex:0 0 auto; pointer-events:none;
+  transition:width .12s ease, height .12s ease;
+}
 
-.item-feedback{ font-size:11.5px; margin-top:2px; min-height:14px; }
+.item-feedback{ font-size:11.5px; margin-bottom:4px; min-height:14px; }
 .item-feedback.correct{ color:var(--good); }
 .item-feedback.wrong{ color:var(--bad); }
-
-.check-btn{
-  font-family:inherit; font-size:12.5px; font-weight:600; padding:5px 12px; border-radius:999px;
-  border:none; background:var(--text-accent); color:#fff; cursor:pointer; margin-top:4px;
-}
 
 .legend{ display:flex; flex-wrap:wrap; gap:8px; margin-bottom:1rem; }
 .legend-pill{ font-size:11.5px; font-weight:600; padding:3px 11px; border-radius:20px; }
@@ -273,9 +274,10 @@ footer{ text-align:center; font-size:12px; color:var(--text-muted); margin-top:1
 .grammar-hidden .word-chip.pos-neg,
 .grammar-hidden .word-chip.pos-adverb,
 .grammar-hidden .word-chip.pos-none{
-  background:var(--surface-2) !important; color:var(--text-primary) !important; border-color:var(--border) !important;
+  background:var(--good-bg) !important; color:var(--good) !important; border-color:var(--good) !important;
 }
 .grammar-hidden .pos-legend{ display:none; }
+
 </style>
 </head>
 <body>
@@ -287,7 +289,7 @@ footer{ text-align:center; font-size:12px; color:var(--text-muted); margin-top:1
 
   <div class="sec-div">Practice — Word order</div>
   <div class="rule-box">
-    Tap a word to add it. Tap it again to remove it. You can also drag words to reorder them.
+    Tap a word to add it. Tap it again to remove it. You can also drag words to reorder them. When all the words are placed, we check it for you.
   </div>
   <button id="grammarToggle" class="grammar-toggle-btn">🎨 Hide Grammar</button>
   <div class="pos-legend">
@@ -414,17 +416,15 @@ function buildExercise(containerId, items, scoreElId, totalElId) {
       : `<div class="item-context">${entry.context || ''}</div>`;
     itemEl.innerHTML = `
       ${headerHtml}
-      <div class="target-zone" data-role="target"><span class="target-placeholder">Tap words below to build the sentence</span></div>
-      <div class="pool-zone" data-role="pool"></div>
       <div class="item-feedback" data-role="feedback"></div>
-      <button class="check-btn" data-role="check">Check</button>
+      <div class="target-zone" data-role="target"><span class="target-placeholder">Tap or drag words below to build the sentence</span></div>
+      <div class="pool-zone" data-role="pool"></div>
     `;
     container.appendChild(itemEl);
 
     const targetZone = itemEl.querySelector('[data-role="target"]');
     const poolZone = itemEl.querySelector('[data-role="pool"]');
     const feedback = itemEl.querySelector('[data-role="feedback"]');
-    const checkBtn = itemEl.querySelector('[data-role="check"]');
     const indicator = document.createElement('span');
     indicator.className = 'drop-indicator';
 
@@ -439,23 +439,40 @@ function buildExercise(containerId, items, scoreElId, totalElId) {
       poolZone.appendChild(chip);
     });
 
-    checkBtn.addEventListener('click', () => {
-      const targetChips = Array.from(targetZone.querySelectorAll('.word-chip'));
-      const currentWords = targetChips.map(c => c.dataset.word);
-      const isCorrect = JSON.stringify(currentWords) === JSON.stringify(correctOrder) && currentWords.length === correctOrder.length;
+    // Correction runs automatically, only once every chip has been placed in the
+    // target zone — no Check button needed. A MutationObserver picks up every way
+    // a chip can land there (tap, drag-drop, reordering) without wiring each path by hand.
+    function evaluateItem() {
+      // While a chip from this item is actively being dragged, it's still a real
+      // DOM child of its zone (just visually floated via position:fixed) — so the
+      // sized drop indicator sliding in and out still counts as a childList change
+      // and would re-trigger this. Re-running the full evaluation then would call
+      // applyPosHighlighting, which rewrites every chip's className in the zone —
+      // including the dragged one, wiping its `dragging` class mid-drag and
+      // freezing it in place. Skip evaluation entirely until the drag settles.
+      if (itemEl._dragActive) return;
 
+      const targetChips = Array.from(targetZone.querySelectorAll('.word-chip'));
       targetZone.classList.remove('correct', 'wrong');
 
-      if (currentWords.length === 0) {
-        feedback.textContent = "Add some words first.";
-        feedback.className = "item-feedback wrong";
+      if (targetChips.length < correctOrder.length) {
+        targetChips.forEach(chip => resetChipVisualState(chip));
+        feedback.textContent = "";
+        feedback.className = "item-feedback";
+        if (correctSet.has(idx)) {
+          correctSet.delete(idx);
+          document.getElementById(scoreElId).textContent = correctSet.size;
+        }
         return;
       }
 
+      const currentWords = targetChips.map(c => c.dataset.word);
+      const isCorrect = JSON.stringify(currentWords) === JSON.stringify(correctOrder);
+
       targetChips.forEach((chip, i) => {
-        chip.classList.remove('chip-correct', 'chip-wrong');
+        resetChipVisualState(chip);
         if (chip.dataset.word === correctOrder[i]) {
-          chip.classList.add('chip-correct');
+          chip.classList.add('chip-correct', 'chip-emphasis');
         } else {
           chip.classList.add('chip-wrong');
         }
@@ -463,39 +480,51 @@ function buildExercise(containerId, items, scoreElId, totalElId) {
 
       if (isCorrect) {
         targetZone.classList.add('correct');
-        feedback.textContent = "✓ Correct!";
+        feedback.textContent = "✓ Correct! Well done!";
         feedback.className = "item-feedback correct";
         correctSet.add(idx);
         applyPosHighlighting(targetZone, entry.pos);
       } else {
         targetZone.classList.add('wrong');
-        feedback.textContent = "✗ Not quite — try again.";
+        feedback.textContent = "✗ Not correct. The bold words are in the right place.";
         feedback.className = "item-feedback wrong";
         correctSet.delete(idx);
       }
       document.getElementById(scoreElId).textContent = correctSet.size;
-    });
+    }
+
+    new MutationObserver(evaluateItem).observe(targetZone, { childList: true });
 
     updatePlaceholder(targetZone);
   });
 }
 
-function updatePlaceholder(targetZone) {
-  const hasChips = targetZone.querySelector('.word-chip');
-  let placeholder = targetZone.querySelector('.target-placeholder');
-  if (!hasChips) {
+function updatePlaceholder(zone) {
+  const hasChips = zone.querySelector('.word-chip');
+  const hasIndicator = zone.querySelector('.drop-indicator');
+  let placeholder = zone.querySelector('.target-placeholder');
+  if (!hasChips && !hasIndicator) {
     if (!placeholder) {
       placeholder = document.createElement('span');
       placeholder.className = 'target-placeholder';
-      placeholder.textContent = 'Tap words below to build the sentence';
-      targetZone.appendChild(placeholder);
+      placeholder.textContent = 'Tap or drag words below to build the sentence';
+      zone.appendChild(placeholder);
     }
   } else if (placeholder) {
     placeholder.remove();
   }
 }
 
+function resetChipVisualState(chip) {
+  chip.classList.remove(
+    'chip-correct', 'chip-wrong', 'chip-emphasis',
+    'pos-wh', 'pos-verb', 'pos-subject', 'pos-object', 'pos-complement',
+    'pos-prep', 'pos-aux', 'pos-neg', 'pos-adverb', 'pos-none'
+  );
+}
+
 function moveChipToTarget(chip, targetZone, poolZone) {
+  resetChipVisualState(chip);
   chip.classList.add('in-target');
   targetZone.appendChild(chip);
   updatePlaceholder(targetZone);
@@ -503,6 +532,7 @@ function moveChipToTarget(chip, targetZone, poolZone) {
 }
 
 function moveChipToPool(chip, targetZone, poolZone) {
+  resetChipVisualState(chip);
   chip.classList.remove('in-target');
   poolZone.appendChild(chip);
   updatePlaceholder(targetZone);
@@ -560,6 +590,7 @@ function attachChipEvents(chip, targetZone, poolZone, feedback, itemEl, indicato
         moveChipToPool(chip, targetZone, poolZone);
       }
     }
+    itemEl._dragActive = false;
     dragState = null;
     moved = false;
   }
@@ -597,8 +628,18 @@ function attachChipEvents(chip, targetZone, poolZone, feedback, itemEl, indicato
     if (!dragState) return;
     if (!moved) {
       moved = true;
+      itemEl._dragActive = true;
+      const rect = chip.getBoundingClientRect();
+
+      // Size the drop indicator to match the dragged chip so it acts as a real
+      // reserved slot, pushing the surrounding chips apart, from the very first
+      // moment of the drag — this alone is what keeps the gap open, so there's
+      // no separate placeholder needed at the chip's old spot.
+      indicator.style.width = rect.width + 'px';
+      indicator.style.height = rect.height + 'px';
+
       chip.classList.add('dragging');
-      chip.style.width = chip.getBoundingClientRect().width + 'px';
+      chip.style.width = rect.width + 'px';
     }
     chip.style.left = (e.clientX - dragState.offsetX) + 'px';
     chip.style.top = (e.clientY - dragState.offsetY) + 'px';
@@ -612,10 +653,16 @@ function attachChipEvents(chip, targetZone, poolZone, feedback, itemEl, indicato
     if (overTarget) {
       targetZone.classList.add('drag-over');
       placeIndicator(targetZone, indicator, e.clientX, e.clientY);
+    } else if (overPool) {
+      poolZone.classList.add('drag-over');
+      placeIndicator(poolZone, indicator, e.clientX, e.clientY);
     } else {
       indicator.remove();
-      if (overPool) poolZone.classList.add('drag-over');
     }
+    // The indicator itself should hide the "tap or drag" placeholder the moment
+    // it lands in an empty zone — not just once a real chip is actually dropped.
+    updatePlaceholder(targetZone);
+    updatePlaceholder(poolZone);
   });
 
   chip.addEventListener('pointerup', (e) => {
@@ -634,8 +681,16 @@ function attachChipEvents(chip, targetZone, poolZone, feedback, itemEl, indicato
       chip.style.width = '';
 
       if (indicator.parentElement === targetZone) {
+        resetChipVisualState(chip);
         targetZone.insertBefore(chip, indicator);
         chip.classList.add('in-target');
+        indicator.remove();
+        updatePlaceholder(targetZone);
+        updatePlaceholder(poolZone);
+      } else if (indicator.parentElement === poolZone) {
+        resetChipVisualState(chip);
+        poolZone.insertBefore(chip, indicator);
+        chip.classList.remove('in-target');
         indicator.remove();
         updatePlaceholder(targetZone);
         updatePlaceholder(poolZone);
@@ -660,6 +715,7 @@ function attachChipEvents(chip, targetZone, poolZone, feedback, itemEl, indicato
       }
     }
 
+    itemEl._dragActive = false;
     dragState = null;
     moved = false;
   });
@@ -685,13 +741,13 @@ function applyPosHighlighting(targetZone, posArray) {
   const chips = Array.from(targetZone.querySelectorAll('.word-chip'));
   chips.forEach((chip, i) => {
     const pos = posArray[i] || 'none';
-    chip.className = `word-chip ${POS_CLASSES[pos] || 'pos-none'}`;
+    chip.className = `word-chip in-target chip-emphasis ${POS_CLASSES[pos] || 'pos-none'}`;
   });
 }
 function clearPosHighlighting(targetZone) {
   targetZone.querySelectorAll('.word-chip').forEach((chip) => {
     chip.classList.remove(
-      'pos-wh','pos-verb','pos-subject','pos-object','pos-complement','pos-prep','pos-aux','pos-neg','pos-adverb','pos-none'
+      'pos-wh','pos-verb','pos-subject','pos-object','pos-complement','pos-prep','pos-aux','pos-neg','pos-adverb','pos-none','chip-emphasis'
     );
   });
 }
