@@ -5,6 +5,20 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
 <title>Introductions — Practice</title>
 <link rel="stylesheet" href="general.css">
+<script>
+// Applies the saved/system theme to <html> as early as possible, before the
+// stylesheet below paints anything, so there's no flash of the wrong theme.
+// Self-contained: no dependency on any external script.
+(function(){
+  try{
+    var saved = localStorage.getItem('theme-preference');
+    var theme = (saved === 'light' || saved === 'dark')
+      ? saved
+      : ((window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches) ? 'dark' : 'light');
+    document.documentElement.setAttribute('data-theme', theme);
+  }catch(e){ /* localStorage/matchMedia unavailable — CSS media query still applies */ }
+})();
+</script>
 <style>
 :root{
   --color-background-primary: #ffffff;
@@ -58,6 +72,7 @@
   --text-q: #8a5a10;
   --bg-cel: #f3e8fd;
   --text-cel: #6b21a8;
+  --cefr-text: #000000;
 }
 
 @media (prefers-color-scheme: dark){
@@ -90,7 +105,76 @@
     --text-q: #e0b95c;
     --bg-cel: #2e1065;
     --text-cel: #c4b5fd;
+    --cefr-text: #ffffff;
   }
+}
+
+/* Explicit overrides for the manual theme toggle. These have higher specificity
+   than the plain :root rules above (and than the prefers-color-scheme media query,
+   which only ever targets :root), so once JS sets data-theme on <html> it always
+   wins — letting a person flip to dark on a light system, or light on a dark
+   system, rather than only ever following the OS setting. */
+html[data-theme="light"]{
+  --color-background-primary: #ffffff;
+  --color-background-secondary: #f7f7f8;
+  --color-text-primary: #1a1a1a;
+  --color-text-secondary: #5b5b60;
+  --color-text-tertiary: #8b8b90;
+  --color-border-secondary: #e3e3e6;
+  --color-border-tertiary: #ebebee;
+  --good-bg: #e8f4ea;
+
+  --pos-wh-bg: #dbeafe;
+  --pos-verb-bg: #fef3c7;
+  --pos-subject-bg: #d1fae5;
+  --pos-object-bg: #ede9fe;
+  --pos-complement-bg: #ffe4e6;
+  --pos-prep-bg: #ecfccb;
+  --pos-aux-bg: #fce7f3;
+  --pos-neg-bg: #e5e7eb;
+  --pos-adverb-bg: #cffafe;
+  --pos-none-bg: #f3f4f6;
+
+  --bg-pos: #eaf3de;
+  --text-pos: #27500a;
+  --bg-neg: #fce8e8;
+  --text-neg: #a32d2d;
+  --bg-q: #fdf1da;
+  --text-q: #8a5a10;
+  --bg-cel: #f3e8fd;
+  --text-cel: #6b21a8;
+  --cefr-text: #000000;
+}
+html[data-theme="dark"]{
+  --color-background-primary: #1e1e20;
+  --color-background-secondary: #26262a;
+  --color-text-primary: #f0f0f2;
+  --color-text-secondary: #b4b4ba;
+  --color-text-tertiary: #85858c;
+  --color-border-secondary: #3a3a3f;
+  --color-border-tertiary: #34343a;
+  --good-bg: #1d2f1f;
+
+  --pos-wh-bg: #172554;
+  --pos-verb-bg: #422006;
+  --pos-subject-bg: #064e3b;
+  --pos-object-bg: #312e81;
+  --pos-complement-bg: #4c0519;
+  --pos-prep-bg: #1a2e05;
+  --pos-aux-bg: #4a1833;
+  --pos-neg-bg: #374151;
+  --pos-adverb-bg: #164e63;
+  --pos-none-bg: #2f3136;
+
+  --bg-pos: #1f3014;
+  --text-pos: #9ed17a;
+  --bg-neg: #3a201e;
+  --text-neg: #e2827a;
+  --bg-q: #3a2c10;
+  --text-q: #e0b95c;
+  --bg-cel: #2e1065;
+  --text-cel: #c4b5fd;
+  --cefr-text: #ffffff;
 }
 
 *{ box-sizing:border-box; -webkit-tap-highlight-color:transparent; }
@@ -115,9 +199,8 @@ h1{ font-size:1.28rem; font-weight:600; letter-spacing:-0.01em; margin:0 0 2px; 
 
 .cefr-tag{
   display:inline-block; font-size:11px; font-weight:700; letter-spacing:.04em;
-  background:#e6f1fb; color:#185fa5; padding:3px 10px; border-radius:20px; margin-bottom:8px;
+  background:hsl(120deg 50% 50%); color:var(--cefr-text); padding:3px 10px; border-radius:20px; margin-bottom:8px;
 }
-@media (prefers-color-scheme: dark){ .cefr-tag{ background:#1c2e40; color:#7fb2e0; } }
 
 .sec-div{
   font-size:11px; font-weight:500; letter-spacing:.06em; text-transform:uppercase;
@@ -204,7 +287,7 @@ h1{ font-size:1.28rem; font-weight:600; letter-spacing:-0.01em; margin:0 0 2px; 
   transition:width .12s ease, height .12s ease;
 }
 
-.item-feedback{ font-size:11.5px; margin-bottom:4px; min-height:14px; }
+.item-feedback{ font-size:14.4px; margin-bottom:4px; min-height:18px; }
 .item-feedback.correct{ color:var(--good); }
 .item-feedback.wrong{ color:var(--bad); }
 
@@ -229,7 +312,7 @@ h1{ font-size:1.28rem; font-weight:600; letter-spacing:-0.01em; margin:0 0 2px; 
 .gf-gap-wrap{ display:inline-flex; flex-direction:column; align-items:center; gap:3px; vertical-align:bottom; margin:0.1em 0.2em; }
 .bar-track{ display:inline-block; width:84px; height:5px; background:var(--color-border-secondary); border-radius:3px; overflow:hidden; }
 .bar-fill{ display:block; height:100%; width:0%; background:hsl(0deg 100% 50%); transition:width 0.12s linear, background 0.12s linear; }
-.bar-pct{ font-family:var(--font-mono); font-size:9.5px; color:var(--text-muted); min-width:30px; text-align:center; }
+.bar-pct{ font-family:var(--font-mono); font-size:14.4px; color:var(--text-muted); min-width:30px; text-align:center; }
 .gf-gap-input{
   font-family:inherit; font-size:14.5px; padding:5px 8px; border-radius:6px;
   border:1px solid var(--color-border-secondary); background:var(--color-background-primary);
@@ -289,7 +372,7 @@ footer{ text-align:center; font-size:12px; color:var(--text-muted); margin-top:1
 
   <div class="sec-div">Practice — Word order</div>
   <div class="rule-box">
-    Tap a word to add it. Tap it again to remove it. You can also drag words to reorder them. When all the words are placed, we check it for you.
+    Tap a word to add it. Tap it again to remove it. You can also drag words to reorder them. When all the words are in place, the sentence is checked.
   </div>
   <button id="grammarToggle" class="grammar-toggle-btn">🎨 Hide Grammar</button>
   <div class="pos-legend">
@@ -486,7 +569,7 @@ function buildExercise(containerId, items, scoreElId, totalElId) {
         applyPosHighlighting(targetZone, entry.pos);
       } else {
         targetZone.classList.add('wrong');
-        feedback.textContent = "✗ Not correct. The bold words are in the right place.";
+        feedback.textContent = "✗ Not correct. The green words are in the right place.";
         feedback.className = "item-feedback wrong";
         correctSet.delete(idx);
       }
@@ -923,6 +1006,54 @@ gfItemsEl.addEventListener('input', (e) => {
     <span id="theme-icon">☀️</span>
   </button>
 </div>
-<script src="theme-toggle-behavior.js"></script>
+<script>
+// Self-contained theme toggle — no external CSS or JS required. Uses plain
+// getElementById/addEventListener/localStorage so it runs on the widest possible
+// range of browsers and devices (desktop, mobile, older Safari included), and
+// degrades gracefully (falls back to the OS theme) if storage is blocked.
+(function(){
+  var root = document.documentElement;
+  var STORAGE_KEY = 'theme-preference';
+
+  function getStored(){
+    try{ return localStorage.getItem(STORAGE_KEY); }catch(e){ return null; }
+  }
+  function setStored(theme){
+    try{ localStorage.setItem(STORAGE_KEY, theme); }catch(e){ /* private mode, etc. — ignore */ }
+  }
+  function systemPrefersDark(){
+    return !!(window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches);
+  }
+  function currentTheme(){
+    var saved = getStored();
+    return (saved === 'light' || saved === 'dark') ? saved : (systemPrefersDark() ? 'dark' : 'light');
+  }
+  function applyTheme(theme){
+    root.setAttribute('data-theme', theme);
+    var icon = document.getElementById('theme-icon');
+    if (icon) icon.textContent = theme === 'dark' ? '🌙' : '☀️';
+  }
+
+  applyTheme(currentTheme());
+
+  var btn = document.getElementById('theme-toggle');
+  if (btn){
+    btn.addEventListener('click', function(){
+      var next = currentTheme() === 'dark' ? 'light' : 'dark';
+      setStored(next);
+      applyTheme(next);
+    });
+  }
+
+  // If the person hasn't manually chosen a theme, keep following the OS setting
+  // live (e.g. their device switches to dark mode at sunset).
+  if (window.matchMedia){
+    var mql = window.matchMedia('(prefers-color-scheme: dark)');
+    var onSystemChange = function(){ if (!getStored()) applyTheme(currentTheme()); };
+    if (mql.addEventListener) mql.addEventListener('change', onSystemChange);
+    else if (mql.addListener) mql.addListener(onSystemChange); // older Safari
+  }
+})();
+</script>
 </body>
 </html>
