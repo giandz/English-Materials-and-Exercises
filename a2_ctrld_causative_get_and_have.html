@@ -1,0 +1,181 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<title>Causative Get and Have — Practice</title>
+<script>
+// Applies the saved/system theme to <html> as early as possible, before the
+// stylesheet below paints anything, so there's no flash of the wrong theme.
+// Self-contained: no dependency on any external script.
+(function(){
+  try{
+    var saved = localStorage.getItem('theme-preference');
+    var theme = (saved === 'light' || saved === 'dark')
+      ? saved
+      : ((window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches) ? 'dark' : 'light');
+    document.documentElement.setAttribute('data-theme', theme);
+  }catch(e){ /* localStorage/matchMedia unavailable — CSS media query still applies */ }
+})();
+</script>
+<link rel="stylesheet" href="house.css">
+<style>
+.cat-tag.have{ background:var(--color-background-info); color:var(--color-text-info); }
+.cat-tag.get{ background:var(--color-background-success); color:var(--color-text-success); }
+.cat-tag.both{ background:var(--surface-1); color:var(--text-secondary); }
+.legend-pill.have{ background:var(--color-background-info); color:var(--color-text-info); }
+.legend-pill.get{ background:var(--color-background-success); color:var(--color-text-success); }
+.legend-pill.both{ background:var(--surface-1); color:var(--text-secondary); }
+</style>
+</head>
+<body class="exercise-page" id="page">
+<span class="cefr-tag cefr-a2">A2 · Elementary</span>
+<div style="padding:.75rem 0 1rem;">
+
+  <h1>Causative Get and Have — Practice</h1>
+  <p class="subtitle">Word order and gap fill practice.</p>
+
+  <div class="sec-div">Practice — Word order</div>
+  <div class="rule-box">
+    Tap a word to add it. Tap it again to remove it. You can also drag words to reorder them. When all the words are in place, the sentence is checked.
+  </div>
+  <button id="grammarToggle" class="grammar-toggle-btn">🎨 Show Grammar</button>
+  <div class="pos-legend"></div>
+  <div class="score-bar">
+    <span>Correct: <strong id="woScore">0</strong> / <span id="woTotal">0</span></span>
+  </div>
+  <div id="woItems"></div>
+
+  <div class="sec-div">Practice — Gap fill</div>
+  <div class="rule-box">
+    Type your answer. The bar turns green 🔴→🟢 when you are right.
+  </div>
+
+  <div class="legend">
+    <span class="legend-pill have">have</span>
+    <span class="legend-pill get">get</span>
+    <span class="legend-pill both">have / get</span>
+  </div>
+
+  <div id="gfItems"></div>
+
+  <footer>Causative Get and Have — Practice (A2)</footer>
+</div>
+
+<div id="theme-toggle-wrap">
+  <button id="theme-toggle" aria-label="Toggle light/dark mode" title="Toggle light/dark mode">
+    <span id="theme-icon">☀️</span>
+  </button>
+</div>
+<script src="house.js"></script>
+<script>
+/* ============ WORD ORDER ============ */
+const WO_ITEMS = [
+  {
+    "context": "Talking about furniture",
+    "text": "I / had / the / sofa / delivered / last / week / .",
+    "pos": ["subject","verb","det","object","part","adj","time","none"]
+  },
+  {
+    "context": "Talking about a car repair",
+    "text": "She / got / her / car / fixed / yesterday / .",
+    "pos": ["subject","verb","det","object","part","time","none"]
+  },
+  {
+    "context": "Talking about home renovation",
+    "text": "We / are / having / the / kitchen / renovated / .",
+    "pos": ["subject","aux","verb","det","object","part","none"]
+  },
+  {
+    "context": "Asking about a haircut",
+    "text": "Did / you / get / your / hair / cut / ?",
+    "pos": ["aux","subject","verb","det","object","part","none"]
+  },
+  {
+    "context": "Talking about car maintenance",
+    "text": "I / haven't / had / my / car / serviced / yet / .",
+    "pos": ["subject","aux","verb","det","object","part","adverb","none"]
+  },
+  {
+    "context": "Talking about a repair job",
+    "text": "They / are / getting / the / roof / repaired / this / month / .",
+    "pos": ["subject","aux","verb","det","object","part","det","time","none"]
+  },
+  {
+    "context": "Talking about getting ready for an event",
+    "text": "He / had / his / suit / cleaned / for / the / wedding / .",
+    "pos": ["subject","verb","det","object","part","prep","det","noun","none"]
+  },
+  {
+    "context": "Talking about the windows",
+    "text": "I'd / like / to / get / my / windows / cleaned / .",
+    "pos": ["subject","verb","none","verb","det","object","part","none"]
+  }
+];
+
+HouseWordOrder.build({ container:'woItems', items:WO_ITEMS, scoreEl:'woScore', totalEl:'woTotal' });
+
+/* ============ GAP FILL ============ */
+const GF_ITEMS = [
+  {
+    "category": "get",
+    "direct": "🔧 Say you had your car fixed (use get)",
+    "template": "I {0} my car fixed.",
+    "hints": [{ "accepted": ["got"] }]
+  },
+  {
+    "category": "have",
+    "direct": "🛋️ Say the sofa was delivered for you (use have)",
+    "template": "I {0} the sofa delivered.",
+    "hints": [{ "accepted": ["had"] }]
+  },
+  {
+    "category": "both",
+    "direct": "🖌️ Complete the past participle (paint)",
+    "template": "She had the walls {0}.",
+    "hints": [{ "accepted": ["painted"] }]
+  },
+  {
+    "category": "both",
+    "direct": "🪟 Complete the past participle (clean)",
+    "template": "He got the windows {0}.",
+    "hints": [{ "accepted": ["cleaned"] }]
+  },
+  {
+    "category": "both",
+    "direct": "🔨 Complete the past participle (install)",
+    "template": "They got the shelves {0}.",
+    "hints": [{ "accepted": ["installed"] }]
+  },
+  {
+    "category": "get",
+    "direct": "💇 Say you're getting your hair cut right now (use get)",
+    "template": "I'm {0} my hair cut.",
+    "hints": [{ "accepted": ["getting"] }]
+  },
+  {
+    "category": "have",
+    "direct": "🏠 Say the kitchen is being renovated (use have)",
+    "template": "We are {0} the kitchen renovated.",
+    "hints": [{ "accepted": ["having"] }]
+  },
+  {
+    "category": "get",
+    "direct": "❓ Ask a question with get (past)",
+    "template": "{0} you get your roof repaired?",
+    "hints": [{ "accepted": ["did"] }]
+  },
+  {
+    "category": "have",
+    "direct": "🚫 Say you haven't had your hair cut yet",
+    "template": "I {0} had my hair cut yet.",
+    "hints": [{ "accepted": ["haven't", "have not"] }]
+  }
+];
+
+HouseGapFill.build({ container:'gfItems', items:GF_ITEMS, labels: { have:'have', get:'get', both:'have / get' } });
+
+HouseGrammar.init();
+</script>
+</body>
+</html>
