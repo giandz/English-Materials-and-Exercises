@@ -2,23 +2,38 @@
 <html lang="en">
 <head>
 <meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
 <title>Let's Cook! — Intro: Cooking Verbs</title>
-<link rel="preconnect" href="https://fonts.googleapis.com">
-<link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,500;9..144,600;9..144,700&family=Karla:wght@400;500;600;700&display=swap" rel="stylesheet">
+<script>
+// Applies the saved/system theme to <html> as early as possible, before the
+// stylesheet below paints anything, so there's no flash of the wrong theme.
+// Self-contained: no dependency on any external script.
+(function(){
+  try{
+    var saved = localStorage.getItem('theme-preference');
+    var theme = (saved === 'light' || saved === 'dark')
+      ? saved
+      : ((window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches) ? 'dark' : 'light');
+    document.documentElement.setAttribute('data-theme', theme);
+  }catch(e){ /* localStorage/matchMedia unavailable — CSS media query still applies */ }
+})();
+</script>
+<link rel="stylesheet" href="house.css">
 <style>
-
+/* Page-specific design tokens. These are this lesson's own palette,
+   not house tokens — house.css owns everything prefixed --color-* etc. */
 :root{
-  --cream:#F7F1E3; --pine:#2F4B3C; --pine-dark:#20332A;
-  --tomato:#C1442E; --tomato-dark:#9A3524;
-  --mustard:#E3A72F; --mustard-dark:#B9821D;
-  --sage:#E9EEE1; --charcoal:#2B2620; --paper:#FFFDF7;
-  --ok:#3F7D4F; --bad:#B4413A;
+  --cream: #F7F1E3;
+  --pine: #2F4B3C;
+  --pine-dark: #20332A;
+  --tomato: #C1442E;
+  --tomato-dark: #9A3524;
+  --mustard: #E3A72F;
+  --sage: #E9EEE1;
+  --charcoal: #2B2620;
+  --paper: #FFFDF7;
+  --ok: #3F7D4F;
 }
-*{box-sizing:border-box;}
-html{scroll-behavior:smooth;}
-body{margin:0;background:var(--cream);color:var(--charcoal);font-family:'Karla',sans-serif;font-size:17px;line-height:1.55;}
-h1,h2,h3,h4{font-family:'Fraunces',serif;color:var(--pine-dark);margin:0 0 .4em 0;line-height:1.15;}
 .wrap{max-width:880px;margin:0 auto;padding:0 20px 100px;}
 
 .hero{background:var(--pine);color:var(--cream);padding:40px 20px 30px;text-align:center;border-bottom:6px solid var(--mustard);}
@@ -31,8 +46,6 @@ section{margin-top:44px;}
 .sec-head{display:flex;align-items:center;margin-bottom:6px;}
 .sec-head h2{font-size:1.5rem;}
 .sec-sub{color:#5b5346;margin:0 0 22px 40px;font-size:.98rem;}
-
-.card{background:var(--paper);border:1px solid rgba(43,38,32,.12);border-radius:14px;box-shadow:5px 5px 0 rgba(47,75,60,.08);padding:26px 28px;}
 
 .badge{width:52px;height:52px;border-radius:50%;flex:none;display:flex;align-items:center;justify-content:center;}
 .badge.heat{background:var(--mustard);} .badge.prep{background:var(--pine);} .badge.combine{background:var(--tomato);}
@@ -60,10 +73,6 @@ section{margin-top:44px;}
 .stress-chip{background:var(--paper);border-radius:10px;padding:10px 16px;font-family:'Fraunces',serif;font-size:1.05rem;}
 .stress-chip b{color:var(--tomato-dark);}
 
-.prequiz{background:var(--paper);border:2px dashed var(--pine);border-radius:14px;padding:24px 28px;}
-.prequiz ol{margin:10px 0 0;padding-left:20px;}
-.prequiz li{margin-bottom:8px;}
-
 .convo{background:var(--paper);border-radius:14px;padding:8px 28px 24px;border:1px solid rgba(43,38,32,.12);}
 .convo .title-strip{display:flex;justify-content:space-between;align-items:center;margin:0 -28px 14px;padding:14px 28px;background:var(--mustard);border-radius:14px 14px 0 0;}
 .convo .title-strip h3{margin:0;color:var(--pine-dark);font-size:1.15rem;}
@@ -73,15 +82,6 @@ section{margin-top:44px;}
 .speaker .emoji{margin-right:4px;}
 .line p{margin:0;}
 .seq-mark{background:rgba(227,167,47,.35);padding:1px 5px;border-radius:4px;font-weight:700;color:var(--pine-dark);}
-
-.quiz-q{margin-bottom:24px;}
-.quiz-q .q-text{font-weight:600;margin-bottom:10px;font-family:'Fraunces',serif;color:var(--pine-dark);}
-.opt{display:block;width:100%;text-align:left;background:var(--sage);border:1px solid rgba(43,38,32,.15);border-radius:10px;padding:10px 14px;margin-bottom:8px;cursor:pointer;font-family:'Karla',sans-serif;font-size:.98rem;color:var(--charcoal);transition:background .15s, border-color .15s;}
-.opt:hover{border-color:var(--pine);}
-.opt.correct{background:#DCEFDF;border-color:var(--ok);color:#265232;font-weight:600;}
-.opt.incorrect{background:#F6DAD7;border-color:var(--bad);color:#7A2A24;}
-.opt:disabled{cursor:default;}
-.q-feedback{font-size:.88rem;margin-top:2px;color:#5b5346;min-height:1.2em;}
 
 .gap-text{font-size:1.02rem;margin-bottom:18px;}
 .gap-text ol{padding-left:20px;}
@@ -98,8 +98,6 @@ section{margin-top:44px;}
   text-align:center;padding:2px 4px;
 }
 .blank input:focus{outline:none;border-bottom-color:var(--tomato);}
-
-.word-bank{display:flex;flex-wrap:wrap;gap:10px;margin:14px 0 18px;padding:14px;background:var(--sage);border-radius:10px;}
 .chip{background:var(--pine);color:var(--cream);border:none;padding:9px 16px;border-radius:8px;font-family:'Karla',sans-serif;font-weight:600;font-size:.92rem;cursor:grab;}
 .chip:active{cursor:grabbing;}
 .chip.selected{background:var(--tomato);}
@@ -139,17 +137,17 @@ section{margin-top:44px;}
 .discuss li{margin-bottom:12px;font-size:1.02rem;}
 .discuss .lead{font-size:1.05rem;margin:0 0 6px;}
 
-footer{text-align:center;color:#8a8172;font-size:.85rem;margin-top:60px;}
-
 @media(max-width:560px){
   .speaker{width:80px;font-size:.82rem;}
   .match-wrap{grid-template-columns:1fr;}
   .match-grid{grid-template-columns:repeat(3,1fr);}
 }
-
 </style>
 </head>
 <body>
+<div class="page" id="page">
+  <span class="cefr-tag cefr-a1a2">A1/A2 · Beginner–Elementary</span>
+
 <div class="hero">
   <h1>Let's Cook!</h1>
   <div class="stage-label">Stage 1/5 &middot; First: Intro</div>
@@ -188,8 +186,16 @@ footer{text-align:center;color:#8a8172;font-size:.85rem;margin-top:60px;}
 
 </div>
 <footer>Cooking Instructions &amp; Adverbs of Sequence &mdash; A1/A2 Lesson Pack</footer>
-<script>
 
+</div>
+
+<div id="theme-toggle-wrap">
+  <button id="theme-toggle" aria-label="Toggle light/dark mode" title="Toggle light/dark mode">
+    <span id="theme-icon">☀️</span>
+  </button>
+</div>
+<script src="house.js"></script>
+<script>
 const VERBS = [{"k": "boil", "grp": "heat", "def": "to cook food in very hot, bubbling water", "ex": "First, boil the water in a big pot."}, {"k": "simmer", "grp": "heat", "def": "to cook food gently, with small bubbles", "ex": "Then, simmer the soup for 20 minutes."}, {"k": "bake", "grp": "heat", "def": "to cook food in the oven", "ex": "Bake the cake for 30 minutes."}, {"k": "fry", "grp": "heat", "def": "to cook food in hot oil in a pan", "ex": "Fry the eggs for breakfast."}, {"k": "chop", "grp": "prep", "def": "to cut food into small pieces", "ex": "Chop the onion and the carrots."}, {"k": "cut", "grp": "prep", "def": "to divide food into pieces with a knife", "ex": "Cut the bread into slices."}, {"k": "peel", "grp": "prep", "def": "to remove the skin of a fruit or vegetable", "ex": "Peel the potatoes first."}, {"k": "grate", "grp": "prep", "def": "to cut food into small pieces with a grater", "ex": "Grate the cheese on top."}, {"k": "mix", "grp": "combine", "def": "to put two or more things together", "ex": "Mix the flour and the sugar."}, {"k": "stir", "grp": "combine", "def": "to move a spoon around in food or liquid", "ex": "Stir the soup so it doesn't stick."}, {"k": "add", "grp": "combine", "def": "to put something into the food", "ex": "Add a little salt and pepper."}, {"k": "pour", "grp": "combine", "def": "to make a liquid flow into a container", "ex": "Pour the milk into the bowl."}];
 const ICONS = {"boil": "<svg viewBox=\"0 0 64 64\"><path d=\"M14 30h36l-4 20a5 5 0 0 1-5 4H23a5 5 0 0 1-5-4Z\" fill=\"#FFF8EC\"/><ellipse cx=\"32\" cy=\"30\" rx=\"18\" ry=\"4.5\" fill=\"#FFE8C2\"/><rect x=\"10\" y=\"27\" width=\"6\" height=\"6\" rx=\"2\" fill=\"#FFE8C2\"/><rect x=\"48\" y=\"27\" width=\"6\" height=\"6\" rx=\"2\" fill=\"#FFE8C2\"/><circle cx=\"26\" cy=\"40\" r=\"3\" fill=\"#8FCBE8\"/><circle cx=\"35\" cy=\"44\" r=\"2.5\" fill=\"#8FCBE8\"/><circle cx=\"30\" cy=\"48\" r=\"2\" fill=\"#8FCBE8\"/><path d=\"M24 20c-2-3 2-4 0-7M32 17c-2-3 2-4 0-7M40 20c-2-3 2-4 0-7\" stroke=\"#fff\" stroke-width=\"2.4\" fill=\"none\" stroke-linecap=\"round\"/></svg>", "simmer": "<svg viewBox=\"0 0 64 64\"><path d=\"M16 32h32l-3.5 18a5 5 0 0 1-5 4H24.5a5 5 0 0 1-5-4Z\" fill=\"#FFF8EC\"/><ellipse cx=\"32\" cy=\"32\" rx=\"16\" ry=\"4\" fill=\"#FFE8C2\"/><rect x=\"12\" y=\"29.5\" width=\"5.5\" height=\"5.5\" rx=\"2\" fill=\"#FFE8C2\"/><rect x=\"46.5\" y=\"29.5\" width=\"5.5\" height=\"5.5\" rx=\"2\" fill=\"#FFE8C2\"/><circle cx=\"30\" cy=\"42\" r=\"2\" fill=\"#8FCBE8\"/><circle cx=\"36\" cy=\"46\" r=\"1.6\" fill=\"#8FCBE8\"/><path d=\"M31 23c-1.4-2 1.4-2.6 0-4.6\" stroke=\"#fff\" stroke-width=\"2.2\" fill=\"none\" stroke-linecap=\"round\"/><path d=\"M25 54c3-1 11-1 14 0\" stroke=\"#EB5757\" stroke-width=\"3\" fill=\"none\" stroke-linecap=\"round\"/></svg>", "chop": "<svg viewBox=\"0 0 64 64\"><rect x=\"8\" y=\"42\" width=\"48\" height=\"9\" rx=\"3\" fill=\"#C68958\"/><circle cx=\"24\" cy=\"46.5\" r=\"3\" fill=\"#E8963C\"/><circle cx=\"32\" cy=\"46.5\" r=\"3\" fill=\"#E8963C\"/><circle cx=\"40\" cy=\"46.5\" r=\"3\" fill=\"#E8963C\"/><g transform=\"rotate(-18 40 24)\"><rect x=\"37\" y=\"10\" width=\"6\" height=\"26\" rx=\"1.5\" fill=\"#C7CDD1\"/><rect x=\"35\" y=\"34\" width=\"10\" height=\"7\" rx=\"2\" fill=\"#8B5E34\"/></g></svg>", "cut": "<svg viewBox=\"0 0 64 64\"><rect x=\"8\" y=\"44\" width=\"48\" height=\"7\" rx=\"3\" fill=\"#C68958\"/><path d=\"M14 24c0-6 6-10 12-10h6v22H26c-6 0-12-4-12-10Z\" fill=\"#EAD1A4\"/><path d=\"M34 14h6c6 0 12 4 12 10s-6 10-12 10h-6Z\" fill=\"#EAD1A4\"/><rect x=\"30\" y=\"12\" width=\"4\" height=\"26\" fill=\"#F7F1E3\"/><g transform=\"rotate(90 46 26)\"><rect x=\"43\" y=\"8\" width=\"6\" height=\"20\" rx=\"1.5\" fill=\"#C7CDD1\"/><rect x=\"41\" y=\"26\" width=\"10\" height=\"6\" rx=\"2\" fill=\"#8B5E34\"/></g></svg>", "mix": "<svg viewBox=\"0 0 64 64\"><path d=\"M14 26h36l-5 18a6 6 0 0 1-6 4.5H25a6 6 0 0 1-6-4.5Z\" fill=\"#FFF8EC\"/><ellipse cx=\"32\" cy=\"26\" rx=\"18\" ry=\"4.5\" fill=\"#FFE8C2\"/><circle cx=\"26\" cy=\"34\" r=\"2.6\" fill=\"#C1442E\"/><circle cx=\"36\" cy=\"37\" r=\"2.2\" fill=\"#6FA85E\"/><path d=\"M40 12c6 3 8 9 5 15\" stroke=\"#2F4B3C\" stroke-width=\"2.4\" fill=\"none\" stroke-linecap=\"round\" stroke-dasharray=\"3 4\"/><rect x=\"37\" y=\"10\" width=\"4\" height=\"20\" rx=\"2\" fill=\"#8B5E34\" transform=\"rotate(18 39 20)\"/></svg>", "stir": "<svg viewBox=\"0 0 64 64\"><path d=\"M15 30h34l-4 19a5 5 0 0 1-5 4H24a5 5 0 0 1-5-4Z\" fill=\"#FFF8EC\"/><ellipse cx=\"32\" cy=\"30\" rx=\"17\" ry=\"4.2\" fill=\"#FFE8C2\"/><path d=\"M46 22c4 2 6 7 3 12\" stroke=\"#2F4B3C\" stroke-width=\"2.4\" fill=\"none\" stroke-linecap=\"round\"/><path d=\"M49 34l-2-5 5 1Z\" fill=\"#2F4B3C\"/><rect x=\"29\" y=\"14\" width=\"4.5\" height=\"24\" rx=\"2\" fill=\"#8B5E34\" transform=\"rotate(-8 31 26)\"/></svg>", "bake": "<svg viewBox=\"0 0 64 64\"><rect x=\"10\" y=\"12\" width=\"44\" height=\"40\" rx=\"4\" fill=\"#3B372F\"/><rect x=\"16\" y=\"24\" width=\"32\" height=\"22\" rx=\"3\" fill=\"#1E1B16\"/><path d=\"M24 40c1-4 3-4 4-8 1 4 3 4 4 8 1-3 2-3 3-6 1 3 2 3 3 6\" stroke=\"#E8963C\" stroke-width=\"2.4\" fill=\"none\" stroke-linecap=\"round\"/><circle cx=\"18\" cy=\"17\" r=\"2.2\" fill=\"#E3A72F\"/><circle cx=\"26\" cy=\"17\" r=\"2.2\" fill=\"#E3A72F\"/></svg>", "fry": "<svg viewBox=\"0 0 64 64\"><ellipse cx=\"28\" cy=\"34\" rx=\"17\" ry=\"10\" fill=\"#3B372F\"/><ellipse cx=\"28\" cy=\"31\" rx=\"17\" ry=\"9\" fill=\"#55504A\"/><rect x=\"43\" y=\"28\" width=\"16\" height=\"5\" rx=\"2.5\" fill=\"#8B5E34\"/><ellipse cx=\"24\" cy=\"31\" rx=\"8\" ry=\"5.5\" fill=\"#FFF8EC\"/><circle cx=\"26\" cy=\"31\" r=\"3\" fill=\"#E3A72F\"/><path d=\"M14 18c1-3-1-4 0-7M22 16c1-3-1-4 0-7\" stroke=\"#C1442E\" stroke-width=\"2\" fill=\"none\" stroke-linecap=\"round\"/></svg>", "peel": "<svg viewBox=\"0 0 64 64\"><path d=\"M22 20c10-4 20 2 20 16 0 10-7 18-14 18S16 46 16 36c0-7 2-12 6-16Z\" fill=\"#E8963C\"/><path d=\"M25 18c2-4 6-6 9-5\" stroke=\"#6FA85E\" stroke-width=\"4\" fill=\"none\" stroke-linecap=\"round\"/><path d=\"M20 24c4 6 3 16-2 20-3-6-3-15 2-20Z\" fill=\"#F3B978\"/><g transform=\"rotate(30 46 22)\"><rect x=\"42\" y=\"10\" width=\"8\" height=\"18\" rx=\"3\" fill=\"#C7CDD1\"/><rect x=\"43.5\" y=\"28\" width=\"5\" height=\"10\" rx=\"2\" fill=\"#8B5E34\"/><ellipse cx=\"46\" cy=\"16\" rx=\"2\" ry=\"4\" fill=\"#8E9994\"/></g></svg>", "pour": "<svg viewBox=\"0 0 64 64\"><path d=\"M14 14h18l4 8-4 18a4 4 0 0 1-4 3H18a4 4 0 0 1-4-4Z\" fill=\"#EAD1A4\" transform=\"rotate(-18 24 25)\"/><path d=\"M40 30c2 6 4 10 5 16\" stroke=\"#6FB3D9\" stroke-width=\"4\" fill=\"none\" stroke-linecap=\"round\"/><path d=\"M34 46h20l-3 6a4 4 0 0 1-4 3H41a4 4 0 0 1-4-3Z\" fill=\"#FFF8EC\"/><ellipse cx=\"44\" cy=\"46\" rx=\"10\" ry=\"2.6\" fill=\"#FFE8C2\"/></svg>", "add": "<svg viewBox=\"0 0 64 64\"><path d=\"M14 34h36l-4 15a5 5 0 0 1-5 4H23a5 5 0 0 1-5-4Z\" fill=\"#FFF8EC\"/><ellipse cx=\"32\" cy=\"34\" rx=\"18\" ry=\"4.4\" fill=\"#FFE8C2\"/><circle cx=\"24\" cy=\"16\" r=\"4\" fill=\"#C1442E\"/><path d=\"M40 12c2 3 2 6 0 9\" stroke=\"#6FA85E\" stroke-width=\"3\" fill=\"none\" stroke-linecap=\"round\"/><path d=\"M50 20h8M54 16v8\" stroke=\"#2F4B3C\" stroke-width=\"3\" stroke-linecap=\"round\"/></svg>", "grate": "<svg viewBox=\"0 0 64 64\"><path d=\"M20 12h18l6 40H22Z\" fill=\"#C7CDD1\"/><circle cx=\"27\" cy=\"22\" r=\"1.6\" fill=\"#8E9994\"/><circle cx=\"34\" cy=\"22\" r=\"1.6\" fill=\"#8E9994\"/><circle cx=\"27\" cy=\"30\" r=\"1.6\" fill=\"#8E9994\"/><circle cx=\"34\" cy=\"30\" r=\"1.6\" fill=\"#8E9994\"/><circle cx=\"27\" cy=\"38\" r=\"1.6\" fill=\"#8E9994\"/><circle cx=\"34\" cy=\"38\" r=\"1.6\" fill=\"#8E9994\"/><path d=\"M40 16l6-4 4 22-8 4Z\" fill=\"#F4C95D\"/><path d=\"M18 54c4-3 8-1 11-3 3-2 7 0 10-2 3-2 7 0 9-2\" stroke=\"#F4C95D\" stroke-width=\"3\" fill=\"none\" stroke-linecap=\"round\"/></svg>"};
 
@@ -281,7 +287,6 @@ function revealDef(key){
 function resetMatch(){
   location.reload();
 }
-
 </script>
 </body>
 </html>

@@ -1,0 +1,212 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<title>There Is / There Are — City Conversation</title>
+<script>
+// Applies the saved/system theme to <html> as early as possible, before the
+// stylesheet below paints anything, so there's no flash of the wrong theme.
+// Self-contained: no dependency on any external script.
+(function(){
+  try{
+    var saved = localStorage.getItem('theme-preference');
+    var theme = (saved === 'light' || saved === 'dark')
+      ? saved
+      : ((window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches) ? 'dark' : 'light');
+    document.documentElement.setAttribute('data-theme', theme);
+  }catch(e){ /* localStorage/matchMedia unavailable — CSS media query still applies */ }
+})();
+</script>
+<link rel="stylesheet" href="house.css">
+<style>
+/* Recovered page-specific rules. */
+.bubble-row { display: flex; align-items: flex-end; gap: 8px; }
+.bubble-row.right { flex-direction: row-reverse; }
+.bubble-row.right .bubble { background: #eef0ff; }
+
+.toolbar { display: flex; justify-content: space-between; align-items: center; margin: 6px 0 16px; flex-wrap: wrap; gap: 10px; }
+    .btn {
+      display: inline-flex; align-items: center; gap: 6px; padding: 8px 16px;
+      background: var(--text-accent); color: #fff; border: none; border-radius: 10px;
+      font-size: 0.85rem; font-weight: 600; cursor: pointer;
+    }
+
+    .pos-subject, .pos-aux, .pos-neg, .pos-wh, .pos-det { border-radius: 4px; padding: 1px 4px; transition: color .2s, background .2s; }
+    body.no-highlight .pos-subject, body.no-highlight .pos-aux, body.no-highlight .pos-neg, body.no-highlight .pos-wh, body.no-highlight .pos-det {
+      color: inherit; background: none; padding: 0;
+    }
+    .pos-subject { color: var(--pos-subject); background: var(--pos-subject-bg); }
+    .pos-aux     { color: var(--pos-aux);     background: var(--pos-aux-bg); }
+    .pos-neg     { color: var(--pos-neg);     background: var(--pos-neg-bg); }
+    .pos-wh      { color: var(--pos-wh);      background: var(--pos-wh-bg); }
+    .pos-det     { color: var(--pos-det);     background: var(--pos-det-bg); }
+    footer.credits { text-align: center; font-size: 0.75rem; color: var(--text-muted); margin-top: 40px; }
+</style>
+</head>
+<body>
+<div class="page" id="page">
+  <h1>What's Your Neighborhood Like? <span class="cefr-tag cefr-a1a2">A1/A2 · Beginner–Elementary</span></h1>
+  <p class="subtitle">Read the conversation between Anna and Ben. Notice how Anna describes her new neighborhood.</p>
+    <div class="sec-div">Before you read</div>
+  <p class="subtitle">Read these three questions first, then look for the answers in the conversation.</p>
+  <div id="preQuestions" class="prequiz"></div>
+
+  <button id="grammarToggle" class="grammar-toggle-btn">🎨 Show Grammar</button>
+  <div class="pos-legend"></div>
+<div class="setting-chip">📍 Ben is asking Anna about her new neighborhood</div>
+
+  <div class="toolbar">
+    <button class="btn" id="toggleBtn">Hide grammar highlighting</button>
+  </div>
+  <div class="legend">
+    <span class="legend-pill"><span class="legend-swatch" style="background:var(--pos-subject)"></span>there</span>
+    <span class="legend-pill"><span class="legend-swatch" style="background:var(--pos-aux)"></span>is / are (+ n't)</span>
+    <span class="legend-pill"><span class="legend-swatch" style="background:var(--pos-det)"></span>determiner (many/much/a lot of…)</span>
+    <span class="legend-pill"><span class="legend-swatch" style="background:var(--pos-wh)"></span>is/are (question)</span>
+  </div>
+
+  <div class="bubble-wrap">
+    <div class="bubble-row left">
+      <div class="avatar">🧔</div>
+      <div class="bubble-col">
+        <p class="bname">Ben</p>
+        <div class="bubble">Hey! <span class="pos-hl pos-wh">What</span><span class="pos-hl pos-verb">'s</span> <span class="pos-hl pos-subject">your new neighborhood</span> like?</div>
+      </div>
+    </div>
+
+    <div class="bubble-row right">
+      <div class="avatar">👩</div>
+      <div class="bubble-col">
+        <p class="bname">Anna</p>
+        <div class="bubble">It's nice, but <span class="pos-hl pos-subject">there</span>'s <span class="pos-hl pos-det">a lot of</span> traffic.</div>
+      </div>
+    </div>
+
+    <div class="bubble-row left">
+      <div class="avatar">🧔</div>
+      <div class="bubble-col">
+        <p class="bname">Ben</p>
+        <div class="bubble">Really? <span class="pos-hl pos-aux">Are</span> <span class="pos-hl pos-subject">there</span> <span class="pos-hl pos-det">many</span> parks?</div>
+      </div>
+    </div>
+
+    <div class="bubble-row right">
+      <div class="avatar">👩</div>
+      <div class="bubble-col">
+        <p class="bname">Anna</p>
+        <div class="bubble">Yes, <span class="pos-hl pos-subject">there</span> <span class="pos-hl pos-aux">are</span> <span class="pos-hl pos-det">a few</span> parks nearby, but <span class="pos-hl pos-subject">there</span> <span class="pos-hl pos-aux">aren</span><span class="pos-hl pos-neg">'t</span> <span class="pos-hl pos-det">many</span> restaurants.</div>
+      </div>
+    </div>
+
+    <div class="bubble-row left">
+      <div class="avatar">🧔</div>
+      <div class="bubble-col">
+        <p class="bname">Ben</p>
+        <div class="bubble"><span class="pos-hl pos-aux">Is</span> <span class="pos-hl pos-subject">there</span> <span class="pos-hl pos-det">much</span> crime?</div>
+      </div>
+    </div>
+
+    <div class="bubble-row right">
+      <div class="avatar">👩</div>
+      <div class="bubble-col">
+        <p class="bname">Anna</p>
+        <div class="bubble">No, <span class="pos-hl pos-subject">there</span> <span class="pos-hl pos-aux">isn</span><span class="pos-hl pos-neg">'t</span> <span class="pos-hl pos-det">much</span> crime. It's very safe.</div>
+      </div>
+    </div>
+
+    <div class="bubble-row left">
+      <div class="avatar">🧔</div>
+      <div class="bubble-col">
+        <p class="bname">Ben</p>
+        <div class="bubble">That's good! <span class="pos-hl pos-aux">Is</span> <span class="pos-hl pos-subject">there</span> a supermarket nearby?</div>
+      </div>
+    </div>
+
+    <div class="bubble-row right">
+      <div class="avatar">👩</div>
+      <div class="bubble-col">
+        <p class="bname">Anna</p>
+        <div class="bubble">Yes, <span class="pos-hl pos-subject">there</span>'s one supermarket, but <span class="pos-hl pos-subject">there</span> <span class="pos-hl pos-aux">isn</span><span class="pos-hl pos-neg">'t</span> a big shopping center.</div>
+      </div>
+    </div>
+
+    <div class="bubble-row left">
+      <div class="avatar">🧔</div>
+      <div class="bubble-col">
+        <p class="bname">Ben</p>
+        <div class="bubble">Sounds quiet. <span class="pos-hl pos-aux">Is</span> <span class="pos-hl pos-subject">there</span> <span class="pos-hl pos-det">a lot of</span> noise at night?</div>
+      </div>
+    </div>
+
+    <div class="bubble-row right">
+      <div class="avatar">👩</div>
+      <div class="bubble-col">
+        <p class="bname">Anna</p>
+        <div class="bubble">No, <span class="pos-hl pos-subject">there</span> <span class="pos-hl pos-aux">isn</span><span class="pos-hl pos-neg">'t</span> <span class="pos-hl pos-det">much</span> noise. It's peaceful.</div>
+      </div>
+    </div>
+  </div>
+  <div class="sec-div">Check your answers</div>
+  <p class="subtitle">The same three questions — now choose the correct answer.</p>
+  <div id="quiz"></div>
+
+
+  <div class="rule-box"><strong>Notice:</strong> Anna uses <em>there is / there are</em> to say what exists in a place. With words like <em>traffic</em>, <em>crime</em>, and <em>noise</em> (no plural — <em>noncount</em> nouns) she uses <em>is / much / a lot of</em>. With words like <em>parks</em> and <em>restaurants</em> (plural — <em>count</em> nouns) she uses <em>are / many / a few</em>. Let's look at this more closely.</div>
+
+  <footer class="credits">There is / There are · Describing a City</footer>
+</div>
+
+<div id="theme-toggle-wrap">
+  <button id="theme-toggle" aria-label="Toggle light/dark mode" title="Toggle light/dark mode">
+    <span id="theme-icon">☀️</span>
+  </button>
+</div>
+<script src="house.js"></script>
+<script>
+document.getElementById('toggleBtn').addEventListener('click', function () {
+  document.body.classList.toggle('no-highlight');
+  this.textContent = document.body.classList.contains('no-highlight')
+    ? 'Show grammar highlighting'
+    : 'Hide grammar highlighting';
+});
+</script>
+<script>
+/* The same three questions run before and after the conversation:
+   as a plain list first (setting a purpose for reading), then with
+   three options each once the text has been read. */
+const CQ_ITEMS = [
+  {
+    "q": "What is the main problem with Anna's neighborhood?",
+    "opts": [
+      "There is a lot of traffic",
+      "There is much crime",
+      "There is a lot of noise at night"
+    ],
+    "correct": 0
+  },
+  {
+    "q": "What is there near Anna's home?",
+    "opts": [
+      "A big shopping center",
+      "A few parks",
+      "Many restaurants"
+    ],
+    "correct": 1
+  },
+  {
+    "q": "How does Anna describe her neighborhood at night?",
+    "opts": [
+      "Very busy",
+      "Rather dangerous",
+      "Peaceful — there isn't much noise"
+    ],
+    "correct": 2
+  }
+];
+
+HouseComprehension.build({ pre: 'preQuestions', quiz: 'quiz', items: CQ_ITEMS });
+HouseGrammar.init();
+</script>
+</body>
+</html>

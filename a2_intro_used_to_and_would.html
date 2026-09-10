@@ -2,130 +2,59 @@
 <html lang="en">
 <head>
 <meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
 <title>Ben & Ana — Past Habits</title>
-<link rel="stylesheet" href="general.css">
+<script>
+// Applies the saved/system theme to <html> as early as possible, before the
+// stylesheet below paints anything, so there's no flash of the wrong theme.
+// Self-contained: no dependency on any external script.
+(function(){
+  try{
+    var saved = localStorage.getItem('theme-preference');
+    var theme = (saved === 'light' || saved === 'dark')
+      ? saved
+      : ((window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches) ? 'dark' : 'light');
+    document.documentElement.setAttribute('data-theme', theme);
+  }catch(e){ /* localStorage/matchMedia unavailable — CSS media query still applies */ }
+})();
+</script>
+<link rel="stylesheet" href="house.css">
 <style>
-  :root{
-    --color-background-primary: #ffffff;
-    --color-background-secondary: #f7f7f8;
-    --color-text-primary: #1a1a1a;
-    --color-text-secondary: #5b5b60;
-    --color-text-tertiary: #8b8b90;
-    --color-border-secondary: #e3e3e6;
-    --color-border-tertiary: #ebebee;
-    --border-radius-lg: 12px;
-    --font-mono: "SF Mono", "JetBrains Mono", monospace;
-
-    --text-primary: var(--color-text-primary);
-    --text-secondary: var(--color-text-secondary);
-    --text-muted: var(--color-text-tertiary);
-    --text-accent: #185fa5;
-    --surface-1: var(--color-background-secondary);
-    --surface-2: var(--color-background-primary);
-    --border: var(--color-border-tertiary);
-    --radius: var(--border-radius-lg);
-    --bg-accent: #e6f1fb;
-    --bg-pro: #eeedfe;
-    --text-pro: #26215c;
-    --border-pro: #afa9ec;
-
-    --q-color: #8a6d00;
-    --q-bg: #fdf3d0;
-    --neg-color: #a32d2d;
-    --neg-bg: #fce8e8;
-    --pos-color: #27500a;
-    --pos-bg: #eaf3de;
-  }
-
-  @media (prefers-color-scheme: dark){
-    :root{
-      --color-background-primary: #1e1e20;
-      --color-background-secondary: #26262a;
-      --color-text-primary: #f0f0f2;
-      --color-text-secondary: #b4b4ba;
-      --color-text-tertiary: #85858c;
-      --color-border-secondary: #3a3a3f;
-      --color-border-tertiary: #34343a;
-      --bg-accent: #1c2e40;
-      --bg-pro: #2a2650;
-      --text-pro: #d7d3ff;
-      --border-pro: #4c447f;
-
-      --q-color: #e8c94a;
-      --q-bg: #3a3115;
-      --neg-color: #e2827a;
-      --neg-bg: #3a201e;
-      --pos-color: #9ed17a;
-      --pos-bg: #1f3014;
-    }
-  }
-
-  *{ box-sizing:border-box; }
-  html,body{
-    margin:0;
-    background:var(--color-background-primary);
-    color:var(--color-text-primary);
-    font-family:-apple-system, BlinkMacSystemFont, "Segoe UI", Helvetica, Arial, sans-serif;
-    font-size:15px;
-    line-height:1.6;
-  }
-  .page{ max-width:640px; margin:0 auto; padding:28px 20px 56px; }
-
-  h1{ font-size:1.3rem; font-weight:600; letter-spacing:-0.01em; margin:0 0 4px; }
-  .subtitle{ font-size:13px; color:var(--text-secondary); margin:0 0 4px; }
-  .cefr-tag{
-    display:inline-block;
-    font-size:11px;
-    font-weight:700;
-    letter-spacing:.04em;
-    background:#e6f1fb;
-    color:#185fa5;
-    padding:3px 10px;
-    border-radius:20px;
-    margin-bottom:10px;
-  }
-
-  .sec-div{font-size:11px;font-weight:500;letter-spacing:.06em;text-transform:uppercase;color:var(--text-muted);display:flex;align-items:center;gap:8px;margin:1.75rem 0 1rem;}
-  .sec-div::before,.sec-div::after{content:'';flex:1;height:.5px;background:var(--border);}
-
-  .setting-chip{display:inline-flex;align-items:center;gap:5px;font-size:12px;padding:3px 10px;border-radius:20px;background:var(--surface-1);border:.5px solid var(--border);color:var(--text-secondary);margin-bottom:1rem;}
-
-  .legend{
-    display:flex;
-    flex-wrap:wrap;
-    gap:8px;
-    margin-bottom:1.25rem;
-  }
-  .legend-pill{
-    font-size:12px;
-    font-weight:600;
-    padding:4px 12px;
-    border-radius:20px;
-    display:inline-flex;
-    align-items:center;
-    gap:6px;
-  }
-  .legend-pill.q{ background:var(--q-bg); color:var(--q-color); }
-  .legend-pill.neg{ background:var(--neg-bg); color:var(--neg-color); }
-  .legend-pill.pos{ background:var(--pos-bg); color:var(--pos-color); }
-
-  .q{ color:var(--q-color); font-weight:700; background:var(--q-bg); padding:1px 5px; border-radius:4px; }
-  .neg{ color:var(--neg-color); font-weight:700; background:var(--neg-bg); padding:1px 5px; border-radius:4px; }
-  .pos{ color:var(--pos-color); font-weight:700; background:var(--pos-bg); padding:1px 5px; border-radius:4px; }
-
-  .bubble-wrap{display:flex;gap:10px;align-items:flex-end;margin-bottom:22px;}
-  .bubble-wrap.right{flex-direction:row-reverse;}
-  .avatar-col{
+/* Recovered page-specific rules. */
+.avatar-col{
     display:flex;
     flex-direction:column;
     align-items:center;
     gap:5px;
     flex-shrink:0;
   }
+
+/* Page-specific design tokens. These are this lesson's own palette,
+   not house tokens — house.css owns everything prefixed --color-* etc. */
+:root{
+  --q-color: #8a6d00;
+  --q-bg: #fdf3d0;
+  --neg-color: #a32d2d;
+  --neg-bg: #fce8e8;
+  --pos-color: #27500a;
+  --pos-bg: #eaf3de;
+}
+@media (prefers-color-scheme: dark){
+:root{
+  --q-color: #e8c94a;
+  --q-bg: #3a3115;
+  --neg-color: #e2827a;
+  --neg-bg: #3a201e;
+  --pos-color: #9ed17a;
+  --pos-bg: #1f3014;
+}}
+
+  .q{ color:var(--q-color); font-weight:700; background:var(--q-bg); padding:1px 5px; border-radius:4px; }
+  .neg{ color:var(--neg-color); font-weight:700; background:var(--neg-bg); padding:1px 5px; border-radius:4px; }
+  .pos{ color:var(--pos-color); font-weight:700; background:var(--pos-bg); padding:1px 5px; border-radius:4px; }
   .thought-bubble{
     position:relative;
-    background:var(--gray-10);
+    background:var(--color-background-secondary);
     border:1px solid var(--border);
     border-radius:14px;
     padding:3px 9px;
@@ -137,7 +66,7 @@
   .thought-bubble .puff{
     position:absolute;
     left:50%;
-    background:var(--gray-10);
+    background:var(--color-background-secondary);
     border:1px solid var(--border);
     border-radius:50%;
     box-shadow: 0 1px 2px rgb(0 0 0 / 50%);
@@ -152,28 +81,21 @@
     bottom:-18px;
     margin-left:-2.5px;
   }
-  .avatar{width:34px;height:34px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:18px;flex-shrink:0;}
-  .av-a{background:var(--bg-accent);}
-  .av-b{background:var(--bg-pro);}
-  .bubble{max-width:80%;padding:9px 13px;border-radius:15px;font-size:14px;line-height:1.65;border:.5px solid var(--border);}
-  .bubble.left{background:var(--surface-2);border-bottom-left-radius:4px;color:var(--text-primary);}
-  .bubble.right{background:var(--bg-pro);border-bottom-right-radius:4px;color:var(--text-pro);border-color:var(--border-pro);}
-  .bname{font-size:11px;font-weight:500;color:var(--text-muted);margin-bottom:3px;padding:0 2px;}
-  .bname.right{text-align:right;}
-
-  .rule-box{background:var(--surface-1);border-radius:var(--radius);padding:10px 14px;margin-bottom:1.25rem;font-size:13px;color:var(--text-secondary);line-height:1.7;}
-  .rule-box strong{color:var(--text-primary);font-weight:500;}
-
-  footer{ text-align:center; font-size:12px; color:var(--text-muted); margin-top:2rem; }
 </style>
 </head>
 <body>
-<div class="page">
+<div class="page" id="page">
 
-  <span class="cefr-tag">A2 · Elementary</span>
+  <span class="cefr-tag cefr-a2">A2 · Elementary</span>
   <h1>We were so different!</h1>
   <p class="subtitle">Ben and Ana talk about their childhood habits.</p>
-  <div class="setting-chip">🧑‍🤝‍🧑☕ old friends, catching up over coffee</div>
+    <div class="sec-div">Before you read</div>
+  <p class="subtitle">Read these three questions first, then look for the answers in the conversation.</p>
+  <div id="preQuestions" class="prequiz"></div>
+
+  <button id="grammarToggle" class="grammar-toggle-btn">🎨 Show Grammar</button>
+  <div class="pos-legend"></div>
+<div class="setting-chip">🧑‍🤝‍🧑☕ old friends, catching up over coffee</div>
 
   <div class="legend">
     <span class="legend-pill q">●&nbsp; question</span>
@@ -288,7 +210,7 @@
     </div>
     <div>
       <div class="bname right">Ana</div>
-      <div class="bubble right">No way! And now look at us — coffee and grown-up jobs.</div>
+      <div class="bubble right">No way! And <span class="pos-hl pos-time">now</span> <span class="pos-hl pos-verb">look</span> <span class="pos-hl pos-prep">at</span> <span class="pos-hl pos-object">us</span> — <span class="pos-hl pos-object">coffee and grown-up jobs</span>.</div>
     </div>
   </div>
 
@@ -302,6 +224,10 @@
       <div class="bubble left">True. We <span class="pos">used to</span> have so much free time — now it's all meetings!</div>
     </div>
   </div>
+  <div class="sec-div">Check your answers</div>
+  <p class="subtitle">The same three questions — now choose the correct answer.</p>
+  <div id="quiz"></div>
+
 
   <div class="sec-div">Quick reference</div>
 
@@ -312,11 +238,49 @@
   <footer>Conversation Practice — Used to / Would (A2)</footer>
 
 </div>
+
 <div id="theme-toggle-wrap">
   <button id="theme-toggle" aria-label="Toggle light/dark mode" title="Toggle light/dark mode">
     <span id="theme-icon">☀️</span>
   </button>
 </div>
-<script src="theme-toggle-behavior.js"></script>
+<script src="house.js"></script>
+<script>
+/* The same three questions run before and after the conversation:
+   as a plain list first (setting a purpose for reading), then with
+   three options each once the text has been read. */
+const CQ_ITEMS = [
+  {
+    "q": "What sport did Ana use to play?",
+    "opts": [
+      "Soccer, every weekend",
+      "Skateboarding, in front of the house",
+      "She didn't use to play any sport"
+    ],
+    "correct": 0
+  },
+  {
+    "q": "What would Ben's dad do every night?",
+    "opts": [
+      "Play video games with him",
+      "Read him a story",
+      "Practise with the band"
+    ],
+    "correct": 1
+  },
+  {
+    "q": "Where did Ben's band use to practise?",
+    "opts": [
+      "In front of the house",
+      "At school",
+      "In his garage, every Friday"
+    ],
+    "correct": 2
+  }
+];
+
+HouseComprehension.build({ pre: 'preQuestions', quiz: 'quiz', items: CQ_ITEMS });
+HouseGrammar.init();
+</script>
 </body>
 </html>

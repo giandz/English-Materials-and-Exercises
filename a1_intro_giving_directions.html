@@ -2,121 +2,54 @@
 <html lang="en">
 <head>
 <meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
 <title>Giving Directions — Conversations</title>
-<link rel="stylesheet" href="general.css">
+<script>
+// Applies the saved/system theme to <html> as early as possible, before the
+// stylesheet below paints anything, so there's no flash of the wrong theme.
+// Self-contained: no dependency on any external script.
+(function(){
+  try{
+    var saved = localStorage.getItem('theme-preference');
+    var theme = (saved === 'light' || saved === 'dark')
+      ? saved
+      : ((window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches) ? 'dark' : 'light');
+    document.documentElement.setAttribute('data-theme', theme);
+  }catch(e){ /* localStorage/matchMedia unavailable — CSS media query still applies */ }
+})();
+</script>
+<link rel="stylesheet" href="house.css">
 <style>
-  :root{
-    --color-background-primary: #ffffff;
-    --color-background-secondary: #f7f7f8;
-    --color-text-primary: #1a1a1a;
-    --color-text-secondary: #5b5b60;
-    --color-text-tertiary: #8b8b90;
-    --color-border-secondary: #e3e3e6;
-    --color-border-tertiary: #ebebee;
-    --border-radius-lg: 12px;
-    --font-mono: "SF Mono", "JetBrains Mono", monospace;
-
-    --text-primary: var(--color-text-primary);
-    --text-secondary: var(--color-text-secondary);
-    --text-muted: var(--color-text-tertiary);
-    --text-accent: #185fa5;
-    --surface-1: var(--color-background-secondary);
-    --surface-2: var(--color-background-primary);
-    --border: var(--color-border-tertiary);
-    --radius: var(--border-radius-lg);
-    --bg-accent: #e6f1fb;
-    --bg-pro: #eeedfe;
-    --text-pro: #26215c;
-    --border-pro: #afa9ec;
-  }
-
-  @media (prefers-color-scheme: dark){
-    :root{
-      --color-background-primary: #1e1e20;
-      --color-background-secondary: #26262a;
-      --color-text-primary: #f0f0f2;
-      --color-text-secondary: #b4b4ba;
-      --color-text-tertiary: #85858c;
-      --color-border-secondary: #3a3a3f;
-      --color-border-tertiary: #34343a;
-      --bg-accent: #1c2e40;
-      --bg-pro: #2a2650;
-      --text-pro: #d7d3ff;
-      --border-pro: #4c447f;
-    }
-  }
-
-  *{ box-sizing:border-box; }
-  html,body{
-    margin:0;
-    background:var(--color-background-primary);
-    color:var(--color-text-primary);
-    font-family:-apple-system, BlinkMacSystemFont, "Segoe UI", Helvetica, Arial, sans-serif;
-    font-size:15px;
-    line-height:1.6;
-  }
-  .page{ max-width:640px; margin:0 auto; padding:28px 20px 56px; }
-
-  h1{ font-size:1.3rem; font-weight:600; letter-spacing:-0.01em; margin:0 0 4px; }
-  .subtitle{ font-size:13px; color:var(--text-secondary); margin:0 0 4px; }
-  .cefr-tag{
-    display:inline-block;
-    font-size:11px;
-    font-weight:700;
-    letter-spacing:.04em;
-    background:#e6f1fb;
-    color:#185fa5;
-    padding:3px 10px;
-    border-radius:20px;
-    margin-bottom:10px;
-  }
-
-  .sec-div{font-size:11px;font-weight:500;letter-spacing:.06em;text-transform:uppercase;color:var(--text-muted);display:flex;align-items:center;gap:8px;margin:1.75rem 0 1rem;}
-  .sec-div::before,.sec-div::after{content:'';flex:1;height:.5px;background:var(--border);}
-
-  .setting-chip{display:inline-flex;align-items:center;gap:5px;font-size:12px;padding:3px 10px;border-radius:20px;background:var(--surface-1);border:.5px solid var(--border);color:var(--text-secondary);margin-bottom:1rem;}
-
-  .hl{ font-weight:700; color:var(--text-accent); }
-
-  .bubble-wrap{display:flex;gap:10px;align-items:flex-end;margin-bottom:14px;}
-  .bubble-wrap.right{flex-direction:row-reverse;}
-  .avatar{width:34px;height:34px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:18px;flex-shrink:0;}
-  .av-a{background:var(--bg-accent);}
-  .av-b{background:var(--bg-pro);}
-  .bubble{max-width:80%;padding:9px 13px;border-radius:15px;font-size:14px;line-height:1.65;border:.5px solid var(--border);}
-  .bubble.left{background:var(--surface-2);border-bottom-left-radius:4px;color:var(--text-primary);}
-  .bubble.right{background:var(--bg-pro);border-bottom-right-radius:4px;color:var(--text-pro);border-color:var(--border-pro);}
-  .bname{font-size:11px;font-weight:500;color:var(--text-muted);margin-bottom:3px;padding:0 2px;}
-  .bname.right{text-align:right;}
-
-  .rule-box{background:var(--surface-1);border-radius:var(--radius);padding:10px 14px;margin-bottom:1.25rem;font-size:13px;color:var(--text-secondary);line-height:1.7;}
-  .rule-box strong{color:var(--text-primary);font-weight:500;}
-
-  footer{ text-align:center; font-size:12px; color:var(--text-muted); margin-top:2rem; }
+.hl{ font-weight:700; color:var(--text-accent); }
 </style>
 </head>
 <body>
-<div class="page">
+<div class="page" id="page">
 
-  <span class="cefr-tag">A1 · Beginner</span>
+  <span class="cefr-tag cefr-a1">A1 · Beginner</span>
   <h1>Giving Directions</h1>
   <p class="subtitle">Two short conversations using common direction phrases.</p>
 
   <!-- ══ CONVERSATION 1 ══ -->
-  <div class="sec-div">1. A tourist asks for directions</div>
+    <div class="sec-div">Before you read</div>
+  <p class="subtitle">Read these three questions first. There are two conversations — look for the answers in both.</p>
+  <div id="preQuestions" class="prequiz"></div>
+
+  <button id="grammarToggle" class="grammar-toggle-btn">🎨 Show Grammar</button>
+  <div class="pos-legend"></div>
+<div class="sec-div">1. A tourist asks for directions</div>
   <div class="setting-chip">🗺️ tourist and a local, on the street</div>
 
   <div class="bubble-wrap left">
-    <div class="avatar av-a">🧳</div>
+    <div class="avatar av-a">👩‍🦳</div>
     <div>
       <div class="bname">Tourist</div>
-      <div class="bubble left">Excuse me. How do I get to the museum?</div>
+      <div class="bubble left">Excuse me. <span class="pos-hl pos-wh">How</span> <span class="pos-hl pos-aux">do</span> <span class="pos-hl pos-subject">I</span> <span class="pos-hl pos-verb">get</span> <span class="pos-hl pos-prep">to</span> <span class="pos-hl pos-object">the museum</span>?</div>
     </div>
   </div>
 
   <div class="bubble-wrap right">
-    <div class="avatar av-b">🧑</div>
+    <div class="avatar av-b">👨‍🦱</div>
     <div>
       <div class="bname right">Local</div>
       <div class="bubble right">Sure! <span class="hl">Go straight</span> for two blocks.</div>
@@ -124,15 +57,15 @@
   </div>
 
   <div class="bubble-wrap left">
-    <div class="avatar av-a">🧳</div>
+    <div class="avatar av-a">👩‍🦳</div>
     <div>
       <div class="bname">Tourist</div>
-      <div class="bubble left">Okay, straight for two blocks. Then what?</div>
+      <div class="bubble left">Okay, straight <span class="pos-hl pos-prep">for</span> <span class="pos-hl pos-object">two blocks</span>. Then <span class="pos-hl pos-wh">what</span>?</div>
     </div>
   </div>
 
   <div class="bubble-wrap right">
-    <div class="avatar av-b">🧑</div>
+    <div class="avatar av-b">👨‍🦱</div>
     <div>
       <div class="bname right">Local</div>
       <div class="bubble right">Then <span class="hl">turn left</span> at the park. <span class="hl">Walk along the river</span> for a little while.</div>
@@ -140,7 +73,7 @@
   </div>
 
   <div class="bubble-wrap left">
-    <div class="avatar av-a">🧳</div>
+    <div class="avatar av-a">👩‍🦳</div>
     <div>
       <div class="bname">Tourist</div>
       <div class="bubble left">Turn left, then walk along the river. Got it.</div>
@@ -148,23 +81,23 @@
   </div>
 
   <div class="bubble-wrap right">
-    <div class="avatar av-b">🧑</div>
+    <div class="avatar av-b">👨‍🦱</div>
     <div>
       <div class="bname right">Local</div>
-      <div class="bubble right">Right. You will see a bridge. <span class="hl">Cross</span> the bridge.</div>
+      <div class="bubble right">Right. <span class="pos-hl pos-subject">You</span> <span class="pos-hl pos-aux">will</span> <span class="pos-hl pos-verb">see</span> <span class="pos-hl pos-object">a bridge</span>. <span class="hl">Cross</span> <span class="pos-hl pos-object">the bridge</span>.</div>
     </div>
   </div>
 
   <div class="bubble-wrap left">
-    <div class="avatar av-a">🧳</div>
+    <div class="avatar av-a">👩‍🦳</div>
     <div>
       <div class="bname">Tourist</div>
-      <div class="bubble left">Cross the bridge. Is the museum near there?</div>
+      <div class="bubble left"><span class="pos-hl pos-verb">Cross</span> <span class="pos-hl pos-object">the bridge</span>. <span class="pos-hl pos-verb">Is</span> <span class="pos-hl pos-subject">the museum</span> <span class="pos-hl pos-complement">near there</span>?</div>
     </div>
   </div>
 
   <div class="bubble-wrap right">
-    <div class="avatar av-b">🧑</div>
+    <div class="avatar av-b">👨‍🦱</div>
     <div>
       <div class="bname right">Local</div>
       <div class="bubble right">Almost. After the bridge, <span class="hl">turn right</span>. <span class="hl">Go past</span> the small church.</div>
@@ -172,7 +105,7 @@
   </div>
 
   <div class="bubble-wrap left">
-    <div class="avatar av-a">🧳</div>
+    <div class="avatar av-a">👩‍🦳</div>
     <div>
       <div class="bname">Tourist</div>
       <div class="bubble left">Turn right, go past the church. And then?</div>
@@ -180,7 +113,7 @@
   </div>
 
   <div class="bubble-wrap right">
-    <div class="avatar av-b">🧑</div>
+    <div class="avatar av-b">👨‍🦱</div>
     <div>
       <div class="bname right">Local</div>
       <div class="bubble right">The museum is <span class="hl">on the corner</span>. It's <span class="hl">opposite</span> a big hotel.</div>
@@ -188,18 +121,18 @@
   </div>
 
   <div class="bubble-wrap left">
-    <div class="avatar av-a">🧳</div>
+    <div class="avatar av-a">👩‍🦳</div>
     <div>
       <div class="bname">Tourist</div>
-      <div class="bubble left">On the corner, opposite a hotel. Thank you so much!</div>
+      <div class="bubble left"><span class="pos-hl pos-prep">On</span> <span class="pos-hl pos-object">the corner</span>, <span class="pos-hl pos-prep">opposite</span> <span class="pos-hl pos-object">a hotel</span>. Thank you so much!</div>
     </div>
   </div>
 
   <div class="bubble-wrap right">
-    <div class="avatar av-b">🧑</div>
+    <div class="avatar av-b">👨‍🦱</div>
     <div>
       <div class="bname right">Local</div>
-      <div class="bubble right">You're welcome. Have a nice day!</div>
+      <div class="bubble right"><span class="pos-hl pos-subject">You</span>'re <span class="pos-hl pos-complement">welcome</span>. <span class="pos-hl pos-verb">Have</span> <span class="pos-hl pos-object">a nice day</span>!</div>
     </div>
   </div>
 
@@ -208,31 +141,31 @@
   <div class="setting-chip">📞 driver, lost, calls the customer</div>
 
   <div class="bubble-wrap left">
-    <div class="avatar av-a">🚚</div>
+    <div class="avatar av-a">🧑‍✈️</div>
     <div>
       <div class="bname">Driver</div>
-      <div class="bubble left">Hi! I have your package, but I can't find your house.</div>
+      <div class="bubble left">Hi! <span class="pos-hl pos-subject">I</span> <span class="pos-hl pos-verb">have</span> <span class="pos-hl pos-object">your package</span>, but <span class="pos-hl pos-subject">I</span> <span class="pos-hl pos-neg">can't</span> <span class="pos-hl pos-verb">find</span> <span class="pos-hl pos-object">your house</span>.</div>
     </div>
   </div>
 
   <div class="bubble-wrap right">
-    <div class="avatar av-b">🏠</div>
+    <div class="avatar av-b">👩‍🦰</div>
     <div>
       <div class="bname right">Customer</div>
-      <div class="bubble right">Okay, no problem! Where are you now?</div>
+      <div class="bubble right">Okay, no problem! <span class="pos-hl pos-wh">Where</span> <span class="pos-hl pos-verb">are</span> <span class="pos-hl pos-subject">you</span> <span class="pos-hl pos-time">now</span>?</div>
     </div>
   </div>
 
   <div class="bubble-wrap left">
-    <div class="avatar av-a">🚚</div>
+    <div class="avatar av-a">🧑‍✈️</div>
     <div>
       <div class="bname">Driver</div>
-      <div class="bubble left">I'm at the gas station on Elm Street.</div>
+      <div class="bubble left"><span class="pos-hl pos-subject">I</span><span class="pos-hl pos-verb">'m</span> <span class="pos-hl pos-prep">at</span> <span class="pos-hl pos-object">the gas station</span> <span class="pos-hl pos-prep">on</span> <span class="pos-hl pos-object">Elm Street</span>.</div>
     </div>
   </div>
 
   <div class="bubble-wrap right">
-    <div class="avatar av-b">🏠</div>
+    <div class="avatar av-b">👩‍🦰</div>
     <div>
       <div class="bname right">Customer</div>
       <div class="bubble right">Good. <span class="hl">Go straight</span> and <span class="hl">go through</span> the small tunnel.</div>
@@ -240,7 +173,7 @@
   </div>
 
   <div class="bubble-wrap left">
-    <div class="avatar av-a">🚚</div>
+    <div class="avatar av-a">🧑‍✈️</div>
     <div>
       <div class="bname">Driver</div>
       <div class="bubble left">Go straight, then through the tunnel. Okay.</div>
@@ -248,7 +181,7 @@
   </div>
 
   <div class="bubble-wrap right">
-    <div class="avatar av-b">🏠</div>
+    <div class="avatar av-b">👩‍🦰</div>
     <div>
       <div class="bname right">Customer</div>
       <div class="bubble right">After the tunnel, <span class="hl">turn right</span>. My street is <span class="hl">between</span> two big shops.</div>
@@ -256,7 +189,7 @@
   </div>
 
   <div class="bubble-wrap left">
-    <div class="avatar av-a">🚚</div>
+    <div class="avatar av-a">🧑‍✈️</div>
     <div>
       <div class="bname">Driver</div>
       <div class="bubble left">Turn right, between two shops. I see it!</div>
@@ -264,7 +197,7 @@
   </div>
 
   <div class="bubble-wrap right">
-    <div class="avatar av-b">🏠</div>
+    <div class="avatar av-b">👩‍🦰</div>
     <div>
       <div class="bname right">Customer</div>
       <div class="bubble right">Great. My house is <span class="hl">next to</span> a yellow house.</div>
@@ -272,15 +205,15 @@
   </div>
 
   <div class="bubble-wrap left">
-    <div class="avatar av-a">🚚</div>
+    <div class="avatar av-a">🧑‍✈️</div>
     <div>
       <div class="bname">Driver</div>
-      <div class="bubble left">Next to a yellow house. Is it on the left or the right?</div>
+      <div class="bubble left"><span class="pos-hl pos-prep">Next to</span> <span class="pos-hl pos-object">a yellow house</span>. <span class="pos-hl pos-verb">Is</span> <span class="pos-hl pos-subject">it</span> <span class="pos-hl pos-prep">on</span> <span class="pos-hl pos-object">the left</span> or <span class="pos-hl pos-object">the right</span>?</div>
     </div>
   </div>
 
   <div class="bubble-wrap right">
-    <div class="avatar av-b">🏠</div>
+    <div class="avatar av-b">👩‍🦰</div>
     <div>
       <div class="bname right">Customer</div>
       <div class="bubble right"><span class="hl">It's on the right</span>. Blue door, number 12.</div>
@@ -288,15 +221,15 @@
   </div>
 
   <div class="bubble-wrap left">
-    <div class="avatar av-a">🚚</div>
+    <div class="avatar av-a">🧑‍✈️</div>
     <div>
       <div class="bname">Driver</div>
-      <div class="bubble left">Hmm, I don't see it. Wait — I think I went too far.</div>
+      <div class="bubble left">Hmm, <span class="pos-hl pos-subject">I</span> <span class="pos-hl pos-neg">don't</span> <span class="pos-hl pos-verb">see</span> <span class="pos-hl pos-object">it</span>. <span class="pos-hl pos-verb">Wait</span> — <span class="pos-hl pos-subject">I</span> <span class="pos-hl pos-verb">think</span> <span class="pos-hl pos-subject">I</span> <span class="pos-hl pos-verb">went</span> too far.</div>
     </div>
   </div>
 
   <div class="bubble-wrap right">
-    <div class="avatar av-b">🏠</div>
+    <div class="avatar av-b">👩‍🦰</div>
     <div>
       <div class="bname right">Customer</div>
       <div class="bubble right">No problem. <span class="hl">Turn around</span> and go back a little.</div>
@@ -304,7 +237,7 @@
   </div>
 
   <div class="bubble-wrap left">
-    <div class="avatar av-a">🚚</div>
+    <div class="avatar av-a">🧑‍✈️</div>
     <div>
       <div class="bname">Driver</div>
       <div class="bubble left">Turning around now... Oh, I see it! It's <span class="hl">around the corner</span>.</div>
@@ -312,12 +245,16 @@
   </div>
 
   <div class="bubble-wrap right">
-    <div class="avatar av-b">🏠</div>
+    <div class="avatar av-b">👩‍🦰</div>
     <div>
       <div class="bname right">Customer</div>
-      <div class="bubble right">Yes! That's my house. Thank you!</div>
+      <div class="bubble right">Yes! <span class="pos-hl pos-subject">That</span><span class="pos-hl pos-verb">'s</span> <span class="pos-hl pos-complement">my house</span>. Thank you!</div>
     </div>
   </div>
+  <div class="sec-div">Check your answers</div>
+  <p class="subtitle">The same three questions — now choose the correct answer.</p>
+  <div id="quiz"></div>
+
 
   <div class="sec-div">Quick reference</div>
 
@@ -328,11 +265,49 @@
   <footer>Conversation Practice — Giving Directions (A1)</footer>
 
 </div>
+
 <div id="theme-toggle-wrap">
   <button id="theme-toggle" aria-label="Toggle light/dark mode" title="Toggle light/dark mode">
     <span id="theme-icon">☀️</span>
   </button>
 </div>
-<script src="theme-toggle-behavior.js"></script>
+<script src="house.js"></script>
+<script>
+/* The same three questions run before and after the conversation:
+   as a plain list first (setting a purpose for reading), then with
+   three options each once the text has been read. */
+const CQ_ITEMS = [
+  {
+    "q": "What does the tourist do after crossing the bridge?",
+    "opts": [
+      "Turn right and go past the small church",
+      "Turn left at the park",
+      "Walk along the river"
+    ],
+    "correct": 0
+  },
+  {
+    "q": "Where is the museum?",
+    "opts": [
+      "Next to the park",
+      "On the corner, opposite a big hotel",
+      "Between two big shops"
+    ],
+    "correct": 1
+  },
+  {
+    "q": "Why can't the driver find the customer's house at first?",
+    "opts": [
+      "He turned left instead of right",
+      "He did not go through the tunnel",
+      "He went too far and had to turn around"
+    ],
+    "correct": 2
+  }
+];
+
+HouseComprehension.build({ pre: 'preQuestions', quiz: 'quiz', items: CQ_ITEMS });
+HouseGrammar.init();
+</script>
 </body>
 </html>

@@ -1,167 +1,52 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>A1 Conversations: At the Places</title>
-
-  <style>
-    :root {
-      --color-background-primary: #ffffff;
-      --color-background-secondary: #f7f7f8;
-      --color-text-primary: #1a1a1a;
-      --color-text-secondary: #5b5b60;
-      --color-text-tertiary: #8b8b90;
-      --color-border-secondary: #e3e3e6;
-      --color-border-tertiary: #ebebee;
-      --border-radius-lg: 12px;
-
-      --text-primary: var(--color-text-primary);
-      --text-secondary: var(--color-text-secondary);
-      --text-muted: var(--color-text-tertiary);
-      --text-accent: #185fa5;
-      --surface-1: var(--color-background-secondary);
-      --surface-2: var(--color-background-primary);
-      --border: var(--color-border-tertiary);
-      --radius: var(--border-radius-lg);
-
-      --bg-accent: #e6f1fb;
-      --bg-pro: #eeedfe;
-      --text-pro: #26215c;
-      --border-pro: #afa9ec;
-
-      --bg-place: #eaf3de;
-      --text-place: #27500a;
-      --bg-phrase: #fdf1da;
-      --text-phrase: #8a5a10;
-    }
-
-    html[data-theme="dark"] {
-      --color-background-primary: #1e1e20;
-      --color-background-secondary: #26262a;
-      --color-text-primary: #f0f0f2;
-      --color-text-secondary: #b4b4ba;
-      --color-text-tertiary: #85858c;
-      --color-border-secondary: #3a3a3f;
-      --color-border-tertiary: #34343a;
-
-      --text-accent: #7fb2e0;
-      --surface-1: var(--color-background-secondary);
-      --surface-2: var(--color-background-primary);
-      --border: var(--color-border-tertiary);
-
-      --bg-accent: #1c2e40;
-      --bg-pro: #2a2650;
-      --text-pro: #d7d3ff;
-      --border-pro: #4c447f;
-
-      --bg-place: #1f3014;
-      --text-place: #9ed17a;
-      --bg-phrase: #3a2c10;
-      --text-phrase: #e0b95c;
-    }
-
-    * {
-      box-sizing: border-box;
-    }
-
-    html,
-    body {
-      margin: 0;
-      background: var(--color-background-primary);
-      color: var(--text-primary);
-      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Helvetica, Arial, sans-serif;
-      font-size: 15px;
-      line-height: 1.6;
-    }
-
-    .page {
-      max-width: 680px;
-      margin: 0 auto;
-      padding: 28px 20px 56px;
-    }
-
-    h1 {
-      margin: 0 0 4px;
-      font-size: 1.3rem;
-      font-weight: 600;
-      letter-spacing: -0.01em;
-    }
-
-    .subtitle {
-      margin: 0 0 4px;
-      color: var(--text-secondary);
-      font-size: 13px;
-    }
-
-    .cefr-tag {
-      display: inline-block;
-      margin-bottom: 10px;
-      padding: 3px 10px;
-      border-radius: 20px;
-      background: var(--bg-accent);
-      color: var(--text-accent);
-      font-size: 11px;
-      font-weight: 700;
-      letter-spacing: 0.04em;
-    }
-
-    .sec-div {
-      display: flex;
-      align-items: center;
-      gap: 8px;
-      margin: 1.75rem 0 1rem;
-      color: var(--text-muted);
-      font-size: 11px;
-      font-weight: 500;
-      letter-spacing: 0.06em;
-      text-transform: uppercase;
-    }
-
-    .sec-div::before,
-    .sec-div::after {
-      content: "";
-      flex: 1;
-      height: 0.5px;
-      background: var(--border);
-    }
-
-    .setting-chip {
-      display: inline-flex;
-      align-items: center;
-      gap: 5px;
-      margin-bottom: 1rem;
-      padding: 3px 10px;
-      border: 0.5px solid var(--border);
-      border-radius: 20px;
-      background: var(--surface-1);
-      color: var(--text-secondary);
-      font-size: 12px;
-    }
-
-    .legend {
-      display: flex;
-      flex-wrap: wrap;
-      gap: 8px;
-      margin-bottom: 1.25rem;
-    }
-
-    .legend-pill {
-      padding: 3px 11px;
-      border-radius: 20px;
-      font-size: 11.5px;
-      font-weight: 600;
-    }
-
-    .legend-pill.place {
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<title>A1 Conversations: At the Places</title>
+<script>
+// Applies the saved/system theme to <html> as early as possible, before the
+// stylesheet below paints anything, so there's no flash of the wrong theme.
+// Self-contained: no dependency on any external script.
+(function(){
+  try{
+    var saved = localStorage.getItem('theme-preference');
+    var theme = (saved === 'light' || saved === 'dark')
+      ? saved
+      : ((window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches) ? 'dark' : 'light');
+    document.documentElement.setAttribute('data-theme', theme);
+  }catch(e){ /* localStorage/matchMedia unavailable — CSS media query still applies */ }
+})();
+</script>
+<link rel="stylesheet" href="house.css">
+<style>
+/* Recovered page-specific rules. */
+.legend-pill.place {
       background: var(--bg-place);
       color: var(--text-place);
     }
-
-    .legend-pill.phrase {
+.legend-pill.phrase {
       background: var(--bg-phrase);
       color: var(--text-phrase);
     }
+.bubble-column {
+      max-width: 80%;
+    }
+
+/* Page-specific design tokens. These are this lesson's own palette,
+   not house tokens — house.css owns everything prefixed --color-* etc. */
+:root{
+  --bg-place: #eaf3de;
+  --text-place: #27500a;
+  --bg-phrase: #fdf1da;
+  --text-phrase: #8a5a10;
+}
+html[data-theme="dark"]{
+  --bg-place: #1f3014;
+  --text-place: #9ed17a;
+  --bg-phrase: #3a2c10;
+  --text-phrase: #e0b95c;
+}
 
     .place-word {
       padding: 1px 5px;
@@ -178,121 +63,11 @@
       color: var(--text-phrase);
       font-weight: 700;
     }
-
-    .bubble-wrap {
-      display: flex;
-      align-items: flex-end;
-      gap: 10px;
-      margin-bottom: 14px;
-    }
-
-    .bubble-wrap.right {
-      flex-direction: row-reverse;
-    }
-
-    .avatar {
-      display: flex;
-      width: 34px;
-      height: 34px;
-      flex-shrink: 0;
-      align-items: center;
-      justify-content: center;
-      border-radius: 50%;
-      font-size: 18px;
-    }
-
-    .av-a {
-      background: var(--bg-accent);
-    }
-
-    .av-b {
-      background: var(--bg-pro);
-    }
-
-    .bubble-column {
-      max-width: 80%;
-    }
-
-    .bubble {
-      padding: 9px 13px;
-      border: 0.5px solid var(--border);
-      border-radius: 15px;
-      font-size: 14px;
-      line-height: 1.65;
-    }
-
-    .bubble.left {
-      border-bottom-left-radius: 4px;
-      background: var(--surface-2);
-      color: var(--text-primary);
-    }
-
-    .bubble.right {
-      border-color: var(--border-pro);
-      border-bottom-right-radius: 4px;
-      background: var(--bg-pro);
-      color: var(--text-pro);
-    }
-
-    .bname {
-      margin-bottom: 3px;
-      padding: 0 2px;
-      color: var(--text-muted);
-      font-size: 11px;
-      font-weight: 500;
-    }
-
-    .bname.right {
-      text-align: right;
-    }
-
-    .rule-box {
-      margin-bottom: 1.25rem;
-      padding: 10px 14px;
-      border-radius: var(--radius);
-      background: var(--surface-1);
-      color: var(--text-secondary);
-      font-size: 13px;
-      line-height: 1.7;
-    }
-
-    .rule-box strong {
-      color: var(--text-primary);
-      font-weight: 600;
-    }
-
-    footer {
-      margin-top: 2rem;
-      color: var(--text-muted);
-      font-size: 12px;
-      text-align: center;
-    }
-
-    #theme-toggle-wrap {
-      position: fixed;
-      right: 18px;
-      bottom: 18px;
-    }
-
-    #theme-toggle {
-      display: flex;
-      width: 40px;
-      height: 40px;
-      align-items: center;
-      justify-content: center;
-      border: 0.5px solid var(--border);
-      border-radius: 50%;
-      cursor: pointer;
-      background: var(--surface-2);
-      color: var(--text-primary);
-      font-size: 18px;
-    }
-  </style>
+</style>
 </head>
-
 <body>
-  <div class="page">
-    <span class="cefr-tag">A1 · Beginners</span>
+<div class="page" id="page">
+    <span class="cefr-tag cefr-a1">A1 · Beginners</span>
 
     <h1>At the Places</h1>
 
@@ -305,12 +80,18 @@
       <span class="legend-pill phrase">Useful phrase</span>
     </div>
 
-    <div class="sec-div">At the airport ✈️</div>
+      <div class="sec-div">Before you read</div>
+  <p class="subtitle">Read these three questions first. There are nine short scenes — look for the answers as you read.</p>
+  <div id="preQuestions" class="prequiz"></div>
+
+  <button id="grammarToggle" class="grammar-toggle-btn">🎨 Show Grammar</button>
+  <div class="pos-legend"></div>
+<div class="sec-div">At the airport ✈️</div>
 
     <div class="setting-chip">A passenger is going through airport security.</div>
 
     <div class="bubble-wrap left">
-      <div class="avatar av-a">🧳</div>
+      <div class="avatar av-a">👩‍🦳</div>
       <div class="bubble-column">
         <div class="bname">Passenger</div>
         <div class="bubble left">
@@ -320,17 +101,17 @@
     </div>
 
     <div class="bubble-wrap right">
-      <div class="avatar av-b">🛂</div>
+      <div class="avatar av-b">👮</div>
       <div class="bubble-column">
         <div class="bname right">Airport worker</div>
         <div class="bubble right">
-          It is at the end of this hall.
+          <span class="pos-hl pos-subject">It</span> <span class="pos-hl pos-verb">is</span> <span class="pos-hl pos-prep">at</span> <span class="pos-hl pos-object">the end of this hall</span>.
         </div>
       </div>
     </div>
 
     <div class="bubble-wrap left">
-      <div class="avatar av-a">🧳</div>
+      <div class="avatar av-a">👩‍🦳</div>
       <div class="bubble-column">
         <div class="bname">Passenger</div>
         <div class="bubble left">
@@ -340,7 +121,7 @@
     </div>
 
     <div class="bubble-wrap right">
-      <div class="avatar av-b">🛂</div>
+      <div class="avatar av-b">👮</div>
       <div class="bubble-column">
         <div class="bname right">Security officer</div>
         <div class="bubble right">
@@ -350,17 +131,17 @@
     </div>
 
     <div class="bubble-wrap left">
-      <div class="avatar av-a">🧳</div>
+      <div class="avatar av-a">👩‍🦳</div>
       <div class="bubble-column">
         <div class="bname">Passenger</div>
         <div class="bubble left">
-          Yes, here it is.
+          Yes, here <span class="pos-hl pos-subject">it</span> <span class="pos-hl pos-verb">is</span>.
         </div>
       </div>
     </div>
 
     <div class="bubble-wrap right">
-      <div class="avatar av-b">🛂</div>
+      <div class="avatar av-b">👮</div>
       <div class="bubble-column">
         <div class="bname right">Security officer</div>
         <div class="bubble right">
@@ -378,7 +159,7 @@
       <div class="bubble-column">
         <div class="bname">Visitor</div>
         <div class="bubble left">
-          This painting is beautiful.
+          <span class="pos-hl pos-subject">This painting</span> <span class="pos-hl pos-verb">is</span> <span class="pos-hl pos-complement">beautiful</span>.
         </div>
       </div>
     </div>
@@ -398,7 +179,7 @@
       <div class="bubble-column">
         <div class="bname">Visitor</div>
         <div class="bubble left">
-          Can I take a photo?
+          <span class="pos-hl pos-aux">Can</span> <span class="pos-hl pos-subject">I</span> <span class="pos-hl pos-verb">take</span> <span class="pos-hl pos-object">a photo</span>?
         </div>
       </div>
     </div>
@@ -418,7 +199,7 @@
       <div class="bubble-column">
         <div class="bname">Visitor</div>
         <div class="bubble left">
-          Okay. Where is the dinosaur exhibition?
+          Okay. <span class="pos-hl pos-wh">Where</span> <span class="pos-hl pos-verb">is</span> <span class="pos-hl pos-subject">the dinosaur exhibition</span>?
         </div>
       </div>
     </div>
@@ -452,7 +233,7 @@
       <div class="bubble-column">
         <div class="bname right">Librarian</div>
         <div class="bubble right">
-          It is on the first floor.
+          <span class="pos-hl pos-subject">It</span> <span class="pos-hl pos-verb">is</span> <span class="pos-hl pos-prep">on</span> <span class="pos-hl pos-object">the first floor</span>.
         </div>
       </div>
     </div>
@@ -462,7 +243,7 @@
       <div class="bubble-column">
         <div class="bname">Student</div>
         <div class="bubble left">
-          Can I borrow these books?
+          <span class="pos-hl pos-aux">Can</span> <span class="pos-hl pos-subject">I</span> <span class="pos-hl pos-verb">borrow</span> <span class="pos-hl pos-object">these books</span>?
         </div>
       </div>
     </div>
@@ -482,7 +263,7 @@
       <div class="bubble-column">
         <div class="bname">Student</div>
         <div class="bubble left">
-          I have my card.
+          <span class="pos-hl pos-subject">I</span> <span class="pos-hl pos-verb">have</span> <span class="pos-hl pos-object">my card</span>.
         </div>
       </div>
     </div>
@@ -536,7 +317,7 @@
       <div class="bubble-column">
         <div class="bname right">Customer</div>
         <div class="bubble right">
-          I’d like the chicken and rice, please.
+          <span class="pos-hl pos-subject">I</span><span class="pos-hl pos-aux">’d</span> <span class="pos-hl pos-verb">like</span> <span class="pos-hl pos-object">the chicken and rice</span>, please.
         </div>
       </div>
     </div>
@@ -556,7 +337,7 @@
       <div class="bubble-column">
         <div class="bname right">Customer</div>
         <div class="bubble right">
-          Excuse me. Can I pay, please?
+          Excuse me. <span class="pos-hl pos-aux">Can</span> <span class="pos-hl pos-subject">I</span> <span class="pos-hl pos-verb">pay</span>, please?
         </div>
       </div>
     </div>
@@ -586,11 +367,11 @@
     </div>
 
     <div class="bubble-wrap right">
-      <div class="avatar av-b">🤒</div>
+      <div class="avatar av-b">🧑‍⚕️</div>
       <div class="bubble-column">
         <div class="bname right">Patient</div>
         <div class="bubble right">
-          It is 12 May 2001.
+          <span class="pos-hl pos-subject">It</span> <span class="pos-hl pos-verb">is</span> <span class="pos-hl pos-complement">12 May 2001</span>.
         </div>
       </div>
     </div>
@@ -606,7 +387,7 @@
     </div>
 
     <div class="bubble-wrap right">
-      <div class="avatar av-b">🤒</div>
+      <div class="avatar av-b">🧑‍⚕️</div>
       <div class="bubble-column">
         <div class="bname right">Patient</div>
         <div class="bubble right">
@@ -626,7 +407,7 @@
     </div>
 
     <div class="bubble-wrap right">
-      <div class="avatar av-b">🤒</div>
+      <div class="avatar av-b">🧑‍⚕️</div>
       <div class="bubble-column">
         <div class="bname right">Patient</div>
         <div class="bubble right">
@@ -644,7 +425,7 @@
       <div class="bubble-column">
         <div class="bname">Customer</div>
         <div class="bubble left">
-          Excuse me. Where can I find bread?
+          Excuse me. <span class="pos-hl pos-wh">Where</span> <span class="pos-hl pos-aux">can</span> <span class="pos-hl pos-subject">I</span> <span class="pos-hl pos-verb">find</span> <span class="pos-hl pos-object">bread</span>?
         </div>
       </div>
     </div>
@@ -674,7 +455,7 @@
       <div class="bubble-column">
         <div class="bname right">Worker</div>
         <div class="bubble right">
-          It is near the entrance.
+          <span class="pos-hl pos-subject">It</span> <span class="pos-hl pos-verb">is</span> <span class="pos-hl pos-prep">near</span> <span class="pos-hl pos-object">the entrance</span>.
         </div>
       </div>
     </div>
@@ -708,13 +489,13 @@
       <div class="bubble-column">
         <div class="bname">Customer</div>
         <div class="bubble left">
-          Hello. What time does the film start?
+          Hello. <span class="pos-hl pos-wh">What time</span> <span class="pos-hl pos-aux">does</span> <span class="pos-hl pos-subject">the film</span> <span class="pos-hl pos-verb">start</span>?
         </div>
       </div>
     </div>
 
     <div class="bubble-wrap right">
-      <div class="avatar av-b">🎟️</div>
+      <div class="avatar av-b">👨‍🦱</div>
       <div class="bubble-column">
         <div class="bname right">Cinema worker</div>
         <div class="bubble right">
@@ -728,13 +509,13 @@
       <div class="bubble-column">
         <div class="bname">Customer</div>
         <div class="bubble left">
-          Great. Where is Screen 4?
+          Great. <span class="pos-hl pos-wh">Where</span> <span class="pos-hl pos-verb">is</span> <span class="pos-hl pos-subject">Screen 4</span>?
         </div>
       </div>
     </div>
 
     <div class="bubble-wrap right">
-      <div class="avatar av-b">🎟️</div>
+      <div class="avatar av-b">👨‍🦱</div>
       <div class="bubble-column">
         <div class="bname right">Cinema worker</div>
         <div class="bubble right">
@@ -754,11 +535,11 @@
     </div>
 
     <div class="bubble-wrap right">
-      <div class="avatar av-b">🎟️</div>
+      <div class="avatar av-b">👨‍🦱</div>
       <div class="bubble-column">
         <div class="bname right">Cinema worker</div>
         <div class="bubble right">
-          Sure. That is five dollars.
+          Sure. <span class="pos-hl pos-subject">That</span> <span class="pos-hl pos-verb">is</span> <span class="pos-hl pos-complement">five dollars</span>.
         </div>
       </div>
     </div>
@@ -778,11 +559,11 @@
     </div>
 
     <div class="bubble-wrap right">
-      <div class="avatar av-b">🧳</div>
+      <div class="avatar av-b">👩‍🦳</div>
       <div class="bubble-column">
         <div class="bname right">Guest</div>
         <div class="bubble right">
-          Thank you. What time is breakfast?
+          Thank you. <span class="pos-hl pos-wh">What time</span> <span class="pos-hl pos-verb">is</span> <span class="pos-hl pos-subject">breakfast</span>?
         </div>
       </div>
     </div>
@@ -798,7 +579,7 @@
     </div>
 
     <div class="bubble-wrap right">
-      <div class="avatar av-b">🧳</div>
+      <div class="avatar av-b">👩‍🦳</div>
       <div class="bubble-column">
         <div class="bname right">Guest</div>
         <div class="bubble right">
@@ -818,11 +599,11 @@
     </div>
 
     <div class="bubble-wrap right">
-      <div class="avatar av-b">🧳</div>
+      <div class="avatar av-b">👩‍🦳</div>
       <div class="bubble-column">
         <div class="bname right">Guest</div>
         <div class="bubble right">
-          At 10:00, please.
+          <span class="pos-hl pos-time">At 10:00</span>, please.
         </div>
       </div>
     </div>
@@ -846,7 +627,7 @@
       <div class="bubble-column">
         <div class="bname right">Pharmacist</div>
         <div class="bubble right">
-          Yes. These tablets can help.
+          Yes. <span class="pos-hl pos-subject">These tablets</span> <span class="pos-hl pos-aux">can</span> <span class="pos-hl pos-verb">help</span>.
         </div>
       </div>
     </div>
@@ -856,7 +637,7 @@
       <div class="bubble-column">
         <div class="bname">Customer</div>
         <div class="bubble left">
-          How do I take them?
+          <span class="pos-hl pos-wh">How</span> <span class="pos-hl pos-aux">do</span> <span class="pos-hl pos-subject">I</span> <span class="pos-hl pos-verb">take</span> <span class="pos-hl pos-object">them</span>?
         </div>
       </div>
     </div>
@@ -876,7 +657,7 @@
       <div class="bubble-column">
         <div class="bname">Customer</div>
         <div class="bubble left">
-          Can I buy this stronger medicine too?
+          <span class="pos-hl pos-aux">Can</span> <span class="pos-hl pos-subject">I</span> <span class="pos-hl pos-verb">buy</span> <span class="pos-hl pos-object">this stronger medicine</span> too?
         </div>
       </div>
     </div>
@@ -890,6 +671,10 @@
         </div>
       </div>
     </div>
+  <div class="sec-div">Check your answers</div>
+  <p class="subtitle">The same three questions — now choose the correct answer.</p>
+  <div id="quiz"></div>
+
 
     <div class="sec-div">Quick reference</div>
 
@@ -904,16 +689,14 @@
     </footer>
   </div>
 
-  <div id="theme-toggle-wrap">
-    <button
-      id="theme-toggle"
-      aria-label="Toggle light and dark mode"
-      title="Toggle light and dark mode"
-    >◐</button>
-  </div>
-
-  <script>
-    const themeToggle = document.getElementById("theme-toggle");
+<div id="theme-toggle-wrap">
+  <button id="theme-toggle" aria-label="Toggle light/dark mode" title="Toggle light/dark mode">
+    <span id="theme-icon">☀️</span>
+  </button>
+</div>
+<script src="house.js"></script>
+<script>
+const themeToggle = document.getElementById("theme-toggle");
 
     function applySavedTheme() {
       const savedTheme = localStorage.getItem("places-conversations-theme");
@@ -932,6 +715,43 @@
     });
 
     applySavedTheme();
-  </script>
+</script>
+<script>
+/* The same three questions run before and after the conversation:
+   as a plain list first (setting a purpose for reading), then with
+   three options each once the text has been read. */
+const CQ_ITEMS = [
+  {
+    "q": "At the museum, what is the visitor NOT allowed to do?",
+    "opts": [
+      "Use flash photography",
+      "Go upstairs",
+      "Take any photos at all"
+    ],
+    "correct": 0
+  },
+  {
+    "q": "What does the student need in order to borrow books?",
+    "opts": [
+      "To return the books by Friday",
+      "A library card",
+      "Permission from the librarian"
+    ],
+    "correct": 1
+  },
+  {
+    "q": "Why can't the customer buy the stronger medicine?",
+    "opts": [
+      "It must be taken after food",
+      "The pharmacy has sold out",
+      "They need a prescription for it"
+    ],
+    "correct": 2
+  }
+];
+
+HouseComprehension.build({ pre: 'preQuestions', quiz: 'quiz', items: CQ_ITEMS });
+HouseGrammar.init();
+</script>
 </body>
 </html>

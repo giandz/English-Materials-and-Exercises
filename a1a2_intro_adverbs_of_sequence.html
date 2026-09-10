@@ -2,23 +2,38 @@
 <html lang="en">
 <head>
 <meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
 <title>Let's Cook! — Intro: Adverbs of Sequence</title>
-<link rel="preconnect" href="https://fonts.googleapis.com">
-<link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,500;9..144,600;9..144,700&family=Karla:wght@400;500;600;700&display=swap" rel="stylesheet">
+<script>
+// Applies the saved/system theme to <html> as early as possible, before the
+// stylesheet below paints anything, so there's no flash of the wrong theme.
+// Self-contained: no dependency on any external script.
+(function(){
+  try{
+    var saved = localStorage.getItem('theme-preference');
+    var theme = (saved === 'light' || saved === 'dark')
+      ? saved
+      : ((window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches) ? 'dark' : 'light');
+    document.documentElement.setAttribute('data-theme', theme);
+  }catch(e){ /* localStorage/matchMedia unavailable — CSS media query still applies */ }
+})();
+</script>
+<link rel="stylesheet" href="house.css">
 <style>
-
+/* Page-specific design tokens. These are this lesson's own palette,
+   not house tokens — house.css owns everything prefixed --color-* etc. */
 :root{
-  --cream:#F7F1E3; --pine:#2F4B3C; --pine-dark:#20332A;
-  --tomato:#C1442E; --tomato-dark:#9A3524;
-  --mustard:#E3A72F; --mustard-dark:#B9821D;
-  --sage:#E9EEE1; --charcoal:#2B2620; --paper:#FFFDF7;
-  --ok:#3F7D4F; --bad:#B4413A;
+  --cream: #F7F1E3;
+  --pine: #2F4B3C;
+  --pine-dark: #20332A;
+  --tomato: #C1442E;
+  --tomato-dark: #9A3524;
+  --mustard: #E3A72F;
+  --sage: #E9EEE1;
+  --charcoal: #2B2620;
+  --paper: #FFFDF7;
+  --ok: #3F7D4F;
 }
-*{box-sizing:border-box;}
-html{scroll-behavior:smooth;}
-body{margin:0;background:var(--cream);color:var(--charcoal);font-family:'Karla',sans-serif;font-size:17px;line-height:1.55;}
-h1,h2,h3,h4{font-family:'Fraunces',serif;color:var(--pine-dark);margin:0 0 .4em 0;line-height:1.15;}
 .wrap{max-width:880px;margin:0 auto;padding:0 20px 100px;}
 
 .hero{background:var(--pine);color:var(--cream);padding:40px 20px 30px;text-align:center;border-bottom:6px solid var(--mustard);}
@@ -31,8 +46,6 @@ section{margin-top:44px;}
 .sec-head{display:flex;align-items:center;margin-bottom:6px;}
 .sec-head h2{font-size:1.5rem;}
 .sec-sub{color:#5b5346;margin:0 0 22px 40px;font-size:.98rem;}
-
-.card{background:var(--paper);border:1px solid rgba(43,38,32,.12);border-radius:14px;box-shadow:5px 5px 0 rgba(47,75,60,.08);padding:26px 28px;}
 
 .badge{width:52px;height:52px;border-radius:50%;flex:none;display:flex;align-items:center;justify-content:center;}
 .badge.heat{background:var(--mustard);} .badge.prep{background:var(--pine);} .badge.combine{background:var(--tomato);}
@@ -60,10 +73,6 @@ section{margin-top:44px;}
 .stress-chip{background:var(--paper);border-radius:10px;padding:10px 16px;font-family:'Fraunces',serif;font-size:1.05rem;}
 .stress-chip b{color:var(--tomato-dark);}
 
-.prequiz{background:var(--paper);border:2px dashed var(--pine);border-radius:14px;padding:24px 28px;}
-.prequiz ol{margin:10px 0 0;padding-left:20px;}
-.prequiz li{margin-bottom:8px;}
-
 .convo{background:var(--paper);border-radius:14px;padding:8px 28px 24px;border:1px solid rgba(43,38,32,.12);}
 .convo .title-strip{display:flex;justify-content:space-between;align-items:center;margin:0 -28px 14px;padding:14px 28px;background:var(--mustard);border-radius:14px 14px 0 0;}
 .convo .title-strip h3{margin:0;color:var(--pine-dark);font-size:1.15rem;}
@@ -73,15 +82,6 @@ section{margin-top:44px;}
 .speaker .emoji{margin-right:4px;}
 .line p{margin:0;}
 .seq-mark{background:rgba(227,167,47,.35);padding:1px 5px;border-radius:4px;font-weight:700;color:var(--pine-dark);}
-
-.quiz-q{margin-bottom:24px;}
-.quiz-q .q-text{font-weight:600;margin-bottom:10px;font-family:'Fraunces',serif;color:var(--pine-dark);}
-.opt{display:block;width:100%;text-align:left;background:var(--sage);border:1px solid rgba(43,38,32,.15);border-radius:10px;padding:10px 14px;margin-bottom:8px;cursor:pointer;font-family:'Karla',sans-serif;font-size:.98rem;color:var(--charcoal);transition:background .15s, border-color .15s;}
-.opt:hover{border-color:var(--pine);}
-.opt.correct{background:#DCEFDF;border-color:var(--ok);color:#265232;font-weight:600;}
-.opt.incorrect{background:#F6DAD7;border-color:var(--bad);color:#7A2A24;}
-.opt:disabled{cursor:default;}
-.q-feedback{font-size:.88rem;margin-top:2px;color:#5b5346;min-height:1.2em;}
 
 .gap-text{font-size:1.02rem;margin-bottom:18px;}
 .gap-text ol{padding-left:20px;}
@@ -98,8 +98,6 @@ section{margin-top:44px;}
   text-align:center;padding:2px 4px;
 }
 .blank input:focus{outline:none;border-bottom-color:var(--tomato);}
-
-.word-bank{display:flex;flex-wrap:wrap;gap:10px;margin:14px 0 18px;padding:14px;background:var(--sage);border-radius:10px;}
 .chip{background:var(--pine);color:var(--cream);border:none;padding:9px 16px;border-radius:8px;font-family:'Karla',sans-serif;font-weight:600;font-size:.92rem;cursor:grab;}
 .chip:active{cursor:grabbing;}
 .chip.selected{background:var(--tomato);}
@@ -139,17 +137,17 @@ section{margin-top:44px;}
 .discuss li{margin-bottom:12px;font-size:1.02rem;}
 .discuss .lead{font-size:1.05rem;margin:0 0 6px;}
 
-footer{text-align:center;color:#8a8172;font-size:.85rem;margin-top:60px;}
-
 @media(max-width:560px){
   .speaker{width:80px;font-size:.82rem;}
   .match-wrap{grid-template-columns:1fr;}
   .match-grid{grid-template-columns:repeat(3,1fr);}
 }
-
 </style>
 </head>
 <body>
+<div class="page" id="page">
+  <span class="cefr-tag cefr-a1a2">A1/A2 · Beginner–Elementary</span>
+
 <div class="hero">
   <h1>Let's Cook!</h1>
   <div class="stage-label">Stage 2/5 &middot; Next: Intro</div>
@@ -199,8 +197,16 @@ footer{text-align:center;color:#8a8172;font-size:.85rem;margin-top:60px;}
 
 </div>
 <footer>Cooking Instructions &amp; Adverbs of Sequence &mdash; A1/A2 Lesson Pack</footer>
-<script>
 
+</div>
+
+<div id="theme-toggle-wrap">
+  <button id="theme-toggle" aria-label="Toggle light/dark mode" title="Toggle light/dark mode">
+    <span id="theme-icon">☀️</span>
+  </button>
+</div>
+<script src="house.js"></script>
+<script>
 const quizData = [{"q": "What do Grandma and Mia peel first?", "opts": ["The onions", "The carrots and potatoes", "The tomatoes"], "correct": 1}, {"q": "What do they do after they boil the soup?", "opts": ["They simmer the soup", "They bake the soup", "They fry the soup"], "correct": 0}, {"q": "What does Grandma do finally, before serving?", "opts": ["She adds sugar to the soup", "She peels more potatoes", "She pours the soup into bowls and grates cheese on top"], "correct": 2}];
 const quizEl = document.getElementById('quiz');
 quizData.forEach((item, qi) => {
@@ -227,7 +233,6 @@ quizEl.addEventListener('click', e => {
     document.getElementById('fb-'+qi).textContent = 'Not quite — the correct answer is highlighted.';
   }
 });
-
 </script>
 </body>
 </html>

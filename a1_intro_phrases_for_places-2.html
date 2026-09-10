@@ -1,100 +1,52 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>A1 Places and Phrases Matching</title>
-
-  <style>
-    :root {
-      --color-background-primary: #ffffff;
-      --color-background-secondary: #f6f7f9;
-      --color-text-primary: #1a1d23;
-      --color-text-secondary: #4b5261;
-      --color-text-tertiary: #8a8f9c;
-      --color-border-secondary: #e2e5ea;
-      --color-border-tertiary: #ececef;
-      --border-radius-lg: 14px;
-
-      --text-primary: var(--color-text-primary);
-      --text-secondary: var(--color-text-secondary);
-      --text-muted: var(--color-text-tertiary);
-      --text-accent: #2563eb;
-      --surface-1: var(--color-background-primary);
-      --surface-2: var(--color-background-secondary);
-      --border: var(--color-border-secondary);
-
-      --pos-wh: #1d6fd8;
-      --pos-wh-bg: #e3edfd;
-      --pos-yes: #1a7f37;
-      --pos-yes-bg: #e6f6ea;
-      --pos-no: #c03434;
-      --pos-no-bg: #fbe7e7;
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<title>A1 Places and Phrases Matching</title>
+<script>
+// Applies the saved/system theme to <html> as early as possible, before the
+// stylesheet below paints anything, so there's no flash of the wrong theme.
+// Self-contained: no dependency on any external script.
+(function(){
+  try{
+    var saved = localStorage.getItem('theme-preference');
+    var theme = (saved === 'light' || saved === 'dark')
+      ? saved
+      : ((window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches) ? 'dark' : 'light');
+    document.documentElement.setAttribute('data-theme', theme);
+  }catch(e){ /* localStorage/matchMedia unavailable — CSS media query still applies */ }
+})();
+</script>
+<link rel="stylesheet" href="house.css">
+<style>
+/* Recovered page-specific rules. */
+.score-bar-wrap {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      margin: 10px 0 16px;
     }
-
-    html[data-theme="dark"] {
-      --color-background-primary: #16181d;
-      --color-background-secondary: #1d2026;
-      --color-text-primary: #eef0f3;
-      --color-text-secondary: #b7bcc6;
-      --color-text-tertiary: #838995;
-      --color-border-secondary: #2c303a;
-      --color-border-tertiary: #262a33;
-
-      --text-accent: #6ea8fe;
-      --surface-1: var(--color-background-primary);
-      --surface-2: var(--color-background-secondary);
-      --border: var(--color-border-secondary);
-
-      --pos-wh: #7cb0f7;
-      --pos-wh-bg: #1c2b42;
-      --pos-yes: #6fd08c;
-      --pos-yes-bg: #163524;
-      --pos-no: #f08a8a;
-      --pos-no-bg: #3a1c1c;
-    }
-
-    * {
-      box-sizing: border-box;
-    }
-
-    body {
-      margin: 0;
-      background: var(--surface-1);
-      color: var(--text-primary);
-      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Helvetica, Arial, sans-serif;
-      font-size: 15px;
-      line-height: 1.55;
-    }
-
-    .page {
-      max-width: 940px;
-      margin: 0 auto;
-      padding: 28px 20px 64px;
-    }
-
-    h1 {
-      margin: 4px 0 2px;
-      font-size: 1.35rem;
-    }
-
-    .subtitle {
-      margin: 0 0 14px;
+.score-label {
       color: var(--text-secondary);
-      font-size: 0.95rem;
+      font-size: 0.82rem;
+      white-space: nowrap;
     }
 
-    .cefr-tag {
-      display: inline-block;
-      padding: 3px 10px;
-      border-radius: 999px;
-      background: var(--pos-wh-bg);
-      color: var(--pos-wh);
-      font-size: 0.72rem;
-      font-weight: 700;
-      letter-spacing: 0.04em;
-      text-transform: uppercase;
-    }
+/* Page-specific design tokens. These are this lesson's own palette,
+   not house tokens — house.css owns everything prefixed --color-* etc. */
+:root{
+  --pos-yes: #1a7f37;
+  --pos-yes-bg: #e6f6ea;
+  --pos-no: #c03434;
+  --pos-no-bg: #fbe7e7;
+}
+html[data-theme="dark"]{
+  --pos-yes: #6fd08c;
+  --pos-yes-bg: #163524;
+  --pos-no: #f08a8a;
+  --pos-no-bg: #3a1c1c;
+}
 
     .instructions {
       margin: 0;
@@ -104,26 +56,6 @@
       background: var(--surface-2);
       color: var(--text-secondary);
       font-size: 0.9rem;
-    }
-
-    .sec-div {
-      display: flex;
-      align-items: center;
-      gap: 10px;
-      margin: 30px 0 8px;
-      color: var(--text-muted);
-      font-size: 0.72rem;
-      font-weight: 700;
-      letter-spacing: 0.08em;
-      text-transform: uppercase;
-    }
-
-    .sec-div::before,
-    .sec-div::after {
-      content: "";
-      flex: 1;
-      height: 1px;
-      background: var(--border);
     }
 
     .phrase-pool {
@@ -189,32 +121,11 @@
       }
     }
 
-    .score-bar-wrap {
-      display: flex;
-      align-items: center;
-      gap: 12px;
-      margin: 10px 0 16px;
-    }
-
-    .score-bar {
-      flex: 1;
-      height: 8px;
-      overflow: hidden;
-      border-radius: 999px;
-      background: var(--surface-2);
-    }
-
     .score-fill {
       width: 0;
       height: 100%;
       background: var(--pos-yes);
       transition: width 0.3s ease;
-    }
-
-    .score-label {
-      color: var(--text-secondary);
-      font-size: 0.82rem;
-      white-space: nowrap;
     }
 
     .board-grid {
@@ -325,38 +236,18 @@
       color: var(--text-accent);
     }
 
-    #theme-toggle-wrap {
-      position: fixed;
-      right: 18px;
-      bottom: 18px;
-    }
-
-    #theme-toggle {
-      width: 42px;
-      height: 42px;
-      border: 1px solid var(--border);
-      border-radius: 50%;
-      cursor: pointer;
-      background: var(--surface-1);
-      color: var(--text-primary);
-      font-size: 18px;
-    }
-
     @media (max-width: 560px) {
-      .page {
-        padding: 22px 14px 58px;
-      }
 
       .pair-chip {
         width: 100%;
-      }
-    }
-  </style>
+      }}
+</style>
 </head>
-
 <body>
+<div class="page" id="page">
+
   <main class="page">
-    <span class="cefr-tag">A1</span>
+    <span class="cefr-tag cefr-a1">A1 · Beginner</span>
 
     <h1>Places and Phrases</h1>
 
@@ -392,16 +283,17 @@
     <button class="reset-btn" id="resetBtn">Reset exercise</button>
   </main>
 
-  <div id="theme-toggle-wrap">
-    <button
-      id="theme-toggle"
-      aria-label="Toggle light and dark mode"
-      title="Toggle light and dark mode"
-    >◐</button>
-  </div>
+  
+</div>
 
-  <script>
-    const placeData = [
+<div id="theme-toggle-wrap">
+  <button id="theme-toggle" aria-label="Toggle light/dark mode" title="Toggle light/dark mode">
+    <span id="theme-icon">☀️</span>
+  </button>
+</div>
+<script src="house.js"></script>
+<script>
+const placeData = [
       {
         id: "airport",
         emoji: "✈️",
@@ -718,6 +610,6 @@
     });
 
     resetExercise();
-  </script>
+</script>
 </body>
 </html>

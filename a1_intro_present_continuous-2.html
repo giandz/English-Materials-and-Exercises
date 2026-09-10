@@ -1,38 +1,46 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-<meta charset="UTF-8" />
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<title>Present Continuous 2 — Introduction</title>
+<script>
+// Applies the saved/system theme to <html> as early as possible, before the
+// stylesheet below paints anything, so there's no flash of the wrong theme.
+// Self-contained: no dependency on any external script.
+(function(){
+  try{
+    var saved = localStorage.getItem('theme-preference');
+    var theme = (saved === 'light' || saved === 'dark')
+      ? saved
+      : ((window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches) ? 'dark' : 'light');
+    document.documentElement.setAttribute('data-theme', theme);
+  }catch(e){ /* localStorage/matchMedia unavailable — CSS media query still applies */ }
+})();
+</script>
+<link rel="stylesheet" href="house.css">
 <style>
-  .sec-div{font-size:11px;font-weight:500;letter-spacing:.06em;text-transform:uppercase;color:var(--color-text-tertiary);display:flex;align-items:center;gap:8px;margin:1.5rem 0 1rem;}
-  .sec-div::before,.sec-div::after{content:'';flex:1;height:.5px;background:var(--color-border-tertiary);}
-  .setting-chip{display:inline-flex;align-items:center;gap:5px;font-size:12px;padding:3px 10px;border-radius:20px;background:var(--color-background-secondary);border:.5px solid var(--color-border-secondary);color:var(--color-text-secondary);margin-bottom:1rem;}
-  .bubble-wrap{display:flex;gap:10px;align-items:flex-end;margin-bottom:14px;}
-  .bubble-wrap.right{flex-direction:row-reverse;}
-  .avatar{width:34px;height:34px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:18px;flex-shrink:0;}
-  .av-a{background:#e6f1fb;} .av-b{background:#eeedfe;}
-  .bubble{max-width:76%;padding:9px 13px;border-radius:15px;font-size:14px;line-height:1.65;border:.5px solid var(--color-border-tertiary);}
-  .bubble.left{background:var(--color-background-primary);border-bottom-left-radius:4px;color:var(--color-text-primary);}
-  .bubble.right{background:#eeedfe;border-bottom-right-radius:4px;color:#26215c;border-color:#afa9ec;}
-  .bname{font-size:11px;font-weight:500;color:var(--color-text-secondary);margin-bottom:3px;padding:0 2px;}
-  .bname.right{text-align:right;}
-  .hl-aff{font-weight:600;color:#185fa5;}
+.hl-aff{font-weight:600;color:#185fa5;}
   .hl-neg{font-weight:600;color:#a32d2d;}
   .hl-q{font-weight:600;color:#27500a;}
-  .rule-box{background:var(--color-background-secondary);border-radius:var(--border-radius-md);padding:10px 14px;margin-bottom:1.25rem;font-size:13px;color:var(--color-text-secondary);line-height:1.7;}
-  .rule-box strong{color:var(--color-text-primary);font-weight:500;}
   
-
 
   @media(max-width:480px){.form-grid{grid-template-columns:1fr;}}
 </style>
-<link rel="stylesheet" href="general.css">
 </head>
-<body class="exercise-page">
+<body class="exercise-page" id="page">
+<span class="cefr-tag cefr-a1">A1 · Beginner</span>
 <div style="padding:.75rem 0 1rem;">
 
   
 
-  <div class="sec-div">conversation</div>
+    <div class="sec-div">Before you read</div>
+  <p class="subtitle">Read these three questions first, then look for the answers in the conversation.</p>
+  <div id="preQuestions" class="prequiz"></div>
+
+  <button id="grammarToggle" class="grammar-toggle-btn">🎨 Show Grammar</button>
+  <div class="pos-legend"></div>
+<div class="sec-div">conversation</div>
   <div class="setting-chip">📱 two friends texting each other</div>
 
   <div class="bubble-wrap left">
@@ -50,7 +58,7 @@
   <div class="bubble-wrap left">
     <div class="avatar av-a">👩</div>
     <div><div class="bname">A</div>
-    <div class="bubble left"><span class="hl-neg">I'm not working</span> today — it's my day off. <span class="hl-aff">I'm sitting</span> in the garden and <span class="hl-aff">I'm reading</span> a book.</div></div>
+    <div class="bubble left"><span class="hl-neg">I'm not working</span> <span class="pos-hl pos-time">today</span> — <span class="pos-hl pos-subject">it</span><span class="pos-hl pos-verb">'s</span> <span class="pos-hl pos-complement">my day off</span>. <span class="hl-aff">I'm sitting</span> <span class="pos-hl pos-prep">in</span> <span class="pos-hl pos-object">the garden</span> and <span class="hl-aff">I'm reading</span> <span class="pos-hl pos-object">a book</span>.</div></div>
   </div>
 
   <div class="bubble-wrap right">
@@ -62,13 +70,13 @@
   <div class="bubble-wrap left">
     <div class="avatar av-a">👩</div>
     <div><div class="bname">A</div>
-    <div class="bubble left">Yes, the sun <span class="hl-aff">is shining</span>. What about your family? <span class="hl-q">What is your sister doing?</span></div></div>
+    <div class="bubble left">Yes, <span class="pos-hl pos-subject">the sun</span> <span class="hl-aff">is shining</span>. What about <span class="pos-hl pos-object">your family</span>? <span class="hl-q">What is your sister doing?</span></div></div>
   </div>
 
   <div class="bubble-wrap right">
     <div class="avatar av-b">👨</div>
     <div><div class="bname right">B</div>
-    <div class="bubble right"><span class="hl-aff">She's studying</span> in her room. <span class="hl-neg">She isn't eating</span> — <span class="hl-neg">she's not coming</span> down for lunch today.</div></div>
+    <div class="bubble right"><span class="hl-aff">She's studying</span> <span class="pos-hl pos-prep">in</span> <span class="pos-hl pos-object">her room</span>. <span class="hl-neg">She isn't eating</span> — <span class="hl-neg">she's not coming</span> down <span class="pos-hl pos-prep">for</span> <span class="pos-hl pos-object">lunch</span> <span class="pos-hl pos-time">today</span>.</div></div>
   </div>
 
   <div class="bubble-wrap left">
@@ -80,7 +88,7 @@
   <div class="bubble-wrap right">
     <div class="avatar av-b">👨</div>
     <div><div class="bname right">B</div>
-    <div class="bubble right">Dad <span class="hl-aff">is watching</span> baseball. Mom <span class="hl-neg">isn't watching</span> with him — <span class="hl-aff">she's working</span> in the garden.</div></div>
+    <div class="bubble right"><span class="pos-hl pos-subject">Dad</span> <span class="hl-aff">is watching</span> <span class="pos-hl pos-object">baseball</span>. <span class="pos-hl pos-subject">Mom</span> <span class="hl-neg">isn't watching</span> <span class="pos-hl pos-prep">with</span> <span class="pos-hl pos-object">him</span> — <span class="hl-aff">she's working</span> <span class="pos-hl pos-prep">in</span> <span class="pos-hl pos-object">the garden</span>.</div></div>
   </div>
 
   <div class="bubble-wrap left">
@@ -92,22 +100,63 @@
   <div class="bubble-wrap right">
     <div class="avatar av-b">👨</div>
     <div><div class="bname right">B</div>
-    <div class="bubble right">Yes! <span class="hl-aff">I'm finishing</span> lunch now and then <span class="hl-aff">I'm leaving</span> in about twenty minutes.</div></div>
+    <div class="bubble right">Yes! <span class="hl-aff">I'm finishing</span> <span class="pos-hl pos-object">lunch</span> <span class="pos-hl pos-time">now</span> and then <span class="hl-aff">I'm leaving</span> <span class="pos-hl pos-time">in about twenty minutes</span>.</div></div>
   </div>
 
   <div class="bubble-wrap left">
     <div class="avatar av-a">👩</div>
     <div><div class="bname">A</div>
-    <div class="bubble left">Great! <span class="hl-aff">I'm getting</span> ready now. See you soon!</div></div>
+    <div class="bubble left">Great! <span class="hl-aff">I'm getting</span> <span class="pos-hl pos-complement">ready</span> <span class="pos-hl pos-time">now</span>. <span class="pos-hl pos-verb">See</span> <span class="pos-hl pos-object">you</span> <span class="pos-hl pos-time">soon</span>!</div></div>
   </div>
+  <div class="sec-div">Check your answers</div>
+  <p class="subtitle">The same three questions — now choose the correct answer.</p>
+  <div id="quiz"></div>
+
 
 </div>
+
 <div id="theme-toggle-wrap">
   <button id="theme-toggle" aria-label="Toggle light/dark mode" title="Toggle light/dark mode">
     <span id="theme-icon">☀️</span>
   </button>
 </div>
-<script src="theme-toggle-behavior.js"></script>
+<script src="house.js"></script>
+<script>
+/* The same three questions run before and after the conversation:
+   as a plain list first (setting a purpose for reading), then with
+   three options each once the text has been read. */
+const CQ_ITEMS = [
+  {
+    "q": "Why is speaker A not working today?",
+    "opts": [
+      "It is their day off",
+      "They are reading in the garden",
+      "They are making lunch"
+    ],
+    "correct": 0
+  },
+  {
+    "q": "What is B's sister doing?",
+    "opts": [
+      "Watching baseball",
+      "Studying in her room",
+      "Working in the garden"
+    ],
+    "correct": 1
+  },
+  {
+    "q": "When is B leaving for the café?",
+    "opts": [
+      "Straight away",
+      "After watching the baseball",
+      "In about twenty minutes"
+    ],
+    "correct": 2
+  }
+];
 
+HouseComprehension.build({ pre: 'preQuestions', quiz: 'quiz', items: CQ_ITEMS });
+HouseGrammar.init();
+</script>
 </body>
 </html>

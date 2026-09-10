@@ -1,12 +1,26 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-<meta charset="UTF-8" />
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<title>Present Continuous — Introduction</title>
+<script>
+// Applies the saved/system theme to <html> as early as possible, before the
+// stylesheet below paints anything, so there's no flash of the wrong theme.
+// Self-contained: no dependency on any external script.
+(function(){
+  try{
+    var saved = localStorage.getItem('theme-preference');
+    var theme = (saved === 'light' || saved === 'dark')
+      ? saved
+      : ((window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches) ? 'dark' : 'light');
+    document.documentElement.setAttribute('data-theme', theme);
+  }catch(e){ /* localStorage/matchMedia unavailable — CSS media query still applies */ }
+})();
+</script>
+<link rel="stylesheet" href="house.css">
 <style>
-  .sec-div{font-size:11px;font-weight:500;letter-spacing:.06em;text-transform:uppercase;color:var(--color-text-tertiary);display:flex;align-items:center;gap:8px;margin:1.5rem 0 1rem;}
-  .sec-div::before,.sec-div::after{content:'';flex:1;height:.5px;background:var(--color-border-tertiary);}
-
-  /* ── vocab grid ── */
+/* ── vocab grid ── */
   .vocab-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(130px,1fr));gap:8px;margin-bottom:.5rem;}
   .vocab-chip{display:flex;flex-direction:column;align-items:center;gap:4px;padding:10px 8px;border:.5px solid var(--color-border-tertiary);border-radius:var(--border-radius-lg);background:var(--color-background-primary);text-align:center;}
   .vc-emoji{font-size:26px;line-height:1;}
@@ -34,9 +48,9 @@
   .score-msg{font-size:13px;color:var(--color-text-secondary);}
   @keyframes shake{0%,100%{transform:translateX(0)}25%{transform:translateX(-5px)}75%{transform:translateX(5px)}}
 </style>
-<link rel="stylesheet" href="general.css">
 </head>
-<body class="exercise-page">
+<body class="exercise-page" id="page">
+<span class="cefr-tag cefr-a1">A1 · Beginner</span>
 <div style="padding:.75rem 0 1rem;">
 
   <!-- ══ VOCAB ══ -->
@@ -93,6 +107,12 @@
 
 </div>
 
+<div id="theme-toggle-wrap">
+  <button id="theme-toggle" aria-label="Toggle light/dark mode" title="Toggle light/dark mode">
+    <span id="theme-icon">☀️</span>
+  </button>
+</div>
+<script src="house.js"></script>
 <script>
 const matchItems = [
   { id:"cook",       word:"cook",             emoji:"🍳", def:"to prepare food using heat"                         },
@@ -215,12 +235,5 @@ function build(){
 document.getElementById('reset-btn').addEventListener('click',build);
 build();
 </script>
-<div id="theme-toggle-wrap">
-  <button id="theme-toggle" aria-label="Toggle light/dark mode" title="Toggle light/dark mode">
-    <span id="theme-icon">☀️</span>
-  </button>
-</div>
-<script src="theme-toggle-behavior.js"></script>
-
 </body>
 </html>

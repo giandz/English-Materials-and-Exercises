@@ -2,94 +2,35 @@
 <html lang="en">
 <head>
 <meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
 <title>Present Perfect — Life Experiences Conversation</title>
-<link rel="stylesheet" href="general.css">
+<script>
+// Applies the saved/system theme to <html> as early as possible, before the
+// stylesheet below paints anything, so there's no flash of the wrong theme.
+// Self-contained: no dependency on any external script.
+(function(){
+  try{
+    var saved = localStorage.getItem('theme-preference');
+    var theme = (saved === 'light' || saved === 'dark')
+      ? saved
+      : ((window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches) ? 'dark' : 'light');
+    document.documentElement.setAttribute('data-theme', theme);
+  }catch(e){ /* localStorage/matchMedia unavailable — CSS media query still applies */ }
+})();
+</script>
+<link rel="stylesheet" href="house.css">
 <style>
-    :root {
-      --color-background-primary: #ffffff;
-      --color-background-secondary: #f7f8fb;
-      --color-text-primary: #1a1a2e;
-      --color-text-secondary: #4a4a68;
-      --color-text-tertiary: #8888a0;
-      --color-border-secondary: #e2e2ec;
-      --border-radius-lg: 16px;
-      --text-primary: var(--color-text-primary);
-      --text-secondary: var(--color-text-secondary);
-      --text-muted: var(--color-text-tertiary);
-      --text-accent: #4338ca;
-      --surface-1: var(--color-background-primary);
-      --surface-2: var(--color-background-secondary);
-      --border: var(--color-border-secondary);
-      --radius: var(--border-radius-lg);
-      --pos-aux: #db2777;    --pos-aux-bg: #fce7f3;
-      --pos-verb: #d97706;   --pos-verb-bg: #fef3c7;
-      --pos-adverb: #0891b2; --pos-adverb-bg: #cffafe;
-      --pos-neg: #6b7280;    --pos-neg-bg: #f3f4f6;
-    }
-    @media (prefers-color-scheme: dark) {
-      :root {
-        --color-background-primary: #14141f;
-        --color-background-secondary: #1b1b2b;
-        --color-text-primary: #eceef5;
-        --color-text-secondary: #b8b9cc;
-        --color-text-tertiary: #7c7d94;
-        --color-border-secondary: #303049;
-        --text-accent: #a5b4fc;
-        --pos-aux-bg: #3a1830; --pos-verb-bg: #3a2a08;
-        --pos-adverb-bg: #0a2e35; --pos-neg-bg: #24242f;
-      }
-    }
-    * { box-sizing: border-box; }
-    body {
-      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Helvetica, Arial, sans-serif;
-      background: var(--surface-2); color: var(--text-primary);
-      margin: 0; padding: 24px 16px 64px; font-size: 15px; line-height: 1.55;
-    }
-    .page { max-width: 700px; margin: 0 auto; }
-    h1 { font-size: 1.3rem; margin: 0 0 4px; }
-    .cefr-tag {
-      display: inline-block; padding: 3px 10px; border-radius: 999px;
-      background: var(--text-accent); color: #fff; font-size: 0.7rem;
-      font-weight: 700; letter-spacing: .04em; text-transform: uppercase;
-      vertical-align: middle; margin-left: 8px;
-    }
-    .subtitle { color: var(--text-secondary); margin: 0 0 14px; font-size: 0.92rem; }
-    .setting-chip {
-      display: inline-flex; align-items: center; gap: 6px; padding: 5px 12px;
-      background: var(--surface-1); border: 1px solid var(--border);
-      border-radius: 999px; font-size: 0.8rem; color: var(--text-secondary); margin-bottom: 16px;
-    }
-    .toolbar { display: flex; justify-content: space-between; align-items: center; margin: 6px 0 16px; flex-wrap: wrap; gap: 10px; }
+/* Recovered page-specific rules. */
+.bubble-row { display: flex; align-items: flex-end; gap: 8px; }
+.bubble-row.right { flex-direction: row-reverse; }
+.bubble-row.right .bubble { background: #eef0ff; }
+
+.toolbar { display: flex; justify-content: space-between; align-items: center; margin: 6px 0 16px; flex-wrap: wrap; gap: 10px; }
     .btn {
       display: inline-flex; align-items: center; gap: 6px; padding: 8px 16px;
       background: var(--text-accent); color: #fff; border: none; border-radius: 10px;
       font-size: 0.85rem; font-weight: 600; cursor: pointer;
     }
-    .legend { display: flex; flex-wrap: wrap; gap: 8px; margin: 4px 0 18px; }
-    .legend-pill {
-      display: inline-flex; align-items: center; gap: 6px; padding: 4px 10px;
-      border-radius: 999px; font-size: 0.72rem; font-weight: 600; border: 1px solid var(--border);
-      background: var(--surface-1); color: var(--text-secondary);
-    }
-    .legend-swatch { width: 8px; height: 8px; border-radius: 50%; display: inline-block; }
-
-    .bubble-wrap { display: flex; flex-direction: column; gap: 12px; margin: 10px 0 6px; }
-    .bubble-row { display: flex; align-items: flex-end; gap: 8px; }
-    .bubble-row.right { flex-direction: row-reverse; }
-    .avatar {
-      width: 34px; height: 34px; border-radius: 50%; flex-shrink: 0;
-      display: flex; align-items: center; justify-content: center;
-      background: var(--surface-1); border: 1px solid var(--border); font-size: 1.05rem;
-    }
-    .bubble-col { max-width: 78%; }
-    .bname { font-size: 0.72rem; color: var(--text-muted); margin: 0 0 3px 2px; font-weight: 600; }
-    .bubble {
-      background: var(--surface-1); border: 1px solid var(--border);
-      border-radius: 16px; padding: 10px 14px; font-size: 0.93rem;
-    }
-    .bubble-row.right .bubble { background: #eef0ff; }
-    @media (prefers-color-scheme: dark) { .bubble-row.right .bubble { background: #22224a; } }
 
     .pos-aux, .pos-verb, .pos-adverb, .pos-neg { border-radius: 4px; padding: 1px 4px; transition: color .2s, background .2s; }
     body.no-highlight .pos-aux, body.no-highlight .pos-verb, body.no-highlight .pos-adverb, body.no-highlight .pos-neg {
@@ -99,20 +40,20 @@
     .pos-verb   { color: var(--pos-verb);   background: var(--pos-verb-bg); }
     .pos-adverb { color: var(--pos-adverb); background: var(--pos-adverb-bg); }
     .pos-neg    { color: var(--pos-neg);    background: var(--pos-neg-bg); }
-
-    .rule-box {
-      background: var(--surface-1); border: 1px solid var(--border);
-      border-left: 4px solid var(--text-accent); border-radius: var(--radius);
-      padding: 12px 16px; margin: 24px 0 0; font-size: 0.9rem;
-    }
     footer.credits { text-align: center; font-size: 0.75rem; color: var(--text-muted); margin-top: 40px; }
 </style>
 </head>
 <body>
-<div class="page">
-  <h1>Talking About Life Experiences <span class="cefr-tag">B1</span></h1>
+<div class="page" id="page">
+  <h1>Talking About Life Experiences <span class="cefr-tag cefr-b1">B1 · Intermediate</span></h1>
   <p class="subtitle">Read the conversation between Maya and Leo. Notice how they talk about things they have and haven't done.</p>
-  <div class="setting-chip">☕ Two old friends catching up over coffee</div>
+    <div class="sec-div">Before you read</div>
+  <p class="subtitle">Read these three questions first, then look for the answers in the conversation.</p>
+  <div id="preQuestions" class="prequiz"></div>
+
+  <button id="grammarToggle" class="grammar-toggle-btn">🎨 Show Grammar</button>
+  <div class="pos-legend"></div>
+<div class="setting-chip">☕ Two old friends catching up over coffee</div>
 
   <div class="toolbar">
     <button class="btn" id="toggleBtn">Hide grammar highlighting</button>
@@ -128,7 +69,7 @@
       <div class="avatar">🧑‍🦱</div>
       <div class="bubble-col">
         <p class="bname">Maya</p>
-        <div class="bubble"><span class="pos-wh" style="color:var(--text-accent)">Have</span> you <span class="pos-adverb">ever</span> <span class="pos-verb">been</span> to Japan?</div>
+        <div class="bubble"><span class="pos-hl pos-aux">Have</span> you <span class="pos-hl pos-adverb">ever</span> <span class="pos-hl pos-verb">been</span> to Japan?</div>
       </div>
     </div>
 
@@ -136,7 +77,7 @@
       <div class="avatar">🧔</div>
       <div class="bubble-col">
         <p class="bname">Leo</p>
-        <div class="bubble">No, I <span class="pos-aux">haven</span><span class="pos-neg">'t</span> <span class="pos-verb">been</span> there <span class="pos-adverb">yet</span>, but I've always wanted to go.</div>
+        <div class="bubble">No, I <span class="pos-hl pos-aux">haven</span><span class="pos-hl pos-neg">'t</span> <span class="pos-hl pos-verb">been</span> there <span class="pos-hl pos-adverb">yet</span>, but I've always wanted to go.</div>
       </div>
     </div>
 
@@ -144,7 +85,7 @@
       <div class="avatar">🧑‍🦱</div>
       <div class="bubble-col">
         <p class="bname">Maya</p>
-        <div class="bubble">I<span class="pos-aux">'ve</span> <span class="pos-adverb">never</span> <span class="pos-verb">eaten</span> sushi in my life either, believe it or not!</div>
+        <div class="bubble">I<span class="pos-hl pos-aux">'ve</span> <span class="pos-hl pos-adverb">never</span> <span class="pos-hl pos-verb">eaten</span> sushi in my life either, believe it or not!</div>
       </div>
     </div>
 
@@ -152,7 +93,7 @@
       <div class="avatar">🧔</div>
       <div class="bubble-col">
         <p class="bname">Leo</p>
-        <div class="bubble">Really? I<span class="pos-aux">'ve</span> <span class="pos-adverb">already</span> <span class="pos-verb">tried</span> sushi twice this year.</div>
+        <div class="bubble">Really? I<span class="pos-hl pos-aux">'ve</span> <span class="pos-hl pos-adverb">already</span> <span class="pos-hl pos-verb">tried</span> sushi twice this year.</div>
       </div>
     </div>
 
@@ -160,7 +101,7 @@
       <div class="avatar">🧑‍🦱</div>
       <div class="bubble-col">
         <p class="bname">Maya</p>
-        <div class="bubble">What about adventure sports? <span class="pos-wh" style="color:var(--text-accent)">Have</span> you <span class="pos-adverb">ever</span> <span class="pos-verb">jumped</span> from a plane?</div>
+        <div class="bubble">What about adventure sports? <span class="pos-hl pos-aux">Have</span> you <span class="pos-hl pos-adverb">ever</span> <span class="pos-hl pos-verb">jumped</span> from a plane?</div>
       </div>
     </div>
 
@@ -168,7 +109,7 @@
       <div class="avatar">🧔</div>
       <div class="bubble-col">
         <p class="bname">Leo</p>
-        <div class="bubble">Yes, I <span class="pos-aux">have</span>! I went skydiving last summer. It was terrifying.</div>
+        <div class="bubble">Yes, I <span class="pos-hl pos-aux">have</span>! I went skydiving last summer. It was terrifying.</div>
       </div>
     </div>
 
@@ -176,7 +117,7 @@
       <div class="avatar">🧑‍🦱</div>
       <div class="bubble-col">
         <p class="bname">Maya</p>
-        <div class="bubble">Wow. I<span class="pos-aux">'ve</span> <span class="pos-verb">ridden</span> a horse, but I<span class="pos-aux">'ve</span> <span class="pos-adverb">never</span> <span class="pos-verb">jumped</span> from a plane.</div>
+        <div class="bubble">Wow. I<span class="pos-hl pos-aux">'ve</span> <span class="pos-hl pos-verb">ridden</span> a horse, but I<span class="pos-hl pos-aux">'ve</span> <span class="pos-hl pos-adverb">never</span> <span class="pos-hl pos-verb">jumped</span> from a plane.</div>
       </div>
     </div>
 
@@ -184,7 +125,7 @@
       <div class="avatar">🧔</div>
       <div class="bubble-col">
         <p class="bname">Leo</p>
-        <div class="bubble"><span class="pos-wh" style="color:var(--text-accent)">Have</span> you <span class="pos-adverb">ever</span> <span class="pos-verb">seen</span> the Northern Lights?</div>
+        <div class="bubble"><span class="pos-hl pos-aux">Have</span> you <span class="pos-hl pos-adverb">ever</span> <span class="pos-hl pos-verb">seen</span> the Northern Lights?</div>
       </div>
     </div>
 
@@ -192,7 +133,7 @@
       <div class="avatar">🧑‍🦱</div>
       <div class="bubble-col">
         <p class="bname">Maya</p>
-        <div class="bubble">I<span class="pos-aux">'ve</span> <span class="pos-adverb">already</span> <span class="pos-verb">seen</span> the Aurora Borealis — in Iceland, two years ago.</div>
+        <div class="bubble">I<span class="pos-hl pos-aux">'ve</span> <span class="pos-hl pos-adverb">already</span> <span class="pos-hl pos-verb">seen</span> the Aurora Borealis — in Iceland, two years ago.</div>
       </div>
     </div>
 
@@ -200,7 +141,7 @@
       <div class="avatar">🧔</div>
       <div class="bubble-col">
         <p class="bname">Leo</p>
-        <div class="bubble">I <span class="pos-aux">haven</span><span class="pos-neg">'t</span> <span class="pos-verb">seen</span> it <span class="pos-adverb">yet</span>. It's still on my list.</div>
+        <div class="bubble">I <span class="pos-hl pos-aux">haven</span><span class="pos-hl pos-neg">'t</span> <span class="pos-hl pos-verb">seen</span> it <span class="pos-hl pos-adverb">yet</span>. It's still on my list.</div>
       </div>
     </div>
 
@@ -208,7 +149,7 @@
       <div class="avatar">🧑‍🦱</div>
       <div class="bubble-col">
         <p class="bname">Maya</p>
-        <div class="bubble"><span class="pos-wh" style="color:var(--text-accent)">Have</span> you <span class="pos-adverb">ever</span> <span class="pos-verb">run</span> a marathon?</div>
+        <div class="bubble"><span class="pos-hl pos-aux">Have</span> you <span class="pos-hl pos-adverb">ever</span> <span class="pos-hl pos-verb">run</span> a marathon?</div>
       </div>
     </div>
 
@@ -216,7 +157,7 @@
       <div class="avatar">🧔</div>
       <div class="bubble-col">
         <p class="bname">Leo</p>
-        <div class="bubble">I <span class="pos-aux">haven</span><span class="pos-neg">'t</span> <span class="pos-verb">run</span> a full marathon, but I<span class="pos-aux">'ve</span> <span class="pos-verb">run</span> a half marathon twice.</div>
+        <div class="bubble">I <span class="pos-hl pos-aux">haven</span><span class="pos-hl pos-neg">'t</span> <span class="pos-hl pos-verb">run</span> a full marathon, but I<span class="pos-hl pos-aux">'ve</span> <span class="pos-hl pos-verb">run</span> a half marathon twice.</div>
       </div>
     </div>
 
@@ -232,7 +173,7 @@
       <div class="avatar">🧔</div>
       <div class="bubble-col">
         <p class="bname">Leo</p>
-        <div class="bubble">True. I<span class="pos-aux">'ve</span> <span class="pos-verb">broken</span> a bone once, though — does that count as an "experience"?</div>
+        <div class="bubble">True. I<span class="pos-hl pos-aux">'ve</span> <span class="pos-hl pos-verb">broken</span> a bone once, though — does that count as an "experience"?</div>
       </div>
     </div>
 
@@ -244,12 +185,22 @@
       </div>
     </div>
   </div>
+  <div class="sec-div">Check your answers</div>
+  <p class="subtitle">The same three questions — now choose the correct answer.</p>
+  <div id="quiz"></div>
+
 
   <div class="rule-box"><strong>Notice:</strong> Maya and Leo use the present perfect to talk about experiences at any point in their lives — not a specific finished time. Words like <em>ever</em>, <em>never</em>, <em>already</em>, and <em>yet</em> often signal this use. We'll break down the forms next.</div>
 
   <footer class="credits">Present Perfect · Life Experiences</footer>
 </div>
 
+<div id="theme-toggle-wrap">
+  <button id="theme-toggle" aria-label="Toggle light/dark mode" title="Toggle light/dark mode">
+    <span id="theme-icon">☀️</span>
+  </button>
+</div>
+<script src="house.js"></script>
 <script>
 document.getElementById('toggleBtn').addEventListener('click', function () {
   document.body.classList.toggle('no-highlight');
@@ -258,6 +209,42 @@ document.getElementById('toggleBtn').addEventListener('click', function () {
     : 'Hide grammar highlighting';
 });
 </script>
-<div id="theme-toggle-wrap"><button id="theme-toggle" aria-label="Toggle light/dark mode" title="Toggle light/dark mode"><span id="theme-icon">☀️</span></button></div><script src="theme-toggle-behavior.js"></script>
+<script>
+/* The same three questions run before and after the conversation:
+   as a plain list first (setting a purpose for reading), then with
+   three options each once the text has been read. */
+const CQ_ITEMS = [
+  {
+    "q": "Which of these has Leo done?",
+    "opts": [
+      "Been to Japan",
+      "Seen the Northern Lights",
+      "Jumped from a plane"
+    ],
+    "correct": 2
+  },
+  {
+    "q": "Where did Maya see the Aurora Borealis?",
+    "opts": [
+      "In Iceland, two years ago",
+      "In Japan, last summer",
+      "She hasn't seen it yet"
+    ],
+    "correct": 0
+  },
+  {
+    "q": "What has Leo run?",
+    "opts": [
+      "A full marathon, twice",
+      "A half marathon, twice",
+      "He has never run a race"
+    ],
+    "correct": 1
+  }
+];
+
+HouseComprehension.build({ pre: 'preQuestions', quiz: 'quiz', items: CQ_ITEMS });
+HouseGrammar.init();
+</script>
 </body>
 </html>

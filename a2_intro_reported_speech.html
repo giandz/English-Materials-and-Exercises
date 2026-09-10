@@ -1,25 +1,29 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-<meta charset="UTF-8" />
-<link rel="stylesheet" href="general.css">
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<title>Reported Speech — Introduction</title>
+<script>
+// Applies the saved/system theme to <html> as early as possible, before the
+// stylesheet below paints anything, so there's no flash of the wrong theme.
+// Self-contained: no dependency on any external script.
+(function(){
+  try{
+    var saved = localStorage.getItem('theme-preference');
+    var theme = (saved === 'light' || saved === 'dark')
+      ? saved
+      : ((window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches) ? 'dark' : 'light');
+    document.documentElement.setAttribute('data-theme', theme);
+  }catch(e){ /* localStorage/matchMedia unavailable — CSS media query still applies */ }
+})();
+</script>
+<link rel="stylesheet" href="house.css">
 <style>
-  .sec-div{font-size:11px;font-weight:500;letter-spacing:.06em;text-transform:uppercase;color:var(--color-text-tertiary);display:flex;align-items:center;gap:8px;margin:1.75rem 0 1rem;}
-  .sec-div::before,.sec-div::after{content:'';flex:1;height:.5px;background:var(--color-border-tertiary);}
-  .setting-chip{display:inline-flex;align-items:center;gap:5px;font-size:12px;padding:3px 10px;border-radius:20px;background:var(--color-background-secondary);border:.5px solid var(--color-border-secondary);color:var(--color-text-secondary);margin-bottom:1rem;}
-  .bubble-wrap{display:flex;gap:10px;align-items:flex-end;margin-bottom:14px;}
-  .bubble-wrap.right{flex-direction:row-reverse;}
-  .avatar{width:34px;height:34px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:18px;flex-shrink:0;}
-  .av-a{background:#e6f1fb;} .av-b{background:#eeedfe;}
-  .av-c{background:#eaf3de;} .av-d{background:#faeeda;}
-  .bubble{max-width:78%;padding:9px 13px;border-radius:15px;font-size:14px;line-height:1.7;border:.5px solid var(--color-border-tertiary);}
-  .bubble.left {background:var(--color-background-primary);border-bottom-left-radius:4px;color:var(--color-text-primary);}
-  .bubble.right{background:#eeedfe;border-bottom-right-radius:4px;color:#26215c;border-color:#afa9ec;}
-  .bubble.green{background:#eaf3de;border-color:#97c459;color:#1e4208;border-bottom-left-radius:4px;}
-  .bubble.amber{background:#faeeda;border-color:#ef9f27;color:#4a2800;border-bottom-right-radius:4px;}
-  .bname{font-size:11px;font-weight:500;color:var(--color-text-secondary);margin-bottom:3px;padding:0 2px;}
-  .bname.right{text-align:right;}
-  /* quote of original speech */
+/* Recovered page-specific rules. */
+.bubble.amber{background:#faeeda;border-color:#ef9f27;color:#4a2800;border-bottom-right-radius:4px;}
+
+/* quote of original speech */
   .direct{display:block;font-style:italic;color:var(--color-text-secondary);font-size:13px;margin-top:4px;padding-left:10px;border-left:2px solid var(--color-border-tertiary);}
   /* highlights */
   .hl-rep{font-weight:600;color:#185fa5;}   /* reported verb */
@@ -28,17 +32,24 @@
   .hl-say{font-weight:600;color:#b45309;}   /* said / told / asked */
 </style>
 </head>
-<body class="exercise-page">
+<body class="exercise-page" id="page">
+<span class="cefr-tag cefr-a2">A2 · Elementary</span>
 <div style="padding:.75rem 0 1rem;">
 
   <!-- ══ SCENE 1 ══ -->
-  <div class="sec-div">scene 1 — student &amp; mother</div>
+    <div class="sec-div">Before you read</div>
+  <p class="subtitle">Read these three questions first. There are two conversations — look for the answers in both.</p>
+  <div id="preQuestions" class="prequiz"></div>
+
+  <button id="grammarToggle" class="grammar-toggle-btn">🎨 Show Grammar</button>
+  <div class="pos-legend"></div>
+<div class="sec-div">scene 1 — student &amp; mother</div>
   <div class="setting-chip">🏠 at home after school</div>
 
   <div class="bubble-wrap right">
     <div class="avatar av-b">👩</div>
     <div><div class="bname right">Mum</div>
-    <div class="bubble right">How was school today, Leo?</div></div>
+    <div class="bubble right"><span class="pos-hl pos-wh">How</span> <span class="pos-hl pos-verb">was</span> <span class="pos-hl pos-subject">school</span> <span class="pos-hl pos-time">today</span>, Leo?</div></div>
   </div>
 
   <div class="bubble-wrap left">
@@ -52,7 +63,7 @@
   <div class="bubble-wrap right">
     <div class="avatar av-b">👩</div>
     <div><div class="bname right">Mum</div>
-    <div class="bubble right">Oh, that's great! What else did he say?</div></div>
+    <div class="bubble right">Oh, <span class="pos-hl pos-subject">that</span><span class="pos-hl pos-verb">'s</span> <span class="pos-hl pos-complement">great</span>! <span class="pos-hl pos-wh">What else</span> <span class="pos-hl pos-aux">did</span> <span class="pos-hl pos-subject">he</span> <span class="pos-hl pos-verb">say</span>?</div></div>
   </div>
 
   <div class="bubble-wrap left">
@@ -66,7 +77,7 @@
   <div class="bubble-wrap right">
     <div class="avatar av-b">👩</div>
     <div><div class="bname right">Mum</div>
-    <div class="bubble right">Did he give you any advice?</div></div>
+    <div class="bubble right"><span class="pos-hl pos-aux">Did</span> <span class="pos-hl pos-subject">he</span> <span class="pos-hl pos-verb">give</span> <span class="pos-hl pos-object">you</span> <span class="pos-hl pos-object">any advice</span>?</div></div>
   </div>
 
   <div class="bubble-wrap left">
@@ -80,7 +91,7 @@
   <div class="bubble-wrap right">
     <div class="avatar av-b">👩</div>
     <div><div class="bname right">Mum</div>
-    <div class="bubble right">Good advice. Did he say anything about the homework?</div></div>
+    <div class="bubble right"><span class="pos-hl pos-complement">Good advice</span>. <span class="pos-hl pos-aux">Did</span> <span class="pos-hl pos-subject">he</span> <span class="pos-hl pos-verb">say</span> <span class="pos-hl pos-object">anything</span> <span class="pos-hl pos-prep">about</span> <span class="pos-hl pos-object">the homework</span>?</div></div>
   </div>
 
   <div class="bubble-wrap left">
@@ -94,7 +105,7 @@
   <div class="bubble-wrap right">
     <div class="avatar av-b">👩</div>
     <div><div class="bname right">Mum</div>
-    <div class="bubble right">Right. And did he say anything else?</div></div>
+    <div class="bubble right">Right. And <span class="pos-hl pos-aux">did</span> <span class="pos-hl pos-subject">he</span> <span class="pos-hl pos-verb">say</span> <span class="pos-hl pos-object">anything else</span>?</div></div>
   </div>
 
   <div class="bubble-wrap left">
@@ -118,7 +129,7 @@
   <div class="bubble-wrap left">
     <div class="avatar av-c">👩</div>
     <div><div class="bname">Sara</div>
-    <div class="bubble green">You look stressed, Marco. Everything okay?</div></div>
+    <div class="bubble green"><span class="pos-hl pos-subject">You</span> <span class="pos-hl pos-verb">look</span> <span class="pos-hl pos-complement">stressed</span>, Marco. <span class="pos-hl pos-subject">Everything</span> <span class="pos-hl pos-complement">okay</span>?</div></div>
   </div>
 
   <div class="bubble-wrap right">
@@ -132,7 +143,7 @@
   <div class="bubble-wrap left">
     <div class="avatar av-c">👩</div>
     <div><div class="bname">Sara</div>
-    <div class="bubble green">Oh no. What else did she say?</div></div>
+    <div class="bubble green">Oh no. <span class="pos-hl pos-wh">What else</span> <span class="pos-hl pos-aux">did</span> <span class="pos-hl pos-subject">she</span> <span class="pos-hl pos-verb">say</span>?</div></div>
   </div>
 
   <div class="bubble-wrap right">
@@ -146,7 +157,7 @@
   <div class="bubble-wrap left">
     <div class="avatar av-c">👩</div>
     <div><div class="bname">Sara</div>
-    <div class="bubble green">That's tough. Did she give you any instructions?</div></div>
+    <div class="bubble green"><span class="pos-hl pos-subject">That</span><span class="pos-hl pos-verb">'s</span> <span class="pos-hl pos-complement">tough</span>. <span class="pos-hl pos-aux">Did</span> <span class="pos-hl pos-subject">she</span> <span class="pos-hl pos-verb">give</span> <span class="pos-hl pos-object">you</span> <span class="pos-hl pos-object">any instructions</span>?</div></div>
   </div>
 
   <div class="bubble-wrap right">
@@ -160,7 +171,7 @@
   <div class="bubble-wrap left">
     <div class="avatar av-c">👩</div>
     <div><div class="bname">Sara</div>
-    <div class="bubble green">That's a lot. Did she say anything about extra help?</div></div>
+    <div class="bubble green"><span class="pos-hl pos-subject">That</span><span class="pos-hl pos-verb">'s</span> <span class="pos-hl pos-complement">a lot</span>. <span class="pos-hl pos-aux">Did</span> <span class="pos-hl pos-subject">she</span> <span class="pos-hl pos-verb">say</span> <span class="pos-hl pos-object">anything</span> <span class="pos-hl pos-prep">about</span> <span class="pos-hl pos-object">extra help</span>?</div></div>
   </div>
 
   <div class="bubble-wrap right">
@@ -174,7 +185,7 @@
   <div class="bubble-wrap left">
     <div class="avatar av-c">👩</div>
     <div><div class="bname">Sara</div>
-    <div class="bubble green">Of course! And did she say anything positive at all?</div></div>
+    <div class="bubble green">Of course! And <span class="pos-hl pos-aux">did</span> <span class="pos-hl pos-subject">she</span> <span class="pos-hl pos-verb">say</span> <span class="pos-hl pos-object">anything positive</span> at all?</div></div>
   </div>
 
   <div class="bubble-wrap right">
@@ -190,14 +201,55 @@
     <div><div class="bname">Sara</div>
     <div class="bubble green">Well, that's something! Let's get started then.</div></div>
   </div>
+  <div class="sec-div">Check your answers</div>
+  <p class="subtitle">The same three questions — now choose the correct answer.</p>
+  <div id="quiz"></div>
+
 
 </div>
+
 <div id="theme-toggle-wrap">
   <button id="theme-toggle" aria-label="Toggle light/dark mode" title="Toggle light/dark mode">
     <span id="theme-icon">☀️</span>
   </button>
 </div>
-<script src="theme-toggle-behavior.js"></script>
+<script src="house.js"></script>
+<script>
+/* The same three questions run before and after the conversation:
+   as a plain list first (setting a purpose for reading), then with
+   three options each once the text has been read. */
+const CQ_ITEMS = [
+  {
+    "q": "What did Mr Collins tell the students to do every evening?",
+    "opts": [
+      "Revise their notes",
+      "Hand in the homework",
+      "Come to the parents' evening"
+    ],
+    "correct": 0
+  },
+  {
+    "q": "When does Marco's boss need the report?",
+    "opts": [
+      "By Friday",
+      "By Monday",
+      "In two weeks"
+    ],
+    "correct": 1
+  },
+  {
+    "q": "What did the boss say at the end of the meeting?",
+    "opts": [
+      "That Marco should take Friday off",
+      "That the client would wait another two weeks",
+      "That she appreciated everyone's hard work"
+    ],
+    "correct": 2
+  }
+];
 
+HouseComprehension.build({ pre: 'preQuestions', quiz: 'quiz', items: CQ_ITEMS });
+HouseGrammar.init();
+</script>
 </body>
 </html>

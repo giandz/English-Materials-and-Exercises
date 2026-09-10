@@ -2,123 +2,44 @@
 <html lang="en">
 <head>
 <meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
 <title>At the Supermarket — Conversation</title>
-<link rel="stylesheet" href="general.css">
-<style>
-  :root {
-    --color-background-primary: #ffffff;
-    --color-background-secondary: #f6f7f9;
-    --color-text-primary: #1a1d23;
-    --color-text-secondary: #4b5261;
-    --color-text-tertiary: #8a8f9c;
-    --color-border-secondary: #e2e5ea;
-    --border-radius-lg: 14px;
+<script>
+// Applies the saved/system theme to <html> as early as possible, before the
+// stylesheet below paints anything, so there's no flash of the wrong theme.
+// Self-contained: no dependency on any external script.
+(function(){
+  try{
+    var saved = localStorage.getItem('theme-preference');
+    var theme = (saved === 'light' || saved === 'dark')
+      ? saved
+      : ((window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches) ? 'dark' : 'light');
+    document.documentElement.setAttribute('data-theme', theme);
+  }catch(e){ /* localStorage/matchMedia unavailable — CSS media query still applies */ }
+})();
+</script>
+<link rel="stylesheet" href="house.css">
 
-    --text-primary: var(--color-text-primary);
-    --text-secondary: var(--color-text-secondary);
-    --text-muted: var(--color-text-tertiary);
-    --text-accent: #2563eb;
-    --surface-1: var(--color-background-primary);
-    --surface-2: var(--color-background-secondary);
-    --border: var(--color-border-secondary);
-    --radius: var(--border-radius-lg);
-
-    --pos-wh: #1d6fd8;           --pos-wh-bg: #e3edfd;
-  }
-
-  @media (prefers-color-scheme: dark) {
-    :root {
-      --color-background-primary: #16181d;
-      --color-background-secondary: #1d2026;
-      --color-text-primary: #eef0f3;
-      --color-text-secondary: #b7bcc6;
-      --color-text-tertiary: #838995;
-      --color-border-secondary: #2c303a;
-
-      --text-accent: #6ea8fe;
-      --surface-1: var(--color-background-primary);
-      --surface-2: var(--color-background-secondary);
-      --border: var(--color-border-secondary);
-
-      --pos-wh: #7cb0f7;           --pos-wh-bg: #1c2b42;
-    }
-  }
-
-  * { box-sizing: border-box; }
-  body {
-    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Helvetica, Arial, sans-serif;
-    font-size: 15px;
-    color: var(--text-primary);
-    background: var(--surface-1);
-    margin: 0;
-    line-height: 1.55;
-  }
-  .page { max-width: 720px; margin: 0 auto; padding: 28px 20px 64px; }
-
-  h1 { font-size: 1.3rem; margin: 4px 0 2px; }
-  .subtitle { color: var(--text-secondary); margin: 0 0 14px; font-size: 0.95rem; }
-
-  .cefr-tag {
-    display: inline-block;
-    font-size: 0.72rem;
-    font-weight: 700;
-    letter-spacing: 0.04em;
-    padding: 3px 10px;
-    border-radius: 999px;
-    background: var(--pos-wh-bg);
-    color: var(--pos-wh);
-    text-transform: uppercase;
-  }
-
-  .setting-chip {
-    display: inline-flex;
-    align-items: center;
-    gap: 6px;
-    font-size: 0.82rem;
-    font-weight: 600;
-    padding: 5px 12px;
-    border-radius: 999px;
-    background: var(--surface-2);
-    border: 1px solid var(--border);
-    color: var(--text-secondary);
-    margin: 8px 0 12px;
-  }
-
-  .bubble-wrap { display: flex; align-items: flex-end; gap: 10px; margin: 0 0 14px; }
-  .bubble-wrap.right { flex-direction: row-reverse; }
-  .avatar {
-    width: 34px; height: 34px; border-radius: 50%;
-    background: var(--surface-2); display: flex; align-items: center; justify-content: center;
-    font-size: 1.1rem; flex: none;
-  }
-  .bubble-col { max-width: 78%; }
-  .bubble-wrap.right .bubble-col { align-items: flex-end; display: flex; flex-direction: column; }
-  .bname { font-size: 0.72rem; color: var(--text-muted); margin: 0 0 3px 4px; font-weight: 700; }
-  .bubble-wrap.right .bname { margin: 0 4px 3px 0; }
-  .bubble {
-    background: var(--surface-2);
-    border: 1px solid var(--border);
-    border-radius: 16px 16px 16px 4px;
-    padding: 9px 14px;
-    font-size: 0.95rem;
-  }
-  .bubble-wrap.right .bubble { border-radius: 16px 16px 4px 16px; }
-</style>
 </head>
 <body>
-<div class="page">
+<div class="page" id="page">
 
-  <span class="cefr-tag">A1</span>
+  <span class="cefr-tag cefr-a1">A1 · Beginner</span>
   <h1>At the Supermarket</h1>
   <p class="subtitle">A conversation using supermarket language</p>
-  <div class="setting-chip">🛒 Mia and Jake are grocery shopping</div>
+    <div class="sec-div">Before you read</div>
+  <p class="subtitle">Read these three questions first, then look for the answers in the conversation.</p>
+  <div id="preQuestions" class="prequiz"></div>
+
+  <button id="grammarToggle" class="grammar-toggle-btn">🎨 Show Grammar</button>
+  <div class="pos-legend"></div>
+<div class="setting-chip">🛒 Mia and Jake are grocery shopping</div>
 
   <div class="bubble-wrap right">
     <span class="avatar">🧑‍🦱</span>
     <div class="bubble-col">
       <p class="bname">Jake</p>
-      <p class="bubble">Do you have the shopping list?</p>
+      <p class="bubble"><span class="pos-hl pos-aux">Do</span> <span class="pos-hl pos-subject">you</span> <span class="pos-hl pos-verb">have</span> <span class="pos-hl pos-object">the shopping list</span>?</p>
     </div>
   </div>
 
@@ -126,7 +47,7 @@
     <span class="avatar">🧑</span>
     <div class="bubble-col">
       <p class="bname">Mia</p>
-      <p class="bubble">Yes, it's right here. We need milk, bread, and cheese.</p>
+      <p class="bubble">Yes, <span class="pos-hl pos-subject">it</span><span class="pos-hl pos-verb">'s</span> right here. <span class="pos-hl pos-subject">We</span> <span class="pos-hl pos-verb">need</span> <span class="pos-hl pos-object">milk, bread, and cheese</span>.</p>
     </div>
   </div>
 
@@ -134,7 +55,7 @@
     <span class="avatar">🧑‍🦱</span>
     <div class="bubble-col">
       <p class="bname">Jake</p>
-      <p class="bubble">Should we get a cart or a basket?</p>
+      <p class="bubble"><span class="pos-hl pos-aux">Should</span> <span class="pos-hl pos-subject">we</span> <span class="pos-hl pos-verb">get</span> <span class="pos-hl pos-object">a cart</span> or <span class="pos-hl pos-object">a basket</span>?</p>
     </div>
   </div>
 
@@ -142,7 +63,7 @@
     <span class="avatar">🧑</span>
     <div class="bubble-col">
       <p class="bname">Mia</p>
-      <p class="bubble">Let's use a basket — we don't need much today.</p>
+      <p class="bubble">Let's <span class="pos-hl pos-verb">use</span> <span class="pos-hl pos-object">a basket</span> — <span class="pos-hl pos-subject">we</span> <span class="pos-hl pos-neg">don't</span> <span class="pos-hl pos-verb">need</span> <span class="pos-hl pos-object">much</span> <span class="pos-hl pos-time">today</span>.</p>
     </div>
   </div>
 
@@ -150,7 +71,7 @@
     <span class="avatar">🧑‍🦱</span>
     <div class="bubble-col">
       <p class="bname">Jake</p>
-      <p class="bubble">The milk is in aisle 3, next to the yogurt.</p>
+      <p class="bubble"><span class="pos-hl pos-subject">The milk</span> <span class="pos-hl pos-verb">is</span> <span class="pos-hl pos-prep">in</span> <span class="pos-hl pos-object">aisle 3</span>, <span class="pos-hl pos-prep">next to</span> <span class="pos-hl pos-object">the yogurt</span>.</p>
     </div>
   </div>
 
@@ -158,7 +79,7 @@
     <span class="avatar">🧑</span>
     <div class="bubble-col">
       <p class="bname">Mia</p>
-      <p class="bubble">Great, let's go. Oh, I have a coupon for the cheese!</p>
+      <p class="bubble">Great, let's <span class="pos-hl pos-verb">go</span>. Oh, <span class="pos-hl pos-subject">I</span> <span class="pos-hl pos-verb">have</span> <span class="pos-hl pos-object">a coupon</span> <span class="pos-hl pos-prep">for</span> <span class="pos-hl pos-object">the cheese</span>!</p>
     </div>
   </div>
 
@@ -166,7 +87,7 @@
     <span class="avatar">🧑‍🦱</span>
     <div class="bubble-col">
       <p class="bname">Jake</p>
-      <p class="bubble">Nice, that'll save us some money. Can you grab a bag for the apples?</p>
+      <p class="bubble">Nice, <span class="pos-hl pos-subject">that</span><span class="pos-hl pos-aux">'ll</span> <span class="pos-hl pos-verb">save</span> <span class="pos-hl pos-object">us</span> <span class="pos-hl pos-object">some money</span>. <span class="pos-hl pos-aux">Can</span> <span class="pos-hl pos-subject">you</span> <span class="pos-hl pos-verb">grab</span> <span class="pos-hl pos-object">a bag</span> <span class="pos-hl pos-prep">for</span> <span class="pos-hl pos-object">the apples</span>?</p>
     </div>
   </div>
 
@@ -174,7 +95,7 @@
     <span class="avatar">🧑</span>
     <div class="bubble-col">
       <p class="bname">Mia</p>
-      <p class="bubble">Sure. Are we ready to pay now?</p>
+      <p class="bubble">Sure. <span class="pos-hl pos-aux">Are</span> <span class="pos-hl pos-subject">we</span> <span class="pos-hl pos-complement">ready to pay</span> <span class="pos-hl pos-time">now</span>?</p>
     </div>
   </div>
 
@@ -182,7 +103,7 @@
     <span class="avatar">🧑‍🦱</span>
     <div class="bubble-col">
       <p class="bname">Jake</p>
-      <p class="bubble">Yes, let's go to the cashier.</p>
+      <p class="bubble">Yes, let's <span class="pos-hl pos-verb">go</span> <span class="pos-hl pos-prep">to</span> <span class="pos-hl pos-object">the cashier</span>.</p>
     </div>
   </div>
 
@@ -190,7 +111,7 @@
     <span class="avatar">🧑‍💼</span>
     <div class="bubble-col">
       <p class="bname">Cashier</p>
-      <p class="bubble">Hi! Is that everything today?</p>
+      <p class="bubble">Hi! <span class="pos-hl pos-verb">Is</span> <span class="pos-hl pos-subject">that</span> <span class="pos-hl pos-complement">everything</span> <span class="pos-hl pos-time">today</span>?</p>
     </div>
   </div>
 
@@ -198,7 +119,7 @@
     <span class="avatar">🧑‍🦱</span>
     <div class="bubble-col">
       <p class="bname">Jake</p>
-      <p class="bubble">Yes, that's all, thanks.</p>
+      <p class="bubble">Yes, <span class="pos-hl pos-subject">that</span><span class="pos-hl pos-verb">'s</span> <span class="pos-hl pos-complement">all</span>, thanks.</p>
     </div>
   </div>
 
@@ -206,7 +127,7 @@
     <span class="avatar">🧑‍💼</span>
     <div class="bubble-col">
       <p class="bname">Cashier</p>
-      <p class="bubble">Here's your receipt. Have a great day!</p>
+      <p class="bubble">Here<span class="pos-hl pos-verb">'s</span> <span class="pos-hl pos-subject">your receipt</span>. <span class="pos-hl pos-verb">Have</span> <span class="pos-hl pos-object">a great day</span>!</p>
     </div>
   </div>
 
@@ -214,13 +135,58 @@
     <span class="avatar">🧑‍🦱</span>
     <div class="bubble-col">
       <p class="bname">Jake</p>
-      <p class="bubble">Thanks! You too.</p>
+      <p class="bubble">Thanks! <span class="pos-hl pos-subject">You</span> too.</p>
     </div>
   </div>
+  <div class="sec-div">Check your answers</div>
+  <p class="subtitle">The same three questions — now choose the correct answer.</p>
+  <div id="quiz"></div>
+
 
 </div>
 
-<div id="theme-toggle-wrap"><button id="theme-toggle" aria-label="Toggle light/dark mode" title="Toggle light/dark mode"><span id="theme-icon">☀️</span></button></div>
-<script src="theme-toggle-behavior.js"></script>
+<div id="theme-toggle-wrap">
+  <button id="theme-toggle" aria-label="Toggle light/dark mode" title="Toggle light/dark mode">
+    <span id="theme-icon">☀️</span>
+  </button>
+</div>
+<script src="house.js"></script>
+<script>
+/* The same three questions run before and after the conversation:
+   as a plain list first (setting a purpose for reading), then with
+   three options each once the text has been read. */
+const CQ_ITEMS = [
+  {
+    "q": "What do Jake and Mia need to buy?",
+    "opts": [
+      "Milk, bread and cheese",
+      "Yogurt and apples",
+      "Only milk"
+    ],
+    "correct": 0
+  },
+  {
+    "q": "Why do they choose a basket instead of a cart?",
+    "opts": [
+      "The carts are all being used",
+      "They don't need much today",
+      "Mia has a coupon"
+    ],
+    "correct": 1
+  },
+  {
+    "q": "Where is the milk?",
+    "opts": [
+      "Next to the cashier",
+      "In the bag with the apples",
+      "In aisle 3, next to the yogurt"
+    ],
+    "correct": 2
+  }
+];
+
+HouseComprehension.build({ pre: 'preQuestions', quiz: 'quiz', items: CQ_ITEMS });
+HouseGrammar.init();
+</script>
 </body>
 </html>

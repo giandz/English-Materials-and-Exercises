@@ -2,144 +2,60 @@
 <html lang="en">
 <head>
 <meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
 <title>Simple Present vs. Present Continuous — Conversation</title>
-<link rel="stylesheet" href="general.css">
+<script>
+// Applies the saved/system theme to <html> as early as possible, before the
+// stylesheet below paints anything, so there's no flash of the wrong theme.
+// Self-contained: no dependency on any external script.
+(function(){
+  try{
+    var saved = localStorage.getItem('theme-preference');
+    var theme = (saved === 'light' || saved === 'dark')
+      ? saved
+      : ((window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches) ? 'dark' : 'light');
+    document.documentElement.setAttribute('data-theme', theme);
+  }catch(e){ /* localStorage/matchMedia unavailable — CSS media query still applies */ }
+})();
+</script>
+<link rel="stylesheet" href="house.css">
 <style>
-  :root {
-    --color-background-primary: #ffffff;
-    --color-background-secondary: #f6f7f9;
-    --color-text-primary: #1a1d23;
-    --color-text-secondary: #4b5261;
-    --color-text-tertiary: #8a8f9c;
-    --color-border-secondary: #e2e5ea;
-    --border-radius-lg: 14px;
-
-    --text-primary: var(--color-text-primary);
-    --text-secondary: var(--color-text-secondary);
-    --text-muted: var(--color-text-tertiary);
-    --surface-1: var(--color-background-primary);
-    --surface-2: var(--color-background-secondary);
-    --border: var(--color-border-secondary);
-    --radius: var(--border-radius-lg);
-
-    --pos-wh: #1d6fd8;          --pos-wh-bg: #e3edfd;
-    --pos-present: #1a7f37;     --pos-present-bg: #e6f6ea;
-    --pos-continuous: #0891b2;  --pos-continuous-bg: #cffafe;
-    --pos-time: #7a3fc0;        --pos-time-bg: #f2e9fb;
-  }
-
-  @media (prefers-color-scheme: dark) {
-    :root {
-      --color-background-primary: #16181d;
-      --color-background-secondary: #1d2026;
-      --color-text-primary: #eef0f3;
-      --color-text-secondary: #b7bcc6;
-      --color-text-tertiary: #838995;
-      --color-border-secondary: #2c303a;
-
-      --surface-1: var(--color-background-primary);
-      --surface-2: var(--color-background-secondary);
-      --border: var(--color-border-secondary);
-
-      --pos-wh: #7cb0f7;          --pos-wh-bg: #1c2b42;
-      --pos-present: #6fd08c;     --pos-present-bg: #163524;
-      --pos-continuous: #4fd3e8;  --pos-continuous-bg: #123a42;
-      --pos-time: #b98af0;        --pos-time-bg: #2c2140;
-    }
-  }
-
-  * { box-sizing: border-box; }
-  body {
-    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Helvetica, Arial, sans-serif;
-    font-size: 15px;
-    color: var(--text-primary);
-    background: var(--surface-1);
-    margin: 0;
-    line-height: 1.55;
-  }
-  .page { max-width: 720px; margin: 0 auto; padding: 28px 20px 64px; }
-
-  h1 { font-size: 1.3rem; margin: 4px 0 2px; }
-  .subtitle { color: var(--text-secondary); margin: 0 0 14px; font-size: 0.95rem; }
-
-  .cefr-tag {
-    display: inline-block;
-    font-size: 0.72rem;
-    font-weight: 700;
-    letter-spacing: 0.04em;
-    padding: 3px 10px;
-    border-radius: 999px;
-    background: var(--pos-wh-bg);
-    color: var(--pos-wh);
-    text-transform: uppercase;
-  }
-
-  .setting-chip {
-    display: inline-flex;
-    align-items: center;
-    gap: 6px;
-    font-size: 0.82rem;
-    font-weight: 600;
-    padding: 5px 12px;
-    border-radius: 999px;
-    background: var(--surface-2);
-    border: 1px solid var(--border);
-    color: var(--text-secondary);
-    margin: 8px 0 12px;
-  }
-
-  .legend { display: flex; flex-wrap: wrap; gap: 8px; margin: 0 0 18px; }
-  .legend-pill {
-    display: inline-flex;
-    align-items: center;
-    gap: 6px;
-    font-size: 0.75rem;
-    padding: 4px 10px 4px 8px;
-    border-radius: 999px;
-    border: 1px solid var(--border);
-    background: var(--surface-2);
-    color: var(--text-secondary);
-  }
-  .legend-dot { width: 9px; height: 9px; border-radius: 50%; flex: none; }
-
-  .pos { padding: 1px 5px; border-radius: 5px; font-weight: 600; }
-  .pos-present    { color: var(--pos-present); background: var(--pos-present-bg); }
-  .pos-continuous { color: var(--pos-continuous); background: var(--pos-continuous-bg); }
-  .pos-time       { color: var(--pos-time); background: var(--pos-time-bg); }
-
-  .bubble-wrap { display: flex; align-items: flex-end; gap: 10px; margin: 0 0 14px; }
-  .bubble-wrap.right { flex-direction: row-reverse; }
-  .avatar {
-    width: 34px; height: 34px; border-radius: 50%;
-    background: var(--surface-2); display: flex; align-items: center; justify-content: center;
-    font-size: 1.1rem; flex: none;
-  }
-  .bubble-col { max-width: 78%; }
-  .bubble-wrap.right .bubble-col { align-items: flex-end; display: flex; flex-direction: column; }
-  .bname { font-size: 0.72rem; color: var(--text-muted); margin: 0 0 3px 4px; font-weight: 700; }
-  .bubble-wrap.right .bname { margin: 0 4px 3px 0; }
-  .bubble {
-    background: var(--surface-2);
-    border: 1px solid var(--border);
-    border-radius: 16px 16px 16px 4px;
-    padding: 9px 14px;
-    font-size: 0.95rem;
-  }
-  .bubble-wrap.right .bubble { border-radius: 16px 16px 4px 16px; }
+/* Page-specific design tokens. These are this lesson's own palette,
+   not house tokens — house.css owns everything prefixed --color-* etc. */
+:root{
+  --tense-present: #1a7f37;
+  --tense-present-bg: #e6f6ea;
+  --tense-continuous: #0891b2;
+  --tense-continuous-bg: #cffafe;
+}
+@media (prefers-color-scheme: dark) {
+:root{
+  --tense-present: #6fd08c;
+  --tense-present-bg: #163524;
+  --tense-continuous: #4fd3e8;
+  --tense-continuous-bg: #123a42;
+}}
+  .tense-present    { color: var(--tense-present); background: var(--tense-present-bg); }
+  .tense-continuous { color: var(--tense-continuous); background: var(--tense-continuous-bg); }
 </style>
 </head>
 <body>
-<div class="page">
+<div class="page" id="page">
 
-  <span class="cefr-tag">A1</span>
+  <span class="cefr-tag cefr-a1">A1 · Beginner</span>
   <h1>Simple Present vs. Present Continuous</h1>
   <p class="subtitle">Habits vs. actions happening right now</p>
-  <div class="setting-chip">📱 Mia and Leo are on a phone call</div>
+    <div class="sec-div">Before you read</div>
+  <p class="subtitle">Read these three questions first, then look for the answers in the conversation.</p>
+  <div id="preQuestions" class="prequiz"></div>
+
+  <button id="grammarToggle" class="grammar-toggle-btn">🎨 Show Grammar</button>
+  <div class="pos-legend"></div>
+<div class="setting-chip">📱 Mia and Leo are on a phone call</div>
 
   <div class="legend">
-    <span class="legend-pill"><span class="legend-dot" style="background:var(--pos-present)"></span>present (habit)</span>
-    <span class="legend-pill"><span class="legend-dot" style="background:var(--pos-continuous)"></span>continuous (now)</span>
+    <span class="legend-pill"><span class="legend-dot" style="background:var(--tense-present)"></span>present (habit)</span>
+    <span class="legend-pill"><span class="legend-dot" style="background:var(--tense-continuous)"></span>continuous (now)</span>
     <span class="legend-pill"><span class="legend-dot" style="background:var(--pos-time)"></span>time expression</span>
   </div>
 
@@ -147,7 +63,7 @@
     <span class="avatar">🧑‍🦱</span>
     <div class="bubble-col">
       <p class="bname">Leo</p>
-      <p class="bubble">Hi Mia! What are you doing <span class="pos pos-time">right now</span>?</p>
+      <p class="bubble">Hi Mia! What are you doing <span class="pos-hl pos-time">right now</span>?</p>
     </div>
   </div>
 
@@ -155,7 +71,7 @@
     <span class="avatar">🧑</span>
     <div class="bubble-col">
       <p class="bname">Mia</p>
-      <p class="bubble">I'm <span class="pos pos-continuous">cooking</span> dinner. What about you?</p>
+      <p class="bubble">I'm <span class="tense-continuous">cooking</span> dinner. What about you?</p>
     </div>
   </div>
 
@@ -163,7 +79,7 @@
     <span class="avatar">🧑‍🦱</span>
     <div class="bubble-col">
       <p class="bname">Leo</p>
-      <p class="bubble">I'm <span class="pos pos-continuous">watching</span> TV <span class="pos pos-time">at the moment</span>. I <span class="pos pos-present">usually cook</span> <span class="pos pos-time">on Mondays</span>, but I'm too tired <span class="pos pos-time">today</span>.</p>
+      <p class="bubble">I'm <span class="tense-continuous">watching</span> TV <span class="pos-hl pos-time">at the moment</span>. I <span class="tense-present">usually cook</span> <span class="pos-hl pos-time">on Mondays</span>, but I'm too tired <span class="pos-hl pos-time">today</span>.</p>
     </div>
   </div>
 
@@ -171,7 +87,7 @@
     <span class="avatar">🧑</span>
     <div class="bubble-col">
       <p class="bname">Mia</p>
-      <p class="bubble">I understand! I <span class="pos pos-present">usually eat</span> with my family <span class="pos pos-time">every evening</span>.</p>
+      <p class="bubble">I understand! <span class="pos-hl pos-subject">I</span> <span class="tense-present">usually eat</span> <span class="pos-hl pos-prep">with</span> <span class="pos-hl pos-object">my family</span> <span class="pos-hl pos-time">every evening</span>.</p>
     </div>
   </div>
 
@@ -179,7 +95,7 @@
     <span class="avatar">🧑‍🦱</span>
     <div class="bubble-col">
       <p class="bname">Leo</p>
-      <p class="bubble">That's nice. Are you <span class="pos pos-continuous">making</span> something special <span class="pos pos-time">today</span>?</p>
+      <p class="bubble">That's nice. Are you <span class="tense-continuous">making</span> something special <span class="pos-hl pos-time">today</span>?</p>
     </div>
   </div>
 
@@ -187,7 +103,7 @@
     <span class="avatar">🧑</span>
     <div class="bubble-col">
       <p class="bname">Mia</p>
-      <p class="bubble">Yes! I'm <span class="pos pos-continuous">making</span> pasta <span class="pos pos-time">right now</span>. I <span class="pos pos-present">usually make</span> rice, but I want something different.</p>
+      <p class="bubble">Yes! I'm <span class="tense-continuous">making</span> pasta <span class="pos-hl pos-time">right now</span>. I <span class="tense-present">usually make</span> rice, but I want something different.</p>
     </div>
   </div>
 
@@ -195,7 +111,7 @@
     <span class="avatar">🧑‍🦱</span>
     <div class="bubble-col">
       <p class="bname">Leo</p>
-      <p class="bubble">Sounds good! I <span class="pos pos-present">usually exercise</span> <span class="pos pos-time">in the morning</span>, but I'm just <span class="pos pos-continuous">relaxing</span> <span class="pos pos-time">right now</span>.</p>
+      <p class="bubble">Sounds good! I <span class="tense-present">usually exercise</span> <span class="pos-hl pos-time">in the morning</span>, but I'm just <span class="tense-continuous">relaxing</span> <span class="pos-hl pos-time">right now</span>.</p>
     </div>
   </div>
 
@@ -203,7 +119,7 @@
     <span class="avatar">🧑</span>
     <div class="bubble-col">
       <p class="bname">Mia</p>
-      <p class="bubble">Good idea! Enjoy your evening.</p>
+      <p class="bubble">Good idea! <span class="pos-hl pos-verb">Enjoy</span> <span class="pos-hl pos-object">your evening</span>.</p>
     </div>
   </div>
 
@@ -211,13 +127,58 @@
     <span class="avatar">🧑‍🦱</span>
     <div class="bubble-col">
       <p class="bname">Leo</p>
-      <p class="bubble">You too! Talk soon.</p>
+      <p class="bubble"><span class="pos-hl pos-subject">You</span> too! <span class="pos-hl pos-verb">Talk</span> <span class="pos-hl pos-time">soon</span>.</p>
     </div>
   </div>
+  <div class="sec-div">Check your answers</div>
+  <p class="subtitle">The same three questions — now choose the correct answer.</p>
+  <div id="quiz"></div>
+
 
 </div>
 
-<div id="theme-toggle-wrap"><button id="theme-toggle" aria-label="Toggle light/dark mode" title="Toggle light/dark mode"><span id="theme-icon">☀️</span></button></div>
-<script src="theme-toggle-behavior.js"></script>
+<div id="theme-toggle-wrap">
+  <button id="theme-toggle" aria-label="Toggle light/dark mode" title="Toggle light/dark mode">
+    <span id="theme-icon">☀️</span>
+  </button>
+</div>
+<script src="house.js"></script>
+<script>
+/* The same three questions run before and after the conversation:
+   as a plain list first (setting a purpose for reading), then with
+   three options each once the text has been read. */
+const CQ_ITEMS = [
+  {
+    "q": "What is Mia doing right now?",
+    "opts": [
+      "Making pasta",
+      "Making rice",
+      "Watching TV"
+    ],
+    "correct": 0
+  },
+  {
+    "q": "Why isn't Leo cooking tonight?",
+    "opts": [
+      "He never cooks on Mondays",
+      "He is too tired today",
+      "He is eating with his family"
+    ],
+    "correct": 1
+  },
+  {
+    "q": "When does Leo usually exercise?",
+    "opts": [
+      "Every evening",
+      "On Mondays",
+      "In the morning"
+    ],
+    "correct": 2
+  }
+];
+
+HouseComprehension.build({ pre: 'preQuestions', quiz: 'quiz', items: CQ_ITEMS });
+HouseGrammar.init();
+</script>
 </body>
 </html>

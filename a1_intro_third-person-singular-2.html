@@ -1,158 +1,227 @@
-<head><meta charset="UTF-8">
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<title>Third Person Singular 2 — Introduction</title>
+<script>
+// Applies the saved/system theme to <html> as early as possible, before the
+// stylesheet below paints anything, so there's no flash of the wrong theme.
+// Self-contained: no dependency on any external script.
+(function(){
+  try{
+    var saved = localStorage.getItem('theme-preference');
+    var theme = (saved === 'light' || saved === 'dark')
+      ? saved
+      : ((window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches) ? 'dark' : 'light');
+    document.documentElement.setAttribute('data-theme', theme);
+  }catch(e){ /* localStorage/matchMedia unavailable — CSS media query still applies */ }
+})();
+</script>
+<link rel="stylesheet" href="house.css">
 <style>
-  .bubble-wrap { display:flex; gap:10px; align-items:flex-end; margin-bottom:14px; }
-  .bubble-wrap.right { flex-direction:row-reverse; }
-  .avatar { width:36px; height:36px; border-radius:50%; display:flex; align-items:center; justify-content:center; font-size:13px; font-weight:500; flex-shrink:0; }
-  .av-a { background:#E1F5EE; color:#085041; }
-  .av-b { background:#EEEDFE; color:#3C3489; }
-  .bubble { max-width:72%; padding:10px 14px; border-radius:16px; font-size:15px; line-height:1.5; color:var(--color-text-primary); background:var(--color-background-secondary); border:0.5px solid var(--color-border-tertiary); }
-  .bubble.right { background:#EEEDFE; color:#26215C; border-color:#AFA9EC; border-bottom-right-radius:4px; }
-  .bubble.left { border-bottom-left-radius:4px; }
-  .name { font-size:11px; font-weight:500; color:var(--color-text-secondary); margin-bottom:3px; padding:0 2px; }
+.name { font-size:11px; font-weight:500; color:var(--color-text-secondary); margin-bottom:3px; padding:0 2px; }
   .name.right-name { text-align:right; }
-  .section-label { font-size:11px; font-weight:500; letter-spacing:0.05em; color:var(--color-text-tertiary); text-align:center; margin:20px 0 14px; display:flex; align-items:center; gap:8px; }
-  .section-label::before, .section-label::after { content:''; flex:1; height:0.5px; background:var(--color-border-tertiary); }
 </style>
 </head>
 <body>
+<div class="page" id="page">
+  <span class="cefr-tag cefr-a1">A1 · Beginner</span>
 
 <div style="background:var(--color-background-secondary); border-radius:var(--border-radius-lg); padding:1.25rem 1rem;">
 
   <div class="section-label">their routines</div>
 
-  <div class="bubble-wrap left">
-    <div class="avatar av-a">Ana</div>
-    <div><div class="name">Ana</div>
-    <div class="bubble left">Hi, Ben! What time do you wake up?</div></div>
+    <div class="sec-div">Before you read</div>
+  <p class="subtitle">Read these three questions first, then look for the answers in the conversation.</p>
+  <div id="preQuestions" class="prequiz"></div>
+
+  <button id="grammarToggle" class="grammar-toggle-btn">🎨 Show Grammar</button>
+  <div class="pos-legend"></div>
+<div class="bubble-wrap left">
+    <div class="avatar av-a">👩‍🦰</div>
+    <div><div class="bname">Ana</div>
+    <div class="bubble left">Hi, Ben! <span class="pos-hl pos-wh">What time</span> <span class="pos-hl pos-aux">do</span> <span class="pos-hl pos-subject">you</span> <span class="pos-hl pos-verb">wake up</span>?</div></div>
   </div>
 
   <div class="bubble-wrap right">
-    <div class="avatar av-b">Ben</div>
-    <div><div class="name right-name">Ben</div>
-    <div class="bubble right">I wake up at seven. And you?</div></div>
+    <div class="avatar av-b">👨‍🦱</div>
+    <div><div class="bname right">Ben</div>
+    <div class="bubble right"><span class="pos-hl pos-subject">I</span> <span class="pos-hl pos-verb">wake up</span> <span class="pos-hl pos-time">at seven</span>. And <span class="pos-hl pos-subject">you</span>?</div></div>
   </div>
 
   <div class="bubble-wrap left">
-    <div class="avatar av-a">Ana</div>
-    <div><div class="name">Ana</div>
-    <div class="bubble left">I wake up at eight. I eat breakfast and then I go to school.</div></div>
+    <div class="avatar av-a">👩‍🦰</div>
+    <div><div class="bname">Ana</div>
+    <div class="bubble left"><span class="pos-hl pos-subject">I</span> <span class="pos-hl pos-verb">wake up</span> <span class="pos-hl pos-time">at eight</span>. <span class="pos-hl pos-subject">I</span> <span class="pos-hl pos-verb">eat</span> <span class="pos-hl pos-object">breakfast</span> and then <span class="pos-hl pos-subject">I</span> <span class="pos-hl pos-verb">go</span> <span class="pos-hl pos-prep">to</span> <span class="pos-hl pos-object">school</span>.</div></div>
   </div>
 
   <div class="bubble-wrap right">
-    <div class="avatar av-b">Ben</div>
-    <div><div class="name right-name">Ben</div>
-    <div class="bubble right">Me too! I eat breakfast at seven thirty. I drink coffee and eat bread.</div></div>
+    <div class="avatar av-b">👨‍🦱</div>
+    <div><div class="bname right">Ben</div>
+    <div class="bubble right">Me too! <span class="pos-hl pos-subject">I</span> <span class="pos-hl pos-verb">eat</span> <span class="pos-hl pos-object">breakfast</span> <span class="pos-hl pos-time">at seven thirty</span>. <span class="pos-hl pos-subject">I</span> <span class="pos-hl pos-verb">drink</span> <span class="pos-hl pos-object">coffee</span> and <span class="pos-hl pos-verb">eat</span> <span class="pos-hl pos-object">bread</span>.</div></div>
   </div>
 
   <div class="bubble-wrap left">
-    <div class="avatar av-a">Ana</div>
-    <div><div class="name">Ana</div>
-    <div class="bubble left">Do you walk to school?</div></div>
+    <div class="avatar av-a">👩‍🦰</div>
+    <div><div class="bname">Ana</div>
+    <div class="bubble left"><span class="pos-hl pos-aux">Do</span> <span class="pos-hl pos-subject">you</span> <span class="pos-hl pos-verb">walk</span> <span class="pos-hl pos-prep">to</span> <span class="pos-hl pos-object">school</span>?</div></div>
   </div>
 
   <div class="bubble-wrap right">
-    <div class="avatar av-b">Ben</div>
-    <div><div class="name right-name">Ben</div>
-    <div class="bubble right">No, I take the bus. What about you?</div></div>
+    <div class="avatar av-b">👨‍🦱</div>
+    <div><div class="bname right">Ben</div>
+    <div class="bubble right">No, <span class="pos-hl pos-subject">I</span> <span class="pos-hl pos-verb">take</span> <span class="pos-hl pos-object">the bus</span>. What about <span class="pos-hl pos-subject">you</span>?</div></div>
   </div>
 
   <div class="bubble-wrap left">
-    <div class="avatar av-a">Ana</div>
-    <div><div class="name">Ana</div>
-    <div class="bubble left">I walk. It's not far. Our teacher is Mr. Collins. Do you know him?</div></div>
+    <div class="avatar av-a">👩‍🦰</div>
+    <div><div class="bname">Ana</div>
+    <div class="bubble left"><span class="pos-hl pos-subject">I</span> <span class="pos-hl pos-verb">walk</span>. <span class="pos-hl pos-subject">It</span><span class="pos-hl pos-verb">'s</span> <span class="pos-hl pos-neg">not</span> <span class="pos-hl pos-complement">far</span>. <span class="pos-hl pos-subject">Our teacher</span> <span class="pos-hl pos-verb">is</span> <span class="pos-hl pos-complement">Mr. Collins</span>. <span class="pos-hl pos-aux">Do</span> <span class="pos-hl pos-subject">you</span> <span class="pos-hl pos-verb">know</span> <span class="pos-hl pos-object">him</span>?</div></div>
   </div>
 
   <div class="bubble-wrap right">
-    <div class="avatar av-b">Ben</div>
-    <div><div class="name right-name">Ben</div>
-    <div class="bubble right">Yes! He is very nice. My teacher is Mrs. Park. She is great too.</div></div>
+    <div class="avatar av-b">👨‍🦱</div>
+    <div><div class="bname right">Ben</div>
+    <div class="bubble right">Yes! <span class="pos-hl pos-subject">He</span> <span class="pos-hl pos-verb">is</span> <span class="pos-hl pos-complement">very nice</span>. <span class="pos-hl pos-subject">My teacher</span> <span class="pos-hl pos-verb">is</span> <span class="pos-hl pos-complement">Mrs. Park</span>. <span class="pos-hl pos-subject">She</span> <span class="pos-hl pos-verb">is</span> <span class="pos-hl pos-complement">great</span> too.</div></div>
   </div>
 
   <div class="bubble-wrap left">
-    <div class="avatar av-a">Ana</div>
-    <div><div class="name">Ana</div>
-    <div class="bubble left">What time does your class start?</div></div>
+    <div class="avatar av-a">👩‍🦰</div>
+    <div><div class="bname">Ana</div>
+    <div class="bubble left"><span class="pos-hl pos-wh">What time</span> <span class="pos-hl pos-aux">does</span> <span class="pos-hl pos-subject">your class</span> <span class="pos-hl pos-verb">start</span>?</div></div>
   </div>
 
   <div class="bubble-wrap right">
-    <div class="avatar av-b">Ben</div>
-    <div><div class="name right-name">Ben</div>
-    <div class="bubble right">It starts at eight thirty. And then I have lunch at twelve.</div></div>
+    <div class="avatar av-b">👨‍🦱</div>
+    <div><div class="bname right">Ben</div>
+    <div class="bubble right"><span class="pos-hl pos-subject">It</span> <span class="pos-hl pos-verb">starts</span> <span class="pos-hl pos-time">at eight thirty</span>. And then <span class="pos-hl pos-subject">I</span> <span class="pos-hl pos-verb">have</span> <span class="pos-hl pos-object">lunch</span> <span class="pos-hl pos-time">at twelve</span>.</div></div>
   </div>
 
   <div class="bubble-wrap left">
-    <div class="avatar av-a">Ana</div>
-    <div><div class="name">Ana</div>
-    <div class="bubble left">My lunch is at twelve thirty. After school, I do my homework.</div></div>
+    <div class="avatar av-a">👩‍🦰</div>
+    <div><div class="bname">Ana</div>
+    <div class="bubble left"><span class="pos-hl pos-subject">My lunch</span> <span class="pos-hl pos-verb">is</span> <span class="pos-hl pos-time">at twelve thirty</span>. <span class="pos-hl pos-time">After school</span>, <span class="pos-hl pos-subject">I</span> <span class="pos-hl pos-verb">do</span> <span class="pos-hl pos-object">my homework</span>.</div></div>
   </div>
 
   <div class="bubble-wrap right">
-    <div class="avatar av-b">Ben</div>
-    <div><div class="name right-name">Ben</div>
-    <div class="bubble right">I do my homework too. Then I watch TV.</div></div>
+    <div class="avatar av-b">👨‍🦱</div>
+    <div><div class="bname right">Ben</div>
+    <div class="bubble right"><span class="pos-hl pos-subject">I</span> <span class="pos-hl pos-verb">do</span> <span class="pos-hl pos-object">my homework</span> too. Then <span class="pos-hl pos-subject">I</span> <span class="pos-hl pos-verb">watch</span> <span class="pos-hl pos-object">TV</span>.</div></div>
   </div>
 
   <div class="section-label">a family member's routine</div>
 
   <div class="bubble-wrap left">
-    <div class="avatar av-a">Ana</div>
-    <div><div class="name">Ana</div>
-    <div class="bubble left">Does your mom work?</div></div>
+    <div class="avatar av-a">👩‍🦰</div>
+    <div><div class="bname">Ana</div>
+    <div class="bubble left"><span class="pos-hl pos-aux">Does</span> <span class="pos-hl pos-subject">your mom</span> <span class="pos-hl pos-verb">work</span>?</div></div>
   </div>
 
   <div class="bubble-wrap right">
-    <div class="avatar av-b">Ben</div>
-    <div><div class="name right-name">Ben</div>
-    <div class="bubble right">Yes, she works at a school. She is a teacher, like Mrs. Park!</div></div>
+    <div class="avatar av-b">👨‍🦱</div>
+    <div><div class="bname right">Ben</div>
+    <div class="bubble right">Yes, <span class="pos-hl pos-subject">she</span> <span class="pos-hl pos-verb">works</span> <span class="pos-hl pos-prep">at</span> <span class="pos-hl pos-object">a school</span>. <span class="pos-hl pos-subject">She</span> <span class="pos-hl pos-verb">is</span> <span class="pos-hl pos-complement">a teacher</span>, like Mrs. Park!</div></div>
   </div>
 
   <div class="bubble-wrap left">
-    <div class="avatar av-a">Ana</div>
-    <div><div class="name">Ana</div>
-    <div class="bubble left">Oh, really? What time does she start?</div></div>
+    <div class="avatar av-a">👩‍🦰</div>
+    <div><div class="bname">Ana</div>
+    <div class="bubble left">Oh, really? <span class="pos-hl pos-wh">What time</span> <span class="pos-hl pos-aux">does</span> <span class="pos-hl pos-subject">she</span> <span class="pos-hl pos-verb">start</span>?</div></div>
   </div>
 
   <div class="bubble-wrap right">
-    <div class="avatar av-b">Ben</div>
-    <div><div class="name right-name">Ben</div>
-    <div class="bubble right">She starts at eight. She wakes up at six thirty. That's early!</div></div>
+    <div class="avatar av-b">👨‍🦱</div>
+    <div><div class="bname right">Ben</div>
+    <div class="bubble right"><span class="pos-hl pos-subject">She</span> <span class="pos-hl pos-verb">starts</span> <span class="pos-hl pos-time">at eight</span>. <span class="pos-hl pos-subject">She</span> <span class="pos-hl pos-verb">wakes up</span> <span class="pos-hl pos-time">at six thirty</span>. <span class="pos-hl pos-subject">That</span><span class="pos-hl pos-verb">'s</span> <span class="pos-hl pos-complement">early</span>!</div></div>
   </div>
 
   <div class="bubble-wrap left">
-    <div class="avatar av-a">Ana</div>
-    <div><div class="name">Ana</div>
-    <div class="bubble left">It sure is! My mom works at a hospital. She wakes up at six.</div></div>
+    <div class="avatar av-a">👩‍🦰</div>
+    <div><div class="bname">Ana</div>
+    <div class="bubble left"><span class="pos-hl pos-subject">It</span> sure <span class="pos-hl pos-verb">is</span>! <span class="pos-hl pos-subject">My mom</span> <span class="pos-hl pos-verb">works</span> <span class="pos-hl pos-prep">at</span> <span class="pos-hl pos-object">a hospital</span>. <span class="pos-hl pos-subject">She</span> <span class="pos-hl pos-verb">wakes up</span> <span class="pos-hl pos-time">at six</span>.</div></div>
   </div>
 
   <div class="bubble-wrap right">
-    <div class="avatar av-b">Ben</div>
-    <div><div class="name right-name">Ben</div>
-    <div class="bubble right">Wow! Does she take the train?</div></div>
+    <div class="avatar av-b">👨‍🦱</div>
+    <div><div class="bname right">Ben</div>
+    <div class="bubble right">Wow! <span class="pos-hl pos-aux">Does</span> <span class="pos-hl pos-subject">she</span> <span class="pos-hl pos-verb">take</span> <span class="pos-hl pos-object">the train</span>?</div></div>
   </div>
 
   <div class="bubble-wrap left">
-    <div class="avatar av-a">Ana</div>
-    <div><div class="name">Ana</div>
-    <div class="bubble left">No, she doesn't like trains, so she drives to work. She comes home at five o'clock. And then she cooks dinner.</div></div>
+    <div class="avatar av-a">👩‍🦰</div>
+    <div><div class="bname">Ana</div>
+    <div class="bubble left">No, <span class="pos-hl pos-subject">she</span> <span class="pos-hl pos-neg">doesn't</span> <span class="pos-hl pos-verb">like</span> <span class="pos-hl pos-object">trains</span>, so <span class="pos-hl pos-subject">she</span> <span class="pos-hl pos-verb">drives</span> <span class="pos-hl pos-prep">to</span> <span class="pos-hl pos-object">work</span>. <span class="pos-hl pos-subject">She</span> <span class="pos-hl pos-verb">comes</span> <span class="pos-hl pos-object">home</span> <span class="pos-hl pos-time">at five o'clock</span>. And then <span class="pos-hl pos-subject">she</span> <span class="pos-hl pos-verb">cooks</span> <span class="pos-hl pos-object">dinner</span>.</div></div>
   </div>
 
   <div class="bubble-wrap right">
-    <div class="avatar av-b">Ben</div>
-    <div><div class="name right-name">Ben</div>
-    <div class="bubble right">My dad cooks dinner too. He works at home. He starts at nine and ends at six.</div></div>
+    <div class="avatar av-b">👨‍🦱</div>
+    <div><div class="bname right">Ben</div>
+    <div class="bubble right"><span class="pos-hl pos-subject">My dad</span> <span class="pos-hl pos-verb">cooks</span> <span class="pos-hl pos-object">dinner</span> too. <span class="pos-hl pos-subject">He</span> <span class="pos-hl pos-verb">works</span> <span class="pos-hl pos-prep">at</span> <span class="pos-hl pos-object">home</span>. <span class="pos-hl pos-subject">He</span> <span class="pos-hl pos-verb">starts</span> <span class="pos-hl pos-time">at nine</span> and <span class="pos-hl pos-verb">ends</span> <span class="pos-hl pos-time">at six</span>.</div></div>
   </div>
 
   <div class="bubble-wrap left">
-    <div class="avatar av-a">Ana</div>
-    <div><div class="name">Ana</div>
-    <div class="bubble left">That's good! He has a nice routine.</div></div>
+    <div class="avatar av-a">👩‍🦰</div>
+    <div><div class="bname">Ana</div>
+    <div class="bubble left"><span class="pos-hl pos-subject">That</span><span class="pos-hl pos-verb">'s</span> <span class="pos-hl pos-complement">good</span>! <span class="pos-hl pos-subject">He</span> <span class="pos-hl pos-verb">has</span> <span class="pos-hl pos-object">a nice routine</span>.</div></div>
   </div>
 
   <div class="bubble-wrap right">
-    <div class="avatar av-b">Ben</div>
-    <div><div class="name right-name">Ben</div>
-    <div class="bubble right">Yes! Our families are very busy!</div></div>
+    <div class="avatar av-b">👨‍🦱</div>
+    <div><div class="bname right">Ben</div>
+    <div class="bubble right">Yes! <span class="pos-hl pos-subject">Our families</span> <span class="pos-hl pos-verb">are</span> <span class="pos-hl pos-complement">very busy</span>!</div></div>
   </div>
+  <div class="sec-div">Check your answers</div>
+  <p class="subtitle">The same three questions — now choose the correct answer.</p>
+  <div id="quiz"></div>
+
 
 </div>
+
+</div>
+
+<div id="theme-toggle-wrap">
+  <button id="theme-toggle" aria-label="Toggle light/dark mode" title="Toggle light/dark mode">
+    <span id="theme-icon">☀️</span>
+  </button>
+</div>
+<script src="house.js"></script>
+<script>
+/* The same three questions run before and after the conversation:
+   as a plain list first (setting a purpose for reading), then with
+   three options each once the text has been read. */
+const CQ_ITEMS = [
+  {
+    "q": "How does Ben get to school?",
+    "opts": [
+      "He walks",
+      "He takes the bus",
+      "His mom drives him"
+    ],
+    "correct": 1
+  },
+  {
+    "q": "Where does Ben's mom work?",
+    "opts": [
+      "At a school",
+      "At a hospital",
+      "At home"
+    ],
+    "correct": 0
+  },
+  {
+    "q": "Why does Ana's mom drive to work?",
+    "opts": [
+      "The hospital is very far",
+      "She starts work at eight",
+      "She doesn't like trains"
+    ],
+    "correct": 2
+  }
+];
+
+HouseComprehension.build({ pre: 'preQuestions', quiz: 'quiz', items: CQ_ITEMS });
+HouseGrammar.init();
+</script>
 </body>
+</html>

@@ -2,100 +2,25 @@
 <html lang="en">
 <head>
 <meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
 <title>Sofia & Greg — Sports, Music & Activities</title>
+<script>
+// Applies the saved/system theme to <html> as early as possible, before the
+// stylesheet below paints anything, so there's no flash of the wrong theme.
+// Self-contained: no dependency on any external script.
+(function(){
+  try{
+    var saved = localStorage.getItem('theme-preference');
+    var theme = (saved === 'light' || saved === 'dark')
+      ? saved
+      : ((window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches) ? 'dark' : 'light');
+    document.documentElement.setAttribute('data-theme', theme);
+  }catch(e){ /* localStorage/matchMedia unavailable — CSS media query still applies */ }
+})();
+</script>
+<link rel="stylesheet" href="house.css">
 <style>
-  :root{
-    --color-background-primary: #ffffff;
-    --color-background-secondary: #f7f7f8;
-    --color-text-primary: #1a1a1a;
-    --color-text-secondary: #5b5b60;
-    --color-text-tertiary: #8b8b90;
-    --color-border-secondary: #e3e3e6;
-    --color-border-tertiary: #ebebee;
-    --border-radius-lg: 12px;
-    --font-mono: "SF Mono", "JetBrains Mono", monospace;
-
-    --text-primary: var(--color-text-primary);
-    --text-secondary: var(--color-text-secondary);
-    --text-muted: var(--color-text-tertiary);
-    --text-accent: #185fa5;
-    --surface-1: var(--color-background-secondary);
-    --surface-2: var(--color-background-primary);
-    --border: var(--color-border-tertiary);
-    --radius: var(--border-radius-lg);
-    --bg-accent: #e6f1fb;
-    --bg-pro: #eeedfe;
-    --text-pro: #26215c;
-    --border-pro: #afa9ec;
-  }
-
-  @media (prefers-color-scheme: dark){
-    :root{
-      --color-background-primary: #1e1e20;
-      --color-background-secondary: #26262a;
-      --color-text-primary: #f0f0f2;
-      --color-text-secondary: #b4b4ba;
-      --color-text-tertiary: #85858c;
-      --color-border-secondary: #3a3a3f;
-      --color-border-tertiary: #34343a;
-      --bg-accent: #1c2e40;
-      --bg-pro: #2a2650;
-      --text-pro: #d7d3ff;
-      --border-pro: #4c447f;
-    }
-  }
-
-  *{ box-sizing:border-box; }
-  html,body{
-    margin:0;
-    background:var(--color-background-primary);
-    color:var(--color-text-primary);
-    font-family:-apple-system, BlinkMacSystemFont, "Segoe UI", Helvetica, Arial, sans-serif;
-    font-size:15px;
-    line-height:1.6;
-  }
-  .page{ max-width:640px; margin:0 auto; padding:28px 20px 56px; }
-
-  h1{ font-size:1.3rem; font-weight:600; letter-spacing:-0.01em; margin:0 0 4px; }
-  .subtitle{ font-size:13px; color:var(--text-secondary); margin:0 0 4px; }
-  .cefr-tag{
-    display:inline-block;
-    font-size:11px;
-    font-weight:700;
-    letter-spacing:.04em;
-    background:#e6f1fb;
-    color:#185fa5;
-    padding:3px 10px;
-    border-radius:20px;
-    margin-bottom:10px;
-  }
-
-  .sec-div{font-size:11px;font-weight:500;letter-spacing:.06em;text-transform:uppercase;color:var(--text-muted);display:flex;align-items:center;gap:8px;margin:1.75rem 0 1rem;}
-  .sec-div::before,.sec-div::after{content:'';flex:1;height:.5px;background:var(--border);}
-
-  .setting-chip{display:inline-flex;align-items:center;gap:5px;font-size:12px;padding:3px 10px;border-radius:20px;background:var(--surface-1);border:.5px solid var(--border);color:var(--text-secondary);margin-bottom:1rem;}
-
-  .legend{
-    display:flex;
-    flex-wrap:wrap;
-    gap:8px;
-    margin-bottom:1.25rem;
-  }
-  .legend-pill{
-    font-size:11.5px;
-    font-weight:600;
-    padding:3px 11px;
-    border-radius:20px;
-  }
-  .legend-pill.option{ background:#e6f1fb; color:#185fa5; }
-  .legend-pill.company{ background:#faeeda; color:#b45309; }
-  .legend-pill.location{ background:#f3effe; color:#7c3aed; }
-  .legend-pill.frequency{ background:#eaf3de; color:#27500a; }
-  .legend-pill.gentime{ background:#e8faf6; color:#0f766e; }
-  .legend-pill.spectime{ background:#fce8e8; color:#a32d2d; }
-
-  .option{ color:#185fa5; font-weight:700; background:#e6f1fb; padding:1px 5px; border-radius:4px; }
+.option{ color:#185fa5; font-weight:700; background:#e6f1fb; padding:1px 5px; border-radius:4px; }
   .company{ color:#b45309; font-weight:700; background:#faeeda; padding:1px 5px; border-radius:4px; }
   .location{ color:#7c3aed; font-weight:700; background:#f3effe; padding:1px 5px; border-radius:4px; }
   .frequency{ color:#27500a; font-weight:700; background:#eaf3de; padding:1px 5px; border-radius:4px; }
@@ -108,33 +33,22 @@
     .legend-pill.location, .location{ background:#2a2145; color:#b79aff; }
     .legend-pill.frequency, .frequency{ background:#1f3014; color:#9ed17a; }
     .legend-pill.gentime, .gentime{ background:#0f2b28; color:#5cd6c4; }
-    .legend-pill.spectime, .spectime{ background:#3a201e; color:#e2827a; }
-  }
-
-  .bubble-wrap{display:flex;gap:10px;align-items:flex-end;margin-bottom:14px;}
-  .bubble-wrap.right{flex-direction:row-reverse;}
-  .avatar{width:34px;height:34px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:18px;flex-shrink:0;}
-  .av-a{background:var(--bg-accent);}
-  .av-b{background:var(--bg-pro);}
-  .bubble{max-width:80%;padding:9px 13px;border-radius:15px;font-size:14px;line-height:1.65;border:.5px solid var(--border);}
-  .bubble.left{background:var(--surface-2);border-bottom-left-radius:4px;color:var(--text-primary);}
-  .bubble.right{background:var(--bg-pro);border-bottom-right-radius:4px;color:var(--text-pro);border-color:var(--border-pro);}
-  .bname{font-size:11px;font-weight:500;color:var(--text-muted);margin-bottom:3px;padding:0 2px;}
-  .bname.right{text-align:right;}
-
-  .rule-box{background:var(--surface-1);border-radius:var(--radius);padding:10px 14px;margin-bottom:1.25rem;font-size:13px;color:var(--text-secondary);line-height:1.7;}
-  .rule-box strong{color:var(--text-primary);font-weight:500;}
-
-  footer{ text-align:center; font-size:12px; color:var(--text-muted); margin-top:2rem; }
+    .legend-pill.spectime, .spectime{ background:#3a201e; color:#e2827a; }}
 </style>
 </head>
 <body>
-<div class="page">
+<div class="page" id="page">
 
-  <span class="cefr-tag">A1 · Beginner</span>
+  <span class="cefr-tag cefr-a1">A1 · Beginner</span>
   <h1>What do you do for fun?</h1>
   <p class="subtitle">Sofia and Greg talk about sports, music, and activities.</p>
-  <div class="setting-chip">🏫 school hallway, lunchtime</div>
+    <div class="sec-div">Before you read</div>
+  <p class="subtitle">Read these three questions first, then look for the answers in the conversation.</p>
+  <div id="preQuestions" class="prequiz"></div>
+
+  <button id="grammarToggle" class="grammar-toggle-btn">🎨 Show Grammar</button>
+  <div class="pos-legend"></div>
+<div class="setting-chip">🏫 school hallway, lunchtime</div>
 
   <div class="legend">
     <span class="legend-pill option">🎛️ option</span>
@@ -159,7 +73,7 @@
     <div class="avatar av-b">👦</div>
     <div>
       <div class="bname right">Greg</div>
-      <div class="bubble right">I play basketball and swimming. <span class="option">What about you</span>?</div>
+      <div class="bubble right"><span class="pos-hl pos-subject">I</span> <span class="pos-hl pos-verb">play</span> <span class="pos-hl pos-object">basketball</span> and <span class="pos-hl pos-object">swimming</span>. <span class="option">What about you</span>?</div>
     </div>
   </div>
 
@@ -175,7 +89,7 @@
     <div class="avatar av-b">👦</div>
     <div>
       <div class="bname right">Greg</div>
-      <div class="bubble right">I play with my cousins. <span class="location">Where do</span> you play volleyball?</div>
+      <div class="bubble right"><span class="pos-hl pos-subject">I</span> <span class="pos-hl pos-verb">play</span> <span class="pos-hl pos-prep">with</span> <span class="pos-hl pos-object">my cousins</span>. <span class="location">Where do</span> <span class="pos-hl pos-subject">you</span> <span class="pos-hl pos-verb">play</span> <span class="pos-hl pos-object">volleyball</span>?</div>
     </div>
   </div>
 
@@ -191,7 +105,7 @@
     <div class="avatar av-b">👦</div>
     <div>
       <div class="bname right">Greg</div>
-      <div class="bubble right">Twice a week. <span class="gentime">When do</span> you usually practice volleyball?</div>
+      <div class="bubble right"><span class="pos-hl pos-time">Twice a week</span>. <span class="gentime">When do</span> <span class="pos-hl pos-subject">you</span> <span class="pos-hl pos-adverb">usually</span> <span class="pos-hl pos-verb">practice</span> <span class="pos-hl pos-object">volleyball</span>?</div>
     </div>
   </div>
 
@@ -207,7 +121,7 @@
     <div class="avatar av-b">👦</div>
     <div>
       <div class="bname right">Greg</div>
-      <div class="bubble right">Around 6pm. Hey, <span class="option">what music do</span> you listen to?</div>
+      <div class="bubble right"><span class="pos-hl pos-time">Around 6pm</span>. Hey, <span class="option">what music do</span> <span class="pos-hl pos-subject">you</span> <span class="pos-hl pos-verb">listen</span> <span class="pos-hl pos-prep">to</span>?</div>
     </div>
   </div>
 
@@ -223,7 +137,7 @@
     <div class="avatar av-b">👦</div>
     <div>
       <div class="bname right">Greg</div>
-      <div class="bubble right">She likes rock music. <span class="company">Who do</span> you usually listen to music <span class="company">with</span>?</div>
+      <div class="bubble right"><span class="pos-hl pos-subject">She</span> <span class="pos-hl pos-verb">likes</span> <span class="pos-hl pos-object">rock music</span>. <span class="company">Who do</span> <span class="pos-hl pos-subject">you</span> <span class="pos-hl pos-adverb">usually</span> <span class="pos-hl pos-verb">listen</span> <span class="pos-hl pos-prep">to</span> <span class="pos-hl pos-object">music</span> <span class="company">with</span>?</div>
     </div>
   </div>
 
@@ -239,7 +153,7 @@
     <div class="avatar av-b">👦</div>
     <div>
       <div class="bname right">Greg</div>
-      <div class="bubble right">In her room. <span class="frequency">How often does</span> she practice?</div>
+      <div class="bubble right"><span class="pos-hl pos-prep">In</span> <span class="pos-hl pos-object">her room</span>. <span class="frequency">How often does</span> <span class="pos-hl pos-subject">she</span> <span class="pos-hl pos-verb">practice</span>?</div>
     </div>
   </div>
 
@@ -263,9 +177,13 @@
     <div class="avatar av-a">👧</div>
     <div>
       <div class="bname">Sofia</div>
-      <div class="bubble left">Around 7:30. This was fun — let's talk more tomorrow!</div>
+      <div class="bubble left"><span class="pos-hl pos-time">Around 7:30</span>. <span class="pos-hl pos-subject">This</span> <span class="pos-hl pos-verb">was</span> <span class="pos-hl pos-complement">fun</span> — let's <span class="pos-hl pos-verb">talk</span> more <span class="pos-hl pos-time">tomorrow</span>!</div>
     </div>
   </div>
+  <div class="sec-div">Check your answers</div>
+  <p class="subtitle">The same three questions — now choose the correct answer.</p>
+  <div id="quiz"></div>
+
 
   <div class="sec-div">Quick reference</div>
 
@@ -276,5 +194,49 @@
   <footer>Conversation Practice — Wh-Questions with "do" (A1)</footer>
 
 </div>
+
+<div id="theme-toggle-wrap">
+  <button id="theme-toggle" aria-label="Toggle light/dark mode" title="Toggle light/dark mode">
+    <span id="theme-icon">☀️</span>
+  </button>
+</div>
+<script src="house.js"></script>
+<script>
+/* The same three questions run before and after the conversation:
+   as a plain list first (setting a purpose for reading), then with
+   three options each once the text has been read. */
+const CQ_ITEMS = [
+  {
+    "q": "Which sports does Greg play?",
+    "opts": [
+      "Volleyball",
+      "Basketball and swimming",
+      "Only basketball"
+    ],
+    "correct": 1
+  },
+  {
+    "q": "How often does Greg go swimming?",
+    "opts": [
+      "Twice a week",
+      "Every day",
+      "Only in the evening"
+    ],
+    "correct": 0
+  },
+  {
+    "q": "Where does Greg's sister practice guitar?",
+    "opts": [
+      "At the sports center",
+      "After school",
+      "In her room"
+    ],
+    "correct": 2
+  }
+];
+
+HouseComprehension.build({ pre: 'preQuestions', quiz: 'quiz', items: CQ_ITEMS });
+HouseGrammar.init();
+</script>
 </body>
 </html>

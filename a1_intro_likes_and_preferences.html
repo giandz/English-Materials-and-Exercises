@@ -2,121 +2,47 @@
 <html lang="en">
 <head>
 <meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
 <title>Comparing Tastes — Conversation</title>
-<link rel="stylesheet" href="general.css">
+<script>
+// Applies the saved/system theme to <html> as early as possible, before the
+// stylesheet below paints anything, so there's no flash of the wrong theme.
+// Self-contained: no dependency on any external script.
+(function(){
+  try{
+    var saved = localStorage.getItem('theme-preference');
+    var theme = (saved === 'light' || saved === 'dark')
+      ? saved
+      : ((window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches) ? 'dark' : 'light');
+    document.documentElement.setAttribute('data-theme', theme);
+  }catch(e){ /* localStorage/matchMedia unavailable — CSS media query still applies */ }
+})();
+</script>
+<link rel="stylesheet" href="house.css">
 <style>
-  :root{
-    --color-background-primary: #ffffff;
-    --color-background-secondary: #f7f7f8;
-    --color-text-primary: #1a1a1a;
-    --color-text-secondary: #5b5b60;
-    --color-text-tertiary: #8b8b90;
-    --color-border-secondary: #e3e3e6;
-    --color-border-tertiary: #ebebee;
-    --border-radius-lg: 12px;
-    --font-mono: "SF Mono", "JetBrains Mono", monospace;
-
-    --text-primary: var(--color-text-primary);
-    --text-secondary: var(--color-text-secondary);
-    --text-muted: var(--color-text-tertiary);
-    --text-accent: #185fa5;
-    --surface-1: var(--color-background-secondary);
-    --surface-2: var(--color-background-primary);
-    --border: var(--color-border-tertiary);
-    --radius: var(--border-radius-lg);
-    --bg-accent: #e6f1fb;
-    --bg-pro: #eeedfe;
-    --text-pro: #26215c;
-    --border-pro: #afa9ec;
-  }
-
-  @media (prefers-color-scheme: dark){
-    :root{
-      --color-background-primary: #1e1e20;
-      --color-background-secondary: #26262a;
-      --color-text-primary: #f0f0f2;
-      --color-text-secondary: #b4b4ba;
-      --color-text-tertiary: #85858c;
-      --color-border-secondary: #3a3a3f;
-      --color-border-tertiary: #34343a;
-      --bg-accent: #1c2e40;
-      --bg-pro: #2a2650;
-      --text-pro: #d7d3ff;
-      --border-pro: #4c447f;
-    }
-  }
-
-  *{ box-sizing:border-box; }
-  html,body{
-    margin:0;
-    background:var(--color-background-primary);
-    color:var(--color-text-primary);
-    font-family:-apple-system, BlinkMacSystemFont, "Segoe UI", Helvetica, Arial, sans-serif;
-    font-size:15px;
-    line-height:1.6;
-  }
-  .page{ max-width:640px; margin:0 auto; padding:28px 20px 56px; }
-
-  h1{ font-size:1.3rem; font-weight:600; letter-spacing:-0.01em; margin:0 0 4px; }
-  .subtitle{ font-size:13px; color:var(--text-secondary); margin:0 0 4px; }
-  .cefr-tag{
-    display:inline-block;
-    font-size:11px;
-    font-weight:700;
-    letter-spacing:.04em;
-    background:#e6f1fb;
-    color:#185fa5;
-    padding:3px 10px;
-    border-radius:20px;
-    margin-bottom:10px;
-  }
-
-  .sec-div{font-size:11px;font-weight:500;letter-spacing:.06em;text-transform:uppercase;color:var(--text-muted);display:flex;align-items:center;gap:8px;margin:1.75rem 0 1rem;}
-  .sec-div::before,.sec-div::after{content:'';flex:1;height:.5px;background:var(--border);}
-
-  .setting-chip{display:inline-flex;align-items:center;gap:5px;font-size:12px;padding:3px 10px;border-radius:20px;background:var(--surface-1);border:.5px solid var(--border);color:var(--text-secondary);margin-bottom:1rem;}
-
-  .legend{ display:flex; flex-wrap:wrap; gap:8px; margin-bottom:1.25rem; }
-  .legend-pill{ font-size:11.5px; font-weight:600; padding:3px 11px; border-radius:20px; }
-  .legend-pill.pref{ background:#e6f1fb; color:#185fa5; }
-  .legend-pill.agree{ background:#eaf3de; color:#27500a; }
-  .legend-pill.disagree{ background:#fce8e8; color:#a32d2d; }
-
-  .pref{ color:#185fa5; font-weight:700; background:#e6f1fb; padding:1px 5px; border-radius:4px; }
+.pref{ color:#185fa5; font-weight:700; background:#e6f1fb; padding:1px 5px; border-radius:4px; }
   .agree{ color:#27500a; font-weight:700; background:#eaf3de; padding:1px 5px; border-radius:4px; }
   .disagree{ color:#a32d2d; font-weight:700; background:#fce8e8; padding:1px 5px; border-radius:4px; }
 
   @media (prefers-color-scheme: dark){
     .pref, .legend-pill.pref{ background:#16283a; color:#7fb2e0; }
     .agree, .legend-pill.agree{ background:#1f3014; color:#9ed17a; }
-    .disagree, .legend-pill.disagree{ background:#3a201e; color:#e2827a; }
-  }
-
-  .bubble-wrap{display:flex;gap:10px;align-items:flex-end;margin-bottom:14px;}
-  .bubble-wrap.right{flex-direction:row-reverse;}
-  .avatar{width:34px;height:34px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:18px;flex-shrink:0;}
-  .av-a{background:var(--bg-accent);}
-  .av-b{background:var(--bg-pro);}
-  .bubble{max-width:80%;padding:9px 13px;border-radius:15px;font-size:14px;line-height:1.65;border:.5px solid var(--border);}
-  .bubble.left{background:var(--surface-2);border-bottom-left-radius:4px;color:var(--text-primary);}
-  .bubble.right{background:var(--bg-pro);border-bottom-right-radius:4px;color:var(--text-pro);border-color:var(--border-pro);}
-  .bname{font-size:11px;font-weight:500;color:var(--text-muted);margin-bottom:3px;padding:0 2px;}
-  .bname.right{text-align:right;}
-
-  .rule-box{background:var(--surface-1);border-radius:var(--radius);padding:10px 14px;margin-bottom:1.25rem;font-size:13px;color:var(--text-secondary);line-height:1.7;}
-  .rule-box strong{color:var(--text-primary);font-weight:500;}
-
-  footer{ text-align:center; font-size:12px; color:var(--text-muted); margin-top:2rem; }
+    .disagree, .legend-pill.disagree{ background:#3a201e; color:#e2827a; }}
 </style>
 </head>
 <body>
-<div class="page">
+<div class="page" id="page">
 
-  <span class="cefr-tag">A1 · Beginner</span>
+  <span class="cefr-tag cefr-a1">A1 · Beginner</span>
   <h1>What do you like?</h1>
   <p class="subtitle">Mia and Tom compare their tastes in music, movies, and food.</p>
-  <div class="setting-chip">☕ two friends, coffee shop</div>
+    <div class="sec-div">Before you read</div>
+  <p class="subtitle">Read these three questions first, then look for the answers in the conversation.</p>
+  <div id="preQuestions" class="prequiz"></div>
+
+  <button id="grammarToggle" class="grammar-toggle-btn">🎨 Show Grammar</button>
+  <div class="pos-legend"></div>
+<div class="setting-chip">☕ two friends, coffee shop</div>
 
   <div class="legend">
     <span class="legend-pill pref">●&nbsp; likes / preferences</span>
@@ -127,132 +53,135 @@
   <div class="sec-div">Conversation</div>
 
   <div class="bubble-wrap left">
-    <div class="avatar av-a">👩</div>
+    <div class="avatar av-a">👩‍🦳</div>
     <div>
       <div class="bname">Mia</div>
-      <div class="bubble left"><span class="pref">What</span> music <span class="pref">do you prefer</span>, Tom? Rock or salsa?</div>
+      <div class="bubble left"><span class="pref">What</span> <span class="pos-hl pos-object">music</span> <span class="pref">do you prefer</span>, Tom? <span class="pos-hl pos-object">Rock</span> or <span class="pos-hl pos-object">salsa</span>?</div>
     </div>
   </div>
 
   <div class="bubble-wrap right">
-    <div class="avatar av-b">🧑</div>
+    <div class="avatar av-b">👨‍🦱</div>
     <div>
       <div class="bname right">Tom</div>
-      <div class="bubble right">I <span class="pref">prefer</span> rock <span class="pref">to</span> salsa music. What about you?</div>
+      <div class="bubble right"><span class="pos-hl pos-subject">I</span> <span class="pref">prefer</span> <span class="pos-hl pos-object">rock</span> <span class="pref">to</span> <span class="pos-hl pos-object">salsa music</span>. What about <span class="pos-hl pos-subject">you</span>?</div>
     </div>
   </div>
 
   <div class="bubble-wrap left">
-    <div class="avatar av-a">👩</div>
+    <div class="avatar av-a">👩‍🦳</div>
     <div>
       <div class="bname">Mia</div>
-      <div class="bubble left"><span class="agree">So do I</span>! I <span class="pref">really like</span> rock too.</div>
+      <div class="bubble left"><span class="agree">So do I</span>! <span class="pos-hl pos-subject">I</span> <span class="pref">really like</span> <span class="pos-hl pos-object">rock</span> too.</div>
     </div>
   </div>
 
   <div class="bubble-wrap right">
-    <div class="avatar av-b">🧑</div>
+    <div class="avatar av-b">👨‍🦱</div>
     <div>
       <div class="bname right">Tom</div>
-      <div class="bubble right">Nice! Do you like watching movies?</div>
+      <div class="bubble right">Nice! <span class="pos-hl pos-aux">Do</span> <span class="pos-hl pos-subject">you</span> <span class="pos-hl pos-verb">like watching</span> <span class="pos-hl pos-object">movies</span>?</div>
     </div>
   </div>
 
   <div class="bubble-wrap left">
-    <div class="avatar av-a">👩</div>
+    <div class="avatar av-a">👩‍🦳</div>
     <div>
       <div class="bname">Mia</div>
-      <div class="bubble left">Yes, I do. I <span class="pref">love</span> action movies. I <span class="pref">don't like</span> horror films, though.</div>
+      <div class="bubble left">Yes, <span class="pos-hl pos-subject">I</span> <span class="pos-hl pos-aux">do</span>. <span class="pos-hl pos-subject">I</span> <span class="pref">love</span> <span class="pos-hl pos-object">action movies</span>. <span class="pos-hl pos-subject">I</span> <span class="pref">don't like</span> <span class="pos-hl pos-object">horror films</span>, though.</div>
     </div>
   </div>
 
   <div class="bubble-wrap right">
-    <div class="avatar av-b">🧑</div>
+    <div class="avatar av-b">👨‍🦱</div>
     <div>
       <div class="bname right">Tom</div>
-      <div class="bubble right"><span class="agree">Me too</span>! I <span class="pref">can't stand</span> horror films.</div>
+      <div class="bubble right"><span class="agree">Me too</span>! <span class="pos-hl pos-subject">I</span> <span class="pref">can't stand</span> <span class="pos-hl pos-object">horror films</span>.</div>
     </div>
   </div>
 
   <div class="bubble-wrap left">
-    <div class="avatar av-a">👩</div>
+    <div class="avatar av-a">👩‍🦳</div>
     <div>
       <div class="bname">Mia</div>
-      <div class="bubble left">And videogames? <span class="pref">Do you like</span> any? I<span class="pref">'m not a big fan of</span> them.</div>
+      <div class="bubble left">And <span class="pos-hl pos-object">videogames</span>? <span class="pref">Do you like</span> any? <span class="pos-hl pos-subject">I</span><span class="pref">'m not a big fan of</span> <span class="pos-hl pos-object">them</span>.</div>
     </div>
   </div>
 
   <div class="bubble-wrap right">
-    <div class="avatar av-b">🧑</div>
+    <div class="avatar av-b">👨‍🦱</div>
     <div>
       <div class="bname right">Tom</div>
-      <div class="bubble right"><span class="agree">Neither do I</span>. <span class="pref">I'm not into</span>videogames.</div>
+      <div class="bubble right"><span class="agree">Neither do I</span>. <span class="pref">I'm not into</span> <span class="pos-hl pos-object">videogames</span>.</div>
     </div>
   </div>
 
   <div class="bubble-wrap left">
-    <div class="avatar av-a">👩</div>
+    <div class="avatar av-a">👩‍🦳</div>
     <div>
       <div class="bname">Mia</div>
-      <div class="bubble left">What about food? I'm <span class="pref">crazy about</span> Chinese food.</div>
+      <div class="bubble left">What about <span class="pos-hl pos-object">food</span>? <span class="pos-hl pos-subject">I</span>'m <span class="pref">crazy about</span> <span class="pos-hl pos-object">Chinese food</span>.</div>
     </div>
   </div>
 
   <div class="bubble-wrap right">
-    <div class="avatar av-b">🧑</div>
+    <div class="avatar av-b">👨‍🦱</div>
     <div>
       <div class="bname right">Tom</div>
-      <div class="bubble right"><span class="disagree">Really?</span> I <span class="pref">don't mind</span> Chinese food, but I <span class="pref">prefer</span> Italian food <span class="pref">to</span> Chinese food.</div>
+      <div class="bubble right"><span class="disagree">Really?</span> <span class="pos-hl pos-subject">I</span> <span class="pref">don't mind</span> <span class="pos-hl pos-object">Chinese food</span>, but <span class="pos-hl pos-subject">I</span> <span class="pref">prefer</span> <span class="pos-hl pos-object">Italian food</span> <span class="pref">to</span> <span class="pos-hl pos-object">Chinese food</span>.</div>
     </div>
   </div>
 
   <div class="bubble-wrap left">
-    <div class="avatar av-a">👩</div>
+    <div class="avatar av-a">👩‍🦳</div>
     <div>
       <div class="bname">Mia</div>
-      <div class="bubble left"><span class="disagree">Oh, I don't</span>. I <span class="pref">really don't like</span> Italian food.</div>
+      <div class="bubble left"><span class="disagree">Oh, I don't</span>. <span class="pos-hl pos-subject">I</span> <span class="pref">really don't like</span> <span class="pos-hl pos-object">Italian food</span>.</div>
     </div>
   </div>
 
   <div class="bubble-wrap right">
-    <div class="avatar av-b">🧑</div>
+    <div class="avatar av-b">👨‍🦱</div>
     <div>
       <div class="bname right">Tom</div>
-      <div class="bubble right">Interesting! What about sports? I <span class="pref">like playing</span> soccer.</div>
+      <div class="bubble right">Interesting! What about <span class="pos-hl pos-object">sports</span>? <span class="pos-hl pos-subject">I</span> <span class="pref">like playing</span> <span class="pos-hl pos-object">soccer</span>.</div>
     </div>
   </div>
 
   <div class="bubble-wrap left">
-    <div class="avatar av-a">👩</div>
+    <div class="avatar av-a">👩‍🦳</div>
     <div>
       <div class="bname">Mia</div>
-      <div class="bubble left">I<span class="pref">'m OK with</span> soccer, but I <span class="pref">prefer</span> swimming <span class="pref">to</span> soccer.</div>
+      <div class="bubble left"><span class="pos-hl pos-subject">I</span><span class="pref">'m OK with</span> <span class="pos-hl pos-object">soccer</span>, but <span class="pos-hl pos-subject">I</span> <span class="pref">prefer</span> <span class="pos-hl pos-object">swimming</span> <span class="pref">to</span> <span class="pos-hl pos-object">soccer</span>.</div>
     </div>
   </div>
 
   <div class="bubble-wrap right">
-    <div class="avatar av-b">🧑</div>
+    <div class="avatar av-b">👨‍🦱</div>
     <div>
       <div class="bname right">Tom</div>
-      <div class="bubble right"><span class="disagree">Really? I don't</span>. I <span class="pref">hate</span> swimming — the water is always too cold!</div>
+      <div class="bubble right"><span class="disagree">Really? I don't</span>. <span class="pos-hl pos-subject">I</span> <span class="pref">hate</span> <span class="pos-hl pos-object">swimming</span> — <span class="pos-hl pos-subject">the water</span> <span class="pos-hl pos-verb">is</span> always <span class="pos-hl pos-complement">too cold</span>!</div>
     </div>
   </div>
 
   <div class="bubble-wrap left">
-    <div class="avatar av-a">👩</div>
+    <div class="avatar av-a">👩‍🦳</div>
     <div>
       <div class="bname">Mia</div>
-      <div class="bubble left">That's funny! I thought you were a swimming fan.</div>
+      <div class="bubble left">That's funny! <span class="pos-hl pos-subject">I</span> <span class="pos-hl pos-verb">thought</span> <span class="pos-hl pos-subject">you</span> <span class="pos-hl pos-verb">were</span> <span class="pos-hl pos-complement">a swimming fan</span>.</div>
     </div>
   </div>
 
   <div class="bubble-wrap right">
-    <div class="avatar av-b">🧑</div>
+    <div class="avatar av-b">👨‍🦱</div>
     <div>
       <div class="bname right">Tom</div>
-      <div class="bubble right"><span class="pref">I love many things, but</span> swimming <span class="pref">is not one of them.</span></div>
+      <div class="bubble right"><span class="pref">I love many things, but</span> <span class="pos-hl pos-object">swimming</span> <span class="pref">is not one of them.</span></div>
     </div>
   </div>
+  <div class="sec-div">Check your answers</div>
+  <p class="subtitle">The same three questions — now choose the correct answer.</p>
+  <div id="quiz"></div>
 
   <div class="sec-div">Quick reference</div>
 
@@ -263,11 +192,49 @@
   <footer>Conversation Practice — Likes & Preferences (A1)</footer>
 
 </div>
+
 <div id="theme-toggle-wrap">
   <button id="theme-toggle" aria-label="Toggle light/dark mode" title="Toggle light/dark mode">
     <span id="theme-icon">☀️</span>
   </button>
 </div>
-<script src="theme-toggle-behavior.js"></script>
+<script src="house.js"></script>
+<script>
+/* The same three questions run before and after the conversation:
+   as a plain list first (setting a purpose for reading), then with
+   three options each once the text has been read. */
+const CQ_ITEMS = [
+  {
+    "q": "Which kind of music does Tom prefer?",
+    "opts": [
+      "Salsa",
+      "Rock",
+      "He likes both the same"
+    ],
+    "correct": 1
+  },
+  {
+    "q": "How do Mia and Tom both feel about horror films?",
+    "opts": [
+      "They both dislike them",
+      "They both love them",
+      "Only Mia enjoys them"
+    ],
+    "correct": 0
+  },
+  {
+    "q": "Which sport does Mia prefer?",
+    "opts": [
+      "Soccer",
+      "Swimming",
+      "She dislikes both"
+    ],
+    "correct": 1
+  }
+];
+
+HouseComprehension.build({ pre: 'preQuestions', quiz: 'quiz', items: CQ_ITEMS });
+HouseGrammar.init();
+</script>
 </body>
 </html>
