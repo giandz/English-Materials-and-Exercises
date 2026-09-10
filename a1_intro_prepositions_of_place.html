@@ -15,6 +15,12 @@
       ? saved
       : ((window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches) ? 'dark' : 'light');
     document.documentElement.setAttribute('data-theme', theme);
+    // Same idea for the text size: apply it before house.css paints, so a
+    // person who chose 28px doesn't watch the page reflow from 14px on load.
+    var fs = parseFloat(localStorage.getItem('font-size-preference'));
+    if (fs >= 10 && fs <= 28){
+      document.documentElement.style.setProperty('--fs-base', fs + 'px');
+    }
   }catch(e){ /* localStorage/matchMedia unavailable — CSS media query still applies */ }
 })();
 </script>
@@ -22,7 +28,7 @@
 <style>
 /* matching */
   .match-grid{display:grid;grid-template-columns:1fr 1fr;gap:16px;margin-bottom:1rem;}
-  .match-col-label{font-size:11px;font-weight:500;text-transform:uppercase;letter-spacing:.05em;color:var(--text-muted);margin-bottom:8px;}
+  .match-col-label{font-size:0.7333rem;font-weight:500;text-transform:uppercase;letter-spacing:.05em;color:var(--text-muted);margin-bottom:8px;}
   .img-card{border:.5px solid var(--border);border-radius:12px;overflow:hidden;cursor:pointer;transition:border-color .12s;}
   .img-card:hover{border-color:var(--color-border-primary);}
   .img-card.selected{border-color:var(--text-accent);}
@@ -30,19 +36,19 @@
   .img-card.wrong{border-color:var(--color-border-danger);animation:shake .3s;}
   .img-slot{height:80px;background:var(--surface-1);display:flex;flex-direction:column;align-items:center;justify-content:center;gap:4px;border-bottom:.5px solid var(--border);}
   .img-slot img{width:100%;height:100%;object-fit:contain;padding:6px;display:none;}
-  .img-slot .ph-icon{font-size:22px;color:var(--text-muted);}
-  .img-slot .ph-name{font-size:10px;color:var(--text-muted);font-family:var(--font-mono);}
-  .img-label{font-size:12px;font-weight:500;text-align:center;padding:6px 8px;color:var(--color-text-secondary);}
+  .img-slot .ph-icon{font-size:1.4667rem;color:var(--text-muted);}
+  .img-slot .ph-name{font-size:0.6667rem;color:var(--text-muted);font-family:var(--font-mono);}
+  .img-label{font-size:0.8rem;font-weight:500;text-align:center;padding:6px 8px;color:var(--color-text-secondary);}
   .img-grid-wrap{display:flex;flex-direction:column;gap:7px;}
 
   /* gap fill */
-  .gap-para{background:var(--surface-2);border:.5px solid var(--border);border-radius:12px;padding:1rem 1.25rem;font-size:14px;line-height:2.5;margin-bottom:1rem;}
+  .gap-para{background:var(--surface-2);border:.5px solid var(--border);border-radius:12px;padding:1rem 1.25rem;font-size:0.9333rem;line-height:2.5;margin-bottom:1rem;}
   .bank{display:flex;flex-wrap:wrap;gap:6px;margin-bottom:1rem;}
-  .bank-chip{font-size:13px;padding:4px 11px;border-radius:20px;background:var(--surface-1);border:.5px solid var(--border);color:var(--color-text-secondary);}
+  .bank-chip{font-size:0.8667rem;padding:4px 11px;border-radius:20px;background:var(--surface-1);border:.5px solid var(--border);color:var(--color-text-secondary);}
   .ex-bar{display:flex;gap:8px;align-items:center;flex-wrap:wrap;}
-  .score-msg{font-size:13px;color:var(--color-text-secondary);}
+  .score-msg{font-size:0.8667rem;color:var(--color-text-secondary);}
   .ak-body{padding:10px 14px;display:flex;flex-direction:column;gap:2px;}
-  .ak-row{display:flex;gap:10px;align-items:baseline;padding:4px 0;border-bottom:.5px solid var(--border);font-size:13px;}
+  .ak-row{display:flex;gap:10px;align-items:baseline;padding:4px 0;border-bottom:.5px solid var(--border);font-size:0.8667rem;}
   .ak-row:last-child{border-bottom:none;}
   .ak-num{color:var(--text-muted);min-width:20px;}
   .ak-ans{font-weight:500;color:var(--text-accent);min-width:80px;}

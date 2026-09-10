@@ -15,6 +15,12 @@
       ? saved
       : ((window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches) ? 'dark' : 'light');
     document.documentElement.setAttribute('data-theme', theme);
+    // Same idea for the text size: apply it before house.css paints, so a
+    // person who chose 28px doesn't watch the page reflow from 14px on load.
+    var fs = parseFloat(localStorage.getItem('font-size-preference'));
+    if (fs >= 10 && fs <= 28){
+      document.documentElement.style.setProperty('--fs-base', fs + 'px');
+    }
   }catch(e){ /* localStorage/matchMedia unavailable — CSS media query still applies */ }
 })();
 </script>
@@ -30,7 +36,7 @@
   }
   .score-pill{
     font-family:var(--font-mono);
-    font-size:13px;
+    font-size:0.8667rem;
     background:var(--surface-1);
     border:.5px solid var(--border);
     padding:5px 13px;
@@ -39,7 +45,7 @@
   .score-pill strong{ color:var(--good); }
   .reset-btn{
     font-family:inherit;
-    font-size:12.5px;
+    font-size:0.8333rem;
     font-weight:600;
     background:var(--text-accent);
     color:#fff;
@@ -80,7 +86,7 @@
   }
   .bin-word{
     font-weight:600;
-    font-size:14px;
+    font-size:0.9333rem;
     color:var(--text-primary);
     white-space:nowrap;
   }
@@ -114,7 +120,7 @@
     color:var(--good);
     border-radius:var(--radius);
     font-weight:600;
-    font-size:14px;
+    font-size:0.9333rem;
   }
   .win-banner.show{ display:block; }
 </style>

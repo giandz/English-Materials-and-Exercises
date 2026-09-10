@@ -15,28 +15,34 @@
       ? saved
       : ((window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches) ? 'dark' : 'light');
     document.documentElement.setAttribute('data-theme', theme);
+    // Same idea for the text size: apply it before house.css paints, so a
+    // person who chose 28px doesn't watch the page reflow from 14px on load.
+    var fs = parseFloat(localStorage.getItem('font-size-preference'));
+    if (fs >= 10 && fs <= 28){
+      document.documentElement.style.setProperty('--fs-base', fs + 'px');
+    }
   }catch(e){ /* localStorage/matchMedia unavailable — CSS media query still applies */ }
 })();
 </script>
 <link rel="stylesheet" href="house.css">
 <style>
 .hdr { padding: 1rem 0 1.25rem; border-bottom: 0.5px solid var(--color-border-tertiary); margin-bottom: 1.5rem; }
-  .hdr-label { font-size: 11px; font-weight: 500; letter-spacing: 0.07em; text-transform: uppercase; color: var(--color-text-secondary); margin-bottom: 5px; }
-  .hdr-title { font-size: 20px; font-weight: 500; color: var(--color-text-primary); margin-bottom: 4px; }
-  .hdr-sub   { font-size: 14px; color: var(--color-text-secondary); }
+  .hdr-label { font-size:0.7333rem; font-weight: 500; letter-spacing: 0.07em; text-transform: uppercase; color: var(--color-text-secondary); margin-bottom: 5px; }
+  .hdr-title { font-size:1.3333rem; font-weight: 500; color: var(--color-text-primary); margin-bottom: 4px; }
+  .hdr-sub   { font-size:0.9333rem; color: var(--color-text-secondary); }
 
   .progress-bar { height: 4px; background: var(--color-border-tertiary); border-radius: 2px; margin-bottom: 1.5rem; overflow: hidden; }
   .progress-fill { height: 100%; background: var(--color-text-primary); border-radius: 2px; transition: width 0.3s; }
 
   .scene-box { background: var(--color-background-secondary); border-radius: var(--border-radius-lg); padding: 1rem 1.25rem; margin-bottom: 1.25rem; }
-  .scene-eyebrow { font-size: 11px; font-weight: 500; letter-spacing: 0.06em; text-transform: uppercase; color: var(--color-text-tertiary); margin-bottom: 6px; }
+  .scene-eyebrow { font-size:0.7333rem; font-weight: 500; letter-spacing: 0.06em; text-transform: uppercase; color: var(--color-text-tertiary); margin-bottom: 6px; }
   .scene-speakers { display: flex; flex-direction: column; gap: 10px; }
-  .av { width: 28px; height: 28px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 11px; font-weight: 500; flex-shrink: 0; }
+  .av { width: 28px; height: 28px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size:0.7333rem; font-weight: 500; flex-shrink: 0; }
 
-  .options-label { font-size: 11px; font-weight: 500; letter-spacing: 0.06em; text-transform: uppercase; color: var(--color-text-secondary); margin-bottom: 10px; }
+  .options-label { font-size:0.7333rem; font-weight: 500; letter-spacing: 0.06em; text-transform: uppercase; color: var(--color-text-secondary); margin-bottom: 10px; }
   @keyframes shake { 0%,100%{transform:translateX(0)} 25%{transform:translateX(-5px)} 75%{transform:translateX(5px)} }
 
-  .modal-tag { display: inline-block; font-size: 11px; padding: 2px 8px; border-radius: 20px; border: 1px solid transparent; font-family: var(--font-mono, monospace); margin-top: 6px; }
+  .modal-tag { display: inline-block; font-size:0.7333rem; padding: 2px 8px; border-radius: 20px; border: 1px solid transparent; font-family: var(--font-mono, monospace); margin-top: 6px; }
   .tag-can    { background:#e6f1fb; color:#0c447c; border-color:#85b7eb; }
   .tag-could  { background:#e1f5ee; color:#085041; border-color:#5dcaa5; }
   .tag-should { background:#eaf3de; color:#27500a; border-color:#97c459; }
@@ -45,18 +51,18 @@
   .tag-would  { background:#eeedfe; color:#26215c; border-color:#afa9ec; }
 
   .nav-row { display: flex; justify-content: space-between; align-items: center; margin-top: 1.25rem; }
-  .nav-counter { font-size: 13px; color: var(--color-text-secondary); }
-  .nav-btn { font-size: 13px; padding: 6px 16px; display: flex; align-items: center; gap: 5px; }
+  .nav-counter { font-size:0.8667rem; color: var(--color-text-secondary); }
+  .nav-btn { font-size:0.8667rem; padding: 6px 16px; display: flex; align-items: center; gap: 5px; }
   .nav-btn:disabled { opacity: 0.35; cursor: default; }
 
   .summary-box { padding: 1rem 0; }
-  .summary-score { font-size: 32px; font-weight: 500; color: var(--color-text-primary); margin-bottom: 4px; }
-  .summary-sub { font-size: 14px; color: var(--color-text-secondary); margin-bottom: 1.25rem; }
+  .summary-score { font-size:2.1333rem; font-weight: 500; color: var(--color-text-primary); margin-bottom: 4px; }
+  .summary-sub { font-size:0.9333rem; color: var(--color-text-secondary); margin-bottom: 1.25rem; }
   .summary-list { display: flex; flex-direction: column; gap: 6px; margin-bottom: 1.25rem; }
-  .summary-item { display: flex; gap: 10px; align-items: center; padding: 8px 12px; border-radius: var(--border-radius-md); background: var(--color-background-secondary); font-size: 13px; }
-  .si-icon { font-size: 15px; flex-shrink: 0; }
+  .summary-item { display: flex; gap: 10px; align-items: center; padding: 8px 12px; border-radius: var(--border-radius-md); background: var(--color-background-secondary); font-size:0.8667rem; }
+  .si-icon { font-size:1rem; flex-shrink: 0; }
   .si-text { color: var(--color-text-primary); flex: 1; }
-  .si-tag  { font-size: 11px; margin-left: auto; }
+  .si-tag  { font-size:0.7333rem; margin-left: auto; }
 </style>
 </head>
 <body class="exercise-page" id="page">
@@ -232,10 +238,10 @@ function handleChoice(btn, q, idx) {
 
   const fb = document.getElementById('fb');
   if (isCorrect) {
-    fb.innerHTML = `<i class="ti ti-circle-check" aria-hidden="true" style="font-size:15px;margin-right:4px;"></i> <strong>Correct!</strong> ${q.why}<br><span class="modal-tag ${q.tag}">${q.modal}</span>`;
+    fb.innerHTML = `<i class="ti ti-circle-check" aria-hidden="true" style="font-size:1rem;margin-right:4px;"></i> <strong>Correct!</strong> ${q.why}<br><span class="modal-tag ${q.tag}">${q.modal}</span>`;
     fb.className = 'feedback-box show fb-ok';
   } else {
-    fb.innerHTML = `<i class="ti ti-circle-x" aria-hidden="true" style="font-size:15px;margin-right:4px;"></i> <strong>Not quite.</strong> ${q.whyWrong} ${q.why}<br><span class="modal-tag ${q.tag}">${q.modal}</span>`;
+    fb.innerHTML = `<i class="ti ti-circle-x" aria-hidden="true" style="font-size:1rem;margin-right:4px;"></i> <strong>Not quite.</strong> ${q.whyWrong} ${q.why}<br><span class="modal-tag ${q.tag}">${q.modal}</span>`;
     fb.className = 'feedback-box show fb-err';
   }
 

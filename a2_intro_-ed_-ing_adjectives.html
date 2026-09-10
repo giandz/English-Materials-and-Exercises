@@ -15,6 +15,12 @@
       ? saved
       : ((window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches) ? 'dark' : 'light');
     document.documentElement.setAttribute('data-theme', theme);
+    // Same idea for the text size: apply it before house.css paints, so a
+    // person who chose 28px doesn't watch the page reflow from 14px on load.
+    var fs = parseFloat(localStorage.getItem('font-size-preference'));
+    if (fs >= 10 && fs <= 28){
+      document.documentElement.style.setProperty('--fs-base', fs + 'px');
+    }
   }catch(e){ /* localStorage/matchMedia unavailable — CSS media query still applies */ }
 })();
 </script>
@@ -22,13 +28,13 @@
 <style>
 .hl-ing{font-weight:600;color:#185fa5;}
   .hl-ed{font-weight:600;color:#27500a;}
-  .gap-para{background:var(--color-background-primary);border:.5px solid var(--color-border-tertiary);border-radius:var(--border-radius-lg);padding:1rem 1.25rem;font-size:14px;line-height:2.5;margin-bottom:1rem;}
+  .gap-para{background:var(--color-background-primary);border:.5px solid var(--color-border-tertiary);border-radius:var(--border-radius-lg);padding:1rem 1.25rem;font-size:0.9333rem;line-height:2.5;margin-bottom:1rem;}
   .bank{display:flex;flex-wrap:wrap;gap:6px;margin-bottom:1rem;}
-  .bank-chip{user-select:none;-webkit-user-select:none;font-size:13px;padding:4px 11px;border-radius:20px;background:var(--color-background-secondary);border:.5px solid var(--color-border-secondary);color:var(--color-text-primary);}
+  .bank-chip{user-select:none;-webkit-user-select:none;font-size:0.8667rem;padding:4px 11px;border-radius:20px;background:var(--color-background-secondary);border:.5px solid var(--color-border-secondary);color:var(--color-text-primary);}
   .ex-bar{display:flex;gap:8px;align-items:center;flex-wrap:wrap;}
-  .score-msg{font-size:13px;color:var(--color-text-secondary);}
+  .score-msg{font-size:0.8667rem;color:var(--color-text-secondary);}
   .ak-body{padding:10px 14px;display:flex;flex-direction:column;gap:2px;}
-  .ak-row{display:flex;gap:10px;align-items:baseline;padding:4px 0;border-bottom:.5px solid var(--color-border-tertiary);font-size:13px;}
+  .ak-row{display:flex;gap:10px;align-items:baseline;padding:4px 0;border-bottom:.5px solid var(--color-border-tertiary);font-size:0.8667rem;}
   .ak-row:last-child{border-bottom:none;}
   .ak-num{color:var(--color-text-secondary);min-width:20px;}
   .ak-ing{font-weight:600;color:#185fa5;min-width:100px;}
@@ -37,16 +43,16 @@
   details summary{user-select:none;list-style:none;display:flex;justify-content:space-between;align-items:center;}
   details summary::-webkit-details-marker{display:none;}
   .q-card{background:var(--color-background-secondary);border:.5px solid var(--color-border-tertiary);border-radius:var(--border-radius-lg);padding:1rem 1.25rem;margin-bottom:8px;}
-  .q-num{font-size:11px;font-weight:500;color:var(--color-text-tertiary);margin-bottom:4px;font-family:var(--font-mono);}
-  .q-prompt{font-size:12px;color:var(--color-text-secondary);font-style:italic;line-height:1.5;}
-  .q-tag{display:inline-block;font-size:11px;font-weight:500;padding:2px 8px;border-radius:20px;border:.5px solid transparent;margin-bottom:5px;}
+  .q-num{font-size:0.7333rem;font-weight:500;color:var(--color-text-tertiary);margin-bottom:4px;font-family:var(--font-mono);}
+  .q-prompt{font-size:0.8rem;color:var(--color-text-secondary);font-style:italic;line-height:1.5;}
+  .q-tag{display:inline-block;font-size:0.7333rem;font-weight:500;padding:2px 8px;border-radius:20px;border:.5px solid transparent;margin-bottom:5px;}
   .tag-ing{background:#e6f1fb;color:#0c447c;border-color:#85b7eb;}
   .tag-ed{background:#eaf3de;color:#27500a;border-color:#97c459;}
   .tag-both{background:var(--color-background-secondary);color:var(--color-text-secondary);border-color:var(--color-border-secondary);}
   .phrase-box{background:var(--color-background-secondary);border-radius:var(--border-radius-md);padding:10px 14px;margin-top:1.25rem;}
-  .phrase-title{font-size:11px;font-weight:500;text-transform:uppercase;letter-spacing:.05em;color:var(--color-text-secondary);margin-bottom:8px;}
+  .phrase-title{font-size:0.7333rem;font-weight:500;text-transform:uppercase;letter-spacing:.05em;color:var(--color-text-secondary);margin-bottom:8px;}
   .phrase-grid{display:flex;flex-wrap:wrap;gap:6px;}
-  .phrase-chip{font-size:13px;padding:4px 10px;border-radius:20px;background:var(--color-background-primary);border:.5px solid var(--color-border-secondary);color:var(--color-text-primary);}
+  .phrase-chip{font-size:0.8667rem;padding:4px 10px;border-radius:20px;background:var(--color-background-primary);border:.5px solid var(--color-border-secondary);color:var(--color-text-primary);}
 </style>
 </head>
 <body class="exercise-page" id="page">

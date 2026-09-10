@@ -15,6 +15,12 @@
       ? saved
       : ((window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches) ? 'dark' : 'light');
     document.documentElement.setAttribute('data-theme', theme);
+    // Same idea for the text size: apply it before house.css paints, so a
+    // person who chose 28px doesn't watch the page reflow from 14px on load.
+    var fs = parseFloat(localStorage.getItem('font-size-preference'));
+    if (fs >= 10 && fs <= 28){
+      document.documentElement.style.setProperty('--fs-base', fs + 'px');
+    }
   }catch(e){ /* localStorage/matchMedia unavailable — CSS media query still applies */ }
 })();
 </script>
@@ -24,7 +30,7 @@
 .bubble.amber{background:#faeeda;border-color:#ef9f27;color:#4a2800;border-bottom-right-radius:4px;}
 
 /* quote of original speech */
-  .direct{display:block;font-style:italic;color:var(--color-text-secondary);font-size:13px;margin-top:4px;padding-left:10px;border-left:2px solid var(--color-border-tertiary);}
+  .direct{display:block;font-style:italic;color:var(--color-text-secondary);font-size:0.8667rem;margin-top:4px;padding-left:10px;border-left:2px solid var(--color-border-tertiary);}
   /* highlights */
   .hl-rep{font-weight:600;color:#185fa5;}   /* reported verb */
   .hl-shift{font-weight:600;color:#7c3aed;} /* backshifted tense */

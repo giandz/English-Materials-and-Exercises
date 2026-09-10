@@ -15,6 +15,12 @@
       ? saved
       : ((window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches) ? 'dark' : 'light');
     document.documentElement.setAttribute('data-theme', theme);
+    // Same idea for the text size: apply it before house.css paints, so a
+    // person who chose 28px doesn't watch the page reflow from 14px on load.
+    var fs = parseFloat(localStorage.getItem('font-size-preference'));
+    if (fs >= 10 && fs <= 28){
+      document.documentElement.style.setProperty('--fs-base', fs + 'px');
+    }
   }catch(e){ /* localStorage/matchMedia unavailable — CSS media query still applies */ }
 })();
 </script>
@@ -27,7 +33,7 @@ button.main, button.secondary{
     border:none;
     border-radius:100px;
     font-weight:600;
-    font-size:13.5px;
+    font-size:0.9rem;
     cursor:pointer;
   }
 button.main{ background:var(--text-accent); color:#fff; }
@@ -51,7 +57,7 @@ button.secondary{
     margin-bottom:10px;
   }
   .q-emoji{
-    font-size:20px;
+    font-size:1.3333rem;
     width:36px;
     height:36px;
     display:flex;
@@ -73,7 +79,7 @@ button.secondary{
     padding:8px 12px;
     border:1px solid var(--border);
     border-radius:8px;
-    font-size:13.5px;
+    font-size:0.9rem;
     cursor:pointer;
     transition:border-color .15s, background .15s;
   }
@@ -103,14 +109,14 @@ button.secondary{
   }
   .summary.show{ display:block; }
   .summary h2{
-    font-size:14px;
+    font-size:0.9333rem;
     margin:0 0 10px;
     color:var(--good);
   }
   .summary ul{
     margin:0;
     padding-left:18px;
-    font-size:13.5px;
+    font-size:0.9rem;
     color:var(--text-primary);
   }
   .summary li{ margin-bottom:4px; }
@@ -265,7 +271,7 @@ button.secondary{
   <div class="summary" id="summary">
     <h2>Your favorites</h2>
     <ul id="summaryList"></ul>
-    <p style="font-size:11px;color:var(--text-muted);margin:10px 0 0;font-style:italic;">Percentages are rough, illustrative estimates for classroom fun — not real survey data.</p>
+    <p style="font-size:0.7333rem;color:var(--text-muted);margin:10px 0 0;font-style:italic;">Percentages are rough, illustrative estimates for classroom fun — not real survey data.</p>
   </div>
 
   <footer>Vocabulary & Speaking Practice — Favorites Questionnaire (A2)</footer>

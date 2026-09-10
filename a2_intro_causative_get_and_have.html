@@ -15,6 +15,12 @@
       ? saved
       : ((window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches) ? 'dark' : 'light');
     document.documentElement.setAttribute('data-theme', theme);
+    // Same idea for the text size: apply it before house.css paints, so a
+    // person who chose 28px doesn't watch the page reflow from 14px on load.
+    var fs = parseFloat(localStorage.getItem('font-size-preference'));
+    if (fs >= 10 && fs <= 28){
+      document.documentElement.style.setProperty('--fs-base', fs + 'px');
+    }
   }catch(e){ /* localStorage/matchMedia unavailable — CSS media query still applies */ }
 })();
 </script>
@@ -24,15 +30,15 @@
   .hl-get{font-weight:600;color:#27500a;}
   .ref-grid{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:1.5rem;}
   .ref-card{border:.5px solid var(--color-border-tertiary);border-radius:var(--border-radius-lg);overflow:hidden;}
-  .ref-head{padding:8px 12px;border-bottom:.5px solid var(--color-border-tertiary);font-family:var(--font-mono,monospace);font-size:13px;font-weight:500;}
+  .ref-head{padding:8px 12px;border-bottom:.5px solid var(--color-border-tertiary);font-family:var(--font-mono,monospace);font-size:0.8667rem;font-weight:500;}
   .ref-head-have{background:#e6f1fb;color:#0c447c;}
   .ref-head-get{background:#eaf3de;color:#27500a;}
-  .ref-body{padding:10px 12px;font-size:13px;color:var(--color-text-secondary);line-height:1.6;}
+  .ref-body{padding:10px 12px;font-size:0.8667rem;color:var(--color-text-secondary);line-height:1.6;}
   .ref-body strong{color:var(--color-text-primary);font-weight:500;}
-  .ref-formula{font-family:var(--font-mono,monospace);font-size:12px;padding:5px 8px;border-radius:6px;margin-bottom:6px;}
+  .ref-formula{font-family:var(--font-mono,monospace);font-size:0.8rem;padding:5px 8px;border-radius:6px;margin-bottom:6px;}
   .formula-have{background:#e6f1fb;color:#0c447c;}
   .formula-get{background:#eaf3de;color:#27500a;}
-  .note-box{background:var(--color-background-secondary);border-radius:var(--border-radius-md);padding:9px 12px;font-size:13px;color:var(--color-text-secondary);line-height:1.6;margin-bottom:1.25rem;}
+  .note-box{background:var(--color-background-secondary);border-radius:var(--border-radius-md);padding:9px 12px;font-size:0.8667rem;color:var(--color-text-secondary);line-height:1.6;margin-bottom:1.25rem;}
   .note-box strong{color:var(--color-text-primary);font-weight:500;}
   @media(max-width:480px){.ref-grid{grid-template-columns:1fr;}}
 </style>

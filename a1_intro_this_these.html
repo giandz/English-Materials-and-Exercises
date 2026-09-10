@@ -15,20 +15,26 @@
       ? saved
       : ((window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches) ? 'dark' : 'light');
     document.documentElement.setAttribute('data-theme', theme);
+    // Same idea for the text size: apply it before house.css paints, so a
+    // person who chose 28px doesn't watch the page reflow from 14px on load.
+    var fs = parseFloat(localStorage.getItem('font-size-preference'));
+    if (fs >= 10 && fs <= 28){
+      document.documentElement.style.setProperty('--fs-base', fs + 'px');
+    }
   }catch(e){ /* localStorage/matchMedia unavailable — CSS media query still applies */ }
 })();
 </script>
 <link rel="stylesheet" href="house.css">
 <style>
 .vocab-section{margin-top:.25rem;}
-  .room-label{font-size:11px;font-weight:500;letter-spacing:.06em;text-transform:uppercase;color:var(--color-text-tertiary);margin-bottom:8px;margin-top:1.25rem;}
+  .room-label{font-size:0.7333rem;font-weight:500;letter-spacing:.06em;text-transform:uppercase;color:var(--color-text-tertiary);margin-bottom:8px;margin-top:1.25rem;}
   .vocab-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(130px,1fr));gap:8px 10px;margin-bottom:.25rem;}
   .vocab-chip{display:flex;flex-direction:row;align-items:center;gap:4px;padding:10px 8px;border:.5px solid var(--color-border-tertiary);border-radius:var(--border-radius-lg);background:var(--color-background-primary);text-align:center;}
-  .vc-emoji{font-size:26px;line-height:1;}
-  .vc-article{font-size:11px;font-weight:500;padding:1px 7px;border-radius:20px;margin-top:1px;}
+  .vc-emoji{font-size:1.7333rem;line-height:1;}
+  .vc-article{font-size:0.7333rem;font-weight:500;padding:1px 7px;border-radius:20px;margin-top:1px;}
   .art-a{background:#eaf3de;color:#27500a;}
   .art-an{background:#e6f1fb;color:#0c447c;}
-  .vc-word{font-size:13px;font-weight:500;color:var(--color-text-primary);}
+  .vc-word{font-size:0.8667rem;font-weight:500;color:var(--color-text-primary);}
   .voc{width:26px;}
 </style>
 </head>

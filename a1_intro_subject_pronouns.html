@@ -15,20 +15,26 @@
       ? saved
       : ((window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches) ? 'dark' : 'light');
     document.documentElement.setAttribute('data-theme', theme);
+    // Same idea for the text size: apply it before house.css paints, so a
+    // person who chose 28px doesn't watch the page reflow from 14px on load.
+    var fs = parseFloat(localStorage.getItem('font-size-preference'));
+    if (fs >= 10 && fs <= 28){
+      document.documentElement.style.setProperty('--fs-base', fs + 'px');
+    }
   }catch(e){ /* localStorage/matchMedia unavailable — CSS media query still applies */ }
 })();
 </script>
 <link rel="stylesheet" href="house.css">
 <style>
-.gf-label { font-size:11px; font-weight:500; letter-spacing:0.07em; text-transform:uppercase; color:var(--color-text-secondary); margin-bottom:6px; }
-  .gf-title { font-size:20px; font-weight:500; color:var(--color-text-primary); margin-bottom:4px; }
-  .gf-sub   { font-size:13px; color:var(--color-text-secondary); margin-bottom:1.5rem; }
+.gf-label { font-size:0.7333rem; font-weight:500; letter-spacing:0.07em; text-transform:uppercase; color:var(--color-text-secondary); margin-bottom:6px; }
+  .gf-title { font-size:1.3333rem; font-weight:500; color:var(--color-text-primary); margin-bottom:4px; }
+  .gf-sub   { font-size:0.8667rem; color:var(--color-text-secondary); margin-bottom:1.5rem; }
 
   .rule-strip { display:flex; flex-direction:column; gap:6px; margin-bottom:1.5rem; }
-  .rule-row { display:flex; align-items:flex-start; gap:8px; font-size:13px; color:var(--color-text-secondary); line-height:1.5; }
-  .rule-icon { flex-shrink:0; font-size:14px; margin-top:1px; color:var(--color-text-tertiary); }
+  .rule-row { display:flex; align-items:flex-start; gap:8px; font-size:0.8667rem; color:var(--color-text-secondary); line-height:1.5; }
+  .rule-icon { flex-shrink:0; font-size:0.9333rem; margin-top:1px; color:var(--color-text-tertiary); }
 
-  .section-divider { font-size:11px; font-weight:500; letter-spacing:0.06em; text-transform:uppercase; color:var(--color-text-tertiary); display:flex; align-items:center; gap:8px; margin:1.5rem 0 1rem; }
+  .section-divider { font-size:0.7333rem; font-weight:500; letter-spacing:0.06em; text-transform:uppercase; color:var(--color-text-tertiary); display:flex; align-items:center; gap:8px; margin:1.5rem 0 1rem; }
   .section-divider::before,.section-divider::after { content:''; flex:1; height:0.5px; background:var(--color-border-tertiary); }
 
   .pronoun-grid { display:grid; grid-template-columns:repeat(auto-fill,minmax(190px,1fr)); gap:10px; }
@@ -37,13 +43,13 @@
   .p-card-img { height:120px; background:var(--color-background-secondary); display:flex; align-items:center; justify-content:center; border-bottom:0.5px solid var(--color-border-tertiary); overflow:hidden; position:relative; }
   .p-card-img img { width:100%; height:100%; object-fit:contain; padding:8px; }
   .p-card-img .img-fallback { display:flex; flex-direction:column; align-items:center; gap:4px; }
-  .p-card-img .img-fallback i { font-size:28px; color:var(--color-text-tertiary); }
-  .p-card-img .img-fallback span { font-size:10px; color:var(--color-text-tertiary); font-family:var(--font-mono); }
+  .p-card-img .img-fallback i { font-size:1.8667rem; color:var(--color-text-tertiary); }
+  .p-card-img .img-fallback span { font-size:0.6667rem; color:var(--color-text-tertiary); font-family:var(--font-mono); }
 
   .p-card-body { padding:10px 12px 12px; }
-  .p-pronoun { font-size:22px; font-weight:500; margin-bottom:4px; }
-  .p-use { font-size:11px; font-weight:500; letter-spacing:0.05em; text-transform:uppercase; margin-bottom:6px; padding:2px 8px; border-radius:20px; display:inline-block; border:1px solid transparent; }
-  .p-example { font-size:13px; color:var(--color-text-secondary); line-height:1.5; }
+  .p-pronoun { font-size:1.4667rem; font-weight:500; margin-bottom:4px; }
+  .p-use { font-size:0.7333rem; font-weight:500; letter-spacing:0.05em; text-transform:uppercase; margin-bottom:6px; padding:2px 8px; border-radius:20px; display:inline-block; border:1px solid transparent; }
+  .p-example { font-size:0.8667rem; color:var(--color-text-secondary); line-height:1.5; }
   .p-example strong { font-weight:500; color:var(--color-text-primary); }
 
   .pu-i      { background:#e6f1fb; color:#0c447c; border-color:#85b7eb; }
@@ -62,11 +68,11 @@
   .ph-we     { color:#993556; }
   .ph-they   { color:#0f6e56; }
 
-  .summary-table { width:100%; border-collapse:collapse; font-size:13px; margin-top:0.5rem; }
-  .summary-table th { font-size:11px; font-weight:500; letter-spacing:0.05em; text-transform:uppercase; color:var(--color-text-secondary); text-align:left; padding:6px 10px; border-bottom:1px solid var(--color-border-tertiary); background:var(--color-background-secondary); }
+  .summary-table { width:100%; border-collapse:collapse; font-size:0.8667rem; margin-top:0.5rem; }
+  .summary-table th { font-size:0.7333rem; font-weight:500; letter-spacing:0.05em; text-transform:uppercase; color:var(--color-text-secondary); text-align:left; padding:6px 10px; border-bottom:1px solid var(--color-border-tertiary); background:var(--color-background-secondary); }
   .summary-table td { padding:7px 10px; border-bottom:0.5px solid var(--color-border-tertiary); color:var(--color-text-primary); vertical-align:middle; }
   .summary-table tr:last-child td { border-bottom:none; }
-  .summary-table .pron { font-size:16px; font-weight:500; }
+  .summary-table .pron { font-size:1.0667rem; font-weight:500; }
 </style>
 </head>
 <body class="exercise-page" id="page">
