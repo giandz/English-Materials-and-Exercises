@@ -6,6 +6,7 @@
      · HouseWordOrder — the tap/drag sentence-builder engine
      · HouseGapFill   — the Damerau-Levenshtein accuracy-bar gap fill
      · HouseGrammar   — the part-of-speech highlighting toggle
+     · HouseFontSize  — the 🔎 text-size slider
      · HouseComprehension — the before/after reading questions
 
    Load it once at the end of <body>, before the page's own script.
@@ -850,4 +851,145 @@
   }
 
   global.HouseComprehension = { build: build };
+})(window);
+
+
+/* ══════════════════════════════════════════════════════════════════════════
+   HOUSE FONT SIZE
+   A 🔎 button under the theme toggle that opens a slider running from 10px to
+   28px, captioned 🤏 (smaller) and 🖐️ (larger).
+
+   Every font-size in house.css is expressed in rem, and `html` takes its size
+   from --fs-base, so writing that one custom property rescales the whole page
+   proportionally — nothing here needs to know about individual components.
+
+   The markup is created at runtime rather than pasted into every lesson page,
+   so adding the control to a page costs nothing but loading house.js.
+   ══════════════════════════════════════════════════════════════════════════ */
+(function (global) {
+  'use strict';
+
+  var STORAGE_KEY = 'font-size-preference';
+
+  // Read the bounds and the default straight out of house.css, so --fs-base,
+  // --fs-min and --fs-max are the single source of truth and this file never
+  // has to be edited in step with the stylesheet.
+  function cssNum(name, fallback) {
+    try {
+      var v = parseFloat(getComputedStyle(document.documentElement)
+        .getPropertyValue(name));
+      return isNaN(v) ? fallback : v;
+    } catch (e) { return fallback; }
+  }
+
+  var MIN = cssNum('--fs-min', 10);
+  var MAX = cssNum('--fs-max', 28);
+  var DEFAULT = cssNum('--fs-default', 14);
+
+  function getStored() {
+    try {
+      var v = parseFloat(localStorage.getItem(STORAGE_KEY));
+      return (v >= MIN && v <= MAX) ? v : null;
+    } catch (e) { return null; }
+  }
+
+  function setStored(px) {
+    try { localStorage.setItem(STORAGE_KEY, String(px)); } catch (e) { /* private mode */ }
+  }
+
+  function clamp(px) {
+    return Math.min(MAX, Math.max(MIN, px));
+  }
+
+  function apply(px) {
+    document.documentElement.style.setProperty('--fs-base', px + 'px');
+  }
+
+  function build() {
+    if (document.getElementById('font-size-wrap')) return;
+
+    var current = getStored() || DEFAULT;
+    apply(current);
+
+    var wrap = document.createElement('div');
+    wrap.id = 'font-size-wrap';
+    wrap.innerHTML =
+      '<button id="font-size-toggle" aria-label="Change text size" ' +
+      'title="Change text size" aria-expanded="false">🔎</button>';
+
+    var panel = document.createElement('div');
+    panel.id = 'font-size-panel';
+    panel.innerHTML =
+      '<button class="fs-cap" id="fs-smaller" aria-label="Smaller text" title="Smaller">🤏</button>' +
+      '<input type="range" id="font-size-slider" min="' + MIN + '" max="' + MAX + '" step="1" ' +
+      'value="' + current + '" aria-label="Text size">' +
+      '<button class="fs-cap" id="fs-larger" aria-label="Larger text" title="Larger">🖐️</button>' +
+      '<span id="font-size-value">' + current + 'px</span>' +
+      '<button id="font-size-reset" title="Back to the default size">Reset</button>';
+
+    document.body.appendChild(wrap);
+    document.body.appendChild(panel);
+
+    var btn = document.getElementById('font-size-toggle');
+    var slider = document.getElementById('font-size-slider');
+    var label = document.getElementById('font-size-value');
+
+    function update(px, persist) {
+      px = clamp(px);
+      slider.value = px;
+      label.textContent = px + 'px';
+      apply(px);
+      if (persist !== false) setStored(px);
+    }
+
+    function open(state) {
+      panel.classList.toggle('open', state);
+      btn.setAttribute('aria-expanded', String(state));
+    }
+
+    btn.addEventListener('click', function (e) {
+      e.stopPropagation();
+      open(!panel.classList.contains('open'));
+    });
+
+    slider.addEventListener('input', function () { update(Number(slider.value)); });
+
+    // The captions aren't decoration — tapping them nudges by a step, which is
+    // far easier than dragging a small thumb on a phone.
+    document.getElementById('fs-smaller').addEventListener('click', function () {
+      update(Number(slider.value) - 1);
+    });
+    document.getElementById('fs-larger').addEventListener('click', function () {
+      update(Number(slider.value) + 1);
+    });
+    document.getElementById('font-size-reset').addEventListener('click', function () {
+      update(DEFAULT);
+    });
+
+    panel.addEventListener('click', function (e) { e.stopPropagation(); });
+    document.addEventListener('click', function () { open(false); });
+    document.addEventListener('keydown', function (e) {
+      if (e.key === 'Escape') open(false);
+    });
+  }
+
+  if (document.readyState === 'loading') {
+    document.addEventListener('DOMContentLoaded', build);
+  } else {
+    build();
+  }
+
+  global.HouseFontSize = {
+    set: function (px) {
+      px = clamp(px);
+      apply(px);
+      setStored(px);
+      var slider = document.getElementById('font-size-slider');
+      var label = document.getElementById('font-size-value');
+      if (slider) slider.value = px;
+      if (label) label.textContent = px + 'px';
+    },
+    get: function () { return getStored() || DEFAULT; },
+    MIN: MIN, MAX: MAX, DEFAULT: DEFAULT
+  };
 })(window);
