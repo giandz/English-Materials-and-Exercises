@@ -798,7 +798,21 @@ footer{ text-align:center; font-size:12px; color:var(--text-muted); margin-top:1
     .no-speech .chip[data-say]:not([data-audio]) { cursor: default; opacity: .75; }
 
     .speak-hint { text-align: center; font-size: 13px; color: var(--mid); margin: -1.5rem 0 1.75rem; }
-    .speak-hint small { display: block; font-size: 11px; color: var(--text-muted); margin-top: 2px; min-height: 1.2em; }
+    .speak-voice { display: flex; justify-content: center; align-items: center; gap: 6px; margin-top: 6px; font-size: 11.5px; color: var(--text-muted); }
+    .speak-voice select {
+      font: inherit; font-size: 12px; color: var(--text-primary); cursor: pointer;
+      -webkit-appearance: none; appearance: none;
+      padding: 4px 24px 4px 10px; max-width: min(300px, 70vw); text-overflow: ellipsis;
+      border: 1px solid var(--rule); border-radius: 999px;
+      background-color: var(--surface-1);
+      background-image: linear-gradient(45deg, transparent 50%, var(--mid) 50%), linear-gradient(135deg, var(--mid) 50%, transparent 50%);
+      background-position: calc(100% - 13px) 55%, calc(100% - 9px) 55%;
+      background-size: 4px 4px; background-repeat: no-repeat;
+    }
+    .speak-voice select:focus-visible { outline: 2px solid var(--text-accent); outline-offset: 2px; }
+    .speak-voice select:disabled { cursor: default; opacity: .7; }
+    html[data-theme="dark"] .speak-voice select { color-scheme: dark; }
+    html[data-theme="light"] .speak-voice select { color-scheme: light; }
     @media print { .grid { gap: 0.75rem; }}
     @media (max-width: 480px) {
       .grid { grid-template-columns: 1fr 1fr; gap: 0.75rem; }
@@ -817,7 +831,9 @@ footer{ text-align:center; font-size:12px; color:var(--text-muted); margin-top:1
     <div class="poster-rule"></div>
   </header>
 
-  <p class="speak-hint" id="speakHint">🔊 Tap a word to hear it.<small id="speakVoice"></small></p>
+  <div class="speak-hint" id="speakHint">🔊 Tap a word to hear it.
+    <label class="speak-voice">Voice <select id="speakVoice"><option>Device default</option></select></label>
+  </div>
 
   <div class="grid">
 
@@ -1908,8 +1924,12 @@ footer{ text-align:center; font-size:12px; color:var(--text-muted); margin-top:1
      <button type="button" class="chip" data-say="cab">cab</button>
      <button type="button" class="chip" data-say="cab" data-audio="audio/cab.mp3">cab</button>
 
-   The element gets .is-speaking while it plays. #speakVoice, if present,
-   shows which synthetic voice this device picked, for classroom testing.
+   The element gets .is-speaking while it plays.
+
+   Optional voice picker: put <select id="speakVoice"> on the page and it is
+   filled with this device's English voices, grouped by accent. The choice is
+   remembered per device and the last word is replayed in the new voice.
+   (Any other element with that id just shows the chosen voice as text.)
    ══════════════════════════════════════════════════════════════════════════ */
 (function (global) {
   'use strict';
@@ -1918,55 +1938,130 @@ footer{ text-align:center; font-size:12px; color:var(--text-muted); margin-top:1
   var LANG = 'en-US';
   var RATE = 0.85;
   var SAFETY_MS = 3000; // single words finish well inside this
+  var STORE_KEY = 'house-speak-voice';
 
-  // Good, widely shipped voices, tried in order before falling back to the default.
-  var PREFERRED = ['Google US English', 'Samantha', 'Microsoft Aria', 'Microsoft Jenny',
-                   'Microsoft Ava', 'Microsoft Zira', 'Alex'];
-  // macOS/iOS list novelty and Eloquence voices under en-US; never pick those for pronunciation models.
+  // Good, widely shipped voices, tried in order (on-device voices first, so an
+  // offline classroom doesn't silently pick a voice that needs the network).
+  var PREFERRED = ['Samantha', 'Microsoft Aria', 'Microsoft Jenny', 'Microsoft Ava',
+                   'Microsoft Zira', 'Google US English', 'Alex'];
+  // macOS/iOS list novelty and Eloquence voices under English; never offer those as pronunciation models.
   var NOVELTY = /^(albert|bad news|bahh|bells|boing|bubbles|cellos|good news|jester|organ|superstar|trinoids|whisper|wobble|zarvox|junior|ralph|fred|kathy|grandma|grandpa|eddy|flo|reed|rocko|sandy|shelley)(\s|\(|$)/i;
 
   var synth = ('speechSynthesis' in global && 'SpeechSynthesisUtterance' in global) ? global.speechSynthesis : null;
   var voice = null;
-  var current = null; // strong reference: Chrome can garbage-collect an in-flight utterance
+  var voices = [];      // English voices currently offered, indexed by <option value>
+  var current = null;   // strong reference: Chrome can garbage-collect an in-flight utterance
   var audio = null;
   var activeEl = null;
+  var lastEl = null;
 
   function norm(lang) { return (lang || '').replace('_', '-').toLowerCase(); }
+  function loadPref() { try { return localStorage.getItem(STORE_KEY); } catch (e) { return null; } }
+  function savePref(uri) { try { localStorage.setItem(STORE_KEY, uri); } catch (e) { /* private mode etc. */ } }
+
+  function langLabel(code) {
+    try {
+      if (global.Intl && Intl.DisplayNames) {
+        return new Intl.DisplayNames(['en'], { type: 'language' }).of(code.replace('_', '-'));
+      }
+    } catch (e) { /* malformed tag — fall through */ }
+    return code;
+  }
+
+  function autoPick(list) {
+    var target = norm(LANG);
+    var exact = list.filter(function (v) { return norm(v.lang) === target; });
+    var passes = [exact.filter(function (v) { return v.localService; }), exact];
+    for (var p = 0; p < passes.length; p++) {
+      for (var i = 0; i < PREFERRED.length; i++) {
+        for (var j = 0; j < passes[p].length; j++) {
+          if (passes[p][j].name.indexOf(PREFERRED[i]) === 0) return passes[p][j];
+        }
+      }
+    }
+    return exact.filter(function (v) { return v.default; })[0] || exact[0] || list[0] || null;
+  }
 
   function pickVoice() {
     if (!synth) return;
-    var all = synth.getVoices();
-    if (!all.length) return;
-    var target = norm(LANG);
-    var usable = all.filter(function (v) { return !NOVELTY.test(v.name); });
-    var exact = usable.filter(function (v) { return norm(v.lang) === target; });
+    var list = synth.getVoices().filter(function (v) {
+      return norm(v.lang).indexOf('en') === 0 && !NOVELTY.test(v.name);
+    });
+    var byUri = function (uri) { return list.filter(function (v) { return v.voiceURI === uri; })[0]; };
 
-    var chosen = null, i, j;
-    for (i = 0; i < PREFERRED.length && !chosen; i++) {
-      for (j = 0; j < exact.length; j++) {
-        if (exact[j].name.indexOf(PREFERRED[i]) === 0) { chosen = exact[j]; break; }
-      }
-    }
-    if (!chosen) chosen = exact.filter(function (v) { return v.default; })[0] || exact[0] || null;
-    if (!chosen) chosen = usable.filter(function (v) { return norm(v.lang).indexOf('en') === 0; })[0] || null;
-
-    voice = chosen;
-    showStatus();
+    // Chrome fires voiceschanged more than once; keep whatever is already in use.
+    voice = (voice && byUri(voice.voiceURI)) || byUri(loadPref()) || autoPick(list);
+    voices = list;
+    renderPicker();
   }
 
-  function showStatus() {
+  function renderPicker() {
     var el = document.getElementById('speakVoice');
     if (!el) return;
-    if (!synth) { el.textContent = 'This browser can’t read words aloud. Try Chrome, Edge or Safari.'; return; }
-    el.textContent = voice ? 'Voice: ' + voice.name + ' (' + voice.lang + ')' : 'Voice: device default';
+
+    if (el.tagName !== 'SELECT') {
+      el.textContent = !synth ? 'This browser can’t read words aloud. Try Chrome, Edge or Safari.'
+        : voice ? 'Voice: ' + voice.name + ' (' + voice.lang + ')' : 'Voice: device default';
+      return;
+    }
+
+    if (!synth) {
+      (el.closest('label') || el).textContent = 'This browser can’t read words aloud. Try Chrome, Edge or Safari.';
+      return;
+    }
+
+    el.innerHTML = '';
+    if (!voices.length) {
+      el.appendChild(new Option('Device default', ''));
+      el.disabled = true;
+      return;
+    }
+    el.disabled = false;
+
+    // Group by accent; the page's own accent first, the rest alphabetically.
+    var groups = {};
+    voices.forEach(function (v, i) {
+      var key = norm(v.lang);
+      (groups[key] = groups[key] || []).push(i);
+    });
+    var keys = Object.keys(groups).sort(function (a, b) {
+      if (a === norm(LANG)) return -1;
+      if (b === norm(LANG)) return 1;
+      return langLabel(a).localeCompare(langLabel(b));
+    });
+
+    keys.forEach(function (key) {
+      var og = document.createElement('optgroup');
+      og.label = langLabel(key);
+      groups[key]
+        .sort(function (a, b) { return voices[a].name.localeCompare(voices[b].name); })
+        .forEach(function (i) {
+          var v = voices[i];
+          var opt = new Option(v.name + (v.localService ? '' : ' · online'), String(i));
+          if (v === voice) opt.selected = true;
+          og.appendChild(opt);
+        });
+      el.appendChild(og);
+    });
+    el.title = voice ? voice.name + ' (' + voice.lang + ')' : '';
+  }
+
+  function onPickerChange(e) {
+    var v = voices[Number(e.target.value)];
+    if (!v) return;
+    voice = v;
+    savePref(v.voiceURI);
+    e.target.title = v.name + ' (' + v.lang + ')';
+    // Replay the last word (or the first on the page) so the new voice can be judged straight away.
+    var sample = lastEl || document.querySelector('[data-say]');
+    if (sample) speak(sample.getAttribute('data-say'), lastEl);
   }
 
   function setActive(el) {
     if (activeEl) activeEl.classList.remove('is-speaking');
     activeEl = el || null;
     if (activeEl) {
-      // Re-adding the class on a repeat tap restarts the CSS animation.
-      void activeEl.offsetWidth;
+      void activeEl.offsetWidth; // restart the CSS animation on a repeat tap
       activeEl.classList.add('is-speaking');
     }
   }
@@ -1986,7 +2081,8 @@ footer{ text-align:center; font-size:12px; color:var(--text-muted); margin-top:1
     synth.resume(); // Chrome can leave the queue paused after tab switches
 
     var u = new SpeechSynthesisUtterance(text);
-    u.lang = LANG;
+    // lang must follow the voice: some engines (notably on Android) honour lang over voice.
+    u.lang = voice ? voice.lang.replace('_', '-') : LANG;
     u.rate = RATE;
     if (voice) u.voice = voice;
 
@@ -2000,12 +2096,13 @@ footer{ text-align:center; font-size:12px; color:var(--text-muted); margin-top:1
 
     current = u;
     setActive(el);
-    synth.speak(u); // must stay synchronous inside the tap handler for iOS
+    synth.speak(u); // must stay synchronous inside the user's gesture for iOS
     setTimeout(done, SAFETY_MS);
     return true;
   }
 
   function play(el) {
+    lastEl = el;
     var text = el.getAttribute('data-say');
     var src = el.getAttribute('data-audio');
     if (!src) { speak(text, el); return; }
@@ -2014,8 +2111,8 @@ footer{ text-align:center; font-size:12px; color:var(--text-muted); margin-top:1
     var a = audio = new Audio(src);
     setActive(el);
     a.onended = function () { if (audio === a) { audio = null; setActive(null); } };
-    var p = a.play();
     var fallback = function () { if (audio === a) { audio = null; speak(text, el); } };
+    var p = a.play();
     if (p && p.catch) p.catch(fallback);
     a.onerror = fallback;
   }
@@ -2025,15 +2122,20 @@ footer{ text-align:center; font-size:12px; color:var(--text-muted); margin-top:1
     if (el) play(el);
   });
 
-  if (synth) {
-    pickVoice();
-    if (synth.addEventListener) synth.addEventListener('voiceschanged', pickVoice);
-    else synth.onvoiceschanged = pickVoice;
-  } else {
-    document.documentElement.classList.add('no-speech');
+  function init() {
+    var picker = document.getElementById('speakVoice');
+    if (picker && picker.tagName === 'SELECT') picker.addEventListener('change', onPickerChange);
+    if (synth) {
+      pickVoice();
+      if (synth.addEventListener) synth.addEventListener('voiceschanged', pickVoice);
+      else synth.onvoiceschanged = pickVoice;
+    } else {
+      document.documentElement.classList.add('no-speech');
+      renderPicker();
+    }
   }
-  if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', showStatus);
-  else showStatus();
+  if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', init);
+  else init();
 
   global.HouseSpeak = { speak: speak, play: play, stop: stopAll, pickVoice: pickVoice };
 })(window);
