@@ -41,9 +41,6 @@
 }}
     .score-track { flex: 1; height: 8px; border-radius: 4px; background: var(--surface-2); overflow: hidden; border: 1px solid var(--border); }
     .score-fill { height: 100%; background: var(--yes-color); width: 0%; transition: width .3s; }
-
-    .match-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px 16px; }
-    .match-col { display: flex; flex-direction: column; gap: 8px; }
     .match-chip {
       background: var(--surface-1); border: 1.5px solid var(--border); border-radius: 12px;
       padding: 12px 14px; font-size: 0.92rem; cursor: pointer; user-select: none;
@@ -63,7 +60,6 @@
       background: var(--text-accent); color: #fff; border: none; border-radius: 10px;
       font-size: 0.88rem; font-weight: 600; cursor: pointer;
     }
-    .win-msg { text-align: center; color: var(--yes-color); font-weight: 700; margin-top: 14px; display: none; }
     footer.credits { text-align: center; font-size: 0.75rem; color: var(--text-muted); margin-top: 40px; }
 </style>
 </head>
@@ -111,84 +107,15 @@ const pairs = [
   { id: 10, verb: "meet", verbEmoji: "⭐", noun: "a celebrity" },
 ];
 
-let selectedVerb = null, selectedNoun = null, matchedCount = 0;
-
-function shuffle(arr) {
-  const a = [...arr];
-  for (let i = a.length - 1; i > 0; i--) {
-    const j = Math.floor(Math.random() * (i + 1));
-    [a[i], a[j]] = [a[j], a[i]];
+HouseMatching.build({
+  left: 'verbCol', right: 'nounCol',
+  pairs: pairs, leftKey: 'verb', rightKey: 'noun', leftEmojiKey: 'verbEmoji',
+  resetBtn: 'resetBtn',
+  onScore: function (done, total) {
+    document.getElementById('scoreLabel').textContent = done + ' / ' + total + ' matched';
+    document.getElementById('scoreFill').style.width = (done / total * 100) + '%';
   }
-  return a;
-}
-
-function render() {
-  matchedCount = 0;
-  selectedVerb = null; selectedNoun = null;
-  document.getElementById('winMsg').style.display = 'none';
-
-  const verbCol = document.getElementById('verbCol');
-  const nounCol = document.getElementById('nounCol');
-  verbCol.innerHTML = ''; nounCol.innerHTML = '';
-
-  pairs.forEach(p => {
-    const v = document.createElement('div');
-    v.className = 'match-chip'; v.dataset.id = p.id; v.dataset.side = 'verb';
-    v.innerHTML = `<span class="chip-emoji">${p.verbEmoji}</span><span>${p.verb}</span>`;
-    v.addEventListener('click', () => selectChip(v, 'verb'));
-    verbCol.appendChild(v);
-  });
-
-  shuffle(pairs).forEach(p => {
-    const n = document.createElement('div');
-    n.className = 'match-chip'; n.dataset.id = p.id; n.dataset.side = 'noun';
-    n.innerHTML = `<span>${p.noun}</span>`;
-    n.addEventListener('click', () => selectChip(n, 'noun'));
-    nounCol.appendChild(n);
-  });
-
-  updateScore();
-}
-
-function selectChip(el, side) {
-  if (el.classList.contains('matched')) return;
-  if (side === 'verb') {
-    if (selectedVerb) selectedVerb.classList.remove('selected');
-    selectedVerb = el; el.classList.add('selected');
-  } else {
-    if (selectedNoun) selectedNoun.classList.remove('selected');
-    selectedNoun = el; el.classList.add('selected');
-  }
-  if (selectedVerb && selectedNoun) checkMatch();
-}
-
-function checkMatch() {
-  const v = selectedVerb, n = selectedNoun;
-  if (v.dataset.id === n.dataset.id) {
-    v.classList.remove('selected'); n.classList.remove('selected');
-    v.classList.add('matched'); n.classList.add('matched');
-    matchedCount++;
-    updateScore();
-    if (matchedCount === pairs.length) {
-      document.getElementById('winMsg').style.display = 'block';
-    }
-  } else {
-    v.classList.add('wrong'); n.classList.add('wrong');
-    setTimeout(() => {
-      v.classList.remove('selected', 'wrong');
-      n.classList.remove('selected', 'wrong');
-    }, 400);
-  }
-  selectedVerb = null; selectedNoun = null;
-}
-
-function updateScore() {
-  document.getElementById('scoreLabel').textContent = `${matchedCount} / ${pairs.length} matched`;
-  document.getElementById('scoreFill').style.width = `${(matchedCount / pairs.length) * 100}%`;
-}
-
-document.getElementById('resetBtn').addEventListener('click', render);
-render();
+});
 </script>
 </body>
 </html>

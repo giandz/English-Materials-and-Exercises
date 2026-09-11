@@ -73,6 +73,17 @@
 </div>
 <script src="house.js"></script>
 <script>
+function buildKey(){
+  const el=document.getElementById('answer-key');
+  pairs.forEach((p,i)=>{
+    const row=document.createElement('div');
+    row.style.cssText='font-size:0.8667rem;display:flex;gap:8px;padding:4px 0;border-bottom:0.5px solid var(--color-border-tertiary);';
+    row.innerHTML='<span style="color:var(--color-text-secondary);min-width:20px;">'+(i+1)+'.</span><span style="font-weight:500;min-width:110px;color:#185fa5;">'+p.noun+'</span><span style="color:var(--color-text-secondary);">'+p.def+'</span>';
+    el.appendChild(row);
+  });
+  const last=el.lastChild;if(last)last.style.borderBottom='none';
+}
+
 const pairs = [
   { noun:"bus stop",    def:"where you wait for the bus" },
   { noun:"living room", def:"the main room in a house" },
@@ -88,98 +99,19 @@ const pairs = [
   { noun:"dinner table",def:"the table where you eat dinner" },
 ];
 
-let selected={noun:null,def:null};
-let matched=new Set();
-let wrongTimeout=null;
-
-function shuffle(a){const b=[...a];for(let i=b.length-1;i>0;i--){const j=Math.floor(Math.random()*(i+1));[b[i],b[j]]=[b[j],b[i]];}return b;}
-
-function setFeedback(msg,color){
-  const el=document.getElementById('feedback');
-  el.textContent=msg;
-  el.style.color=color||'var(--color-text-secondary)';
-}
-
-function updateScore(){
-  document.getElementById('score-label').textContent=matched.size+' / '+pairs.length+' matched';
-}
-
-function selectCard(type,value,el){
-  if(wrongTimeout||el.classList.contains('done'))return;
-  const prev=selected[type];
-  if(prev!==null){
-    const prevEl=document.querySelector(`[data-type="${type}"][data-value="${CSS.escape(prev)}"]`);
-    if(prevEl&&!prevEl.classList.contains('done'))prevEl.classList.remove('selected');
+const game = HouseMatching.build({
+  left: 'nouns-col', right: 'defs-col',
+  pairs: pairs, leftKey: 'noun', rightKey: 'def',
+  feedbackEl: 'feedback',
+  onScore: function (done, total) {
+    document.getElementById('score-label').textContent = done + ' / ' + total + ' matched';
   }
-  if(selected[type]===value){selected[type]=null;el.classList.remove('selected');return;}
-  selected[type]=value;
-  el.classList.add('selected');
-  if(selected.noun!==null&&selected.def!==null)checkMatch();
-}
+});
 
-function checkMatch(){
-  const n=selected.noun,d=selected.def;
-  const key=n+'|||'+d;
-  const valid=pairs.find(p=>p.noun===n&&p.def===d);
-  const nEl=document.querySelector(`[data-type="noun"][data-value="${CSS.escape(n)}"]`);
-  const dEl=document.querySelector(`[data-type="def"][data-value="${CSS.escape(d)}"]`);
+// The Restart button on this page is wired with an inline onclick.
+window.resetGame = game.render;
 
-  if(valid&&!matched.has(key)){
-    matched.add(key);
-    if(nEl){nEl.classList.remove('selected');nEl.classList.add('done');}
-    if(dEl){dEl.classList.remove('selected');dEl.classList.add('done');}
-    updateScore();
-    setFeedback('Correct! "'+n+'" = '+d,'#3b6d11');
-    if(matched.size===pairs.length)setTimeout(()=>setFeedback('All matched! Well done!','#185fa5'),400);
-    selected={noun:null,def:null};
-  } else {
-    if(nEl){nEl.classList.remove('selected');nEl.classList.add('wrong');}
-    if(dEl){dEl.classList.remove('selected');dEl.classList.add('wrong');}
-    setFeedback('Try again!','#a32d2d');
-    wrongTimeout=setTimeout(()=>{
-      if(nEl&&!nEl.classList.contains('done'))nEl.classList.remove('wrong');
-      if(dEl&&!dEl.classList.contains('done'))dEl.classList.remove('wrong');
-      wrongTimeout=null;setFeedback('');
-    },700);
-    selected={noun:null,def:null};
-  }
-}
-
-function buildGame(){
-  const nc=document.getElementById('nouns-col');
-  const dc=document.getElementById('defs-col');
-  nc.innerHTML='';dc.innerHTML='';
-  shuffle(pairs).forEach(p=>{
-    const d=document.createElement('div');
-    d.className='card';d.dataset.type='noun';d.dataset.value=p.noun;
-    d.textContent=p.noun;d.onclick=()=>selectCard('noun',p.noun,d);
-    nc.appendChild(d);
-  });
-  shuffle(pairs).forEach(p=>{
-    const d=document.createElement('div');
-    d.className='card';d.dataset.type='def';d.dataset.value=p.def;
-    d.textContent=p.def;d.onclick=()=>selectCard('def',p.def,d);
-    dc.appendChild(d);
-  });
-}
-
-function buildKey(){
-  const el=document.getElementById('answer-key');
-  pairs.forEach((p,i)=>{
-    const row=document.createElement('div');
-    row.style.cssText='font-size:0.8667rem;display:flex;gap:8px;padding:4px 0;border-bottom:0.5px solid var(--color-border-tertiary);';
-    row.innerHTML='<span style="color:var(--color-text-secondary);min-width:20px;">'+(i+1)+'.</span><span style="font-weight:500;min-width:110px;color:#185fa5;">'+p.noun+'</span><span style="color:var(--color-text-secondary);">'+p.def+'</span>';
-    el.appendChild(row);
-  });
-  const last=el.lastChild;if(last)last.style.borderBottom='none';
-}
-
-function resetGame(){
-  selected={noun:null,def:null};matched=new Set();wrongTimeout=null;
-  updateScore();setFeedback('');buildGame();
-}
-
-buildGame();buildKey();
+buildKey();
 </script>
 </body>
 </html>

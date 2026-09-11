@@ -47,9 +47,6 @@
 }}
     .score-track { flex: 1; height: 8px; border-radius: 4px; background: var(--surface-2); overflow: hidden; border: 1px solid var(--border); }
     .score-fill { height: 100%; background: var(--yes-color); width: 0%; transition: width .3s; }
-
-    .match-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px 16px; }
-    .match-col { display: flex; flex-direction: column; gap: 8px; }
     .match-chip {
       background: var(--surface-1); border: 1.5px solid var(--border); border-radius: 12px;
       padding: 12px 14px; font-size: 0.92rem; cursor: pointer; user-select: none;
@@ -76,7 +73,6 @@
       background: var(--text-accent); color: #fff; border: none; border-radius: 10px;
       font-size: 0.88rem; font-weight: 600; cursor: pointer;
     }
-    .win-msg { text-align: center; color: var(--yes-color); font-weight: 700; margin-top: 14px; display: none; }
     footer.credits { text-align: center; font-size: 0.75rem; color: var(--text-muted); margin-top: 40px; }
 </style>
 </head>
@@ -129,84 +125,16 @@ const pairs = [
   { id: 10, word: "litter",     emoji: "🗑️", cat: "noncount" },
 ];
 
-let selectedWord = null, selectedPic = null, matchedCount = 0;
-
-function shuffle(arr) {
-  const a = [...arr];
-  for (let i = a.length - 1; i > 0; i--) {
-    const j = Math.floor(Math.random() * (i + 1));
-    [a[i], a[j]] = [a[j], a[i]];
+// The left column shows the picture, the right column the word.
+HouseMatching.build({
+  left: 'picCol', right: 'wordCol',
+  pairs: pairs, leftKey: 'emoji', rightKey: 'word',
+  resetBtn: 'resetBtn',
+  onScore: function (done, total) {
+    document.getElementById('scoreLabel').textContent = done + ' / ' + total + ' matched';
+    document.getElementById('scoreFill').style.width = (done / total * 100) + '%';
   }
-  return a;
-}
-
-function render() {
-  matchedCount = 0;
-  selectedWord = null; selectedPic = null;
-  document.getElementById('winMsg').style.display = 'none';
-
-  const wordCol = document.getElementById('wordCol');
-  const picCol = document.getElementById('picCol');
-  wordCol.innerHTML = ''; picCol.innerHTML = '';
-
-  shuffle(pairs).forEach(p => {
-    const w = document.createElement('div');
-    w.className = 'match-chip'; w.dataset.id = p.id; w.dataset.side = 'word';
-    w.innerHTML = `<span>${p.word}</span>`;
-    w.addEventListener('click', () => selectChip(w, 'word'));
-    wordCol.appendChild(w);
-  });
-
-  shuffle(pairs).forEach(p => {
-    const c = document.createElement('div');
-    c.className = 'match-chip'; c.dataset.id = p.id; c.dataset.side = 'pic';
-    c.innerHTML = `<span class="chip-emoji">${p.emoji}</span><span class="cat-pill ${p.cat}">${p.cat}</span>`;
-    c.addEventListener('click', () => selectChip(c, 'pic'));
-    picCol.appendChild(c);
-  });
-
-  updateScore();
-}
-
-function selectChip(el, side) {
-  if (el.classList.contains('matched')) return;
-  if (side === 'word') {
-    if (selectedWord) selectedWord.classList.remove('selected');
-    selectedWord = el; el.classList.add('selected');
-  } else {
-    if (selectedPic) selectedPic.classList.remove('selected');
-    selectedPic = el; el.classList.add('selected');
-  }
-  if (selectedWord && selectedPic) checkMatch();
-}
-
-function checkMatch() {
-  const w = selectedWord, c = selectedPic;
-  if (w.dataset.id === c.dataset.id) {
-    w.classList.remove('selected'); c.classList.remove('selected');
-    w.classList.add('matched'); c.classList.add('matched');
-    matchedCount++;
-    updateScore();
-    if (matchedCount === pairs.length) {
-      document.getElementById('winMsg').style.display = 'block';
-    }
-  } else {
-    w.classList.add('wrong'); c.classList.add('wrong');
-    setTimeout(() => {
-      w.classList.remove('selected', 'wrong');
-      c.classList.remove('selected', 'wrong');
-    }, 400);
-  }
-  selectedWord = null; selectedPic = null;
-}
-
-function updateScore() {
-  document.getElementById('scoreLabel').textContent = `${matchedCount} / ${pairs.length} matched`;
-  document.getElementById('scoreFill').style.width = `${(matchedCount / pairs.length) * 100}%`;
-}
-
-document.getElementById('resetBtn').addEventListener('click', render);
-render();
+});
 </script>
 </body>
 </html>

@@ -26,19 +26,6 @@
 </script>
 <link rel="stylesheet" href="house.css">
 <style>
-/* Page-specific design tokens — this lesson's own palette, not
-   house tokens. house.css owns everything else. */
-:root{
-  --sel-bg: #e6f1fb;
-  --sel-border: #185fa5;
-}
-@media (prefers-color-scheme: dark){
-:root{
-  --sel-bg: #16283a;
-}
-}
-
-
 h1{ font-size:1.3rem; font-weight:600; letter-spacing:-0.01em; margin:0 0 4px; }
   .reset-btn{
     font-family:inherit;
@@ -52,77 +39,14 @@ h1{ font-size:1.3rem; font-weight:600; letter-spacing:-0.01em; margin:0 0 4px; }
     cursor:pointer;
   }
   .reset-btn:hover{ border-color:var(--text-accent); color:var(--text-accent); }
-
-  .match-grid{
-    display:grid;
-    grid-template-columns:1fr 1fr;
-    gap:10px 14px;
-    margin-bottom:1.5rem;
-  }
   @media (max-width:480px){
     .match-grid{ gap:8px 8px; }}
-
-  .match-col-label{
-    font-size:0.7333rem;
-    font-weight:700;
-    text-transform:uppercase;
-    letter-spacing:.04em;
-    color:var(--text-muted);
-    margin-bottom:6px;
-  }
-
-  .match-card{
-    display:flex;
-    align-items:center;
-    gap:9px;
-    border:1.5px solid var(--border);
-    border-radius:12px;
-    padding:10px 12px;
-    background:var(--surface-2);
-    cursor:pointer;
-    font-size:0.9rem;
-    font-weight:500;
-    line-height:1.35;
-    transition:border-color .12s, background .12s, transform .08s;
-  }
-  .match-card:active{ transform:scale(0.98); }
-  .match-card .emoji{ font-size:1.3333rem; flex-shrink:0; }
-
-  .match-card.selected{
-    border-color:var(--sel-border);
-    background:var(--sel-bg);
-  }
-  .match-card.matched{
-    border-color:var(--good);
-    background:var(--good-bg);
-    color:var(--good);
-    cursor:default;
-  }
-  .match-card.matched .emoji{ opacity:0.9; }
-  .match-card.wrong{
-    border-color:var(--bad);
-    background:var(--bad-bg);
-    animation:shake .3s;
-  }
 
   @keyframes shake{
     0%,100%{ transform:translateX(0); }
     25%{ transform:translateX(-4px); }
     75%{ transform:translateX(4px); }
   }
-
-  .win-msg{
-    text-align:center;
-    font-size:0.9333rem;
-    font-weight:600;
-    color:var(--good);
-    padding:10px;
-    border-radius:var(--radius);
-    background:var(--good-bg);
-    margin-bottom:1.25rem;
-    display:none;
-  }
-  .win-msg.show{ display:block; }
 
   footer{ text-align:center; font-size:0.8rem; color:var(--text-muted); margin-top:2rem; }
 </style>
@@ -169,7 +93,7 @@ h1{ font-size:1.3rem; font-weight:600; letter-spacing:-0.01em; margin:0 0 4px; }
 <script src="house.js"></script>
 <script>
 const PAIRS = [
-    { id: "xmas",  left: "Christmas",   leftEmoji: "🎄", right: "Decorate a tree", 			  rightEmoji: "🌳" },
+    { id: "xmas",  left: "Christmas",   leftEmoji: "🎄", right: "Decorate a tree", 	          rightEmoji: "🌳" },
     { id: "ny",    left: "New Year",    leftEmoji: "🎆", right: "Watch the fireworks",        rightEmoji: "🎇" },
     { id: "hall",  left: "Halloween",   leftEmoji: "🎃", right: "Dress up in a costume",      rightEmoji: "👻" },
     { id: "bday",  left: "Birthday",    leftEmoji: "🎂", right: "Blow out the candles",       rightEmoji: "🕯️" },
@@ -179,107 +103,12 @@ const PAIRS = [
     { id: "grad",  left: "Graduation",  leftEmoji: "🎓", right: "Throw your cap in the air",  rightEmoji: "🧢" }
   ];
 
-  const leftCol = document.getElementById('leftCol');
-  const rightCol = document.getElementById('rightCol');
-  const scoreEl = document.getElementById('score');
-  const totalEl = document.getElementById('total');
-  const winMsg = document.getElementById('winMsg');
-  const resetBtn = document.getElementById('resetBtn');
-
-  totalEl.textContent = PAIRS.length;
-
-  let matchedCount = 0;
-  let selectedLeft = null;
-  let selectedRight = null;
-
-  function shuffleArr(arr) {
-    const a = [...arr];
-    for (let i = a.length - 1; i > 0; i--) {
-      const j = Math.floor(Math.random() * (i + 1));
-      [a[i], a[j]] = [a[j], a[i]];
-    }
-    return a;
-  }
-
-  function render() {
-    leftCol.innerHTML = '';
-    rightCol.innerHTML = '';
-    matchedCount = 0;
-    selectedLeft = null;
-    selectedRight = null;
-    scoreEl.textContent = 0;
-    winMsg.classList.remove('show');
-
-    const leftOrder = shuffleArr(PAIRS);
-    const rightOrder = shuffleArr(PAIRS);
-
-    leftOrder.forEach(pair => {
-      const card = document.createElement('div');
-      card.className = 'match-card';
-      card.dataset.id = pair.id;
-      card.dataset.side = 'left';
-      card.innerHTML = `<span class="emoji">${pair.leftEmoji}</span><span>${pair.left}</span>`;
-      card.addEventListener('click', () => onCardClick(card));
-      leftCol.appendChild(card);
-    });
-
-    rightOrder.forEach(pair => {
-      const card = document.createElement('div');
-      card.className = 'match-card';
-      card.dataset.id = pair.id;
-      card.dataset.side = 'right';
-      card.innerHTML = `<span class="emoji">${pair.rightEmoji}</span><span>${pair.right}</span>`;
-      card.addEventListener('click', () => onCardClick(card));
-      rightCol.appendChild(card);
-    });
-  }
-
-  function onCardClick(card) {
-    if (card.classList.contains('matched')) return;
-
-    if (card.dataset.side === 'left') {
-      if (selectedLeft) selectedLeft.classList.remove('selected');
-      selectedLeft = card;
-      card.classList.add('selected');
-    } else {
-      if (selectedRight) selectedRight.classList.remove('selected');
-      selectedRight = card;
-      card.classList.add('selected');
-    }
-
-    if (selectedLeft && selectedRight) {
-      const isMatch = selectedLeft.dataset.id === selectedRight.dataset.id;
-
-      if (isMatch) {
-        selectedLeft.classList.remove('selected');
-        selectedRight.classList.remove('selected');
-        selectedLeft.classList.add('matched');
-        selectedRight.classList.add('matched');
-        matchedCount++;
-        scoreEl.textContent = matchedCount;
-        selectedLeft = null;
-        selectedRight = null;
-        if (matchedCount === PAIRS.length) {
-          winMsg.classList.add('show');
-        }
-      } else {
-        const wrongLeft = selectedLeft;
-        const wrongRight = selectedRight;
-        wrongLeft.classList.add('wrong');
-        wrongRight.classList.add('wrong');
-        setTimeout(() => {
-          wrongLeft.classList.remove('selected', 'wrong');
-          wrongRight.classList.remove('selected', 'wrong');
-        }, 400);
-        selectedLeft = null;
-        selectedRight = null;
-      }
-    }
-  }
-
-  resetBtn.addEventListener('click', render);
-
-  render();
+HouseMatching.build({
+  left: 'leftCol', right: 'rightCol',
+  pairs: PAIRS,
+  scoreEl: 'score', totalEl: 'total',
+  winEl: 'winMsg', resetBtn: 'resetBtn'
+});
 </script>
 </body>
 </html>

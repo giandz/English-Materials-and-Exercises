@@ -8,6 +8,7 @@
      · HouseGrammar   — the part-of-speech highlighting toggle
      · HouseFontSize  — the 🔎 text-size slider
      · HouseRandomGen — the 🎲 freer-practice prompt generator
+     · HouseMatching  — two-column matching with connector lines
      · HouseComprehension — the before/after reading questions
 
    Load it once at the end of <body>, before the page's own script.
@@ -1094,4 +1095,239 @@
   }
 
   global.HouseRandomGen = { build: build, pickFrom: pickFrom };
+})(window);
+
+
+/* ══════════════════════════════════════════════════════════════════════════
+   HOUSE MATCHING
+   Two-column tap-to-match. Tap an item on the left, then its partner on the
+   right. A correct pair locks in place and a connector line is drawn across
+   the gutter between the columns — from the middle of the left item's right
+   edge to the middle of the right item's left edge, with a circle cap at each
+   end. A wrong pair flashes and clears.
+
+   Usage:
+     HouseMatching.build({
+       left:  'leftCol',           // element id of the left column
+       right: 'rightCol',          // element id of the right column
+       pairs: PAIRS,               // [{id, left, right, leftEmoji, rightEmoji}]
+       scoreEl: 'score', totalEl: 'total',
+       resetBtn: 'resetBtn', winEl: 'winMsg', feedbackEl: 'feedback'
+     });
+
+   Pages with a progress bar rather than a plain counter pass `onScore`:
+     HouseMatching.build({ …, onScore: function (done, total) { … } });
+
+   Pages that name their pair fields differently can say so:
+     HouseMatching.build({ left:'nouns-col', right:'defs-col', pairs: pairs,
+                           leftKey:'noun', rightKey:'def' });
+
+   The lines are laid over the columns' common ancestor and recomputed whenever
+   anything resizes — which matters here, because the 🔎 text-size slider
+   reflows the cards underneath them.
+   ══════════════════════════════════════════════════════════════════════════ */
+(function (global) {
+  'use strict';
+
+  var SVG_NS = 'http://www.w3.org/2000/svg';
+
+  function el(id) {
+    return typeof id === 'string' ? document.getElementById(id) : id;
+  }
+
+  function shuffle(arr) {
+    var a = arr.slice();
+    for (var i = a.length - 1; i > 0; i--) {
+      var j = Math.floor(Math.random() * (i + 1));
+      var t = a[i]; a[i] = a[j]; a[j] = t;
+    }
+    return a;
+  }
+
+  function commonAncestor(a, b) {
+    var node = a;
+    while (node && !node.contains(b)) node = node.parentElement;
+    return node || a.parentElement;
+  }
+
+  function build(opts) {
+    var leftEl = el(opts.left);
+    var rightEl = el(opts.right);
+    if (!leftEl || !rightEl) return;
+
+    var pairs = opts.pairs || [];
+    var leftKey = opts.leftKey || 'left';
+    var rightKey = opts.rightKey || 'right';
+    var leftEmojiKey = opts.leftEmojiKey || 'leftEmoji';
+    var rightEmojiKey = opts.rightEmojiKey || 'rightEmoji';
+    var cardClass = opts.cardClass || 'match-card';
+
+    var scoreEl = el(opts.scoreEl);
+    var totalEl = el(opts.totalEl);
+    var winEl = el(opts.winEl);
+    var feedbackEl = el(opts.feedbackEl);
+    var resetBtn = el(opts.resetBtn);
+
+    // Pairs may not carry an id of their own; fall back to the index.
+    pairs = pairs.map(function (p, i) {
+      return {
+        id: p.id != null ? String(p.id) : 'p' + i,
+        left: p[leftKey], right: p[rightKey],
+        leftEmoji: p[leftEmojiKey] || '', rightEmoji: p[rightEmojiKey] || ''
+      };
+    });
+
+    if (totalEl) totalEl.textContent = pairs.length;
+
+    // ── connector layer ──────────────────────────────────────────────────
+    var stage = commonAncestor(leftEl, rightEl);
+    stage.classList.add('match-stage');
+    // Several pages set their column gap inline, which would beat a class, so
+    // widen the gutter here — the connector needs room to read as a line.
+    stage.style.columnGap = 'var(--match-gap)';
+
+    var svg = stage.querySelector(':scope > .match-lines');
+    if (!svg) {
+      svg = document.createElementNS(SVG_NS, 'svg');
+      svg.setAttribute('class', 'match-lines');
+      svg.setAttribute('aria-hidden', 'true');
+      stage.appendChild(svg);
+    }
+
+    var links = [];   // [{ id, a: leftCard, b: rightCard }]
+
+    function drawLinks() {
+      while (svg.firstChild) svg.removeChild(svg.firstChild);
+      var base = stage.getBoundingClientRect();
+      svg.setAttribute('viewBox', '0 0 ' + base.width + ' ' + base.height);
+      svg.setAttribute('width', base.width);
+      svg.setAttribute('height', base.height);
+
+      links.forEach(function (link) {
+        if (!link.a.isConnected || !link.b.isConnected) return;
+        var ra = link.a.getBoundingClientRect();
+        var rb = link.b.getBoundingClientRect();
+        // Middle of the left card's right edge → middle of the right card's left edge.
+        var x1 = ra.right - base.left, y1 = ra.top - base.top + ra.height / 2;
+        var x2 = rb.left - base.left, y2 = rb.top - base.top + rb.height / 2;
+
+        var line = document.createElementNS(SVG_NS, 'line');
+        line.setAttribute('x1', x1); line.setAttribute('y1', y1);
+        line.setAttribute('x2', x2); line.setAttribute('y2', y2);
+        line.setAttribute('class', 'match-line');
+        svg.appendChild(line);
+
+        [[x1, y1], [x2, y2]].forEach(function (pt) {
+          var dot = document.createElementNS(SVG_NS, 'circle');
+          dot.setAttribute('cx', pt[0]); dot.setAttribute('cy', pt[1]);
+          dot.setAttribute('r', 4);
+          dot.setAttribute('class', 'match-dot');
+          svg.appendChild(dot);
+        });
+      });
+    }
+
+    // Cards reflow when the window resizes and when the text-size slider moves,
+    // so the lines have to be recomputed rather than drawn once.
+    if (global.ResizeObserver) {
+      var ro = new ResizeObserver(function () { drawLinks(); });
+      ro.observe(stage);
+      ro.observe(leftEl);
+      ro.observe(rightEl);
+    }
+    global.addEventListener('resize', drawLinks);
+
+    // ── game state ───────────────────────────────────────────────────────
+    var matched = 0, pickedLeft = null, pickedRight = null;
+
+    function cardHtml(text, emoji) {
+      return (emoji ? '<span class="emoji">' + emoji + '</span>' : '') +
+             '<span>' + text + '</span>';
+    }
+
+    function makeCard(pair, side) {
+      var card = document.createElement('div');
+      card.className = cardClass;
+      card.dataset.id = pair.id;
+      card.dataset.side = side;
+      card.innerHTML = side === 'left'
+        ? cardHtml(pair.left, pair.leftEmoji)
+        : cardHtml(pair.right, pair.rightEmoji);
+      card.addEventListener('click', function () { onPick(card); });
+      return card;
+    }
+
+    function setFeedback(text, kind) {
+      if (!feedbackEl) return;
+      feedbackEl.textContent = text || '';
+      feedbackEl.className = 'feedback' + (kind ? ' ' + kind : '');
+    }
+
+    function onPick(card) {
+      if (card.classList.contains('matched')) return;
+
+      if (card.dataset.side === 'left') {
+        if (pickedLeft) pickedLeft.classList.remove('selected');
+        pickedLeft = card;
+      } else {
+        if (pickedRight) pickedRight.classList.remove('selected');
+        pickedRight = card;
+      }
+      card.classList.add('selected');
+
+      if (!(pickedLeft && pickedRight)) return;
+
+      var a = pickedLeft, b = pickedRight;
+      pickedLeft = pickedRight = null;
+
+      if (a.dataset.id === b.dataset.id) {
+        a.classList.remove('selected');
+        b.classList.remove('selected');
+        a.classList.add('matched');
+        b.classList.add('matched');
+        links.push({ id: a.dataset.id, a: a, b: b });
+        drawLinks();
+        matched++;
+        if (scoreEl) scoreEl.textContent = matched;
+        if (opts.onScore) opts.onScore(matched, pairs.length);
+        setFeedback('✓ Correct!', 'success');
+        if (matched === pairs.length) {
+          if (winEl) winEl.classList.add('show');
+          setFeedback('🎉 All matched!', 'success');
+        }
+      } else {
+        a.classList.add('wrong');
+        b.classList.add('wrong');
+        setFeedback('✗ Not a match — try again.', 'error');
+        setTimeout(function () {
+          a.classList.remove('selected', 'wrong');
+          b.classList.remove('selected', 'wrong');
+        }, 420);
+      }
+    }
+
+    function render() {
+      leftEl.innerHTML = '';
+      rightEl.innerHTML = '';
+      links = [];
+      matched = 0;
+      pickedLeft = pickedRight = null;
+      if (scoreEl) scoreEl.textContent = 0;
+      if (opts.onScore) opts.onScore(0, pairs.length);
+      if (winEl) winEl.classList.remove('show');
+      setFeedback('');
+
+      // Shuffled independently, or the two columns would line up row for row.
+      shuffle(pairs).forEach(function (p) { leftEl.appendChild(makeCard(p, 'left')); });
+      shuffle(pairs).forEach(function (p) { rightEl.appendChild(makeCard(p, 'right')); });
+      drawLinks();
+    }
+
+    if (resetBtn) resetBtn.addEventListener('click', render);
+    render();
+
+    return { render: render, redraw: drawLinks };
+  }
+
+  global.HouseMatching = { build: build };
 })(window);
