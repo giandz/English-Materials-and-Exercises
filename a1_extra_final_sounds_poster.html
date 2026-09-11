@@ -15,761 +15,62 @@
       ? saved
       : ((window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches) ? 'dark' : 'light');
     document.documentElement.setAttribute('data-theme', theme);
+    // Same idea for the text size: apply it before house.css paints, so a
+    // person who chose 28px doesn't watch the page reflow from 14px on load.
+    var fs = parseFloat(localStorage.getItem('font-size-preference'));
+    if (fs >= 10 && fs <= 28){
+      document.documentElement.style.setProperty('--fs-base', fs + 'px');
+    }
   }catch(e){ /* localStorage/matchMedia unavailable — CSS media query still applies */ }
 })();
 </script>
-<!-- PREVIEW-INLINE house.css START — replace this block with the original link/script once deployed next to the house assets -->
+<link rel="stylesheet" href="house.css">
 <style>
-
-/* ── Poster tokens ───────────────────────────────────────────────────────────
-   These were referenced below but never defined in house.css (lost in the
-   migration). Structural ones alias house tokens so they follow the theme;
-   the nine box tints are reconstructed from the hard-coded chip border hues. */
+/* Page-specific design tokens — this lesson's own palette, not
+   house tokens. house.css owns everything else. */
 :root{
-  --ink: var(--text-primary);
-  --mid: var(--text-secondary);
-  --rule: var(--color-border-secondary);
-  --cream: var(--surface-1);
-  --font-head: var(--font-sans);
-  --c1:#e8effb; --c1b:#2a4f9a;  --c2:#fbede5; --c2b:#a44a1f;  --c3:#e9f5e1; --c3b:#3f7a1f;
-  --c4:#f5e8fb; --c4b:#7a2fa0;  --c5:#fbf1dc; --c5b:#8a5a00;  --c6:#e0f5ee; --c6b:#16775a;
-  --c7:#fbe6ea; --c7b:#a8324f;  --c8:#e8e8fb; --c8b:#4040a8;  --c9:#f4f4dc; --c9b:#6b6b12;
-}
-@media (prefers-color-scheme: dark){ :root{
-  --c1:#1c2a44; --c1b:#9fbdf2;  --c2:#3a2418; --c2b:#f2b596;  --c3:#1e3316; --c3b:#a9d98a;
-  --c4:#33203d; --c4b:#d6a3ef;  --c5:#3a2d10; --c5b:#f0c870;  --c6:#123329; --c6b:#7fd8b8;
-  --c7:#3a1c24; --c7b:#f2a0b4;  --c8:#22224a; --c8b:#b0b0f5;  --c9:#30300f; --c9b:#d6d680;
-} }
-html[data-theme="light"]{
-  --c1:#e8effb; --c1b:#2a4f9a;  --c2:#fbede5; --c2b:#a44a1f;  --c3:#e9f5e1; --c3b:#3f7a1f;
-  --c4:#f5e8fb; --c4b:#7a2fa0;  --c5:#fbf1dc; --c5b:#8a5a00;  --c6:#e0f5ee; --c6b:#16775a;
-  --c7:#fbe6ea; --c7b:#a8324f;  --c8:#e8e8fb; --c8b:#4040a8;  --c9:#f4f4dc; --c9b:#6b6b12;
-}
-html[data-theme="dark"]{
-  --c1:#1c2a44; --c1b:#9fbdf2;  --c2:#3a2418; --c2b:#f2b596;  --c3:#1e3316; --c3b:#a9d98a;
-  --c4:#33203d; --c4b:#d6a3ef;  --c5:#3a2d10; --c5b:#f0c870;  --c6:#123329; --c6b:#7fd8b8;
-  --c7:#3a1c24; --c7b:#f2a0b4;  --c8:#22224a; --c8b:#b0b0f5;  --c9:#30300f; --c9b:#d6d680;
-}
-/* ══════════════════════════════════════════════════════════════════════════
-   house.css — the shared stylesheet for every lesson page in this library.
-
-   One file, linked by every lesson. Design tokens first, then the shared
-   component language. A lesson page adds only its own page-specific CSS in an
-   inline <style> after this link; it must not re-skin anything defined here,
-   or the library drifts apart again.
-   ══════════════════════════════════════════════════════════════════════════ */
-
-/* ══════════════════════════════════════════════════════════════════════════
-   HOUSE TOKENS — shared design system for all lesson pages.
-   Self-contained: replaces the old shared stylesheet. Do not add an external
-   stylesheet link; every lesson page must stand alone.
-   ══════════════════════════════════════════════════════════════════════════ */
-:root{
-  --color-background-primary: #ffffff;
-  --color-background-secondary: #f7f7f8;
-  --color-background-tertiary: #eeeef0;
-  --color-background-info: #e6f1fb;
-  --color-background-success: #eaf3de;
-  --color-background-warning: #faeeda;
-  --color-background-danger: #fcebeb;
-  --color-text-primary: #1a1a1a;
-  --color-text-secondary: #5b5b60;
-  --color-text-tertiary: #8b8b90;
-  --color-text-info: #0c447c;
-  --color-text-success: #27500a;
-  --color-text-warning: #633806;
-  --color-text-danger: #791f1f;
-  --color-border-primary: #d4d4d8;
-  --color-border-secondary: #e3e3e6;
-  --color-border-tertiary: #ebebee;
-  --color-border-info: #85b7eb;
-  --color-border-success: #97c459;
-  --color-border-warning: #ef9f27;
-  --color-border-danger: #f09595;
-
-  --border-radius-md: 8px;
-  --border-radius-lg: 12px;
-  --border-radius-xl: 16px;
-  --font-sans: -apple-system, BlinkMacSystemFont, "Segoe UI", Helvetica, Arial, sans-serif;
-  --font-serif: Georgia, "Times New Roman", serif;
-  --font-mono: "SF Mono", "JetBrains Mono", Menlo, Consolas, monospace;
-
-  --text-primary: var(--color-text-primary);
-  --text-secondary: var(--color-text-secondary);
-  --text-muted: var(--color-text-tertiary);
-  --text-accent: #185fa5;
-  --surface-1: var(--color-background-secondary);
-  --surface-2: var(--color-background-primary);
-  --border: var(--color-border-tertiary);
-  --radius: var(--border-radius-lg);
-  --good: #2f7d3a;
-  --good-bg: #e8f4ea;
-  --bad: #b0392f;
-  --bad-bg: #fbebe9;
-
-  /* ── Part-of-speech palette ──────────────────────────────────────────── */
-  --pos-wh: #2563eb;
-  --pos-aux: #db2777;
-  --pos-verb: #f59e0b;
-  --pos-part: #0369a1;
-  --pos-subject: #10b981;
-  --pos-object: #8b5cf6;
-  --pos-complement: #e11d48;
-  --pos-noun: #ea580c;
-  --pos-adj: #c026d3;
-  --pos-adverb: #0891b2;
-  --pos-prep: #65a30d;
-  --pos-det: #6366f1;
-  --pos-conj: #a16207;
-  --pos-time: #0d9488;
-  --pos-neg: #6b7280;
-  --pos-none: #8b8b90;
-
-  --pos-wh-bg: #dbeafe;
-  --pos-aux-bg: #fce7f3;
-  --pos-verb-bg: #fef3c7;
-  --pos-part-bg: #e0f2fe;
-  --pos-subject-bg: #d1fae5;
-  --pos-object-bg: #ede9fe;
-  --pos-complement-bg: #ffe4e6;
-  --pos-noun-bg: #ffedd5;
-  --pos-adj-bg: #fae8ff;
-  --pos-adverb-bg: #cffafe;
-  --pos-prep-bg: #ecfccb;
-  --pos-det-bg: #e0e7ff;
-  --pos-conj-bg: #fef9c3;
-  --pos-time-bg: #ccfbf1;
-  --pos-neg-bg: #e5e7eb;
-  --pos-none-bg: #f3f4f6;
-
-  /* ── Category pill palette ───────────────────────────────────────────── */
-  --bg-pos: #eaf3de;  --text-pos: #27500a;
-  --bg-neg: #fce8e8;  --text-neg: #a32d2d;
-  --bg-q:   #fdf1da;  --text-q:   #8a5a10;
-  --bg-cel: #f3e8fd;  --text-cel: #6b21a8;
-
-  --cefr-text: #000000;
-}
-
-@media (prefers-color-scheme: dark){
-  :root{
-    --color-background-primary: #1e1e20;
-    --color-background-secondary: #26262a;
-    --color-background-tertiary: #2f2f34;
-    --color-background-info: #042c53;
-    --color-background-success: #173404;
-    --color-background-warning: #412402;
-    --color-background-danger: #501313;
-    --color-text-primary: #f0f0f2;
-    --color-text-secondary: #b4b4ba;
-    --color-text-tertiary: #85858c;
-    --color-text-info: #b5d4f4;
-    --color-text-success: #c0dd97;
-    --color-text-warning: #fac775;
-    --color-text-danger: #f7c1c1;
-    --color-border-primary: #4a4a50;
-    --color-border-secondary: #3a3a3f;
-    --color-border-tertiary: #34343a;
-    --color-border-info: #378add;
-    --color-border-success: #639922;
-    --color-border-warning: #ba7517;
-    --color-border-danger: #e24b4a;
-
-    --good-bg: #1d2f1f;
-    --bad-bg: #3a201e;
-
-    --pos-wh-bg: #172554;
-    --pos-aux-bg: #4a1833;
-    --pos-verb-bg: #422006;
-    --pos-part-bg: #082f49;
-    --pos-subject-bg: #064e3b;
-    --pos-object-bg: #312e81;
-    --pos-complement-bg: #4c0519;
-    --pos-noun-bg: #431407;
-    --pos-adj-bg: #4a044e;
-    --pos-adverb-bg: #164e63;
-    --pos-prep-bg: #1a2e05;
-    --pos-det-bg: #1e1b4b;
-    --pos-conj-bg: #3b2f05;
-    --pos-time-bg: #042f2e;
-    --pos-neg-bg: #374151;
-    --pos-none-bg: #2f3136;
-
-    --bg-pos: #1f3014;  --text-pos: #9ed17a;
-    --bg-neg: #3a201e;  --text-neg: #e2827a;
-    --bg-q:   #3a2c10;  --text-q:   #e0b95c;
-    --bg-cel: #2e1065;  --text-cel: #c4b5fd;
-
-    --cefr-text: #ffffff;
-  }
-}
-
-/* Explicit overrides for the manual theme toggle. These have higher specificity
-   than the plain :root rules above (and than the prefers-color-scheme media query,
-   which only ever targets :root), so once JS sets data-theme on <html> it always
-   wins — letting a person flip to dark on a light system, or light on a dark
-   system, rather than only ever following the OS setting. */
-html[data-theme="light"]{
-  --color-background-primary: #ffffff;
-  --color-background-secondary: #f7f7f8;
-  --color-background-tertiary: #eeeef0;
-  --color-background-info: #e6f1fb;
-  --color-background-success: #eaf3de;
-  --color-background-warning: #faeeda;
-  --color-background-danger: #fcebeb;
-  --color-text-primary: #1a1a1a;
-  --color-text-secondary: #5b5b60;
-  --color-text-tertiary: #8b8b90;
-  --color-text-info: #0c447c;
-  --color-text-success: #27500a;
-  --color-text-warning: #633806;
-  --color-text-danger: #791f1f;
-  --color-border-primary: #d4d4d8;
-  --color-border-secondary: #e3e3e6;
-  --color-border-tertiary: #ebebee;
-  --color-border-info: #85b7eb;
-  --color-border-success: #97c459;
-  --color-border-warning: #ef9f27;
-  --color-border-danger: #f09595;
-
-  --good-bg: #e8f4ea;
-  --bad-bg: #fbebe9;
-
-  --pos-wh-bg: #dbeafe;
-  --pos-aux-bg: #fce7f3;
-  --pos-verb-bg: #fef3c7;
-  --pos-part-bg: #e0f2fe;
-  --pos-subject-bg: #d1fae5;
-  --pos-object-bg: #ede9fe;
-  --pos-complement-bg: #ffe4e6;
-  --pos-noun-bg: #ffedd5;
-  --pos-adj-bg: #fae8ff;
-  --pos-adverb-bg: #cffafe;
-  --pos-prep-bg: #ecfccb;
-  --pos-det-bg: #e0e7ff;
-  --pos-conj-bg: #fef9c3;
-  --pos-time-bg: #ccfbf1;
-  --pos-neg-bg: #e5e7eb;
-  --pos-none-bg: #f3f4f6;
-
-  --bg-pos: #eaf3de;  --text-pos: #27500a;
-  --bg-neg: #fce8e8;  --text-neg: #a32d2d;
-  --bg-q:   #fdf1da;  --text-q:   #8a5a10;
-  --bg-cel: #f3e8fd;  --text-cel: #6b21a8;
-
-  --cefr-text: #000000;
-}
-html[data-theme="dark"]{
-  --color-background-primary: #1e1e20;
-  --color-background-secondary: #26262a;
-  --color-background-tertiary: #2f2f34;
-  --color-background-info: #042c53;
-  --color-background-success: #173404;
-  --color-background-warning: #412402;
-  --color-background-danger: #501313;
-  --color-text-primary: #f0f0f2;
-  --color-text-secondary: #b4b4ba;
-  --color-text-tertiary: #85858c;
-  --color-text-info: #b5d4f4;
-  --color-text-success: #c0dd97;
-  --color-text-warning: #fac775;
-  --color-text-danger: #f7c1c1;
-  --color-border-primary: #4a4a50;
-  --color-border-secondary: #3a3a3f;
-  --color-border-tertiary: #34343a;
-  --color-border-info: #378add;
-  --color-border-success: #639922;
-  --color-border-warning: #ba7517;
-  --color-border-danger: #e24b4a;
-
-  --good-bg: #1d2f1f;
-  --bad-bg: #3a201e;
-
-  --pos-wh-bg: #172554;
-  --pos-aux-bg: #4a1833;
-  --pos-verb-bg: #422006;
-  --pos-part-bg: #082f49;
-  --pos-subject-bg: #064e3b;
-  --pos-object-bg: #312e81;
-  --pos-complement-bg: #4c0519;
-  --pos-noun-bg: #431407;
-  --pos-adj-bg: #4a044e;
-  --pos-adverb-bg: #164e63;
-  --pos-prep-bg: #1a2e05;
-  --pos-det-bg: #1e1b4b;
-  --pos-conj-bg: #3b2f05;
-  --pos-time-bg: #042f2e;
-  --pos-neg-bg: #374151;
-  --pos-none-bg: #2f3136;
-
-  --bg-pos: #1f3014;  --text-pos: #9ed17a;
-  --bg-neg: #3a201e;  --text-neg: #e2827a;
-  --bg-q:   #3a2c10;  --text-q:   #e0b95c;
-  --bg-cel: #2e1065;  --text-cel: #c4b5fd;
-
-  --cefr-text: #ffffff;
+  --cream: #F7F4EE;
+  --ink: #1A1814;
+  --mid: #6B6760;
+  --rule: #D8D4CC;
+  --c1: #E8F0FB;
+  --c1b: #2E5EA8;
+  --c2: #FBF0E8;
+  --c2b: #A84E2E;
+  --c3: #EEF8E8;
+  --c3b: #3A7A1C;
+  --c4: #F8EBF8;
+  --c4b: #8A2EA8;
+  --c5: #FFF3E0;
+  --c5b: #B06000;
+  --c6: #E8FBF6;
+  --c6b: #1A8060;
+  --c7: #FBE8EC;
+  --c7b: #A82E4A;
+  --c8: #F0F0FB;
+  --c8b: #3A3AA8;
+  --c9: #F8F8E8;
+  --c9b: #7A7A10;
+  --font-head: 'Space Mono', monospace;
 }
 
 
-/* ══════════════════════════════════════════════════════════════════════════
-   HOUSE COMPONENTS — loaded after any page-specific CSS so the shared
-   component language always wins. Page CSS is still free to add its own
-   classes; it just can't quietly re-skin the shared ones.
-   ══════════════════════════════════════════════════════════════════════════ */
-*{ box-sizing:border-box; -webkit-tap-highlight-color:transparent; }
-
-html,body{
-  margin:0;
-  background:var(--color-background-primary);
-  color:var(--color-text-primary);
-  font-family:var(--font-sans);
-  font-size:15px;
-  line-height:1.5;
-  touch-action:manipulation;
-  overscroll-behavior:none;
-  -webkit-font-smoothing:antialiased;
-}
-
-/* Page shells. `.page` is the house wrapper; `.exercise-page` is the legacy
-   wrapper from the previous shared stylesheet, kept so existing markup works. */
-.page,
-.exercise-page{ max-width:700px; margin:0 auto; padding:20px 14px 40px; }
-
-h1{ font-size:1.28rem; font-weight:600; letter-spacing:-0.01em; margin:0 0 2px; }
-h2{ font-size:1.06rem; font-weight:600; margin:1.2rem 0 .5rem; }
-h3{ font-size:.95rem; font-weight:600; margin:1rem 0 .4rem; }
-p{ margin:0 0 .7rem; }
-p:last-child{ margin-bottom:0; }
-.subtitle{ font-size:12.5px; color:var(--text-secondary); margin:0 0 8px; }
-
-/* ── CEFR level tag ─────────────────────────────────────────────────────────
-   Background hue is mapped to level: green (A1) through red (C2). Transitional
-   levels (A1/A2, A2/B1 …) get a hard split between the two hues, matching the
-   gradient-split pills in the lesson directory. Text is plain black in light
-   mode and plain white in dark mode — never tinted. */
-.cefr-tag{
-  display:inline-block; font-size:11px; font-weight:700; letter-spacing:.04em;
-  padding:3px 10px; border-radius:20px; margin-bottom:8px;
-  color:var(--cefr-text);
-  --cefr-hue:120deg;
-  background:linear-gradient(100deg,
-    hsl(var(--cefr-hue) 50% 50%) 0%,
-    hsl(var(--cefr-hue) 50% 50%) 48%,
-    hsl(var(--cefr-hue-2, var(--cefr-hue)) 50% 50%) 52%,
-    hsl(var(--cefr-hue-2, var(--cefr-hue)) 50% 50%) 100%);
-}
-.cefr-a1{ --cefr-hue:120deg; }
-.cefr-a2{ --cefr-hue:96deg; }
-.cefr-b1{ --cefr-hue:72deg; }
-.cefr-b2{ --cefr-hue:48deg; }
-.cefr-c1{ --cefr-hue:24deg; }
-.cefr-c2{ --cefr-hue:0deg; }
-.cefr-a1a2{ --cefr-hue:120deg; --cefr-hue-2:96deg; }
-.cefr-a2b1{ --cefr-hue:96deg;  --cefr-hue-2:72deg; }
-.cefr-b1b2{ --cefr-hue:72deg;  --cefr-hue-2:48deg; }
-.cefr-b2c1{ --cefr-hue:48deg;  --cefr-hue-2:24deg; }
-.cefr-c1c2{ --cefr-hue:24deg;  --cefr-hue-2:0deg; }
-
-/* ── Section divider ───────────────────────────────────────────────────── */
-.sec-div,
-.section-label{
-  font-size:11px; font-weight:500; letter-spacing:.06em; text-transform:uppercase;
-  color:var(--text-muted); display:flex; align-items:center; gap:8px; margin:1.6rem 0 .7rem;
-}
-.sec-div::before,.sec-div::after,
-.section-label::before,.section-label::after{ content:''; flex:1; height:.5px; background:var(--border); }
-
-.col-label{
-  font-size:11px; font-weight:500; color:var(--text-secondary);
-  text-transform:uppercase; letter-spacing:.05em; margin-bottom:8px;
-}
-
-/* ── Rule / instruction box ────────────────────────────────────────────── */
-.rule-box{
-  background:var(--surface-1);
-  border-radius:16px;
-  padding:10px 12px;
-  margin-bottom:.9rem;
-  font-size:13px;
-  color:var(--text-secondary);
-  line-height:1.55;
-  border:1px solid var(--border);
-}
-.rule-box strong{ color:var(--text-primary); font-weight:600; }
-
-/* ── Cards & surfaces ──────────────────────────────────────────────────── */
-.exercise-card{
-  background:var(--surface-2);
-  border:.5px solid var(--color-border-tertiary);
-  border-radius:var(--border-radius-lg);
-  padding:14px 16px;
-  margin-bottom:14px;
-  box-shadow:0 1px 0 rgba(0,0,0,0.03);
-}
-.exercise-surface{
-  background:var(--surface-1);
-  border-radius:var(--border-radius-lg);
-  padding:14px 16px;
-  margin-bottom:14px;
-}
-
-/* ── Score / utility bar ───────────────────────────────────────────────── */
-.score-bar,
-.exercise-bar{
-  display:flex; justify-content:space-between; align-items:center;
-  margin-bottom:.55rem; font-size:13px; color:var(--text-secondary); flex-wrap:wrap; gap:8px;
-}
-.score-bar strong{ color:var(--good); }
-.exercise-hint{ font-size:13px; color:var(--text-secondary); }
-
-/* ── Buttons & inputs ──────────────────────────────────────────────────── */
-button{
-  font-family:inherit; font-size:13px; font-weight:500;
-  padding:6px 13px; border-radius:999px;
-  border:1px solid var(--border); background:var(--surface-1);
-  color:var(--text-primary); cursor:pointer; transition:background .15s;
-}
-button:hover{ background:var(--color-background-tertiary); }
-button:active{ transform:scale(.98); }
-
-input[type="text"],input[type="search"]{
-  font-family:inherit; font-size:14.5px; padding:5px 10px;
-  border:1px solid var(--color-border-secondary); border-radius:var(--border-radius-md);
-  background:var(--color-background-primary); color:var(--text-primary); outline:none;
-}
-input[type="text"]:focus,input[type="search"]:focus{ border-color:var(--text-accent); }
-
-/* ── Matching cards ────────────────────────────────────────────────────── */
-.card{
-  border:1.5px solid var(--color-border-secondary);
-  border-radius:var(--border-radius-md);
-  padding:9px 12px; font-size:14px; font-weight:500; cursor:pointer;
-  background:var(--surface-2); color:var(--text-primary); text-align:center;
-  transition:background .15s, border-color .15s; user-select:none;
-}
-.card:hover{ background:var(--surface-1); border-color:var(--color-border-primary); }
-.card.selected{ border-color:var(--text-accent); background:var(--color-background-info); color:var(--color-text-info); }
-.card.matched,.card.done{ border-color:var(--good); background:var(--good-bg); color:var(--good); pointer-events:none; }
-.card.wrong{ border-color:var(--bad); background:var(--bad-bg); color:var(--bad); animation:shake .3s; }
-@keyframes shake{ 0%,100%{transform:translateX(0);} 25%{transform:translateX(-5px);} 75%{transform:translateX(5px);} }
-.cards-grid{ display:grid; grid-template-columns:minmax(0,1fr) minmax(0,1fr); gap:20px; }
-.cards-col{ display:flex; flex-direction:column; gap:7px; }
-
-/* ── Dialogue bubbles ──────────────────────────────────────────────────── */
-.bubble-wrap{ display:flex; gap:10px; align-items:flex-end; margin-bottom:14px; }
-.bubble-wrap.right{ flex-direction:row-reverse; }
-.avatar{
-  width:34px; height:34px; border-radius:50%; display:flex; align-items:center;
-  justify-content:center; font-size:18px; flex-shrink:0;
-}
-.av-a{ background:var(--color-background-info); color:var(--color-text-info); }
-.av-b{ background:var(--bg-cel); color:var(--text-cel); }
-.bubble{
-  max-width:76%; padding:9px 13px; border-radius:15px; font-size:14px; line-height:1.65;
-  border:.5px solid var(--color-border-tertiary);
-  background:var(--surface-2); color:var(--text-primary);
-}
-.bubble.left{ border-bottom-left-radius:4px; }
-.bubble.right{ background:var(--bg-cel); color:var(--text-cel); border-bottom-right-radius:4px; border-color:transparent; }
-.bname,.bubble-name{ font-size:11px; font-weight:500; color:var(--text-secondary); margin-bottom:3px; padding:0 2px; }
-.bname.right,.bubble-name.right-name{ text-align:right; }
-
-/* ── Feedback ──────────────────────────────────────────────────────────── */
-.feedback{ min-height:24px; font-size:14px; text-align:center; color:var(--text-secondary); margin-top:1rem; }
-.feedback.success{ color:var(--good); }
-.feedback.error{ color:var(--bad); }
-
-/* ── Details / answer key ──────────────────────────────────────────────── */
-details{
-  border:.5px solid var(--color-border-tertiary); border-radius:var(--border-radius-md);
-  overflow:hidden; margin-top:1.25rem;
-}
-summary{
-  padding:9px 14px; cursor:pointer; font-size:14px; font-weight:500;
-  background:var(--surface-1); list-style:none; display:flex;
-  justify-content:space-between; align-items:center;
-}
-summary::-webkit-details-marker{ display:none; }
-.answer-key-body{ padding:10px 14px; display:flex; flex-direction:column; gap:4px; }
-.answer-row{
-  display:flex; align-items:center; gap:10px; padding:7px 0;
-  border-bottom:.5px solid var(--color-border-tertiary); font-size:14px;
-}
-.answer-row:last-child{ border-bottom:none; }
-.answer-num{ color:var(--text-secondary); min-width:18px; }
-.answer-word{ font-weight:500; color:var(--text-accent); min-width:70px; }
-.answer-rule{ color:var(--text-secondary); }
-
-/* ── Word bank ─────────────────────────────────────────────────────────── */
-.word-bank{ display:flex; flex-wrap:wrap; gap:8px; margin-bottom:1.25rem; }
-.word-btn{
-  border:.5px solid var(--color-border-secondary); border-radius:999px;
-  padding:5px 12px; font-size:14px; cursor:pointer;
-  background:var(--surface-2); color:var(--text-primary);
-}
-.word-btn:hover{ background:var(--surface-1); }
-.word-btn.used{ opacity:.35; pointer-events:none; text-decoration:line-through; }
-
-/* ── Category tags & legend pills ──────────────────────────────────────── */
-.legend{ display:flex; flex-wrap:wrap; gap:8px; margin-bottom:1rem; }
-.legend-pill{ font-size:11.5px; font-weight:600; padding:3px 11px; border-radius:20px; }
-.legend-pill.pos{ background:var(--bg-pos); color:var(--text-pos); }
-.legend-pill.neg{ background:var(--bg-neg); color:var(--text-neg); }
-.legend-pill.q{ background:var(--bg-q); color:var(--text-q); }
-.legend-pill.cel{ background:var(--bg-cel); color:var(--text-cel); }
-
-.cat-tag{
-  display:inline-block; font-size:10px; font-weight:700; letter-spacing:.03em; text-transform:uppercase;
-  padding:2px 9px; border-radius:20px; margin-bottom:9px;
-}
-.cat-tag.pos{ background:var(--bg-pos); color:var(--text-pos); }
-.cat-tag.neg{ background:var(--bg-neg); color:var(--text-neg); }
-.cat-tag.q{ background:var(--bg-q); color:var(--text-q); }
-.cat-tag.cel{ background:var(--bg-cel); color:var(--text-cel); }
-
-/* ══ WORD-ORDER DRAG EXERCISE ═══════════════════════════════════════════ */
-.wo-item{
-  border:.5px solid var(--color-border-tertiary);
-  border-radius:18px;
-  padding:10px 10px 9px;
-  margin-bottom:10px;
-  background:var(--surface-2);
-  box-shadow:0 1px 0 rgba(0,0,0,0.03);
-}
-.item-speaker{
-  display:flex; align-items:center; justify-content:flex-start; gap:8px;
-  font-size:11.5px; font-weight:600; color:var(--text-muted); margin-bottom:6px;
-}
-.item-speaker .avatar-mini{ font-size:16px; line-height:1; width:20px; text-align:center; flex:0 0 auto; }
-.item-context{ font-size:12px; color:var(--text-muted); font-style:italic; margin-bottom:6px; }
-
-.target-zone{
-  display:flex; flex-wrap:wrap; gap:5px; min-height:48px; padding:7px;
-  border:1.5px dashed var(--border); border-radius:14px; margin-bottom:6px;
-  align-items:center; background:var(--surface-2);
-}
-.target-zone.drag-over{ border-color:var(--text-accent); background:var(--surface-1); }
-.target-zone.correct{ border-style:solid; border-color:var(--good); background:var(--good-bg); }
-.target-zone.wrong{ border-style:solid; border-color:var(--bad); }
-.target-placeholder{ font-size:12px; color:var(--text-muted); font-style:italic; }
-
-.pool-zone{ display:flex; flex-wrap:wrap; gap:5px; min-height:34px; padding:7px; background:rgba(0,0,0,0.03); border-radius:14px; }
-@media (prefers-color-scheme: dark){ .pool-zone{ background:rgba(255,255,255,0.04); } }
-html[data-theme="dark"] .pool-zone{ background:rgba(255,255,255,0.04); }
-html[data-theme="light"] .pool-zone{ background:rgba(0,0,0,0.03); }
-
-.word-chip{
-  padding:5px 10px; border-radius:999px; border:.5px solid var(--border);
-  background:var(--surface-2); font-size:13px; font-weight:500; cursor:grab;
-  touch-action:none; user-select:none; line-height:1.2;
-}
-.word-chip.in-target{ background:var(--color-background-primary); border-color:var(--text-accent); }
-.word-chip.dragging{
-  position:fixed; z-index:999; pointer-events:none;
-  box-shadow:0 8px 20px rgba(0,0,0,0.18); transform:scale(1.05); cursor:grabbing;
-}
-.word-chip.chip-correct{ background:var(--good-bg); border-color:var(--good); color:var(--good); }
-.word-chip.chip-wrong{ background:var(--bad-bg); border-color:var(--bad); color:var(--bad); }
-.word-chip.chip-emphasis{ font-weight:700; box-shadow:inset 0 0 0 1.5px currentColor; }
-
-.drop-indicator{
-  border-radius:999px; border:1.5px dashed var(--text-accent);
-  background:rgba(24,95,165,0.1);
-  flex:0 0 auto; pointer-events:none;
-  transition:width .12s ease, height .12s ease;
-}
-
-.item-feedback{ font-size:14.4px; margin-bottom:4px; min-height:18px; }
-.item-feedback.correct{ color:var(--good); }
-.item-feedback.wrong{ color:var(--bad); }
-
-/* ══ GAP FILL ═══════════════════════════════════════════════════════════ */
-.gf-item{
-  border:.5px solid var(--color-border-tertiary); border-radius:var(--border-radius-lg);
-  padding:14px 16px; margin-bottom:14px; background:var(--surface-2);
-}
-.direct{ font-size:12.5px; color:var(--text-muted); font-style:italic; margin-bottom:8px; }
-.sentence{ font-size:14.5px; line-height:2.1; }
-
-.gf-gap-wrap{ display:inline-flex; flex-direction:column; align-items:center; gap:3px; vertical-align:bottom; margin:0.1em 0.2em; }
-.bar-track{ display:inline-block; width:84px; height:5px; background:var(--color-border-secondary); border-radius:3px; overflow:hidden; }
-.bar-fill{ display:block; height:100%; width:0%; background:hsl(0deg 100% 50%); transition:width 0.12s linear, background 0.12s linear; }
-.bar-pct{ font-family:var(--font-mono); font-size:14.4px; color:var(--text-muted); min-width:30px; text-align:center; }
-.gf-gap-input{
-  font-family:inherit; font-size:14.5px; padding:5px 8px; border-radius:6px;
-  border:1px solid var(--color-border-secondary); background:var(--color-background-primary);
-  color:var(--text-primary); text-align:center;
-  transition:border-color .12s linear, background .12s linear, color .12s linear;
-}
-.gf-gap-input:focus{ outline:none; border-color:var(--text-accent); }
-.gf-gap-input.gap-correct{ border-color:var(--good); background:var(--good-bg); color:var(--good); font-weight:600; }
-
-/* Legacy inline gap input from the previous shared stylesheet, restyled. */
-input.gap{
-  display:inline-block; border:none; border-bottom:2px solid var(--color-border-primary);
-  border-radius:0; width:90px; padding:0 2px; text-align:center; background:transparent;
-  vertical-align:baseline; box-shadow:none; font-family:inherit; font-size:14.5px;
-  color:var(--text-primary);
-}
-input.gap:focus{ border-bottom-color:var(--text-accent); outline:none; }
-input.gap.correct{ border-bottom-color:var(--good); color:var(--good); }
-input.gap.wrong{ border-bottom-color:var(--bad); color:var(--bad); }
-
-/* ══ PART-OF-SPEECH HIGHLIGHTING ════════════════════════════════════════
-   Two surfaces share one palette: draggable `.word-chip`s in word-order
-   exercises, and inline `.pos-hl` spans used to colour running text in
-   clarification and intro pages. Both are driven by the same `.pos-*` class,
-   so a verb looks like a verb everywhere in the library. */
-.word-chip.pos-wh{ background:var(--pos-wh-bg); color:var(--pos-wh); border-color:var(--pos-wh); }
-.word-chip.pos-aux{ background:var(--pos-aux-bg); color:var(--pos-aux); border-color:var(--pos-aux); }
-.word-chip.pos-verb{ background:var(--pos-verb-bg); color:var(--pos-verb); border-color:var(--pos-verb); }
-.word-chip.pos-part{ background:var(--pos-part-bg); color:var(--pos-part); border-color:var(--pos-part); }
-.word-chip.pos-subject{ background:var(--pos-subject-bg); color:var(--pos-subject); border-color:var(--pos-subject); }
-.word-chip.pos-object{ background:var(--pos-object-bg); color:var(--pos-object); border-color:var(--pos-object); }
-.word-chip.pos-complement{ background:var(--pos-complement-bg); color:var(--pos-complement); border-color:var(--pos-complement); }
-.word-chip.pos-noun{ background:var(--pos-noun-bg); color:var(--pos-noun); border-color:var(--pos-noun); }
-.word-chip.pos-adj{ background:var(--pos-adj-bg); color:var(--pos-adj); border-color:var(--pos-adj); }
-.word-chip.pos-adverb{ background:var(--pos-adverb-bg); color:var(--pos-adverb); border-color:var(--pos-adverb); }
-.word-chip.pos-prep{ background:var(--pos-prep-bg); color:var(--pos-prep); border-color:var(--pos-prep); }
-.word-chip.pos-det{ background:var(--pos-det-bg); color:var(--pos-det); border-color:var(--pos-det); }
-.word-chip.pos-conj{ background:var(--pos-conj-bg); color:var(--pos-conj); border-color:var(--pos-conj); }
-.word-chip.pos-time{ background:var(--pos-time-bg); color:var(--pos-time); border-color:var(--pos-time); }
-.word-chip.pos-neg{ background:var(--pos-neg-bg); color:var(--pos-neg); border-color:var(--pos-neg); }
-.word-chip.pos-none{ background:var(--pos-none-bg); color:var(--pos-none); border-color:var(--color-border-secondary); }
-
-.pos-hl{
-  display:inline-block; padding:0 4px; border-radius:5px; font-weight:600;
-  background:transparent; color:inherit;
-  transition:background .15s linear, color .15s linear;
-}
-.pos-hl.pos-wh{ background:var(--pos-wh-bg); color:var(--pos-wh); }
-.pos-hl.pos-aux{ background:var(--pos-aux-bg); color:var(--pos-aux); }
-.pos-hl.pos-verb{ background:var(--pos-verb-bg); color:var(--pos-verb); }
-.pos-hl.pos-part{ background:var(--pos-part-bg); color:var(--pos-part); }
-.pos-hl.pos-subject{ background:var(--pos-subject-bg); color:var(--pos-subject); }
-.pos-hl.pos-object{ background:var(--pos-object-bg); color:var(--pos-object); }
-.pos-hl.pos-complement{ background:var(--pos-complement-bg); color:var(--pos-complement); }
-.pos-hl.pos-noun{ background:var(--pos-noun-bg); color:var(--pos-noun); }
-.pos-hl.pos-adj{ background:var(--pos-adj-bg); color:var(--pos-adj); }
-.pos-hl.pos-adverb{ background:var(--pos-adverb-bg); color:var(--pos-adverb); }
-.pos-hl.pos-prep{ background:var(--pos-prep-bg); color:var(--pos-prep); }
-.pos-hl.pos-det{ background:var(--pos-det-bg); color:var(--pos-det); }
-.pos-hl.pos-conj{ background:var(--pos-conj-bg); color:var(--pos-conj); }
-.pos-hl.pos-time{ background:var(--pos-time-bg); color:var(--pos-time); }
-.pos-hl.pos-neg{ background:var(--pos-neg-bg); color:var(--pos-neg); }
-.pos-hl.pos-none{ background:var(--pos-none-bg); color:var(--pos-none); }
-
-/* ── Grammar toggle ────────────────────────────────────────────────────── */
-.grammar-toggle-btn{
-  font-family:inherit; font-size:12.5px; font-weight:600; padding:6px 13px;
-  border-radius:999px; border:1px solid var(--border); background:var(--surface-1);
-  color:var(--text-primary); cursor:pointer; margin-bottom:.7rem;
-}
-.pos-legend{ display:flex; flex-wrap:wrap; gap:8px 12px; margin-bottom:1rem; }
-.legend-item{ display:inline-flex; align-items:center; gap:6px; font-size:12px; color:var(--text-secondary); white-space:nowrap; }
-.legend-swatch{ width:10px; height:10px; border-radius:999px; display:inline-block; }
-.legend-wh{ background:var(--pos-wh); }
-.legend-aux{ background:var(--pos-aux); }
-.legend-verb{ background:var(--pos-verb); }
-.legend-part{ background:var(--pos-part); }
-.legend-subject{ background:var(--pos-subject); }
-.legend-object{ background:var(--pos-object); }
-.legend-complement{ background:var(--pos-complement); }
-.legend-noun{ background:var(--pos-noun); }
-.legend-adj{ background:var(--pos-adj); }
-.legend-adverb{ background:var(--pos-adverb); }
-.legend-prep{ background:var(--pos-prep); }
-.legend-det{ background:var(--pos-det); }
-.legend-conj{ background:var(--pos-conj); }
-.legend-time{ background:var(--pos-time); }
-.legend-neg{ background:var(--pos-neg); }
-.legend-none{ background:var(--pos-none); }
-
-/* When grammar highlighting is switched off, EVERY pos class must be listed —
-   including .pos-none — so punctuation and filler chips fall back to the same
-   neutral colour as everything else instead of keeping a stray tint. */
-.grammar-hidden .word-chip.pos-wh,
-.grammar-hidden .word-chip.pos-aux,
-.grammar-hidden .word-chip.pos-verb,
-.grammar-hidden .word-chip.pos-part,
-.grammar-hidden .word-chip.pos-subject,
-.grammar-hidden .word-chip.pos-object,
-.grammar-hidden .word-chip.pos-complement,
-.grammar-hidden .word-chip.pos-noun,
-.grammar-hidden .word-chip.pos-adj,
-.grammar-hidden .word-chip.pos-adverb,
-.grammar-hidden .word-chip.pos-prep,
-.grammar-hidden .word-chip.pos-det,
-.grammar-hidden .word-chip.pos-conj,
-.grammar-hidden .word-chip.pos-time,
-.grammar-hidden .word-chip.pos-neg,
-.grammar-hidden .word-chip.pos-none{
-  background:var(--good-bg) !important; color:var(--good) !important; border-color:var(--good) !important;
-}
-.grammar-hidden .pos-hl.pos-wh,
-.grammar-hidden .pos-hl.pos-aux,
-.grammar-hidden .pos-hl.pos-verb,
-.grammar-hidden .pos-hl.pos-part,
-.grammar-hidden .pos-hl.pos-subject,
-.grammar-hidden .pos-hl.pos-object,
-.grammar-hidden .pos-hl.pos-complement,
-.grammar-hidden .pos-hl.pos-noun,
-.grammar-hidden .pos-hl.pos-adj,
-.grammar-hidden .pos-hl.pos-adverb,
-.grammar-hidden .pos-hl.pos-prep,
-.grammar-hidden .pos-hl.pos-det,
-.grammar-hidden .pos-hl.pos-conj,
-.grammar-hidden .pos-hl.pos-time,
-.grammar-hidden .pos-hl.pos-neg,
-.grammar-hidden .pos-hl.pos-none{
-  background:transparent !important; color:inherit !important;
-}
-.grammar-hidden .pos-legend{ display:none; }
-
-/* ── Theme toggle ──────────────────────────────────────────────────────── */
-#theme-toggle-wrap{ position:fixed; top:14px; right:14px; z-index:1000; }
-#theme-toggle{
-  width:38px; height:38px; border-radius:50%; padding:0;
-  border:1px solid var(--border); background:var(--surface-2); color:var(--text-primary);
-  font-size:16px; display:flex; align-items:center; justify-content:center;
-  cursor:pointer; box-shadow:0 2px 8px rgba(0,0,0,0.12);
-}
-
-footer{ text-align:center; font-size:12px; color:var(--text-muted); margin-top:1.4rem; }
-
-.text-secondary{ color:var(--text-secondary); }
-.text-tertiary{ color:var(--text-muted); }
-.text-info{ color:var(--color-text-info); }
-.text-success{ color:var(--color-text-success); }
-.text-warning{ color:var(--color-text-warning); }
-.text-danger{ color:var(--color-text-danger); }
-.sr-only{ position:absolute; width:1px; height:1px; padding:0; margin:-1px; overflow:hidden; clip:rect(0,0,0,0); white-space:nowrap; border:0; }
-
-@media (max-width:520px){
-  .cards-grid{ grid-template-columns:1fr; gap:16px; }
-  .bubble{ max-width:88%; }
-  .page,.exercise-page{ padding:20px 10px 32px; }
-}
-
-</style>
-<!-- PREVIEW-INLINE house.css END -->
-<style>
 *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
     .poster-header { text-align: center; margin-bottom: 2.5rem; }
-    .poster-eyebrow { font-family: var(--font-head); font-size: 11px; letter-spacing: 0.18em; text-transform: uppercase; color: var(--mid); margin-bottom: 0.6rem; }
+    .poster-eyebrow { font-family: var(--font-head); font-size:0.7333rem; letter-spacing: 0.18em; text-transform: uppercase; color: var(--mid); margin-bottom: 0.6rem; }
     .poster-title { font-family: var(--font-head); font-size: clamp(26px,5vw,44px); font-weight: 700; line-height: 1.1; letter-spacing: -0.02em; }
     .poster-title span { display: inline-block; background: var(--ink); color: var(--cream); padding: 2px 12px 4px; border-radius: 6px; margin: 0 2px; }
-    .poster-sub { font-size: 14px; color: var(--mid); margin-top: 0.6rem; font-family: var(--font-head); letter-spacing: 0.04em; }
+    .poster-sub { font-size:0.9333rem; color: var(--mid); margin-top: 0.6rem; font-family: var(--font-head); letter-spacing: 0.04em; }
     .poster-rule { width: 48px; height: 3px; background: var(--ink); margin: 1rem auto 0; border-radius: 2px; }
     .grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(260px, 1fr)); gap: 1.25rem; max-width: 1200px; margin: 0 auto; }
     .pbox { border-radius: var(--radius); overflow: hidden; border: 1.5px solid var(--rule); background: #fff; }
     .pbox-header { padding: 14px 18px 12px; display: flex; align-items: baseline; gap: 10px; border-bottom: 1.5px solid var(--rule); }
-    .phoneme { font-family: var(--font-head); font-size: 22px; font-weight: 700; letter-spacing: -0.01em; line-height: 1; }
-    .spelling-hint { font-family: var(--font-head); font-size: 11px; color: var(--mid); letter-spacing: 0.04em; }
+    .phoneme { font-family: var(--font-head); font-size:1.4667rem; font-weight: 700; letter-spacing: -0.01em; line-height: 1; }
+    .spelling-hint { font-family: var(--font-head); font-size:0.7333rem; color: var(--mid); letter-spacing: 0.04em; }
     .pbox-body { padding: 12px 14px 14px; display: flex; flex-wrap: wrap; gap: 7px; }
     .chip { display: flex; flex-direction: column; align-items: center; gap: 2px; padding: 7px 8px 6px; border-radius: 10px; border: 1px solid var(--rule); background: var(--cream); min-width: 58px; }
-    .chip-emoji { font-size: 22px; line-height: 1; }
-    .chip-word { font-size: 12px; font-weight: 500; letter-spacing: 0.01em; text-align: center; color: var(--ink); line-height: 1.2; }
+    .chip-emoji { font-size:1.4667rem; line-height: 1; }
+    .chip-word { font-size:0.8rem; font-weight: 500; letter-spacing: 0.01em; text-align: center; color: var(--ink); line-height: 1.2; }
     .pbox:nth-child(9n+1) .pbox-header { background:var(--c1); } .pbox:nth-child(9n+1) .phoneme { color:var(--c1b); } .pbox:nth-child(9n+1) .chip { border-color:#c5d5f0; }
     .pbox:nth-child(9n+2) .pbox-header { background:var(--c2); } .pbox:nth-child(9n+2) .phoneme { color:var(--c2b); } .pbox:nth-child(9n+2) .chip { border-color:#f0d0c0; }
     .pbox:nth-child(9n+3) .pbox-header { background:var(--c3); } .pbox:nth-child(9n+3) .phoneme { color:var(--c3b); } .pbox:nth-child(9n+3) .chip { border-color:#bde0a8; }
@@ -779,44 +80,11 @@ footer{ text-align:center; font-size:12px; color:var(--text-muted); margin-top:1
     .pbox:nth-child(9n+7) .pbox-header { background:var(--c7); } .pbox:nth-child(9n+7) .phoneme { color:var(--c7b); } .pbox:nth-child(9n+7) .chip { border-color:#f0a8b8; }
     .pbox:nth-child(9n+8) .pbox-header { background:var(--c8); } .pbox:nth-child(9n+8) .phoneme { color:var(--c8b); } .pbox:nth-child(9n+8) .chip { border-color:#b0b0f0; }
     .pbox:nth-child(9n+9) .pbox-header { background:var(--c9); } .pbox:nth-child(9n+9) .phoneme { color:var(--c9b); } .pbox:nth-child(9n+9) .chip { border-color:#d8d890; }
-    .poster-footer { text-align: center; margin-top: 2.5rem; font-family: var(--font-head); font-size: 11px; letter-spacing: 0.1em; color: var(--mid); text-transform: uppercase; }
-
-    /* ── Speakable chips ──────────────────────────────────────────────────── */
-    .pbox { background: var(--surface-2); }
-    .pbox:nth-child(9n+1){--accent:var(--c1b);} .pbox:nth-child(9n+2){--accent:var(--c2b);} .pbox:nth-child(9n+3){--accent:var(--c3b);}
-    .pbox:nth-child(9n+4){--accent:var(--c4b);} .pbox:nth-child(9n+5){--accent:var(--c5b);} .pbox:nth-child(9n+6){--accent:var(--c6b);}
-    .pbox:nth-child(9n+7){--accent:var(--c7b);} .pbox:nth-child(9n+8){--accent:var(--c8b);} .pbox:nth-child(9n+9){--accent:var(--c9b);}
-    .chip { font: inherit; color: inherit; cursor: pointer; -webkit-appearance: none; appearance: none;
-            transition: background .12s ease, box-shadow .12s ease; }
-    .chip:hover { background: var(--surface-2); }
-    .chip:focus-visible { outline: 2px solid var(--text-accent); outline-offset: 2px; }
-    .chip.is-speaking { background: var(--surface-2); box-shadow: 0 0 0 2px var(--accent); }
-    .chip.is-speaking u { color: var(--accent); text-decoration-thickness: 2px; }
-    .chip.is-speaking .chip-emoji { animation: chip-say .45s ease; }
-    @keyframes chip-say { 0%,100%{ transform: translateY(0); } 40%{ transform: translateY(-4px) scale(1.12); } }
-    @media (prefers-reduced-motion: reduce){ .chip.is-speaking .chip-emoji { animation: none; } }
-    .no-speech .chip[data-say]:not([data-audio]) { cursor: default; opacity: .75; }
-
-    .speak-hint { text-align: center; font-size: 13px; color: var(--mid); margin: -1.5rem 0 1.75rem; }
-    .speak-voice { display: flex; justify-content: center; align-items: center; gap: 6px; margin-top: 6px; font-size: 11.5px; color: var(--text-muted); }
-    .speak-voice select {
-      font: inherit; font-size: 12px; color: var(--text-primary); cursor: pointer;
-      -webkit-appearance: none; appearance: none;
-      padding: 4px 24px 4px 10px; max-width: min(300px, 70vw); text-overflow: ellipsis;
-      border: 1px solid var(--rule); border-radius: 999px;
-      background-color: var(--surface-1);
-      background-image: linear-gradient(45deg, transparent 50%, var(--mid) 50%), linear-gradient(135deg, var(--mid) 50%, transparent 50%);
-      background-position: calc(100% - 13px) 55%, calc(100% - 9px) 55%;
-      background-size: 4px 4px; background-repeat: no-repeat;
-    }
-    .speak-voice select:focus-visible { outline: 2px solid var(--text-accent); outline-offset: 2px; }
-    .speak-voice select:disabled { cursor: default; opacity: .7; }
-    html[data-theme="dark"] .speak-voice select { color-scheme: dark; }
-    html[data-theme="light"] .speak-voice select { color-scheme: light; }
+    .poster-footer { text-align: center; margin-top: 2.5rem; font-family: var(--font-head); font-size:0.7333rem; letter-spacing: 0.1em; color: var(--mid); text-transform: uppercase; }
     @media print { .grid { gap: 0.75rem; }}
     @media (max-width: 480px) {
       .grid { grid-template-columns: 1fr 1fr; gap: 0.75rem; }
-      .phoneme { font-size: 18px; } .chip { min-width: 48px; padding: 5px 7px; } .chip-emoji { font-size: 18px; } .chip-word { font-size: 11px; }}
+      .phoneme { font-size:1.2rem; } .chip { min-width: 48px; padding: 5px 7px; } .chip-emoji { font-size:1.2rem; } .chip-word { font-size:0.7333rem; }}
 </style>
 </head>
 <body>
@@ -831,249 +99,245 @@ footer{ text-align:center; font-size:12px; color:var(--text-muted); margin-top:1
     <div class="poster-rule"></div>
   </header>
 
-  <div class="speak-hint" id="speakHint">🔊 Tap a word to hear it.
-    <label class="speak-voice">Voice <select id="speakVoice"><option>Device default</option></select></label>
-  </div>
-
   <div class="grid">
 
     <div class="pbox">
       <div class="pbox-header"><span class="phoneme">/b/</span><span class="spelling-hint">spelled b</span></div>
       <div class="pbox-body">
-        <button type="button" class="chip" data-say="cab" aria-label="cab"><span class="chip-emoji" aria-hidden="true">🚕</span><span class="chip-word">ca<u>b</u></span></button>
-        <button type="button" class="chip" data-say="jab" aria-label="jab"><span class="chip-emoji" aria-hidden="true">💉</span><span class="chip-word">ja<u>b</u></span></button>
-        <button type="button" class="chip" data-say="job" aria-label="job"><span class="chip-emoji" aria-hidden="true">💼</span><span class="chip-word">jo<u>b</u></span></button>
-        <button type="button" class="chip" data-say="orb" aria-label="orb"><span class="chip-emoji" aria-hidden="true">🔮</span><span class="chip-word">or<u>b</u></span></button>
+        <div class="chip"><span class="chip-emoji">🚕</span><span class="chip-word">ca<u>b</u></span></div>
+        <div class="chip"><span class="chip-emoji">💉</span><span class="chip-word">ja<u>b</u></span></div>
+        <div class="chip"><span class="chip-emoji">💼</span><span class="chip-word">jo<u>b</u></span></div>
+        <div class="chip"><span class="chip-emoji">🔮</span><span class="chip-word">or<u>b</u></span></div>
         
-        <button type="button" class="chip" data-say="rib" aria-label="rib"><span class="chip-emoji" aria-hidden="true">🍖</span><span class="chip-word">ri<u>b</u></span></button>    
-        <button type="button" class="chip" data-say="rub" aria-label="rub"><span class="chip-emoji" aria-hidden="true">🧴</span><span class="chip-word">ru<u>b</u></span></button>
-        <button type="button" class="chip" data-say="sob" aria-label="sob"><span class="chip-emoji" aria-hidden="true">😢</span><span class="chip-word">so<u>b</u></span></button>
-        <button type="button" class="chip" data-say="web" aria-label="web"><span class="chip-emoji" aria-hidden="true">🕸️</span><span class="chip-word">we<u>b</u></span></button>
+        <div class="chip"><span class="chip-emoji">🍖</span><span class="chip-word">ri<u>b</u></span></div>    
+        <div class="chip"><span class="chip-emoji">🧴</span><span class="chip-word">ru<u>b</u></span></div>
+        <div class="chip"><span class="chip-emoji">😢</span><span class="chip-word">so<u>b</u></span></div>
+        <div class="chip"><span class="chip-emoji">🕸️</span><span class="chip-word">we<u>b</u></span></div>
       </div>
     </div>
 
     <div class="pbox">
       <div class="pbox-header"><span class="phoneme">/k/</span><span class="spelling-hint">spelled c</span></div>
       <div class="pbox-body">
-        <button type="button" class="chip" data-say="clinic" aria-label="clinic"><span class="chip-emoji" aria-hidden="true">🏥</span><span class="chip-word">clini<u>c</u></span></button>
-        <button type="button" class="chip" data-say="comic" aria-label="comic"><span class="chip-emoji" aria-hidden="true">📚</span><span class="chip-word">comi<u>c</u></span></button>
-        <button type="button" class="chip" data-say="disc" aria-label="disc"><span class="chip-emoji" aria-hidden="true">💿</span><span class="chip-word">dis<u>c</u></span></button>
-        <button type="button" class="chip" data-say="magic" aria-label="magic"><span class="chip-emoji" aria-hidden="true">🪄</span><span class="chip-word">magi<u>c</u></span></button>
+        <div class="chip"><span class="chip-emoji">🏥</span><span class="chip-word">clini<u>c</u></span></div>
+        <div class="chip"><span class="chip-emoji">📚</span><span class="chip-word">comi<u>c</u></span></div>
+        <div class="chip"><span class="chip-emoji">💿</span><span class="chip-word">dis<u>c</u></span></div>
+        <div class="chip"><span class="chip-emoji">🪄</span><span class="chip-word">magi<u>c</u></span></div>
         
-        <button type="button" class="chip" data-say="tarmac" aria-label="tarmac"><span class="chip-emoji" aria-hidden="true">🛣️</span><span class="chip-word">tarma<u>c</u></span></button>
-        <button type="button" class="chip" data-say="toxic" aria-label="toxic"><span class="chip-emoji" aria-hidden="true">☠️</span><span class="chip-word">toxi<u>c</u></span></button>
-        <button type="button" class="chip" data-say="tunic" aria-label="tunic"><span class="chip-emoji" aria-hidden="true">👘</span><span class="chip-word">tuni<u>c</u></span></button>
-        <button type="button" class="chip" data-say="tropic" aria-label="tropic"><span class="chip-emoji" aria-hidden="true">🏝️</span><span class="chip-word">tropi<u>c</u></span></button>
+        <div class="chip"><span class="chip-emoji">🛣️</span><span class="chip-word">tarma<u>c</u></span></div>
+        <div class="chip"><span class="chip-emoji">☠️</span><span class="chip-word">toxi<u>c</u></span></div>
+        <div class="chip"><span class="chip-emoji">👘</span><span class="chip-word">tuni<u>c</u></span></div>
+        <div class="chip"><span class="chip-emoji">🏝️</span><span class="chip-word">tropi<u>c</u></span></div>
       </div>
     </div>
 
     <div class="pbox">
       <div class="pbox-header"><span class="phoneme">/d/</span><span class="spelling-hint">spelled d</span></div>
       <div class="pbox-body">
-        <button type="button" class="chip" data-say="bad" aria-label="bad"><span class="chip-emoji" aria-hidden="true">😈</span><span class="chip-word">ba<u>d</u></span></button>
-        <button type="button" class="chip" data-say="bed" aria-label="bed"><span class="chip-emoji" aria-hidden="true">🛏️</span><span class="chip-word">be<u>d</u></span></button>
-        <button type="button" class="chip" data-say="cold" aria-label="cold"><span class="chip-emoji" aria-hidden="true">🥶</span><span class="chip-word">col<u>d</u></span></button>
-        <button type="button" class="chip" data-say="lid" aria-label="lid"><span class="chip-emoji" aria-hidden="true">🫙</span><span class="chip-word">li<u>d</u></span></button>
+        <div class="chip"><span class="chip-emoji">😈</span><span class="chip-word">ba<u>d</u></span></div>
+        <div class="chip"><span class="chip-emoji">🛏️</span><span class="chip-word">be<u>d</u></span></div>
+        <div class="chip"><span class="chip-emoji">🥶</span><span class="chip-word">col<u>d</u></span></div>
+        <div class="chip"><span class="chip-emoji">🫙</span><span class="chip-word">li<u>d</u></span></div>
         
-        <button type="button" class="chip" data-say="old" aria-label="old"><span class="chip-emoji" aria-hidden="true">👴</span><span class="chip-word">ol<u>d</u></span></button>
-        <button type="button" class="chip" data-say="red" aria-label="red"><span class="chip-emoji" aria-hidden="true">🔴</span><span class="chip-word">re<u>d</u></span></button>
-        <button type="button" class="chip" data-say="sad" aria-label="sad"><span class="chip-emoji" aria-hidden="true">😔</span><span class="chip-word">sa<u>d</u></span></button>
-        <button type="button" class="chip" data-say="head" aria-label="head"><span class="chip-emoji" aria-hidden="true">🗣️</span><span class="chip-word">hea<u>d</u></span></button>
+        <div class="chip"><span class="chip-emoji">👴</span><span class="chip-word">ol<u>d</u></span></div>
+        <div class="chip"><span class="chip-emoji">🔴</span><span class="chip-word">re<u>d</u></span></div>
+        <div class="chip"><span class="chip-emoji">😔</span><span class="chip-word">sa<u>d</u></span></div>
+        <div class="chip"><span class="chip-emoji">🗣️</span><span class="chip-word">hea<u>d</u></span></div>
       </div>
     </div>
 
     <div class="pbox">
       <div class="pbox-header"><span class="phoneme">/f/</span><span class="spelling-hint">spelled f · fe · lf</span></div>
       <div class="pbox-body">
-        <button type="button" class="chip" data-say="beef" aria-label="beef"><span class="chip-emoji" aria-hidden="true">🥩</span><span class="chip-word">bee<u>f</u></span></button>
-        <button type="button" class="chip" data-say="deaf" aria-label="deaf"><span class="chip-emoji" aria-hidden="true">🦻</span><span class="chip-word">dea<u>f</u></span></button>
-        <button type="button" class="chip" data-say="knife" aria-label="knife"><span class="chip-emoji" aria-hidden="true">🔪</span><span class="chip-word">kni<u>fe</u></span></button>
-        <button type="button" class="chip" data-say="leaf" aria-label="leaf"><span class="chip-emoji" aria-hidden="true">🍃</span><span class="chip-word">lea<u>f</u></span></button>
+        <div class="chip"><span class="chip-emoji">🥩</span><span class="chip-word">bee<u>f</u></span></div>
+        <div class="chip"><span class="chip-emoji">🦻</span><span class="chip-word">dea<u>f</u></span></div>
+        <div class="chip"><span class="chip-emoji">🔪</span><span class="chip-word">kni<u>fe</u></span></div>
+        <div class="chip"><span class="chip-emoji">🍃</span><span class="chip-word">lea<u>f</u></span></div>
         
-        <button type="button" class="chip" data-say="loaf" aria-label="loaf"><span class="chip-emoji" aria-hidden="true">🍞</span><span class="chip-word">loa<u>f</u></span></button>
-        <button type="button" class="chip" data-say="riff" aria-label="riff"><span class="chip-emoji" aria-hidden="true">🎶</span><span class="chip-word">ri<u>ff</u></span></button>
-        <button type="button" class="chip" data-say="roof" aria-label="roof"><span class="chip-emoji" aria-hidden="true">🏠</span><span class="chip-word">roo<u>f</u></span></button>
-        <button type="button" class="chip" data-say="scarf" aria-label="scarf"><span class="chip-emoji" aria-hidden="true">🧣</span><span class="chip-word">scar<u>f</u></span></button>
+        <div class="chip"><span class="chip-emoji">🍞</span><span class="chip-word">loa<u>f</u></span></div>
+        <div class="chip"><span class="chip-emoji">🎶</span><span class="chip-word">ri<u>ff</u></span></div>
+        <div class="chip"><span class="chip-emoji">🏠</span><span class="chip-word">roo<u>f</u></span></div>
+        <div class="chip"><span class="chip-emoji">🧣</span><span class="chip-word">scar<u>f</u></span></div>
       </div>
     </div>
 
     <div class="pbox">
       <div class="pbox-header"><span class="phoneme">/g/</span><span class="spelling-hint">spelled g · gue</span></div>
       <div class="pbox-body">
-        <button type="button" class="chip" data-say="bag" aria-label="bag"><span class="chip-emoji" aria-hidden="true">👜</span><span class="chip-word">ba<u>g</u></span></button>
-        <button type="button" class="chip" data-say="beg" aria-label="beg"><span class="chip-emoji" aria-hidden="true">🙏</span><span class="chip-word">be<u>g</u></span></button>
-        <button type="button" class="chip" data-say="dog" aria-label="dog"><span class="chip-emoji" aria-hidden="true">🐕</span><span class="chip-word">do<u>g</u></span></button>
-        <button type="button" class="chip" data-say="jog" aria-label="jog"><span class="chip-emoji" aria-hidden="true">🏃</span><span class="chip-word">jo<u>g</u></span></button>
+        <div class="chip"><span class="chip-emoji">👜</span><span class="chip-word">ba<u>g</u></span></div>
+        <div class="chip"><span class="chip-emoji">🙏</span><span class="chip-word">be<u>g</u></span></div>
+        <div class="chip"><span class="chip-emoji">🐕</span><span class="chip-word">do<u>g</u></span></div>
+        <div class="chip"><span class="chip-emoji">🏃</span><span class="chip-word">jo<u>g</u></span></div>
         
-        <button type="button" class="chip" data-say="fog" aria-label="fog"><span class="chip-emoji" aria-hidden="true">🌫️</span><span class="chip-word">fo<u>g</u></span></button>
-        <button type="button" class="chip" data-say="leg" aria-label="leg"><span class="chip-emoji" aria-hidden="true">🦵</span><span class="chip-word">le<u>g</u></span></button>
-        <button type="button" class="chip" data-say="pig" aria-label="pig"><span class="chip-emoji" aria-hidden="true">🐖</span><span class="chip-word">pi<u>g</u></span></button>
-        <button type="button" class="chip" data-say="vague" aria-label="vague"><span class="chip-emoji" aria-hidden="true">🤔</span><span class="chip-word">va<u>gue</u></span></button>
+        <div class="chip"><span class="chip-emoji">🌫️</span><span class="chip-word">fo<u>g</u></span></div>
+        <div class="chip"><span class="chip-emoji">🦵</span><span class="chip-word">le<u>g</u></span></div>
+        <div class="chip"><span class="chip-emoji">🐖</span><span class="chip-word">pi<u>g</u></span></div>
+        <div class="chip"><span class="chip-emoji">🤔</span><span class="chip-word">va<u>gue</u></span></div>
       </div>
     </div>
 
     <div class="pbox">
       <div class="pbox-header"><span class="phoneme">/k/</span><span class="spelling-hint">spelled ck · k</span></div>
       <div class="pbox-body">
-        <button type="button" class="chip" data-say="book" aria-label="book"><span class="chip-emoji" aria-hidden="true">📖</span><span class="chip-word">boo<u>k</u></span></button>
-        <button type="button" class="chip" data-say="cook" aria-label="cook"><span class="chip-emoji" aria-hidden="true">👨‍🍳</span><span class="chip-word">coo<u>k</u></span></button>
-        <button type="button" class="chip" data-say="duck" aria-label="duck"><span class="chip-emoji" aria-hidden="true">🦆</span><span class="chip-word">du<u>ck</u></span></button>
-		<button type="button" class="chip" data-say="hook" aria-label="hook"><span class="chip-emoji" aria-hidden="true">🪝</span><span class="chip-word">hoo<u>k</u></span></button>
+        <div class="chip"><span class="chip-emoji">📖</span><span class="chip-word">boo<u>k</u></span></div>
+        <div class="chip"><span class="chip-emoji">👨‍🍳</span><span class="chip-word">coo<u>k</u></span></div>
+        <div class="chip"><span class="chip-emoji">🦆</span><span class="chip-word">du<u>ck</u></span></div>
+		<div class="chip"><span class="chip-emoji">🪝</span><span class="chip-word">hoo<u>k</u></span></div>
 		
-        <button type="button" class="chip" data-say="look" aria-label="look"><span class="chip-emoji" aria-hidden="true">👀</span><span class="chip-word">loo<u>k</u></span></button>
-        <button type="button" class="chip" data-say="leak" aria-label="leak"><span class="chip-emoji" aria-hidden="true">💧</span><span class="chip-word">lea<u>k</u></span></button>
-        <button type="button" class="chip" data-say="week" aria-label="week"><span class="chip-emoji" aria-hidden="true">📅</span><span class="chip-word">wee<u>k</u></span></button>
-        <button type="button" class="chip" data-say="sick" aria-label="sick"><span class="chip-emoji" aria-hidden="true">🤒</span><span class="chip-word">si<u>ck</u></span></button>
+        <div class="chip"><span class="chip-emoji">👀</span><span class="chip-word">loo<u>k</u></span></div>
+        <div class="chip"><span class="chip-emoji">💧</span><span class="chip-word">lea<u>k</u></span></div>
+        <div class="chip"><span class="chip-emoji">📅</span><span class="chip-word">wee<u>k</u></span></div>
+        <div class="chip"><span class="chip-emoji">🤒</span><span class="chip-word">si<u>ck</u></span></div>
       </div>
     </div>
 
     <div class="pbox">
       <div class="pbox-header"><span class="phoneme">/l/</span><span class="spelling-hint">spelled l · ll</span></div>
       <div class="pbox-body">
-        <button type="button" class="chip" data-say="curl" aria-label="curl"><span class="chip-emoji" aria-hidden="true">➿</span><span class="chip-word">cur<u>l</u></span></button>
-        <button type="button" class="chip" data-say="feel" aria-label="feel"><span class="chip-emoji" aria-hidden="true">🥰</span><span class="chip-word">fee<u>l</u></span></button>
-        <button type="button" class="chip" data-say="girl" aria-label="girl"><span class="chip-emoji" aria-hidden="true">👧</span><span class="chip-word">gir<u>l</u></span></button>
-        <button type="button" class="chip" data-say="kneel" aria-label="kneel"><span class="chip-emoji" aria-hidden="true">🧎</span><span class="chip-word">knee<u>l</u></span></button>
+        <div class="chip"><span class="chip-emoji">➿</span><span class="chip-word">cur<u>l</u></span></div>
+        <div class="chip"><span class="chip-emoji">🥰</span><span class="chip-word">fee<u>l</u></span></div>
+        <div class="chip"><span class="chip-emoji">👧</span><span class="chip-word">gir<u>l</u></span></div>
+        <div class="chip"><span class="chip-emoji">🧎</span><span class="chip-word">knee<u>l</u></span></div>
         
-        <button type="button" class="chip" data-say="pearl" aria-label="pearl"><span class="chip-emoji" aria-hidden="true">🦪</span><span class="chip-word">pear<u>l</u></span></button>
-        <button type="button" class="chip" data-say="pill" aria-label="pill"><span class="chip-emoji" aria-hidden="true">💊</span><span class="chip-word">pi<u>ll</u></span></button>
-        <button type="button" class="chip" data-say="seal" aria-label="seal"><span class="chip-emoji" aria-hidden="true">🦭</span><span class="chip-word">sea<u>l</u></span></button>
-        <button type="button" class="chip" data-say="wheel" aria-label="wheel"><span class="chip-emoji" aria-hidden="true">🛞</span><span class="chip-word">whee<u>l</u></span></button>
+        <div class="chip"><span class="chip-emoji">🦪</span><span class="chip-word">pear<u>l</u></span></div>
+        <div class="chip"><span class="chip-emoji">💊</span><span class="chip-word">pi<u>ll</u></span></div>
+        <div class="chip"><span class="chip-emoji">🦭</span><span class="chip-word">sea<u>l</u></span></div>
+        <div class="chip"><span class="chip-emoji">🛞</span><span class="chip-word">whee<u>l</u></span></div>
       </div>
     </div>
 
     <div class="pbox">
       <div class="pbox-header"><span class="phoneme">/m/</span><span class="spelling-hint">spelled m · me</span></div>
       <div class="pbox-body">
-        <button type="button" class="chip" data-say="sum" aria-label="sum"><span class="chip-emoji" aria-hidden="true">➕</span><span class="chip-word">su<u>m</u></span></button>
-        <button type="button" class="chip" data-say="ham" aria-label="ham"><span class="chip-emoji" aria-hidden="true">🥓</span><span class="chip-word">ha<u>m</u></span></button>
-        <button type="button" class="chip" data-say="home" aria-label="home"><span class="chip-emoji" aria-hidden="true">🏡</span><span class="chip-word">ho<u>me</u></span></button>
-        <button type="button" class="chip" data-say="room" aria-label="room"><span class="chip-emoji" aria-hidden="true">🛋️</span><span class="chip-word">roo<u>m</u></span></button>
+        <div class="chip"><span class="chip-emoji">➕</span><span class="chip-word">su<u>m</u></span></div>
+        <div class="chip"><span class="chip-emoji">🥓</span><span class="chip-word">ha<u>m</u></span></div>
+        <div class="chip"><span class="chip-emoji">🏡</span><span class="chip-word">ho<u>me</u></span></div>
+        <div class="chip"><span class="chip-emoji">🛋️</span><span class="chip-word">roo<u>m</u></span></div>
         
-        <button type="button" class="chip" data-say="drum" aria-label="drum"><span class="chip-emoji" aria-hidden="true">🥁</span><span class="chip-word">dru<u>m</u></span></button>
-        <button type="button" class="chip" data-say="plum" aria-label="plum"><span class="chip-emoji" aria-hidden="true">🍑</span><span class="chip-word">plu<u>m</u></span></button>
-        <button type="button" class="chip" data-say="cream" aria-label="cream"><span class="chip-emoji" aria-hidden="true">🍦</span><span class="chip-word">crea<u>m</u></span></button>
-        <button type="button" class="chip" data-say="dream" aria-label="dream"><span class="chip-emoji" aria-hidden="true">💭</span><span class="chip-word">drea<u>m</u></span></button>
+        <div class="chip"><span class="chip-emoji">🥁</span><span class="chip-word">dru<u>m</u></span></div>
+        <div class="chip"><span class="chip-emoji">🍑</span><span class="chip-word">plu<u>m</u></span></div>
+        <div class="chip"><span class="chip-emoji">🍦</span><span class="chip-word">crea<u>m</u></span></div>
+        <div class="chip"><span class="chip-emoji">💭</span><span class="chip-word">drea<u>m</u></span></div>
       </div>
     </div>
 
     <div class="pbox">
       <div class="pbox-header"><span class="phoneme">/n/</span><span class="spelling-hint">spelled n · ne</span></div>
       <div class="pbox-body">
-        <button type="button" class="chip" data-say="bone" aria-label="bone"><span class="chip-emoji" aria-hidden="true">🦴</span><span class="chip-word">bo<u>ne</u></span></button>
-        <button type="button" class="chip" data-say="clown" aria-label="clown"><span class="chip-emoji" aria-hidden="true">🤡</span><span class="chip-word">clow<u>n</u></span></button>
-        <button type="button" class="chip" data-say="man" aria-label="man"><span class="chip-emoji" aria-hidden="true">🧑</span><span class="chip-word">ma<u>n</u></span></button>
-        <button type="button" class="chip" data-say="pan" aria-label="pan"><span class="chip-emoji" aria-hidden="true">🥘</span><span class="chip-word">pa<u>n</u></span></button>
+        <div class="chip"><span class="chip-emoji">🦴</span><span class="chip-word">bo<u>ne</u></span></div>
+        <div class="chip"><span class="chip-emoji">🤡</span><span class="chip-word">clow<u>n</u></span></div>
+        <div class="chip"><span class="chip-emoji">🧑</span><span class="chip-word">ma<u>n</u></span></div>
+        <div class="chip"><span class="chip-emoji">🥘</span><span class="chip-word">pa<u>n</u></span></div>
         
-        <button type="button" class="chip" data-say="run" aria-label="run"><span class="chip-emoji" aria-hidden="true">🏃</span><span class="chip-word">ru<u>n</u></span></button>       
-        <button type="button" class="chip" data-say="sun" aria-label="sun"><span class="chip-emoji" aria-hidden="true">☀️</span><span class="chip-word">su<u>n</u></span></button>
-        <button type="button" class="chip" data-say="ten" aria-label="ten"><span class="chip-emoji" aria-hidden="true">🔟</span><span class="chip-word">te<u>n</u></span></button>
-        <button type="button" class="chip" data-say="tin" aria-label="tin"><span class="chip-emoji" aria-hidden="true">🪣</span><span class="chip-word">ti<u>n</u></span></button>
+        <div class="chip"><span class="chip-emoji">🏃</span><span class="chip-word">ru<u>n</u></span></div>       
+        <div class="chip"><span class="chip-emoji">☀️</span><span class="chip-word">su<u>n</u></span></div>
+        <div class="chip"><span class="chip-emoji">🔟</span><span class="chip-word">te<u>n</u></span></div>
+        <div class="chip"><span class="chip-emoji">🪣</span><span class="chip-word">ti<u>n</u></span></div>
       </div>
     </div>
 
     <div class="pbox">
       <div class="pbox-header"><span class="phoneme">/ŋ/</span><span class="spelling-hint">spelled ng · ung</span></div>
       <div class="pbox-body">
-        <button type="button" class="chip" data-say="bang" aria-label="bang"><span class="chip-emoji" aria-hidden="true">💥</span><span class="chip-word">ba<u>ng</u></span></button>
-        <button type="button" class="chip" data-say="king" aria-label="king"><span class="chip-emoji" aria-hidden="true">🤴</span><span class="chip-word">ki<u>ng</u></span></button>
-        <button type="button" class="chip" data-say="lung" aria-label="lung"><span class="chip-emoji" aria-hidden="true">🫁</span><span class="chip-word">lu<u>ng</u></span></button>      
-        <button type="button" class="chip" data-say="ring" aria-label="ring"><span class="chip-emoji" aria-hidden="true">💍</span><span class="chip-word">ri<u>ng</u></span></button>
+        <div class="chip"><span class="chip-emoji">💥</span><span class="chip-word">ba<u>ng</u></span></div>
+        <div class="chip"><span class="chip-emoji">🤴</span><span class="chip-word">ki<u>ng</u></span></div>
+        <div class="chip"><span class="chip-emoji">🫁</span><span class="chip-word">lu<u>ng</u></span></div>      
+        <div class="chip"><span class="chip-emoji">💍</span><span class="chip-word">ri<u>ng</u></span></div>
         
-        <button type="button" class="chip" data-say="swing" aria-label="swing"><span class="chip-emoji" aria-hidden="true">🏌️</span><span class="chip-word">swi<u>ng</u></span></button>
-        <button type="button" class="chip" data-say="wing" aria-label="wing"><span class="chip-emoji" aria-hidden="true">🪽</span><span class="chip-word">wi<u>ng</u></span></button>
-        <button type="button" class="chip" data-say="wrong" aria-label="wrong"><span class="chip-emoji" aria-hidden="true">❌</span><span class="chip-word">wro<u>ng</u></span></button>
-        <button type="button" class="chip" data-say="young" aria-label="young"><span class="chip-emoji" aria-hidden="true">👶</span><span class="chip-word">yo<u>ung</u></span></button>
+        <div class="chip"><span class="chip-emoji">🏌️</span><span class="chip-word">swi<u>ng</u></span></div>
+        <div class="chip"><span class="chip-emoji">🪽</span><span class="chip-word">wi<u>ng</u></span></div>
+        <div class="chip"><span class="chip-emoji">❌</span><span class="chip-word">wro<u>ng</u></span></div>
+        <div class="chip"><span class="chip-emoji">👶</span><span class="chip-word">yo<u>ung</u></span></div>
       </div>
     </div>
 
     <div class="pbox">
       <div class="pbox-header"><span class="phoneme">/p/</span><span class="spelling-hint">spelled p</span></div>
       <div class="pbox-body">
-        <button type="button" class="chip" data-say="cap" aria-label="cap"><span class="chip-emoji" aria-hidden="true">🧢</span><span class="chip-word">ca<u>p</u></span></button>
-        <button type="button" class="chip" data-say="cup" aria-label="cup"><span class="chip-emoji" aria-hidden="true">☕</span><span class="chip-word">cu<u>p</u></span></button>
-        <button type="button" class="chip" data-say="dip" aria-label="dip"><span class="chip-emoji" aria-hidden="true">🫕</span><span class="chip-word">di<u>p</u></span></button>
-        <button type="button" class="chip" data-say="gap" aria-label="gap"><span class="chip-emoji" aria-hidden="true">🕳️</span><span class="chip-word">ga<u>p</u></span></button>
+        <div class="chip"><span class="chip-emoji">🧢</span><span class="chip-word">ca<u>p</u></span></div>
+        <div class="chip"><span class="chip-emoji">☕</span><span class="chip-word">cu<u>p</u></span></div>
+        <div class="chip"><span class="chip-emoji">🫕</span><span class="chip-word">di<u>p</u></span></div>
+        <div class="chip"><span class="chip-emoji">🕳️</span><span class="chip-word">ga<u>p</u></span></div>
         
-        <button type="button" class="chip" data-say="map" aria-label="map"><span class="chip-emoji" aria-hidden="true">🗺️</span><span class="chip-word">ma<u>p</u></span></button>
-        <button type="button" class="chip" data-say="pup" aria-label="pup"><span class="chip-emoji" aria-hidden="true">🐶</span><span class="chip-word">pu<u>p</u></span></button>
-        <button type="button" class="chip" data-say="top" aria-label="top"><span class="chip-emoji" aria-hidden="true">🔝</span><span class="chip-word">to<u>p</u></span></button>
-        <button type="button" class="chip" data-say="leap" aria-label="leap"><span class="chip-emoji" aria-hidden="true">🤾</span><span class="chip-word">lea<u>p</u></span></button>
+        <div class="chip"><span class="chip-emoji">🗺️</span><span class="chip-word">ma<u>p</u></span></div>
+        <div class="chip"><span class="chip-emoji">🐶</span><span class="chip-word">pu<u>p</u></span></div>
+        <div class="chip"><span class="chip-emoji">🔝</span><span class="chip-word">to<u>p</u></span></div>
+        <div class="chip"><span class="chip-emoji">🤾</span><span class="chip-word">lea<u>p</u></span></div>
       </div>
     </div>
 
     <div class="pbox">
       <div class="pbox-header"><span class="phoneme">/r/</span><span class="spelling-hint">spelled r</span></div>
       <div class="pbox-body">
-        <button type="button" class="chip" data-say="car" aria-label="car"><span class="chip-emoji" aria-hidden="true">🚗</span><span class="chip-word">ca<u>r</u></span></button>
-        <button type="button" class="chip" data-say="baker" aria-label="baker"><span class="chip-emoji" aria-hidden="true">🧑‍🍳</span><span class="chip-word">bake<u>r</u></span></button>
-        <button type="button" class="chip" data-say="deer" aria-label="deer"><span class="chip-emoji" aria-hidden="true">🦌</span><span class="chip-word">dee<u>r</u></span></button>
-        <button type="button" class="chip" data-say="door" aria-label="door"><span class="chip-emoji" aria-hidden="true">🚪</span><span class="chip-word">doo<u>r</u></span></button>
+        <div class="chip"><span class="chip-emoji">🚗</span><span class="chip-word">ca<u>r</u></span></div>
+        <div class="chip"><span class="chip-emoji">🧑‍🍳</span><span class="chip-word">bake<u>r</u></span></div>
+        <div class="chip"><span class="chip-emoji">🦌</span><span class="chip-word">dee<u>r</u></span></div>
+        <div class="chip"><span class="chip-emoji">🚪</span><span class="chip-word">doo<u>r</u></span></div>
         
-        <button type="button" class="chip" data-say="far" aria-label="far"><span class="chip-emoji" aria-hidden="true">↔️</span><span class="chip-word">fa<u>r</u></span></button>
-        <button type="button" class="chip" data-say="fair" aria-label="fair"><span class="chip-emoji" aria-hidden="true">🎡</span><span class="chip-word">fai<u>r</u></span></button>
-        <button type="button" class="chip" data-say="hair" aria-label="hair"><span class="chip-emoji" aria-hidden="true">💇</span><span class="chip-word">hai<u>r</u></span></button>
-        <button type="button" class="chip" data-say="pear" aria-label="pear"><span class="chip-emoji" aria-hidden="true">🍐</span><span class="chip-word">pea<u>r</u></span></button>
+        <div class="chip"><span class="chip-emoji">↔️</span><span class="chip-word">fa<u>r</u></span></div>
+        <div class="chip"><span class="chip-emoji">🎡</span><span class="chip-word">fai<u>r</u></span></div>
+        <div class="chip"><span class="chip-emoji">💇</span><span class="chip-word">hai<u>r</u></span></div>
+        <div class="chip"><span class="chip-emoji">🍐</span><span class="chip-word">pea<u>r</u></span></div>
       </div>
     </div>
 
     <div class="pbox">
       <div class="pbox-header"><span class="phoneme">/s/</span><span class="spelling-hint">spelled s · ss · se · ce</span></div>
       <div class="pbox-body">
-		<button type="button" class="chip" data-say="circus" aria-label="circus"><span class="chip-emoji" aria-hidden="true">🎪</span><span class="chip-word">circu<u>s</u></span></button>
-		<button type="button" class="chip" data-say="class" aria-label="class"><span class="chip-emoji" aria-hidden="true">🧑‍🏫</span><span class="chip-word">cla<u>ss</u></span></button>
-        <button type="button" class="chip" data-say="bus" aria-label="bus"><span class="chip-emoji" aria-hidden="true">🚌</span><span class="chip-word">bu<u>s</u></span></button>
-        <button type="button" class="chip" data-say="gas" aria-label="gas"><span class="chip-emoji" aria-hidden="true">⛽</span><span class="chip-word">ga<u>s</u></span></button>
+		<div class="chip"><span class="chip-emoji">🎪</span><span class="chip-word">circu<u>s</u></span></div>
+		<div class="chip"><span class="chip-emoji">🧑‍🏫</span><span class="chip-word">cla<u>ss</u></span></div>
+        <div class="chip"><span class="chip-emoji">🚌</span><span class="chip-word">bu<u>s</u></span></div>
+        <div class="chip"><span class="chip-emoji">⛽</span><span class="chip-word">ga<u>s</u></span></div>
         
-		<button type="button" class="chip" data-say="horse" aria-label="horse"><span class="chip-emoji" aria-hidden="true">🐎</span><span class="chip-word">hor<u>se</u></span></button>
-        <button type="button" class="chip" data-say="lies" aria-label="lies"><span class="chip-emoji" aria-hidden="true">🤥</span><span class="chip-word">lie<u>s</u></span></button>
-        <button type="button" class="chip" data-say="spice" aria-label="spice"><span class="chip-emoji" aria-hidden="true">🌶️</span><span class="chip-word">spi<u>ce</u></span></button>
-        <button type="button" class="chip" data-say="yes" aria-label="yes"><span class="chip-emoji" aria-hidden="true">✅</span><span class="chip-word">ye<u>s</u></span></button>
+		<div class="chip"><span class="chip-emoji">🐎</span><span class="chip-word">hor<u>se</u></span></div>
+        <div class="chip"><span class="chip-emoji">🤥</span><span class="chip-word">lie<u>s</u></span></div>
+        <div class="chip"><span class="chip-emoji">🌶️</span><span class="chip-word">spi<u>ce</u></span></div>
+        <div class="chip"><span class="chip-emoji">✅</span><span class="chip-word">ye<u>s</u></span></div>
       </div>
     </div>
 
     <div class="pbox">
       <div class="pbox-header"><span class="phoneme">/t/</span><span class="spelling-hint">spelled t · ce</span></div>
       <div class="pbox-body">
-        <button type="button" class="chip" data-say="bat" aria-label="bat"><span class="chip-emoji" aria-hidden="true">🦇</span><span class="chip-word">ba<u>t</u></span></button>
-        <button type="button" class="chip" data-say="cat" aria-label="cat"><span class="chip-emoji" aria-hidden="true">🐈‍⬛</span><span class="chip-word">ca<u>t</u></span></button>
-        <button type="button" class="chip" data-say="hit" aria-label="hit"><span class="chip-emoji" aria-hidden="true">🥊</span><span class="chip-word">hi<u>t</u></span></button>
-        <button type="button" class="chip" data-say="hot" aria-label="hot"><span class="chip-emoji" aria-hidden="true">🥵</span><span class="chip-word">ho<u>t</u></span></button>
+        <div class="chip"><span class="chip-emoji">🦇</span><span class="chip-word">ba<u>t</u></span></div>
+        <div class="chip"><span class="chip-emoji">🐈‍⬛</span><span class="chip-word">ca<u>t</u></span></div>
+        <div class="chip"><span class="chip-emoji">🥊</span><span class="chip-word">hi<u>t</u></span></div>
+        <div class="chip"><span class="chip-emoji">🥵</span><span class="chip-word">ho<u>t</u></span></div>
         
-        <button type="button" class="chip" data-say="jet" aria-label="jet"><span class="chip-emoji" aria-hidden="true">✈️</span><span class="chip-word">je<u>t</u></span></button>
-        <button type="button" class="chip" data-say="note" aria-label="note"><span class="chip-emoji" aria-hidden="true">📝</span><span class="chip-word">no<u>te</u></span></button>
-        <button type="button" class="chip" data-say="pet" aria-label="pet"><span class="chip-emoji" aria-hidden="true">🐾</span><span class="chip-word">pe<u>t</u></span></button>
-        <button type="button" class="chip" data-say="sit" aria-label="sit"><span class="chip-emoji" aria-hidden="true">🪑</span><span class="chip-word">si<u>t</u></span></button>
+        <div class="chip"><span class="chip-emoji">✈️</span><span class="chip-word">je<u>t</u></span></div>
+        <div class="chip"><span class="chip-emoji">📝</span><span class="chip-word">no<u>te</u></span></div>
+        <div class="chip"><span class="chip-emoji">🐾</span><span class="chip-word">pe<u>t</u></span></div>
+        <div class="chip"><span class="chip-emoji">🪑</span><span class="chip-word">si<u>t</u></span></div>
       </div>
     </div>
     
     <div class="pbox">
       <div class="pbox-header"><span class="phoneme">/v/</span><span class="spelling-hint">spelled ve</span></div>
       <div class="pbox-body">
-        <button type="button" class="chip" data-say="curve" aria-label="curve"><span class="chip-emoji" aria-hidden="true">〰️</span><span class="chip-word">cur<u>ve</u></span></button>
-        <button type="button" class="chip" data-say="dove" aria-label="dove"><span class="chip-emoji" aria-hidden="true">🕊️</span><span class="chip-word">do<u>ve</u></span></button>
-        <button type="button" class="chip" data-say="five" aria-label="five"><span class="chip-emoji" aria-hidden="true">5️⃣</span><span class="chip-word">fi<u>ve</u></span></button>
-		<button type="button" class="chip" data-say="glove" aria-label="glove"><span class="chip-emoji" aria-hidden="true">🧤</span><span class="chip-word">glo<u>ve</u></span></button>
+        <div class="chip"><span class="chip-emoji">〰️</span><span class="chip-word">cur<u>ve</u></span></div>
+        <div class="chip"><span class="chip-emoji">🕊️</span><span class="chip-word">do<u>ve</u></span></div>
+        <div class="chip"><span class="chip-emoji">5️⃣</span><span class="chip-word">fi<u>ve</u></span></div>
+		<div class="chip"><span class="chip-emoji">🧤</span><span class="chip-word">glo<u>ve</u></span></div>
 		
-        <button type="button" class="chip" data-say="leave" aria-label="leave"><span class="chip-emoji" aria-hidden="true">🛫</span><span class="chip-word">lea<u>ve</u></span></button>  
-        <button type="button" class="chip" data-say="love" aria-label="love"><span class="chip-emoji" aria-hidden="true">💘</span><span class="chip-word">lo<u>ve</u></span></button>
-        <button type="button" class="chip" data-say="olive" aria-label="olive"><span class="chip-emoji" aria-hidden="true">🫒</span><span class="chip-word">oli<u>ve</u></span></button>
-        <button type="button" class="chip" data-say="solve" aria-label="solve"><span class="chip-emoji" aria-hidden="true">☑️</span><span class="chip-word">sol<u>ve</u></span></button>
+        <div class="chip"><span class="chip-emoji">🛫</span><span class="chip-word">lea<u>ve</u></span></div>  
+        <div class="chip"><span class="chip-emoji">💘</span><span class="chip-word">lo<u>ve</u></span></div>
+        <div class="chip"><span class="chip-emoji">🫒</span><span class="chip-word">oli<u>ve</u></span></div>
+        <div class="chip"><span class="chip-emoji">☑️</span><span class="chip-word">sol<u>ve</u></span></div>
       </div>
     </div>
 
     <div class="pbox">
       <div class="pbox-header"><span class="phoneme">/w/</span><span class="spelling-hint">spelled w</span></div>
       <div class="pbox-body">
-        <!-- say-override: bow (archery) = /boʊ/; "beau" stops TTS saying /baʊ/ --><button type="button" class="chip" data-say="beau" aria-label="bow"><span class="chip-emoji" aria-hidden="true">🏹</span><span class="chip-word">bo<u>w</u></span></button>
-        <button type="button" class="chip" data-say="cow" aria-label="cow"><span class="chip-emoji" aria-hidden="true">🐄</span><span class="chip-word">co<u>w</u></span></button>
-        <button type="button" class="chip" data-say="few" aria-label="few"><span class="chip-emoji" aria-hidden="true">🤏</span><span class="chip-word">fe<u>w</u></span></button>
-        <button type="button" class="chip" data-say="how" aria-label="how"><span class="chip-emoji" aria-hidden="true">❓</span><span class="chip-word">ho<u>w</u></span></button>
+        <div class="chip"><span class="chip-emoji">🏹</span><span class="chip-word">bo<u>w</u></span></div>
+        <div class="chip"><span class="chip-emoji">🐄</span><span class="chip-word">co<u>w</u></span></div>
+        <div class="chip"><span class="chip-emoji">🤏</span><span class="chip-word">fe<u>w</u></span></div>
+        <div class="chip"><span class="chip-emoji">❓</span><span class="chip-word">ho<u>w</u></span></div>
         
-        <button type="button" class="chip" data-say="low" aria-label="low"><span class="chip-emoji" aria-hidden="true">⬇️</span><span class="chip-word">lo<u>w</u></span></button>
-        <!-- say-override: row (a boat) = /roʊ/; "roe" stops TTS saying /raʊ/ --><button type="button" class="chip" data-say="roe" aria-label="row"><span class="chip-emoji" aria-hidden="true">🚣</span><span class="chip-word">ro<u>w</u></span></button>
-        <button type="button" class="chip" data-say="know" aria-label="know"><span class="chip-emoji" aria-hidden="true">🧠</span><span class="chip-word">kno<u>w</u></span></button>
-        <button type="button" class="chip" data-say="blow" aria-label="blow"><span class="chip-emoji" aria-hidden="true">💨</span><span class="chip-word">blo<u>w</u></span></button>
+        <div class="chip"><span class="chip-emoji">⬇️</span><span class="chip-word">lo<u>w</u></span></div>
+        <div class="chip"><span class="chip-emoji">🚣</span><span class="chip-word">ro<u>w</u></span></div>
+        <div class="chip"><span class="chip-emoji">🧠</span><span class="chip-word">kno<u>w</u></span></div>
+        <div class="chip"><span class="chip-emoji">💨</span><span class="chip-word">blo<u>w</u></span></div>
       </div>
     </div>
 
@@ -1081,45 +345,45 @@ footer{ text-align:center; font-size:12px; color:var(--text-muted); margin-top:1
       <div class="pbox-header"><span class="phoneme">/ks/</span><span class="spelling-hint">spelled x</span></div>
       <div class="pbox-body">
 
-        <button type="button" class="chip" data-say="box" aria-label="box"><span class="chip-emoji" aria-hidden="true">📦</span><span class="chip-word">bo<u>x</u></span></button>
-        <button type="button" class="chip" data-say="fix" aria-label="fix"><span class="chip-emoji" aria-hidden="true">🔧</span><span class="chip-word">fi<u>x</u></span></button>
-        <button type="button" class="chip" data-say="flex" aria-label="flex"><span class="chip-emoji" aria-hidden="true">💪</span><span class="chip-word">fle<u>x</u></span></button>
-        <button type="button" class="chip" data-say="index" aria-label="index"><span class="chip-emoji" aria-hidden="true">☝️</span><span class="chip-word">inde<u>x</u></span></button>
+        <div class="chip"><span class="chip-emoji">📦</span><span class="chip-word">bo<u>x</u></span></div>
+        <div class="chip"><span class="chip-emoji">🔧</span><span class="chip-word">fi<u>x</u></span></div>
+        <div class="chip"><span class="chip-emoji">💪</span><span class="chip-word">fle<u>x</u></span></div>
+        <div class="chip"><span class="chip-emoji">☝️</span><span class="chip-word">inde<u>x</u></span></div>
         
-        <button type="button" class="chip" data-say="ox" aria-label="ox"><span class="chip-emoji" aria-hidden="true">🐂</span><span class="chip-word">o<u>x</u></span></button>
-        <button type="button" class="chip" data-say="mix" aria-label="mix"><span class="chip-emoji" aria-hidden="true">🥣</span><span class="chip-word">mi<u>x</u></span></button>
-        <button type="button" class="chip" data-say="six" aria-label="six"><span class="chip-emoji" aria-hidden="true">6️⃣</span><span class="chip-word">si<u>x</u></span></button>
-        <button type="button" class="chip" data-say="wax" aria-label="wax"><span class="chip-emoji" aria-hidden="true">🕯️</span><span class="chip-word">wa<u>x</u></span></button>
+        <div class="chip"><span class="chip-emoji">🐂</span><span class="chip-word">o<u>x</u></span></div>
+        <div class="chip"><span class="chip-emoji">🥣</span><span class="chip-word">mi<u>x</u></span></div>
+        <div class="chip"><span class="chip-emoji">6️⃣</span><span class="chip-word">si<u>x</u></span></div>
+        <div class="chip"><span class="chip-emoji">🕯️</span><span class="chip-word">wa<u>x</u></span></div>
       </div>
     </div>
 
     <div class="pbox">
       <div class="pbox-header"><span class="phoneme">/aɪ/</span><span class="spelling-hint">spelled y · uy</span></div>
       <div class="pbox-body">
-        <button type="button" class="chip" data-say="my" aria-label="my"><span class="chip-emoji" aria-hidden="true">🫵</span><span class="chip-word">m<u>y</u></span></button>
-        <button type="button" class="chip" data-say="buy" aria-label="buy"><span class="chip-emoji" aria-hidden="true">🛍️</span><span class="chip-word">b<u>uy</u></span></button>
-        <button type="button" class="chip" data-say="cry" aria-label="cry"><span class="chip-emoji" aria-hidden="true">😭</span><span class="chip-word">cr<u>y</u></span></button>
-        <button type="button" class="chip" data-say="fly" aria-label="fly"><span class="chip-emoji" aria-hidden="true">🪰</span><span class="chip-word">fl<u>y</u></span></button>
+        <div class="chip"><span class="chip-emoji">🫵</span><span class="chip-word">m<u>y</u></span></div>
+        <div class="chip"><span class="chip-emoji">🛍️</span><span class="chip-word">b<u>uy</u></span></div>
+        <div class="chip"><span class="chip-emoji">😭</span><span class="chip-word">cr<u>y</u></span></div>
+        <div class="chip"><span class="chip-emoji">🪰</span><span class="chip-word">fl<u>y</u></span></div>
         
-        <button type="button" class="chip" data-say="fry" aria-label="fry"><span class="chip-emoji" aria-hidden="true">🍳</span><span class="chip-word">fr<u>y</u></span></button>
-        <button type="button" class="chip" data-say="shy" aria-label="shy"><span class="chip-emoji" aria-hidden="true">🫣</span><span class="chip-word">sh<u>y</u></span></button>
-        <button type="button" class="chip" data-say="try" aria-label="try"><span class="chip-emoji" aria-hidden="true">💪</span><span class="chip-word">tr<u>y</u></span></button>
-        <button type="button" class="chip" data-say="why" aria-label="why"><span class="chip-emoji" aria-hidden="true">⁉️</span><span class="chip-word">wh<u>y</u></span></button>
+        <div class="chip"><span class="chip-emoji">🍳</span><span class="chip-word">fr<u>y</u></span></div>
+        <div class="chip"><span class="chip-emoji">🫣</span><span class="chip-word">sh<u>y</u></span></div>
+        <div class="chip"><span class="chip-emoji">💪</span><span class="chip-word">tr<u>y</u></span></div>
+        <div class="chip"><span class="chip-emoji">⁉️</span><span class="chip-word">wh<u>y</u></span></div>
       </div>
     </div>
 
     <div class="pbox">
       <div class="pbox-header"><span class="phoneme">/i/</span><span class="spelling-hint">spelled y</span></div>
       <div class="pbox-body">
-        <button type="button" class="chip" data-say="angry" aria-label="angry"><span class="chip-emoji" aria-hidden="true">😡</span><span class="chip-word">angr<u>y</u></span></button>
-        <button type="button" class="chip" data-say="berry" aria-label="berry"><span class="chip-emoji" aria-hidden="true">🍓</span><span class="chip-word">berr<u>y</u></span></button>
-        <button type="button" class="chip" data-say="fairy" aria-label="fairy"><span class="chip-emoji" aria-hidden="true">🧚</span><span class="chip-word">fair<u>y</u></span></button>
-        <button type="button" class="chip" data-say="happy" aria-label="happy"><span class="chip-emoji" aria-hidden="true">😊</span><span class="chip-word">happ<u>y</u></span></button>
+        <div class="chip"><span class="chip-emoji">😡</span><span class="chip-word">angr<u>y</u></span></div>
+        <div class="chip"><span class="chip-emoji">🍓</span><span class="chip-word">berr<u>y</u></span></div>
+        <div class="chip"><span class="chip-emoji">🧚</span><span class="chip-word">fair<u>y</u></span></div>
+        <div class="chip"><span class="chip-emoji">😊</span><span class="chip-word">happ<u>y</u></span></div>
         
-        <button type="button" class="chip" data-say="heavy" aria-label="heavy"><span class="chip-emoji" aria-hidden="true">🏋️️</span><span class="chip-word">heav<u>y</u></span></button>
-        <button type="button" class="chip" data-say="merry" aria-label="merry"><span class="chip-emoji" aria-hidden="true">🎉</span><span class="chip-word">merr<u>y</u></span></button>
-        <button type="button" class="chip" data-say="silly" aria-label="silly"><span class="chip-emoji" aria-hidden="true">🤪</span><span class="chip-word">sill<u>y</u></span></button>
-        <button type="button" class="chip" data-say="story" aria-label="story"><span class="chip-emoji" aria-hidden="true">📖</span><span class="chip-word">stor<u>y</u></span></button>
+        <div class="chip"><span class="chip-emoji">🏋️️</span><span class="chip-word">heav<u>y</u></span></div>
+        <div class="chip"><span class="chip-emoji">🎉</span><span class="chip-word">merr<u>y</u></span></div>
+        <div class="chip"><span class="chip-emoji">🤪</span><span class="chip-word">sill<u>y</u></span></div>
+        <div class="chip"><span class="chip-emoji">📖</span><span class="chip-word">stor<u>y</u></span></div>
       </div>
     </div>
 
@@ -1135,1011 +399,6 @@ footer{ text-align:center; font-size:12px; color:var(--text-muted); margin-top:1
     <span id="theme-icon">☀️</span>
   </button>
 </div>
-<!-- PREVIEW-INLINE house.js START — replace this block with the original link/script once deployed next to the house assets -->
-<script>
-/* ══════════════════════════════════════════════════════════════════════════
-   house.js — the shared behaviour for every lesson page in this library.
-
-   Bundles four things:
-     · the light/dark theme toggle
-     · HouseWordOrder — the tap/drag sentence-builder engine
-     · HouseGapFill   — the Damerau-Levenshtein accuracy-bar gap fill
-     · HouseGrammar   — the part-of-speech highlighting toggle
-
-   Load it once at the end of <body>, before the page's own script.
-   ══════════════════════════════════════════════════════════════════════════ */
-
-// Self-contained theme toggle — no external CSS or JS required. Uses plain
-// getElementById/addEventListener/localStorage so it runs on the widest possible
-// range of browsers and devices (desktop, mobile, older Safari included), and
-// degrades gracefully (falls back to the OS theme) if storage is blocked.
-(function(){
-  var root = document.documentElement;
-  var STORAGE_KEY = 'theme-preference';
-
-  function getStored(){
-    try{ return localStorage.getItem(STORAGE_KEY); }catch(e){ return null; }
-  }
-  function setStored(theme){
-    try{ localStorage.setItem(STORAGE_KEY, theme); }catch(e){ /* private mode, etc. — ignore */ }
-  }
-  function systemPrefersDark(){
-    return !!(window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches);
-  }
-  function currentTheme(){
-    var saved = getStored();
-    return (saved === 'light' || saved === 'dark') ? saved : (systemPrefersDark() ? 'dark' : 'light');
-  }
-  function applyTheme(theme){
-    root.setAttribute('data-theme', theme);
-    var icon = document.getElementById('theme-icon');
-    if (icon) icon.textContent = theme === 'dark' ? '🌙' : '☀️';
-  }
-
-  applyTheme(currentTheme());
-
-  var btn = document.getElementById('theme-toggle');
-  if (btn){
-    btn.addEventListener('click', function(){
-      var next = currentTheme() === 'dark' ? 'light' : 'dark';
-      setStored(next);
-      applyTheme(next);
-    });
-  }
-
-  // If the person hasn't manually chosen a theme, keep following the OS setting
-  // live (e.g. their device switches to dark mode at sunset).
-  if (window.matchMedia){
-    var mql = window.matchMedia('(prefers-color-scheme: dark)');
-    var onSystemChange = function(){ if (!getStored()) applyTheme(currentTheme()); };
-    if (mql.addEventListener) mql.addEventListener('change', onSystemChange);
-    else if (mql.addListener) mql.addListener(onSystemChange); // older Safari
-  }
-})();
-
-
-/* ══════════════════════════════════════════════════════════════════════════
-   HOUSE WORD-ORDER ENGINE
-   Tap a chip to place it, tap again to remove it, or drag to reorder.
-   Correction is automatic once every chip is in the target zone.
-
-   Usage:
-     HouseWordOrder.build({
-       container: 'woItems',        // element id to render into
-       items: WO_ITEMS,             // [{speaker, avatar, context, text, pos}]
-       scoreEl: 'woScore',          // element id for the running score
-       totalEl: 'woTotal'           // element id for the item count
-     });
-
-   Each item's `text` is words joined by " / ", and `pos` is a parallel array of
-   part-of-speech keys used for the grammar highlighting shown on a correct answer.
-   ══════════════════════════════════════════════════════════════════════════ */
-(function (global) {
-  'use strict';
-
-  var POS_CLASSES = {
-    wh: 'pos-wh', aux: 'pos-aux', verb: 'pos-verb', part: 'pos-part',
-    subject: 'pos-subject', object: 'pos-object', complement: 'pos-complement',
-    noun: 'pos-noun', adj: 'pos-adj', adverb: 'pos-adverb', prep: 'pos-prep',
-    det: 'pos-det', conj: 'pos-conj', time: 'pos-time', neg: 'pos-neg', none: 'pos-none'
-  };
-
-  var ALL_POS_CLASSES = Object.keys(POS_CLASSES).map(function (k) { return POS_CLASSES[k]; });
-
-  var PLACEHOLDER_TEXT = 'Tap or drag words below to build the sentence';
-
-  function parseItem(str) {
-    return str.split(' / ').map(function (w) { return w.trim(); });
-  }
-
-  function shuffleArr(arr) {
-    var a = arr.slice();
-    for (var i = a.length - 1; i > 0; i--) {
-      var j = Math.floor(Math.random() * (i + 1));
-      var t = a[i]; a[i] = a[j]; a[j] = t;
-    }
-    return a;
-  }
-
-  function updatePlaceholder(zone) {
-    var hasChips = zone.querySelector('.word-chip');
-    var hasIndicator = zone.querySelector('.drop-indicator');
-    var placeholder = zone.querySelector('.target-placeholder');
-    if (!hasChips && !hasIndicator) {
-      if (!placeholder && zone.dataset.role === 'target') {
-        placeholder = document.createElement('span');
-        placeholder.className = 'target-placeholder';
-        placeholder.textContent = PLACEHOLDER_TEXT;
-        zone.appendChild(placeholder);
-      }
-    } else if (placeholder) {
-      placeholder.remove();
-    }
-  }
-
-  function resetChipVisualState(chip) {
-    chip.classList.remove('chip-correct', 'chip-wrong', 'chip-emphasis');
-    ALL_POS_CLASSES.forEach(function (c) { chip.classList.remove(c); });
-  }
-
-  function moveChipToTarget(chip, targetZone, poolZone) {
-    resetChipVisualState(chip);
-    chip.classList.add('in-target');
-    targetZone.appendChild(chip);
-    updatePlaceholder(targetZone);
-    updatePlaceholder(poolZone);
-  }
-
-  function moveChipToPool(chip, targetZone, poolZone) {
-    resetChipVisualState(chip);
-    chip.classList.remove('in-target');
-    poolZone.appendChild(chip);
-    updatePlaceholder(targetZone);
-    updatePlaceholder(poolZone);
-  }
-
-  function getDropSpot(zone, x, y) {
-    var chips = Array.prototype.slice.call(zone.querySelectorAll('.word-chip:not(.dragging)'));
-    if (chips.length === 0) return null;
-    var closest = null, closestDist = Infinity;
-    chips.forEach(function (c) {
-      var rect = c.getBoundingClientRect();
-      var cx = rect.left + rect.width / 2;
-      var cy = rect.top + rect.height / 2;
-      var dist = Math.hypot(x - cx, y - cy);
-      if (dist < closestDist) { closestDist = dist; closest = { chip: c, rect: rect }; }
-    });
-    var before = x < closest.rect.left + closest.rect.width / 2;
-    return { chip: closest.chip, before: before };
-  }
-
-  function placeIndicator(zone, indicator, x, y) {
-    var spot = getDropSpot(zone, x, y);
-    if (!spot) {
-      zone.appendChild(indicator);
-    } else if (spot.before) {
-      zone.insertBefore(indicator, spot.chip);
-    } else {
-      zone.insertBefore(indicator, spot.chip.nextSibling);
-    }
-  }
-
-  function applyPosHighlighting(targetZone, posArray) {
-    var chips = Array.prototype.slice.call(targetZone.querySelectorAll('.word-chip'));
-    chips.forEach(function (chip, i) {
-      var pos = (posArray && posArray[i]) || 'none';
-      chip.className = 'word-chip in-target chip-emphasis ' + (POS_CLASSES[pos] || 'pos-none');
-    });
-  }
-
-  function clearPosHighlighting(targetZone) {
-    targetZone.querySelectorAll('.word-chip').forEach(function (chip) {
-      ALL_POS_CLASSES.forEach(function (c) { chip.classList.remove(c); });
-      chip.classList.remove('chip-emphasis');
-    });
-  }
-
-  function attachChipEvents(chip, targetZone, poolZone, feedback, itemEl, indicator) {
-    var dragState = null;
-    var moved = false;
-
-    // Shared cleanup used by pointercancel, lostpointercapture, and the window-level
-    // fallback below. Mac trackpads/Safari can silently drop pointer capture mid-drag
-    // (a stray scroll or gesture, or the window losing focus) without ever firing a
-    // matching pointerup or pointercancel — leaving the chip stuck with position:fixed
-    // and frozen in the viewport. Routing every "drag ended unexpectedly" path through
-    // this one function guarantees the chip always gets its inline styles cleared and
-    // lands back in a real zone.
-    function forceEndDrag() {
-      indicator.remove();
-      if (dragState && moved) {
-        chip.classList.remove('dragging');
-        chip.style.position = '';
-        chip.style.left = '';
-        chip.style.top = '';
-        chip.style.width = '';
-        if (dragState.originParent === targetZone) {
-          moveChipToTarget(chip, targetZone, poolZone);
-        } else {
-          moveChipToPool(chip, targetZone, poolZone);
-        }
-      }
-      itemEl._dragActive = false;
-      dragState = null;
-      moved = false;
-    }
-
-    chip.addEventListener('pointerdown', function (e) {
-      e.preventDefault();
-
-      // Defensive: if a previous drag never got a clean pointerup (the freeze bug),
-      // clear it out before starting a new one instead of stacking on top of it.
-      if (dragState) forceEndDrag();
-
-      if (targetZone.classList.contains('correct')) {
-        clearPosHighlighting(targetZone);
-        targetZone.classList.remove('correct');
-      }
-
-      moved = false;
-      var rect = chip.getBoundingClientRect();
-      dragState = {
-        offsetX: e.clientX - rect.left,
-        offsetY: e.clientY - rect.top,
-        originParent: chip.parentElement
-      };
-      chip.setPointerCapture(e.pointerId);
-
-      itemEl.querySelectorAll('.word-chip').forEach(function (c) {
-        c.classList.remove('chip-correct', 'chip-wrong');
-      });
-      targetZone.classList.remove('wrong');
-      feedback.textContent = '';
-      feedback.className = 'item-feedback';
-    });
-
-    chip.addEventListener('pointermove', function (e) {
-      if (!dragState) return;
-      if (!moved) {
-        moved = true;
-        itemEl._dragActive = true;
-        var rect = chip.getBoundingClientRect();
-
-        // Size the drop indicator to match the dragged chip so it acts as a real
-        // reserved slot, pushing the surrounding chips apart from the very first
-        // moment of the drag — this alone is what keeps the gap open, so there's
-        // no separate placeholder needed at the chip's old spot.
-        indicator.style.width = rect.width + 'px';
-        indicator.style.height = rect.height + 'px';
-
-        chip.classList.add('dragging');
-        chip.style.width = rect.width + 'px';
-      }
-      chip.style.left = (e.clientX - dragState.offsetX) + 'px';
-      chip.style.top = (e.clientY - dragState.offsetY) + 'px';
-
-      targetZone.classList.remove('drag-over');
-      poolZone.classList.remove('drag-over');
-      var els = document.elementsFromPoint(e.clientX, e.clientY);
-      var overTarget = els.some(function (el) { return el.closest && el.closest('[data-role="target"]') === targetZone; });
-      var overPool = els.some(function (el) { return el.closest && el.closest('[data-role="pool"]') === poolZone; });
-
-      if (overTarget) {
-        targetZone.classList.add('drag-over');
-        placeIndicator(targetZone, indicator, e.clientX, e.clientY);
-      } else if (overPool) {
-        poolZone.classList.add('drag-over');
-        placeIndicator(poolZone, indicator, e.clientX, e.clientY);
-      } else {
-        indicator.remove();
-      }
-      // The indicator itself should hide the "tap or drag" placeholder the moment
-      // it lands in an empty zone — not just once a real chip is actually dropped.
-      updatePlaceholder(targetZone);
-      updatePlaceholder(poolZone);
-    });
-
-    chip.addEventListener('pointerup', function (e) {
-      if (!dragState) return;
-      targetZone.classList.remove('drag-over');
-      poolZone.classList.remove('drag-over');
-      targetZone.classList.remove('correct', 'wrong');
-      feedback.textContent = '';
-      feedback.className = 'item-feedback';
-
-      if (moved) {
-        chip.classList.remove('dragging');
-        chip.style.position = '';
-        chip.style.left = '';
-        chip.style.top = '';
-        chip.style.width = '';
-
-        if (indicator.parentElement === targetZone) {
-          resetChipVisualState(chip);
-          targetZone.insertBefore(chip, indicator);
-          chip.classList.add('in-target');
-          indicator.remove();
-          updatePlaceholder(targetZone);
-          updatePlaceholder(poolZone);
-        } else if (indicator.parentElement === poolZone) {
-          resetChipVisualState(chip);
-          poolZone.insertBefore(chip, indicator);
-          chip.classList.remove('in-target');
-          indicator.remove();
-          updatePlaceholder(targetZone);
-          updatePlaceholder(poolZone);
-        } else {
-          indicator.remove();
-          var els = document.elementsFromPoint(e.clientX, e.clientY);
-          var overPool = els.some(function (el) { return el.closest && el.closest('[data-role="pool"]') === poolZone; });
-          if (overPool) {
-            moveChipToPool(chip, targetZone, poolZone);
-          } else if (dragState.originParent === targetZone) {
-            moveChipToTarget(chip, targetZone, poolZone);
-          } else {
-            moveChipToPool(chip, targetZone, poolZone);
-          }
-        }
-      } else {
-        targetZone.classList.remove('correct', 'wrong');
-        if (chip.parentElement === poolZone) {
-          moveChipToTarget(chip, targetZone, poolZone);
-        } else {
-          moveChipToPool(chip, targetZone, poolZone);
-        }
-      }
-
-      itemEl._dragActive = false;
-      dragState = null;
-      moved = false;
-    });
-
-    chip.addEventListener('pointercancel', forceEndDrag);
-
-    // Fires whenever pointer capture is released for any reason. In the normal flow
-    // pointerup already runs first and clears dragState, so this is a no-op then; it
-    // only does real work when capture was lost WITHOUT a pointerup/pointercancel,
-    // which is the Mac freeze case.
-    chip.addEventListener('lostpointercapture', function () {
-      if (dragState) forceEndDrag();
-    });
-
-    // Last-resort fallback: if the whole window loses focus mid-drag (switching apps,
-    // a trackpad gesture triggering Mission Control/Spaces, etc.) release the chip too.
-    window.addEventListener('blur', function () {
-      if (dragState) forceEndDrag();
-    });
-  }
-
-  function build(opts) {
-    var container = typeof opts.container === 'string'
-      ? document.getElementById(opts.container) : opts.container;
-    if (!container) return;
-
-    var items = opts.items || [];
-    var scoreEl = opts.scoreEl ? document.getElementById(opts.scoreEl) : null;
-    var totalEl = opts.totalEl ? document.getElementById(opts.totalEl) : null;
-    if (totalEl) totalEl.textContent = items.length;
-
-    // Scoped per exercise, so two exercises on one page never share a score.
-    var correctSet = new Set();
-
-    items.forEach(function (entry, idx) {
-      var words = parseItem(entry.text);
-      var correctOrder = words.slice();
-      var pool = shuffleArr(words);
-      var tries = 0;
-      while (JSON.stringify(pool) === JSON.stringify(correctOrder) && tries < 5) {
-        pool = shuffleArr(words);
-        tries++;
-      }
-
-      var itemEl = document.createElement('div');
-      itemEl.className = 'wo-item';
-      itemEl.dataset.idx = idx;
-      var headerHtml = entry.speaker
-        ? '<div class="item-speaker"><span class="avatar-mini">' + (entry.avatar || '') + '</span> ' + entry.speaker + '</div>'
-        : (entry.context ? '<div class="item-context">' + entry.context + '</div>' : '');
-      itemEl.innerHTML =
-        headerHtml +
-        '<div class="item-feedback" data-role="feedback"></div>' +
-        '<div class="target-zone" data-role="target"><span class="target-placeholder">' + PLACEHOLDER_TEXT + '</span></div>' +
-        '<div class="pool-zone" data-role="pool"></div>';
-      container.appendChild(itemEl);
-
-      var targetZone = itemEl.querySelector('[data-role="target"]');
-      var poolZone = itemEl.querySelector('[data-role="pool"]');
-      var feedback = itemEl.querySelector('[data-role="feedback"]');
-      var indicator = document.createElement('span');
-      indicator.className = 'drop-indicator';
-
-      // The chips are shuffled, so a chip's pool position no longer lines up with
-      // the pos array — look the part of speech up by the word's position in the
-      // correct order instead, matching each duplicate word in turn.
-      var posCursor = {};
-      pool.forEach(function (word, wIdx) {
-        var chip = document.createElement('span');
-        chip.className = 'word-chip';
-        chip.textContent = word;
-        chip.dataset.word = word;
-        chip.dataset.uid = idx + '-' + wIdx + '-' + Math.random().toString(36).slice(2, 6);
-        var from = posCursor[word] || 0;
-        var origIdx = correctOrder.indexOf(word, from);
-        if (origIdx === -1) origIdx = correctOrder.indexOf(word);
-        posCursor[word] = origIdx + 1;
-        chip.dataset.pos = (entry.pos && entry.pos[origIdx]) || 'none';
-        attachChipEvents(chip, targetZone, poolZone, feedback, itemEl, indicator);
-        poolZone.appendChild(chip);
-      });
-
-      // Correction runs automatically, only once every chip has been placed in the
-      // target zone — no Check button needed. A MutationObserver picks up every way
-      // a chip can land there (tap, drag-drop, reordering) without wiring each path by hand.
-      function evaluateItem() {
-        // While a chip from this item is actively being dragged, it's still a real
-        // DOM child of its zone (just visually floated via position:fixed) — so the
-        // sized drop indicator sliding in and out still counts as a childList change
-        // and would re-trigger this. Re-running the full evaluation then would call
-        // applyPosHighlighting, which rewrites every chip's className in the zone —
-        // including the dragged one, wiping its `dragging` class mid-drag and
-        // freezing it in place. Skip evaluation entirely until the drag settles.
-        if (itemEl._dragActive) return;
-
-        var targetChips = Array.prototype.slice.call(targetZone.querySelectorAll('.word-chip'));
-        targetZone.classList.remove('correct', 'wrong');
-
-        if (targetChips.length < correctOrder.length) {
-          targetChips.forEach(resetChipVisualState);
-          feedback.textContent = '';
-          feedback.className = 'item-feedback';
-          if (correctSet.has(idx)) {
-            correctSet.delete(idx);
-            if (scoreEl) scoreEl.textContent = correctSet.size;
-          }
-          return;
-        }
-
-        var currentWords = targetChips.map(function (c) { return c.dataset.word; });
-        var isCorrect = JSON.stringify(currentWords) === JSON.stringify(correctOrder);
-
-        targetChips.forEach(function (chip, i) {
-          resetChipVisualState(chip);
-          if (chip.dataset.word === correctOrder[i]) {
-            chip.classList.add('chip-correct', 'chip-emphasis');
-          } else {
-            chip.classList.add('chip-wrong');
-          }
-        });
-
-        if (isCorrect) {
-          targetZone.classList.add('correct');
-          feedback.textContent = '✓ Correct! Well done!';
-          feedback.className = 'item-feedback correct';
-          correctSet.add(idx);
-          applyPosHighlighting(targetZone, entry.pos);
-        } else {
-          targetZone.classList.add('wrong');
-          feedback.textContent = '✗ Not correct. The green words are in the right place.';
-          feedback.className = 'item-feedback wrong';
-          correctSet.delete(idx);
-        }
-        if (scoreEl) scoreEl.textContent = correctSet.size;
-      }
-
-      new MutationObserver(evaluateItem).observe(targetZone, { childList: true });
-
-      updatePlaceholder(targetZone);
-    });
-  }
-
-  global.HouseWordOrder = { build: build, POS_CLASSES: POS_CLASSES };
-})(window);
-
-
-/* ══════════════════════════════════════════════════════════════════════════
-   HOUSE GAP-FILL ENGINE
-   The learner types free text. A Damerau-Levenshtein comparison against every
-   accepted answer drives a live accuracy bar that runs red → green, so a near
-   miss reads as "nearly there" rather than a flat wrong.
-
-   Usage:
-     HouseGapFill.build({
-       container: 'gfItems',
-       items: GF_ITEMS,             // [{category, direct, template, hints}]
-       labels: { pos:'personal info', q:'question' }   // optional cat-tag text
-     });
-
-   `template` holds {0}, {1} … placeholders; `hints[n].accepted` is the list of
-   answers accepted for that gap. Items should be ordered easiest → hardest:
-   short common phrases first, questions / formal / idiomatic ones last.
-   ══════════════════════════════════════════════════════════════════════════ */
-(function (global) {
-  'use strict';
-
-  function damerauLevenshtein(a, b) {
-    a = a.toLowerCase();
-    b = b.toLowerCase();
-    var al = a.length, bl = b.length;
-    if (al === 0) return bl;
-    if (bl === 0) return al;
-
-    var d = [];
-    for (var i = 0; i <= al; i++) { d[i] = new Array(bl + 1).fill(0); d[i][0] = i; }
-    for (var j = 0; j <= bl; j++) d[0][j] = j;
-
-    for (i = 1; i <= al; i++) {
-      for (j = 1; j <= bl; j++) {
-        var cost = a[i - 1] === b[j - 1] ? 0 : 1;
-        d[i][j] = Math.min(
-          d[i - 1][j] + 1,
-          d[i][j - 1] + 1,
-          d[i - 1][j - 1] + cost
-        );
-        if (i > 1 && j > 1 && a[i - 1] === b[j - 2] && a[i - 2] === b[j - 1]) {
-          d[i][j] = Math.min(d[i][j], d[i - 2][j - 2] + cost);
-        }
-      }
-    }
-    return d[al][bl];
-  }
-
-  function bestAccuracy(input, acceptedList) {
-    if (!input) return 0;
-    var best = 0;
-    acceptedList.forEach(function (answer) {
-      var dist = damerauLevenshtein(input, answer);
-      var maxLen = Math.max(input.length, answer.length);
-      var pct = maxLen === 0 ? 100 : Math.max(0, (1 - dist / maxLen) * 100);
-      if (pct > best) best = pct;
-    });
-    return best;
-  }
-
-  function pctToColor(pct) {
-    var hue = (pct / 100) * 120;
-    return 'hsl(' + hue + 'deg 100% 40%)';
-  }
-
-  var DEFAULT_LABELS = {
-    cel: 'introduction', pos: 'positive', neg: 'negative', q: 'question'
-  };
-
-  function build(opts) {
-    var container = typeof opts.container === 'string'
-      ? document.getElementById(opts.container) : opts.container;
-    if (!container) return;
-
-    var items = opts.items || [];
-    var labels = Object.assign({}, DEFAULT_LABELS, opts.labels || {});
-    var uid = container.id || ('gf' + Math.random().toString(36).slice(2, 7));
-
-    items.forEach(function (item, idx) {
-      var sentenceHtml = item.template;
-      item.hints.forEach(function (gap, gapIdx) {
-        var gapId = uid + '-' + idx + '-' + gapIdx;
-        var widthCh = Math.max(gap.accepted[0].length * 0.75, 6);
-        var gapHtml =
-          '<span class="gf-gap-wrap">' +
-            '<span class="bar-track"><span class="bar-fill" id="bar-' + gapId + '"></span></span>' +
-            '<span class="bar-pct" id="pct-' + gapId + '">0%</span>' +
-            '<input type="text" style="width:' + widthCh + 'em" class="gf-gap-input" ' +
-              'id="input-' + gapId + '" data-idx="' + idx + '" data-gap="' + gapIdx + '" ' +
-              'autocomplete="off" autocapitalize="off" spellcheck="false">' +
-          '</span>';
-        sentenceHtml = sentenceHtml.replace('{' + gapIdx + '}', gapHtml);
-      });
-
-      var wrap = document.createElement('div');
-      wrap.className = 'gf-item';
-      var catHtml = item.category
-        ? '<span class="cat-tag ' + item.category + '">' + (labels[item.category] || item.category) + '</span>'
-        : '';
-      wrap.innerHTML =
-        catHtml +
-        (item.direct ? '<div class="direct">' + item.direct + '</div>' : '') +
-        '<div class="sentence">' + sentenceHtml + '</div>';
-      container.appendChild(wrap);
-    });
-
-    container.addEventListener('input', function (e) {
-      if (!e.target.classList.contains('gf-gap-input')) return;
-      var idx = Number(e.target.dataset.idx);
-      var gapIdx = Number(e.target.dataset.gap);
-      var gapId = uid + '-' + idx + '-' + gapIdx;
-      var accepted = items[idx].hints[gapIdx].accepted;
-
-      var value = e.target.value.trim();
-      var pct = bestAccuracy(value, accepted);
-      var color = pctToColor(pct);
-
-      var bar = document.getElementById('bar-' + gapId);
-      var pctLabel = document.getElementById('pct-' + gapId);
-      bar.style.width = pct + '%';
-      bar.style.background = color;
-      pctLabel.textContent = Math.round(pct) + '%';
-      pctLabel.style.color = color;
-
-      if (Math.round(pct) >= 100) {
-        e.target.classList.add('gap-correct');
-      } else {
-        e.target.classList.remove('gap-correct');
-      }
-    });
-  }
-
-  /* ── In-place upgrade ────────────────────────────────────────────────────
-     Some pages hand-write their gaps inside rich sentence markup rather than
-     generating them from a data array. Rather than flatten that markup into
-     templates, wrap each existing input in the same accuracy-bar widget so the
-     interaction is identical to the generated exercises.
-
-       HouseGapFill.attach({ g1: ['on'], g2: ['under', 'below'] });
-  */
-  function attach(answers, opts) {
-    opts = opts || {};
-    var selector = opts.selector || 'input.gap, input.gf-gap-input';
-
-    Object.keys(answers).forEach(function (id) {
-      var input = document.getElementById(id);
-      if (!input) return;
-      var accepted = answers[id];
-      if (typeof accepted === 'string') accepted = [accepted];
-
-      // A stale check/reset button flow would fight the live bar, so drop the
-      // old pass/fail classes and let accuracy be the only signal.
-      input.classList.remove('correct', 'wrong');
-      input.classList.add('gf-gap-input');
-      input.setAttribute('autocomplete', 'off');
-      input.setAttribute('autocapitalize', 'off');
-      input.setAttribute('spellcheck', 'false');
-      if (!input.style.width) {
-        input.style.width = Math.max(accepted[0].length * 0.75, 6) + 'em';
-      }
-
-      var wrap = document.createElement('span');
-      wrap.className = 'gf-gap-wrap';
-      var track = document.createElement('span');
-      track.className = 'bar-track';
-      var fill = document.createElement('span');
-      fill.className = 'bar-fill';
-      track.appendChild(fill);
-      var pctLabel = document.createElement('span');
-      pctLabel.className = 'bar-pct';
-      pctLabel.textContent = '0%';
-
-      input.parentNode.insertBefore(wrap, input);
-      wrap.appendChild(track);
-      wrap.appendChild(pctLabel);
-      wrap.appendChild(input);
-
-      input.addEventListener('input', function () {
-        var pct = bestAccuracy(input.value.trim(), accepted);
-        var color = pctToColor(pct);
-        fill.style.width = pct + '%';
-        fill.style.background = color;
-        pctLabel.textContent = Math.round(pct) + '%';
-        pctLabel.style.color = color;
-        input.classList.toggle('gap-correct', Math.round(pct) >= 100);
-      });
-    });
-  }
-
-  global.HouseGapFill = {
-    build: build,
-    attach: attach,
-    damerauLevenshtein: damerauLevenshtein,
-    bestAccuracy: bestAccuracy
-  };
-})(window);
-
-
-/* ══════════════════════════════════════════════════════════════════════════
-   HOUSE GRAMMAR HIGHLIGHTING TOGGLE
-   Colours parts of speech on chips (.word-chip.pos-*) and on inline spans
-   (.pos-hl.pos-*), and wires up one "🎨 Show / Hide Grammar" button.
-
-   Highlighting is HIDDEN by default so learners meet the language before the
-   colour scaffolding — except on word-order pages, where the colours are part
-   of how the exercise teaches, so they default to on.
-
-   The legend is generated from whichever parts of speech actually appear on the
-   page, so no page ever shows a swatch for a category it doesn't use.
-
-   Usage (both optional — sensible defaults are inferred from the markup):
-     HouseGrammar.init();
-     HouseGrammar.init({ defaultOn: true, scope: '#page' });
-   ══════════════════════════════════════════════════════════════════════════ */
-(function (global) {
-  'use strict';
-
-  // Ordered so the legend always reads in a sensible grammatical sequence
-  // rather than in whatever order the words happen to appear.
-  var POS_ORDER = [
-    ['wh', 'Wh-word'],
-    ['aux', 'Auxiliary'],
-    ['subject', 'Subject'],
-    ['verb', 'Verb'],
-    ['part', 'Past participle'],
-    ['object', 'Object'],
-    ['complement', 'Complement'],
-    ['noun', 'Noun'],
-    ['det', 'Determiner'],
-    ['adj', 'Adjective'],
-    ['adverb', 'Adverb'],
-    ['time', 'Time expression'],
-    ['prep', 'Preposition'],
-    ['conj', 'Conjunction'],
-    ['neg', 'Negative'],
-    ['none', 'Other']
-  ];
-
-  function detectUsedPos(scope) {
-    var used = {};
-    scope.querySelectorAll('[class*="pos-"], [data-pos]').forEach(function (el) {
-      if (el.dataset && el.dataset.pos) used[el.dataset.pos] = true;
-      el.classList.forEach(function (cls) {
-        if (cls.indexOf('pos-') === 0) used[cls.slice(4)] = true;
-      });
-    });
-    // `.pos-legend` and `.pos-hl` are wrappers, not parts of speech.
-    delete used.legend;
-    delete used.hl;
-    return used;
-  }
-
-  function buildLegend(legendEl, used) {
-    var html = POS_ORDER.filter(function (p) { return used[p[0]]; })
-      .map(function (p) {
-        return '<span class="legend-item"><span class="legend-swatch legend-' + p[0] + '"></span>' + p[1] + '</span>';
-      }).join('');
-    legendEl.innerHTML = html;
-    // Nothing tagged on this page — don't leave an empty strip behind.
-    legendEl.style.display = html ? '' : 'none';
-    return !!html;
-  }
-
-  function init(opts) {
-    opts = opts || {};
-    var scope = document.querySelector(opts.scope || '#page') || document.body;
-    var btn = document.getElementById('grammarToggle');
-    var legendEl = scope.querySelector('.pos-legend') || document.querySelector('.pos-legend');
-
-    var used = detectUsedPos(scope);
-    var hasAny = legendEl ? buildLegend(legendEl, used) : Object.keys(used).length > 0;
-
-    if (!btn) return;
-    if (!hasAny) { btn.style.display = 'none'; return; }
-
-    // Word-order exercises are the documented exception: their colours default to on.
-    var defaultOn = typeof opts.defaultOn === 'boolean'
-      ? opts.defaultOn
-      : !!scope.querySelector('.target-zone');
-
-    function render(hidden) {
-      scope.classList.toggle('grammar-hidden', hidden);
-      btn.textContent = hidden ? '🎨 Show Grammar' : '🎨 Hide Grammar';
-      btn.setAttribute('aria-pressed', String(!hidden));
-    }
-
-    render(!defaultOn);
-    btn.addEventListener('click', function () {
-      render(!scope.classList.contains('grammar-hidden'));
-    });
-  }
-
-  global.HouseGrammar = { init: init, POS_ORDER: POS_ORDER };
-})(window);
-
-</script>
-<!-- PREVIEW-INLINE house.js END -->
-<!-- HouseSpeak — inline for testing; migrate into house.js when settled -->
-<script>
-/* ══════════════════════════════════════════════════════════════════════════
-   HOUSE SPEAK — tap-to-hear for individual words.
-
-   Any element with data-say="word" becomes speakable. If it also has
-   data-audio="audio/word.mp3" that recording plays first, and the browser's
-   own speech synthesis is used only when the file is missing or fails.
-
-     <button type="button" class="chip" data-say="cab">cab</button>
-     <button type="button" class="chip" data-say="cab" data-audio="audio/cab.mp3">cab</button>
-
-   The element gets .is-speaking while it plays.
-
-   Optional voice picker: put <select id="speakVoice"> on the page and it is
-   filled with this device's English voices, grouped by accent. The choice is
-   remembered per device and the last word is replayed in the new voice.
-   (Any other element with that id just shows the chosen voice as text.)
-   ══════════════════════════════════════════════════════════════════════════ */
-(function (global) {
-  'use strict';
-  if (global.HouseSpeak) return; // house.js already provides it
-
-  var LANG = 'en-US';
-  var RATE = 0.85;
-  var SAFETY_MS = 3000; // single words finish well inside this
-  var STORE_KEY = 'house-speak-voice';
-
-  // Good, widely shipped voices, tried in order (on-device voices first, so an
-  // offline classroom doesn't silently pick a voice that needs the network).
-  var PREFERRED = ['Samantha', 'Microsoft Aria', 'Microsoft Jenny', 'Microsoft Ava',
-                   'Microsoft Zira', 'Google US English', 'Alex'];
-  // macOS/iOS list novelty and Eloquence voices under English; never offer those as pronunciation models.
-  var NOVELTY = /^(albert|bad news|bahh|bells|boing|bubbles|cellos|good news|jester|organ|superstar|trinoids|whisper|wobble|zarvox|junior|ralph|fred|kathy|grandma|grandpa|eddy|flo|reed|rocko|sandy|shelley)(\s|\(|$)/i;
-
-  var synth = ('speechSynthesis' in global && 'SpeechSynthesisUtterance' in global) ? global.speechSynthesis : null;
-  var voice = null;
-  var voices = [];      // English voices currently offered, indexed by <option value>
-  var current = null;   // strong reference: Chrome can garbage-collect an in-flight utterance
-  var audio = null;
-  var activeEl = null;
-  var lastEl = null;
-
-  function norm(lang) { return (lang || '').replace('_', '-').toLowerCase(); }
-  function loadPref() { try { return localStorage.getItem(STORE_KEY); } catch (e) { return null; } }
-  function savePref(uri) { try { localStorage.setItem(STORE_KEY, uri); } catch (e) { /* private mode etc. */ } }
-
-  function langLabel(code) {
-    try {
-      if (global.Intl && Intl.DisplayNames) {
-        return new Intl.DisplayNames(['en'], { type: 'language' }).of(code.replace('_', '-'));
-      }
-    } catch (e) { /* malformed tag — fall through */ }
-    return code;
-  }
-
-  function autoPick(list) {
-    var target = norm(LANG);
-    var exact = list.filter(function (v) { return norm(v.lang) === target; });
-    var passes = [exact.filter(function (v) { return v.localService; }), exact];
-    for (var p = 0; p < passes.length; p++) {
-      for (var i = 0; i < PREFERRED.length; i++) {
-        for (var j = 0; j < passes[p].length; j++) {
-          if (passes[p][j].name.indexOf(PREFERRED[i]) === 0) return passes[p][j];
-        }
-      }
-    }
-    return exact.filter(function (v) { return v.default; })[0] || exact[0] || list[0] || null;
-  }
-
-  function pickVoice() {
-    if (!synth) return;
-    var list = synth.getVoices().filter(function (v) {
-      return norm(v.lang).indexOf('en') === 0 && !NOVELTY.test(v.name);
-    });
-    var byUri = function (uri) { return list.filter(function (v) { return v.voiceURI === uri; })[0]; };
-
-    // Chrome fires voiceschanged more than once; keep whatever is already in use.
-    voice = (voice && byUri(voice.voiceURI)) || byUri(loadPref()) || autoPick(list);
-    voices = list;
-    renderPicker();
-  }
-
-  function renderPicker() {
-    var el = document.getElementById('speakVoice');
-    if (!el) return;
-
-    if (el.tagName !== 'SELECT') {
-      el.textContent = !synth ? 'This browser can’t read words aloud. Try Chrome, Edge or Safari.'
-        : voice ? 'Voice: ' + voice.name + ' (' + voice.lang + ')' : 'Voice: device default';
-      return;
-    }
-
-    if (!synth) {
-      (el.closest('label') || el).textContent = 'This browser can’t read words aloud. Try Chrome, Edge or Safari.';
-      return;
-    }
-
-    el.innerHTML = '';
-    if (!voices.length) {
-      el.appendChild(new Option('Device default', ''));
-      el.disabled = true;
-      return;
-    }
-    el.disabled = false;
-
-    // Group by accent; the page's own accent first, the rest alphabetically.
-    var groups = {};
-    voices.forEach(function (v, i) {
-      var key = norm(v.lang);
-      (groups[key] = groups[key] || []).push(i);
-    });
-    var keys = Object.keys(groups).sort(function (a, b) {
-      if (a === norm(LANG)) return -1;
-      if (b === norm(LANG)) return 1;
-      return langLabel(a).localeCompare(langLabel(b));
-    });
-
-    keys.forEach(function (key) {
-      var og = document.createElement('optgroup');
-      og.label = langLabel(key);
-      groups[key]
-        .sort(function (a, b) { return voices[a].name.localeCompare(voices[b].name); })
-        .forEach(function (i) {
-          var v = voices[i];
-          var opt = new Option(v.name + (v.localService ? '' : ' · online'), String(i));
-          if (v === voice) opt.selected = true;
-          og.appendChild(opt);
-        });
-      el.appendChild(og);
-    });
-    el.title = voice ? voice.name + ' (' + voice.lang + ')' : '';
-  }
-
-  function onPickerChange(e) {
-    var v = voices[Number(e.target.value)];
-    if (!v) return;
-    voice = v;
-    savePref(v.voiceURI);
-    e.target.title = v.name + ' (' + v.lang + ')';
-    // Replay the last word (or the first on the page) so the new voice can be judged straight away.
-    var sample = lastEl || document.querySelector('[data-say]');
-    if (sample) speak(sample.getAttribute('data-say'), lastEl);
-  }
-
-  function setActive(el) {
-    if (activeEl) activeEl.classList.remove('is-speaking');
-    activeEl = el || null;
-    if (activeEl) {
-      void activeEl.offsetWidth; // restart the CSS animation on a repeat tap
-      activeEl.classList.add('is-speaking');
-    }
-  }
-
-  function stopAll() {
-    if (audio) { audio.pause(); audio = null; }
-    if (synth && (synth.speaking || synth.pending)) {
-      current = null; // so the cancelled utterance's late error event can't clear the next chip
-      synth.cancel();
-    }
-  }
-
-  function speak(text, el) {
-    if (!synth) return false;
-    if (!voice) pickVoice();
-    stopAll();
-    synth.resume(); // Chrome can leave the queue paused after tab switches
-
-    var u = new SpeechSynthesisUtterance(text);
-    // lang must follow the voice: some engines (notably on Android) honour lang over voice.
-    u.lang = voice ? voice.lang.replace('_', '-') : LANG;
-    u.rate = RATE;
-    if (voice) u.voice = voice;
-
-    var done = function () {
-      if (current !== u) return;
-      current = null;
-      if (!audio) setActive(null);
-    };
-    u.onend = done;
-    u.onerror = done;
-
-    current = u;
-    setActive(el);
-    synth.speak(u); // must stay synchronous inside the user's gesture for iOS
-    setTimeout(done, SAFETY_MS);
-    return true;
-  }
-
-  function play(el) {
-    lastEl = el;
-    var text = el.getAttribute('data-say');
-    var src = el.getAttribute('data-audio');
-    if (!src) { speak(text, el); return; }
-
-    stopAll();
-    var a = audio = new Audio(src);
-    setActive(el);
-    a.onended = function () { if (audio === a) { audio = null; setActive(null); } };
-    var fallback = function () { if (audio === a) { audio = null; speak(text, el); } };
-    var p = a.play();
-    if (p && p.catch) p.catch(fallback);
-    a.onerror = fallback;
-  }
-
-  document.addEventListener('click', function (e) {
-    var el = e.target && e.target.closest ? e.target.closest('[data-say]') : null;
-    if (el) play(el);
-  });
-
-  function init() {
-    var picker = document.getElementById('speakVoice');
-    if (picker && picker.tagName === 'SELECT') picker.addEventListener('change', onPickerChange);
-    if (synth) {
-      pickVoice();
-      if (synth.addEventListener) synth.addEventListener('voiceschanged', pickVoice);
-      else synth.onvoiceschanged = pickVoice;
-    } else {
-      document.documentElement.classList.add('no-speech');
-      renderPicker();
-    }
-  }
-  if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', init);
-  else init();
-
-  global.HouseSpeak = { speak: speak, play: play, stop: stopAll, pickVoice: pickVoice };
-})(window);
-
-</script>
+<script src="house.js"></script>
 </body>
 </html>

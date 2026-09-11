@@ -2,82 +2,49 @@
 <html lang="en">
 <head>
 <meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
 <title>Grammar Focus — Past Perfect</title>
-<link rel="stylesheet" href="general.css">
-<style>
-  :root{
-    --color-background-primary: #ffffff;
-    --color-background-secondary: #f7f7f8;
-    --color-text-primary: #1a1a1a;
-    --color-text-secondary: #5b5b60;
-    --color-text-tertiary: #8b8b90;
-    --color-border-secondary: #e3e3e6;
-    --color-border-tertiary: #ebebee;
-    --border-radius-lg: 12px;
-    --font-mono: "SF Mono", "JetBrains Mono", monospace;
-
-    --text-primary: var(--color-text-primary);
-    --text-secondary: var(--color-text-secondary);
-    --text-muted: var(--color-text-tertiary);
-    --text-accent: #185fa5;
-    --surface-1: var(--color-background-secondary);
-    --surface-2: var(--color-background-primary);
-    --border: var(--color-border-tertiary);
-    --radius: var(--border-radius-lg);
-
-    --pp-color: #7c3aed;
-    --pp-bg: #f3effe;
-    --ps-color: #185fa5;
-    --ps-bg: #e6f1fb;
-  }
-
-  @media (prefers-color-scheme: dark){
-    :root{
-      --color-background-primary: #1e1e20;
-      --color-background-secondary: #26262a;
-      --color-text-primary: #f0f0f2;
-      --color-text-secondary: #b4b4ba;
-      --color-text-tertiary: #85858c;
-      --color-border-secondary: #3a3a3f;
-      --color-border-tertiary: #34343a;
-      --pp-color: #b79aff;
-      --pp-bg: #2a2145;
-      --ps-color: #7fb2e0;
-      --ps-bg: #16283a;
+<script>
+// Applies the saved/system theme to <html> as early as possible, before the
+// stylesheet below paints anything, so there's no flash of the wrong theme.
+// Self-contained: no dependency on any external script.
+(function(){
+  try{
+    var saved = localStorage.getItem('theme-preference');
+    var theme = (saved === 'light' || saved === 'dark')
+      ? saved
+      : ((window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches) ? 'dark' : 'light');
+    document.documentElement.setAttribute('data-theme', theme);
+    // Same idea for the text size: apply it before house.css paints, so a
+    // person who chose 28px doesn't watch the page reflow from 14px on load.
+    var fs = parseFloat(localStorage.getItem('font-size-preference'));
+    if (fs >= 10 && fs <= 28){
+      document.documentElement.style.setProperty('--fs-base', fs + 'px');
     }
-  }
+  }catch(e){ /* localStorage/matchMedia unavailable — CSS media query still applies */ }
+})();
+</script>
+<link rel="stylesheet" href="house.css">
+<style>
+/* Page-specific design tokens — this lesson's own palette, not
+   house tokens. house.css owns everything else. */
+:root{
+  --pp-color: #7c3aed;
+  --pp-bg: #f3effe;
+  --ps-color: #185fa5;
+  --ps-bg: #e6f1fb;
+}
+@media (prefers-color-scheme: dark){
+:root{
+  --pp-color: #b79aff;
+  --pp-bg: #2a2145;
+  --ps-color: #7fb2e0;
+  --ps-bg: #16283a;
+}
+}
 
-  *{ box-sizing:border-box; }
-  html,body{
-    margin:0;
-    background:var(--color-background-primary);
-    color:var(--color-text-primary);
-    font-family:-apple-system, BlinkMacSystemFont, "Segoe UI", Helvetica, Arial, sans-serif;
-    font-size:15px;
-    line-height:1.6;
-  }
-  .page{ max-width:720px; margin:0 auto; padding:28px 20px 56px; }
 
-  h1{ font-size:1.3rem; font-weight:600; letter-spacing:-0.01em; margin:0 0 4px; }
-  .subtitle{ font-size:13px; color:var(--text-secondary); margin:0; }
-  .cefr-tag{
-    display:inline-block;
-    font-size:11px;
-    font-weight:700;
-    letter-spacing:.04em;
-    background:#e6f1fb;
-    color:#185fa5;
-    padding:3px 10px;
-    border-radius:20px;
-    margin-bottom:10px;
-  }
-
-  .sec-div{font-size:11px;font-weight:500;letter-spacing:.06em;text-transform:uppercase;color:var(--text-muted);display:flex;align-items:center;gap:8px;margin:1.75rem 0 1rem;}
-  .sec-div::before,.sec-div::after{content:'';flex:1;height:.5px;background:var(--border);}
-
-  .rule-box{background:var(--surface-1);border-radius:var(--radius);padding:10px 14px;margin-bottom:1.25rem;font-size:13px;color:var(--text-secondary);line-height:1.7;}
-  .rule-box strong{color:var(--text-primary);font-weight:500;}
+h1{ font-size:1.3rem; font-weight:600; letter-spacing:-0.01em; margin:0 0 4px; }
 
   .pp{ color:var(--pp-color); font-weight:700; background:var(--pp-bg); padding:1px 5px; border-radius:4px; }
   .ps{ color:var(--ps-color); font-weight:700; background:var(--ps-bg); padding:1px 5px; border-radius:4px; }
@@ -91,13 +58,13 @@
     background:var(--surface-2);
   }
   .use-title{
-    font-size:14px;
+    font-size:0.9333rem;
     font-weight:600;
     margin-bottom:8px;
     color:var(--text-primary);
   }
   .use-example{
-    font-size:13.5px;
+    font-size:0.9rem;
     margin-bottom:10px;
   }
 
@@ -119,7 +86,7 @@
     flex:1;
   }
   .tl-emoji{
-    font-size:26px;
+    font-size:1.7333rem;
     background:var(--surface-2);
     border-radius:22px;
     min-width:44px;
@@ -131,7 +98,7 @@
     padding: 6px;
   }
   .tl-label{
-    font-size:10.5px;
+    font-size:0.7rem;
     font-weight:600;
     text-align:center;
     line-height:1.3;
@@ -139,12 +106,12 @@
   .tl-label.pp{ color:var(--pp-color); background:none; padding:0; }
   .tl-label.ps{ color:var(--ps-color); background:none; padding:0; }
   .tl-arrow{
-    font-size:18px;
+    font-size:1.2rem;
     color:var(--text-muted);
     flex-shrink:0;
   }
   .tl-now{
-    font-size:10px;
+    font-size:0.6667rem;
     color:var(--text-muted);
     text-align:center;
   }
@@ -157,7 +124,7 @@
     margin-top:6px;
   }
   .time-pill{
-    font-size:11.5px;
+    font-size:0.7667rem;
     font-weight:500;
     padding:3px 10px;
     border-radius:20px;
@@ -171,13 +138,13 @@
     width: 0px;
 }
 
-  footer{ text-align:center; font-size:12px; color:var(--text-muted); margin-top:2rem; }
+  footer{ text-align:center; font-size:0.8rem; color:var(--text-muted); margin-top:2rem; }
 </style>
 </head>
 <body>
-<div class="page">
+<div class="page" id="page">
 
-  <span class="cefr-tag">B1 · Intermediate</span>
+  <span class="cefr-tag cefr-b1">B1 · Intermediate</span>
   <h1>Past Perfect</h1>
   <p class="subtitle">The "past before the past" — showing what happened earlier, from a later point in the past.</p>
 
@@ -308,11 +275,12 @@
   <footer>Grammar Focus — Past Perfect (B1)</footer>
 
 </div>
+
 <div id="theme-toggle-wrap">
   <button id="theme-toggle" aria-label="Toggle light/dark mode" title="Toggle light/dark mode">
     <span id="theme-icon">☀️</span>
   </button>
 </div>
-<script src="theme-toggle-behavior.js"></script>
+<script src="house.js"></script>
 </body>
 </html>

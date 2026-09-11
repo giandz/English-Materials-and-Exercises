@@ -2,73 +2,31 @@
 <html lang="en">
 <head>
 <meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
 <title>Grammar Focus — Likes & Preferences</title>
-<link rel="stylesheet" href="general.css">
-<style>
-  :root{
-    --color-background-primary: #ffffff;
-    --color-background-secondary: #f7f7f8;
-    --color-text-primary: #1a1a1a;
-    --color-text-secondary: #5b5b60;
-    --color-text-tertiary: #8b8b90;
-    --color-border-secondary: #e3e3e6;
-    --color-border-tertiary: #ebebee;
-    --border-radius-lg: 12px;
-    --font-mono: "SF Mono", "JetBrains Mono", monospace;
-
-    --text-primary: var(--color-text-primary);
-    --text-secondary: var(--color-text-secondary);
-    --text-muted: var(--color-text-tertiary);
-    --text-accent: #185fa5;
-    --surface-1: var(--color-background-secondary);
-    --surface-2: var(--color-background-primary);
-    --border: var(--color-border-tertiary);
-    --radius: var(--border-radius-lg);
-  }
-
-  @media (prefers-color-scheme: dark){
-    :root{
-      --color-background-primary: #1e1e20;
-      --color-background-secondary: #26262a;
-      --color-text-primary: #f0f0f2;
-      --color-text-secondary: #b4b4ba;
-      --color-text-tertiary: #85858c;
-      --color-border-secondary: #3a3a3f;
-      --color-border-tertiary: #34343a;
+<script>
+// Applies the saved/system theme to <html> as early as possible, before the
+// stylesheet below paints anything, so there's no flash of the wrong theme.
+// Self-contained: no dependency on any external script.
+(function(){
+  try{
+    var saved = localStorage.getItem('theme-preference');
+    var theme = (saved === 'light' || saved === 'dark')
+      ? saved
+      : ((window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches) ? 'dark' : 'light');
+    document.documentElement.setAttribute('data-theme', theme);
+    // Same idea for the text size: apply it before house.css paints, so a
+    // person who chose 28px doesn't watch the page reflow from 14px on load.
+    var fs = parseFloat(localStorage.getItem('font-size-preference'));
+    if (fs >= 10 && fs <= 28){
+      document.documentElement.style.setProperty('--fs-base', fs + 'px');
     }
-  }
-
-  *{ box-sizing:border-box; }
-  html,body{
-    margin:0;
-    background:var(--color-background-primary);
-    color:var(--color-text-primary);
-    font-family:-apple-system, BlinkMacSystemFont, "Segoe UI", Helvetica, Arial, sans-serif;
-    font-size:15px;
-    line-height:1.6;
-  }
-  .page{ max-width:700px; margin:0 auto; padding:28px 20px 56px; }
-
-  h1{ font-size:1.3rem; font-weight:600; letter-spacing:-0.01em; margin:0 0 4px; }
-  .subtitle{ font-size:13px; color:var(--text-secondary); margin:0; }
-  .cefr-tag{
-    display:inline-block;
-    font-size:11px;
-    font-weight:700;
-    letter-spacing:.04em;
-    background:#e6f1fb;
-    color:#185fa5;
-    padding:3px 10px;
-    border-radius:20px;
-    margin-bottom:10px;
-  }
-
-  .sec-div{font-size:11px;font-weight:500;letter-spacing:.06em;text-transform:uppercase;color:var(--text-muted);display:flex;align-items:center;gap:8px;margin:1.75rem 0 1rem;}
-  .sec-div::before,.sec-div::after{content:'';flex:1;height:.5px;background:var(--border);}
-
-  .rule-box{background:var(--surface-1);border-radius:var(--radius);padding:10px 14px;margin-bottom:1.25rem;font-size:13px;color:var(--text-secondary);line-height:1.7;}
-  .rule-box strong{color:var(--text-primary);font-weight:500;}
+  }catch(e){ /* localStorage/matchMedia unavailable — CSS media query still applies */ }
+})();
+</script>
+<link rel="stylesheet" href="house.css">
+<style>
+h1{ font-size:1.3rem; font-weight:600; letter-spacing:-0.01em; margin:0 0 4px; }
 
   /* Vertical scale */
   .scale{
@@ -86,17 +44,17 @@
     border:.5px solid var(--color-border-tertiary);
   }
   .scale-emoji{
-    font-size:22px;
+    font-size:1.4667rem;
     width:34px;
     text-align:center;
     flex-shrink:0;
   }
   .scale-text{
-    font-size:14px;
+    font-size:0.9333rem;
   }
   .scale-text strong{ font-weight:700; }
   .scale-example{
-    font-size:11.5px;
+    font-size:0.7667rem;
     color:var(--text-secondary);
     margin-top:2px;
   }
@@ -120,8 +78,7 @@
 	.s-nbfan{ background:hsl(45deg 75% 20%) }
 	.s-dlike{ background:hsl(30deg 75% 20%) }
 	.s-rdlike{ background:hsl(15deg 75% 20%) }
-	.s-hate{ background:hsl(0deg 75% 20%) }
-  }
+	.s-hate{ background:hsl(0deg 75% 20%) }}
 
 	.dark .s-love{ background:hsl(120deg 75% 25%) }
 	.dark .s-rlike{ background:hsl(105deg 75% 25%) }
@@ -140,15 +97,6 @@
     gap:8px;
     margin-bottom:1.25rem;
   }
-  .word-chip{
-    font-size:12.5px;
-    font-weight:500;
-    padding:5px 12px;
-    border-radius:20px;
-    background:var(--surface-1);
-    border:.5px solid var(--border);
-    color:var(--text-primary);
-  }
 
   .tense-card{
     border:.5px solid var(--color-border-tertiary);
@@ -159,7 +107,7 @@
   .tense-head{
     padding:10px 14px;
     font-weight:700;
-    font-size:13.5px;
+    font-size:0.9rem;
     color:#fff;
     background:#185fa5;
   }
@@ -169,14 +117,14 @@
   }
   .form-block:last-child{ border-bottom:none; }
   .form-label{
-    font-size:10.5px;
+    font-size:0.7rem;
     font-weight:700;
     letter-spacing:.05em;
     text-transform:uppercase;
     color:var(--text-muted);
     margin-bottom:5px;
   }
-  .form-line{ font-size:13.5px; margin-bottom:5px; }
+  .form-line{ font-size:0.9rem; margin-bottom:5px; }
   .form-line .noun{ color:#185fa5; font-weight:700; }
   .form-line .ger{ color:#7c3aed; font-weight:700; }
 
@@ -193,23 +141,23 @@
     gap:10px;
     margin-bottom:8px;
   }
-  .gauge-emoji{ font-size:20px; width:26px; text-align:center; }
-  .gauge-bar{ font-size:15px; letter-spacing:2px; }
+  .gauge-emoji{ font-size:1.3333rem; width:26px; text-align:center; }
+  .gauge-bar{ font-size:1rem; letter-spacing:2px; }
   .prefer-sentence{
-    font-size:14px;
+    font-size:0.9333rem;
     margin-top:10px;
     padding-top:10px;
     border-top:.5px solid var(--color-border-tertiary);
   }
   .prefer-sentence .hl{ font-weight:700; color:var(--text-accent); }
 
-  footer{ text-align:center; font-size:12px; color:var(--text-muted); margin-top:2rem; }
+  footer{ text-align:center; font-size:0.8rem; color:var(--text-muted); margin-top:2rem; }
 </style>
 </head>
 <body>
-<div class="page">
+<div class="page" id="page">
 
-  <span class="cefr-tag">A1 · Beginner</span>
+  <span class="cefr-tag cefr-a1">A1 · Beginner</span>
   <h1>Likes & Preferences</h1>
   <p class="subtitle">How much do you like it? From love to hate.</p>
 
@@ -381,11 +329,12 @@
   <footer>Grammar Focus — Likes & Preferences (A1)</footer>
 
 </div>
+
 <div id="theme-toggle-wrap">
   <button id="theme-toggle" aria-label="Toggle light/dark mode" title="Toggle light/dark mode">
     <span id="theme-icon">☀️</span>
   </button>
 </div>
-<script src="theme-toggle-behavior.js"></script>
+<script src="house.js"></script>
 </body>
 </html>

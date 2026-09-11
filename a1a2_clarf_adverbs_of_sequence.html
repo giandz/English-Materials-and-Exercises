@@ -2,22 +2,46 @@
 <html lang="en">
 <head>
 <meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
 <title>Let's Cook! — Clarification: Adverbs of Sequence</title>
-<link rel="preconnect" href="https://fonts.googleapis.com">
-<link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,500;9..144,600;9..144,700&family=Karla:wght@400;500;600;700&display=swap" rel="stylesheet">
+<script>
+// Applies the saved/system theme to <html> as early as possible, before the
+// stylesheet below paints anything, so there's no flash of the wrong theme.
+// Self-contained: no dependency on any external script.
+(function(){
+  try{
+    var saved = localStorage.getItem('theme-preference');
+    var theme = (saved === 'light' || saved === 'dark')
+      ? saved
+      : ((window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches) ? 'dark' : 'light');
+    document.documentElement.setAttribute('data-theme', theme);
+    // Same idea for the text size: apply it before house.css paints, so a
+    // person who chose 28px doesn't watch the page reflow from 14px on load.
+    var fs = parseFloat(localStorage.getItem('font-size-preference'));
+    if (fs >= 10 && fs <= 28){
+      document.documentElement.style.setProperty('--fs-base', fs + 'px');
+    }
+  }catch(e){ /* localStorage/matchMedia unavailable — CSS media query still applies */ }
+})();
+</script>
+<link rel="stylesheet" href="house.css">
 <style>
-
+/* Page-specific design tokens — this lesson's own palette, not
+   house tokens. house.css owns everything else. */
 :root{
-  --cream:#F7F1E3; --pine:#2F4B3C; --pine-dark:#20332A;
-  --tomato:#C1442E; --tomato-dark:#9A3524;
-  --mustard:#E3A72F; --mustard-dark:#B9821D;
-  --sage:#E9EEE1; --charcoal:#2B2620; --paper:#FFFDF7;
-  --ok:#3F7D4F; --bad:#B4413A;
+  --cream: #F7F1E3;
+  --pine: #2F4B3C;
+  --pine-dark: #20332A;
+  --tomato: #C1442E;
+  --tomato-dark: #9A3524;
+  --mustard: #E3A72F;
+  --sage: #E9EEE1;
+  --charcoal: #2B2620;
+  --paper: #FFFDF7;
+  --ok: #3F7D4F;
 }
-*{box-sizing:border-box;}
-html{scroll-behavior:smooth;}
-body{margin:0;background:var(--cream);color:var(--charcoal);font-family:'Karla',sans-serif;font-size:17px;line-height:1.55;}
+
+
 h1,h2,h3,h4{font-family:'Fraunces',serif;color:var(--pine-dark);margin:0 0 .4em 0;line-height:1.15;}
 .wrap{max-width:880px;margin:0 auto;padding:0 20px 100px;}
 
@@ -31,8 +55,6 @@ section{margin-top:44px;}
 .sec-head{display:flex;align-items:center;margin-bottom:6px;}
 .sec-head h2{font-size:1.5rem;}
 .sec-sub{color:#5b5346;margin:0 0 22px 40px;font-size:.98rem;}
-
-.card{background:var(--paper);border:1px solid rgba(43,38,32,.12);border-radius:14px;box-shadow:5px 5px 0 rgba(47,75,60,.08);padding:26px 28px;}
 
 .badge{width:52px;height:52px;border-radius:50%;flex:none;display:flex;align-items:center;justify-content:center;}
 .badge.heat{background:var(--mustard);} .badge.prep{background:var(--pine);} .badge.combine{background:var(--tomato);}
@@ -98,8 +120,6 @@ section{margin-top:44px;}
   text-align:center;padding:2px 4px;
 }
 .blank input:focus{outline:none;border-bottom-color:var(--tomato);}
-
-.word-bank{display:flex;flex-wrap:wrap;gap:10px;margin:14px 0 18px;padding:14px;background:var(--sage);border-radius:10px;}
 .chip{background:var(--pine);color:var(--cream);border:none;padding:9px 16px;border-radius:8px;font-family:'Karla',sans-serif;font-weight:600;font-size:.92rem;cursor:grab;}
 .chip:active{cursor:grabbing;}
 .chip.selected{background:var(--tomato);}
@@ -146,10 +166,12 @@ footer{text-align:center;color:#8a8172;font-size:.85rem;margin-top:60px;}
   .match-wrap{grid-template-columns:1fr;}
   .match-grid{grid-template-columns:repeat(3,1fr);}
 }
-
 </style>
 </head>
 <body>
+<div class="page" id="page">
+  <span class="cefr-tag cefr-a1a2">A1/A2 · Beginner–Elementary</span>
+
 <div class="hero">
   <h1>Let's Cook!</h1>
   <div class="stage-label">Stage 3/5 &middot; Then: Clarification</div>
@@ -217,8 +239,17 @@ footer{text-align:center;color:#8a8172;font-size:.85rem;margin-top:60px;}
 
 </div>
 <footer>Cooking Instructions &amp; Adverbs of Sequence &mdash; A1/A2 Lesson Pack</footer>
-<script>
 
+
+</div>
+
+<div id="theme-toggle-wrap">
+  <button id="theme-toggle" aria-label="Toggle light/dark mode" title="Toggle light/dark mode">
+    <span id="theme-icon">☀️</span>
+  </button>
+</div>
+<script src="house.js"></script>
+<script>
 document.querySelectorAll('.tf-btn').forEach(btn => {
   btn.addEventListener('click', () => {
     const q = btn.dataset.q;
@@ -235,7 +266,6 @@ document.querySelectorAll('.tf-btn').forEach(btn => {
     }
   });
 });
-
 </script>
 </body>
 </html>

@@ -1,41 +1,65 @@
-<head><meta charset="UTF-8">
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<title>S Endings Pronunciation — Clarification</title>
+<script>
+// Applies the saved/system theme to <html> as early as possible, before the
+// stylesheet below paints anything, so there's no flash of the wrong theme.
+// Self-contained: no dependency on any external script.
+(function(){
+  try{
+    var saved = localStorage.getItem('theme-preference');
+    var theme = (saved === 'light' || saved === 'dark')
+      ? saved
+      : ((window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches) ? 'dark' : 'light');
+    document.documentElement.setAttribute('data-theme', theme);
+    // Same idea for the text size: apply it before house.css paints, so a
+    // person who chose 28px doesn't watch the page reflow from 14px on load.
+    var fs = parseFloat(localStorage.getItem('font-size-preference'));
+    if (fs >= 10 && fs <= 28){
+      document.documentElement.style.setProperty('--fs-base', fs + 'px');
+    }
+  }catch(e){ /* localStorage/matchMedia unavailable — CSS media query still applies */ }
+})();
+</script>
+<link rel="stylesheet" href="house.css">
 <style>
-  .sound-card{background:var(--color-background-primary);border:0.5px solid var(--color-border-tertiary);border-radius:var(--border-radius-lg);padding:1rem 1.25rem;margin-bottom:1rem;}
-  .sound-badge{display:inline-block;font-size:13px;font-weight:500;padding:3px 10px;border-radius:20px;margin-bottom:10px;font-family:var(--font-mono);}
+.sound-card{background:var(--color-background-primary);border:0.5px solid var(--color-border-tertiary);border-radius:var(--border-radius-lg);padding:1rem 1.25rem;margin-bottom:1rem;}
+  .sound-badge{display:inline-block;font-size:0.8667rem;font-weight:500;padding:3px 10px;border-radius:20px;margin-bottom:10px;font-family:var(--font-mono);}
   .badge-s{background:#eeedfe;color:#3c3489;}
   .badge-z{background:#eaf3de;color:#27500a;}
   .badge-iz{background:#faeeda;color:#633806;}
-  .rule-box{font-size:13px;color:var(--color-text-secondary);margin-bottom:10px;line-height:1.6;}
-  .verb-row{display:flex;align-items:baseline;gap:10px;padding:5px 0;border-bottom:0.5px solid var(--color-border-tertiary);font-size:14px;}
+  .verb-row{display:flex;align-items:baseline;gap:10px;padding:5px 0;border-bottom:0.5px solid var(--color-border-tertiary);font-size:0.9333rem;}
   .verb-row:last-child{border-bottom:none;}
   .verb-base{min-width:80px;color:var(--color-text-secondary);}
   .verb-form{font-weight:500;min-width:90px;color:var(--color-text-primary);}
-  .verb-ipa{font-family:var(--font-mono);font-size:13px;}
+  .verb-ipa{font-family:var(--font-mono);font-size:0.8667rem;}
   .ipa-s{color:#7061ff;}
   .ipa-z{color:#7dff1f;}
   .ipa-iz{color:#ff910f;}
-  .verb-example{font-size:13px;color:var(--color-text-secondary);font-style:italic;}
+  .verb-example{font-size:0.8667rem;color:var(--color-text-secondary);font-style:italic;}
 
   .sort-area{background:var(--color-background-secondary);border-radius:var(--border-radius-lg);padding:1.25rem;margin-bottom:1rem;}
   .sort-grid{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:12px;margin-top:12px;}
-  .sort-col-label{font-size:12px;font-weight:500;text-align:center;padding:5px 8px;border-radius:var(--border-radius-md);margin-bottom:6px;font-family:var(--font-mono);}
+  .sort-col-label{font-size:0.8rem;font-weight:500;text-align:center;padding:5px 8px;border-radius:var(--border-radius-md);margin-bottom:6px;font-family:var(--font-mono);}
   .sort-col-s .sort-col-label{background:#eeedfe;color:#3c3489;}
   .sort-col-z .sort-col-label{background:#eaf3de;color:#27500a;}
   .sort-col-iz .sort-col-label{background:#faeeda;color:#633806;}
   .drop-zone{min-height:80px;border:1.5px dashed var(--color-border-secondary);border-radius:var(--border-radius-md);padding:6px;display:flex;flex-direction:column;gap:5px;transition:background 0.15s;}
   .drop-zone.over{background:var(--color-background-tertiary);}
-  .drag-chip{font-size:13px;font-weight:500;padding:5px 10px;border-radius:var(--border-radius-md);background:var(--color-background-primary);border:0.5px solid var(--color-border-secondary);cursor:grab;user-select:none;text-align:center;color:var(--color-text-primary);}
+  .drag-chip{font-size:0.8667rem;font-weight:500;padding:5px 10px;border-radius:var(--border-radius-md);background:var(--color-background-primary);border:0.5px solid var(--color-border-secondary);cursor:grab;user-select:none;text-align:center;color:var(--color-text-primary);}
   .drag-chip:active{cursor:grabbing;opacity:0.7;}
   .drag-chip.correct{background:#eaf3de;border-color:#97c459;color:#27500a;cursor:default;}
   .drag-chip.wrong{background:#fcebeb;border-color:#f09595;color:#791f1f;animation:shake 0.3s;}
-  .word-bank{display:flex;flex-wrap:wrap;gap:7px;margin-top:10px;}
   @keyframes shake{0%,100%{transform:translateX(0)}25%{transform:translateX(-4px)}75%{transform:translateX(4px)}}
-  .section-divider{font-size:11px;font-weight:500;letter-spacing:0.05em;color:var(--color-text-tertiary);display:flex;align-items:center;gap:8px;margin:1.5rem 0 1rem;}
+  .section-divider{font-size:0.7333rem;font-weight:500;letter-spacing:0.05em;color:var(--color-text-tertiary);display:flex;align-items:center;gap:8px;margin:1.5rem 0 1rem;}
   .section-divider::before,.section-divider::after{content:'';flex:1;height:0.5px;background:var(--color-border-tertiary);}
 </style>
- <link rel="stylesheet" href="general.css">
 </head>
-<body class="exercise-page">
+<body class="exercise-page" id="page">
+<span class="cefr-tag cefr-a1">A1 · Beginner</span>
 <h2 class="sr-only">Grammar focus on the three pronunciations of the third person singular S ending: /s/, /z/, and /ɪz/, with rules, examples, and a sorting exercise.</h2>
 
 <div style="padding:1rem 0;">
@@ -74,7 +98,7 @@
   <div class="section-divider">sorting practice</div>
 
   <div class="sort-area">
-    <div style="font-size:14px;color:var(--color-text-secondary);margin-bottom:4px;">Drag each verb into the correct sound group.</div>
+    <div style="font-size:0.9333rem;color:var(--color-text-secondary);margin-bottom:4px;">Drag each verb into the correct sound group.</div>
     <div id="word-bank" class="word-bank"></div>
     <div class="sort-grid" style="margin-top:16px;">
       <div class="sort-col sort-col-s">
@@ -92,12 +116,18 @@
     </div>
     <div style="display:flex;gap:8px;margin-top:12px;align-items:center;">
       <button onclick="resetSort()">↺ Reset</button>
-      <span id="sort-feedback" style="font-size:13px;color:var(--color-text-secondary);"></span>
+      <span id="sort-feedback" style="font-size:0.8667rem;color:var(--color-text-secondary);"></span>
     </div>
   </div>
 
 </div>
 
+<div id="theme-toggle-wrap">
+  <button id="theme-toggle" aria-label="Toggle light/dark mode" title="Toggle light/dark mode">
+    <span id="theme-icon">☀️</span>
+  </button>
+</div>
+<script src="house.js"></script>
 <script>
 const sortWords = [
   {word:"starts",  sound:"s"},
@@ -179,3 +209,4 @@ function resetSort(){buildSort();}
 buildSort();
 </script>
 </body>
+</html>

@@ -2,78 +2,47 @@
 <html lang="en">
 <head>
 <meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
 <title>Future Time Expressions — Ordering</title>
-<link rel="stylesheet" href="general.css">
-<style>
-  :root {
-    --color-background-primary: #ffffff;
-    --color-background-secondary: #f6f7f9;
-    --color-text-primary: #1a1d23;
-    --color-text-secondary: #4b5261;
-    --color-text-tertiary: #8a8f9c;
-    --color-border-secondary: #e2e5ea;
-    --border-radius-lg: 14px;
-
-    --text-primary: var(--color-text-primary);
-    --text-secondary: var(--color-text-secondary);
-    --text-muted: var(--color-text-tertiary);
-    --text-accent: #2563eb;
-    --surface-1: var(--color-background-primary);
-    --surface-2: var(--color-background-secondary);
-    --border: var(--color-border-secondary);
-    --radius: var(--border-radius-lg);
-
-    --pos-wh: #1d6fd8;           --pos-wh-bg: #e3edfd;
-    --pos-yes: #1a7f37;          --pos-yes-bg: #e6f6ea;
-    --pos-no: #c03434;           --pos-no-bg: #fbe7e7;
-  }
-
-  @media (prefers-color-scheme: dark) {
-    :root {
-      --color-background-primary: #16181d;
-      --color-background-secondary: #1d2026;
-      --color-text-primary: #eef0f3;
-      --color-text-secondary: #b7bcc6;
-      --color-text-tertiary: #838995;
-      --color-border-secondary: #2c303a;
-
-      --text-accent: #6ea8fe;
-      --surface-1: var(--color-background-primary);
-      --surface-2: var(--color-background-secondary);
-      --border: var(--color-border-secondary);
-
-      --pos-wh: #7cb0f7;           --pos-wh-bg: #1c2b42;
-      --pos-yes: #6fd08c;          --pos-yes-bg: #163524;
-      --pos-no: #f08a8a;           --pos-no-bg: #3a1c1c;
+<script>
+// Applies the saved/system theme to <html> as early as possible, before the
+// stylesheet below paints anything, so there's no flash of the wrong theme.
+// Self-contained: no dependency on any external script.
+(function(){
+  try{
+    var saved = localStorage.getItem('theme-preference');
+    var theme = (saved === 'light' || saved === 'dark')
+      ? saved
+      : ((window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches) ? 'dark' : 'light');
+    document.documentElement.setAttribute('data-theme', theme);
+    // Same idea for the text size: apply it before house.css paints, so a
+    // person who chose 28px doesn't watch the page reflow from 14px on load.
+    var fs = parseFloat(localStorage.getItem('font-size-preference'));
+    if (fs >= 10 && fs <= 28){
+      document.documentElement.style.setProperty('--fs-base', fs + 'px');
     }
-  }
+  }catch(e){ /* localStorage/matchMedia unavailable — CSS media query still applies */ }
+})();
+</script>
+<link rel="stylesheet" href="house.css">
+<style>
+/* Page-specific design tokens — this lesson's own palette, not
+   house tokens. house.css owns everything else. */
+:root{
+  --pos-yes: #1a7f37;
+  --pos-no: #c03434;
+  --pos-no-bg: #fbe7e7;
+}
+@media (prefers-color-scheme: dark) {
+:root{
+  --pos-yes: #6fd08c;
+  --pos-no: #f08a8a;
+  --pos-no-bg: #3a1c1c;
+}
+}
 
-  * { box-sizing: border-box; }
-  body {
-    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Helvetica, Arial, sans-serif;
-    font-size: 15px;
-    color: var(--text-primary);
-    background: var(--surface-1);
-    margin: 0;
-    line-height: 1.55;
-  }
-  .page { max-width: 700px; margin: 0 auto; padding: 28px 20px 64px; }
 
-  h1 { font-size: 1.3rem; margin: 4px 0 2px; }
-  .subtitle { color: var(--text-secondary); margin: 0 0 14px; font-size: 0.95rem; }
-
-  .cefr-tag {
-    display: inline-block;
-    font-size: 0.72rem;
-    font-weight: 700;
-    letter-spacing: 0.04em;
-    padding: 3px 10px;
-    border-radius: 999px;
-    background: var(--pos-wh-bg);
-    color: var(--pos-wh);
-    text-transform: uppercase;
-  }
+h1 { font-size: 1.3rem; margin: 4px 0 2px; }
 
   .timeline-wrap { display: flex; gap: 14px; align-items: stretch; margin: 4px 0 16px; }
   .timeline-track { display: flex; flex-direction: column; gap: 8px; flex: 1; }
@@ -161,9 +130,9 @@
 </style>
 </head>
 <body>
-<div class="page">
+<div class="page" id="page">
 
-  <span class="cefr-tag">A2</span>
+  <span class="cefr-tag cefr-a2">A2 · Elementary</span>
   <h1>Future Time Expressions — Ordering</h1>
 
   <table class="ref-table">
@@ -188,9 +157,12 @@
 
 </div>
 
-<div id="theme-toggle-wrap"><button id="theme-toggle" aria-label="Toggle light/dark mode" title="Toggle light/dark mode"><span id="theme-icon">☀️</span></button></div>
-<script src="theme-toggle-behavior.js"></script>
-
+<div id="theme-toggle-wrap">
+  <button id="theme-toggle" aria-label="Toggle light/dark mode" title="Toggle light/dark mode">
+    <span id="theme-icon">☀️</span>
+  </button>
+</div>
+<script src="house.js"></script>
 <script>
 const futureItems = ["in a few minutes", "later today", "tomorrow", "next week", "next month", "in three months", "next year", "in five years", "ten years from now"];
 

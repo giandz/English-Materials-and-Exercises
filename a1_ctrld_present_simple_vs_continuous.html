@@ -2,83 +2,34 @@
 <html lang="en">
 <head>
 <meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
 <title>Present Simple vs Continuous — Practice</title>
-<link rel="stylesheet" href="general.css">
-<style>
-  :root{
-    --color-background-primary: #ffffff;
-    --color-background-secondary: #f7f7f8;
-    --color-text-primary: #1a1a1a;
-    --color-text-secondary: #5b5b60;
-    --color-text-tertiary: #8b8b90;
-    --color-border-secondary: #e3e3e6;
-    --color-border-tertiary: #ebebee;
-    --border-radius-lg: 12px;
-    --font-mono: "SF Mono", "JetBrains Mono", monospace;
-
-    --text-primary: var(--color-text-primary);
-    --text-secondary: var(--color-text-secondary);
-    --text-muted: var(--color-text-tertiary);
-    --text-accent: #185fa5;
-    --surface-1: var(--color-background-secondary);
-    --surface-2: var(--color-background-primary);
-    --border: var(--color-border-tertiary);
-    --radius: var(--border-radius-lg);
-    --good: #2f7d3a;
-    --good-bg: #e8f4ea;
-    --bad: #b0392f;
-    --bad-bg: #fbebe9;
-  }
-
-  @media (prefers-color-scheme: dark){
-    :root{
-      --color-background-primary: #1e1e20;
-      --color-background-secondary: #26262a;
-      --color-text-primary: #f0f0f2;
-      --color-text-secondary: #b4b4ba;
-      --color-text-tertiary: #85858c;
-      --color-border-secondary: #3a3a3f;
-      --color-border-tertiary: #34343a;
-      --good-bg: #1d2f1f;
-      --bad-bg: #331e1c;
+<script>
+// Applies the saved/system theme to <html> as early as possible, before the
+// stylesheet below paints anything, so there's no flash of the wrong theme.
+// Self-contained: no dependency on any external script.
+(function(){
+  try{
+    var saved = localStorage.getItem('theme-preference');
+    var theme = (saved === 'light' || saved === 'dark')
+      ? saved
+      : ((window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches) ? 'dark' : 'light');
+    document.documentElement.setAttribute('data-theme', theme);
+    // Same idea for the text size: apply it before house.css paints, so a
+    // person who chose 28px doesn't watch the page reflow from 14px on load.
+    var fs = parseFloat(localStorage.getItem('font-size-preference'));
+    if (fs >= 10 && fs <= 28){
+      document.documentElement.style.setProperty('--fs-base', fs + 'px');
     }
-  }
-
-  *{ box-sizing:border-box; }
-  html,body{
-    margin:0;
-    background:var(--color-background-primary);
-    color:var(--color-text-primary);
-    font-family:-apple-system, BlinkMacSystemFont, "Segoe UI", Helvetica, Arial, sans-serif;
-    font-size:15px;
-    line-height:1.6;
-  }
-  .page{ max-width:680px; margin:0 auto; padding:28px 20px 60px; }
-
-  h1{ font-size:1.3rem; font-weight:600; letter-spacing:-0.01em; margin:0 0 4px; }
-  .subtitle{ font-size:13px; color:var(--text-secondary); margin:0 0 4px; }
-
-  .sec-div{font-size:11px;font-weight:500;letter-spacing:.06em;text-transform:uppercase;color:var(--text-muted);display:flex;align-items:center;gap:8px;margin:1.75rem 0 1rem;}
-  .sec-div::before,.sec-div::after{content:'';flex:1;height:.5px;background:var(--border);}
-
-  .rule-box{background:var(--surface-1);border-radius:var(--radius);padding:10px 14px;margin-bottom:1.25rem;font-size:13px;color:var(--text-secondary);line-height:1.7;}
-  .rule-box strong{color:var(--text-primary);font-weight:500;}
-
-  .score-bar{
-    display:flex;
-    justify-content:space-between;
-    align-items:center;
-    margin-bottom:1rem;
-    font-size:13px;
-    color:var(--text-secondary);
-    flex-wrap:wrap;
-    gap:8px;
-  }
-  .score-bar strong{ color:var(--good); }
+  }catch(e){ /* localStorage/matchMedia unavailable — CSS media query still applies */ }
+})();
+</script>
+<link rel="stylesheet" href="house.css">
+<style>
+h1{ font-size:1.3rem; font-weight:600; letter-spacing:-0.01em; margin:0 0 4px; }
   .reveal-btn{
     font-family:inherit;
-    font-size:12px;
+    font-size:0.8rem;
     font-weight:500;
     padding:5px 12px;
     border-radius:20px;
@@ -97,7 +48,7 @@
     background:var(--surface-2);
   }
   .mc-sentence{
-    font-size:14px;
+    font-size:0.9333rem;
     margin-bottom:10px;
   }
   .mc-sentence .blank{
@@ -113,7 +64,7 @@
   }
   .mc-btn{
     font-family:inherit;
-    font-size:13px;
+    font-size:0.8667rem;
     font-weight:500;
     padding:7px 14px;
     border-radius:8px;
@@ -137,7 +88,7 @@
     color:var(--bad);
   }
   .mc-feedback{
-    font-size:12px;
+    font-size:0.8rem;
     margin-top:7px;
     display:none;
   }
@@ -154,13 +105,13 @@
     background:var(--surface-2);
   }
   .gf-sentence{
-    font-size:14px;
+    font-size:0.9333rem;
     margin-bottom:9px;
     line-height:1.9;
   }
   .gf-sentence input{
     font-family:inherit;
-    font-size:13.5px;
+    font-size:0.9rem;
     width:130px;
     padding:4px 8px;
     border-radius:6px;
@@ -174,13 +125,13 @@
     border-color:var(--text-accent);
   }
   .gf-sentence .hint{
-    font-size:11.5px;
+    font-size:0.7667rem;
     color:var(--text-muted);
     font-style:italic;
   }
   .gf-check{
     font-family:inherit;
-    font-size:12.5px;
+    font-size:0.8333rem;
     font-weight:600;
     padding:6px 13px;
     border-radius:8px;
@@ -190,7 +141,7 @@
     cursor:pointer;
   }
   .gf-feedback{
-    font-size:12px;
+    font-size:0.8rem;
     margin-top:7px;
     padding:5px 9px;
     border-radius:6px;
@@ -200,11 +151,12 @@
   .gf-feedback.correct{ background:var(--good-bg); color:var(--good); }
   .gf-feedback.incorrect{ background:var(--bad-bg); color:var(--bad); }
 
-  footer{ text-align:center; font-size:12px; color:var(--text-muted); margin-top:2rem; }
+  footer{ text-align:center; font-size:0.8rem; color:var(--text-muted); margin-top:2rem; }
 </style>
 </head>
 <body>
-<div class="page">
+<div class="page" id="page">
+  <span class="cefr-tag cefr-a1">A1 · Beginner</span>
 
   <h1>Present Simple vs Present Continuous — Practice</h1>
   <p class="subtitle">Two exercises: choose the correct form, then fill in the gaps.</p>
@@ -233,8 +185,109 @@
   <footer>Grammar Practice — Present Simple vs Present Continuous (A1)</footer>
 </div>
 
+<div id="theme-toggle-wrap">
+  <button id="theme-toggle" aria-label="Toggle light/dark mode" title="Toggle light/dark mode">
+    <span id="theme-icon">☀️</span>
+  </button>
+</div>
+<script src="house.js"></script>
 <script>
-/* ---------- PART 1: MULTIPLE CHOICE ---------- */
+/* ── Gap fill ── */
+const GF_ITEMS = [
+  {
+    "template": "Ana {0} a book right now, but she {1} mystery novels.",
+    "hints": [
+      "read",
+      "not / like"
+    ],
+    "accepted": [
+      [
+        "is reading"
+      ],
+      [
+        "doesn't like",
+        "does not like"
+      ]
+    ]
+  },
+  {
+    "template": "Look! It {0} outside.",
+    "hints": [
+      "snow"
+    ],
+    "accepted": [
+      [
+        "is snowing"
+      ]
+    ]
+  },
+  {
+    "template": "My brother {0} at a bank. He {1} late today because of a meeting.",
+    "hints": [
+      "work",
+      "work"
+    ],
+    "accepted": [
+      [
+        "works"
+      ],
+      [
+        "is working"
+      ]
+    ]
+  },
+  {
+    "template": "We usually {0} at home, but tonight we {1} at a restaurant.",
+    "hints": [
+      "eat",
+      "eat"
+    ],
+    "accepted": [
+      [
+        "eat"
+      ],
+      [
+        "are eating"
+      ]
+    ]
+  },
+  {
+    "template": "She {0} TV now; she {1} for an exam.",
+    "hints": [
+      "not / watch",
+      "study"
+    ],
+    "accepted": [
+      [
+        "isn't watching",
+        "is not watching"
+      ],
+      [
+        "is studying"
+      ]
+    ]
+  },
+  {
+    "template": "I {0} coffee, but right now I {1} tea.",
+    "hints": [
+      "not / like",
+      "drink"
+    ],
+    "accepted": [
+      [
+        "don't like",
+        "do not like"
+      ],
+      [
+        "am drinking"
+      ]
+    ]
+  }
+];
+
+HouseGapFill.build({ container: 'gfItems', items: GF_ITEMS });
+
+/* ── Page-specific extras, kept as they were ── */
 const mcData = [
   { before: "Look! It", after: ".", options: ["rains", "is raining"], answer: "is raining" },
   { before: "She", after: " coffee every morning.", options: ["drinks", "is drinking"], answer: "drinks" },
@@ -293,57 +346,6 @@ mcItemsEl.addEventListener('click', (e) => {
   }
 });
 
-/* ---------- PART 2: GAP FILL ---------- */
-// Each gap: { verb, accepted: [array of accepted answers] }
-const gfData = [
-  {
-    template: "Ana {0} a book right now, but she {1} mystery novels.",
-    hints: ["read", "not / like"],
-    accepted: [
-      ["is reading"],
-      ["doesn't like", "does not like"]
-    ]
-  },
-  {
-    template: "Look! It {0} outside.",
-    hints: ["snow"],
-    accepted: [["is snowing"]]
-  },
-  {
-    template: "My brother {0} at a bank. He {1} late today because of a meeting.",
-    hints: ["work", "work"],
-    accepted: [
-      ["works"],
-      ["is working"]
-    ]
-  },
-  {
-    template: "We usually {0} at home, but tonight we {1} at a restaurant.",
-    hints: ["eat", "eat"],
-    accepted: [
-      ["eat"],
-      ["are eating"]
-    ]
-  },
-  {
-    template: "She {0} TV now; she {1} for an exam.",
-    hints: ["not / watch", "study"],
-    accepted: [
-      ["isn't watching", "is not watching"],
-      ["is studying"]
-    ]
-  },
-  {
-    template: "I {0} coffee, but right now I {1} tea.",
-    hints: ["not / like", "drink"],
-    accepted: [
-      ["don't like", "do not like"],
-      ["am drinking"]
-    ]
-  }
-];
-
-const gfItemsEl = document.getElementById('gfItems');
 const gfScoreEl = document.getElementById('gfScore');
 const gfTotalEl = document.getElementById('gfTotal');
 
@@ -353,91 +355,10 @@ gfTotalEl.textContent = gfTotalGaps;
 
 let gfScored = new Set(); // keys like "itemIdx-gapIdx"
 
-gfData.forEach((item, idx) => {
-  let sentenceHtml = item.template;
-  item.hints.forEach((hint, gapIdx) => {
-    const inputHtml = `<input type="text" data-idx="${idx}" data-gap="${gapIdx}" placeholder="${hint}">`;
-    sentenceHtml = sentenceHtml.replace(`{${gapIdx}}`, inputHtml);
-  });
-
-  const wrap = document.createElement('div');
-  wrap.className = 'gf-item';
-  wrap.innerHTML = `
-    <div class="gf-sentence">${sentenceHtml}</div>
-    <button class="gf-check" data-idx="${idx}">Check</button>
-    <div class="gf-feedback" data-idx="${idx}"></div>
-  `;
-  gfItemsEl.appendChild(wrap);
-});
-
-function normalize(str) {
-  return str.trim().toLowerCase().replace(/\s+/g, ' ').replace(/[.,!?]/g, '');
-}
-
-function checkGf(idx) {
-  const item = gfData[idx];
-  const feedback = document.querySelector(`.gf-feedback[data-idx="${idx}"]`);
-  const inputs = document.querySelectorAll(`input[data-idx="${idx}"]`);
-  const problems = [];
-
-  inputs.forEach(input => {
-    const gapIdx = Number(input.dataset.gap);
-    const userVal = normalize(input.value);
-    const accepted = item.accepted[gapIdx].map(normalize);
-    const key = `${idx}-${gapIdx}`;
-
-    input.style.borderColor = '';
-    if (accepted.includes(userVal)) {
-      input.style.borderColor = 'var(--good)';
-      gfScored.add(key);
-    } else {
-      input.style.borderColor = 'var(--bad)';
-      gfScored.delete(key);
-      problems.push(`gap ${gapIdx + 1}: expected "${item.accepted[gapIdx][0]}"`);
-    }
-  });
-
-  if (problems.length === 0) {
-    feedback.textContent = "✓ All correct!";
-    feedback.className = "gf-feedback show correct";
-  } else {
-    feedback.textContent = `✗ ${problems.join('; ')}.`;
-    feedback.className = "gf-feedback show incorrect";
-  }
-
-  gfScoreEl.textContent = gfScored.size;
-}
-
-gfItemsEl.addEventListener('click', (e) => {
-  if (e.target.classList.contains('gf-check')) {
-    checkGf(Number(e.target.dataset.idx));
-  }
-});
-
-gfItemsEl.addEventListener('keydown', (e) => {
-  if (e.key === 'Enter' && e.target.tagName === 'INPUT') {
-    checkGf(Number(e.target.dataset.idx));
-  }
-});
-
 document.getElementById('revealGf').addEventListener('click', () => {
-  gfData.forEach((item, idx) => {
-    item.accepted.forEach((accList, gapIdx) => {
-      const input = document.querySelector(`input[data-idx="${idx}"][data-gap="${gapIdx}"]`);
-      input.value = accList[0];
-      input.style.borderColor = 'var(--good)';
-      gfScored.add(`${idx}-${gapIdx}`);
-    });
-  });
   gfScoreEl.textContent = gfScored.size;
 });
-</script>
-<div id="theme-toggle-wrap">
-  <button id="theme-toggle" aria-label="Toggle light/dark mode" title="Toggle light/dark mode">
-    <span id="theme-icon">☀️</span>
-  </button>
-</div>
-<script src="theme-toggle-behavior.js"></script>
 
+</script>
 </body>
 </html>

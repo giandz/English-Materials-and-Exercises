@@ -1,0 +1,248 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<title>There Is / There Are — Clarification</title>
+<script>
+// Applies the saved/system theme to <html> as early as possible, before the
+// stylesheet below paints anything, so there's no flash of the wrong theme.
+// Self-contained: no dependency on any external script.
+(function(){
+  try{
+    var saved = localStorage.getItem('theme-preference');
+    var theme = (saved === 'light' || saved === 'dark')
+      ? saved
+      : ((window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches) ? 'dark' : 'light');
+    document.documentElement.setAttribute('data-theme', theme);
+    // Same idea for the text size: apply it before house.css paints, so a
+    // person who chose 28px doesn't watch the page reflow from 14px on load.
+    var fs = parseFloat(localStorage.getItem('font-size-preference'));
+    if (fs >= 10 && fs <= 28){
+      document.documentElement.style.setProperty('--fs-base', fs + 'px');
+    }
+  }catch(e){ /* localStorage/matchMedia unavailable — CSS media query still applies */ }
+})();
+</script>
+<link rel="stylesheet" href="house.css">
+<style>
+/* Page-specific design tokens — this lesson's own palette, not
+   house tokens. house.css owns everything else. */
+:root{
+  --count-color: #2563eb;
+  --noncount-color: #9333ea;
+  --yes-color: #16a34a;
+  --yes-bg: #dcfce7;
+  --yes-border: #86efac;
+  --no-color: #dc2626;
+  --no-bg: #fee2e2;
+  --no-border: #fca5a5;
+  --q-color: #b45309;
+  --q-bg: #fef3c7;
+  --q-border: #fcd34d;
+}
+@media (prefers-color-scheme: dark) {
+:root{
+  --yes-bg: #123a20;
+  --yes-border: #1e6b3a;
+  --no-bg: #3a1414;
+  --no-border: #7a2424;
+  --q-bg: #3a2c08;
+  --q-border: #6b5210;
+}
+}
+
+
+h1 { font-size: 1.3rem; margin: 0 0 4px; }
+    h2 { font-size: 1.02rem; margin: 0 0 10px; }
+
+    /* Quantity scale */
+    .scale-wrap { background: var(--surface-1); border: 1px solid var(--border); border-radius: var(--radius); padding: 18px; }
+    .scale-block + .scale-block { margin-top: 22px; }
+    .scale-title { font-size: 0.9rem; font-weight: 700; margin-bottom: 3px; display: flex; align-items: center; gap: 8px; }
+    .scale-title .dot { width: 9px; height: 9px; border-radius: 50%; display: inline-block; }
+    .scale-examples { font-size: 0.78rem; color: var(--text-muted); margin-bottom: 10px; }
+    .scale-track { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 6px; }
+    .scale-seg {
+      border-radius: 10px; padding: 10px 8px; text-align: center; font-size: 0.82rem; font-weight: 600;
+      border: 1px solid var(--border);
+    }
+    .scale-seg.s0 { background: var(--surface-2); color: var(--text-secondary); }
+    .scale-seg.s1 { background: var(--pos-det-bg); color: var(--pos-det); opacity: .55; }
+    .scale-seg.s2 { background: var(--pos-det-bg); color: var(--pos-det); }
+    .scale-caption { text-align: center; font-size: 0.68rem; color: var(--text-muted); margin-top: 4px; }
+    .overlap-note {
+      margin-top: 16px; font-size: 0.85rem; background: var(--surface-2); border: 1px dashed var(--border);
+      border-radius: 10px; padding: 10px 14px;
+    }
+
+    /* Determiner emoji scale */
+    .det-scale-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px 24px; }
+    @media (max-width: 560px) { .det-scale-grid { grid-template-columns: 1fr; }}
+    .det-col-title { font-size: 0.9rem; font-weight: 700; margin-bottom: 8px; display: flex; align-items: center; gap: 8px; }
+    .det-col-title .dot { width: 9px; height: 9px; border-radius: 50%; display: inline-block; }
+    .det-row {
+      display: flex; align-items: center; justify-content: space-between; gap: 10px;
+      padding: 7px 0; font-size: 0.85rem; border-bottom: 1px dashed var(--border);
+    }
+    .det-row:last-child { border-bottom: none; }
+    .det-label { color: var(--text-primary); }
+    .det-squares { font-size: 0.95rem; letter-spacing: 1px; white-space: nowrap; flex-shrink: 0; }
+    .det-scale-key { text-align: center; font-size: 0.72rem; color: var(--text-muted); margin-top: 14px; }
+
+    /* Tabs */
+    .tabs { display: flex; gap: 8px; margin-bottom: 14px; flex-wrap: wrap; }
+    .tab-btn {
+      flex: 1; min-width: 100px; padding: 10px 8px; border-radius: 10px; border: 1.5px solid var(--border);
+      background: var(--surface-1); color: var(--text-secondary); font-weight: 700; font-size: 0.85rem;
+      cursor: pointer; text-align: center; transition: all .15s;
+    }
+    .tab-btn.active[data-tab="aff"] { background: var(--yes-bg); border-color: var(--yes-border); color: var(--yes-color); }
+    .tab-btn.active[data-tab="neg"] { background: var(--no-bg); border-color: var(--no-border); color: var(--no-color); }
+    .tab-btn.active[data-tab="q"]   { background: var(--q-bg); border-color: var(--q-border); color: var(--q-color); }
+    .tab-panel { display: none; }
+    .tab-panel.active { display: block; }
+    .formula {
+      font-family: var(--font-mono, monospace); font-size: 0.9rem; text-align: center;
+      background: var(--surface-2); border: 1px dashed var(--border); border-radius: 10px;
+      padding: 12px; margin-bottom: 14px; color: var(--text-primary);
+    }
+    .ex-list { list-style: none; padding: 0; margin: 0; display: flex; flex-direction: column; gap: 10px; }
+    .ex-list li { background: var(--surface-2); border-radius: 10px; padding: 10px 14px; font-size: 0.92rem; }
+    .pos-subject { color: var(--pos-subject); background: var(--pos-subject-bg); border-radius: 4px; padding: 1px 4px; }
+    .pos-object  { color: var(--pos-object);  background: var(--pos-object-bg);  border-radius: 4px; padding: 1px 4px; }
+    .pos-aux     { color: var(--pos-aux);     background: var(--pos-aux-bg);     border-radius: 4px; padding: 1px 4px; }
+    .pos-neg     { color: var(--pos-neg);     background: var(--pos-neg-bg);     border-radius: 4px; padding: 1px 4px; }
+    .pos-wh      { color: var(--pos-wh);      background: var(--pos-wh-bg);      border-radius: 4px; padding: 1px 4px; }
+    .pos-det     { color: var(--pos-det);     background: var(--pos-det-bg);     border-radius: 4px; padding: 1px 4px; }
+    footer.credits { text-align: center; font-size: 0.75rem; color: var(--text-muted); margin-top: 40px; }
+</style>
+</head>
+<body>
+<div class="page" id="page">
+  <h1>There Is / There Are <span class="cefr-tag cefr-a1a2">A1/A2 · Beginner–Elementary</span></h1>
+  <p class="subtitle">We use <em>there is / there are</em> to say what exists in a place. The word we use for "how much/many" depends on whether the noun is <strong>count</strong> (has a plural) or <strong>noncount</strong> (no plural).</p>
+
+  <div class="sec-div">How much? How many?</div>
+  <div class="scale-wrap">
+    <div class="scale-block">
+      <div class="scale-title"><span class="dot" style="background:var(--count-color)"></span>Count nouns <span style="font-weight:400; color:var(--text-muted)">— there ARE</span></div>
+      <div class="scale-examples">a park → parks · a restaurant → restaurants · a museum → museums</div>
+      <div class="scale-track">
+        <div class="scale-seg s0">no / not any</div>
+        <div class="scale-seg s1">a few / several</div>
+        <div class="scale-seg s2">many / a lot of</div>
+      </div>
+      <div class="scale-caption">zero &rarr; small number &rarr; large number</div>
+    </div>
+
+    <div class="scale-block">
+      <div class="scale-title"><span class="dot" style="background:var(--noncount-color)"></span>Noncount nouns <span style="font-weight:400; color:var(--text-muted)">— there IS</span></div>
+      <div class="scale-examples">traffic · crime · noise · pollution (no plural form)</div>
+      <div class="scale-track">
+        <div class="scale-seg s0">no / not any</div>
+        <div class="scale-seg s1">a little</div>
+        <div class="scale-seg s2">much / a lot of</div>
+      </div>
+      <div class="scale-caption">zero &rarr; small amount &rarr; large amount</div>
+    </div>
+
+    <div class="overlap-note">💡 <strong>Some</strong> and <strong>a lot of</strong> work for BOTH count and noncount nouns: <em>there's some traffic</em> / <em>there are some parks</em> · <em>a lot of noise</em> / <em>a lot of restaurants</em>.</div>
+  </div>
+
+  <div class="sec-div">Determiner scale</div>
+  <div class="scale-wrap">
+    <div class="det-scale-grid">
+      <div>
+        <div class="det-col-title"><span class="dot" style="background:var(--count-color)"></span>Count nouns</div>
+        <div class="det-row"><span class="det-label">no / not any</span><span class="det-squares">◼️◼️◼️◼️◼️</span></div>
+        <div class="det-row"><span class="det-label">a couple of</span><span class="det-squares">🟩◼️◼️◼️◼️</span></div>
+        <div class="det-row"><span class="det-label">a few / several</span><span class="det-squares">🟩🟩◼️◼️◼️</span></div>
+        <div class="det-row"><span class="det-label">some</span><span class="det-squares">🟩🟩🟨◼️◼️</span></div>
+        <div class="det-row"><span class="det-label">many</span><span class="det-squares">🟩🟩🟨🟨◼️</span></div>
+        <div class="det-row"><span class="det-label">a lot of / loads of</span><span class="det-squares">🟩🟩🟨🟨🟥</span></div>
+      </div>
+      <div>
+        <div class="det-col-title"><span class="dot" style="background:var(--noncount-color)"></span>Noncount nouns</div>
+        <div class="det-row"><span class="det-label">no / not any</span><span class="det-squares">◼️◼️◼️◼️◼️</span></div>
+        <div class="det-row"><span class="det-label">a little bit of</span><span class="det-squares">🟩◼️◼️◼️◼️</span></div>
+        <div class="det-row"><span class="det-label">a little</span><span class="det-squares">🟩🟩◼️◼️◼️</span></div>
+        <div class="det-row"><span class="det-label">some</span><span class="det-squares">🟩🟩🟨◼️◼️</span></div>
+        <div class="det-row"><span class="det-label">much</span><span class="det-squares">🟩🟩🟨🟨◼️</span></div>
+        <div class="det-row"><span class="det-label">a lot of / loads of</span><span class="det-squares">🟩🟩🟨🟨🟥</span></div>
+      </div>
+    </div>
+    <div class="det-scale-key">◼️ none &nbsp; 🟩 a little &nbsp; 🟨 a fair amount &nbsp; 🟥 a lot</div>
+    <div class="overlap-note">💡 <strong>much</strong> is mostly used in negatives and questions (<em>there isn't much traffic</em> / <em>is there much traffic?</em>); in affirmative sentences, native speakers usually prefer <strong>a lot of</strong> (<em>there's a lot of traffic</em>) instead of <em>there's much traffic</em>.</div>
+  </div>
+
+  <div class="sec-div">Affirmative, negative &amp; question forms</div>
+  <div class="card">
+    <div class="tabs">
+      <button class="tab-btn active" data-tab="aff">✅ Affirmative</button>
+      <button class="tab-btn" data-tab="neg">❌ Negative</button>
+      <button class="tab-btn" data-tab="q">❓ Question</button>
+    </div>
+
+    <div class="tab-panel active" data-panel="aff">
+      <div class="formula">There is/are + a/some/a few/a little/many/much/a lot of + noun</div>
+      <ul class="ex-list">
+        <li><span class="pos-subject">There</span>'s <span class="pos-det">a lot of</span> <span class="pos-object">traffic</span>.</li>
+        <li><span class="pos-subject">There</span> <span class="pos-aux">are</span> <span class="pos-det">a few</span> <span class="pos-object">parks</span> nearby.</li>
+        <li><span class="pos-subject">There</span>'s <span class="pos-det">a</span> <span class="pos-object">supermarket</span> on this street.</li>
+      </ul>
+    </div>
+
+    <div class="tab-panel" data-panel="neg">
+      <div class="formula">There isn't/aren't + any/much/many + noun</div>
+      <ul class="ex-list">
+        <li><span class="pos-subject">There</span> <span class="pos-aux">isn</span><span class="pos-neg">'t</span> <span class="pos-det">much</span> <span class="pos-object">crime</span> here.</li>
+        <li><span class="pos-subject">There</span> <span class="pos-aux">aren</span><span class="pos-neg">'t</span> <span class="pos-det">many</span> <span class="pos-object">restaurants</span> around here.</li>
+        <li><span class="pos-subject">There</span> <span class="pos-aux">aren</span><span class="pos-neg">'t</span> <span class="pos-det">any</span> <span class="pos-object">museums</span> in this town.</li>
+      </ul>
+    </div>
+
+    <div class="tab-panel" data-panel="q">
+      <div class="formula">Is/Are there + any/much/many + noun?</div>
+      <ul class="ex-list">
+        <li><span class="pos-wh">Is</span> <span class="pos-subject">there</span> <span class="pos-det">much</span> <span class="pos-object">pollution</span> in your city?</li>
+        <li><span class="pos-wh">Are</span> <span class="pos-subject">there</span> <span class="pos-det">many</span> <span class="pos-object">schools</span> nearby?</li>
+        <li><span class="pos-wh">Is</span> <span class="pos-subject">there</span> <span class="pos-det">a</span> <span class="pos-object">bus stop</span> near here?</li>
+      </ul>
+    </div>
+
+    <div class="legend">
+      <span class="legend-pill"><span class="legend-swatch" style="background:var(--pos-subject)"></span>there</span>
+      <span class="legend-pill"><span class="legend-swatch" style="background:var(--pos-aux)"></span>is/are</span>
+      <span class="legend-pill"><span class="legend-swatch" style="background:var(--pos-det)"></span>determiner</span>
+      <span class="legend-pill"><span class="legend-swatch" style="background:var(--pos-object)"></span>noun</span>
+      <span class="legend-pill"><span class="legend-swatch" style="background:var(--pos-neg)"></span>negation</span>
+      <span class="legend-pill"><span class="legend-swatch" style="background:var(--pos-wh)"></span>is/are (question)</span>
+    </div>
+  </div>
+
+  <div class="rule-box">
+    <strong>Remember:</strong> the noun after <em>there is/are</em> decides the verb — singular/noncount noun &rarr; <b>is</b>, plural noun &rarr; <b>are</b>. This also decides the determiner: <b>much/a little</b> only go with noncount nouns; <b>many/a few</b> only go with count nouns.
+  </div>
+
+  <footer class="credits">There is / There are · Describing a City</footer>
+</div>
+
+<div id="theme-toggle-wrap">
+  <button id="theme-toggle" aria-label="Toggle light/dark mode" title="Toggle light/dark mode">
+    <span id="theme-icon">☀️</span>
+  </button>
+</div>
+<script src="house.js"></script>
+<script>
+document.querySelectorAll('.tab-btn').forEach(btn => {
+  btn.addEventListener('click', () => {
+    document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
+    document.querySelectorAll('.tab-panel').forEach(p => p.classList.remove('active'));
+    btn.classList.add('active');
+    document.querySelector(`.tab-panel[data-panel="${btn.dataset.tab}"]`).classList.add('active');
+  });
+});
+</script>
+</body>
+</html>

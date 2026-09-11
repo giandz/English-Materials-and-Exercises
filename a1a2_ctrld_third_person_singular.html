@@ -1,0 +1,632 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<title>Third Person Singular — Practice</title>
+<script>
+// Applies the saved/system theme to <html> as early as possible, before the
+// stylesheet below paints anything, so there's no flash of the wrong theme.
+// Self-contained: no dependency on any external script.
+(function(){
+  try{
+    var saved = localStorage.getItem('theme-preference');
+    var theme = (saved === 'light' || saved === 'dark')
+      ? saved
+      : ((window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches) ? 'dark' : 'light');
+    document.documentElement.setAttribute('data-theme', theme);
+    // Same idea for the text size: apply it before house.css paints, so a
+    // person who chose 28px doesn't watch the page reflow from 14px on load.
+    var fs = parseFloat(localStorage.getItem('font-size-preference'));
+    if (fs >= 10 && fs <= 28){
+      document.documentElement.style.setProperty('--fs-base', fs + 'px');
+    }
+  }catch(e){ /* localStorage/matchMedia unavailable — CSS media query still applies */ }
+})();
+</script>
+<link rel="stylesheet" href="house.css">
+<style>
+/* Page-specific design tokens — this lesson's own palette, not
+   house tokens. house.css owns everything else. */
+:root{
+  --noun-color: #185fa5;
+  --noun-bg: #e6f1fb;
+  --pron-color: #7c3aed;
+  --pron-bg: #f3effe;
+  --neg-color: #a32d2d;
+  --neg-bg: #fce8e8;
+  --q-color: #8a6d00;
+  --q-bg: #fdf3d0;
+}
+@media (prefers-color-scheme: dark){
+:root{
+  --noun-color: #7fb2e0;
+  --noun-bg: #16283a;
+  --pron-color: #b79aff;
+  --pron-bg: #2a2145;
+  --neg-color: #e2827a;
+  --neg-bg: #3a201e;
+  --q-color: #e8c94a;
+  --q-bg: #3a3115;
+}
+}
+
+
+h1{ font-size:1.3rem; font-weight:600; letter-spacing:-0.01em; margin:0 0 4px; }
+
+  .noun{ color:var(--noun-color); font-weight:700; background:var(--noun-bg); padding:1px 5px; border-radius:4px; }
+  .pron{ color:var(--pron-color); font-weight:700; background:var(--pron-bg); padding:1px 5px; border-radius:4px; }
+  .neg{ color:var(--neg-color); font-weight:700; background:var(--neg-bg); padding:1px 5px; border-radius:4px; }
+  .q{ color:var(--q-color); font-weight:700; background:var(--q-bg); padding:1px 5px; border-radius:4px; }
+
+  /* Honorific reference cards */
+  .honor-grid{
+    display:grid;
+    grid-template-columns:repeat(auto-fill,minmax(150px,1fr));
+    gap:10px;
+    margin-bottom:1.25rem;
+  }
+  .honor-card{
+    border:.5px solid var(--color-border-tertiary);
+    border-radius:var(--border-radius-lg);
+    padding:12px 14px;
+    background:var(--surface-2);
+  }
+  .honor-title{ font-size:1rem; font-weight:700; color:var(--text-accent); margin-bottom:4px; }
+  .honor-use{ font-size:0.7667rem; color:var(--text-secondary); margin-bottom:6px; }
+  .honor-ex{ font-size:0.8333rem; color:var(--text-primary); }
+
+  /* Form cards */
+  .tense-card{
+    border:.5px solid var(--color-border-tertiary);
+    border-radius:var(--border-radius-lg);
+    overflow:hidden;
+    margin-bottom:14px;
+  }
+  .tense-head{
+    padding:10px 14px;
+    font-weight:700;
+    font-size:0.9rem;
+    color:#fff;
+    background:#185fa5;
+  }
+  .form-block{
+    padding:10px 14px;
+    border-bottom:.5px solid var(--color-border-tertiary);
+  }
+  .form-block:last-child{ border-bottom:none; }
+  .form-label{
+    font-size:0.7rem;
+    font-weight:700;
+    letter-spacing:.05em;
+    text-transform:uppercase;
+    color:var(--text-muted);
+    margin-bottom:5px;
+  }
+  .form-line{ font-size:0.9rem; margin-bottom:5px; }
+
+  /* Drag matching activity */
+  .status-bar{
+    display:flex;
+    justify-content:space-between;
+    align-items:center;
+    margin-bottom:1rem;
+    flex-wrap:wrap;
+    gap:10px;
+  }
+  .score-pill{
+    font-family:var(--font-mono);
+    font-size:0.8667rem;
+    background:var(--surface-1);
+    border:.5px solid var(--border);
+    padding:5px 13px;
+    border-radius:20px;
+  }
+  .score-pill strong{ color:var(--good); }
+  .reset-btn{
+    font-family:inherit;
+    font-size:0.8333rem;
+    font-weight:600;
+    background:var(--text-accent);
+    color:#fff;
+    border:none;
+    padding:6px 14px;
+    border-radius:20px;
+    cursor:pointer;
+  }
+
+  .pron-bins{
+    display:grid;
+    grid-template-columns:repeat(auto-fill,minmax(150px,1fr));
+    gap:10px;
+    margin-bottom:20px;
+  }
+  .bin{
+    border:1.5px dashed var(--border);
+    border-radius:10px;
+    padding:10px;
+    background:var(--surface-2);
+    transition:border-color .15s, background .15s;
+  }
+  .bin.drag-over{ border-color:var(--text-accent); background:var(--surface-1); }
+  .bin.complete{ border-style:solid; border-color:var(--good); background:var(--good-bg); }
+  .bin-label{
+    font-weight:700;
+    font-size:1rem;
+    color:var(--text-primary);
+    margin-bottom:6px;
+    text-align:center;
+  }
+  .bin-slots{ display:flex; flex-direction:column; gap:5px; min-height:64px; }
+  .slot{
+    border:1px solid var(--border);
+    border-radius:7px;
+    min-height:30px;
+    background:var(--surface-1);
+    display:flex;
+    align-items:center;
+    padding:0 4px;
+  }
+  .slot.filled{ border:none; background:transparent; padding:0; }
+
+  .pool-heading{
+    font-size:0.7333rem;
+    font-weight:500;
+    letter-spacing:.06em;
+    text-transform:uppercase;
+    color:var(--text-muted);
+    margin:0 0 10px;
+  }
+  .pool{
+    display:flex;
+    flex-wrap:wrap;
+    gap:8px;
+    min-height:50px;
+    padding:12px;
+    background:var(--surface-1);
+    border-radius:var(--radius);
+    margin-bottom:1.5rem;
+  }
+  @keyframes shake{
+    0%,100%{transform:translateX(0);}
+    20%{transform:translateX(-5px);} 40%{transform:translateX(5px);}
+    60%{transform:translateX(-3px);} 80%{transform:translateX(3px);}
+  }
+
+  .win-banner{
+    display:none;
+    text-align:center;
+    padding:14px;
+    background:var(--surface-1);
+    border:.5px solid var(--good);
+    color:var(--good);
+    border-radius:var(--radius);
+    font-weight:600;
+    font-size:0.9333rem;
+    margin-bottom:1.5rem;
+  }
+  .win-banner.show{ display:block; }
+
+  /* Gap fill */
+  .gf-item{
+    border:.5px solid var(--color-border-tertiary);
+    border-radius:var(--border-radius-lg);
+    padding:13px 15px;
+    margin-bottom:10px;
+    background:var(--surface-2);
+  }
+  .gf-top{
+    display:flex;
+    align-items:center;
+    gap:8px;
+    margin-bottom:8px;
+  }
+  .gf-pron-tag{
+    font-family:var(--font-mono);
+    font-size:0.7333rem;
+    font-weight:700;
+    padding:2px 9px;
+    border-radius:20px;
+    background:var(--pron-bg);
+    color:var(--pron-color);
+  }
+  .gf-form-tag{
+    font-size:0.6667rem;
+    font-weight:600;
+    text-transform:uppercase;
+    letter-spacing:.03em;
+    color:var(--text-muted);
+  }
+  .gf-sentence{
+	display: flex;
+    font-size:0.9333rem;
+    margin-bottom:9px;
+    line-height:1.8;
+    white-space:break-space;
+    align-items: baseline;
+  }
+  .gf-sentence input{
+    font-family:inherit;
+    font-size:0.9rem;
+    width:120px;
+    padding:5px 8px;
+    border-radius:6px;
+    border:1px solid var(--color-border-secondary);
+    background:var(--color-background-primary);
+    color:var(--text-primary);
+    text-align:center;
+    margin: 0 5px;
+  }
+  .gf-sentence input:focus{ outline:none; border-color:var(--text-accent); }
+  .gf-check{
+    font-family:inherit;
+    font-size:0.8333rem;
+    font-weight:600;
+    padding:6px 13px;
+    border-radius:8px;
+    border:none;
+    background:var(--text-accent);
+    color:#fff;
+    cursor:pointer;
+  }
+  .gf-feedback{
+    font-size:0.8rem;
+    margin-top:7px;
+    padding:5px 9px;
+    border-radius:6px;
+    display:none;
+  }
+  .gf-feedback.show{ display:block; }
+  .gf-feedback.correct{ background:var(--good-bg); color:var(--good); }
+  .gf-feedback.incorrect{ background:var(--bad-bg); color:var(--bad); }
+  .gf-hint{ color:var(--text-secondary); }
+  .reveal-btn{
+    font-family:inherit;
+    font-size:0.8rem;
+    font-weight:500;
+    padding:5px 12px;
+    border-radius:20px;
+    border:.5px solid var(--border);
+    background:var(--surface-1);
+    color:var(--text-secondary);
+    cursor:pointer;
+  }
+  .vert {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+}
+
+  footer{ text-align:center; font-size:0.8rem; color:var(--text-muted); margin-top:2rem; }
+</style>
+</head>
+<body>
+<div class="page" id="page">
+
+  <span class="cefr-tag cefr-a1a2">A1/A2 · Practice</span>
+  <h1>Third Person Singular</h1>
+  <p class="subtitle">He, she, and it. Titles for people. Verbs with -s.</p>
+
+
+  <!-- ══ DRAG MATCHING ACTIVITY ══ -->
+  <div class="sec-div">practice 1: match the pronoun</div>
+
+  <div class="rule-box">
+    Drag each word or name into the correct box.
+  </div>
+
+  <div class="status-bar">
+    <div class="score-pill">Correct: <strong id="matchedCount">0</strong> / 14</div>
+    <button class="reset-btn" id="resetBtn">Reset</button>
+  </div>
+
+  <div class="pool-heading">Words</div>
+  <div class="pool" id="pool"></div>
+
+  <div class="pron-bins" id="bins"></div>
+
+  <div class="win-banner" id="winBanner">🎉 Great job! All correct.</div>
+
+  <!-- ══ GAP FILL ══ -->
+  <div class="sec-div">practice 2: complete the sentence</div>
+
+  <div class="rule-box">
+    The small tag shows the pronoun. Use it to write the correct verb.
+  </div>
+
+  <div class="score-bar">
+    <span>Score: <strong id="gfScore">0</strong> / <span id="gfTotal">0</span></span>
+    <button class="reveal-btn" id="revealGf">Show all answers</button>
+  </div>
+
+  <div id="gfItems"></div>
+
+  <footer>Grammar Focus & Practice — Third Person Singular (A1–A2)</footer>
+</div>
+
+<div id="theme-toggle-wrap">
+  <button id="theme-toggle" aria-label="Toggle light/dark mode" title="Toggle light/dark mode">
+    <span id="theme-icon">☀️</span>
+  </button>
+</div>
+<script src="house.js"></script>
+<script>
+/* ══════════════ PRACTICE 1: DRAG MATCHING ══════════════ */
+const pronounData = [
+  { pronoun: "I", nouns: ["Ana (talking about Ana)", "Leo (talking about Leo)","you (talking about you)"] },
+  /*{ pronoun: "you", nouns: ["your friend", "your name"] },*/
+  { pronoun: "he", nouns: ["Mr. Smith", "my father", "Diego"] },
+  { pronoun: "she", nouns: ["Mrs. Lopez", "your sister", "Sofía"] },
+  { pronoun: "it", nouns: ["my car", "the weather", "your horse"] },
+  { pronoun: "we", nouns: ["my friends and I", "our class", "my husband and I"] },
+  { pronoun: "they", nouns: ["our parents", "the students", "the windows"] }
+];
+
+const binsEl = document.getElementById('bins');
+const poolEl = document.getElementById('pool');
+const matchedCountEl = document.getElementById('matchedCount');
+const winBanner = document.getElementById('winBanner');
+
+let allNouns = [];
+pronounData.forEach(entry => {
+  entry.nouns.forEach(n => {
+    allNouns.push({ id: 'c' + Math.random().toString(36).slice(2,9), pronoun: entry.pronoun, text: n });
+  });
+});
+
+for (let i = allNouns.length - 1; i > 0; i--) {
+  const j = Math.floor(Math.random() * (i + 1));
+  [allNouns[i], allNouns[j]] = [allNouns[j], allNouns[i]];
+}
+
+pronounData.forEach(entry => {
+  const bin = document.createElement('div');
+  bin.className = 'bin';
+  bin.dataset.pronoun = entry.pronoun;
+  bin.innerHTML = `
+    <div class="bin-label">${entry.pronoun}</div>
+    <div class="bin-slots">
+      <div class="slot" data-slot="0"></div>
+      <div class="slot" data-slot="1"></div>
+      <div class="slot" data-slot="2"></div>
+    </div>
+  `;
+  binsEl.appendChild(bin);
+});
+
+allNouns.forEach(n => {
+  const card = document.createElement('div');
+  card.className = 'card';
+  card.id = n.id;
+  card.dataset.pronoun = n.pronoun;
+  card.textContent = n.text;
+  poolEl.appendChild(card);
+});
+
+let matched = 0;
+const total = allNouns.length;
+let dragState = null;
+
+function getBinAtPoint(x, y) {
+  const els = document.elementsFromPoint(x, y);
+  for (const el of els) {
+    const bin = el.closest('.bin');
+    if (bin) return bin;
+  }
+  return null;
+}
+
+function clearDragOver() {
+  document.querySelectorAll('.bin.drag-over').forEach(b => b.classList.remove('drag-over'));
+}
+
+function onPointerDown(e, card) {
+  if (card.classList.contains('placed')) return;
+  e.preventDefault();
+  const rect = card.getBoundingClientRect();
+  dragState = {
+    card,
+    offsetX: e.clientX - rect.left,
+    offsetY: e.clientY - rect.top,
+    originParent: card.parentElement,
+    originNext: card.nextSibling,
+    startWidth: rect.width
+  };
+  card.setPointerCapture(e.pointerId);
+  card.classList.add('dragging');
+  card.style.width = rect.width + 'px';
+}
+
+function movePointer(e) {
+  if (!dragState) return;
+  const { card, offsetX, offsetY } = dragState;
+  card.style.left = (e.clientX - offsetX) + 'px';
+  card.style.top = (e.clientY - offsetY) + 'px';
+  clearDragOver();
+  const bin = getBinAtPoint(e.clientX, e.clientY);
+  if (bin && !bin.classList.contains('complete')) {
+    bin.classList.add('drag-over');
+  }
+}
+
+function onPointerMove(e) {
+  if (!dragState) return;
+  e.preventDefault();
+  movePointer(e);
+}
+
+function onPointerUp(e) {
+  if (!dragState) return;
+  const { card, originParent, originNext } = dragState;
+  clearDragOver();
+  card.classList.remove('dragging');
+  card.style.position = '';
+  card.style.left = '';
+  card.style.top = '';
+  card.style.width = '';
+
+  const bin = getBinAtPoint(e.clientX, e.clientY);
+
+  if (bin) {
+    if (bin.dataset.pronoun === card.dataset.pronoun && !bin.classList.contains('complete')) {
+      const emptySlot = bin.querySelector('.slot:not(.filled)');
+      if (emptySlot) {
+        emptySlot.classList.add('filled');
+        card.classList.add('placed');
+        emptySlot.appendChild(card);
+        matched++;
+        matchedCountEl.textContent = matched;
+        updateBinCount(bin);
+        if (matched === total) winBanner.classList.add('show');
+      } else {
+        returnToOrigin(card, originParent, originNext);
+      }
+    } else {
+      returnToOrigin(card, originParent, originNext);
+      card.classList.add('wrong');
+      setTimeout(() => card.classList.remove('wrong'), 400);
+    }
+  } else {
+    returnToOrigin(card, originParent, originNext);
+  }
+
+  dragState = null;
+}
+
+function returnToOrigin(card, parent, nextSibling) {
+  card.style.width = '';
+  if (nextSibling && nextSibling.parentElement === parent) {
+    parent.insertBefore(card, nextSibling);
+  } else {
+    parent.appendChild(card);
+  }
+}
+
+function updateBinCount(bin) {
+  const filled = bin.querySelectorAll('.slot.filled').length;
+  if (filled === 3) bin.classList.add('complete');
+}
+
+document.querySelectorAll('.card').forEach(card => {
+  card.addEventListener('pointerdown', (e) => onPointerDown(e, card));
+});
+document.addEventListener('pointermove', onPointerMove, { passive: false });
+document.addEventListener('pointerup', onPointerUp);
+document.addEventListener('pointercancel', onPointerUp);
+
+document.getElementById('resetBtn').addEventListener('click', () => location.reload());
+
+/* ══════════════ PRACTICE 2: GAP FILL ══════════════ */
+const gfData = [
+  { pronoun: "I", form: "positive", template: "I {0} to school every day.", hints: ["walk"], accepted: [["walk"]] },
+  { pronoun: "I", form: "negative", template: "I {0} coffee.", hints: ["not / like"], accepted: [["don't like", "don’t like","do not like"]] },
+
+  { pronoun: "you", form: "positive", template: "You {0} English well.", hints: ["speak"], accepted: [["speak"]] },
+  { pronoun: "you", form: "question", template: "{0} you like pizza?", hints: ["do"], accepted: [["do"]] },
+
+  { pronoun: "he", form: "positive", template: "Mr. Smith {0} math.", hints: ["teach"], accepted: [["teaches"]] },
+  { pronoun: "he", form: "negative", template: "My father {0} vegetables.", hints: ["not / like"], accepted: [["doesn't like", "doesn’t like", "does not like"]] },
+  { pronoun: "he", form: "question", template: "{0} your brother play soccer?", hints: ["do"], accepted: [["does"]] },
+
+  { pronoun: "she", form: "positive", template: "Mrs. Lopez {0} in a small office.", hints: ["work"], accepted: [["works"]] },
+  { pronoun: "she", form: "negative", template: "Your sister {0} early.", hints: ["not / wake up"], accepted: [["doesn't wake up","doesn’t wake up", "does not wake up"]] },
+  { pronoun: "she", form: "question", template: "{0} Ms. Baker teach art?", hints: ["do"], accepted: [["does"]] },
+
+  { pronoun: "it", form: "positive", template: "My bike {0} new tires.", hints: ["need"], accepted: [["needs"]] },
+  { pronoun: "it", form: "negative", template: "The store {0} on Sundays.", hints: ["not / open"], accepted: [["doesn't open", "doesn’t open", "does not open"]] },
+
+  { pronoun: "we", form: "positive", template: "We {0} to school by bus.", hints: ["go"], accepted: [["go"]] },
+  { pronoun: "we", form: "negative", template: "We {0} homework on Fridays.", hints: ["not / have"], accepted: [["don't have", "don’t have", "do not have"]] },
+
+  { pronoun: "they", form: "positive", template: "Our parents {0} dinner together.", hints: ["cook"], accepted: [["cook"]] },
+  { pronoun: "they", form: "question", template: "{0} the students study every night?", hints: ["do"], accepted: [["do"]] }
+];
+
+const gfItemsEl = document.getElementById('gfItems');
+const gfScoreEl = document.getElementById('gfScore');
+const gfTotalEl = document.getElementById('gfTotal');
+
+let gfTotalGaps = 0;
+gfData.forEach(item => gfTotalGaps += item.accepted.length);
+gfTotalEl.textContent = gfTotalGaps;
+
+let gfScored = new Set();
+
+gfData.forEach((item, idx) => {
+  let sentenceHtml = item.template;
+  item.hints.forEach((hint, gapIdx) => {
+    const inputHtml = `<div class="vert"><input type="text" data-idx="${idx}" data-gap="${gapIdx}"><span class="gf-hint">(${hint})</span></div>`;
+    sentenceHtml = sentenceHtml.replace(`{${gapIdx}}`, inputHtml);
+  });
+
+  const wrap = document.createElement('div');
+  wrap.className = 'gf-item';
+  wrap.innerHTML = `
+    <div class="gf-top">
+      <span class="gf-pron-tag">${item.pronoun}</span>
+      <span class="gf-form-tag">${item.form}</span>
+    </div>
+    <div class="gf-sentence">${sentenceHtml}</div>
+    <button class="gf-check" data-idx="${idx}">Check</button>
+    <div class="gf-feedback" data-idx="${idx}"></div>
+  `;
+  gfItemsEl.appendChild(wrap);
+});
+
+function normalize(str) {
+  return str.trim().toLowerCase().replace(/\s+/g, ' ').replace(/[.,!?]/g, '');
+}
+
+function checkGf(idx) {
+  const item = gfData[idx];
+  const feedback = document.querySelector(`.gf-feedback[data-idx="${idx}"]`);
+  const inputs = document.querySelectorAll(`input[data-idx="${idx}"]`);
+  const problems = [];
+
+  inputs.forEach(input => {
+    const gapIdx = Number(input.dataset.gap);
+    const userVal = normalize(input.value);
+    const accepted = item.accepted[gapIdx].map(normalize);
+
+    input.style.borderColor = '';
+    if (accepted.includes(userVal)) {
+      input.style.borderColor = 'var(--good)';
+      gfScored.add(`${idx}-${gapIdx}`);
+    } else {
+      input.style.borderColor = 'var(--bad)';
+      gfScored.delete(`${idx}-${gapIdx}`);
+      problems.push(`expected "${item.accepted[gapIdx][0]}"`);
+    }
+  });
+
+  if (problems.length === 0) {
+    feedback.textContent = "✓ Correct!";
+    feedback.className = "gf-feedback show correct";
+  } else {
+    feedback.textContent = `✗ ${problems.join('; ')}.`;
+    feedback.className = "gf-feedback show incorrect";
+  }
+  gfScoreEl.textContent = gfScored.size;
+}
+
+gfItemsEl.addEventListener('click', (e) => {
+  if (e.target.classList.contains('gf-check')) checkGf(Number(e.target.dataset.idx));
+});
+gfItemsEl.addEventListener('keydown', (e) => {
+  if (e.key === 'Enter' && e.target.tagName === 'INPUT') checkGf(Number(e.target.dataset.idx));
+});
+
+document.getElementById('revealGf').addEventListener('click', () => {
+  gfData.forEach((item, idx) => {
+    item.accepted.forEach((accList, gapIdx) => {
+      const input = document.querySelector(`input[data-idx="${idx}"][data-gap="${gapIdx}"]`);
+      input.value = accList[0];
+      input.style.borderColor = 'var(--good)';
+      gfScored.add(`${idx}-${gapIdx}`);
+    });
+  });
+  gfScoreEl.textContent = gfScored.size;
+});
+</script>
+</body>
+</html>

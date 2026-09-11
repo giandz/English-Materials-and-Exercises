@@ -2,102 +2,47 @@
 <html lang="en">
 <head>
 <meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
 <title>Celebrations — Matching</title>
-<link rel="stylesheet" href="general.css">
-<style>
-  :root{
-    --color-background-primary: #ffffff;
-    --color-background-secondary: #f7f7f8;
-    --color-text-primary: #1a1a1a;
-    --color-text-secondary: #5b5b60;
-    --color-text-tertiary: #8b8b90;
-    --color-border-secondary: #e3e3e6;
-    --color-border-tertiary: #ebebee;
-    --border-radius-lg: 12px;
-    --font-mono: "SF Mono", "JetBrains Mono", monospace;
-
-    --text-primary: var(--color-text-primary);
-    --text-secondary: var(--color-text-secondary);
-    --text-muted: var(--color-text-tertiary);
-    --text-accent: #185fa5;
-    --surface-1: var(--color-background-secondary);
-    --surface-2: var(--color-background-primary);
-    --border: var(--color-border-tertiary);
-    --radius: var(--border-radius-lg);
-
-    --good: #2f7d3a;
-    --good-bg: #e8f4ea;
-    --bad: #b0392f;
-    --bad-bg: #fbebe9;
-    --sel-bg: #e6f1fb;
-    --sel-border: #185fa5;
-  }
-
-  @media (prefers-color-scheme: dark){
-    :root{
-      --color-background-primary: #1e1e20;
-      --color-background-secondary: #26262a;
-      --color-text-primary: #f0f0f2;
-      --color-text-secondary: #b4b4ba;
-      --color-text-tertiary: #85858c;
-      --color-border-secondary: #3a3a3f;
-      --color-border-tertiary: #34343a;
-      --good-bg: #1d2f1f;
-      --bad-bg: #3a201e;
-      --sel-bg: #16283a;
+<script>
+// Applies the saved/system theme to <html> as early as possible, before the
+// stylesheet below paints anything, so there's no flash of the wrong theme.
+// Self-contained: no dependency on any external script.
+(function(){
+  try{
+    var saved = localStorage.getItem('theme-preference');
+    var theme = (saved === 'light' || saved === 'dark')
+      ? saved
+      : ((window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches) ? 'dark' : 'light');
+    document.documentElement.setAttribute('data-theme', theme);
+    // Same idea for the text size: apply it before house.css paints, so a
+    // person who chose 28px doesn't watch the page reflow from 14px on load.
+    var fs = parseFloat(localStorage.getItem('font-size-preference'));
+    if (fs >= 10 && fs <= 28){
+      document.documentElement.style.setProperty('--fs-base', fs + 'px');
     }
-  }
+  }catch(e){ /* localStorage/matchMedia unavailable — CSS media query still applies */ }
+})();
+</script>
+<link rel="stylesheet" href="house.css">
+<style>
+/* Page-specific design tokens — this lesson's own palette, not
+   house tokens. house.css owns everything else. */
+:root{
+  --sel-bg: #e6f1fb;
+  --sel-border: #185fa5;
+}
+@media (prefers-color-scheme: dark){
+:root{
+  --sel-bg: #16283a;
+}
+}
 
-  *{ box-sizing:border-box; -webkit-tap-highlight-color:transparent; }
-  html,body{
-    margin:0;
-    background:var(--color-background-primary);
-    color:var(--color-text-primary);
-    font-family:-apple-system, BlinkMacSystemFont, "Segoe UI", Helvetica, Arial, sans-serif;
-    font-size:15px;
-    line-height:1.6;
-    user-select:none;
-  }
-  .page{ max-width:680px; margin:0 auto; padding:28px 20px 60px; }
 
-  h1{ font-size:1.3rem; font-weight:600; letter-spacing:-0.01em; margin:0 0 4px; }
-  .subtitle{ font-size:13px; color:var(--text-secondary); margin:0 0 4px; }
-  .cefr-tag{
-    display:inline-block;
-    font-size:11px;
-    font-weight:700;
-    letter-spacing:.04em;
-    background:#e6f1fb;
-    color:#185fa5;
-    padding:3px 10px;
-    border-radius:20px;
-    margin-bottom:10px;
-  }
-  @media (prefers-color-scheme: dark){
-    .cefr-tag{ background:#1c2e40; color:#7fb2e0; }
-  }
-
-  .sec-div{font-size:11px;font-weight:500;letter-spacing:.06em;text-transform:uppercase;color:var(--text-muted);display:flex;align-items:center;gap:8px;margin:1.75rem 0 1rem;}
-  .sec-div::before,.sec-div::after{content:'';flex:1;height:.5px;background:var(--border);}
-
-  .rule-box{background:var(--surface-1);border-radius:var(--radius);padding:10px 14px;margin-bottom:1.25rem;font-size:13px;color:var(--text-secondary);line-height:1.7;}
-  .rule-box strong{color:var(--text-primary);font-weight:500;}
-
-  .score-bar{
-    display:flex;
-    justify-content:space-between;
-    align-items:center;
-    margin-bottom:.8rem;
-    font-size:13px;
-    color:var(--text-secondary);
-    flex-wrap:wrap;
-    gap:8px;
-  }
-  .score-bar strong{ color:var(--good); }
+h1{ font-size:1.3rem; font-weight:600; letter-spacing:-0.01em; margin:0 0 4px; }
   .reset-btn{
     font-family:inherit;
-    font-size:12px;
+    font-size:0.8rem;
     font-weight:600;
     padding:4px 12px;
     border-radius:999px;
@@ -115,11 +60,10 @@
     margin-bottom:1.5rem;
   }
   @media (max-width:480px){
-    .match-grid{ gap:8px 8px; }
-  }
+    .match-grid{ gap:8px 8px; }}
 
   .match-col-label{
-    font-size:11px;
+    font-size:0.7333rem;
     font-weight:700;
     text-transform:uppercase;
     letter-spacing:.04em;
@@ -136,13 +80,13 @@
     padding:10px 12px;
     background:var(--surface-2);
     cursor:pointer;
-    font-size:13.5px;
+    font-size:0.9rem;
     font-weight:500;
     line-height:1.35;
     transition:border-color .12s, background .12s, transform .08s;
   }
   .match-card:active{ transform:scale(0.98); }
-  .match-card .emoji{ font-size:20px; flex-shrink:0; }
+  .match-card .emoji{ font-size:1.3333rem; flex-shrink:0; }
 
   .match-card.selected{
     border-color:var(--sel-border);
@@ -169,7 +113,7 @@
 
   .win-msg{
     text-align:center;
-    font-size:14px;
+    font-size:0.9333rem;
     font-weight:600;
     color:var(--good);
     padding:10px;
@@ -180,13 +124,13 @@
   }
   .win-msg.show{ display:block; }
 
-  footer{ text-align:center; font-size:12px; color:var(--text-muted); margin-top:2rem; }
+  footer{ text-align:center; font-size:0.8rem; color:var(--text-muted); margin-top:2rem; }
 </style>
 </head>
 <body>
-<div class="page">
+<div class="page" id="page">
 
-  <span class="cefr-tag">A1 · Beginner</span>
+  <span class="cefr-tag cefr-a1">A1 · Beginner</span>
   <h1>Celebrations — What Do We Do?</h1>
   <p class="subtitle">Match each celebration to the activity people do during it.</p>
 
@@ -217,8 +161,14 @@
   <footer>Vocabulary Practice — Celebrations & Activities (A1)</footer>
 </div>
 
+<div id="theme-toggle-wrap">
+  <button id="theme-toggle" aria-label="Toggle light/dark mode" title="Toggle light/dark mode">
+    <span id="theme-icon">☀️</span>
+  </button>
+</div>
+<script src="house.js"></script>
 <script>
-  const PAIRS = [
+const PAIRS = [
     { id: "xmas",  left: "Christmas",   leftEmoji: "🎄", right: "Decorate a Christmas tree", rightEmoji: "🌲" },
     { id: "ny",    left: "New Year",    leftEmoji: "🎆", right: "Watch the fireworks",        rightEmoji: "🎇" },
     { id: "hall",  left: "Halloween",   leftEmoji: "🎃", right: "Dress up in a costume",      rightEmoji: "👻" },
@@ -331,11 +281,5 @@
 
   render();
 </script>
-<div id="theme-toggle-wrap">
-  <button id="theme-toggle" aria-label="Toggle light/dark mode" title="Toggle light/dark mode">
-    <span id="theme-icon">☀️</span>
-  </button>
-</div>
-<script src="theme-toggle-behavior.js"></script>
 </body>
 </html>

@@ -2,62 +2,31 @@
 <html lang="en">
 <head>
 <meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
 <title>Grammar Focus — Present Simple vs Present Continuous</title>
-<link rel="stylesheet" href="general.css">
-<style>
-  :root{
-    --color-background-primary: #ffffff;
-    --color-background-secondary: #f7f7f8;
-    --color-text-primary: #1a1a1a;
-    --color-text-secondary: #5b5b60;
-    --color-text-tertiary: #8b8b90;
-    --color-border-secondary: #e3e3e6;
-    --color-border-tertiary: #ebebee;
-    --border-radius-lg: 12px;
-    --font-mono: "SF Mono", "JetBrains Mono", monospace;
-
-    --text-primary: var(--color-text-primary);
-    --text-secondary: var(--color-text-secondary);
-    --text-muted: var(--color-text-tertiary);
-    --text-accent: #185fa5;
-    --surface-1: var(--color-background-secondary);
-    --surface-2: var(--color-background-primary);
-    --border: var(--color-border-tertiary);
-    --radius: var(--border-radius-lg);
-  }
-
-  @media (prefers-color-scheme: dark){
-    :root{
-      --color-background-primary: #1e1e20;
-      --color-background-secondary: #26262a;
-      --color-text-primary: #f0f0f2;
-      --color-text-secondary: #b4b4ba;
-      --color-text-tertiary: #85858c;
-      --color-border-secondary: #3a3a3f;
-      --color-border-tertiary: #34343a;
+<script>
+// Applies the saved/system theme to <html> as early as possible, before the
+// stylesheet below paints anything, so there's no flash of the wrong theme.
+// Self-contained: no dependency on any external script.
+(function(){
+  try{
+    var saved = localStorage.getItem('theme-preference');
+    var theme = (saved === 'light' || saved === 'dark')
+      ? saved
+      : ((window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches) ? 'dark' : 'light');
+    document.documentElement.setAttribute('data-theme', theme);
+    // Same idea for the text size: apply it before house.css paints, so a
+    // person who chose 28px doesn't watch the page reflow from 14px on load.
+    var fs = parseFloat(localStorage.getItem('font-size-preference'));
+    if (fs >= 10 && fs <= 28){
+      document.documentElement.style.setProperty('--fs-base', fs + 'px');
     }
-  }
-
-  *{ box-sizing:border-box; }
-  html,body{
-    margin:0;
-    background:var(--color-background-primary);
-    color:var(--color-text-primary);
-    font-family:-apple-system, BlinkMacSystemFont, "Segoe UI", Helvetica, Arial, sans-serif;
-    font-size:15px;
-    line-height:1.6;
-  }
-  .page{ max-width:720px; margin:0 auto; padding:28px 20px 56px; }
-
-  h1{ font-size:1.3rem; font-weight:600; letter-spacing:-0.01em; margin:0 0 4px; }
-  .subtitle{ font-size:13px; color:var(--text-secondary); margin:0; }
-
-  .sec-div{font-size:11px;font-weight:500;letter-spacing:.06em;text-transform:uppercase;color:var(--text-muted);display:flex;align-items:center;gap:8px;margin:1.75rem 0 1rem;}
-  .sec-div::before,.sec-div::after{content:'';flex:1;height:.5px;background:var(--border);}
-
-  .rule-box{background:var(--surface-1);border-radius:var(--radius);padding:10px 14px;margin-bottom:1.25rem;font-size:13px;color:var(--text-secondary);line-height:1.7;}
-  .rule-box strong{color:var(--text-primary);font-weight:500;}
+  }catch(e){ /* localStorage/matchMedia unavailable — CSS media query still applies */ }
+})();
+</script>
+<link rel="stylesheet" href="house.css">
+<style>
+h1{ font-size:1.3rem; font-weight:600; letter-spacing:-0.01em; margin:0 0 4px; }
 
   /* Two-column tense comparison */
   .tense-grid{
@@ -67,8 +36,7 @@
     margin-bottom:1.5rem;
   }
   @media (max-width:560px){
-    .tense-grid{ grid-template-columns:1fr; }
-  }
+    .tense-grid{ grid-template-columns:1fr; }}
   .tense-card{
     border:.5px solid var(--color-border-tertiary);
     border-radius:var(--border-radius-lg);
@@ -77,14 +45,14 @@
   .tense-head{
     padding:11px 14px;
     font-weight:700;
-    font-size:14.5px;
+    font-size:0.9667rem;
     color:#fff;
   }
   .tense-head.simple{ background:#185fa5; }
   .tense-head.cont{ background:#27500a; }
   .tense-use{
     padding:8px 14px;
-    font-size:12.5px;
+    font-size:0.8333rem;
     color:var(--text-secondary);
     border-bottom:.5px solid var(--color-border-tertiary);
     background:var(--surface-1);
@@ -95,7 +63,7 @@
   }
   .form-block:last-child{ border-bottom:none; }
   .form-label{
-    font-size:10.5px;
+    font-size:0.7rem;
     font-weight:700;
     letter-spacing:.05em;
     text-transform:uppercase;
@@ -103,7 +71,7 @@
     margin-bottom:5px;
   }
   .form-line{
-    font-size:13.5px;
+    font-size:0.9rem;
     margin-bottom:3px;
   }
   .form-line .hl{
@@ -120,7 +88,7 @@
     margin-top:6px;
   }
   .time-pill{
-    font-size:11.5px;
+    font-size:0.7667rem;
     font-weight:500;
     padding:3px 10px;
     border-radius:20px;
@@ -129,16 +97,17 @@
     color:var(--text-secondary);
   }
 
-  .compare-table{width:100%;border-collapse:collapse;font-size:13px;margin-top:.5rem;}
-  .compare-table th{font-size:10.5px;font-weight:600;letter-spacing:.04em;text-transform:uppercase;color:var(--color-text-secondary);text-align:left;padding:6px 10px;border-bottom:1px solid var(--color-border-tertiary);background:var(--color-background-secondary);}
+  .compare-table{width:100%;border-collapse:collapse;font-size:0.8667rem;margin-top:.5rem;}
+  .compare-table th{font-size:0.7rem;font-weight:600;letter-spacing:.04em;text-transform:uppercase;color:var(--color-text-secondary);text-align:left;padding:6px 10px;border-bottom:1px solid var(--color-border-tertiary);background:var(--color-background-secondary);}
   .compare-table td{padding:8px 10px;border-bottom:.5px solid var(--color-border-tertiary);color:var(--color-text-primary);vertical-align:top;}
   .compare-table tr:last-child td{border-bottom:none;}
 
-  footer{ text-align:center; font-size:12px; color:var(--text-muted); margin-top:2rem; }
+  footer{ text-align:center; font-size:0.8rem; color:var(--text-muted); margin-top:2rem; }
 </style>
 </head>
 <body>
-<div class="page">
+<div class="page" id="page">
+  <span class="cefr-tag cefr-a1">A1 · Beginner</span>
 
   <h1>Present Simple vs Present Continuous</h1>
   <p class="subtitle">Two ways to talk about the present — routines and habits vs. actions happening right now.</p>
@@ -234,7 +203,7 @@
 
   <div class="sec-div">Time expressions</div>
 
-  <p style="font-size:13px;color:var(--text-secondary);margin:0 0 6px;"><strong style="color:var(--text-primary);">Present Simple</strong> often uses:</p>
+  <p style="font-size:0.8667rem;color:var(--text-secondary);margin:0 0 6px;"><strong style="color:var(--text-primary);">Present Simple</strong> often uses:</p>
   <div class="time-pills">
     <span class="time-pill">always</span>
     <span class="time-pill">usually</span>
@@ -244,7 +213,7 @@
     <span class="time-pill">on Mondays</span>
   </div>
 
-  <p style="font-size:13px;color:var(--text-secondary);margin:16px 0 6px;"><strong style="color:var(--text-primary);">Present Continuous</strong> often uses:</p>
+  <p style="font-size:0.8667rem;color:var(--text-secondary);margin:16px 0 6px;"><strong style="color:var(--text-primary);">Present Continuous</strong> often uses:</p>
   <div class="time-pills">
     <span class="time-pill">now</span>
     <span class="time-pill">right now</span>
@@ -266,12 +235,12 @@
   <footer>Grammar Focus — Present Simple vs Present Continuous (A1)</footer>
 
 </div>
+
 <div id="theme-toggle-wrap">
   <button id="theme-toggle" aria-label="Toggle light/dark mode" title="Toggle light/dark mode">
     <span id="theme-icon">☀️</span>
   </button>
 </div>
-<script src="theme-toggle-behavior.js"></script>
-
+<script src="house.js"></script>
 </body>
 </html>

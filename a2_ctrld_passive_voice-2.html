@@ -1,45 +1,63 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-<meta charset="UTF-8" />
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<title>Passive and Active Voice</title>
+<script>
+// Applies the saved/system theme to <html> as early as possible, before the
+// stylesheet below paints anything, so there's no flash of the wrong theme.
+// Self-contained: no dependency on any external script.
+(function(){
+  try{
+    var saved = localStorage.getItem('theme-preference');
+    var theme = (saved === 'light' || saved === 'dark')
+      ? saved
+      : ((window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches) ? 'dark' : 'light');
+    document.documentElement.setAttribute('data-theme', theme);
+    // Same idea for the text size: apply it before house.css paints, so a
+    // person who chose 28px doesn't watch the page reflow from 14px on load.
+    var fs = parseFloat(localStorage.getItem('font-size-preference'));
+    if (fs >= 10 && fs <= 28){
+      document.documentElement.style.setProperty('--fs-base', fs + 'px');
+    }
+  }catch(e){ /* localStorage/matchMedia unavailable — CSS media query still applies */ }
+})();
+</script>
+<link rel="stylesheet" href="house.css">
 <style>
-  .sec-div{font-size:11px;font-weight:500;letter-spacing:.06em;text-transform:uppercase;color:var(--color-text-tertiary);display:flex;align-items:center;gap:8px;margin:1.5rem 0 1rem;}
-  .sec-div::before,.sec-div::after{content:'';flex:1;height:.5px;background:var(--color-border-tertiary);}
-  .intro{font-size:13px;color:var(--color-text-secondary);line-height:1.6;margin-bottom:1rem;}
+/* Recovered page-specific rules. */
+input.gap.wide{width:160px;}
+
+.intro{font-size:0.8667rem;color:var(--color-text-secondary);line-height:1.6;margin-bottom:1rem;}
   .intro strong{color:var(--color-text-primary);font-weight:500;}
-  .group-label{font-size:12px;font-weight:500;padding:4px 12px;border-radius:20px;border:1px solid transparent;display:inline-block;margin-bottom:10px;}
+  .group-label{font-size:0.8rem;font-weight:500;padding:4px 12px;border-radius:20px;border:1px solid transparent;display:inline-block;margin-bottom:10px;}
   .gl-active{background:var(--color-background-info);color:var(--color-text-info);border-color:var(--color-border-info);}
   .gl-passive{background:var(--color-background-secondary);color:var(--color-text-secondary);border-color:var(--color-border-secondary);}
   .gap-block{border:.5px solid var(--color-border-tertiary);border-radius:var(--border-radius-lg);overflow:hidden;margin-bottom:10px;}
-  .gap-block-head{padding:6px 14px;background:var(--color-background-secondary);border-bottom:.5px solid var(--color-border-tertiary);font-size:11px;font-weight:500;text-transform:uppercase;letter-spacing:.05em;color:var(--color-text-tertiary);}
+  .gap-block-head{padding:6px 14px;background:var(--color-background-secondary);border-bottom:.5px solid var(--color-border-tertiary);font-size:0.7333rem;font-weight:500;text-transform:uppercase;letter-spacing:.05em;color:var(--color-text-tertiary);}
   .gap-body{padding:10px 14px;display:flex;flex-direction:column;gap:10px;}
-  .gap-row{font-size:14px;color:var(--color-text-primary);line-height:2;display:flex;gap:8px;align-items:baseline;}
-  .gap-num{font-size:12px;color:var(--color-text-tertiary);min-width:20px;flex-shrink:0;}
+  .gap-row{font-size:0.9333rem;color:var(--color-text-primary);line-height:2;display:flex;gap:8px;align-items:baseline;}
+  .gap-num{font-size:0.8rem;color:var(--color-text-tertiary);min-width:20px;flex-shrink:0;}
   .gap-text{flex:1;}
-  input.gap{display:inline-block;border:none;border-bottom:2px solid var(--color-border-primary);border-radius:0;font-size:14px;font-family:inherit;color:var(--color-text-primary);background:transparent;text-align:center;outline:none;padding:0 2px;vertical-align:baseline;width:120px;}
-  input.gap.wide{width:160px;}
-  input.gap:focus{border-bottom-color:#185fa5;}
-  input.gap.correct{border-bottom-color:#3b6d11;color:#3b6d11;}
-  input.gap.wrong{border-bottom-color:#a32d2d;color:#a32d2d;}
-  .verb-hint{font-size:12px;color:var(--color-text-tertiary);font-style:italic;}
+  .verb-hint{font-size:0.8rem;color:var(--color-text-tertiary);font-style:italic;}
   .ex-bar{display:flex;gap:8px;align-items:center;flex-wrap:wrap;margin-top:1.25rem;}
-  .score-msg{font-size:13px;color:var(--color-text-secondary);}
+  .score-msg{font-size:0.8667rem;color:var(--color-text-secondary);}
   .ak-body{padding:10px 14px;display:flex;flex-direction:column;gap:2px;}
-  .ak-row{display:flex;gap:10px;align-items:baseline;padding:5px 0;border-bottom:.5px solid var(--color-border-tertiary);font-size:13px;flex-wrap:wrap;}
+  .ak-row{display:flex;gap:10px;align-items:baseline;padding:5px 0;border-bottom:.5px solid var(--color-border-tertiary);font-size:0.8667rem;flex-wrap:wrap;}
   .ak-row:last-child{border-bottom:none;}
   .ak-num{color:var(--color-text-secondary);min-width:22px;flex-shrink:0;}
   .ak-ans{font-weight:500;color:#185fa5;min-width:140px;}
-  .ak-label{font-size:11px;padding:1px 7px;border-radius:20px;border:1px solid transparent;flex-shrink:0;}
+  .ak-label{font-size:0.7333rem;padding:1px 7px;border-radius:20px;border:1px solid transparent;flex-shrink:0;}
   .ak-label-active{background:var(--color-background-info);color:var(--color-text-info);}
   .ak-label-passive{background:var(--color-background-secondary);color:var(--color-text-secondary);border-color:var(--color-border-secondary);}
-  .ak-tense{color:var(--color-text-tertiary);font-size:12px;}
+  .ak-tense{color:var(--color-text-tertiary);font-size:0.8rem;}
   details summary{user-select:none;list-style:none;display:flex;justify-content:space-between;align-items:center;}
   details summary::-webkit-details-marker{display:none;}
 </style>
-<link rel="stylesheet" href="general.css">
-
 </head>
-<body class="exercise-page">
+<body class="exercise-page" id="page">
+<span class="cefr-tag cefr-a2">A2 · Elementary</span>
 	<title>Passive and Active Voice</title>
 <div style="padding:.75rem 0 1rem;">
 
@@ -113,14 +131,12 @@
   </div>
 
   <div class="ex-bar">
-    <button id="check-btn">Check answers</button>
-    <button id="reset-btn">↺ Reset</button>
     <span class="score-msg" id="fb"></span>
   </div>
 
   <details style="margin-top:1.25rem;border:.5px solid var(--color-border-tertiary);border-radius:var(--border-radius-md);overflow:hidden;">
-    <summary style="padding:9px 14px;cursor:pointer;font-size:14px;font-weight:500;background:var(--color-background-secondary);">
-      Answer key <i class="ti ti-chevron-down" aria-hidden="true" style="font-size:15px;color:var(--color-text-secondary);"></i>
+    <summary style="padding:9px 14px;cursor:pointer;font-size:0.9333rem;font-weight:500;background:var(--color-background-secondary);">
+      Answer key <i class="ti ti-chevron-down" aria-hidden="true" style="font-size:1rem;color:var(--color-text-secondary);"></i>
     </summary>
     <div class="ak-body">
       <div class="ak-row"><span class="ak-num">1.</span><span class="ak-ans">teaches</span><span class="ak-label ak-label-active">active</span><span class="ak-tense">present simple · she → -es</span></div>
@@ -146,67 +162,78 @@
 
 </div>
 
-<script>
-const answers = {
-  g1:  ['teaches'],
-  g2:  ['investigate'],
-  g3:  ['study'],
-  g4:  ['is spoken'],
-  g5:  ['is investigated'],
-  g6:  ["aren't made","are not made"],
-  g7:  ['visited'],
-  g8:  ['explained'],
-  g9:  ['abandoned'],
-  g10: ['were found'],
-  g11: ["wasn't sent","was not sent"],
-  g12: ['was discovered'],
-  g13: ['have been studying','have studied'],
-  g14: ["haven't solved","have not solved"],
-  g15: ['have discovered'],
-  g16: ['has been studied'],
-  g17: ["hasn't been solved","has not been solved"],
-  g18: ['have been seen'],
-};
-const TOTAL = Object.keys(answers).length;
-
-function check() {
-  let correct = 0, filled = 0;
-  Object.entries(answers).forEach(([id, ans]) => {
-    const el = document.getElementById(id); if (!el) return;
-    const val = el.value.trim().toLowerCase();
-    el.classList.remove('correct','wrong');
-    if (!val) return;
-    filled++;
-    if (ans.includes(val)) { el.classList.add('correct'); correct++; }
-    else el.classList.add('wrong');
-  });
-  const fb = document.getElementById('fb');
-  if (!filled) { fb.textContent = ''; return; }
-  fb.textContent = correct === TOTAL ? 'All correct!' : correct + ' / ' + TOTAL + ' correct';
-  fb.style.color = correct === TOTAL ? 'var(--color-text-success)' : 'var(--color-text-secondary)';
-}
-
-function reset() {
-  Object.keys(answers).forEach(id => {
-    const el = document.getElementById(id);
-    if (el) { el.value = ''; el.classList.remove('correct','wrong'); }
-  });
-  document.getElementById('fb').textContent = '';
-}
-
-document.getElementById('check-btn').addEventListener('click', check);
-document.getElementById('reset-btn').addEventListener('click', reset);
-Object.keys(answers).forEach(id => {
-  const el = document.getElementById(id);
-  if (el) el.addEventListener('keydown', e => { if (e.key === 'Enter') check(); });
-});
-</script>
 <div id="theme-toggle-wrap">
   <button id="theme-toggle" aria-label="Toggle light/dark mode" title="Toggle light/dark mode">
     <span id="theme-icon">☀️</span>
   </button>
 </div>
-<script src="theme-toggle-behavior.js"></script>
+<script src="house.js"></script>
+<script>
+/* ── Inline gap answers ── */
+const GAP_ANSWERS = {
+  "g1": [
+    "teaches"
+  ],
+  "g2": [
+    "investigate"
+  ],
+  "g3": [
+    "study"
+  ],
+  "g4": [
+    "is spoken"
+  ],
+  "g5": [
+    "is investigated"
+  ],
+  "g6": [
+    "aren't made",
+    "are not made"
+  ],
+  "g7": [
+    "visited"
+  ],
+  "g8": [
+    "explained"
+  ],
+  "g9": [
+    "abandoned"
+  ],
+  "g10": [
+    "were found"
+  ],
+  "g11": [
+    "wasn't sent",
+    "was not sent"
+  ],
+  "g12": [
+    "was discovered"
+  ],
+  "g13": [
+    "have been studying",
+    "have studied"
+  ],
+  "g14": [
+    "haven't solved",
+    "have not solved"
+  ],
+  "g15": [
+    "have discovered"
+  ],
+  "g16": [
+    "has been studied"
+  ],
+  "g17": [
+    "hasn't been solved",
+    "has not been solved"
+  ],
+  "g18": [
+    "have been seen"
+  ]
+};
 
+HouseGapFill.attach(GAP_ANSWERS);
+
+</script>
 </body>
 </html>
