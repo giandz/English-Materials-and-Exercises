@@ -1,27 +1,48 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-<meta charset="UTF-8" />
-<link rel="stylesheet" href="general.css">
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<title>Reported Speech — Practice</title>
+<script>
+// Applies the saved/system theme to <html> as early as possible, before the
+// stylesheet below paints anything, so there's no flash of the wrong theme.
+// Self-contained: no dependency on any external script.
+(function(){
+  try{
+    var saved = localStorage.getItem('theme-preference');
+    var theme = (saved === 'light' || saved === 'dark')
+      ? saved
+      : ((window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches) ? 'dark' : 'light');
+    document.documentElement.setAttribute('data-theme', theme);
+    // Same idea for the text size: apply it before house.css paints, so a
+    // person who chose 28px doesn't watch the page reflow from 14px on load.
+    var fs = parseFloat(localStorage.getItem('font-size-preference'));
+    if (fs >= 10 && fs <= 28){
+      document.documentElement.style.setProperty('--fs-base', fs + 'px');
+    }
+  }catch(e){ /* localStorage/matchMedia unavailable — CSS media query still applies */ }
+})();
+</script>
+<link rel="stylesheet" href="house.css">
 <style>
-  .intro{font-size:13px;color:var(--color-text-secondary);line-height:1.6;margin-bottom:1.5rem;}
+/* Recovered page-specific rules. */
+input.gap.wide{width:110px;}
+input.gap.xwide{width:140px;}
+
+.intro{font-size:0.8667rem;color:var(--color-text-secondary);line-height:1.6;margin-bottom:1.5rem;}
   .q-block{border:.5px solid var(--color-border-tertiary);border-radius:var(--border-radius-lg);overflow:hidden;margin-bottom:10px;}
   .q-top{padding:10px 14px;background:var(--color-background-secondary);border-bottom:.5px solid var(--color-border-tertiary);display:flex;align-items:flex-start;gap:10px;}
-  .q-num{font-size:11px;font-weight:500;color:var(--color-text-tertiary);min-width:20px;padding-top:2px;flex-shrink:0;}
+  .q-num{font-size:0.7333rem;font-weight:500;color:var(--color-text-tertiary);min-width:20px;padding-top:2px;flex-shrink:0;}
   .q-quote-wrap{display:flex;flex-direction:column;gap:4px;}
-  .q-speaker{font-size:12px;font-weight:500;color:var(--color-text-secondary);}
-  .q-quote{font-size:14px;color:var(--color-text-primary);font-style:italic;}"
+  .q-speaker{font-size:0.8rem;font-weight:500;color:var(--color-text-secondary);}
+  .q-quote{font-size:0.9333rem;color:var(--color-text-primary);font-style:italic;}"
   
-  input.gap{display:inline-block;border:none;border-bottom:2px solid var(--color-border-primary);border-radius:0;font-size:14px;font-family:inherit;color:var(--color-text-primary);background:transparent;text-align:center;outline:none;padding:0 2px;vertical-align:baseline;width:80px;}
-  input.gap.wide{width:110px;}
-  input.gap.xwide{width:140px;}
-  input.gap:focus{border-bottom-color:#185fa5;}
-  input.gap.correct{border-bottom-color:#3b6d11;color:#3b6d11;}
-  input.gap.wrong{border-bottom-color:#a32d2d;color:#a32d2d;}
+  input.gap{display:inline-block;border:none;border-bottom:2px solid var(--color-border-primary);border-radius:0;font-size:0.9333rem;font-family:inherit;color:var(--color-text-primary);background:transparent;text-align:center;outline:none;padding:0 2px;vertical-align:baseline;width:80px;}
   .ex-bar{display:flex;gap:8px;align-items:center;flex-wrap:wrap;margin-top:1.25rem;}
-  .score-msg{font-size:13px;color:var(--color-text-secondary);}
+  .score-msg{font-size:0.8667rem;color:var(--color-text-secondary);}
   .ak-body{padding:10px 14px;display:flex;flex-direction:column;gap:4px;}
-  .ak-row{display:flex;gap:10px;align-items:baseline;padding:5px 0;border-bottom:.5px solid var(--color-border-tertiary);font-size:13px;flex-wrap:wrap;}
+  .ak-row{display:flex;gap:10px;align-items:baseline;padding:5px 0;border-bottom:.5px solid var(--color-border-tertiary);font-size:0.8667rem;flex-wrap:wrap;}
   .ak-row:last-child{border-bottom:none;}
   .ak-num{color:var(--color-text-secondary);min-width:20px;flex-shrink:0;}
   .ak-sent{color:var(--color-text-primary);flex:1;line-height:1.5;}
@@ -29,12 +50,12 @@
   details summary{user-select:none;list-style:none;display:flex;justify-content:space-between;align-items:center;}
   details summary::-webkit-details-marker{display:none;}
   .q-body {
-   padding:10px 14px 12px;font-size:14px;color:var(--color-text-primary);line-height:2.2;
+   padding:10px 14px 12px;font-size:0.9333rem;color:var(--color-text-primary);line-height:2.2;
 }
 </style>
-
 </head>
-<body class="exercise-page">
+<body class="exercise-page" id="page">
+<span class="cefr-tag cefr-a2">A2 · Elementary</span>
 <div style="padding:.75rem 0 1rem;">
   <div class="intro">Read each quote and complete the reported speech. There are more gaps in each sentence as you go — watch the tense, pronouns, and reporting verb.</div>
 
@@ -179,14 +200,12 @@
   </div>
 
   <div class="ex-bar">
-    <button id="check-btn">Check answers</button>
-    <button id="reset-btn">↺ Reset</button>
     <span class="score-msg" id="fb"></span>
   </div>
 
   <details style="margin-top:1.25rem;border:.5px solid var(--color-border-tertiary);border-radius:var(--border-radius-md);overflow:hidden;">
-    <summary style="padding:9px 14px;cursor:pointer;font-size:14px;font-weight:500;background:var(--color-background-secondary);">
-      Answer key <i class="ti ti-chevron-down" aria-hidden="true" style="font-size:15px;color:var(--color-text-secondary);"></i>
+    <summary style="padding:9px 14px;cursor:pointer;font-size:0.9333rem;font-weight:500;background:var(--color-background-secondary);">
+      Answer key <i class="ti ti-chevron-down" aria-hidden="true" style="font-size:1rem;color:var(--color-text-secondary);"></i>
     </summary>
     <div class="ak-body">
       <div class="ak-row"><span class="ak-num">1.</span><span class="ak-sent">The teacher said the test <strong>was</strong> the next day.</span></div>
@@ -203,58 +222,111 @@
   </details>
 </div>
 
-<script>
-const answers = {
-  g1a: ['was'],
-  g2a: ['told'], g2b: ['needed'],
-  g3a: ['would'], g3b: ['the next day','the following day'],
-  g4a: ['them to open', 'the students to open'], g4b: ['not to'],
-  g5a: ['he had been','she had been','they had been'], g5b: ['since'],
-  g6a: ['asked'], g6b: ['to'], g6c: ['them','him', 'her'], g6d: ['they','she','he'],
-  g7a: ['they were coming','he was coming','she was coming'], g7b: ['they would be','he would be','she would be'],
-  g8a: ['that'], g8b: ['had been'], g8c: ['couldn\'t have'], g8d: ['yet'],
-  g9a: ['that we would land','we would land'], g9b: ['us to'], g9c: ['our'],
-  g10a: ['told me I couldn\'t park there','told him him couldn\'t park there','told her she couldn\'t park there','told them they couldn\'t park there', 'told me that I couldn\'t park there','told him that he couldn\'t park there','told her that she couldn\'t park there','told them that they couldn\'t park there'],g10b: ['told me to move my car', 'told him to move his car', 'told her to move her car', 'told them to move their car' ],
-};
-const TOTAL = Object.keys(answers).length;
-
-function check(){
-  let correct=0,filled=0;
-  Object.entries(answers).forEach(([id,ans])=>{
-    const el=document.getElementById(id);if(!el)return;
-    const val=el.value.trim().toLowerCase();
-    el.classList.remove('correct','wrong');
-    if(!val)return;filled++;
-    if(ans.map(a=>a.toLowerCase()).includes(val)){el.classList.add('correct');correct++;}
-    else el.classList.add('wrong');
-  });
-  const fb=document.getElementById('fb');
-  if(!filled){fb.textContent='';return;}
-  fb.textContent=correct===TOTAL?'All correct!':correct+' / '+TOTAL+' correct';
-  fb.style.color=correct===TOTAL?'var(--color-text-success)':'var(--color-text-secondary)';
-}
-
-function reset(){
-  Object.keys(answers).forEach(id=>{
-    const el=document.getElementById(id);
-    if(el){el.value='';el.classList.remove('correct','wrong');}
-  });
-  document.getElementById('fb').textContent='';
-}
-
-document.getElementById('check-btn').addEventListener('click',check);
-document.getElementById('reset-btn').addEventListener('click',reset);
-Object.keys(answers).forEach(id=>{
-  const el=document.getElementById(id);
-  if(el)el.addEventListener('keydown',e=>{if(e.key==='Enter')check();});
-});
-</script>
 <div id="theme-toggle-wrap">
   <button id="theme-toggle" aria-label="Toggle light/dark mode" title="Toggle light/dark mode">
     <span id="theme-icon">☀️</span>
   </button>
 </div>
-<script src="theme-toggle-behavior.js"></script>
+<script src="house.js"></script>
+<script>
+/* ── Inline gap answers ── */
+const GAP_ANSWERS = {
+  "g1a": [
+    "was"
+  ],
+  "g2a": [
+    "told"
+  ],
+  "g2b": [
+    "needed"
+  ],
+  "g3a": [
+    "would"
+  ],
+  "g3b": [
+    "the next day",
+    "the following day"
+  ],
+  "g4a": [
+    "them to open",
+    "the students to open"
+  ],
+  "g4b": [
+    "not to"
+  ],
+  "g5a": [
+    "he had been",
+    "she had been",
+    "they had been"
+  ],
+  "g6a": [
+    "asked"
+  ],
+  "g6b": [
+    "to"
+  ],
+  "g6c": [
+    "them",
+    "him",
+    "her"
+  ],
+  "g6d": [
+    "they",
+    "she",
+    "he"
+  ],
+  "g7a": [
+    "they were coming",
+    "he was coming",
+    "she was coming"
+  ],
+  "g7b": [
+    "they would be",
+    "he would be",
+    "she would be"
+  ],
+  "g8a": [
+    "that"
+  ],
+  "g8b": [
+    "had been"
+  ],
+  "g8c": [
+    "couldn't have"
+  ],
+  "g8d": [
+    "yet"
+  ],
+  "g9a": [
+    "that we would land",
+    "we would land"
+  ],
+  "g9b": [
+    "us to"
+  ],
+  "g9c": [
+    "our"
+  ],
+  "g10a": [
+    "told me i couldn't park there",
+    "told him him couldn't park there",
+    "told her she couldn't park there",
+    "told them they couldn't park there",
+    "told me that i couldn't park there",
+    "told him that he couldn't park there",
+    "told her that she couldn't park there",
+    "told them that they couldn't park there"
+  ],
+  "g10b": [
+    "told me to move my car",
+    "told him to move his car",
+    "told her to move her car",
+    "told them to move their car"
+  ]
+};
 
+HouseGapFill.attach(GAP_ANSWERS);
+
+</script>
 </body>
 </html>

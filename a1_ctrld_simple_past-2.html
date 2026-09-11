@@ -1,26 +1,62 @@
-<!doctype html><html lang="en"><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>A1 Past Tense Gapfill</title><style>
-:root{--bg:#fff;--surface:#f6f7f9;--text:#1a1d23;--muted:#4b5261;--border:#e2e5ea;--accent:#2563eb}
-*{box-sizing:border-box}body{margin:0;background:var(--bg);color:var(--text);font:15px/1.55 -apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif}
-.page{max-width:720px;margin:auto;padding:28px 20px 64px}
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<title>A1 Past Tense Gapfill</title>
+<script>
+// Applies the saved/system theme to <html> as early as possible, before the
+// stylesheet below paints anything, so there's no flash of the wrong theme.
+// Self-contained: no dependency on any external script.
+(function(){
+  try{
+    var saved = localStorage.getItem('theme-preference');
+    var theme = (saved === 'light' || saved === 'dark')
+      ? saved
+      : ((window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches) ? 'dark' : 'light');
+    document.documentElement.setAttribute('data-theme', theme);
+    // Same idea for the text size: apply it before house.css paints, so a
+    // person who chose 28px doesn't watch the page reflow from 14px on load.
+    var fs = parseFloat(localStorage.getItem('font-size-preference'));
+    if (fs >= 10 && fs <= 28){
+      document.documentElement.style.setProperty('--fs-base', fs + 'px');
+    }
+  }catch(e){ /* localStorage/matchMedia unavailable — CSS media query still applies */ }
+})();
+</script>
+<link rel="stylesheet" href="house.css">
+<style>
+/* Page-specific design tokens — this lesson's own palette, not
+   house tokens. house.css owns everything else. */
+:root{
+  --surface: #f6f7f9;
+  --muted: #4b5261;
+}
+html.force-dark{
+  --surface: #1d2026;
+  --muted: #b7bcc6;
+}
+
+
 .tag{display:inline-block;padding:3px 10px;border-radius:999px;background:#e3edfd;color:#1d6fd8;font-size:.72rem;font-weight:700}
 h1{font-size:1.3rem;margin:4px 0 2px}
-.subtitle{color:var(--muted);margin:0 0 14px;font-size:.95rem}
 .section{display:flex;gap:10px;align-items:center;margin:30px 0 14px;color:#8a8f9c;font-size:.72rem;font-weight:700;letter-spacing:.08em;text-transform:uppercase}
 .section:before,.section:after{content:"";height:1px;background:var(--border);flex:1}
 .ex{background:var(--surface);border:1px solid var(--border);border-radius:14px;padding:16px 18px;margin:16px 0}
 .ex h3{margin:0 0 10px;font-size:1.05rem}
 .item{margin:14px 0}
 .item p{margin:0 0 8px}
-input[type=text]{font:inherit;padding:6px 9px;border:1px solid var(--border);border-radius:8px;background:var(--bg);color:var(--text);min-width:140px;transition:background .2s ease}
 .bar{height:8px;background:var(--surface);border:1px solid var(--border);border-radius:999px;overflow:hidden;margin:8px 0}
 .fill{height:100%;width:0;transition:width .2s ease,background .2s ease}
 .meta{font-size:.8rem;color:var(--muted)}
-details{margin-top:12px;border-top:1px dashed var(--border);padding-top:12px}
-summary{cursor:pointer;font-weight:600;color:var(--accent)}
 kbd{font:600 .85em ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;padding:2px 6px;border-radius:6px;background:var(--surface);border:1px solid var(--border)}
 #theme{display:block;margin:30px auto 0;padding:7px 14px;border:1px solid var(--border);border-radius:999px;background:var(--surface);color:var(--muted);cursor:pointer}
-html.force-dark{--bg:#16181d;--surface:#1d2026;--text:#eef0f3;--muted:#b7bcc6;--border:#2c303a}
-</style></head><body><main class="page">
+</style>
+</head>
+<body>
+<div class="page" id="page">
+  <span class="cefr-tag cefr-a1">A1 · Beginner</span>
+<main class="page">
 <span class="tag">A1</span><h1>Past Tense Gapfill</h1><p class="subtitle">Three short conversations. Type the correct past-tense verb in each blank.</p>
 <div class="section">Exercise 1 — Regular Verbs</div>
 <div class="ex" id="ex1"></div>
@@ -28,7 +64,16 @@ html.force-dark{--bg:#16181d;--surface:#1d2026;--text:#eef0f3;--muted:#b7bcc6;--
 <div class="ex" id="ex2"></div>
 <div class="section">Exercise 3 — Mixed</div>
 <div class="ex" id="ex3"></div>
-<button id="theme">🌓 Theme</button></main><script>
+<button id="theme">🌓 Theme</button></main>
+</div>
+
+<div id="theme-toggle-wrap">
+  <button id="theme-toggle" aria-label="Toggle light/dark mode" title="Toggle light/dark mode">
+    <span id="theme-icon">☀️</span>
+  </button>
+</div>
+<script src="house.js"></script>
+<script>
 function damerauLevenshtein(a,b){a=a.toLowerCase().trim();b=b.toLowerCase().trim();if(a===b)return 0;const m=a.length,n=b.length;const dp=Array.from({length:m+2},()=>Array(n+2).fill(Infinity));for(let i=0;i<=m+1;i++)for(let j=0;j<=n+1;j++)dp[i][j]=i+j;for(let i=1;i<=m;i++)for(let j=1;j<=n;j++){const cost=+(a[i-1]!==b[j-1]);dp[i][j]=Math.min(dp[i-1][j]+1,dp[i][j-1]+1,dp[i-1][j-1]+cost);if(i>1&&j>1&&a[i-1]===b[j-2]&&a[i-2]===b[j-1]){dp[i][j]=Math.min(dp[i][j],dp[i-2][j-2]+cost+(i-2===0?0:1))}}return dp[m][n]}
 function similarity(a,b){const d=damerauLevenshtein(a,b);const maxLen=Math.max(a.length,b.length)||1;return Math.max(0,1-d/maxLen)}
 function renderEx(containerId,title,lines,answers){
@@ -78,4 +123,6 @@ renderEx('ex3','Mixed (last vacation)',[
  'He ___ (want) to stay longer.'
 ],['visited','bought','liked','made','wanted']);
 document.getElementById('theme').onclick=()=>document.documentElement.classList.toggle('force-dark');
-</script></body></html>
+</script>
+</body>
+</html>

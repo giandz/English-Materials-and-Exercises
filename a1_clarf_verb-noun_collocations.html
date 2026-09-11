@@ -1,18 +1,32 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Verb–Noun Collocations</title>
-  <style>
-    body {
-      font-family: Arial, sans-serif;
-      background: #f7f8fc;
-      color: #1f2937;
-      margin: 0;
-      padding: 24px;
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<title>Verb–Noun Collocations</title>
+<script>
+// Applies the saved/system theme to <html> as early as possible, before the
+// stylesheet below paints anything, so there's no flash of the wrong theme.
+// Self-contained: no dependency on any external script.
+(function(){
+  try{
+    var saved = localStorage.getItem('theme-preference');
+    var theme = (saved === 'light' || saved === 'dark')
+      ? saved
+      : ((window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches) ? 'dark' : 'light');
+    document.documentElement.setAttribute('data-theme', theme);
+    // Same idea for the text size: apply it before house.css paints, so a
+    // person who chose 28px doesn't watch the page reflow from 14px on load.
+    var fs = parseFloat(localStorage.getItem('font-size-preference'));
+    if (fs >= 10 && fs <= 28){
+      document.documentElement.style.setProperty('--fs-base', fs + 'px');
     }
-    .wrap {
+  }catch(e){ /* localStorage/matchMedia unavailable — CSS media query still applies */ }
+})();
+</script>
+<link rel="stylesheet" href="house.css">
+<style>
+.wrap {
       max-width: 1100px;
       margin: 0 auto;
     }
@@ -29,42 +43,34 @@
       grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
       gap: 14px;
     }
-    .card {
-      background: #fff;
-      border: 1px solid #e5e7eb;
-      border-radius: 14px;
-      padding: 16px;
-      box-shadow: 0 2px 8px rgba(0,0,0,0.04);
-      display: flex;
-      flex-direction: column;
-      align-items: center;
-      text-align: center;
-    }
     .verb {
       font-weight: 700;
       color: #1d4ed8;
       margin-bottom: 6px;
-      font-size: 16px;
+      font-size:1.0667rem;
     }
     .collocation {
-      font-size: 18px;
+      font-size:1.2rem;
       font-weight: 600;
       margin-bottom: 8px;
     }
     .emoji {
-      font-size: 32px;
+      font-size:2.1333rem;
       line-height: 1;
     }
     .section-title {
       margin: 22px 0 10px;
-      font-size: 20px;
+      font-size:1.3333rem;
       color: #0f766e;
       border-bottom: 1px solid #e5e7eb;
       padding-bottom: 6px;
     }
-  </style>
+</style>
 </head>
 <body>
+<div class="page" id="page">
+  <span class="cefr-tag cefr-a1">A1 · Beginner</span>
+
   <div class="wrap">
     <h1>Verb–Noun Collocations</h1>
     <div class="intro">
@@ -465,5 +471,14 @@
       </div>
     </div>
   </div>
+
+</div>
+
+<div id="theme-toggle-wrap">
+  <button id="theme-toggle" aria-label="Toggle light/dark mode" title="Toggle light/dark mode">
+    <span id="theme-icon">☀️</span>
+  </button>
+</div>
+<script src="house.js"></script>
 </body>
 </html>

@@ -2,85 +2,52 @@
 <html lang="en">
 <head>
 <meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
 <title>Supermarket Items — Matching</title>
-<link rel="stylesheet" href="general.css">
-<style>
-  :root {
-    --color-background-primary: #ffffff;
-    --color-background-secondary: #f6f7f9;
-    --color-text-primary: #1a1d23;
-    --color-text-secondary: #4b5261;
-    --color-text-tertiary: #8a8f9c;
-    --color-border-secondary: #e2e5ea;
-    --border-radius-lg: 14px;
-
-    --text-primary: var(--color-text-primary);
-    --text-secondary: var(--color-text-secondary);
-    --text-muted: var(--color-text-tertiary);
-    --surface-1: var(--color-background-primary);
-    --surface-2: var(--color-background-secondary);
-    --border: var(--color-border-secondary);
-    --radius: var(--border-radius-lg);
-
-    --pos-yes: #1a7f37;
-    --pos-no: #c03434;           --pos-no-bg: #fbe7e7;
-
-    --cat-dairy: #1d6fd8;        --cat-dairy-bg: #e3edfd;
-    --cat-produce: #1a7f37;      --cat-produce-bg: #e6f6ea;
-    --cat-meat: #c0355e;         --cat-meat-bg: #fbe6ee;
-    --cat-bakery: #b3690a;       --cat-bakery-bg: #fdf1e0;
-    --cat-pantry: #7a3fc0;       --cat-pantry-bg: #f2e9fb;
-    --cat-frozen: #0891b2;       --cat-frozen-bg: #cffafe;
-    --cat-beverages: #c03a7a;    --cat-beverages-bg: #fbe6f1;
-    --cat-household: #5c6270;    --cat-household-bg: #e7e8eb;
-  }
-
-  @media (prefers-color-scheme: dark) {
-    :root {
-      --color-background-primary: #16181d;
-      --color-background-secondary: #1d2026;
-      --color-text-primary: #eef0f3;
-      --color-text-secondary: #b7bcc6;
-      --color-text-tertiary: #838995;
-      --color-border-secondary: #2c303a;
-
-      --surface-1: var(--color-background-primary);
-      --surface-2: var(--color-background-secondary);
-      --border: var(--color-border-secondary);
-
-      --pos-yes: #6fd08c;
-      --pos-no: #f08a8a;           --pos-no-bg: #3a1c1c;
-
-      --cat-dairy: #7cb0f7;        --cat-dairy-bg: #1c2b42;
-      --cat-produce: #6fd08c;      --cat-produce-bg: #163524;
-      --cat-meat: #ec7fa3;         --cat-meat-bg: #3a1c28;
-      --cat-bakery: #e3a655;       --cat-bakery-bg: #3a2c14;
-      --cat-pantry: #b98af0;       --cat-pantry-bg: #2c2140;
-      --cat-frozen: #4fd3e8;       --cat-frozen-bg: #123a42;
-      --cat-beverages: #ec86bb;    --cat-beverages-bg: #3a1f2c;
-      --cat-household: #a3a8b4;    --cat-household-bg: #2a2d34;
+<script>
+// Applies the saved/system theme to <html> as early as possible, before the
+// stylesheet below paints anything, so there's no flash of the wrong theme.
+// Self-contained: no dependency on any external script.
+(function(){
+  try{
+    var saved = localStorage.getItem('theme-preference');
+    var theme = (saved === 'light' || saved === 'dark')
+      ? saved
+      : ((window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches) ? 'dark' : 'light');
+    document.documentElement.setAttribute('data-theme', theme);
+    // Same idea for the text size: apply it before house.css paints, so a
+    // person who chose 28px doesn't watch the page reflow from 14px on load.
+    var fs = parseFloat(localStorage.getItem('font-size-preference'));
+    if (fs >= 10 && fs <= 28){
+      document.documentElement.style.setProperty('--fs-base', fs + 'px');
     }
-  }
+  }catch(e){ /* localStorage/matchMedia unavailable — CSS media query still applies */ }
+})();
+</script>
+<link rel="stylesheet" href="house.css">
+<style>
+/* Recovered page-specific rules. */
+.score-bar-wrap { display: flex; align-items: center; gap: 12px; margin: 10px 0 18px; }
+.score-label { font-size: 0.8rem; color: var(--text-secondary); white-space: nowrap; }
 
-  * { box-sizing: border-box; }
-  body {
-    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Helvetica, Arial, sans-serif;
-    font-size: 15px;
-    color: var(--text-primary);
-    background: var(--surface-1);
-    margin: 0;
-    line-height: 1.55;
-  }
-  .page { max-width: 820px; margin: 0 auto; padding: 28px 20px 0; }
+/* Page-specific design tokens — this lesson's own palette, not
+   house tokens. house.css owns everything else. */
+:root{
+  --pos-yes: #1a7f37;
+  --pos-no: #c03434;
+  --pos-no-bg: #fbe7e7;
+}
+@media (prefers-color-scheme: dark) {
+:root{
+  --pos-yes: #6fd08c;
+  --pos-no: #f08a8a;
+  --pos-no-bg: #3a1c1c;
+}
+}
 
-  h1 { font-size: 1.3rem; margin: 4px 0 2px; }
-  .subtitle { color: var(--text-secondary); margin: 0 0 14px; font-size: 0.95rem; }
 
-  .score-bar-wrap { display: flex; align-items: center; gap: 12px; margin: 10px 0 18px; }
-  .score-bar { flex: 1; height: 8px; border-radius: 999px; background: var(--surface-2); overflow: hidden; }
+h1 { font-size: 1.3rem; margin: 4px 0 2px; }
   .score-fill { height: 100%; width: 0%; background: var(--pos-yes); transition: width .3s; }
-  .score-label { font-size: 0.8rem; color: var(--text-secondary); white-space: nowrap; }
 
   .bin-grid {
     display: grid;
@@ -159,7 +126,8 @@
 </style>
 </head>
 <body>
-<div class="page">
+<div class="page" id="page">
+  <span class="cefr-tag cefr-a1">A1 · Beginner</span>
 
   <h1>Supermarket Items — Matching</h1>
   <p class="subtitle">Drag each word into the category it belongs to.</p>
@@ -178,9 +146,12 @@
   <div class="chip-pool" id="pool"></div>
 </div>
 
-<div id="theme-toggle-wrap"><button id="theme-toggle" aria-label="Toggle light/dark mode" title="Toggle light/dark mode"><span id="theme-icon">☀️</span></button></div>
-<script src="theme-toggle-behavior.js"></script>
-
+<div id="theme-toggle-wrap">
+  <button id="theme-toggle" aria-label="Toggle light/dark mode" title="Toggle light/dark mode">
+    <span id="theme-icon">☀️</span>
+  </button>
+</div>
+<script src="house.js"></script>
 <script>
 const data = [
   { category: "dairy", label: "Dairy & Eggs", def: "Food made from milk, and eggs from chickens.", color: "var(--cat-dairy)", bg: "var(--cat-dairy-bg)",

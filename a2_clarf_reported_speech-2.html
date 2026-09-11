@@ -4,36 +4,56 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
 <title>Reporting Verbs — Matching Activity</title>
-<link rel="preconnect" href="https://fonts.googleapis.com">
-<link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,500..700&family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;600&display=swap" rel="stylesheet">
+<script>
+// Applies the saved/system theme to <html> as early as possible, before the
+// stylesheet below paints anything, so there's no flash of the wrong theme.
+// Self-contained: no dependency on any external script.
+(function(){
+  try{
+    var saved = localStorage.getItem('theme-preference');
+    var theme = (saved === 'light' || saved === 'dark')
+      ? saved
+      : ((window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches) ? 'dark' : 'light');
+    document.documentElement.setAttribute('data-theme', theme);
+    // Same idea for the text size: apply it before house.css paints, so a
+    // person who chose 28px doesn't watch the page reflow from 14px on load.
+    var fs = parseFloat(localStorage.getItem('font-size-preference'));
+    if (fs >= 10 && fs <= 28){
+      document.documentElement.style.setProperty('--fs-base', fs + 'px');
+    }
+  }catch(e){ /* localStorage/matchMedia unavailable — CSS media query still applies */ }
+})();
+</script>
+<link rel="stylesheet" href="house.css">
 <style>
-  :root{
-    --ink:#1b2430;
-    --paper:#f6f3ec;
-    --panel:#ffffff;
-    --rule:#d9d2c2;
-    --navy:#26364a;
-    --navy-deep:#182230;
-    --amber:#c9722f;
-    --amber-soft:#f0dcc6;
-    --sage:#5a7d68;
-    --sage-soft:#dde8de;
-    --danger:#b6503b;
-    --muted:#6b7280;
-    --radius:10px;
+/* Recovered page-specific rules. */
+button.reset{
+    font-family:'Inter', sans-serif;
+    font-weight:600;
+    font-size:0.88rem;
+    background:var(--navy-deep);
+    color:#f2ede1;
+    border:none;
+    padding:9px 18px;
+    border-radius:100px;
+    cursor:pointer;
   }
-  *{box-sizing:border-box; -webkit-tap-highlight-color:transparent;}
-  html,body{
-    margin:0;
-    background:var(--paper);
-    color:var(--ink);
-    font-family:'Inter',sans-serif;
-    touch-action:manipulation;
-    -webkit-user-select:none;
-    user-select:none;
-    overscroll-behavior:none;
-  }
-  .wrap{max-width:1040px;margin:0 auto;padding:28px 20px 60px;}
+button.reset:active{transform:scale(0.97);}
+
+/* Page-specific design tokens — this lesson's own palette, not
+   house tokens. house.css owns everything else. */
+:root{
+  --panel: #ffffff;
+  --rule: #d9d2c2;
+  --navy-deep: #182230;
+  --amber: #c9722f;
+  --sage: #5a7d68;
+  --sage-soft: #dde8de;
+  --muted: #6b7280;
+}
+
+
+.wrap{max-width:1040px;margin:0 auto;padding:28px 20px 60px;}
 
   header{
     text-align:center;
@@ -41,7 +61,7 @@
   }
   .eyebrow{
     font-family:'JetBrains Mono', monospace;
-    font-size:12px;
+    font-size:0.8rem;
     letter-spacing:0.14em;
     text-transform:uppercase;
     color:var(--amber);
@@ -78,18 +98,6 @@
     border-radius:100px;
   }
   .score strong{color:var(--sage);}
-  button.reset{
-    font-family:'Inter', sans-serif;
-    font-weight:600;
-    font-size:0.88rem;
-    background:var(--navy-deep);
-    color:#f2ede1;
-    border:none;
-    padding:9px 18px;
-    border-radius:100px;
-    cursor:pointer;
-  }
-  button.reset:active{transform:scale(0.97);}
 
   /* VERB BINS */
   .bins{
@@ -99,8 +107,7 @@
     margin-bottom:32px;
   }
   @media (max-width:680px){
-    .bins{grid-template-columns:1fr;}
-  }
+    .bins{grid-template-columns:1fr;}}
   .bin{
     background:var(--panel);
     border:2px dashed var(--rule);
@@ -158,7 +165,7 @@
   /* SENTENCE POOL */
   .pool-heading{
     font-family:'JetBrains Mono', monospace;
-    font-size:12px;
+    font-size:0.8rem;
     letter-spacing:0.1em;
     text-transform:uppercase;
     color:var(--muted);
@@ -172,41 +179,6 @@
     padding:14px;
     background:rgba(217,210,194,0.25);
     border-radius:var(--radius);
-  }
-
-  .card{
-    background:var(--panel);
-    border:1px solid var(--rule);
-    border-radius:8px;
-    padding:10px 14px;
-    font-size:0.92rem;
-    line-height:1;
-    cursor:grab;
-    box-shadow:0 1px 2px rgba(0,0,0,0.05);
-    max-width:340px;
-    touch-action:none;
-  }
-  .card.placed{
-    width:100%;
-    max-width:none;
-    cursor:default;
-    background:#fff;
-    border-color:var(--sage);
-  }
-  .card.dragging{
-    position:fixed;
-    z-index:999;
-    pointer-events:none;
-    box-shadow:0 8px 24px rgba(0,0,0,0.18);
-    transform:scale(1.03);
-    cursor:grabbing;
-  }
-  .card.wrong{
-    animation:shake 0.4s ease;
-    border-color:var(--danger);
-  }
-  .card.correct-flash{
-    animation:flash 0.5s ease;
   }
   @keyframes shake{
     0%,100%{transform:translateX(0);}
@@ -233,10 +205,11 @@
   }
   .win-banner.show{display:block;}
 </style>
-<link rel="stylesheet" href="general.css">
-
 </head>
 <body>
+<div class="page" id="page">
+  <span class="cefr-tag cefr-a2">A2 · Elementary</span>
+
 
 <div class="wrap">
   <header>
@@ -258,6 +231,16 @@
   <div class="win-banner" id="winBanner">🎉 All matched! Great work with reporting verbs.</div>
 </div>
 
+
+
+</div>
+
+<div id="theme-toggle-wrap">
+  <button id="theme-toggle" aria-label="Toggle light/dark mode" title="Toggle light/dark mode">
+    <span id="theme-icon">☀️</span>
+  </button>
+</div>
+<script src="house.js"></script>
 <script>
 const data = [
   { verb: "explain", sentences: [
@@ -475,11 +458,5 @@ document.getElementById('resetBtn').addEventListener('click', () => {
   location.reload();
 });
 </script>
-<div id="theme-toggle-wrap">
-  <button id="theme-toggle" aria-label="Toggle light/dark mode" title="Toggle light/dark mode">
-    <span id="theme-icon">☀️</span>
-  </button>
-</div>
-<script src="theme-toggle-behavior.js"></script>
 </body>
 </html>

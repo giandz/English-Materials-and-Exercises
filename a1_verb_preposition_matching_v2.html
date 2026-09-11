@@ -1,23 +1,43 @@
-<head><meta charset="UTF-8">
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<title>Preposition Matching V2</title>
+<script>
+// Applies the saved/system theme to <html> as early as possible, before the
+// stylesheet below paints anything, so there's no flash of the wrong theme.
+// Self-contained: no dependency on any external script.
+(function(){
+  try{
+    var saved = localStorage.getItem('theme-preference');
+    var theme = (saved === 'light' || saved === 'dark')
+      ? saved
+      : ((window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches) ? 'dark' : 'light');
+    document.documentElement.setAttribute('data-theme', theme);
+    // Same idea for the text size: apply it before house.css paints, so a
+    // person who chose 28px doesn't watch the page reflow from 14px on load.
+    var fs = parseFloat(localStorage.getItem('font-size-preference'));
+    if (fs >= 10 && fs <= 28){
+      document.documentElement.style.setProperty('--fs-base', fs + 'px');
+    }
+  }catch(e){ /* localStorage/matchMedia unavailable — CSS media query still applies */ }
+})();
+</script>
+<link rel="stylesheet" href="house.css">
 <style>
-  .card { border: 1.5px solid var(--color-border-secondary); border-radius: var(--border-radius-md); padding: 9px 12px; font-size: 14px; font-weight: 500; cursor: pointer; background: var(--color-background-primary); color: var(--color-text-primary); text-align: center; transition: background 0.15s, border-color 0.15s; user-select: none; }
-  .card:hover { background: var(--color-background-secondary); border-color: var(--color-border-primary); }
-  .card.selected { border-color: #185FA5; background: #E6F1FB; color: #0C447C; }
-  .card.done { border-color: #3B6D11; background: #EAF3DE; color: #27500A; pointer-events: none; }
-  .card.wrong { border-color: #A32D2D; background: #FCEBEB; color: #791F1F; animation: shake 0.3s; }
-  @keyframes shake { 0%,100%{transform:translateX(0)} 25%{transform:translateX(-5px)} 75%{transform:translateX(5px)} }
-  .col-label { font-size: 11px; font-weight: 500; color: var(--color-text-secondary); letter-spacing: 0.05em; margin-bottom: 8px; }
+@keyframes shake { 0%,100%{transform:translateX(0)} 25%{transform:translateX(-5px)} 75%{transform:translateX(5px)} }
 </style>
-<link rel="stylesheet" href="general.css">
 </head>
-<body class="exercise-page">
+<body class="exercise-page" id="page">
+<span class="cefr-tag cefr-a1">A1 · Beginner</span>
 
 <div style="padding:1.25rem 0;">
 
   <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:1.25rem; flex-wrap:wrap; gap:8px;">
-    <div style="font-size:14px; color:var(--color-text-secondary);">Click a verb, then click a preposition. Some cards have more than one match.</div>
+    <div style="font-size:0.9333rem; color:var(--color-text-secondary);">Click a verb, then click a preposition. Some cards have more than one match.</div>
     <div style="display:flex; gap:8px; align-items:center;">
-      <span id="score-label" style="font-size:14px; color:var(--color-text-secondary);">0 / 16 matched</span>
+      <span id="score-label" style="font-size:0.9333rem; color:var(--color-text-secondary);">0 / 16 matched</span>
       <button onclick="resetGame()">↺ Restart</button>
     </div>
   </div>
@@ -33,14 +53,20 @@
     </div>
   </div>
 
-  <div id="feedback" style="margin-top:1rem; min-height:24px; font-size:14px; text-align:center; color:var(--color-text-secondary);"></div>
+  <div id="feedback" style="margin-top:1rem; min-height:24px; font-size:0.9333rem; text-align:center; color:var(--color-text-secondary);"></div>
 
   <details style="margin-top:1.25rem; border:0.5px solid var(--color-border-tertiary); border-radius:var(--border-radius-md); overflow:hidden;">
-    <summary style="padding:9px 14px; cursor:pointer; font-size:14px; font-weight:500; background:var(--color-background-secondary); list-style:none; display:flex; justify-content:space-between; align-items:center;">Answer key <i class="ti ti-chevron-down" aria-hidden="true" style="font-size:15px; color:var(--color-text-secondary);"></i></summary>
+    <summary style="padding:9px 14px; cursor:pointer; font-size:0.9333rem; font-weight:500; background:var(--color-background-secondary); list-style:none; display:flex; justify-content:space-between; align-items:center;">Answer key <i class="ti ti-chevron-down" aria-hidden="true" style="font-size:1rem; color:var(--color-text-secondary);"></i></summary>
     <div style="padding:10px 14px; display:flex; flex-direction:column; gap:4px;" id="answer-key"></div>
   </details>
 </div>
 
+<div id="theme-toggle-wrap">
+  <button id="theme-toggle" aria-label="Toggle light/dark mode" title="Toggle light/dark mode">
+    <span id="theme-icon">☀️</span>
+  </button>
+</div>
+<script src="house.js"></script>
 <script>
 const pairs = [
   { verb:"live",    prep:"in",    example:"I live in Mexico." },
@@ -179,7 +205,7 @@ function buildGame() {
     d.className = 'card';
     d.dataset.type = 'verb';
     d.dataset.value = v;
-    d.innerHTML = v + (total > 1 ? ' <span class="count" style="font-size:11px;font-weight:400;color:var(--color-text-secondary);">×' + total + '</span>' : '<span class="count"></span>');
+    d.innerHTML = v + (total > 1 ? ' <span class="count" style="font-size:0.7333rem;font-weight:400;color:var(--color-text-secondary);">×' + total + '</span>' : '<span class="count"></span>');
     d.onclick = () => selectCard('verb', v, d);
     vc.appendChild(d);
   });
@@ -190,7 +216,7 @@ function buildGame() {
     d.className = 'card';
     d.dataset.type = 'prep';
     d.dataset.value = p;
-    d.innerHTML = p + (total > 1 ? ' <span class="count" style="font-size:11px;font-weight:400;color:var(--color-text-secondary);">×' + total + '</span>' : '<span class="count"></span>');
+    d.innerHTML = p + (total > 1 ? ' <span class="count" style="font-size:0.7333rem;font-weight:400;color:var(--color-text-secondary);">×' + total + '</span>' : '<span class="count"></span>');
     d.onclick = () => selectCard('prep', p, d);
     pc.appendChild(d);
   });
@@ -208,12 +234,12 @@ function buildKey() {
   ];
   categories.forEach(cat => {
     const heading = document.createElement('div');
-    heading.style.cssText = 'font-size:11px;font-weight:500;color:var(--color-text-secondary);letter-spacing:0.05em;margin-top:8px;margin-bottom:2px;';
+    heading.style.cssText = 'font-size:0.7333rem;font-weight:500;color:var(--color-text-secondary);letter-spacing:0.05em;margin-top:8px;margin-bottom:2px;';
     heading.textContent = cat.label.toUpperCase();
     el.appendChild(heading);
     pairs.filter(p => cat.verbs.includes(p.verb)).forEach(item => {
       const row = document.createElement('div');
-      row.style.cssText = 'font-size:13px;display:flex;gap:8px;padding:3px 0;';
+      row.style.cssText = 'font-size:0.8667rem;display:flex;gap:8px;padding:3px 0;';
       row.innerHTML = '<span style="font-weight:500;min-width:90px;color:var(--color-text-primary);">' + item.verb + ' <span style="color:#185FA5;">' + item.prep + '</span></span><span style="color:var(--color-text-secondary);">' + item.example + '</span>';
       el.appendChild(row);
     });
@@ -232,3 +258,4 @@ buildGame();
 buildKey();
 </script>
 </body>
+</html>

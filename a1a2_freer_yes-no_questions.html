@@ -1,0 +1,147 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<title>Question Generator — Yes/No Questions</title>
+<script>
+// Applies the saved/system theme to <html> as early as possible, before the
+// stylesheet below paints anything, so there's no flash of the wrong theme.
+// Self-contained: no dependency on any external script.
+(function(){
+  try{
+    var saved = localStorage.getItem('theme-preference');
+    var theme = (saved === 'light' || saved === 'dark')
+      ? saved
+      : ((window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches) ? 'dark' : 'light');
+    document.documentElement.setAttribute('data-theme', theme);
+    // Same idea for the text size: apply it before house.css paints, so a
+    // person who chose 28px doesn't watch the page reflow from 14px on load.
+    var fs = parseFloat(localStorage.getItem('font-size-preference'));
+    if (fs >= 10 && fs <= 28){
+      document.documentElement.style.setProperty('--fs-base', fs + 'px');
+    }
+  }catch(e){ /* localStorage/matchMedia unavailable — CSS media query still applies */ }
+})();
+</script>
+<link rel="stylesheet" href="house.css">
+</head>
+<body>
+<div class="page" id="page">
+
+  <span class="cefr-tag cefr-a1a2">A1/A2 · Speaking Practice</span>
+  <h1>Yes/No Question Generator</h1>
+  <p class="subtitle">Click the dice to get a random question, then ask a partner!</p>
+
+  <div class="rule-box">
+    <strong>How to play:</strong> click 🎲, read the question out loud to your partner, and let them answer with a short answer. Then it's their turn to roll.
+  </div>
+
+  <div class="q-card" id="qCard">
+    <span class="q-placeholder" id="qPlaceholder">Click the dice to generate a question</span>
+  </div>
+
+  <button class="dice-btn" id="diceBtn" aria-label="Generate question">🎲</button>
+
+  <div class="roll-count">Questions asked: <strong id="rollCount">0</strong></div>
+
+  <div class="topic-legend">
+    <span class="topic-pill">🪪 identification</span>
+    <span class="topic-pill">🎂 age</span>
+    <span class="topic-pill">🌍 origin</span>
+    <span class="topic-pill">😎 status</span>
+    <span class="topic-pill">👤 description</span>
+    <span class="topic-pill">🚗 transportation</span>
+    <span class="topic-pill">🍽️ meals</span>
+    <span class="topic-pill">💍 belongings</span>
+    <span class="topic-pill">⚽ activities</span>
+  </div>
+
+  <footer>Speaking Practice — Yes/No Questions (A1–A2)</footer>
+</div>
+
+<div id="theme-toggle-wrap">
+  <button id="theme-toggle" aria-label="Toggle light/dark mode" title="Toggle light/dark mode">
+    <span id="theme-icon">☀️</span>
+  </button>
+</div>
+<script src="house.js"></script>
+<script>
+/* ── Prompt pools ──────────────────────────────────────────────────────────
+   Every roll pairs a subject with a topic complement, so the pool is
+   combinatorial rather than a fixed list of written-out questions. */
+const SUBJECTS = [
+  { label: "you",              be: "Are", do: "Do",   possessive: "your" },
+  { label: "your brother",     be: "Is",  do: "Does", possessive: "your brother's" },
+  { label: "your sister",      be: "Is",  do: "Does", possessive: "your sister's" },
+  { label: "your mother",      be: "Is",  do: "Does", possessive: "your mother's" },
+  { label: "your best friend", be: "Is",  do: "Does", possessive: "your best friend's" }
+];
+
+const TOPICS = {
+    identification: {
+      icon: "🪪",
+      complements: ["Sandra", "Marco", "Elena", "David", "Sofia"],
+      build: (subject, complement) => {
+        if (subject.label === "you") {
+          return `Are you ${complement}?`;
+        }
+        return `Is ${subject.possessive} name ${complement}?`;
+      }
+    },
+    age: {
+      icon: "🎂",
+      complements: ["20 years old", "25 years old", "30 years old", "18 years old", "40 years old"],
+      build: (subject, complement) => `${subject.be} ${subject.label} ${complement}?`
+    },
+    origin: {
+      icon: "🌍",
+      complements: ["from China", "Colombian", "Japanese", "from Italy", "from Mexico", "from Canada"],
+      build: (subject, complement) => `${subject.be} ${subject.label} ${complement}?`
+    },
+    status: {
+      icon: "😎",
+      complements: ["happy today", "tired today", "busy this week", "hungry right now", "sad today"],
+      build: (subject, complement) => `${subject.be} ${subject.label} ${complement}?`
+    },
+    description: {
+      icon: "👤",
+      complements: ["tall", "funny", "organized", "thin", "short"],
+      build: (subject, complement) => `${subject.be} ${subject.label} ${complement}?`
+    },
+    transportation: {
+      icon: "🚗",
+      complements: ["drive to work", "take the bus to school", "walk to work", "ride a bike to school", "take the train to work"],
+      build: (subject, complement) => `${subject.do} ${subject.label} ${complement}?`
+    },
+    meals: {
+      icon: "🍽️",
+      complements: ["eat pizza for dinner", "drink coffee in the morning", "eat breakfast every day", "cook dinner at home", "eat vegetables every day"],
+      build: (subject, complement) => `${subject.do} ${subject.label} ${complement}?`
+    },
+    belongings: {
+      icon: "💍",
+      complements: ["have a tablet", "have a dog", "have a cat", "have a swimming pool", "have credit cards", "have a smartwatch"],
+      build: (subject, complement) => `${subject.do} ${subject.label} ${complement}?`
+    },
+    activities: {
+      icon: "⚽",
+      complements: ["play soccer", "play the piano", "play the guitar", "listen to classical music", "go swimming", "go running", "play baseball"],
+      build: (subject, complement) => `${subject.do} ${subject.label} ${complement}?`
+    }
+  };
+
+const TOPIC_KEYS = Object.keys(TOPICS);
+
+HouseRandomGen.build({
+  pick: function () {
+    var key = HouseRandomGen.pickFrom(TOPIC_KEYS);
+    var topic = TOPICS[key];
+    var subject = HouseRandomGen.pickFrom(SUBJECTS);
+    var complement = HouseRandomGen.pickFrom(topic.complements);
+    return { icon: topic.icon, label: key, text: topic.build(subject, complement) };
+  }
+});
+</script>
+</body>
+</html>

@@ -1,64 +1,83 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-<meta charset="UTF-8" />
-<link rel="stylesheet" href="general.css">
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<title>Passive Voice — Clarification</title>
+<script>
+// Applies the saved/system theme to <html> as early as possible, before the
+// stylesheet below paints anything, so there's no flash of the wrong theme.
+// Self-contained: no dependency on any external script.
+(function(){
+  try{
+    var saved = localStorage.getItem('theme-preference');
+    var theme = (saved === 'light' || saved === 'dark')
+      ? saved
+      : ((window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches) ? 'dark' : 'light');
+    document.documentElement.setAttribute('data-theme', theme);
+    // Same idea for the text size: apply it before house.css paints, so a
+    // person who chose 28px doesn't watch the page reflow from 14px on load.
+    var fs = parseFloat(localStorage.getItem('font-size-preference'));
+    if (fs >= 10 && fs <= 28){
+      document.documentElement.style.setProperty('--fs-base', fs + 'px');
+    }
+  }catch(e){ /* localStorage/matchMedia unavailable — CSS media query still applies */ }
+})();
+</script>
+<link rel="stylesheet" href="house.css">
 <style>
-
-    .sec-div{font-size:11px;font-weight:500;letter-spacing:.06em;text-transform:uppercase;color:var(--text-muted);display:flex;align-items:center;gap:8px;margin:1.5rem 0 1rem;}
-  .sec-div::before,.sec-div::after{content:'';flex:1;height:.5px;background:var(--alpha-2);}
-  .formula-box{background:var(--surface-1);border-radius:12px;padding:14px 18px;margin-bottom:1.25rem;font-family:var(--font-mono);font-size:13px;color:var(--color-text-primary);line-height:2;}
+.formula-box{background:var(--surface-1);border-radius:12px;padding:14px 18px;margin-bottom:1.25rem;font-family:var(--font-mono);font-size:0.8667rem;color:var(--color-text-primary);line-height:2;}
   .formula-row{display:flex;align-items:center;gap:8px;flex-wrap:wrap;}
-  .f-part{padding:3px 10px;border-radius:8px;border:1px solid transparent;font-size:13px;white-space:nowrap;}
-  .f-sub{background:var(--bg-accent);color:var(--text-accent);}
-  .f-be{background:var(--bg-success);color:var(--text-success);}
-  .f-pp{background:var(--bg-pro);color:var(--text-pro);}
-  .f-plus{color:var(--text-muted);font-size:14px;}
+  .f-part{padding:3px 10px;border-radius:8px;border:1px solid transparent;font-size:0.8667rem;white-space:nowrap;}
+  .f-sub{background:var(--color-background-info);color:var(--text-accent);}
+  .f-be{background:var(--color-background-success);color:var(--color-text-success);}
+  .f-pp{background:var(--color-background-info);color:var(--color-text-info);}
+  .f-plus{color:var(--text-muted);font-size:0.9333rem;}
 	
-  .tense-card{border:.5px solid var(--alpha-2);border-radius:12px;overflow:hidden;margin-bottom:12px;}
-  .tense-head{padding:9px 14px;border-bottom:.5px solid var(--alpha-2);background:var(--surface-1);}
-  .tense-name{font-size:14px;font-weight:500;color:var(--color-text-primary);}
-  .tense-formula{font-family:var(--font-mono);font-size:11px;color:var(--text-secondary);margin-top:2px;}
-  .form-row{display:flex;align-items:flex-start;gap:8px;padding:8px 14px;border-bottom:.5px solid var(--alpha-2);}
+  .tense-card{border:.5px solid var(--color-border-secondary);border-radius:12px;overflow:hidden;margin-bottom:12px;}
+  .tense-head{padding:9px 14px;border-bottom:.5px solid var(--color-border-secondary);background:var(--surface-1);}
+  .tense-name{font-size:0.9333rem;font-weight:500;color:var(--color-text-primary);}
+  .tense-formula{font-family:var(--font-mono);font-size:0.7333rem;color:var(--text-secondary);margin-top:2px;}
+  .form-row{display:flex;align-items:flex-start;gap:8px;padding:8px 14px;border-bottom:.5px solid var(--color-border-secondary);}
   .form-row:last-child{border-bottom:none;}
-  .form-badge{font-size:11px;font-weight:500;padding:2px 9px;border-radius:20px;border:1px solid transparent;flex-shrink:0;margin-top:1px;white-space:nowrap;}
-  .badge-aff{background:var(--bg-success);color:var(--text-success);}
-  .badge-neg{background:var(--bg-danger);color:var(--text-danger);}
+  .form-badge{font-size:0.7333rem;font-weight:500;padding:2px 9px;border-radius:20px;border:1px solid transparent;flex-shrink:0;margin-top:1px;white-space:nowrap;}
+  .badge-aff{background:var(--color-background-success);color:var(--color-text-success);}
+  .badge-neg{background:var(--color-background-danger);color:var(--color-text-danger);}
   .form-examples{display:flex;flex-direction:column;gap:4px;}
-  .form-ex{font-size:13px;color:var(--color-text-primary);line-height:1.5;}
-  .hl-be{font-weight:500;color:var(--text-success);}
-  .hl-neg{font-weight:500;color:var(--text-danger);}
-  .hl-pp{font-weight:500;color:var(--text-pro);}
+  .form-ex{font-size:0.8667rem;color:var(--color-text-primary);line-height:1.5;}
+  .hl-be{font-weight:500;color:var(--color-text-success);}
+  .hl-neg{font-weight:500;color:var(--color-text-danger);}
+  .hl-pp{font-weight:500;color:var(--color-text-info);}
 
-  .summary-table{width:100%;border-collapse:collapse;font-size:13px;margin-top:.5rem;margin-bottom:1.5rem;}
-  .summary-table th{font-size:11px;font-weight:500;letter-spacing:.05em;text-transform:uppercase;color:var(--text-secondary);text-align:left;padding:6px 10px;border-bottom:1px solid var(--alpha-2);background:var(--surface-1);}
-  .summary-table td{padding:7px 10px;border-bottom:.5px solid var(--alpha-2);color:var(--color-text-primary);vertical-align:top;}
+  .summary-table{width:100%;border-collapse:collapse;font-size:0.8667rem;margin-top:.5rem;margin-bottom:1.5rem;}
+  .summary-table th{font-size:0.7333rem;font-weight:500;letter-spacing:.05em;text-transform:uppercase;color:var(--text-secondary);text-align:left;padding:6px 10px;border-bottom:1px solid var(--color-border-secondary);background:var(--surface-1);}
+  .summary-table td{padding:7px 10px;border-bottom:.5px solid var(--color-border-secondary);color:var(--color-text-primary);vertical-align:top;}
   .summary-table tr:last-child td{border-bottom:none;}
-  .summary-table .tense-label{font-size:12px;font-weight:500;color:var(--text-secondary);}
+  .summary-table .tense-label{font-size:0.8rem;font-weight:500;color:var(--text-secondary);}
 
   .use-grid{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:1.25rem;}
-  .use-card{border:.5px solid var(--alpha-2);border-radius:12px;overflow:hidden;}
-  .use-head{padding:9px 14px;border-bottom:.5px solid var(--alpha-2);font-size:13px;font-weight:500;}
-  .use-head-active{background:var(--bg-accent);color:var(--text-accent);}
-  .use-head-passive{background:var(--bg-pro);color:var(--text-pro);}
+  .use-card{border:.5px solid var(--color-border-secondary);border-radius:12px;overflow:hidden;}
+  .use-head{padding:9px 14px;border-bottom:.5px solid var(--color-border-secondary);font-size:0.8667rem;font-weight:500;}
+  .use-head-active{background:var(--color-background-info);color:var(--text-accent);}
+  .use-head-passive{background:var(--color-background-info);color:var(--color-text-info);}
   .use-body{padding:10px 14px;display:flex;flex-direction:column;gap:8px;}
-  .use-point{font-size:13px;color:var(--text-secondary);line-height:1.5;}
+  .use-point{font-size:0.8667rem;color:var(--text-secondary);line-height:1.5;}
   .use-point strong{color:var(--color-text-primary);font-weight:500;}
 
   .compare-row{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:8px;}
-  .compare-card{border:.5px solid var(--alpha-2);border-radius:12px;padding:10px 14px;}
-  .compare-tag{font-size:11px;font-weight:500;padding:2px 9px;border-radius:20px;border:1px solid transparent;margin-bottom:6px;display:inline-block;}
-  .tag-active{background:var(--bg-accent);color:var(--text-accent);}
-  .tag-passive{background:var(--bg-pro);color:var(--text-pro);}
-  .compare-text{font-size:13px;color:var(--color-text-primary);line-height:1.5;}
-  .compare-note{font-size:11px;color:var(--text-muted);margin-top:4px;line-height:1.4;}
+  .compare-card{border:.5px solid var(--color-border-secondary);border-radius:12px;padding:10px 14px;}
+  .compare-tag{font-size:0.7333rem;font-weight:500;padding:2px 9px;border-radius:20px;border:1px solid transparent;margin-bottom:6px;display:inline-block;}
+  .tag-active{background:var(--color-background-info);color:var(--text-accent);}
+  .tag-passive{background:var(--color-background-info);color:var(--color-text-info);}
+  .compare-text{font-size:0.8667rem;color:var(--color-text-primary);line-height:1.5;}
+  .compare-note{font-size:0.7333rem;color:var(--text-muted);margin-top:4px;line-height:1.4;}
   .gf-pic {width: 50%;border-radius: 18px;}
   .use-pic{display:flex; flex-direction:column;align-items: center;}
   @media(max-width:520px){.use-grid,.compare-row{grid-template-columns:1fr;}}
 </style>
-
 </head>
-<body class="exercise-page">
+<body class="exercise-page" id="page">
+<span class="cefr-tag cefr-a2">A2 · Elementary</span>
 <div style="padding:.75rem 0 1rem;">
   <div class="sec-div">active vs passive — when to use each</div>
  <div class="use-pic"><img class="gf-pic" src="eng_mats_images/passive_active_voice.png">
@@ -82,7 +101,7 @@
     </div>
   </div>
 
-  <div style="font-size:13px;color:var(--text-secondary);margin-bottom:1rem;line-height:1.6;">
+  <div style="font-size:0.8667rem;color:var(--text-secondary);margin-bottom:1rem;line-height:1.6;">
     Compare the same idea in both voices:
   </div>
 
@@ -125,7 +144,7 @@
     </div>
   </div>
 
-  <div style="font-size:12px;color:var(--text-muted);line-height:1.6;margin-top:.5rem;">
+  <div style="font-size:0.8rem;color:var(--text-muted);line-height:1.6;margin-top:.5rem;">
     Tip: if you can finish the sentence with "…but I don't know who" and it sounds natural, passive voice is probably the better choice.
   </div>
 
@@ -140,7 +159,7 @@
     </div>
   </div>
 
-  <div style="font-size:13px;color:var(--text-secondary);margin-bottom:1.25rem;line-height:1.6;">
+  <div style="font-size:0.8667rem;color:var(--text-secondary);margin-bottom:1.25rem;line-height:1.6;">
     The form of <strong style="color:var(--color-text-primary);font-weight:500;">be</strong> changes with the tense. The past participle stays the same.
   </div>
 
@@ -237,13 +256,12 @@
       </tr>
     </tbody>
   </table>
-  
+
 <div id="theme-toggle-wrap">
   <button id="theme-toggle" aria-label="Toggle light/dark mode" title="Toggle light/dark mode">
     <span id="theme-icon">☀️</span>
   </button>
 </div>
-<script src="theme-toggle-behavior.js"></script>
-
+<script src="house.js"></script>
 </body>
 </html>

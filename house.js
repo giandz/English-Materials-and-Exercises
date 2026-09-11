@@ -7,6 +7,7 @@
      · HouseGapFill   — the Damerau-Levenshtein accuracy-bar gap fill
      · HouseGrammar   — the part-of-speech highlighting toggle
      · HouseFontSize  — the 🔎 text-size slider
+     · HouseRandomGen — the 🎲 freer-practice prompt generator
      · HouseComprehension — the before/after reading questions
 
    Load it once at the end of <body>, before the page's own script.
@@ -992,4 +993,105 @@
     get: function () { return getStored() || DEFAULT; },
     MIN: MIN, MAX: MAX, DEFAULT: DEFAULT
   };
+})(window);
+
+
+/* ══════════════════════════════════════════════════════════════════════════
+   HOUSE RANDOM GENERATOR
+   The 🎲 prompt generator behind the freer-practice speaking activities.
+   Roll, read the prompt aloud, let your partner answer, pass the dice on.
+
+   Three shapes of generator existed across the library; this covers all of them.
+
+   1. A flat list of ready-made prompts:
+
+        HouseRandomGen.build({
+          items: QUESTIONS            // [{icon, label, text}]
+        });
+
+   2. Prompts assembled from slots, so the pool is combinatorial rather than
+      fixed — pass `pick`, which returns one freshly built prompt per roll:
+
+        HouseRandomGen.build({
+          pick: function () {
+            var s = HouseRandomGen.pickFrom(SUBJECTS);
+            var t = HouseRandomGen.pickFrom(TOPICS);
+            return { icon:t.icon, label:t.name,
+                     text: s.do + ' ' + s.label + ' ' + HouseRandomGen.pickFrom(t.complements) + '?' };
+          }
+        });
+
+   3. Anything else — supply `render` and return whatever HTML the card needs.
+
+   Element ids default to the ones every freer page already uses (`qCard`,
+   `diceBtn`, `rollCount`), so most pages need only `items` or `pick`.
+
+   An immediate repeat is always avoided: a prompt never follows itself, which
+   otherwise happens often enough with small pools to feel broken.
+   ══════════════════════════════════════════════════════════════════════════ */
+(function (global) {
+  'use strict';
+
+  function pickFrom(arr) {
+    return arr[Math.floor(Math.random() * arr.length)];
+  }
+
+  function defaultRender(item) {
+    var head = (item.icon ? item.icon + ' ' : '') + (item.label || '');
+    return (head.trim() ? '<span class="q-topic">' + head.trim() + '</span>' : '') +
+           '<span class="q-text">' + (item.text || item.question || '') + '</span>';
+  }
+
+  function defaultKey(item) {
+    return item.text || item.question || JSON.stringify(item);
+  }
+
+  function build(opts) {
+    opts = opts || {};
+
+    var card = document.getElementById(opts.card || 'qCard');
+    var btn = document.getElementById(opts.button || 'diceBtn');
+    var countEl = document.getElementById(opts.countEl || 'rollCount');
+    if (!card || !btn) return;
+
+    var items = opts.items || null;
+    var pick = opts.pick || (items ? function () { return pickFrom(items); } : null);
+    if (!pick) return;
+
+    var render = opts.render || defaultRender;
+    var key = opts.key || defaultKey;
+
+    var count = 0;
+    var lastKey = null;
+
+    function roll() {
+      var item, tries = 0;
+      // Small pools repeat often, so re-draw a few times rather than let the
+      // same prompt come up twice in a row.
+      do {
+        item = pick();
+        tries++;
+      } while (items && items.length > 1 && key(item) === lastKey && tries < 8);
+      lastKey = key(item);
+
+      card.innerHTML = render(item);
+
+      // Removing and forcing a reflow before re-adding restarts the CSS
+      // animation; without the reflow the browser coalesces the two changes
+      // and the card never animates on the second roll onwards.
+      card.classList.remove('roll');
+      void card.offsetWidth;
+      card.classList.add('roll');
+
+      count++;
+      if (countEl) countEl.textContent = count;
+      return item;
+    }
+
+    btn.addEventListener('click', roll);
+
+    return { roll: roll, reset: function () { count = 0; lastKey = null; if (countEl) countEl.textContent = 0; } };
+  }
+
+  global.HouseRandomGen = { build: build, pickFrom: pickFrom };
 })(window);

@@ -15,6 +15,12 @@
       ? saved
       : ((window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches) ? 'dark' : 'light');
     document.documentElement.setAttribute('data-theme', theme);
+    // Same idea for the text size: apply it before house.css paints, so a
+    // person who chose 28px doesn't watch the page reflow from 14px on load.
+    var fs = parseFloat(localStorage.getItem('font-size-preference'));
+    if (fs >= 10 && fs <= 28){
+      document.documentElement.style.setProperty('--fs-base', fs + 'px');
+    }
   }catch(e){ /* localStorage/matchMedia unavailable — CSS media query still applies */ }
 })();
 </script>
@@ -33,7 +39,7 @@ h1{
   border-radius:16px;
   padding:10px 12px;
   margin-bottom:.9rem;
-  font-size:13px;
+  font-size:0.8667rem;
   color:var(--text-secondary);
   line-height:1.55;
   border:1px solid var(--border);
@@ -45,7 +51,7 @@ h1{
 }
 
 .reference-title{
-  font-size:13px;
+  font-size:0.8667rem;
   margin-bottom:8px;
 }
 
@@ -59,7 +65,7 @@ h1{
 .ref-card:last-child{ margin-bottom:0; }
 
 .ref-label{
-  font-size:11px;
+  font-size:0.7333rem;
   font-weight:700;
   letter-spacing:.04em;
   text-transform:uppercase;
@@ -69,7 +75,7 @@ h1{
 
 .ref-card p{
   margin:0;
-  font-size:12.5px;
+  font-size:0.8333rem;
   line-height:1.45;
   color:var(--text-secondary);
 }
@@ -92,7 +98,7 @@ h1{
   display:inline-flex;
   align-items:center;
   gap:5px;
-  font-size:12px;
+  font-size:0.8rem;
   padding:3px 10px;
   border-radius:20px;
   background:var(--surface-1);
@@ -103,7 +109,7 @@ h1{
 
 .check-btn{
   font-family:inherit;
-  font-size:12.5px;
+  font-size:0.8333rem;
   font-weight:600;
   padding:5px 12px;
   border-radius:999px;
@@ -116,7 +122,7 @@ h1{
 
 footer{
   text-align:center;
-  font-size:12px;
+  font-size:0.8rem;
   color:var(--text-muted);
   margin-top:1.4rem;
 }
@@ -402,6 +408,10 @@ const GF_ITEMS = [
   }
 ];
 
+HouseWordOrder.build({ container: 'woItems', items: WO_ITEMS, scoreEl: 'woScore', totalEl: 'woTotal' });
+HouseGapFill.build({ container: 'gfItems', items: GF_ITEMS });
+
+/* ── Page-specific extras, kept as they were ── */
 HouseWordOrder.build({ container: 'woItems', items: WO_ITEMS, scoreEl: 'woScore', totalEl: 'woTotal' });
 HouseGapFill.build({ container: 'gfItems', items: GF_ITEMS, labels: {} });
 

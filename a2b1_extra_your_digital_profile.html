@@ -1,15 +1,39 @@
-<html>
-	<head><meta charset="UTF-8">
-
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<title>Your Digital Profile — Extra</title>
+<script>
+// Applies the saved/system theme to <html> as early as possible, before the
+// stylesheet below paints anything, so there's no flash of the wrong theme.
+// Self-contained: no dependency on any external script.
+(function(){
+  try{
+    var saved = localStorage.getItem('theme-preference');
+    var theme = (saved === 'light' || saved === 'dark')
+      ? saved
+      : ((window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches) ? 'dark' : 'light');
+    document.documentElement.setAttribute('data-theme', theme);
+    // Same idea for the text size: apply it before house.css paints, so a
+    // person who chose 28px doesn't watch the page reflow from 14px on load.
+    var fs = parseFloat(localStorage.getItem('font-size-preference'));
+    if (fs >= 10 && fs <= 28){
+      document.documentElement.style.setProperty('--fs-base', fs + 'px');
+    }
+  }catch(e){ /* localStorage/matchMedia unavailable — CSS media query still applies */ }
+})();
+</script>
+<link rel="stylesheet" href="house.css">
 <style>
-  .survey-wrap { padding: 0.75rem 0 1rem; }
+.survey-wrap { padding: 0.75rem 0 1rem; }
   .progress-bar { height: 4px; background: var(--color-border-tertiary); border-radius: 2px; margin-bottom: 1.5rem; overflow: hidden; }
   .progress-fill { height: 100%; background: var(--color-text-primary); border-radius: 2px; transition: width 0.35s ease; }
   .q-block { display: none; }
   .q-block.active { display: block; }
-  .q-num { font-size: 11px; font-weight: 500; letter-spacing: 0.07em; text-transform: uppercase; color: var(--color-text-secondary); margin-bottom: 6px; }
-  .q-text { font-size: 16px; font-weight: 500; color: var(--color-text-primary); margin-bottom: 1.25rem; line-height: 1.5; }
-  .q-note { font-size: 13px; color: var(--color-text-secondary); margin-top: -0.9rem; margin-bottom: 1.1rem; font-style: italic; }
+  .q-num { font-size:0.7333rem; font-weight: 500; letter-spacing: 0.07em; text-transform: uppercase; color: var(--color-text-secondary); margin-bottom: 6px; }
+  .q-text { font-size:1.0667rem; font-weight: 500; color: var(--color-text-primary); margin-bottom: 1.25rem; line-height: 1.5; }
+  .q-note { font-size:0.8667rem; color: var(--color-text-secondary); margin-top: -0.9rem; margin-bottom: 1.1rem; font-style: italic; }
   .opt-list { display: flex; flex-direction: column; gap: 8px; margin-bottom: 1.25rem; }
   .opt-btn {
     display: flex; align-items: flex-start; gap: 12px;
@@ -22,49 +46,54 @@
   .opt-btn:hover { background: var(--color-background-secondary); border-color: var(--color-border-primary); }
   .opt-btn.selected { border-color: #185fa5; background: #e6f1fb; }
   .opt-btn.selected .opt-label { color: #0c447c; }
-  .opt-letter { font-size: 12px; font-weight: 500; width: 22px; height: 22px; border-radius: 50%; border: 1px solid var(--color-border-secondary); display: flex; align-items: center; justify-content: center; flex-shrink: 0; color: var(--color-text-secondary); margin-top: 1px; }
+  .opt-letter { font-size:0.8rem; font-weight: 500; width: 22px; height: 22px; border-radius: 50%; border: 1px solid var(--color-border-secondary); display: flex; align-items: center; justify-content: center; flex-shrink: 0; color: var(--color-text-secondary); margin-top: 1px; }
   .opt-btn.selected .opt-letter { background: #185fa5; border-color: #185fa5; color: #fff; }
-  .opt-label { font-size: 14px; color: var(--color-text-primary); line-height: 1.5; }
-  .opt-label em { color: var(--color-text-secondary); font-style: normal; font-size: 13px; display: block; margin-top: 2px; }
+  .opt-label { font-size:0.9333rem; color: var(--color-text-primary); line-height: 1.5; }
+  .opt-label em { color: var(--color-text-secondary); font-style: normal; font-size:0.8667rem; display: block; margin-top: 2px; }
   .nav-row { display: flex; justify-content: space-between; align-items: center; }
-  .nav-counter { font-size: 13px; color: var(--color-text-secondary); }
-  .nav-btn { padding: 7px 18px; font-size: 14px; }
+  .nav-counter { font-size:0.8667rem; color: var(--color-text-secondary); }
+  .nav-btn { padding: 7px 18px; font-size:0.9333rem; }
   .nav-btn:disabled { opacity: 0.35; cursor: default; }
 
   .result-wrap { display: none; }
   .result-wrap.show { display: block; }
   .result-header { margin-bottom: 1.5rem; }
-  .result-title { font-size: 20px; font-weight: 500; color: var(--color-text-primary); margin-bottom: 4px; }
-  .result-type { font-size: 13px; color: var(--color-text-secondary); margin-bottom: 1rem; }
-  .result-badge { display: inline-block; font-size: 13px; font-weight: 500; padding: 4px 14px; border-radius: 20px; margin-bottom: 1rem; }
+  .result-title { font-size:1.3333rem; font-weight: 500; color: var(--color-text-primary); margin-bottom: 4px; }
+  .result-type { font-size:0.8667rem; color: var(--color-text-secondary); margin-bottom: 1rem; }
+  .result-badge { display: inline-block; font-size:0.8667rem; font-weight: 500; padding: 4px 14px; border-radius: 20px; margin-bottom: 1rem; }
   .stat-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(130px, 1fr)); gap: 10px; margin-bottom: 1.5rem; }
   .stat-card { background: var(--color-background-secondary); border-radius: var(--border-radius-md); padding: 12px 14px; }
-  .stat-label { font-size: 12px; color: var(--color-text-secondary); margin-bottom: 4px; }
-  .stat-value { font-size: 22px; font-weight: 500; color: var(--color-text-primary); }
+  .stat-label { font-size:0.8rem; color: var(--color-text-secondary); margin-bottom: 4px; }
+  .stat-value { font-size:1.4667rem; font-weight: 500; color: var(--color-text-primary); }
   .skill-bar-wrap { margin-bottom: 1.25rem; }
-  .skill-bar-label { display: flex; justify-content: space-between; font-size: 13px; margin-bottom: 4px; }
+  .skill-bar-label { display: flex; justify-content: space-between; font-size:0.8667rem; margin-bottom: 4px; }
   .skill-bar-label span:first-child { color: var(--color-text-secondary); }
   .skill-bar-label span:last-child { font-weight: 500; color: var(--color-text-primary); }
   .skill-bar-track { height: 8px; background: var(--color-background-secondary); border-radius: 4px; overflow: hidden; }
   .skill-bar-fill { height: 100%; border-radius: 4px; transition: width 0.6s ease; }
-  .section-divider { font-size: 11px; font-weight: 500; letter-spacing: 0.06em; text-transform: uppercase; color: var(--color-text-tertiary); display: flex; align-items: center; gap: 8px; margin: 1.5rem 0 1rem; }
+  .section-divider { font-size:0.7333rem; font-weight: 500; letter-spacing: 0.06em; text-transform: uppercase; color: var(--color-text-tertiary); display: flex; align-items: center; gap: 8px; margin: 1.5rem 0 1rem; }
   .section-divider::before,.section-divider::after { content:''; flex:1; height:0.5px; background:var(--color-border-tertiary); }
   .finding-list { display: flex; flex-direction: column; gap: 8px; margin-bottom: 1.5rem; }
-  .finding-row { display: flex; gap: 10px; align-items: flex-start; font-size: 13px; color: var(--color-text-secondary); line-height: 1.5; padding: 8px 12px; background: var(--color-background-secondary); border-radius: var(--border-radius-md); }
-  .finding-row i { flex-shrink: 0; margin-top: 2px; font-size: 15px; }
+  .finding-row { display: flex; gap: 10px; align-items: flex-start; font-size:0.8667rem; color: var(--color-text-secondary); line-height: 1.5; padding: 8px 12px; background: var(--color-background-secondary); border-radius: var(--border-radius-md); }
+  .finding-row i { flex-shrink: 0; margin-top: 2px; font-size:1rem; }
   .finding-row strong { color: var(--color-text-primary); font-weight: 500; }
-  .restart-btn { font-size: 14px; padding: 7px 18px; }
+  .restart-btn { font-size:0.9333rem; padding: 7px 18px; }
 </style>
-<link rel="stylesheet" href="general.css">
-
 </head>
-<body class="exercise-page">
+<body class="exercise-page" id="page">
+<span class="cefr-tag cefr-a2b1">A2/B1 · Elementary–Intermediate</span>
 <div class="survey-wrap">
   <div class="progress-bar"><div class="progress-fill" id="prog" style="width:0%"></div></div>
   <div id="survey-body"></div>
   <div class="result-wrap" id="result-wrap"></div>
 </div>
 
+<div id="theme-toggle-wrap">
+  <button id="theme-toggle" aria-label="Toggle light/dark mode" title="Toggle light/dark mode">
+    <span id="theme-icon">☀️</span>
+  </button>
+</div>
+<script src="house.js"></script>
 <script>
 const questions = [
   {
@@ -223,12 +252,12 @@ function renderQ(idx) {
     <div class="q-block active">
       <div class="q-num">Question ${idx + 1} of ${questions.length}</div>
       <div class="q-text">${q.text}</div>
-      ${q.note ? `<div class="q-note"><i class="ti ti-quote" aria-hidden="true" style="font-size:13px;margin-right:4px;"></i>${q.note}</div>` : ''}
+      ${q.note ? `<div class="q-note"><i class="ti ti-quote" aria-hidden="true" style="font-size:0.8667rem;margin-right:4px;"></i>${q.note}</div>` : ''}
       <div class="opt-list" id="opt-list"></div>
       <div class="nav-row">
-        <span class="nav-counter" id="sel-count" style="font-size:13px;color:var(--color-text-secondary);"></span>
+        <span class="nav-counter" id="sel-count" style="font-size:0.8667rem;color:var(--color-text-secondary);"></span>
         <button class="nav-btn" id="next-btn" disabled>
-          ${idx < questions.length - 1 ? 'Next <i class="ti ti-arrow-right" aria-hidden="true" style="font-size:14px;vertical-align:-1px;"></i>' : 'See my results <i class="ti ti-check" aria-hidden="true" style="font-size:14px;vertical-align:-1px;"></i>'}
+          ${idx < questions.length - 1 ? 'Next <i class="ti ti-arrow-right" aria-hidden="true" style="font-size:0.9333rem;vertical-align:-1px;"></i>' : 'See my results <i class="ti ti-check" aria-hidden="true" style="font-size:0.9333rem;vertical-align:-1px;"></i>'}
         </button>
       </div>
     </div>`;
@@ -291,9 +320,9 @@ function showResult() {
       <div class="result-title">Your digital profile</div>
       <div class="result-type">Based on your answers:</div>
       <span class="result-badge" style="background:${profile.badge.bg};color:${profile.badge.color};border:1px solid ${profile.badge.border};">
-        <i class="ti ti-device-laptop" aria-hidden="true" style="font-size:13px;margin-right:5px;vertical-align:-1px;"></i>${profile.label}
+        <i class="ti ti-device-laptop" aria-hidden="true" style="font-size:0.8667rem;margin-right:5px;vertical-align:-1px;"></i>${profile.label}
       </span>
-      <div style="font-size:14px;color:var(--color-text-secondary);line-height:1.6;">${profile.desc}</div>
+      <div style="font-size:0.9333rem;color:var(--color-text-secondary);line-height:1.6;">${profile.desc}</div>
     </div>
 
     <div class="section-divider">your scores</div>

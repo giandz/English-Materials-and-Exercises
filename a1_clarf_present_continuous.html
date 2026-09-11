@@ -1,29 +1,51 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-<meta charset="UTF-8" />
-
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<title>Present Continuous — Clarification</title>
+<script>
+// Applies the saved/system theme to <html> as early as possible, before the
+// stylesheet below paints anything, so there's no flash of the wrong theme.
+// Self-contained: no dependency on any external script.
+(function(){
+  try{
+    var saved = localStorage.getItem('theme-preference');
+    var theme = (saved === 'light' || saved === 'dark')
+      ? saved
+      : ((window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches) ? 'dark' : 'light');
+    document.documentElement.setAttribute('data-theme', theme);
+    // Same idea for the text size: apply it before house.css paints, so a
+    // person who chose 28px doesn't watch the page reflow from 14px on load.
+    var fs = parseFloat(localStorage.getItem('font-size-preference'));
+    if (fs >= 10 && fs <= 28){
+      document.documentElement.style.setProperty('--fs-base', fs + 'px');
+    }
+  }catch(e){ /* localStorage/matchMedia unavailable — CSS media query still applies */ }
+})();
+</script>
+<link rel="stylesheet" href="house.css">
 <style>
-  .sec-div{font-size:11px;font-weight:500;letter-spacing:.06em;text-transform:uppercase;color:var(--color-text-tertiary);display:flex;align-items:center;gap:8px;margin:1.5rem 0 1rem;}
-  .sec-div::before,.sec-div::after{content:'';flex:1;height:.5px;background:var(--color-border-tertiary);}
-  .page-title{font-size:18px;font-weight:500;color:var(--color-text-primary);margin-bottom:4px;}
-  .page-sub{font-size:13px;color:var(--color-text-secondary);margin-bottom:1.5rem;}
-  .formula-box{background:var(--color-background-secondary);border-radius:var(--border-radius-md);padding:10px 16px;margin-bottom:1.5rem;font-size:13px;color:var(--color-text-secondary);display:flex;align-items:center;gap:8px;flex-wrap:wrap;}
-  .f-part{padding:3px 10px;border-radius:8px;border:1px solid transparent;font-size:13px;white-space:nowrap;font-weight:500;}
+/* Recovered page-specific rules. */
+.page-title{font-size:18px;font-weight:500;color:var(--color-text-primary);margin-bottom:4px;}
+.page-sub{font-size:13px;color:var(--color-text-secondary);margin-bottom:1.5rem;}
+
+.formula-box{background:var(--color-background-secondary);border-radius:var(--border-radius-md);padding:10px 16px;margin-bottom:1.5rem;font-size:0.8667rem;color:var(--color-text-secondary);display:flex;align-items:center;gap:8px;flex-wrap:wrap;}
+  .f-part{padding:3px 10px;border-radius:8px;border:1px solid transparent;font-size:0.8667rem;white-space:nowrap;font-weight:500;}
   .f-sub{background:#deea93;color:#0a2700;border-color:#599724;}
   .f-be{background:#def3ea;color:#0a5027;border-color:#59c497;}
   .f-ing{background:#fbf1e6;color:#7c440c;border-color:#ebb785;}
-  .f-plus{color:var(--color-text-tertiary);font-size:14px;}
+  .f-plus{color:var(--color-text-tertiary);font-size:0.9333rem;}
   .use-card{border:.5px solid var(--color-border-tertiary);border-radius:var(--border-radius-lg);overflow:hidden;margin-bottom:12px;}
   .use-head{padding:11px 16px;border-bottom:.5px solid var(--color-border-tertiary);display:flex;align-items:center;gap:10px;}
-  .use-emoji{font-size:22px;flex-shrink:0;}
-  .use-title{font-size:15px;font-weight:500;color:var(--color-text-primary);}
-  .use-desc{font-size:12px;color:var(--color-text-secondary);margin-top:1px;}
+  .use-emoji{font-size:1.4667rem;flex-shrink:0;}
+  .use-title{font-size:1rem;font-weight:500;color:var(--color-text-primary);}
+  .use-desc{font-size:0.8rem;color:var(--color-text-secondary);margin-top:1px;}
   .use-body{padding:10px 16px 14px;display:flex;flex-direction:column;gap:6px;}
   .ex-row{display:grid;grid-template-columns:1fr 1fr;gap:8px;padding:6px 0;border-bottom:.5px solid var(--color-border-tertiary);}
   .ex-row:last-child{border-bottom:none;}
-  .ex-aff{font-size:13px;color:var(--color-text-primary);line-height:1.5;}
-  .ex-neg{font-size:13px;color:var(--color-text-secondary);line-height:1.5;}
+  .ex-aff{font-size:0.8667rem;color:var(--color-text-primary);line-height:1.5;}
+  .ex-neg{font-size:0.8667rem;color:var(--color-text-secondary);line-height:1.5;}
   .hl{font-weight:600;}
   .hl-1{color:#185fa5;}
   .hl-2{color:#7c3aed;}
@@ -32,22 +54,21 @@
   .h2-head{background:#f3effe;}
   .h3-head{background:#e8faf6;}
   .vocab-row{display:flex;flex-wrap:wrap;gap:6px;margin-top:8px;}
-  .vocab-tag{font-size:12px;padding:3px 10px;border-radius:20px;background:var(--color-background-secondary);border:.5px solid var(--color-border-secondary);color:var(--color-text-secondary);}
-  .vocab-tag span{font-size:14px;margin-right:3px;}
-  .col-label{font-size:11px;font-weight:500;text-transform:uppercase;letter-spacing:.05em;color:var(--color-text-tertiary);margin-bottom:4px;}
+  .vocab-tag{font-size:0.8rem;padding:3px 10px;border-radius:20px;background:var(--color-background-secondary);border:.5px solid var(--color-border-secondary);color:var(--color-text-secondary);}
+  .vocab-tag span{font-size:0.9333rem;margin-right:3px;}
 .form-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));gap:8px;margin-bottom:1.25rem;}
   .form-card{border:.5px solid var(--color-border-tertiary);border-radius:var(--border-radius-lg);overflow:hidden;}
-  .form-head{padding:7px 12px;border-bottom:.5px solid var(--color-border-tertiary);font-size:11px;font-weight:500;text-transform:uppercase;letter-spacing:.05em;}
-  .form-body{padding:8px 12px;font-family:var(--font-mono);font-size:12px;color:var(--color-text-secondary);line-height:1.8;}
+  .form-head{padding:7px 12px;border-bottom:.5px solid var(--color-border-tertiary);font-size:0.7333rem;font-weight:500;text-transform:uppercase;letter-spacing:.05em;}
+  .form-body{padding:8px 12px;font-family:var(--font-mono);font-size:0.8rem;color:var(--color-text-secondary);line-height:1.8;}
   .form-body strong{color:var(--color-text-primary);font-weight:500;}
     .fh-aff{background:#e6f1fb;color:#0c447c;}
   .fh-neg{background:#fcebeb;color:#791f1f;}
   .fh-q{background:#eaf3de;color:#27500a;}
   @media(max-width:480px){.ex-row{grid-template-columns:1fr;}}
 </style>
-<link rel="stylesheet" href="general.css">
 </head>
-<body class="exercise-page">
+<body class="exercise-page" id="page">
+<span class="cefr-tag cefr-a1">A1 · Beginner</span>
 <div style="padding:.75rem 0 1rem;">
 
 	<div class="rule-box">
@@ -222,19 +243,19 @@
 
   <div class="sec-div">quick comparison</div>
 
-  <div style="background:var(--color-background-secondary);border-radius:var(--border-radius-lg);padding:12px 16px;font-size:13px;color:var(--color-text-secondary);line-height:1.9;">
-    <span style="font-size:18px;">🚏🏃</span> <strong style="color:var(--color-text-primary);">She is running</strong> to the bus stop.<br>
-    <span style="font-size:18px;">👗👜</span> <strong style="color:var(--color-text-primary);">She is wearing</strong> a blue dress and <strong style="color:var(--color-text-primary);">carrying</strong> a large bag.<br>
-    <span style="font-size:18px;">🌧️💨</span> <strong style="color:var(--color-text-primary);">It is raining</strong> and <strong style="color:var(--color-text-primary);">the wind is blowing</strong>!
+  <div style="background:var(--color-background-secondary);border-radius:var(--border-radius-lg);padding:12px 16px;font-size:0.8667rem;color:var(--color-text-secondary);line-height:1.9;">
+    <span style="font-size:1.2rem;">🚏🏃</span> <strong style="color:var(--color-text-primary);">She is running</strong> to the bus stop.<br>
+    <span style="font-size:1.2rem;">👗👜</span> <strong style="color:var(--color-text-primary);">She is wearing</strong> a blue dress and <strong style="color:var(--color-text-primary);">carrying</strong> a large bag.<br>
+    <span style="font-size:1.2rem;">🌧️💨</span> <strong style="color:var(--color-text-primary);">It is raining</strong> and <strong style="color:var(--color-text-primary);">the wind is blowing</strong>!
   </div>
 
 </div>
+
 <div id="theme-toggle-wrap">
   <button id="theme-toggle" aria-label="Toggle light/dark mode" title="Toggle light/dark mode">
     <span id="theme-icon">☀️</span>
   </button>
 </div>
-<script src="theme-toggle-behavior.js"></script>
-
+<script src="house.js"></script>
 </body>
 </html>

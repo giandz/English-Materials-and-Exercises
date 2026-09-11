@@ -15,18 +15,24 @@
       ? saved
       : ((window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches) ? 'dark' : 'light');
     document.documentElement.setAttribute('data-theme', theme);
+    // Same idea for the text size: apply it before house.css paints, so a
+    // person who chose 28px doesn't watch the page reflow from 14px on load.
+    var fs = parseFloat(localStorage.getItem('font-size-preference'));
+    if (fs >= 10 && fs <= 28){
+      document.documentElement.style.setProperty('--fs-base', fs + 'px');
+    }
   }catch(e){ /* localStorage/matchMedia unavailable — CSS media query still applies */ }
 })();
 </script>
 <link rel="stylesheet" href="house.css">
 <style>
 .activity-bar { display:flex; justify-content:space-between; align-items:center; margin-bottom:1.25rem; flex-wrap:wrap; gap:8px; }
-  .activity-hint { font-size:13px; color:var(--color-text-secondary); }
-  .score-pill { font-size:13px; color:var(--color-text-secondary); }
-  .bank-label { font-size:11px; font-weight:500; letter-spacing:0.06em; text-transform:uppercase; color:var(--color-text-secondary); margin-bottom:10px; }
+  .activity-hint { font-size:0.8667rem; color:var(--color-text-secondary); }
+  .score-pill { font-size:0.8667rem; color:var(--color-text-secondary); }
+  .bank-label { font-size:0.7333rem; font-weight:500; letter-spacing:0.06em; text-transform:uppercase; color:var(--color-text-secondary); margin-bottom:10px; }
   .bank { display:flex; flex-wrap:wrap; gap:8px; margin-bottom:1.5rem; min-height:52px; padding:10px; background:var(--color-background-secondary); border-radius:var(--border-radius-lg); border:0.5px solid var(--color-border-tertiary); }
   .pronoun-chip {
-    font-size:18px; font-weight:500; padding:9px 22px;
+    font-size:1.2rem; font-weight:500; padding:9px 22px;
     border-radius:var(--border-radius-md);
     border:1.5px solid var(--color-border-secondary);
     background:var(--color-background-primary);
@@ -46,14 +52,14 @@
   }
   .img-slot img { width:100%; height:100%; object-fit:contain; padding:8px; display:none; }
   .img-placeholder { display:flex; flex-direction:column; align-items:center; gap:5px; }
-  .img-placeholder-icon { font-size:24px; color:var(--color-text-tertiary); }
-  .img-placeholder-text { font-size:10px; color:var(--color-text-tertiary); font-family:var(--font-mono); text-align:center; padding:0 4px; }
+  .img-placeholder-icon { font-size:1.6rem; color:var(--color-text-tertiary); }
+  .img-placeholder-text { font-size:0.6667rem; color:var(--color-text-tertiary); font-family:var(--font-mono); text-align:center; padding:0 4px; }
   .img-slot.over    { background:var(--color-background-info); }
   .img-slot.matched { background:var(--color-background-success); }
   .img-slot.wrong-drop { animation:shake 0.3s; }
-  .drop-zone-label {10px; display:flex; align-items:center; justify-content:center;}
-  .dz-filename { font-size:10px; color:var(--color-text-tertiary); font-family:var(--font-mono); overflow:hidden; text-overflow:ellipsis; white-space:nowrap; max-width:100px; }
-  .chip-placed { font-size:15px; font-weight:500; }
+  .drop-zone-label { padding:7px 10px; display:flex; align-items:center; justify-content:center; min-height:38px; }
+  .dz-filename { font-size:0.6667rem; color:var(--color-text-tertiary); font-family:var(--font-mono); overflow:hidden; text-overflow:ellipsis; white-space:nowrap; max-width:100px; }
+  .chip-placed { font-size:1rem; font-weight:500; }
   .chip-placed.correct { color:var(--color-text-success); }
   .chip-placed.wrong   { color:var(--color-text-danger); animation:shake 0.3s; }
   .reset-row { display:flex; gap:8px; align-items:center; margin-top:1.25rem; }
@@ -65,7 +71,7 @@
 	
 <div style="padding:0.75rem 0;">
   <div class="activity-bar">
-    <span class="activity-hint"><i class="ti ti-drag-drop" aria-hidden="true" style="font-size:15px;vertical-align:-1px;margin-right:4px;"></i>Drag word → image.</span>
+    <span class="activity-hint"><i class="ti ti-drag-drop" aria-hidden="true" style="font-size:1rem;vertical-align:-1px;margin-right:4px;"></i>Drag word → image.</span>
     <span class="score-pill"><span id="score">0</span> / 10 matched</span>
   </div>
   <div class="bank-label">Pronoun bank</div>
@@ -73,7 +79,7 @@
   <div class="img-grid" id="img-grid"></div>
   <div class="reset-row">
     <button id="reset-btn">↺ Reset</button>
-    <span style="font-size:13px;color:var(--color-text-secondary);" id="feedback-msg"></span>
+    <span style="font-size:0.8667rem;color:var(--color-text-secondary);" id="feedback-msg"></span>
   </div>
 </div>
 
