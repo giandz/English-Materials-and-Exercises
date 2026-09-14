@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-<title>Wh-Questions Drag and Drop</title>
+<title>Wh-Questions with Be — Practice</title>
 <script>
 // Applies the saved/system theme to <html> as early as possible, before the
 // stylesheet below paints anything, so there's no flash of the wrong theme.
@@ -25,27 +25,38 @@
 })();
 </script>
 <link rel="stylesheet" href="house.css">
-<style>
-.activity-bar{display:flex;justify-content:space-between;align-items:center;margin-bottom:1.25rem;flex-wrap:wrap;gap:8px;}
-  .activity-hint{font-size:0.8667rem;color:var(--color-text-secondary);}
-  .score-pill{font-size:0.8667rem;color:var(--color-text-secondary);}
-  .bank-label{font-size:0.7333rem;font-weight:500;letter-spacing:.06em;text-transform:uppercase;color:var(--color-text-secondary);margin-bottom:10px;}
-  .bank,.dropzone{display:flex;flex-wrap:wrap;gap:8px;margin-bottom:1.5rem;min-height:56px;padding:10px 12px;background:var(--color-background-secondary);border-radius:var(--border-radius-lg);border:.5px solid var(--color-border-tertiary);}
-  .dropzone{border-width:1px;border-style:dashed;}
-  .drop-label{padding:7px 10px;min-height:36px;font-size:0.8rem;color:var(--color-text-secondary);line-height:1.4;align-items:center;}
-  .drop-label.placed-correct{color:var(--color-text-success);font-weight:500;}
-  .reset-row{display:flex;gap:8px;align-items:center;margin-top:1.25rem;}
-  .word{background-color: var(--color-background-primary);border: 1px solid var(--color-text-primary);border-radius: 25px;min-width: 60px;display: inline-flex;justify-content: center;align-items: center;user-select: none;-webkit-user-select: none;}
-  @keyframes shake{0%,100%{transform:translateX(0)}25%{transform:translateX(-5px)}75%{transform:translateX(5px)}}
-</style>
 </head>
 <body class="exercise-page" id="page">
 <span class="cefr-tag cefr-a1">A1 · Beginner</span>
 <div class="wrap">
-  <h1>Drag the words to make the sentence</h1>
-  <p>Drag each word into the answer box, then click Check.</p>
 
-  <div id="quiz" class="quiz"></div>
+  <h1>Wh-Questions with Be — Practice</h1>
+  <p class="subtitle">Word order and gap fill practice.</p>
+
+  <div class="sec-div">Practice — Word order</div>
+  <div class="rule-box">
+    Tap a word to add it. Tap it again to remove it. You can also drag words to reorder them. When all the words are in place, the sentence is checked.
+  </div>
+  <button id="grammarToggle" class="grammar-toggle-btn">🎨 Show Grammar</button>
+  <div class="pos-legend"></div>
+  <div class="score-bar">
+    <span>Correct: <strong id="woScore">0</strong> / <span id="woTotal">0</span></span>
+  </div>
+  <div id="woItems"></div>
+
+  <div class="sec-div">Practice — Gap fill</div>
+  <div class="rule-box">
+    Type your answer. The bar turns green 🔴→🟢 when you are right.
+  </div>
+
+  <div class="legend">
+    <span class="legend-pill q">Question</span>
+    <span class="legend-pill pos">Answer</span>
+  </div>
+
+  <div id="gfItems"></div>
+
+  <footer>Wh-Questions with Be — Practice (A1)</footer>
 </div>
 
 <div id="theme-toggle-wrap">
@@ -55,113 +66,153 @@
 </div>
 <script src="house.js"></script>
 <script>
-const items = [
-  { sentence: "what's your name?", words: ["what","is","your","name","?"], dialogue: "" },
-  { sentence: "my name is Ana.", words: ["my","name","is","Ana"], dialogue: "A: What's your name? B: My name is Ana." },
-  
-  { sentence: "how are you?", words: ["how","are","you","?"], dialogue: "" },
-  { sentence: "I'm fine, thanks.", words: ["I","am","fine", "thanks"], dialogue: "A: How are you? B: I'm fine, thanks." },
-  
-  { sentence: "where are you from?", words: ["where","are","you","from","?"], dialogue: "" },
-  { sentence: "I'm from Lima, Peru.", words: ["I","am","from","Lima","Peru"], dialogue: "A: Where are you from? B: I'm from Lima, Peru." },
-  
-  { sentence: "who is that?", words: ["who","is","that","?"], dialogue: "" },
-  { sentence: "that's my brother", words: ["that","is","my","brother"], dialogue: "A: Who's that? B: That's my brother." },
-
-  { sentence: "what's his name?", words: ["what","is","his","name","?"], dialogue: "" },
-  { sentence: "he's Leo.", words: ["he","is","Leo"], dialogue: "A: What's your name? B: He's Leo." },
-  
-  { sentence: "how old is he?", words: ["how","old","is","he","?"], dialogue: "" },
-  { sentence: "he's ten years old.", words: ["he","is","ten","years","old"], dialogue: "A: How old is he? B: He's ten years old." },
-  
-  { sentence: "what's he like?", words: ["what","is","he","like","?"], dialogue: "" },
-  { sentence: "he's very smart", words: ["he","is","very","smart"], dialogue: "A: What's he like? B: He's very smart." },
-  
-  { sentence: "who are they?", words: ["who","are","they","?"], dialogue: "" },
-  { sentence: "they're my parents", words: ["they","are","my","parents"], dialogue: "A: Who are they? B: They're my parents." },
+/* ============ WORD ORDER ============ */
+const WO_ITEMS = [
+  {
+    "context": "Asking someone's name",
+    "text": "What / is / your / name / ?",
+    "pos": ["wh","aux","det","complement","none"]
+  },
+  {
+    "context": "Answering: What's your name?",
+    "text": "My / name / is / Ana / .",
+    "pos": ["det","subject","verb","complement","none"]
+  },
+  {
+    "context": "Asking how someone is",
+    "text": "How / are / you / ?",
+    "pos": ["wh","aux","subject","none"]
+  },
+  {
+    "context": "Answering: How are you?",
+    "text": "I / am / fine / , / thanks / .",
+    "pos": ["subject","verb","complement","none","none","none"]
+  },
+  {
+    "context": "Asking where someone is from",
+    "text": "Where / are / you / from / ?",
+    "pos": ["wh","aux","subject","prep","none"]
+  },
+  {
+    "context": "Answering: Where are you from?",
+    "text": "I / am / from / Lima / , / Peru / .",
+    "pos": ["subject","verb","prep","complement","none","complement","none"]
+  },
+  {
+    "context": "Asking who someone is",
+    "text": "Who / is / that / ?",
+    "pos": ["wh","aux","subject","none"]
+  },
+  {
+    "context": "Answering: Who is that?",
+    "text": "That / is / my / brother / .",
+    "pos": ["subject","verb","det","complement","none"]
+  },
+  {
+    "context": "Asking someone else's name",
+    "text": "What / is / his / name / ?",
+    "pos": ["wh","aux","det","complement","none"]
+  },
+  {
+    "context": "Answering: What's his name?",
+    "text": "He / is / Leo / .",
+    "pos": ["subject","verb","complement","none"]
+  },
+  {
+    "context": "Asking someone's age",
+    "text": "How / old / is / he / ?",
+    "pos": ["wh","adj","aux","subject","none"]
+  },
+  {
+    "context": "Answering: How old is he?",
+    "text": "He / is / ten / years / old / .",
+    "pos": ["subject","verb","complement","complement","adj","none"]
+  },
+  {
+    "context": "Asking what someone is like",
+    "text": "What / is / he / like / ?",
+    "pos": ["wh","aux","subject","prep","none"]
+  },
+  {
+    "context": "Answering: What's he like?",
+    "text": "He / is / very / smart / .",
+    "pos": ["subject","verb","adverb","adj","none"]
+  },
+  {
+    "context": "Asking who a group of people is",
+    "text": "Who / are / they / ?",
+    "pos": ["wh","aux","subject","none"]
+  },
+  {
+    "context": "Answering: Who are they?",
+    "text": "They / are / my / parents / .",
+    "pos": ["subject","verb","det","complement","none"]
+  }
 ];
 
-const quiz = document.getElementById('quiz');
+HouseWordOrder.build({ container:'woItems', items:WO_ITEMS, scoreEl:'woScore', totalEl:'woTotal' });
 
-items.forEach((item, idx) => {
-  const card = document.createElement('div');
-  card.className = 'card';
-  card.innerHTML = `
-    <!--<div class="prompt">${idx + 1}. Make the sentence:</div>-->
-    <div class="bank" id="bank-${idx}"></div>
-    <div class="dropzone" id="drop-${idx}" aria-label="answer box"></div>
-    <div class="controls">
-      <button class="check" id="check-${idx}">Check answer</button>
-      <button class="reset" id="reset-${idx}">Reset</button>
-    </div>
-    <div class="result" id="result-${idx}"></div>
-    <div class="dialogue" id="dialogue-${idx}"></div>
-    <!--<div class="small">Target: ${item.sentence}</div>-->
-  `;
-  quiz.appendChild(card);
-
-  const bank = card.querySelector(`#bank-${idx}`);
-  const drop = card.querySelector(`#drop-${idx}`);
-  const result = card.querySelector(`#result-${idx}`);
-  const dialogue = card.querySelector(`#dialogue-${idx}`);
-  const words = [...item.words].sort(() => Math.random() - 0.5);
-
-  function makeWord(w) {
-    const el = document.createElement('div');
-    el.className = 'word';
-    el.textContent = w;
-    el.draggable = true;
-    el.addEventListener('dragstart', e => {
-      e.dataTransfer.setData('text/plain', w);
-      e.dataTransfer.setData('source', el.parentElement.id);
-      el.classList.add('dragging');
-    });
-    el.addEventListener('dragend', () => el.classList.remove('dragging'));
-    return el;
+/* ============ GAP FILL ============ */
+const GF_ITEMS = [
+  {
+    "category": "pos",
+    "direct": "💬 Answer: What's your name? (Ana)",
+    "template": "My name {0} Ana.",
+    "hints": [{ "accepted": ["is"] }]
+  },
+  {
+    "category": "pos",
+    "direct": "💬 Answer: How old is he? (ten)",
+    "template": "He is {0} years old.",
+    "hints": [{ "accepted": ["ten"] }]
+  },
+  {
+    "category": "q",
+    "direct": "❓ Ask someone's name",
+    "template": "{0} your name?",
+    "hints": [{ "accepted": ["what is", "what's"] }]
+  },
+  {
+    "category": "q",
+    "direct": "❓ Ask who someone is",
+    "template": "{0} that?",
+    "hints": [{ "accepted": ["who is", "who's"] }]
+  },
+  {
+    "category": "q",
+    "direct": "❓ Ask what someone is like",
+    "template": "{0} is he like?",
+    "hints": [{ "accepted": ["what"] }]
+  },
+  {
+    "category": "q",
+    "direct": "❓ Ask how someone is",
+    "template": "{0} you?",
+    "hints": [{ "accepted": ["how are"] }]
+  },
+  {
+    "category": "q",
+    "direct": "❓ Ask someone's age",
+    "template": "{0} is he?",
+    "hints": [{ "accepted": ["how old"] }]
+  },
+  {
+    "category": "q",
+    "direct": "❓ Ask where someone is from",
+    "template": "{0} you from?",
+    "hints": [{ "accepted": ["where are"] }]
+  },
+  {
+    "category": "pos",
+    "direct": "💬 Answer: Where are you from? (Lima, Peru)",
+    "template": "I am from {0}.",
+    "hints": [{ "accepted": ["lima, peru", "lima peru"] }]
   }
+];
 
-  words.forEach(w => bank.appendChild(makeWord(w)));
+HouseGapFill.build({ container:'gfItems', items:GF_ITEMS, labels: { pos: 'answer', q: 'question' } });
 
-  [bank, drop].forEach(zone => {
-    zone.addEventListener('dragover', e => e.preventDefault());
-    zone.addEventListener('drop', e => {
-      e.preventDefault();
-      const w = e.dataTransfer.getData('text/plain');
-      const sourceId = e.dataTransfer.getData('source');
-      const source = document.getElementById(sourceId);
-      const wordEl = [...source.children].find(x => x.textContent === w && !x.classList.contains('used'));
-      if (wordEl) {
-        wordEl.classList.add('used');
-        wordEl.style.display = 'inline-flex';
-        drop.appendChild(wordEl);
-      }
-    });
-  });
-
-  card.querySelector(`#check-${idx}`).addEventListener('click', () => {
-    const answer = [...drop.querySelectorAll('.word')].map(x => x.textContent).join(' ');
-    if (answer === item.words.join(' ')) {
-      result.textContent = 'Correct!';
-      result.style.color = '#16a34a';
-      dialogue.style.display = 'block';
-      dialogue.textContent = item.dialogue;
-    } else {
-      result.textContent = 'Try again.';
-      result.style.color = '#dc2626';
-      dialogue.style.display = 'none';
-    }
-  });
-
-  card.querySelector(`#reset-${idx}`).addEventListener('click', () => {
-    result.textContent = '';
-    dialogue.style.display = 'none';
-    [...drop.querySelectorAll('.word')].forEach(w => {
-      w.classList.remove('used');
-      w.style.display = 'inline-flex';
-      bank.appendChild(w);
-    });
-  });
-});
+HouseGrammar.init();
 </script>
 </body>
 </html>

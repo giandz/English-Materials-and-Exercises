@@ -1,0 +1,81 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<title>Question Generator — Technology</title>
+<script>
+// Applies the saved/system theme to <html> as early as possible, before the
+// stylesheet below paints anything, so there's no flash of the wrong theme.
+// Self-contained: no dependency on any external script.
+(function(){
+  try{
+    var saved = localStorage.getItem('theme-preference');
+    var theme = (saved === 'light' || saved === 'dark')
+      ? saved
+      : ((window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches) ? 'dark' : 'light');
+    document.documentElement.setAttribute('data-theme', theme);
+  }catch(e){ /* localStorage/matchMedia unavailable — CSS media query still applies */ }
+})();
+</script>
+<link rel="stylesheet" href="house.css">
+</head>
+<body>
+<div class="page" id="page">
+
+  <span class="cefr-tag cefr-b1">B1 · Intermediate</span>
+  <h1>Question Generator — Technology</h1>
+  <p class="subtitle">Click the dice to get a question, then talk about it with a partner!</p>
+
+  <div class="rule-box">
+    <strong>How to play:</strong> click 🎲, read the question out loud to your partner, and answer it together. Try to use <strong>to + verb</strong>, <strong>by + ‑ing</strong>, or <strong>for + ‑ing</strong> in your answer.
+  </div>
+
+  <div class="q-card" id="qCard">
+    <span class="q-placeholder" id="qPlaceholder">Click the dice to generate a question</span>
+  </div>
+
+  <button class="dice-btn" id="diceBtn" aria-label="Generate question">🎲</button>
+
+  <div class="roll-count">Questions asked: <strong id="rollCount">0</strong></div>
+
+  <div class="topic-legend">
+    <span class="topic-pill">🎯 to + infinitive</span>
+    <span class="topic-pill">⚙️ by + ‑ing</span>
+    <span class="topic-pill">🔧 for + ‑ing</span>
+  </div>
+
+  <footer>Speaking Practice — Technology (B1)</footer>
+</div>
+
+<div id="theme-toggle-wrap">
+  <button id="theme-toggle" aria-label="Toggle light/dark mode" title="Toggle light/dark mode">
+    <span id="theme-icon">☀️</span>
+  </button>
+</div>
+<script src="house.js"></script>
+<script>
+const ITEMS = [
+  { icon: "📱", label: "to + infinitive", text: "What do you use your phone to do every day?" },
+  { icon: "💻", label: "to + infinitive", text: "What do people use laptops to do at work?" },
+  { icon: "🎧", label: "to + infinitive", text: "Why do you use headphones? What do you use them to do?" },
+  { icon: "📷", label: "to + infinitive", text: "What do you use your camera to take pictures of?" },
+  { icon: "🤖", label: "to + infinitive", text: "Would you use an AI assistant to help you study? Why or why not?" },
+
+  { icon: "🔋", label: "by + ‑ing", text: "How can you save your phone's battery? Give an example with \"by …ing\"." },
+  { icon: "🔒", label: "by + ‑ing", text: "How can you protect your online accounts? Give an example with \"by …ing\"." },
+  { icon: "📶", label: "by + ‑ing", text: "How do you stay connected when you travel? Answer with \"by …ing\"." },
+  { icon: "🗂️", label: "by + ‑ing", text: "How can you organize your files on a computer? Answer with \"by …ing\"." },
+  { icon: "💬", label: "by + ‑ing", text: "How do you usually contact your friends? Answer with \"by …ing\"." },
+
+  { icon: "📲", label: "for + ‑ing", text: "What is a good app for learning a new language?" },
+  { icon: "⌚", label: "for + ‑ing", text: "What is a smartwatch useful for?" },
+  { icon: "🖥️", label: "for + ‑ing", text: "What software do you use for editing photos or videos?" },
+  { icon: "🎮", label: "for + ‑ing", text: "What device do you use for playing video games?" },
+  { icon: "🔍", label: "for + ‑ing", text: "What do you use a search engine for?" }
+];
+
+HouseRandomGen.build({ items: ITEMS });
+</script>
+</body>
+</html>
