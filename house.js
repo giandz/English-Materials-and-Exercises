@@ -9,6 +9,7 @@
      · HouseFontSize  — the 🔎 text-size slider
      · HouseRandomGen — the 🎲 freer-practice prompt generator
      · HouseMatching  — two-column matching with connector lines
+     · favicon        — auto-sets a level badge in the browser tab
      · HouseComprehension — the before/after reading questions
 
    Load it once at the end of <body>, before the page's own script.
@@ -1331,3 +1332,96 @@
 
   global.HouseMatching = { build: build };
 })(window);
+
+
+/* ══════════════════════════════════════════════════════════════════════════
+   HOUSE FAVICON
+   Sets a level-appropriate favicon by reading the `cefr-*` class already
+   present on the `.cefr-tag` element. No configuration needed — just drop
+   the 11 favicon files in the repo root next to house.js and they are
+   picked up automatically.
+
+   The 11 canonical filenames are:
+     favicon-a1.png    favicon-a1a2.png  favicon-a2.png
+     favicon-a2b1.png  favicon-b1.png    favicon-b1b2.png
+     favicon-b2.png    favicon-b2c1.png  favicon-c1.png
+     favicon-c1c2.png  favicon-c2.png
+
+   Required format: **PNG, 32 × 32 px**.
+   A browser that supports SVG favicons can also use a higher-resolution
+   source (e.g. 64 × 64 px) in the same PNG slot; 32 × 32 is the baseline
+   that works everywhere including older Safari and all Android browsers.
+   Keep the files small — 1–3 KB each is plenty.
+
+   Any `cefr-*` class not in the canonical set falls back to the nearest
+   parent level (e.g. `cefr-a1b1` → `favicon-a1.png`).
+   ══════════════════════════════════════════════════════════════════════════ */
+(function () {
+  'use strict';
+
+  // The 11 canonical level codes in ascending order.
+  // The order also acts as a fallback chain: an unknown code maps to the
+  // last known code that shares its opening level.
+  var LEVELS = [
+    'a1', 'a1a2', 'a2', 'a2b1', 'b1', 'b1b2', 'b2', 'b2c1', 'c1', 'c1c2', 'c2'
+  ];
+
+  function levelFromClass(cls) {
+    // cls is like "cefr-a1a2" — strip the prefix.
+    return cls.replace(/^cefr-/, '');
+  }
+
+  function canonicalise(code) {
+    if (LEVELS.indexOf(code) !== -1) return code;
+    // Try the first two characters (the base level).
+    var base = code.slice(0, 2);
+    if (LEVELS.indexOf(base) !== -1) return base;
+    return null;
+  }
+
+  function inject() {
+    var tag = document.querySelector('.cefr-tag');
+    if (!tag) return;
+
+    // The level class is always the second class: "cefr-tag cefr-a1".
+    var cls = '';
+    for (var i = 0; i < tag.classList.length; i++) {
+      if (tag.classList[i] !== 'cefr-tag') { cls = tag.classList[i]; break; }
+    }
+    if (!cls) return;
+
+    var code = canonicalise(levelFromClass(cls));
+    if (!code) return;
+
+    // Resolve the favicon path relative to house.js itself rather than the
+    // current page, so a page in a sub-folder still finds the file.
+    var base = '';
+    var scripts = document.querySelectorAll('script[src]');
+    for (var s = 0; s < scripts.length; s++) {
+      if (/house\.js$/.test(scripts[s].src)) {
+        base = scripts[s].src.replace(/house\.js$/, '');
+        break;
+      }
+    }
+
+    var href = base + 'favicon-' + code + '.png';
+
+    // Remove any existing favicon links first (there should be none in the
+    // library, but a stale browser cache can inject them).
+    var existing = document.querySelectorAll('link[rel~="icon"]');
+    for (var e = 0; e < existing.length; e++) {
+      existing[e].parentNode.removeChild(existing[e]);
+    }
+
+    var link = document.createElement('link');
+    link.rel = 'icon';
+    link.type = 'image/png';
+    link.sizes = '32x32';
+    link.href = href;
+    document.head.appendChild(link);
+  }
+
+  // house.js loads at the end of <body>, so the DOM is always ready by the
+  // time this runs — no DOMContentLoaded guard needed.
+  inject();
+})();
