@@ -1,0 +1,117 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<title>Phrases for Places — Role Play</title>
+<script>
+// Applies the saved/system theme to <html> as early as possible, before the
+// stylesheet below paints anything, so there's no flash of the wrong theme.
+// Self-contained: no dependency on any external script.
+(function(){
+  try{
+    var saved = localStorage.getItem('theme-preference');
+    var theme = (saved === 'light' || saved === 'dark')
+      ? saved
+      : ((window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches) ? 'dark' : 'light');
+    document.documentElement.setAttribute('data-theme', theme);
+    // Same idea for the text size: apply it before house.css paints, so a
+    // person who chose 28px doesn't watch the page reflow from 14px on load.
+    var fs = parseFloat(localStorage.getItem('font-size-preference'));
+    if (fs >= 10 && fs <= 28){
+      document.documentElement.style.setProperty('--fs-base', fs + 'px');
+    }
+  }catch(e){ /* localStorage/matchMedia unavailable — CSS media query still applies */ }
+})();
+</script>
+<link rel="stylesheet" href="house.css">
+</head>
+<body>
+<div class="page" id="page">
+  <span class="cefr-tag cefr-a1">A1 · Beginner</span>
+  <h1>Phrases for Places — Role Play</h1>
+  <p class="subtitle">Click the dice for a place, then act out the conversation with a partner.</p>
+
+  <div class="rule-box"><strong>How to play:</strong> click 🎲 and read the situation. One of you is the <strong>visitor</strong>, the other <strong>works there</strong>. Start with <em>Excuse me…</em> and finish with <em>Thank you!</em> Then swap roles and roll again.</div>
+  <div class="q-card" id="qCard"><span class="q-placeholder">Click the dice to get a question</span></div>
+  <button class="dice-btn" id="diceBtn" aria-label="Generate question">🎲</button>
+  <div class="roll-count">Questions asked: <strong id="rollCount">0</strong></div>
+  <div class="topic-legend"><span class="topic-pill">✈️ airport</span><span class="topic-pill">📚 library</span><span class="topic-pill">🍽️ restaurant</span><span class="topic-pill">🏨 hotel</span><span class="topic-pill">💊 pharmacy</span></div>
+
+  <footer>Speaking Practice — Phrases for Places (A1)</footer>
+</div>
+
+<div id="theme-toggle-wrap">
+  <button id="theme-toggle" aria-label="Toggle light/dark mode" title="Toggle light/dark mode">
+    <span id="theme-icon">☀️</span>
+  </button>
+</div>
+<script src="house.js"></script>
+<script>
+const PROMPTS = [
+  {
+    "icon": "✈️",
+    "label": "airport",
+    "text": "You cannot find gate 12. Ask a worker at the airport."
+  },
+  {
+    "icon": "🛂",
+    "label": "airport",
+    "text": "You are at security. The worker asks for your boarding pass and your liquids."
+  },
+  {
+    "icon": "🏛️",
+    "label": "museum",
+    "text": "Ask where the dinosaur exhibition is. Ask if you can take a photo."
+  },
+  {
+    "icon": "📚",
+    "label": "library",
+    "text": "You want to borrow three books. Ask what you need and when to return them."
+  },
+  {
+    "icon": "🍽️",
+    "label": "restaurant",
+    "text": "Order an appetizer, a main course and a drink. Then ask for the bill."
+  },
+  {
+    "icon": "🛒",
+    "label": "supermarket",
+    "text": "Ask where the bread is. The worker asks if you need a bag."
+  },
+  {
+    "icon": "🎬",
+    "label": "cinema",
+    "text": "Ask what time the film starts and where Screen 4 is. Buy a popcorn."
+  },
+  {
+    "icon": "🏨",
+    "label": "hotel",
+    "text": "You are checking in. Ask about your room key and breakfast times."
+  },
+  {
+    "icon": "💊",
+    "label": "pharmacy",
+    "text": "You have a headache. Ask for something and ask how to take it."
+  },
+  {
+    "icon": "🏥",
+    "label": "doctor",
+    "text": "You are at the doctor. Give your date of birth and wait to be called."
+  },
+  {
+    "icon": "🗺️",
+    "label": "lost",
+    "text": "You are lost in a new city. Stop someone politely and ask for help."
+  },
+  {
+    "icon": "⭐",
+    "label": "your choice",
+    "text": "Choose any place. Your partner guesses where you are from your questions."
+  }
+];
+
+HouseRandomGen.build({ items: PROMPTS });
+</script>
+</body>
+</html>

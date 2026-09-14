@@ -1,0 +1,256 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<title>This, That, These, Those — Practice</title>
+<script>
+// Applies the saved/system theme to <html> as early as possible, before the
+// stylesheet below paints anything, so there's no flash of the wrong theme.
+// Self-contained: no dependency on any external script.
+(function(){
+  try{
+    var saved = localStorage.getItem('theme-preference');
+    var theme = (saved === 'light' || saved === 'dark')
+      ? saved
+      : ((window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches) ? 'dark' : 'light');
+    document.documentElement.setAttribute('data-theme', theme);
+    // Same idea for the text size: apply it before house.css paints, so a
+    // person who chose 28px doesn't watch the page reflow from 14px on load.
+    var fs = parseFloat(localStorage.getItem('font-size-preference'));
+    if (fs >= 10 && fs <= 28){
+      document.documentElement.style.setProperty('--fs-base', fs + 'px');
+    }
+  }catch(e){ /* localStorage/matchMedia unavailable — CSS media query still applies */ }
+})();
+</script>
+<link rel="stylesheet" href="house.css">
+</head>
+<body>
+<div class="page" id="page">
+  <span class="cefr-tag cefr-a1">A1 · Beginner</span>
+  <h1>This, That, These, Those — Practice</h1>
+  <p class="subtitle">Build the questions and answers, then fill the gaps.</p>
+
+  <div class="sec-div">Practice — Word order</div>
+  <div class="rule-box">Tap a word to add it. Tap it again to remove it. You can also drag words to reorder them. When all the words are in place, the sentence is checked.</div>
+  <button id="grammarToggle" class="grammar-toggle-btn">🎨 Show Grammar</button>
+  <div class="pos-legend"></div>
+  <div class="score-bar"><span>Correct: <strong id="woScore">0</strong> / <span id="woTotal">0</span></span></div>
+  <div id="woItems"></div>
+  <div class="sec-div">Practice — Gap fill</div>
+  <div class="rule-box">Type your answer. The bar turns green 🔴→🟢 when you are right.</div>
+  <div id="gfItems"></div>
+
+  <footer>Practice — This / That / These / Those (A1)</footer>
+</div>
+
+<div id="theme-toggle-wrap">
+  <button id="theme-toggle" aria-label="Toggle light/dark mode" title="Toggle light/dark mode">
+    <span id="theme-icon">☀️</span>
+  </button>
+</div>
+<script src="house.js"></script>
+<script>
+const WO_ITEMS = [
+  {
+    "context": "🛋️ one sofa, near you",
+    "text": "This / is / a / sofa / .",
+    "pos": [
+      "subject",
+      "verb",
+      "det",
+      "complement",
+      "none"
+    ]
+  },
+  {
+    "context": "☕ many mugs, near you",
+    "text": "These / are / mugs / .",
+    "pos": [
+      "subject",
+      "verb",
+      "complement",
+      "none"
+    ]
+  },
+  {
+    "context": "🪑 one armchair, further away",
+    "text": "That / is / an / armchair / .",
+    "pos": [
+      "subject",
+      "verb",
+      "det",
+      "complement",
+      "none"
+    ]
+  },
+  {
+    "context": "🍽️ many plates, further away",
+    "text": "Those / are / plates / .",
+    "pos": [
+      "subject",
+      "verb",
+      "complement",
+      "none"
+    ]
+  },
+  {
+    "context": "❓ ask about one thing near you",
+    "text": "What / is / this / ?",
+    "pos": [
+      "wh",
+      "verb",
+      "subject",
+      "none"
+    ]
+  },
+  {
+    "context": "❓ ask about many things near you",
+    "text": "What / are / these / ?",
+    "pos": [
+      "wh",
+      "verb",
+      "subject",
+      "none"
+    ]
+  },
+  {
+    "context": "🚪 one door, further away",
+    "text": "Is / that / a / door / ?",
+    "pos": [
+      "verb",
+      "subject",
+      "det",
+      "complement",
+      "none"
+    ]
+  },
+  {
+    "context": "🪟 many windows, near you",
+    "text": "These / windows / are / very / big / .",
+    "pos": [
+      "det",
+      "subject",
+      "verb",
+      "adverb",
+      "complement",
+      "none"
+    ]
+  }
+];
+
+HouseWordOrder.build({ container: 'woItems', items: WO_ITEMS, scoreEl: 'woScore', totalEl: 'woTotal' });
+
+const GF_ITEMS = [
+  {
+    "category": "pos",
+    "direct": "🛏️ one bed, near you",
+    "template": "{0} a bed.",
+    "hints": [
+      {
+        "accepted": [
+          "this is"
+        ]
+      }
+    ]
+  },
+  {
+    "category": "pos",
+    "direct": "🪴 many plants, near you",
+    "template": "{0} plants.",
+    "hints": [
+      {
+        "accepted": [
+          "these are"
+        ]
+      }
+    ]
+  },
+  {
+    "category": "pos",
+    "direct": "🧼 one bar of soap, further away",
+    "template": "{0} a bar of soap.",
+    "hints": [
+      {
+        "accepted": [
+          "that is",
+          "that's"
+        ]
+      }
+    ]
+  },
+  {
+    "category": "pos",
+    "direct": "🧺 many baskets, further away",
+    "template": "{0} baskets.",
+    "hints": [
+      {
+        "accepted": [
+          "those are"
+        ]
+      }
+    ]
+  },
+  {
+    "category": "q",
+    "direct": "❓ Ask what one far thing is",
+    "template": "{0} that?",
+    "hints": [
+      {
+        "accepted": [
+          "what is",
+          "what's"
+        ]
+      }
+    ]
+  },
+  {
+    "category": "q",
+    "direct": "❓ Ask what many far things are",
+    "template": "{0} those?",
+    "hints": [
+      {
+        "accepted": [
+          "what are"
+        ]
+      }
+    ]
+  },
+  {
+    "category": "pos",
+    "direct": "🪞 Answer about one mirror",
+    "template": "{0} a mirror.",
+    "hints": [
+      {
+        "accepted": [
+          "it is",
+          "it's"
+        ]
+      }
+    ]
+  },
+  {
+    "category": "pos",
+    "direct": "🍴 Answer about many forks",
+    "template": "{0} forks.",
+    "hints": [
+      {
+        "accepted": [
+          "they are",
+          "they're"
+        ]
+      }
+    ]
+  }
+];
+
+HouseGapFill.build({ container: 'gfItems', items: GF_ITEMS, labels: {
+  "pos": "statement",
+  "q": "question"
+} });
+
+HouseGrammar.init();
+</script>
+</body>
+</html>

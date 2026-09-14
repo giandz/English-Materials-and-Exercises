@@ -1,0 +1,145 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<title>Food Vocabulary — Clarification</title>
+<script>
+// Applies the saved/system theme to <html> as early as possible, before the
+// stylesheet below paints anything, so there's no flash of the wrong theme.
+// Self-contained: no dependency on any external script.
+(function(){
+  try{
+    var saved = localStorage.getItem('theme-preference');
+    var theme = (saved === 'light' || saved === 'dark')
+      ? saved
+      : ((window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches) ? 'dark' : 'light');
+    document.documentElement.setAttribute('data-theme', theme);
+    // Same idea for the text size: apply it before house.css paints, so a
+    // person who chose 28px doesn't watch the page reflow from 14px on load.
+    var fs = parseFloat(localStorage.getItem('font-size-preference'));
+    if (fs >= 10 && fs <= 28){
+      document.documentElement.style.setProperty('--fs-base', fs + 'px');
+    }
+  }catch(e){ /* localStorage/matchMedia unavailable — CSS media query still applies */ }
+})();
+</script>
+<link rel="stylesheet" href="house.css">
+</head>
+<body>
+<div class="page" id="page">
+  <span class="cefr-tag cefr-a1">A1 · Beginner</span>
+  <h1>Food Vocabulary — Clarification</h1>
+  <p class="subtitle">Ingredients, meals, and how to talk about what you eat.</p>
+
+  <div class="rule-box"><strong>Ingredients</strong> are the things you cook <em>with</em>. A <strong>meal</strong> is what you put on the plate and eat.</div>
+  <div class="sec-div">Ingredients by group</div>
+  <div class="exercise-card"><div class="answer-row"><span class="answer-word">🥩 Meats</span><span class="answer-rule">beef · chicken · bacon · pork</span></div><div class="answer-row"><span class="answer-word">🧀 Dairy &amp; eggs</span><span class="answer-rule">milk · cheese · butter · egg</span></div><div class="answer-row"><span class="answer-word">🍎 Fruits</span><span class="answer-rule">apple · banana · grapes · strawberry</span></div><div class="answer-row"><span class="answer-word">🥕 Vegetables</span><span class="answer-rule">broccoli · carrot · corn · potato</span></div></div>
+  <div class="sec-div">The parts of a meal</div>
+  <div class="exercise-card"><div class="answer-row"><span class="answer-word">🍲 Appetizer</span><span class="answer-rule">the small first dish — soup, dumplings, falafel</span></div><div class="answer-row"><span class="answer-word">🍔 Main course</span><span class="answer-rule">the big dish — hamburger, pizza, spaghetti, taco</span></div><div class="answer-row"><span class="answer-word">🍟 Side dish</span><span class="answer-rule">a small dish with the main — fries, rice, bread, salad</span></div><div class="answer-row"><span class="answer-word">🍰 Dessert</span><span class="answer-rule">the sweet dish at the end — cake, ice cream, cookie, pie</span></div></div>
+  <div class="sec-div">Some food you count, some you do not</div>
+  <button id="grammarToggle" class="grammar-toggle-btn">🎨 Show Grammar</button>
+  <div class="pos-legend"></div>
+  <div class="exercise-card"><p><span class="pos-hl pos-subject">I</span> <span class="pos-hl pos-verb">eat</span> <span class="pos-hl pos-det">an</span> <span class="pos-hl pos-noun">apple</span> <span class="pos-hl pos-prep">every day</span>. → count: one apple, two apple<strong>s</strong></p><p><span class="pos-hl pos-subject">I</span> <span class="pos-hl pos-verb">drink</span> <span class="pos-hl pos-noun">milk</span> <span class="pos-hl pos-prep">every day</span>. → noncount: never <s>two milks</s></p><p>Count: <span class="pos-hl pos-noun">apple, banana, egg, carrot, potato, cookie</span></p><p>Noncount: <span class="pos-hl pos-noun">milk, cheese, butter, rice, bread, corn</span></p></div>
+  <div class="sec-div">Talking about food</div>
+  <div class="exercise-card"><p><span class="pos-hl pos-wh">What</span> <span class="pos-hl pos-verb">is</span> <span class="pos-hl pos-subject">your favourite food</span>?</p><p><span class="pos-hl pos-subject">I</span> <span class="pos-hl pos-verb">like</span> <span class="pos-hl pos-adj">spicy</span> <span class="pos-hl pos-object">food</span>, but <span class="pos-hl pos-subject">I</span> <span class="pos-hl pos-neg">don't</span> <span class="pos-hl pos-verb">like</span> <span class="pos-hl pos-object">fish</span>.</p><p><span class="pos-hl pos-aux">Would</span> <span class="pos-hl pos-subject">you</span> <span class="pos-hl pos-verb">like</span> <span class="pos-hl pos-det">a</span> <span class="pos-hl pos-object">dessert</span>?</p></div>
+  <div class="sec-div">Quick check</div>
+  <div id="gfItems"></div>
+
+  <footer>Clarification — Food Vocabulary (A1)</footer>
+</div>
+
+<div id="theme-toggle-wrap">
+  <button id="theme-toggle" aria-label="Toggle light/dark mode" title="Toggle light/dark mode">
+    <span id="theme-icon">☀️</span>
+  </button>
+</div>
+<script src="house.js"></script>
+<script>
+const GF_ITEMS = [
+  {
+    "category": "pos",
+    "direct": "🍲 The small first dish",
+    "template": "Soup is an {0}.",
+    "hints": [
+      {
+        "accepted": [
+          "appetizer",
+          "appetiser"
+        ]
+      }
+    ]
+  },
+  {
+    "category": "pos",
+    "direct": "🍰 The sweet dish at the end",
+    "template": "Cake is a {0}.",
+    "hints": [
+      {
+        "accepted": [
+          "dessert"
+        ]
+      }
+    ]
+  },
+  {
+    "category": "pos",
+    "direct": "🍔 The big dish in the middle of the meal",
+    "template": "A hamburger is a {0}.",
+    "hints": [
+      {
+        "accepted": [
+          "main course",
+          "main dish"
+        ]
+      }
+    ]
+  },
+  {
+    "category": "pos",
+    "direct": "🥛 milk — a or nothing?",
+    "template": "I drink {0} every morning.",
+    "hints": [
+      {
+        "accepted": [
+          "milk"
+        ]
+      }
+    ]
+  },
+  {
+    "category": "pos",
+    "direct": "🍎 apple — a or an?",
+    "template": "I eat {0} apple every day.",
+    "hints": [
+      {
+        "accepted": [
+          "an"
+        ]
+      }
+    ]
+  },
+  {
+    "category": "q",
+    "direct": "❓ Ask about a favourite",
+    "template": "{0} your favourite food?",
+    "hints": [
+      {
+        "accepted": [
+          "what is",
+          "what's"
+        ]
+      }
+    ]
+  }
+];
+
+HouseGapFill.build({ container: 'gfItems', items: GF_ITEMS, labels: {
+  "pos": "vocabulary",
+  "q": "question"
+} });
+
+HouseGrammar.init();
+</script>
+</body>
+</html>

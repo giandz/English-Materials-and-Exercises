@@ -1,0 +1,117 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<title>Celebrations: Going To — Speaking</title>
+<script>
+// Applies the saved/system theme to <html> as early as possible, before the
+// stylesheet below paints anything, so there's no flash of the wrong theme.
+// Self-contained: no dependency on any external script.
+(function(){
+  try{
+    var saved = localStorage.getItem('theme-preference');
+    var theme = (saved === 'light' || saved === 'dark')
+      ? saved
+      : ((window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches) ? 'dark' : 'light');
+    document.documentElement.setAttribute('data-theme', theme);
+    // Same idea for the text size: apply it before house.css paints, so a
+    // person who chose 28px doesn't watch the page reflow from 14px on load.
+    var fs = parseFloat(localStorage.getItem('font-size-preference'));
+    if (fs >= 10 && fs <= 28){
+      document.documentElement.style.setProperty('--fs-base', fs + 'px');
+    }
+  }catch(e){ /* localStorage/matchMedia unavailable — CSS media query still applies */ }
+})();
+</script>
+<link rel="stylesheet" href="house.css">
+</head>
+<body>
+<div class="page" id="page">
+  <span class="cefr-tag cefr-a1">A1 · Beginner</span>
+  <h1>Celebrations: Going To — Speaking</h1>
+  <p class="subtitle">Click the dice and tell your partner about your plans.</p>
+
+  <div class="rule-box"><strong>How to play:</strong> click 🎲, read the question out loud and answer it with <strong>going to</strong>. Then ask your partner the same question. Try to give a reason too!</div>
+  <div class="q-card" id="qCard"><span class="q-placeholder">Click the dice to get a question</span></div>
+  <button class="dice-btn" id="diceBtn" aria-label="Generate question">🎲</button>
+  <div class="roll-count">Questions asked: <strong id="rollCount">0</strong></div>
+  <div class="topic-legend"><span class="topic-pill">🎂 birthday</span><span class="topic-pill">🎆 new year</span><span class="topic-pill">🎁 presents</span><span class="topic-pill">💪 resolutions</span><span class="topic-pill">🍽️ food</span></div>
+
+  <footer>Speaking Practice — Celebrations & Going To (A1)</footer>
+</div>
+
+<div id="theme-toggle-wrap">
+  <button id="theme-toggle" aria-label="Toggle light/dark mode" title="Toggle light/dark mode">
+    <span id="theme-icon">☀️</span>
+  </button>
+</div>
+<script src="house.js"></script>
+<script>
+const PROMPTS = [
+  {
+    "icon": "🎂",
+    "label": "birthday",
+    "text": "What are you going to do for your next birthday?"
+  },
+  {
+    "icon": "🎁",
+    "label": "presents",
+    "text": "Are you going to buy a present for someone soon? Who?"
+  },
+  {
+    "icon": "🎆",
+    "label": "new year",
+    "text": "What are you going to do on New Year's Eve?"
+  },
+  {
+    "icon": "💪",
+    "label": "resolutions",
+    "text": "Are you going to make any resolutions this year? Tell your partner two."
+  },
+  {
+    "icon": "🍽️",
+    "label": "family meal",
+    "text": "Is your family going to have a big dinner this year? Who is going to cook?"
+  },
+  {
+    "icon": "🎄",
+    "label": "december",
+    "text": "Are you going to decorate your home in December? How?"
+  },
+  {
+    "icon": "🎓",
+    "label": "graduation",
+    "text": "What are you going to do after you finish your studies?"
+  },
+  {
+    "icon": "💍",
+    "label": "wedding",
+    "text": "Are you going to go to a wedding this year? Tell your partner about it."
+  },
+  {
+    "icon": "🧳",
+    "label": "travel",
+    "text": "Are you going to travel for a celebration? Where?"
+  },
+  {
+    "icon": "🕯️",
+    "label": "this weekend",
+    "text": "What are you going to do this weekend? Say three things."
+  },
+  {
+    "icon": "🦃",
+    "label": "food",
+    "text": "What food are you going to eat at your next celebration?"
+  },
+  {
+    "icon": "❌",
+    "label": "negative",
+    "text": "Tell your partner two things you are NOT going to do this month."
+  }
+];
+
+HouseRandomGen.build({ items: PROMPTS });
+</script>
+</body>
+</html>

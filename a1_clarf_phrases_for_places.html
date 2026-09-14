@@ -1,0 +1,141 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<title>Phrases for Places — Clarification</title>
+<script>
+// Applies the saved/system theme to <html> as early as possible, before the
+// stylesheet below paints anything, so there's no flash of the wrong theme.
+// Self-contained: no dependency on any external script.
+(function(){
+  try{
+    var saved = localStorage.getItem('theme-preference');
+    var theme = (saved === 'light' || saved === 'dark')
+      ? saved
+      : ((window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches) ? 'dark' : 'light');
+    document.documentElement.setAttribute('data-theme', theme);
+    // Same idea for the text size: apply it before house.css paints, so a
+    // person who chose 28px doesn't watch the page reflow from 14px on load.
+    var fs = parseFloat(localStorage.getItem('font-size-preference'));
+    if (fs >= 10 && fs <= 28){
+      document.documentElement.style.setProperty('--fs-base', fs + 'px');
+    }
+  }catch(e){ /* localStorage/matchMedia unavailable — CSS media query still applies */ }
+})();
+</script>
+<link rel="stylesheet" href="house.css">
+</head>
+<body>
+<div class="page" id="page">
+  <span class="cefr-tag cefr-a1">A1 · Beginner</span>
+  <h1>Phrases for Places — Clarification</h1>
+  <p class="subtitle">The same three moves work in every place: ask, answer, thank.</p>
+
+  <div class="rule-box">Wherever you are — airport, library, café, pharmacy — you usually need to do the same three things: <strong>ask for what you want</strong>, <strong>understand the answer</strong>, and <strong>be polite</strong>.</div>
+  <div class="sec-div">Three ways to ask</div>
+  <button id="grammarToggle" class="grammar-toggle-btn">🎨 Show Grammar</button>
+  <div class="pos-legend"></div>
+  <div class="exercise-card"><p><span class="pos-hl pos-wh">Where</span> <span class="pos-hl pos-verb">is</span> <span class="pos-hl pos-subject">the checkout</span>? — asking for a place</p><p><span class="pos-hl pos-aux">Can</span> <span class="pos-hl pos-subject">I</span> <span class="pos-hl pos-verb">borrow</span> <span class="pos-hl pos-object">these books</span>? — asking for permission</p><p><span class="pos-hl pos-aux">Do</span> <span class="pos-hl pos-subject">you</span> <span class="pos-hl pos-verb">have</span> <span class="pos-hl pos-object">anything for a headache</span>? — asking if they have it</p><p><span class="pos-hl pos-wh">What time</span> <span class="pos-hl pos-aux">does</span> <span class="pos-hl pos-subject">the film</span> <span class="pos-hl pos-verb">start</span>? — asking about time</p></div>
+  <div class="sec-div">Answers you will hear</div>
+  <div class="exercise-card"><div class="answer-row"><span class="answer-word">✈️ Airport</span><span class="answer-rule">Can I see your boarding pass? · Where is gate 12?</span></div><div class="answer-row"><span class="answer-word">🏛️ Museum</span><span class="answer-rule">The dinosaur exhibition is upstairs. · You can't use flash photography here.</span></div><div class="answer-row"><span class="answer-word">📚 Library</span><span class="answer-rule">You need a library card to borrow books. · Please return this book by Friday.</span></div><div class="answer-row"><span class="answer-word">🍽️ Restaurant</span><span class="answer-rule">What would you like to order? · Here is your bill.</span></div><div class="answer-row"><span class="answer-word">🛒 Supermarket</span><span class="answer-rule">The bread is in aisle five. · Do you need a shopping bag?</span></div><div class="answer-row"><span class="answer-word">🎬 Cinema</span><span class="answer-rule">The film starts at 7:30. · Screen 4 is on the left.</span></div><div class="answer-row"><span class="answer-word">🏨 Hotel</span><span class="answer-rule">Here is your room key. · Breakfast is served from 7:00 to 10:00.</span></div><div class="answer-row"><span class="answer-word">💊 Pharmacy</span><span class="answer-rule">Take these tablets after food. · You need a prescription for this medicine.</span></div></div>
+  <div class="rule-box">Two small words do a lot of work. <strong>Excuse me</strong> starts the conversation; <strong>please</strong> and <strong>thank you</strong> end it. Without them the same question can sound rude.</div>
+  <div class="sec-div">Quick check</div>
+  <div id="gfItems"></div>
+
+  <footer>Clarification — Phrases for Places (A1)</footer>
+</div>
+
+<div id="theme-toggle-wrap">
+  <button id="theme-toggle" aria-label="Toggle light/dark mode" title="Toggle light/dark mode">
+    <span id="theme-icon">☀️</span>
+  </button>
+</div>
+<script src="house.js"></script>
+<script>
+const GF_ITEMS = [
+  {
+    "category": "pos",
+    "direct": "🙋 Start when you want someone's attention",
+    "template": "{0}, where is the bank?",
+    "hints": [
+      {
+        "accepted": [
+          "excuse me"
+        ]
+      }
+    ]
+  },
+  {
+    "category": "q",
+    "direct": "📚 Ask permission to take the books",
+    "template": "{0} borrow these books?",
+    "hints": [
+      {
+        "accepted": [
+          "can i",
+          "may i"
+        ]
+      }
+    ]
+  },
+  {
+    "category": "q",
+    "direct": "💊 Ask if the shop has something",
+    "template": "{0} anything for a headache?",
+    "hints": [
+      {
+        "accepted": [
+          "do you have"
+        ]
+      }
+    ]
+  },
+  {
+    "category": "q",
+    "direct": "🎬 Ask about the start time",
+    "template": "{0} the film start?",
+    "hints": [
+      {
+        "accepted": [
+          "what time does"
+        ]
+      }
+    ]
+  },
+  {
+    "category": "pos",
+    "direct": "🍽️ The paper you pay in a restaurant",
+    "template": "Here is your {0}.",
+    "hints": [
+      {
+        "accepted": [
+          "bill",
+          "check"
+        ]
+      }
+    ]
+  },
+  {
+    "category": "pos",
+    "direct": "💊 The paper from the doctor",
+    "template": "You need a {0} for this medicine.",
+    "hints": [
+      {
+        "accepted": [
+          "prescription"
+        ]
+      }
+    ]
+  }
+];
+
+HouseGapFill.build({ container: 'gfItems', items: GF_ITEMS, labels: {
+  "q": "question",
+  "pos": "phrase"
+} });
+
+HouseGrammar.init();
+</script>
+</body>
+</html>

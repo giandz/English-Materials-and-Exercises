@@ -1,0 +1,335 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<title>Describing a City — Practice</title>
+<script>
+// Applies the saved/system theme to <html> as early as possible, before the
+// stylesheet below paints anything, so there's no flash of the wrong theme.
+// Self-contained: no dependency on any external script.
+(function(){
+  try{
+    var saved = localStorage.getItem('theme-preference');
+    var theme = (saved === 'light' || saved === 'dark')
+      ? saved
+      : ((window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches) ? 'dark' : 'light');
+    document.documentElement.setAttribute('data-theme', theme);
+    // Same idea for the text size: apply it before house.css paints, so a
+    // person who chose 28px doesn't watch the page reflow from 14px on load.
+    var fs = parseFloat(localStorage.getItem('font-size-preference'));
+    if (fs >= 10 && fs <= 28){
+      document.documentElement.style.setProperty('--fs-base', fs + 'px');
+    }
+  }catch(e){ /* localStorage/matchMedia unavailable — CSS media query still applies */ }
+})();
+</script>
+<link rel="stylesheet" href="house.css">
+</head>
+<body>
+<div class="page" id="page">
+  <span class="cefr-tag cefr-a1a2">A1/A2 · Beginner–Elementary</span>
+  <h1>Describing a City — Practice</h1>
+  <p class="subtitle">Sort the words, build the sentences, then fill the gaps.</p>
+
+  <div class="sec-div">Match the word to its group</div>
+  <div class="rule-box">Tap a word on the left, then tap the right description on the right. A correct pair is joined with a line.</div>
+  <div class="score-bar"><span>Matched: <strong id="score">0</strong> / <span id="total">0</span></span><button id="resetBtn">🔄 Shuffle again</button></div>
+  <div class="win-msg" id="winMsg">🎉 Great job! You matched them all!</div>
+  <div class="match-grid">
+    <div><div class="match-col-label">City word</div><div class="match-col" id="leftCol"></div></div>
+    <div><div class="match-col-label">What it means</div><div class="match-col" id="rightCol"></div></div>
+  </div>
+  <div class="sec-div">Practice — Word order</div>
+  <div class="rule-box">Tap a word to add it. Tap it again to remove it. You can also drag words to reorder them. When all the words are in place, the sentence is checked.</div>
+  <button id="grammarToggle" class="grammar-toggle-btn">🎨 Show Grammar</button>
+  <div class="pos-legend"></div>
+  <div class="score-bar"><span>Correct: <strong id="woScore">0</strong> / <span id="woTotal">0</span></span></div>
+  <div id="woItems"></div>
+  <div class="sec-div">Practice — Gap fill</div>
+  <div class="rule-box">Type your answer. The bar turns green 🔴→🟢 when you are right.</div>
+  <div id="gfItems"></div>
+
+  <footer>Practice — Describing a City (A1/A2)</footer>
+</div>
+
+<div id="theme-toggle-wrap">
+  <button id="theme-toggle" aria-label="Toggle light/dark mode" title="Toggle light/dark mode">
+    <span id="theme-icon">☀️</span>
+  </button>
+</div>
+<script src="house.js"></script>
+<script>
+const PAIRS = [
+  {
+    "id": "traffic",
+    "left": "traffic",
+    "leftEmoji": "🚗",
+    "right": "a lot of cars on the road",
+    "rightEmoji": "🛣️"
+  },
+  {
+    "id": "pollution",
+    "left": "pollution",
+    "leftEmoji": "🏭",
+    "right": "dirty air or dirty water",
+    "rightEmoji": "💨"
+  },
+  {
+    "id": "crime",
+    "left": "crime",
+    "leftEmoji": "🚨",
+    "right": "people doing illegal things",
+    "rightEmoji": "👮"
+  },
+  {
+    "id": "litter",
+    "left": "litter",
+    "leftEmoji": "🗑️",
+    "right": "rubbish on the street",
+    "rightEmoji": "🥤"
+  },
+  {
+    "id": "noise",
+    "left": "noise",
+    "leftEmoji": "🔊",
+    "right": "loud sound you do not want",
+    "rightEmoji": "📢"
+  },
+  {
+    "id": "museum",
+    "left": "a museum",
+    "leftEmoji": "🏛️",
+    "right": "where you see art and history",
+    "rightEmoji": "🖼️"
+  },
+  {
+    "id": "park",
+    "left": "a park",
+    "leftEmoji": "🌳",
+    "right": "green space to walk and relax",
+    "rightEmoji": "🧺"
+  },
+  {
+    "id": "shop",
+    "left": "a shop",
+    "leftEmoji": "🛍️",
+    "right": "where you buy things",
+    "rightEmoji": "💳"
+  }
+];
+
+HouseMatching.build({ left: 'leftCol', right: 'rightCol', pairs: PAIRS,
+  scoreEl: 'score', totalEl: 'total', winEl: 'winMsg', resetBtn: 'resetBtn' });
+
+const WO_ITEMS = [
+  {
+    "context": "🌳 count, plural",
+    "text": "There / are / a / lot / of / parks / .",
+    "pos": [
+      "subject",
+      "verb",
+      "det",
+      "det",
+      "det",
+      "noun",
+      "none"
+    ]
+  },
+  {
+    "context": "🚗 noncount",
+    "text": "There / is / a / lot / of / traffic / .",
+    "pos": [
+      "subject",
+      "verb",
+      "det",
+      "det",
+      "det",
+      "noun",
+      "none"
+    ]
+  },
+  {
+    "context": "🏛️ count, negative",
+    "text": "There / aren't / many / museums / .",
+    "pos": [
+      "subject",
+      "neg",
+      "det",
+      "noun",
+      "none"
+    ]
+  },
+  {
+    "context": "🚨 noncount, negative",
+    "text": "There / isn't / much / crime / .",
+    "pos": [
+      "subject",
+      "neg",
+      "det",
+      "noun",
+      "none"
+    ]
+  },
+  {
+    "context": "❓ ask about a number",
+    "text": "How / many / shops / are / there / ?",
+    "pos": [
+      "wh",
+      "det",
+      "noun",
+      "verb",
+      "subject",
+      "none"
+    ]
+  },
+  {
+    "context": "❓ ask about an amount",
+    "text": "How / much / noise / is / there / ?",
+    "pos": [
+      "wh",
+      "det",
+      "noun",
+      "verb",
+      "subject",
+      "none"
+    ]
+  },
+  {
+    "context": "🏫 count, some",
+    "text": "There / are / some / good / schools / .",
+    "pos": [
+      "subject",
+      "verb",
+      "det",
+      "adj",
+      "noun",
+      "none"
+    ]
+  },
+  {
+    "context": "🗑️ noncount, negative",
+    "text": "There / isn't / any / litter / here / .",
+    "pos": [
+      "subject",
+      "neg",
+      "det",
+      "noun",
+      "adverb",
+      "none"
+    ]
+  }
+];
+
+HouseWordOrder.build({ container: 'woItems', items: WO_ITEMS, scoreEl: 'woScore', totalEl: 'woTotal' });
+
+const GF_ITEMS = [
+  {
+    "category": "pos",
+    "direct": "🍽️ restaurants — is or are?",
+    "template": "There {0} a lot of restaurants.",
+    "hints": [
+      {
+        "accepted": [
+          "are"
+        ]
+      }
+    ]
+  },
+  {
+    "category": "neg",
+    "direct": "🏭 pollution — is or are?",
+    "template": "There {0} too much pollution.",
+    "hints": [
+      {
+        "accepted": [
+          "is"
+        ]
+      }
+    ]
+  },
+  {
+    "category": "pos",
+    "direct": "🌳 parks — many or much?",
+    "template": "How {0} parks are there?",
+    "hints": [
+      {
+        "accepted": [
+          "many"
+        ]
+      }
+    ]
+  },
+  {
+    "category": "neg",
+    "direct": "🔊 noise — many or much?",
+    "template": "There isn't {0} noise at night.",
+    "hints": [
+      {
+        "accepted": [
+          "much"
+        ]
+      }
+    ]
+  },
+  {
+    "category": "pos",
+    "direct": "🛍️ Say there are a few shops",
+    "template": "There are {0} shops near my home.",
+    "hints": [
+      {
+        "accepted": [
+          "some",
+          "a few"
+        ]
+      }
+    ]
+  },
+  {
+    "category": "neg",
+    "direct": "🚨 Say there is no crime",
+    "template": "There {0} any crime here.",
+    "hints": [
+      {
+        "accepted": [
+          "isn't"
+        ]
+      }
+    ]
+  },
+  {
+    "category": "q",
+    "direct": "❓ Ask about traffic in their city",
+    "template": "{0} traffic is there?",
+    "hints": [
+      {
+        "accepted": [
+          "how much"
+        ]
+      }
+    ]
+  },
+  {
+    "category": "q",
+    "direct": "❓ Ask about museums in their city",
+    "template": "{0} museums are there?",
+    "hints": [
+      {
+        "accepted": [
+          "how many"
+        ]
+      }
+    ]
+  }
+];
+
+HouseGapFill.build({ container: 'gfItems', items: GF_ITEMS, labels: {
+  "pos": "count",
+  "neg": "noncount",
+  "q": "question"
+} });
+
+HouseGrammar.init();
+</script>
+</body>
+</html>

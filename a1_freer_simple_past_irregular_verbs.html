@@ -1,0 +1,117 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<title>Irregular Past Verbs — Speaking</title>
+<script>
+// Applies the saved/system theme to <html> as early as possible, before the
+// stylesheet below paints anything, so there's no flash of the wrong theme.
+// Self-contained: no dependency on any external script.
+(function(){
+  try{
+    var saved = localStorage.getItem('theme-preference');
+    var theme = (saved === 'light' || saved === 'dark')
+      ? saved
+      : ((window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches) ? 'dark' : 'light');
+    document.documentElement.setAttribute('data-theme', theme);
+    // Same idea for the text size: apply it before house.css paints, so a
+    // person who chose 28px doesn't watch the page reflow from 14px on load.
+    var fs = parseFloat(localStorage.getItem('font-size-preference'));
+    if (fs >= 10 && fs <= 28){
+      document.documentElement.style.setProperty('--fs-base', fs + 'px');
+    }
+  }catch(e){ /* localStorage/matchMedia unavailable — CSS media query still applies */ }
+})();
+</script>
+<link rel="stylesheet" href="house.css">
+</head>
+<body>
+<div class="page" id="page">
+  <span class="cefr-tag cefr-a1">A1 · Beginner</span>
+  <h1>Irregular Past Verbs — Speaking</h1>
+  <p class="subtitle">Click the dice and tell your partner about your past.</p>
+
+  <div class="rule-box"><strong>How to play:</strong> click 🎲, read the question out loud and answer it in the past. Then ask your partner the same question. Try to use at least <strong>two irregular verbs</strong> each time.</div>
+  <div class="q-card" id="qCard"><span class="q-placeholder">Click the dice to get a question</span></div>
+  <button class="dice-btn" id="diceBtn" aria-label="Generate question">🎲</button>
+  <div class="roll-count">Questions asked: <strong id="rollCount">0</strong></div>
+  <div class="topic-legend"><span class="topic-pill">🚗 went</span><span class="topic-pill">👀 saw</span><span class="topic-pill">🍽️ ate</span><span class="topic-pill">🛍️ bought</span><span class="topic-pill">😴 slept</span></div>
+
+  <footer>Speaking Practice — Irregular Past Verbs (A1)</footer>
+</div>
+
+<div id="theme-toggle-wrap">
+  <button id="theme-toggle" aria-label="Toggle light/dark mode" title="Toggle light/dark mode">
+    <span id="theme-icon">☀️</span>
+  </button>
+</div>
+<script src="house.js"></script>
+<script>
+const PROMPTS = [
+  {
+    "icon": "🚗",
+    "label": "go / went",
+    "text": "Where did you go last weekend? Who did you go with?"
+  },
+  {
+    "icon": "👀",
+    "label": "see / saw",
+    "text": "What did you see on your way here today?"
+  },
+  {
+    "icon": "🍽️",
+    "label": "eat / ate",
+    "text": "What did you eat yesterday? Was it good?"
+  },
+  {
+    "icon": "☕",
+    "label": "drink / drank",
+    "text": "What did you drink this morning?"
+  },
+  {
+    "icon": "😴",
+    "label": "sleep / slept",
+    "text": "How long did you sleep last night? Was it enough?"
+  },
+  {
+    "icon": "🛍️",
+    "label": "buy / bought",
+    "text": "What was the last thing you bought? Why?"
+  },
+  {
+    "icon": "📖",
+    "label": "read / read",
+    "text": "What did you read last week — a book, a message, the news?"
+  },
+  {
+    "icon": "📷",
+    "label": "take / took",
+    "text": "When did you last take a photo? What was in it?"
+  },
+  {
+    "icon": "🎉",
+    "label": "have / had",
+    "text": "Did you have a good week? Say two things that happened."
+  },
+  {
+    "icon": "🚪",
+    "label": "come / came",
+    "text": "What time did you come home yesterday?"
+  },
+  {
+    "icon": "❌",
+    "label": "negative",
+    "text": "Tell your partner two things you did NOT do last weekend."
+  },
+  {
+    "icon": "🗺️",
+    "label": "a trip",
+    "text": "Describe a trip you took. Where did you go, what did you see, what did you eat?"
+  }
+];
+
+HouseRandomGen.build({ items: PROMPTS });
+</script>
+</body>
+</html>

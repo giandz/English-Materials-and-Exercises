@@ -1,0 +1,117 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<title>This, That, These, Those — Speaking</title>
+<script>
+// Applies the saved/system theme to <html> as early as possible, before the
+// stylesheet below paints anything, so there's no flash of the wrong theme.
+// Self-contained: no dependency on any external script.
+(function(){
+  try{
+    var saved = localStorage.getItem('theme-preference');
+    var theme = (saved === 'light' || saved === 'dark')
+      ? saved
+      : ((window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches) ? 'dark' : 'light');
+    document.documentElement.setAttribute('data-theme', theme);
+    // Same idea for the text size: apply it before house.css paints, so a
+    // person who chose 28px doesn't watch the page reflow from 14px on load.
+    var fs = parseFloat(localStorage.getItem('font-size-preference'));
+    if (fs >= 10 && fs <= 28){
+      document.documentElement.style.setProperty('--fs-base', fs + 'px');
+    }
+  }catch(e){ /* localStorage/matchMedia unavailable — CSS media query still applies */ }
+})();
+</script>
+<link rel="stylesheet" href="house.css">
+</head>
+<body>
+<div class="page" id="page">
+  <span class="cefr-tag cefr-a1">A1 · Beginner</span>
+  <h1>This, That, These, Those — Speaking</h1>
+  <p class="subtitle">Click the dice, then ask and answer with a partner about the room you are in.</p>
+
+  <div class="rule-box"><strong>How to play:</strong> click 🎲 and read the task out loud. Point at something real in your room! Then it is your partner's turn to roll.</div>
+  <div class="q-card" id="qCard"><span class="q-placeholder">Click the dice to get a question</span></div>
+  <button class="dice-btn" id="diceBtn" aria-label="Generate question">🎲</button>
+  <div class="roll-count">Questions asked: <strong id="rollCount">0</strong></div>
+  <div class="topic-legend"><span class="topic-pill">🛋️ near you</span><span class="topic-pill">🪟 far away</span><span class="topic-pill">☕ plural</span><span class="topic-pill">💡 a / an</span><span class="topic-pill">🏠 your room</span></div>
+
+  <footer>Speaking Practice — This / That / These / Those (A1)</footer>
+</div>
+
+<div id="theme-toggle-wrap">
+  <button id="theme-toggle" aria-label="Toggle light/dark mode" title="Toggle light/dark mode">
+    <span id="theme-icon">☀️</span>
+  </button>
+</div>
+<script src="house.js"></script>
+<script>
+const PROMPTS = [
+  {
+    "icon": "🛋️",
+    "label": "near you",
+    "text": "Point at one thing near you. Ask your partner: \"What's this?\""
+  },
+  {
+    "icon": "🪟",
+    "label": "far away",
+    "text": "Point at one thing far away. Ask your partner: \"What's that?\""
+  },
+  {
+    "icon": "☕",
+    "label": "near you",
+    "text": "Point at two or three things near you. Ask: \"What are these?\""
+  },
+  {
+    "icon": "🍽️",
+    "label": "far away",
+    "text": "Point at some things far away. Ask: \"What are those?\""
+  },
+  {
+    "icon": "🪑",
+    "label": "describe",
+    "text": "Find a chair. Say one sentence about it with \"this\" or \"that\"."
+  },
+  {
+    "icon": "💡",
+    "label": "a or an",
+    "text": "Find something that needs \"an\". Say: \"This is an ______.\""
+  },
+  {
+    "icon": "🖼️",
+    "label": "describe",
+    "text": "Point at a picture or a window. Is it big or small? Say two sentences."
+  },
+  {
+    "icon": "📚",
+    "label": "plural",
+    "text": "Find some books. Say: \"These are books.\" Then say how many."
+  },
+  {
+    "icon": "🏠",
+    "label": "your room",
+    "text": "Name three things in your room. Use \"this\" for each one."
+  },
+  {
+    "icon": "🚪",
+    "label": "question",
+    "text": "Ask your partner about the door: \"Is that a door?\""
+  },
+  {
+    "icon": "🪴",
+    "label": "your room",
+    "text": "Is there a plant near you? Ask your partner about it."
+  },
+  {
+    "icon": "🛏️",
+    "label": "describe",
+    "text": "Describe two things in your bedroom using \"these\" or \"those\"."
+  }
+];
+
+HouseRandomGen.build({ items: PROMPTS });
+</script>
+</body>
+</html>

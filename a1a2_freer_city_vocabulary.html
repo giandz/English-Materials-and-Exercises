@@ -1,0 +1,117 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<title>Describing a City — Speaking</title>
+<script>
+// Applies the saved/system theme to <html> as early as possible, before the
+// stylesheet below paints anything, so there's no flash of the wrong theme.
+// Self-contained: no dependency on any external script.
+(function(){
+  try{
+    var saved = localStorage.getItem('theme-preference');
+    var theme = (saved === 'light' || saved === 'dark')
+      ? saved
+      : ((window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches) ? 'dark' : 'light');
+    document.documentElement.setAttribute('data-theme', theme);
+    // Same idea for the text size: apply it before house.css paints, so a
+    // person who chose 28px doesn't watch the page reflow from 14px on load.
+    var fs = parseFloat(localStorage.getItem('font-size-preference'));
+    if (fs >= 10 && fs <= 28){
+      document.documentElement.style.setProperty('--fs-base', fs + 'px');
+    }
+  }catch(e){ /* localStorage/matchMedia unavailable — CSS media query still applies */ }
+})();
+</script>
+<link rel="stylesheet" href="house.css">
+</head>
+<body>
+<div class="page" id="page">
+  <span class="cefr-tag cefr-a1a2">A1/A2 · Beginner–Elementary</span>
+  <h1>Describing a City — Speaking</h1>
+  <p class="subtitle">Click the dice and describe your own city to a partner.</p>
+
+  <div class="rule-box"><strong>How to play:</strong> click 🎲, read the question out loud and answer about <strong>your own city or town</strong>. Use <em>there is / there are</em>, <em>much / many</em> and <em>a lot of</em>.</div>
+  <div class="q-card" id="qCard"><span class="q-placeholder">Click the dice to get a question</span></div>
+  <button class="dice-btn" id="diceBtn" aria-label="Generate question">🎲</button>
+  <div class="roll-count">Questions asked: <strong id="rollCount">0</strong></div>
+  <div class="topic-legend"><span class="topic-pill">🌳 parks</span><span class="topic-pill">🚗 traffic</span><span class="topic-pill">🔊 noise</span><span class="topic-pill">🛍️ shops</span><span class="topic-pill">⭐ your city</span></div>
+
+  <footer>Speaking Practice — Describing a City (A1/A2)</footer>
+</div>
+
+<div id="theme-toggle-wrap">
+  <button id="theme-toggle" aria-label="Toggle light/dark mode" title="Toggle light/dark mode">
+    <span id="theme-icon">☀️</span>
+  </button>
+</div>
+<script src="house.js"></script>
+<script>
+const PROMPTS = [
+  {
+    "icon": "🌳",
+    "label": "parks",
+    "text": "How many parks are there near your home? What do people do there?"
+  },
+  {
+    "icon": "🚗",
+    "label": "traffic",
+    "text": "Is there a lot of traffic in your city? When is it worst?"
+  },
+  {
+    "icon": "🍽️",
+    "label": "restaurants",
+    "text": "Are there many restaurants near you? Which one do you like best?"
+  },
+  {
+    "icon": "🔊",
+    "label": "noise",
+    "text": "Is there much noise where you live? What makes the noise?"
+  },
+  {
+    "icon": "🏛️",
+    "label": "museums",
+    "text": "Are there any museums in your city? Have you been to one?"
+  },
+  {
+    "icon": "🏭",
+    "label": "pollution",
+    "text": "Is there much pollution in your city? What could make it better?"
+  },
+  {
+    "icon": "🛍️",
+    "label": "shops",
+    "text": "How many shops are there on your street? What do they sell?"
+  },
+  {
+    "icon": "🚨",
+    "label": "crime",
+    "text": "Is your neighbourhood safe? Is there much crime?"
+  },
+  {
+    "icon": "🏫",
+    "label": "schools",
+    "text": "Are there good schools in your area? How many?"
+  },
+  {
+    "icon": "🗑️",
+    "label": "litter",
+    "text": "Is there a lot of litter in your city? Who cleans the streets?"
+  },
+  {
+    "icon": "⭐",
+    "label": "the best",
+    "text": "Say three good things about your city. Use \"there is\" or \"there are\"."
+  },
+  {
+    "icon": "🤔",
+    "label": "changes",
+    "text": "What does your city need more of? What does it need less of?"
+  }
+];
+
+HouseRandomGen.build({ items: PROMPTS });
+</script>
+</body>
+</html>

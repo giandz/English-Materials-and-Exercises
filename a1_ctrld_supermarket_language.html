@@ -1,0 +1,346 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<title>At the Supermarket — Practice</title>
+<script>
+// Applies the saved/system theme to <html> as early as possible, before the
+// stylesheet below paints anything, so there's no flash of the wrong theme.
+// Self-contained: no dependency on any external script.
+(function(){
+  try{
+    var saved = localStorage.getItem('theme-preference');
+    var theme = (saved === 'light' || saved === 'dark')
+      ? saved
+      : ((window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches) ? 'dark' : 'light');
+    document.documentElement.setAttribute('data-theme', theme);
+    // Same idea for the text size: apply it before house.css paints, so a
+    // person who chose 28px doesn't watch the page reflow from 14px on load.
+    var fs = parseFloat(localStorage.getItem('font-size-preference'));
+    if (fs >= 10 && fs <= 28){
+      document.documentElement.style.setProperty('--fs-base', fs + 'px');
+    }
+  }catch(e){ /* localStorage/matchMedia unavailable — CSS media query still applies */ }
+})();
+</script>
+<link rel="stylesheet" href="house.css">
+</head>
+<body>
+<div class="page" id="page">
+  <span class="cefr-tag cefr-a1">A1 · Beginner</span>
+  <h1>At the Supermarket — Practice</h1>
+  <p class="subtitle">Match the words, build the sentences, then fill the gaps.</p>
+
+  <div class="sec-div">Match the word to its meaning</div>
+  <div class="rule-box">Tap a word on the left, then tap its meaning on the right. A correct pair is joined with a line.</div>
+  <div class="score-bar"><span>Matched: <strong id="score">0</strong> / <span id="total">0</span></span><button id="resetBtn">🔄 Shuffle again</button></div>
+  <div class="win-msg" id="winMsg">🎉 Great job! You matched them all!</div>
+  <div class="match-grid">
+    <div><div class="match-col-label">Word</div><div class="match-col" id="leftCol"></div></div>
+    <div><div class="match-col-label">Meaning</div><div class="match-col" id="rightCol"></div></div>
+  </div>
+  <div class="sec-div">Practice — Word order</div>
+  <div class="rule-box">Tap a word to add it. Tap it again to remove it. You can also drag words to reorder them. When all the words are in place, the sentence is checked.</div>
+  <button id="grammarToggle" class="grammar-toggle-btn">🎨 Show Grammar</button>
+  <div class="pos-legend"></div>
+  <div class="score-bar"><span>Correct: <strong id="woScore">0</strong> / <span id="woTotal">0</span></span></div>
+  <div id="woItems"></div>
+  <div class="sec-div">Practice — Gap fill</div>
+  <div class="rule-box">Type your answer. The bar turns green 🔴→🟢 when you are right.</div>
+  <div id="gfItems"></div>
+
+  <footer>Practice — Supermarket Language (A1)</footer>
+</div>
+
+<div id="theme-toggle-wrap">
+  <button id="theme-toggle" aria-label="Toggle light/dark mode" title="Toggle light/dark mode">
+    <span id="theme-icon">☀️</span>
+  </button>
+</div>
+<script src="house.js"></script>
+<script>
+const PAIRS = [
+  {
+    "id": "cart",
+    "left": "a cart",
+    "leftEmoji": "🛒",
+    "right": "the big one you push",
+    "rightEmoji": "💪"
+  },
+  {
+    "id": "basket",
+    "left": "a basket",
+    "leftEmoji": "🧺",
+    "right": "the small one you carry",
+    "rightEmoji": "🤲"
+  },
+  {
+    "id": "aisle",
+    "left": "an aisle",
+    "leftEmoji": "📍",
+    "right": "the row between the shelves",
+    "rightEmoji": "🏪"
+  },
+  {
+    "id": "coupon",
+    "left": "a coupon",
+    "leftEmoji": "🎟️",
+    "right": "paper that makes it cheaper",
+    "rightEmoji": "💰"
+  },
+  {
+    "id": "cashier",
+    "left": "the cashier",
+    "leftEmoji": "🧑‍💼",
+    "right": "the person you pay",
+    "rightEmoji": "💳"
+  },
+  {
+    "id": "receipt",
+    "left": "a receipt",
+    "leftEmoji": "🧾",
+    "right": "paper that shows what you paid",
+    "rightEmoji": "📄"
+  },
+  {
+    "id": "list",
+    "left": "a shopping list",
+    "leftEmoji": "📝",
+    "right": "what you need to buy",
+    "rightEmoji": "✅"
+  },
+  {
+    "id": "bag",
+    "left": "a bag",
+    "leftEmoji": "🛍️",
+    "right": "you carry your food home in it",
+    "rightEmoji": "🏠"
+  }
+];
+
+HouseMatching.build({ left: 'leftCol', right: 'rightCol', pairs: PAIRS,
+  scoreEl: 'score', totalEl: 'total', winEl: 'winMsg', resetBtn: 'resetBtn' });
+
+const WO_ITEMS = [
+  {
+    "speaker": "Mia",
+    "avatar": "👩‍🦰",
+    "text": "We / need / milk / and / bread / .",
+    "pos": [
+      "subject",
+      "verb",
+      "object",
+      "conj",
+      "object",
+      "none"
+    ]
+  },
+  {
+    "speaker": "Jake",
+    "avatar": "👨‍🦱",
+    "text": "Where / is / the / milk / ?",
+    "pos": [
+      "wh",
+      "verb",
+      "det",
+      "subject",
+      "none"
+    ]
+  },
+  {
+    "speaker": "Mia",
+    "avatar": "👩‍🦰",
+    "text": "It / is / in / aisle / 3 / .",
+    "pos": [
+      "subject",
+      "verb",
+      "prep",
+      "object",
+      "object",
+      "none"
+    ]
+  },
+  {
+    "speaker": "Jake",
+    "avatar": "👨‍🦱",
+    "text": "Should / we / get / a / basket / ?",
+    "pos": [
+      "aux",
+      "subject",
+      "verb",
+      "det",
+      "object",
+      "none"
+    ]
+  },
+  {
+    "speaker": "Mia",
+    "avatar": "👩‍🦰",
+    "text": "I / have / a / coupon / for / the / cheese / .",
+    "pos": [
+      "subject",
+      "verb",
+      "det",
+      "object",
+      "prep",
+      "det",
+      "object",
+      "none"
+    ]
+  },
+  {
+    "speaker": "Jake",
+    "avatar": "👨‍🦱",
+    "text": "Can / you / grab / a / bag / ?",
+    "pos": [
+      "aux",
+      "subject",
+      "verb",
+      "det",
+      "object",
+      "none"
+    ]
+  },
+  {
+    "speaker": "Cashier",
+    "avatar": "🧑‍💼",
+    "text": "Is / that / everything / today / ?",
+    "pos": [
+      "verb",
+      "subject",
+      "complement",
+      "time",
+      "none"
+    ]
+  },
+  {
+    "speaker": "Mia",
+    "avatar": "👩‍🦰",
+    "text": "Are / we / ready / to / pay / now / ?",
+    "pos": [
+      "aux",
+      "subject",
+      "complement",
+      "none",
+      "verb",
+      "time",
+      "none"
+    ]
+  }
+];
+
+HouseWordOrder.build({ container: 'woItems', items: WO_ITEMS, scoreEl: 'woScore', totalEl: 'woTotal' });
+
+const GF_ITEMS = [
+  {
+    "category": "pos",
+    "direct": "📝 Say what you have to buy",
+    "template": "We {0} eggs and cheese.",
+    "hints": [
+      {
+        "accepted": [
+          "need"
+        ]
+      }
+    ]
+  },
+  {
+    "category": "q",
+    "direct": "❓ Ask where the bread is",
+    "template": "{0} the bread?",
+    "hints": [
+      {
+        "accepted": [
+          "where is",
+          "where's"
+        ]
+      }
+    ]
+  },
+  {
+    "category": "q",
+    "direct": "🛒 Ask which one to take",
+    "template": "{0} a cart or a basket?",
+    "hints": [
+      {
+        "accepted": [
+          "should we get",
+          "should we take"
+        ]
+      }
+    ]
+  },
+  {
+    "category": "pos",
+    "direct": "📍 Say where it is (row 5)",
+    "template": "It's in {0}.",
+    "hints": [
+      {
+        "accepted": [
+          "aisle 5"
+        ]
+      }
+    ]
+  },
+  {
+    "category": "q",
+    "direct": "🙏 Ask your friend to take a bag",
+    "template": "{0} grab a bag?",
+    "hints": [
+      {
+        "accepted": [
+          "can you",
+          "could you"
+        ]
+      }
+    ]
+  },
+  {
+    "category": "q",
+    "direct": "💳 Ask if it is time to pay",
+    "template": "{0} ready to pay?",
+    "hints": [
+      {
+        "accepted": [
+          "are we"
+        ]
+      }
+    ]
+  },
+  {
+    "category": "pos",
+    "direct": "🧑‍💼 Tell the cashier you have finished",
+    "template": "Yes, {0}, thanks.",
+    "hints": [
+      {
+        "accepted": [
+          "that's all",
+          "that is all"
+        ]
+      }
+    ]
+  },
+  {
+    "category": "pos",
+    "direct": "🧾 What the cashier gives you at the end",
+    "template": "Here's your {0}.",
+    "hints": [
+      {
+        "accepted": [
+          "receipt"
+        ]
+      }
+    ]
+  }
+];
+
+HouseGapFill.build({ container: 'gfItems', items: GF_ITEMS, labels: {
+  "q": "question",
+  "pos": "phrase"
+} });
+
+HouseGrammar.init();
+</script>
+</body>
+</html>

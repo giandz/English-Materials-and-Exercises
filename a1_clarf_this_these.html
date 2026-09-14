@@ -1,0 +1,166 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<title>This, That, These, Those — Clarification</title>
+<script>
+// Applies the saved/system theme to <html> as early as possible, before the
+// stylesheet below paints anything, so there's no flash of the wrong theme.
+// Self-contained: no dependency on any external script.
+(function(){
+  try{
+    var saved = localStorage.getItem('theme-preference');
+    var theme = (saved === 'light' || saved === 'dark')
+      ? saved
+      : ((window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches) ? 'dark' : 'light');
+    document.documentElement.setAttribute('data-theme', theme);
+    // Same idea for the text size: apply it before house.css paints, so a
+    // person who chose 28px doesn't watch the page reflow from 14px on load.
+    var fs = parseFloat(localStorage.getItem('font-size-preference'));
+    if (fs >= 10 && fs <= 28){
+      document.documentElement.style.setProperty('--fs-base', fs + 'px');
+    }
+  }catch(e){ /* localStorage/matchMedia unavailable — CSS media query still applies */ }
+})();
+</script>
+<link rel="stylesheet" href="house.css">
+</head>
+<body>
+<div class="page" id="page">
+  <span class="cefr-tag cefr-a1">A1 · Beginner</span>
+  <h1>This, That, These, Those — Clarification</h1>
+  <p class="subtitle">One thing or more than one? Near you or further away?</p>
+
+  <div class="rule-box">We use <strong>this</strong> and <strong>these</strong> for things <strong>near</strong> us, and <strong>that</strong> and <strong>those</strong> for things <strong>further away</strong>.</div>
+  <div class="sec-div">The four words</div>
+  <div class="exercise-card"><div class="answer-row"><span class="answer-word">this</span><span class="answer-rule">one thing, near — <em>This is a sofa.</em></span></div><div class="answer-row"><span class="answer-word">these</span><span class="answer-rule">many things, near — <em>These are cushions.</em></span></div><div class="answer-row"><span class="answer-word">that</span><span class="answer-rule">one thing, far — <em>That is an armchair.</em></span></div><div class="answer-row"><span class="answer-word">those</span><span class="answer-rule">many things, far — <em>Those are shelves.</em></span></div></div>
+  <div class="sec-div">Asking and answering</div>
+  <button id="grammarToggle" class="grammar-toggle-btn">🎨 Show Grammar</button>
+  <div class="pos-legend"></div>
+  <div class="exercise-card"><p><span class="pos-hl pos-wh">What</span> <span class="pos-hl pos-verb">is</span> <span class="pos-hl pos-subject">this</span>? — <span class="pos-hl pos-subject">It</span> <span class="pos-hl pos-verb">is</span> <span class="pos-hl pos-det">a</span> <span class="pos-hl pos-complement">lamp</span>.</p><p><span class="pos-hl pos-wh">What</span> <span class="pos-hl pos-verb">are</span> <span class="pos-hl pos-subject">these</span>? — <span class="pos-hl pos-subject">They</span> <span class="pos-hl pos-verb">are</span> <span class="pos-hl pos-complement">mugs</span>.</p><p><span class="pos-hl pos-wh">What</span> <span class="pos-hl pos-verb">is</span> <span class="pos-hl pos-subject">that</span>? — <span class="pos-hl pos-subject">It</span> <span class="pos-hl pos-verb">is</span> <span class="pos-hl pos-det">an</span> <span class="pos-hl pos-complement">oven</span>.</p><p><span class="pos-hl pos-wh">What</span> <span class="pos-hl pos-verb">are</span> <span class="pos-hl pos-subject">those</span>? — <span class="pos-hl pos-subject">They</span> <span class="pos-hl pos-verb">are</span> <span class="pos-hl pos-complement">plates</span>.</p></div>
+  <div class="rule-box"><strong>this / that</strong> go with <strong>is</strong>. <strong>these / those</strong> go with <strong>are</strong>, and the noun takes <strong>-s</strong>: <em>a mug → two mug<strong>s</strong></em>.</div>
+  <div class="sec-div">a or an?</div>
+  <div class="rule-box">Use <strong>a</strong> before a consonant sound — <em>a chair, a fridge, a towel</em>. Use <strong>an</strong> before a vowel sound — <em>an armchair, an oven, an alarm clock</em>.</div>
+  <div class="sec-div">Quick check</div>
+  <div id="gfItems"></div>
+
+  <footer>Clarification — This / That / These / Those (A1)</footer>
+</div>
+
+<div id="theme-toggle-wrap">
+  <button id="theme-toggle" aria-label="Toggle light/dark mode" title="Toggle light/dark mode">
+    <span id="theme-icon">☀️</span>
+  </button>
+</div>
+<script src="house.js"></script>
+<script>
+const GF_ITEMS = [
+  {
+    "category": "pos",
+    "direct": "🛋️ One sofa, near you",
+    "template": "{0} is a sofa.",
+    "hints": [
+      {
+        "accepted": [
+          "this"
+        ]
+      }
+    ]
+  },
+  {
+    "category": "pos",
+    "direct": "🪑 Many chairs, near you",
+    "template": "{0} are chairs.",
+    "hints": [
+      {
+        "accepted": [
+          "these"
+        ]
+      }
+    ]
+  },
+  {
+    "category": "pos",
+    "direct": "🍳 One oven, on the other side of the room",
+    "template": "{0} is an oven.",
+    "hints": [
+      {
+        "accepted": [
+          "that"
+        ]
+      }
+    ]
+  },
+  {
+    "category": "pos",
+    "direct": "📚 Many shelves, on the other side of the room",
+    "template": "{0} are shelves.",
+    "hints": [
+      {
+        "accepted": [
+          "those"
+        ]
+      }
+    ]
+  },
+  {
+    "category": "pos",
+    "direct": "💡 Choose a or an",
+    "template": "It is {0} lamp.",
+    "hints": [
+      {
+        "accepted": [
+          "a"
+        ]
+      }
+    ]
+  },
+  {
+    "category": "pos",
+    "direct": "⏰ Choose a or an",
+    "template": "It is {0} alarm clock.",
+    "hints": [
+      {
+        "accepted": [
+          "an"
+        ]
+      }
+    ]
+  },
+  {
+    "category": "q",
+    "direct": "❓ Ask about one thing near you",
+    "template": "{0} this?",
+    "hints": [
+      {
+        "accepted": [
+          "what is",
+          "what's"
+        ]
+      }
+    ]
+  },
+  {
+    "category": "q",
+    "direct": "❓ Ask about many things near you",
+    "template": "{0} these?",
+    "hints": [
+      {
+        "accepted": [
+          "what are"
+        ]
+      }
+    ]
+  }
+];
+
+HouseGapFill.build({ container: 'gfItems', items: GF_ITEMS, labels: {
+  "q": "question",
+  "pos": "answer"
+} });
+
+HouseGrammar.init();
+</script>
+</body>
+</html>

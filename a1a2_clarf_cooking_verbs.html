@@ -1,0 +1,167 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<title>Cooking Verbs — Clarification</title>
+<script>
+// Applies the saved/system theme to <html> as early as possible, before the
+// stylesheet below paints anything, so there's no flash of the wrong theme.
+// Self-contained: no dependency on any external script.
+(function(){
+  try{
+    var saved = localStorage.getItem('theme-preference');
+    var theme = (saved === 'light' || saved === 'dark')
+      ? saved
+      : ((window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches) ? 'dark' : 'light');
+    document.documentElement.setAttribute('data-theme', theme);
+    // Same idea for the text size: apply it before house.css paints, so a
+    // person who chose 28px doesn't watch the page reflow from 14px on load.
+    var fs = parseFloat(localStorage.getItem('font-size-preference'));
+    if (fs >= 10 && fs <= 28){
+      document.documentElement.style.setProperty('--fs-base', fs + 'px');
+    }
+  }catch(e){ /* localStorage/matchMedia unavailable — CSS media query still applies */ }
+})();
+</script>
+<link rel="stylesheet" href="house.css">
+</head>
+<body>
+<div class="page" id="page">
+  <span class="cefr-tag cefr-a1a2">A1/A2 · Beginner–Elementary</span>
+  <h1>Cooking Verbs — Clarification</h1>
+  <p class="subtitle">Three groups of cooking verbs, and how to use them in a recipe.</p>
+
+  <div class="rule-box">Cooking verbs fall into three groups: what you do <strong>before</strong> cooking, how you <strong>heat</strong> the food, and how you <strong>combine</strong> the ingredients.</div>
+  <div class="sec-div">The three groups</div>
+  <div class="exercise-card"><span class="cat-tag q">preparing 🔪</span><div class="answer-row"><span class="answer-word">chop</span><span class="answer-rule">cut food into small pieces</span></div><div class="answer-row"><span class="answer-word">cut</span><span class="answer-rule">divide food with a knife</span></div><div class="answer-row"><span class="answer-word">peel</span><span class="answer-rule">remove the skin of a fruit or vegetable</span></div><div class="answer-row"><span class="answer-word">grate</span><span class="answer-rule">cut into small pieces with a grater</span></div></div><div class="exercise-card"><span class="cat-tag pos">heating 🔥</span><div class="answer-row"><span class="answer-word">boil</span><span class="answer-rule">cook in very hot, bubbling water</span></div><div class="answer-row"><span class="answer-word">simmer</span><span class="answer-rule">cook gently, with small bubbles</span></div><div class="answer-row"><span class="answer-word">bake</span><span class="answer-rule">cook in the oven</span></div><div class="answer-row"><span class="answer-word">fry</span><span class="answer-rule">cook in hot oil in a pan</span></div></div><div class="exercise-card"><span class="cat-tag cel">combining 🥄</span><div class="answer-row"><span class="answer-word">mix</span><span class="answer-rule">put two or more things together</span></div><div class="answer-row"><span class="answer-word">stir</span><span class="answer-rule">move a spoon around in food or liquid</span></div><div class="answer-row"><span class="answer-word">add</span><span class="answer-rule">put something into the food</span></div><div class="answer-row"><span class="answer-word">pour</span><span class="answer-rule">make a liquid flow into a container</span></div></div>
+  <div class="sec-div">Recipes use the imperative</div>
+  <button id="grammarToggle" class="grammar-toggle-btn">🎨 Show Grammar</button>
+  <div class="pos-legend"></div>
+  <div class="rule-box">A recipe gives instructions, so it uses the <strong>imperative</strong> — the plain verb with <strong>no subject</strong>. Not <s>You boil the water</s>, just <strong>Boil the water.</strong></div>
+  <div class="exercise-card"><p><span class="pos-hl pos-verb">Boil</span> <span class="pos-hl pos-object">the water</span> <span class="pos-hl pos-prep">in</span> <span class="pos-hl pos-object">a big pot</span>.</p><p><span class="pos-hl pos-verb">Chop</span> <span class="pos-hl pos-object">the onion and the carrots</span>.</p><p><span class="pos-hl pos-verb">Add</span> <span class="pos-hl pos-object">a little salt and pepper</span>.</p><p><span class="pos-hl pos-neg">Do not</span> <span class="pos-hl pos-verb">boil</span> <span class="pos-hl pos-object">the soup</span> — <span class="pos-hl pos-verb">simmer</span> <span class="pos-hl pos-object">it</span>.</p></div>
+  <div class="sec-div">Putting the steps in order</div>
+  <div class="rule-box">Sequence words tell the cook what comes when: <strong>First</strong> · <strong>Then</strong> · <strong>Next</strong> · <strong>After that</strong> · <strong>Finally</strong>. They go at the start, followed by a comma.</div>
+  <div class="exercise-card"><p><span class="pos-hl pos-time">First</span>, <span class="pos-hl pos-verb">peel</span> <span class="pos-hl pos-object">the potatoes</span>.</p><p><span class="pos-hl pos-time">Then</span>, <span class="pos-hl pos-verb">boil</span> <span class="pos-hl pos-object">them</span> <span class="pos-hl pos-prep">for</span> <span class="pos-hl pos-object">20 minutes</span>.</p><p><span class="pos-hl pos-time">Finally</span>, <span class="pos-hl pos-verb">add</span> <span class="pos-hl pos-object">butter and salt</span>.</p></div>
+  <div class="sec-div">Quick check</div>
+  <div id="gfItems"></div>
+
+  <footer>Clarification — Cooking Verbs (A1/A2)</footer>
+</div>
+
+<div id="theme-toggle-wrap">
+  <button id="theme-toggle" aria-label="Toggle light/dark mode" title="Toggle light/dark mode">
+    <span id="theme-icon">☀️</span>
+  </button>
+</div>
+<script src="house.js"></script>
+<script>
+const GF_ITEMS = [
+  {
+    "category": "pos",
+    "direct": "🥔 Remove the skin of the potato",
+    "template": "{0} the potatoes first.",
+    "hints": [
+      {
+        "accepted": [
+          "peel"
+        ]
+      }
+    ]
+  },
+  {
+    "category": "pos",
+    "direct": "🔪 Cut the onion into small pieces",
+    "template": "{0} the onion.",
+    "hints": [
+      {
+        "accepted": [
+          "chop"
+        ]
+      }
+    ]
+  },
+  {
+    "category": "pos",
+    "direct": "🔥 Cook in very hot bubbling water",
+    "template": "{0} the water in a big pot.",
+    "hints": [
+      {
+        "accepted": [
+          "boil"
+        ]
+      }
+    ]
+  },
+  {
+    "category": "pos",
+    "direct": "🍳 Cook in hot oil in a pan",
+    "template": "{0} the eggs for breakfast.",
+    "hints": [
+      {
+        "accepted": [
+          "fry"
+        ]
+      }
+    ]
+  },
+  {
+    "category": "pos",
+    "direct": "🥄 Move the spoon around the soup",
+    "template": "{0} the soup so it does not stick.",
+    "hints": [
+      {
+        "accepted": [
+          "stir"
+        ]
+      }
+    ]
+  },
+  {
+    "category": "q",
+    "direct": "1️⃣ The first step",
+    "template": "{0}, peel the potatoes.",
+    "hints": [
+      {
+        "accepted": [
+          "first"
+        ]
+      }
+    ]
+  },
+  {
+    "category": "q",
+    "direct": "2️⃣ The next step",
+    "template": "{0}, boil them for 20 minutes.",
+    "hints": [
+      {
+        "accepted": [
+          "then",
+          "next"
+        ]
+      }
+    ]
+  },
+  {
+    "category": "q",
+    "direct": "🏁 The last step",
+    "template": "{0}, add butter and salt.",
+    "hints": [
+      {
+        "accepted": [
+          "finally"
+        ]
+      }
+    ]
+  }
+];
+
+HouseGapFill.build({ container: 'gfItems', items: GF_ITEMS, labels: {
+  "pos": "verb",
+  "q": "sequence"
+} });
+
+HouseGrammar.init();
+</script>
+</body>
+</html>
