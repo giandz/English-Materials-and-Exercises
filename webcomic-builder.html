@@ -1,0 +1,391 @@
+<html>
+    <head>
+        <link rel="stylesheet" href="/stylesheets/webcomic.css">
+        <meta charset="UTF-8">
+        <style>
+            #webcomic-controls {
+                position: fixed;
+                display: flex;
+                justify-content: space-evenly; 
+                width: 100%;
+                bottom: 0;
+                left: 0;
+            }       
+            div#webcomic {
+                display: flex;
+                max-width: 100%;
+                justify-content: center;
+                align-items: center;
+            }
+            #webcomic-controls button {
+                width: 100%;
+                color: black ;
+                background: rgba(255,255,255,0.5);
+                border: none;
+                border-top: 1px solid black;
+                border-bottom: 1px solid black;
+                height: 2em;
+                margin-left: 20px;
+                margin-right: 20px;
+            }
+            #wcbuilder-controls * {
+                font-size: x-large;
+                font-family: sans-serif;
+            }
+            #webcomic-controls button:disabled {
+               color: lightgray;
+            }
+            #wcbuilder-controls {
+                width: 100%;
+                display: flex;
+                justify-content: center;
+                top: 0;
+
+            }
+            #composite-webcomic {
+                display: grid;
+                margin: auto auto;
+                border: none;
+                max-width: 100vmin;
+                grid-template-columns: repeat(12, calc(95vmin / 12));
+                grid-template-rows: repeat(12, calc(95vmin / 12));
+            }
+            .panel {
+                margin: 3px;
+                border: 1px solid black;
+                box-sizing: border-box;
+                display: flex;
+                align-items: center;
+                justify-content: center;
+                font-size: xx-large;
+                font-family: sans-serif;
+                position: relative;
+                background-size: cover !important;
+                background-position: center center !important;
+            }
+            .panelsrc {
+                position: absolute;
+                top: 0;
+                width: calc(100% - 2px);
+                border: none;
+                border-bottom: 1px solid black;
+            }
+            .size {
+                position: absolute;
+                bottom: 0;
+                font-size: medium;
+            }
+            .quarter-quarter {
+                grid-column: span 3;
+                grid-row: span 3;
+            }
+            .third-quarter {
+                grid-column: span 4;
+                grid-row: span 3;
+            }
+            .half-quarter {
+                grid-column: span 6;
+                grid-row: span 3;
+            }
+            .doublethird-quarter {
+                grid-column: span 8;
+                grid-row: span 3;
+            }
+            .triplequarter-quarter {
+                grid-column: span 9;
+                grid-row: span 3;
+            }
+            .full-quarter {
+                grid-column: span 12;
+                grid-row: span 3;
+            }
+            .quarter-third {
+                grid-column: span 3;
+                grid-row: span 4;
+            }
+            .third-third {
+                grid-column: span 4;
+                grid-row: span 4;
+            }
+            .half-third {
+                grid-column: span 6;
+                grid-row: span 4;
+            }
+            .doublethird-third {
+                grid-column: span 8;
+                grid-row: span 4;
+            }
+            .triplequarter-third {
+                grid-column: span 9;
+                grid-row: span 4;
+            }
+            .full-third {
+                grid-column: span 12;
+                grid-row: span 4;
+            }
+            .quarter-half {
+                grid-column: span 3;
+                grid-row: span 6;
+            }
+            .third-half {
+                grid-column: span 4;
+                grid-row: span 6;
+            }
+            .half-half {
+                grid-column: span 6;
+                grid-row: span 6;
+            }
+            .doublethird-half {
+                grid-column: span 8;
+                grid-row: span 6;
+            }
+            .triplequarter-half {
+                grid-column: span 9;
+                grid-row: span 6;
+            }
+            .full-half {
+                grid-column: span 12;
+                grid-row: span 6;
+            }
+            .quarter-doublethird {
+                grid-column: span 3;
+                grid-row: span 8;
+            }
+            .third-doublethird {
+                grid-column: span 4;
+                grid-row: span 8;
+            }
+            .half-doublethird {
+                grid-column: span 6;
+                grid-row: span 8;
+            }
+            .doublethird-doublethird {
+                grid-column: span 8;
+                grid-row: span 8;
+            }
+            .triplequarter-doublethird {
+                grid-column: span 9;
+                grid-row: span 8;
+            }
+            .full-doublethird {
+                grid-column: span 12;
+                grid-row: span 8;
+            }
+            .quarter-triplequarter {
+                grid-column: span 3;
+                grid-row: span 9;
+            }
+            .third-triplequarter {
+                grid-column: span 4;
+                grid-row: span 9;
+            }
+            .half-triplequarter {
+                grid-column: span 6;
+                grid-row: span 9;
+            }
+            .doublethird-triplequarter {
+                grid-column: span 8;
+                grid-row: span 9;
+            }
+            .triplequarter-triplequarter {
+                grid-column: span 9;
+                grid-row: span 9;
+            }
+            .full-triplequarter {
+                grid-column: span 12;
+                grid-row: span 9;
+            }
+            .quarter-full {
+                grid-column: span 3;
+                grid-row: span 12;
+            }
+            .third-full {
+                grid-column: span 4;
+                grid-row: span 12;
+            }
+            .half-full {
+                grid-column: span 6;
+                grid-row: span 12;
+            }
+            .doublethird-full {
+                grid-column: span 8;
+                grid-row: span 12;
+            }
+            .triplequarter-full {
+                grid-column: span 9;
+                grid-row: span 12;
+            }
+            .full-full {
+                grid-column: span 12;
+                grid-row: span 12;
+            }
+            .hidden {
+                display: none;
+            }
+        </style>
+    </head>
+    <body>
+        <div id="wcbuilder-controls">
+            <label>Horizontal</label>
+            <select id="width">
+                <option value="q">1/4</option>
+                <option value="t">1/3</option>
+                <option value="h">1/2</option>
+                <option value="dt">2/3</option>
+                <option value="tq">3/4</option>
+                <option value="f">1/1</option>
+            </select>
+            <label>Vertical</label>
+            <select id="height">
+                <option value="q">1/4</option>
+                <option value="t">1/3</option>
+                <option value="h">1/2</option>
+                <option value="dt">2/3</option>
+                <option value="tq">3/4</option>
+                <option value="f">1/1</option>
+            </select>
+            <button onclick="addPanel(document.querySelector('#width').value, document.querySelector('#height').value)">Add Panel</button>
+            <button onclick="removePanel()">Remove Panel</button>
+            <label>Show Labels</label>
+            <input type="checkbox" id="toggleCheck" checked onchange="toggleSpans()">
+        </div>
+        <div id="webcomic">
+        </div>
+    </body>
+    <datalist id="language">
+        <option value="en">English</option>
+        <option value="es">Español</option>
+        <option value="fr">Français</option>
+        <option value="pt">Português</option>
+        <option value="de">Deutsch</option>
+        <option value="it">Italiano</option>
+    </datalist>
+        <script type="text/javascript" src="/scripts/webcomic.js"></script>
+    <script>
+    
+        function addPanel(sizeX, sizeY) {
+            if (document.querySelector("#composite-webcomic") != null) {
+                var webcomic = document.querySelector("#composite-webcomic");
+            } else {
+                var webcomic = document.querySelector("#webcomic");
+            }
+            if (document.querySelector("#webcomic img") != null) {
+                webcomic.removeChild(document.querySelector("#webcomic img"))
+            }
+            webcomic.id = "composite-webcomic";
+            var panel = document.createElement("div");
+            var classtext = "panel ";
+            var sizetext = ""
+            switch(sizeX) {
+                case "q":
+                    classtext += "quarter";
+                    sizetext += "1/4"
+                    break;
+                case "t":
+                    classtext += "third";
+                    sizetext += "1/3"
+                    break;
+                case "h":
+                    classtext += "half";
+                    sizetext += "1/2"
+                    break;
+                case "dt":
+                    classtext += "doublethird";
+                    sizetext += "2/3"
+                    break;
+                case "tq":
+                    classtext += "triplequarter";
+                    sizetext += "3/4"
+                    break;
+                case "f":
+                    classtext += "full";
+                    sizetext += "1"
+                    break;
+                default:
+                    return("error");
+            }
+            classtext += "-"
+            sizetext += " x "
+            switch(sizeY) {
+                 case "q":
+                    classtext += "quarter";
+                    sizetext += "1/4"
+                    break;
+                case "t":
+                    classtext += "third";
+                    sizetext += "1/3"
+                    break;
+                case "h":
+                    classtext += "half";
+                    sizetext += "1/2"
+                    break;
+                case "dt":
+                    classtext += "doublethird";
+                    sizetext += "2/3"
+                    break;
+                case "tq":
+                    classtext += "triplequarter";
+                    sizetext += "3/4"
+                    break;
+                case "f":
+                    classtext += "full";
+                    sizetext += "1"
+                    break;
+                default:
+                    return("error");
+            }
+            panel.className = classtext;
+            panel.id = "panel" + (webcomic.childElementCount + 1);
+            // var colorstring = "#";
+            // for (ii = 0; ii < 6; ii++) {
+            //     colorstring += String.fromCharCode(Math.floor(Math.random()*6) + 97);
+            // }
+            // panel.style.backgroundColor = colorstring;
+            var numberspan = document.createElement("span");
+            numberspan.innerText = webcomic.childElementCount + 1
+            if(!document.querySelector("#toggleCheck").checked) {
+                numberspan.className += " hidden";
+            }
+            panel.append(numberspan);
+            var sizespan = document.createElement("span");
+            sizespan.innerText = sizetext;
+            sizespan.className = "size";
+            if(!document.querySelector("#toggleCheck").checked) {
+                sizespan.className += " hidden";
+            }
+            panel.append(sizespan);
+            var srcinput = document.createElement("input");
+            srcinput.setAttribute("type", "url");
+            srcinput.setAttribute("placeholder", "BG in CSS or picture URL");
+            srcinput.className = "panelsrc";
+            if(!document.querySelector("#toggleCheck").checked) {
+                srcinput.className += " hidden";
+            }
+            srcinput.setAttribute("onchange", "processBg(this)");
+            panel.append(srcinput);
+            webcomic.append(panel);
+        };
+        function removePanel() {
+            if (document.querySelector("#composite-webcomic") != null) {
+                var webcomic = document.querySelector("#composite-webcomic");
+            } else {
+                var webcomic = document.querySelector("#webcomic");
+            }
+            webcomic.removeChild(webcomic.lastElementChild);
+        };
+        function toggleSpans() {
+            var panelspans = document.querySelectorAll(".panel *");
+            for (panel of panelspans) {
+                panel.classList.toggle("hidden");
+            }
+        };
+        function processBg(input) {
+            var text = input.value;
+            if (text.includes("http")) {
+                input.parentElement.style.background = "url("+ text + ")";
+            } else {
+                input.parentElement.style.background = text.replace(/;/g, "");
+            }
+        };
+    </script>
+</html>

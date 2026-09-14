@@ -1,0 +1,322 @@
+<html>
+    <head>
+        <link href="https://fonts.googleapis.com/css?family=Comfortaa" rel="stylesheet">
+        <link href="https://fonts.googleapis.com/css?family=Nunito" rel="stylesheet">
+        <link rel="stylesheet" href="/stylesheets/webcomic.css">
+        <meta charset="UTF-8">
+        <style>
+            #webcomic-controls {
+                position: fixed;
+                display: flex;
+                justify-content: space-evenly; 
+                width: 100%;
+                bottom: 0;
+                left: 0;
+            }       
+            div#webcomic {
+                display: flex;
+                max-width: 100%;
+                justify-content: center;
+                align-items: center;
+            }
+            #webcomic-controls button {
+                width: 100%;
+                color: black ;
+                background: rgba(255,255,255,0.5);
+                border: none;
+                border-top: 1px solid black;
+                border-bottom: 1px solid black;
+                height: 2em;
+                margin-left: 20px;
+                margin-right: 20px;
+            }
+            #webcomic-controls button:disabled {
+               color: lightgray;
+            } 
+            #composite-webcomic {
+                display: grid;
+                margin: auto auto;
+                border: none;
+                width: 960px;
+                height: 960px;
+                grid-template-columns: repeat(12, 80px);
+                grid-template-rows: repeat(12, 80px);
+            }
+            #composite-webcomic div {
+                margin: 3px;
+                border: 2px solid black;
+                box-sizing: border-box;
+            }
+            .quarter-quarter {
+                grid-column: span 3;
+                grid-row: span 3;
+            }
+            .third-quarter {
+                grid-column: span 4;
+                grid-row: span 3;
+            }
+            .half-quarter {
+                grid-column: span 6;
+                grid-row: span 3;
+            }
+            .doublethird-quarter {
+                grid-column: span 8;
+                grid-row: span 3;
+            }
+            .triplequarter-quarter {
+                grid-column: span 9;
+                grid-row: span 3;
+            }
+            .full-quarter {
+                grid-column: span 12;
+                grid-row: span 3;
+            }
+            .quarter-third {
+                grid-column: span 3;
+                grid-row: span 4;
+            }
+            .third-third {
+                grid-column: span 4;
+                grid-row: span 4;
+            }
+            .half-third {
+                grid-column: span 6;
+                grid-row: span 4;
+            }
+            .doublethird-third {
+                grid-column: span 8;
+                grid-row: span 4;
+            }
+            .triplequarter-third {
+                grid-column: span 9;
+                grid-row: span 4;
+            }
+            .full-third {
+                grid-column: span 12;
+                grid-row: span 4;
+            }
+            .quarter-half {
+                grid-column: span 3;
+                grid-row: span 6;
+            }
+            .third-half {
+                grid-column: span 4;
+                grid-row: span 6;
+            }
+            .half-half {
+                grid-column: span 6;
+                grid-row: span 6;
+            }
+            .doublethird-half {
+                grid-column: span 8;
+                grid-row: span 6;
+            }
+            .triplequarter-half {
+                grid-column: span 9;
+                grid-row: span 6;
+            }
+            .full-half {
+                grid-column: span 12;
+                grid-row: span 6;
+            }
+            .quarter-doublethird {
+                grid-column: span 3;
+                grid-row: span 8;
+            }
+            .third-doublethird {
+                grid-column: span 4;
+                grid-row: span 8;
+            }
+            .half-doublethird {
+                grid-column: span 6;
+                grid-row: span 8;
+            }
+            .doublethird-doublethird {
+                grid-column: span 8;
+                grid-row: span 8;
+            }
+            .triplequarter-doublethird {
+                grid-column: span 9;
+                grid-row: span 8;
+            }
+            .full-doublethird {
+                grid-column: span 12;
+                grid-row: span 8;
+            }
+            .quarter-triplequarter {
+                grid-column: span 3;
+                grid-row: span 9;
+            }
+            .third-triplequarter {
+                grid-column: span 4;
+                grid-row: span 9;
+            }
+            .half-triplequarter {
+                grid-column: span 6;
+                grid-row: span 9;
+            }
+            .doublethird-triplequarter {
+                grid-column: span 8;
+                grid-row: span 9;
+            }
+            .triplequarter-triplequarter {
+                grid-column: span 9;
+                grid-row: span 9;
+            }
+            .full-triplequarter {
+                grid-column: span 12;
+                grid-row: span 9;
+            }
+            .quarter-full {
+                grid-column: span 3;
+                grid-row: span 12;
+            }
+            .third-full {
+                grid-column: span 4;
+                grid-row: span 12;
+            }
+            .half-full {
+                grid-column: span 6;
+                grid-row: span 12;
+            }
+            .doublethird-full {
+                grid-column: span 8;
+                grid-row: span 12;
+            }
+            .triplequarter-full {
+                grid-column: span 9;
+                grid-row: span 12;
+            }
+            .full-full {
+                grid-column: span 12;
+                grid-row: span 12;
+            }
+
+        </style>
+    </head>
+    <body>
+        <div id="webcomic">
+        </div>
+        <div id="webcomic-controls">
+            <button onclick="moveComic(-10)">◀10</button>
+            <button onclick="moveComic(-1)">◀1</button>
+            <button onclick="moveComic(1)">1▶</button>
+            <button onclick="moveComic(10)">10▶</button>
+        </div>
+    </body>
+    <datalist id="language">
+        <option value="en">English</option>
+        <option value="es">Español</option>
+        <option value="fr">Français</option>
+        <option value="pt">Português</option>
+        <option value="de">Deutsch</option>
+        <option value="it">Italiano</option>
+    </datalist>
+        <script type="text/javascript" src="/scripts/webcomic.js"></script>
+    <script>
+        var currentNumber = parseInt(window.location.search.slice(1).split("&")[0].split("=")[1]);
+        if (currentNumber < 11){
+            document.querySelector("#webcomic-controls").children[0].disabled = "true";
+        };
+        if (currentNumber < 2){
+             document.querySelector("#webcomic-controls").children[1].disabled = "true";
+        }
+
+        var webcomicPic = document.createElement("img");
+        function setPic() {
+            webcomicPic.src = "webcomic/" + currentNumber + ".png";
+        }
+        
+
+        try {
+            setPic();
+        }
+
+        catch {
+            console.log("Does not exist T_T")
+            }
+
+        document.querySelector("#webcomic").append(webcomicPic);
+        function moveComic(delta) {
+            var currentNumber = parseInt(window.location.search.slice(1).split("&")[0].split("=")[1]);
+            var newNumber = currentNumber + delta;
+            console.log("Moving to comic #" + newNumber);
+            window.location = window.location.href.split("?")[0] + "?n=" + newNumber;
+        };
+        function addPanel(sizeX, sizeY) {
+            if (document.querySelector("#composite-webcomic") != null) {
+                var webcomic = document.querySelector("#composite-webcomic");
+            } else {
+                var webcomic = document.querySelector("#webcomic");
+            }
+            if (document.querySelector("#webcomic img") != null) {
+                webcomic.removeChild(document.querySelector("#webcomic img"))
+            }
+            webcomic.id = "composite-webcomic";
+            var panel = document.createElement("div");
+            var classtext = "";
+            switch(sizeX) {
+                case "q":
+                    classtext += "quarter";
+                    break;
+                case "t":
+                    classtext += "third";
+                    break;
+                case "h":
+                    classtext += "half";
+                    break;
+                case "dt":
+                    classtext += "doublethird";
+                    break;
+                case "tq":
+                    classtext += "triplequarter";
+                    break;
+                case "f":
+                    classtext += "full";
+                    break;
+                default:
+                    return("error");
+            }
+            classtext += "-"
+            switch(sizeY) {
+                 case "q":
+                    classtext += "quarter";
+                    break;
+                case "t":
+                    classtext += "third";
+                    break;
+                case "h":
+                    classtext += "half";
+                    break;
+                case "dt":
+                    classtext += "doublethird";
+                    break;
+                case "tq":
+                    classtext += "triplequarter";
+                    break;
+                case "f":
+                    classtext += "full";
+                    break;
+                default:
+                    return("error");
+            }
+            panel.className = classtext;
+            panel.id = "panel" + (webcomic.childElementCount + 1);
+            var colorstring = "#";
+            for (ii = 0; ii < 6; ii++) {
+                colorstring += String.fromCharCode(Math.floor(Math.random()*6) + 97);
+            }
+            panel.style.backgroundColor = colorstring;
+            panel.innerText = webcomic.childElementCount + 1
+            webcomic.append(panel);
+        };
+        function removePanel() {
+            if (document.querySelector("#composite-webcomic") != null) {
+                var webcomic = document.querySelector("#composite-webcomic");
+            } else {
+                var webcomic = document.querySelector("#webcomic");
+            }
+            webcomic.removeChild(webcomic.lastElementChild);
+        }
+    </script>
+</html>
