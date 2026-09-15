@@ -1,0 +1,143 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<title>Can and Can't — Speaking Activity</title>
+<script>
+(function(){
+  try{
+    var saved = localStorage.getItem('theme-preference');
+    var theme = (saved === 'light' || saved === 'dark')
+      ? saved
+      : ((window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches) ? 'dark' : 'light');
+    document.documentElement.setAttribute('data-theme', theme);
+  }catch(e){ /* localStorage/matchMedia unavailable — CSS media query still applies */ }
+})();
+</script>
+<link rel="stylesheet" href="house.css">
+<style>
+.skill-list{ display:flex; flex-direction:column; gap:8px; margin-bottom:1.5rem; }
+.skill-row{
+  display:flex; align-items:center; justify-content:space-between; gap:10px;
+  padding:10px 14px; border-radius:12px;
+  background:var(--surface-2); border:1px solid var(--color-border-tertiary);
+}
+.skill-name{ font-size:14px; color:var(--text-primary); }
+.skill-stars{ display:flex; gap:2px; }
+.skill-star{ font-size:22px; line-height:1; cursor:pointer; color:var(--color-border-secondary); user-select:none; }
+.skill-star.filled{ color:#e3a72f; }
+.skill-caption{ font-size:11px; color:var(--text-muted); min-width:70px; text-align:right; }
+
+.q-grid{ display:grid; grid-template-columns:1fr 1fr; gap:8px; }
+@media (max-width:480px){ .q-grid{ grid-template-columns:1fr; } }
+.q-card{
+  border:1px solid var(--color-border-tertiary); border-radius:14px;
+  padding:12px 12px 10px; background:var(--surface-2); cursor:pointer;
+  transition:background .15s, border-color .15s;
+}
+.q-card .q-num{ font-size:10.5px; font-weight:700; color:var(--text-muted); letter-spacing:.04em; }
+.q-card .q-text{ font-size:14px; margin-top:4px; line-height:1.4; }
+.q-card .q-done{ font-size:11px; color:var(--good); font-weight:600; margin-top:6px; display:none; }
+.q-card.asked{ background:var(--good-bg); border-color:var(--good); }
+.q-card.asked .q-done{ display:block; }
+</style>
+</head>
+<body class="exercise-page" id="page">
+<span class="cefr-tag cefr-a1">A1 · Beginner</span>
+<div style="padding:.75rem 0 1rem;">
+
+  <h1>Let's Talk: What Can You Do?</h1>
+  <p class="subtitle">A short speaking activity about abilities</p>
+
+  <div class="sec-div">⭐ Rate yourself</div>
+  <div class="rule-box">
+    Tap the stars to rate how well you can do each thing. 5 stars = very well, 1 star = a little.
+  </div>
+  <div class="skill-list" id="skillList">
+    <div class="skill-row" data-skill="swim"><span class="skill-name">🏊 Swim</span><span class="skill-stars"></span></div>
+    <div class="skill-row" data-skill="cook"><span class="skill-name">🍳 Cook</span><span class="skill-stars"></span></div>
+    <div class="skill-row" data-skill="dance"><span class="skill-name">💃 Dance</span><span class="skill-stars"></span></div>
+    <div class="skill-row" data-skill="sing"><span class="skill-name">🎤 Sing</span><span class="skill-stars"></span></div>
+    <div class="skill-row" data-skill="drive"><span class="skill-name">🚗 Drive a car</span><span class="skill-stars"></span></div>
+    <div class="skill-row" data-skill="instrument"><span class="skill-name">🎸 Play an instrument</span><span class="skill-stars"></span></div>
+    <div class="skill-row" data-skill="english"><span class="skill-name">🗣️ Speak English</span><span class="skill-stars"></span></div>
+    <div class="skill-row" data-skill="draw"><span class="skill-name">🎨 Draw or paint</span><span class="skill-stars"></span></div>
+  </div>
+
+  <div class="sec-div">🗣️ Ask a partner</div>
+  <div class="rule-box">
+    Now ask a partner about their ratings. Use "Can you…?" and "How well can you…?"
+  </div>
+  <div class="q-grid" id="qGrid">
+    <div class="q-card"><div class="q-num">1</div><div class="q-text">What can you do very well (5 stars)?</div><div class="q-done">✓ Asked</div></div>
+    <div class="q-card"><div class="q-num">2</div><div class="q-text">What can't you do at all?</div><div class="q-done">✓ Asked</div></div>
+    <div class="q-card"><div class="q-num">3</div><div class="q-text">Can you speak more than one language?</div><div class="q-done">✓ Asked</div></div>
+    <div class="q-card"><div class="q-num">4</div><div class="q-text">What would you like to learn to do?</div><div class="q-done">✓ Asked</div></div>
+    <div class="q-card"><div class="q-num">5</div><div class="q-text">Who in your family can cook very well?</div><div class="q-done">✓ Asked</div></div>
+    <div class="q-card"><div class="q-num">6</div><div class="q-text">Can you play a sport? How well?</div><div class="q-done">✓ Asked</div></div>
+  </div>
+
+  <div class="sec-div">🎯 Find someone who…</div>
+  <div class="rule-box">
+    Stand up and talk to your classmates. Find a different person for each sentence and write their name.
+  </div>
+  <div class="q-grid" id="qGridFind">
+    <div class="q-card"><div class="q-num">1</div><div class="q-text">…can touch their toes.</div><div class="q-done">✓ Found</div></div>
+    <div class="q-card"><div class="q-num">2</div><div class="q-text">…can whistle.</div><div class="q-done">✓ Found</div></div>
+    <div class="q-card"><div class="q-num">3</div><div class="q-text">…can ride a bike.</div><div class="q-done">✓ Found</div></div>
+    <div class="q-card"><div class="q-num">4</div><div class="q-text">…can speak three languages.</div><div class="q-done">✓ Found</div></div>
+    <div class="q-card"><div class="q-num">5</div><div class="q-text">…can't cook at all.</div><div class="q-done">✓ Found</div></div>
+    <div class="q-card"><div class="q-num">6</div><div class="q-text">…can play a musical instrument.</div><div class="q-done">✓ Found</div></div>
+  </div>
+
+  <footer>Let's Talk: What Can You Do? (A1)</footer>
+</div>
+
+<div id="theme-toggle-wrap">
+  <button id="theme-toggle" aria-label="Toggle light/dark mode" title="Toggle light/dark mode">
+    <span id="theme-icon">☀️</span>
+  </button>
+</div>
+<script src="house.js"></script>
+<script>
+const CAPTIONS = ['', 'a little', 'a little', 'quite well', 'well', 'very well'];
+
+document.querySelectorAll('.skill-row').forEach(row => {
+  const starsWrap = row.querySelector('.skill-stars');
+  const caption = document.createElement('span');
+  caption.className = 'skill-caption';
+  let rating = 0;
+
+  const stars = [];
+  for (let i = 1; i <= 5; i++) {
+    const star = document.createElement('span');
+    star.className = 'skill-star';
+    star.textContent = '★';
+    star.addEventListener('click', () => {
+      rating = (rating === i) ? 0 : i;
+      render();
+    });
+    stars.push(star);
+    starsWrap.appendChild(star);
+  }
+  row.appendChild(caption);
+
+  function render() {
+    stars.forEach((s, idx) => s.classList.toggle('filled', idx < rating));
+    caption.textContent = rating === 0 ? "can't at all" : CAPTIONS[rating];
+  }
+  render();
+});
+
+document.getElementById('qGrid').addEventListener('click', (e) => {
+  const card = e.target.closest('.q-card');
+  if (card) card.classList.toggle('asked');
+});
+document.getElementById('qGridFind').addEventListener('click', (e) => {
+  const card = e.target.closest('.q-card');
+  if (card) card.classList.toggle('asked');
+});
+</script>
+</body>
+</html>
