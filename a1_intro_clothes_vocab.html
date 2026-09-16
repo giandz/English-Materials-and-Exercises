@@ -1,0 +1,84 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<title>Match the Clothes — Vocabulary</title>
+<script>
+(function(){
+  try{
+    var saved = localStorage.getItem('theme-preference');
+    var theme = (saved === 'light' || saved === 'dark')
+      ? saved
+      : ((window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches) ? 'dark' : 'light');
+    document.documentElement.setAttribute('data-theme', theme);
+  }catch(e){ /* localStorage/matchMedia unavailable — CSS media query still applies */ }
+})();
+</script>
+<link rel="stylesheet" href="house.css">
+</head>
+<body class="exercise-page" id="page">
+<span class="cefr-tag cefr-a1">A1 · Beginner</span>
+<div style="padding:.75rem 0 1rem;">
+
+  <h1>Clothes Vocabulary</h1>
+  <p class="subtitle">Match each word to its picture.</p>
+
+  <div class="rule-box">
+    Tap a word, then tap its picture. A line joins each correct pair.
+  </div>
+
+  <div class="score-bar">
+    <span>Matched: <strong id="matchScore">0</strong> / <span id="matchTotal">12</span></span>
+  </div>
+  <div id="matchFeedback" class="item-feedback"></div>
+
+  <div id="matchLeft"></div>
+  <div id="matchRight"></div>
+
+  <div id="matchWin" style="margin-top:10px; font-weight:600; color:var(--good); display:none;">🎉 Well done! All 12 matched.</div>
+
+  <div class="reset-row" style="margin-top:1rem;">
+    <button id="matchReset">↺ Reset</button>
+  </div>
+
+  <footer>Clothes Vocabulary — Matching (A1)</footer>
+</div>
+
+<div id="theme-toggle-wrap">
+  <button id="theme-toggle" aria-label="Toggle light/dark mode" title="Toggle light/dark mode">
+    <span id="theme-icon">☀️</span>
+  </button>
+</div>
+<script src="house.js"></script>
+<script>
+const PAIRS = [
+  { word: "shirt",      emoji: "👕" },
+  { word: "jacket",     emoji: "🧥" },
+  { word: "dress",      emoji: "👗" },
+  { word: "scarf",      emoji: "🧣" },
+  { word: "pants",      emoji: "👖" },
+  { word: "shoes",      emoji: "👟" },
+  { word: "socks",      emoji: "🧦" },
+  { word: "boots",      emoji: "🥾" },
+  { word: "hat",        emoji: "🧢" },
+  { word: "gloves",     emoji: "🧤" },
+  { word: "sunglasses", emoji: "🕶️" },
+  { word: "backpack",   emoji: "🎒" }
+];
+
+HouseMatching.build({
+  left: 'matchLeft',
+  right: 'matchRight',
+  pairs: PAIRS,
+  leftKey: 'word',
+  rightKey: 'emoji',
+  scoreEl: 'matchScore',
+  totalEl: 'matchTotal',
+  winEl: 'matchWin',
+  resetBtn: 'matchReset',
+  feedbackEl: 'matchFeedback'
+});
+</script>
+</body>
+</html>

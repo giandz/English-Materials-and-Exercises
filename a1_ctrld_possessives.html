@@ -1,0 +1,170 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<title>Possessives — Practice</title>
+<script>
+(function(){
+  try{
+    var saved = localStorage.getItem('theme-preference');
+    var theme = (saved === 'light' || saved === 'dark')
+      ? saved
+      : ((window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches) ? 'dark' : 'light');
+    document.documentElement.setAttribute('data-theme', theme);
+  }catch(e){ /* localStorage/matchMedia unavailable — CSS media query still applies */ }
+})();
+</script>
+<link rel="stylesheet" href="house.css">
+</head>
+<body class="exercise-page" id="page">
+<span class="cefr-tag cefr-a1">A1 · Beginner</span>
+<div style="padding:.75rem 0 1rem;">
+
+  <h1>Possessives — Practice</h1>
+  <p class="subtitle">Word order and gap fill practice.</p>
+
+  <div class="sec-div">Practice — Word order</div>
+  <div class="rule-box">
+    Tap a word to add it. Tap it again to remove it. You can also drag words to reorder them. When all the words are in place, the sentence is checked.
+  </div>
+  <button id="grammarToggle" class="grammar-toggle-btn">🎨 Show Grammar</button>
+  <div class="pos-legend"></div>
+  <div class="score-bar">
+    <span>Correct: <strong id="woScore">0</strong> / <span id="woTotal">0</span></span>
+  </div>
+  <div id="woItems"></div>
+
+  <div class="sec-div">Practice — Gap fill</div>
+  <div class="rule-box">
+    Type your answer. The bar turns green 🔴→🟢 when you are right.
+  </div>
+
+  <div class="legend">
+    <span class="legend-pill pos">possessive adjective</span>
+    <span class="legend-pill cel">possessive 's</span>
+    <span class="legend-pill q">question</span>
+  </div>
+
+  <div id="gfItems"></div>
+
+  <footer>Possessives — Practice (A1)</footer>
+</div>
+
+<div id="theme-toggle-wrap">
+  <button id="theme-toggle" aria-label="Toggle light/dark mode" title="Toggle light/dark mode">
+    <span id="theme-icon">☀️</span>
+  </button>
+</div>
+<script src="house.js"></script>
+<script>
+/* ============ WORD ORDER ============ */
+const WO_ITEMS = [
+  {
+    "context": "Talking about a jacket",
+    "text": "This / is / my / jacket / .",
+    "pos": ["subject","verb","det","object","none"]
+  },
+  {
+    "context": "Asking about a hat",
+    "text": "Is / that / your / hat / ?",
+    "pos": ["aux","subject","det","complement","none"]
+  },
+  {
+    "context": "Talking about gloves",
+    "text": "Those / are / his / gloves / .",
+    "pos": ["subject","verb","det","complement","none"]
+  },
+  {
+    "context": "Talking about a scarf",
+    "text": "That / is / her / scarf / .",
+    "pos": ["subject","verb","det","complement","none"]
+  },
+  {
+    "context": "Talking about Leo's jacket",
+    "text": "This / is / Leo's / jacket / .",
+    "pos": ["subject","verb","complement","complement","none"]
+  },
+  {
+    "context": "Talking about backpacks",
+    "text": "Those / are / their / backpacks / .",
+    "pos": ["subject","verb","det","complement","none"]
+  },
+  {
+    "context": "Talking about a dog's sweater",
+    "text": "The / dog / wears / its / sweater / .",
+    "pos": ["det","subject","verb","det","object","none"]
+  },
+  {
+    "context": "Asking whose shoes these are",
+    "text": "Whose / shoes / are / these / ?",
+    "pos": ["wh","noun","aux","subject","none"]
+  }
+];
+
+HouseWordOrder.build({ container:'woItems', items:WO_ITEMS, scoreEl:'woScore', totalEl:'woTotal' });
+
+/* ============ GAP FILL ============ */
+const GF_ITEMS = [
+  {
+    "category": "pos",
+    "direct": "🧥 Say the jacket belongs to you (I)",
+    "template": "This is {0} jacket.",
+    "hints": [{ "accepted": ["my"] }]
+  },
+  {
+    "category": "pos",
+    "direct": "🧢 Ask if the hat belongs to the listener (you)",
+    "template": "Is that {0} hat?",
+    "hints": [{ "accepted": ["your"] }]
+  },
+  {
+    "category": "pos",
+    "direct": "🧤 Say the gloves belong to a man (he)",
+    "template": "Those are {0} gloves.",
+    "hints": [{ "accepted": ["his"] }]
+  },
+  {
+    "category": "pos",
+    "direct": "🧣 Say the scarf belongs to a woman (she)",
+    "template": "That is {0} scarf.",
+    "hints": [{ "accepted": ["her"] }]
+  },
+  {
+    "category": "cel",
+    "direct": "🧥 Say the jacket belongs to Leo",
+    "template": "This is {0} jacket.",
+    "hints": [{ "accepted": ["leo's"] }]
+  },
+  {
+    "category": "pos",
+    "direct": "🎒 Say the backpacks belong to two people (they)",
+    "template": "Those are {0} backpacks.",
+    "hints": [{ "accepted": ["their"] }]
+  },
+  {
+    "category": "cel",
+    "direct": "🐶 Say the sweater belongs to the dog (it)",
+    "template": "The dog wears {0} sweater.",
+    "hints": [{ "accepted": ["its"] }]
+  },
+  {
+    "category": "q",
+    "direct": "❓ Ask whose shoes these are",
+    "template": "{0} shoes are these?",
+    "hints": [{ "accepted": ["whose"] }]
+  },
+  {
+    "category": "cel",
+    "direct": "📚 Say the books belong to the students (plural noun ending in s)",
+    "template": "These are the {0} books.",
+    "hints": [{ "accepted": ["students'"] }]
+  }
+];
+
+HouseGapFill.build({ container:'gfItems', items:GF_ITEMS, labels: { pos: 'possessive adjective', cel: "possessive 's", q: 'question' } });
+
+HouseGrammar.init();
+</script>
+</body>
+</html>

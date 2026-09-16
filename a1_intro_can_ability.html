@@ -1,0 +1,202 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<title>Can and Can't — Conversation</title>
+<script>
+// Applies the saved/system theme to <html> as early as possible, before the
+// stylesheet below paints anything, so there's no flash of the wrong theme.
+// Self-contained: no dependency on any external script.
+(function(){
+  try{
+    var saved = localStorage.getItem('theme-preference');
+    var theme = (saved === 'light' || saved === 'dark')
+      ? saved
+      : ((window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches) ? 'dark' : 'light');
+    document.documentElement.setAttribute('data-theme', theme);
+  }catch(e){ /* localStorage/matchMedia unavailable — CSS media query still applies */ }
+})();
+</script>
+<link rel="stylesheet" href="house.css">
+<style>
+.ability{ font-weight:600; color:var(--text-accent); }
+
+.ability-scale{ display:flex; flex-direction:column; gap:6px; margin-top:10px; }
+.ability-row{
+  display:flex; align-items:center; gap:12px;
+  padding:7px 12px; border-radius:10px;
+  background:var(--surface-1); border:1px solid var(--border);
+}
+.ability-row.best{ background:var(--good-bg); border-color:var(--good); }
+.ability-row.worst{ background:var(--bad-bg); border-color:var(--bad); }
+.ability-stars{ font-size:15px; letter-spacing:1px; min-width:92px; }
+.ability-label{ font-size:13px; color:var(--text-secondary); }
+.ability-row.best .ability-label{ color:var(--good); font-weight:600; }
+.ability-row.worst .ability-label{ color:var(--bad); font-weight:600; }
+</style>
+</head>
+<body class="exercise-page" id="page">
+<span class="cefr-tag cefr-a1">A1 · Beginner</span>
+<div style="padding:.75rem 0 1rem;">
+
+  <h1>Can and Can't — What Can You Do?</h1>
+  <p class="subtitle">A short conversation about abilities, using "can" and "can't".</p>
+
+  <div class="sec-div">Before you read</div>
+  <p class="subtitle">Read these three questions first, then look for the answers in the conversation.</p>
+  <div id="preQuestions" class="prequiz"></div>
+
+  <button id="grammarToggle" class="grammar-toggle-btn">🎨 Show Grammar</button>
+  <div class="pos-legend"></div>
+  <div class="setting-chip">☕ two friends, chatting at the weekend</div>
+
+  <div class="sec-div">Conversation</div>
+
+  <div class="bubble-wrap left">
+    <div class="avatar av-a">👨‍🦱</div>
+    <div><div class="bname">Sam</div>
+    <div class="bubble left">Hey Ana! <span class="pos-hl pos-aux">Can</span> <span class="pos-hl pos-subject">you</span> <span class="pos-hl pos-verb">swim</span>?</div></div>
+  </div>
+
+  <div class="bubble-wrap right">
+    <div class="avatar av-b">🙋</div>
+    <div><div class="bname right">Ana</div>
+    <div class="bubble right">Yes, <span class="pos-hl pos-subject">I</span> <span class="pos-hl pos-aux">can</span> <span class="pos-hl pos-verb">swim</span> <span class="ability">very well</span> ★★★★★. I learned when I was five.</div></div>
+  </div>
+
+  <div class="bubble-wrap left">
+    <div class="avatar av-a">👨‍🦱</div>
+    <div><div class="bname">Sam</div>
+    <div class="bubble left">Wow! <span class="pos-hl pos-subject">I</span> <span class="pos-hl pos-aux">can</span> only <span class="pos-hl pos-verb">swim</span> <span class="ability">a little</span> ★★☆☆☆. I'm scared of deep water.</div></div>
+  </div>
+
+  <div class="bubble-wrap right">
+    <div class="avatar av-b">🙋</div>
+    <div><div class="bname right">Ana</div>
+    <div class="bubble right">That's okay! <span class="pos-hl pos-aux">Can</span> <span class="pos-hl pos-subject">you</span> <span class="pos-hl pos-verb">cook</span>?</div></div>
+  </div>
+
+  <div class="bubble-wrap left">
+    <div class="avatar av-a">👨‍🦱</div>
+    <div><div class="bname">Sam</div>
+    <div class="bubble left"><span class="pos-hl pos-subject">I</span> <span class="pos-hl pos-aux">can</span> <span class="pos-hl pos-verb">cook</span> <span class="ability">quite well</span> ★★★☆☆. My pasta is famous!</div></div>
+  </div>
+
+  <div class="bubble-wrap right">
+    <div class="avatar av-b">🙋</div>
+    <div><div class="bname right">Ana</div>
+    <div class="bubble right">Nice! <span class="pos-hl pos-subject">I</span> <span class="pos-hl pos-neg">can't</span> <span class="pos-hl pos-verb">cook</span> <span class="ability">at all</span> ☆☆☆☆☆. I always burn the food.</div></div>
+  </div>
+
+  <div class="bubble-wrap left">
+    <div class="avatar av-a">👨‍🦱</div>
+    <div><div class="bname">Sam</div>
+    <div class="bubble left">Ha! <span class="pos-hl pos-aux">Can</span> <span class="pos-hl pos-subject">you</span> <span class="pos-hl pos-verb">play</span> <span class="pos-hl pos-object">any instruments</span>?</div></div>
+  </div>
+
+  <div class="bubble-wrap right">
+    <div class="avatar av-b">🙋</div>
+    <div><div class="bname right">Ana</div>
+    <div class="bubble right"><span class="pos-hl pos-subject">I</span> <span class="pos-hl pos-aux">can</span> <span class="pos-hl pos-verb">play</span> <span class="pos-hl pos-object">the piano</span> <span class="ability">well</span> ★★★★☆, but <span class="pos-hl pos-subject">I</span> <span class="pos-hl pos-neg">can't</span> <span class="pos-hl pos-verb">play</span> <span class="pos-hl pos-object">the guitar</span> <span class="ability">at all</span> ☆☆☆☆☆.</div></div>
+  </div>
+
+  <div class="bubble-wrap left">
+    <div class="avatar av-a">👨‍🦱</div>
+    <div><div class="bname">Sam</div>
+    <div class="bubble left"><span class="pos-hl pos-subject">I</span> <span class="pos-hl pos-aux">can</span> <span class="pos-hl pos-verb">play</span> <span class="pos-hl pos-object">the guitar</span> <span class="ability">very well</span> ★★★★★! I've played for ten years.</div></div>
+  </div>
+
+  <div class="bubble-wrap right">
+    <div class="avatar av-b">🙋</div>
+    <div><div class="bname right">Ana</div>
+    <div class="bubble right">That's amazing! <span class="pos-hl pos-aux">Can</span> <span class="pos-hl pos-subject">you</span> <span class="pos-hl pos-verb">dance</span>?</div></div>
+  </div>
+
+  <div class="bubble-wrap left">
+    <div class="avatar av-a">👨‍🦱</div>
+    <div><div class="bname">Sam</div>
+    <div class="bubble left">Not really. <span class="pos-hl pos-subject">I</span> <span class="pos-hl pos-aux">can</span> <span class="pos-hl pos-verb">dance</span> <span class="ability">a little</span> ★★☆☆☆, but I'm not very good.</div></div>
+  </div>
+
+  <div class="bubble-wrap right">
+    <div class="avatar av-b">🙋</div>
+    <div><div class="bname right">Ana</div>
+    <div class="bubble right">Me too! <span class="pos-hl pos-subject">I</span> <span class="pos-hl pos-aux">can</span> <span class="pos-hl pos-verb">dance</span> <span class="ability">quite well</span> ★★★☆☆ though — I take lessons.</div></div>
+  </div>
+
+  <div class="bubble-wrap left">
+    <div class="avatar av-a">👨‍🦱</div>
+    <div><div class="bname">Sam</div>
+    <div class="bubble left">We should go dancing together sometime!</div></div>
+  </div>
+
+  <div class="bubble-wrap right">
+    <div class="avatar av-b">🙋</div>
+    <div><div class="bname right">Ana</div>
+    <div class="bubble right">Sounds fun!</div></div>
+  </div>
+
+  <div class="sec-div">Check your answers</div>
+  <p class="subtitle">The same three questions — now choose the correct answer.</p>
+  <div id="quiz"></div>
+
+  <div class="sec-div">Quick reference</div>
+
+  <div class="rule-box">
+    <strong>Can / can't</strong> + verb talks about ability. Use it the same way for every person: I can, you can, he/she/it can, we can, they can — never "cans".
+  </div>
+
+  <div class="ability-scale">
+    <div class="ability-row best"><span class="ability-stars">★★★★★</span><span class="ability-label">I can … very well</span></div>
+    <div class="ability-row"><span class="ability-stars">★★★★☆</span><span class="ability-label">I can … well</span></div>
+    <div class="ability-row"><span class="ability-stars">★★★☆☆</span><span class="ability-label">I can … quite well</span></div>
+    <div class="ability-row"><span class="ability-stars">★★☆☆☆</span><span class="ability-label">I can … a little</span></div>
+    <div class="ability-row worst"><span class="ability-stars">☆☆☆☆☆</span><span class="ability-label">I can't … at all</span></div>
+  </div>
+
+  <footer>Can and Can't — Ability (A1)</footer>
+</div>
+
+<div id="theme-toggle-wrap">
+  <button id="theme-toggle" aria-label="Toggle light/dark mode" title="Toggle light/dark mode">
+    <span id="theme-icon">☀️</span>
+  </button>
+</div>
+<script src="house.js"></script>
+<script>
+const CQ_ITEMS = [
+  {
+    "q": "How well can Ana swim?",
+    "opts": [
+      "Not at all",
+      "Very well",
+      "A little"
+    ],
+    "correct": 1
+  },
+  {
+    "q": "What can Sam cook well?",
+    "opts": [
+      "Pizza",
+      "Pasta",
+      "Soup"
+    ],
+    "correct": 1
+  },
+  {
+    "q": "What can't Ana do at all?",
+    "opts": [
+      "Swim",
+      "Cook",
+      "Dance"
+    ],
+    "correct": 1
+  }
+];
+
+HouseComprehension.build({ pre: 'preQuestions', quiz: 'quiz', items: CQ_ITEMS });
+HouseGrammar.init();
+</script>
+</body>
+</html>

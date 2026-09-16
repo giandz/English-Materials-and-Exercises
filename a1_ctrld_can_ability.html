@@ -1,0 +1,170 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<title>Can and Can't — Practice</title>
+<script>
+(function(){
+  try{
+    var saved = localStorage.getItem('theme-preference');
+    var theme = (saved === 'light' || saved === 'dark')
+      ? saved
+      : ((window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches) ? 'dark' : 'light');
+    document.documentElement.setAttribute('data-theme', theme);
+  }catch(e){ /* localStorage/matchMedia unavailable — CSS media query still applies */ }
+})();
+</script>
+<link rel="stylesheet" href="house.css">
+</head>
+<body class="exercise-page" id="page">
+<span class="cefr-tag cefr-a1">A1 · Beginner</span>
+<div style="padding:.75rem 0 1rem;">
+
+  <h1>Can and Can't — Practice</h1>
+  <p class="subtitle">Word order and gap fill practice.</p>
+
+  <div class="sec-div">Practice — Word order</div>
+  <div class="rule-box">
+    Tap a word to add it. Tap it again to remove it. You can also drag words to reorder them. When all the words are in place, the sentence is checked.
+  </div>
+  <button id="grammarToggle" class="grammar-toggle-btn">🎨 Show Grammar</button>
+  <div class="pos-legend"></div>
+  <div class="score-bar">
+    <span>Correct: <strong id="woScore">0</strong> / <span id="woTotal">0</span></span>
+  </div>
+  <div id="woItems"></div>
+
+  <div class="sec-div">Practice — Gap fill</div>
+  <div class="rule-box">
+    Type your answer. The bar turns green 🔴→🟢 when you are right.
+  </div>
+
+  <div class="legend">
+    <span class="legend-pill pos">Affirmative</span>
+    <span class="legend-pill neg">Negative</span>
+    <span class="legend-pill q">Question</span>
+  </div>
+
+  <div id="gfItems"></div>
+
+  <footer>Can and Can't — Practice (A1)</footer>
+</div>
+
+<div id="theme-toggle-wrap">
+  <button id="theme-toggle" aria-label="Toggle light/dark mode" title="Toggle light/dark mode">
+    <span id="theme-icon">☀️</span>
+  </button>
+</div>
+<script src="house.js"></script>
+<script>
+/* ============ WORD ORDER ============ */
+const WO_ITEMS = [
+  {
+    "context": "Talking about swimming",
+    "text": "I / can / swim / very / well / .",
+    "pos": ["subject","aux","verb","adverb","adverb","none"]
+  },
+  {
+    "context": "Talking about cooking",
+    "text": "She / can't / cook / at / all / .",
+    "pos": ["subject","neg","verb","prep","none","none"]
+  },
+  {
+    "context": "Asking about playing an instrument",
+    "text": "Can / you / play / the / guitar / ?",
+    "pos": ["aux","subject","verb","det","object","none"]
+  },
+  {
+    "context": "Talking about dancing",
+    "text": "He / can / dance / a / little / .",
+    "pos": ["subject","aux","verb","det","adverb","none"]
+  },
+  {
+    "context": "Talking about languages",
+    "text": "They / can / speak / English / quite / well / .",
+    "pos": ["subject","aux","verb","object","adverb","adverb","none"]
+  },
+  {
+    "context": "Talking about playing an instrument",
+    "text": "I / can't / play / the / piano / at / all / .",
+    "pos": ["subject","neg","verb","det","object","prep","none","none"]
+  },
+  {
+    "context": "Talking about dancing",
+    "text": "We / can / dance / quite / well / .",
+    "pos": ["subject","aux","verb","adverb","adverb","none"]
+  },
+  {
+    "context": "Asking about riding a bike",
+    "text": "Can / she / ride / a / bike / ?",
+    "pos": ["aux","subject","verb","det","object","none"]
+  }
+];
+
+HouseWordOrder.build({ container:'woItems', items:WO_ITEMS, scoreEl:'woScore', totalEl:'woTotal' });
+
+/* ============ GAP FILL ============ */
+const GF_ITEMS = [
+  {
+    "category": "pos",
+    "direct": "🏊 Say you can swim (affirmative)",
+    "template": "I {0} swim.",
+    "hints": [{ "accepted": ["can"] }]
+  },
+  {
+    "category": "neg",
+    "direct": "🍳 Say you can't cook (negative)",
+    "template": "I {0} cook.",
+    "hints": [{ "accepted": ["can't", "cannot"] }]
+  },
+  {
+    "category": "q",
+    "direct": "❓ Ask if someone can play the guitar",
+    "template": "{0} you play the guitar?",
+    "hints": [{ "accepted": ["can"] }]
+  },
+  {
+    "category": "q",
+    "direct": "🚲 Complete the question with the missing verb",
+    "template": "Can she {0} a bike?",
+    "hints": [{ "accepted": ["ride"] }]
+  },
+  {
+    "category": "pos",
+    "direct": "⭐ Say you swim very well",
+    "template": "I can swim {0}.",
+    "hints": [{ "accepted": ["very well"] }]
+  },
+  {
+    "category": "pos",
+    "direct": "⭐ Say you dance a little",
+    "template": "I can dance {0}.",
+    "hints": [{ "accepted": ["a little"] }]
+  },
+  {
+    "category": "pos",
+    "direct": "⭐ Say you speak English quite well",
+    "template": "I can speak English {0}.",
+    "hints": [{ "accepted": ["quite well"] }]
+  },
+  {
+    "category": "neg",
+    "direct": "⭐ Say you can't cook at all",
+    "template": "I can't cook {0}.",
+    "hints": [{ "accepted": ["at all"] }]
+  },
+  {
+    "category": "neg",
+    "direct": "🎹 Say he can't play the piano at all",
+    "template": "He {0} play the piano at all.",
+    "hints": [{ "accepted": ["can't", "cannot"] }]
+  }
+];
+
+HouseGapFill.build({ container:'gfItems', items:GF_ITEMS, labels: { pos: 'affirmative', neg: 'negative', q: 'question' } });
+
+HouseGrammar.init();
+</script>
+</body>
+</html>
