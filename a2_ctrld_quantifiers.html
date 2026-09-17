@@ -1,0 +1,170 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<title>Quantifiers — Practice</title>
+<script>
+(function(){
+  try{
+    var saved = localStorage.getItem('theme-preference');
+    var theme = (saved === 'light' || saved === 'dark')
+      ? saved
+      : ((window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches) ? 'dark' : 'light');
+    document.documentElement.setAttribute('data-theme', theme);
+  }catch(e){ /* localStorage/matchMedia unavailable — CSS media query still applies */ }
+})();
+</script>
+<link rel="stylesheet" href="house.css">
+</head>
+<body class="exercise-page" id="page">
+<span class="cefr-tag cefr-a2">A2 · Elementary</span>
+<div style="padding:.75rem 0 1rem;">
+
+  <h1>Quantifiers — Practice</h1>
+  <p class="subtitle">Word order and gap fill practice.</p>
+
+  <div class="sec-div">Practice — Word order</div>
+  <div class="rule-box">
+    Tap a word to add it. Tap it again to remove it. You can also drag words to reorder them. When all the words are in place, the sentence is checked.
+  </div>
+  <button id="grammarToggle" class="grammar-toggle-btn">🎨 Show Grammar</button>
+  <div class="pos-legend"></div>
+  <div class="score-bar">
+    <span>Correct: <strong id="woScore">0</strong> / <span id="woTotal">0</span></span>
+  </div>
+  <div id="woItems"></div>
+
+  <div class="sec-div">Practice — Gap fill</div>
+  <div class="rule-box">
+    Type your answer. The bar turns green 🔴→🟢 when you are right.
+  </div>
+
+  <div class="legend">
+    <span class="legend-pill q">question</span>
+    <span class="legend-pill pos">quantifier</span>
+    <span class="legend-pill neg">negative</span>
+  </div>
+
+  <div id="gfItems"></div>
+
+  <footer>Quantifiers — Practice (A2)</footer>
+</div>
+
+<div id="theme-toggle-wrap">
+  <button id="theme-toggle" aria-label="Toggle light/dark mode" title="Toggle light/dark mode">
+    <span id="theme-icon">☀️</span>
+  </button>
+</div>
+<script src="house.js"></script>
+<script>
+/* ============ WORD ORDER ============ */
+const WO_ITEMS = [
+  {
+    "context": "Asking about milk (uncountable)",
+    "text": "How / much / milk / do / we / have / ?",
+    "pos": ["wh","det","object","aux","subject","verb","none"]
+  },
+  {
+    "context": "Talking about milk",
+    "text": "We / have / a / little / milk / .",
+    "pos": ["subject","verb","det","adj","object","none"]
+  },
+  {
+    "context": "Asking about eggs (countable)",
+    "text": "How / many / eggs / do / we / have / ?",
+    "pos": ["wh","det","object","aux","subject","verb","none"]
+  },
+  {
+    "context": "Talking about eggs",
+    "text": "We / have / a / few / eggs / .",
+    "pos": ["subject","verb","det","adj","object","none"]
+  },
+  {
+    "context": "Talking about bread (negative)",
+    "text": "We / don't / have / any / bread / .",
+    "pos": ["subject","neg","verb","det","object","none"]
+  },
+  {
+    "context": "Talking about sugar",
+    "text": "We / have / a / lot / of / sugar / .",
+    "pos": ["subject","verb","det","noun","prep","object","none"]
+  },
+  {
+    "context": "Talking about apples",
+    "text": "Most / of / the / apples / are / fresh / .",
+    "pos": ["det","prep","det","subject","verb","complement","none"]
+  },
+  {
+    "context": "Talking about apples",
+    "text": "We / have / several / apples / .",
+    "pos": ["subject","verb","det","object","none"]
+  }
+];
+
+HouseWordOrder.build({ container:'woItems', items:WO_ITEMS, scoreEl:'woScore', totalEl:'woTotal' });
+
+/* ============ GAP FILL ============ */
+const GF_ITEMS = [
+  {
+    "category": "q",
+    "direct": "❓ Ask about milk (uncountable)",
+    "template": "{0} milk do we have?",
+    "hints": [{ "accepted": ["how much"] }]
+  },
+  {
+    "category": "q",
+    "direct": "❓ Ask about eggs (countable)",
+    "template": "{0} eggs do we have?",
+    "hints": [{ "accepted": ["how many"] }]
+  },
+  {
+    "category": "pos",
+    "direct": "🥛 Say you have a small amount of milk (uncountable)",
+    "template": "We have {0} milk.",
+    "hints": [{ "accepted": ["a little"] }]
+  },
+  {
+    "category": "pos",
+    "direct": "🥚 Say you have a small number of eggs (countable)",
+    "template": "We have {0} eggs.",
+    "hints": [{ "accepted": ["a few"] }]
+  },
+  {
+    "category": "neg",
+    "direct": "🍞 Say you don't have bread (negative)",
+    "template": "We don't have {0} bread.",
+    "hints": [{ "accepted": ["any"] }]
+  },
+  {
+    "category": "pos",
+    "direct": "🍬 Say you have a large amount of sugar",
+    "template": "We have {0} of sugar.",
+    "hints": [{ "accepted": ["a lot"] }]
+  },
+  {
+    "category": "pos",
+    "direct": "🍎 Say most of the apples are fresh",
+    "template": "{0} of the apples are fresh.",
+    "hints": [{ "accepted": ["most"] }]
+  },
+  {
+    "category": "pos",
+    "direct": "🍏 Say you have several apples",
+    "template": "We have {0} apples.",
+    "hints": [{ "accepted": ["several"] }]
+  },
+  {
+    "category": "pos",
+    "direct": "👥 Say every person is invited",
+    "template": "{0} people are invited.",
+    "hints": [{ "accepted": ["all"] }]
+  }
+];
+
+HouseGapFill.build({ container:'gfItems', items:GF_ITEMS, labels: { pos: 'quantifier', neg: 'negative', q: 'question' } });
+
+HouseGrammar.init();
+</script>
+</body>
+</html>
