@@ -1360,17 +1360,24 @@
    `kind` controls the stem:
      'point'        solid  — a definite moment  (simple past)
      'unspecified'  dashed — we don't say when  (present perfect)
-     'ongoing'      solid with an arrow — still going on
 
-   A `span` is a shaded band rather than a single moment:
-     { from: 0.2, to: 0.6, label: 'all summer', kind: 'span' }
+   A shaded band marks a period of time that the events sit inside:
+
+     bands: [{ from: 0.10, to: 0.76, label: 'last weekend' }]
+
+   Bands are drawn behind the line and the events, so an event placed within
+   `from`..`to` reads as happening during that period.
    ══════════════════════════════════════════════════════════════════════════ */
 (function (global) {
   'use strict';
 
   var NS = 'http://www.w3.org/2000/svg';
-  var W = 680, H = 220;
-  var X0 = 46, X1 = 600, Y = 130;
+  var W = 680, H = 232;
+  var X0 = 46, X1 = 600, Y = 142;
+
+  // Vertical extent of a period band: high enough to clear the emoji row,
+  // deep enough to enclose the event captions underneath the line.
+  var BAND_TOP = 40, BAND_BOTTOM = Y + 56;
 
   function el(tag, attrs, text) {
     var n = document.createElementNS(NS, tag);
@@ -1400,6 +1407,32 @@
       'aria-label': opts.caption || 'Timeline'
     });
 
+    var events = opts.events || [];
+
+    // Older pages wrote a period as an event with kind:'span'; treat those as
+    // bands so both spellings land on the same rendering.
+    var bands = (opts.bands || []).slice();
+    events.forEach(function (ev) {
+      if (ev.kind === 'span') bands.push(ev);
+    });
+
+    // ── period bands, behind everything else ─────────────────────────────
+    bands.forEach(function (b) {
+      var a = xAt(b.from), z = xAt(b.to);
+      var fill = b.fill || 'var(--pos-time-bg)';
+      var line = b.colour || 'var(--pos-time)';
+      svg.appendChild(el('rect', {
+        x: a, y: BAND_TOP, width: Math.max(4, z - a), height: BAND_BOTTOM - BAND_TOP,
+        rx: 14, fill: fill, stroke: line, 'stroke-width': 1.5, 'stroke-dasharray': '5,4'
+      }));
+      if (b.label) {
+        svg.appendChild(el('text', {
+          x: (a + z) / 2, y: BAND_TOP - 10, 'font-size': 12, 'font-weight': 700,
+          fill: line, 'text-anchor': 'middle'
+        }, b.label));
+      }
+    });
+
     // ── the line itself ──────────────────────────────────────────────────
     svg.appendChild(el('line', {
       x1: X0, y1: Y, x2: X1, y2: Y,
@@ -1411,29 +1444,8 @@
       fill: 'var(--color-text-secondary)', 'text-anchor': 'middle'
     }, opts.startLabel || 'Past'));
 
-    // ── spans first, so single events draw on top of them ────────────────
-    (opts.events || []).forEach(function (ev) {
-      if (ev.kind !== 'span') return;
-      var a = xAt(ev.from), b = xAt(ev.to);
-      svg.appendChild(el('rect', {
-        x: a, y: Y - 13, width: Math.max(2, b - a), height: 26, rx: 13,
-        fill: 'var(--pos-verb-bg)', stroke: 'var(--pos-verb)', 'stroke-width': 1.5
-      }));
-      if (ev.label) {
-        svg.appendChild(el('text', {
-          x: (a + b) / 2, y: Y + 46, 'font-size': 10.5,
-          fill: 'var(--color-text-secondary)', 'text-anchor': 'middle'
-        }, ev.label));
-      }
-      if (ev.emoji) {
-        svg.appendChild(el('text', {
-          x: (a + b) / 2, y: Y - 28, 'font-size': 22, 'text-anchor': 'middle'
-        }, ev.emoji));
-      }
-    });
-
     // ── point events ─────────────────────────────────────────────────────
-    (opts.events || []).forEach(function (ev) {
+    events.forEach(function (ev) {
       if (ev.kind === 'span') return;
       var x = xAt(ev.at);
       var colour = ev.colour || 'var(--pos-verb)';
