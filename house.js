@@ -9,6 +9,9 @@
      · HouseFontSize  — the 🔎 text-size slider
      · HouseRandomGen — the 🎲 freer-practice prompt generator
      · HouseMatching  — two-column matching with connector lines
+     · HouseTimeline  — tense timelines
+     · HouseFormClarf — drag POS chips onto sentence parts
+     · HouseErrorHunt — find and fix the mistakes
      · favicon        — auto-sets a level badge in the browser tab
      · HouseComprehension — the before/after reading questions
 
@@ -1331,6 +1334,541 @@
   }
 
   global.HouseMatching = { build: build };
+})(window);
+
+
+/* ══════════════════════════════════════════════════════════════════════════
+   HOUSE TIMELINE
+   The tense timeline used on clarification pages. Every tense page was drawing
+   its own SVG by hand, which is why no two of them lined up; this generates the
+   whole thing from data instead.
+
+     HouseTimeline.build({
+       container: 'timeline',
+       startLabel: 'Past',
+       nowLabel: 'NOW',
+       nowNote: 'speaking now',
+       events: [
+         { at: 0.30, emoji: '🏔️', label: 'went to the mountains', kind: 'point' }
+       ],
+       caption: 'A finished action at a definite time before now.'
+     });
+
+   `at` is a fraction of the way along the line (0 = start, 1 = now), so an
+   event keeps its position whatever the viewport does.
+
+   `kind` controls the stem:
+     'point'        solid  — a definite moment  (simple past)
+     'unspecified'  dashed — we don't say when  (present perfect)
+     'ongoing'      solid with an arrow — still going on
+
+   A `span` is a shaded band rather than a single moment:
+     { from: 0.2, to: 0.6, label: 'all summer', kind: 'span' }
+   ══════════════════════════════════════════════════════════════════════════ */
+(function (global) {
+  'use strict';
+
+  var NS = 'http://www.w3.org/2000/svg';
+  var W = 680, H = 220;
+  var X0 = 46, X1 = 600, Y = 130;
+
+  function el(tag, attrs, text) {
+    var n = document.createElementNS(NS, tag);
+    for (var k in attrs) {
+      if (Object.prototype.hasOwnProperty.call(attrs, k)) n.setAttribute(k, attrs[k]);
+    }
+    if (text != null) n.textContent = text;
+    return n;
+  }
+
+  function xAt(f) {
+    return X0 + (X1 - X0) * Math.max(0, Math.min(1, f));
+  }
+
+  function build(opts) {
+    var host = typeof opts.container === 'string'
+      ? document.getElementById(opts.container) : opts.container;
+    if (!host) return;
+
+    host.classList.add('timeline-wrap');
+    host.innerHTML = '';
+
+    var svg = el('svg', {
+      viewBox: '0 0 ' + W + ' ' + H,
+      xmlns: NS,
+      role: 'img',
+      'aria-label': opts.caption || 'Timeline'
+    });
+
+    // ── the line itself ──────────────────────────────────────────────────
+    svg.appendChild(el('line', {
+      x1: X0, y1: Y, x2: X1, y2: Y,
+      stroke: 'var(--color-border-secondary)', 'stroke-width': 3, 'stroke-linecap': 'round'
+    }));
+    svg.appendChild(el('circle', { cx: X0, cy: Y, r: 5, fill: 'var(--text-muted)' }));
+    svg.appendChild(el('text', {
+      x: X0, y: Y + 25, 'font-size': 12,
+      fill: 'var(--color-text-secondary)', 'text-anchor': 'middle'
+    }, opts.startLabel || 'Past'));
+
+    // ── spans first, so single events draw on top of them ────────────────
+    (opts.events || []).forEach(function (ev) {
+      if (ev.kind !== 'span') return;
+      var a = xAt(ev.from), b = xAt(ev.to);
+      svg.appendChild(el('rect', {
+        x: a, y: Y - 13, width: Math.max(2, b - a), height: 26, rx: 13,
+        fill: 'var(--pos-verb-bg)', stroke: 'var(--pos-verb)', 'stroke-width': 1.5
+      }));
+      if (ev.label) {
+        svg.appendChild(el('text', {
+          x: (a + b) / 2, y: Y + 46, 'font-size': 10.5,
+          fill: 'var(--color-text-secondary)', 'text-anchor': 'middle'
+        }, ev.label));
+      }
+      if (ev.emoji) {
+        svg.appendChild(el('text', {
+          x: (a + b) / 2, y: Y - 28, 'font-size': 22, 'text-anchor': 'middle'
+        }, ev.emoji));
+      }
+    });
+
+    // ── point events ─────────────────────────────────────────────────────
+    (opts.events || []).forEach(function (ev) {
+      if (ev.kind === 'span') return;
+      var x = xAt(ev.at);
+      var colour = ev.colour || 'var(--pos-verb)';
+      var stem = { x1: x, y1: Y, x2: x, y2: Y - 40, stroke: colour, 'stroke-width': 2 };
+      if (ev.kind === 'unspecified') stem['stroke-dasharray'] = '3,3';
+      svg.appendChild(el('line', stem));
+      svg.appendChild(el('circle', { cx: x, cy: Y, r: 5, fill: colour }));
+      if (ev.emoji) {
+        svg.appendChild(el('text', {
+          x: x, y: Y - 54, 'font-size': 22, 'text-anchor': 'middle'
+        }, ev.emoji));
+      }
+      if (ev.label) {
+        svg.appendChild(el('text', {
+          x: x, y: Y + 46, 'font-size': 10.5,
+          fill: 'var(--color-text-secondary)', 'text-anchor': 'middle'
+        }, ev.label));
+      }
+    });
+
+    // ── the NOW marker ───────────────────────────────────────────────────
+    if (opts.nowLabel !== false) {
+      svg.appendChild(el('line', {
+        x1: X1, y1: Y, x2: X1, y2: Y - 40,
+        stroke: 'var(--text-accent)', 'stroke-width': 2.5
+      }));
+      svg.appendChild(el('circle', { cx: X1, cy: Y, r: 7, fill: 'var(--text-accent)' }));
+      svg.appendChild(el('text', {
+        x: X1, y: Y - 60, 'font-size': 13, 'font-weight': 700,
+        fill: 'var(--text-accent)', 'text-anchor': 'middle'
+      }, opts.nowLabel || 'NOW'));
+      if (opts.nowNote) {
+        svg.appendChild(el('text', {
+          x: X1, y: Y + 26, 'font-size': 10.5,
+          fill: 'var(--color-text-secondary)', 'text-anchor': 'middle'
+        }, opts.nowNote));
+      }
+    }
+
+    if (opts.caption) {
+      svg.appendChild(el('text', {
+        x: W / 2 - 20, y: H - 15, 'font-size': 11,
+        fill: 'var(--color-text-tertiary)', 'text-anchor': 'middle', 'font-style': 'italic'
+      }, opts.caption));
+    }
+
+    host.appendChild(svg);
+  }
+
+  global.HouseTimeline = { build: build };
+})(window);
+
+
+/* ══════════════════════════════════════════════════════════════════════════
+   HOUSE FORM CLARF — guided discovery of a structure's form
+   The learner sees the same structure in affirmative, negative and question
+   form, and labels each part by putting a part-of-speech chip in the drop zone
+   ABOVE it. Working out that "did" sits in the same slot as "didn't", and that
+   the main verb goes back to its plain form in both, is the discovery; being
+   told it in a rule box is not.
+
+     HouseFormClarf.build({
+       container: 'formClarf',
+       pool: ['subject', 'aux', 'neg', 'verb', 'object'],
+       items: [
+         { form: 'aff', parts: [['I','subject'], ['went','verb'], ['to the mountains','object']] },
+         { form: 'neg', parts: [['I','subject'], ["didn't",'neg'], ['buy','verb'], ['anything','object']] },
+         { form: 'q',   parts: [['Did','aux'], ['you','subject'], ['go','verb'], ['anywhere?','object']] }
+       ]
+     });
+
+   A part with `null` for its label is punctuation or filler — it renders with
+   no drop zone and is not scored.
+
+   The pool is a palette, not a hand: chips are reused, because several words in
+   the same sentence share a part of speech. Tap a chip then tap a zone, or drag
+   it — both work, because this has to be usable on a phone.
+   ══════════════════════════════════════════════════════════════════════════ */
+(function (global) {
+  'use strict';
+
+  var LABELS = {
+    wh: 'Wh-word', aux: 'Auxiliary', subject: 'Subject', verb: 'Verb',
+    part: 'Past participle', object: 'Object', complement: 'Complement',
+    noun: 'Noun', det: 'Determiner', adj: 'Adjective', adverb: 'Adverb',
+    time: 'Time expression', prep: 'Preposition', conj: 'Conjunction',
+    neg: 'Negative', none: 'Other'
+  };
+
+  var FORM_LABEL = { aff: 'affirmative', neg: 'negative', q: 'question' };
+  var FORM_CAT = { aff: 'pos', neg: 'neg', q: 'q' };
+
+  function build(opts) {
+    var host = typeof opts.container === 'string'
+      ? document.getElementById(opts.container) : opts.container;
+    if (!host) return;
+
+    var items = opts.items || [];
+    var pool = opts.pool || [];
+    var scoreEl = opts.scoreEl ? document.getElementById(opts.scoreEl) : null;
+    var totalEl = opts.totalEl ? document.getElementById(opts.totalEl) : null;
+
+    host.classList.add('fc-wrap');
+    host.innerHTML = '';
+
+    // ── the palette ──────────────────────────────────────────────────────
+    var palette = document.createElement('div');
+    palette.className = 'fc-pool';
+    pool.forEach(function (key) {
+      var chip = document.createElement('button');
+      chip.className = 'fc-chip pos-' + key;
+      chip.dataset.pos = key;
+      chip.textContent = LABELS[key] || key;
+      palette.appendChild(chip);
+    });
+    host.appendChild(palette);
+
+    var total = 0;
+    items.forEach(function (it) {
+      it.parts.forEach(function (p) { if (p[1]) total++; });
+    });
+    if (totalEl) totalEl.textContent = total;
+    var correct = 0;
+
+    // ── the sentences ────────────────────────────────────────────────────
+    items.forEach(function (item, idx) {
+      var card = document.createElement('div');
+      card.className = 'fc-item';
+      if (item.form) {
+        var tag = document.createElement('span');
+        tag.className = 'cat-tag ' + (FORM_CAT[item.form] || 'pos');
+        tag.textContent = FORM_LABEL[item.form] || item.form;
+        card.appendChild(tag);
+      }
+
+      var row = document.createElement('div');
+      row.className = 'fc-sentence';
+
+      item.parts.forEach(function (part, pi) {
+        var word = part[0], answer = part[1];
+        var col = document.createElement('div');
+        col.className = 'fc-col';
+
+        if (answer) {
+          var zone = document.createElement('div');
+          zone.className = 'fc-zone';
+          zone.dataset.answer = answer;
+          zone.dataset.item = idx;
+          zone.dataset.part = pi;
+          zone.setAttribute('role', 'button');
+          zone.setAttribute('tabindex', '0');
+          col.appendChild(zone);
+        } else {
+          var spacer = document.createElement('div');
+          spacer.className = 'fc-zone fc-zone-none';
+          col.appendChild(spacer);
+        }
+
+        var w = document.createElement('div');
+        w.className = 'fc-word';
+        w.textContent = word;
+        col.appendChild(w);
+        row.appendChild(col);
+      });
+
+      card.appendChild(row);
+      host.appendChild(card);
+    });
+
+    // ── interaction ──────────────────────────────────────────────────────
+    var picked = null;
+
+    function selectChip(chip) {
+      if (picked) picked.classList.remove('selected');
+      picked = (picked === chip) ? null : chip;
+      if (picked) picked.classList.add('selected');
+    }
+
+    function place(zone, key) {
+      if (!key || zone.classList.contains('correct')) return;
+      zone.textContent = LABELS[key] || key;
+      zone.className = 'fc-zone filled pos-' + key;
+      if (key === zone.dataset.answer) {
+        zone.classList.add('correct');
+        zone.classList.remove('filled');
+        correct++;
+        if (scoreEl) scoreEl.textContent = correct;
+        if (correct === total) host.classList.add('fc-done');
+      } else {
+        zone.classList.add('wrong');
+        // Clear it again so the slot is obviously still open, rather than
+        // leaving a wrong label sitting there looking answered.
+        setTimeout(function () {
+          if (zone.classList.contains('correct')) return;
+          zone.textContent = '';
+          zone.className = 'fc-zone';
+        }, 600);
+      }
+    }
+
+    palette.addEventListener('click', function (e) {
+      var chip = e.target.closest('.fc-chip');
+      if (chip) selectChip(chip);
+    });
+
+    host.addEventListener('click', function (e) {
+      var zone = e.target.closest('.fc-zone');
+      if (!zone || zone.classList.contains('fc-zone-none')) return;
+      if (!picked) return;
+      place(zone, picked.dataset.pos);
+    });
+
+    host.addEventListener('keydown', function (e) {
+      if (e.key !== 'Enter' && e.key !== ' ') return;
+      var zone = e.target.closest('.fc-zone');
+      if (zone && picked) { e.preventDefault(); place(zone, picked.dataset.pos); }
+    });
+
+    // ── dragging ─────────────────────────────────────────────────────────
+    // Same shape as the word-order engine: every way a drag can end routes
+    // through one cleanup, so a dropped pointer can't leave a chip stuck to
+    // the viewport.
+    palette.querySelectorAll('.fc-chip').forEach(function (chip) {
+      var ghost = null;
+
+      function endDrag(e) {
+        if (!ghost) return;
+        var drop = document.elementFromPoint(e.clientX, e.clientY);
+        ghost.remove();
+        ghost = null;
+        chip.classList.remove('dragging');
+        var zone = drop && drop.closest && drop.closest('.fc-zone');
+        if (zone && !zone.classList.contains('fc-zone-none')) {
+          place(zone, chip.dataset.pos);
+        }
+      }
+
+      function cancelDrag() {
+        if (ghost) { ghost.remove(); ghost = null; }
+        chip.classList.remove('dragging');
+      }
+
+      chip.addEventListener('pointerdown', function (e) {
+        if (e.pointerType === 'mouse' && e.button !== 0) return;
+        chip.setPointerCapture(e.pointerId);
+        var moved = false;
+
+        function onMove(ev) {
+          if (!moved && Math.abs(ev.clientX - e.clientX) + Math.abs(ev.clientY - e.clientY) < 6) return;
+          if (!moved) {
+            moved = true;
+            chip.classList.add('dragging');
+            ghost = chip.cloneNode(true);
+            ghost.classList.add('fc-ghost');
+            ghost.classList.remove('dragging', 'selected');
+            document.body.appendChild(ghost);
+          }
+          ghost.style.left = ev.clientX + 'px';
+          ghost.style.top = ev.clientY + 'px';
+        }
+
+        function onUp(ev) {
+          chip.removeEventListener('pointermove', onMove);
+          chip.removeEventListener('pointerup', onUp);
+          chip.removeEventListener('pointercancel', cancelDrag);
+          chip.removeEventListener('lostpointercapture', cancelDrag);
+          if (moved) { endDrag(ev); ev.preventDefault(); }
+        }
+
+        chip.addEventListener('pointermove', onMove);
+        chip.addEventListener('pointerup', onUp);
+        chip.addEventListener('pointercancel', cancelDrag);
+        chip.addEventListener('lostpointercapture', cancelDrag);
+      });
+    });
+  }
+
+  global.HouseFormClarf = { build: build, LABELS: LABELS };
+})(window);
+
+
+/* ══════════════════════════════════════════════════════════════════════════
+   HOUSE ERROR HUNT — the productive half of "common mistakes"
+   Reading a ✗/✓ pair tells the learner what the mistake looks like; finding it
+   themselves is what makes it stick. Each sentence holds one or two errors —
+   and from A2 up, some sentences hold none, so the learner cannot assume there
+   is always something to fix.
+
+     HouseErrorHunt.build({
+       container: 'errorHunt',
+       items: [
+         { words: ['I', 'goed', 'to', 'the', 'park', '.'],
+           errors: { 1: { options: ['went', 'gone', 'did go'], correct: 'went' } } },
+         { words: ['She', 'saw', 'a', 'film', '.'], errors: {} }   // nothing wrong
+       ]
+     });
+
+   Tapping a word that is wrong opens three options under the sentence; tapping
+   a word that is right does nothing at all, deliberately — a wrong guess costs
+   the learner nothing but a moment, so the exercise stays about noticing rather
+   than about being punished. "OK" declares the sentence finished and is the only
+   thing that gives a verdict.
+   ══════════════════════════════════════════════════════════════════════════ */
+(function (global) {
+  'use strict';
+
+  function build(opts) {
+    var host = typeof opts.container === 'string'
+      ? document.getElementById(opts.container) : opts.container;
+    if (!host) return;
+
+    var items = opts.items || [];
+    var prompt = opts.prompt || 'Which is correct?';
+    var scoreEl = opts.scoreEl ? document.getElementById(opts.scoreEl) : null;
+    var totalEl = opts.totalEl ? document.getElementById(opts.totalEl) : null;
+    if (totalEl) totalEl.textContent = items.length;
+
+    var done = 0;
+    host.classList.add('eh-wrap');
+    host.innerHTML = '';
+
+    items.forEach(function (item, idx) {
+      var errors = item.errors || {};
+      var remaining = Object.keys(errors).length;
+      var hadErrors = remaining > 0;
+      var settled = false;
+
+      var card = document.createElement('div');
+      card.className = 'eh-item';
+
+      var row = document.createElement('div');
+      row.className = 'eh-row';
+
+      var sentence = document.createElement('div');
+      sentence.className = 'eh-sentence';
+
+      item.words.forEach(function (w, wi) {
+        var word = document.createElement('span');
+        word.className = 'eh-word';
+        word.textContent = w;
+        word.dataset.i = wi;
+        if (/^[.,!?;:]$/.test(w)) word.classList.add('eh-punct');
+        sentence.appendChild(word);
+      });
+
+      var ok = document.createElement('button');
+      ok.className = 'eh-ok';
+      ok.textContent = 'OK';
+
+      row.appendChild(sentence);
+      row.appendChild(ok);
+      card.appendChild(row);
+
+      var chooser = document.createElement('div');
+      chooser.className = 'eh-chooser';
+      card.appendChild(chooser);
+
+      var fb = document.createElement('div');
+      fb.className = 'eh-feedback';
+      card.appendChild(fb);
+
+      host.appendChild(card);
+
+      function closeChooser() {
+        chooser.classList.remove('open');
+        chooser.innerHTML = '';
+        sentence.querySelectorAll('.eh-word.picked')
+          .forEach(function (w) { w.classList.remove('picked'); });
+      }
+
+      function openChooser(wordEl, wi) {
+        closeChooser();
+        wordEl.classList.add('picked');
+        var spec = errors[wi];
+        chooser.innerHTML = '<span class="eh-prompt">' + prompt + '</span>';
+        spec.options.forEach(function (opt) {
+          var b = document.createElement('button');
+          b.className = 'eh-opt';
+          b.textContent = opt;
+          b.addEventListener('click', function () {
+            if (opt === spec.correct) {
+              wordEl.textContent = opt;
+              wordEl.classList.remove('picked');
+              wordEl.classList.add('fixed');
+              delete errors[wi];
+              remaining--;
+              closeChooser();
+            } else {
+              b.classList.add('wrong');
+              setTimeout(function () { b.classList.remove('wrong'); }, 420);
+            }
+          });
+          chooser.appendChild(b);
+        });
+        chooser.classList.add('open');
+      }
+
+      sentence.addEventListener('click', function (e) {
+        var wordEl = e.target.closest('.eh-word');
+        if (!wordEl || settled) return;
+        var wi = Number(wordEl.dataset.i);
+        // A word that isn't an error gives no feedback at all — by design.
+        if (!errors[wi]) return;
+        openChooser(wordEl, wi);
+      });
+
+      ok.addEventListener('click', function () {
+        if (settled) return;
+        closeChooser();
+        if (remaining === 0) {
+          settled = true;
+          card.classList.add('eh-correct');
+          // Track it rather than querying the DOM: the two verdicts are
+          // pedagogically different — "you fixed it" vs "you were right to
+          // leave it alone" — and that must not hinge on a selector.
+          fb.textContent = hadErrors
+            ? '✓ Fixed!'
+            : '✓ Correct — there was nothing wrong with this one.';
+          fb.className = 'eh-feedback correct';
+          ok.disabled = true;
+          sentence.querySelectorAll('.eh-word')
+            .forEach(function (w) { w.classList.add('eh-locked'); });
+          done++;
+          if (scoreEl) scoreEl.textContent = done;
+        } else {
+          fb.textContent = remaining === 1
+            ? '✗ There is still one mistake. Tap the word you think is wrong.'
+            : '✗ There are still ' + remaining + ' mistakes. Tap a word you think is wrong.';
+          fb.className = 'eh-feedback wrong';
+        }
+      });
+    });
+  }
+
+  global.HouseErrorHunt = { build: build };
 })(window);
 
 
