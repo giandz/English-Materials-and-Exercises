@@ -1,0 +1,211 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<title>For -ing, To + Infinitive, By -ing — Practice</title>
+<script>
+// Applies the saved/system theme to <html> as early as possible, before the
+// stylesheet below paints anything, so there's no flash of the wrong theme.
+// Self-contained: no dependency on any external script.
+(function(){
+  try{
+    var saved = localStorage.getItem('theme-preference');
+    var theme = (saved === 'light' || saved === 'dark')
+      ? saved
+      : ((window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches) ? 'dark' : 'light');
+    document.documentElement.setAttribute('data-theme', theme);
+    // Same idea for the text size: apply it before house.css paints, so a
+    // person who chose 28px doesn't watch the page reflow from 14px on load.
+    var fs = parseFloat(localStorage.getItem('font-size-preference'));
+    if (fs >= 10 && fs <= 28){
+      document.documentElement.style.setProperty('--fs-base', fs + 'px');
+    }
+  }catch(e){ /* localStorage/matchMedia unavailable — CSS media query still applies */ }
+})();
+</script>
+<link rel="stylesheet" href="house.css">
+</head>
+<body>
+<div class="page" id="page">
+  <span class="cefr-tag cefr-a2">A2 · Elementary</span>
+  <h1>For -ing / To + Infinitive / By -ing — Practice</h1>
+  <p class="subtitle">Build the sentences, then choose the right structure.</p>
+
+  <div class="sec-div">Practice — Word order</div>
+  <div class="rule-box">Tap a word to add it. Tap it again to remove it. You can also drag words to reorder them. When all the words are in place, the sentence is checked.</div>
+  <button id="grammarToggle" class="grammar-toggle-btn">🎨 Show Grammar</button>
+  <div class="pos-legend"></div>
+  <div class="score-bar"><span>Correct: <strong id="woScore">0</strong> / <span id="woTotal">0</span></span></div>
+  <div id="woItems"></div>
+
+  <div class="sec-div">Practice — Gap fill</div>
+  <div class="rule-box">Type your answer. The bar turns green 🔴→🟢 when you are right.</div>
+  <div id="gfItems"></div>
+
+  <footer>Controlled Practice — Purpose and Method (A2)</footer>
+</div>
+
+<div id="theme-toggle-wrap">
+  <button id="theme-toggle" aria-label="Toggle light/dark mode" title="Toggle light/dark mode">
+    <span id="theme-icon">☀️</span>
+  </button>
+</div>
+<script src="house.js"></script>
+<script>
+const WO_ITEMS = [
+  {
+    "context": "🔪 what it is for",
+    "text": "This knife / is / for / cutting / bread / .",
+    "pos": [
+      "subject",
+      "verb",
+      "prep",
+      "verb",
+      "object",
+      "none"
+    ]
+  },
+  {
+    "context": "🎯 why you did it",
+    "text": "I / came / here / to / study / .",
+    "pos": [
+      "subject",
+      "verb",
+      "adverb",
+      "prep",
+      "verb",
+      "none"
+    ]
+  },
+  {
+    "context": "🛠️ how you did it",
+    "text": "She / learned / English / by / watching / films / .",
+    "pos": [
+      "subject",
+      "verb",
+      "object",
+      "prep",
+      "verb",
+      "object",
+      "none"
+    ]
+  },
+  {
+    "context": "🔑 what it is for",
+    "text": "A key / is / for / opening / doors / .",
+    "pos": [
+      "subject",
+      "verb",
+      "prep",
+      "verb",
+      "object",
+      "none"
+    ]
+  },
+  {
+    "context": "🎯 why you did it",
+    "text": "He / went / to the shop / to / buy / milk / .",
+    "pos": [
+      "subject",
+      "verb",
+      "object",
+      "prep",
+      "verb",
+      "object",
+      "none"
+    ]
+  },
+  {
+    "context": "🛠️ how you did it",
+    "text": "They / saved / money / by / cooking / at home / .",
+    "pos": [
+      "subject",
+      "verb",
+      "object",
+      "prep",
+      "verb",
+      "object",
+      "none"
+    ]
+  }
+];
+
+HouseWordOrder.build({ container: 'woItems', items: WO_ITEMS, scoreEl: 'woScore', totalEl: 'woTotal' });
+
+const GF_ITEMS = [
+  {
+    "direct": "🔪 What is a knife for?",
+    "template": "A knife is {0} bread.",
+    "hints": [
+      {
+        "accepted": [
+          "for cutting"
+        ]
+      }
+    ]
+  },
+  {
+    "direct": "🎯 Why did you come here?",
+    "template": "I came here {0} English.",
+    "hints": [
+      {
+        "accepted": [
+          "to study",
+          "to learn"
+        ]
+      }
+    ]
+  },
+  {
+    "direct": "🛠️ How did she learn?",
+    "template": "She learned English {0} films.",
+    "hints": [
+      {
+        "accepted": [
+          "by watching"
+        ]
+      }
+    ]
+  },
+  {
+    "direct": "🔑 What is a key for?",
+    "template": "A key is {0} doors.",
+    "hints": [
+      {
+        "accepted": [
+          "for opening"
+        ]
+      }
+    ]
+  },
+  {
+    "direct": "🎯 Why did he go out?",
+    "template": "He went to the shop {0} milk.",
+    "hints": [
+      {
+        "accepted": [
+          "to buy"
+        ]
+      }
+    ]
+  },
+  {
+    "direct": "🛠️ How did they save money?",
+    "template": "They saved money {0} at home.",
+    "hints": [
+      {
+        "accepted": [
+          "by cooking"
+        ]
+      }
+    ]
+  }
+];
+
+HouseGapFill.build({ container: 'gfItems', items: GF_ITEMS });
+
+HouseGrammar.init();
+</script>
+</body>
+</html>

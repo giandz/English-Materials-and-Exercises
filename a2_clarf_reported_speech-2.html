@@ -242,12 +242,198 @@ button.reset:active{transform:scale(0.97);}
   <div class="rule-box">Answer the questions about each sentence. These check the <strong>meaning</strong>, not the form.</div>
   <div id="ccq"></div>
 
+  
+  <div class="sec-div">Work out the form</div>
+  <div class="rule-box">Tap a label, then tap the box <strong>above</strong> the word it describes. Compare the rows — what changes, and what stays exactly the same?</div>
+  <div class="score-bar"><span>Labelled: <strong id="fcScore">0</strong> / <span id="fcTotal">0</span></span></div>
+  <div id="formClarf"></div>
+  <div class="rule-box">The reporting verb comes first and is already past. Everything after it steps back one tense to match.</div>
+
+  
+  <div class="sec-div">Common mistakes</div>
+  <div class="pair-card"><div class="pair-line no"><span class="mark">✗</span>She said she is tired.</div><div class="pair-line yes"><span class="mark">✓</span>She said she was tired.</div></div>
+  <div class="pair-card"><div class="pair-line no"><span class="mark">✗</span>He told that he was busy.</div><div class="pair-line yes"><span class="mark">✓</span>He said that he was busy.</div></div>
+  <div class="pair-card"><div class="pair-line no"><span class="mark">✗</span>She said me she would come.</div><div class="pair-line yes"><span class="mark">✓</span>She told me she would come.</div></div>
+  <div class="pair-card"><div class="pair-line no"><span class="mark">✗</span>He asked me where do I live.</div><div class="pair-line yes"><span class="mark">✓</span>He asked me where I lived.</div></div>
+  <div class="pair-card"><div class="pair-line no"><span class="mark">✗</span>She said she will call tomorrow.</div><div class="pair-line yes"><span class="mark">✓</span>She said she would call the next day.</div></div>
+
+
+  <div class="sec-div">Find the mistake</div>
+  <div class="rule-box">Each sentence below has <strong>one or two mistakes</strong> — but <strong>some are already correct</strong>. Tap a word you think is wrong and choose the right one. When you think the sentence is right, press <strong>OK</strong>.</div>
+  <div class="score-bar"><span>Corrected: <strong id="ehScore">0</strong> / <span id="ehTotal">0</span></span></div>
+  <div id="errorHunt"></div>
+
   <div id="theme-toggle-wrap">
   <button id="theme-toggle" aria-label="Toggle light/dark mode" title="Toggle light/dark mode">
     <span id="theme-icon">☀️</span>
   </button>
 </div>
 <script src="house.js"></script>
+<script>
+HouseErrorHunt.build({
+  container: 'errorHunt',
+  scoreEl: 'ehScore', totalEl: 'ehTotal',
+  items: [
+  {
+    "words": [
+      "She",
+      "said",
+      "she",
+      "is",
+      "tired",
+      "."
+    ],
+    "errors": {
+      "3": {
+        "options": [
+          "was",
+          "is",
+          "has been"
+        ],
+        "correct": "was"
+      }
+    }
+  },
+  {
+    "words": [
+      "He",
+      "told",
+      "me",
+      "he",
+      "had",
+      "finished",
+      "the",
+      "report",
+      "."
+    ],
+    "errors": {}
+  },
+  {
+    "words": [
+      "He",
+      "told",
+      "that",
+      "he",
+      "was",
+      "busy",
+      "."
+    ],
+    "errors": {
+      "1": {
+        "options": [
+          "said",
+          "told",
+          "asked"
+        ],
+        "correct": "said"
+      }
+    }
+  },
+  {
+    "words": [
+      "She",
+      "said",
+      "me",
+      "she",
+      "would",
+      "come",
+      "."
+    ],
+    "errors": {
+      "1": {
+        "options": [
+          "told",
+          "said",
+          "asked"
+        ],
+        "correct": "told"
+      }
+    }
+  },
+  {
+    "words": [
+      "She",
+      "asked",
+      "if",
+      "I",
+      "was",
+      "coming",
+      "to",
+      "the",
+      "party",
+      "."
+    ],
+    "errors": {}
+  },
+  {
+    "words": [
+      "He",
+      "asked",
+      "me",
+      "where",
+      "do",
+      "I",
+      "live",
+      "."
+    ],
+    "errors": {
+      "4": {
+        "options": [
+          "I",
+          "do I",
+          "I do"
+        ],
+        "correct": "I",
+        "alsoRemove": [
+          5
+        ]
+      },
+      "6": {
+        "options": [
+          "lived",
+          "live",
+          "living"
+        ],
+        "correct": "lived"
+      }
+    }
+  },
+  {
+    "words": [
+      "She",
+      "said",
+      "she",
+      "will",
+      "call",
+      "me",
+      "."
+    ],
+    "errors": {
+      "3": {
+        "options": [
+          "would",
+          "will",
+          "shall"
+        ],
+        "correct": "would"
+      }
+    }
+  }
+]
+});
+</script>
+<script>
+HouseFormClarf.build({
+  container: 'formClarf',
+  scoreEl: 'fcScore', totalEl: 'fcTotal',
+  pool: ["subject", "verb", "object", "aux", "part", "conj", "complement"],
+  items: [
+    { form: "aff", parts: [["She", "subject"], ["said", "verb"], ["she", "subject"], ["was", "verb"], ["tired", "complement"], [".", null]] },
+    { form: "aff", parts: [["He", "subject"], ["told", "verb"], ["me", "object"], ["he", "subject"], ["had finished", "part"], ["the report", "object"], [".", null]] },
+    { form: "aff", parts: [["She", "subject"], ["asked", "verb"], ["if", "conj"], ["I", "subject"], ["was", "aux"], ["coming", "verb"], [".", null]] }
+  ]
+});
+</script>
 <script>
 HouseTimeline.build({
   container: 'timeline',
@@ -494,6 +680,8 @@ document.addEventListener('pointercancel', onPointerUp);
 document.getElementById('resetBtn').addEventListener('click', () => {
   location.reload();
 });
+
+HouseGrammar.init();
 </script>
 </body>
 </html>

@@ -215,6 +215,14 @@ h1{ font-size:1.3rem; font-weight:600; letter-spacing:-0.01em; margin:0 0 4px; }
     </div>
   </div>
 
+
+  <div class="sec-div">Work out the form</div>
+  <div class="rule-box">Tap a label, then tap the box <strong>above</strong> the word it describes. Compare the rows — what changes, and what stays exactly the same?</div>
+  <div class="score-bar"><span>Labelled: <strong id="fcScore">0</strong> / <span id="fcTotal">0</span></span></div>
+  <div id="formClarf"></div>
+  <div class="rule-box">With <em>be</em>, the verb itself moves to the front. With every other verb you need <em>do / does</em> to do the moving for it.</div>
+
+
   <div class="sec-div">Side by side</div>
 
   <div class="rule-box">
@@ -231,6 +239,12 @@ h1{ font-size:1.3rem; font-weight:600; letter-spacing:-0.01em; margin:0 0 4px; }
     ✓ <span class="q">Does</span> she work here? — the -s only goes on <span class="q">does</span>, not on the main verb.
   </div>
 
+  
+  <div class="sec-div">Find the mistake</div>
+  <div class="rule-box">Every sentence below has <strong>one or two mistakes</strong>. Tap the word you think is wrong and choose the correct one. When you think the sentence is right, press <strong>OK</strong>.</div>
+  <div class="score-bar"><span>Corrected: <strong id="ehScore">0</strong> / <span id="ehTotal">0</span></span></div>
+  <div id="errorHunt"></div>
+
   <footer>Grammar Focus — Yes/No Questions (A1)</footer>
 
 </div>
@@ -241,5 +255,151 @@ h1{ font-size:1.3rem; font-weight:600; letter-spacing:-0.01em; margin:0 0 4px; }
   </button>
 </div>
 <script src="house.js"></script>
+<script>
+HouseErrorHunt.build({
+  container: 'errorHunt',
+  scoreEl: 'ehScore', totalEl: 'ehTotal',
+  items: [
+  {
+    "words": [
+      "Are",
+      "you",
+      "like",
+      "coffee",
+      "?"
+    ],
+    "errors": {
+      "0": {
+        "options": [
+          "Do",
+          "Are",
+          "Does"
+        ],
+        "correct": "Do"
+      }
+    }
+  },
+  {
+    "words": [
+      "Do",
+      "you",
+      "free",
+      "this",
+      "weekend",
+      "?"
+    ],
+    "errors": {
+      "0": {
+        "options": [
+          "Are",
+          "Do",
+          "Does"
+        ],
+        "correct": "Are"
+      }
+    }
+  },
+  {
+    "words": [
+      "Does",
+      "your",
+      "family",
+      "lives",
+      "nearby",
+      "?"
+    ],
+    "errors": {
+      "3": {
+        "options": [
+          "live",
+          "lives",
+          "living"
+        ],
+        "correct": "live"
+      }
+    }
+  },
+  {
+    "words": [
+      "Is",
+      "she",
+      "cook",
+      "dinner",
+      "every",
+      "night",
+      "?"
+    ],
+    "errors": {
+      "0": {
+        "options": [
+          "Does",
+          "Is",
+          "Do"
+        ],
+        "correct": "Does"
+      }
+    }
+  },
+  {
+    "words": [
+      "Yes",
+      ",",
+      "I",
+      "do",
+      "tired",
+      "."
+    ],
+    "errors": {
+      "3": {
+        "options": [
+          "am",
+          "do",
+          "does"
+        ],
+        "correct": "am"
+      }
+    }
+  },
+  {
+    "words": [
+      "Do",
+      "you",
+      "can",
+      "swim",
+      "?"
+    ],
+    "errors": {
+      "0": {
+        "options": [
+          "Can you",
+          "Do you can",
+          "Are you"
+        ],
+        "correct": "Can you",
+        "alsoRemove": [
+          1,
+          2
+        ]
+      }
+    }
+  }
+]
+});
+</script>
+<script>
+HouseFormClarf.build({
+  container: 'formClarf',
+  scoreEl: 'fcScore', totalEl: 'fcTotal',
+  pool: ["subject", "verb", "aux", "neg", "complement", "object", "adverb"],
+  items: [
+    { form: "q", parts: [["Are", "verb"], ["you", "subject"], ["free", "complement"], ["?", null]] },
+    { form: "q", parts: [["Do", "aux"], ["you", "subject"], ["like", "verb"], ["coffee", "object"], ["?", null]] },
+    { form: "q", parts: [["Does", "aux"], ["your family", "subject"], ["live", "verb"], ["nearby", "adverb"], ["?", null]] },
+    { form: "neg", parts: [["I", "subject"], ["am", "verb"], ["not", "neg"], ["free", "complement"], [".", null]] }
+  ]
+});
+
+HouseGrammar.init();
+</script>
 </body>
 </html>

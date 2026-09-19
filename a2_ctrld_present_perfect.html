@@ -1,0 +1,252 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<title>Present Perfect — Practice</title>
+<script>
+// Applies the saved/system theme to <html> as early as possible, before the
+// stylesheet below paints anything, so there's no flash of the wrong theme.
+// Self-contained: no dependency on any external script.
+(function(){
+  try{
+    var saved = localStorage.getItem('theme-preference');
+    var theme = (saved === 'light' || saved === 'dark')
+      ? saved
+      : ((window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches) ? 'dark' : 'light');
+    document.documentElement.setAttribute('data-theme', theme);
+    // Same idea for the text size: apply it before house.css paints, so a
+    // person who chose 28px doesn't watch the page reflow from 14px on load.
+    var fs = parseFloat(localStorage.getItem('font-size-preference'));
+    if (fs >= 10 && fs <= 28){
+      document.documentElement.style.setProperty('--fs-base', fs + 'px');
+    }
+  }catch(e){ /* localStorage/matchMedia unavailable — CSS media query still applies */ }
+})();
+</script>
+<link rel="stylesheet" href="house.css">
+</head>
+<body>
+<div class="page" id="page">
+  <span class="cefr-tag cefr-a2">A2 · Elementary</span>
+  <h1>Present Perfect — Practice</h1>
+  <p class="subtitle">Build the sentences, then write the verb forms.</p>
+
+  <div class="sec-div">Practice — Word order</div>
+  <div class="rule-box">Tap a word to add it. Tap it again to remove it. You can also drag words to reorder them. When all the words are in place, the sentence is checked.</div>
+  <button id="grammarToggle" class="grammar-toggle-btn">🎨 Show Grammar</button>
+  <div class="pos-legend"></div>
+  <div class="score-bar"><span>Correct: <strong id="woScore">0</strong> / <span id="woTotal">0</span></span></div>
+  <div id="woItems"></div>
+
+  <div class="sec-div">Practice — Gap fill</div>
+  <div class="rule-box">Type your answer. The bar turns green 🔴→🟢 when you are right.</div>
+  <div id="gfItems"></div>
+
+  <footer>Controlled Practice — Present Perfect (A2)</footer>
+</div>
+
+<div id="theme-toggle-wrap">
+  <button id="theme-toggle" aria-label="Toggle light/dark mode" title="Toggle light/dark mode">
+    <span id="theme-icon">☀️</span>
+  </button>
+</div>
+<script src="house.js"></script>
+<script>
+const WO_ITEMS = [
+  {
+    "context": "🌍 experience",
+    "text": "I / have / been / to Japan / .",
+    "pos": [
+      "subject",
+      "aux",
+      "part",
+      "object",
+      "none"
+    ]
+  },
+  {
+    "context": "❌ negative",
+    "text": "She / hasn't / finished / her homework / yet / .",
+    "pos": [
+      "subject",
+      "neg",
+      "part",
+      "object",
+      "adverb",
+      "none"
+    ]
+  },
+  {
+    "context": "❓ question",
+    "text": "Have / you / ever / run / a marathon / ?",
+    "pos": [
+      "aux",
+      "subject",
+      "adverb",
+      "part",
+      "object",
+      "none"
+    ]
+  },
+  {
+    "context": "⏳ how long",
+    "text": "How long / have / you / lived / here / ?",
+    "pos": [
+      "wh",
+      "aux",
+      "subject",
+      "part",
+      "adverb",
+      "none"
+    ]
+  },
+  {
+    "context": "✅ just",
+    "text": "They / have / just / arrived / .",
+    "pos": [
+      "subject",
+      "aux",
+      "adverb",
+      "part",
+      "none"
+    ]
+  },
+  {
+    "context": "📝 already",
+    "text": "He / has / already / seen / that film / .",
+    "pos": [
+      "subject",
+      "aux",
+      "adverb",
+      "part",
+      "object",
+      "none"
+    ]
+  },
+  {
+    "context": "🚫 never",
+    "text": "We / have / never / eaten / sushi / .",
+    "pos": [
+      "subject",
+      "aux",
+      "adverb",
+      "part",
+      "object",
+      "none"
+    ]
+  },
+  {
+    "context": "🔁 since",
+    "text": "She / has / worked / here / since 2019 / .",
+    "pos": [
+      "subject",
+      "aux",
+      "part",
+      "adverb",
+      "time",
+      "none"
+    ]
+  }
+];
+
+HouseWordOrder.build({ container: 'woItems', items: WO_ITEMS, scoreEl: 'woScore', totalEl: 'woTotal' });
+
+const GF_ITEMS = [
+  {
+    "direct": "🌍 be → past participle",
+    "template": "I have {0} to Japan.",
+    "hints": [
+      {
+        "accepted": [
+          "been"
+        ]
+      }
+    ]
+  },
+  {
+    "direct": "👀 see → past participle",
+    "template": "He has {0} that film.",
+    "hints": [
+      {
+        "accepted": [
+          "seen"
+        ]
+      }
+    ]
+  },
+  {
+    "direct": "🍽️ eat → past participle",
+    "template": "We have never {0} sushi.",
+    "hints": [
+      {
+        "accepted": [
+          "eaten"
+        ]
+      }
+    ]
+  },
+  {
+    "direct": "🏃 run → past participle",
+    "template": "Have you ever {0} a marathon?",
+    "hints": [
+      {
+        "accepted": [
+          "run"
+        ]
+      }
+    ]
+  },
+  {
+    "direct": "❌ Make it negative (she / finish)",
+    "template": "She {0} her homework yet.",
+    "hints": [
+      {
+        "accepted": [
+          "hasn't finished",
+          "has not finished"
+        ]
+      }
+    ]
+  },
+  {
+    "direct": "❓ Ask about duration",
+    "template": "{0} you lived here?",
+    "hints": [
+      {
+        "accepted": [
+          "how long have"
+        ]
+      }
+    ]
+  },
+  {
+    "direct": "⏳ Choose: for or since (2019)",
+    "template": "She has worked here {0} 2019.",
+    "hints": [
+      {
+        "accepted": [
+          "since"
+        ]
+      }
+    ]
+  },
+  {
+    "direct": "⏳ Choose: for or since (three years)",
+    "template": "She has worked here {0} three years.",
+    "hints": [
+      {
+        "accepted": [
+          "for"
+        ]
+      }
+    ]
+  }
+];
+
+HouseGapFill.build({ container: 'gfItems', items: GF_ITEMS });
+
+HouseGrammar.init();
+</script>
+</body>
+</html>

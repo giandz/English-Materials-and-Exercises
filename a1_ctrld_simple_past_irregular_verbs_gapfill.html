@@ -1,0 +1,73 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<title>Irregular Past Verbs — Gap Fill</title>
+<script>
+// Applies the saved/system theme to <html> as early as possible, before the
+// stylesheet below paints anything, so there's no flash of the wrong theme.
+// Self-contained: no dependency on any external script.
+(function(){
+  try{
+    var saved = localStorage.getItem('theme-preference');
+    var theme = (saved === 'light' || saved === 'dark')
+      ? saved
+      : ((window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches) ? 'dark' : 'light');
+    document.documentElement.setAttribute('data-theme', theme);
+    // Same idea for the text size: apply it before house.css paints, so a
+    // person who chose 28px doesn't watch the page reflow from 14px on load.
+    var fs = parseFloat(localStorage.getItem('font-size-preference'));
+    if (fs >= 10 && fs <= 28){
+      document.documentElement.style.setProperty('--fs-base', fs + 'px');
+    }
+  }catch(e){ /* localStorage/matchMedia unavailable — CSS media query still applies */ }
+})();
+</script>
+<link rel="stylesheet" href="house.css">
+</head>
+<body>
+<div class="page" id="page">
+  <span class="cefr-tag cefr-a1">A1 · Beginner</span>
+  <h1>Irregular Past Verbs — Gap Fill</h1>
+  <p class="subtitle">Controlled practice: write the correct past form.</p>
+
+  <div class="sec-div">Practice — Gap fill</div>
+  <div class="rule-box">Type your answer. The bar turns green 🔴→🟢 when you are right. Watch out after <strong>did</strong> and <strong>didn't</strong> — the verb goes back to its plain form.</div>
+  <div id="gfItems"></div>
+
+  <footer>Controlled Practice — Irregular Past Verbs (A1)</footer>
+</div>
+
+<div id="theme-toggle-wrap">
+  <button id="theme-toggle" aria-label="Toggle light/dark mode" title="Toggle light/dark mode">
+    <span id="theme-icon">☀️</span>
+  </button>
+</div>
+<script src="house.js"></script>
+<script>
+const GF_ITEMS = [
+  { category: 'pos', direct: '🏔️ go → ?',  template: 'I {0} to the mountains.',
+    hints: [{ accepted: ['went'] }] },
+  { category: 'pos', direct: '📷 take → ?', template: 'I {0} many photos.',
+    hints: [{ accepted: ['took'] }] },
+  { category: 'pos', direct: '🍽️ eat → ?',  template: 'We {0} lunch at a café.',
+    hints: [{ accepted: ['ate'] }] },
+  { category: 'pos', direct: '☕ drink → ?', template: 'He {0} hot chocolate.',
+    hints: [{ accepted: ['drank'] }] },
+  { category: 'pos', direct: '😴 sleep → ?', template: 'I {0} for an hour.',
+    hints: [{ accepted: ['slept'] }] },
+  { category: 'q',   direct: '❓ After "did", which form?', template: 'Did you {0} anywhere?',
+    hints: [{ accepted: ['go'] }] },
+  { category: 'neg', direct: '❌ After "didn\'t", which form?', template: "I didn't {0} anything.",
+    hints: [{ accepted: ['buy'] }] },
+  { category: 'pos', direct: '✅ Short answer: yes', template: '{0}.',
+    hints: [{ accepted: ['yes, i did'] }] }
+];
+
+HouseGapFill.build({ container: 'gfItems', items: GF_ITEMS, labels: {
+  pos: 'affirmative', neg: 'negative', q: 'question'
+} });
+</script>
+</body>
+</html>

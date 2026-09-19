@@ -48,8 +48,25 @@
   <div id="timeline"></div>
   <div class="rule-box">A recipe is a sequence. These words hold it together.</div>
 
-  <div class="sec-div">Quick check</div>
-  <div id="gfItems"></div>
+
+  <div class="sec-div">Work out the form</div>
+  <div class="rule-box">Tap a label, then tap the box <strong>above</strong> the word it describes. Compare the rows — what changes, and what stays exactly the same?</div>
+  <div class="score-bar"><span>Labelled: <strong id="fcScore">0</strong> / <span id="fcTotal">0</span></span></div>
+  <div id="formClarf"></div>
+  <div class="rule-box">Look at what is <strong>missing</strong>: there is no subject anywhere. That is what makes it an imperative — the recipe is talking straight to you.</div>
+
+  <div class="sec-div">Common mistakes</div>
+  <div class="pair-card"><div class="pair-line no"><span class="mark">✗</span>You boil the water first.</div><div class="pair-line yes"><span class="mark">✓</span>Boil the water first.</div></div>
+  <div class="pair-card"><div class="pair-line no"><span class="mark">✗</span>Please to chop the onion.</div><div class="pair-line yes"><span class="mark">✓</span>Please chop the onion.</div></div>
+  <div class="pair-card"><div class="pair-line no"><span class="mark">✗</span>Not boil the soup.</div><div class="pair-line yes"><span class="mark">✓</span>Don't boil the soup.</div></div>
+  <div class="pair-card"><div class="pair-line no"><span class="mark">✗</span>Peel the potatoes and boiling them.</div><div class="pair-line yes"><span class="mark">✓</span>Peel the potatoes and boil them.</div></div>
+  <div class="pair-card"><div class="pair-line no"><span class="mark">✗</span>Add salt in the soup.</div><div class="pair-line yes"><span class="mark">✓</span>Add salt to the soup.</div></div>
+
+
+  <div class="sec-div">Find the mistake</div>
+  <div class="rule-box">Every sentence below has <strong>one or two mistakes</strong>. Tap the word you think is wrong and choose the correct one. When you think the sentence is right, press <strong>OK</strong>.</div>
+  <div class="score-bar"><span>Corrected: <strong id="ehScore">0</strong> / <span id="ehTotal">0</span></span></div>
+  <div id="errorHunt"></div>
 
   <footer>Clarification — Cooking Verbs (A1/A2)</footer>
 </div>
@@ -60,6 +77,153 @@
   </button>
 </div>
 <script src="house.js"></script>
+<script>
+HouseErrorHunt.build({
+  container: 'errorHunt',
+  scoreEl: 'ehScore', totalEl: 'ehTotal',
+  items: [
+  {
+    "words": [
+      "You",
+      "boil",
+      "the",
+      "water",
+      "first",
+      "."
+    ],
+    "errors": {
+      "0": {
+        "options": [
+          "Boil",
+          "You boil",
+          "Boils"
+        ],
+        "correct": "Boil",
+        "alsoRemove": [
+          1
+        ]
+      }
+    }
+  },
+  {
+    "words": [
+      "Please",
+      "to",
+      "chop",
+      "the",
+      "onion",
+      "."
+    ],
+    "errors": {
+      "1": {
+        "options": [
+          "chop",
+          "to chop",
+          "chopping"
+        ],
+        "correct": "chop",
+        "alsoRemove": [
+          2
+        ]
+      }
+    }
+  },
+  {
+    "words": [
+      "Not",
+      "boil",
+      "the",
+      "soup",
+      "."
+    ],
+    "errors": {
+      "0": {
+        "options": [
+          "Don't",
+          "Not",
+          "No"
+        ],
+        "correct": "Don't"
+      }
+    }
+  },
+  {
+    "words": [
+      "Peel",
+      "the",
+      "potatoes",
+      "and",
+      "boiling",
+      "them",
+      "."
+    ],
+    "errors": {
+      "4": {
+        "options": [
+          "boil",
+          "boiling",
+          "boils"
+        ],
+        "correct": "boil"
+      }
+    }
+  },
+  {
+    "words": [
+      "Add",
+      "salt",
+      "in",
+      "the",
+      "soup",
+      "."
+    ],
+    "errors": {
+      "2": {
+        "options": [
+          "to",
+          "in",
+          "on"
+        ],
+        "correct": "to"
+      }
+    }
+  },
+  {
+    "words": [
+      "Grating",
+      "the",
+      "cheese",
+      ",",
+      "please",
+      "."
+    ],
+    "errors": {
+      "0": {
+        "options": [
+          "Grate",
+          "Grating",
+          "Grates"
+        ],
+        "correct": "Grate"
+      }
+    }
+  }
+]
+});
+</script>
+<script>
+HouseFormClarf.build({
+  container: 'formClarf',
+  scoreEl: 'fcScore', totalEl: 'fcTotal',
+  pool: ["time", "verb", "neg", "det", "object", "conj"],
+  items: [
+    { form: "aff", parts: [["Boil", "verb"], ["the", "det"], ["water", "object"], [".", null]] },
+    { form: "aff", parts: [["Chop", "verb"], ["the onion", "object"], ["and", "conj"], ["the carrots", "object"], [".", null]] },
+    { form: "neg", parts: [["Do not", "neg"], ["boil", "verb"], ["the soup", "object"], [".", null]] },
+    { form: "aff", parts: [["First", "time"], [",", null], ["peel", "verb"], ["the potatoes", "object"], [".", null]] }
+  ]
+});
+</script>
 <script>
 HouseTimeline.build({
   container: 'timeline',
@@ -73,110 +237,7 @@ HouseTimeline.build({
 });
 </script>
 <script>
-const GF_ITEMS = [
-  {
-    "category": "pos",
-    "direct": "🥔 Remove the skin of the potato",
-    "template": "{0} the potatoes first.",
-    "hints": [
-      {
-        "accepted": [
-          "peel"
-        ]
-      }
-    ]
-  },
-  {
-    "category": "pos",
-    "direct": "🔪 Cut the onion into small pieces",
-    "template": "{0} the onion.",
-    "hints": [
-      {
-        "accepted": [
-          "chop"
-        ]
-      }
-    ]
-  },
-  {
-    "category": "pos",
-    "direct": "🔥 Cook in very hot bubbling water",
-    "template": "{0} the water in a big pot.",
-    "hints": [
-      {
-        "accepted": [
-          "boil"
-        ]
-      }
-    ]
-  },
-  {
-    "category": "pos",
-    "direct": "🍳 Cook in hot oil in a pan",
-    "template": "{0} the eggs for breakfast.",
-    "hints": [
-      {
-        "accepted": [
-          "fry"
-        ]
-      }
-    ]
-  },
-  {
-    "category": "pos",
-    "direct": "🥄 Move the spoon around the soup",
-    "template": "{0} the soup so it does not stick.",
-    "hints": [
-      {
-        "accepted": [
-          "stir"
-        ]
-      }
-    ]
-  },
-  {
-    "category": "q",
-    "direct": "1️⃣ The first step",
-    "template": "{0}, peel the potatoes.",
-    "hints": [
-      {
-        "accepted": [
-          "first"
-        ]
-      }
-    ]
-  },
-  {
-    "category": "q",
-    "direct": "2️⃣ The next step",
-    "template": "{0}, boil them for 20 minutes.",
-    "hints": [
-      {
-        "accepted": [
-          "then",
-          "next"
-        ]
-      }
-    ]
-  },
-  {
-    "category": "q",
-    "direct": "🏁 The last step",
-    "template": "{0}, add butter and salt.",
-    "hints": [
-      {
-        "accepted": [
-          "finally"
-        ]
-      }
-    ]
-  }
-];
 
-HouseGapFill.build({ container: 'gfItems', items: GF_ITEMS, labels: {
-  "pos": "verb",
-  "q": "sequence"
-} });
 
 HouseGrammar.init();
 </script>

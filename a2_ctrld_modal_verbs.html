@@ -1,0 +1,219 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<title>Modal Verbs — Practice</title>
+<script>
+// Applies the saved/system theme to <html> as early as possible, before the
+// stylesheet below paints anything, so there's no flash of the wrong theme.
+// Self-contained: no dependency on any external script.
+(function(){
+  try{
+    var saved = localStorage.getItem('theme-preference');
+    var theme = (saved === 'light' || saved === 'dark')
+      ? saved
+      : ((window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches) ? 'dark' : 'light');
+    document.documentElement.setAttribute('data-theme', theme);
+    // Same idea for the text size: apply it before house.css paints, so a
+    // person who chose 28px doesn't watch the page reflow from 14px on load.
+    var fs = parseFloat(localStorage.getItem('font-size-preference'));
+    if (fs >= 10 && fs <= 28){
+      document.documentElement.style.setProperty('--fs-base', fs + 'px');
+    }
+  }catch(e){ /* localStorage/matchMedia unavailable — CSS media query still applies */ }
+})();
+</script>
+<link rel="stylesheet" href="house.css">
+</head>
+<body>
+<div class="page" id="page">
+  <span class="cefr-tag cefr-a2">A2 · Elementary</span>
+  <h1>Modal Verbs — Practice</h1>
+  <p class="subtitle">Build the sentences, then choose the right modal.</p>
+
+  <div class="sec-div">Practice — Word order</div>
+  <div class="rule-box">Tap a word to add it. Tap it again to remove it. You can also drag words to reorder them. When all the words are in place, the sentence is checked.</div>
+  <button id="grammarToggle" class="grammar-toggle-btn">🎨 Show Grammar</button>
+  <div class="pos-legend"></div>
+  <div class="score-bar"><span>Correct: <strong id="woScore">0</strong> / <span id="woTotal">0</span></span></div>
+  <div id="woItems"></div>
+
+  <div class="sec-div">Practice — Gap fill</div>
+  <div class="rule-box">Complete each sentence with the correct modal. The bar turns green 🔴→🟢 when you are right.</div>
+
+  <div class="gap-para">
+    1. Anna is tired. She <input class="gap" id="g1" autocomplete="off" placeholder="?"> go to bed early.<br>
+    2. <input class="gap" id="g2" autocomplete="off" placeholder="?"> I use your phone, please?<br>
+    3. I <input class="gap" id="g3" autocomplete="off" placeholder="?"> like a cup of tea, please.<br>
+    4. Tom <input class="gap" id="g4" autocomplete="off" placeholder="?"> speak three languages when he was ten.<br>
+    5. It is very cloudy. It <input class="gap" id="g5" autocomplete="off" placeholder="?"> rain — but I'm not sure.<br>
+    6. You <input class="gap" id="g6" autocomplete="off" placeholder="?"> eat so much sugar. It is not good for you.<br>
+    7. <input class="gap" id="g7" autocomplete="off" placeholder="?"> you like to sit by the window?<br>
+    8. She <input class="gap" id="g8" autocomplete="off" placeholder="?"> not come to the party. She is probably busy.<br>
+    9. <input class="gap" id="g9" autocomplete="off" placeholder="?"> you swim? — Yes, I <input class="gap" id="g9b" autocomplete="off" placeholder="?"> swim very well.<br>
+    10. Students <input class="gap" id="g10" autocomplete="off" placeholder="?"> not use their phones in class.<br>
+    11. <input class="gap" id="g11" autocomplete="off" placeholder="?"> you pass me the salt, please?<br>
+    12. It <input class="gap" id="g12" autocomplete="off" placeholder="?"> be expensive — I am not sure about the price.
+  </div>
+
+  <footer>Controlled Practice — Modal Verbs (A2)</footer>
+</div>
+
+<div id="theme-toggle-wrap">
+  <button id="theme-toggle" aria-label="Toggle light/dark mode" title="Toggle light/dark mode">
+    <span id="theme-icon">☀️</span>
+  </button>
+</div>
+<script src="house.js"></script>
+<script>
+const WO_ITEMS = [
+  {
+    "context": "🪖 obligation",
+    "text": "You / must / wear / a helmet / .",
+    "pos": [
+      "subject",
+      "aux",
+      "verb",
+      "object",
+      "none"
+    ]
+  },
+  {
+    "context": "🚫 prohibition",
+    "text": "You / mustn't / park / here / .",
+    "pos": [
+      "subject",
+      "neg",
+      "verb",
+      "adverb",
+      "none"
+    ]
+  },
+  {
+    "context": "💡 advice",
+    "text": "You / should / see / a doctor / .",
+    "pos": [
+      "subject",
+      "aux",
+      "verb",
+      "object",
+      "none"
+    ]
+  },
+  {
+    "context": "❓ asking",
+    "text": "Should / I / call / him / ?",
+    "pos": [
+      "aux",
+      "subject",
+      "verb",
+      "object",
+      "none"
+    ]
+  },
+  {
+    "context": "🤔 possibility",
+    "text": "We / might / go / to the beach / .",
+    "pos": [
+      "subject",
+      "aux",
+      "verb",
+      "object",
+      "none"
+    ]
+  },
+  {
+    "context": "🙅 inability",
+    "text": "She / can't / come / today / .",
+    "pos": [
+      "subject",
+      "neg",
+      "verb",
+      "time",
+      "none"
+    ]
+  },
+  {
+    "context": "🎫 permission",
+    "text": "Can / I / borrow / your pen / ?",
+    "pos": [
+      "aux",
+      "subject",
+      "verb",
+      "object",
+      "none"
+    ]
+  },
+  {
+    "context": "🚭 rule",
+    "text": "You / don't have to / pay / .",
+    "pos": [
+      "subject",
+      "neg",
+      "verb",
+      "none"
+    ]
+  }
+];
+
+HouseWordOrder.build({ container: 'woItems', items: WO_ITEMS, scoreEl: 'woScore', totalEl: 'woTotal' });
+
+const GAP_ANSWERS = {
+  "g1": [
+    "should"
+  ],
+  "g2": [
+    "can",
+    "could",
+    "may"
+  ],
+  "g3": [
+    "would"
+  ],
+  "g4": [
+    "could"
+  ],
+  "g5": [
+    "might",
+    "may"
+  ],
+  "g6": [
+    "shouldn't",
+    "should not"
+  ],
+  "g7": [
+    "would"
+  ],
+  "g8": [
+    "may",
+    "might"
+  ],
+  "g9": [
+    "can",
+    "could"
+  ],
+  "g9b": [
+    "can"
+  ],
+  "g10": [
+    "may"
+  ],
+  "g11": [
+    "could",
+    "can",
+    "would"
+  ],
+  "g12": [
+    "might",
+    "may",
+    "could"
+  ]
+};
+
+HouseGapFill.attach(GAP_ANSWERS);
+
+HouseGrammar.init();
+</script>
+</body>
+</html>

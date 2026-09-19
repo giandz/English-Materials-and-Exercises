@@ -249,6 +249,14 @@
   <div id="ccq"></div>
 
 
+  <div class="sec-div">Work out the form</div>
+  <div class="rule-box">Tap a label, then tap the box <strong>above</strong> the word it describes. Compare the rows — what changes, and what stays exactly the same?</div>
+  <div class="score-bar"><span>Labelled: <strong id="fcScore">0</strong> / <span id="fcTotal">0</span></span></div>
+  <div id="formClarf"></div>
+  <div class="rule-box"><em>am / is / are</em> carries the grammar; the <em>-ing</em> verb never changes. In questions the auxiliary jumps in front of the subject.</div>
+
+
+
   <div class="sec-div">quick comparison</div>
 
   <div style="background:var(--color-background-secondary);border-radius:var(--border-radius-lg);padding:12px 16px;font-size:0.8667rem;color:var(--color-text-secondary);line-height:1.9;">
@@ -259,12 +267,170 @@
 
 </div>
 
-<div id="theme-toggle-wrap">
+
+  <div class="sec-div">Common mistakes</div>
+  <div class="pair-card"><div class="pair-line no"><span class="mark">✗</span>I reading a book.</div><div class="pair-line yes"><span class="mark">✓</span>I'm reading a book.</div></div>
+  <div class="pair-card"><div class="pair-line no"><span class="mark">✗</span>She is eat lunch.</div><div class="pair-line yes"><span class="mark">✓</span>She is eating lunch.</div></div>
+  <div class="pair-card"><div class="pair-line no"><span class="mark">✗</span>They are studing.</div><div class="pair-line yes"><span class="mark">✓</span>They are studying.</div></div>
+  <div class="pair-card"><div class="pair-line no"><span class="mark">✗</span>What you are doing?</div><div class="pair-line yes"><span class="mark">✓</span>What are you doing?</div></div>
+  <div class="pair-card"><div class="pair-line no"><span class="mark">✗</span>He is no working today.</div><div class="pair-line yes"><span class="mark">✓</span>He isn't working today.</div></div>
+
+
+  <div class="sec-div">Find the mistake</div>
+  <div class="rule-box">Every sentence below has <strong>one or two mistakes</strong>. Tap the word you think is wrong and choose the correct one. When you think the sentence is right, press <strong>OK</strong>.</div>
+  <div class="score-bar"><span>Corrected: <strong id="ehScore">0</strong> / <span id="ehTotal">0</span></span></div>
+  <div id="errorHunt"></div>
+
+  <div id="theme-toggle-wrap">
   <button id="theme-toggle" aria-label="Toggle light/dark mode" title="Toggle light/dark mode">
     <span id="theme-icon">☀️</span>
   </button>
 </div>
 <script src="house.js"></script>
+<script>
+HouseErrorHunt.build({
+  container: 'errorHunt',
+  scoreEl: 'ehScore', totalEl: 'ehTotal',
+  items: [
+  {
+    "words": [
+      "I",
+      "reading",
+      "a",
+      "book",
+      "."
+    ],
+    "errors": {
+      "1": {
+        "options": [
+          "am reading",
+          "reading",
+          "read"
+        ],
+        "correct": "am reading"
+      }
+    }
+  },
+  {
+    "words": [
+      "She",
+      "is",
+      "eat",
+      "lunch",
+      "."
+    ],
+    "errors": {
+      "2": {
+        "options": [
+          "eating",
+          "eat",
+          "eats"
+        ],
+        "correct": "eating"
+      }
+    }
+  },
+  {
+    "words": [
+      "What",
+      "you",
+      "are",
+      "doing",
+      "?"
+    ],
+    "errors": {
+      "1": {
+        "options": [
+          "are you",
+          "you are",
+          "do you"
+        ],
+        "correct": "are you",
+        "alsoRemove": [
+          2
+        ]
+      }
+    }
+  },
+  {
+    "words": [
+      "He",
+      "is",
+      "no",
+      "working",
+      "today",
+      "."
+    ],
+    "errors": {
+      "2": {
+        "options": [
+          "not",
+          "no",
+          "never"
+        ],
+        "correct": "not"
+      }
+    }
+  },
+  {
+    "words": [
+      "They",
+      "is",
+      "studying",
+      "in",
+      "their",
+      "room",
+      "."
+    ],
+    "errors": {
+      "1": {
+        "options": [
+          "are",
+          "is",
+          "am"
+        ],
+        "correct": "are"
+      }
+    }
+  },
+  {
+    "words": [
+      "We",
+      "are",
+      "go",
+      "to",
+      "the",
+      "park",
+      "now",
+      "."
+    ],
+    "errors": {
+      "2": {
+        "options": [
+          "going",
+          "go",
+          "goes"
+        ],
+        "correct": "going"
+      }
+    }
+  }
+]
+});
+</script>
+<script>
+HouseFormClarf.build({
+  container: 'formClarf',
+  scoreEl: 'fcScore', totalEl: 'fcTotal',
+  pool: ["wh", "subject", "aux", "neg", "verb", "object", "time"],
+  items: [
+    { form: "aff", parts: [["I", "subject"], ["am", "aux"], ["reading", "verb"], ["a book", "object"], [".", null]] },
+    { form: "neg", parts: [["She", "subject"], ["isn't", "neg"], ["eating", "verb"], [".", null]] },
+    { form: "q", parts: [["Are", "aux"], ["you", "subject"], ["working", "verb"], ["today", "time"], ["?", null]] },
+    { form: "wh", parts: [["What", "wh"], ["is", "aux"], ["your sister", "subject"], ["doing", "verb"], ["?", null]] }
+  ]
+});
+</script>
 <script>
 HouseTimeline.build({
   container: 'timeline',
@@ -293,6 +459,8 @@ HouseCCQ.build({
       ]}
   ]
 });
+
+HouseGrammar.init();
 </script>
 </body>
 </html>

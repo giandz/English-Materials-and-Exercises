@@ -225,6 +225,14 @@ h1 { font-size: 1.3rem; margin: 4px 0 2px; }
     <p class="note">"No" replaces "any" and goes directly before the noun. It never uses isn't/aren't — the verb stays positive: <strong>There's no</strong>, <strong>There are no</strong>.</p>
   </div>
 
+
+  <div class="sec-div">Work out the form</div>
+  <div class="rule-box">Tap a label, then tap the box <strong>above</strong> the word it describes. Compare the rows — what changes, and what stays exactly the same?</div>
+  <div class="score-bar"><span>Labelled: <strong id="fcScore">0</strong> / <span id="fcTotal">0</span></span></div>
+  <div id="formClarf"></div>
+  <div class="rule-box"><em>There</em> is the subject in every one of these. The verb agrees with the noun that follows: <em>is</em> for one thing or an uncountable one, <em>are</em> for plurals.</div>
+
+
   <div class="sec-div">Quick Reference</div>
 
   <table class="neg-table">
@@ -256,11 +264,183 @@ h1 { font-size: 1.3rem; margin: 4px 0 2px; }
 
 </div>
 
-<div id="theme-toggle-wrap">
+
+  <div class="sec-div">Common mistakes</div>
+  <div class="pair-card"><div class="pair-line no"><span class="mark">✗</span>There are a milk in the fridge.</div><div class="pair-line yes"><span class="mark">✓</span>There is some milk in the fridge.</div></div>
+  <div class="pair-card"><div class="pair-line no"><span class="mark">✗</span>There is three eggs.</div><div class="pair-line yes"><span class="mark">✓</span>There are three eggs.</div></div>
+  <div class="pair-card"><div class="pair-line no"><span class="mark">✗</span>There isn't no bread.</div><div class="pair-line yes"><span class="mark">✓</span>There isn't any bread.</div></div>
+  <div class="pair-card"><div class="pair-line no"><span class="mark">✗</span>There are much traffic.</div><div class="pair-line yes"><span class="mark">✓</span>There is a lot of traffic.</div></div>
+  <div class="pair-card"><div class="pair-line no"><span class="mark">✗</span>Have a park near my house.</div><div class="pair-line yes"><span class="mark">✓</span>There is a park near my house.</div></div>
+
+
+  <div class="sec-div">Find the mistake</div>
+  <div class="rule-box">Every sentence below has <strong>one or two mistakes</strong>. Tap the word you think is wrong and choose the correct one. When you think the sentence is right, press <strong>OK</strong>.</div>
+  <div class="score-bar"><span>Corrected: <strong id="ehScore">0</strong> / <span id="ehTotal">0</span></span></div>
+  <div id="errorHunt"></div>
+
+  <div id="theme-toggle-wrap">
   <button id="theme-toggle" aria-label="Toggle light/dark mode" title="Toggle light/dark mode">
     <span id="theme-icon">☀️</span>
   </button>
 </div>
 <script src="house.js"></script>
+<script>
+HouseErrorHunt.build({
+  container: 'errorHunt',
+  scoreEl: 'ehScore', totalEl: 'ehTotal',
+  items: [
+  {
+    "words": [
+      "There",
+      "is",
+      "three",
+      "eggs",
+      "in",
+      "the",
+      "fridge",
+      "."
+    ],
+    "errors": {
+      "1": {
+        "options": [
+          "are",
+          "is",
+          "be"
+        ],
+        "correct": "are"
+      }
+    }
+  },
+  {
+    "words": [
+      "There",
+      "are",
+      "some",
+      "milk",
+      "on",
+      "the",
+      "table",
+      "."
+    ],
+    "errors": {
+      "1": {
+        "options": [
+          "is",
+          "are",
+          "be"
+        ],
+        "correct": "is"
+      }
+    }
+  },
+  {
+    "words": [
+      "There",
+      "isn't",
+      "no",
+      "bread",
+      "."
+    ],
+    "errors": {
+      "2": {
+        "options": [
+          "any",
+          "no",
+          "some"
+        ],
+        "correct": "any"
+      }
+    }
+  },
+  {
+    "words": [
+      "There",
+      "are",
+      "much",
+      "traffic",
+      "today",
+      "."
+    ],
+    "errors": {
+      "1": {
+        "options": [
+          "is",
+          "are",
+          "be"
+        ],
+        "correct": "is"
+      },
+      "2": {
+        "options": [
+          "a lot of",
+          "much",
+          "many"
+        ],
+        "correct": "a lot of"
+      }
+    }
+  },
+  {
+    "words": [
+      "Have",
+      "a",
+      "park",
+      "near",
+      "my",
+      "house",
+      "."
+    ],
+    "errors": {
+      "0": {
+        "options": [
+          "There is",
+          "Have",
+          "It has"
+        ],
+        "correct": "There is",
+        "alsoRemove": [
+          1
+        ]
+      }
+    }
+  },
+  {
+    "words": [
+      "There",
+      "aren't",
+      "much",
+      "shops",
+      "here",
+      "."
+    ],
+    "errors": {
+      "2": {
+        "options": [
+          "many",
+          "much",
+          "a lot"
+        ],
+        "correct": "many"
+      }
+    }
+  }
+]
+});
+</script>
+<script>
+HouseFormClarf.build({
+  container: 'formClarf',
+  scoreEl: 'fcScore', totalEl: 'fcTotal',
+  pool: ["wh", "subject", "verb", "neg", "det", "noun"],
+  items: [
+    { form: "aff", parts: [["There", "subject"], ["are", "verb"], ["some", "det"], ["apples", "noun"], [".", null]] },
+    { form: "aff", parts: [["There", "subject"], ["is", "verb"], ["some", "det"], ["milk", "noun"], [".", null]] },
+    { form: "neg", parts: [["There", "subject"], ["aren't", "neg"], ["any", "det"], ["eggs", "noun"], [".", null]] },
+    { form: "q", parts: [["Is", "verb"], ["there", "subject"], ["any", "det"], ["bread", "noun"], ["?", null]] }
+  ]
+});
+
+HouseGrammar.init();
+</script>
 </body>
 </html>

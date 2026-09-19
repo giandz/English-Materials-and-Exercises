@@ -171,6 +171,14 @@
     The form of <strong style="color:var(--color-text-primary);font-weight:500;">be</strong> changes with the tense. The past participle stays the same.
   </div>
 
+
+  <div class="sec-div">Work out the form</div>
+  <div class="rule-box">Tap a label, then tap the box <strong>above</strong> the word it describes. Compare the rows — what changes, and what stays exactly the same?</div>
+  <div class="score-bar"><span>Labelled: <strong id="fcScore">0</strong> / <span id="fcTotal">0</span></span></div>
+  <div id="formClarf"></div>
+  <div class="rule-box">Two pieces, always: a form of <em>be</em> plus the <strong>past participle</strong>. Change the tense and only <em>be</em> changes.</div>
+
+
   <div class="sec-div">present simple passive</div>
 
   <div class="tense-card">
@@ -265,12 +273,179 @@
     </tbody>
   </table>
 
-<div id="theme-toggle-wrap">
+
+  <div class="sec-div">Common mistakes</div>
+  <div class="pair-card"><div class="pair-line no"><span class="mark">✗</span>The house was abandon in 1962.</div><div class="pair-line yes"><span class="mark">✓</span>The house was abandoned in 1962.</div></div>
+  <div class="pair-card"><div class="pair-line no"><span class="mark">✗</span>Some photos were find behind the shelf.</div><div class="pair-line yes"><span class="mark">✓</span>Some photos were found behind the shelf.</div></div>
+  <div class="pair-card"><div class="pair-line no"><span class="mark">✗</span>The diary is study by researchers.</div><div class="pair-line yes"><span class="mark">✓</span>The diary is studied by researchers.</div></div>
+  <div class="pair-card"><div class="pair-line no"><span class="mark">✗</span>The mystery has not solved.</div><div class="pair-line yes"><span class="mark">✓</span>The mystery has not been solved.</div></div>
+  <div class="pair-card"><div class="pair-line no"><span class="mark">✗</span>The door was opened by someone. It discovered last year.</div><div class="pair-line yes"><span class="mark">✓</span>It was discovered last year.</div></div>
+
+
+  <div class="sec-div">Find the mistake</div>
+  <div class="rule-box">Each sentence below has <strong>one or two mistakes</strong> — but <strong>some are already correct</strong>. Tap a word you think is wrong and choose the right one. When you think the sentence is right, press <strong>OK</strong>.</div>
+  <div class="score-bar"><span>Corrected: <strong id="ehScore">0</strong> / <span id="ehTotal">0</span></span></div>
+  <div id="errorHunt"></div>
+
+  <div id="theme-toggle-wrap">
   <button id="theme-toggle" aria-label="Toggle light/dark mode" title="Toggle light/dark mode">
     <span id="theme-icon">☀️</span>
   </button>
 </div>
 <script src="house.js"></script>
+<script>
+HouseErrorHunt.build({
+  container: 'errorHunt',
+  scoreEl: 'ehScore', totalEl: 'ehTotal',
+  items: [
+  {
+    "words": [
+      "The",
+      "house",
+      "was",
+      "abandon",
+      "in",
+      "1962",
+      "."
+    ],
+    "errors": {
+      "3": {
+        "options": [
+          "abandoned",
+          "abandon",
+          "abandoning"
+        ],
+        "correct": "abandoned"
+      }
+    }
+  },
+  {
+    "words": [
+      "Some",
+      "photographs",
+      "were",
+      "found",
+      "behind",
+      "the",
+      "bookshelf",
+      "."
+    ],
+    "errors": {}
+  },
+  {
+    "words": [
+      "The",
+      "diary",
+      "is",
+      "study",
+      "by",
+      "researchers",
+      "."
+    ],
+    "errors": {
+      "3": {
+        "options": [
+          "studied",
+          "study",
+          "studying"
+        ],
+        "correct": "studied"
+      }
+    }
+  },
+  {
+    "words": [
+      "The",
+      "mystery",
+      "has",
+      "not",
+      "solved",
+      "yet",
+      "."
+    ],
+    "errors": {
+      "4": {
+        "options": [
+          "been solved",
+          "solved",
+          "solve"
+        ],
+        "correct": "been solved"
+      }
+    }
+  },
+  {
+    "words": [
+      "The",
+      "bridge",
+      "was",
+      "built",
+      "in",
+      "1890",
+      "."
+    ],
+    "errors": {}
+  },
+  {
+    "words": [
+      "The",
+      "photos",
+      "was",
+      "taken",
+      "last",
+      "year",
+      "."
+    ],
+    "errors": {
+      "2": {
+        "options": [
+          "were",
+          "was",
+          "are"
+        ],
+        "correct": "were"
+      }
+    }
+  },
+  {
+    "words": [
+      "When",
+      "the",
+      "house",
+      "was",
+      "built",
+      "?"
+    ],
+    "errors": {
+      "1": {
+        "options": [
+          "was the",
+          "the",
+          "did the"
+        ],
+        "correct": "was the",
+        "alsoRemove": [
+          3
+        ]
+      }
+    }
+  }
+]
+});
+</script>
+<script>
+HouseFormClarf.build({
+  container: 'formClarf',
+  scoreEl: 'fcScore', totalEl: 'fcTotal',
+  pool: ["wh", "subject", "aux", "neg", "part", "object", "time"],
+  items: [
+    { form: "aff", parts: [["The house", "subject"], ["was", "aux"], ["abandoned", "part"], ["in 1962", "time"], [".", null]] },
+    { form: "aff", parts: [["Some photos", "subject"], ["were", "aux"], ["found", "part"], ["behind the bookshelf", "object"], [".", null]] },
+    { form: "neg", parts: [["The mystery", "subject"], ["hasn't", "neg"], ["been", "aux"], ["solved", "part"], [".", null]] },
+    { form: "wh", parts: [["When", "wh"], ["was", "aux"], ["the house", "subject"], ["built", "part"], ["?", null]] }
+  ]
+});
+</script>
 <script>
 HouseTimeline.build({
   container: 'timeline',
@@ -302,6 +477,8 @@ HouseCCQ.build({
       ]}
   ]
 });
+
+HouseGrammar.init();
 </script>
 </body>
 </html>

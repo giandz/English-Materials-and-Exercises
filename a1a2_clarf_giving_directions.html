@@ -239,6 +239,14 @@ h1{ font-size:1.3rem; font-weight:600; letter-spacing:-0.01em; margin:0 0 4px; }
       </div>
     </div>
     </div>
+
+
+  <div class="sec-div">Work out the form</div>
+  <div class="rule-box">Tap a label, then tap the box <strong>above</strong> the word it describes. Compare the rows — what changes, and what stays exactly the same?</div>
+  <div class="score-bar"><span>Labelled: <strong id="fcScore">0</strong> / <span id="fcTotal">0</span></span></div>
+  <div id="formClarf"></div>
+  <div class="rule-box">Directions are imperatives too — no subject. The preposition is what turns a movement into a place: <em>turn left</em> vs <em>turn left <strong>at</strong> the park</em>.</div>
+
 	<div class="sec-div">Location phrases</div>
 	 <div class="map-grid">
     <!-- OPPOSITE / ACROSS FROM -->
@@ -402,6 +410,20 @@ h1{ font-size:1.3rem; font-weight:600; letter-spacing:-0.01em; margin:0 0 4px; }
 
   </div>
 
+  
+  <div class="sec-div">Common mistakes</div>
+  <div class="pair-card"><div class="pair-line no"><span class="mark">✗</span>You go straight two blocks.</div><div class="pair-line yes"><span class="mark">✓</span>Go straight for two blocks.</div></div>
+  <div class="pair-card"><div class="pair-line no"><span class="mark">✗</span>Turn at the left.</div><div class="pair-line yes"><span class="mark">✓</span>Turn left.</div></div>
+  <div class="pair-card"><div class="pair-line no"><span class="mark">✗</span>Cross of the bridge.</div><div class="pair-line yes"><span class="mark">✓</span>Cross the bridge.</div></div>
+  <div class="pair-card"><div class="pair-line no"><span class="mark">✗</span>It is in the corner.</div><div class="pair-line yes"><span class="mark">✓</span>It is on the corner.</div></div>
+  <div class="pair-card"><div class="pair-line no"><span class="mark">✗</span>Go to straight.</div><div class="pair-line yes"><span class="mark">✓</span>Go straight.</div></div>
+
+
+  <div class="sec-div">Find the mistake</div>
+  <div class="rule-box">Every sentence below has <strong>one or two mistakes</strong>. Tap the word you think is wrong and choose the correct one. When you think the sentence is right, press <strong>OK</strong>.</div>
+  <div class="score-bar"><span>Corrected: <strong id="ehScore">0</strong> / <span id="ehTotal">0</span></span></div>
+  <div id="errorHunt"></div>
+
   <footer>Visual Reference — Giving Directions (A1-A2)</footer>
 </div>
 
@@ -411,5 +433,163 @@ h1{ font-size:1.3rem; font-weight:600; letter-spacing:-0.01em; margin:0 0 4px; }
   </button>
 </div>
 <script src="house.js"></script>
+<script>
+HouseErrorHunt.build({
+  container: 'errorHunt',
+  scoreEl: 'ehScore', totalEl: 'ehTotal',
+  items: [
+  {
+    "words": [
+      "You",
+      "go",
+      "straight",
+      "for",
+      "two",
+      "blocks",
+      "."
+    ],
+    "errors": {
+      "0": {
+        "options": [
+          "Go",
+          "You go",
+          "Goes"
+        ],
+        "correct": "Go",
+        "alsoRemove": [
+          1
+        ]
+      }
+    }
+  },
+  {
+    "words": [
+      "Turn",
+      "at",
+      "the",
+      "left",
+      "."
+    ],
+    "errors": {
+      "1": {
+        "options": [
+          "left",
+          "at the left",
+          "to left"
+        ],
+        "correct": "left",
+        "alsoRemove": [
+          2,
+          3
+        ]
+      }
+    }
+  },
+  {
+    "words": [
+      "Cross",
+      "of",
+      "the",
+      "bridge",
+      "."
+    ],
+    "errors": {
+      "1": {
+        "options": [
+          "the",
+          "of the",
+          "of"
+        ],
+        "correct": "the",
+        "alsoRemove": [
+          2
+        ]
+      }
+    }
+  },
+  {
+    "words": [
+      "It",
+      "is",
+      "in",
+      "the",
+      "corner",
+      "."
+    ],
+    "errors": {
+      "2": {
+        "options": [
+          "on",
+          "in",
+          "at"
+        ],
+        "correct": "on"
+      }
+    }
+  },
+  {
+    "words": [
+      "Go",
+      "to",
+      "straight",
+      "."
+    ],
+    "errors": {
+      "1": {
+        "options": [
+          "straight",
+          "to straight",
+          "to"
+        ],
+        "correct": "straight",
+        "alsoRemove": [
+          2
+        ]
+      }
+    }
+  },
+  {
+    "words": [
+      "The",
+      "museum",
+      "is",
+      "opposite",
+      "of",
+      "the",
+      "hotel",
+      "."
+    ],
+    "errors": {
+      "3": {
+        "options": [
+          "opposite",
+          "opposite of",
+          "in opposite"
+        ],
+        "correct": "opposite",
+        "alsoRemove": [
+          4
+        ]
+      }
+    }
+  }
+]
+});
+</script>
+<script>
+HouseFormClarf.build({
+  container: 'formClarf',
+  scoreEl: 'fcScore', totalEl: 'fcTotal',
+  pool: ["verb", "subject", "adverb", "prep", "det", "object"],
+  items: [
+    { form: "aff", parts: [["Go", "verb"], ["straight", "adverb"], ["for", "prep"], ["two blocks", "object"], [".", null]] },
+    { form: "aff", parts: [["Turn", "verb"], ["left", "adverb"], ["at", "prep"], ["the park", "object"], [".", null]] },
+    { form: "aff", parts: [["Cross", "verb"], ["the", "det"], ["bridge", "object"], [".", null]] },
+    { form: "aff", parts: [["It", "subject"], ["is", "verb"], ["on", "prep"], ["the corner", "object"], [".", null]] }
+  ]
+});
+
+HouseGrammar.init();
+</script>
 </body>
 </html>

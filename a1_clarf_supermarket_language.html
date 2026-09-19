@@ -42,8 +42,19 @@
   <div class="sec-div">At the cashier</div>
   <div class="exercise-card"><p><span class="pos-hl pos-aux">Are</span> <span class="pos-hl pos-subject">we</span> <span class="pos-hl pos-complement">ready to pay</span> <span class="pos-hl pos-time">now</span>?</p><p><span class="pos-hl pos-verb">Is</span> <span class="pos-hl pos-subject">that</span> <span class="pos-hl pos-complement">everything</span> <span class="pos-hl pos-time">today</span>? — Yes, <span class="pos-hl pos-subject">that</span> <span class="pos-hl pos-verb">is</span> <span class="pos-hl pos-complement">all</span>.</p><p>Here <span class="pos-hl pos-verb">is</span> <span class="pos-hl pos-subject">your receipt</span>.</p></div>
   <div class="rule-box"><strong>a cart</strong> is the big one you push; <strong>a basket</strong> is the small one you carry. An <strong>aisle</strong> is the row between the shelves. A <strong>receipt</strong> is the paper that shows what you paid.</div>
-  <div class="sec-div">Quick check</div>
-  <div id="gfItems"></div>
+
+  <div class="sec-div">Common mistakes</div>
+  <div class="pair-card"><div class="pair-line no"><span class="mark">✗</span>Where are the milk?</div><div class="pair-line yes"><span class="mark">✓</span>Where is the milk?</div></div>
+  <div class="pair-card"><div class="pair-line no"><span class="mark">✗</span>I want a bag, give me.</div><div class="pair-line yes"><span class="mark">✓</span>Could I have a bag, please?</div></div>
+  <div class="pair-card"><div class="pair-line no"><span class="mark">✗</span>How much are this?</div><div class="pair-line yes"><span class="mark">✓</span>How much is this?</div></div>
+  <div class="pair-card"><div class="pair-line no"><span class="mark">✗</span>We need a bread.</div><div class="pair-line yes"><span class="mark">✓</span>We need some bread.</div></div>
+  <div class="pair-card"><div class="pair-line no"><span class="mark">✗</span>I go to pay at the cashier man.</div><div class="pair-line yes"><span class="mark">✓</span>I'm going to pay at the checkout.</div></div>
+
+
+  <div class="sec-div">Find the mistake</div>
+  <div class="rule-box">Every sentence below has <strong>one or two mistakes</strong>. Tap the word you think is wrong and choose the correct one. When you think the sentence is right, press <strong>OK</strong>.</div>
+  <div class="score-bar"><span>Corrected: <strong id="ehScore">0</strong> / <span id="ehTotal">0</span></span></div>
+  <div id="errorHunt"></div>
 
   <footer>Clarification — Supermarket Language (A1)</footer>
 </div>
@@ -55,87 +66,157 @@
 </div>
 <script src="house.js"></script>
 <script>
-const GF_ITEMS = [
+HouseErrorHunt.build({
+  container: 'errorHunt',
+  scoreEl: 'ehScore', totalEl: 'ehTotal',
+  items: [
   {
-    "category": "pos",
-    "direct": "🛒 Say what is on your list",
-    "template": "We {0} milk and bread.",
-    "hints": [
-      {
-        "accepted": [
-          "need"
-        ]
+    "words": [
+      "Where",
+      "are",
+      "the",
+      "milk",
+      "?"
+    ],
+    "errors": {
+      "1": {
+        "options": [
+          "is",
+          "are",
+          "be"
+        ],
+        "correct": "is"
       }
-    ]
+    }
   },
   {
-    "category": "q",
-    "direct": "❓ Ask where something is",
-    "template": "{0} the milk?",
-    "hints": [
-      {
-        "accepted": [
-          "where is",
-          "where's"
-        ]
+    "words": [
+      "We",
+      "need",
+      "a",
+      "bread",
+      "and",
+      "a",
+      "milk",
+      "."
+    ],
+    "errors": {
+      "2": {
+        "options": [
+          "some",
+          "a",
+          "an"
+        ],
+        "correct": "some"
+      },
+      "5": {
+        "options": [
+          "some",
+          "a",
+          "an"
+        ],
+        "correct": "some"
       }
-    ]
+    }
   },
   {
-    "category": "pos",
-    "direct": "🧺 The small one you carry",
-    "template": "Let's use a {0}.",
-    "hints": [
-      {
-        "accepted": [
-          "basket"
-        ]
+    "words": [
+      "How",
+      "much",
+      "are",
+      "this",
+      "?"
+    ],
+    "errors": {
+      "2": {
+        "options": [
+          "is",
+          "are",
+          "do"
+        ],
+        "correct": "is"
       }
-    ]
+    }
   },
   {
-    "category": "pos",
-    "direct": "📍 The row between the shelves",
-    "template": "It is in {0} 3.",
-    "hints": [
-      {
-        "accepted": [
-          "aisle"
+    "words": [
+      "Can",
+      "you",
+      "to",
+      "grab",
+      "a",
+      "bag",
+      "?"
+    ],
+    "errors": {
+      "2": {
+        "options": [
+          "grab",
+          "to grab",
+          "grabbing"
+        ],
+        "correct": "grab",
+        "alsoRemove": [
+          3
         ]
       }
-    ]
+    }
   },
   {
-    "category": "q",
-    "direct": "💳 Ask if you can pay now",
-    "template": "{0} pay now?",
-    "hints": [
-      {
-        "accepted": [
-          "can we",
-          "can i"
-        ]
+    "words": [
+      "Is",
+      "that",
+      "all",
+      "today",
+      "?",
+      "—",
+      "Yes",
+      ",",
+      "that",
+      "all",
+      "."
+    ],
+    "errors": {
+      "9": {
+        "options": [
+          "is all",
+          "all",
+          "are all"
+        ],
+        "correct": "is all"
       }
-    ]
+    }
   },
   {
-    "category": "pos",
-    "direct": "🧾 The paper the cashier gives you",
-    "template": "Here's your {0}.",
-    "hints": [
-      {
-        "accepted": [
-          "receipt"
+    "words": [
+      "The",
+      "bread",
+      "is",
+      "in",
+      "aisle",
+      "the",
+      "five",
+      "."
+    ],
+    "errors": {
+      "5": {
+        "options": [
+          "five",
+          "the five",
+          "a five"
+        ],
+        "correct": "five",
+        "alsoRemove": [
+          6
         ]
       }
-    ]
+    }
   }
-];
+]
+});
+</script>
+<script>
 
-HouseGapFill.build({ container: 'gfItems', items: GF_ITEMS, labels: {
-  "q": "question",
-  "pos": "phrase"
-} });
 
 HouseGrammar.init();
 </script>

@@ -47,10 +47,29 @@
   <div class="rule-box">Answer the questions about each sentence. These check the <strong>meaning</strong>, not the form.</div>
   <div id="ccq"></div>
 
+
+  <div class="sec-div">Work out the form</div>
+  <div class="rule-box">Tap a label, then tap the box <strong>above</strong> the word it describes. Compare the rows — what changes, and what stays exactly the same?</div>
+  <div class="score-bar"><span>Labelled: <strong id="fcScore">0</strong> / <span id="fcTotal">0</span></span></div>
+  <div id="formClarf"></div>
+  <div class="rule-box">Only <em>am / is / are</em> moves. <em>going to</em> and the main verb stay welded together in every form.</div>
+
+
   <div class="sec-div">Short answers</div>
   <div class="exercise-card"><p>Are you going to invite your family? — <strong>Yes, I am.</strong> / <strong>No, I'm not.</strong></p><p>Is your mom going to bake a cake? — <strong>Yes, she is.</strong> / <strong>No, she isn't.</strong></p></div>
-  <div class="sec-div">Quick check</div>
-  <div id="gfItems"></div>
+
+  <div class="sec-div">Common mistakes</div>
+  <div class="pair-card"><div class="pair-line no"><span class="mark">✗</span>I going to have a party.</div><div class="pair-line yes"><span class="mark">✓</span>I'm going to have a party.</div></div>
+  <div class="pair-card"><div class="pair-line no"><span class="mark">✗</span>She is going to bakes a cake.</div><div class="pair-line yes"><span class="mark">✓</span>She is going to bake a cake.</div></div>
+  <div class="pair-card"><div class="pair-line no"><span class="mark">✗</span>Are you going to invites your cousins?</div><div class="pair-line yes"><span class="mark">✓</span>Are you going to invite your cousins?</div></div>
+  <div class="pair-card"><div class="pair-line no"><span class="mark">✗</span>I am not going open my presents.</div><div class="pair-line yes"><span class="mark">✓</span>I'm not going to open my presents.</div></div>
+  <div class="pair-card"><div class="pair-line no"><span class="mark">✗</span>You going to stay up until midnight?</div><div class="pair-line yes"><span class="mark">✓</span>Are you going to stay up until midnight?</div></div>
+
+
+  <div class="sec-div">Find the mistake</div>
+  <div class="rule-box">Every sentence below has <strong>one or two mistakes</strong>. Tap the word you think is wrong and choose the correct one. When you think the sentence is right, press <strong>OK</strong>.</div>
+  <div class="score-bar"><span>Corrected: <strong id="ehScore">0</strong> / <span id="ehTotal">0</span></span></div>
+  <div id="errorHunt"></div>
 
   <footer>Clarification — Celebrations & Going To (A1)</footer>
 </div>
@@ -61,6 +80,159 @@
   </button>
 </div>
 <script src="house.js"></script>
+<script>
+HouseErrorHunt.build({
+  container: 'errorHunt',
+  scoreEl: 'ehScore', totalEl: 'ehTotal',
+  items: [
+  {
+    "words": [
+      "I",
+      "going",
+      "to",
+      "have",
+      "a",
+      "party",
+      "."
+    ],
+    "errors": {
+      "1": {
+        "options": [
+          "am going",
+          "'m going",
+          "going"
+        ],
+        "correct": "am going"
+      }
+    }
+  },
+  {
+    "words": [
+      "She",
+      "is",
+      "going",
+      "to",
+      "bakes",
+      "a",
+      "cake",
+      "."
+    ],
+    "errors": {
+      "4": {
+        "options": [
+          "bake",
+          "bakes",
+          "baking"
+        ],
+        "correct": "bake"
+      }
+    }
+  },
+  {
+    "words": [
+      "Are",
+      "you",
+      "going",
+      "to",
+      "invites",
+      "your",
+      "cousins",
+      "?"
+    ],
+    "errors": {
+      "4": {
+        "options": [
+          "invite",
+          "invites",
+          "inviting"
+        ],
+        "correct": "invite"
+      }
+    }
+  },
+  {
+    "words": [
+      "I",
+      "am",
+      "not",
+      "going",
+      "open",
+      "my",
+      "presents",
+      "."
+    ],
+    "errors": {
+      "4": {
+        "options": [
+          "to open",
+          "open",
+          "opening"
+        ],
+        "correct": "to open"
+      }
+    }
+  },
+  {
+    "words": [
+      "You",
+      "going",
+      "to",
+      "watch",
+      "the",
+      "fireworks",
+      "?"
+    ],
+    "errors": {
+      "0": {
+        "options": [
+          "Are you",
+          "You are",
+          "Do you"
+        ],
+        "correct": "Are you",
+        "alsoRemove": [
+          1
+        ]
+      }
+    }
+  },
+  {
+    "words": [
+      "He",
+      "are",
+      "going",
+      "to",
+      "exercise",
+      "more",
+      "."
+    ],
+    "errors": {
+      "1": {
+        "options": [
+          "is",
+          "are",
+          "am"
+        ],
+        "correct": "is"
+      }
+    }
+  }
+]
+});
+</script>
+<script>
+HouseFormClarf.build({
+  container: 'formClarf',
+  scoreEl: 'fcScore', totalEl: 'fcTotal',
+  pool: ["wh", "subject", "aux", "neg", "verb", "object"],
+  items: [
+    { form: "aff", parts: [["I", "subject"], ["am", "aux"], ["going to", "aux"], ["invite", "verb"], ["my family", "object"], [".", null]] },
+    { form: "neg", parts: [["I", "subject"], ["am", "aux"], ["not", "neg"], ["going to", "aux"], ["open", "verb"], ["them", "object"], [".", null]] },
+    { form: "q", parts: [["Are", "aux"], ["you", "subject"], ["going to", "aux"], ["bake", "verb"], ["a cake", "object"], ["?", null]] },
+    { form: "wh", parts: [["What", "wh"], ["are", "aux"], ["you", "subject"], ["going to", "aux"], ["do", "verb"], ["?", null]] }
+  ]
+});
+</script>
 <script>
 HouseTimeline.build({
   container: 'timeline',
@@ -93,90 +265,7 @@ HouseCCQ.build({
 });
 </script>
 <script>
-const GF_ITEMS = [
-  {
-    "category": "pos",
-    "direct": "🎉 I + have a party",
-    "template": "I {0} have a party.",
-    "hints": [
-      {
-        "accepted": [
-          "am going to",
-          "'m going to"
-        ]
-      }
-    ]
-  },
-  {
-    "category": "pos",
-    "direct": "🎂 She + bake a cake",
-    "template": "She {0} bake a cake.",
-    "hints": [
-      {
-        "accepted": [
-          "is going to",
-          "'s going to"
-        ]
-      }
-    ]
-  },
-  {
-    "category": "pos",
-    "direct": "🎆 We + watch the fireworks",
-    "template": "We {0} watch the fireworks.",
-    "hints": [
-      {
-        "accepted": [
-          "are going to",
-          "'re going to"
-        ]
-      }
-    ]
-  },
-  {
-    "category": "neg",
-    "direct": "🎁 I + NOT open the presents",
-    "template": "I {0} open the presents.",
-    "hints": [
-      {
-        "accepted": [
-          "am not going to",
-          "'m not going to"
-        ]
-      }
-    ]
-  },
-  {
-    "category": "q",
-    "direct": "❓ Ask about your partner's plans",
-    "template": "{0} invite your cousins?",
-    "hints": [
-      {
-        "accepted": [
-          "are you going to"
-        ]
-      }
-    ]
-  },
-  {
-    "category": "q",
-    "direct": "❓ Ask what they will do",
-    "template": "{0} do for your birthday?",
-    "hints": [
-      {
-        "accepted": [
-          "what are you going to"
-        ]
-      }
-    ]
-  }
-];
 
-HouseGapFill.build({ container: 'gfItems', items: GF_ITEMS, labels: {
-  "pos": "affirmative",
-  "neg": "negative",
-  "q": "question"
-} });
 
 HouseGrammar.init();
 </script>

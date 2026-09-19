@@ -224,6 +224,14 @@ h1{ font-size:1.3rem; font-weight:600; letter-spacing:-0.01em; margin:0 0 4px; }
     </div>
   </div>
 
+
+  <div class="sec-div">Work out the form</div>
+  <div class="rule-box">Tap a label, then tap the box <strong>above</strong> the word it describes. Compare the rows — what changes, and what stays exactly the same?</div>
+  <div class="score-bar"><span>Labelled: <strong id="fcScore">0</strong> / <span id="fcTotal">0</span></span></div>
+  <div id="formClarf"></div>
+  <div class="rule-box">The intensifier always sits <strong>immediately before</strong> the adjective it strengthens — never after it, and never separated from it.</div>
+
+
   <div class="sec-div">Word order</div>
 
   <div class="rule-box">
@@ -235,11 +243,194 @@ h1{ font-size:1.3rem; font-weight:600; letter-spacing:-0.01em; margin:0 0 4px; }
 
 </div>
 
-<div id="theme-toggle-wrap">
+
+  <div class="sec-div">Common mistakes</div>
+  <div class="pair-card"><div class="pair-line no"><span class="mark">✗</span>The city is lively extremely.</div><div class="pair-line yes"><span class="mark">✓</span>The city is extremely lively.</div></div>
+  <div class="pair-card"><div class="pair-line no"><span class="mark">✗</span>My flat is very small quite.</div><div class="pair-line yes"><span class="mark">✓</span>My flat is quite small.</div></div>
+  <div class="pair-card"><div class="pair-line no"><span class="mark">✗</span>The coffee is too much hot.</div><div class="pair-line yes"><span class="mark">✓</span>The coffee is too hot.</div></div>
+  <div class="pair-card"><div class="pair-line no"><span class="mark">✗</span>It is enough big for us.</div><div class="pair-line yes"><span class="mark">✓</span>It is big enough for us.</div></div>
+  <div class="pair-card"><div class="pair-line no"><span class="mark">✗</span>She is very much tired.</div><div class="pair-line yes"><span class="mark">✓</span>She is very tired.</div></div>
+
+
+  <div class="sec-div">Find the mistake</div>
+  <div class="rule-box">Each sentence below has <strong>one or two mistakes</strong> — but <strong>some are already correct</strong>. Tap a word you think is wrong and choose the right one. When you think the sentence is right, press <strong>OK</strong>.</div>
+  <div class="score-bar"><span>Corrected: <strong id="ehScore">0</strong> / <span id="ehTotal">0</span></span></div>
+  <div id="errorHunt"></div>
+
+  <div id="theme-toggle-wrap">
   <button id="theme-toggle" aria-label="Toggle light/dark mode" title="Toggle light/dark mode">
     <span id="theme-icon">☀️</span>
   </button>
 </div>
 <script src="house.js"></script>
+<script>
+HouseErrorHunt.build({
+  container: 'errorHunt',
+  scoreEl: 'ehScore', totalEl: 'ehTotal',
+  items: [
+  {
+    "words": [
+      "The",
+      "city",
+      "is",
+      "lively",
+      "extremely",
+      "."
+    ],
+    "errors": {
+      "3": {
+        "options": [
+          "extremely lively",
+          "lively extremely",
+          "extremely"
+        ],
+        "correct": "extremely lively",
+        "alsoRemove": [
+          4
+        ]
+      }
+    }
+  },
+  {
+    "words": [
+      "This",
+      "coffee",
+      "is",
+      "extremely",
+      "hot",
+      "—",
+      "be",
+      "careful",
+      "."
+    ],
+    "errors": {}
+  },
+  {
+    "words": [
+      "The",
+      "kitchen",
+      "is",
+      "too",
+      "much",
+      "small",
+      "."
+    ],
+    "errors": {
+      "3": {
+        "options": [
+          "too",
+          "too much",
+          "much too"
+        ],
+        "correct": "too",
+        "alsoRemove": [
+          4
+        ]
+      }
+    }
+  },
+  {
+    "words": [
+      "It",
+      "is",
+      "enough",
+      "big",
+      "for",
+      "two",
+      "people",
+      "."
+    ],
+    "errors": {
+      "2": {
+        "options": [
+          "big enough",
+          "enough big",
+          "enough"
+        ],
+        "correct": "big enough",
+        "alsoRemove": [
+          3
+        ]
+      }
+    }
+  },
+  {
+    "words": [
+      "My",
+      "neighbourhood",
+      "is",
+      "fairly",
+      "quiet",
+      "at",
+      "night",
+      "."
+    ],
+    "errors": {}
+  },
+  {
+    "words": [
+      "She",
+      "is",
+      "very",
+      "much",
+      "tired",
+      "today",
+      "."
+    ],
+    "errors": {
+      "2": {
+        "options": [
+          "very",
+          "very much",
+          "much"
+        ],
+        "correct": "very",
+        "alsoRemove": [
+          3
+        ]
+      }
+    }
+  },
+  {
+    "words": [
+      "The",
+      "film",
+      "was",
+      "quite",
+      "very",
+      "good",
+      "."
+    ],
+    "errors": {
+      "3": {
+        "options": [
+          "quite",
+          "quite very",
+          "very quite"
+        ],
+        "correct": "quite",
+        "alsoRemove": [
+          4
+        ]
+      }
+    }
+  }
+]
+});
+</script>
+<script>
+HouseFormClarf.build({
+  container: 'formClarf',
+  scoreEl: 'fcScore', totalEl: 'fcTotal',
+  pool: ["subject", "verb", "neg", "adverb", "adj"],
+  items: [
+    { form: "aff", parts: [["The city", "subject"], ["is", "verb"], ["extremely", "adverb"], ["lively", "adj"], [".", null]] },
+    { form: "aff", parts: [["My flat", "subject"], ["is", "verb"], ["quite", "adverb"], ["small", "adj"], [".", null]] },
+    { form: "neg", parts: [["It", "subject"], ["isn't", "neg"], ["very", "adverb"], ["noisy", "adj"], [".", null]] }
+  ]
+});
+
+HouseGrammar.init();
+</script>
 </body>
 </html>

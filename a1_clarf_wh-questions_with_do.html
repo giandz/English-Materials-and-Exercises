@@ -137,6 +137,14 @@
 
   </div>
 
+
+  <div class="sec-div">Work out the form</div>
+  <div class="rule-box">Tap a label, then tap the box <strong>above</strong> the word it describes. Compare the rows — what changes, and what stays exactly the same?</div>
+  <div class="score-bar"><span>Labelled: <strong id="fcScore">0</strong> / <span id="fcTotal">0</span></span></div>
+  <div id="formClarf"></div>
+  <div class="rule-box">The wh- word goes first, then <em>do / does</em>, then the subject, then the plain verb — never <s>does she practices</s>.</div>
+
+
   <div class="sec-div">summary</div>
 
   <table class="summary-table">
@@ -179,11 +187,166 @@
 
 </div>
 
-<div id="theme-toggle-wrap">
+
+  <div class="sec-div">Common mistakes</div>
+  <div class="pair-card"><div class="pair-line no"><span class="mark">✗</span>Where you go to school?</div><div class="pair-line yes"><span class="mark">✓</span>Where do you go to school?</div></div>
+  <div class="pair-card"><div class="pair-line no"><span class="mark">✗</span>What sports do you plays?</div><div class="pair-line yes"><span class="mark">✓</span>What sports do you play?</div></div>
+  <div class="pair-card"><div class="pair-line no"><span class="mark">✗</span>Where does he goes?</div><div class="pair-line yes"><span class="mark">✓</span>Where does he go?</div></div>
+  <div class="pair-card"><div class="pair-line no"><span class="mark">✗</span>How often you practice?</div><div class="pair-line yes"><span class="mark">✓</span>How often do you practice?</div></div>
+  <div class="pair-card"><div class="pair-line no"><span class="mark">✗</span>What do she like?</div><div class="pair-line yes"><span class="mark">✓</span>What does she like?</div></div>
+
+
+  <div class="sec-div">Find the mistake</div>
+  <div class="rule-box">Every sentence below has <strong>one or two mistakes</strong>. Tap the word you think is wrong and choose the correct one. When you think the sentence is right, press <strong>OK</strong>.</div>
+  <div class="score-bar"><span>Corrected: <strong id="ehScore">0</strong> / <span id="ehTotal">0</span></span></div>
+  <div id="errorHunt"></div>
+
+  <div id="theme-toggle-wrap">
   <button id="theme-toggle" aria-label="Toggle light/dark mode" title="Toggle light/dark mode">
     <span id="theme-icon">☀️</span>
   </button>
 </div>
 <script src="house.js"></script>
+<script>
+HouseErrorHunt.build({
+  container: 'errorHunt',
+  scoreEl: 'ehScore', totalEl: 'ehTotal',
+  items: [
+  {
+    "words": [
+      "Where",
+      "you",
+      "go",
+      "to",
+      "school",
+      "?"
+    ],
+    "errors": {
+      "1": {
+        "options": [
+          "do you",
+          "you",
+          "are you"
+        ],
+        "correct": "do you"
+      }
+    }
+  },
+  {
+    "words": [
+      "What",
+      "sports",
+      "do",
+      "you",
+      "plays",
+      "?"
+    ],
+    "errors": {
+      "4": {
+        "options": [
+          "play",
+          "plays",
+          "playing"
+        ],
+        "correct": "play"
+      }
+    }
+  },
+  {
+    "words": [
+      "Where",
+      "does",
+      "he",
+      "goes",
+      "?"
+    ],
+    "errors": {
+      "3": {
+        "options": [
+          "go",
+          "goes",
+          "going"
+        ],
+        "correct": "go"
+      }
+    }
+  },
+  {
+    "words": [
+      "How",
+      "often",
+      "you",
+      "practice",
+      "?"
+    ],
+    "errors": {
+      "2": {
+        "options": [
+          "do you",
+          "you",
+          "you do"
+        ],
+        "correct": "do you"
+      }
+    }
+  },
+  {
+    "words": [
+      "What",
+      "do",
+      "she",
+      "like",
+      "?"
+    ],
+    "errors": {
+      "1": {
+        "options": [
+          "does",
+          "do",
+          "is"
+        ],
+        "correct": "does"
+      }
+    }
+  },
+  {
+    "words": [
+      "Who",
+      "do",
+      "you",
+      "listen",
+      "music",
+      "with",
+      "?"
+    ],
+    "errors": {
+      "4": {
+        "options": [
+          "to music",
+          "music",
+          "at music"
+        ],
+        "correct": "to music"
+      }
+    }
+  }
+]
+});
+</script>
+<script>
+HouseFormClarf.build({
+  container: 'formClarf',
+  scoreEl: 'fcScore', totalEl: 'fcTotal',
+  pool: ["wh", "aux", "subject", "neg", "verb", "object"],
+  items: [
+    { form: "wh", parts: [["What", "wh"], ["do", "aux"], ["you", "subject"], ["play", "verb"], ["?", null]] },
+    { form: "wh", parts: [["Where", "wh"], ["does", "aux"], ["she", "subject"], ["practice", "verb"], ["?", null]] },
+    { form: "wh", parts: [["How often", "wh"], ["do", "aux"], ["you", "subject"], ["go", "verb"], ["to the gym", "object"], ["?", null]] },
+    { form: "neg", parts: [["I", "subject"], ["don't", "neg"], ["play", "verb"], ["volleyball", "object"], [".", null]] }
+  ]
+});
+
+HouseGrammar.init();
+</script>
 </body>
 </html>
