@@ -93,37 +93,11 @@ h1 { font-size: 1.3rem; margin: 0 0 4px; }
   <p class="subtitle">We use the present perfect to talk about experiences — things that have (or haven't) happened at <em>some point</em> in a person's life. We don't say exactly when.</p>
 
   <div class="sec-div">Timeline</div>
-  <div class="timeline-wrap">
-    <svg viewBox="0 0 680 220" xmlns="http://www.w3.org/2000/svg">
-      <line x1="40" y1="130" x2="600" y2="130" stroke="var(--color-border-secondary)" stroke-width="3" stroke-linecap="round" />
-      <circle cx="40" cy="130" r="5" fill="var(--text-muted)" />
-      <text x="40" y="155" font-size="12" fill="var(--color-text-secondary)" text-anchor="middle">Birth</text>
-
-      <!-- unspecified-time markers -->
-      <line x1="150" y1="130" x2="150" y2="90" stroke="var(--pos-verb)" stroke-width="2" stroke-dasharray="3,3"/>
-      <circle cx="150" cy="130" r="5" fill="var(--pos-verb)" />
-      <text x="150" y="76" font-size="22" text-anchor="middle">🐎</text>
-      <text x="150" y="176" font-size="10.5" fill="var(--color-text-secondary)" text-anchor="middle">ride a horse</text>
-
-      <line x1="290" y1="130" x2="290" y2="90" stroke="var(--pos-verb)" stroke-width="2" stroke-dasharray="3,3"/>
-      <circle cx="290" cy="130" r="5" fill="var(--pos-verb)" />
-      <text x="290" y="76" font-size="22" text-anchor="middle">🎤</text>
-      <text x="290" y="176" font-size="10.5" fill="var(--color-text-secondary)" text-anchor="middle">watch a concert</text>
-
-      <line x1="430" y1="130" x2="430" y2="90" stroke="var(--pos-verb)" stroke-width="2" stroke-dasharray="3,3"/>
-      <circle cx="430" cy="130" r="5" fill="var(--pos-verb)" />
-      <text x="430" y="76" font-size="22" text-anchor="middle">🌌</text>
-      <text x="430" y="176" font-size="10.5" fill="var(--color-text-secondary)" text-anchor="middle">see the Northern Lights</text>
-
-      <line x1="600" y1="130" x2="600" y2="90" stroke="var(--text-accent)" stroke-width="2.5"/>
-      <circle cx="600" cy="130" r="7" fill="var(--text-accent)" />
-      <text x="600" y="70" font-size="13" font-weight="700" fill="var(--text-accent)" text-anchor="middle">NOW</text>
-      <text x="600" y="156" font-size="10.5" fill="var(--color-text-secondary)" text-anchor="middle">speaking now</text>
-
-      <text x="320" y="205" font-size="11" fill="var(--color-text-tertiary)" text-anchor="middle" font-style="italic">We don't know or don't say exactly when — only that it happened before now.</text>
-    </svg>
-  </div>
-  <div class="rule-box"><strong>Key idea:</strong> the exact time isn't important — what matters is that the experience is now part of the person's life story, connected to the present moment.</div>
+  <div id="timeline"></div>
+  <div class="sec-div">Check the meaning</div>
+  <div class="rule-box">Answer the questions about each sentence. These check the <strong>meaning</strong>, not the form.</div>
+  <div id="ccq"></div>
+<div class="rule-box"><strong>Key idea:</strong> the exact time isn't important — what matters is that the experience is now part of the person's life story, connected to the present moment.</div>
 
   <div class="sec-div">Affirmative, negative &amp; question forms</div>
   <div class="card">
@@ -184,6 +158,37 @@ h1 { font-size: 1.3rem; margin: 0 0 4px; }
   </button>
 </div>
 <script src="house.js"></script>
+<script>
+HouseTimeline.build({
+  container: 'timeline',
+  startLabel: 'Birth', nowNote: 'now',
+  bands: [{ from: 0.04, to: 0.97, label: 'your whole life up to now' }],
+  events: [
+    { at: 0.22, emoji: '✈️', label: 'been to Japan', kind: 'unspecified' },
+    { at: 0.48, emoji: '🪂', label: 'jumped from a plane', kind: 'unspecified' },
+    { at: 0.72, emoji: '🌌', label: 'seen the Northern Lights', kind: 'unspecified' }
+  ],
+  caption: 'Experiences somewhere in your life — the dashes mean we never say when.'
+});
+
+HouseCCQ.build({
+  container: 'ccq',
+  items: [
+    { sentence: "I've seen the Northern Lights.",
+      questions: [
+        { q: 'Do we know when?', opts: ['Yes', 'No'], correct: 1,
+          why: 'No. If you add <em>two years ago</em>, the verb has to change to <em>I saw</em>.' },
+        { q: 'Is the experience part of my life now?', opts: ['Yes', 'No'], correct: 0,
+          why: 'Yes — that is the point. It is something I can say about myself today.' }
+      ]},
+    { sentence: "Have you ever run a marathon?",
+      questions: [
+        { q: 'Am I asking about a specific day?', opts: ['Yes', 'No'], correct: 1,
+          why: 'No — <em>ever</em> means "at any time in your life".' }
+      ]}
+  ]
+});
+</script>
 <script>
 document.querySelectorAll('.tab-btn').forEach(btn => {
   btn.addEventListener('click', () => {

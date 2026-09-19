@@ -235,12 +235,49 @@ button.reset:active{transform:scale(0.97);}
 
 </div>
 
-<div id="theme-toggle-wrap">
+  <div class="sec-div">Why the tense moves back</div>
+  <div id="timeline"></div>
+  <div class="rule-box">The words were said at one moment; you report them at a later one. Everything shifts one step further into the past — that is <strong>backshift</strong>.</div>
+  <div class="sec-div">Check the meaning</div>
+  <div class="rule-box">Answer the questions about each sentence. These check the <strong>meaning</strong>, not the form.</div>
+  <div id="ccq"></div>
+
+  <div id="theme-toggle-wrap">
   <button id="theme-toggle" aria-label="Toggle light/dark mode" title="Toggle light/dark mode">
     <span id="theme-icon">☀️</span>
   </button>
 </div>
 <script src="house.js"></script>
+<script>
+HouseTimeline.build({
+  container: 'timeline',
+  startLabel: 'Past', nowNote: 'you report it',
+  events: [
+    { at: 0.18, emoji: '💬', label: '"I am tired."  ← what she said', kind: 'point',
+      colour: 'var(--pos-subject)' },
+    { at: 0.55, emoji: '🗣️', label: 'She said she WAS tired.', kind: 'point' }
+  ],
+  caption: 'The speaking is now further away, so the tense steps back: am → was.'
+});
+
+HouseCCQ.build({
+  container: 'ccq',
+  items: [
+    { sentence: 'She said she was tired.',
+      questions: [
+        { q: 'What were her exact words?', opts: ['"I am tired."', '"I was tired."'], correct: 0,
+          why: 'She said <em>am</em>. It became <em>was</em> only because we are reporting it later.' },
+        { q: 'Might she still be tired?', opts: ['Yes', 'No'], correct: 0,
+          why: 'Possibly. Backshift is about the reporting, not about the tiredness ending.' }
+      ]},
+    { sentence: 'He told me he had finished the report.',
+      questions: [
+        { q: 'Which happened first?', opts: ['Finishing', 'Telling'], correct: 0,
+          why: 'Finishing. The past perfect puts it before the telling.' }
+      ]}
+  ]
+});
+</script>
 <script>
 const data = [
   { verb: "explain", sentences: [

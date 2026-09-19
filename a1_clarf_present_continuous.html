@@ -241,6 +241,14 @@
     </div>
   </div>
 
+  <div class="sec-div">When does it happen?</div>
+  <div id="timeline"></div>
+  <div class="rule-box">The action started <strong>before</strong> now and has not finished. It is happening <strong>around</strong> this moment.</div>
+  <div class="sec-div">Check the meaning</div>
+  <div class="rule-box">Answer the questions about each sentence. These check the <strong>meaning</strong>, not the form.</div>
+  <div id="ccq"></div>
+
+
   <div class="sec-div">quick comparison</div>
 
   <div style="background:var(--color-background-secondary);border-radius:var(--border-radius-lg);padding:12px 16px;font-size:0.8667rem;color:var(--color-text-secondary);line-height:1.9;">
@@ -257,5 +265,34 @@
   </button>
 </div>
 <script src="house.js"></script>
+<script>
+HouseTimeline.build({
+  container: 'timeline',
+  startLabel: 'Past', nowNote: 'you speak',
+  bands: [{ from: 0.42, to: 1.0, label: 'happening now' }],
+  events: [
+    { at: 0.47, emoji: '▶️', label: 'started', kind: 'point', colour: 'var(--pos-subject)' }
+  ],
+  caption: 'Started a moment ago, still going — and not finished.'
+});
+
+HouseCCQ.build({
+  container: 'ccq',
+  items: [
+    { sentence: "I'm reading a book.",
+      questions: [
+        { q: 'Did it start before now?', opts: ['Yes', 'No'], correct: 0,
+          why: 'Yes — you opened the book before you spoke.' },
+        { q: 'Is it finished?', opts: ['Yes', 'No'], correct: 1,
+          why: 'No. That is the whole point: the action is still going on.' }
+      ]},
+    { sentence: "She isn't eating — she's studying in her room.",
+      questions: [
+        { q: 'Is she in her room right now?', opts: ['Yes', 'No'], correct: 0,
+          why: 'Yes. The present continuous describes this moment, not a habit.' }
+      ]}
+  ]
+});
+</script>
 </body>
 </html>

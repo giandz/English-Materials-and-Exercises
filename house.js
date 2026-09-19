@@ -12,6 +12,7 @@
      · HouseTimeline  — tense timelines
      · HouseFormClarf — drag POS chips onto sentence parts
      · HouseErrorHunt — find and fix the mistakes
+     · HouseCCQ       — concept checking questions
      · favicon        — auto-sets a level badge in the browser tab
      · HouseComprehension — the before/after reading questions
 
@@ -1400,6 +1401,32 @@
     host.classList.add('timeline-wrap');
     host.innerHTML = '';
 
+    // ── sequence mode ────────────────────────────────────────────────────
+    // Ordering lessons (first / then / finally) are not about time relative to
+    // now, so they get numbered stops along an arrow rather than a past→now
+    // line. Same component, because it is the same idea of position in time.
+    if (opts.steps) {
+      var strip = document.createElement('ol');
+      strip.className = 'seq-strip';
+      opts.steps.forEach(function (st) {
+        var li = document.createElement('li');
+        li.className = 'seq-step';
+        li.innerHTML =
+          (st.emoji ? '<span class="seq-emoji">' + st.emoji + '</span>' : '') +
+          '<span class="seq-word">' + (st.word || '') + '</span>' +
+          (st.example ? '<span class="seq-example">' + st.example + '</span>' : '');
+        strip.appendChild(li);
+      });
+      host.appendChild(strip);
+      if (opts.caption) {
+        var cap = document.createElement('p');
+        cap.className = 'seq-caption';
+        cap.innerHTML = opts.caption;
+        host.appendChild(cap);
+      }
+      return;
+    }
+
     var svg = el('svg', {
       viewBox: '0 0 ' + W + ' ' + H,
       xmlns: NS,
@@ -1905,6 +1932,95 @@
   }
 
   global.HouseErrorHunt = { build: build };
+})(window);
+
+
+/* ══════════════════════════════════════════════════════════════════════════
+   HOUSE CCQ — concept checking questions
+   The check a teacher makes after presenting a form: not "can you build it?"
+   but "do you know what it means?". Each card shows one example sentence and
+   asks one or two short questions about it, usually Yes/No. The answer is
+   revealed with the reason, because the reason is the teaching.
+
+     HouseCCQ.build({
+       container: 'ccq',
+       items: [
+         { sentence: "I've been to Japan.",
+           questions: [
+             { q: 'Do we know when?',        opts: ['Yes', 'No'], correct: 1,
+               why: 'The present perfect does not say when. If we said when, we would use the past simple.' },
+             { q: 'Am I in Japan now?',      opts: ['Yes', 'No'], correct: 1,
+               why: 'It is a finished visit — an experience in my life up to now.' }
+           ]}
+       ]
+     });
+
+   Kept deliberately small: a CCQ that needs a paragraph to answer is not a
+   CCQ. Two options is the norm, three the maximum.
+   ══════════════════════════════════════════════════════════════════════════ */
+(function (global) {
+  'use strict';
+
+  function build(opts) {
+    var host = typeof opts.container === 'string'
+      ? document.getElementById(opts.container) : opts.container;
+    if (!host) return;
+
+    host.classList.add('ccq-wrap');
+    host.innerHTML = '';
+
+    (opts.items || []).forEach(function (item, ii) {
+      var card = document.createElement('div');
+      card.className = 'ccq-card';
+
+      var sent = document.createElement('div');
+      sent.className = 'ccq-sentence';
+      sent.innerHTML = item.sentence;
+      card.appendChild(sent);
+
+      (item.questions || []).forEach(function (q, qi) {
+        var row = document.createElement('div');
+        row.className = 'ccq-row';
+
+        var label = document.createElement('span');
+        label.className = 'ccq-q';
+        label.textContent = q.q;
+        row.appendChild(label);
+
+        var btns = document.createElement('span');
+        btns.className = 'ccq-opts';
+        q.opts.forEach(function (o, oi) {
+          var b = document.createElement('button');
+          b.className = 'ccq-opt';
+          b.textContent = o;
+          b.addEventListener('click', function () {
+            if (row.classList.contains('answered')) return;
+            row.classList.add('answered');
+            btns.querySelectorAll('.ccq-opt').forEach(function (x) { x.disabled = true; });
+            if (oi === q.correct) {
+              b.classList.add('correct');
+            } else {
+              b.classList.add('incorrect');
+              btns.querySelectorAll('.ccq-opt')[q.correct].classList.add('correct');
+            }
+            if (q.why) {
+              var why = document.createElement('div');
+              why.className = 'ccq-why';
+              why.innerHTML = q.why;
+              row.appendChild(why);
+            }
+          });
+          btns.appendChild(b);
+        });
+        row.appendChild(btns);
+        card.appendChild(row);
+      });
+
+      host.appendChild(card);
+    });
+  }
+
+  global.HouseCCQ = { build: build };
 })(window);
 
 
