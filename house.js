@@ -1748,6 +1748,18 @@
        ]
      });
 
+   Most corrections swap one word for another. Word-order mistakes don't work
+   that way — "She cooks often dinner" is wrong because two words are in the
+   wrong order, and no single substitution fixes it. So a correction may also
+   absorb its neighbours:
+
+     { words: ['She', 'cooks', 'often', 'dinner', '.'],
+       errors: { 1: { options: ['often cooks', 'cooks often', 'often cook'],
+                      correct: 'often cooks', alsoRemove: [2] } } }
+
+   Choosing "often cooks" rewrites word 1 and deletes word 2, leaving
+   "She often cooks dinner." — which is what the learner needed to produce.
+
    Tapping a word that is wrong opens three options under the sentence; tapping
    a word that is right does nothing at all, deliberately — a wrong guess costs
    the learner nothing but a moment, so the exercise stays about noticing rather
@@ -1835,6 +1847,13 @@
               wordEl.textContent = opt;
               wordEl.classList.remove('picked');
               wordEl.classList.add('fixed');
+              // A word-order fix absorbs its neighbour, so that neighbour has
+              // to disappear or the sentence ends up with the word twice.
+              (spec.alsoRemove || []).forEach(function (ri) {
+                var gone = sentence.querySelector('.eh-word[data-i="' + ri + '"]');
+                if (gone) gone.classList.add('eh-removed');
+                delete errors[ri];
+              });
               delete errors[wi];
               remaining--;
               closeChooser();

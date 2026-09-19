@@ -201,6 +201,23 @@ h1{ font-size:1.3rem; font-weight:600; letter-spacing:-0.01em; margin:0 0 4px; }
   </table>
   <p class="example" style="margin-top:8px;">Rough guide only — real frequency doesn't need to fall on the same days every week!</p>
 
+  
+  <div class="sec-div">Work out the word order</div>
+  <div class="rule-box">Tap a label, then tap the box <strong>above</strong> the word it describes. Watch where the <strong>adverb</strong> lands in each sentence — that is the only thing that moves.</div>
+  <div class="score-bar"><span>Labelled: <strong id="fcScore">0</strong> / <span id="fcTotal">0</span></span></div>
+  <div id="formClarf"></div>
+  <div class="rule-box">There it is: the adverb goes <strong>before</strong> an ordinary verb, but <strong>after</strong> <em>be</em>, and <strong>after</strong> the auxiliary in negatives and questions. One adverb, three different slots — and it is always next to the verb, never between the verb and its object.</div>
+
+  <div class="rule-box">⚠️ <strong>One exception worth knowing:</strong> <em>sometimes</em>, <em>usually</em> and <em>often</em> can also start the sentence — <em>Sometimes I take the bus.</em> <em>always</em> and <em>never</em> cannot: <s>Always I drink coffee.</s></div>
+
+  <div class="sec-div">Common mistakes</div>
+<div class="pair-card"><div class="pair-line no"><span class="mark">✗</span>She cooks often dinner.</div><div class="pair-line yes"><span class="mark">✓</span>She often cooks dinner.</div></div><div class="pair-card"><div class="pair-line no"><span class="mark">✗</span>We eat usually at seven.</div><div class="pair-line yes"><span class="mark">✓</span>We usually eat at seven.</div></div><div class="pair-card"><div class="pair-line no"><span class="mark">✗</span>He never is late.</div><div class="pair-line yes"><span class="mark">✓</span>He is never late.</div></div><div class="pair-card"><div class="pair-line no"><span class="mark">✗</span>Always I drink coffee in the morning.</div><div class="pair-line yes"><span class="mark">✓</span>I always drink coffee in the morning.</div></div><div class="pair-card"><div class="pair-line no"><span class="mark">✗</span>I don't never eat meat.</div><div class="pair-line yes"><span class="mark">✓</span>I never eat meat. / I don't ever eat meat.</div></div><div class="pair-card"><div class="pair-line no"><span class="mark">✗</span>How often you go to the gym?</div><div class="pair-line yes"><span class="mark">✓</span>How often do you go to the gym?</div></div><div class="pair-card"><div class="pair-line no"><span class="mark">✗</span>My brother never eat breakfast.</div><div class="pair-line yes"><span class="mark">✓</span>My brother never eats breakfast.</div></div>
+
+  <div class="sec-div">Find the mistake</div>
+  <div class="rule-box">Every sentence below has <strong>one or two mistakes</strong>. Tap the word you think is wrong and choose the correct one. When you think the sentence is right, press <strong>OK</strong>.</div>
+  <div class="score-bar"><span>Corrected: <strong id="ehScore">0</strong> / <span id="ehTotal">0</span></span></div>
+  <div id="errorHunt"></div>
+
   <footer>Grammar Focus — Adverbs of Frequency</footer>
 </div>
 
@@ -210,5 +227,76 @@ h1{ font-size:1.3rem; font-weight:600; letter-spacing:-0.01em; margin:0 0 4px; }
   </button>
 </div>
 <script src="house.js"></script>
+<script>
+/* ── Guided discovery of the word order ──
+   Four rows, one adverb, three different slots. Rows 1 and 2 are the pair that
+   matters most: the same adverb sits before `cooks` but after `is`, which is
+   the rule learners most often get wrong. */
+HouseFormClarf.build({
+  container: 'formClarf',
+  scoreEl: 'fcScore', totalEl: 'fcTotal',
+  pool: ['subject', 'aux', 'neg', 'adverb', 'verb', 'object', 'complement'],
+  items: [
+    { form: 'aff', parts: [
+        ['She', 'subject'], ['often', 'adverb'], ['cooks', 'verb'], ['dinner', 'object'], ['.', null]
+    ]},
+    { form: 'aff', parts: [
+        ['She', 'subject'], ['is', 'verb'], ['often', 'adverb'], ['tired', 'complement'], ['.', null]
+    ]},
+    { form: 'neg', parts: [
+        ['I', 'subject'], ["don't", 'neg'], ['usually', 'adverb'], ['eat', 'verb'],
+        ['breakfast', 'object'], ['.', null]
+    ]},
+    { form: 'q', parts: [
+        ['Do', 'aux'], ['you', 'subject'], ['always', 'adverb'], ['walk', 'verb'],
+        ['to work', 'object'], ['?', null]
+    ]}
+  ]
+});
+
+/* ── Find the mistake ──
+   Mostly word-order errors, so most corrections absorb the neighbouring word
+   (`alsoRemove`) rather than just swapping one for another. A1, so every
+   sentence contains an error; from A2 up, clean sentences get mixed in. */
+HouseErrorHunt.build({
+  container: 'errorHunt',
+  scoreEl: 'ehScore', totalEl: 'ehTotal',
+  items: [
+    { words: ['She', 'cooks', 'often', 'dinner', '.'],
+      errors: { 1: { options: ['often cooks', 'cooks often', 'often cook'],
+                     correct: 'often cooks', alsoRemove: [2] } } },
+
+    { words: ['We', 'eat', 'usually', 'at', 'seven', '.'],
+      errors: { 1: { options: ['usually eat', 'eat usually', 'usually eats'],
+                     correct: 'usually eat', alsoRemove: [2] } } },
+
+    { words: ['He', 'never', 'is', 'late', 'for', 'class', '.'],
+      errors: { 1: { options: ['is never', 'never is', 'is not never'],
+                     correct: 'is never', alsoRemove: [2] } } },
+
+    { words: ['Always', 'I', 'drink', 'coffee', 'in', 'the', 'morning', '.'],
+      errors: { 0: { options: ['I always', 'Always I', 'I am always'],
+                     correct: 'I always', alsoRemove: [1] } } },
+
+    { words: ['I', "don't", 'never', 'eat', 'meat', '.'],
+      errors: { 2: { options: ['ever', 'always', 'sometimes'], correct: 'ever' } } },
+
+    { words: ['How', 'often', 'you', 'go', 'to', 'the', 'gym', '?'],
+      errors: { 2: { options: ['do you', 'you do', 'are you'], correct: 'do you' } } },
+
+    { words: ['She', 'is', 'always', 'tired', '?'],
+      errors: { 0: { options: ['Is she', 'She is', 'Does she'],
+                     correct: 'Is she', alsoRemove: [1] } } },
+
+    { words: ['He', 'never', 'eat', 'breakfast', ',', 'and', 'he', 'rarely', 'is', 'hungry', '.'],
+      errors: { 2: { options: ['eats', 'eat', 'ate'], correct: 'eats' },
+                7: { options: ['is rarely', 'rarely is', 'rarely'],
+                     correct: 'is rarely', alsoRemove: [8] } } }
+  ]
+});
+
+HouseGrammar.init();
+</script>
+
 </body>
 </html>
