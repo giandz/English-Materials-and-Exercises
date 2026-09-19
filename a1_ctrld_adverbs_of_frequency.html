@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-<title>Adverbs of Frequency — Gap Fill</title>
+<title>How Often? — Practice</title>
 <script>
 // Applies the saved/system theme to <html> as early as possible, before the
 // stylesheet below paints anything, so there's no flash of the wrong theme.
@@ -25,100 +25,32 @@
 })();
 </script>
 <link rel="stylesheet" href="house.css">
-<style>
-h1{ font-size:1.3rem; font-weight:600; letter-spacing:-0.01em; margin:0 0 4px; }
-
-  .item{
-    border:.5px solid var(--color-border-tertiary);
-    border-radius:var(--border-radius-lg);
-    padding:14px 16px;
-    margin-bottom:12px;
-    background:var(--surface-2);
-  }
-  .item-top{
-    display:flex;
-    align-items:center;
-    gap:14px;
-    margin-bottom:10px;
-    flex-wrap:wrap;
-  }
-  .emoji-pair{
-    font-size:1.7333rem;
-    display:flex;
-    gap:2px;
-  }
-  .x-marks{
-    font-family:var(--font-mono);
-    font-size:1.1333rem;
-    font-weight:700;
-    color:var(--text-accent);
-    letter-spacing:2px;
-  }
-  .x-marks .dim{ color:var(--color-border-secondary); }
-  .x-count-label{
-    font-size:0.7333rem;
-    color:var(--text-muted);
-    margin-left:auto;
-  }
-  .check-btn{
-    font-family:inherit;
-    font-size:0.8667rem;
-    font-weight:600;
-    padding:8px 14px;
-    border-radius:8px;
-    border:none;
-    background:var(--text-accent);
-    color:#fff;
-    cursor:pointer;
-  }
-  .check-btn:active{ opacity:0.85; }
-
-  .item.correct-state input[type="text"]{ border-color:var(--good); }
-  .item.incorrect-state input[type="text"]{ border-color:var(--bad); }
-  .reveal-all{
-    font-family:inherit;
-    font-size:0.8rem;
-    font-weight:500;
-    padding:5px 12px;
-    border-radius:20px;
-    border:.5px solid var(--border);
-    background:var(--surface-1);
-    color:var(--text-secondary);
-    cursor:pointer;
-  }
-
-  footer{ text-align:center; font-size:0.8rem; color:var(--text-muted); margin-top:2rem; }
-</style>
 </head>
 <body>
 <div class="page" id="page">
   <span class="cefr-tag cefr-a1">A1 · Beginner</span>
+  <h1>How Often? — Practice</h1>
+  <p class="subtitle">First build the sentences, then write the adverb yourself.</p>
 
-  <h1>How often? — Emoji Gap Fill</h1>
-  <p class="subtitle">Look at the emojis and the number of X's, then write a full sentence using the matching adverb of frequency.</p>
-
+  <div class="sec-div">Practice — Word order</div>
   <div class="rule-box">
-    <strong>Example:</strong> 👩🧀 XXXXX → <em>She often eats cheese.</em> &nbsp;·&nbsp; 👨🎾 X X → <em>He rarely plays tennis.</em>
+    Tap a word to add it. Tap it again to remove it. You can also drag words to reorder them. When all the words are in place, the sentence is checked.<br>
+    Remember: the adverb goes <strong>before</strong> an ordinary verb, but <strong>after</strong> <em>be</em>.
+  </div>
+  <button id="grammarToggle" class="grammar-toggle-btn">🎨 Show Grammar</button>
+  <div class="pos-legend"></div>
+  <div class="score-bar"><span>Correct: <strong id="woScore">0</strong> / <span id="woTotal">0</span></span></div>
+  <div id="woItems"></div>
+
+  <div class="sec-div">Practice — How often?</div>
+  <div class="rule-box">
+    Look at the emojis and count the <strong>X</strong>s, then write the adverb <strong>and</strong> the verb. The verb is given each time — you choose the right adverb and add <strong>-s</strong> for <em>he</em> and <em>she</em>.<br>
+    <strong>Example:</strong> 👩🧀 &nbsp; X X X X X &nbsp; <strong>5/7</strong> &nbsp;·&nbsp; verb: <strong>eat</strong> → She <em>often eats</em> cheese.
   </div>
 
-  <div class="legend">
-    <span class="legend-pill"><b>0</b> = never</span>
-    <span class="legend-pill"><b>1</b> = almost never</span>
-    <span class="legend-pill"><b>2</b> = hardly ever / rarely</span>
-    <span class="legend-pill"><b>4</b> = sometimes</span>
-    <span class="legend-pill"><b>5</b> = often / usually</span>
-    <span class="legend-pill"><b>6</b> = almost always</span>
-    <span class="legend-pill"><b>7</b> = always</span>
-  </div>
+  <div class="legend"><span class="legend-pill"><b>0</b> = never</span><span class="legend-pill"><b>1</b> = almost never</span><span class="legend-pill"><b>2</b> = hardly ever / rarely</span><span class="legend-pill"><b>4</b> = sometimes</span><span class="legend-pill"><b>5</b> = often / usually</span><span class="legend-pill"><b>6</b> = almost always</span><span class="legend-pill"><b>7</b> = always</span></div>
 
-  <div class="sec-div">Write your sentences</div>
-
-  <div id="items"></div>
-
-  <div class="score-bar">
-    <span>Score: <strong id="scoreLabel">0</strong> / <span id="totalLabel">0</span></span>
-    <button class="reveal-all" id="revealAllBtn">Show all answers</button>
-  </div>
+  <div id="gfItems"></div>
 
   <footer>Grammar Practice — Adverbs of Frequency</footer>
 </div>
@@ -130,190 +62,88 @@ h1{ font-size:1.3rem; font-weight:600; letter-spacing:-0.01em; margin:0 0 4px; }
 </div>
 <script src="house.js"></script>
 <script>
-// Each adverb group lists accepted phrases as arrays of words (for multi-word phrases)
-const ADVERB_GROUPS = {
-  0: { phrases: [["never"]], label: "never" },
-  1: { phrases: [["almost", "never"]], label: "almost never" },
-  2: { phrases: [["hardly", "ever"], ["rarely"]], label: "hardly ever / rarely" },
-  4: { phrases: [["sometimes"], ["occasionally"]], label: "sometimes" },
-  5: { phrases: [["often"], ["usually"]], label: "often / usually" },
-  6: { phrases: [["almost", "always"]], label: "almost always" },
-  7: { phrases: [["always"]], label: "always" }
-};
-
-// verbBase = correct 3rd person singular (he/she) form required in the answer
-// verbWrong = the bare/base form (no -s), used to detect the common student error
-const items = [
-  { emojis: "👩🧀", count: 5, subject: "she", verbBase: "eats", verbWrong: "eat", object: "cheese" },
-  { emojis: "👨🎾", count: 2, subject: "he", verbBase: "plays", verbWrong: "play", object: "tennis" },
-  { emojis: "👦📚", count: 7, subject: "he", verbBase: "reads", verbWrong: "read", object: "books" },
-  { emojis: "👧🎨", count: 1, subject: "she", verbBase: "paints", verbWrong: "paint", object: "" },
-  { emojis: "👴☕", count: 6, subject: "he", verbBase: "drinks", verbWrong: "drink", object: "coffee" },
-  { emojis: "👵🚶", count: 4, subject: "she", verbBase: "walks", verbWrong: "walk", object: "" },
-  { emojis: "🧑‍🍳🍳", count: 0, subject: "he", verbBase: "cooks", verbWrong: "cook", object: "" },
-  { emojis: "👱‍♀️️💻", count: 7, subject: "she", verbBase: "works", verbWrong: "work", object: "late" },
-  { emojis: "👩‍🎤🎤", count: 2, subject: "she", verbBase: "sings", verbWrong: "sing", object: "" },
-  { emojis: "👨‍🔧🔩", count: 1, subject: "he", verbBase: "fixes", verbWrong: "fix", object: "things" }
+const WO_ITEMS = [
+  { context: '🍳 ordinary verb', text: 'She / often / cooks / dinner / .',
+    pos: ['subject', 'adverb', 'verb', 'object', 'none'] },
+  { context: '⏰ with "be" — the adverb moves!', text: 'He / is / never / late / .',
+    pos: ['subject', 'verb', 'adverb', 'complement', 'none'] },
+  { context: '🚶 ordinary verb', text: 'I / usually / walk / to work / .',
+    pos: ['subject', 'adverb', 'verb', 'object', 'none'] },
+  { context: '😴 with "be"', text: 'My sister / is / sometimes / tired / .',
+    pos: ['subject', 'verb', 'adverb', 'complement', 'none'] },
+  { context: '🥩 negative', text: "They / don't / often / eat / meat / .",
+    pos: ['subject', 'neg', 'adverb', 'verb', 'object', 'none'] },
+  { context: '📺 two-word adverb', text: 'We / hardly ever / watch / TV / .',
+    pos: ['subject', 'adverb', 'verb', 'object', 'none'] },
+  { context: '☕ question', text: 'Do / you / always / drink / coffee / ?',
+    pos: ['aux', 'subject', 'adverb', 'verb', 'object', 'none'] },
+  { context: '🏃 two-word adverb', text: 'She / almost always / arrives / early / .',
+    pos: ['subject', 'adverb', 'verb', 'adverb', 'none'] }
 ];
 
-const itemsEl = document.getElementById('items');
-const scoreLabel = document.getElementById('scoreLabel');
-const totalLabel = document.getElementById('totalLabel');
-totalLabel.textContent = items.length;
+HouseWordOrder.build({ container: 'woItems', items: WO_ITEMS,
+                       scoreEl: 'woScore', totalEl: 'woTotal' });
 
-function buildXMarks(count) {
-  let out = "";
-  for (let i = 0; i < 7; i++) {
-    out += i < count ? "X " : '<span class="dim">·</span> ';
-  }
-  return out.trim();
-}
+HouseGrammar.init();
 
-items.forEach((item, idx) => {
-  const wrap = document.createElement('div');
-  wrap.className = 'item';
-  wrap.dataset.idx = idx;
+const GF_ITEMS = [
+  { direct: '👦📚 &nbsp; X X X X X X X &nbsp; <strong>7/7</strong> &nbsp;·&nbsp; verb: <strong>read</strong>',
+    template: "He {0} books.",
+    hints: [{ accepted: [
+      "always reads"
+    ] }] },
+  { direct: '🧑‍🍳🍳 &nbsp; <span class="text-tertiary">· · · · · · · </span> &nbsp; <strong>0/7</strong> &nbsp;·&nbsp; verb: <strong>cook</strong>',
+    template: "He {0}.",
+    hints: [{ accepted: [
+      "never cooks"
+    ] }] },
+  { direct: '👩🧀 &nbsp; X X X X X <span class="text-tertiary">· · </span> &nbsp; <strong>5/7</strong> &nbsp;·&nbsp; verb: <strong>eat</strong>',
+    template: "She {0} cheese.",
+    hints: [{ accepted: [
+      "often eats",
+      "usually eats"
+    ] }] },
+  { direct: '👵🚶 &nbsp; X X X X <span class="text-tertiary">· · · </span> &nbsp; <strong>4/7</strong> &nbsp;·&nbsp; verb: <strong>walk</strong>',
+    template: "She {0}.",
+    hints: [{ accepted: [
+      "sometimes walks",
+      "occasionally walks"
+    ] }] },
+  { direct: '👨🎾 &nbsp; X X <span class="text-tertiary">· · · · · </span> &nbsp; <strong>2/7</strong> &nbsp;·&nbsp; verb: <strong>play</strong>',
+    template: "He {0} tennis.",
+    hints: [{ accepted: [
+      "rarely plays",
+      "hardly ever plays"
+    ] }] },
+  { direct: '👩‍🎤🎤 &nbsp; X X <span class="text-tertiary">· · · · · </span> &nbsp; <strong>2/7</strong> &nbsp;·&nbsp; verb: <strong>sing</strong>',
+    template: "She {0}.",
+    hints: [{ accepted: [
+      "rarely sings",
+      "hardly ever sings"
+    ] }] },
+  { direct: '👱‍♀️💻 &nbsp; X X X X X X X &nbsp; <strong>7/7</strong> &nbsp;·&nbsp; verb: <strong>work</strong>',
+    template: "She {0} late.",
+    hints: [{ accepted: [
+      "always works"
+    ] }] },
+  { direct: '👴☕ &nbsp; X X X X X X <span class="text-tertiary">· </span> &nbsp; <strong>6/7</strong> &nbsp;·&nbsp; verb: <strong>drink</strong>',
+    template: "He {0} coffee.",
+    hints: [{ accepted: [
+      "almost always drinks"
+    ] }] },
+  { direct: '👧🎨 &nbsp; X <span class="text-tertiary">· · · · · · </span> &nbsp; <strong>1/7</strong> &nbsp;·&nbsp; verb: <strong>paint</strong>',
+    template: "She {0}.",
+    hints: [{ accepted: [
+      "almost never paints"
+    ] }] },
+  { direct: '👨‍🔧🔩 &nbsp; X <span class="text-tertiary">· · · · · · </span> &nbsp; <strong>1/7</strong> &nbsp;·&nbsp; verb: <strong>fix</strong>',
+    template: "He {0} things.",
+    hints: [{ accepted: [
+      "almost never fixes"
+    ] }] }
+];
 
-  wrap.innerHTML = `
-    <div class="item-top">
-      <div class="emoji-pair">${item.emojis}</div>
-      <div class="x-marks">${buildXMarks(item.count)}</div>
-      <div class="x-count-label">${item.count}/7</div>
-    </div>
-    <div class="answer-row">
-      <input type="text" placeholder="Write a full sentence..." data-idx="${idx}">
-      <button class="check-btn" data-idx="${idx}">Check</button>
-    </div>
-    <div class="feedback" data-idx="${idx}"></div>
-  `;
-  itemsEl.appendChild(wrap);
-});
-
-let scored = new Set();
-
-// Tokenize into lowercase words, stripping punctuation
-function tokenize(text) {
-  return text
-    .toLowerCase()
-    .replace(/[.,!?;:]/g, "")
-    .split(/\s+/)
-    .filter(Boolean);
-}
-
-// Find the index of a (possibly multi-word) phrase inside a token array.
-// Returns { start, end } (end = index after last word) or null if not found.
-function findPhrase(tokens, phraseWords) {
-  for (let i = 0; i <= tokens.length - phraseWords.length; i++) {
-    let match = true;
-    for (let j = 0; j < phraseWords.length; j++) {
-      if (tokens[i + j] !== phraseWords[j]) { match = false; break; }
-    }
-    if (match) return { start: i, end: i + phraseWords.length };
-  }
-  return null;
-}
-
-function checkAnswer(idx) {
-  const item = items[idx];
-  const input = document.querySelector(`input[data-idx="${idx}"]`);
-  const feedback = document.querySelector(`.feedback[data-idx="${idx}"]`);
-  const wrap = document.querySelector(`.item[data-idx="${idx}"]`);
-  const raw = input.value.trim();
-  wrap.classList.remove('correct-state', 'incorrect-state');
-
-  if (!raw) {
-    feedback.textContent = "Type a sentence first.";
-    feedback.className = "feedback show incorrect";
-    return;
-  }
-
-  const tokens = tokenize(raw);
-  const group = ADVERB_GROUPS[item.count];
-
-  // Find subject pronoun
-  const subjectPos = tokens.indexOf(item.subject);
-
-  // Find the best-matching adverb phrase (try each accepted phrasing)
-  let adverbMatch = null;
-  for (const phrase of group.phrases) {
-    const found = findPhrase(tokens, phrase);
-    if (found) { adverbMatch = found; break; }
-  }
-
-  // Find verb: correct -s form vs. the common bare-form mistake
-  const correctVerbPos = tokens.indexOf(item.verbBase);
-  const wrongVerbPos = tokens.indexOf(item.verbWrong);
-  const hasCorrectVerb = correctVerbPos !== -1;
-  const hasWrongVerb = !hasCorrectVerb && wrongVerbPos !== -1;
-
-  const problems = [];
-
-  if (!adverbMatch) {
-    problems.push(`the adverb "${group.label}"`);
-  }
-
-  if (!hasCorrectVerb && !hasWrongVerb) {
-    problems.push(`the verb "${item.verbBase}"`);
-  } else if (hasWrongVerb) {
-    problems.push(`the -s ending — use "${item.verbBase}", not "${item.verbWrong}" (3rd person singular)`);
-  }
-
-  if (subjectPos === -1) {
-    problems.push(`the subject "${item.subject}"`);
-  }
-
-  // Word order check: only run if subject, adverb, and verb were all found
-  const verbPos = hasCorrectVerb ? correctVerbPos : wrongVerbPos;
-  if (problems.length === 0 || (adverbMatch && verbPos !== -1 && subjectPos !== -1 && problems.every(p => p.includes('-s ending')))) {
-    if (adverbMatch && verbPos !== -1 && subjectPos !== -1) {
-      const orderCorrect = subjectPos < adverbMatch.start && adverbMatch.end <= verbPos;
-      if (!orderCorrect) {
-        problems.push(`word order — the adverb goes before the verb (subject → adverb → verb)`);
-      }
-    }
-  }
-
-  if (problems.length === 0) {
-    feedback.textContent = "✓ Correct! Well matched.";
-    feedback.className = "feedback show correct";
-    wrap.classList.add('correct-state');
-    if (!scored.has(idx)) { scored.add(idx); updateScore(); }
-  } else {
-    feedback.textContent = `✗ Check: ${problems.join("; ")}.`;
-    feedback.className = "feedback show incorrect";
-    wrap.classList.add('incorrect-state');
-    scored.delete(idx);
-    updateScore();
-  }
-}
-
-function updateScore() {
-  scoreLabel.textContent = scored.size;
-}
-
-itemsEl.addEventListener('click', (e) => {
-  if (e.target.classList.contains('check-btn')) {
-    checkAnswer(Number(e.target.dataset.idx));
-  }
-});
-
-itemsEl.addEventListener('keydown', (e) => {
-  if (e.key === 'Enter' && e.target.tagName === 'INPUT') {
-    checkAnswer(Number(e.target.dataset.idx));
-  }
-});
-
-document.getElementById('revealAllBtn').addEventListener('click', () => {
-  items.forEach((item, idx) => {
-    const input = document.querySelector(`input[data-idx="${idx}"]`);
-    const group = ADVERB_GROUPS[item.count];
-    const subjectCap = item.subject.charAt(0).toUpperCase() + item.subject.slice(1);
-    const adverbText = group.phrases[0].join(" ");
-    const sample = `${subjectCap} ${adverbText} ${item.verbBase} ${item.object}`.trim().replace(/\s+/g, ' ') + '.';
-    input.value = sample;
-    input.placeholder = sample;
-  });
-});
+HouseGapFill.build({ container: 'gfItems', items: GF_ITEMS });
 </script>
 </body>
 </html>
