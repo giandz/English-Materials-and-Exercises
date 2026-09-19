@@ -1535,8 +1535,13 @@
     neg: 'Negative', none: 'Other'
   };
 
-  var FORM_LABEL = { aff: 'affirmative', neg: 'negative', q: 'question' };
-  var FORM_CAT = { aff: 'pos', neg: 'neg', q: 'q' };
+  var FORM_LABEL = {
+    aff: 'affirmative', neg: 'negative',
+    q: 'yes / no question', wh: 'wh- question'
+  };
+  // `wh` borrows the celebration pill colour so a wh- question is visibly a
+  // different move from a yes/no question rather than a variant of it.
+  var FORM_CAT = { aff: 'pos', neg: 'neg', q: 'q', wh: 'cel' };
 
   function build(opts) {
     var host = typeof opts.container === 'string'
