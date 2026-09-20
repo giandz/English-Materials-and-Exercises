@@ -1,0 +1,618 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<title>Spelling — Quick Reference</title>
+<script>
+(function(){
+  try{
+    var saved = localStorage.getItem('theme-preference');
+    var theme = (saved === 'light' || saved === 'dark')
+      ? saved
+      : ((window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches) ? 'dark' : 'light');
+    document.documentElement.setAttribute('data-theme', theme);
+  }catch(e){ /* localStorage/matchMedia unavailable — CSS media query still applies */ }
+})();
+</script>
+<link rel="stylesheet" href="house.css">
+<style>
+.ref-card{
+  background:var(--surface-2);
+  border:1px solid var(--color-border-tertiary);
+  border-radius:12px;
+  padding:10px 12px 9px;
+  margin-bottom:8px;
+}
+.ref-card p{ margin:0; font-size:14px; line-height:1.6; color:var(--text-primary); }
+.ref-card strong{ color:var(--text-accent); }
+
+.pair-card{
+  background:var(--surface-2);
+  border:1px solid var(--color-border-tertiary);
+  border-radius:12px;
+  padding:10px 12px;
+  margin-bottom:8px;
+}
+.pair-line{ font-size:14px; line-height:1.7; padding:2px 0; }
+.pair-line.no{ color:var(--bad); }
+.pair-line.yes{ color:var(--good); font-weight:600; }
+.mark{ font-weight:700; margin-right:5px; }
+
+/* ── Talking alphabet poster ─────────────────────────────────────────────── */
+.speak-hint{ text-align:center; font-size:13px; color:var(--text-secondary); margin:0 0 1rem; }
+.speak-voice{ display:flex; justify-content:center; align-items:center; gap:6px; margin-top:6px; font-size:11.5px; color:var(--text-muted); }
+.speak-voice select{
+  font:inherit; font-size:12px; color:var(--text-primary); cursor:pointer;
+  padding:4px 10px; border:1px solid var(--border); border-radius:999px; background:var(--surface-1);
+  max-width:min(300px, 70vw); text-overflow:ellipsis;
+}
+.speak-voice select:disabled{ cursor:default; opacity:.7; }
+
+.abc-poster{ display:flex; flex-direction:column; gap:12px; margin:0 0 1.5rem; }
+.abc-group{ border:1px solid var(--color-border-tertiary); border-radius:12px; padding:10px 12px; background:var(--surface-2); }
+.abc-group-title{ font-size:11px; font-weight:700; text-transform:uppercase; letter-spacing:.04em; color:var(--text-muted); margin-bottom:8px; }
+.abc-chips{ display:flex; flex-wrap:wrap; gap:8px; }
+.abc-chip{
+  display:flex; flex-direction:column; align-items:center; justify-content:center;
+  width:50px; height:50px; border-radius:10px; border:1px solid var(--border);
+  background:var(--surface-1); cursor:pointer; font:inherit; color:var(--text-primary);
+  transition:box-shadow .12s ease; -webkit-appearance:none; appearance:none;
+}
+.abc-chip .abc-letter{ font-size:19px; font-weight:700; line-height:1; }
+.abc-chip .abc-caption{ font-size:8.5px; font-weight:600; color:var(--text-muted); margin-top:1px; letter-spacing:.03em; }
+.abc-chip.is-speaking{ box-shadow:0 0 0 2px var(--text-accent); }
+.abc-chip.is-speaking .abc-letter{ animation:abc-say .35s ease; }
+@keyframes abc-say{ 0%,100%{ transform:translateY(0); } 40%{ transform:translateY(-3px) scale(1.15); } }
+@media (prefers-reduced-motion: reduce){ .abc-chip.is-speaking .abc-letter{ animation:none; } }
+.no-speech .abc-chip{ cursor:default; opacity:.75; }
+
+/* ── Letter sound-sort exercise ──────────────────────────────────────────── */
+.sort-score{ font-size:13px; color:var(--text-secondary); margin-bottom:.6rem; }
+.sort-score strong{ color:var(--good); }
+.sort-cols{ display:grid; grid-template-columns:repeat(7, 1fr); gap:8px; margin-bottom:1rem; }
+@media (max-width:640px){ .sort-cols{ grid-template-columns:repeat(4, 1fr); } }
+@media (max-width:420px){ .sort-cols{ grid-template-columns:repeat(2, 1fr); } }
+.sort-col{
+  border:1.5px dashed var(--border); border-radius:12px; padding:8px 6px;
+  min-height:120px; background:var(--surface-2); display:flex; flex-direction:column;
+  align-items:center; gap:6px; transition:border-color .12s, background .12s;
+}
+.sort-col.drag-over{ border-color:var(--text-accent); background:var(--color-background-info); }
+.sort-col-head{ font-size:16px; font-weight:700; color:var(--text-accent); line-height:1; }
+.sort-col-sound{ font-size:10px; color:var(--text-muted); text-align:center; line-height:1.2; margin-bottom:2px; }
+.sort-col-body{ display:flex; flex-wrap:wrap; gap:4px; justify-content:center; }
+.sort-pool-label{ font-size:11px; font-weight:700; text-transform:uppercase; letter-spacing:.04em; color:var(--text-muted); margin-bottom:8px; }
+.sort-pool{ display:flex; flex-wrap:wrap; gap:6px; padding:10px; background:rgba(0,0,0,0.03); border-radius:12px; margin-bottom:1rem; min-height:44px; }
+html[data-theme="dark"] .sort-pool{ background:rgba(255,255,255,0.04); }
+.sort-chip{
+  min-width:34px; min-height:34px; border-radius:8px; border:1px solid var(--border);
+  background:var(--surface-1); color:var(--text-primary); font-weight:700; font-size:15px;
+  display:flex; flex-direction:column; align-items:center; justify-content:center; cursor:grab;
+  touch-action:none; user-select:none; -webkit-user-select:none; padding:2px 4px;
+}
+.sort-chip .sort-chip-flag{ font-size:9px; font-weight:500; line-height:1; margin-top:1px; }
+.sort-chip.selected{ border-color:var(--text-accent); box-shadow:0 0 0 2px var(--text-accent); }
+.sort-chip.correct{ background:var(--good-bg); border-color:var(--good); color:var(--good); cursor:default; }
+.sort-chip.wrong-flash{ background:var(--bad-bg); border-color:var(--bad); color:var(--bad); animation:sort-shake .3s; }
+.sort-chip.dragging{ position:fixed; z-index:999; pointer-events:none; box-shadow:0 6px 16px rgba(0,0,0,0.18); transform:scale(1.08); cursor:grabbing; }
+@keyframes sort-shake{ 0%,100%{ transform:translateX(0); } 25%{ transform:translateX(-4px); } 75%{ transform:translateX(4px); } }
+</style>
+</head>
+<body class="exercise-page" id="page">
+<span class="cefr-tag cefr-a1">A1 · Beginner</span>
+<div style="padding:.75rem 0 1rem;">
+
+  <h1>Spelling — Quick Reference</h1>
+  <p class="subtitle">Asking for, giving, and correcting spelling</p>
+
+  <div class="rule-box">
+    <strong>The idea:</strong> we spell a word by saying its letters one by one. This is very useful for names, emails, and other personal information.
+  </div>
+
+  <div class="sec-div">Asking for spelling</div>
+  <div class="ref-card"><p><strong>How do you spell</strong> your name? &nbsp;·&nbsp; <strong>Could you spell</strong> that, please? &nbsp;·&nbsp; <strong>Is that spelled</strong> K-A-T-E?</p></div>
+
+  <div class="sec-div">Giving and correcting spelling</div>
+  <div class="ref-card"><p><strong>It's spelled</strong> C-A-T-E. &nbsp;·&nbsp; <strong>It's</strong> Cate <strong>with a</strong> C.</p></div>
+  <div class="ref-card"><p>To correct someone: <strong>No, it's</strong> [word] <strong>with a</strong> [letter]. — "No, it's Cate with a C."</p></div>
+
+  <div class="sec-div">The talking alphabet</div>
+  <p class="subtitle">Tap a letter to hear it.</p>
+
+  <div class="speak-hint" id="speakHint">🔊 Tap a letter to hear it.
+    <label class="speak-voice">Voice <select id="speakVoice"><option>Device default</option></select></label>
+  </div>
+
+  <div class="abc-poster">
+    <div class="abc-group">
+      <div class="abc-chips">
+        <button type="button" class="abc-chip" data-say="A" aria-label="A"><span class="abc-letter">A</span></button>
+        <button type="button" class="abc-chip" data-say="B" aria-label="B"><span class="abc-letter">B</span></button>
+        <button type="button" class="abc-chip" data-say="C" aria-label="C"><span class="abc-letter">C</span></button>
+        <button type="button" class="abc-chip" data-say="D" aria-label="D"><span class="abc-letter">D</span></button>
+        <button type="button" class="abc-chip" data-say="E" aria-label="E"><span class="abc-letter">E</span></button>
+        <button type="button" class="abc-chip" data-say="F" aria-label="F"><span class="abc-letter">F</span></button>
+        <button type="button" class="abc-chip" data-say="G" aria-label="G"><span class="abc-letter">G</span></button>
+        <button type="button" class="abc-chip" data-say="H" aria-label="H"><span class="abc-letter">H</span></button>
+        <button type="button" class="abc-chip" data-say="I" aria-label="I"><span class="abc-letter">I</span></button>
+        <button type="button" class="abc-chip" data-say="J" aria-label="J"><span class="abc-letter">J</span></button>
+        <button type="button" class="abc-chip" data-say="K" aria-label="K"><span class="abc-letter">K</span></button>
+        <button type="button" class="abc-chip" data-say="L" aria-label="L"><span class="abc-letter">L</span></button>
+        <button type="button" class="abc-chip" data-say="M" aria-label="M"><span class="abc-letter">M</span></button>
+        <button type="button" class="abc-chip" data-say="N" aria-label="N"><span class="abc-letter">N</span></button>
+        <button type="button" class="abc-chip" data-say="O" aria-label="O"><span class="abc-letter">O</span></button>
+        <button type="button" class="abc-chip" data-say="P" aria-label="P"><span class="abc-letter">P</span></button>
+        <button type="button" class="abc-chip" data-say="Q" aria-label="Q"><span class="abc-letter">Q</span></button>
+        <button type="button" class="abc-chip" data-say="R" aria-label="R"><span class="abc-letter">R</span></button>
+        <button type="button" class="abc-chip" data-say="S" aria-label="S"><span class="abc-letter">S</span></button>
+        <button type="button" class="abc-chip" data-say="T" aria-label="T"><span class="abc-letter">T</span></button>
+        <button type="button" class="abc-chip" data-say="U" aria-label="U"><span class="abc-letter">U</span></button>
+        <button type="button" class="abc-chip" data-say="V" aria-label="V"><span class="abc-letter">V</span></button>
+        <button type="button" class="abc-chip" data-say="W" aria-label="W"><span class="abc-letter">W</span></button>
+        <button type="button" class="abc-chip" data-say="X" aria-label="X"><span class="abc-letter">X</span></button>
+        <button type="button" class="abc-chip" data-say="Y" aria-label="Y"><span class="abc-letter">Y</span></button>
+        <button type="button" class="abc-chip" data-say="zee" aria-label="Z, American English"><span class="abc-letter">Z</span><span class="abc-caption">🇺🇸 US</span></button>
+        <button type="button" class="abc-chip" data-say="zed" aria-label="Z, British English"><span class="abc-letter">Z</span><span class="abc-caption">🇬🇧 UK</span></button>
+      </div>
+    </div>
+  </div>
+
+  <div class="ref-card"><p><strong>Note:</strong> the last letter of the alphabet has two names — Americans say <strong>zee</strong>, and British speakers say <strong>zed</strong>. Both are correct.</p></div>
+
+  <div class="sec-div">Sort the letters by sound</div>
+  <p class="subtitle">Many letters rhyme with each other. Tap or drag each letter into the column with the same vowel sound.</p>
+
+  <div class="sort-score">Correct: <strong id="sortScore">0</strong> / <span id="sortTotal">27</span></div>
+
+  <div class="sort-cols" id="sortCols"></div>
+
+  <div class="sort-pool-label">Letters</div>
+  <div class="sort-pool" id="sortPool"></div>
+
+  <div class="sec-div">Common mistakes</div>
+
+  <div class="pair-card">
+    <div class="pair-line no"><span class="mark">✗</span>How you spell your name?</div>
+    <div class="pair-line yes"><span class="mark">✓</span>How do you spell your name?</div>
+  </div>
+  <div class="pair-card">
+    <div class="pair-line no"><span class="mark">✗</span>It's spell C-A-T-E.</div>
+    <div class="pair-line yes"><span class="mark">✓</span>It's spelled C-A-T-E.</div>
+  </div>
+  <div class="pair-card">
+    <div class="pair-line no"><span class="mark">✗</span>Is it spell with a C?</div>
+    <div class="pair-line yes"><span class="mark">✓</span>Is it spelled with a C?</div>
+  </div>
+  <div class="pair-card">
+    <div class="pair-line no"><span class="mark">✗</span>My name spell M-I-A.</div>
+    <div class="pair-line yes"><span class="mark">✓</span>My name is spelled M-I-A.</div>
+  </div>
+
+  <footer>Spelling — Quick Reference (A1)</footer>
+</div>
+
+<div id="theme-toggle-wrap">
+  <button id="theme-toggle" aria-label="Toggle light/dark mode" title="Toggle light/dark mode">
+    <span id="theme-icon">☀️</span>
+  </button>
+</div>
+<script src="house.js"></script>
+<!-- HouseSpeak — inline here so this page works standalone even before the
+     module below is merged into house.js (see the house-speak-module.js file
+     provided alongside this lesson pack; house.js already skips re-adding it
+     via the `if (global.HouseSpeak) return;` guard, so this is safe to leave
+     in place even after the merge). -->
+<script>
+/* ══════════════════════════════════════════════════════════════════════════
+   HOUSE SPEAK — tap-to-hear for individual words.
+
+   Any element with data-say="word" becomes speakable. If it also has
+   data-audio="audio/word.mp3" that recording plays first, and the browser's
+   own speech synthesis is used only when the file is missing or fails.
+
+     <button type="button" class="chip" data-say="cab">cab</button>
+     <button type="button" class="chip" data-say="cab" data-audio="audio/cab.mp3">cab</button>
+
+   The element gets .is-speaking while it plays.
+
+   Optional voice picker: put <select id="speakVoice"> on the page and it is
+   filled with this device's English voices, grouped by accent. The choice is
+   remembered per device and the last word is replayed in the new voice.
+   (Any other element with that id just shows the chosen voice as text.)
+   ══════════════════════════════════════════════════════════════════════════ */
+(function (global) {
+  'use strict';
+  if (global.HouseSpeak) return; // house.js already provides it
+
+  var LANG = 'en-US';
+  var RATE = 0.85;
+  var SAFETY_MS = 3000; // single words finish well inside this
+  var STORE_KEY = 'house-speak-voice';
+
+  // Good, widely shipped voices, tried in order (on-device voices first, so an
+  // offline classroom doesn't silently pick a voice that needs the network).
+  var PREFERRED = ['Samantha', 'Microsoft Aria', 'Microsoft Jenny', 'Microsoft Ava',
+                   'Microsoft Zira', 'Google US English', 'Alex'];
+  // macOS/iOS list novelty and Eloquence voices under English; never offer those as pronunciation models.
+  var NOVELTY = /^(albert|bad news|bahh|bells|boing|bubbles|cellos|good news|jester|organ|superstar|trinoids|whisper|wobble|zarvox|junior|ralph|fred|kathy|grandma|grandpa|eddy|flo|reed|rocko|sandy|shelley)(\s|\(|$)/i;
+
+  var synth = ('speechSynthesis' in global && 'SpeechSynthesisUtterance' in global) ? global.speechSynthesis : null;
+  var voice = null;
+  var voices = [];      // English voices currently offered, indexed by <option value>
+  var current = null;   // strong reference: Chrome can garbage-collect an in-flight utterance
+  var audio = null;
+  var activeEl = null;
+  var lastEl = null;
+
+  function norm(lang) { return (lang || '').replace('_', '-').toLowerCase(); }
+  function loadPref() { try { return localStorage.getItem(STORE_KEY); } catch (e) { return null; } }
+  function savePref(uri) { try { localStorage.setItem(STORE_KEY, uri); } catch (e) { /* private mode etc. */ } }
+
+  function langLabel(code) {
+    try {
+      if (global.Intl && Intl.DisplayNames) {
+        return new Intl.DisplayNames(['en'], { type: 'language' }).of(code.replace('_', '-'));
+      }
+    } catch (e) { /* malformed tag — fall through */ }
+    return code;
+  }
+
+  function autoPick(list) {
+    var target = norm(LANG);
+    var exact = list.filter(function (v) { return norm(v.lang) === target; });
+    var passes = [exact.filter(function (v) { return v.localService; }), exact];
+    for (var p = 0; p < passes.length; p++) {
+      for (var i = 0; i < PREFERRED.length; i++) {
+        for (var j = 0; j < passes[p].length; j++) {
+          if (passes[p][j].name.indexOf(PREFERRED[i]) === 0) return passes[p][j];
+        }
+      }
+    }
+    return exact.filter(function (v) { return v.default; })[0] || exact[0] || list[0] || null;
+  }
+
+  function pickVoice() {
+    if (!synth) return;
+    var list = synth.getVoices().filter(function (v) {
+      return norm(v.lang).indexOf('en') === 0 && !NOVELTY.test(v.name);
+    });
+    var byUri = function (uri) { return list.filter(function (v) { return v.voiceURI === uri; })[0]; };
+
+    // Chrome fires voiceschanged more than once; keep whatever is already in use.
+    voice = (voice && byUri(voice.voiceURI)) || byUri(loadPref()) || autoPick(list);
+    voices = list;
+    renderPicker();
+  }
+
+  function renderPicker() {
+    var el = document.getElementById('speakVoice');
+    if (!el) return;
+
+    if (el.tagName !== 'SELECT') {
+      el.textContent = !synth ? 'This browser can’t read words aloud. Try Chrome, Edge or Safari.'
+        : voice ? 'Voice: ' + voice.name + ' (' + voice.lang + ')' : 'Voice: device default';
+      return;
+    }
+
+    if (!synth) {
+      (el.closest('label') || el).textContent = 'This browser can’t read words aloud. Try Chrome, Edge or Safari.';
+      return;
+    }
+
+    el.innerHTML = '';
+    if (!voices.length) {
+      el.appendChild(new Option('Device default', ''));
+      el.disabled = true;
+      return;
+    }
+    el.disabled = false;
+
+    // Group by accent; the page's own accent first, the rest alphabetically.
+    var groups = {};
+    voices.forEach(function (v, i) {
+      var key = norm(v.lang);
+      (groups[key] = groups[key] || []).push(i);
+    });
+    var keys = Object.keys(groups).sort(function (a, b) {
+      if (a === norm(LANG)) return -1;
+      if (b === norm(LANG)) return 1;
+      return langLabel(a).localeCompare(langLabel(b));
+    });
+
+    keys.forEach(function (key) {
+      var og = document.createElement('optgroup');
+      og.label = langLabel(key);
+      groups[key]
+        .sort(function (a, b) { return voices[a].name.localeCompare(voices[b].name); })
+        .forEach(function (i) {
+          var v = voices[i];
+          var opt = new Option(v.name + (v.localService ? '' : ' · online'), String(i));
+          if (v === voice) opt.selected = true;
+          og.appendChild(opt);
+        });
+      el.appendChild(og);
+    });
+    el.title = voice ? voice.name + ' (' + voice.lang + ')' : '';
+  }
+
+  function onPickerChange(e) {
+    var v = voices[Number(e.target.value)];
+    if (!v) return;
+    voice = v;
+    savePref(v.voiceURI);
+    e.target.title = v.name + ' (' + v.lang + ')';
+    // Replay the last word (or the first on the page) so the new voice can be judged straight away.
+    var sample = lastEl || document.querySelector('[data-say]');
+    if (sample) speak(sample.getAttribute('data-say'), lastEl);
+  }
+
+  function setActive(el) {
+    if (activeEl) activeEl.classList.remove('is-speaking');
+    activeEl = el || null;
+    if (activeEl) {
+      void activeEl.offsetWidth; // restart the CSS animation on a repeat tap
+      activeEl.classList.add('is-speaking');
+    }
+  }
+
+  function stopAll() {
+    if (audio) { audio.pause(); audio = null; }
+    if (synth && (synth.speaking || synth.pending)) {
+      current = null; // so the cancelled utterance's late error event can't clear the next chip
+      synth.cancel();
+    }
+  }
+
+  function speak(text, el) {
+    if (!synth) return false;
+    if (!voice) pickVoice();
+    stopAll();
+    synth.resume(); // Chrome can leave the queue paused after tab switches
+
+    var u = new SpeechSynthesisUtterance(text);
+    // lang must follow the voice: some engines (notably on Android) honour lang over voice.
+    u.lang = voice ? voice.lang.replace('_', '-') : LANG;
+    u.rate = RATE;
+    if (voice) u.voice = voice;
+
+    var done = function () {
+      if (current !== u) return;
+      current = null;
+      if (!audio) setActive(null);
+    };
+    u.onend = done;
+    u.onerror = done;
+
+    current = u;
+    setActive(el);
+    synth.speak(u); // must stay synchronous inside the user's gesture for iOS
+    setTimeout(done, SAFETY_MS);
+    return true;
+  }
+
+  function play(el) {
+    lastEl = el;
+    var text = el.getAttribute('data-say');
+    var src = el.getAttribute('data-audio');
+    if (!src) { speak(text, el); return; }
+
+    stopAll();
+    var a = audio = new Audio(src);
+    setActive(el);
+    a.onended = function () { if (audio === a) { audio = null; setActive(null); } };
+    var fallback = function () { if (audio === a) { audio = null; speak(text, el); } };
+    var p = a.play();
+    if (p && p.catch) p.catch(fallback);
+    a.onerror = fallback;
+  }
+
+  document.addEventListener('click', function (e) {
+    var el = e.target && e.target.closest ? e.target.closest('[data-say]') : null;
+    if (el) play(el);
+  });
+
+  function init() {
+    var picker = document.getElementById('speakVoice');
+    if (picker && picker.tagName === 'SELECT') picker.addEventListener('change', onPickerChange);
+    if (synth) {
+      pickVoice();
+      if (synth.addEventListener) synth.addEventListener('voiceschanged', pickVoice);
+      else synth.onvoiceschanged = pickVoice;
+    } else {
+      document.documentElement.classList.add('no-speech');
+      renderPicker();
+    }
+  }
+  if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', init);
+  else init();
+
+  global.HouseSpeak = { speak: speak, play: play, stop: stopAll, pickVoice: pickVoice };
+})(window);
+</script>
+<script>
+/* ── Letter sound-sort exercise ─────────────────────────────────────────────
+   Tap a letter, then tap a column — or drag it straight there. Z appears
+   twice, once for each of its two names (zee/zed), each going to the column
+   matching that pronunciation. */
+(function(){
+  var GROUPS = [
+    { key:'A', sound:'rhymes with "ay"',  letters:['A','H','J','K'] },
+    { key:'B', sound:'rhymes with "ee"',  letters:['B','C','D','E','G','P','T','V'] },
+    { key:'F', sound:'rhymes with "eh"',  letters:['F','L','M','N','S','X'] },
+    { key:'I', sound:'rhymes with "eye"', letters:['I','Y'] },
+    { key:'O', sound:'its own sound',     letters:['O'] },
+    { key:'Q', sound:'rhymes with "you"', letters:['Q','U','W'] },
+    { key:'R', sound:'its own sound',     letters:['R'] }
+  ];
+  var SPECIAL = [
+    { id:'Z-us', display:'Z', flag:'🇺🇸', group:'B' },
+    { id:'Z-uk', display:'Z', flag:'🇬🇧', group:'F' }
+  ];
+
+  var letterGroup = {};
+  var allLetters = []; // entries: { id, display, flag? }
+  GROUPS.forEach(function(g){
+    g.letters.forEach(function(l){ letterGroup[l] = g.key; allLetters.push({ id:l, display:l }); });
+  });
+  SPECIAL.forEach(function(s){ letterGroup[s.id] = s.group; allLetters.push(s); });
+
+  function shuffle(arr){
+    var a = arr.slice();
+    for (var i = a.length - 1; i > 0; i--) {
+      var j = Math.floor(Math.random() * (i + 1));
+      var t = a[i]; a[i] = a[j]; a[j] = t;
+    }
+    return a;
+  }
+
+  var colsEl = document.getElementById('sortCols');
+  var poolEl = document.getElementById('sortPool');
+  var scoreEl = document.getElementById('sortScore');
+  if (!colsEl || !poolEl) return;
+
+  document.getElementById('sortTotal').textContent = allLetters.length;
+
+  var colBody = {};
+  GROUPS.forEach(function(g){
+    var col = document.createElement('div');
+    col.className = 'sort-col';
+    col.dataset.key = g.key;
+    col.innerHTML =
+      '<div class="sort-col-head">' + g.key + '</div>' +
+      '<div class="sort-col-sound">' + g.sound + '</div>' +
+      '<div class="sort-col-body"></div>';
+    colsEl.appendChild(col);
+    colBody[g.key] = col.querySelector('.sort-col-body');
+  });
+
+  var correctCount = 0;
+  var selected = null; // {chip, letter}
+
+  function updateScore(){
+    scoreEl.textContent = correctCount;
+  }
+
+  function lockCorrect(chip, key){
+    chip.classList.remove('selected', 'dragging');
+    chip.classList.add('correct');
+    chip.style.position = ''; chip.style.left = ''; chip.style.top = ''; chip.style.width = '';
+    colBody[key].appendChild(chip);
+    correctCount++;
+    updateScore();
+  }
+
+  function flashWrong(chip){
+    chip.classList.add('wrong-flash');
+    setTimeout(function(){ chip.classList.remove('wrong-flash'); }, 400);
+  }
+
+  function tryPlace(chip, key){
+    var letter = chip.dataset.letter;
+    if (letterGroup[letter] === key) {
+      lockCorrect(chip, key);
+      return true;
+    }
+    flashWrong(chip);
+    return false;
+  }
+
+  function clearSelection(){
+    if (selected) selected.chip.classList.remove('selected');
+    selected = null;
+  }
+
+  shuffle(allLetters).forEach(function(entry){
+    var chip = document.createElement('div');
+    chip.className = 'sort-chip';
+    chip.dataset.letter = entry.id;
+    var main = document.createElement('span');
+    main.textContent = entry.display;
+    chip.appendChild(main);
+    if (entry.flag) {
+      var flagEl = document.createElement('span');
+      flagEl.className = 'sort-chip-flag';
+      flagEl.textContent = entry.flag;
+      chip.appendChild(flagEl);
+    }
+    poolEl.appendChild(chip);
+    attachEvents(chip);
+  });
+
+  function attachEvents(chip){
+    var dragState = null;
+    var moved = false;
+
+    function forceEnd(){
+      if (dragState && moved && chip.parentElement) {
+        chip.classList.remove('dragging');
+        chip.style.position = ''; chip.style.left = ''; chip.style.top = ''; chip.style.width = '';
+      }
+      dragState = null;
+      moved = false;
+    }
+
+    chip.addEventListener('pointerdown', function(e){
+      if (chip.classList.contains('correct')) return;
+      e.preventDefault();
+      if (dragState) forceEnd();
+      var rect = chip.getBoundingClientRect();
+      dragState = { offsetX: e.clientX - rect.left, offsetY: e.clientY - rect.top };
+      moved = false;
+      chip.setPointerCapture(e.pointerId);
+    });
+
+    chip.addEventListener('pointermove', function(e){
+      if (!dragState) return;
+      if (!moved) {
+        moved = true;
+        clearSelection();
+        var rect = chip.getBoundingClientRect();
+        chip.style.width = rect.width + 'px';
+        chip.classList.add('dragging');
+      }
+      chip.style.left = (e.clientX - dragState.offsetX) + 'px';
+      chip.style.top = (e.clientY - dragState.offsetY) + 'px';
+
+      document.querySelectorAll('.sort-col').forEach(function(c){ c.classList.remove('drag-over'); });
+      var els = document.elementsFromPoint(e.clientX, e.clientY);
+      var col = els.map(function(el){ return el.closest && el.closest('.sort-col'); }).filter(Boolean)[0];
+      if (col) col.classList.add('drag-over');
+    });
+
+    chip.addEventListener('pointerup', function(e){
+      if (!dragState) return;
+      document.querySelectorAll('.sort-col').forEach(function(c){ c.classList.remove('drag-over'); });
+
+      if (moved) {
+        chip.classList.remove('dragging');
+        chip.style.position = ''; chip.style.left = ''; chip.style.top = ''; chip.style.width = '';
+        var els = document.elementsFromPoint(e.clientX, e.clientY);
+        var col = els.map(function(el){ return el.closest && el.closest('.sort-col'); }).filter(Boolean)[0];
+        if (col) tryPlace(chip, col.dataset.key);
+      } else {
+        clearSelection();
+        chip.classList.add('selected');
+        selected = { chip: chip, letter: chip.dataset.letter };
+      }
+      dragState = null;
+      moved = false;
+    });
+
+    chip.addEventListener('pointercancel', forceEnd);
+    chip.addEventListener('lostpointercapture', function(){ if (dragState) forceEnd(); });
+    window.addEventListener('blur', function(){ if (dragState) forceEnd(); });
+  }
+
+  document.querySelectorAll('.sort-col').forEach(function(col){
+    col.addEventListener('click', function(){
+      if (!selected) return;
+      var chip = selected.chip;
+      clearSelection();
+      tryPlace(chip, col.dataset.key);
+    });
+  });
+})();
+</script>
+</body>
+</html>

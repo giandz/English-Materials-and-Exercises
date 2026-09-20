@@ -1,0 +1,107 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<title>Spelling — Speaking Activity</title>
+<script>
+(function(){
+  try{
+    var saved = localStorage.getItem('theme-preference');
+    var theme = (saved === 'light' || saved === 'dark')
+      ? saved
+      : ((window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches) ? 'dark' : 'light');
+    document.documentElement.setAttribute('data-theme', theme);
+  }catch(e){ /* localStorage/matchMedia unavailable — CSS media query still applies */ }
+})();
+</script>
+<link rel="stylesheet" href="house.css">
+<style>
+.role-wrap{ display:flex; gap:10px; flex-wrap:wrap; margin-bottom:1rem; }
+.role-card{
+  flex:1 1 260px; border:1px solid var(--color-border-tertiary); border-radius:16px;
+  padding:14px; background:var(--surface-2);
+}
+.role-card .role-title{ font-size:12px; font-weight:700; text-transform:uppercase; letter-spacing:.04em; color:var(--text-accent); margin-bottom:6px; }
+.role-card .role-desc{ font-size:13px; color:var(--text-secondary); margin-bottom:10px; }
+.role-card ul{ margin:0; padding-left:18px; font-size:13px; line-height:1.7; }
+
+.q-grid{ display:grid; grid-template-columns:1fr 1fr; gap:8px; }
+@media (max-width:480px){ .q-grid{ grid-template-columns:1fr; } }
+.q-card{
+  border:1px solid var(--color-border-tertiary); border-radius:14px;
+  padding:12px 12px 10px; background:var(--surface-2); cursor:pointer;
+  transition:background .15s, border-color .15s;
+}
+.q-card .q-num{ font-size:10.5px; font-weight:700; color:var(--text-muted); letter-spacing:.04em; }
+.q-card .q-text{ font-size:14px; margin-top:4px; line-height:1.4; }
+.q-card .q-done{ font-size:11px; color:var(--good); font-weight:600; margin-top:6px; display:none; }
+.q-card.asked{ background:var(--good-bg); border-color:var(--good); }
+.q-card.asked .q-done{ display:block; }
+</style>
+</head>
+<body class="exercise-page" id="page">
+<span class="cefr-tag cefr-a1">A1 · Beginner</span>
+<div style="padding:.75rem 0 1rem;">
+
+  <h1>Let's Talk: Spell It Out</h1>
+  <p class="subtitle">A short speaking activity about personal information</p>
+
+  <div class="sec-div">🗣️ Mingle — ask and spell</div>
+  <div class="rule-box">
+    Talk to three classmates. Ask 2–3 questions from the cards, and ask them to spell their answer. Tap a card after you ask it.
+  </div>
+  <div class="q-grid" id="qGrid">
+    <div class="q-card"><div class="q-num">1</div><div class="q-text">What's your first name? How do you spell it?</div><div class="q-done">✓ Asked</div></div>
+    <div class="q-card"><div class="q-num">2</div><div class="q-text">What's your last name? How do you spell it?</div><div class="q-done">✓ Asked</div></div>
+    <div class="q-card"><div class="q-num">3</div><div class="q-text">What city are you from? Can you spell it?</div><div class="q-done">✓ Asked</div></div>
+    <div class="q-card"><div class="q-num">4</div><div class="q-text">What's your favorite food? Spell it, please.</div><div class="q-done">✓ Asked</div></div>
+    <div class="q-card"><div class="q-num">5</div><div class="q-text">What street do you live on? How is it spelled?</div><div class="q-done">✓ Asked</div></div>
+    <div class="q-card"><div class="q-num">6</div><div class="q-text">What's a word in English that's hard for you to spell?</div><div class="q-done">✓ Asked</div></div>
+  </div>
+
+  <div class="sec-div">🎭 Role play: at the front desk</div>
+  <div class="rule-box">
+    Work in pairs. One person is filling in a form; the other is giving personal information. Practice asking for and correcting spelling.
+  </div>
+
+  <div class="role-wrap">
+    <div class="role-card">
+      <div class="role-title">Receptionist</div>
+      <div class="role-desc">Ask for your partner's information and check the spelling of anything tricky.</div>
+      <ul>
+        <li>Can I have your name, please?</li>
+        <li>How do you spell that?</li>
+        <li>Is that spelled...?</li>
+        <li>Could you spell that again?</li>
+      </ul>
+    </div>
+    <div class="role-card">
+      <div class="role-title">Visitor</div>
+      <div class="role-desc">Give your information. On purpose, let the receptionist guess your name wrong once, then correct them!</div>
+      <ul>
+        <li>It's... (name)</li>
+        <li>It's spelled...</li>
+        <li>No, it's [word] with a [letter].</li>
+        <li>That's right!</li>
+      </ul>
+    </div>
+  </div>
+
+  <footer>Let's Talk: Spell It Out (A1)</footer>
+</div>
+
+<div id="theme-toggle-wrap">
+  <button id="theme-toggle" aria-label="Toggle light/dark mode" title="Toggle light/dark mode">
+    <span id="theme-icon">☀️</span>
+  </button>
+</div>
+<script src="house.js"></script>
+<script>
+document.getElementById('qGrid').addEventListener('click', (e) => {
+  const card = e.target.closest('.q-card');
+  if (card) card.classList.toggle('asked');
+});
+</script>
+</body>
+</html>
