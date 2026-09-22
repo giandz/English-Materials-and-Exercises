@@ -189,6 +189,14 @@ html[data-theme="dark"] .sort-pool{ background:rgba(255,255,255,0.04); }
     <div class="pair-line yes"><span class="mark">✓</span>My name is spelled M-I-A.</div>
   </div>
 
+  <div class="sec-div">Error hunt</div>
+  <p class="subtitle">Find the mistake. Tap the wrong word and pick the right one.</p>
+
+  <div class="score-bar">
+    <span>Fixed: <strong id="errorScore">0</strong> / <span id="errorTotal">0</span></span>
+  </div>
+  <div id="errorHuntItems"></div>
+
   <footer>Spelling — Quick Reference (A1)</footer>
 </div>
 
@@ -198,6 +206,34 @@ html[data-theme="dark"] .sort-pool{ background:rgba(255,255,255,0.04); }
   </button>
 </div>
 <script src="house.js"></script>
+<script>
+const EH_ITEMS = [
+  {
+    "words": ["How", "you", "spell", "your", "name", "?"],
+    "errors": { "1": { "options": ["you", "do you", "does you"], "correct": "do you" } }
+  },
+  {
+    "words": ["It's", "spell", "C-A-T-E", "."],
+    "errors": { "1": { "options": ["spell", "spelled", "spelling"], "correct": "spelled" } }
+  },
+  {
+    "words": ["Is", "it", "spell", "with", "a", "C", "?"],
+    "errors": { "2": { "options": ["spell", "spelled", "spells"], "correct": "spelled" } }
+  },
+  {
+    "words": ["My", "name", "spell", "M-I-A", "."],
+    "errors": { "2": { "options": ["spell", "is spelled", "spelled"], "correct": "is spelled" } }
+  }
+];
+
+HouseErrorHunt.build({
+  container: 'errorHuntItems',
+  items: EH_ITEMS,
+  scoreEl: 'errorScore',
+  totalEl: 'errorTotal',
+  prompt: 'Tap the wrong word. Choose the right one.'
+});
+</script>
 <!-- HouseSpeak — inline here so this page works standalone even before the
      module below is merged into house.js (see the house-speak-module.js file
      provided alongside this lesson pack; house.js already skips re-adding it
