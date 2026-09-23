@@ -4,24 +4,7 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>Lesson Directory</title>
-<script>
-(function(){
-  try{
-    var saved = localStorage.getItem('theme-preference');
-    var theme = (saved === 'light' || saved === 'dark')
-      ? saved
-      : ((window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches) ? 'dark' : 'light');
-    document.documentElement.setAttribute('data-theme', theme);
-    // Same idea for the text size: apply it before house.css paints, so a
-    // person who chose 28px doesn't watch the page reflow from 14px on load.
-    var fs = parseFloat(localStorage.getItem('font-size-preference'));
-    if (fs >= 10 && fs <= 28){
-      document.documentElement.style.setProperty('--fs-base', fs + 'px');
-    }
-  }catch(e){}
-})();
-</script>
-<link rel="stylesheet" href="house.css">
+<link rel="stylesheet" href="general.css">
 <style>
   :root {
     --ld-bg: var(--color-background-primary, #fafafa);
@@ -238,7 +221,7 @@
 </table>
 
 <div id="theme-toggle-wrap"><button id="theme-toggle" aria-label="Toggle light/dark mode" title="Toggle light/dark mode"><span id="theme-icon">☀️</span></button></div>
-<script src="house.js"></script>
+<script src="theme-toggle-behavior.js"></script>
 
 <script>
   const TYPE_LABELS = {
@@ -424,10 +407,16 @@
     });
   });
 
-  filterInput.addEventListener('input', render);
+  filterInput.addEventListener('input', () => {
+    if (filterInput.value) topicFilter.value = '';
+    render();
+  });
   levelFilter.addEventListener('change', render);
   typeFilter.addEventListener('change', render);
-  topicFilter.addEventListener('input', render);
+  topicFilter.addEventListener('input', () => {
+    if (topicFilter.value) filterInput.value = '';
+    render();
+  });
 
   loadDirectory()
     .then(parsed => {
