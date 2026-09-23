@@ -162,11 +162,7 @@ h1{ font-size:1.3rem; font-weight:600; letter-spacing:-0.01em; margin:0 0 4px; }
   <div id="mcItems"></div>
 
   <div class="sec-div">Part 2 — Fill in the gaps</div>
-
-  <div class="score-bar">
-    <span>Score: <strong id="gfScore">0</strong> / <span id="gfTotal">0</span></span>
-    <button class="reveal-btn" id="revealGf">Show all answers</button>
-  </div>
+  <div class="rule-box">Type your answer. The bar turns green 🔴→🟢 when you are right.</div>
 
   <div id="gfItems"></div>
 
@@ -183,162 +179,79 @@ h1{ font-size:1.3rem; font-weight:600; letter-spacing:-0.01em; margin:0 0 4px; }
 /* ── Gap fill ── */
 const GF_ITEMS = [
   {
-    "category": [
-      "location"
-    ],
+    "category": "location",
+    "direct": "📍 ask about a place",
     "template": "{0} do you go to school?",
-    "hints": [
-      "where"
-    ],
-    "accepted": [
-      [
-        "where"
-      ]
-    ]
+    "hints": [{ "accepted": ["where"] }]
   },
   {
-    "category": [
-      "option"
-    ],
+    "category": "option",
+    "direct": "🎛️ complete the question",
     "template": "What sports {0} you play?",
-    "hints": [
-      "do"
-    ],
-    "accepted": [
-      [
-        "do"
-      ]
-    ]
+    "hints": [{ "accepted": ["do"] }]
   },
   {
-    "category": [
-      "spectime"
-    ],
+    "category": "spectime",
+    "direct": "⌚ ask about a specific time",
     "template": "{0} does he go to work?",
-    "hints": [
-      "what time"
-    ],
-    "accepted": [
-      [
-        "what time"
-      ]
-    ]
+    "hints": [{ "accepted": ["what time"] }]
   },
   {
-    "category": [
-      "frequency"
-    ],
+    "category": "frequency",
+    "direct": "🗓️ complete the question",
     "template": "How often {0} you clean your room?",
-    "hints": [
-      "do"
-    ],
-    "accepted": [
-      [
-        "do"
-      ]
-    ]
+    "hints": [{ "accepted": ["do"] }]
   },
   {
-    "category": [
-      "company"
-    ],
+    "category": "company",
+    "direct": "🧑‍🤝‍🧑 ask about a person",
     "template": "{0} do you do your homework with?",
-    "hints": [
-      "who"
-    ],
-    "accepted": [
-      [
-        "who"
-      ]
-    ]
+    "hints": [{ "accepted": ["who"] }]
   },
   {
-    "category": [
-      "gentime"
-    ],
+    "category": "gentime",
+    "direct": "🌄 ask about a general time",
     "template": "{0} does your family usually have dinner?",
-    "hints": [
-      "when"
-    ],
-    "accepted": [
-      [
-        "when"
-      ]
-    ]
+    "hints": [{ "accepted": ["when"] }]
   },
   {
-    "category": [
-      "option"
-    ],
+    "category": "option",
+    "direct": "🎛️ complete the question",
     "template": "What movies {0} she like?",
-    "hints": [
-      "does"
-    ],
-    "accepted": [
-      [
-        "does"
-      ]
-    ]
+    "hints": [{ "accepted": ["does"] }]
   },
   {
-    "category": [
-      "frequency"
-    ],
+    "category": "frequency",
+    "direct": "🗓️ ask about frequency (two blanks)",
     "template": "{0} often {1} you visit your grandparents?",
-    "hints": [
-      "how",
-      "do"
-    ],
-    "accepted": [
-      [
-        "how"
-      ],
-      [
-        "do"
-      ]
-    ]
+    "hints": [{ "accepted": ["how"] }, { "accepted": ["do"] }]
   },
   {
-    "category": [
-      "company",
-      "spectime"
-    ],
+    "category": "company",
+    "direct": "🧑‍🤝‍🧑 ask about a person and a time (two blanks)",
     "template": "{0} do you practice with, and {1} time do you finish?",
-    "hints": [
-      "who",
-      "what"
-    ],
-    "accepted": [
-      [
-        "who"
-      ],
-      [
-        "what"
-      ]
-    ]
+    "hints": [{ "accepted": ["who"] }, { "accepted": ["what"] }]
   },
   {
-    "category": [
-      "location",
-      "frequency"
-    ],
+    "category": "location",
+    "direct": "📍 ask about a place, and how many times it happens",
     "template": "{0} does your brother study, and {1} does he usually go there?",
-    "hints": [
-      "where",
-      "how often"
-    ],
-    "accepted": [
-      [
-        "where"
-      ],
-      [
-        "how often"
-      ]
-    ]
+    "hints": [{ "accepted": ["where"] }, { "accepted": ["how often"] }]
   }
 ];
 
-HouseGapFill.build({ container: 'gfItems', items: GF_ITEMS });
+HouseGapFill.build({
+  container: 'gfItems',
+  items: GF_ITEMS,
+  labels: {
+    option: "🎛️ option",
+    company: "🧑‍🤝‍🧑 company",
+    location: "📍 location",
+    frequency: "🗓️ frequency",
+    gentime: "🌄 general time",
+    spectime: "⌚ specific time"
+  }
+});
 
 /* ── Page-specific extras, kept as they were ── */
 const mcData = [
@@ -408,20 +321,6 @@ mcItemsEl.addEventListener('click', (e) => {
     mcScoreEl.textContent = mcScored.size;
   }
 });
-
-const gfScoreEl = document.getElementById('gfScore');
-const gfTotalEl = document.getElementById('gfTotal');
-
-let gfTotalGaps = 0;
-gfData.forEach(item => gfTotalGaps += item.accepted.length);
-gfTotalEl.textContent = gfTotalGaps;
-
-let gfScored = new Set();
-
-document.getElementById('revealGf').addEventListener('click', () => {
-  gfScoreEl.textContent = gfScored.size;
-});
-
 </script>
 </body>
 </html>
