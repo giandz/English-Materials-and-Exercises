@@ -79,8 +79,7 @@
   align-items:center; gap:6px; transition:border-color .12s, background .12s;
 }
 .sort-col.drag-over{ border-color:var(--text-accent); background:var(--color-background-info); }
-.sort-col-head{ font-size:16px; font-weight:700; color:var(--text-accent); line-height:1; }
-.sort-col-sound{ font-size:10px; color:var(--text-muted); text-align:center; line-height:1.2; margin-bottom:2px; }
+.sort-col-head{ font-size:14px; font-weight:700; color:var(--text-accent); line-height:1.2; margin-bottom:2px; }
 .sort-col-body{ display:flex; flex-wrap:wrap; gap:4px; justify-content:center; }
 .sort-pool-label{ font-size:11px; font-weight:700; text-transform:uppercase; letter-spacing:.04em; color:var(--text-muted); margin-bottom:8px; }
 .sort-pool{ display:flex; flex-wrap:wrap; gap:6px; padding:10px; background:rgba(0,0,0,0.03); border-radius:12px; margin-bottom:1rem; min-height:44px; }
@@ -97,6 +96,45 @@ html[data-theme="dark"] .sort-pool{ background:rgba(255,255,255,0.04); }
 .sort-chip.wrong-flash{ background:var(--bad-bg); border-color:var(--bad); color:var(--bad); animation:sort-shake .3s; }
 .sort-chip.dragging{ position:fixed; z-index:999; pointer-events:none; box-shadow:0 6px 16px rgba(0,0,0,0.18); transform:scale(1.08); cursor:grabbing; }
 @keyframes sort-shake{ 0%,100%{ transform:translateX(0); } 25%{ transform:translateX(-4px); } 75%{ transform:translateX(4px); } }
+
+/* ── Error hunt (missing / extra / misplaced word) ───────────────────────── */
+.eh2-item{ border:1px solid var(--color-border-tertiary); border-radius:var(--border-radius-lg); padding:12px 14px; margin-bottom:12px; background:var(--surface-2); }
+.eh2-sentence{ display:flex; flex-wrap:wrap; align-items:center; gap:1px; font-size:15px; line-height:2.3; margin-bottom:8px; }
+.eh2-word, .eh2-gap{
+  display:inline-flex; align-items:center; justify-content:center;
+  padding:4px 8px; border-radius:8px; cursor:pointer; color:var(--text-primary);
+  border:1px solid transparent; transition:background .12s, border-color .12s;
+}
+.eh2-word:hover, .eh2-gap:hover{ background:var(--surface-1); border-color:var(--border); }
+.eh2-gap{ min-width:10px; color:var(--text-muted); }
+.eh2-gap::after{ content:''; }
+.eh2-gap:hover::after, .eh2-gap.target-pick::after{ content:'·'; font-weight:700; }
+.eh2-gap.target-pick{ background:var(--color-background-info); border-color:var(--text-accent); color:var(--text-accent); }
+.eh2-word.deleted, .eh2-word.moved-away{ text-decoration:line-through; color:var(--text-muted); opacity:.55; cursor:default; }
+.eh2-word.inserted, .eh2-word.moved-in, .eh2-gap.deleted-ok{ color:var(--good); font-weight:600; background:var(--good-bg); border-color:var(--good); cursor:default; }
+.eh2-gap.deleted-ok:hover::after{ content:none; }
+.eh2-word.wrong-flash, .eh2-gap.wrong-flash{ background:var(--bad-bg); border-color:var(--bad); color:var(--bad); animation:eh2-shake .3s; }
+@keyframes eh2-shake{ 0%,100%{ transform:translateX(0); } 25%{ transform:translateX(-4px); } 75%{ transform:translateX(4px); } }
+
+
+.eh2-menu{ display:none; flex-wrap:wrap; align-items:center; gap:6px; margin:6px 0 10px; padding:8px 10px; background:var(--surface-1); border-radius:10px; border:1px solid var(--border); }
+.eh2-menu.open{ display:flex; }
+.eh2-menu-hint{ width:100%; font-size:12px; color:var(--text-muted); }
+.eh2-menu-btn{
+  font-family:inherit; font-size:13px; font-weight:600; padding:6px 12px;
+  border-radius:999px; border:1px solid var(--border); background:var(--surface-2);
+  color:var(--text-primary); cursor:pointer;
+}
+.eh2-menu-btn:hover{ background:var(--color-background-tertiary); }
+
+.eh2-ok{
+  font-family:inherit; font-size:13px; font-weight:600; padding:6px 14px;
+  border-radius:999px; border:none; background:var(--text-accent); color:#fff; cursor:pointer;
+  margin-right:6px;
+}
+.eh2-verdict{ font-size:13px; margin-top:6px; min-height:18px; }
+.eh2-verdict.correct{ color:var(--good); font-weight:600; }
+.eh2-verdict.incorrect{ color:var(--bad); }
 </style>
 </head>
 <body class="exercise-page" id="page">
@@ -177,20 +215,24 @@ html[data-theme="dark"] .sort-pool{ background:rgba(255,255,255,0.04); }
     <div class="pair-line yes"><span class="mark">✓</span>How do you spell your name?</div>
   </div>
   <div class="pair-card">
-    <div class="pair-line no"><span class="mark">✗</span>It's spell C-A-T-E.</div>
-    <div class="pair-line yes"><span class="mark">✓</span>It's spelled C-A-T-E.</div>
+    <div class="pair-line no"><span class="mark">✗</span>It's spell M-A-R-K.</div>
+    <div class="pair-line yes"><span class="mark">✓</span>It's spelled M-A-R-K.</div>
   </div>
   <div class="pair-card">
-    <div class="pair-line no"><span class="mark">✗</span>Is it spell with a C?</div>
-    <div class="pair-line yes"><span class="mark">✓</span>Is it spelled with a C?</div>
+    <div class="pair-line no"><span class="mark">✗</span>Is it spell with a K?</div>
+    <div class="pair-line yes"><span class="mark">✓</span>Is it spelled with a K?</div>
   </div>
   <div class="pair-card">
-    <div class="pair-line no"><span class="mark">✗</span>My name spell M-I-A.</div>
-    <div class="pair-line yes"><span class="mark">✓</span>My name is spelled M-I-A.</div>
+    <div class="pair-line no"><span class="mark">✗</span>My name spell E-R-I-C-K.</div>
+    <div class="pair-line yes"><span class="mark">✓</span>My name is spelled E-R-I-C-K.</div>
+  </div>
+  <div class="pair-card">
+    <div class="pair-line no"><span class="mark">✗</span>It's Erick with C-K.</div>
+    <div class="pair-line yes"><span class="mark">✓</span>It's Erick with a C-K.</div>
   </div>
 
   <div class="sec-div">Error hunt</div>
-  <p class="subtitle">Find the mistake. Tap the wrong word and pick the right one.</p>
+  <p class="subtitle">Tap a word — or a space between words — to check it. Fix the mistake, then press OK.</p>
 
   <div class="score-bar">
     <span>Fixed: <strong id="errorScore">0</strong> / <span id="errorTotal">0</span></span>
@@ -207,32 +249,338 @@ html[data-theme="dark"] .sort-pool{ background:rgba(255,255,255,0.04); }
 </div>
 <script src="house.js"></script>
 <script>
+/* ── Error hunt: missing / extra / misplaced word ──────────────────────────
+   Tap any word or any gap between words. Tapping a correct one does nothing,
+   by design. Tapping the one erroneous spot opens a 3-way menu:
+     ✒️ Insert — for a MISSING word (tapped a gap): pick from 3 word choices.
+     ❌ Delete — for an EXTRA word: strikes it through, doesn't remove it.
+     ↔️ Move   — for a MISPLACED word: pick the gap it belongs in ("Where to?").
+   Picking the wrong action, wrong word, or wrong destination does nothing —
+   the menu just closes so the student can try again. OK gives the verdict. */
 const EH_ITEMS = [
   {
     "words": ["How", "you", "spell", "your", "name", "?"],
-    "errors": { "1": { "options": ["you", "do you", "does you"], "correct": "do you" } }
+    "error": { "type": "missing", "gapIndex": 1, "options": ["do", "does", "is"], "correct": "do" }
   },
   {
-    "words": ["It's", "spell", "C-A-T-E", "."],
-    "errors": { "1": { "options": ["spell", "spelled", "spelling"], "correct": "spelled" } }
+    "words": ["Can", "I", "have", "your", "your", "name", "?"],
+    "error": { "type": "extra", "wordIndex": 4 }
   },
   {
-    "words": ["Is", "it", "spell", "with", "a", "C", "?"],
-    "errors": { "2": { "options": ["spell", "spelled", "spells"], "correct": "spelled" } }
+    "words": ["Spell", "please", "your", "name", "."],
+    "error": { "type": "misplaced", "wordIndex": 1, "targetGapIndex": 4 }
   },
   {
-    "words": ["My", "name", "spell", "M-I-A", "."],
-    "errors": { "2": { "options": ["spell", "is spelled", "spelled"], "correct": "is spelled" } }
+    "words": ["My", "name", "spelled", "M-A-R-K", "."],
+    "error": { "type": "missing", "gapIndex": 2, "options": ["is", "are", "was"], "correct": "is" }
+  },
+  {
+    "words": ["It's", "Erick", "with", "C-K", "."],
+    "error": { "type": "missing", "gapIndex": 3, "options": ["a", "an", "the"], "correct": "a" }
   }
 ];
 
-HouseErrorHunt.build({
-  container: 'errorHuntItems',
-  items: EH_ITEMS,
-  scoreEl: 'errorScore',
-  totalEl: 'errorTotal',
-  prompt: 'Tap the wrong word. Choose the right one.'
-});
+(function(){
+  const listEl = document.getElementById('errorHuntItems');
+  document.getElementById('errorTotal').textContent = EH_ITEMS.length;
+  let fixedCount = 0;
+  const counted = new Set();
+
+  EH_ITEMS.forEach(function(item, idx){ renderSentence(item, idx); });
+
+  function renderSentence(item, idx){
+    const wrap = document.createElement('div');
+    wrap.className = 'eh2-item';
+
+    const sentEl = document.createElement('div');
+    sentEl.className = 'eh2-sentence';
+
+    const menuEl = document.createElement('div');
+    menuEl.className = 'eh2-menu';
+
+    const okBtn = document.createElement('button');
+    okBtn.className = 'eh2-ok';
+    okBtn.textContent = 'OK';
+
+    const resetBtn = document.createElement('button');
+    resetBtn.className = 'eh2-menu-btn';
+    resetBtn.textContent = '↺ Reset';
+
+    const verdictEl = document.createElement('div');
+    verdictEl.className = 'eh2-verdict';
+
+    wrap.appendChild(sentEl);
+    wrap.appendChild(menuEl);
+    wrap.appendChild(okBtn);
+    wrap.appendChild(resetBtn);
+    wrap.appendChild(verdictEl);
+    listEl.appendChild(wrap);
+
+    let resolved = false;
+    let activeTarget = null;      // { kind: 'word'|'gap', index }
+    let pickingDestination = false;
+    const gapEls = [];
+    const wordEls = [];
+
+    function buildSentenceDOM(){
+      sentEl.innerHTML = '';
+      gapEls.length = 0; wordEls.length = 0;
+      for (let i = 0; i <= item.words.length; i++){
+        const gap = document.createElement('span');
+        gap.className = 'eh2-gap';
+        gap.addEventListener('click', function(){ onGapClick(i); });
+        sentEl.appendChild(gap);
+        gapEls[i] = gap;
+
+        if (i < item.words.length){
+          const w = document.createElement('span');
+          w.className = 'eh2-word';
+          w.textContent = item.words[i];
+          w.addEventListener('click', function(){ onWordClick(i); });
+          sentEl.appendChild(w);
+          wordEls[i] = w;
+        }
+      }
+    }
+
+    function isErrorWord(i){
+      const e = item.error;
+      return (e.type === 'extra' && e.wordIndex === i) || (e.type === 'misplaced' && e.wordIndex === i);
+    }
+    function isErrorGap(i){
+      return item.error.type === 'missing' && item.error.gapIndex === i;
+    }
+
+    function closeMenu(){
+      menuEl.classList.remove('open');
+      menuEl.innerHTML = '';
+      activeTarget = null;
+      pickingDestination = false;
+      gapEls.forEach(function(g){ g.classList.remove('target-pick'); });
+    }
+
+    function flashWrong(elements){
+      elements.forEach(function(el){
+        if (!el) return;
+        el.classList.remove('wrong-flash');
+        void el.offsetWidth; // restart animation if it's already flashing
+        el.classList.add('wrong-flash');
+        setTimeout(function(){ el.classList.remove('wrong-flash'); }, 350);
+      });
+    }
+
+    function onWordClick(i){
+      if (resolved || pickingDestination) { closeMenu(); return; }
+      if (wordEls[i].classList.contains('deleted') || wordEls[i].classList.contains('moved-away')) return;
+      if (!isErrorWord(i)) return; // correct word: nothing happens
+      openActionMenu('word', i);
+    }
+
+    function onGapClick(i){
+      if (pickingDestination){
+        const e = item.error;
+        if (e.type === 'misplaced' && i === e.targetGapIndex){
+          performMove(e.wordIndex, i);
+          resolved = true;
+          closeMenu();
+        } else {
+          flashWrong([wordEls[e.wordIndex], gapEls[i]]);
+          closeMenu();
+        }
+        return;
+      }
+      if (resolved) return;
+      if (!isErrorGap(i)) return; // correct/empty gap: nothing happens
+      openActionMenu('gap', i);
+    }
+
+    function openActionMenu(kind, index){
+      closeMenu();
+      activeTarget = { kind: kind, index: index };
+      menuEl.classList.add('open');
+
+      const insertBtn = document.createElement('button');
+      insertBtn.className = 'eh2-menu-btn';
+      insertBtn.textContent = '✒️ Insert';
+      insertBtn.addEventListener('click', function(){ handleAction('insert'); });
+
+      const deleteBtn = document.createElement('button');
+      deleteBtn.className = 'eh2-menu-btn';
+      deleteBtn.textContent = '❌ Delete';
+      deleteBtn.addEventListener('click', function(){ handleAction('delete'); });
+
+      const moveBtn = document.createElement('button');
+      moveBtn.className = 'eh2-menu-btn';
+      moveBtn.textContent = '↔️ Move';
+      moveBtn.addEventListener('click', function(){ handleAction('move'); });
+
+      menuEl.appendChild(insertBtn);
+      menuEl.appendChild(deleteBtn);
+      menuEl.appendChild(moveBtn);
+    }
+
+    function handleAction(action){
+      const e = item.error;
+      const t = activeTarget;
+      if (!t) return;
+      const targetEl = t.kind === 'word' ? wordEls[t.index] : gapEls[t.index];
+
+      if (action === 'insert'){
+        if (e.type === 'missing' && t.kind === 'gap' && t.index === e.gapIndex){
+          showInsertOptions(e);
+        } else {
+          flashWrong([targetEl]);
+          closeMenu();
+        }
+        return;
+      }
+      if (action === 'delete'){
+        if (e.type === 'extra' && t.kind === 'word' && t.index === e.wordIndex){
+          removeWordAndGaps(t.index);
+          resolved = true;
+          closeMenu();
+        } else {
+          flashWrong([targetEl]);
+          closeMenu();
+        }
+        return;
+      }
+      if (action === 'move'){
+        if (e.type === 'misplaced' && t.kind === 'word' && t.index === e.wordIndex){
+          startDestinationPick();
+        } else {
+          flashWrong([targetEl]);
+          closeMenu();
+        }
+        return;
+      }
+    }
+
+    function showInsertOptions(e){
+      menuEl.innerHTML = '';
+      const hint = document.createElement('div');
+      hint.className = 'eh2-menu-hint';
+      hint.textContent = 'Which word?';
+      menuEl.appendChild(hint);
+      e.options.forEach(function(opt){
+        const b = document.createElement('button');
+        b.className = 'eh2-menu-btn';
+        b.textContent = opt;
+        b.addEventListener('click', function(){
+          if (opt === e.correct){
+            insertWordAt(e.gapIndex, opt);
+            resolved = true;
+            closeMenu();
+          } else {
+            flashWrong([gapEls[e.gapIndex]]);
+            closeMenu();
+          }
+        });
+        menuEl.appendChild(b);
+      });
+    }
+
+    function startDestinationPick(){
+      menuEl.innerHTML = '';
+      const hint = document.createElement('div');
+      hint.className = 'eh2-menu-hint';
+      hint.textContent = 'Where to?';
+      menuEl.appendChild(hint);
+      menuEl.classList.add('open');
+      pickingDestination = true;
+      // A gap right after sentence-ending punctuation isn't a real position
+      // in the sentence — never offer it as a place to move a word to.
+      var enders = ['.', '?', '!'];
+      gapEls.forEach(function(g, i){
+        if (i > 0 && enders.indexOf(item.words[i - 1]) !== -1) return;
+        g.classList.add('target-pick');
+      });
+    }
+
+    function insertWordAt(gapIndex, word){
+      const chip = document.createElement('span');
+      chip.className = 'eh2-word inserted';
+      chip.textContent = word;
+      gapEls[gapIndex].insertAdjacentElement('afterend', chip);
+
+      // Every other word in the sentence is followed by a gap slot — add a
+      // matching one after the inserted word too, so the rhythm of the
+      // sentence looks the same as before. It's plain .eh2-gap: no listener
+      // is attached (it's not part of gapEls), and like every other gap its
+      // "·" only shows on hover, via the base CSS rule — never by default.
+      const dot = document.createElement('span');
+      dot.className = 'eh2-gap';
+      chip.insertAdjacentElement('afterend', dot);
+    }
+
+    // A word sits between two gap slots in the original layout, so removing
+    // it "cleanly" means removing both of those too — otherwise the sentence
+    // would be left with a leftover empty gap right next to the single
+    // permanently-highlighted "·" that replaces the word (two "·"s in a row,
+    // one hover-only and one always showing). That highlight matches the
+    // green an inserted or moved-in word gets, so the vacated spot reads as
+    // a resolved part of the sentence, not just a gap.
+    function removeWordAndGaps(i){
+      const wordEl = wordEls[i];
+      if (!wordEl) return;
+
+      const dot = document.createElement('span');
+      dot.className = 'eh2-gap deleted-ok';
+      dot.textContent = '·';
+      wordEl.parentNode.insertBefore(dot, wordEl);
+
+      const gapBefore = gapEls[i];
+      const gapAfter = gapEls[i + 1];
+      if (gapAfter && gapAfter.parentNode) gapAfter.parentNode.removeChild(gapAfter);
+      if (gapBefore && gapBefore.parentNode) gapBefore.parentNode.removeChild(gapBefore);
+      wordEl.parentNode.removeChild(wordEl);
+    }
+
+    function performMove(wordIndex, targetGapIndex){
+      const word = item.words[wordIndex];
+      removeWordAndGaps(wordIndex);
+
+      const chip = document.createElement('span');
+      chip.className = 'eh2-word moved-in';
+      chip.textContent = word;
+      gapEls[targetGapIndex].insertAdjacentElement('afterend', chip);
+
+      const dot = document.createElement('span');
+      dot.className = 'eh2-gap';
+      chip.insertAdjacentElement('afterend', dot);
+    }
+
+    okBtn.addEventListener('click', function(){
+      if (resolved){
+        verdictEl.textContent = '✓ Fixed!';
+        verdictEl.className = 'eh2-verdict correct';
+        if (!counted.has(idx)){
+          counted.add(idx);
+          fixedCount++;
+          document.getElementById('errorScore').textContent = fixedCount;
+        }
+      } else {
+        verdictEl.textContent = 'Not yet — keep looking.';
+        verdictEl.className = 'eh2-verdict incorrect';
+      }
+    });
+
+    resetBtn.addEventListener('click', function(){
+      closeMenu();
+      resolved = false;
+      verdictEl.textContent = '';
+      verdictEl.className = 'eh2-verdict';
+      if (counted.has(idx)){
+        counted.delete(idx);
+        fixedCount--;
+        document.getElementById('errorScore').textContent = fixedCount;
+      }
+      buildSentenceDOM();
+    });
+
+    buildSentenceDOM();
+  }
+})();
 </script>
 <!-- HouseSpeak — inline here so this page works standalone even before the
      module below is merged into house.js (see the house-speak-module.js file
@@ -473,17 +821,17 @@ HouseErrorHunt.build({
    matching that pronunciation. */
 (function(){
   var GROUPS = [
-    { key:'/ei/', sound:'',  letters:['A','H','J','K'] },
-    { key:'/i/', sound:'',  letters:['B','C','D','E','G','P','T','V'] },
-    { key:'/e/', sound:'',  letters:['F','L','M','N','S','X'] },
-    { key:'/ai/', sound:'', letters:['I','Y'] },
-    { key:'/ou/', sound:'',     letters:['O'] },
-    { key:'/iu/', sound:'', letters:['Q','U','W'] },
-    { key:'/a/', sound:'',     letters:['R'] }
+    { key:'/ei/',  letters:['A','H','J','K'] },
+    { key:'/i:/',  letters:['B','C','D','E','G','P','T','V'] },
+    { key:'/e/',   letters:['F','L','M','N','S','X'] },
+    { key:'/ai/',  letters:['I','Y'] },
+    { key:'/ou/',  letters:['O'] },
+    { key:'/ju:/', letters:['Q','U','W'] },
+    { key:'/ar/',  letters:['R'] }
   ];
   var SPECIAL = [
-    { id:'Z-us', display:'Z', flag:'🇺🇸', group:'B' },
-    { id:'Z-uk', display:'Z', flag:'🇬🇧', group:'F' }
+    { id:'Z-us', display:'Z', flag:'🇺🇸', group:'/i:/' },
+    { id:'Z-uk', display:'Z', flag:'🇬🇧', group:'/e/' }
   ];
 
   var letterGroup = {};
@@ -516,7 +864,6 @@ HouseErrorHunt.build({
     col.dataset.key = g.key;
     col.innerHTML =
       '<div class="sort-col-head">' + g.key + '</div>' +
-      '<div class="sort-col-sound">' + g.sound + '</div>' +
       '<div class="sort-col-body"></div>';
     colsEl.appendChild(col);
     colBody[g.key] = col.querySelector('.sort-col-body');
