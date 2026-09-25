@@ -2002,6 +2002,11 @@
       function onGapClick(i) {
         if (pickingDestination) {
           var e = item.error;
+          // The two gaps immediately touching the word itself aren't real
+          // destinations — moving it there is a no-op. They were never
+          // offered as options (see startDestinationPick), so a click here
+          // shouldn't register as an attempt at all, right or wrong.
+          if (i === e.wordIndex || i === e.wordIndex + 1) return;
           if (e.type === 'misplaced' && i === e.targetGapIndex) {
             performMove(e.wordIndex, i);
             resolved = true;
@@ -2125,10 +2130,14 @@
         menuEl.appendChild(hint);
         menuEl.classList.add('open');
         pickingDestination = true;
-        // A gap right after sentence-ending punctuation isn't a real
-        // position in the sentence — never offer it as a move destination.
+        var e = item.error;
         gapEls.forEach(function (g, i) {
+          // A gap right after sentence-ending punctuation isn't a real
+          // position in the sentence — never offer it as a move destination.
           if (i > 0 && ENDERS.indexOf(item.words[i - 1]) !== -1) return;
+          // Nor are the two gaps immediately touching the word being moved —
+          // dropping it right back next to itself doesn't move anything.
+          if (i === e.wordIndex || i === e.wordIndex + 1) return;
           g.classList.add('target-pick');
         });
         positionMenu();
