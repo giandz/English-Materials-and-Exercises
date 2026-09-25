@@ -100,8 +100,8 @@
 
   <div class="sec-div">Find the mistake</div>
   <div class="rule-box">Every sentence below has <strong>one or two mistakes</strong>. Tap the word you think is wrong and choose the correct one. When you think the sentence is right, press <strong>OK</strong>.</div>
-  <div class="score-bar"><span>Corrected: <strong id="ehScore">0</strong> / <span id="ehTotal">0</span></span></div>
-  <div id="errorHunt"></div>
+  <div class="score-bar"><span>Corrected: <strong id="errorScore">0</strong> / <span id="errorTotal">0</span></span></div>
+  <div id="errorHuntItems"></div>
 
   <div id="theme-toggle-wrap">
   <button id="theme-toggle" aria-label="Toggle light/dark mode" title="Toggle light/dark mode">
@@ -110,139 +110,38 @@
 </div>
 <script src="house.js"></script>
 <script>
-HouseErrorHunt.build({
-  container: 'errorHunt',
-  scoreEl: 'ehScore', totalEl: 'ehTotal',
-  items: [
+	const EH_ITEMS = [
   {
-    "words": [
-      "The",
-      "book",
-      "is",
-      "in",
-      "the",
-      "table",
-      "."
-    ],
-    "errors": {
-      "3": {
-        "options": [
-          "on",
-          "in",
-          "at"
-        ],
-        "correct": "on"
-      }
-    }
+    "words": ["The", "book", "is", "in", "the","table","."],
+    "error": { "type": "wrong", "wordIndex": 3, "options": ["at", "of", "on"], "correct": "on" }
   },
   {
-    "words": [
-      "The",
-      "cat",
-      "is",
-      "under",
-      "of",
-      "the",
-      "chair",
-      "."
-    ],
-    "errors": {
-      "3": {
-        "options": [
-          "under",
-          "under of",
-          "below of"
-        ],
-        "correct": "under",
-        "alsoRemove": [
-          4
-        ]
-      }
-    }
+    "words": [ "The", "cat", "is", "under", "of", "the", "chair", "."],
+    "error": { "type": "extra", "wordIndex": 4 }
   },
   {
-    "words": [
-      "I",
-      "live",
-      "at",
-      "Mexico",
-      "."
-    ],
-    "errors": {
-      "2": {
-        "options": [
-          "in",
-          "at",
-          "on"
-        ],
-        "correct": "in"
-      }
-    }
+    "words": ["I", "live", "at", "Mexico", "."],
+    "error": { "type": "wrong", "wordIndex": 2, "options": ["in", "at", "on"], "correct": "in"}
   },
   {
-    "words": [
-      "The",
-      "bank",
-      "is",
-      "in",
-      "front",
-      "the",
-      "park",
-      "."
-    ],
-    "errors": {
-      "4": {
-        "options": [
-          "front of",
-          "front",
-          "of front"
-        ],
-        "correct": "front of"
-      }
-    }
+    "words": [ "The", "bank", "is", "in", "front", "the", "park", "."],
+    "error": { "type": "missing", "gapIndex": 5, "options": ["of", "from", "at"], "correct": "of" }
   },
   {
-    "words": [
-      "She",
-      "is",
-      "on",
-      "the",
-      "kitchen",
-      "."
-    ],
-    "errors": {
-      "2": {
-        "options": [
-          "in",
-          "on",
-          "at"
-        ],
-        "correct": "in"
-      }
-    }
+    "words": ["She", "is", "on", "the", "kitchen", "."],
+    "error": { "type": "wrong", "wordIndex": 2, "options": ["in", "on", "at"], "correct": "in" }
   },
   {
-    "words": [
-      "The",
-      "keys",
-      "are",
-      "next",
-      "the",
-      "door",
-      "."
-    ],
-    "errors": {
-      "3": {
-        "options": [
-          "next to",
-          "next",
-          "near to"
-        ],
-        "correct": "next to"
-      }
-    }
+    "words": ["The", "keys", "are", "next", "the", "door", "."],
+    "error": { "type": "missing", "gapIndex": 4, "options": ["to", "near", "from"], "correct": "to" }
   }
-]
+];
+
+HouseErrorHunt.build({
+  container: 'errorHuntItems',
+  items: EH_ITEMS,
+  scoreEl: 'errorScore',
+  totalEl: 'errorTotal'
 });
 </script>
 <script>

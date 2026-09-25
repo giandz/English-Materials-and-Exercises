@@ -60,8 +60,8 @@
 
   <div class="sec-div">Find the mistake</div>
   <div class="rule-box">Every sentence below has <strong>one or two mistakes</strong>. Tap the word you think is wrong and choose the correct one. When you think the sentence is right, press <strong>OK</strong>.</div>
-  <div class="score-bar"><span>Corrected: <strong id="ehScore">0</strong> / <span id="ehTotal">0</span></span></div>
-  <div id="errorHunt"></div>
+  <div class="score-bar"><span>Corrected: <strong id="errorScore">0</strong> / <span id="errorTotal">0</span></span></div>
+  <div id="errorHuntItems"></div>
 
   <footer>Clarification — This / That / These / Those (A1)</footer>
 </div>
@@ -73,123 +73,36 @@
 </div>
 <script src="house.js"></script>
 <script>
-HouseErrorHunt.build({
-  container: 'errorHunt',
-  scoreEl: 'ehScore', totalEl: 'ehTotal',
-  items: [
+const EH_ITEMS = [
   {
-    "words": [
-      "This",
-      "are",
-      "mugs",
-      "."
-    ],
-    "errors": {
-      "0": {
-        "options": [
-          "These",
-          "This",
-          "That"
-        ],
-        "correct": "These"
-      }
-    }
+    "words": [ "This", "are", "mugs", "."],
+    "error": { "type": "wrong", "wordIndex": 0, "options": ["These", "This", "That"], "correct": "These" }
   },
   {
-    "words": [
-      "These",
-      "is",
-      "a",
-      "lamp",
-      "."
-    ],
-    "errors": {
-      "0": {
-        "options": [
-          "This",
-          "These",
-          "Those"
-        ],
-        "correct": "This"
-      }
-    }
+    "words": [ "These", "is", "a", "lamp", "."],
+    "error": { "type": "wrong", "wordIndex": 0, "options": ["This", "These", "Those"], "correct": "This" }
   },
   {
-    "words": [
-      "This",
-      "is",
-      "a",
-      "oven",
-      "."
-    ],
-    "errors": {
-      "2": {
-        "options": [
-          "an",
-          "a",
-          "the"
-        ],
-        "correct": "an"
-      }
-    }
+    "words": [ "What", "are", "this", "thing", "?"],
+    "error": { "type": "wrong", "wordIndex": 1, "options": ["is", "does", "be"],"correct": "is"}
   },
   {
-    "words": [
-      "What",
-      "are",
-      "this",
-      "?"
-    ],
-    "errors": {
-      "1": {
-        "options": [
-          "is",
-          "are",
-          "be"
-        ],
-        "correct": "is"
-      }
-    }
+    "words": ["These", "are", "book", "."],
+    "error": { "type": "wrong", "wordIndex": 2, "options": ["books", "book", "bookes"], "correct": "books"}
   },
   {
-    "words": [
-      "These",
-      "are",
-      "book",
-      "."
-    ],
-    "errors": {
-      "2": {
-        "options": [
-          "books",
-          "book",
-          "bookes"
-        ],
-        "correct": "books"
-      }
-    }
-  },
-  {
-    "words": [
-      "Those",
-      "is",
-      "my",
-      "plates",
-      "."
-    ],
-    "errors": {
-      "1": {
-        "options": [
-          "are",
-          "is",
-          "be"
-        ],
-        "correct": "are"
-      }
-    }
+    "words": ["Those", "my", "plates", "."],
+    "error": { "type": "missing", "gapIndex": 1, "options": ["are", "is", "the"], "correct": "are" }
   }
-]
+];
+
+HouseErrorHunt.build({
+  container: 'errorHuntItems',
+  items: EH_ITEMS,
+  scoreEl: 'errorScore',
+  totalEl: 'errorTotal'
 });
+
 </script>
 <script>
 HouseFormClarf.build({
