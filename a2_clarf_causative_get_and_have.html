@@ -79,8 +79,10 @@
 }
 .eh2-word:hover, .eh2-gap:hover{ background:var(--surface-1); border-color:var(--border); }
 .eh2-gap{ min-width:10px; color:var(--text-muted); }
-.eh2-gap::after{ content:''; }
-.eh2-gap:hover::after, .eh2-gap.target-pick::after{ content:'·'; font-weight:700; }
+/* The "·" is always present in the box (so hovering never resizes it) —
+   only its opacity toggles, going from invisible to visible. */
+.eh2-gap::after{ content:'·'; font-weight:700; opacity:0; transition:opacity .12s ease; }
+.eh2-gap:hover::after, .eh2-gap.target-pick::after{ opacity:1; }
 .eh2-gap.target-pick{ background:var(--color-background-info); border-color:var(--text-accent); color:var(--text-accent); }
 .eh2-word.inserted, .eh2-word.moved-in, .eh2-gap.deleted-ok{ color:var(--good); font-weight:600; background:var(--good-bg); border-color:var(--good); cursor:default; }
 .eh2-gap.deleted-ok:hover::after{ content:none; }
@@ -91,7 +93,7 @@
    the sentence — it never gets the "·" affordance, hover or otherwise. */
 .eh2-gap.no-dot{ cursor:default; }
 .eh2-gap.no-dot:hover{ background:transparent; border-color:transparent; }
-.eh2-gap.no-dot:hover::after{ content:none; }
+.eh2-gap.no-dot::after, .eh2-gap.no-dot:hover::after{ content:none; }
 
 .eh2-menu{
   display:none; position:absolute; z-index:20; transform:translateX(-50%);
