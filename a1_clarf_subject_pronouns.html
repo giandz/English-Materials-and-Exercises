@@ -64,6 +64,7 @@
   .chip-placed.wrong   { color:var(--color-text-danger); animation:shake 0.3s; }
   .reset-row { display:flex; gap:8px; align-items:center; margin-top:1.25rem; }
   @keyframes shake { 0%,100%{transform:translateX(0)} 25%{transform:translateX(-5px)} 75%{transform:translateX(5px)} }
+
 </style>
 </head>
 <body class="exercise-page" id="page">
@@ -93,7 +94,7 @@
 
 
   <div class="sec-div">Find the mistake</div>
-  <div class="rule-box">Every sentence below has <strong>one or two mistakes</strong>. Tap the word you think is wrong and choose the correct one. When you think the sentence is right, press <strong>OK</strong>.</div>
+  <div class="rule-box">Tap a word — or a space between words — to check it. Fix the mistake, then press <strong>OK</strong>.</div>
   <div class="score-bar"><span>Corrected: <strong id="ehScore">0</strong> / <span id="ehTotal">0</span></span></div>
   <div id="errorHunt"></div>
 
@@ -104,130 +105,38 @@
 </div>
 <script src="house.js"></script>
 <script>
+const EH_ITEMS = [
+  {
+    "words": ["Me", "am", "happy", "today", "."],
+    "error": { "type": "wrong", "wordIndex": 0, "options": ["I", "Me", "My"], "correct": "I" }
+  },
+  {
+    "words": ["Are", "they", "my", "friends", "."],
+    "error": { "type": "misplaced", "wordIndex": 0, "targetGapIndex": 2 }
+  },
+  {
+    "words": ["My", "brother", "he", "is", "tall", "."],
+    "error": { "type": "extra", "wordIndex": 2 }
+  },
+  {
+    "words": ["She", "is", "teacher", "."],
+    "error": { "type": "missing", "gapIndex": 2, "options": ["a", "an", "the"], "correct": "a" }
+  },
+  {
+    "words": ["Us", "live", "in", "Mexico", "."],
+    "error": { "type": "wrong", "wordIndex": 0, "options": ["We", "Us", "Our"], "correct": "We" }
+  },
+  {
+    "words": ["Him", "and", "I", "are", "brothers", "."],
+    "error": { "type": "wrong", "wordIndex": 0, "options": ["He", "Him", "His"], "correct": "He" }
+  }
+];
+
 HouseErrorHunt.build({
   container: 'errorHunt',
-  scoreEl: 'ehScore', totalEl: 'ehTotal',
-  items: [
-  {
-    "words": [
-      "Me",
-      "am",
-      "happy",
-      "today",
-      "."
-    ],
-    "errors": {
-      "0": {
-        "options": [
-          "I",
-          "Me",
-          "My"
-        ],
-        "correct": "I"
-      }
-    }
-  },
-  {
-    "words": [
-      "Them",
-      "are",
-      "my",
-      "friends",
-      "."
-    ],
-    "errors": {
-      "0": {
-        "options": [
-          "They",
-          "Them",
-          "Their"
-        ],
-        "correct": "They"
-      }
-    }
-  },
-  {
-    "words": [
-      "My",
-      "brother",
-      "he",
-      "is",
-      "tall",
-      "."
-    ],
-    "errors": {
-      "2": {
-        "options": [
-          "is",
-          "he is",
-          "he"
-        ],
-        "correct": "is",
-        "alsoRemove": [
-          3
-        ]
-      }
-    }
-  },
-  {
-    "words": [
-      "Her",
-      "is",
-      "a",
-      "teacher",
-      "."
-    ],
-    "errors": {
-      "0": {
-        "options": [
-          "She",
-          "Her",
-          "Hers"
-        ],
-        "correct": "She"
-      }
-    }
-  },
-  {
-    "words": [
-      "Us",
-      "live",
-      "in",
-      "Mexico",
-      "."
-    ],
-    "errors": {
-      "0": {
-        "options": [
-          "We",
-          "Us",
-          "Our"
-        ],
-        "correct": "We"
-      }
-    }
-  },
-  {
-    "words": [
-      "Him",
-      "and",
-      "I",
-      "are",
-      "brothers",
-      "."
-    ],
-    "errors": {
-      "0": {
-        "options": [
-          "He",
-          "Him",
-          "His"
-        ],
-        "correct": "He"
-      }
-    }
-  }
-]
+  items: EH_ITEMS,
+  scoreEl: 'ehScore',
+  totalEl: 'ehTotal'
 });
 </script>
 <script>
