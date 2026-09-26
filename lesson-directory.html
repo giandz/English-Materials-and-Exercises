@@ -167,6 +167,39 @@
     margin-bottom: 16px;
   }
   .hidden { display: none; }
+
+  #local-fallback {
+    padding: 14px;
+    border-radius: var(--ld-radius);
+    background: var(--ld-surface);
+    border: 1px solid var(--ld-border);
+    margin-bottom: 16px;
+    font-size: 0.9rem;
+    color: var(--ld-text-muted);
+  }
+  #local-fallback p {
+    margin: 0 0 10px;
+  }
+  #folder-picker-btn {
+    padding: 8px 14px;
+    font-size: 0.88rem;
+    border: 1px solid var(--ld-border);
+    border-radius: var(--ld-radius);
+    background: var(--ld-surface-2);
+    color: var(--ld-text);
+    cursor: pointer;
+  }
+  #folder-picker-btn:hover { background: var(--ld-border); }
+  #source-note {
+    font-size: 0.82rem;
+    color: var(--ld-text-muted);
+    margin: -8px 0 16px;
+  }
+  #source-note a {
+    color: var(--ld-accent);
+    cursor: pointer;
+    text-decoration: underline;
+  }
 </style>
 </head>
 <body>
@@ -175,6 +208,14 @@
 <p class="sub">Auto-generated index of lesson files in this folder.</p>
 
 <div id="error-box" class="hidden"></div>
+
+<div id="local-fallback" class="hidden">
+  <p id="local-fallback-msg">Couldn't load the file list from GitHub. Pick the local folder containing the lesson files instead:</p>
+  <button id="folder-picker-btn" type="button">Choose folder…</button>
+  <input type="file" id="folder-input" webkitdirectory directory multiple class="hidden">
+</div>
+
+<p id="source-note" class="hidden"></p>
 
 <div class="toolbar">
   <input type="text" id="filter-input" placeholder="Filter by level, type, or topic…">
@@ -252,6 +293,10 @@
 
   const statusBox = document.getElementById('status-box');
   const errorBox = document.getElementById('error-box');
+  const localFallback = document.getElementById('local-fallback');
+  const folderPickerBtn = document.getElementById('folder-picker-btn');
+  const folderInput = document.getElementById('folder-input');
+  const sourceNote = document.getElementById('source-note');
   const table = document.getElementById('lesson-table');
   const tableBody = document.getElementById('table-body');
   const filterInput = document.getElementById('filter-input');
@@ -283,12 +328,10 @@
       .join(' ');
   }
 
-  function parseFile(item) {
-    const match = item.name.match(FILE_PATTERN);
+  function parseFileNameParts(fileName) {
+    const match = fileName.match(FILE_PATTERN);
     if (!match) return null;
     const [, levelGroup, type, topicSlug] = match;
-    const pagesUrl = convertToPagesUrl(item.html_url);
-    if (!pagesUrl) return null;
     const levels = levelGroup.toLowerCase().match(new RegExp(LEVEL_TOKEN, 'g'));
     return {
       level: levelGroup.toLowerCase(),
@@ -296,10 +339,66 @@
       levelLabel: levels.map(l => l.toUpperCase()).join('/'),
       type: type.toLowerCase(),
       typeLabel: TYPE_LABELS[type.toLowerCase()],
-      topic: normaliseTopic(topicSlug),
-      url: pagesUrl,
-      fileName: item.name
+      topic: normaliseTopic(topicSlug)
     };
+  }
+
+  function buildRow(fileName, url) {
+    const parts = parseFileNameParts(fileName);
+    if (!parts || !url) return null;
+    return { ...parts, url, fileName };
+  }
+
+  function parseFile(item) {
+    return buildRow(item.name, convertToPagesUrl(item.html_url));
+  }
+
+  function isRelativeUrl(url) {
+    return !/^[a-z][a-z0-9+.-]*:/i.test(url) && !url.startsWith('//');
+  }
+
+  // blob: URLs have no directory of their own, so a lesson file's relative
+  // <link href="general.css"> / <script src="theme-toggle-behavior.js">
+  // can't resolve once it's opened from one. Inline those sibling files'
+  // actual contents (found by filename in the picked folder) directly into
+  // the markup before it's turned into a blob, so the opened page is fully
+  // self-contained. Anything the CSS/JS itself references by a further
+  // relative path (fonts, background images) is not covered by this.
+  async function inlineLocalAssets(htmlText, fileMap) {
+    const doc = new DOMParser().parseFromString(htmlText, 'text/html');
+
+    const links = Array.from(doc.querySelectorAll('link[rel="stylesheet"][href]'));
+    for (const link of links) {
+      const href = link.getAttribute('href');
+      if (!isRelativeUrl(href)) continue;
+      const assetFile = fileMap.get(href.split('/').pop().toLowerCase());
+      if (!assetFile) continue;
+      const style = doc.createElement('style');
+      style.textContent = await assetFile.text();
+      link.replaceWith(style);
+    }
+
+    const scripts = Array.from(doc.querySelectorAll('script[src]'));
+    for (const script of scripts) {
+      const src = script.getAttribute('src');
+      if (!isRelativeUrl(src)) continue;
+      const assetFile = fileMap.get(src.split('/').pop().toLowerCase());
+      if (!assetFile) continue;
+      const inlined = doc.createElement('script');
+      inlined.textContent = await assetFile.text();
+      script.replaceWith(inlined);
+    }
+
+    return '<!DOCTYPE html>\n' + doc.documentElement.outerHTML;
+  }
+
+  async function buildLocalRow(file, fileMap) {
+    const name = file.webkitRelativePath ? file.webkitRelativePath.split('/').pop() : file.name;
+    const parts = parseFileNameParts(name);
+    if (!parts) return null;
+    const html = await inlineLocalAssets(await file.text(), fileMap);
+    const url = URL.createObjectURL(new Blob([html], { type: 'text/html' }));
+    return { ...parts, url, fileName: name };
   }
 
   async function fetchContents(owner, repo, dirPath) {
@@ -314,6 +413,10 @@
   }
 
   async function loadDirectory() {
+    if (location.protocol === 'file:') {
+      throw new Error('page opened as a local file, no GitHub host to query');
+    }
+
     const owner = location.hostname.split('.')[0];
     const pathParts = location.pathname.split('/').filter(Boolean);
 
@@ -418,23 +521,76 @@
     render();
   });
 
-  loadDirectory()
-    .then(parsed => {
-      rows = parsed;
-      statusBox.classList.add('hidden');
-      if (rows.length === 0) {
-        errorBox.textContent = 'No matching lesson files were found in this folder.';
-        errorBox.classList.remove('hidden');
-        return;
-      }
+  function showLoaded(parsed, sourceLabel, switchLabel, onSwitch) {
+    rows = parsed;
+    statusBox.classList.add('hidden');
+    localFallback.classList.add('hidden');
+    errorBox.classList.add('hidden');
+
+    if (rows.length === 0) {
+      errorBox.textContent = 'No matching lesson files were found in this folder.';
+      errorBox.classList.remove('hidden');
+      table.classList.add('hidden');
+    } else {
       table.classList.remove('hidden');
       render();
-    })
-    .catch(err => {
-      statusBox.classList.add('hidden');
-      errorBox.textContent = `Could not load the file list from GitHub (${err.message}). This tool needs to be hosted on GitHub Pages in the same repository and folder as the lesson files.`;
-      errorBox.classList.remove('hidden');
+    }
+
+    sourceNote.innerHTML = `${sourceLabel} <a id="switch-source-link">${switchLabel}</a>`;
+    sourceNote.classList.remove('hidden');
+    document.getElementById('switch-source-link').addEventListener('click', onSwitch);
+  }
+
+  function offerLocalFallback(message) {
+    statusBox.classList.add('hidden');
+    table.classList.add('hidden');
+    sourceNote.classList.add('hidden');
+    errorBox.classList.add('hidden');
+    document.getElementById('local-fallback-msg').textContent = message;
+    localFallback.classList.remove('hidden');
+  }
+
+  folderPickerBtn.addEventListener('click', () => folderInput.click());
+
+  folderInput.addEventListener('change', async () => {
+    const files = Array.from(folderInput.files);
+    const fileMap = new Map();
+    files.forEach(f => {
+      const base = (f.webkitRelativePath ? f.webkitRelativePath.split('/').pop() : f.name).toLowerCase();
+      fileMap.set(base, f);
     });
+
+    const parsed = (await Promise.all(files.map(f => buildLocalRow(f, fileMap)))).filter(Boolean);
+    showLoaded(
+      parsed,
+      `Showing ${parsed.length} file(s) from a local folder.`,
+      'Try GitHub again',
+      () => loadFromGitHub()
+    );
+  });
+
+  function loadFromGitHub() {
+    statusBox.classList.remove('hidden');
+    statusBox.textContent = 'Loading lesson files…';
+    errorBox.classList.add('hidden');
+    localFallback.classList.add('hidden');
+    sourceNote.classList.add('hidden');
+
+    loadDirectory()
+      .then(parsed => {
+        showLoaded(
+          parsed,
+          `Showing ${parsed.length} file(s) loaded from GitHub.`,
+          'Browse a local folder instead',
+          () => offerLocalFallback('Pick the local folder containing the lesson files:')
+        );
+      })
+      .catch(() => {
+        offerLocalFallback('Could not load the file list from GitHub. Pick the local folder containing the lesson files instead:');
+      });
+  }
+
+  loadFromGitHub();
 </script>
 
 </body>
