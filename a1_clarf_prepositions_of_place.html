@@ -27,33 +27,29 @@
 <link rel="stylesheet" href="house.css">
 <style>
 /* Recovered page-specific rules. */
-.sentence-list{display:flex;flex-direction:column;gap:7px;}
 
 .setting-chip{display:inline-flex;align-items:center;gap:5px;font-size:0.8rem;padding:3px 10px;border-radius:20px;background:var(--surface-1);border:.5px solid var(--border);color:var(--color-text-secondary);margin-bottom:1rem;}
   .hl-prep{font-weight:500;color:var(--text-accent);}
   .hl-obj{font-weight:500;color:var(--color-text-success);}
 
-  /* matching */
-  .match-grid{display:grid;grid-template-columns:1fr 1fr;gap:16px;margin-bottom:1rem;}
-  .match-col-label{font-size:0.7333rem;font-weight:500;text-transform:uppercase;letter-spacing:.05em;color:var(--text-muted);margin-bottom:8px;}
-  .img-card{user-drag: none; -webkit-user-drag: none; -webkit-user-select: none; user-select: none; border:.5px solid var(--border);border-radius:12px;overflow:hidden;cursor:pointer;transition:border-color .12s;}
-  .img-card:hover{border-color:var(--color-border-primary);}
-  .img-card.selected{border-color:black;}
-  .img-card.correct{border: 4px solid var(--color-border-success);pointer-events:none;}
-  .img-card.wrong{border-color:var(--color-border-danger);animation:shake .3s;}
-  .img-slot{height:80px;background:var(--surface-1);display:flex;flex-direction:column;align-items:center;justify-content:center;gap:4px;border-bottom:.5px solid var(--border);}
-  .img-slot img{width:100%;height:100%;object-fit:contain;padding:6px;display:none;}
-  .img-slot .ph-icon{font-size:1.4667rem;color:var(--text-muted);}
-  .img-slot .ph-name{font-size:0.6667rem;color:var(--text-muted);font-family:var(--font-mono);}
-  .img-label{font-size:0.8rem;font-weight:500;text-align:center;padding:6px 8px;color:var(--color-text-secondary);}
-  .img-grid-wrap{display:flex;flex-direction:column;gap:7px;}
+  /* Matching: the cards, columns and connector lines all come from house.css.
+     Only the picture cards need anything extra — a tighter box around the
+     image, and a filename placeholder (the img's alt) while the art is
+     still to be drawn. */
+  /* One row height for both columns, derived from the picture: the sentence
+     card and the picture card then line up row for row, so a matched pair's
+     connector line runs straight across. Cards still grow if a sentence wraps. */
+  :root{ --match-img-h:78px; --match-row-h:calc(var(--match-img-h) + 15px); }
+  #sent-list .match-card,
+  #img-list .match-card{min-height:var(--match-row-h);}
+  #img-list .match-card{padding:6px;font-family:var(--font-mono);font-size:0.6667rem;color:var(--text-muted);text-align:center;}
+  #img-list .match-card > span{flex:1 1 auto;min-width:0;}
+  .match-img{display:block;width:100%;height:var(--match-img-h);object-fit:contain;}
 
   /* gap fill */
   .gap-para{background:var(--surface-2);border:.5px solid var(--border);border-radius:12px;padding:1rem 1.25rem;font-size:0.9333rem;line-height:2.5;margin-bottom:1rem;}
   .bank{display:flex;flex-wrap:wrap;gap:6px;margin-bottom:1rem;}
   .bank-chip{font-size:0.8667rem;padding:4px 11px;border-radius:20px;background:var(--surface-1);border:.5px solid var(--border);color:var(--color-text-secondary);}
-  .ex-bar{display:flex;gap:8px;align-items:center;flex-wrap:wrap;}
-  .score-msg{font-size:0.8667rem;color:var(--color-text-secondary);}
   .ak-body{padding:10px 14px;display:flex;flex-direction:column;gap:2px;}
   .ak-row{display:flex;gap:10px;align-items:baseline;padding:4px 0;border-bottom:.5px solid var(--border);font-size:0.8667rem;}
   .ak-row:last-child{border-bottom:none;}
@@ -62,8 +58,6 @@
   .ak-note{color:var(--text-muted);}
   details summary{user-select:none;list-style:none;display:flex;justify-content:space-between;align-items:center;}
   details summary::-webkit-details-marker{display:none;}
-  @keyframes shake{0%,100%{transform:translateX(0)}25%{transform:translateX(-5px)}75%{transform:translateX(5px)}}
-  @media(max-width:480px){.match-grid{grid-template-columns:1fr;}}
 </style>
 </head>
 <body class="exercise-page" id="page">
@@ -73,21 +67,25 @@
 <div class="sec-div">exercise 1 — match the sentence to the picture</div>
 <div style="font-size:0.8667rem;color:var(--color-text-secondary);margin-bottom:1rem;">Click a sentence, then click the matching picture.</div>
 
+<div class="score-bar">
+  <span>Matched: <strong id="matchScore">0</strong> / <span id="matchTotal">0</span></span>
+  <button id="reset-match">↺ Reset</button>
+</div>
+
+<div class="win-msg" id="matchWin">🎉 All matched!</div>
+
 <div class="match-grid">
   <div>
     <div class="match-col-label">Sentences</div>
-    <div class="sentence-list" id="sent-list"></div>
+    <div class="match-col" id="sent-list"></div>
   </div>
   <div>
     <div class="match-col-label">Pictures</div>
-    <div class="img-grid-wrap" id="img-list"></div>
+    <div class="match-col" id="img-list"></div>
   </div>
 </div>
 
-<div class="ex-bar" style="margin-bottom:.5rem;">
-  <button id="reset-match">↺ Reset</button>
-  <span class="score-msg" id="match-fb"></span>
-</div>
+<div class="feedback" id="match-fb"></div>
 
 
   <div class="sec-div">Common mistakes</div>
@@ -100,8 +98,8 @@
 
   <div class="sec-div">Find the mistake</div>
   <div class="rule-box">Every sentence below has <strong>one or two mistakes</strong>. Tap the word you think is wrong and choose the correct one. When you think the sentence is right, press <strong>OK</strong>.</div>
-  <div class="score-bar"><span>Corrected: <strong id="errorScore">0</strong> / <span id="errorTotal">0</span></span></div>
-  <div id="errorHuntItems"></div>
+  <div class="score-bar"><span>Corrected: <strong id="ehScore">0</strong> / <span id="ehTotal">0</span></span></div>
+  <div id="errorHunt"></div>
 
   <div id="theme-toggle-wrap">
   <button id="theme-toggle" aria-label="Toggle light/dark mode" title="Toggle light/dark mode">
@@ -110,145 +108,68 @@
 </div>
 <script src="house.js"></script>
 <script>
-	const EH_ITEMS = [
+const EH_ITEMS = [
   {
-    "words": ["The", "book", "is", "in", "the","table","."],
-    "error": { "type": "wrong", "wordIndex": 3, "options": ["at", "of", "on"], "correct": "on" }
+    "words": ["The", "book", "is", "in", "the", "table", "."],
+    "errors": [ { "type": "wrong", "wordIndex": 3, "options": ["on", "in", "at"], "correct": "on" } ]
   },
   {
-    "words": [ "The", "cat", "is", "under", "of", "the", "chair", "."],
-    "error": { "type": "extra", "wordIndex": 4 }
+    "words": ["The", "cat", "is", "under", "of", "the", "chair", "."],
+    "errors": [ { "type": "extra", "wordIndex": 4 } ]
   },
   {
     "words": ["I", "live", "at", "Mexico", "."],
-    "error": { "type": "wrong", "wordIndex": 2, "options": ["in", "at", "on"], "correct": "in"}
+    "errors": [ { "type": "wrong", "wordIndex": 2, "options": ["in", "at", "on"], "correct": "in" } ]
   },
   {
-    "words": [ "The", "bank", "is", "in", "front", "the", "park", "."],
-    "error": { "type": "missing", "gapIndex": 5, "options": ["of", "from", "at"], "correct": "of" }
+    "words": ["The", "bank", "is", "in", "front", "the", "park", "."],
+    "errors": [ { "type": "missing", "gapIndex": 5, "options": ["of", "at", "to"], "correct": "of" } ]
   },
   {
     "words": ["She", "is", "on", "the", "kitchen", "."],
-    "error": { "type": "wrong", "wordIndex": 2, "options": ["in", "on", "at"], "correct": "in" }
+    "errors": [ { "type": "wrong", "wordIndex": 2, "options": ["in", "on", "at"], "correct": "in" } ]
   },
   {
     "words": ["The", "keys", "are", "next", "the", "door", "."],
-    "error": { "type": "missing", "gapIndex": 4, "options": ["to", "near", "from"], "correct": "to" }
+    "errors": [ { "type": "missing", "gapIndex": 4, "options": ["to", "at", "of"], "correct": "to" } ]
   }
 ];
 
 HouseErrorHunt.build({
-  container: 'errorHuntItems',
+  container: "errorHunt",
   items: EH_ITEMS,
-  scoreEl: 'errorScore',
-  totalEl: 'errorTotal'
+  scoreEl: "ehScore",
+  totalEl: "ehTotal"
 });
 </script>
 <script>
-const matchItems = [
-  { id:"m1", sentence:"The cat is on the sofa.",           prep:"on",          file:"eng_mats_images/cat_on_sofa.png"         },
-  { id:"m2", sentence:"The cat is under the table.",        prep:"under",       file:"eng_mats_images/cat_under_table.png"      },
-  { id:"m3", sentence:"The cat is next to the sofa.",      prep:"next_to",     file:"eng_mats_images/cat_next_to_sofa.png"    },
-  { id:"m4", sentence:"The cat is behind the plant.",       prep:"behind",      file:"eng_mats_images/cat_behind_plant.png"     },
-  { id:"m5", sentence:"The cat is between the cushions.",  prep:"between",     file:"eng_mats_images/cat_between_cushions.png"},
-  { id:"m6", sentence:"The cat is in front of the sofa.",  prep:"in_front_of", file:"eng_mats_images/cat_in_front_of_sofa.png"},
-  { id:"m7", sentence:"The cat is above the sofa.",        prep:"above",       file:"eng_mats_images/cat_above_sofa.png"      },
-  { id:"m8", sentence:"The cat is on top of the sofa.",    prep:"on_top_of",   file:"eng_mats_images/cat_on_top_of_sofa.png"  },
+const MATCH_PAIRS = [
+  { id:"m1", prep:"on",          sentence:"The cat is on the sofa.",          file:"eng_mats_images/cat_on_sofa.png"          },
+  { id:"m2", prep:"under",       sentence:"The cat is under the table.",      file:"eng_mats_images/cat_under_table.png"      },
+  { id:"m3", prep:"next_to",     sentence:"The cat is next to the sofa.",     file:"eng_mats_images/cat_next_to_sofa.png"     },
+  { id:"m4", prep:"behind",      sentence:"The cat is behind the plant.",     file:"eng_mats_images/cat_behind_plant.png"     },
+  { id:"m5", prep:"between",     sentence:"The cat is between the cushions.", file:"eng_mats_images/cat_between_cushions.png" },
+  { id:"m6", prep:"in_front_of", sentence:"The cat is in front of the sofa.", file:"eng_mats_images/cat_in_front_of_sofa.png" },
+  { id:"m7", prep:"above",       sentence:"The cat is above the sofa.",       file:"eng_mats_images/cat_above_sofa.png"       },
+  { id:"m8", prep:"on_top_of",   sentence:"The cat is on top of the sofa.",   file:"eng_mats_images/cat_on_top_of_sofa.png"   }
 ];
 
-let selectedSentence = null;
-let matched = 0;
-
-function buildMatch() {
-  matched = 0; selectedSentence = null;
-  document.getElementById('match-fb').textContent = '';
-
-  const sentList = document.getElementById('sent-list');
-  const imgList  = document.getElementById('img-list');
-  sentList.innerHTML = ''; imgList.innerHTML = '';
-
-  shuffle([...matchItems]).forEach(item => {
-    const btn = document.createElement('button');
-    btn.className = 'sentence-btn';
-    btn.dataset.id = item.id;
-    btn.textContent = item.sentence;
-    btn.addEventListener('click', () => selectSentence(btn, item));
-    sentList.appendChild(btn);
-  });
-
-  shuffle([...matchItems]).forEach(item => {
-    const card = document.createElement('div');
-    card.className = 'img-card';
-    card.dataset.id = item.id;
-
-    const slot = document.createElement('div');
-    slot.className = 'img-slot';
-
-    const img = document.createElement('img');
-    img.src = item.file;
-    img.alt = item.sentence;
-    img.addEventListener('load', () => {
-      slot.querySelector('.ph-icon').style.display = 'none';
-      slot.querySelector('.ph-name').style.display = 'none';
-      img.style.display = 'block';
-    });
-
-    const phIcon = document.createElement('i');
-    phIcon.className = 'ti ti-photo ph-icon';
-    phIcon.setAttribute('aria-hidden','true');
-    const phName = document.createElement('span');
-    phName.className = 'ph-name';
-    phName.textContent = item.file;
-
-    slot.appendChild(phIcon); slot.appendChild(phName); slot.appendChild(img);
-    const lbl = document.createElement('div');
-    lbl.className = 'img-label';
-
-    card.appendChild(slot); card.appendChild(lbl);
-    card.addEventListener('click', () => selectImage(card, item));
-    imgList.appendChild(card);
-  });
-}
-
-function selectSentence(btn, item) {
-  if (btn.classList.contains('correct')) return;
-  document.querySelectorAll('.sentence-btn.selected').forEach(b => b.classList.remove('selected'));
-  btn.classList.add('selected');
-  selectedSentence = item;
-}
-
-function selectImage(card, item) {
-  if (!selectedSentence) return;
-  if (card.classList.contains('correct')) return;
-
-  const sentBtn = document.querySelector(`.sentence-btn[data-id="${selectedSentence.id}"]`);
-
-  if (selectedSentence.id === item.id) {
-    card.classList.add('correct');
-    if (sentBtn) { sentBtn.classList.remove('selected'); sentBtn.classList.add('correct'); sentBtn.disabled = true; }
-    matched++;
-    const fb = document.getElementById('match-fb');
-    fb.textContent = matched === matchItems.length ? 'All matched!' : matched + ' / ' + matchItems.length + ' matched';
-    fb.style.color = matched === matchItems.length ? 'var(--color-text-success)' : 'var(--color-text-secondary)';
-  } else {
-    card.classList.add('wrong');
-    if (sentBtn) sentBtn.classList.add('wrong');
-    setTimeout(() => { card.classList.remove('wrong'); if(sentBtn) sentBtn.classList.remove('wrong','selected'); }, 700);
-  }
-  selectedSentence = null;
-  document.querySelectorAll('.sentence-btn.selected').forEach(b => b.classList.remove('selected'));
-}
-
-function shuffle(a){for(let i=a.length-1;i>0;i--){const j=Math.floor(Math.random()*(i+1));[b,a[j]]=[a[j],a[i]];a[i]=b;}return a;}
-// safer shuffle
-function shuffle(a){
-  const b=[...a];
-  for(let i=b.length-1;i>0;i--){const j=Math.floor(Math.random()*(i+1));[b[i],b[j]]=[b[j],b[i]];}
-  return b;
-}
-
-document.getElementById('reset-match').addEventListener('click', buildMatch);
-buildMatch();
+HouseMatching.build({
+  left: 'sent-list', right: 'img-list',
+  // The right-hand card is the picture itself. Its alt text is the file name,
+  // not a description: a described image would hand the student the answer,
+  // and until the art exists the browser shows that name as the placeholder.
+  pairs: MATCH_PAIRS.map(function (p) {
+    return {
+      id: p.id,
+      sentence: p.sentence,
+      picture: '<img class="match-img" src="' + p.file + '" alt="' + p.file.split('/').pop() + '">'
+    };
+  }),
+  leftKey: 'sentence', rightKey: 'picture',
+  scoreEl: 'matchScore', totalEl: 'matchTotal',
+  winEl: 'matchWin', feedbackEl: 'match-fb', resetBtn: 'reset-match'
+});
 </script>
 </body>
 </html>

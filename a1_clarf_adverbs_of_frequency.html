@@ -255,44 +255,49 @@ HouseFormClarf.build({
 });
 
 /* ── Find the mistake ──
-   Mostly word-order errors, so most corrections absorb the neighbouring word
-   (`alsoRemove`) rather than just swapping one for another. A1, so every
-   sentence contains an error; from A2 up, clean sentences get mixed in. */
+   Mostly word-order errors (missing/misplaced), so most items use the
+   "misplaced" type. A1, so every sentence contains an error; from A2 up,
+   clean sentences get mixed in. */
+const EH_ITEMS = [
+  {
+    "words": ["She", "cooks", "often", "dinner", "."],
+    "errors": [ { "type": "misplaced", "wordIndex": 1, "targetGapIndex": 3 } ]
+  },
+  {
+    "words": ["We", "eat", "usually", "at", "seven", "."],
+    "errors": [ { "type": "misplaced", "wordIndex": 1, "targetGapIndex": 3 } ]
+  },
+  {
+    "words": ["He", "never", "is", "late", "for", "class", "."],
+    "errors": [ { "type": "misplaced", "wordIndex": 1, "targetGapIndex": 3 } ]
+  },
+  {
+    "words": ["Always", "I", "drink", "coffee", "in", "the", "morning", "."],
+    "errors": [ { "type": "misplaced", "wordIndex": 0, "targetGapIndex": 2 } ]
+  },
+  {
+    "words": ["I", "don't", "never", "eat", "meat", "."],
+    "errors": [ { "type": "wrong", "wordIndex": 2, "options": ["ever", "always", "sometimes"], "correct": "ever" } ]
+  },
+  {
+    "words": ["How", "often", "you", "go", "to", "the", "gym", "?"],
+    "errors": [ { "type": "wrong", "wordIndex": 2, "options": ["do you", "you do", "are you"], "correct": "do you" } ]
+  },
+  {
+    "words": ["She", "is", "always", "tired", "?"],
+    "errors": [ { "type": "misplaced", "wordIndex": 0, "targetGapIndex": 2 } ]
+  },
+  {
+    "words": ["He", "never", "eat", "breakfast", ",", "and", "he", "rarely", "is", "hungry", "."],
+    "errors": [ { "type": "wrong", "wordIndex": 2, "options": ["eats", "eat", "ate"], "correct": "eats" }, { "type": "misplaced", "wordIndex": 7, "targetGapIndex": 9 } ]
+  }
+];
+
 HouseErrorHunt.build({
-  container: 'errorHunt',
-  scoreEl: 'ehScore', totalEl: 'ehTotal',
-  items: [
-    { words: ['She', 'cooks', 'often', 'dinner', '.'],
-      errors: { 1: { options: ['often cooks', 'cooks often', 'often cook'],
-                     correct: 'often cooks', alsoRemove: [2] } } },
-
-    { words: ['We', 'eat', 'usually', 'at', 'seven', '.'],
-      errors: { 1: { options: ['usually eat', 'eat usually', 'usually eats'],
-                     correct: 'usually eat', alsoRemove: [2] } } },
-
-    { words: ['He', 'never', 'is', 'late', 'for', 'class', '.'],
-      errors: { 1: { options: ['is never', 'never is', 'is not never'],
-                     correct: 'is never', alsoRemove: [2] } } },
-
-    { words: ['Always', 'I', 'drink', 'coffee', 'in', 'the', 'morning', '.'],
-      errors: { 0: { options: ['I always', 'Always I', 'I am always'],
-                     correct: 'I always', alsoRemove: [1] } } },
-
-    { words: ['I', "don't", 'never', 'eat', 'meat', '.'],
-      errors: { 2: { options: ['ever', 'always', 'sometimes'], correct: 'ever' } } },
-
-    { words: ['How', 'often', 'you', 'go', 'to', 'the', 'gym', '?'],
-      errors: { 2: { options: ['do you', 'you do', 'are you'], correct: 'do you' } } },
-
-    { words: ['She', 'is', 'always', 'tired', '?'],
-      errors: { 0: { options: ['Is she', 'She is', 'Does she'],
-                     correct: 'Is she', alsoRemove: [1] } } },
-
-    { words: ['He', 'never', 'eat', 'breakfast', ',', 'and', 'he', 'rarely', 'is', 'hungry', '.'],
-      errors: { 2: { options: ['eats', 'eat', 'ate'], correct: 'eats' },
-                7: { options: ['is rarely', 'rarely is', 'rarely'],
-                     correct: 'is rarely', alsoRemove: [8] } } }
-  ]
+  container: "errorHunt",
+  items: EH_ITEMS,
+  scoreEl: "ehScore",
+  totalEl: "ehTotal"
 });
 
 HouseGrammar.init();
