@@ -2288,6 +2288,7 @@
 })(window);
 
 
+
 /* ══════════════════════════════════════════════════════════════════════════
    HOUSE CCQ — concept checking questions
    The check a teacher makes after presenting a form: not "can you build it?"
