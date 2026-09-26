@@ -1758,7 +1758,6 @@
   global.HouseFormClarf = { build: build, LABELS: LABELS };
 })(window);
 
-
 /* ══════════════════════════════════════════════════════════════════════════
    HOUSE ERROR HUNT — missing / extra / misplaced / wrong-form word.
 
@@ -2041,8 +2040,9 @@
           return;
         }
         if (resolved) return;
-        if (!isErrorGap(i)) return; // correct/empty gap: nothing happens
-        openActionMenu('gap', i);
+        var errIdx = findErrorForGap(i);
+        if (errIdx === -1) return; // correct/empty gap: nothing happens
+        openActionMenu('gap', i, errIdx);
       }
 
       function makeActionBtn(emoji, label, handler) {
@@ -2286,7 +2286,6 @@
 
   global.HouseErrorHunt = { build: build };
 })(window);
-
 
 
 /* ══════════════════════════════════════════════════════════════════════════
