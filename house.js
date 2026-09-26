@@ -1799,12 +1799,19 @@
        prompt: 'optional hint shown once above all the sentences'
      });
 
-   Item shape — one of:
-     { words: [...], error: null }                                     // no mistake
-     { words: [...], error: { type:'missing',   gapIndex,  options, correct } }
-     { words: [...], error: { type:'extra',     wordIndex } }
-     { words: [...], error: { type:'misplaced', wordIndex, targetGapIndex } }
-     { words: [...], error: { type:'wrong',     wordIndex, options, correct } }
+   A sentence can have any number of independent errors, tappable and
+   resolvable in any order — the sentence only counts as fixed once every
+   one of them is. Item shape:
+     { words: [...], errors: [] }                     // no mistake
+     { words: [...], errors: [ <error>, <error>, ... ] }
+   where each <error> is one of:
+     { type:'missing',   gapIndex,  options, correct }
+     { type:'extra',     wordIndex }
+     { type:'misplaced', wordIndex, targetGapIndex }
+     { type:'wrong',     wordIndex, options, correct }
+   A single error is also accepted directly as the older, singular shape —
+   `{ words: [...], error: null }` or `{ words: [...], error: <error> }` —
+   for pages written before multi-error sentences existed; both forms work.
    ══════════════════════════════════════════════════════════════════════════ */
 (function (global) {
   'use strict';
@@ -1916,12 +1923,38 @@
       wrap.appendChild(verdictEl);
       listEl.appendChild(wrap);
 
-      var resolved = !item.error; // error-free sentences start already "solved"
-      var activeTarget = null;    // { kind: 'word'|'gap', index }
+      // Back-compat: a single `error` (object or null) is treated as a
+      // one-element (or empty) `errors` list, so existing pages using the
+      // singular field keep working unchanged.
+      var errorsList = item.errors || (item.error ? [item.error] : []);
+      var errorResolved = errorsList.map(function () { return false; });
+      var resolved = errorsList.length === 0; // nothing to fix: already "solved"
+      var activeTarget = null;    // { kind: 'word'|'gap', index, errorIndex }
       var pickingDestination = false;
       var anchorEl = null;
       var gapEls = [];
       var wordEls = [];
+
+      function updateResolved() {
+        resolved = errorResolved.length === 0 || errorResolved.every(function (r) { return r; });
+      }
+
+      function findErrorForWord(i) {
+        for (var k = 0; k < errorsList.length; k++) {
+          if (errorResolved[k]) continue;
+          var e = errorsList[k];
+          if ((e.type === 'extra' || e.type === 'misplaced' || e.type === 'wrong') && e.wordIndex === i) return k;
+        }
+        return -1;
+      }
+      function findErrorForGap(i) {
+        for (var k = 0; k < errorsList.length; k++) {
+          if (errorResolved[k]) continue;
+          var e = errorsList[k];
+          if (e.type === 'missing' && e.gapIndex === i) return k;
+        }
+        return -1;
+      }
 
       function buildSentenceDOM() {
         sentEl.innerHTML = '';
@@ -1945,18 +1978,6 @@
             }
           })(i);
         }
-      }
-
-      function isErrorWord(i) {
-        var e = item.error;
-        if (!e) return false;
-        return (e.type === 'extra' && e.wordIndex === i) ||
-               (e.type === 'misplaced' && e.wordIndex === i) ||
-               (e.type === 'wrong' && e.wordIndex === i);
-      }
-      function isErrorGap(i) {
-        var e = item.error;
-        return !!e && e.type === 'missing' && e.gapIndex === i;
       }
 
       function closeMenu() {
@@ -1995,13 +2016,14 @@
 
       function onWordClick(i) {
         if (resolved || pickingDestination) { closeMenu(); return; }
-        if (!isErrorWord(i)) return; // correct word: nothing happens
-        openActionMenu('word', i);
+        var errIdx = findErrorForWord(i);
+        if (errIdx === -1) return; // correct word: nothing happens
+        openActionMenu('word', i, errIdx);
       }
 
       function onGapClick(i) {
         if (pickingDestination) {
-          var e = item.error;
+          var e = errorsList[activeTarget.errorIndex];
           // The two gaps immediately touching the word itself aren't real
           // destinations — moving it there is a no-op. They were never
           // offered as options (see startDestinationPick), so a click here
@@ -2009,7 +2031,8 @@
           if (i === e.wordIndex || i === e.wordIndex + 1) return;
           if (e.type === 'misplaced' && i === e.targetGapIndex) {
             performMove(e.wordIndex, i);
-            resolved = true;
+            errorResolved[activeTarget.errorIndex] = true;
+            updateResolved();
             closeMenu();
           } else {
             flashWrong([wordEls[e.wordIndex], gapEls[i]]);
@@ -2037,9 +2060,9 @@
         return b;
       }
 
-      function openActionMenu(kind, index) {
+      function openActionMenu(kind, index, errIdx) {
         closeMenu();
-        activeTarget = { kind: kind, index: index };
+        activeTarget = { kind: kind, index: index, errorIndex: errIdx };
         anchorEl = kind === 'word' ? wordEls[index] : gapEls[index];
         anchorEl.classList.add('active-target');
         menuEl.classList.add('open');
@@ -2057,9 +2080,9 @@
       }
 
       function handleAction(action) {
-        var e = item.error;
         var t = activeTarget;
         if (!t) return;
+        var e = errorsList[t.errorIndex];
         var targetEl = t.kind === 'word' ? wordEls[t.index] : gapEls[t.index];
 
         if (action === 'insert') {
@@ -2076,7 +2099,8 @@
         if (action === 'delete') {
           if (e.type === 'extra' && t.kind === 'word' && t.index === e.wordIndex) {
             removeWordAndGaps(t.index);
-            resolved = true;
+            errorResolved[t.errorIndex] = true;
+            updateResolved();
             closeMenu();
           } else {
             flashWrong([targetEl]);
@@ -2109,7 +2133,8 @@
             if (opt === e.correct) {
               if (mode === 'gap') insertWordAt(e.gapIndex, opt);
               else replaceWordAt(e.wordIndex, opt);
-              resolved = true;
+              errorResolved[activeTarget.errorIndex] = true;
+              updateResolved();
               closeMenu();
             } else {
               var el = mode === 'gap' ? gapEls[e.gapIndex] : wordEls[e.wordIndex];
@@ -2130,7 +2155,7 @@
         menuEl.appendChild(hint);
         menuEl.classList.add('open');
         pickingDestination = true;
-        var e = item.error;
+        var e = errorsList[activeTarget.errorIndex];
         gapEls.forEach(function (g, i) {
           // A gap right after sentence-ending punctuation isn't a real
           // position in the sentence — never offer it as a move destination.
@@ -2225,7 +2250,7 @@
 
       okBtn.addEventListener('click', function () {
         if (resolved) {
-          verdictEl.textContent = item.error ? '✓ Fixed!' : '✓ Correct — nothing was wrong!';
+          verdictEl.textContent = errorsList.length ? '✓ Fixed!' : '✓ Correct — nothing was wrong!';
           verdictEl.className = 'eh2-verdict correct';
           wrap.classList.add('correct');
           if (!counted.has(idx)) {
@@ -2242,7 +2267,8 @@
 
       resetBtn.addEventListener('click', function () {
         closeMenu();
-        resolved = !item.error;
+        errorResolved = errorResolved.map(function () { return false; });
+        updateResolved();
         verdictEl.textContent = '';
         verdictEl.className = 'eh2-verdict';
         wrap.classList.remove('correct');
