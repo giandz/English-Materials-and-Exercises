@@ -214,6 +214,15 @@
     cursor: pointer;
   }
   #folder-picker-btn:hover { background: var(--ld-border); }
+  #popup-note {
+    margin: -4px 0 16px;
+    padding: 10px 14px;
+    border-radius: var(--ld-radius);
+    border: 1px solid #e0c48a;
+    background: var(--ld-surface);
+    color: #8a5a00;
+    font-size: 0.85rem;
+  }
   #source-note {
     font-size: 0.82rem;
     color: var(--ld-text-muted);
@@ -247,6 +256,8 @@
   <button id="filter-by-btn" type="button" class="toolbar-btn" disabled>Filter by</button>
   <span class="count" id="count-label"></span>
 </div>
+
+<p id="popup-note" class="hidden"></p>
 
 <div id="status-box">Loading lesson files…</div>
 
@@ -334,6 +345,7 @@
   const countLabel = document.getElementById('count-label');
   const selectAllCheckbox = document.getElementById('select-all');
   const openAllBtn = document.getElementById('open-all-btn');
+  const popupNote = document.getElementById('popup-note');
   const filterByBtn = document.getElementById('filter-by-btn');
 
   let rows = [];
@@ -488,6 +500,7 @@
     if (col === 'type') {
       return TYPE_ORDER.indexOf(a.type) - TYPE_ORDER.indexOf(b.type);
     }
+    if (typeof a[col] !== 'string') return 0;
     return a[col].localeCompare(b[col]);
   }
 
@@ -528,12 +541,10 @@
 
     countLabel.textContent = `${filtered.length} of ${rows.length} files`;
 
-    document.querySelectorAll('.header-row th').forEach(th => {
+    document.querySelectorAll('.header-row th[data-col]').forEach(th => {
       const col = th.dataset.col;
       th.classList.toggle('sorted', col === sortCol);
-      if (th.querySelector('.arrow')) {
-        th.querySelector('.arrow').textContent = col === sortCol ? (sortDir === 'asc' ? '▲' : '▼') : '';
-      }
+      th.querySelector('.arrow').textContent = col === sortCol ? (sortDir === 'asc' ? '▲' : '▼') : '';
     });
 
     updateSelectionUI();
@@ -553,7 +564,7 @@
     selectAllCheckbox.indeterminate = selectedVisible > 0 && selectedVisible < lastFiltered.length;
   }
 
-  document.querySelectorAll('.header-row th').forEach(th => {
+  document.querySelectorAll('.header-row th[data-col]').forEach(th => {
     th.addEventListener('click', () => {
       const col = th.dataset.col;
       if (sortCol === col) {
@@ -584,10 +595,22 @@
   });
 
   openAllBtn.addEventListener('click', () => {
+    popupNote.classList.add('hidden');
+    let blocked = 0;
     selectedIds.forEach(id => {
       const row = rowsById.get(id);
-      if (row) window.open(row.url, '_blank', 'noopener');
+      if (!row) return;
+      const win = window.open(row.url, '_blank');
+      if (win) {
+        try { win.opener = null; } catch (e) { /* ignore */ }
+      } else {
+        blocked++;
+      }
     });
+    if (blocked > 0) {
+      popupNote.textContent = `Your browser blocked ${blocked} of ${selectedIds.size} tabs. Allow pop-ups for this site (see the icon in the address bar), then click "Open all" again.`;
+      popupNote.classList.remove('hidden');
+    }
   });
 
   filterByBtn.addEventListener('click', () => {
