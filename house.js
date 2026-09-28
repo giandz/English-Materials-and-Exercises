@@ -1805,6 +1805,10 @@
      { words: [...], errors: [ <error>, <error>, ... ] }
    where each <error> is one of:
      { type:'missing',   gapIndex,  options, correct }
+       // Several missing words can share one gap (e.g. "two bread" →
+       // "two loaves of bread"): give each its own `missing` error with the
+       // same gapIndex. They're offered one at a time in array order, so
+       // list them left to right; each lands after the previous one.
      { type:'extra',     wordIndex }
      { type:'misplaced', wordIndex, targetGapIndex, alwaysCap? }
        // alwaysCap: 'first' | 'second' | 'both' — only needed when the move
@@ -1942,6 +1946,10 @@
       var pickingDestination = false;
       var anchorEl = null;
       var gapEls = [];
+      // Where the next word inserted into a given gap should go: right after
+      // whatever was inserted there last (initially the gap itself), so
+      // several missing words sharing one gap read left to right.
+      var gapTail = {};
       var wordEls = [];
 
       function updateResolved() {
@@ -2010,7 +2018,7 @@
 
       function buildSentenceDOM() {
         sentEl.innerHTML = '';
-        gapEls.length = 0; wordEls.length = 0;
+        gapEls.length = 0; wordEls.length = 0; gapTail = {};
         for (var i = 0; i <= item.words.length; i++) {
           (function (i) {
             var gap = document.createElement('span');
@@ -2137,10 +2145,10 @@
         return b;
       }
 
-      function openActionMenu(kind, index, errIdx) {
+      function openActionMenu(kind, index, errIdx, anchorOverride) {
         closeMenu();
         activeTarget = { kind: kind, index: index, errorIndex: errIdx };
-        anchorEl = kind === 'word' ? wordEls[index] : gapEls[index];
+        anchorEl = anchorOverride || (kind === 'word' ? wordEls[index] : gapEls[index]);
         anchorEl.classList.add('active-target');
         menuEl.classList.add('open');
 
@@ -2214,7 +2222,7 @@
               updateResolved();
               closeMenu();
             } else {
-              var el = mode === 'gap' ? gapEls[e.gapIndex] : wordEls[e.wordIndex];
+              var el = mode === 'gap' ? (anchorEl || gapEls[e.gapIndex]) : wordEls[e.wordIndex];
               flashWrong([el]);
               closeMenu();
             }
@@ -2250,11 +2258,24 @@
         var chip = document.createElement('span');
         chip.className = 'eh2-word inserted';
         chip.textContent = word;
-        gapEls[gapIndex].insertAdjacentElement('afterend', chip);
+        (gapTail[gapIndex] || gapEls[gapIndex]).insertAdjacentElement('afterend', chip);
 
+        // The slot after the new word stands in for the gap it was inserted
+        // into: if more missing words remain for that same gap, tapping it
+        // offers the next one (see findErrorForGap: array order = reading
+        // order). Otherwise it stays inert, like any other empty gap.
         var dot = document.createElement('span');
         dot.className = 'eh2-gap';
+        dot.addEventListener('click', function () { onInsertedGapClick(gapIndex, dot); });
         chip.insertAdjacentElement('afterend', dot);
+        gapTail[gapIndex] = dot;
+      }
+
+      function onInsertedGapClick(gapIndex, el) {
+        if (resolved || pickingDestination) return;
+        var errIdx = findErrorForGap(gapIndex);
+        if (errIdx === -1) return;
+        openActionMenu('gap', gapIndex, errIdx, el);
       }
 
       function replaceWordAt(i, word) {

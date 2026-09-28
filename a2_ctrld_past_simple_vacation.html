@@ -1,0 +1,281 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<title>Past Simple — Vacation Practice</title>
+<script>
+(function(){
+  try{
+    var saved = localStorage.getItem('theme-preference');
+    var theme = (saved === 'light' || saved === 'dark')
+      ? saved
+      : ((window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches) ? 'dark' : 'light');
+    document.documentElement.setAttribute('data-theme', theme);
+    var fs = parseFloat(localStorage.getItem('font-size-preference'));
+    if (fs >= 10 && fs <= 28) document.documentElement.style.setProperty('--fs-base', fs + 'px');
+  }catch(e){ /* localStorage/matchMedia unavailable — CSS media query still applies */ }
+})();
+</script>
+<link rel="stylesheet" href="house.css">
+
+</head>
+<body>
+<div class="page" id="page">
+  <span class="cefr-tag cefr-a2">A2 · Elementary</span>
+  <h1>Past Simple — Vacation Practice</h1>
+  <p class="subtitle">Build the sentences, then complete them with the past simple.</p>
+
+  <div class="sec-div">Put the words in order</div>
+  <div class="rule-box"><strong>How to play:</strong> tap a word to add it to the line. Tap a word in the line to send it back. You can also drag the words.</div>
+  <div><button class="grammar-toggle-btn" id="grammarToggle">🎨 Hide Grammar</button></div>
+  <div class="pos-legend"></div>
+  <div class="score-bar"><span>Correct: <strong id="woScore">0</strong> / <span id="woTotal">0</span></span></div>
+  <div id="woItems"></div>
+
+  <div class="sec-div">Fill in the gaps</div>
+  <div class="rule-box"><strong>Tip:</strong> write the verb in the past. The bar goes from red to green 🔴→🟢 when your answer is almost right. Green = correct!</div>
+  <div id="gfItems"></div>
+
+  <footer>Past Simple — Vacation Practice (A2)</footer>
+</div>
+
+<div id="theme-toggle-wrap">
+  <button id="theme-toggle" aria-label="Toggle light/dark mode" title="Toggle light/dark mode">
+    <span id="theme-icon">☀️</span>
+  </button>
+</div>
+<script src="house.js"></script>
+<script>
+
+const WO_ITEMS = [
+  {
+    "speaker": "Leo",
+    "avatar": "👨‍🦱",
+    "text": "We / stayed / in / a / hotel / .",
+    "pos": [
+      "subject",
+      "verb",
+      "prep",
+      "det",
+      "noun",
+      "none"
+    ]
+  },
+  {
+    "speaker": "Sara",
+    "avatar": "👩",
+    "text": "I / took / photos / at / the / beach / .",
+    "pos": [
+      "subject",
+      "verb",
+      "noun",
+      "prep",
+      "det",
+      "noun",
+      "none"
+    ]
+  },
+  {
+    "speaker": "Leo",
+    "avatar": "👨‍🦱",
+    "text": "We / watched / the / sunset / every / evening / .",
+    "pos": [
+      "subject",
+      "verb",
+      "det",
+      "noun",
+      "time",
+      "time",
+      "none"
+    ]
+  },
+  {
+    "speaker": "Sara",
+    "avatar": "👩",
+    "text": "I / didn't / buy / souvenirs / .",
+    "pos": [
+      "subject",
+      "neg",
+      "verb",
+      "noun",
+      "none"
+    ]
+  },
+  {
+    "speaker": "Leo",
+    "avatar": "👨‍🦱",
+    "text": "We / went / hiking / on / Saturday / .",
+    "pos": [
+      "subject",
+      "verb",
+      "noun",
+      "time",
+      "time",
+      "none"
+    ]
+  },
+  {
+    "speaker": "Sara",
+    "avatar": "👩",
+    "text": "Did / you / swim / in / the / sea / ?",
+    "pos": [
+      "aux",
+      "subject",
+      "verb",
+      "prep",
+      "det",
+      "noun",
+      "none"
+    ]
+  },
+  {
+    "speaker": "Leo",
+    "avatar": "👨‍🦱",
+    "text": "I / didn't / sleep / late / on / vacation / .",
+    "pos": [
+      "subject",
+      "neg",
+      "verb",
+      "adverb",
+      "prep",
+      "noun",
+      "none"
+    ]
+  },
+  {
+    "speaker": "Sara",
+    "avatar": "👩",
+    "text": "Where / did / you / eat / local / food / ?",
+    "pos": [
+      "wh",
+      "aux",
+      "subject",
+      "verb",
+      "adj",
+      "noun",
+      "none"
+    ]
+  }
+];
+HouseWordOrder.build({ container: 'woItems', items: WO_ITEMS, scoreEl: 'woScore', totalEl: 'woTotal' });
+
+const GF_ITEMS = [
+  {
+    "category": "pos",
+    "direct": "🏨 Our vacation home: a small hotel.",
+    "template": "Last summer we {0} in a small hotel.",
+    "hints": [
+      {
+        "accepted": [
+          "stayed"
+        ]
+      }
+    ]
+  },
+  {
+    "category": "pos",
+    "direct": "🏊 The sea — every morning!",
+    "template": "I {0} in the sea every morning.",
+    "hints": [
+      {
+        "accepted": [
+          "swam"
+        ]
+      }
+    ]
+  },
+  {
+    "category": "pos",
+    "direct": "🍜 Food from that place — past form.",
+    "template": "We {0} local food every day.",
+    "hints": [
+      {
+        "accepted": [
+          "ate"
+        ]
+      }
+    ]
+  },
+  {
+    "category": "pos",
+    "direct": "📸 Now she has photos of the sunset.",
+    "template": "She {0} photos of the sunset.",
+    "hints": [
+      {
+        "accepted": [
+          "took"
+        ]
+      }
+    ]
+  },
+  {
+    "category": "neg",
+    "direct": "🏛️ No museum on this vacation.",
+    "template": "We {0} a museum.",
+    "hints": [
+      {
+        "accepted": [
+          "didn't visit",
+          "did not visit"
+        ]
+      }
+    ]
+  },
+  {
+    "category": "neg",
+    "direct": "🛍️ He has no souvenirs from his vacation.",
+    "template": "He {0} souvenirs.",
+    "hints": [
+      {
+        "accepted": [
+          "didn't buy",
+          "did not buy"
+        ]
+      }
+    ]
+  },
+  {
+    "category": "q",
+    "direct": "🚲 Ask your friend about bikes on vacation.",
+    "template": "{0} you {1} bikes?",
+    "hints": [
+      {
+        "accepted": [
+          "did"
+        ]
+      },
+      {
+        "accepted": [
+          "rent"
+        ]
+      }
+    ]
+  },
+  {
+    "category": "q",
+    "direct": "🥾 Ask about the place for hiking.",
+    "template": "Where {0} you {1} hiking?",
+    "hints": [
+      {
+        "accepted": [
+          "did"
+        ]
+      },
+      {
+        "accepted": [
+          "go"
+        ]
+      }
+    ]
+  }
+];
+HouseGapFill.build({
+  container: 'gfItems', items: GF_ITEMS,
+  labels: { pos: 'affirmative', neg: 'negative', q: 'question' }
+});
+
+</script>
+<script>HouseGrammar.init();</script>
+</body>
+</html>

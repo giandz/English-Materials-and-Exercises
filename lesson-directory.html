@@ -66,6 +66,21 @@
     background: var(--ld-surface);
     color: var(--ld-text);
   }
+  .toolbar-btn {
+    padding: 8px 14px;
+    font-size: 0.88rem;
+    white-space: nowrap;
+    border: 1px solid var(--ld-border);
+    border-radius: var(--ld-radius);
+    background: var(--ld-surface-2);
+    color: var(--ld-text);
+    cursor: pointer;
+  }
+  .toolbar-btn:hover:not(:disabled) { background: var(--ld-border); }
+  .toolbar-btn:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+  }
   .count {
     font-size: 0.85rem;
     color: var(--ld-text-muted);
@@ -127,6 +142,15 @@
     font-size: 0.92rem;
     border-bottom: 1px solid var(--ld-border);
     vertical-align: middle;
+  }
+  th.select-col, td.select-col {
+    width: 1%;
+    padding-right: 4px;
+  }
+  .row-select, #select-all {
+    width: 16px;
+    height: 16px;
+    cursor: pointer;
   }
   tbody tr:last-child td { border-bottom: none; }
   tbody tr:hover td { background: var(--ld-surface-2); }
@@ -219,6 +243,8 @@
 
 <div class="toolbar">
   <input type="text" id="filter-input" placeholder="Filter by level, type, or topic…">
+  <button id="open-all-btn" type="button" class="toolbar-btn" disabled>Open all</button>
+  <button id="filter-by-btn" type="button" class="toolbar-btn" disabled>Filter by</button>
   <span class="count" id="count-label"></span>
 </div>
 
@@ -227,11 +253,13 @@
 <table id="lesson-table" class="hidden">
   <thead>
     <tr class="header-row">
+      <th class="select-col"><input type="checkbox" id="select-all" title="Select all"></th>
       <th data-col="level">Level <span class="arrow"></span></th>
       <th data-col="type">Type <span class="arrow"></span></th>
       <th data-col="topic">Topic <span class="arrow"></span></th>
     </tr>
     <tr class="filter-row">
+      <th></th>
       <th>
         <select id="level-filter">
           <option value="">All levels</option>
@@ -304,10 +332,17 @@
   const typeFilter = document.getElementById('type-filter');
   const topicFilter = document.getElementById('topic-filter');
   const countLabel = document.getElementById('count-label');
+  const selectAllCheckbox = document.getElementById('select-all');
+  const openAllBtn = document.getElementById('open-all-btn');
+  const filterByBtn = document.getElementById('filter-by-btn');
 
   let rows = [];
+  let rowsById = new Map();
+  let lastFiltered = [];
+  let selectedIds = new Set();
   let sortCol = 'level';
   let sortDir = 'asc';
+  let nextRowId = 1;
 
   // Same conversion approach as the GitHub → GitHub Pages link converter:
   // parse a github.com/.../blob/branch/path URL into its github.io equivalent.
@@ -346,7 +381,7 @@
   function buildRow(fileName, url) {
     const parts = parseFileNameParts(fileName);
     if (!parts || !url) return null;
-    return { ...parts, url, fileName };
+    return { ...parts, url, fileName, id: nextRowId++ };
   }
 
   function parseFile(item) {
@@ -398,7 +433,7 @@
     if (!parts) return null;
     const html = await inlineLocalAssets(await file.text(), fileMap);
     const url = URL.createObjectURL(new Blob([html], { type: 'text/html' }));
-    return { ...parts, url, fileName: name };
+    return { ...parts, url, fileName: name, id: nextRowId++ };
   }
 
   async function fetchContents(owner, repo, dirPath) {
@@ -480,8 +515,11 @@
       return sortDir === 'asc' ? cmp : -cmp;
     });
 
+    lastFiltered = filtered;
+
     tableBody.innerHTML = filtered.map(r => `
       <tr>
+        <td class="select-col"><input type="checkbox" class="row-select" data-id="${r.id}" ${selectedIds.has(r.id) ? 'checked' : ''}></td>
         <td><span class="level-pill" style="background:${levelBackground(r.levels)}">${r.levelLabel}</span></td>
         <td>${r.typeLabel}</td>
         <td class="topic-cell"><a href="${r.url}" target="_blank" rel="noopener">${r.topic}</a></td>
@@ -493,8 +531,26 @@
     document.querySelectorAll('.header-row th').forEach(th => {
       const col = th.dataset.col;
       th.classList.toggle('sorted', col === sortCol);
-      th.querySelector('.arrow').textContent = col === sortCol ? (sortDir === 'asc' ? '▲' : '▼') : '';
+      if (th.querySelector('.arrow')) {
+        th.querySelector('.arrow').textContent = col === sortCol ? (sortDir === 'asc' ? '▲' : '▼') : '';
+      }
     });
+
+    updateSelectionUI();
+  }
+
+  function updateSelectionUI() {
+    openAllBtn.disabled = selectedIds.size === 0;
+    filterByBtn.disabled = selectedIds.size !== 1;
+
+    if (lastFiltered.length === 0) {
+      selectAllCheckbox.checked = false;
+      selectAllCheckbox.indeterminate = false;
+      return;
+    }
+    const selectedVisible = lastFiltered.filter(r => selectedIds.has(r.id)).length;
+    selectAllCheckbox.checked = selectedVisible === lastFiltered.length;
+    selectAllCheckbox.indeterminate = selectedVisible > 0 && selectedVisible < lastFiltered.length;
   }
 
   document.querySelectorAll('.header-row th').forEach(th => {
@@ -510,6 +566,39 @@
     });
   });
 
+  tableBody.addEventListener('change', e => {
+    if (!e.target.matches('.row-select')) return;
+    const id = Number(e.target.dataset.id);
+    if (e.target.checked) selectedIds.add(id);
+    else selectedIds.delete(id);
+    updateSelectionUI();
+  });
+
+  selectAllCheckbox.addEventListener('change', () => {
+    if (selectAllCheckbox.checked) {
+      lastFiltered.forEach(r => selectedIds.add(r.id));
+    } else {
+      lastFiltered.forEach(r => selectedIds.delete(r.id));
+    }
+    render();
+  });
+
+  openAllBtn.addEventListener('click', () => {
+    selectedIds.forEach(id => {
+      const row = rowsById.get(id);
+      if (row) window.open(row.url, '_blank', 'noopener');
+    });
+  });
+
+  filterByBtn.addEventListener('click', () => {
+    if (selectedIds.size !== 1) return;
+    const row = rowsById.get(Array.from(selectedIds)[0]);
+    if (!row) return;
+    topicFilter.value = row.topic;
+    filterInput.value = '';
+    render();
+  });
+
   filterInput.addEventListener('input', () => {
     if (filterInput.value) topicFilter.value = '';
     render();
@@ -523,6 +612,8 @@
 
   function showLoaded(parsed, sourceLabel, switchLabel, onSwitch) {
     rows = parsed;
+    rowsById = new Map(rows.map(r => [r.id, r]));
+    selectedIds = new Set();
     statusBox.classList.add('hidden');
     localFallback.classList.add('hidden');
     errorBox.classList.add('hidden');
@@ -531,6 +622,8 @@
       errorBox.textContent = 'No matching lesson files were found in this folder.';
       errorBox.classList.remove('hidden');
       table.classList.add('hidden');
+      lastFiltered = [];
+      updateSelectionUI();
     } else {
       table.classList.remove('hidden');
       render();
