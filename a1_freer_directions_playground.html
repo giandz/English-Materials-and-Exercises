@@ -51,7 +51,7 @@
     user-select:none;
     overscroll-behavior:none;
   }
-  .page{ max-width:900px; margin:0 auto; padding:28px 20px 60px; }
+  .page{ max-width:900px; margin:0 auto; padding:28px 20px 150px; }
 
   h1{ font-size:1.3rem; font-weight:600; letter-spacing:-0.01em; margin:0 0 4px; }
   .subtitle{ font-size:13px; color:var(--text-secondary); margin:0 0 4px; }
@@ -70,8 +70,6 @@
   .sec-div{font-size:11px;font-weight:500;letter-spacing:.06em;text-transform:uppercase;color:var(--text-muted);display:flex;align-items:center;gap:8px;margin:1.75rem 0 1rem;}
   .sec-div::before,.sec-div::after{content:'';flex:1;height:.5px;background:var(--border);}
 
-  .rule-box{background:var(--surface-1);border-radius:var(--radius);padding:10px 14px;margin-bottom:1.25rem;font-size:13px;color:var(--text-secondary);line-height:1.7;}
-  .rule-box strong{color:var(--text-primary);font-weight:500;}
 
   .map-wrap{
     width:100%;
@@ -80,61 +78,9 @@
     border:.5px solid var(--color-border-tertiary);
     margin-bottom:1.25rem;
   }
-  .tool-badge-row{
-    display:flex;
-    margin-bottom:.5rem;
-  }
-  .tool-badge{
-    display:flex;
-    align-items:center;
-    gap:6px;
-    padding:6px 14px;
-    background:var(--surface-1);
-    border:.5px solid var(--border);
-    border-radius:100px;
-    font-size:12.5px;
-    font-weight:600;
-    color:var(--text-secondary);
-    user-select:none;
-  }
-  .tool-badge-icon{ font-size:15px; line-height:1; }
   #mapSvg{overflow:visible; width:100%; height:auto; display:block; }
   .building-symbol{ font-size:30px; pointer-events:none; user-select:none; }
   .pin-symbol{ font-size:64px; pointer-events:none; user-select:none; cursor:pointer; }
-
-  .tool-selector{
-    display:grid;
-    grid-template-columns:repeat(2, 1fr);
-    gap:6px;
-    padding:6px;
-    background:var(--surface-1);
-    border-radius:var(--radius);
-    margin-bottom:.75rem;
-  }
-  button.tool-btn{
-    flex:1 1 auto;
-    display:flex;
-    align-items:center;
-    justify-content:center;
-    gap:6px;
-    font-family:inherit;
-    font-size:12.5px;
-    font-weight:600;
-    padding:9px 14px;
-    border-radius:calc(var(--radius) - 4px);
-    border:.5px solid transparent;
-    cursor:pointer;
-    background:transparent;
-    color:var(--text-secondary);
-    white-space:nowrap;
-  }
-  button.tool-btn .tool-icon{ font-size:15px; }
-  button.tool-btn:hover{ background:var(--surface-2); }
-  button.tool-btn.active{
-    background:var(--text-accent);
-    color:#fff;
-    border-color:var(--text-accent);
-  }
 
   .tool-pool{
     align-items:center;
@@ -246,6 +192,134 @@
     margin:-.25rem 0 .75rem;
   }
 
+
+  /* ═══════════ Hotbar (bottom-center toolbar) + tool drawers ═══════════ */
+  :root{ --slot-accent:#185fa5; --slot-accent-soft:#e6f1fb; }
+  @media (prefers-color-scheme: dark){
+    :root{ --slot-accent:#6aa9ec; --slot-accent-soft:#1f3346; }
+  }
+
+  .dock{
+    position:fixed; z-index:900;
+    left:50%; bottom:calc(12px + env(safe-area-inset-bottom, 0px));
+    transform:translateX(-50%);
+    display:flex; flex-direction:column; align-items:center; gap:8px;
+    width:max-content; max-width:calc(100vw - 16px);
+    pointer-events:none;            /* only the hotbar and open drawer catch clicks */
+  }
+  .dock > *{ pointer-events:auto; }
+
+  .hotbar{
+    display:flex; align-items:stretch; gap:4px;
+    padding:5px;
+    background:var(--color-background-primary);
+    border:1px solid var(--color-border-secondary);
+    border-radius:14px;
+    box-shadow:0 6px 24px rgba(0,0,0,.18);
+  }
+  .hotbar-divider{ width:1px; margin:6px 3px; background:var(--color-border-secondary); }
+
+  .slot{
+    position:relative;
+    width:clamp(42px, 12vw, 60px);
+    display:flex; flex-direction:column; align-items:center; justify-content:center; gap:3px;
+    padding:7px 2px 6px;
+    font:inherit; color:var(--text-secondary);
+    background:var(--surface-1);
+    border:1px solid var(--border);
+    border-radius:10px;
+    cursor:pointer;
+    -webkit-appearance:none; appearance:none;
+    transition:background .12s ease, box-shadow .12s ease, color .12s ease;
+  }
+  .slot:hover{ background:var(--surface-2); }
+  .slot:focus-visible{ outline:2px solid var(--slot-accent); outline-offset:2px; }
+  .slot-emoji{ font-size:22px; line-height:1; transition:transform .12s ease; }
+  .slot-word{ font-size:11px; font-weight:600; line-height:1.1; letter-spacing:.01em; }
+  .slot-key{
+    position:absolute; top:2px; left:4px;
+    font-size:9px; font-weight:600; line-height:1; color:var(--text-muted);
+  }
+  .slot.is-active{
+    background:var(--slot-accent-soft);
+    color:var(--slot-accent);
+    box-shadow:inset 0 0 0 2px var(--slot-accent);
+    border-color:transparent;
+  }
+  .slot.is-active .slot-emoji{ transform:translateY(-1px) scale(1.08); }
+  .slot.is-active .slot-key{ color:var(--slot-accent); }
+
+  .drawer{
+    width:min(560px, calc(100vw - 16px));
+    max-height:min(46vh, 420px);
+    overflow-y:auto; overscroll-behavior:contain;
+    padding:10px 14px 14px;
+    background:var(--color-background-primary);
+    border:1px solid var(--color-border-secondary);
+    border-radius:14px;
+    box-shadow:0 6px 24px rgba(0,0,0,.18);
+  }
+  .drawer[hidden]{ display:none; }
+  .drawer-head{ display:flex; align-items:center; justify-content:space-between; margin-bottom:6px; }
+  .drawer-title{ font-size:14px; font-weight:650; margin:0; }
+  .drawer-close{
+    border:0; background:transparent; color:var(--text-secondary);
+    font:22px/1 sans-serif; padding:2px 6px 4px; border-radius:8px; cursor:pointer;
+  }
+  .drawer-close:hover{ background:var(--surface-1); }
+  .drawer-label{ font-size:12px; font-weight:600; color:var(--text-secondary); margin:8px 0 6px; }
+  .drawer .pool{ margin-bottom:0; padding:10px; }
+  .drawer .tool-pool{ gap:8px; }
+  .drawer-hint{ font-size:12px; color:var(--text-muted); margin:8px 0 0; line-height:1.45; }
+  .drawer .tool-status{ margin:8px 0 0; color:var(--slot-accent); }
+
+  .chip.is-selected{ box-shadow:0 0 0 2px var(--slot-accent); background:var(--slot-accent-soft); }
+
+  .size-dialog{
+    border:1px solid var(--color-border-secondary);
+    border-radius:14px;
+    padding:16px 18px 18px;
+    background:var(--color-background-primary);
+    color:var(--color-text-primary);
+    box-shadow:0 12px 40px rgba(0,0,0,.25);
+    width:min(340px, calc(100vw - 32px));
+  }
+  .size-dialog::backdrop{ background:rgba(0,0,0,.34); }
+  .size-dialog h2{ font-size:15px; font-weight:650; margin:0 0 12px; }
+  .size-grid{ display:grid; grid-template-columns:auto 1fr; gap:8px 12px; align-items:center; }
+  .size-actions{ display:flex; flex-wrap:wrap; justify-content:space-between; gap:8px; margin-top:16px; }
+  .size-actions .right{ display:flex; gap:8px; }
+  button.action-btn.primary{ background:var(--slot-accent); border-color:var(--slot-accent); color:#fff; }
+  button.action-btn.danger{ color:#c62828; }
+
+  .help-btn{
+    position:fixed; z-index:950; top:14px; right:14px;
+    width:40px; height:40px; border-radius:50%;
+    display:flex; align-items:center; justify-content:center;
+    font-size:19px; line-height:1; cursor:pointer;
+    background:var(--color-background-primary);
+    border:1px solid var(--color-border-secondary);
+    box-shadow:0 3px 12px rgba(0,0,0,.14);
+  }
+  .help-btn:hover{ background:var(--surface-1); }
+  .help-btn:focus-visible{ outline:2px solid var(--slot-accent); outline-offset:2px; }
+  .help-dialog{ width:min(420px, calc(100vw - 32px)); }
+  .help-list{ margin:0; padding-left:1.1em; font-size:13.5px; line-height:1.55; color:var(--text-secondary); }
+  .help-list li{ margin-bottom:6px; }
+  .help-list strong{ color:var(--text-primary); font-weight:600; }
+  @media (prefers-color-scheme: dark){ button.action-btn.danger{ color:#ef7a7a; } }
+
+  @media (max-width:420px){
+    .slot{ padding:6px 1px 5px; }
+    .slot-emoji{ font-size:19px; }
+    .slot-word{ font-size:10px; }
+    .slot-key{ display:none; }
+  }
+  @media (hover:none){ .slot-key{ display:none; } }
+  @media (prefers-reduced-motion: reduce){
+    .slot, .slot-emoji{ transition:none; }
+  }
+
   footer{ text-align:center; font-size:12px; color:var(--text-muted); margin-top:2rem; }
 </style>
 </head>
@@ -256,67 +330,110 @@
   <h1>City Playground — 8×8</h1>
   <p class="subtitle">A free-form map for practicing directions out loud. No scoring — build any city you like!</p>
 
-  <div class="rule-box">
-    <strong>How to play:</strong> drag a <strong>place</strong> chip or a <strong>special road tile</strong> from the pools below onto the grid (reusable). To draw plain roads or water directly, <strong>click or drag on the grid</strong> — dragging from an empty square paints, dragging from an existing tile of the same type erases it. Roads and rivers connect automatically into straights, corners, T-junctions, and crossings. A <strong>⚓ ferry terminal</strong> placed next to water grows a dock, and a route that reaches one will sail across connected water to another terminal to continue. A <strong>🚇 subway station</strong> connects straight to any other station, no water needed. Tap a placed building to remove it, or drag it to move it.
-  </div>
-
-  <div class="tool-badge-row">
-    <div class="tool-badge" id="toolBadge">
-      <span class="tool-badge-icon">🛣️</span>
-      <span class="tool-badge-label">Road</span>
-    </div>
-  </div>
-
   <div class="map-wrap">
     <svg id="mapSvg" viewBox="0 0 480 480" xmlns="http://www.w3.org/2000/svg"></svg>
   </div>
 
-  <div class="pool-heading">Places (drag onto the grid — reusable)</div>
-  <div class="pool" id="placePool"></div>
+  <footer>Free Practice — Giving Directions (A1–B1)</footer>
+</div>
 
-  <div class="pool-heading">Special road tiles (drag onto the grid, one at a time — reusable)</div>
-  <div class="pool" id="stampPool"></div>
+<div class="dock" id="dock">
 
-  <div class="pool-heading">Pins (drag onto a placed chip — reusable)</div>
-  <div class="pool" id="pinPool"></div>
+  <section class="drawer" id="drawer-build" hidden aria-labelledby="drawerTitleBuild">
+    <div class="drawer-head">
+      <h2 class="drawer-title" id="drawerTitleBuild">🏗️ Build</h2>
+      <button type="button" class="drawer-close" aria-label="Hide drawer">×</button>
+    </div>
+    <div class="drawer-label">Places</div>
+    <div class="pool" id="placePool"></div>
+    <div class="drawer-label">Special road tiles</div>
+    <div class="pool" id="stampPool"></div>
+    <p class="drawer-hint">Drag a chip onto the grid, or tap it to drop it in the first empty square.</p>
+  </section>
 
-  <div class="pool-heading">Grid size</div>
-  <div class="pool tool-pool">
+  <section class="drawer" id="drawer-path" hidden aria-labelledby="drawerTitlePath">
+    <div class="drawer-head">
+      <h2 class="drawer-title" id="drawerTitlePath">🧭 Path</h2>
+      <button type="button" class="drawer-close" aria-label="Hide drawer">×</button>
+    </div>
+    <div class="pool tool-pool" id="pathOptions">
+      <label class="size-label" for="pathColorSelect">Color</label>
+      <select class="size-select" id="pathColorSelect"></select>
+      <button class="action-btn" id="clearPathsBtn">Erase all paths</button>
+    </div>
+    <p class="tool-status" id="pathStatus">Click a place chip to start a route.</p>
+  </section>
+
+  <section class="drawer" id="drawer-label" hidden aria-labelledby="drawerTitleLabel">
+    <div class="drawer-head">
+      <h2 class="drawer-title" id="drawerTitleLabel">🏷️ Label</h2>
+      <button type="button" class="drawer-close" aria-label="Hide drawer">×</button>
+    </div>
+    <div class="pool tool-pool" id="labelOptions">
+      <input type="text" class="size-select" id="labelTextInput" placeholder="Street name..." style="flex:1;min-width:140px;">
+      <button class="action-btn" id="labelOrientToggle">↔️ Horizontal</button>
+      <button class="action-btn" id="clearLabelsBtn">Erase all labels</button>
+    </div>
+    <p class="tool-status" id="labelStatus">Type a name, then click a square to place it. Click a placed label to remove it, or drag to move it.</p>
+  </section>
+
+  <section class="drawer" id="drawer-pin" hidden aria-labelledby="drawerTitlePin">
+    <div class="drawer-head">
+      <h2 class="drawer-title" id="drawerTitlePin">📍 Pin</h2>
+      <button type="button" class="drawer-close" aria-label="Hide drawer">×</button>
+    </div>
+    <div class="pool tool-pool">
+      <div id="pinPool" style="display:flex;flex-wrap:wrap;gap:8px;flex:1;"></div>
+      <button class="action-btn" id="clearPinsBtn">Remove all pins</button>
+    </div>
+    <p class="tool-status" id="pinStatus">Pick a color, then tap a place on the map. Tap the same pin again to remove it.</p>
+  </section>
+
+  <nav class="hotbar" id="hotbar" role="toolbar" aria-label="Map tools">
+    <button type="button" class="slot" data-tool="build" aria-pressed="false" aria-controls="drawer-build"><span class="slot-key" aria-hidden="true">1</span><span class="slot-emoji" aria-hidden="true">🏗️</span><span class="slot-word">Build</span></button>
+    <button type="button" class="slot" data-tool="road"  aria-pressed="true"><span class="slot-key" aria-hidden="true">2</span><span class="slot-emoji" aria-hidden="true">🛣️</span><span class="slot-word">Road</span></button>
+    <button type="button" class="slot" data-tool="water" aria-pressed="false"><span class="slot-key" aria-hidden="true">3</span><span class="slot-emoji" aria-hidden="true">🌊</span><span class="slot-word">Water</span></button>
+    <button type="button" class="slot" data-tool="path"  aria-pressed="false" aria-controls="drawer-path"><span class="slot-key" aria-hidden="true">4</span><span class="slot-emoji" aria-hidden="true">🧭</span><span class="slot-word">Path</span></button>
+    <button type="button" class="slot" data-tool="label" aria-pressed="false" aria-controls="drawer-label"><span class="slot-key" aria-hidden="true">5</span><span class="slot-emoji" aria-hidden="true">🏷️</span><span class="slot-word">Label</span></button>
+    <button type="button" class="slot" data-tool="pin"   aria-pressed="false" aria-controls="drawer-pin"><span class="slot-key" aria-hidden="true">6</span><span class="slot-emoji" aria-hidden="true">📍</span><span class="slot-word">Pin</span></button>
+    <span class="hotbar-divider" aria-hidden="true"></span>
+    <button type="button" class="slot" id="sizeSlot" aria-haspopup="dialog" aria-controls="sizeDialog"><span class="slot-key" aria-hidden="true">7</span><span class="slot-emoji" aria-hidden="true">🤏</span><span class="slot-word">Size</span></button>
+  </nav>
+</div>
+
+<button type="button" class="help-btn" id="helpBtn" aria-haspopup="dialog" aria-controls="helpDialog" aria-label="How to play" title="How to play">❓</button>
+
+<dialog class="size-dialog help-dialog" id="helpDialog" aria-labelledby="helpDialogTitle">
+  <h2 id="helpDialogTitle">❓ How to play</h2>
+  <ul class="help-list">
+    <li>Pick a tool in the toolbar at the bottom, or press <strong>1–7</strong>.</li>
+    <li><strong>🛣️ Road</strong> and <strong>🌊 Water</strong>: click or drag on the map to draw. Drag over it again to erase.</li>
+    <li><strong>🏗️ Build</strong>: drag a place onto the map. Tap it to remove it, or drag it to move it.</li>
+    <li><strong>⚓ Ferry</strong>: put it next to water. Routes can sail from one ferry to another.</li>
+    <li><strong>🚇 Subway</strong>: routes can go from one station to any other station.</li>
+    <li><strong>🧭 Path</strong>, <strong>🏷️ Label</strong> and <strong>📍 Pin</strong> open a drawer with options. Tap the tool again to hide it.</li>
+  </ul>
+  <div class="size-actions" style="justify-content:flex-end;">
+    <button type="button" class="action-btn primary" id="helpCloseBtn">Got it</button>
+  </div>
+</dialog>
+
+<dialog class="size-dialog" id="sizeDialog" aria-labelledby="sizeDialogTitle">
+  <h2 id="sizeDialogTitle">🤏 Grid size</h2>
+  <div class="size-grid">
     <label class="size-label" for="colsSelect">Columns</label>
     <select class="size-select" id="colsSelect"></select>
     <label class="size-label" for="rowsSelect">Rows</label>
     <select class="size-select" id="rowsSelect"></select>
-    <button class="action-btn" id="resizeBtn">Apply grid size</button>
   </div>
-
-  <div class="pool-heading">Tool</div>
-  <div class="tool-selector" id="toolSelector">
-    <button class="tool-btn" data-tool="road"><span class="tool-icon">🛣️</span>Road</button>
-    <button class="tool-btn" data-tool="water"><span class="tool-icon">🌊</span>Water</button>
-    <button class="tool-btn" data-tool="path"><span class="tool-icon">🧭</span>Path</button>
-    <button class="tool-btn" data-tool="label"><span class="tool-icon">🏷️</span>Label</button>
+  <div class="size-actions">
+    <button type="button" class="action-btn danger" id="clearAllBtn">Clear grid</button>
+    <div class="right">
+      <button type="button" class="action-btn" id="sizeCancelBtn">Cancel</button>
+      <button type="button" class="action-btn primary" id="resizeBtn">Apply</button>
+    </div>
   </div>
-
-  <div class="pool tool-pool" id="roadWaterOptions">
-    <button class="action-btn" id="clearAllBtn">Clear grid</button>
-  </div>
-
-  <div class="pool tool-pool" id="pathOptions" hidden>
-    <label class="size-label" for="pathColorSelect">Color</label>
-    <select class="size-select" id="pathColorSelect"></select>
-    <button class="action-btn" id="clearPathsBtn">Erase all paths</button>
-  </div>
-  <p class="tool-status" id="pathStatus" hidden>Click a place chip to start a route.</p>
-
-  <div class="pool tool-pool" id="labelOptions" hidden>
-    <input type="text" class="size-select" id="labelTextInput" placeholder="Street name..." style="flex:1;min-width:140px;">
-    <button class="action-btn" id="labelOrientToggle">↔️ Horizontal</button>
-    <button class="action-btn" id="clearLabelsBtn">Erase all labels</button>
-  </div>
-  <p class="tool-status" id="labelStatus" hidden>Type a name, then click a square to place it. Click a placed label to remove it, or drag to move it.</p>
-
-  <footer>Free Practice — Giving Directions (A1–B1)</footer>
-</div>
+</dialog>
 
 <script>
   let COLS = 8, ROWS = 8;
@@ -342,15 +459,20 @@
 
   const PIN_SYMBOL = "📍";
   // Six colors of the same pin emoji, made by rotating its hue with
-  // a CSS filter rather than swapping in six different images.
+  // a CSS filter rather than swapping in six different images. The
+  // brightness boost lifts orange and yellow out of the muddy brown
+  // and olive that a plain hue-rotate of the red pin produces.
   const PIN_COLORS = [
-    { key: 'red',    label: 'Red',    rotate: 0   },
-    { key: 'orange', label: 'Orange', rotate: 30  },
-    { key: 'yellow', label: 'Yellow', rotate: 60  },
-    { key: 'green',  label: 'Green',  rotate: 120 },
-    { key: 'blue',   label: 'Blue',   rotate: 210 },
-    { key: 'purple', label: 'Purple', rotate: 270 },
+    { key: 'red',    label: 'Red',    rotate: 0,   bright: 1   },
+    { key: 'orange', label: 'Orange', rotate: 30,  bright: 1.6 },
+    { key: 'yellow', label: 'Yellow', rotate: 50,  bright: 2.3 },
+    { key: 'green',  label: 'Green',  rotate: 120, bright: 1.2 },
+    { key: 'blue',   label: 'Blue',   rotate: 210, bright: 1.1 },
+    { key: 'purple', label: 'Purple', rotate: 265, bright: 1   },
   ];
+  function pinFilter(info) {
+    return info ? `hue-rotate(${info.rotate}deg) brightness(${info.bright})` : '';
+  }
 
   let greenBg;
 
@@ -980,7 +1102,8 @@
     return s;
   }
 
-  let currentTool = 'road'; // 'road' | 'water' | 'path' | 'label'
+  let currentTool = 'road'; // 'build' | 'road' | 'water' | 'path' | 'label' | 'pin'
+  let selectedPinColor = 'red'; // color the 📍 Pin tool stamps on a tap
 
   function setKind(r, c, kind, opts) {
     const cell = grid[r][c];
@@ -1028,7 +1151,7 @@
     if (cell.pin) {
       const info = PIN_COLORS.find(p => p.key === cell.pin);
       pinEl.textContent = PIN_SYMBOL;
-      pinEl.style.filter = info ? `hue-rotate(${info.rotate}deg)` : '';
+      pinEl.style.filter = pinFilter(info);
       pinEl.style.pointerEvents = 'all';
     } else {
       pinEl.textContent = '';
@@ -1051,6 +1174,7 @@
       e.stopPropagation();
       if (currentTool === 'path') { handlePathClick(r, c); return; }
       if (currentTool === 'label') { placeLabelAtCell(r, c); return; }
+      if (currentTool === 'pin') { handlePinClick(r, c); return; }
       downX = e.clientX; downY = e.clientY; moved = false;
       pointerId = e.pointerId;
       pinEl.setPointerCapture(e.pointerId);
@@ -1085,6 +1209,19 @@
       if (currentTool === 'label') {
         placeLabelAtCell(r, c);
         return;
+      }
+
+      if (currentTool === 'pin') {
+        handlePinClick(r, c);
+        return;
+      }
+
+      // Build tool: placed chips and special tiles can still be moved or
+      // removed, but empty squares and plain road/water are left alone —
+      // only Road and Water paint.
+      if (currentTool === 'build') {
+        const k = grid[r][c].kind;
+        if (k !== 'building' && k !== 'special') return;
       }
 
       moved = false;
@@ -1436,11 +1573,7 @@
         }
         dragGhost.remove(); dragGhost = null;
       } else if (!wasMoved) {
-        for (let r = 0; r < ROWS; r++) {
-          for (let c = 0; c < COLS; c++) {
-            if (grid[r][c].kind === 'building' && !grid[r][c].pin) { setPin(r, c, colorKey); return; }
-          }
-        }
+        selectPinColor(colorKey);
       }
     });
 
@@ -1450,15 +1583,38 @@
     });
   }
 
+  // Taps with the 📍 Pin tool: put the selected color on a place, swap
+  // an existing pin to the selected color, or — tapping a pin of the
+  // selected color — take it off again. Empty squares are ignored.
+  function handlePinClick(r, c) {
+    if (grid[r][c].kind !== 'building') return;
+    setPin(r, c, grid[r][c].pin === selectedPinColor ? null : selectedPinColor);
+  }
+
+  function selectPinColor(key) {
+    selectedPinColor = key;
+    document.querySelectorAll('#pinPool .chip').forEach(ch => {
+      const on = ch.dataset.pinColor === key;
+      ch.classList.toggle('is-selected', on);
+      ch.setAttribute('aria-checked', String(on));
+    });
+  }
+
   function buildPinPool() {
     const container = document.getElementById('pinPool');
+    container.setAttribute('role', 'radiogroup');
+    container.setAttribute('aria-label', 'Pin color');
     PIN_COLORS.forEach(info => {
       const chip = document.createElement('div');
       chip.className = 'chip';
+      chip.setAttribute('role', 'radio');
       chip.dataset.pinColor = info.key;
       chip.title = info.label + ' pin';
-      chip.textContent = PIN_SYMBOL;
-      chip.style.filter = `hue-rotate(${info.rotate}deg)`;
+      // tint only the emoji, so the chip's selection ring keeps its own color
+      const glyph = document.createElement('span');
+      glyph.textContent = PIN_SYMBOL;
+      glyph.style.filter = pinFilter(info);
+      chip.appendChild(glyph);
       attachPinChipEvents(chip);
       container.appendChild(chip);
     });
@@ -1467,9 +1623,15 @@
   buildPlacePool();
   buildStampPool();
   buildPinPool();
+  selectPinColor(selectedPinColor);
+
+  document.getElementById('clearPinsBtn').addEventListener('click', () => {
+    for (let r = 0; r < ROWS; r++) for (let c = 0; c < COLS; c++) if (grid[r][c].pin) setPin(r, c, null);
+  });
 
   document.getElementById('clearAllBtn').addEventListener('click', () => {
     for (let r = 0; r < ROWS; r++) for (let c = 0; c < COLS; c++) clearCell(r, c);
+    document.getElementById('sizeDialog').close();
   });
 
   // Grid resize controls
@@ -1485,6 +1647,7 @@
   }
   document.getElementById('resizeBtn').addEventListener('click', () => {
     resizeGrid(Number(colsSelect.value), Number(rowsSelect.value));
+    document.getElementById('sizeDialog').close();
   });
 
   /* ═══════════════════ PATHFINDING (Dijkstra) ═══════════════════ */
@@ -2333,28 +2496,45 @@
 
   document.getElementById('clearPathsBtn').addEventListener('click', clearAllPaths);
 
-  /* ═══════════════ TOOL SELECTOR (unified) ═══════════════ */
-  const TOOL_INFO = {
-    road:  { icon: '🛣️', label: 'Road' },
-    water: { icon: '🌊', label: 'Water' },
-    path:  { icon: '🧭', label: 'Path' },
-    label: { icon: '🏷️', label: 'Label' },
-  };
-  const toolButtons = Array.from(document.querySelectorAll('.tool-btn'));
-  const roadWaterOptions = document.getElementById('roadWaterOptions');
-  const pathOptions = document.getElementById('pathOptions');
-  const labelOptions = document.getElementById('labelOptions');
-  const toolBadgeIcon = document.querySelector('#toolBadge .tool-badge-icon');
-  const toolBadgeLabel = document.querySelector('#toolBadge .tool-badge-label');
+  /* ═══════════════ HOTBAR (bottom toolbar) ═══════════════ */
+  // Six tool slots plus 🤏 Size. Build, Path, Label and Pin each own a
+  // drawer that opens above the hotbar; Road and Water have none. Tapping
+  // the tool that's already selected hides/shows its drawer, so it can be
+  // tucked away when it covers the part of the map you're working on.
+  const DRAWER_TOOLS = ['build', 'path', 'label', 'pin'];
+  const toolSlots = Array.from(document.querySelectorAll('.slot[data-tool]'));
+  const drawers = {};
+  DRAWER_TOOLS.forEach(t => { drawers[t] = document.getElementById('drawer-' + t); });
+  let drawerOpen = false;
+
+  function renderDrawers() {
+    DRAWER_TOOLS.forEach(t => {
+      const show = drawerOpen && currentTool === t;
+      drawers[t].hidden = !show;
+    });
+    toolSlots.forEach(btn => {
+      if (btn.hasAttribute('aria-controls')) {
+        btn.setAttribute('aria-expanded', String(drawerOpen && btn.dataset.tool === currentTool));
+      }
+    });
+    if (drawerOpen && currentTool === 'label' && window.matchMedia('(pointer: fine)').matches) {
+      labelTextInput.focus({ preventScroll: true });
+    }
+  }
 
   function setTool(tool) {
+    if (tool === currentTool) {
+      // same slot again → toggle its drawer (no-op for Road/Water)
+      if (DRAWER_TOOLS.includes(tool)) { drawerOpen = !drawerOpen; renderDrawers(); }
+      return;
+    }
     currentTool = tool;
-    toolButtons.forEach(btn => btn.classList.toggle('active', btn.dataset.tool === tool));
-    roadWaterOptions.hidden = !(tool === 'road' || tool === 'water');
-    pathOptions.hidden = tool !== 'path';
-    pathStatus.hidden = tool !== 'path';
-    labelOptions.hidden = tool !== 'label';
-    labelStatus.hidden = tool !== 'label';
+    drawerOpen = DRAWER_TOOLS.includes(tool);
+    toolSlots.forEach(btn => {
+      const on = btn.dataset.tool === tool;
+      btn.classList.toggle('is-active', on);
+      btn.setAttribute('aria-pressed', String(on));
+    });
     if (tool !== 'path' && pendingStart) {
       // restore the pending-start highlight, same as a completed/cancelled click would
       const p = pendingStart;
@@ -2362,210 +2542,59 @@
       pendingStart = null;
     }
     updatePathStatus();
-    toolBadgeIcon.textContent = TOOL_INFO[tool].icon;
-    toolBadgeLabel.textContent = TOOL_INFO[tool].label;
+    renderDrawers();
   }
 
-  toolButtons.forEach(btn => {
+  toolSlots.forEach(btn => {
     btn.addEventListener('click', () => setTool(btn.dataset.tool));
   });
+  document.querySelectorAll('.drawer-close').forEach(btn => {
+    btn.addEventListener('click', () => { drawerOpen = false; renderDrawers(); });
+  });
 
+  // 🤏 Size opens a dialog rather than becoming the current tool.
+  const sizeDialog = document.getElementById('sizeDialog');
+  function openSizeDialog() {
+    colsSelect.value = COLS;
+    rowsSelect.value = ROWS;
+    sizeDialog.showModal();
+  }
+  document.getElementById('sizeSlot').addEventListener('click', openSizeDialog);
+  document.getElementById('sizeCancelBtn').addEventListener('click', () => sizeDialog.close());
+  sizeDialog.addEventListener('click', (e) => { if (e.target === sizeDialog) sizeDialog.close(); }); // backdrop
+
+  const helpDialog = document.getElementById('helpDialog');
+  document.getElementById('helpBtn').addEventListener('click', () => helpDialog.showModal());
+  document.getElementById('helpCloseBtn').addEventListener('click', () => helpDialog.close());
+  helpDialog.addEventListener('click', (e) => { if (e.target === helpDialog) helpDialog.close(); }); // backdrop
+
+  // Number keys 1–7 pick a slot, like a game hotbar; Escape hides a drawer.
+  const HOTKEYS = ['build', 'road', 'water', 'path', 'label', 'pin', 'size'];
+  document.addEventListener('keydown', (e) => {
+    if (sizeDialog.open || helpDialog.open) return; // dialogs handle their own Escape
+    const t = e.target;
+    const typing = t && (t.tagName === 'INPUT' || t.tagName === 'SELECT' || t.tagName === 'TEXTAREA' || t.isContentEditable);
+    if (e.key === 'Escape') {
+      if (typing) t.blur();
+      if (drawerOpen) { drawerOpen = false; renderDrawers(); }
+      return;
+    }
+    if (typing || e.ctrlKey || e.metaKey || e.altKey) return;
+    const n = Number(e.key);
+    if (n >= 1 && n <= HOTKEYS.length) {
+      e.preventDefault();
+      const target = HOTKEYS[n - 1];
+      if (target === 'size') openSizeDialog();
+      else setTool(target);
+    }
+  });
+
+  // Start on Road without toggling: mark the slot as selected directly.
+  currentTool = null;
   setTool('road');
 
 </script>
-<!--
-Add this block immediately before the final </body> tag in
- a1_freer_directions_playground.html.
-It turns the existing Pools / Map tools / Path tool area into an accessible
-hamburger drawer without changing any of the existing control IDs or logic.
--->
-<style>
-  :root { --controls-drawer-width: 360px; }
 
-  .controls-menu-button {
-    position: fixed;
-    z-index: 1002;
-    left: 20px;
-    top: 20px;
-    display: inline-flex;
-    align-items: center;
-    gap: 9px;
-    min-height: 42px;
-    padding: 9px 13px;
-    border: 1px solid var(--border);
-    border-radius: 999px;
-    background: var(--surface-2);
-    color: var(--text-primary);
-    box-shadow: 0 5px 18px rgba(0, 0, 0, .16);
-    font: 600 13px/1 inherit;
-    cursor: pointer;
-  }
-  .controls-menu-button:hover { border-color: var(--text-accent); }
-  .controls-menu-button:focus-visible,
-  .controls-drawer-close:focus-visible {
-    outline: 3px solid color-mix(in srgb, var(--text-accent) 45%, transparent);
-    outline-offset: 2px;
-  }
-  .controls-menu-icon,
-  .controls-menu-icon::before,
-  .controls-menu-icon::after {
-    display: block;
-    width: 18px;
-    height: 2px;
-    border-radius: 2px;
-    background: currentColor;
-    transition: transform .2s ease, opacity .2s ease;
-  }
-  .controls-menu-icon { position: relative; }
-  .controls-menu-icon::before,
-  .controls-menu-icon::after { content: ""; position: absolute; left: 0; }
-  .controls-menu-icon::before { top: -6px; }
-  .controls-menu-icon::after { top: 6px; }
-  body.controls-drawer-open .controls-menu-icon { background: transparent; }
-  body.controls-drawer-open .controls-menu-icon::before { transform: translateY(6px) rotate(45deg); }
-  body.controls-drawer-open .controls-menu-icon::after { transform: translateY(-6px) rotate(-45deg); }
-
-  .controls-drawer-backdrop {
-    position: fixed;
-    z-index: 1000;
-    inset: 0;
-    background: rgba(0, 0, 0, .34);
-    opacity: 0;
-    pointer-events: none;
-    transition: opacity .24s ease;
-  }
-  .controls-drawer {
-    position: fixed;
-    z-index: 1001;
-    top: 0;
-    left: 0;
-    width: min(var(--controls-drawer-width), calc(100vw - 28px));
-    height: 100dvh;
-    overflow-y: auto;
-    overscroll-behavior: contain;
-    padding: 18px 18px 34px;
-    box-sizing: border-box;
-    background: var(--surface-2);
-    border-right: 1px solid var(--border);
-    box-shadow: 12px 0 34px rgba(0, 0, 0, .18);
-    transform: translateX(calc(-100% - 12px));
-    visibility: hidden;
-    transition: transform .28s ease, visibility 0s linear .28s;
-  }
-  body.controls-drawer-open { overflow: hidden; }
-  body.controls-drawer-open .controls-drawer { transform: translateX(0); visibility: visible; transition-delay: 0s; }
-  body.controls-drawer-open .controls-drawer-backdrop { opacity: 1; pointer-events: auto; }
-  .controls-drawer-header { display: flex; align-items: center; justify-content: space-between; gap: 12px; margin-bottom: 6px; }
-  .controls-drawer-title { margin: 0; font-size: 1.05rem; font-weight: 650; }
-  .controls-drawer-close { border: 0; border-radius: 8px; background: transparent; color: var(--text-secondary); font: 28px/1 sans-serif; cursor: pointer; padding: 3px 8px 6px; }
-  .controls-drawer .pool-heading:first-of-type { margin-top: 1rem; }
-
-  @media (max-width: 640px) {
-    .controls-menu-button { top: auto; bottom: 16px; left: 16px; }
-    .controls-drawer {
-      top: 0;
-      left: 0;
-      width: 100%;
-      height: min(82dvh, 700px);
-      border-right: 0;
-      border-bottom: 1px solid var(--border);
-      border-radius: 0 0 18px 18px;
-      box-shadow: 0 10px 28px rgba(0, 0, 0, .20);
-      transform: translateY(calc(-100% - 12px));
-    }
-    body.controls-drawer-open .controls-drawer { transform: translateY(0); }
-  }
-
-  @media (prefers-reduced-motion: reduce) {
-    .controls-menu-icon, .controls-menu-icon::before, .controls-menu-icon::after,
-    .controls-drawer, .controls-drawer-backdrop { transition: none; }
-  }
-</style>
-
-<script>
-(() => {
-  const page = document.querySelector('.page');
-  const mapWrap = document.querySelector('.map-wrap');
-  const placePool = document.getElementById('placePool');
-  const pathStatus = document.getElementById('pathStatus');
-  const labelStatus = document.getElementById('labelStatus');
-
-  if (!page || !mapWrap || !placePool || !pathStatus || !labelStatus) {
-    console.warn('Controls drawer: required page elements were not found.');
-    return;
-  }
-
-  const firstHeading = placePool.previousElementSibling;
-
-  const button = document.createElement('button');
-  button.className = 'controls-menu-button';
-  button.type = 'button';
-  button.setAttribute('aria-controls', 'controlsDrawer');
-  button.setAttribute('aria-expanded', 'false');
-  button.innerHTML =
-    '<span class="controls-menu-icon" aria-hidden="true"></span><span>Controls</span>';
-
-  const backdrop = document.createElement('div');
-  backdrop.className = 'controls-drawer-backdrop';
-  backdrop.setAttribute('aria-hidden', 'true');
-
-  const drawer = document.createElement('aside');
-  drawer.className = 'controls-drawer';
-  drawer.id = 'controlsDrawer';
-  drawer.setAttribute('aria-label', 'Map controls');
-  drawer.innerHTML = `
-    <div class="controls-drawer-header">
-      <h2 class="controls-drawer-title">Map controls</h2>
-      <button class="controls-drawer-close" type="button" aria-label="Close controls">×</button>
-    </div>
-  `;
-
-  const controls = [];
-  let collecting = false;
-
-  for (const child of [...page.children]) {
-    if (child === firstHeading) collecting = true;
-    if (collecting) controls.push(child);
-    if (child === labelStatus) break;
-  }
-
-  if (!controls.length || controls[controls.length - 1] !== labelStatus) {
-    console.warn('Controls drawer: could not identify the complete controls section.');
-    return;
-  }
-
-  controls.forEach(node => drawer.appendChild(node));
-
-  page.insertBefore(button, mapWrap);
-  document.body.append(backdrop, drawer);
-
-  const closeButton = drawer.querySelector('.controls-drawer-close');
-
-  function setOpen(open) {
-    document.body.classList.toggle('controls-drawer-open', open);
-    button.setAttribute('aria-expanded', String(open));
-
-    if (open) closeButton.focus();
-    else button.focus();
-  }
-
-  button.addEventListener('click', () => {
-    setOpen(!document.body.classList.contains('controls-drawer-open'));
-  });
-
-  closeButton.addEventListener('click', () => setOpen(false));
-  backdrop.addEventListener('click', () => setOpen(false));
-
-  document.addEventListener('keydown', event => {
-    if (
-      event.key === 'Escape' &&
-      document.body.classList.contains('controls-drawer-open')
-    ) {
-      setOpen(false);
-    }
-  });
-})();
-</script>
 
 </body>
 </html>
