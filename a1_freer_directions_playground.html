@@ -79,6 +79,12 @@
     margin-bottom:1.25rem;
   }
   #mapSvg{overflow:visible; width:100%; height:auto; display:block; }
+  /* Touch: a finger dragged on the map draws/moves instead of scrolling
+     the page. Without this, mobile browsers claim the gesture as a
+     scroll and cancel the pointer events after the first square. Path
+     and Pin only use taps, so the map scrolls normally with those. */
+  #mapSvg{ touch-action:none; -webkit-touch-callout:none; }
+  body.map-pannable #mapSvg{ touch-action:manipulation; }
   .building-symbol{ font-size:30px; pointer-events:none; user-select:none; }
   .pin-symbol{ font-size:64px; pointer-events:none; user-select:none; cursor:pointer; }
 
@@ -2530,6 +2536,7 @@
     }
     currentTool = tool;
     drawerOpen = DRAWER_TOOLS.includes(tool);
+    document.body.classList.toggle('map-pannable', tool === 'path' || tool === 'pin');
     toolSlots.forEach(btn => {
       const on = btn.dataset.tool === tool;
       btn.classList.toggle('is-active', on);
