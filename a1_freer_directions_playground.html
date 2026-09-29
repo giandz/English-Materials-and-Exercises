@@ -299,6 +299,20 @@
   .drawer .tool-status{ margin:8px 0 0; color:var(--slot-accent); }
 
   .chip.is-selected{ box-shadow:0 0 0 2px var(--slot-accent); background:var(--slot-accent-soft); }
+  .stamp-chip.is-selected{ box-shadow:0 0 0 2px var(--slot-accent); }
+  /* active-chip badge on the Build slot; the slot can be dragged from */
+  .slot[data-tool="build"]{ touch-action:none; }
+  .slot-badge{
+    position:absolute; top:-7px; right:-7px;
+    width:22px; height:22px; border-radius:6px;
+    display:flex; align-items:center; justify-content:center;
+    font-size:13px; line-height:1; overflow:hidden;
+    background:var(--color-background-primary);
+    border:1.5px solid var(--slot-accent);
+    box-shadow:0 1px 4px rgba(0,0,0,.18);
+    pointer-events:none;
+  }
+  .slot-badge svg{ width:100%; height:100%; display:block; }
 
   .size-dialog{
     border:1px solid var(--color-border-secondary);
@@ -392,10 +406,10 @@
     <div class="brush-row" id="brushRow" role="radiogroup" aria-label="Paint">
       <button type="button" class="brush" data-brush="water" role="radio" aria-checked="true"><span class="brush-emoji" aria-hidden="true">🌊</span><span class="brush-word">Water</span></button>
       <span class="brush-divider" aria-hidden="true"></span>
-      <button type="button" class="brush" data-brush="grass" role="radio" aria-checked="false"><span class="brush-emoji" aria-hidden="true">🏕️</span><span class="brush-word">Grass</span></button>
-      <button type="button" class="brush" data-brush="dirt" role="radio" aria-checked="false"><span class="brush-emoji" aria-hidden="true">⛰️</span><span class="brush-word">Dirt</span></button>
-      <button type="button" class="brush" data-brush="sand" role="radio" aria-checked="false"><span class="brush-emoji" aria-hidden="true">🏜️</span><span class="brush-word">Sand</span></button>
-      <button type="button" class="brush" data-brush="snow" role="radio" aria-checked="false"><span class="brush-emoji" aria-hidden="true">☃️</span><span class="brush-word">Snow</span></button>
+      <button type="button" class="brush" data-brush="grass" role="radio" aria-checked="false"><span class="brush-emoji" aria-hidden="true">🟩</span><span class="brush-word">Grass</span></button>
+      <button type="button" class="brush" data-brush="dirt" role="radio" aria-checked="false"><span class="brush-emoji" aria-hidden="true">🟫</span><span class="brush-word">Dirt</span></button>
+      <button type="button" class="brush" data-brush="sand" role="radio" aria-checked="false"><span class="brush-emoji" aria-hidden="true">🟨</span><span class="brush-word">Sand</span></button>
+      <button type="button" class="brush" data-brush="snow" role="radio" aria-checked="false"><span class="brush-emoji" aria-hidden="true">⬜</span><span class="brush-word">Snow</span></button>
     </div>
     <p class="drawer-hint">Water makes rivers. Grass, dirt, sand and snow only change the colour of the ground — roads, places and routes stay the same. Drag from a square that already has that colour to erase it.</p>
   </section>
@@ -463,9 +477,9 @@
   <ul class="help-list">
     <li>Pick a tool in the toolbar at the bottom, or press <strong>1–7</strong>.</li>
     <li><strong>🛣️ Road</strong> and <strong>🌊 Water</strong>: click or drag on the map to draw. Drag over it again to erase.</li>
-    <li>In the <strong>🌊 Water</strong> drawer you can also paint the ground: <strong>🏕️grass</strong>, <strong>⛰️ dirt</strong>, <strong>🏜️ sand</strong> or <strong>☃️ snow</strong>. It only changes the colour.</li>
+    <li>In the <strong>🌊 Water</strong> drawer you can also paint the ground: <strong>🟩 grass</strong>, <strong>🟫 dirt</strong>, <strong>🟨 sand</strong> or <strong>⬜ snow</strong>. It only changes the colour.</li>
     <li>Tap <strong>🛣️ Road</strong> again to switch to <strong>🛤️ Railroad</strong>. Trains only go from one <strong>🚉 train station</strong> to another.</li>
-    <li><strong>🏗️ Build</strong>: drag a place onto the map. Tap it to remove it, or drag it to move it.</li>
+    <li><strong>🏗️ Build</strong>: drag a place onto the map. Tap it to remove it, or drag it to move it. The last place you picked shows on the Build button — drag from the button to add another one.</li>
     <li><strong>⚓ Ferry</strong>: put it next to water. Routes can sail from one ferry to another.</li>
     <li><strong>🚇 Subway</strong>: routes can go from one station to any other station.</li>
     <li><strong>🧭 Path</strong>, <strong>🏷️ Label</strong> and <strong>📍 Pin</strong> open a drawer with options. Tap the tool again to hide it.</li>
@@ -520,9 +534,8 @@
 
   const PLACE_CHIPS = [
     "🏫", "🍞", "🧰", "🌳", "🏦", "☕", "💊", "🧸", "👟", "🍦",
-    "🍫", "🎁", "🎈", "🍰", "🐶", "🏥", "🏠", "🏢", "⛪", "💈",
-    "🏬", "🏛️", "🎸", "🎯", "🍻", "✉️", "🔬", "🛒", "🎪", "🏟️",
-    "🏪", "🍕", "🎮", "✂️", "🐟", "⚓", "🚉", "🚇"
+    "🍫", "🎁", "🎈", "🍰", "🐶", "🏥", "🏠", "🏢", "⛪",
+    "🅿️", "🏪", "🍕", "🎮", "💇", "🐟", "⚓", "🚉", "🚇"
   ];
 
   // Captions shown under each chip in the 🏗️ Build drawer only —
@@ -533,11 +546,9 @@
     "👟": "shoe store", "🍦": "ice cream shop", "🍫": "candy store",
     "🎁": "gift shop", "🎈": "party store", "🍰": "cake shop",
     "🐶": "pet shop", "🏥": "hospital", "🏠": "house", "🏢": "office",
-    "⛪": "church", "🚉": "train station", "🏟️": "stadium",
-    "🏪": "conve\u00ADnience store", "🍕": "pizzeria", "🎮": "arcade",
-    "✂️": "hair salon", "🐟": "fish market", "⚓": "ferry", "🚇": "subway",
-    "💈": "barber\u00ADshop", "🏬": "depart\u00ADment store", "🏛️": "museum", "🎸": "music store",
-    "🎯": "sports bar", "🍻": "bar", "✉️": "post office", "🔬": "lab", "🛒": "super\u00ADmarket", "🎪": "circus"
+    "⛪": "church", "🚉": "train station", "🅿️": "parking lot",
+    "🏪": "conve\u00ADnience store", "🍕": "pizzeria", "🎮": "game store",
+    "💇": "hair salon", "🐟": "fish market", "⚓": "ferry", "🚇": "subway"
   };
 
   const FERRY_SYMBOL = "⚓";
@@ -1327,47 +1338,78 @@
   // cover it, so a terminal on a small pond shows more dock and a
   // terminal beside a flowing river shows just enough to kill the
   // green border.
+  // Is local point (x, y) inside this river tile's water? Mirrors the
+  // shapes drawRiverTile draws (ignoring its tiny corner fillets).
+  function riverWaterAt(r, c, on, x, y) {
+    const x0 = c * CELL, y0 = r * CELL, cx = x0 + CELL / 2, cy = y0 + CELL / 2;
+    const h = RIVER_ARM_W / 2;
+    const dirs = ['N', 'S', 'E', 'W'].filter(k => on[k]);
+    const V = { N: [0, -1], S: [0, 1], E: [1, 0], W: [-1, 0] };
+    // solid quadrants
+    for (const [d1, d2] of [['N', 'E'], ['E', 'S'], ['S', 'W'], ['W', 'N']]) {
+      if (!on[d1] || !on[d2]) continue;
+      const [a1, b1] = V[d1], [a2, b2] = V[d2];
+      if (!(riverSame(r + b1, c + a1) && riverSame(r + b2, c + a2) && riverSame(r + b1 + b2, c + a1 + a2))) continue;
+      const qx = a1 + a2 > 0 ? cx : x0, qy = b1 + b2 > 0 ? cy : y0;
+      if (x >= qx && x <= qx + CELL / 2 && y >= qy && y <= qy + CELL / 2) return true;
+    }
+    const inArm = k => {
+      const [dx, dy] = V[k];
+      return dx ? (Math.abs(y - cy) <= h && (dx > 0 ? x >= cx : x <= cx))
+                : (Math.abs(x - cx) <= h && (dy > 0 ? y >= cy : y <= cy));
+    };
+    if (dirs.length === 0) return Math.hypot(x - cx, y - cy) <= h;
+    if (dirs.length === 1) return inArm(dirs[0]) || Math.hypot(x - cx, y - cy) <= h;
+    if (dirs.length === 2 && !(on.N && on.S) && !(on.E && on.W)) {
+      const px = on.E ? x0 + CELL : x0, py = on.S ? y0 + CELL : y0;
+      const d = Math.hypot(x - px, y - py);
+      return d >= CELL / 2 - h && d <= CELL / 2 + h;
+    }
+    return (Math.abs(x - cx) <= h && Math.abs(y - cy) <= h) || dirs.some(inArm);
+  }
+
+  // Ferry docks: a wooden pier that starts at the terminal's edge and
+  // runs out over the water. It is drawn on top of the river so it
+  // visibly reaches into it, and it is as long as it needs to be — it
+  // walks inward along the tile's centre line until it meets the water
+  // (which may be further away at a bend or a rounded river end) and
+  // then carries on a little way into it.
+  const PIER_W = CELL * 0.42;
   function drawFerryDocks(art, r, c, on) {
-    const x0 = c * CELL, y0 = r * CELL;
+    const x0 = c * CELL, y0 = r * CELL, cx = x0 + CELL / 2, cy = y0 + CELL / 2;
     ['N', 'S', 'E', 'W'].forEach(dir => {
       const [dr, dc] = DIRVEC[dir];
       const nr = r + dr, nc = c + dc;
       if (nr < 0 || nr >= ROWS || nc < 0 || nc >= COLS) return;
       if (!isFerryTerminal(grid[nr][nc])) return;
 
-      // If the water keeps going past this tile (away from the
-      // terminal), let the dock reach a little further in, as if
-      // the pier extends out toward open water instead of always
-      // stopping right at the bank.
-      const continues = !!on[OPPOSITE[dir]];
-      const depth = continues ? CELL * 0.85 : CELL * 0.55;
-
-      const dock = document.createElementNS(SVG_NS, "rect");
-      if (dir === 'N') { dock.setAttribute("x", x0); dock.setAttribute("y", y0); dock.setAttribute("width", CELL); dock.setAttribute("height", depth); }
-      if (dir === 'S') { dock.setAttribute("x", x0); dock.setAttribute("y", y0 + CELL - depth); dock.setAttribute("width", CELL); dock.setAttribute("height", depth); }
-      if (dir === 'W') { dock.setAttribute("x", x0); dock.setAttribute("y", y0); dock.setAttribute("width", depth); dock.setAttribute("height", CELL); }
-      if (dir === 'E') { dock.setAttribute("x", x0 + CELL - depth); dock.setAttribute("y", y0); dock.setAttribute("width", depth); dock.setAttribute("height", CELL); }
-      dock.setAttribute("fill", DOCK_COLOR);
-      art.appendChild(dock);
-
-      // wooden plank lines, running across the dock's length
-      const plankCount = 4;
-      for (let i = 1; i < plankCount; i++) {
-        const t = i / plankCount;
-        const plank = document.createElementNS(SVG_NS, "line");
-        if (dir === 'N' || dir === 'S') {
-          const py = dir === 'N' ? y0 + depth * t : y0 + CELL - depth * t;
-          plank.setAttribute("x1", x0 + 4); plank.setAttribute("x2", x0 + CELL - 4);
-          plank.setAttribute("y1", py); plank.setAttribute("y2", py);
-        } else {
-          const px = dir === 'W' ? x0 + depth * t : x0 + CELL - depth * t;
-          plank.setAttribute("y1", y0 + 4); plank.setAttribute("y2", y0 + CELL - 4);
-          plank.setAttribute("x1", px); plank.setAttribute("x2", px);
-        }
-        plank.setAttribute("stroke", DOCK_PLANK_COLOR);
-        plank.setAttribute("stroke-width", "1.5");
-        art.appendChild(plank);
+      // walk in from the terminal's edge until we're over water
+      const along = t => ({
+        N: [cx, y0 + t], S: [cx, y0 + CELL - t], W: [x0 + t, cy], E: [x0 + CELL - t, cy]
+      })[dir];
+      let bank = CELL / 2;
+      for (let t = 0; t <= CELL; t += 1) {
+        const [px, py] = along(t);
+        if (riverWaterAt(r, c, on, px, py)) { bank = t; break; }
       }
+      const depth = Math.min(CELL - 4, Math.max(CELL * 0.3, bank + CELL * 0.22));
+
+      const g = svgEl('g', {});
+      const vertical = dir === 'N' || dir === 'S';
+      const rect = vertical
+        ? { x: cx - PIER_W / 2, y: dir === 'N' ? y0 : y0 + CELL - depth, width: PIER_W, height: depth }
+        : { x: dir === 'W' ? x0 : x0 + CELL - depth, y: cy - PIER_W / 2, width: depth, height: PIER_W };
+      g.appendChild(svgEl('rect', Object.assign({ fill: DOCK_COLOR, stroke: DOCK_PLANK_COLOR, 'stroke-width': 1 }, rect)));
+      // planks across the pier
+      const planks = Math.max(3, Math.round(depth / 7));
+      for (let i = 1; i < planks; i++) {
+        const t = depth * i / planks;
+        const [px, py] = along(t);
+        g.appendChild(svgEl('line', vertical
+          ? { x1: cx - PIER_W / 2 + 1, x2: cx + PIER_W / 2 - 1, y1: py, y2: py, stroke: DOCK_PLANK_COLOR, 'stroke-width': 1.2 }
+          : { y1: cy - PIER_W / 2 + 1, y2: cy + PIER_W / 2 - 1, x1: px, x2: px, stroke: DOCK_PLANK_COLOR, 'stroke-width': 1.2 }));
+      }
+      art.appendChild(g);
     });
   }
 
@@ -1397,8 +1439,8 @@
     if (cell.kind === 'river') {
       const on = riverNeighbors(r, c);
       extendWaterToGridEdges(r, c, on);
-      drawFerryDocks(art, r, c, on);
       drawRiverTile(art, r, c, on);
+      drawFerryDocks(art, r, c, on); // on top of the water
       return;
     }
   }
@@ -2083,6 +2125,7 @@
       pointerId = null;
       const wasMoved = moved;
       moved = false;
+      setActiveBuildChip({ type: 'place', value: chip.dataset.symbol });
       if (wasMoved && dragGhost) {
         const els = document.elementsFromPoint(e.clientX, e.clientY);
         const dropRect = els.find(el => el.classList && el.classList.contains('cell-hit'));
@@ -2147,6 +2190,7 @@
       pointerId = null;
       const wasMoved = moved;
       moved = false;
+      setActiveBuildChip({ type: 'special', value: chip.dataset.special });
       if (wasMoved && dragGhost) {
         const els = document.elementsFromPoint(e.clientX, e.clientY);
         const dropRect = els.find(el => el.classList && el.classList.contains('cell-hit'));
@@ -2170,6 +2214,80 @@
       if (dragGhost) { dragGhost.remove(); dragGhost = null; endDrawerDrag(); }
       pointerId = null; moved = false;
     });
+  }
+
+  /* ═══════════════ BUILD SLOT: active chip ═══════════════ */
+  // Whichever chip was last picked from the Build drawer (tapped or
+  // dragged) becomes the "active chip". It shows as a small badge on the
+  // 🏗️ Build slot, and dragging from the slot itself drops another copy
+  // of it — no need to open the drawer again. A plain tap on the slot
+  // still just selects Build / shows or hides its drawer.
+  let activeBuildChip = null; // { type: 'place' | 'special', value }
+
+  function setActiveBuildChip(ch) {
+    activeBuildChip = ch;
+    document.querySelectorAll('#placePool .chip, #stampPool .stamp-chip').forEach(el => {
+      const on = (ch.type === 'place' && el.dataset.symbol === ch.value) || (ch.type === 'special' && el.dataset.special === ch.value);
+      el.classList.toggle('is-selected', on);
+    });
+    const slot = document.querySelector('.slot[data-tool="build"]');
+    let badge = slot.querySelector('.slot-badge');
+    if (!badge) { badge = document.createElement('span'); badge.className = 'slot-badge'; badge.setAttribute('aria-hidden', 'true'); slot.appendChild(badge); }
+    badge.innerHTML = '';
+    if (ch.type === 'place') badge.textContent = ch.value;
+    else badge.appendChild(miniPreviewSVG(ch.value));
+    const name = ch.type === 'place' ? (PLACE_NAMES[ch.value] || ch.value).replace(/\u00AD/g, '') : SPECIAL_TYPES[ch.value].label.toLowerCase();
+    slot.title = `Build — drag from here to add another ${name}`;
+    slot.setAttribute('aria-label', `Build (active: ${name})`);
+  }
+
+  function makeBuildGhost(ch) {
+    const g = document.createElement('div');
+    if (ch.type === 'place') { g.className = 'chip dragging'; g.textContent = ch.value; }
+    else { g.className = 'stamp-chip dragging'; g.appendChild(miniPreviewSVG(ch.value)); }
+    g.style.width = '46px'; g.style.height = '46px';
+    document.body.appendChild(g);
+    return g;
+  }
+
+  function dropBuildChipAt(ch, r, c) {
+    if (grid[r][c].kind === 'building') return; // same rule as dropping from the drawer
+    if (ch.type === 'place') { clearCell(r, c); setKind(r, c, 'building', { symbol: ch.value }); }
+    else setKind(r, c, 'special', { special: ch.value });
+  }
+
+  function attachBuildSlotDrag(slot) {
+    let pointerId = null, startX = 0, startY = 0, ghost = null;
+    slot.addEventListener('pointerdown', (e) => {
+      if (!activeBuildChip) return;
+      pointerId = e.pointerId; startX = e.clientX; startY = e.clientY;
+      slot.setPointerCapture(e.pointerId);
+    });
+    slot.addEventListener('pointermove', (e) => {
+      if (e.pointerId !== pointerId) return;
+      if (!ghost) {
+        if (Math.hypot(e.clientX - startX, e.clientY - startY) < 6) return;
+        ghost = makeBuildGhost(activeBuildChip);
+      }
+      ghost.style.left = (e.clientX - 23) + 'px';
+      ghost.style.top = (e.clientY - 23) + 'px';
+    });
+    const finish = (e, drop) => {
+      if (e.pointerId !== pointerId) return;
+      pointerId = null;
+      if (!ghost) return;
+      ghost.remove(); ghost = null;
+      // A mouse drag still ends in a click on the slot; ignore it so it
+      // doesn't toggle the drawer. (Touch drags usually send no click at
+      // all, so a time window is safer than a flag that might linger.)
+      slot._dragEndedAt = performance.now();
+      if (!drop) return;
+      const els = document.elementsFromPoint(e.clientX, e.clientY);
+      const hit = els.find(el => el.classList && el.classList.contains('cell-hit'));
+      if (hit) dropBuildChipAt(activeBuildChip, Number(hit.dataset.row), Number(hit.dataset.col));
+    };
+    slot.addEventListener('pointerup', e => finish(e, true));
+    slot.addEventListener('pointercancel', e => finish(e, false));
   }
 
   function buildStampPool() {
@@ -3340,7 +3458,7 @@
   }
 
   // Water slot: shows whichever brush is picked in its drawer
-  const BRUSH_FACE = { water: ['🌊', 'Water'], grass: ['🏕️', 'Grass'], dirt: ['⛰️', 'Dirt'], sand: ['🏜️', 'Sand'], snow: ['☃️', 'Snow'] };
+  const BRUSH_FACE = { water: ['🌊', 'Water'], grass: ['🟩', 'Grass'], dirt: ['🟫', 'Dirt'], sand: ['🟨', 'Sand'], snow: ['⬜', 'Snow'] };
   const waterSlot = document.querySelector('.slot[data-tool="water"]');
   function selectBrush(b) {
     waterBrush = b;
@@ -3385,8 +3503,13 @@
   }
 
   toolSlots.forEach(btn => {
-    btn.addEventListener('click', () => setTool(btn.dataset.tool));
+    btn.addEventListener('click', () => {
+      if (btn._dragEndedAt && performance.now() - btn._dragEndedAt < 350) return; // that was a drag from the slot, not a tap
+      setTool(btn.dataset.tool);
+    });
   });
+  attachBuildSlotDrag(document.querySelector('.slot[data-tool="build"]'));
+
   document.querySelectorAll('.drawer-close').forEach(btn => {
     btn.addEventListener('click', () => { drawerOpen = false; renderDrawers(); });
   });
