@@ -283,6 +283,18 @@
   .drawer-label{ font-size:0.8571rem; font-weight:600; color:var(--text-secondary); margin:8px 0 6px; }
   .drawer .pool{ margin-bottom:0; padding:10px; }
   .drawer .tool-pool{ gap:8px; }
+  .brush-row{ display:flex; flex-wrap:wrap; gap:6px; align-items:stretch; }
+  .brush-divider{ width:1px; margin:4px 2px; background:var(--color-border-secondary); }
+  .brush{
+    width:60px; display:flex; flex-direction:column; align-items:center; gap:3px;
+    padding:7px 2px 6px; font:inherit; color:var(--text-secondary);
+    background:var(--surface-1); border:1px solid var(--border); border-radius:10px; cursor:pointer;
+  }
+  .brush:hover{ background:var(--surface-2); }
+  .brush-emoji{ font-size:20px; line-height:1; }
+  @media (max-width:420px){ .brush{ width:54px; } .brush-row{ gap:5px; } }
+  .brush-word{ font-size:0.7857rem; font-weight:600; line-height:1.1; }
+  .brush[aria-checked="true"]{ background:var(--slot-accent-soft); color:var(--slot-accent); box-shadow:inset 0 0 0 2px var(--slot-accent); border-color:transparent; }
   .drawer-hint{ font-size:0.8571rem; color:var(--text-muted); margin:8px 0 0; line-height:1.45; }
   .drawer .tool-status{ margin:8px 0 0; color:var(--slot-accent); }
 
@@ -372,6 +384,22 @@
     <p class="drawer-hint">Drag a chip onto the grid, or tap it to drop it in the first empty square.</p>
   </section>
 
+  <section class="drawer" id="drawer-water" hidden aria-labelledby="drawerTitleWater">
+    <div class="drawer-head">
+      <h2 class="drawer-title" id="drawerTitleWater">🌊 Water &amp; ground</h2>
+      <button type="button" class="drawer-close" aria-label="Hide drawer">×</button>
+    </div>
+    <div class="brush-row" id="brushRow" role="radiogroup" aria-label="Paint">
+      <button type="button" class="brush" data-brush="water" role="radio" aria-checked="true"><span class="brush-emoji" aria-hidden="true">🌊</span><span class="brush-word">Water</span></button>
+      <span class="brush-divider" aria-hidden="true"></span>
+      <button type="button" class="brush" data-brush="grass" role="radio" aria-checked="false"><span class="brush-emoji" aria-hidden="true">🏕️</span><span class="brush-word">Grass</span></button>
+      <button type="button" class="brush" data-brush="dirt" role="radio" aria-checked="false"><span class="brush-emoji" aria-hidden="true">⛰️</span><span class="brush-word">Dirt</span></button>
+      <button type="button" class="brush" data-brush="sand" role="radio" aria-checked="false"><span class="brush-emoji" aria-hidden="true">🏜️</span><span class="brush-word">Sand</span></button>
+      <button type="button" class="brush" data-brush="snow" role="radio" aria-checked="false"><span class="brush-emoji" aria-hidden="true">☃️</span><span class="brush-word">Snow</span></button>
+    </div>
+    <p class="drawer-hint">Water makes rivers. Grass, dirt, sand and snow only change the colour of the ground — roads, places and routes stay the same. Drag from a square that already has that colour to erase it.</p>
+  </section>
+
   <section class="drawer" id="drawer-path" hidden aria-labelledby="drawerTitlePath">
     <div class="drawer-head">
       <h2 class="drawer-title" id="drawerTitlePath">🧭 Path</h2>
@@ -413,7 +441,7 @@
   <nav class="hotbar" id="hotbar" role="toolbar" aria-label="Map tools">
     <button type="button" class="slot" data-tool="build" aria-pressed="false" aria-controls="drawer-build"><span class="slot-key" aria-hidden="true">1</span><span class="slot-emoji" aria-hidden="true">🏗️</span><span class="slot-word">Build</span></button>
     <button type="button" class="slot" data-tool="road"  aria-pressed="true"><span class="slot-key" aria-hidden="true">2</span><span class="slot-emoji" aria-hidden="true">🛣️</span><span class="slot-word">Road</span></button>
-    <button type="button" class="slot" data-tool="water" aria-pressed="false"><span class="slot-key" aria-hidden="true">3</span><span class="slot-emoji" aria-hidden="true">🌊</span><span class="slot-word">Water</span></button>
+    <button type="button" class="slot" data-tool="water" aria-pressed="false" aria-controls="drawer-water"><span class="slot-key" aria-hidden="true">3</span><span class="slot-emoji" aria-hidden="true">🌊</span><span class="slot-word">Water</span></button>
     <button type="button" class="slot" data-tool="path"  aria-pressed="false" aria-controls="drawer-path"><span class="slot-key" aria-hidden="true">4</span><span class="slot-emoji" aria-hidden="true">🧭</span><span class="slot-word">Path</span></button>
     <button type="button" class="slot" data-tool="label" aria-pressed="false" aria-controls="drawer-label"><span class="slot-key" aria-hidden="true">5</span><span class="slot-emoji" aria-hidden="true">🏷️</span><span class="slot-word">Label</span></button>
     <button type="button" class="slot" data-tool="pin"   aria-pressed="false" aria-controls="drawer-pin"><span class="slot-key" aria-hidden="true">6</span><span class="slot-emoji" aria-hidden="true">📍</span><span class="slot-word">Pin</span></button>
@@ -435,6 +463,7 @@
   <ul class="help-list">
     <li>Pick a tool in the toolbar at the bottom, or press <strong>1–7</strong>.</li>
     <li><strong>🛣️ Road</strong> and <strong>🌊 Water</strong>: click or drag on the map to draw. Drag over it again to erase.</li>
+    <li>In the <strong>🌊 Water</strong> drawer you can also paint the ground: <strong>🏕️grass</strong>, <strong>⛰️ dirt</strong>, <strong>🏜️ sand</strong> or <strong>☃️ snow</strong>. It only changes the colour.</li>
     <li>Tap <strong>🛣️ Road</strong> again to switch to <strong>🛤️ Railroad</strong>. Trains only go from one <strong>🚉 train station</strong> to another.</li>
     <li><strong>🏗️ Build</strong>: drag a place onto the map. Tap it to remove it, or drag it to move it.</li>
     <li><strong>⚓ Ferry</strong>: put it next to water. Routes can sail from one ferry to another.</li>
@@ -492,7 +521,7 @@
   const PLACE_CHIPS = [
     "🏫", "🍞", "🧰", "🌳", "🏦", "☕", "💊", "🧸", "👟", "🍦",
     "🍫", "🎁", "🎈", "🍰", "🐶", "🏥", "🏠", "🏢", "⛪", "💈",
-    "🏬", "🏛️", "🎸", "🎯", "🍻", "✉️", "🔬", "🛒", "🎪",
+    "🏬", "🏛️", "🎸", "🎯", "🍻", "✉️", "🔬", "🛒", "🎪", "🏟️",
     "🏪", "🍕", "🎮", "✂️", "🐟", "⚓", "🚉", "🚇"
   ];
 
@@ -504,11 +533,11 @@
     "👟": "shoe store", "🍦": "ice cream shop", "🍫": "candy store",
     "🎁": "gift shop", "🎈": "party store", "🍰": "cake shop",
     "🐶": "pet shop", "🏥": "hospital", "🏠": "house", "🏢": "office",
-    "⛪": "church", "🚉": "train station",
+    "⛪": "church", "🚉": "train station", "🏟️": "stadium",
     "🏪": "conve\u00ADnience store", "🍕": "pizzeria", "🎮": "arcade",
     "✂️": "hair salon", "🐟": "fish market", "⚓": "ferry", "🚇": "subway",
-    "💈": "barbershop", "🏬": "depart\u00ADment store", "🏛️": "museum", "🎸": "music store",
-    "🎯": "sports bar", "🍻": "bar", "✉️": "post office", "🔬": "lab", "🛒": "supermarket", "🎪": "circus"
+    "💈": "barber\u00ADshop", "🏬": "depart\u00ADment store", "🏛️": "museum", "🎸": "music store",
+    "🎯": "sports bar", "🍻": "bar", "✉️": "post office", "🔬": "lab", "🛒": "super\u00ADmarket", "🎪": "circus"
   };
 
   const FERRY_SYMBOL = "⚓";
@@ -543,7 +572,111 @@
     return info ? `hue-rotate(${info.rotate}deg) brightness(${info.bright})` : '';
   }
 
-  let greenBg;
+  let greenBg, terrainLayer;
+
+  /* ═══════════════ TERRAIN (cosmetic ground colour) ═══════════════ */
+  // Each square may carry cell.terrain = 'dirt' | 'sand' | 'snow' (no
+  // value = grass). It is purely visual: nothing else reads it, and it
+  // survives whatever road, river or place sits on the square.
+  //
+  // Borders are drawn marching-squares style. Samples sit at the centre of
+  // every square; each "dual" cell between four neighbouring centres looks
+  // at which of its corners have the terrain (a 4-bit case) and fills the
+  // matching shape, cutting across at edge midpoints. Straight runs give
+  // straight borders, and corners come out bevelled instead of stepped.
+  // At the map edge the samples are clamped, so shapes run cleanly out to
+  // the border.
+  const TERRAINS = {
+    dirt: { color: '#b58c5c', label: 'Dirt' },
+    sand: { color: '#ead38e', label: 'Sand' },
+    snow: { color: '#f3f6f9', label: 'Snow' }
+  };
+  const TERRAIN_ORDER = ['dirt', 'sand', 'snow'];
+
+  // Marching-squares shape for one dual cell. Returns the outline as
+  // [x, y, isMidpoint] vertices. Where the outline runs from one edge
+  // midpoint to another it is drawn as a curve (see renderTerrain).
+  function terrainPolygon(tl, tr, br, bl, x0, y0, x1, y1) {
+    const xm = (x0 + x1) / 2, ym = (y0 + y1) / 2;
+    const TL = [x0, y0, 0], TR = [x1, y0, 0], BR = [x1, y1, 0], BL = [x0, y1, 0];
+    const T = [xm, y0, 1], R = [x1, ym, 1], B = [xm, y1, 1], L = [x0, ym, 1];
+    const code = (tl ? 8 : 0) | (tr ? 4 : 0) | (br ? 2 : 0) | (bl ? 1 : 0);
+    switch (code) {
+      case 0: return null;
+      case 1: return [L, B, BL];
+      case 2: return [B, R, BR];
+      case 3: return [L, R, BR, BL];
+      case 4: return [T, TR, R];
+      case 5: return [L, T, TR, R, B, BL];      // saddle: joined along the diagonal
+      case 6: return [T, TR, BR, B];
+      case 7: return [L, T, TR, BR, BL];
+      case 8: return [TL, T, L];
+      case 9: return [TL, T, B, BL];
+      case 10: return [TL, T, R, BR, B, L];     // saddle: joined along the diagonal
+      case 11: return [TL, T, R, BR, BL];
+      case 12: return [TL, TR, R, L];
+      case 13: return [TL, TR, R, B, BL];
+      case 14: return [TL, TR, BR, B, L];
+      case 15: return [TL, TR, BR, BL];
+    }
+  }
+
+  function renderTerrain() {
+    if (!terrainLayer) return;
+    terrainLayer.innerHTML = '';
+    const W = COLS * CELL, H = ROWS * CELL;
+    const clampX = x => Math.max(0, Math.min(W, x)), clampY = y => Math.max(0, Math.min(H, y));
+    const at = (r, c, t) => {
+      r = Math.max(0, Math.min(ROWS - 1, r)); c = Math.max(0, Math.min(COLS - 1, c));
+      return grid[r][c].terrain === t;
+    };
+    TERRAIN_ORDER.forEach(t => {
+      let used = false;
+      for (let r = 0; r < ROWS && !used; r++) for (let c = 0; c < COLS; c++) if (grid[r][c].terrain === t) { used = true; break; }
+      if (!used) return;
+      let d = '';
+      for (let i = -1; i < ROWS; i++) {
+        for (let j = -1; j < COLS; j++) {
+          const x0 = j * CELL + CELL / 2, y0 = i * CELL + CELL / 2;
+          const poly = terrainPolygon(at(i, j, t), at(i, j + 1, t), at(i + 1, j + 1, t), at(i + 1, j, t),
+                                      x0, y0, x0 + CELL, y0 + CELL);
+          if (!poly) continue;
+          // Border segments (midpoint → midpoint) become quadratic curves
+          // with their control point at the dual cell's centre. That makes
+          // every curve leave each cell edge at a right angle — the same
+          // direction a straight border crosses it — so neighbouring cells'
+          // curves and straight runs join smoothly: single squares turn
+          // into rounded blobs, corners into round bends.
+          const qx = clampX(x0 + CELL / 2), qy = clampY(y0 + CELL / 2);
+          d += 'M' + clampX(poly[0][0]) + ' ' + clampY(poly[0][1]);
+          for (let k = 1; k <= poly.length; k++) {
+            const a = poly[k - 1], b = poly[k % poly.length];
+            const bx = clampX(b[0]), by = clampY(b[1]);
+            d += (a[2] && b[2]) ? `Q${qx} ${qy} ${bx} ${by}` : `L${bx} ${by}`;
+          }
+          d += 'Z';
+        }
+      }
+      const p = document.createElementNS(SVG_NS, 'path');
+      p.setAttribute('d', d);
+      p.setAttribute('fill', TERRAINS[t].color);
+      // a hairline of the same colour hides anti-aliasing seams between
+      // the little polygons
+      p.setAttribute('stroke', TERRAINS[t].color);
+      p.setAttribute('stroke-width', '1');
+      p.setAttribute('stroke-linejoin', 'round');
+      terrainLayer.appendChild(p);
+    });
+  }
+
+  let terrainFrame = 0;
+  function setTerrain(r, c, t) {
+    const cell = grid[r][c];
+    const next = (t && t !== 'grass') ? t : undefined;
+    if (cell.terrain === next) return;
+    if (next) cell.terrain = next; else delete cell.terrain;
+    if (!terrainFrame) terrainFrame = requestAnimationFrame(() => { terrainFrame = 0; renderTerrain(); });
+  }
 
   function buildGreenBg() {
     greenBg = document.createElementNS(SVG_NS, "g");
@@ -553,11 +686,16 @@
     greenRect.setAttribute("width", COLS * CELL); greenRect.setAttribute("height", ROWS * CELL);
     greenRect.setAttribute("fill", "#8bc76b");
     greenBg.appendChild(greenRect);
+    // cosmetic ground colours (dirt / sand / snow) sit between the grass
+    // and the grid dots, and under every road, river and place
+    terrainLayer = document.createElementNS(SVG_NS, "g");
+    terrainLayer.setAttribute("id", "terrainLayer");
+    greenBg.appendChild(terrainLayer);
     for (let i = 1; i < COLS; i++) {
       const line = document.createElementNS(SVG_NS, "line");
       line.setAttribute("x1", i * CELL); line.setAttribute("x2", i * CELL);
       line.setAttribute("y1", 0); line.setAttribute("y2", ROWS * CELL);
-      line.setAttribute("stroke", "#6ea852"); line.setAttribute("stroke-width", "1.5");
+      line.setAttribute("stroke", "rgba(0,0,0,0.17)"); line.setAttribute("stroke-width", "1.5"); // ≈ #6ea852 on grass, still visible on sand/snow
       line.setAttribute("stroke-dasharray", "2 6");
       greenBg.appendChild(line);
     }
@@ -565,11 +703,12 @@
       const line = document.createElementNS(SVG_NS, "line");
       line.setAttribute("y1", i * CELL); line.setAttribute("y2", i * CELL);
       line.setAttribute("x1", 0); line.setAttribute("x2", COLS * CELL);
-      line.setAttribute("stroke", "#6ea852"); line.setAttribute("stroke-width", "1.5");
+      line.setAttribute("stroke", "rgba(0,0,0,0.17)"); line.setAttribute("stroke-width", "1.5"); // ≈ #6ea852 on grass, still visible on sand/snow
       line.setAttribute("stroke-dasharray", "2 6");
       greenBg.appendChild(line);
     }
     svg.appendChild(greenBg);
+    renderTerrain();
   }
 
   function applyTheme() {
@@ -671,10 +810,11 @@
     for (let r = 0; r < ROWS; r++) {
       for (let c = 0; c < COLS; c++) {
         const cell = grid[r][c];
-        if (cell.kind === null) continue;
+        if (cell.kind === null && !cell.terrain) continue;
         const nr = r + frontChangeRows, nc = c + frontChangeCols;
         if (nr < 0 || nr >= newRows || nc < 0 || nc >= newCols) continue;
         newGrid[nr][nc] = { kind: cell.kind, symbol: cell.symbol, special: cell.special, pin: cell.pin };
+        if (cell.terrain) newGrid[nr][nc].terrain = cell.terrain;
       }
     }
 
@@ -813,6 +953,86 @@
   const SIDEWALK_EXTRA = CELL * 0.10;         // sidewalk band on each side
   const RIVER_ARM_W = CELL * 0.9 * 0.75;      // river width, 25% narrower
 
+  // Rivers are drawn with curves instead of square corners:
+  //  · a bend (two perpendicular arms) is a quarter-ring of constant
+  //    width pivoting on the tile corner, like a railroad curve;
+  //  · a dead end or a lone pond gets a round end;
+  //  · where three or four arms meet, each open inside corner gets a
+  //    small concave fillet so the banks flow into each other.
+  // Wide water still fills its corner quadrants exactly as before, so
+  // lakes and wide rivers stay solid, and their outer corners round off.
+  function riverSame(rr, cc) {
+    if (rr < 0 || rr >= ROWS || cc < 0 || cc >= COLS) return true;
+    const n = grid[rr][cc];
+    return n.kind === 'river' || isWaterBridge(n);
+  }
+  function drawRiverTile(art, r, c, on) {
+    const x0 = c * CELL, y0 = r * CELL, cx = x0 + CELL / 2, cy = y0 + CELL / 2;
+    const h = RIVER_ARM_W / 2;
+    const dirs = ['N', 'S', 'E', 'W'].filter(k => on[k]);
+    const V = { N: [0, -1], S: [0, 1], E: [1, 0], W: [-1, 0] };
+    const quad = (d1, d2) => { // is this corner quadrant solid water?
+      if (!on[d1] || !on[d2]) return false;
+      const [a1, b1] = V[d1], [a2, b2] = V[d2]; // [dx, dy]
+      return riverSame(r + b1, c + a1) && riverSame(r + b2, c + a2) && riverSame(r + b1 + b2, c + a1 + a2);
+    };
+    // a hairline outline in the same colour hides anti-aliasing seams between pieces
+    const water = attrs => art.appendChild(svgEl(attrs.d ? 'path' : attrs.r ? 'circle' : 'rect', Object.assign({ fill: RIVER_COLOR, stroke: RIVER_COLOR, 'stroke-width': 0.8 }, attrs)));
+    const CORNERS = [['N', 'E'], ['E', 'S'], ['S', 'W'], ['W', 'N']];
+
+    // solid corner quadrants (wide water)
+    CORNERS.forEach(([d1, d2]) => {
+      if (!quad(d1, d2)) return;
+      water({ x: V[d1][0] + V[d2][0] > 0 ? cx : x0, y: V[d1][1] + V[d2][1] > 0 ? cy : y0, width: CELL / 2, height: CELL / 2 });
+    });
+
+    if (dirs.length === 0) { water({ cx, cy, r: h }); return; }
+
+    if (dirs.length === 1) {
+      const [dx, dy] = V[dirs[0]];
+      water(dx ? { x: dx > 0 ? cx : x0, y: cy - h, width: CELL / 2, height: 2 * h }
+               : { x: cx - h, y: dy > 0 ? cy : y0, width: 2 * h, height: CELL / 2 });
+      water({ cx, cy, r: h });
+      return;
+    }
+
+    if (dirs.length === 2 && !(on.N && on.S) && !(on.E && on.W)) {
+      // bend: quarter ring around the tile corner between the two arms
+      const px = on.E ? x0 + CELL : x0, py = on.S ? y0 + CELL : y0;
+      const angOf = d => { const m = edgeMid(r, c, d); return Math.atan2(m.y - py, m.x - px); };
+      let t0 = angOf(dirs[0]), t1 = angOf(dirs[1]);
+      let dt = t1 - t0; while (dt > Math.PI) dt -= 2 * Math.PI; while (dt < -Math.PI) dt += 2 * Math.PI;
+      const R0 = CELL / 2 - h, R1 = CELL / 2 + h, N = 18;
+      const outer = [], inner = [];
+      for (let i = 0; i <= N; i++) {
+        const t = t0 + dt * i / N;
+        outer.push([px + R1 * Math.cos(t), py + R1 * Math.sin(t)]);
+        inner.push([px + R0 * Math.cos(t), py + R0 * Math.sin(t)]);
+      }
+      const pts = outer.concat(inner.reverse());
+      water({ d: 'M' + pts.map(p => p[0].toFixed(2) + ' ' + p[1].toFixed(2)).join('L') + 'Z' });
+      return;
+    }
+
+    // straight, T-junction or crossing: the usual centre square + arms
+    water({ x: cx - h, y: cy - h, width: 2 * h, height: 2 * h });
+    dirs.forEach(k => {
+      const [dx, dy] = V[k];
+      water(dx ? { x: dx > 0 ? cx : x0, y: cy - h, width: CELL / 2, height: 2 * h }
+               : { x: cx - h, y: dy > 0 ? cy : y0, width: 2 * h, height: CELL / 2 });
+    });
+    // concave fillets in the open inside corners between neighbouring arms
+    const f = 9;
+    CORNERS.forEach(([d1, d2]) => {
+      if (!on[d1] || !on[d2] || quad(d1, d2)) return;
+      const sx = V[d1][0] + V[d2][0], sy = V[d1][1] + V[d2][1];
+      const px = cx + sx * h, py = cy + sy * h;          // where the two banks meet
+      const ax = px + sx * f, by = py + sy * f;
+      const sweep = sx * sy > 0 ? 0 : 1;
+      water({ d: `M${px} ${py}L${ax} ${py}A${f} ${f} 0 0 ${sweep} ${px} ${by}Z` });
+    });
+  }
+
   function drawArmSet(art, cx, cy, r, c, on, armW, color, opts) {
     opts = opts || {};
     const x0 = c * CELL, y0 = r * CELL;
@@ -838,6 +1058,7 @@
         // an edge extension), the corner should fill in rather than
         // leave a hole right at the border.
         if (rr < 0 || rr >= ROWS || cc < 0 || cc >= COLS) return true;
+        if (kind === 'river' && isWaterBridge(grid[rr][cc])) return true;
         return grid[rr][cc].kind === kind;
       };
       const corners = [
@@ -1177,7 +1398,7 @@
       const on = riverNeighbors(r, c);
       extendWaterToGridEdges(r, c, on);
       drawFerryDocks(art, r, c, on);
-      drawArmSet(art, cx, cy, r, c, on, RIVER_ARM_W, RIVER_COLOR, { sidewalk: false, laneLines: false, crossings: false, cornerFillKind: 'river' });
+      drawRiverTile(art, r, c, on);
       return;
     }
   }
@@ -1299,7 +1520,51 @@
     "tunnel-w": { label: "Tunnel (west entrance)" }
   };
 
-  function drawSpecialTile(art, r, c, special) {
+  // Tiles that carry water: plain river, and any bridge (the water
+  // runs under it).
+  function isWaterBridge(cell) {
+    return !!cell && cell.kind === 'special' && /^(rail)?bridge-[hv]$/.test(cell.special || '');
+  }
+  function carriesWater(rr, cc) {
+    if (rr < 0 || rr >= ROWS || cc < 0 || cc >= COLS) return false;
+    const n = grid[rr][cc];
+    return n.kind === 'river' || isWaterBridge(n);
+  }
+  // A bridge only draws a river-wide strip of water under its deck. When
+  // the tile beyond either end of the deck is water too (another bridge
+  // span, or more river), fill that half of the tile with water so the
+  // spans run on over open water instead of little islands of grass. Where
+  // two spans meet, a short pier in the sidewalk colour pokes out from
+  // under the deck. `ends` are the two world directions along the deck;
+  // `deckW` is the deck's width. Drawn before the deck itself.
+  function drawBridgeWater(art, r, c, ends, deckW) {
+    const x0 = c * CELL, y0 = r * CELL, cx = x0 + CELL / 2, cy = y0 + CELL / 2;
+    ends.forEach(dir => {
+      const [dr, dc] = { N: [-1, 0], S: [1, 0], E: [0, 1], W: [0, -1] }[dir];
+      const nr = r + dr, nc = c + dc;
+      if (!carriesWater(nr, nc)) return;
+      const half = {
+        N: { x: x0, y: y0, width: CELL, height: CELL / 2 },
+        S: { x: x0, y: cy, width: CELL, height: CELL / 2 },
+        W: { x: x0, y: y0, width: CELL / 2, height: CELL },
+        E: { x: cx, y: y0, width: CELL / 2, height: CELL }
+      }[dir];
+      art.appendChild(svgEl('rect', Object.assign({ fill: RIVER_COLOR }, half)));
+      if (isWaterBridge(grid[nr][nc])) {
+        const pierW = deckW + 12, pierT = 4; // this tile's half of an 8-unit pier
+        const pier = {
+          N: { x: cx - pierW / 2, y: y0, width: pierW, height: pierT },
+          S: { x: cx - pierW / 2, y: y0 + CELL - pierT, width: pierW, height: pierT },
+          W: { x: x0, y: cy - pierW / 2, width: pierT, height: pierW },
+          E: { x: x0 + CELL - pierT, y: cy - pierW / 2, width: pierT, height: pierW }
+        }[dir];
+        art.appendChild(svgEl('rect', Object.assign({ fill: SIDEWALK_COLOR }, pier)));
+      }
+    });
+  }
+
+  function drawSpecialTile(art, r, c, special, drawOpts) {
+    const preview = !!(drawOpts && drawOpts.preview);
     const x0 = c * CELL, y0 = r * CELL, cx = x0 + CELL / 2, cy = y0 + CELL / 2;
     const roadColor = ROAD_COLOR, riverColor = RIVER_COLOR;
 
@@ -1330,6 +1595,11 @@
         // the ties and rails over it, with a railing on each side
         g.appendChild(svgEl('rect', { x: cx - RIVER_ARM_W / 2, y: y0, width: RIVER_ARM_W, height: CELL, fill: riverColor }));
         const deckW = BALLAST_W + 6;
+        // open water / piers at the deck ends — drawn in world space
+        // (outside the rotated group) and before it
+        const wet = svgEl('g', {});
+        art.insertBefore(wet, g);
+        if (!preview) drawBridgeWater(wet, r, c, special.endsWith('-v') ? ['N', 'S'] : ['E', 'W'], deckW);
         g.appendChild(svgEl('rect', { x: x0, y: cy - deckW / 2, width: CELL, height: deckW, fill: '#8a6d3b' }));
         [-1, 1].forEach(s => g.appendChild(svgEl('line', { x1: x0, x2: x0 + CELL, y1: cy + s * deckW / 2, y2: cy + s * deckW / 2, stroke: '#5c4626', 'stroke-width': 3 })));
         drawTracks(g, [Object.assign(track, { ballast: false })]);
@@ -1388,9 +1658,11 @@
       }
       river.setAttribute("fill", riverColor);
       sidewalk1.setAttribute("fill", SIDEWALK_COLOR);
+      art.appendChild(river);
+      if (!preview) drawBridgeWater(art, r, c, special === "bridge-h" ? ['E', 'W'] : ['N', 'S'], sw);
       road.setAttribute("fill", "#8a6d3b");
       [rail1, rail2].forEach(l => { l.setAttribute("stroke", "#5c4626"); l.setAttribute("stroke-width", "3"); });
-      art.appendChild(river); art.appendChild(sidewalk1); art.appendChild(road); art.appendChild(rail1); art.appendChild(rail2);
+      art.appendChild(sidewalk1); art.appendChild(road); art.appendChild(rail1); art.appendChild(rail2);
       return;
     }
 
@@ -1455,12 +1727,13 @@
     s.setAttribute("viewBox", "0 0 " + CELL + " " + CELL);
     const tempArt = document.createElementNS(SVG_NS, "g");
     s.appendChild(tempArt);
-    drawSpecialTile(tempArt, 0, 0, special);
+    drawSpecialTile(tempArt, 0, 0, special, { preview: true }); // no neighbours in a drawer preview
     return s;
   }
 
   let currentTool = 'road'; // 'build' | 'road' | 'water' | 'path' | 'label' | 'pin'
   let roadMode = 'road';    // the Road slot paints 'road' or 'rail' — tap it again to switch
+  let waterBrush = 'water'; // the Water slot paints 'water', or a ground colour: 'grass' | 'dirt' | 'sand' | 'snow'
   let selectedPinColor = 'red'; // color the 📍 Pin tool stamps on a tap
 
   function setKind(r, c, kind, opts) {
@@ -1587,6 +1860,16 @@
       pointerId = e.pointerId;
       rect.setPointerCapture(e.pointerId);
 
+      // Ground colour brushes: paint (or, starting on the same colour,
+      // erase back to grass) on any square, whatever is on it — the
+      // road, river or place there is left completely alone.
+      if (currentTool === 'water' && waterBrush !== 'water') {
+        const same = waterBrush !== 'grass' && grid[r][c].terrain === waterBrush;
+        mode = same ? 'terrain-erase' : 'terrain-paint';
+        setTerrain(r, c, same ? 'grass' : waterBrush);
+        return;
+      }
+
       const cell = grid[r][c];
       const paintKind = currentTool === 'water' ? 'river' : roadMode;
       if (cell.kind === 'building') {
@@ -1643,6 +1926,17 @@
           ghost.style.left = (e.clientX - ghost.offsetWidth / 2) + 'px';
           ghost.style.top = (e.clientY - ghost.offsetHeight / 2) + 'px';
         }
+        return;
+      }
+
+      if (mode === 'terrain-paint' || mode === 'terrain-erase') {
+        if (!moved && Math.hypot(dx, dy) >= 6) moved = true;
+        const els = document.elementsFromPoint(e.clientX, e.clientY);
+        const targetRect = els.find(el => el.classList && el.classList.contains('cell-hit'));
+        if (!targetRect) return;
+        const tr = Number(targetRect.dataset.row), tc = Number(targetRect.dataset.col);
+        if (mode === 'terrain-paint') setTerrain(tr, tc, waterBrush);
+        else if (grid[tr][tc].terrain === waterBrush) setTerrain(tr, tc, 'grass');
         return;
       }
 
@@ -1767,6 +2061,7 @@
         // captioned place chips shrink to a plain emoji tile while
         // dragging, so centre that tile under the pointer
         if (chip.classList.contains('place-chip')) { offsetX = 23; offsetY = 23; }
+        collapseDrawerForDrag(); // get the drawer out of the way of the grid
         dragGhost = chip.cloneNode(true);
         dragGhost.classList.add('dragging');
         dragGhost.style.width = rect.width + 'px';
@@ -1798,7 +2093,7 @@
             setKind(r, c, 'building', { symbol: chip.dataset.symbol });
           }
         }
-        dragGhost.remove(); dragGhost = null;
+        dragGhost.remove(); dragGhost = null; endDrawerDrag();
       } else if (!wasMoved) {
         for (let r = 0; r < ROWS; r++) {
           for (let c = 0; c < COLS; c++) {
@@ -1809,7 +2104,7 @@
     });
 
     chip.addEventListener('pointercancel', () => {
-      if (dragGhost) { dragGhost.remove(); dragGhost = null; }
+      if (dragGhost) { dragGhost.remove(); dragGhost = null; endDrawerDrag(); }
       pointerId = null; moved = false;
     });
   }
@@ -1833,6 +2128,7 @@
         moved = true;
         const rect = chip.getBoundingClientRect();
         offsetX = startX - rect.left; offsetY = startY - rect.top;
+        collapseDrawerForDrag(); // get the drawer out of the way of the grid
         dragGhost = chip.cloneNode(true);
         dragGhost.classList.add('dragging');
         dragGhost.style.width = rect.width + 'px';
@@ -1860,7 +2156,7 @@
             setKind(r, c, 'special', { special: chip.dataset.special });
           }
         }
-        dragGhost.remove(); dragGhost = null;
+        dragGhost.remove(); dragGhost = null; endDrawerDrag();
       } else if (!wasMoved) {
         for (let r = 0; r < ROWS; r++) {
           for (let c = 0; c < COLS; c++) {
@@ -1871,7 +2167,7 @@
     });
 
     chip.addEventListener('pointercancel', () => {
-      if (dragGhost) { dragGhost.remove(); dragGhost = null; }
+      if (dragGhost) { dragGhost.remove(); dragGhost = null; endDrawerDrag(); }
       pointerId = null; moved = false;
     });
   }
@@ -1909,6 +2205,7 @@
         moved = true;
         const rect = chip.getBoundingClientRect();
         offsetX = startX - rect.left; offsetY = startY - rect.top;
+        collapseDrawerForDrag(); // get the drawer out of the way of the grid
         dragGhost = chip.cloneNode(true);
         dragGhost.classList.add('dragging');
         dragGhost.style.width = rect.width + 'px';
@@ -1935,14 +2232,14 @@
           // pins only make sense stacked on an existing chip
           if (grid[r][c].kind === 'building') setPin(r, c, colorKey);
         }
-        dragGhost.remove(); dragGhost = null;
+        dragGhost.remove(); dragGhost = null; endDrawerDrag();
       } else if (!wasMoved) {
         selectPinColor(colorKey);
       }
     });
 
     chip.addEventListener('pointercancel', () => {
-      if (dragGhost) { dragGhost.remove(); dragGhost = null; }
+      if (dragGhost) { dragGhost.remove(); dragGhost = null; endDrawerDrag(); }
       pointerId = null; moved = false;
     });
   }
@@ -1996,7 +2293,8 @@
   document.getElementById('clearAllBtn').addEventListener('click', () => {
     clearAllPaths();
     clearAllLabels();
-    for (let r = 0; r < ROWS; r++) for (let c = 0; c < COLS; c++) clearCell(r, c);
+    for (let r = 0; r < ROWS; r++) for (let c = 0; c < COLS; c++) { clearCell(r, c); delete grid[r][c].terrain; }
+    renderTerrain();
     document.getElementById('optionsDialog').close();
   });
 
@@ -2998,16 +3296,38 @@
   // drawer that opens above the hotbar; Road and Water have none. Tapping
   // the tool that's already selected hides/shows its drawer, so it can be
   // tucked away when it covers the part of the map you're working on.
-  const DRAWER_TOOLS = ['build', 'path', 'label', 'pin'];
+  const DRAWER_TOOLS = ['build', 'water', 'path', 'label', 'pin'];
   const toolSlots = Array.from(document.querySelectorAll('.slot[data-tool]'));
   const drawers = {};
   DRAWER_TOOLS.forEach(t => { drawers[t] = document.getElementById('drawer-' + t); });
   let drawerOpen = false;
 
+  // Picking up a chip from a drawer collapses that drawer so it doesn't
+  // cover the squares you want to drop on. While the drag is still going,
+  // the drawer is only made invisible (not display:none), because the
+  // chip being dragged lives inside it and keeps the pointer captured;
+  // once the chip is dropped it's hidden properly. Tap the tool again
+  // to bring the drawer back.
+  let dragHidingDrawer = false;
+  function collapseDrawerForDrag() {
+    if (!drawerOpen) return;
+    drawerOpen = false;
+    dragHidingDrawer = true;
+    renderDrawers();
+  }
+  function endDrawerDrag() {
+    if (!dragHidingDrawer) return;
+    dragHidingDrawer = false;
+    renderDrawers();
+  }
+
   function renderDrawers() {
     DRAWER_TOOLS.forEach(t => {
       const show = drawerOpen && currentTool === t;
-      drawers[t].hidden = !show;
+      const d = drawers[t];
+      if (show) { d.hidden = false; d.style.visibility = ''; }
+      else if (dragHidingDrawer && !d.hidden) { d.style.visibility = 'hidden'; }
+      else { d.hidden = true; d.style.visibility = ''; }
     });
     toolSlots.forEach(btn => {
       if (btn.hasAttribute('aria-controls')) {
@@ -3018,6 +3338,17 @@
       labelTextInput.focus({ preventScroll: true });
     }
   }
+
+  // Water slot: shows whichever brush is picked in its drawer
+  const BRUSH_FACE = { water: ['🌊', 'Water'], grass: ['🏕️', 'Grass'], dirt: ['⛰️', 'Dirt'], sand: ['🏜️', 'Sand'], snow: ['☃️', 'Snow'] };
+  const waterSlot = document.querySelector('.slot[data-tool="water"]');
+  function selectBrush(b) {
+    waterBrush = b;
+    document.querySelectorAll('#brushRow .brush').forEach(el => el.setAttribute('aria-checked', String(el.dataset.brush === b)));
+    waterSlot.querySelector('.slot-emoji').textContent = BRUSH_FACE[b][0];
+    waterSlot.querySelector('.slot-word').textContent = BRUSH_FACE[b][1];
+  }
+  document.querySelectorAll('#brushRow .brush').forEach(el => el.addEventListener('click', () => selectBrush(el.dataset.brush)));
 
   const roadSlot = document.querySelector('.slot[data-tool="road"]');
   function renderRoadSlot() {
@@ -3090,8 +3421,9 @@
     for (let r = 0; r < ROWS; r++) {
       for (let c = 0; c < COLS; c++) {
         const cell = grid[r][c];
-        if (!cell.kind) continue;
-        const out = { r, c, kind: cell.kind };
+        if (!cell.kind && !cell.terrain) continue;
+        const out = { r, c, kind: cell.kind || null };
+        if (cell.terrain) out.terrain = cell.terrain;
         if (cell.kind === 'building') { out.symbol = cell.symbol; if (cell.pin) out.pin = cell.pin; }
         if (cell.kind === 'special') out.special = cell.special;
         cells.push(out);
@@ -3153,6 +3485,10 @@
     if (!(cols >= 3 && cols <= 24 && rows >= 3 && rows <= 24)) throw new Error('The grid size in this file is not valid.');
     const pinKeys = PIN_COLORS.map(p => p.key), colorNames = PATH_COLORS.map(p => p.name);
     const inGrid = (r, c) => Number.isInteger(r) && Number.isInteger(c) && r >= 0 && r < rows && c >= 0 && c < cols;
+    // ground colour is stored per square and is independent of what's on it
+    const terrain = (Array.isArray(data.cells) ? data.cells : [])
+      .filter(x => x && inGrid(x.r, x.c) && Object.prototype.hasOwnProperty.call(TERRAINS, x.terrain))
+      .map(x => ({ r: x.r, c: x.c, terrain: x.terrain }));
     const cells = (Array.isArray(data.cells) ? data.cells : []).filter(x => x && inGrid(x.r, x.c)).map(x => {
       if (x.kind === 'building' && typeof x.symbol === 'string' && x.symbol.length <= 16)
         return { r: x.r, c: x.c, kind: 'building', symbol: x.symbol, pin: pinKeys.includes(x.pin) ? x.pin : null };
@@ -3172,7 +3508,7 @@
     const paths = (Array.isArray(data.paths) ? data.paths : []).filter(p =>
       p && p.start && p.end && inGrid(p.start.r, p.start.c) && inGrid(p.end.r, p.end.c) && colorNames.includes(p.color)
     ).map(p => ({ start: { r: p.start.r, c: p.start.c }, end: { r: p.end.r, c: p.end.c }, color: p.color }));
-    return { cols, rows, cells, labels, paths };
+    return { cols, rows, cells, labels, paths, terrain };
   }
 
   function loadCity(city) {
@@ -3190,6 +3526,8 @@
       else setKind(x.r, x.c, x.kind);
     });
     city.cells.forEach(x => { if (x.pin) setPin(x.r, x.c, x.pin); });
+    (city.terrain || []).forEach(x => { grid[x.r][x.c].terrain = x.terrain; });
+    renderTerrain();
     city.labels.forEach(l => createLabel(l.x, l.y, l.text, l.orientation));
     city.paths.forEach(p => {
       // a route only makes sense between two places
