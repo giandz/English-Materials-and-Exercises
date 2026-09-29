@@ -158,6 +158,25 @@
     box-shadow:0 1px 2px rgba(0,0,0,0.05);
     flex-shrink:0;
   }
+  /* Build-drawer place chips: emoji over a caption, like the hotbar slots.
+     The caption lives only in the drawer — placed buildings are drawn in
+     the SVG from data-symbol and never get it. */
+  .place-chip{
+    width:74px; height:auto; min-height:62px;
+    flex-direction:column; gap:3px;
+    padding:7px 3px 6px;
+  }
+  #placePool{ display:grid; grid-template-columns:repeat(auto-fill, minmax(66px, 1fr)); gap:8px; }
+  #placePool .place-chip{ width:auto; }
+  .place-chip-emoji{ font-size:22px; line-height:1; }
+  .place-chip-name{
+    font-size:10.5px; font-weight:600; line-height:1.15;
+    color:var(--text-secondary); text-align:center;
+    overflow-wrap:break-word; hyphens:manual;
+  }
+  .place-chip.dragging{ width:46px !important; height:46px !important; min-height:0; padding:0; }
+  .place-chip.dragging .place-chip-name{ display:none; }
+
   .chip.dragging{
     position:fixed;
     z-index:999;
@@ -293,6 +312,14 @@
   .size-dialog::backdrop{ background:rgba(0,0,0,.34); }
   .size-dialog h2{ font-size:15px; font-weight:650; margin:0 0 12px; }
   .size-grid{ display:grid; grid-template-columns:auto 1fr; gap:8px 12px; align-items:center; }
+  .options-dialog{ width:min(400px, calc(100vw - 32px)); }
+  .opt-section{ border-top:1px solid var(--color-border-secondary); padding-top:12px; margin-top:12px; }
+  .opt-title{ font-size:13px; font-weight:650; margin:0 0 8px; color:var(--text-primary); }
+  .opt-note{ font-size:12.5px; line-height:1.45; color:var(--text-secondary); margin:0 0 10px; }
+  .opt-row{ display:flex; flex-wrap:wrap; gap:8px; margin-top:10px; }
+  .opt-status{ font-size:12.5px; margin:8px 0 0; color:var(--slot-accent); min-height:1em; }
+  .opt-status.is-error{ color:#c62828; }
+  @media (prefers-color-scheme: dark){ .opt-status.is-error{ color:#ef7a7a; } }
   .size-actions{ display:flex; flex-wrap:wrap; justify-content:space-between; gap:8px; margin-top:16px; }
   .size-actions .right{ display:flex; gap:8px; }
   button.action-btn.primary{ background:var(--slot-accent); border-color:var(--slot-accent); color:#fff; }
@@ -376,7 +403,7 @@
       <button type="button" class="drawer-close" aria-label="Hide drawer">×</button>
     </div>
     <div class="pool tool-pool" id="labelOptions">
-      <input type="text" class="size-select" id="labelTextInput" placeholder="Street name..." style="flex:1;min-width:140px;">
+      <input type="text" class="size-select" id="labelTextInput" placeholder="Name..." style="flex:1;min-width:140px;">
       <button class="action-btn" id="labelOrientToggle">↔️ Horizontal</button>
       <button class="action-btn" id="clearLabelsBtn">Erase all labels</button>
     </div>
@@ -403,7 +430,7 @@
     <button type="button" class="slot" data-tool="label" aria-pressed="false" aria-controls="drawer-label"><span class="slot-key" aria-hidden="true">5</span><span class="slot-emoji" aria-hidden="true">🏷️</span><span class="slot-word">Label</span></button>
     <button type="button" class="slot" data-tool="pin"   aria-pressed="false" aria-controls="drawer-pin"><span class="slot-key" aria-hidden="true">6</span><span class="slot-emoji" aria-hidden="true">📍</span><span class="slot-word">Pin</span></button>
     <span class="hotbar-divider" aria-hidden="true"></span>
-    <button type="button" class="slot" id="sizeSlot" aria-haspopup="dialog" aria-controls="sizeDialog"><span class="slot-key" aria-hidden="true">7</span><span class="slot-emoji" aria-hidden="true">🤏</span><span class="slot-word">Size</span></button>
+    <button type="button" class="slot" id="optionsSlot" aria-haspopup="dialog" aria-controls="optionsDialog"><span class="slot-key" aria-hidden="true">7</span><span class="slot-emoji" aria-hidden="true">⚙️</span><span class="slot-word">Options</span></button>
   </nav>
 </div>
 
@@ -414,31 +441,51 @@
   <ul class="help-list">
     <li>Pick a tool in the toolbar at the bottom, or press <strong>1–7</strong>.</li>
     <li><strong>🛣️ Road</strong> and <strong>🌊 Water</strong>: click or drag on the map to draw. Drag over it again to erase.</li>
+    <li>Tap <strong>🛣️ Road</strong> again to switch to <strong>🛤️ Railroad</strong>. Trains only go from one <strong>🚉 train station</strong> to another.</li>
     <li><strong>🏗️ Build</strong>: drag a place onto the map. Tap it to remove it, or drag it to move it.</li>
     <li><strong>⚓ Ferry</strong>: put it next to water. Routes can sail from one ferry to another.</li>
     <li><strong>🚇 Subway</strong>: routes can go from one station to any other station.</li>
     <li><strong>🧭 Path</strong>, <strong>🏷️ Label</strong> and <strong>📍 Pin</strong> open a drawer with options. Tap the tool again to hide it.</li>
+    <li><strong>⚙️ Options</strong>: change the grid size, save your city to a file or open a saved one, or clear the grid.</li>
   </ul>
   <div class="size-actions" style="justify-content:flex-end;">
     <button type="button" class="action-btn primary" id="helpCloseBtn">Got it</button>
   </div>
 </dialog>
 
-<dialog class="size-dialog" id="sizeDialog" aria-labelledby="sizeDialogTitle">
-  <h2 id="sizeDialogTitle">🤏 Grid size</h2>
-  <div class="size-grid">
-    <label class="size-label" for="colsSelect">Columns</label>
-    <select class="size-select" id="colsSelect"></select>
-    <label class="size-label" for="rowsSelect">Rows</label>
-    <select class="size-select" id="rowsSelect"></select>
+<dialog class="size-dialog options-dialog" id="optionsDialog" aria-labelledby="optionsDialogTitle">
+  <div class="drawer-head">
+    <h2 id="optionsDialogTitle" style="margin:0;">⚙️ Options</h2>
+    <button type="button" class="drawer-close" id="optionsCloseX" aria-label="Close">×</button>
   </div>
-  <div class="size-actions">
-    <button type="button" class="action-btn danger" id="clearAllBtn">Clear grid</button>
-    <div class="right">
-      <button type="button" class="action-btn" id="sizeCancelBtn">Cancel</button>
-      <button type="button" class="action-btn primary" id="resizeBtn">Apply</button>
+
+  <section class="opt-section" aria-labelledby="optSizeTitle">
+    <h3 class="opt-title" id="optSizeTitle">Grid size</h3>
+    <div class="size-grid">
+      <label class="size-label" for="colsSelect">Columns</label>
+      <select class="size-select" id="colsSelect"></select>
+      <label class="size-label" for="rowsSelect">Rows</label>
+      <select class="size-select" id="rowsSelect"></select>
     </div>
-  </div>
+    <div class="opt-row"><button type="button" class="action-btn primary" id="resizeBtn">Apply size</button></div>
+  </section>
+
+  <section class="opt-section" aria-labelledby="optFileTitle">
+    <h3 class="opt-title" id="optFileTitle">Save &amp; open</h3>
+    <p class="opt-note">Save the whole city — size, tiles, places, pins, labels and routes — to a file, or open a file you saved before.</p>
+    <div class="opt-row">
+      <button type="button" class="action-btn" id="saveBtn">💾 Save to file</button>
+      <button type="button" class="action-btn" id="loadBtn">📂 Open file</button>
+      <input type="file" id="loadInput" accept=".json,application/json" hidden>
+    </div>
+    <p class="opt-status" id="fileStatus" role="status" aria-live="polite"></p>
+  </section>
+
+  <section class="opt-section" aria-labelledby="optClearTitle">
+    <h3 class="opt-title" id="optClearTitle">Clear</h3>
+    <p class="opt-note">Removes everything on the map, including labels and routes. Save first if you want to keep it.</p>
+    <div class="opt-row"><button type="button" class="action-btn danger" id="clearAllBtn">Clear grid</button></div>
+  </section>
 </dialog>
 
 <script>
@@ -449,13 +496,31 @@
 
   const PLACE_CHIPS = [
     "🏫", "🍞", "🧰", "🌳", "🏦", "☕", "💊", "🧸", "👟", "🍦",
-    "🍫", "🎁", "🎈", "🍰", "🐶", "🏥", "🏠", "🏢", "⛪", "🚉",
-    "🅿️", "🏪", "🍕", "🎮", "💇", "🐟", "⚓", "🚇"
+    "🍫", "🎁", "🎈", "🍰", "🐶", "🏥", "🏠", "🏢", "⛪",
+    "🅿️", "🏪", "🍕", "🎮", "💇", "🐟", "⚓", "🚉", "🚇"
   ];
+
+  // Captions shown under each chip in the 🏗️ Build drawer only —
+  // buildings on the map stay emoji-only so students name them out loud.
+  const PLACE_NAMES = {
+    "🏫": "school", "🍞": "bakery", "🧰": "hardware store", "🌳": "park",
+    "🏦": "bank", "☕": "café", "💊": "pharmacy", "🧸": "toy store",
+    "👟": "shoe store", "🍦": "ice cream shop", "🍫": "candy store",
+    "🎁": "gift shop", "🎈": "party store", "🍰": "cake shop",
+    "🐶": "pet shop", "🏥": "hospital", "🏠": "house", "🏢": "office",
+    "⛪": "church", "🚉": "train station", "🅿️": "parking lot",
+    "🏪": "conve\u00ADnience store", "🍕": "pizzeria", "🎮": "game store",
+    "💇": "hair salon", "🐟": "fish market", "⚓": "ferry", "🚇": "subway"
+  };
 
   const FERRY_SYMBOL = "⚓";
   function isFerryTerminal(cell) {
     return !!cell && cell.kind === 'building' && cell.symbol === FERRY_SYMBOL;
+  }
+
+  const TRAIN_SYMBOL = "🚉";
+  function isTrainStation(cell) {
+    return !!cell && cell.kind === 'building' && cell.symbol === TRAIN_SYMBOL;
   }
 
   const SUBWAY_SYMBOL = "🚇";
@@ -583,6 +648,9 @@
     }
 
     applyTheme();
+    // keep the heading in step with the grid (it used to stay "8×8")
+    const h1 = document.querySelector('h1');
+    if (h1) h1.textContent = `City Playground — ${COLS}×${ROWS}`;
   }
 
   buildGridDOM();
@@ -611,8 +679,22 @@
       }
     }
 
+    // Labels live in the SVG, which is rebuilt below — note them down,
+    // then put them back shifted along with the tiles (dropping any
+    // that now fall outside the grid).
+    const keptLabels = activeLabels.map(({ group }) => {
+      const t = group.querySelector('text');
+      return { text: t.textContent, x: Number(t.getAttribute('x')) + frontChangeCols * CELL,
+               y: Number(t.getAttribute('y')) + frontChangeRows * CELL, o: t.hasAttribute('transform') ? 'v' : 'h' };
+    });
+    activeLabels.length = 0;
+
     COLS = newCols; ROWS = newRows; grid = newGrid;
     buildGridDOM();
+    keptLabels.forEach(l => {
+      if (l.x < 0 || l.x > COLS * CELL || l.y < 0 || l.y > ROWS * CELL) return;
+      createLabel(l.x, l.y, l.text, l.o);
+    });
 
     for (let r = 0; r < ROWS; r++) {
       for (let c = 0; c < COLS; c++) {
@@ -621,7 +703,7 @@
           setKind(r, c, 'building', { symbol: cell.symbol });
           if (cell.pin) setPin(r, c, cell.pin);
         }
-        else if (cell.kind === 'road' || cell.kind === 'river' || cell.kind === 'special') setKind(r, c, cell.kind, { special: cell.special });
+        else if (cell.kind === 'road' || cell.kind === 'rail' || cell.kind === 'river' || cell.kind === 'special') setKind(r, c, cell.kind, { special: cell.special });
       }
     }
   }
@@ -657,6 +739,9 @@
     if (sp === 'tunnel-s') return dir === 'S';
     if (sp === 'tunnel-e') return dir === 'E';
     if (sp === 'tunnel-w') return dir === 'W';
+    if (sp === 'parking') return true; // a parking lot is open on every side
+    if (sp === 'railcross-h') return dir === 'N' || dir === 'S'; // road crosses the E-W track
+    if (sp === 'railcross-v') return dir === 'E' || dir === 'W'; // road crosses the N-S track
     return false;
   }
   function riverConnectsToward(cell, dir) {
@@ -665,7 +750,28 @@
     const sp = cell.special;
     if (sp === 'bridge-h') return dir === 'N' || dir === 'S';
     if (sp === 'bridge-v') return dir === 'E' || dir === 'W';
-    return false; // tunnels never carry river
+    if (sp === 'railbridge-h') return dir === 'N' || dir === 'S';
+    if (sp === 'railbridge-v') return dir === 'E' || dir === 'W';
+    return false; // tunnels and level crossings never carry river
+  }
+  // Railroad: plain rail tiles open on every side; level crossings and
+  // rail bridges carry the track along their own axis only. A train
+  // station also "accepts" track on any side, so a line drawn up to a
+  // 🚉 visibly runs into it — trains can only get on and off there.
+  function railConnectsToward(cell, dir) {
+    if (cell.kind === 'rail') return true;
+    if (isTrainStation(cell)) return true;
+    if (cell.kind !== 'special') return false;
+    const sp = cell.special;
+    if (sp === 'railcross-h' || sp === 'railbridge-h') return dir === 'E' || dir === 'W';
+    if (sp === 'railcross-v' || sp === 'railbridge-v') return dir === 'N' || dir === 'S';
+    return false;
+  }
+  function isRailCarrier(cell) { // a non-building tile that has track on it
+    return cell.kind !== 'building' && ['N', 'S', 'E', 'W'].some(d => railConnectsToward(cell, d));
+  }
+  function isRoadCarrier(cell) { // a tile a road route can stand on
+    return cell.kind === 'road' || (cell.kind === 'special' && ['N', 'S', 'E', 'W'].some(d => roadConnectsToward(cell, d)));
   }
 
   const OPPOSITE = { N: 'S', S: 'N', E: 'W', W: 'E' };
@@ -681,6 +787,14 @@
       S: cellExit(r + 1, c, 'N', roadConnectsToward),
       E: cellExit(r, c + 1, 'W', roadConnectsToward),
       W: cellExit(r, c - 1, 'E', roadConnectsToward)
+    };
+  }
+  function railNeighbors(r, c) {
+    return {
+      N: cellExit(r - 1, c, 'S', railConnectsToward),
+      S: cellExit(r + 1, c, 'N', railConnectsToward),
+      E: cellExit(r, c + 1, 'W', railConnectsToward),
+      W: cellExit(r, c - 1, 'E', railConnectsToward)
     };
   }
   function riverNeighbors(r, c) {
@@ -860,6 +974,127 @@
     }
   }
 
+  // ── Railroad art ──
+  const BALLAST_COLOR = "#b3a896";
+  const TIE_COLOR = "#7a5534";
+  const RAIL_COLOR = "#4f545b";
+  const BALLAST_W = CELL * 0.40;
+  const RAIL_GAUGE = CELL * 0.22;   // distance between the two rails
+  const TIE_LEN = CELL * 0.36;
+  const TIE_W = 3.5;
+  const TIE_SPACING = CELL / 6;
+
+  function svgEl(tag, attrs) {
+    const el = document.createElementNS(SVG_NS, tag);
+    for (const k in attrs) el.setAttribute(k, attrs[k]);
+    return el;
+  }
+  function polyD(pts) { return pts.map((p, i) => (i ? 'L' : 'M') + p.x.toFixed(2) + ' ' + p.y.toFixed(2)).join(' '); }
+
+  // Each track is a centerline polyline. All ballast is drawn first,
+  // then every tie, then every rail, so where tracks meet (junctions,
+  // crossings) the rails always sit on top of the ties and gravel.
+  // opts.ballast=false for tracks on a bridge deck; opts.railExtend
+  // pushes the rails a little past the last point so arms meeting at
+  // the tile centre join up without a gap.
+  function drawTracks(art, tracks) {
+    const normalAt = (pts, i) => {
+      const a = pts[Math.max(0, i - 1)], b = pts[Math.min(pts.length - 1, i + 1)];
+      const dx = b.x - a.x, dy = b.y - a.y, len = Math.hypot(dx, dy) || 1;
+      return { x: -dy / len, y: dx / len, tx: dx / len, ty: dy / len };
+    };
+    tracks.forEach(t => {
+      if (t.ballast === false) return;
+      art.appendChild(svgEl('path', { d: polyD(t.pts), fill: 'none', stroke: BALLAST_COLOR, 'stroke-width': BALLAST_W, 'stroke-linecap': 'butt', 'stroke-linejoin': 'round' }));
+    });
+    tracks.forEach(t => {
+      // arc length along the polyline, then ties evenly spaced along it
+      const cum = [0];
+      for (let i = 1; i < t.pts.length; i++) cum.push(cum[i - 1] + Math.hypot(t.pts[i].x - t.pts[i - 1].x, t.pts[i].y - t.pts[i - 1].y));
+      const L = cum[cum.length - 1];
+      const n = Math.max(1, Math.round(L / TIE_SPACING));
+      for (let k = 0; k < n; k++) {
+        const s = (k + 0.5) * L / n;
+        let i = 1; while (i < cum.length - 1 && cum[i] < s) i++;
+        const f = (s - cum[i - 1]) / ((cum[i] - cum[i - 1]) || 1);
+        const p = { x: t.pts[i - 1].x + (t.pts[i].x - t.pts[i - 1].x) * f, y: t.pts[i - 1].y + (t.pts[i].y - t.pts[i - 1].y) * f };
+        const dx = t.pts[i].x - t.pts[i - 1].x, dy = t.pts[i].y - t.pts[i - 1].y, len = Math.hypot(dx, dy) || 1;
+        const nx = -dy / len, ny = dx / len;
+        art.appendChild(svgEl('line', { x1: p.x - nx * TIE_LEN / 2, y1: p.y - ny * TIE_LEN / 2, x2: p.x + nx * TIE_LEN / 2, y2: p.y + ny * TIE_LEN / 2, stroke: TIE_COLOR, 'stroke-width': TIE_W }));
+      }
+    });
+    tracks.forEach(t => {
+      const pts = t.pts.slice();
+      if (t.railExtend) {
+        const n = normalAt(pts, pts.length - 1), last = pts[pts.length - 1];
+        pts.push({ x: last.x + n.tx * t.railExtend, y: last.y + n.ty * t.railExtend });
+      }
+      [-1, 1].forEach(side => {
+        const off = pts.map((p, i) => { const n = normalAt(pts, i); return { x: p.x + n.x * side * RAIL_GAUGE / 2, y: p.y + n.y * side * RAIL_GAUGE / 2 }; });
+        art.appendChild(svgEl('path', { d: polyD(off), fill: 'none', stroke: RAIL_COLOR, 'stroke-width': 2.5, 'stroke-linecap': 'butt' }));
+      });
+    });
+  }
+
+  function edgeMid(r, c, dir) {
+    const x0 = c * CELL, y0 = r * CELL, cx = x0 + CELL / 2, cy = y0 + CELL / 2;
+    return { N: { x: cx, y: y0 }, S: { x: cx, y: y0 + CELL }, W: { x: x0, y: cy }, E: { x: x0 + CELL, y: cy } }[dir];
+  }
+
+  // Quarter-circle centreline joining two perpendicular edges of a
+  // tile, pivoting on the tile corner between them (radius CELL/2, so
+  // it meets each edge exactly at its midpoint, like a straight arm).
+  function railCurvePts(r, c, d1, d2) {
+    const a = edgeMid(r, c, d1), b = edgeMid(r, c, d2);
+    const px = (d1 === 'E' || d2 === 'E' ? c + 1 : c) * CELL, py = (d1 === 'S' || d2 === 'S' ? r + 1 : r) * CELL;
+    const R = CELL / 2;
+    const a0 = Math.atan2(a.y - py, a.x - px), a1 = Math.atan2(b.y - py, b.x - px);
+    let d = a1 - a0; while (d > Math.PI) d -= 2 * Math.PI; while (d < -Math.PI) d += 2 * Math.PI;
+    const pts = [];
+    for (let i = 0; i <= 16; i++) { const th = a0 + d * i / 16; pts.push({ x: px + R * Math.cos(th), y: py + R * Math.sin(th) }); }
+    return pts;
+  }
+
+  function drawRailTile(art, r, c, on) {
+    const cx = c * CELL + CELL / 2, cy = r * CELL + CELL / 2;
+    const dirs = ['N', 'S', 'E', 'W'].filter(k => on[k]);
+
+    if (dirs.length >= 2) {
+      // Every pair of open edges gets its own continuous piece of
+      // track: a straight line for opposite edges, a quarter-circle
+      // curve for neighbouring ones. So a bend is one curve, a
+      // T-junction is a straight plus two curves branching off it, and
+      // a four-way junction is a diamond crossing plus four curves —
+      // a train can run from any arm to any other without the rails
+      // ever breaking or turning a sharp corner.
+      const tracks = [];
+      if (on.N && on.S) tracks.push({ pts: [edgeMid(r, c, 'N'), edgeMid(r, c, 'S')] });
+      if (on.E && on.W) tracks.push({ pts: [edgeMid(r, c, 'W'), edgeMid(r, c, 'E')] });
+      [['N', 'E'], ['E', 'S'], ['S', 'W'], ['W', 'N']].forEach(([d1, d2]) => {
+        if (on[d1] && on[d2]) tracks.push({ pts: railCurvePts(r, c, d1, d2) });
+      });
+      drawTracks(art, tracks);
+      return;
+    }
+
+    if (dirs.length === 0) {
+      // lone tile: a short piece of track with buffer stops at both ends
+      drawTracks(art, [{ pts: [{ x: cx - CELL * 0.3, y: cy }, { x: cx + CELL * 0.3, y: cy }] }]);
+      [-1, 1].forEach(s => art.appendChild(svgEl('rect', { x: cx + s * CELL * 0.3 - (s > 0 ? 4 : 0), y: cy - TIE_LEN / 2, width: 4, height: TIE_LEN, fill: '#c0392b', rx: 1 })));
+      return;
+    }
+
+    // dead end: one arm from the open edge to the centre
+    drawTracks(art, dirs.map(k => ({ pts: [edgeMid(r, c, k), { x: cx, y: cy }] })));
+    {
+      // dead end: a red buffer stop across the end of the line
+      const k = dirs[0], vertical = k === 'N' || k === 'S';
+      art.appendChild(svgEl('rect', vertical
+        ? { x: cx - TIE_LEN / 2, y: cy - 2, width: TIE_LEN, height: 4, fill: '#c0392b', rx: 1 }
+        : { x: cx - 2, y: cy - TIE_LEN / 2, width: 4, height: TIE_LEN, fill: '#c0392b', rx: 1 }));
+    }
+  }
+
   const DOCK_COLOR = "#8b5e34";
   const DOCK_PLANK_COLOR = "#6b4423";
 
@@ -927,7 +1162,15 @@
     if (cell.kind === 'road') {
       const on = roadNeighbors(r, c);
       extendStraightToGridEdge(r, c, on);
+      drawBuildingSidewalks(art, r, c, on);
       drawArmSet(art, cx, cy, r, c, on, ARM_W, ROAD_COLOR, { sidewalk: true, laneLines: true, crossings: true, cornerFillKind: 'road' });
+      return;
+    }
+
+    if (cell.kind === 'rail') {
+      const on = railNeighbors(r, c);
+      extendStraightToGridEdge(r, c, on);
+      drawRailTile(art, r, c, on);
       return;
     }
 
@@ -938,6 +1181,60 @@
       drawArmSet(art, cx, cy, r, c, on, RIVER_ARM_W, RIVER_COLOR, { sidewalk: false, laneLines: false, crossings: false, cornerFillKind: 'river' });
       return;
     }
+  }
+
+  // Where a road tile touches a building, pave the gap between the
+  // road and the building with sidewalk instead of leaving a strip of
+  // grass, as if the place fronts onto the pavement. The paved area
+  // runs from the road's centre to the building's edge, and sideways
+  // as far as the road itself goes on this tile (edge to edge on a
+  // through road, just the road's width at a dead end). Drawn before
+  // the road, so the road and its normal sidewalk sit on top.
+  // Buildings and parking lots both get paved right up to the road.
+  function isPavedNeighbor(cell) {
+    return cell.kind === 'building' || (cell.kind === 'special' && cell.special === 'parking');
+  }
+  function drawBuildingSidewalks(art, r, c, on) {
+    const x0 = c * CELL, y0 = r * CELL, cx = x0 + CELL / 2, cy = y0 + CELL / 2;
+    const sw = ARM_W + SIDEWALK_EXTRA * 2;
+    ['N', 'S', 'E', 'W'].forEach(dir => {
+      const [dr, dc] = DIRVEC[dir];
+      const nr = r + dr, nc = c + dc;
+      if (nr < 0 || nr >= ROWS || nc < 0 || nc >= COLS) return;
+      if (!isPavedNeighbor(grid[nr][nc])) return;
+      const a = { fill: SIDEWALK_COLOR };
+      if (dir === 'N' || dir === 'S') {
+        const left = on.W ? x0 : cx - sw / 2, right = on.E ? x0 + CELL : cx + sw / 2;
+        Object.assign(a, { x: left, width: right - left, y: dir === 'N' ? y0 : cy, height: CELL / 2 });
+      } else {
+        const top = on.N ? y0 : cy - sw / 2, bottom = on.S ? y0 + CELL : cy + sw / 2;
+        Object.assign(a, { y: top, height: bottom - top, x: dir === 'W' ? x0 : cx, width: CELL / 2 });
+      }
+      art.appendChild(svgEl('rect', a));
+    });
+
+    // Corner quadrants the strips above can't reach: pave the quarter
+    // of the tile between two sides when both sides are paved (a road
+    // arm or a building) and at least one of them — or the tile
+    // diagonally across that corner — is a building. That covers a
+    // bend with a place tucked inside it, and a dead end or cul-de-sac
+    // with places on two neighbouring sides.
+    const isBldg = (rr, cc) => rr >= 0 && rr < ROWS && cc >= 0 && cc < COLS && isPavedNeighbor(grid[rr][cc]);
+    const side = (dir) => {
+      const [dr, dc] = DIRVEC[dir];
+      if (isBldg(r + dr, c + dc)) return 'bldg';
+      return on[dir] ? 'arm' : null;
+    };
+    [['N', 'E'], ['N', 'W'], ['S', 'E'], ['S', 'W']].forEach(([d1, d2]) => {
+      const s1 = side(d1), s2 = side(d2);
+      if (!s1 || !s2) return;
+      const diagBldg = isBldg(r + DIRVEC[d1][0] + DIRVEC[d2][0], c + DIRVEC[d1][1] + DIRVEC[d2][1]);
+      if (s1 !== 'bldg' && s2 !== 'bldg' && !diagBldg) return;
+      art.appendChild(svgEl('rect', {
+        x: d2 === 'E' ? cx : x0, y: d1 === 'S' ? cy : y0,
+        width: CELL / 2, height: CELL / 2, fill: SIDEWALK_COLOR
+      }));
+    });
   }
 
   // If a road tile sits on the grid border and has exactly one real
@@ -992,6 +1289,11 @@
   const SPECIAL_TYPES = {
     "bridge-h": { label: "Bridge (horizontal)" },
     "bridge-v": { label: "Bridge (vertical)" },
+    "parking": { label: "Parking lot" },
+    "railbridge-h": { label: "Rail bridge (horizontal)" },
+    "railbridge-v": { label: "Rail bridge (vertical)" },
+    "railcross-h": { label: "Railroad crossing (horizontal track)" },
+    "railcross-v": { label: "Railroad crossing (vertical track)" },
     "tunnel-n": { label: "Tunnel (north entrance)" },
     "tunnel-e": { label: "Tunnel (east entrance)" },
     "tunnel-s": { label: "Tunnel (south entrance)" },
@@ -1001,6 +1303,56 @@
   function drawSpecialTile(art, r, c, special) {
     const x0 = c * CELL, y0 = r * CELL, cx = x0 + CELL / 2, cy = y0 + CELL / 2;
     const roadColor = ROAD_COLOR, riverColor = RIVER_COLOR;
+
+    // Parking lot: a fully paved square in the sidewalk colour that
+    // roads can enter from any side. Two rows of parking bays line the
+    // top and bottom edges with a clear aisle through the middle, so
+    // neighbouring lots join into one bigger lot.
+    if (special === 'parking') {
+      art.appendChild(svgEl('rect', { x: x0, y: y0, width: CELL, height: CELL, fill: SIDEWALK_COLOR }));
+      const bays = 4, bayDepth = CELL * 0.27, bayW = CELL / bays;
+      for (let i = 0; i <= bays; i++) {
+        const x = x0 + i * bayW;
+        art.appendChild(svgEl('line', { x1: x, x2: x, y1: y0, y2: y0 + bayDepth, stroke: '#f7f6f2', 'stroke-width': 2 }));
+        art.appendChild(svgEl('line', { x1: x, x2: x, y1: y0 + CELL - bayDepth, y2: y0 + CELL, stroke: '#f7f6f2', 'stroke-width': 2 }));
+      }
+      return;
+    }
+
+    // Rail specials are drawn in their horizontal-track form; the
+    // vertical versions are the same art rotated 90° about the centre.
+    if (special.indexOf('railbridge-') === 0 || special.indexOf('railcross-') === 0) {
+      const g = svgEl('g', special.endsWith('-v') ? { transform: `rotate(90 ${cx} ${cy})` } : {});
+      art.appendChild(g);
+      const track = { pts: [{ x: x0, y: cy }, { x: x0 + CELL, y: cy }] };
+
+      if (special.indexOf('railbridge-') === 0) {
+        // river runs across the track (N-S here); a wooden deck carries
+        // the ties and rails over it, with a railing on each side
+        g.appendChild(svgEl('rect', { x: cx - RIVER_ARM_W / 2, y: y0, width: RIVER_ARM_W, height: CELL, fill: riverColor }));
+        const deckW = BALLAST_W + 6;
+        g.appendChild(svgEl('rect', { x: x0, y: cy - deckW / 2, width: CELL, height: deckW, fill: '#8a6d3b' }));
+        [-1, 1].forEach(s => g.appendChild(svgEl('line', { x1: x0, x2: x0 + CELL, y1: cy + s * deckW / 2, y2: cy + s * deckW / 2, stroke: '#5c4626', 'stroke-width': 3 })));
+        drawTracks(g, [Object.assign(track, { ballast: false })]);
+        return;
+      }
+
+      // level crossing: track runs E-W here, the road crosses it N-S.
+      // Gravel and ties first, then the road surface over them, then
+      // the rails on top of the road, with white stop lines on each
+      // side and the centre line broken where it meets the track.
+      const sw = ARM_W + SIDEWALK_EXTRA * 2;
+      g.appendChild(svgEl('rect', { x: x0, y: cy - BALLAST_W / 2, width: CELL, height: BALLAST_W, fill: BALLAST_COLOR }));
+      drawTracks(g, [{ pts: track.pts, ballast: false }]);
+      g.appendChild(svgEl('rect', { x: cx - sw / 2, y: y0, width: sw, height: CELL, fill: SIDEWALK_COLOR }));
+      g.appendChild(svgEl('rect', { x: cx - ARM_W / 2, y: y0, width: ARM_W, height: CELL, fill: roadColor }));
+      const gap = BALLAST_W / 2 + 7;
+      g.appendChild(svgEl('line', { x1: cx, x2: cx, y1: y0, y2: cy - gap, stroke: LANE_COLOR, 'stroke-width': 2, 'stroke-dasharray': '5 5' }));
+      g.appendChild(svgEl('line', { x1: cx, x2: cx, y1: y0 + CELL, y2: cy + gap, stroke: LANE_COLOR, 'stroke-width': 2, 'stroke-dasharray': '5 5' }));
+      [-1, 1].forEach(s => g.appendChild(svgEl('rect', { x: cx - ARM_W / 2, y: cy + s * (BALLAST_W / 2 + 3) - 1.5, width: ARM_W, height: 3, fill: '#ffffff' })));
+      [-1, 1].forEach(s => g.appendChild(svgEl('line', { x1: x0, x2: x0 + CELL, y1: cy + s * RAIL_GAUGE / 2, y2: cy + s * RAIL_GAUGE / 2, stroke: RAIL_COLOR, 'stroke-width': 2.5 })));
+      return;
+    }
 
     if (special === "bridge-h" || special === "bridge-v") {
       const river = document.createElementNS(SVG_NS, "rect");
@@ -1109,6 +1461,7 @@
   }
 
   let currentTool = 'road'; // 'build' | 'road' | 'water' | 'path' | 'label' | 'pin'
+  let roadMode = 'road';    // the Road slot paints 'road' or 'rail' — tap it again to switch
   let selectedPinColor = 'red'; // color the 📍 Pin tool stamps on a tap
 
   function setKind(r, c, kind, opts) {
@@ -1133,7 +1486,7 @@
       if (cell.pin) setPin(r, c, null); // a pin can't outlive the chip it sits on
     }
 
-    if (kind === 'road' || kind === 'special' || kind === 'river') {
+    if (kind === 'road' || kind === 'rail' || kind === 'special' || kind === 'river') {
       refreshTileAndNeighbors(r, c);
     } else {
       cellRoadArt(r, c).innerHTML = "";
@@ -1236,7 +1589,7 @@
       rect.setPointerCapture(e.pointerId);
 
       const cell = grid[r][c];
-      const paintKind = currentTool === 'water' ? 'river' : 'road';
+      const paintKind = currentTool === 'water' ? 'river' : roadMode;
       if (cell.kind === 'building') {
         mode = 'building-drag';
       } else if (cell.kind === 'special') {
@@ -1245,7 +1598,7 @@
         mode = paintKind + '-erase';
         clearCell(r, c);
       } else {
-        // empty, or occupied by the other network (road vs water) —
+        // empty, or occupied by another network (road, rail, water) —
         // paint over it, replacing whichever was there
         mode = paintKind + '-paint';
         setKind(r, c, paintKind);
@@ -1294,14 +1647,14 @@
         return;
       }
 
-      if (mode === 'road-paint' || mode === 'road-erase' || mode === 'river-paint' || mode === 'river-erase') {
+      if (mode && (mode.endsWith('-paint') || mode.endsWith('-erase'))) {
         if (!moved && Math.hypot(dx, dy) >= 6) moved = true;
         const els = document.elementsFromPoint(e.clientX, e.clientY);
         const targetRect = els.find(el => el.classList && el.classList.contains('cell-hit'));
         if (!targetRect) return;
         const tr = Number(targetRect.dataset.row), tc = Number(targetRect.dataset.col);
         const cell = grid[tr][tc];
-        const paintKind = mode.startsWith('river') ? 'river' : 'road';
+        const paintKind = mode.split('-')[0];
         if (mode.endsWith('paint') && cell.kind !== 'building' && cell.kind !== paintKind) {
           setKind(tr, tc, paintKind);
         } else if (mode.endsWith('erase') && (cell.kind === paintKind || cell.kind === 'special')) {
@@ -1382,9 +1735,12 @@
     const container = document.getElementById('placePool');
     PLACE_CHIPS.forEach((sym) => {
       const chip = document.createElement('div');
-      chip.className = 'chip';
-      chip.textContent = sym;
+      chip.className = 'chip place-chip';
       chip.dataset.symbol = sym;
+      const name = PLACE_NAMES[sym] || '';
+      chip.innerHTML = `<span class="place-chip-emoji" aria-hidden="true">${sym}</span>` +
+                       `<span class="place-chip-name">${name}</span>`;
+      chip.title = name;
       attachPoolChipEvents(chip);
       container.appendChild(chip);
     });
@@ -1409,6 +1765,9 @@
         moved = true;
         const rect = chip.getBoundingClientRect();
         offsetX = startX - rect.left; offsetY = startY - rect.top;
+        // captioned place chips shrink to a plain emoji tile while
+        // dragging, so centre that tile under the pointer
+        if (chip.classList.contains('place-chip')) { offsetX = 23; offsetY = 23; }
         dragGhost = chip.cloneNode(true);
         dragGhost.classList.add('dragging');
         dragGhost.style.width = rect.width + 'px';
@@ -1636,8 +1995,10 @@
   });
 
   document.getElementById('clearAllBtn').addEventListener('click', () => {
+    clearAllPaths();
+    clearAllLabels();
     for (let r = 0; r < ROWS; r++) for (let c = 0; c < COLS; c++) clearCell(r, c);
-    document.getElementById('sizeDialog').close();
+    document.getElementById('optionsDialog').close();
   });
 
   // Grid resize controls
@@ -1653,7 +2014,7 @@
   }
   document.getElementById('resizeBtn').addEventListener('click', () => {
     resizeGrid(Number(colsSelect.value), Number(rowsSelect.value));
-    document.getElementById('sizeDialog').close();
+    document.getElementById('optionsDialog').close();
   });
 
   /* ═══════════════════ PATHFINDING (Dijkstra) ═══════════════════ */
@@ -1825,10 +2186,11 @@
     group.addEventListener('pointercancel', () => { pointerId = null; moved = false; });
   }
 
-  document.getElementById('clearLabelsBtn').addEventListener('click', () => {
+  function clearAllLabels() {
     activeLabels.forEach(l => l.group.remove());
     activeLabels.length = 0;
-  });
+  }
+  document.getElementById('clearLabelsBtn').addEventListener('click', clearAllLabels);
 
   function updatePathStatus() {
     if (!pendingStart) {
@@ -1898,6 +2260,13 @@
   // additionally get one extra "underground" edge to whichever other
   // tunnel chip is found first scanning in a straight line away from
   // their entrance).
+  // Rail track lives in its own layer of the graph, keyed "R:r,c", so
+  // a level crossing is two separate nodes (road and rail) sharing a
+  // square and a route can't hop between them mid-crossing. The only
+  // way on or off the railroad is through a 🚉 station node.
+  function railKey(r, c) { return 'R:' + r + ',' + c; }
+  function keyToRC(k) { return k.replace(/^R:/, '').split(',').map(Number); }
+
   function buildRoadGraph() {
     const adj = {};
     const ensure = (k) => { if (!adj[k]) adj[k] = []; };
@@ -1905,7 +2274,7 @@
     for (let r = 0; r < ROWS; r++) {
       for (let c = 0; c < COLS; c++) {
         const cell = grid[r][c];
-        if (cell.kind !== 'road' && cell.kind !== 'special') continue;
+        if (!isRoadCarrier(cell)) continue;
         const k1 = cellKey(r, c);
         ensure(k1);
 
@@ -2041,6 +2410,49 @@
       });
     });
 
+    // Railroad: surface edges between track tiles, rail layer only.
+    for (let r = 0; r < ROWS; r++) {
+      for (let c = 0; c < COLS; c++) {
+        const cell = grid[r][c];
+        if (!isRailCarrier(cell)) continue;
+        const k1 = railKey(r, c);
+        ensure(k1);
+        ['N', 'S', 'E', 'W'].forEach(dir => {
+          if (!railConnectsToward(cell, dir)) return;
+          const [dr, dc] = DIRVEC[dir];
+          const nr = r + dr, nc = c + dc;
+          if (nr < 0 || nr >= ROWS || nc < 0 || nc >= COLS) return;
+          const n = grid[nr][nc];
+          if (!isRailCarrier(n) || !railConnectsToward(n, OPPOSITE[dir])) return;
+          adj[k1].push({ to: railKey(nr, nc), weight: 1 });
+        });
+      }
+    }
+
+    // Train stations: a node of their own, wired both to the roads
+    // beside them and to any track that runs into them.
+    for (let r = 0; r < ROWS; r++) {
+      for (let c = 0; c < COLS; c++) {
+        if (!isTrainStation(grid[r][c])) continue;
+        const k1 = cellKey(r, c);
+        ensure(k1);
+        ['N', 'S', 'E', 'W'].forEach(dir => {
+          const [dr, dc] = DIRVEC[dir];
+          const nr = r + dr, nc = c + dc;
+          if (nr < 0 || nr >= ROWS || nc < 0 || nc >= COLS) return;
+          const n = grid[nr][nc];
+          if (isRoadCarrier(n) && roadConnectsToward(n, OPPOSITE[dir])) {
+            const k2 = cellKey(nr, nc); ensure(k2);
+            adj[k1].push({ to: k2, weight: 1 }); adj[k2].push({ to: k1, weight: 1 });
+          }
+          if (isRailCarrier(n) && railConnectsToward(n, OPPOSITE[dir])) {
+            const k2 = railKey(nr, nc); ensure(k2);
+            adj[k1].push({ to: k2, weight: 1 }); adj[k2].push({ to: k1, weight: 1 });
+          }
+        });
+      }
+    }
+
     // Subway stations: the same idea as ferry terminals — each one
     // is its own graph node, wired into whatever road network sits
     // next to it — but with no medium to detect an entry point
@@ -2154,7 +2566,7 @@
       const rr = r + dr, cc = c + dc;
       if (rr < 0 || rr >= ROWS || cc < 0 || cc >= COLS) continue;
       const cell = grid[rr][cc];
-      if (cell.kind === 'road' || cell.kind === 'special') return { r: rr, c: cc };
+      if (isRoadCarrier(cell)) return { r: rr, c: cc };
     }
     return null;
   }
@@ -2218,14 +2630,21 @@
 
   function computeAndDrawPath(start, end, colorName) {
     const colorInfo = PATH_COLORS.find(p => p.name === colorName);
-    const startNode = findAdjacentRoadNode(start.r, start.c);
-    const endNode = findAdjacentRoadNode(end.r, end.c);
+    // A 🚉 endpoint is itself a graph node (it links road and rail),
+    // so routes start/end right at the station instead of at a road
+    // beside it — otherwise a trip that leaves by train would first
+    // walk out to the road and then double back into the station.
+    const startIsStation = isTrainStation(grid[start.r][start.c]);
+    const endIsStation = isTrainStation(grid[end.r][end.c]);
+    const startNode = startIsStation ? { r: start.r, c: start.c } : findAdjacentRoadNode(start.r, start.c);
+    const endNode = endIsStation ? { r: end.r, c: end.c } : findAdjacentRoadNode(end.r, end.c);
 
     let points = [];
     let tunnelFlags = []; // tunnelFlags[i] = segment points[i]→points[i+1] is a tunnel jump
     let ferryFlags = [];  // ferryFlags[i] = segment points[i]→points[i+1] is a ferry crossing
     let ferryMeta = [];   // ferryMeta[i] = { fromDir, toDir } for ferry segments, else null
     let subwayFlags = []; // subwayFlags[i] = segment points[i]→points[i+1] is a subway hop
+    let railPoints = [];  // railPoints[i] = points[i] is a railroad tile (turns there are drawn curved)
     let reachedEnd = false;
 
     if (startNode && endNode) {
@@ -2237,9 +2656,10 @@
       if (dist[endKey] !== undefined && dist[endKey] < Infinity) {
         const { path: routeKeys, tunnelFlags: routeTunnelFlags, ferryFlags: routeFerryFlags, ferryMeta: routeFerryDirs, subwayFlags: routeSubwayFlags } = reconstructPath(prev, prevTunnel, prevFerry, prevFerryMeta, prevSubway, endKey);
         points = routeKeys.map(k => {
-          const [rr, cc] = k.split(',').map(Number);
+          const [rr, cc] = keyToRC(k);
           return cellCenter(rr, cc);
         });
+        railPoints = routeKeys.map(k => k.indexOf('R:') === 0);
         tunnelFlags = routeTunnelFlags;
         ferryFlags = routeFerryFlags;
         ferryMeta = routeFerryDirs;
@@ -2255,9 +2675,10 @@
         if (farthestKey) {
           const { path: routeKeys, tunnelFlags: routeTunnelFlags, ferryFlags: routeFerryFlags, ferryMeta: routeFerryDirs, subwayFlags: routeSubwayFlags } = reconstructPath(prev, prevTunnel, prevFerry, prevFerryMeta, prevSubway, farthestKey);
           points = routeKeys.map(k => {
-            const [rr, cc] = k.split(',').map(Number);
+            const [rr, cc] = keyToRC(k);
             return cellCenter(rr, cc);
           });
+          railPoints = routeKeys.map(k => k.indexOf('R:') === 0);
           tunnelFlags = routeTunnelFlags;
           ferryFlags = routeFerryFlags;
           ferryMeta = routeFerryDirs;
@@ -2270,24 +2691,36 @@
     // boundary shared with the adjacent road cell) instead of
     // stopping at the road cell's center, so it visually connects to
     // the chip's colored outline without crossing into the chip.
-    if (points.length > 0 && startNode) {
+    // Station endpoints: the route's first/last point is the station
+    // centre — pull it back to the station's edge instead.
+    if (startIsStation) {
+      if (points.length >= 2) points[0] = midpoint(points[0], points[1]);
+      else { points = []; tunnelFlags = []; ferryFlags = []; ferryMeta = []; subwayFlags = []; railPoints = []; }
+    }
+    if (endIsStation && reachedEnd && points.length >= 2) {
+      points[points.length - 1] = midpoint(points[points.length - 1], points[points.length - 2]);
+    }
+
+    if (points.length > 0 && startNode && !startIsStation) {
       const boundaryPoint = midpoint(cellCenter(start.r, start.c), points[0]);
       points.unshift(boundaryPoint);
+      railPoints.unshift(false);
       tunnelFlags.unshift(false);
       ferryFlags.unshift(false);
       ferryMeta.unshift(null);
       subwayFlags.unshift(false);
     }
-    if (reachedEnd && endNode) {
+    if (reachedEnd && endNode && !endIsStation) {
       const boundaryPoint = midpoint(cellCenter(end.r, end.c), points[points.length - 1]);
       points.push(boundaryPoint);
+      railPoints.push(false);
       tunnelFlags.push(false);
       ferryFlags.push(false);
       ferryMeta.push(null);
       subwayFlags.push(false);
     }
 
-    drawPathVisual(points, tunnelFlags, ferryFlags, ferryMeta, subwayFlags, colorInfo, reachedEnd, start, end, colorName);
+    drawPathVisual(points, tunnelFlags, ferryFlags, ferryMeta, subwayFlags, colorInfo, reachedEnd, start, end, colorName, railPoints);
   }
 
   function midpoint(a, b) {
@@ -2393,9 +2826,48 @@
     return [p1, mid, p2];
   }
 
-  function drawPathVisual(points, tunnelFlags, ferryFlags, ferryMeta, subwayFlags, colorInfo, reachedEnd, start, end, colorName) {
+  function drawPathVisual(points, tunnelFlags, ferryFlags, ferryMeta, subwayFlags, colorInfo, reachedEnd, start, end, colorName, railPoints) {
     const layer = getPathLayer();
     const group = document.createElementNS(SVG_NS, "g");
+    railPoints = railPoints || [];
+
+    // Where a route turns 90° on a railroad tile, it follows the
+    // track's curve: the corner is cut half a cell back on each side
+    // and joined with a quarter-circle arc of radius CELL/2 — the
+    // same arc the rails are drawn on.
+    const R_CURVE = CELL / 2;
+    const plainSeg = (i) => i >= 0 && i < points.length - 1 && !tunnelFlags[i] && !ferryFlags[i] && !subwayFlags[i];
+    const segLen = (i) => Math.hypot(points[i + 1].x - points[i].x, points[i + 1].y - points[i].y);
+    const unit = (a, b) => { const l = Math.hypot(b.x - a.x, b.y - a.y) || 1; return { x: (b.x - a.x) / l, y: (b.y - a.y) / l }; };
+    const curvedAt = points.map((p, k) => {
+      if (!railPoints[k] || k === 0 || k === points.length - 1) return false;
+      if (!plainSeg(k - 1) || !plainSeg(k)) return false;
+      if (segLen(k - 1) < R_CURVE - 0.5 || segLen(k) < R_CURVE - 0.5) return false;
+      const a = unit(points[k - 1], p), b = unit(p, points[k + 1]);
+      return Math.abs(a.x * b.x + a.y * b.y) < 0.01; // perpendicular turn
+    });
+    const trimmed = (i) => {
+      // segment i with its ends pulled back from any curved corner
+      let p1 = points[i], p2 = points[i + 1];
+      const u = unit(p1, p2);
+      if (curvedAt[i]) p1 = { x: p1.x + u.x * R_CURVE, y: p1.y + u.y * R_CURVE };
+      if (curvedAt[i + 1]) p2 = { x: p2.x - u.x * R_CURVE, y: p2.y - u.y * R_CURVE };
+      return [p1, p2];
+    };
+    curvedAt.forEach((isCurve, k) => {
+      if (!isCurve) return;
+      const a = unit(points[k - 1], points[k]), b = unit(points[k], points[k + 1]);
+      const from = { x: points[k].x - a.x * R_CURVE, y: points[k].y - a.y * R_CURVE };
+      const to = { x: points[k].x + b.x * R_CURVE, y: points[k].y + b.y * R_CURVE };
+      const sweep = (a.x * b.y - a.y * b.x) > 0 ? 1 : 0; // clockwise turn on screen
+      const arc = document.createElementNS(SVG_NS, "path");
+      arc.setAttribute("d", `M ${from.x} ${from.y} A ${R_CURVE} ${R_CURVE} 0 0 ${sweep} ${to.x} ${to.y}`);
+      arc.setAttribute("fill", "none");
+      arc.setAttribute("stroke", colorInfo.hex);
+      arc.setAttribute("stroke-width", "4");
+      arc.setAttribute("stroke-linecap", "round");
+      group.appendChild(arc);
+    });
 
     // Draw one line per segment (rather than a single polyline) so
     // tunnel-jump segments can be rendered dashed and ferry
@@ -2449,9 +2921,11 @@
         continue;
       }
 
+      const [q1, q2] = trimmed(i);
+      if (Math.hypot(q2.x - q1.x, q2.y - q1.y) < 0.5) continue; // fully taken up by curves
       const line = document.createElementNS(SVG_NS, "line");
-      line.setAttribute("x1", p1.x); line.setAttribute("y1", p1.y);
-      line.setAttribute("x2", p2.x); line.setAttribute("y2", p2.y);
+      line.setAttribute("x1", q1.x); line.setAttribute("y1", q1.y);
+      line.setAttribute("x2", q2.x); line.setAttribute("y2", q2.y);
       line.setAttribute("stroke", colorInfo.hex);
       line.setAttribute("stroke-width", "4");
       line.setAttribute("stroke-linecap", "round");
@@ -2465,9 +2939,26 @@
     // offset the two arrows along it so they don't overlap.
     if (points.length >= 2) {
       const singleSegment = points.length === 2;
-      appendArrow(group, points[0], points[1], singleSegment ? 0.3 : 0.5, colorInfo.hex);
       const n = points.length;
-      appendArrow(group, points[n - 2], points[n - 1], singleSegment ? 0.7 : 0.5, colorInfo.hex);
+      // use the straight (trimmed) part of the end segments, so an arrow
+      // never floats off the line where a curve has cut the corner
+      // If a curve eats the whole end segment, the arrow goes on the
+      // middle of that curve instead, pointing along it.
+      const arrowOnCurve = (k) => {
+        const a = unit(points[k - 1], points[k]), b = unit(points[k], points[k + 1]);
+        const P = points[k];
+        const from = { x: P.x - a.x * R_CURVE, y: P.y - a.y * R_CURVE }, to = { x: P.x + b.x * R_CURVE, y: P.y + b.y * R_CURVE };
+        const C = { x: P.x - a.x * R_CURVE + b.x * R_CURVE, y: P.y - a.y * R_CURVE + b.y * R_CURVE };
+        const m = unit(C, { x: (from.x + to.x) / 2, y: (from.y + to.y) / 2 });
+        const mid = { x: C.x + m.x * R_CURVE, y: C.y + m.y * R_CURVE };
+        const t = unit(from, to);
+        appendArrow(group, { x: mid.x - t.x, y: mid.y - t.y }, { x: mid.x + t.x, y: mid.y + t.y }, 0.5, colorInfo.hex);
+      };
+      const [f1, f2] = trimmed(0), [l1, l2] = trimmed(n - 2);
+      if (Math.hypot(f2.x - f1.x, f2.y - f1.y) >= 1) appendArrow(group, f1, f2, singleSegment ? 0.3 : 0.5, colorInfo.hex);
+      else if (curvedAt[1]) arrowOnCurve(1);
+      if (Math.hypot(l2.x - l1.x, l2.y - l1.y) >= 1) appendArrow(group, l1, l2, singleSegment ? 0.7 : 0.5, colorInfo.hex);
+      else if (curvedAt[n - 2]) arrowOnCurve(n - 2);
     }
 
     layer.appendChild(group);
@@ -2482,7 +2973,8 @@
       group,
       hex: colorInfo.hex,
       startCell: { r: start.r, c: start.c },
-      endCell: reachedEnd ? { r: end.r, c: end.c } : null
+      endCell: reachedEnd ? { r: end.r, c: end.c } : null,
+      request: { start: { r: start.r, c: start.c }, end: { r: end.r, c: end.c }, color: colorName } // for saving
     });
   }
 
@@ -2528,10 +3020,20 @@
     }
   }
 
+  const roadSlot = document.querySelector('.slot[data-tool="road"]');
+  function renderRoadSlot() {
+    const rail = roadMode === 'rail';
+    roadSlot.querySelector('.slot-emoji').textContent = rail ? '🛤️' : '🛣️';
+    roadSlot.querySelector('.slot-word').textContent = rail ? 'Railroad' : 'Road';
+    roadSlot.title = rail ? 'Railroad — tap again for road' : 'Road — tap again for railroad';
+  }
+
   function setTool(tool) {
     if (tool === currentTool) {
-      // same slot again → toggle its drawer (no-op for Road/Water)
+      // same slot again → toggle its drawer; the Road slot instead
+      // flips between road and railroad
       if (DRAWER_TOOLS.includes(tool)) { drawerOpen = !drawerOpen; renderDrawers(); }
+      if (tool === 'road') { roadMode = roadMode === 'road' ? 'rail' : 'road'; renderRoadSlot(); }
       return;
     }
     currentTool = tool;
@@ -2559,16 +3061,168 @@
     btn.addEventListener('click', () => { drawerOpen = false; renderDrawers(); });
   });
 
-  // 🤏 Size opens a dialog rather than becoming the current tool.
-  const sizeDialog = document.getElementById('sizeDialog');
-  function openSizeDialog() {
+  // ⚙️ Options opens a dialog rather than becoming the current tool.
+  const optionsDialog = document.getElementById('optionsDialog');
+  const fileStatus = document.getElementById('fileStatus');
+  function setFileStatus(msg, isError) {
+    fileStatus.textContent = msg || '';
+    fileStatus.classList.toggle('is-error', !!isError);
+  }
+  function openOptionsDialog() {
     colsSelect.value = COLS;
     rowsSelect.value = ROWS;
-    sizeDialog.showModal();
+    setFileStatus('');
+    optionsDialog.showModal();
   }
-  document.getElementById('sizeSlot').addEventListener('click', openSizeDialog);
-  document.getElementById('sizeCancelBtn').addEventListener('click', () => sizeDialog.close());
-  sizeDialog.addEventListener('click', (e) => { if (e.target === sizeDialog) sizeDialog.close(); }); // backdrop
+  document.getElementById('optionsSlot').addEventListener('click', openOptionsDialog);
+  document.getElementById('optionsCloseX').addEventListener('click', () => optionsDialog.close());
+  optionsDialog.addEventListener('click', (e) => { if (e.target === optionsDialog) optionsDialog.close(); }); // backdrop
+
+  /* ═══════════════ SAVE / OPEN (JSON file) ═══════════════ */
+  // File format, version 1:
+  // { app: "city-playground", version: 1, cols, rows,
+  //   cells:  [{ r, c, kind, symbol?, special?, pin? }]   (non-empty squares only)
+  //   labels: [{ text, x, y, orientation: "h" | "v" }]    (SVG units)
+  //   paths:  [{ start: {r,c}, end: {r,c}, color }] }     (re-routed on open)
+  const SAVE_APP = 'city-playground', SAVE_VERSION = 1;
+
+  function serializeCity() {
+    const cells = [];
+    for (let r = 0; r < ROWS; r++) {
+      for (let c = 0; c < COLS; c++) {
+        const cell = grid[r][c];
+        if (!cell.kind) continue;
+        const out = { r, c, kind: cell.kind };
+        if (cell.kind === 'building') { out.symbol = cell.symbol; if (cell.pin) out.pin = cell.pin; }
+        if (cell.kind === 'special') out.special = cell.special;
+        cells.push(out);
+      }
+    }
+    const labels = activeLabels.map(({ group }) => {
+      const t = group.querySelector('text');
+      return {
+        text: t.textContent,
+        x: Number(t.getAttribute('x')), y: Number(t.getAttribute('y')),
+        orientation: t.hasAttribute('transform') ? 'v' : 'h'
+      };
+    });
+    const paths = activePaths.filter(p => p.request).map(p => p.request);
+    return { app: SAVE_APP, version: SAVE_VERSION, savedAt: new Date().toISOString(), cols: COLS, rows: ROWS, cells, labels, paths };
+  }
+
+  function timestampForFilename(d) {
+    const p = n => String(n).padStart(2, '0');
+    return `${d.getFullYear()}-${p(d.getMonth() + 1)}-${p(d.getDate())}_${p(d.getHours())}-${p(d.getMinutes())}-${p(d.getSeconds())}`;
+  }
+
+  async function saveCity() {
+    const json = JSON.stringify(serializeCity(), null, 2);
+    const filename = `city-playground-${timestampForFilename(new Date())}.json`;
+    const blob = new Blob([json], { type: 'application/json' });
+
+    // Where the browser supports it, show a real "Save as" dialog with
+    // the default name filled in; otherwise fall back to a download.
+    if (window.showSaveFilePicker) {
+      try {
+        const handle = await window.showSaveFilePicker({
+          suggestedName: filename,
+          types: [{ description: 'City Playground file', accept: { 'application/json': ['.json'] } }]
+        });
+        const w = await handle.createWritable();
+        await w.write(blob); await w.close();
+        setFileStatus(`Saved as ${handle.name}.`);
+        return;
+      } catch (err) {
+        if (err && err.name === 'AbortError') return; // user cancelled
+        // e.g. not allowed inside an iframe — use a plain download instead
+      }
+    }
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url; a.download = filename;
+    document.body.appendChild(a); a.click(); a.remove();
+    setTimeout(() => URL.revokeObjectURL(url), 1000);
+    setFileStatus(`Downloaded ${filename}.`);
+  }
+
+  // Checks a parsed file and returns a clean copy, or throws with a
+  // short, friendly reason. Anything unknown is skipped, not trusted.
+  function validateCity(data) {
+    if (!data || typeof data !== 'object' || data.app !== SAVE_APP) throw new Error("This isn't a City Playground file.");
+    if (typeof data.version !== 'number' || data.version > SAVE_VERSION) throw new Error('This file was made by a newer version of the playground.');
+    const cols = Math.round(Number(data.cols)), rows = Math.round(Number(data.rows));
+    if (!(cols >= 3 && cols <= 24 && rows >= 3 && rows <= 24)) throw new Error('The grid size in this file is not valid.');
+    const pinKeys = PIN_COLORS.map(p => p.key), colorNames = PATH_COLORS.map(p => p.name);
+    const inGrid = (r, c) => Number.isInteger(r) && Number.isInteger(c) && r >= 0 && r < rows && c >= 0 && c < cols;
+    const cells = (Array.isArray(data.cells) ? data.cells : []).filter(x => x && inGrid(x.r, x.c)).map(x => {
+      if (x.kind === 'building' && typeof x.symbol === 'string' && x.symbol.length <= 16)
+        return { r: x.r, c: x.c, kind: 'building', symbol: x.symbol, pin: pinKeys.includes(x.pin) ? x.pin : null };
+      if (x.kind === 'special' && Object.prototype.hasOwnProperty.call(SPECIAL_TYPES, x.special))
+        return { r: x.r, c: x.c, kind: 'special', special: x.special };
+      if (['road', 'rail', 'river'].includes(x.kind)) return { r: x.r, c: x.c, kind: x.kind };
+      return null;
+    }).filter(Boolean);
+    const maxX = cols * CELL, maxY = rows * CELL;
+    const labels = (Array.isArray(data.labels) ? data.labels : []).filter(l =>
+      l && typeof l.text === 'string' && l.text.trim() && isFinite(l.x) && isFinite(l.y)
+    ).map(l => ({
+      text: l.text.slice(0, 60),
+      x: Math.min(maxX, Math.max(0, Number(l.x))), y: Math.min(maxY, Math.max(0, Number(l.y))),
+      orientation: l.orientation === 'v' ? 'v' : 'h'
+    }));
+    const paths = (Array.isArray(data.paths) ? data.paths : []).filter(p =>
+      p && p.start && p.end && inGrid(p.start.r, p.start.c) && inGrid(p.end.r, p.end.c) && colorNames.includes(p.color)
+    ).map(p => ({ start: { r: p.start.r, c: p.start.c }, end: { r: p.end.r, c: p.end.c }, color: p.color }));
+    return { cols, rows, cells, labels, paths };
+  }
+
+  function loadCity(city) {
+    clearAllPaths();
+    activeLabels.length = 0;          // their SVG goes with the rebuild below
+    COLS = city.cols; ROWS = city.rows;
+    grid = makeEmptyGrid(ROWS, COLS);
+    buildGridDOM();
+    // buildings first, then everything else, so roads and track
+    // render already knowing which squares are places
+    const order = x => x.kind === 'building' ? 0 : 1;
+    city.cells.slice().sort((a, b) => order(a) - order(b)).forEach(x => {
+      if (x.kind === 'building') setKind(x.r, x.c, 'building', { symbol: x.symbol });
+      else if (x.kind === 'special') setKind(x.r, x.c, 'special', { special: x.special });
+      else setKind(x.r, x.c, x.kind);
+    });
+    city.cells.forEach(x => { if (x.pin) setPin(x.r, x.c, x.pin); });
+    city.labels.forEach(l => createLabel(l.x, l.y, l.text, l.orientation));
+    city.paths.forEach(p => {
+      // a route only makes sense between two places
+      if (grid[p.start.r][p.start.c].kind === 'building' && grid[p.end.r][p.end.c].kind === 'building') {
+        computeAndDrawPath(p.start, p.end, p.color);
+      }
+    });
+    colsSelect.value = COLS; rowsSelect.value = ROWS;
+    updatePathStatus();
+  }
+
+  const loadInput = document.getElementById('loadInput');
+  document.getElementById('saveBtn').addEventListener('click', saveCity);
+  document.getElementById('loadBtn').addEventListener('click', () => { loadInput.value = ''; loadInput.click(); });
+  loadInput.addEventListener('change', () => {
+    const file = loadInput.files && loadInput.files[0];
+    if (!file) return;
+    const reader = new FileReader();
+    reader.onload = () => {
+      let city;
+      try {
+        city = validateCity(JSON.parse(reader.result));
+      } catch (err) {
+        setFileStatus(err instanceof SyntaxError ? "This file couldn't be read — it isn't valid JSON." : err.message, true);
+        return;
+      }
+      loadCity(city);
+      optionsDialog.close();
+    };
+    reader.onerror = () => setFileStatus("This file couldn't be read.", true);
+    reader.readAsText(file);
+  });
 
   const helpDialog = document.getElementById('helpDialog');
   document.getElementById('helpBtn').addEventListener('click', () => helpDialog.showModal());
@@ -2576,9 +3230,9 @@
   helpDialog.addEventListener('click', (e) => { if (e.target === helpDialog) helpDialog.close(); }); // backdrop
 
   // Number keys 1–7 pick a slot, like a game hotbar; Escape hides a drawer.
-  const HOTKEYS = ['build', 'road', 'water', 'path', 'label', 'pin', 'size'];
+  const HOTKEYS = ['build', 'road', 'water', 'path', 'label', 'pin', 'options'];
   document.addEventListener('keydown', (e) => {
-    if (sizeDialog.open || helpDialog.open) return; // dialogs handle their own Escape
+    if (optionsDialog.open || helpDialog.open) return; // dialogs handle their own Escape
     const t = e.target;
     const typing = t && (t.tagName === 'INPUT' || t.tagName === 'SELECT' || t.tagName === 'TEXTAREA' || t.isContentEditable);
     if (e.key === 'Escape') {
@@ -2591,7 +3245,7 @@
     if (n >= 1 && n <= HOTKEYS.length) {
       e.preventDefault();
       const target = HOTKEYS[n - 1];
-      if (target === 'size') openSizeDialog();
+      if (target === 'options') openOptionsDialog();
       else setTool(target);
     }
   });
