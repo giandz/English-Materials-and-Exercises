@@ -4,6 +4,20 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
 <title>City Playground — 8×8</title>
+<script>
+(function(){
+  try{
+    var saved = localStorage.getItem('theme-preference');
+    var theme = (saved === 'light' || saved === 'dark')
+      ? saved
+      : ((window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches) ? 'dark' : 'light');
+    document.documentElement.setAttribute('data-theme', theme);
+    var fs = parseFloat(localStorage.getItem('font-size-preference'));
+    if (fs >= 10 && fs <= 28) document.documentElement.style.setProperty('--fs-base', fs + 'px');
+  }catch(e){ /* localStorage/matchMedia unavailable — CSS media query still applies */ }
+})();
+</script>
+<link rel="stylesheet" href="house.css">
 <style>
   :root{
     --color-background-primary: #ffffff;
@@ -26,25 +40,12 @@
     --radius: var(--border-radius-lg);
   }
 
-  @media (prefers-color-scheme: dark){
-    :root{
-      --color-background-primary: #1e1e20;
-      --color-background-secondary: #26262a;
-      --color-text-primary: #f0f0f2;
-      --color-text-secondary: #b4b4ba;
-      --color-text-tertiary: #85858c;
-      --color-border-secondary: #3a3a3f;
-      --color-border-tertiary: #34343a;
-    }
-  }
-
   *{ box-sizing:border-box; -webkit-tap-highlight-color:transparent; }
   html,body{
     margin:0;
     background:var(--color-background-primary);
     color:var(--color-text-primary);
     font-family:-apple-system, BlinkMacSystemFont, "Segoe UI", Helvetica, Arial, sans-serif;
-    font-size:15px;
     line-height:1.6;
     touch-action:manipulation;
     -webkit-user-select:none;
@@ -54,20 +55,9 @@
   .page{ max-width:900px; margin:0 auto; padding:28px 20px 150px; }
 
   h1{ font-size:1.3rem; font-weight:600; letter-spacing:-0.01em; margin:0 0 4px; }
-  .subtitle{ font-size:13px; color:var(--text-secondary); margin:0 0 4px; }
-  .cefr-tag{
-    display:inline-block;
-    font-size:11px;
-    font-weight:700;
-    letter-spacing:.04em;
-    background:#e6f1fb;
-    color:#185fa5;
-    padding:3px 10px;
-    border-radius:20px;
-    margin-bottom:10px;
-  }
+  .subtitle{ font-size:0.9286rem; color:var(--text-secondary); margin:0 0 4px; }
 
-  .sec-div{font-size:11px;font-weight:500;letter-spacing:.06em;text-transform:uppercase;color:var(--text-muted);display:flex;align-items:center;gap:8px;margin:1.75rem 0 1rem;}
+  .sec-div{font-size:0.7857rem;font-weight:500;letter-spacing:.06em;text-transform:uppercase;color:var(--text-muted);display:flex;align-items:center;gap:8px;margin:1.75rem 0 1rem;}
   .sec-div::before,.sec-div::after{content:'';flex:1;height:.5px;background:var(--border);}
 
 
@@ -94,7 +84,7 @@
   .tool-pool[hidden], .tool-status[hidden]{ display:none; }
   button.action-btn{
     font-family:inherit;
-    font-size:12.5px;
+    font-size:0.8929rem;
     font-weight:600;
     padding:7px 16px;
     border-radius:100px;
@@ -110,13 +100,13 @@
   }
 
   .size-label{
-    font-size:12.5px;
+    font-size:0.8929rem;
     color:var(--text-secondary);
     align-self:center;
   }
   .size-select{
     font-family:inherit;
-    font-size:12.5px;
+    font-size:0.8929rem;
     padding:6px 10px;
     border-radius:8px;
     border:.5px solid var(--border);
@@ -125,7 +115,7 @@
   }
 
   .pool-heading{
-    font-size:11px;
+    font-size:0.7857rem;
     font-weight:500;
     letter-spacing:.06em;
     text-transform:uppercase;
@@ -170,7 +160,7 @@
   #placePool .place-chip{ width:auto; }
   .place-chip-emoji{ font-size:22px; line-height:1; }
   .place-chip-name{
-    font-size:10.5px; font-weight:600; line-height:1.15;
+    font-size:0.75rem; font-weight:600; line-height:1.15;
     color:var(--text-secondary); text-align:center;
     overflow-wrap:break-word; hyphens:manual;
   }
@@ -212,7 +202,7 @@
   }
 
   .tool-status{
-    font-size:12px;
+    font-size:0.8571rem;
     color:var(--text-accent);
     margin:-.25rem 0 .75rem;
   }
@@ -220,9 +210,7 @@
 
   /* ═══════════ Hotbar (bottom-center toolbar) + tool drawers ═══════════ */
   :root{ --slot-accent:#185fa5; --slot-accent-soft:#e6f1fb; }
-  @media (prefers-color-scheme: dark){
-    :root{ --slot-accent:#6aa9ec; --slot-accent-soft:#1f3346; }
-  }
+  html[data-theme="dark"]{ --slot-accent:#6aa9ec; --slot-accent-soft:#1f3346; }
 
   .dock{
     position:fixed; z-index:900;
@@ -286,16 +274,16 @@
   }
   .drawer[hidden]{ display:none; }
   .drawer-head{ display:flex; align-items:center; justify-content:space-between; margin-bottom:6px; }
-  .drawer-title{ font-size:14px; font-weight:650; margin:0; }
+  .drawer-title{ font-size:1rem; font-weight:650; margin:0; }
   .drawer-close{
     border:0; background:transparent; color:var(--text-secondary);
     font:22px/1 sans-serif; padding:2px 6px 4px; border-radius:8px; cursor:pointer;
   }
   .drawer-close:hover{ background:var(--surface-1); }
-  .drawer-label{ font-size:12px; font-weight:600; color:var(--text-secondary); margin:8px 0 6px; }
+  .drawer-label{ font-size:0.8571rem; font-weight:600; color:var(--text-secondary); margin:8px 0 6px; }
   .drawer .pool{ margin-bottom:0; padding:10px; }
   .drawer .tool-pool{ gap:8px; }
-  .drawer-hint{ font-size:12px; color:var(--text-muted); margin:8px 0 0; line-height:1.45; }
+  .drawer-hint{ font-size:0.8571rem; color:var(--text-muted); margin:8px 0 0; line-height:1.45; }
   .drawer .tool-status{ margin:8px 0 0; color:var(--slot-accent); }
 
   .chip.is-selected{ box-shadow:0 0 0 2px var(--slot-accent); background:var(--slot-accent-soft); }
@@ -310,37 +298,37 @@
     width:min(340px, calc(100vw - 32px));
   }
   .size-dialog::backdrop{ background:rgba(0,0,0,.34); }
-  .size-dialog h2{ font-size:15px; font-weight:650; margin:0 0 12px; }
+  .size-dialog h2{ font-size:1.0714rem; font-weight:650; margin:0 0 12px; }
   .size-grid{ display:grid; grid-template-columns:auto 1fr; gap:8px 12px; align-items:center; }
   .options-dialog{ width:min(400px, calc(100vw - 32px)); }
   .opt-section{ border-top:1px solid var(--color-border-secondary); padding-top:12px; margin-top:12px; }
-  .opt-title{ font-size:13px; font-weight:650; margin:0 0 8px; color:var(--text-primary); }
-  .opt-note{ font-size:12.5px; line-height:1.45; color:var(--text-secondary); margin:0 0 10px; }
+  .opt-title{ font-size:0.9286rem; font-weight:650; margin:0 0 8px; color:var(--text-primary); }
+  .opt-note{ font-size:0.8929rem; line-height:1.45; color:var(--text-secondary); margin:0 0 10px; }
   .opt-row{ display:flex; flex-wrap:wrap; gap:8px; margin-top:10px; }
-  .opt-status{ font-size:12.5px; margin:8px 0 0; color:var(--slot-accent); min-height:1em; }
+  .opt-status{ font-size:0.8929rem; margin:8px 0 0; color:var(--slot-accent); min-height:1em; }
   .opt-status.is-error{ color:#c62828; }
-  @media (prefers-color-scheme: dark){ .opt-status.is-error{ color:#ef7a7a; } }
+  html[data-theme="dark"] .opt-status.is-error{ color:#ef7a7a; }
   .size-actions{ display:flex; flex-wrap:wrap; justify-content:space-between; gap:8px; margin-top:16px; }
   .size-actions .right{ display:flex; gap:8px; }
   button.action-btn.primary{ background:var(--slot-accent); border-color:var(--slot-accent); color:#fff; }
   button.action-btn.danger{ color:#c62828; }
 
   .help-btn{
-    position:fixed; z-index:950; top:14px; right:14px;
-    width:40px; height:40px; border-radius:50%;
+    position:fixed; z-index:999; top:106px; right:14px;
+    width:38px; height:38px; border-radius:50%; padding:0;
     display:flex; align-items:center; justify-content:center;
-    font-size:19px; line-height:1; cursor:pointer;
+    font-size:16px; line-height:1; cursor:pointer;
     background:var(--color-background-primary);
     border:1px solid var(--color-border-secondary);
-    box-shadow:0 3px 12px rgba(0,0,0,.14);
+    box-shadow:0 2px 8px rgba(0,0,0,0.12);
   }
   .help-btn:hover{ background:var(--surface-1); }
   .help-btn:focus-visible{ outline:2px solid var(--slot-accent); outline-offset:2px; }
   .help-dialog{ width:min(420px, calc(100vw - 32px)); }
-  .help-list{ margin:0; padding-left:1.1em; font-size:13.5px; line-height:1.55; color:var(--text-secondary); }
+  .help-list{ margin:0; padding-left:1.1em; font-size:0.9643rem; line-height:1.55; color:var(--text-secondary); }
   .help-list li{ margin-bottom:6px; }
   .help-list strong{ color:var(--text-primary); font-weight:600; }
-  @media (prefers-color-scheme: dark){ button.action-btn.danger{ color:#ef7a7a; } }
+  html[data-theme="dark"] button.action-btn.danger{ color:#ef7a7a; }
 
   @media (max-width:420px){
     .slot{ padding:6px 1px 5px; }
@@ -353,13 +341,13 @@
     .slot, .slot-emoji{ transition:none; }
   }
 
-  footer{ text-align:center; font-size:12px; color:var(--text-muted); margin-top:2rem; }
+  footer{ text-align:center; font-size:0.8571rem; color:var(--text-muted); margin-top:2rem; }
 </style>
 </head>
 <body>
 <div class="page">
 
-  <span class="cefr-tag">A1–B1 · Giving Directions</span>
+  <span class="cefr-tag cefr-a1">A1 · Giving Directions</span>
   <h1>City Playground — 8×8</h1>
   <p class="subtitle">A free-form map for practicing directions out loud. No scoring — build any city you like!</p>
 
@@ -367,7 +355,7 @@
     <svg id="mapSvg" viewBox="0 0 480 480" xmlns="http://www.w3.org/2000/svg"></svg>
   </div>
 
-  <footer>Free Practice — Giving Directions (A1–B1)</footer>
+  <footer>Free Practice — Giving Directions (A1)</footer>
 </div>
 
 <div class="dock" id="dock">
@@ -436,6 +424,12 @@
 
 <button type="button" class="help-btn" id="helpBtn" aria-haspopup="dialog" aria-controls="helpDialog" aria-label="How to play" title="How to play">❓</button>
 
+<div id="theme-toggle-wrap">
+  <button id="theme-toggle" aria-label="Toggle light/dark mode" title="Toggle light/dark mode">
+    <span id="theme-icon">☀️</span>
+  </button>
+</div>
+
 <dialog class="size-dialog help-dialog" id="helpDialog" aria-labelledby="helpDialogTitle">
   <h2 id="helpDialogTitle">❓ How to play</h2>
   <ul class="help-list">
@@ -488,6 +482,7 @@
   </section>
 </dialog>
 
+<script src="house.js"></script>
 <script>
   let COLS = 8, ROWS = 8;
   const CELL = 60;
@@ -496,8 +491,9 @@
 
   const PLACE_CHIPS = [
     "🏫", "🍞", "🧰", "🌳", "🏦", "☕", "💊", "🧸", "👟", "🍦",
-    "🍫", "🎁", "🎈", "🍰", "🐶", "🏥", "🏠", "🏢", "⛪",
-    "🅿️", "🏪", "🍕", "🎮", "💇", "🐟", "⚓", "🚉", "🚇"
+    "🍫", "🎁", "🎈", "🍰", "🐶", "🏥", "🏠", "🏢", "⛪", "💈",
+    "🏬", "🏛️", "🎸", "🎯", "🍻", "✉️", "🔬", "🛒", "🎪",
+    "🏪", "🍕", "🎮", "✂️", "🐟", "⚓", "🚉", "🚇"
   ];
 
   // Captions shown under each chip in the 🏗️ Build drawer only —
@@ -508,9 +504,11 @@
     "👟": "shoe store", "🍦": "ice cream shop", "🍫": "candy store",
     "🎁": "gift shop", "🎈": "party store", "🍰": "cake shop",
     "🐶": "pet shop", "🏥": "hospital", "🏠": "house", "🏢": "office",
-    "⛪": "church", "🚉": "train station", "🅿️": "parking lot",
-    "🏪": "conve\u00ADnience store", "🍕": "pizzeria", "🎮": "game store",
-    "💇": "hair salon", "🐟": "fish market", "⚓": "ferry", "🚇": "subway"
+    "⛪": "church", "🚉": "train station",
+    "🏪": "conve\u00ADnience store", "🍕": "pizzeria", "🎮": "arcade",
+    "✂️": "hair salon", "🐟": "fish market", "⚓": "ferry", "🚇": "subway",
+    "💈": "barbershop", "🏬": "depart\u00ADment store", "🏛️": "museum", "🎸": "music store",
+    "🎯": "sports bar", "🍻": "bar", "✉️": "post office", "🔬": "lab", "🛒": "supermarket", "🎪": "circus"
   };
 
   const FERRY_SYMBOL = "⚓";
@@ -648,9 +646,10 @@
     }
 
     applyTheme();
-    // keep the heading in step with the grid (it used to stay "8×8")
+    // keep the heading and the browser tab in step with the grid
     const h1 = document.querySelector('h1');
     if (h1) h1.textContent = `City Playground — ${COLS}×${ROWS}`;
+    document.title = `City Playground — ${COLS}×${ROWS}`;
   }
 
   buildGridDOM();
