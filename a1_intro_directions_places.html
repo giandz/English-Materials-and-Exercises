@@ -1,0 +1,68 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<title>Places in Town — Memory Game</title>
+<script>
+(function(){
+  try{
+    var saved = localStorage.getItem('theme-preference');
+    var theme = (saved === 'light' || saved === 'dark')
+      ? saved
+      : ((window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches) ? 'dark' : 'light');
+    document.documentElement.setAttribute('data-theme', theme);
+    var fs = parseFloat(localStorage.getItem('font-size-preference'));
+    if (fs >= 10 && fs <= 28) document.documentElement.style.setProperty('--fs-base', fs + 'px');
+  }catch(e){ /* localStorage/matchMedia unavailable — CSS media query still applies */ }
+})();
+</script>
+<link rel="stylesheet" href="house.css">
+</head>
+<body>
+<div class="page" id="page">
+  <span class="cefr-tag cefr-a1">A1 · Beginner</span>
+  <h1>Places in Town</h1>
+  <p class="subtitle">Find the pairs: a picture and its word.</p>
+
+  <div class="sec-div">Memory game</div>
+  <div class="rule-box"><strong>How to play:</strong> tap two cards. Find a picture and its word. If they match, they stay open. If not, try again!</div>
+  <div id="memory"></div>
+
+  <div class="sec-div">My vocabulary</div>
+  <div id="vocab"></div>
+
+  <footer>Places in Town — Memory Game (A1)</footer>
+</div>
+
+<div id="theme-toggle-wrap">
+  <button id="theme-toggle" aria-label="Toggle light/dark mode" title="Toggle light/dark mode">
+    <span id="theme-icon">☀️</span>
+  </button>
+</div>
+<script src="house.js"></script>
+<script>
+// Places from a1_freer_directions_playground.html (PLACE_CHIPS / PLACE_NAMES).
+const ROUNDS = [
+  { name: 'Around town', pairs: [
+    ['🏠', 'house'], ['🏫', 'school'], ['🏥', 'hospital'], ['🏢', 'office'],
+    ['⛪', 'church'], ['🌳', 'park'], ['🏛️', 'museum'], ['🏟️', 'stadium'] ]},
+  { name: 'Food and drink', pairs: [
+    ['🍞', 'bakery'], ['☕', 'café'], ['🍕', 'pizzeria'], ['🍰', 'cake shop'],
+    ['🍦', 'ice cream shop'], ['🍫', 'candy store'], ['🐟', 'fish market'], ['🍻', 'bar'] ]},
+  { name: 'Shops', pairs: [
+    ['🛒', 'super\u00ADmarket'], ['👟', 'shoe store'], ['🧸', 'toy store'], ['🐶', 'pet shop'],
+    ['🎁', 'gift shop'], ['🎈', 'party store'], ['🎸', 'music store'], ['🧰', 'hardware store'] ]},
+  { name: 'Services', pairs: [
+    ['🏦', 'bank'], ['✉️', 'post office'], ['💊', 'pharmacy'], ['✂️', 'hair salon'],
+    ['💈', 'barber\u00ADshop'], ['🏪', 'conve\u00ADnience store'], ['🏬', 'depart\u00ADment store'], ['🔬', 'lab'] ]},
+  { name: 'Fun and travel', pairs: [
+    ['🎮', 'arcade'], ['🎪', 'circus'], ['🎯', 'sports bar'],
+    ['🚉', 'train station'], ['🚇', 'subway'], ['⚓', 'ferry'] ]}
+];
+
+HouseMemory.build({ container: 'memory', vocab: 'vocab', rounds: ROUNDS });
+</script>
+<script>HouseGrammar.init();</script>
+</body>
+</html>

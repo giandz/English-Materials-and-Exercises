@@ -1758,6 +1758,7 @@
   global.HouseFormClarf = { build: build, LABELS: LABELS };
 })(window);
 
+
 /* ══════════════════════════════════════════════════════════════════════════
    HOUSE ERROR HUNT — missing / extra / misplaced / wrong-form word.
 
@@ -2391,6 +2392,7 @@
   global.HouseErrorHunt = { build: build };
 })(window);
 
+
 /* ══════════════════════════════════════════════════════════════════════════
    HOUSE CCQ — concept checking questions
    The check a teacher makes after presenting a form: not "can you build it?"
@@ -2477,6 +2479,296 @@
   }
 
   global.HouseCCQ = { build: build };
+})(window);
+
+
+/* ══════════════════════════════════════════════════════════════════════════
+   HOUSE MEMORY — picture / word memory game (vocabulary intro pages)
+   Every card starts face down. Each pair is one emoji card and one word card;
+   turning over a matching picture and word keeps both open, says the word
+   (HouseSpeak), and adds it to a vocabulary list under the game. A wrong pair
+   flashes, then turns back over.
+
+   Long sets are split into rounds so a board stays small enough for A1
+   (8 pairs = a 4 × 4 grid). Rounds can be played in any order; a finished
+   round is ticked, and the vocabulary list keeps every round's words grouped
+   under the round's name, in the round's own order — not in the order the
+   pairs happened to be found. Replaying a round never duplicates a word.
+
+     HouseMemory.build({
+       container: 'memory',            // game: round picker, score, board, buttons
+       vocab: 'vocab',                 // optional: where the word list is built
+       rounds: [
+         { name: 'Around town', pairs: [['🏠','house'], ['🏫','school'], …] },
+         { name: 'Shops',       pairs: [['🛒','super\u00ADmarket'], …] }
+       ]
+     });
+
+   A single board needs no rounds:  HouseMemory.build({ container, vocab, pairs:[…] })
+
+   A pair is [emoji, word] or {emoji, word, say}. `say` is what HouseSpeak reads
+   when it differs from the word; soft hyphens (\u00AD) in a word are allowed —
+   they let long words break neatly inside a small card — and are stripped
+   before the word is spoken or compared.
+
+   Optional: columns (4), back ('🧭'), speak (true), labels:{…}, onComplete(i, tries).
+   Returns { start(i) }.
+   ══════════════════════════════════════════════════════════════════════════ */
+(function (global) {
+  'use strict';
+
+  var DEFAULT_LABELS = {
+    howTo: '',
+    pairs: 'Pairs', tries: 'Tries',
+    again: '↺ Play again', next: 'Next round →',
+    empty: 'Your words will appear here.',
+    hint: 'Tap a word to hear it.',
+    roundWin: '🎉 Well done! Round {n} in {tries} tries.',
+    boardWin: '🎉 Well done! {tries} tries.',
+    allWin: '🎉 Great! You know all {total} words!',
+    hidden: 'Hidden card'
+  };
+
+  function el(id) { return typeof id === 'string' ? document.getElementById(id) : id; }
+  function plain(s) { return String(s).replace(/\u00AD/g, ''); }
+  function fill(tpl, vars) {
+    return tpl.replace(/\{(\w+)\}/g, function (m, k) { return vars[k] != null ? vars[k] : m; });
+  }
+  function shuffle(arr) {
+    var a = arr.slice();
+    for (var i = a.length - 1; i > 0; i--) {
+      var j = Math.floor(Math.random() * (i + 1));
+      var t = a[i]; a[i] = a[j]; a[j] = t;
+    }
+    return a;
+  }
+  function normPair(p) {
+    if (Array.isArray(p)) return { emoji: p[0], word: p[1], say: plain(p[2] || p[1]) };
+    return { emoji: p.emoji, word: p.word, say: plain(p.say || p.word) };
+  }
+  function node(tag, cls, html) {
+    var n = document.createElement(tag);
+    if (cls) n.className = cls;
+    if (html != null) n.innerHTML = html;
+    return n;
+  }
+
+  function build(opts) {
+    var host = el(opts.container);
+    if (!host) return null;
+
+    var labels = {};
+    Object.keys(DEFAULT_LABELS).forEach(function (k) { labels[k] = DEFAULT_LABELS[k]; });
+    if (opts.labels) Object.keys(opts.labels).forEach(function (k) { labels[k] = opts.labels[k]; });
+
+    var rounds = (opts.rounds || [{ name: '', pairs: opts.pairs || [] }]).map(function (r) {
+      return { name: r.name || '', pairs: (r.pairs || []).map(normPair) };
+    });
+    var multi = rounds.length > 1;
+    var backFace = opts.back || '🧭';
+    var speak = opts.speak !== false;
+    var total = rounds.reduce(function (n, r) { return n + r.pairs.length; }, 0);
+
+    // ── game markup ────────────────────────────────────────────────────
+    host.classList.add('mem-wrap');
+    host.innerHTML = '';
+
+    var roundRow = null;
+    if (multi) {
+      roundRow = node('div', 'mem-rounds');
+      rounds.forEach(function (r, i) {
+        var b = node('button', 'mem-round-btn', (i + 1) + '. ' + r.name);
+        b.type = 'button';
+        b.addEventListener('click', function () { start(i); });
+        roundRow.appendChild(b);
+      });
+      host.appendChild(roundRow);
+    }
+
+    var bar = node('div', 'score-bar',
+      '<span>' + labels.pairs + ': <strong class="mem-score">0</strong> / <span class="mem-total">0</span></span>' +
+      '<span>' + labels.tries + ': <strong class="mem-tries">0</strong></span>');
+    host.appendChild(bar);
+    var scoreEl = bar.querySelector('.mem-score');
+    var totalEl = bar.querySelector('.mem-total');
+    var triesEl = bar.querySelector('.mem-tries');
+
+    var winEl = node('div', 'win-msg');
+    host.appendChild(winEl);
+
+    var board = node('div', 'mem-board');
+    if (opts.columns) board.style.gridTemplateColumns = 'repeat(' + opts.columns + ', minmax(0,1fr))';
+    host.appendChild(board);
+
+    var actions = node('div', 'mem-actions');
+    var againBtn = node('button', '', labels.again); againBtn.type = 'button';
+    var nextBtn = node('button', '', labels.next); nextBtn.type = 'button'; nextBtn.hidden = true;
+    actions.appendChild(againBtn);
+    actions.appendChild(nextBtn);
+    host.appendChild(actions);
+
+    // ── vocabulary markup ──────────────────────────────────────────────
+    var vocabHost = el(opts.vocab), vocabEmpty = null, vocabGroups = null;
+    if (vocabHost) {
+      vocabHost.classList.add('mem-vocab');
+      vocabHost.innerHTML = '';
+      if (labels.hint) vocabHost.appendChild(node('p', 'subtitle', labels.hint));
+      vocabEmpty = node('p', 'mem-vocab-empty', labels.empty);
+      vocabHost.appendChild(vocabEmpty);
+      vocabGroups = node('div', 'mem-vocab-groups');
+      vocabHost.appendChild(vocabGroups);
+    }
+
+    // ── state ──────────────────────────────────────────────────────────
+    var learned = {}, doneRounds = {};
+    var current = 0, open = [], lock = false, found = 0, tries = 0, timers = [];
+
+    function clearTimers() { timers.forEach(clearTimeout); timers = []; }
+
+    function paintRounds() {
+      if (!roundRow) return;
+      Array.prototype.forEach.call(roundRow.children, function (b, i) {
+        b.classList.toggle('active', i === current);
+        b.classList.toggle('done', !!doneRounds[i]);
+      });
+    }
+
+    function makeCard(k, kind, pair) {
+      var card = node('button', 'mem-card');
+      card.type = 'button';
+      card.dataset.id = k;
+      card.dataset.kind = kind;
+      card.setAttribute('aria-label', labels.hidden);
+      card.innerHTML =
+        '<span class="mem-inner">' +
+          '<span class="mem-face mem-back" aria-hidden="true">' + backFace + '</span>' +
+          '<span class="mem-face mem-front ' + (kind === 'emoji' ? 'is-emoji' : 'is-word') + '">' +
+            (kind === 'emoji' ? pair.emoji : pair.word) +
+          '</span>' +
+        '</span>';
+      card._pair = pair;
+      card.addEventListener('click', function () { flip(card); });
+      return card;
+    }
+
+    function start(i) {
+      clearTimers();
+      current = i; open = []; lock = false; found = 0; tries = 0;
+      var pairs = rounds[i].pairs;
+      scoreEl.textContent = 0;
+      totalEl.textContent = pairs.length;
+      triesEl.textContent = 0;
+      winEl.classList.remove('show');
+      nextBtn.hidden = true;
+
+      var cards = [];
+      pairs.forEach(function (p, k) {
+        cards.push(makeCard(k, 'emoji', p));
+        cards.push(makeCard(k, 'word', p));
+      });
+      board.innerHTML = '';
+      shuffle(cards).forEach(function (c) { board.appendChild(c); });
+      paintRounds();
+    }
+
+    function flip(card) {
+      if (lock || card.classList.contains('flipped') || card.classList.contains('matched')) return;
+      card.classList.add('flipped');
+      card.setAttribute('aria-label', card.dataset.kind === 'emoji' ? card._pair.emoji : card._pair.say);
+      open.push(card);
+      if (open.length < 2) return;
+
+      tries++;
+      triesEl.textContent = tries;
+      var a = open[0], b = open[1];
+      open = [];
+
+      if (a.dataset.id === b.dataset.id && a.dataset.kind !== b.dataset.kind) {
+        [a, b].forEach(function (c) { c.classList.remove('flipped'); c.classList.add('matched'); });
+        found++;
+        scoreEl.textContent = found;
+        addWord(current, a._pair);
+        if (speak && global.HouseSpeak) global.HouseSpeak.speak(a._pair.say);
+        if (found === rounds[current].pairs.length) finish();
+      } else {
+        lock = true;
+        timers.push(setTimeout(function () { a.classList.add('miss'); b.classList.add('miss'); }, 350));
+        timers.push(setTimeout(function () {
+          [a, b].forEach(function (c) {
+            c.classList.remove('flipped', 'miss');
+            c.setAttribute('aria-label', labels.hidden);
+          });
+          lock = false;
+        }, 1100));
+      }
+    }
+
+    function finish() {
+      doneRounds[current] = true;
+      paintRounds();
+      var doneCount = Object.keys(doneRounds).length;
+      var next = -1;
+      for (var i = 0; i < rounds.length; i++) { if (!doneRounds[i]) { next = i; break; } }
+
+      winEl.textContent = (multi && doneCount === rounds.length)
+        ? fill(labels.allWin, { total: total })
+        : fill(multi ? labels.roundWin : labels.boardWin, { n: current + 1, tries: tries });
+      winEl.classList.add('show');
+
+      nextBtn.hidden = next === -1;
+      nextBtn.onclick = function () { start(next); };
+      if (opts.onComplete) opts.onComplete(current, tries);
+    }
+
+    // ── vocabulary list ────────────────────────────────────────────────
+    function listFor(ri) {
+      var g = vocabGroups.querySelector('[data-round="' + ri + '"]');
+      if (g) return g.querySelector('.mem-vocab-list');
+      g = node('div', 'mem-vocab-group');
+      g.dataset.round = ri;
+      if (rounds[ri].name) g.appendChild(node('div', 'mem-vocab-title', rounds[ri].name));
+      g.appendChild(node('div', 'mem-vocab-list'));
+      // Groups stay in round order, whatever order the rounds were played in.
+      var after = null;
+      Array.prototype.some.call(vocabGroups.children, function (c) {
+        if (+c.dataset.round > ri) { after = c; return true; }
+        return false;
+      });
+      vocabGroups.insertBefore(g, after);
+      return g.querySelector('.mem-vocab-list');
+    }
+
+    function addWord(ri, pair) {
+      if (!vocabGroups) return;
+      var key = ri + '|' + pair.say;
+      if (learned[key]) return;
+      learned[key] = true;
+      vocabEmpty.hidden = true;
+
+      var list = listFor(ri);
+      var item = node('div', 'mem-vocab-item',
+        '<span class="mem-v-emoji">' + pair.emoji + '</span><span class="mem-v-word">' + pair.word + '</span>');
+      item.dataset.say = pair.say;          // HouseSpeak's delegated listener picks this up
+      item.setAttribute('aria-label', pair.say);
+
+      // Each group keeps the round's own order, not the order pairs were found.
+      var order = rounds[ri].pairs.map(function (p) { return p.say; });
+      var pos = order.indexOf(pair.say);
+      var after = null;
+      Array.prototype.some.call(list.children, function (c) {
+        if (order.indexOf(c.dataset.say) > pos) { after = c; return true; }
+        return false;
+      });
+      list.insertBefore(item, after);
+    }
+
+    againBtn.addEventListener('click', function () { start(current); });
+
+    start(0);
+    return { start: start };
+  }
+
+  global.HouseMemory = { build: build };
 })(window);
 
 
