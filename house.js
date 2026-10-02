@@ -1758,7 +1758,6 @@
   global.HouseFormClarf = { build: build, LABELS: LABELS };
 })(window);
 
-
 /* ══════════════════════════════════════════════════════════════════════════
    HOUSE ERROR HUNT — missing / extra / misplaced / wrong-form word.
 
@@ -1805,11 +1804,16 @@
      { words: [...], errors: [] }                     // no mistake
      { words: [...], errors: [ <error>, <error>, ... ] }
    where each <error> is one of:
-     { type:'missing',   gapIndex,  options, correct }
+     { type:'missing',   gapIndex,  options, correct, alwaysCap? }
        // Several missing words can share one gap (e.g. "two bread" →
        // "two loaves of bread"): give each its own `missing` error with the
        // same gapIndex. They're offered one at a time in array order, so
        // list them left to right; each lands after the previous one.
+       // alwaysCap (boolean, `missing` only): inserting the first word into
+       // gapIndex 0 pushes the sentence's old first word to second place,
+       // so it loses its capital letter — unless that word is always
+       // capitalized regardless of position (e.g. "I"), in which case set
+       // alwaysCap: true to leave it untouched. No effect at any other gap.
      { type:'extra',     wordIndex }
      { type:'misplaced', wordIndex, targetGapIndex, alwaysCap? }
        // alwaysCap: 'first' | 'second' | 'both' — only needed when the move
@@ -2217,7 +2221,7 @@
           b.textContent = opt;
           b.addEventListener('click', function () {
             if (opt === e.correct) {
-              if (mode === 'gap') insertWordAt(e.gapIndex, opt);
+              if (mode === 'gap') insertWordAt(e.gapIndex, opt, e.alwaysCap);
               else replaceWordAt(e.wordIndex, opt);
               errorResolved[activeTarget.errorIndex] = true;
               updateResolved();
@@ -2255,11 +2259,22 @@
         positionMenu();
       }
 
-      function insertWordAt(gapIndex, word) {
+      function insertWordAt(gapIndex, word, alwaysCap) {
+        // Only the very first word to land in gap 0 can push the sentence's
+        // original first word out of position — a second missing word
+        // chained after it (via gapTail) lands later in the sentence and
+        // doesn't touch capitalization at all.
+        var pushesOldFirst = gapIndex === 0 && !gapTail[0] && wordEls[0];
+        var displayWord = (gapIndex === 0) ? capitalizeFirst(word) : word;
+
         var chip = document.createElement('span');
         chip.className = 'eh2-word inserted';
-        chip.textContent = word;
+        chip.textContent = displayWord;
         (gapTail[gapIndex] || gapEls[gapIndex]).insertAdjacentElement('afterend', chip);
+
+        if (pushesOldFirst && alwaysCap !== true) {
+          wordEls[0].textContent = decapitalizeFirst(wordEls[0].textContent);
+        }
 
         // The slot after the new word stands in for the gap it was inserted
         // into: if more missing words remain for that same gap, tapping it
