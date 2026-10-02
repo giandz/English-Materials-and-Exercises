@@ -1368,6 +1368,17 @@
 
    Bands are drawn behind the line and the events, so an event placed within
    `from`..`to` reads as happening during that period.
+
+   Future forms (going to, will, present continuous for plans) need room after
+   now. `nowAt` moves the NOW marker along the line (default 1 = the right end,
+   as on every past-tense page); everything to its right is the future, which
+   ends in an arrow labelled `endLabel` (default 'Future'):
+
+     HouseTimeline.build({ container: 'timeline', nowAt: 0.5,
+       events: [{ at: 0.2, emoji: '💭', label: 'you decided' },
+                { at: 0.8, emoji: '🎉', label: 'the party' }] });
+
+   With `nowAt`, `at` is still 0 = start of line, 1 = end of line.
    ══════════════════════════════════════════════════════════════════════════ */
 (function (global) {
   'use strict';
@@ -1471,6 +1482,21 @@
       fill: 'var(--color-text-secondary)', 'text-anchor': 'middle'
     }, opts.startLabel || 'Past'));
 
+    // Where NOW sits. Past-tense pages leave it at the end of the line; future
+    // pages move it left so the events after it read as still to come.
+    var nowAt = (typeof opts.nowAt === 'number') ? Math.max(0, Math.min(1, opts.nowAt)) : 1;
+    var XN = xAt(nowAt);
+    if (nowAt < 1) {
+      svg.appendChild(el('path', {
+        d: 'M' + (X1 + 12) + ' ' + Y + ' L' + (X1 - 2) + ' ' + (Y - 7) + ' L' + (X1 - 2) + ' ' + (Y + 7) + ' Z',
+        fill: 'var(--color-border-secondary)'
+      }));
+      svg.appendChild(el('text', {
+        x: X1, y: Y + 25, 'font-size': 12,
+        fill: 'var(--color-text-secondary)', 'text-anchor': 'middle'
+      }, opts.endLabel || 'Future'));
+    }
+
     // ── point events ─────────────────────────────────────────────────────
     events.forEach(function (ev) {
       if (ev.kind === 'span') return;
@@ -1496,17 +1522,17 @@
     // ── the NOW marker ───────────────────────────────────────────────────
     if (opts.nowLabel !== false) {
       svg.appendChild(el('line', {
-        x1: X1, y1: Y, x2: X1, y2: Y - 40,
+        x1: XN, y1: Y, x2: XN, y2: Y - 40,
         stroke: 'var(--text-accent)', 'stroke-width': 2.5
       }));
-      svg.appendChild(el('circle', { cx: X1, cy: Y, r: 7, fill: 'var(--text-accent)' }));
+      svg.appendChild(el('circle', { cx: XN, cy: Y, r: 7, fill: 'var(--text-accent)' }));
       svg.appendChild(el('text', {
-        x: X1, y: Y - 60, 'font-size': 13, 'font-weight': 700,
+        x: XN, y: Y - 60, 'font-size': 13, 'font-weight': 700,
         fill: 'var(--text-accent)', 'text-anchor': 'middle'
       }, opts.nowLabel || 'NOW'));
       if (opts.nowNote) {
         svg.appendChild(el('text', {
-          x: X1, y: Y + 26, 'font-size': 10.5,
+          x: XN, y: Y + 26, 'font-size': 10.5,
           fill: 'var(--color-text-secondary)', 'text-anchor': 'middle'
         }, opts.nowNote));
       }
