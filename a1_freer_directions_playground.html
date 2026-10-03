@@ -406,13 +406,12 @@
     <div class="brush-row" id="brushRow" role="radiogroup" aria-label="Paint">
       <button type="button" class="brush" data-brush="water" role="radio" aria-checked="true"><span class="brush-emoji" aria-hidden="true">🌊</span><span class="brush-word">Water</span></button>
       <span class="brush-divider" aria-hidden="true"></span>
-      <button type="button" class="brush" data-brush="grass" role="radio" aria-checked="false"><span class="brush-emoji" aria-hidden="true">🏕️</span><span class="brush-word">Grass</span></button>
-       <button type="button" class="brush" data-brush="dirt" role="radio" aria-checked="false"><span class="brush-emoji" aria-hidden="true">🪏</span><span class="brush-word">Dirt</span></button>
-      <button type="button" class="brush" data-brush="stone" role="radio" aria-checked="false"><span class="brush-emoji" aria-hidden="true">🪨</span><span class="brush-word">Stone</span></button>
-      <button type="button" class="brush" data-brush="sand" role="radio" aria-checked="false"><span class="brush-emoji" aria-hidden="true">🏜️</span><span class="brush-word">Sand</span></button>
-      <button type="button" class="brush" data-brush="snow" role="radio" aria-checked="false"><span class="brush-emoji" aria-hidden="true">☃️</span><span class="brush-word">Snow</span></button>
-	</div>
-    <p class="drawer-hint">Water makes rivers. Grass, dirt, stone, sand and snow only change the colour of the ground — roads, places and routes stay the same. Drag from a square that already has that colour to erase it.</p>
+      <button type="button" class="brush" data-brush="grass" role="radio" aria-checked="false"><span class="brush-emoji" aria-hidden="true">🟩</span><span class="brush-word">Grass</span></button>
+      <button type="button" class="brush" data-brush="dirt" role="radio" aria-checked="false"><span class="brush-emoji" aria-hidden="true">🟫</span><span class="brush-word">Dirt</span></button>
+      <button type="button" class="brush" data-brush="sand" role="radio" aria-checked="false"><span class="brush-emoji" aria-hidden="true">🟨</span><span class="brush-word">Sand</span></button>
+      <button type="button" class="brush" data-brush="snow" role="radio" aria-checked="false"><span class="brush-emoji" aria-hidden="true">⬜</span><span class="brush-word">Snow</span></button>
+    </div>
+    <p class="drawer-hint">Water makes rivers. Grass, dirt, sand and snow only change the colour of the ground — roads, places and routes stay the same. Drag from a square that already has that colour to erase it.</p>
   </section>
 
   <section class="drawer" id="drawer-path" hidden aria-labelledby="drawerTitlePath">
@@ -478,9 +477,9 @@
   <ul class="help-list">
     <li>Pick a tool in the toolbar at the bottom, or press <strong>1–7</strong>.</li>
     <li><strong>🛣️ Road</strong> and <strong>🌊 Water</strong>: click or drag on the map to draw. Drag over it again to erase.</li>
+    <li>In the <strong>🌊 Water</strong> drawer you can also paint the ground: <strong>🟩 grass</strong>, <strong>🟫 dirt</strong>, <strong>🟨 sand</strong> or <strong>⬜ snow</strong>. It only changes the colour.</li>
     <li>Tap <strong>🛣️ Road</strong> again to switch to <strong>🛤️ Railroad</strong>. Trains only go from one <strong>🚉 train station</strong> to another.</li>
-    <li>In the <strong>🌊 Water</strong> drawer you can also paint the ground: <strong>🏕️grass</strong>, <strong>🪏 dirt</strong>, <strong>🪨 stone</strong>, <strong>🏜️ sand</strong> or <strong>☃️ snow</strong>. It only changes the colour.</li>
-	<li><strong>🏗️ Build</strong>: drag a place onto the map. Tap it to remove it, or drag it to move it. The last place you picked shows on the Build button — drag from the button to add another one.</li>
+    <li><strong>🏗️ Build</strong>: drag a place onto the map. Tap it to remove it, or drag it to move it. The last place you picked shows on the Build button — drag from the button to add another one.</li>
     <li><strong>⚓ Ferry</strong>: put it next to water. Routes can sail from one ferry to another.</li>
     <li><strong>🚇 Subway</strong>: routes can go from one station to any other station.</li>
     <li><strong>🧭 Path</strong>, <strong>🏷️ Label</strong> and <strong>📍 Pin</strong> open a drawer with options. Tap the tool again to hide it.</li>
@@ -533,26 +532,23 @@
   const SVG_NS = "http://www.w3.org/2000/svg";
   const svg = document.getElementById('mapSvg');
 
-   const PLACE_CHIPS = [
+  const PLACE_CHIPS = [
     "🏫", "🍞", "🧰", "🌳", "🏦", "☕", "💊", "🧸", "👟", "🍦",
-    "🍫", "🎁", "🎈", "🍰", "🐶", "🏥", "🏠", "🏢", "⛪", "💈",
-    "🏬", "🏛️", "🎸", "🎯", "🍻", "✉️", "🔬", "🛒", "🎪", "🏟️",
-    "🏪", "🍕", "🎮", "✂️", "🐟", "⚓", "🚉", "🚇"
+    "🍫", "🎁", "🎈", "🍰", "🐶", "🏥", "🏠", "🏢", "⛪",
+    "🅿️", "🏪", "🍕", "🎮", "💇", "🐟", "⚓", "🚉", "🚇"
   ];
 
   // Captions shown under each chip in the 🏗️ Build drawer only —
   // buildings on the map stay emoji-only so students name them out loud.
   const PLACE_NAMES = {
     "🏫": "school", "🍞": "bakery", "🧰": "hardware store", "🌳": "park",
-    "🏦": "bank", "☕": "café", "💊": "drugstore", "🧸": "toy store",
+    "🏦": "bank", "☕": "café", "💊": "pharmacy", "🧸": "toy store",
     "👟": "shoe store", "🍦": "ice cream shop", "🍫": "candy store",
-    "🎁": "gift shop", "🎈": "party store", "🍰": "pastry shop",
+    "🎁": "gift shop", "🎈": "party store", "🍰": "cake shop",
     "🐶": "pet shop", "🏥": "hospital", "🏠": "house", "🏢": "office",
-    "⛪": "church", "🚉": "train station", "🏟️": "stadium",
-    "🏪": "conve\u00ADnience store", "🍕": "pizzeria", "🎮": "arcade",
-    "✂️": "hair salon", "🐟": "fish market", "⚓": "ferry", "🚇": "subway",
-    "💈": "barber\u00ADshop", "🏬": "depart\u00ADment store", "🏛️": "museum", "🎸": "music store",
-    "🎯": "sports bar", "🍻": "bar", "✉️": "post office", "🔬": "lab", "🛒": "super\u00ADmarket", "🎪": "circus"
+    "⛪": "church", "🚉": "train station", "🅿️": "parking lot",
+    "🏪": "conve\u00ADnience store", "🍕": "pizzeria", "🎮": "game store",
+    "💇": "hair salon", "🐟": "fish market", "⚓": "ferry", "🚇": "subway"
   };
 
   const FERRY_SYMBOL = "⚓";
@@ -590,7 +586,7 @@
   let greenBg, terrainLayer;
 
   /* ═══════════════ TERRAIN (cosmetic ground colour) ═══════════════ */
-  // Each square may carry cell.terrain = 'dirt' | 'stone' | 'sand' | 'snow' (no
+  // Each square may carry cell.terrain = 'dirt' | 'sand' | 'snow' (no
   // value = grass). It is purely visual: nothing else reads it, and it
   // survives whatever road, river or place sits on the square.
   //
@@ -603,11 +599,10 @@
   // the border.
   const TERRAINS = {
     dirt: { color: '#b58c5c', label: 'Dirt' },
-    stone: { color: '#777777', label: 'Stone' },
     sand: { color: '#ead38e', label: 'Sand' },
     snow: { color: '#f3f6f9', label: 'Snow' }
   };
-  const TERRAIN_ORDER = ['dirt', 'stone', 'sand', 'snow'];
+  const TERRAIN_ORDER = ['dirt', 'sand', 'snow'];
 
   // Marching-squares shape for one dual cell. Returns the outline as
   // [x, y, isMidpoint] vertices. Where the outline runs from one edge
@@ -702,7 +697,7 @@
     greenRect.setAttribute("width", COLS * CELL); greenRect.setAttribute("height", ROWS * CELL);
     greenRect.setAttribute("fill", "#8bc76b");
     greenBg.appendChild(greenRect);
-    // cosmetic ground colours (dirt / stone / sand / snow) sit between the grass
+    // cosmetic ground colours (dirt / sand / snow) sit between the grass
     // and the grid dots, and under every road, river and place
     terrainLayer = document.createElementNS(SVG_NS, "g");
     terrainLayer.setAttribute("id", "terrainLayer");
@@ -1780,7 +1775,7 @@
 
   let currentTool = 'road'; // 'build' | 'road' | 'water' | 'path' | 'label' | 'pin'
   let roadMode = 'road';    // the Road slot paints 'road' or 'rail' — tap it again to switch
-  let waterBrush = 'water'; // the Water slot paints 'water', or a ground colour: 'grass' | 'dirt' | 'stone' | 'sand' | 'snow'
+  let waterBrush = 'water'; // the Water slot paints 'water', or a ground colour: 'grass' | 'dirt' | 'sand' | 'snow'
   let selectedPinColor = 'red'; // color the 📍 Pin tool stamps on a tap
 
   function setKind(r, c, kind, opts) {
@@ -1924,8 +1919,13 @@
       } else if (cell.kind === 'special') {
         mode = 'special-drag';
       } else if (cell.kind === paintKind) {
-        mode = paintKind + '-erase';
-        clearCell(r, c);
+        // Starting on a tile of the same kind is ambiguous: it may be the
+        // start of an erase, or of a new branch drawn out of an existing
+        // road. Wait for the drag to reach the next tile: if that tile
+        // has the same kind, it's an erase (this tile and that one go);
+        // otherwise it's painting, and this tile stays. A plain tap with
+        // no drag still erases this one tile (see pointerup).
+        mode = paintKind + '-pending';
       } else {
         // empty, or occupied by another network (road, rail, water) —
         // paint over it, replacing whichever was there
@@ -1987,6 +1987,26 @@
         return;
       }
 
+      if (mode && mode.endsWith('-pending')) {
+        const els = document.elementsFromPoint(e.clientX, e.clientY);
+        const targetRect = els.find(el => el.classList && el.classList.contains('cell-hit'));
+        if (!targetRect) return;
+        const tr = Number(targetRect.dataset.row), tc = Number(targetRect.dataset.col);
+        if (tr === r && tc === c) return;            // still on the starting tile
+        moved = true;
+        const paintKind = mode.split('-')[0];
+        const next = grid[tr][tc];
+        if (next.kind === paintKind) {
+          mode = paintKind + '-erase';
+          clearCell(r, c);
+          clearCell(tr, tc);
+        } else {
+          mode = paintKind + '-paint';
+          if (next.kind !== 'building') setKind(tr, tc, paintKind);
+        }
+        return;
+      }
+
       if (mode && (mode.endsWith('-paint') || mode.endsWith('-erase'))) {
         if (!moved && Math.hypot(dx, dy) >= 6) moved = true;
         const els = document.elementsFromPoint(e.clientX, e.clientY);
@@ -2006,6 +2026,13 @@
     rect.addEventListener('pointerup', (e) => {
       if (pointerId === null || e.pointerId !== pointerId) return;
       pointerId = null;
+
+      // tap (never left the starting tile) on a tile of the same kind → erase it
+      if (mode && mode.endsWith('-pending')) {
+        clearCell(r, c);
+        mode = null;
+        return;
+      }
 
       if (mode === 'building-drag') {
         if (!moved) {
@@ -3463,7 +3490,7 @@
   }
 
   // Water slot: shows whichever brush is picked in its drawer
-  const BRUSH_FACE = { water: ['🌊', 'Water'], grass: ['🏕️', 'Grass'], dirt: ['🪏', 'Dirt'], stone: ['🪨', 'Stone'], sand: ['🏜️', 'Sand'], snow: ['☃️', 'Snow'] };
+  const BRUSH_FACE = { water: ['🌊', 'Water'], grass: ['🟩', 'Grass'], dirt: ['🟫', 'Dirt'], sand: ['🟨', 'Sand'], snow: ['⬜', 'Snow'] };
   const waterSlot = document.querySelector('.slot[data-tool="water"]');
   function selectBrush(b) {
     waterBrush = b;
