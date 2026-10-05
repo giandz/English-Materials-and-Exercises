@@ -978,8 +978,11 @@
                                                                              ['boardtall', 'Tall full board'], ['latticetall', 'Tall lattice'], ['chaintall', 'Tall chain-link']] },
     roof:    { label: 'Roof type',     def: 'gable', plural: 'roofs', list: [['flat', 'Flat'], ['gable', 'Box gable'], ['opengable', 'Open gable'], ['shed', 'Box shed'], ['openshed', 'Open shed']] },
     stair:   { label: 'Stair style', def: 'solid', plural: 'staircases', list: [['solid', 'Solid'], ['cantilever', 'Cantilever']] },
-    roofmat: { label: 'Roof material', def: 'clay',  plural: 'roofs', list: [['clay', 'Clay tile'], ['concrete', 'Concrete'], ['metal', 'Corrugated metal']] }
+    roofmat: { label: 'Roof material', def: 'clay',  plural: 'roofs', list: [['clay', 'Clay tile'], ['concrete', 'Concrete'], ['metal', 'Corrugated metal']] },
+    appliance: { label: 'Color', def: 'white', plural: 'appliances', list: [['white', 'White'], ['black', 'Black']] }
   };
+  // the big "white goods" — the only appliances the Style tool's black finish applies to
+  const STYLABLE_APPL = new Set(['fridge', 'freezer', 'washer', 'dryer', 'washdryer', 'oven']);
   const ROOF_MAT = { clay: 'clay', concrete: 'rconc', metal: 'rmetal' };
   // 'gable' / 'shed' (box) close their ends with panels out to the roof's edge;
   // 'opengable' / 'openshed' leave the ends open and raise the walls under them instead
@@ -1052,6 +1055,10 @@
     opengable: SW('<path d="M7 14V24H27V14L17 6.5Z" fill="#efe9dd" stroke="#c9c0b0"/><path d="M2 17.7L17 5L32 17.7" fill="none" stroke="#a9553c" stroke-width="2.4" stroke-linejoin="round"/>'),
     shed: SW('<path d="M3 13L31 5V24H3Z" fill="#efe9dd" stroke="#c9c0b0"/><path d="M3 13L31 5" fill="none" stroke="#a9553c" stroke-width="2.4"/><path d="M6 12.2V24M28 5.9V24" stroke="#c9c0b0"/>'),
     openshed: SW('<path d="M6 13.4L28 7.2V24H6Z" fill="#efe9dd" stroke="#c9c0b0"/><path d="M2 14.5L32 6" fill="none" stroke="#a9553c" stroke-width="2.4"/>')
+  };
+  SWATCH.appliance = {
+    white: SW('<rect x="6" y="1" width="20" height="22" rx="2" fill="#eceff1" stroke="#9aa0a5"/>'),
+    black: SW('<rect x="6" y="1" width="20" height="22" rx="2" fill="#2c3035" stroke="#1f2226"/>')
   };
   SWATCH.stair = {
     solid: SW('<path d="M3 23V18H10V13H17V8H24V3H31V23Z" fill="#e0bd8c" stroke="#a87a48"/>'),
@@ -1238,9 +1245,12 @@
   const APPL_ORDER = ['tv', 'monitor', 'console', 'stereo', 'laptop', 'desktop', 'lamp', 'standlamp', 'microwave', 'stove', 'sink', 'oven', 'toaster', 'blender',
     'fridge', 'freezer', 'washer', 'dryer', 'washdryer', 'watertank', 'rug', 'cushion', 'planter', 'book', 'books'];
   let applDir = 0;
-  function applParts(type, fr, z) {
+  function applParts(type, fr, z, color) {
     const P_ = (u0, u1, v0, v1, z0, z1, m, x) => ({ rect: frameRect(fr, u0, u1, v0, v1), z0: z + z0, z1: z + z1, m, x });
     const front = SIDE_OF_DIR[fr.dir];
+    // the "white goods" styled black swap to the same dark finish already used for electronics —
+    // only these few types ever call matOf; everything else just keeps its own material name
+    const matOf = base => color === 'black' ? 'appdark' : base;
     if (type === 'tv') return [P_(-0.15, 0.15, -0.09, 0.09, 0, 0.03, 'appdark'), P_(-0.03, 0.03, -0.03, 0.01, 0.03, 0.1, 'appdark'), P_(-0.45, 0.45, -0.03, 0.02, 0.1, 0.62, 'tvbody', { front, fdeco: 'tv' })];
     if (type === 'lamp') return [P_(-0.08, 0.08, -0.08, 0.08, 0, 0.03, 'lampbase'), P_(-0.012, 0.012, -0.012, 0.012, 0.03, 0.27, 'lampbase'), P_(-0.13, 0.13, -0.13, 0.13, 0.27, 0.45, 'shade')];
     if (type === 'stove') return [P_(-0.3, 0.3, -0.26, 0.26, 0, 0.03, 'cooktop', { tp: 'burners' })];
@@ -1253,20 +1263,21 @@
       P_(-0.45, -0.3, -0.11, 0.11, 0, 0.3, 'speaker', { front, fdeco: 'speaker' }), P_(0.3, 0.45, -0.11, 0.11, 0, 0.3, 'speaker', { front, fdeco: 'speaker' })];
     if (type === 'laptop') return [P_(-0.17, 0.17, -0.105, 0.12, 0, 0.02, 'silver', { tp: 'keys' }), P_(-0.17, 0.17, -0.12, -0.105, 0, 0.24, 'silver', { front, fdeco: 'lcd' })];
     if (type === 'desktop') return [P_(-0.1, 0.1, -0.225, 0.225, 0, 0.45, 'appdark', { front, fdeco: 'tower' })];
-    if (type === 'fridge') return [P_(-0.34, 0.34, -0.35, 0.35, 0, 1.8, 'fridge', { front, fdeco: 'fridge' })];
-    if (type === 'freezer') return [P_(-0.5, 0.5, -0.325, 0.325, 0, 0.85, 'utility', { tp: 'freezerlid' })];
-    if (type === 'washer') return [P_(-0.3, 0.3, -0.3, 0.3, 0, 0.85, 'utility', { front, fdeco: 'washerdoor' })];
-    if (type === 'dryer') return [P_(-0.3, 0.3, -0.3, 0.3, 0, 0.85, 'utility', { front, fdeco: 'dryerdoor' })];
+    if (type === 'fridge') return [P_(-0.34, 0.34, -0.35, 0.35, 0, 1.8, matOf('fridge'), { front, fdeco: 'fridge' })];
+    if (type === 'freezer') return [P_(-0.5, 0.5, -0.325, 0.325, 0, 0.85, matOf('utility'), { tp: 'freezerlid' })];
+    if (type === 'washer') return [P_(-0.3, 0.3, -0.3, 0.3, 0, 0.85, matOf('utility'), { front, fdeco: 'washerdoor' })];
+    if (type === 'dryer') return [P_(-0.3, 0.3, -0.3, 0.3, 0, 0.85, matOf('utility'), { front, fdeco: 'dryerdoor' })];
     if (type === 'washdryer') return [
-      P_(-0.3, 0.3, -0.325, 0.325, 0, 0.82, 'utility', { front, fdeco: 'washerdoor' }),
+      P_(-0.3, 0.3, -0.325, 0.325, 0, 0.82, matOf('utility'), { front, fdeco: 'washerdoor' }),
       P_(-0.3, 0.3, -0.325, 0.325, 0.82, 0.88, 'appdark'),
-      P_(-0.3, 0.3, -0.325, 0.325, 0.88, 1.7, 'utility', { front, fdeco: 'dryerdoor' })];
+      P_(-0.3, 0.3, -0.325, 0.325, 0.88, 1.7, matOf('utility'), { front, fdeco: 'dryerdoor' })];
     if (type === 'watertank') return [
       P_(-0.25, 0.25, -0.25, 0.25, 0, 1.3, 'tank', { cyl: 'mat' }),
       P_(0.3, 0.55, -0.15, 0.15, 0, 0.3, 'appdark', { front, fdeco: 'pump' })];
-    if (type === 'oven') return [P_(-0.3, 0.3, -0.3, 0.3, 0, 0.85, 'appl', { front, fdeco: 'oven' })];
+    if (type === 'oven') return [P_(-0.3, 0.3, -0.3, 0.3, 0, 0.85, matOf('appl'), { front, fdeco: 'oven' })];
     if (type === 'toaster') return [P_(-0.125, 0.125, -0.1, 0.1, 0, 0.18, 'appl', { tp: 'toaster' })];
-    if (type === 'blender') return [P_(-0.08, 0.08, -0.08, 0.08, 0, 0.1, 'appdark'), P_(-0.06, 0.06, -0.06, 0.06, 0.1, 0.38, 'appl'), P_(-0.025, 0.025, -0.025, 0.025, 0.38, 0.43, 'appdark')];
+    if (type === 'blender') return [P_(-0.08, 0.08, -0.08, 0.08, 0, 0.1, 'appdark'), P_(-0.06, 0.06, -0.06, 0.06, 0.1, 0.38, 'appl'),
+      P_(-0.066, 0.066, -0.066, 0.066, 0.38, 0.41, 'appdark'), P_(-0.022, 0.022, -0.022, 0.022, 0.41, 0.43, 'appdark')];  // a black lid, with its knob
     if (type === 'standlamp') return [P_(-0.14, 0.14, -0.14, 0.14, 0, 0.04, 'lampbase'), P_(-0.018, 0.018, -0.018, 0.018, 0.04, 1.3, 'lampbase'), P_(-0.18, 0.18, -0.18, 0.18, 1.3, 1.5, 'shade')];
     if (type === 'cushion') return [P_(-0.175, 0.175, -0.175, 0.175, 0, 0.12, 'cushion', { tp: 'cushion' })];
     if (type === 'rug') return [P_(-1, 1, -0.7, 0.7, 0, 0.01, 'rug', { tp: 'rug' })];
@@ -2098,19 +2109,20 @@
       const cx = (bx.x0 + bx.x1) / 2, cy = (bx.y0 + bx.y1) / 2, hx = (bx.x1 - bx.x0) / 2, hy = (bx.y1 - bx.y0) / 2;
       const oval = (k2, cls) => { const q = []; for (let i = 0; i < 28; i++) { const th = i / 28 * Math.PI * 2; q.push(W(cx + Math.cos(th) * hx * k2, cy + Math.sin(th) * hy * k2, bx.z1).replace(' ', ',')); } return `<polygon class="${cls}" points="${q.join(' ')}"/>`; };
       return mat === 'toilet' ? oval(0.9, 'seat') + oval(0.58, 'seat-in') : oval(0.86, 'tubin');
-    } else if (mat === 'keys' || mat === 'rug' || mat === 'ps2' || mat === 'controller') {
+    } else if (mat === 'keys' || mat === 'rug' || mat === 'ps2' || mat === 'controller' || mat === 'toaster' || mat === 'cushion') {
       const inset = (mx, my) => [[bx.x0 + mx, bx.y0 + my], [bx.x1 - mx, bx.y0 + my], [bx.x1 - mx, bx.y1 - my], [bx.x0 + mx, bx.y1 - my]].map(([x, y]) => W(x, y, bx.z1).replace(' ', ',')).join(' ');
       const wx = bx.x1 - bx.x0, wy = bx.y1 - bx.y0;
       if (mat === 'keys') return `<polygon class="deco-keys" points="${inset(wx * 0.1, wy * 0.15)}"/>`;
       if (mat === 'rug') return `<polygon class="rug-border" points="${inset(0.1, 0.1)}"/><polygon class="rug-mid" points="${inset(wx * 0.32, wy * 0.32)}"/>`;
       if (mat === 'toaster') {
-        const q1 = inset(wx * 0.18, wy * 0.3), q2 = inset(wx * 0.56, wy * 0.3);
-        return `<polygon class="deco-cabdoor" style="fill:#1c2024" points="${q1}"/><polygon class="deco-cabdoor" style="fill:#1c2024" points="${q2}"/>`;
+        const slot = (v0, v1) => [[bx.x0 + 0.15 * wx, bx.y0 + v0 * wy], [bx.x1 - 0.15 * wx, bx.y0 + v0 * wy], [bx.x1 - 0.15 * wx, bx.y0 + v1 * wy], [bx.x0 + 0.15 * wx, bx.y0 + v1 * wy]].map(([x, y]) => W(x, y, bx.z1).replace(' ', ',')).join(' ');
+        return `<polygon class="deco-cabdoor" style="fill:#1c2024" points="${slot(0.15, 0.42)}"/><polygon class="deco-cabdoor" style="fill:#1c2024" points="${slot(0.58, 0.85)}"/>`;
       }
       if (mat === 'cushion') {
         const cx2 = (bx.x0 + bx.x1) / 2, cy2 = (bx.y0 + bx.y1) / 2;
         const seg = (u0, v0, u1, v1) => `M${W(bx.x0 + u0 * wx, bx.y0 + v0 * wy, bx.z1)}L${W(cx2, cy2, bx.z1)}L${W(bx.x0 + u1 * wx, bx.y0 + v1 * wy, bx.z1)}`;
-        return `<path class="deco-fold" d="${seg(0.12, 0.12, 0.88, 0.12)}${seg(0.88, 0.12, 0.88, 0.88)}${seg(0.88, 0.88, 0.12, 0.88)}${seg(0.12, 0.88, 0.12, 0.12)}"/>`;
+        return `<path class="deco-fold" d="${seg(0.12, 0.12, 0.88, 0.12)}${seg(0.88, 0.12, 0.88, 0.88)}${seg(0.88, 0.88, 0.12, 0.88)}${seg(0.12, 0.88, 0.12, 0.12)}"/>` +
+          `<circle class="deco-knob" cx="${W(cx2, cy2, bx.z1).split(' ')[0]}" cy="${W(cx2, cy2, bx.z1).split(' ')[1]}" r="1.3"/>`;
       }
       if (mat === 'controller') {
         // a small gamepad: body outline, two thumbstick nubs, a D-pad cross
@@ -2451,10 +2463,10 @@
       items.push({ fp: furnRect(f), cls, boxes: parts.map(o => o.boxes[0]) });
     });
     // appliances on the floor
-    (st.appliances || []).forEach(({ a, cls }) => {
+    (st.appliances || []).forEach(({ a, cls }, ai) => {
       if (a.type === 'rug') return;        // rugs are drawn with the floor (see rugSVG)
-      const parts = paintOrder(applParts(a.type, applFrame(a), 0).map(pt => ({ fp: pt.rect, cls: '', boxes: [box(pt.rect, pt.z0, pt.z1, pt.m, pt.x)] })));
-      items.push({ fp: applRect(a), cls, boxes: parts.map(o => o.boxes[0]) });
+      const parts = paintOrder(applParts(a.type, applFrame(a), 0, a.color).map(pt => ({ fp: pt.rect, cls: '', boxes: [box(pt.rect, pt.z0, pt.z1, pt.m, pt.x)] })));
+      items.push({ fp: applRect(a), cls, src: L === level ? 'appl:' + ai : null, boxes: parts.map(o => o.boxes[0]) });
     });
     // stairs: one drawable per step, each a solid block from the floor up to its tread
     // (with the walls down they shrink to a low model, like everything else)
@@ -3338,6 +3350,7 @@
       const mark = (t, cls) => {
         if (!t) return;
         if (t.kind === 'stair') { const st = floors[level].stairs[t.k]; if (st) stairCellRects(st).forEach(r2 => out.push(rect({ x0: r2.x0 + 0.05, x1: r2.x1 - 0.05, y0: r2.y0 + 0.05, y1: r2.y1 - 0.05 }, cls === 'bp-sel' ? 'bp-selring' : 'bp-selring bp-dash'))); return; }
+        if (t.kind === 'appl') { const a = floors[level].appliances[t.k]; if (a) { const R_ = applRect(a); out.push(rect({ x0: R_.x0 - 0.06, x1: R_.x1 + 0.06, y0: R_.y0 - 0.06, y1: R_.y1 + 0.06 }, cls === 'bp-sel' ? 'bp-selring' : 'bp-selring bp-dash')); } return; }
         if (t.kind === 'roof') { const r = floors[level].roofs[t.k]; if (r) { const R_ = roofRect(r); out.push(rect({ x0: R_.x0 - 0.1, x1: R_.x1 + 0.1, y0: R_.y0 - 0.1, y1: R_.y1 + 0.1 }, cls === 'bp-sel' ? 'bp-selring' : 'bp-selring bp-dash')); } return; }
         if (t.kind === 'col') { const fp = colFootprint(t.k); out.push(rect({ x0: fp.x0 - 0.08, x1: fp.x1 + 0.08, y0: fp.y0 - 0.08, y1: fp.y1 + 0.08 }, cls === 'bp-sel' ? 'bp-selring' : 'bp-selring bp-dash')); return; }
         if (t.kind === 'floor') {
@@ -3883,12 +3896,13 @@
     if (!t) return new Set();
     if (t.kind === 'col') return new Set(['col:' + t.k]);
     if (t.kind === 'stair') return new Set(['stair:' + t.k]);
+    if (t.kind === 'appl') return new Set(['appl:' + t.k]);
     if (t.kind === 'roof') return new Set(['roof:' + t.k]);
     if (t.kind === 'edge') return new Set([t.k]);
     if (t.kind === 'edges') return new Set(t.keys);
     return new Set();
   }
-  const selKey = t => !t ? null : t.kind === 'col' ? 'col:' + t.k : t.kind === 'roof' ? 'roof:' + t.k : t.kind === 'stair' ? 'stair:' + t.k : t.kind === 'edge' ? t.k : t.kind + ':' + (t.keys || t.cells).join('|');
+  const selKey = t => !t ? null : t.kind === 'col' ? 'col:' + t.k : t.kind === 'roof' ? 'roof:' + t.k : t.kind === 'stair' ? 'stair:' + t.k : t.kind === 'appl' ? 'appl:' + t.k : t.kind === 'edge' ? t.k : t.kind + ':' + (t.keys || t.cells).join('|');
   const uniq = arr => arr.length && arr.every(x => x === arr[0]) ? arr[0] : null;
   // the selected lines that still exist (and are still the right kind)
   function selEdges() {
@@ -3905,6 +3919,7 @@
       case 'col': return F.columns.has(selection.k) ? { type: 'column' } : null;
       case 'roof': return F.roofs[selection.k] ? { type: 'roof', r: F.roofs[selection.k] } : null;
       case 'stair': return F.stairs[selection.k] ? { type: 'stair', st: F.stairs[selection.k] } : null;
+      case 'appl': return F.appliances[selection.k] ? { type: 'appliance', a: F.appliances[selection.k] } : null;
       case 'edge': return F.edges.get(selection.k) || null;
       case 'edges': { const n = selEdges().length; return n ? { type: selection.sub === 'fence' ? 'fences' : 'walls', n } : null; }
       case 'floor': return selection.cells.length ? { type: 'floor', n: selection.cells.length } : null;
@@ -3952,12 +3967,24 @@
     const room = rm.rooms[rm.id[r * COLS + c]];
     return room ? room.cells.map(([rr, cc]) => rr + ',' + cc) : null;
   }
+  // a floor appliance whose colour can be styled (one of the big "white goods"), at world point w
+  function styleApplAt(w) {
+    const list = floors[level].appliances;
+    for (let i = list.length - 1; i >= 0; i--) {
+      if (!STYLABLE_APPL.has(list[i].type)) continue;
+      const R_ = applRect(list[i]);
+      if (w.x > R_.x0 - 0.04 && w.x < R_.x1 + 0.04 && w.y > R_.y0 - 0.04 && w.y < R_.y1 + 0.04) return i;
+    }
+    return -1;
+  }
   function styleTarget(w) {
     const ck = nearestColSpot(w.x, w.y);
     if (ck && floors[level].columns.has(ck)) {
       const [X, Y] = colXY(ck);
       if (Math.max(Math.abs(w.x - X / 2), Math.abs(w.y - Y / 2)) <= COL_W / 2 + 0.15) return { kind: 'col', k: ck };
     }
+    const ai = styleApplAt(w);
+    if (ai >= 0) return { kind: 'appl', k: ai };
     const k = nearestPresentEdge(w, 0.4);
     if (k) return { kind: 'edge', k };
     const si = stairIndexAt(level, w.x, w.y);
@@ -4024,6 +4051,7 @@
     if (set === 'roof') return v.r.type;
     if (set === 'roofmat') return v.r.mat;
     if (set === 'stair') return v.st.style || 'solid';
+    if (set === 'appliance') return v.a.color || 'white';
     if (set === 'floor') return uniq(selection.cells.map(k => F.floorStyles.get(k) || 'hardwood'));
     if (set === 'wall') {
       const rooms = computeRooms(F.edges, isIndoorEdge), vals = [];
@@ -4042,6 +4070,10 @@
     else if (set === 'stair') {
       const cand = { ...F.stairs[k], style: val };
       F.stairs[k] = cand; stairStyleDefault = val;
+    }
+    else if (set === 'appliance') {
+      const a = F.appliances[k];
+      if (val === 'white') { const { color, ...rest } = a; F.appliances[k] = rest; } else F.appliances[k] = { ...a, color: val };
     }
     else if (set === 'floor') selection.cells.forEach(c => { if (val === 'hardwood') F.floorStyles.delete(c); else F.floorStyles.set(c, val); });
     else if (set === 'wall') {
@@ -4065,6 +4097,10 @@
       const F = floors[L];
       if (set === 'column') { F.columns.forEach(k => { if (val === 'square') F.colStyles.delete(k); else F.colStyles.set(k, val); }); return; }
       if (set === 'stair') { F.stairs = F.stairs.map(st => ({ ...st, style: val })); stairStyleDefault = val; return; }
+      if (set === 'appliance') {
+        F.appliances = F.appliances.map(a => { if (!STYLABLE_APPL.has(a.type)) return a; if (val === 'white') { const { color, ...rest } = a; return rest; } return { ...a, color: val }; });
+        return;
+      }
       if (set === 'roof') { const mat = currentStyle('roofmat'); F.roofs = F.roofs.map(r => ({ ...retypeRoof(r, val), mat })); return; }
       if (set === 'floor') {
         F.floorStyles.clear();
@@ -4112,7 +4148,7 @@
         `<div style="height:6px"></div>` + row('wall') +
         applyBtn('wall', multiSide === 'both' ? 'Apply to all walls' : `Apply to all ${catWord(multiSide)} wall faces`);
     } else {
-      const title = { wall: 'Wall', door: 'Door', window: 'Window', fence: 'Fence', column: 'Column', roof: 'Roof', stair: STAIR_TYPES[sType(v.st || {})] }[type];
+      const title = { wall: 'Wall', door: 'Door', window: 'Window', fence: 'Fence', column: 'Column', roof: 'Roof', stair: STAIR_TYPES[sType(v.st || {})], appliance: PIECES[v.a.type].word }[type];
       html = `<p class="style-what">Selected: <strong>${title}</strong> ${where}</p>`;
       if (type === 'roof') {
         html += `<p class="drawer-label">Roof type</p>` + row('roof') + `<p class="drawer-label">Roof material</p>` + row('roofmat');
@@ -4683,7 +4719,7 @@
           if (o.type === 'countertop') { const e = parseKey(o.ek); return { type: o.type, edge: { o: e.o, r: e.r, c: e.c }, side: o.side, insets: [o.i0 || 0, o.i1 || 0], items }; }
           return items.length ? { type: o.type, x: o.X / 2, y: o.Y / 2, dir: o.dir, items } : { type: o.type, x: o.X / 2, y: o.Y / 2, dir: o.dir };
         }),
-        appliances: floors[L].appliances.map(a => ({ type: a.type, x: a.X / 2, y: a.Y / 2, dir: a.dir })),
+        appliances: floors[L].appliances.map(a => a.color ? { type: a.type, x: a.X / 2, y: a.Y / 2, dir: a.dir, color: a.color } : { type: a.type, x: a.X / 2, y: a.Y / 2, dir: a.dir }),
         pools: floors[L].pools.map(q => ({ x0: q.c0, y0: q.r0, x1: q.c1, y1: q.r1 })),
         floorStyles: [...floors[L].floorStyles].map(([k, v]) => { const [r, c] = k.split(',').map(Number); return { r, c, style: v }; }),
         roofs: floors[L].roofs.map(r => ({ x0: r.X0 / 2, y0: r.Y0 / 2, x1: r.X1 / 2, y1: r.Y1 / 2, type: r.type, material: r.mat, dir: r.dir })),
@@ -4794,6 +4830,7 @@
         if (!Number.isInteger(X) || !Number.isInteger(Y) || (X % 2) !== (Y % 2) || ![0, 1, 2, 3].includes(x.dir)) return;
         const a = { type: x.type, X, Y, dir: x.dir }, R_ = applRect(a);
         if (R_.x0 < -0.001 || R_.y0 < -0.001 || R_.x1 > cols + 0.001 || R_.y1 > rows + 0.001) return;
+        if (STYLABLE_APPL.has(x.type) && x.color === 'black') a.color = 'black';
         out[L].appliances.push(a);
       });
       if (L === 0) (Array.isArray(fl.pools) ? fl.pools : []).forEach(x => {
