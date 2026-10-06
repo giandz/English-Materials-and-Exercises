@@ -71,7 +71,9 @@
   <div class="pair-card"><div class="pair-line no"><span class="mark">✗</span>There was seven children.</div><div class="pair-line yes"><span class="mark">✓</span>There were seven children.</div></div>
 
   <div class="sec-div">Find the mistake</div>
-  <div class="rule-box">Each sentence below has <strong>one or two mistakes</strong>. A word may be <strong>wrong</strong> — tap it and choose the right one. Or a word may be <strong>missing</strong> — tap the small gap where it belongs. When you think the sentence is right, press <strong>OK</strong>.</div>
+  <div class="rule-box">Some sentences below have a mistake — and some are already correct. Tap the word or the gap you think is wrong, then choose what to do with it:<br>
+  <strong>✒️ Insert</strong> a missing word · <strong>🔄 Replace</strong> a wrong one · <strong>❌ Delete</strong> an extra one · <strong>↔️ Move</strong> one that is in the wrong place.<br>
+  When you think the sentence is right, press <strong>OK</strong>.</div>
   <div class="score-bar"><span>Corrected: <strong id="ehScore">0</strong> / <span id="ehTotal">0</span></span></div>
   <div id="errorHunt"></div>
 
@@ -290,7 +292,10 @@ HouseCCQ.build({
    Every fix changes exactly ONE word. "I borned in Chile" is therefore two
    faults, not one: a MISSING `was` and a WRONG `borned`. Treating it as a
    single swap would teach "borned → was born" as one lexical choice and hide
-   the auxiliary the learner actually has to supply. */
+   the auxiliary the learner actually has to supply.
+
+   Four fault types, so the learner has to diagnose WHAT is wrong before
+   fixing it, not just where: missing, wrong, extra, misplaced. */
 HouseErrorHunt.build({
   container: 'errorHunt',
   scoreEl: 'ehScore', totalEl: 'ehTotal',
@@ -303,18 +308,20 @@ HouseErrorHunt.build({
       "Chile",
       "."
     ],
-    "missing": {
-      "1": {
+    "errors": [
+      {
+        "type": "missing",
+        "gapIndex": 1,
         "options": [
           "was",
           "were",
           "am"
         ],
         "correct": "was"
-      }
-    },
-    "errors": {
-      "1": {
+      },
+      {
+        "type": "wrong",
+        "wordIndex": 1,
         "options": [
           "born",
           "birth",
@@ -322,7 +329,7 @@ HouseErrorHunt.build({
         ],
         "correct": "born"
       }
-    }
+    ]
   },
   {
     "words": [
@@ -332,8 +339,10 @@ HouseErrorHunt.build({
       "farmers",
       "."
     ],
-    "errors": {
-      "2": {
+    "errors": [
+      {
+        "type": "wrong",
+        "wordIndex": 2,
         "options": [
           "were",
           "was",
@@ -341,7 +350,7 @@ HouseErrorHunt.build({
         ],
         "correct": "were"
       }
-    }
+    ]
   },
   {
     "words": [
@@ -354,7 +363,7 @@ HouseErrorHunt.build({
       "years",
       "."
     ],
-    "errors": {}
+    "errors": []
   },
   {
     "words": [
@@ -364,24 +373,13 @@ HouseErrorHunt.build({
       "born",
       "?"
     ],
-    "errors": {
-      "1": {
-        "options": [
-          "were",
-          "was",
-          "did"
-        ],
-        "correct": "were"
-      },
-      "2": {
-        "options": [
-          "you",
-          "your",
-          "yours"
-        ],
-        "correct": "you"
+    "errors": [
+      {
+        "type": "misplaced",
+        "wordIndex": 2,
+        "targetGapIndex": 1
       }
-    }
+    ]
   },
   {
     "words": [
@@ -394,8 +392,10 @@ HouseErrorHunt.build({
       "family",
       "."
     ],
-    "errors": {
-      "1": {
+    "errors": [
+      {
+        "type": "wrong",
+        "wordIndex": 1,
         "options": [
           "were",
           "was",
@@ -403,7 +403,7 @@ HouseErrorHunt.build({
         ],
         "correct": "were"
       }
-    }
+    ]
   },
   {
     "words": [
@@ -414,24 +414,22 @@ HouseErrorHunt.build({
       "there",
       "."
     ],
-    "errors": {
-      "1": {
-        "options": [
-          "was",
-          "no",
-          "did"
-        ],
-        "correct": "was"
+    "errors": [
+      {
+        "type": "extra",
+        "wordIndex": 1
       },
-      "2": {
+      {
+        "type": "missing",
+        "gapIndex": 3,
         "options": [
           "not",
-          "was",
-          "no"
+          "no",
+          "never"
         ],
         "correct": "not"
       }
-    }
+    ]
   },
   {
     "words": [
@@ -441,8 +439,10 @@ HouseErrorHunt.build({
       "girls",
       "?"
     ],
-    "errors": {
-      "0": {
+    "errors": [
+      {
+        "type": "wrong",
+        "wordIndex": 0,
         "options": [
           "Were",
           "Was",
@@ -450,7 +450,7 @@ HouseErrorHunt.build({
         ],
         "correct": "Were"
       }
-    }
+    ]
   },
   {
     "words": [
@@ -460,8 +460,10 @@ HouseErrorHunt.build({
       "Egypt",
       "."
     ],
-    "missing": {
-      "2": {
+    "errors": [
+      {
+        "type": "missing",
+        "gapIndex": 2,
         "options": [
           "were",
           "was",
@@ -469,7 +471,24 @@ HouseErrorHunt.build({
         ],
         "correct": "were"
       }
-    }
+    ]
+  },
+  {
+    "words": [
+      "My",
+      "mother",
+      "she",
+      "was",
+      "a",
+      "teacher",
+      "."
+    ],
+    "errors": [
+      {
+        "type": "extra",
+        "wordIndex": 2
+      }
+    ]
   },
   {
     "words": [
@@ -480,8 +499,10 @@ HouseErrorHunt.build({
       "1998",
       "."
     ],
-    "errors": {
-      "1": {
+    "errors": [
+      {
+        "type": "wrong",
+        "wordIndex": 1,
         "options": [
           "was",
           "am",
@@ -489,7 +510,24 @@ HouseErrorHunt.build({
         ],
         "correct": "was"
       }
-    }
+    ]
+  },
+  {
+    "words": [
+      "I",
+      "born",
+      "was",
+      "in",
+      "Lima",
+      "."
+    ],
+    "errors": [
+      {
+        "type": "misplaced",
+        "wordIndex": 2,
+        "targetGapIndex": 1
+      }
+    ]
   },
   {
     "words": [
@@ -500,7 +538,7 @@ HouseErrorHunt.build({
       "then",
       "."
     ],
-    "errors": {}
+    "errors": []
   }
 ]
 });
