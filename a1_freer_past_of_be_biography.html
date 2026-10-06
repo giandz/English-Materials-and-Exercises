@@ -1,0 +1,142 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<title>Was and Were — Speaking</title>
+<script>
+// Applies the saved/system theme to <html> as early as possible, before the
+// stylesheet below paints anything, so there's no flash of the wrong theme.
+// Self-contained: no dependency on any external script.
+(function(){
+  try{
+    var saved = localStorage.getItem('theme-preference');
+    var theme = (saved === 'light' || saved === 'dark')
+      ? saved
+      : ((window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches) ? 'dark' : 'light');
+    document.documentElement.setAttribute('data-theme', theme);
+    // Same idea for the text size: apply it before house.css paints, so a
+    // person who chose 28px doesn't watch the page reflow from 14px on load.
+    var fs = parseFloat(localStorage.getItem('font-size-preference'));
+    if (fs >= 10 && fs <= 28){
+      document.documentElement.style.setProperty('--fs-base', fs + 'px');
+    }
+  }catch(e){ /* localStorage/matchMedia unavailable — CSS media query still applies */ }
+})();
+</script>
+<link rel="stylesheet" href="house.css">
+</head>
+<body>
+<div class="page" id="page">
+  <span class="cefr-tag cefr-a1">A1 · Beginner</span>
+  <h1>Was and Were — Speaking</h1>
+  <p class="subtitle">Talk about your life and your family.</p>
+
+  <div class="rule-box"><strong>How to play:</strong> click 🎲, read the question out loud and answer it about <strong>your own life</strong>. Then ask your partner the same question. Use <em>was</em> and <em>were</em> — and give a reason or a detail each time, not just one word.</div>
+  <div class="q-card" id="qCard"><span class="q-placeholder">Click the dice to get a question</span></div>
+  <button class="dice-btn" id="diceBtn" aria-label="Generate question">🎲</button>
+  <div class="roll-count">Questions asked: <strong id="rollCount">0</strong></div>
+  <div class="topic-legend"><span class="topic-pill">👶 birth</span><span class="topic-pill">👨‍👩‍👧 family</span><span class="topic-pill">🏫 school</span><span class="topic-pill">🧸 childhood</span><span class="topic-pill">🗣️ interview</span></div>
+
+  <div class="sec-div">Then: tell the story</div>
+  <div class="rule-box">Work alone for two minutes. Write or plan <strong>five sentences</strong> about the life of someone in your family — a parent, a grandparent, or anyone you admire. Every sentence must use <strong>was</strong> or <strong>were</strong>. Then tell your partner.</div>
+  <div class="exercise-card"><p><strong>Start like this:</strong></p>
+    <p>My grandfather <strong>was</strong> born in… · His parents <strong>were</strong>… · There <strong>were</strong> … children · He <strong>wasn’t</strong>… · His favourite… <strong>was</strong>…</p></div>
+
+  <footer>Speaking Practice — Past of <em>be</em> (A1)</footer>
+</div>
+
+<div id="theme-toggle-wrap">
+  <button id="theme-toggle" aria-label="Toggle light/dark mode" title="Toggle light/dark mode">
+    <span id="theme-icon">☀️</span>
+  </button>
+</div>
+<script src="house.js"></script>
+<script>
+const PROMPTS = [
+  {
+    "icon": "👶",
+    "label": "where",
+    "text": "Where were you born? Was it a city or a village?"
+  },
+  {
+    "icon": "📅",
+    "label": "when",
+    "text": "What year were you born? Who else in your family was born that year?"
+  },
+  {
+    "icon": "👵",
+    "label": "grandparents",
+    "text": "Where were your grandparents born? Were they from the same place?"
+  },
+  {
+    "icon": "👨‍👩‍👧",
+    "label": "family",
+    "text": "How many children were there in your family? Were you the oldest or the youngest?"
+  },
+  {
+    "icon": "🏫",
+    "label": "school",
+    "text": "Where was your first school? Was it big or small?"
+  },
+  {
+    "icon": "🧑‍🏫",
+    "label": "teachers",
+    "text": "Who was your favourite teacher? Why was he or she special?"
+  },
+  {
+    "icon": "🏠",
+    "label": "home",
+    "text": "Where was your home when you were a child? Was it near the city?"
+  },
+  {
+    "icon": "🧸",
+    "label": "childhood",
+    "text": "What was your favourite toy or game? Who was it from?"
+  },
+  {
+    "icon": "👷",
+    "label": "jobs",
+    "text": "What were your parents' jobs? Were they happy in them?"
+  },
+  {
+    "icon": "🎉",
+    "label": "a good day",
+    "text": "Think of a happy day in the past. Where were you? Who was with you?"
+  },
+  {
+    "icon": "🍲",
+    "label": "food",
+    "text": "What was your favourite food as a child? Who was the cook in your house?"
+  },
+  {
+    "icon": "🌍",
+    "label": "travel",
+    "text": "Were you ever in another country as a child? Where were you?"
+  },
+  {
+    "icon": "👫",
+    "label": "friends",
+    "text": "Who was your best friend? Where were you both from?"
+  },
+  {
+    "icon": "❌",
+    "label": "negative",
+    "text": "Say two things you were NOT good at as a child."
+  },
+  {
+    "icon": "🗣️",
+    "label": "interview",
+    "text": "Ask your partner three questions about their childhood with \"Were you…?\""
+  },
+  {
+    "icon": "👤",
+    "label": "someone famous",
+    "text": "Think of a famous person. Where were they born? What were they famous for? Your partner guesses."
+  }
+];
+
+HouseRandomGen.build({ items: PROMPTS });
+</script>
+</body>
+</html>

@@ -1,0 +1,511 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<title>Was and Were — Clarification</title>
+<script>
+// Applies the saved/system theme to <html> as early as possible, before the
+// stylesheet below paints anything, so there's no flash of the wrong theme.
+// Self-contained: no dependency on any external script.
+(function(){
+  try{
+    var saved = localStorage.getItem('theme-preference');
+    var theme = (saved === 'light' || saved === 'dark')
+      ? saved
+      : ((window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches) ? 'dark' : 'light');
+    document.documentElement.setAttribute('data-theme', theme);
+    // Same idea for the text size: apply it before house.css paints, so a
+    // person who chose 28px doesn't watch the page reflow from 14px on load.
+    var fs = parseFloat(localStorage.getItem('font-size-preference'));
+    if (fs >= 10 && fs <= 28){
+      document.documentElement.style.setProperty('--fs-base', fs + 'px');
+    }
+  }catch(e){ /* localStorage/matchMedia unavailable — CSS media query still applies */ }
+})();
+</script>
+<link rel="stylesheet" href="house.css">
+</head>
+<body>
+<div class="page" id="page">
+  <span class="cefr-tag cefr-a1">A1 · Beginner</span>
+  <h1>Was and Were — Clarification</h1>
+  <p class="subtitle">Two forms, one verb — and the special case of <em>born</em>.</p>
+
+  <div class="rule-box">To talk about a life — where someone was born, what their family did, how things were — you need the past of <strong>be</strong>. There are only two forms: <strong>was</strong> and <strong>were</strong>.</div>
+
+  <div class="sec-div">When does it happen?</div>
+  <div id="timeline"></div>
+  <div class="rule-box"><strong>be</strong> describes a <strong>state</strong> — who or what someone was. It is not an action. That is why <em>was</em> and <em>were</em> are used for ages, jobs, places and feelings in the past.</div>
+
+  <div class="sec-div">Only two forms</div>
+  <div class="exercise-card">
+    <div class="answer-row"><span class="answer-word">I</span><span class="answer-rule"><strong>was</strong></span></div>
+    <div class="answer-row"><span class="answer-word">he / she / it</span><span class="answer-rule"><strong>was</strong></span></div>
+    <div class="answer-row"><span class="answer-word">you</span><span class="answer-rule"><strong>were</strong></span></div>
+    <div class="answer-row"><span class="answer-word">we / they</span><span class="answer-rule"><strong>were</strong></span></div>
+  </div>
+  <div class="rule-box">💡 The odd one out is <strong>I was</strong>. Everywhere else, singular → <em>was</em>, plural → <em>were</em>.</div>
+
+  <div class="sec-div">Work out the form</div>
+  <div class="rule-box">Tap a label, then tap the box <strong>above</strong> the word it describes. Compare the rows — where does <em>was</em> go in a question?</div>
+  <div class="score-bar"><span>Labelled: <strong id="fcScore">0</strong> / <span id="fcTotal">0</span></span></div>
+  <div id="formClarf"></div>
+  <div class="rule-box">There it is. The negative adds <strong>not</strong> straight after <em>was/were</em> (<em>wasn’t, weren’t</em>). The question moves <em>was/were</em> in <strong>front of</strong> the subject. You never need <em>did</em> with <em>be</em>.</div>
+
+  <div class="sec-div">Born: a special case</div>
+  <div class="rule-box"><strong>be born</strong> is always passive. You cannot “born” — you <strong>were born</strong>.<br>
+  ✗ <s>I born in Chile.</s> &nbsp; ✗ <s>I am born in 1998.</s> &nbsp; ✓ <strong>I was born in Chile in 1998.</strong></div>
+
+  <div class="sec-div">Check the meaning</div>
+  <div class="rule-box">Answer the questions about each sentence. These check the <strong>meaning</strong>, not the form.</div>
+  <div id="ccq"></div>
+
+  <div class="sec-div">Common mistakes</div>
+  <div class="pair-card"><div class="pair-line no"><span class="mark">✗</span>I born in Lima.</div><div class="pair-line yes"><span class="mark">✓</span>I was born in Lima.</div></div>
+  <div class="pair-card"><div class="pair-line no"><span class="mark">✗</span>I am born in 1998.</div><div class="pair-line yes"><span class="mark">✓</span>I was born in 1998.</div></div>
+  <div class="pair-card"><div class="pair-line no"><span class="mark">✗</span>My parents was farmers.</div><div class="pair-line yes"><span class="mark">✓</span>My parents were farmers.</div></div>
+  <div class="pair-card"><div class="pair-line no"><span class="mark">✗</span>She no was happy.</div><div class="pair-line yes"><span class="mark">✓</span>She wasn't happy.</div></div>
+  <div class="pair-card"><div class="pair-line no"><span class="mark">✗</span>Where you were born?</div><div class="pair-line yes"><span class="mark">✓</span>Where were you born?</div></div>
+  <div class="pair-card"><div class="pair-line no"><span class="mark">✗</span>Was they all girls?</div><div class="pair-line yes"><span class="mark">✓</span>Were they all girls?</div></div>
+  <div class="pair-card"><div class="pair-line no"><span class="mark">✗</span>There was seven children.</div><div class="pair-line yes"><span class="mark">✓</span>There were seven children.</div></div>
+
+  <div class="sec-div">Find the mistake</div>
+  <div class="rule-box">Each sentence below has <strong>one or two mistakes</strong>. A word may be <strong>wrong</strong> — tap it and choose the right one. Or a word may be <strong>missing</strong> — tap the small gap where it belongs. When you think the sentence is right, press <strong>OK</strong>.</div>
+  <div class="score-bar"><span>Corrected: <strong id="ehScore">0</strong> / <span id="ehTotal">0</span></span></div>
+  <div id="errorHunt"></div>
+
+  <footer>Clarification — Past of <em>be</em> (A1)</footer>
+</div>
+
+<div id="theme-toggle-wrap">
+  <button id="theme-toggle" aria-label="Toggle light/dark mode" title="Toggle light/dark mode">
+    <span id="theme-icon">☀️</span>
+  </button>
+</div>
+<script src="house.js"></script>
+<script>
+/* ── Timeline ──
+   A band rather than points: a life state occupies a stretch of time, not a
+   moment, and that is exactly what distinguishes `be` from an action verb. */
+HouseTimeline.build({
+  container: 'timeline',
+  startLabel: 'Past', nowNote: 'speaking now',
+  bands: [{ from: 0.08, to: 0.62, label: 'she was a nurse' }],
+  events: [
+    { at: 0.05, emoji: '👶', label: 'she was born', kind: 'point' },
+    { at: 0.62, emoji: '🎓', label: 'she retired',  kind: 'point' }
+  ],
+  caption: 'A state that lasted — and that finished before now.'
+});
+
+HouseFormClarf.build({
+  container: 'formClarf',
+  scoreEl: 'fcScore', totalEl: 'fcTotal',
+  pool: ["wh", "subject", "verb", "neg", "complement"],
+  items: [
+  {
+    "form": "aff",
+    "parts": [
+      [
+        "My grandmother",
+        "subject"
+      ],
+      [
+        "was",
+        "verb"
+      ],
+      [
+        "a nurse",
+        "complement"
+      ],
+      [
+        ".",
+        null
+      ]
+    ]
+  },
+  {
+    "form": "aff",
+    "parts": [
+      [
+        "Her parents",
+        "subject"
+      ],
+      [
+        "were",
+        "verb"
+      ],
+      [
+        "farmers",
+        "complement"
+      ],
+      [
+        ".",
+        null
+      ]
+    ]
+  },
+  {
+    "form": "neg",
+    "parts": [
+      [
+        "She",
+        "subject"
+      ],
+      [
+        "was",
+        "verb"
+      ],
+      [
+        "not",
+        "neg"
+      ],
+      [
+        "the oldest",
+        "complement"
+      ],
+      [
+        ".",
+        null
+      ]
+    ]
+  },
+  {
+    "form": "q",
+    "parts": [
+      [
+        "Were",
+        "verb"
+      ],
+      [
+        "they",
+        "subject"
+      ],
+      [
+        "all girls",
+        "complement"
+      ],
+      [
+        "?",
+        null
+      ]
+    ]
+  },
+  {
+    "form": "wh",
+    "parts": [
+      [
+        "Where",
+        "wh"
+      ],
+      [
+        "was",
+        "verb"
+      ],
+      [
+        "she",
+        "subject"
+      ],
+      [
+        "born",
+        "complement"
+      ],
+      [
+        "?",
+        null
+      ]
+    ]
+  }
+]
+});
+
+HouseCCQ.build({
+  container: 'ccq',
+  items: [
+  {
+    "sentence": "My grandmother <strong>was</strong> a nurse for forty years.",
+    "questions": [
+      {
+        "q": "Is she a nurse now?",
+        "opts": [
+          "Yes",
+          "No"
+        ],
+        "correct": 1,
+        "why": "No — <em>was</em> tells us this is finished. She is not a nurse now."
+      },
+      {
+        "q": "Is this an action or a state?",
+        "opts": [
+          "An action",
+          "A state"
+        ],
+        "correct": 1,
+        "why": "A state. <em>be</em> says what someone <strong>was</strong>, not what they did."
+      }
+    ]
+  },
+  {
+    "sentence": "I <strong>was born</strong> in Lima in 1998.",
+    "questions": [
+      {
+        "q": "Can I say \"I born in Lima\"?",
+        "opts": [
+          "Yes",
+          "No"
+        ],
+        "correct": 1,
+        "why": "No. <em>be born</em> always needs <em>was</em> or <em>were</em>."
+      },
+      {
+        "q": "Can I say \"I am born in 1998\"?",
+        "opts": [
+          "Yes",
+          "No"
+        ],
+        "correct": 1,
+        "why": "No — being born is finished, so it must be past: <em>I was born</em>."
+      }
+    ]
+  },
+  {
+    "sentence": "There <strong>were</strong> seven children in the family.",
+    "questions": [
+      {
+        "q": "Why \"were\" and not \"was\"?",
+        "opts": [
+          "Because it is past",
+          "Because \"children\" is plural"
+        ],
+        "correct": 1,
+        "why": "Both are past — the choice depends on number. Seven children is plural, so <em>were</em>."
+      }
+    ]
+  }
+]
+});
+
+/* ── Find the mistake ──
+   Every fix changes exactly ONE word. "I borned in Chile" is therefore two
+   faults, not one: a MISSING `was` and a WRONG `borned`. Treating it as a
+   single swap would teach "borned → was born" as one lexical choice and hide
+   the auxiliary the learner actually has to supply. */
+HouseErrorHunt.build({
+  container: 'errorHunt',
+  scoreEl: 'ehScore', totalEl: 'ehTotal',
+  items: [
+  {
+    "words": [
+      "I",
+      "borned",
+      "in",
+      "Chile",
+      "."
+    ],
+    "missing": {
+      "1": {
+        "options": [
+          "was",
+          "were",
+          "am"
+        ],
+        "correct": "was"
+      }
+    },
+    "errors": {
+      "1": {
+        "options": [
+          "born",
+          "birth",
+          "borning"
+        ],
+        "correct": "born"
+      }
+    }
+  },
+  {
+    "words": [
+      "My",
+      "parents",
+      "was",
+      "farmers",
+      "."
+    ],
+    "errors": {
+      "2": {
+        "options": [
+          "were",
+          "was",
+          "are"
+        ],
+        "correct": "were"
+      }
+    }
+  },
+  {
+    "words": [
+      "She",
+      "was",
+      "a",
+      "nurse",
+      "for",
+      "forty",
+      "years",
+      "."
+    ],
+    "errors": {}
+  },
+  {
+    "words": [
+      "Where",
+      "you",
+      "were",
+      "born",
+      "?"
+    ],
+    "errors": {
+      "1": {
+        "options": [
+          "were",
+          "was",
+          "did"
+        ],
+        "correct": "were"
+      },
+      "2": {
+        "options": [
+          "you",
+          "your",
+          "yours"
+        ],
+        "correct": "you"
+      }
+    }
+  },
+  {
+    "words": [
+      "There",
+      "was",
+      "seven",
+      "children",
+      "in",
+      "the",
+      "family",
+      "."
+    ],
+    "errors": {
+      "1": {
+        "options": [
+          "were",
+          "was",
+          "are"
+        ],
+        "correct": "were"
+      }
+    }
+  },
+  {
+    "words": [
+      "She",
+      "no",
+      "was",
+      "happy",
+      "there",
+      "."
+    ],
+    "errors": {
+      "1": {
+        "options": [
+          "was",
+          "no",
+          "did"
+        ],
+        "correct": "was"
+      },
+      "2": {
+        "options": [
+          "not",
+          "was",
+          "no"
+        ],
+        "correct": "not"
+      }
+    }
+  },
+  {
+    "words": [
+      "Was",
+      "they",
+      "all",
+      "girls",
+      "?"
+    ],
+    "errors": {
+      "0": {
+        "options": [
+          "Were",
+          "Was",
+          "Did"
+        ],
+        "correct": "Were"
+      }
+    }
+  },
+  {
+    "words": [
+      "My",
+      "grandparents",
+      "from",
+      "Egypt",
+      "."
+    ],
+    "missing": {
+      "2": {
+        "options": [
+          "were",
+          "was",
+          "are"
+        ],
+        "correct": "were"
+      }
+    }
+  },
+  {
+    "words": [
+      "I",
+      "am",
+      "born",
+      "in",
+      "1998",
+      "."
+    ],
+    "errors": {
+      "1": {
+        "options": [
+          "was",
+          "am",
+          "were"
+        ],
+        "correct": "was"
+      }
+    }
+  },
+  {
+    "words": [
+      "It",
+      "was",
+      "not",
+      "easy",
+      "then",
+      "."
+    ],
+    "errors": {}
+  }
+]
+});
+
+HouseGrammar.init();
+</script>
+</body>
+</html>
