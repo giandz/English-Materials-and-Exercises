@@ -209,19 +209,120 @@ function ring(cx,cy,rx,ry,a0,a1,n,r){
       upright:false → drawn in the hand's frame (+y continues the forearm)
       upright:true  → stays vertical whatever the arm does
       side = +1 for the character's left hand, −1 for the right            ── */
+/* props stand on the floor. Chair, stool and bicycle are pinned to the pelvis; the rest stand next to the character. */
+const PROPS={chair:{label:'Chair',col:'#CC9966'},stool:{label:'Stool',col:'#CC9966'},desk:{label:'School desk',col:'#CC9966'},
+  beachchair:{label:'Beach chair',col:'#FF6600'},stroller:{label:'Stroller',col:'#0066CC'},bmx:{label:'BMX bicycle',col:'#CC0000'},roadbike:{label:'Road bicycle',col:'#0066CC'},
+  mtb:{label:'Mountain bicycle',col:'#00CC66'},piano:{label:'Grand piano and stool',col:'#000000'},scooter:{label:'Scooter',col:'#CC0000'},car:{label:'Car',col:'#CC0000'}};
+/* Side-view bicycle geometry in stage pixels (about 227 px per metre), saddle at the origin, facing +x.
+   G floor · R wheel radius · tw tyre width · A/F rear and front axle · BB bottom bracket · J where seat stays and top tube meet the seat tube ·
+   HT/HB head tube top and bottom · bar handlebar point · k drawing scale */
+const BIKES={
+  bmx:{k:1.6,G:104,R:34,tw:5,A:[-48,70],F:[87,70],BB:[18,68],J:[4,18],HT:[67.4,4.4],HB:[67.4,4.4],bar:[63.4,-21.6],barW:30,rx:4.5},      /* 20" wheels */
+  roadbike:{k:1,G:192,R:80,tw:5,A:[-60,112],F:[165,112],BB:[30,128],J:[8,34],HT:[128,2],HB:[135,28],bar:[140,-12],barW:44,drop:1,rx:5},       /* 28" wheels, drop bar */
+  mtb:{k:1,G:197,R:77,tw:10,A:[-66,120],F:[186,120],BB:[34,128],J:[10,40],HT:[142,4],HB:[152,36],bar:[150,-12],barW:76,susp:1,rx:10}           /* 26" wheels, double suspension */
+};
+function propSVG(id,c,o){   /* o = {x,y: hip point, g: floor, side: profile view?, dir: facing (-1 left, +1 right), hw} → [{z, svg, bottom?, span?}] */
+  const e=edge(c), F=`fill="${c}" stroke="${e}"`, D=`fill="${shade(c,-0.25)}" stroke="${e}"`, T='fill="#2b2b2b" stroke="#111"', Mt='fill="#b4bcc4" stroke="#5f6870"';
+  const {x,y,g,side,dir}=o, sy=n2(y+13), R=(a,b,w,h,f,r)=>`<rect x="${n2(a)}" y="${n2(b)}" width="${n2(w)}" height="${n2(h)}" rx="${r||0}" ${f}/>`;
+  const at=(X,Y,body,k,flip)=>`<g transform="translate(${n2(X)} ${n2(Y)}) scale(${(flip===false?1:dir)*(k||1)} ${k||1})">${body}</g>`;
+  const P=p=>`${p[0]},${p[1]}`;
+  const tube=(d,w,col)=>`<path d="${d}" fill="none" stroke="${col?'#111':e}" stroke-width="${w+2.4}" stroke-linejoin="round" stroke-linecap="round"/><path d="${d}" fill="none" stroke="${col||c}" stroke-width="${w}" stroke-linejoin="round" stroke-linecap="round"/>`;
+  /* wheel: translucent spokes, tyre, rim, hub */
+  const wheel=(cx,cy,r,tw,knob)=>{ tw=tw||5; let sp=''; for(let i=0;i<14;i++){const a=i*Math.PI/7; sp+=`M${cx},${cy}L${n2(cx+(r-tw)*Math.cos(a))},${n2(cy+(r-tw)*Math.sin(a))}`;}
+    return `<path d="${sp}" stroke="#5f6870" stroke-opacity=".35" stroke-width="1.2" fill="none"/><circle cx="${cx}" cy="${cy}" r="${n2(r-tw/2)}" fill="none" stroke="#222" stroke-width="${tw}"/>`
+      +(knob?`<circle cx="${cx}" cy="${cy}" r="${r}" fill="none" stroke="#222" stroke-width="3" stroke-dasharray="4 5"/>`:'')
+      +`<circle cx="${cx}" cy="${cy}" r="${n2(r-tw-1.5)}" fill="none" stroke="#9aa3ab" stroke-width="1.6"/><circle cx="${cx}" cy="${cy}" r="${Math.max(2.5,r*0.07)}" ${Mt}/>`; };
+  if(BIKES[id]){
+    const b=BIKES[id], Y=y+13, k=b.k, wy=b.G-b.R;
+    if(side){
+      let fr=wheel(b.A[0],b.A[1],b.R,b.tw,b.susp)+wheel(b.F[0],b.F[1],b.R,b.tw,b.susp);
+      if(b.susp){   /* swingarm, rear shock, telescopic fork */
+        fr+=tube(`M${b.BB[0]-2},${b.BB[1]-26}L${P(b.A)}L${b.J[0]+6},${b.J[1]+34}`,5)
+          +`<path d="M${b.J[0]+8},${b.J[1]+30}L${b.BB[0]+22},${b.BB[1]-44}" stroke="#333" stroke-width="9" stroke-linecap="round" fill="none"/><path d="M${b.J[0]+8},${b.J[1]+30}L${b.BB[0]+22},${b.BB[1]-44}" stroke="#FFCC00" stroke-width="5" stroke-dasharray="3 3" fill="none"/>`
+          +tube(`M${P(b.BB)}L${P(b.J)}M${P(b.J)}L${P(b.HT)}L${P(b.HB)}L${P(b.BB)}`,7)
+          +`<path d="M${P(b.HB)}L${n2((b.HB[0]+b.F[0])/2)},${n2((b.HB[1]+b.F[1])/2)}" stroke="#b4bcc4" stroke-width="5" fill="none"/>`+tube(`M${n2((b.HB[0]+b.F[0])/2)},${n2((b.HB[1]+b.F[1])/2)}L${P(b.F)}`,8,'#333');
+      } else {
+        fr+=tube(`M${P(b.BB)}L${P(b.A)}L${P(b.J)}M${P(b.J)}L${P(b.HT)}L${P(b.HB)}L${P(b.BB)}L${P(b.J)}`,id==='bmx'?4:4.5)
+          +tube(id==='roadbike'?`M${P(b.HB)}Q${b.HB[0]+14},${b.F[1]-30} ${P(b.F)}`:`M${P(b.HB)}L${P(b.F)}`,id==='bmx'?4:4);
+      }
+      fr+=`<path d="M${P(b.J)}L0,3" stroke="#b4bcc4" stroke-width="${id==='bmx'?3:4}" fill="none"/><path d="M${id==='bmx'?-12:-20},1H${id==='bmx'?13:16}" stroke="#222" stroke-width="${id==='bmx'?6:7}" stroke-linecap="round" fill="none"/>`
+        +`<path d="M${P(b.HT)}L${P(b.bar)}" stroke="#b4bcc4" stroke-width="${id==='bmx'?3:4.5}" stroke-linecap="round" fill="none"/>`
+        +(b.drop?`<path d="M${P(b.bar)}h16q14,2 10,18q-6,12 -20,10" stroke="#222" stroke-width="5" stroke-linecap="round" fill="none"/>`
+                :`<path d="M${b.bar[0]-(id==='bmx'?8:7)},${b.bar[1]-(id==='bmx'?1:0)}L${b.bar[0]+(id==='bmx'?10:11)},${b.bar[1]+(id==='bmx'?1:0)}" stroke="#222" stroke-width="${id==='bmx'?5:7}" stroke-linecap="round" fill="none"/>`)
+        +`<circle cx="${b.BB[0]}" cy="${b.BB[1]}" r="${id==='bmx'?7:11}" ${Mt}/><path d="M${P(b.BB)}l${id==='bmx'?'10,16m-6,0h12':'14,34m-10,0h20'}" stroke="#333" stroke-width="${id==='bmx'?3.4:4.5}" stroke-linecap="round" fill="none"/>`;
+      const far=`<path d="M${P(b.BB)}l${id==='bmx'?'-10,-16m-6,0h12':'-14,-34m-10,0h20'}" stroke="#333" stroke-width="${id==='bmx'?3.4:4.5}" stroke-linecap="round" fill="none"/>`;   /* the other pedal */
+      return [{z:5,svg:at(x,Y,far,k)},{z:24,bottom:Y+b.G*k,span:(Math.max(-b.A[0],b.F[0])+b.R)*k,svg:at(x,Y,fr,k)}];
+    }
+    const bw=b.barW, by=b.bar[1], col=`stroke="${e}"`;
+    return [{z:33,bottom:Y+b.G*k,span:bw*k+8,svg:at(x,Y,`<ellipse cx="0" cy="${wy}" rx="${b.rx}" ry="${b.R}" ${T}/>`+tube(`M-9,${by+10}L-${b.rx+3},${wy}M9,${by+10}L${b.rx+3},${wy}M-9,${by+10}H9`,id==='mtb'?6:4)+`<path d="M-14,2H14" stroke="#222" stroke-width="7" stroke-linecap="round" fill="none"/>`,k,false)},
+            {z:45,svg:at(x,Y,`<path d="M${-bw},${by}H${bw}" stroke="#5f6870" stroke-width="${id==='mtb'?5:4}" stroke-linecap="round" fill="none"/>`
+              +(b.drop?`<path d="M${-bw},${by}q-7,2 -5,18q2,10 9,10M${bw},${by}q7,2 5,18q-2,10 -9,10" stroke="#222" stroke-width="5" stroke-linecap="round" fill="none"/>`
+                      :`<path d="M${-bw-2},${by}H${-bw+12}M${bw-12},${by}H${bw+2}" stroke="#111" stroke-width="7" stroke-linecap="round" fill="none"/>`),k,false)}];
+  }
+  switch(id){
+    case 'chair': return side
+      ?[{z:-1,svg:R(x-dir*20-3.5,y-64,7,g-y+64,F)+R(x+dir*20-3.5,sy+6,7,g-sy-6,F)+R(x-27,sy,54,8,F,2)+R(x-dir*20-5,y-64,10,34,D,3)}]
+      :[{z:-1,svg:R(x-24,y-68,7,g-y+68,F)+R(x+17,y-68,7,g-y+68,F)+R(x-24,y-66,48,30,D,4)+R(x-28,sy,56,8,F,2)+R(x-26,sy+6,6,g-sy-6,F)+R(x+20,sy+6,6,g-sy-6,F)}];
+    case 'beachchair': {   /* low folding deck chair: reclined striped sling on a crossed wooden frame, seat pinned to the pelvis */
+      const W='#b98a55', frame=dd=>`<path d="${dd}" fill="none" stroke="#6e4a26" stroke-width="7.4" stroke-linecap="round"/><path d="${dd}" fill="none" stroke="${W}" stroke-width="5" stroke-linecap="round"/>`;
+      if(!side) return [{z:-1,span:44,svg:frame(`M${n2(x-34)},${n2(y-78)}V${n2(g)}M${n2(x+34)},${n2(y-78)}V${n2(g)}M${n2(x-34)},${n2(g-4)}H${n2(x+34)}`)+R(x-30,y-76,60,g-y+52-(g-sy)+8,F,3)
+        +[-20,-6,8].map(k=>R(x+k,y-76,7,g-y+52-(g-sy)+8,'fill="#fff" fill-opacity=".85" stroke="none"')).join('')}];
+      const sling=`M${n2(x-dir*56)},${n2(y-74)}Q${n2(x-dir*22)},${n2(sy+10)} ${n2(x+dir*2)},${n2(sy+6)}L${n2(x+dir*46)},${n2(sy-2)}`;
+      return [{z:-1,span:70,svg:frame(`M${n2(x-dir*60)},${n2(y-80)}L${n2(x+dir*34)},${n2(g)}M${n2(x+dir*50)},${n2(sy-6)}L${n2(x-dir*44)},${n2(g)}`)
+        +`<path d="${sling}" fill="none" stroke="${e}" stroke-width="9.4" stroke-linecap="round"/><path d="${sling}" fill="none" stroke="${c}" stroke-width="7" stroke-linecap="round"/><path d="${sling}" fill="none" stroke="#fff" stroke-opacity=".85" stroke-width="7" stroke-dasharray="9 11"/>`}]; }
+    case 'piano': {   /* the stool is pinned to the pelvis; the piano stands in front of the player, keyboard toward them, always seen from the side */
+      const seat=g-sy, W='#b98a55';
+      const bench=R(x-26,sy,52,9,'fill="#7a1f1f" stroke="#3d0f0f"',3)+R(x-24,sy+8,48,6,`fill="${c}" stroke="${e}"`)+R(x-21,sy+13,5,seat-13,`fill="${c}" stroke="${e}"`)+R(x+16,sy+13,5,seat-13,`fill="${c}" stroke="${e}"`);
+      /* behind the player: pedals, key bed and keys (the hands go over them) */
+      const back=`<path d="M108,-128L120,-22M100,-128L88,-22" stroke="${e}" stroke-width="5" stroke-linecap="round" fill="none"/><path d="M84,-16H126" stroke="#e2b23a" stroke-width="5" stroke-linecap="round" fill="none"/>`
+        +`<path d="M40,-170Q40,-178 48,-178H92V-128H48Q40,-128 40,-136Z" ${F}/>`
+        +R(44,-166,44,9,'fill="#fff" stroke="#555"')+`<path d="M52,-166v9M60,-166v9M68,-166v9M76,-166v9" stroke="#555" stroke-width=".8" fill="none"/><path d="M48,-169H86" stroke="#111" stroke-width="3" fill="none"/>`;
+      /* in front of the player: lid, prop stick, music desk and the case itself */
+      const front=`<path d="M112,-192L452,-318L462,-312L130,-190Z" ${F}/><path d="M300,-192L330,-270" stroke="${e}" stroke-width="4" stroke-linecap="round" fill="none"/>`
+        +`<path d="M94,-194L102,-226" stroke="${e}" stroke-width="5" stroke-linecap="round" fill="none"/><path d="M94,-194L102,-226" stroke="${W}" stroke-width="3" stroke-linecap="round" fill="none"/>`
+        +`<path d="M86,-192H440Q470,-192 470,-162V-142Q470,-128 452,-128H86Z" ${F}/>`;
+      const legs=R(66,-130,14,124,F,3)+R(424,-130,14,124,F,3)+`<circle cx="73" cy="-5" r="5" ${Mt}/><circle cx="431" cy="-5" r="5" ${Mt}/>`;   /* in front of the player's legs */
+      return [{z:-1.5,svg:bench},{z:-1,span:520,svg:at(x,g,back)},{z:34,svg:at(x,g,legs)},{z:90,svg:at(x,g,front)}]; }
+    case 'stool': { const legs=`M${n2(x-12)},${sy+6}L${n2(x-21)},${n2(g)}M${n2(x+12)},${sy+6}L${n2(x+21)},${n2(g)}M${n2(x)},${sy+6}V${n2(g)}`;
+      return [{z:-1,svg:tube(legs,4.4)+R(x-17,(sy+g)/2,34,4,D,2)+R(x-20,sy,40,8,F,4)}]; }
+    case 'desk': { const X=side?x+dir*74:x, w=side?52:82, h=150;   /* a real desk height: about 75 cm */
+      return [{z:90,span:side?130:w,svg:R(X-w+6,g-h+6,6,h-6,Mt)+R(X+w-12,g-h+6,6,h-6,Mt)+(side?'':R(X-w+10,g-h+8,w*2-20,46,D))+R(X-w+10,g-h+22,w*2-20,6,D)+R(X-w,g-h,w*2,10,F,2)}]; }
+    case 'stroller': { const X=side?x+dir*170:x+o.hw+112;
+      return side?[{z:90,span:260,svg:at(X,g,`<path d="M-30,-70L-56,-104" stroke="#333" stroke-width="4" stroke-linecap="round" fill="none"/><path d="M-62,-102L-50,-106" stroke="#111" stroke-width="6" stroke-linecap="round" fill="none"/><path d="M-22,-36L-24,-14M22,-36L24,-14M-22,-36L24,-14" stroke="#555" stroke-width="3" fill="none"/><path d="M-32,-72H32Q32,-36 0,-34Q-32,-36 -32,-72Z" ${F}/><path d="M-2,-72A34,34 0 0 1 32,-106L32,-72Z" ${D}/>`+wheel(-24,-13,13,3)+wheel(24,-13,13,3),2)}]
+        :[{z:-1,span:o.hw+180,svg:at(X,g,`<path d="M-22,-104H22" stroke="#111" stroke-width="6" stroke-linecap="round" fill="none"/><path d="M-22,-104L-24,-70M22,-104L24,-70" stroke="#333" stroke-width="4" fill="none"/><ellipse cx="-24" cy="-13" rx="4.5" ry="13" ${T}/><ellipse cx="24" cy="-13" rx="4.5" ry="13" ${T}/><path d="M-26,-112Q0,-128 26,-112V-78H-26Z" ${D}/><rect x="-28" y="-80" width="56" height="48" rx="8" ${F}/><path d="M-22,-34V-20M22,-34V-20" stroke="#555" stroke-width="3" fill="none"/>`,2,false)}]; }
+    case 'scooter': return side
+      ?[{z:24,span:150,svg:at(x,g,wheel(-66,-22,22,5)+wheel(80,-22,22,5)+tube('M-58,-24H58L80,-22',7)+`<path d="M80,-22L66,-236" stroke="#5f6870" stroke-width="8" stroke-linecap="round" fill="none"/><path d="M80,-22L66,-236" stroke="#b4bcc4" stroke-width="5" stroke-linecap="round" fill="none"/><path d="M54,-238H78" stroke="#111" stroke-width="8" stroke-linecap="round" fill="none"/>`)}]
+      :[{z:33,span:60,svg:at(x,g,`<ellipse cx="0" cy="-22" rx="6" ry="22" ${T}/>`+R(-16,-30,32,8,F,3)+`<path d="M0,-30V-236" stroke="#5f6870" stroke-width="8" fill="none"/><path d="M0,-30V-236" stroke="#b4bcc4" stroke-width="5" fill="none"/>`,1,false)},
+        {z:45,svg:at(x,g,`<path d="M-46,-238H46" stroke="#5f6870" stroke-width="5" stroke-linecap="round" fill="none"/><path d="M-48,-238H-34M34,-238H48" stroke="#111" stroke-width="8" stroke-linecap="round" fill="none"/>`,1,false)}];
+    case 'car': { /* the character drives: the seat is pinned to the pelvis, the body shell is in front, and you see them through the window */
+      const k=3, X=x-dir*34*k, Y=y+13+38*k;
+      const body='M-170,-22V-58Q-168,-70 -150,-72L-100,-76L-66,-112Q-60,-118 -48,-118H52Q64,-118 72,-110L112,-76L156,-70Q170,-66 170,-50V-22Z', w1='M-58,-110L-90,-78H-6V-110Z', w2='M6,-110V-78H96L64,-110Z';
+      const wh=cx=>`<circle cx="${cx}" cy="-24" r="24" ${T}/><circle cx="${cx}" cy="-24" r="12" ${Mt}/><circle cx="${cx}" cy="-24" r="3" fill="#5f6870" stroke="none"/>`;
+      return [{z:-2,bottom:Y,span:170*k,svg:at(X,Y,`<path d="${body}" fill="${shade(c,-0.55)}" stroke="${e}" stroke-width=".6"/><rect x="10" y="-100" width="12" height="66" rx="5" fill="#3a3f45" stroke="none"/>`,k)},
+              {z:95,svg:at(X,Y,`<path d="${body}${w1}${w2}" fill="${c}" fill-rule="evenodd" stroke="${e}" stroke-width=".6"/><path d="${w1}${w2}" fill="#bcdcf0" fill-opacity=".3" stroke="${e}" stroke-width=".6"/><path d="M0,-78V-26M-96,-78V-30M100,-76V-30" stroke="${e}" stroke-width=".6" fill="none"/><rect x="-24" y="-66" width="14" height="4" rx="2" ${Mt} stroke-width=".5"/><rect x="74" y="-66" width="14" height="4" rx="2" ${Mt} stroke-width=".5"/><rect x="158" y="-64" width="12" height="10" rx="3" fill="#FFFF99" stroke="${e}" stroke-width=".6"/><rect x="-170" y="-64" width="8" height="12" rx="2" fill="#CC0000" stroke="${e}" stroke-width=".6"/>`+wh(-100)+wh(104),k)}]; }
+  }
+  return [];
+}
 const ITEM_CATS=[['Tools',['wrench','hammer','screwdriver','pliers','paintbrush','flashlight','multimeter']],
-  ['Kitchen',['fork','knife','spoon','pan','cup']],['Everyday',['book','phone','tablet','keys','ball','teddy']],
-  ['Bags and luggage',['box','bag','purse','briefcase','suitcase']],['Umbrellas and canes',['cane','parasol','umbrella']],
-  ['Music',['microphone','micstand','guitar','bass','violin','violinbow','mandolin','accordion','trumpet','flute','tambourine','maraca','drumstick']],
+  ['Kitchen',['fork','knife','spoon','pan','cup','mug','bowl','plate','cake','pizzabox']],['Everyday',['book','phone','tablet','keys','balloon','teddy']],
+  ['Sports',['beachball','soccerball','basketball','volleyball','football','tennisball','baseball','tennisracket','baseballbat','mitt']],
+  ['Cleaning',['broom','mop','duster']],
+  ['Bags and luggage',['box','bag','purse','briefcase','suitcase']],['Umbrellas and canes',['cane','parasol','umbrella','parasolclosed','umbrellaclosed']],
+  ['Music',['boombox','microphone','micstand','guitar','bass','violin','violinbow','mandolin','accordion','concertina','trumpet','flute','tambourine','maraca','drumstick']],
   ['Hats',['hat_cap','hat_beanie','hat_sunhat','hat_hardhat','hat_fedora']]];
 /* each item: col = default colour, draw(side, colour). cane:true items are sized to reach the floor. */
 const ITEMS = (()=>{
   const F=(c,x)=>`fill="${c}" stroke="${edge(c)}"${x||''}`, M='#b4bcc4', MS='#5f6870', W='#b98a55', WS='#6e4a26';
   const metal=`fill="${M}" stroke="${MS}"`, wood=`fill="${W}" stroke="${WS}"`;
   const handle=(w,y1,attr)=>`<rect x="${-w}" y="-9" width="${w*2}" height="${y1+9}" rx="${Math.min(w,2)}" ${attr}/>`;
+  const steam=(x,y)=>[-6,0,6].map((dx,i)=>`<path d="M${x+dx},${y-(i%2)*3}q-4,-6 0,-12t0,-12" fill="none" stroke="#8fa0aa" stroke-opacity=".5" stroke-width="2.6" stroke-linecap="round"/>`).join('');
   const hat=(id,label,noun)=>({label:label+' (in hand)',noun,phrase:`${/^[aeiou]/.test(noun)?'an':'a'} ${noun}`,verb:'holding',get col(){return HEADWEAR[id].col;},
     draw:(s,c)=>`<g transform="translate(${-s*24} 31)">${headwearSVG(id,false,c)}</g>`});
-  const canopy=(k,c)=>`<path d="M0,${-96*k}V10Q0,17 6,17" fill="none" stroke="#5b4636" stroke-width="2.6" stroke-linecap="round"/><path transform="scale(${k})" d="M-64,-92Q-60,-132 0,-136Q60,-132 64,-92Q48,-101 32,-92Q16,-101 0,-92Q-16,-101 -32,-92Q-48,-101 -64,-92Z" ${F(c)} stroke-width="${n2(1.3/k)}"/>`;
+  /* a furled umbrella lies along the hand: hooked handle in the fist, folded canopy beyond it */
+  /* a furled umbrella lies along the hand: hooked handle in the fist, folded canopy beyond it */
+  const furled=(k,c,s)=>{const L=n2(96*k); return `<path d="M0,${L}V${n2(L+9)}" stroke="#5b4636" stroke-width="2.4" stroke-linecap="round" fill="none"/><path d="M0,12V-8Q0,-17 ${-s*7},-17Q${-s*13},-17 ${-s*13},-10" fill="none" stroke="#5b4636" stroke-width="3.4" stroke-linecap="round"/><path d="M0,10Q${n2(5+2*k)},22 ${n2(4+k)},${n2(L-12)}L0,${L}L${n2(-4-k)},${n2(L-12)}Q${n2(-5-2*k)},22 0,10Z" ${F(c)}/><path d="M0,12V${n2(L-2)}M${n2(2+k)},24L${n2(1.5+k*0.5)},${n2(L-10)}M${n2(-2-k)},24L${n2(-1.5-k*0.5)},${n2(L-10)}" stroke="${edge(c)}" stroke-width=".8" fill="none"/><path d="M${n2(-5-2*k)},30H${n2(5+2*k)}" stroke="${edge(c)}" stroke-width="2.2" fill="none"/>`;};
+  /* open: the canopy top sits 96k above the grip (the furled length), with the same bare tip above it and the same hooked handle below */
+  const canopy=(k,c)=>`<path d="M0,${n2(-96*k-9)}V${n2(-96*k)}" stroke="#5b4636" stroke-width="2.4" stroke-linecap="round" fill="none"/><path d="M0,${n2(-96*k)}V8Q0,17 7,17Q13,17 13,10" fill="none" stroke="#5b4636" stroke-width="3" stroke-linecap="round"/><path transform="translate(0 ${n2(40*k)}) scale(${k})" d="M-64,-92Q-60,-132 0,-136Q60,-132 64,-92Q48,-101 32,-92Q16,-101 0,-92Q-16,-101 -32,-92Q-48,-101 -64,-92Z" ${F(c)} stroke-width="${n2(1.3/k)}"/>`;
   return {
   /* tools */
   wrench:{label:'Wrench',noun:'wrench',plural:'wrenches',phrase:'a wrench',verb:'holding',col:'#999999',draw:(s,c)=>
@@ -247,6 +348,16 @@ const ITEMS = (()=>{
     handle(2.4,28,F(shade(c,-0.2)))+`<circle cx="0" cy="45" r="18" ${F(c)}/><circle cx="0" cy="45" r="14" fill="${shade(c,0.18)}" stroke="none"/>`},
   cup:{label:'Cup',noun:'cup',phrase:'a cup',verb:'holding',upright:true,col:'#FFFFFF',draw:(s,c)=>
     `<g transform="translate(${-s*12},-4)"><path d="M${s*8},-6Q${s*17},-6 ${s*17},2Q${s*17},9 ${s*8},9" fill="none" stroke="${edge(c)}" stroke-width="3.2"/><path d="M-10,-12H10L8,11Q8,13 6,13H-6Q-8,13 -8,11Z" ${F(c)}/></g>`},
+  mug:{label:'Mug',noun:'mug',phrase:'a mug',verb:'holding',upright:true,col:'#CC0000',draw:(s,c)=>
+    `<g transform="translate(${-s*12},-4)">${steam(0,-20)}<path d="M${s*8},-9Q${s*18},-9 ${s*18},-1Q${s*18},7 ${s*8},7" fill="none" stroke="${edge(c)}" stroke-width="5"/><path d="M${s*8},-9Q${s*18},-9 ${s*18},-1Q${s*18},7 ${s*8},7" fill="none" stroke="${c}" stroke-width="3"/><path d="M-9,-16H9V10Q9,13 6,13H-6Q-9,13 -9,10Z" ${F(c)}/></g>`},
+  bowl:{label:'Bowl',noun:'bowl',phrase:'a bowl',verb:'holding',upright:true,col:'#0066CC',draw:(s,c)=>
+    `<g transform="translate(${-s*14},-2)">${steam(0,-12)}<path d="M-17,-6H17Q17,12 0,13Q-17,12 -17,-6Z" ${F(c)}/><ellipse cx="0" cy="-6" rx="17" ry="4" fill="#f4d58a" stroke="${edge(c)}"/></g>`},
+  plate:{label:'Plate of food',noun:'plate',phrase:'a plate of food',plural:'plates of food',verb:'holding',upright:true,col:'#FFFFFF',draw:(s,c)=>
+    `<g transform="translate(${-s*16},0)">${steam(0,-16)}<ellipse cx="0" cy="2" rx="23" ry="5.5" ${F(c)}/><path d="M-13,1Q-12,-11 0,-12Q12,-11 13,1Z" fill="#CC6600" stroke="#7a3d00"/><circle cx="6" cy="-6" r="3.4" fill="#00CC66" stroke="#007a3d" stroke-width=".8"/><circle cx="-6" cy="-4" r="2.6" fill="#CC0000" stroke="#7a0000" stroke-width=".8"/></g>`},
+  cake:{label:'Cake',noun:'cake',phrase:'a cake',verb:'carrying',upright:true,col:'#FF66CC',draw:(s,c)=>
+    `<g transform="translate(${-s*20},-2)"><ellipse cx="0" cy="2" rx="27" ry="5" fill="#FFFFFF" stroke="#999"/>`+[-11,0,11].map(x=>`<rect x="${x-1.6}" y="-40" width="3.2" height="13" fill="#0066CC" stroke="none"/><ellipse cx="${x}" cy="-44" rx="2.6" ry="4.4" fill="#FFCC00" stroke="none"/>`).join('')+`<rect x="-22" y="-28" width="44" height="29" rx="5" ${F(shade(c,0.55))}/><path d="M-22,-18q5.5,7 11,0t11,0t11,0t11,0V-23Q22,-28 17,-28H-17Q-22,-28 -22,-23Z" fill="${c}" stroke="none"/></g>`},
+  pizzabox:{label:'Pizza box',noun:'pizza box',plural:'pizza boxes',phrase:'a pizza box',verb:'carrying',upright:true,col:'#CC9966',draw:(s,c)=>
+    `<g transform="translate(${-s*30},-1)"><rect x="-33" y="-10" width="66" height="12" rx="1.5" ${F(c)}/><path d="M-33,-5.5H33" stroke="${edge(c)}" fill="none"/><circle cx="0" cy="-5" r="3.6" fill="#CC0000" stroke="none"/></g>`},
   /* everyday */
   book:{label:'Book',noun:'book',phrase:'a book',verb:'holding',col:'#CC0000',draw:(s,c)=>
     `<rect x="-15" y="-10" width="30" height="42" rx="2" ${F(c)}/><path d="M-11,-10V32" stroke="${edge(c)}" fill="none"/><rect x="-5" y="-2" width="14" height="5" fill="#f1dcc0" stroke="none"/>`},
@@ -254,8 +365,8 @@ const ITEMS = (()=>{
     `<rect x="-8" y="-12" width="16" height="31" rx="3" ${F(c)}/><rect x="-6" y="-9" width="12" height="24" rx="1" fill="#7fb6e6" stroke="none"/>`},
   keys:{label:'Keys',phrase:'some keys',plural:'sets of keys',verb:'holding',upright:true,col:'#CC0000',draw:(s,c)=>   /* hangs straight down */
     `<circle cx="0" cy="13" r="5" fill="none" stroke="${MS}" stroke-width="1.6"/><path d="M-2.5,17.5L-6,36L-3.6,36.5L-3.4,32.5L-1.6,32.8L-1.2,29L0.6,29.2L0,18Z" fill="#d7b54a" stroke="#8c7220"/><circle cx="-1.6" cy="20.5" r="1" fill="#8c7220" stroke="none"/><rect x="2" y="17.5" width="7.5" height="14" rx="2.2" ${F(c)}/>`},
-  ball:{label:'Ball',noun:'ball',phrase:'a ball',verb:'holding',col:'#FF6600',draw:(s,c)=>
-    `<circle cx="0" cy="12" r="17" ${F(c)}/><path d="M-17,12H17M0,-5V29" stroke="${edge(c)}" fill="none"/>`},
+  balloon:{label:'Balloon',noun:'balloon',phrase:'a balloon',verb:'holding',upright:true,col:'#CC0000',draw:(s,c)=>   /* floats straight up */
+    `<path d="M0,8Q9,-30 0,-66" fill="none" stroke="#777"/><path d="M-4,-64H4L0,-70Z" ${F(c)}/><ellipse cx="0" cy="-98" rx="24" ry="30" ${F(c)}/><ellipse cx="-8" cy="-110" rx="5" ry="8" fill="#fff" fill-opacity=".45" stroke="none"/>`},
   teddy:{label:'Teddy bear',noun:'teddy bear',phrase:'a teddy bear',verb:'holding',upright:true,col:'#CC6600',draw:(s,c)=>{   /* dangles by one paw */
     const f=F(c), l=shade(c,0.45);
     return `<g transform="translate(${s*9},4)"><path d="M${-s*7},4L${-s*10},-4" stroke="${c}" stroke-width="7" stroke-linecap="round" fill="none"/><ellipse cx="${s*9}" cy="22" rx="3.6" ry="6" transform="rotate(${-s*30} ${s*9} 22)" ${f}/><ellipse cx="-5.5" cy="41" rx="4.6" ry="6" ${f}/><ellipse cx="5.5" cy="41" rx="4.6" ry="6" ${f}/><ellipse cx="0" cy="28" rx="10.5" ry="12.5" ${f}/><ellipse cx="0" cy="30" rx="6" ry="7.5" fill="${l}" stroke="none"/>`
@@ -265,23 +376,53 @@ const ITEMS = (()=>{
   bag:{label:'Bag',noun:'bag',phrase:'a bag',verb:'carrying',upright:true,col:'#663300',draw:(s,c)=>
     `<path d="M-11,24Q0,-8 11,24" fill="none" stroke="${edge(c)}" stroke-width="2.6"/><path d="M-22,22H22L25,62Q25,66 21,66H-21Q-25,66 -25,62Z" ${F(c)}/>`},
   purse:{label:'Purse',noun:'purse',phrase:'a purse',verb:'carrying',upright:true,col:'#CC0066',draw:(s,c)=>   /* hangs from its strap */
-    `<path d="M-9,36Q0,-10 9,36" fill="none" stroke="${edge(c)}" stroke-width="2.2"/><path d="M-15,33H15Q18.5,33 18,37L16,53Q15.6,57 12,57H-12Q-15.6,57 -16,53L-18,37Q-18.5,33 -15,33Z" ${F(c)}/><path d="M-17.6,40Q0,50 17.6,40" fill="none" stroke="${edge(c)}"/><circle cx="0" cy="45.5" r="2.2" fill="#e2b23a" stroke="#9c7716" stroke-width=".8"/>`},
+    `<g transform="translate(0 -18) scale(1.4)"><path d="M-9,36Q0,-10 9,36" fill="none" stroke="${edge(c)}" stroke-width="2.2"/><path d="M-15,33H15Q18.5,33 18,37L16,53Q15.6,57 12,57H-12Q-15.6,57 -16,53L-18,37Q-18.5,33 -15,33Z" ${F(c)}/><path d="M-17.6,40Q0,50 17.6,40" fill="none" stroke="${edge(c)}"/><circle cx="0" cy="45.5" r="2.2" fill="#e2b23a" stroke="#9c7716" stroke-width=".8"/></g>`},   /* larger; the top of the strap sits in the fist */
   cane:{label:'Cane',noun:'cane',phrase:'a cane',verb:'holding',upright:true,cane:true,col:'#663300',draw:(s,c,len)=>
     `<path d="M0,0V${n2(len-3)}" stroke="${edge(c)}" stroke-width="5.6" stroke-linecap="round" fill="none"/><path d="M0,0V${n2(len-3)}" stroke="${c}" stroke-width="3.6" stroke-linecap="round" fill="none"/><path d="M0,0Q0,-9 ${-s*8},-9Q${-s*14},-9 ${-s*14},-3" fill="none" stroke="${edge(c)}" stroke-width="5.6" stroke-linecap="round"/><path d="M0,0Q0,-9 ${-s*8},-9Q${-s*14},-9 ${-s*14},-3" fill="none" stroke="${c}" stroke-width="3.6" stroke-linecap="round"/><path d="M0,${n2(len-5)}V${n2(len-1.5)}" stroke="#222" stroke-width="5" stroke-linecap="round" fill="none"/>`},
   parasol:{label:'Parasol',noun:'parasol',phrase:'a parasol',verb:'holding',upright:true,col:'#0066CC',draw:(s,c)=>canopy(1,c)},
   umbrella:{label:'Umbrella',noun:'umbrella',phrase:'an umbrella',verb:'holding',upright:true,col:'#CC0000',draw:(s,c)=>canopy(1.5,c)},
   briefcase:{label:'Briefcase',noun:'briefcase',phrase:'a briefcase',verb:'carrying',upright:true,col:'#663300',draw:(s,c)=>
-    `<path d="M-8,22V15Q-8,11 -4,11H4Q8,11 8,15V22" fill="none" stroke="${edge(c)}" stroke-width="2.6"/><rect x="-27" y="21" width="54" height="36" rx="3" ${F(c)}/><path d="M-27,33H27" stroke="${edge(c)}" fill="none"/><rect x="-4" y="30" width="8" height="6" rx="1" fill="#e2b23a" stroke="#9c7716" stroke-width=".8"/>`},
+    `<g transform="translate(0 -16) scale(1.35)"><path d="M-8,22V15Q-8,11 -4,11H4Q8,11 8,15V22" fill="none" stroke="${edge(c)}" stroke-width="2.6"/><rect x="-27" y="21" width="54" height="36" rx="3" ${F(c)}/><path d="M-27,33H27" stroke="${edge(c)}" fill="none"/><rect x="-4" y="30" width="8" height="6" rx="1" fill="#e2b23a" stroke="#9c7716" stroke-width=".8"/></g>`},   /* larger; the handle sits in the fist */
   suitcase:{label:'Suitcase',noun:'suitcase',phrase:'a suitcase',verb:'carrying',upright:true,col:'#006666',draw:(s,c)=>
-    `<path d="M-9,24V12Q-9,8 -5,8H5Q9,8 9,12V24" fill="none" stroke="${edge(c)}" stroke-width="2.8"/><circle cx="-16" cy="93" r="3.4" fill="#222" stroke="none"/><circle cx="16" cy="93" r="3.4" fill="#222" stroke="none"/><rect x="-25" y="23" width="50" height="68" rx="5" ${F(c)}/><path d="M-12,23V91M12,23V91" stroke="${edge(c)}" fill="none"/>`},
+    `<g transform="translate(0 -12) scale(1.3)"><path d="M-9,24V12Q-9,8 -5,8H5Q9,8 9,12V24" fill="none" stroke="${edge(c)}" stroke-width="2.8"/><circle cx="-16" cy="93" r="3.4" fill="#222" stroke="none"/><circle cx="16" cy="93" r="3.4" fill="#222" stroke="none"/><rect x="-25" y="23" width="50" height="68" rx="5" ${F(c)}/><path d="M-12,23V91M12,23V91" stroke="${edge(c)}" fill="none"/></g>`},   /* larger; the handle sits in the fist */
   multimeter:{label:'Multimeter',noun:'multimeter',phrase:'a multimeter',verb:'holding',col:'#FFCC00',draw:(s,c)=>
-    `<path d="M-5,25Q-10,40 -3,52" fill="none" stroke="#CC0000" stroke-width="1.3"/><path d="M5,25Q11,38 4,54" fill="none" stroke="#111" stroke-width="1.3"/><rect x="-11" y="-14" width="22" height="42" rx="4" ${F(c)}/><rect x="-8" y="-10" width="16" height="10" rx="1.5" fill="#cfe0c8" stroke="#555" stroke-width=".8"/><circle cx="0" cy="12" r="6.5" fill="#333" stroke="#111"/><path d="M0,12L3.5,7.5" stroke="#fff" stroke-width="1.4" fill="none"/><circle cx="-5" cy="24" r="1.6" fill="#CC0000" stroke="none"/><circle cx="5" cy="24" r="1.6" fill="#111" stroke="none"/>`},
+    `<path d="M-5,25Q-22,44 -10,58T-16,78" fill="none" stroke="#CC0000" stroke-width="1.3"/><path d="M5,25Q24,42 12,58T18,80" fill="none" stroke="#111" stroke-width="1.3"/><path d="M-16,76L-20,98" stroke="#CC0000" stroke-width="4" stroke-linecap="round" fill="none"/><path d="M-20.4,100L-22,110" stroke="#8a9299" stroke-width="1.6" stroke-linecap="round" fill="none"/><path d="M18,78L22,100" stroke="#222" stroke-width="4" stroke-linecap="round" fill="none"/><path d="M22.4,102L24,112" stroke="#8a9299" stroke-width="1.6" stroke-linecap="round" fill="none"/><rect x="-11" y="-14" width="22" height="42" rx="4" ${F(c)}/><rect x="-8" y="-10" width="16" height="10" rx="1.5" fill="#cfe0c8" stroke="#555" stroke-width=".8"/><circle cx="0" cy="12" r="6.5" fill="#333" stroke="#111"/><path d="M0,12L3.5,7.5" stroke="#fff" stroke-width="1.4" fill="none"/><circle cx="-5" cy="24" r="1.6" fill="#CC0000" stroke="none"/><circle cx="5" cy="24" r="1.6" fill="#111" stroke="none"/>`},
   tablet:{label:'Tablet',noun:'tablet',phrase:'a tablet',verb:'holding',col:'#333333',draw:(s,c)=>
     `<rect x="-17" y="-16" width="34" height="48" rx="3.5" ${F(c)}/><rect x="-14" y="-13" width="28" height="40" rx="1.5" fill="#7fb6e6" stroke="none"/>`},
+  /* sports */
+  beachball:{label:'Beach ball',noun:'beach ball',phrase:'a beach ball',verb:'holding',col:'#CC0000',draw:(s,c)=>{   /* panels: the colour, its two triad partners, and white between */
+    const h=c.slice(1), cols=[c,'#FFFFFF','#'+h.slice(2)+h.slice(0,2),'#FFFFFF','#'+h.slice(4)+h.slice(0,4),'#FFFFFF'], r=36, cy=30; let w='';
+    for(let i=0;i<6;i++){const a=i*Math.PI/3-Math.PI/2, b=a+Math.PI/3; w+=`<path d="M0,${cy}L${n2(r*Math.cos(a))},${n2(cy+r*Math.sin(a))}A${r},${r} 0 0 1 ${n2(r*Math.cos(b))},${n2(cy+r*Math.sin(b))}Z" fill="${cols[i]}" stroke="none"/>`;}
+    return w+`<circle cx="0" cy="${cy}" r="${r}" fill="none" stroke="${edge(c)}"/><circle cx="0" cy="${cy}" r="5" fill="#FFFFFF" stroke="${edge(c)}" stroke-width=".8"/>`;}},
+  soccerball:{label:'Soccer ball',noun:'soccer ball',phrase:'a soccer ball',verb:'holding',col:'#FFFFFF',draw:(s,c)=>
+    `<circle cx="0" cy="22" r="25" ${F(c)}/><path d="M0,13L8.5,19.2L5.3,29.2H-5.3L-8.5,19.2Z" fill="#222" stroke="none"/><path d="M0,13V-3M8.5,19.2L23,14M5.3,29.2L14,42M-5.3,29.2L-14,42M-8.5,19.2L-23,14" stroke="#222" fill="none"/><path d="M-7,-2L0,-3L7,-2L4,-1H-4ZM21,9L23,14L24,22L20,17ZM17,40L14,42L7,46L11,41ZM-17,40L-14,42L-7,46L-11,41ZM-21,9L-23,14L-24,22L-20,17Z" fill="#222" stroke="none"/>`},
+  basketball:{label:'Basketball',noun:'basketball',phrase:'a basketball',verb:'holding',col:'#FF6600',draw:(s,c)=>
+    `<circle cx="0" cy="24" r="27" ${F(c)}/><path d="M-27,24H27M0,-3V51M-19,5Q-6,24 -19,43M19,5Q6,24 19,43" stroke="#222" stroke-width="1.4" fill="none"/>`},
+  volleyball:{label:'Volleyball',noun:'volleyball',phrase:'a volleyball',verb:'holding',col:'#FFFFFF',draw:(s,c)=>
+    `<circle cx="0" cy="21" r="24" ${F(c)}/><path d="M0,21Q-4,6 6,-2M0,21Q16,22 22,12M0,21Q-12,32 -10,43M-7,-1Q-18,12 -23,16M24,20Q14,36 4,44M-22,30Q-10,24 -3,10" stroke="#5f6870" fill="none"/>`},
+  football:{label:'American football',noun:'football',phrase:'a football',verb:'holding',col:'#663300',draw:(s,c)=>
+    `<path d="M0,-8Q20,8 20,24Q20,40 0,56Q-20,40 -20,24Q-20,8 0,-8Z" ${F(c)}/><path d="M0,10V38M-4,14H4M-4,20H4M-4,26H4M-4,32H4" stroke="#fff" stroke-width="1.6" fill="none"/><path d="M-12,2Q0,8 12,2M-12,46Q0,40 12,46" stroke="#fff" stroke-width="2" fill="none"/>`},
+  tennisball:{label:'Tennis ball',noun:'tennis ball',phrase:'a tennis ball',verb:'holding',col:'#CCFF00',draw:(s,c)=>
+    `<circle cx="0" cy="11" r="8.6" ${F(c)}/><path d="M-7,5Q-1,11 -7,17M7,5Q1,11 7,17" stroke="#fff" stroke-width="1.4" fill="none"/>`},
+  baseball:{label:'Baseball',noun:'baseball',phrase:'a baseball',verb:'holding',col:'#FFFFFF',draw:(s,c)=>
+    `<circle cx="0" cy="11" r="9.4" ${F(c)}/><path d="M-7.6,5Q-1.5,11 -7.6,17M7.6,5Q1.5,11 7.6,17" stroke="#CC0000" stroke-width="1.2" stroke-dasharray="1.6 1.4" fill="none"/>`},
+  tennisracket:{label:'Tennis racket',behindArms:true,noun:'tennis racket',phrase:'a tennis racket',verb:'holding',col:'#CC0000',draw:(s,c)=>
+    `<rect x="-2.8" y="-10" width="5.6" height="34" rx="2" fill="#222" stroke="#000"/><path d="M-2,24L-9,46M2,24L9,46" stroke="${edge(c)}" stroke-width="4.6" fill="none"/><path d="M-2,24L-9,46M2,24L9,46" stroke="${c}" stroke-width="2.8" fill="none"/><ellipse cx="0" cy="70" rx="19" ry="27" fill="#fff" fill-opacity=".25" stroke="none"/><path d="M-12,48V92M-6,44V96M0,43V97M6,44V96M12,48V92M-18,60H18M-19,70H19M-18,80H18M-14,52H14M-14,88H14" stroke="#5f6870" stroke-opacity=".45" stroke-width=".8" fill="none"/><ellipse cx="0" cy="70" rx="19" ry="27" fill="none" stroke="${edge(c)}" stroke-width="5.4"/><ellipse cx="0" cy="70" rx="19" ry="27" fill="none" stroke="${c}" stroke-width="3.4"/>`},
+  baseballbat:{label:'Baseball bat',behindArms:true,noun:'baseball bat',phrase:'a baseball bat',verb:'holding',col:'#CC9966',draw:(s,c)=>
+    `<g transform="translate(0 -30) scale(1 1.25)"><path d="M-2.2,-9H2.2L6.4,84Q6.6,100 0,100Q-6.6,100 -6.4,84Z" ${F(c)}/><ellipse cx="0" cy="-10" rx="4" ry="2.6" ${F(c)}/></g>`},   /* 25% longer; held 1.5 hand lengths up from the knob */
+  mitt:{label:'Baseball mitt',noun:'baseball mitt',phrase:'a baseball mitt',verb:'holding',col:'#663300',draw:(s,c)=>
+    `<path d="M-13,2Q-19,-12 -11,-16Q-6,-17 -5,-9Q-3,-22 3,-21Q8,-20 7,-9Q11,-18 15,-14Q19,-9 15,4Q22,10 18,22Q12,34 -2,33Q-16,31 -17,16Q-18,8 -13,2Z" ${F(c)}/><path d="M-5,-9V2M7,-9V1M15,4Q8,10 -2,9Q-10,8 -13,2" stroke="${edge(c)}" fill="none"/>`},
+  /* cleaning — long handles run through the fist; no floor rule */
+  broom:{label:'Broom',behindArms:true,noun:'broom',phrase:'a broom',verb:'holding',col:'#FFCC00',draw:(s,c)=>
+    `<g transform="scale(1 1.25)"><rect x="-2.4" y="-70" width="4.8" height="162" rx="2" ${wood}/><path d="M-9,90H9L17,128H-17Z" ${F(c)}/><path d="M-9,96H9" stroke="#CC0000" stroke-width="3" fill="none"/><path d="M-9,104L-11,127M-3,104L-4,127M3,104L4,127M9,104L11,127" stroke="${edge(c)}" stroke-width=".8" fill="none"/></g>`},
+  mop:{label:'Mop',behindArms:true,noun:'mop',phrase:'a mop',verb:'holding',col:'#CCCCCC',draw:(s,c)=>
+    `<g transform="scale(1 1.25)"><rect x="-2.4" y="-70" width="4.8" height="166" rx="2" ${wood}/><path d="M-12,94H12Q20,106 18,124Q14,132 10,124Q8,132 4,125Q0,133 -4,125Q-8,132 -10,124Q-14,132 -18,124Q-20,106 -12,94Z" ${F(c)}/><path d="M-6,100V122M0,100V124M6,100V122" stroke="${edge(c)}" stroke-width=".8" fill="none"/><rect x="-12" y="90" width="24" height="6" rx="2" fill="#0066CC" stroke="#003d7a"/></g>`},
+  duster:{label:'Duster',noun:'duster',phrase:'a duster',verb:'holding',col:'#FF66CC',draw:(s,c)=>
+    `<rect x="-2" y="-9" width="4" height="34" rx="2" ${wood}/>`+[[0,60,9,14],[-8,50,8,13],[8,50,8,13],[-5,38,8,12],[5,38,8,12],[0,28,7,9]].map(([x,y,rx,ry])=>`<ellipse cx="${x}" cy="${y}" rx="${rx}" ry="${ry}" ${F(c)}/>`).join('')},
   /* music — guitar, bass and violin lie across the hand (neck in the fist, body pointing away from the player's centre when the arm hangs); the rest lie along it */
   microphone:{label:'Microphone',noun:'microphone',phrase:'a microphone',verb:'holding',col:'#333333',draw:(s,c)=>
-    `<path d="M-2.4,-8H2.4L3.4,19H-3.4Z" ${F(c)}/><circle cx="0" cy="24" r="6.8" ${metal}/><path d="M-6.4,22H6.4M-6.4,26H6.4M-3,18V30M3,18V30" stroke="${MS}" stroke-width=".7" fill="none"/>`},
-  micstand:{label:'Microphone stand',noun:'microphone stand',phrase:'a microphone stand',verb:'holding',upright:true,cane:true,col:'#333333',draw:(s,c,len)=>   /* same floor rule as the cane */
+    `<g transform="rotate(${s*90})"><path d="M-2.4,-8H2.4L3.4,19H-3.4Z" ${F(c)}/><circle cx="0" cy="24" r="6.8" ${metal}/><path d="M-6.4,22H6.4M-6.4,26H6.4M-3,18V30M3,18V30" stroke="${MS}" stroke-width=".7" fill="none"/></g>`},   /* across the hand: with the forearm raised across the body, the head points up */
+  micstand:{label:'Microphone stand',across:true,noun:'microphone stand',phrase:'a microphone stand',verb:'holding',upright:true,cane:true,col:'#333333',draw:(s,c,len)=>   /* same floor rule as the cane */
     `<path d="M0,-48V${n2(len-2)}" stroke="${edge(c)}" stroke-width="4.6" stroke-linecap="round" fill="none"/><path d="M0,-48V${n2(len-2)}" stroke="${c}" stroke-width="2.8" stroke-linecap="round" fill="none"/><path d="M-20,${n2(len-1.5)}L0,${n2(len-12)}L20,${n2(len-1.5)}" stroke="${c}" stroke-width="3.4" stroke-linecap="round" stroke-linejoin="round" fill="none"/>`
     +`<g transform="translate(0 -48) rotate(${-s*35})"><path d="M-2.4,4H2.4L3.2,-14H-3.2Z" fill="#333" stroke="#111"/><circle cx="0" cy="-19" r="6.6" ${metal}/></g>`},
   guitar:{label:'Guitar',behindArms:true,noun:'guitar',phrase:'a guitar',verb:'holding',col:'#CC6600',draw:(s,c)=>
@@ -294,12 +435,16 @@ const ITEMS = (()=>{
     `<path d="M${s*3.4},-6V110" stroke="#f1ede0" stroke-width="1.6" fill="none"/><path d="M0,-10V112Q0,116 ${s*3.4},112" stroke="${edge(c)}" stroke-width="3.2" stroke-linecap="round" fill="none"/><path d="M0,-10V112Q0,116 ${s*3.4},112" stroke="${c}" stroke-width="1.8" stroke-linecap="round" fill="none"/><rect x="${s>0?0:-5}" y="-8" width="5" height="9" rx="1" fill="#222" stroke="#000" stroke-width=".8"/>`},
   mandolin:{label:'Mandolin',behindArms:true,noun:'mandolin',phrase:'a mandolin',verb:'holding',col:'#CC9966',draw:(s,c)=>
     `<g transform="rotate(${-s*90})"><path d="M-4.5,-34H4.5L3.5,-22H-3.5Z" fill="#3a2a1c" stroke="#1d140c"/><rect x="-2.6" y="-23" width="5.2" height="54" fill="#5a3d22" stroke="#2e1e0f"/><path d="M0,26C-9,28 -20,40 -20,54C-20,68 -10,76 0,76C10,76 20,68 20,54C20,40 9,28 0,26Z" ${F(c)}/><ellipse cx="0" cy="48" rx="5.5" ry="4" fill="#2a1a0e" stroke="none"/><rect x="-6" y="63" width="12" height="3" fill="#3a2a1c" stroke="none"/><path d="M-1.3,-22V65M1.3,-22V65" stroke="#e8e2d0" stroke-width=".6" fill="none"/></g>`},
-  accordion:{label:'Accordion',noun:'accordion',phrase:'an accordion',verb:'holding',upright:true,col:'#CC0000',draw:(s,c)=>   /* sits across the body, like the box */
+  accordion:{label:'Piano accordion',noun:'accordion',phrase:'an accordion',verb:'holding',upright:true,col:'#CC0000',draw:(s,c)=>   /* sits across the body, like the box */
     `<g transform="translate(${-s*34},-8)"><path d="M-14,-24H14V24H-14Z" fill="#e9e4d6" stroke="#6b6557"/><path d="M-9,-24V24M-4.5,-24V24M0,-24V24M4.5,-24V24M9,-24V24" stroke="#6b6557" fill="none"/><rect x="-36" y="-27" width="22" height="54" rx="3" ${F(c)}/><rect x="14" y="-27" width="22" height="54" rx="3" ${F(c)}/><rect x="-32" y="-22" width="7" height="44" fill="#fff" stroke="#333" stroke-width=".8"/><path d="M-32,-15H-25M-32,-8H-25M-32,-1H-25M-32,6H-25M-32,13H-25" stroke="#333" stroke-width=".8" fill="none"/>`
     +[-14,-4,6,16].map(y=>[20,26,32].map(x=>`<circle cx="${x}" cy="${y}" r="1.6" fill="#fff" stroke="#333" stroke-width=".6"/>`).join('')).join('')+'</g>'},
-  trumpet:{label:'Trumpet',noun:'trumpet',phrase:'a trumpet',verb:'holding',col:'#FFCC00',draw:(s,c)=>
+  concertina:{label:'Concertina',noun:'concertina',phrase:'a concertina',verb:'holding',upright:true,col:'#663300',draw:(s,c)=>{   /* two six-sided ends, bellows between, buttons in a 2-3-2 honeycomb */
+    const end=x=>`<path d="M${x-13},-12L${x-7},-24H${x+7}L${x+13},-12V12L${x+7},24H${x-7}L${x-13},12Z" ${F(c)}/>`
+      +[[-4,-9],[4,-9],[-8,0],[0,0],[8,0],[-4,9],[4,9]].map(([dx,dy])=>`<circle cx="${x+dx}" cy="${dy}" r="2.5" fill="#fff" stroke="#333" stroke-width=".6"/>`).join('');
+    return `<g transform="translate(${-s*30},-6)"><path d="M-13,-20H13V20H-13Z" fill="#e9e4d6" stroke="#6b6557"/><path d="M-8.7,-20V20M-4.3,-20V20M0,-20V20M4.3,-20V20M8.7,-20V20" stroke="#6b6557" fill="none"/>${end(-26)}${end(26)}</g>`;}},
+  trumpet:{label:'Trumpet',behindArms:true,noun:'trumpet',phrase:'a trumpet',verb:'holding',col:'#FFCC00',draw:(s,c)=>
     `<path d="M-2,-24H2V38L11,54H-11L-2,38Z" ${F(c)}/><ellipse cx="0" cy="54" rx="11" ry="2.6" ${F(shade(c,-0.2))}/>`+[2,9,16].map(y=>`<rect x="${s>0?-9:3}" y="${y}" width="6" height="5" rx="1.2" ${F(c)}/>`).join('')+`<rect x="-2.6" y="-28" width="5.2" height="5" rx="1.5" ${F(c)}/>`},
-  flute:{label:'Flute',noun:'flute',phrase:'a flute',verb:'holding',col:'#CCCCCC',draw:(s,c)=>
+  flute:{label:'Flute',behindArms:true,noun:'flute',phrase:'a flute',verb:'holding',col:'#CCCCCC',draw:(s,c)=>
     `<rect x="-2" y="-34" width="4" height="88" rx="2" ${F(c)}/>`+[-18,2,12,22,32,42].map(y=>`<circle cx="0" cy="${y}" r="1.3" fill="${edge(c)}" stroke="none"/>`).join('')},
   tambourine:{label:'Tambourine',noun:'tambourine',phrase:'a tambourine',verb:'holding',col:'#CC6600',draw:(s,c)=>
     `<circle cx="0" cy="20" r="17" fill="#f3ead8" stroke="${edge(c)}"/><circle cx="0" cy="20" r="17" fill="none" stroke="${c}" stroke-width="5"/>`+[30,90,150,210,270,330].map(a=>{const r=a*Math.PI/180; return `<circle cx="${n2(17*Math.cos(r))}" cy="${n2(20+17*Math.sin(r))}" r="2.6" ${metal}/>`;}).join('')},
@@ -307,6 +452,12 @@ const ITEMS = (()=>{
     handle(2,20,wood)+`<ellipse cx="0" cy="31" rx="9.5" ry="12.5" ${F(c)}/><path d="M-9,27Q0,31 9,27M-9,34Q0,38 9,34" stroke="#FFCC00" stroke-width="1.6" fill="none"/>`},
   drumstick:{label:'Drumstick',noun:'drumstick',phrase:'a drumstick',verb:'holding',col:'#CC9966',draw:(s,c)=>
     `<path d="M0,-10V48" stroke="${edge(c)}" stroke-width="4.4" stroke-linecap="round" fill="none"/><path d="M0,-10V48" stroke="${c}" stroke-width="2.8" stroke-linecap="round" fill="none"/><ellipse cx="0" cy="49" rx="2.6" ry="3.6" ${F(c)}/>`},
+  parasolclosed:{label:'Parasol (closed)',behindArms:true,noun:'parasol',phrase:'a parasol',verb:'holding',col:'#0066CC',draw:(s,c)=>furled(1,c,s)},
+  umbrellaclosed:{label:'Umbrella (closed)',behindArms:true,noun:'umbrella',phrase:'an umbrella',verb:'holding',col:'#CC0000',draw:(s,c)=>furled(1.5,c,s)},
+  boombox:{label:'Boombox',noun:'boombox',plural:'boomboxes',phrase:'a boombox',verb:'carrying',upright:true,col:'#333333',draw:(s,c)=>
+    `<path d="M-30,16V4Q-30,0 -26,0H26Q30,0 30,4V16" fill="none" stroke="${edge(c)}" stroke-width="5"/><path d="M-30,16V4Q-30,0 -26,0H26Q30,0 30,4V16" fill="none" stroke="#b4bcc4" stroke-width="2.6"/><path d="M34,14L52,-22" stroke="#b4bcc4" stroke-width="1.6" stroke-linecap="round" fill="none"/><rect x="-52" y="14" width="104" height="56" rx="6" ${F(c)}/>`
+    +[-30,30].map(x=>`<circle cx="${x}" cy="46" r="17" fill="#1b1b1b" stroke="#b4bcc4" stroke-width="1.6"/><circle cx="${x}" cy="46" r="7" fill="#b4bcc4" stroke="#5f6870"/>`).join('')
+    +`<rect x="-11" y="30" width="22" height="16" rx="2" fill="#cfd6dc" stroke="#5f6870"/><circle cx="-5" cy="38" r="3" fill="#333" stroke="none"/><circle cx="5" cy="38" r="3" fill="#333" stroke="none"/><path d="M-9,54H9M-9,60H9" stroke="#b4bcc4" stroke-width="2.4" stroke-linecap="round" fill="none"/><path d="M-46,20H46" stroke="#b4bcc4" stroke-width="1.6" fill="none"/>`},
   /* hats, carried rather than worn */
   hat_cap:hat('cap','Cap','cap'), hat_beanie:hat('beanie','Beanie','beanie'), hat_sunhat:hat('sunhat','Sun hat','sun hat'),
   hat_hardhat:hat('hardhat','Hard hat','hard hat'), hat_fedora:hat('fedora','Fedora','fedora')
@@ -588,8 +739,11 @@ const UPPER = {
   coat:{label:'Coat',noun:'coat',col:'#0066CC',off:4,hem:5,arm:1,fore:0.97,neck:'lapel',tails:0.42,flare:3},
   blouse:{label:'Blouse',noun:'blouse',col:'#CCCCFF',off:1.5,hem:3,arm:1,fore:0.9,neck:'vneck'},
   sportstop:{label:'Sports top',noun:'sports top',col:'#FF66CC',off:0.8,hem:6,arm:0,neck:'scoop'},
+  bikinitop:{label:'Bikini top',noun:'bikini top',col:'#FF66CC',off:0.4,hem:3,arm:0,swim:true,bikini:true},
+  swimsuit:{label:'Swimsuit (one-piece)',noun:'swimsuit',col:'#0066CC',off:0.6,hem:3,arm:0,neck:'scoop',swim:true,onepiece:true},
   dress:{label:'Dress',noun:'dress',col:'#00CCCC',off:1.2,hem:5,arm:0,neck:'scoop',tails:0.8,flare:12},
   gown:{label:'Gown',noun:'gown',col:'#660066',off:1.2,hem:5,arm:0,neck:'vneck',tails:1.85,flare:14},
+  vest:{label:'Shirt and vest',noun:'vest',col:'#666666',off:2,hem:6,arm:1,fore:0.95,neck:'vest',vest:1},
   jacket:{label:'Formal jacket (closed)',noun:'jacket',col:'#000066',off:3.5,hem:5,arm:1,fore:0.97,neck:'suit',tails:0.24,flare:2},
   jacketopen:{label:'Formal jacket (open)',noun:'jacket',col:'#000066',off:3.5,hem:5,arm:1,fore:0.97,neck:'suitopen',tails:0.24,flare:2}
 };
@@ -599,6 +753,10 @@ const LOWER = {
   chinos:{label:'Chinos',noun:'chinos',pl:1,col:'#CCCC66',off:2.5,thigh:1,shin:0.94},
   shorts:{label:'Shorts',noun:'shorts',pl:1,col:'#000000',off:3,thigh:0.7},
   bellbottoms:{label:'Bell-bottoms',noun:'bell-bottoms',pl:1,col:'#0066CC',off:2.2,thigh:1,shin:0.98,bell:9},
+  bikinibottom:{label:'Bikini bottoms',noun:'bikini bottoms',pl:1,col:'#FF66CC',off:0.5,thigh:0,swim:true},
+  swimbriefs:{label:'Swim briefs',noun:'swim briefs',pl:1,col:'#000066',off:0.5,thigh:0,swim:true},
+  swimshorts:{label:'Swim shorts',noun:'swim shorts',pl:1,col:'#00CCCC',off:2.5,thigh:0.5,swim:true},
+  pleatedskirt:{label:'Pleated skirt',noun:'pleated skirt',col:'#FFFFFF',off:1.5,thigh:0,skirt:0.46,flare:11,pleats:1},
   leggings:{label:'Leggings',noun:'leggings',pl:1,col:'#000000',off:0.6,thigh:1,shin:0.9},
   skirt:{label:'Skirt',noun:'skirt',col:'#660066',off:1.5,thigh:0,skirt:0.88,flare:0}
 };
@@ -674,13 +832,30 @@ const OUTFITS = {
     {id:'office',label:'Office',upperGarment:'shirt',lowerGarment:'trousers',footwear:'shoes',tie:true},
     {id:'sport',label:'Sport',upperGarment:'tank',lowerGarment:'shorts',footwear:'sneakers'},
     {id:'winter',label:'Winter',upperGarment:'coat',lowerGarment:'trousers',footwear:'boots'},
-    {id:'summer',label:'Summer',upperGarment:'polo',lowerGarment:'chinos',footwear:'sandals'}],
+    {id:'summer',label:'Summer',upperGarment:'polo',lowerGarment:'chinos',footwear:'sandals'},
+    {id:'formal',label:'Formal',upperGarment:'jacket',lowerGarment:'trousers',footwear:'shoes',tie:true},
+    {id:'smart',label:'Smart casual',upperGarment:'jacketopen',lowerGarment:'jeans',footwear:'sneakers'},
+    {id:'waistcoat',label:'Shirt and vest',upperGarment:'vest',lowerGarment:'trousers',footwear:'shoes',tie:true},
+    {id:'work',label:'Work',upperGarment:'tshirt',lowerGarment:'jeans',footwear:'boots'},
+    {id:'beach',label:'Beach',upperGarment:'tank',lowerGarment:'shorts',footwear:'sandals'},
+    {id:'retro',label:'Retro',upperGarment:'shirt',lowerGarment:'bellbottoms',footwear:'platforms'},
+    {id:'weekend',label:'Weekend',upperGarment:'polo',lowerGarment:'shorts',footwear:'sneakers'},
+    {id:'swim',label:'Swimwear',upperGarment:null,lowerGarment:'swimshorts',footwear:null}],
   female:[
     {id:'casual',label:'Casual',upperGarment:'tshirt',lowerGarment:'jeans',footwear:'sneakers'},
     {id:'office',label:'Office',upperGarment:'blouse',lowerGarment:'skirt',footwear:'heels'},
     {id:'sport',label:'Sport',upperGarment:'sportstop',lowerGarment:'leggings',footwear:'sneakers'},
     {id:'winter',label:'Winter',upperGarment:'coat',lowerGarment:'jeans',footwear:'boots'},
-    {id:'summer',label:'Summer',upperGarment:'dress',lowerGarment:null,footwear:'sandals'}]
+    {id:'summer',label:'Summer',upperGarment:'dress',lowerGarment:null,footwear:'sandals'},
+    {id:'formal',label:'Formal',upperGarment:'gown',lowerGarment:null,footwear:'heels'},
+    {id:'smart',label:'Smart casual',upperGarment:'jacketopen',lowerGarment:'jeans',footwear:'boots'},
+    {id:'business',label:'Business',upperGarment:'jacket',lowerGarment:'skirt',footwear:'heels'},
+    {id:'waistcoat',label:'Shirt and vest',upperGarment:'vest',lowerGarment:'trousers',footwear:'shoes'},
+    {id:'beach',label:'Beach',upperGarment:'sportstop',lowerGarment:'shorts',footwear:'sandals'},
+    {id:'retro',label:'Retro',upperGarment:'blouse',lowerGarment:'bellbottoms',footwear:'platforms'},
+    {id:'weekend',label:'Weekend',upperGarment:'tshirt',lowerGarment:'skirt',footwear:'sneakers'},
+    {id:'swim',label:'Swimsuit',upperGarment:'swimsuit',lowerGarment:null,footwear:null},
+    {id:'bikini',label:'Bikini',upperGarment:'bikinitop',lowerGarment:'bikinibottom',footwear:null}]
 };
 
 /* ── the rig ───────────────────────────────────────────────────────────── */
@@ -717,8 +892,14 @@ function build(d){
   const paint=(g,pat,c2)=>{ if(!g) return g; g.fill=g.col;
     if(pat&&pat!=='plain'){const id='hcp'+(++UID); defs.push(patDef(id,pat,g.col,c2||colour2Default(g.col))); g.fill=`url(#${id})`;}
     return g; };
-  const UG=paint(dye(UPPER[d.upperGarment],d.upperColor),d.upperPattern,d.upperColor2), LG=paint(dye(LOWER[d.lowerGarment],d.lowerColor),d.lowerPattern,d.lowerColor2), FW=dye(FOOT[d.footwear],d.footwearColor);
+  const UG0=paint(dye(UPPER[d.upperGarment],d.upperColor),d.upperPattern,d.upperColor2), LG0=paint(dye(LOWER[d.lowerGarment],d.lowerColor),d.lowerPattern,d.lowerColor2), FW=dye(FOOT[d.footwear],d.footwearColor);
+  /* swimwear replaces the undersuit: bare skin shows instead. A bikini top brings its bottoms, and a woman in swim shorts gets a top. */
+  const swim=!!((UG0&&UG0.swim)||(LG0&&LG0.swim));
+  const UG=swim&&!UG0&&d.bodyType==='female'?{...UPPER.bikinitop,col:LG0.col,fill:LG0.fill}:UG0;
+  const LG=swim&&!LG0&&UG0&&UG0.bikini?{...LOWER.bikinibottom,col:UG0.col,fill:UG0.fill}:LG0;
+  const skinTorso=swim&&(!UG||!!UG.bikini);
   /* socks: worn alone as footwear, and assumed under sneakers, shoes and boots (not sandals or heels) */
+  const SG=UG&&UG.vest?{...UG,col:complement(UG.col),fill:complement(UG.col)}:UG;   /* sleeves: the shirt under a vest */
   const SK=FW?(FW.kind==='sock'?{col:FW.col}:FW.kind==='closed'?{col:d.sockColor||SOCK_COL}:null):null;
   const acc={}; d.accessories.forEach(a=>acc[a]=1);
   const GOLD='#e2b23a', GOLDS='#9c7716';
@@ -730,7 +911,7 @@ function build(d){
   const pel=(o,fill,stroke,faintTop)=>{const q=`fill="none" stroke="${stroke}"`, t=n2(-WA-2), m=n2(-WA*0.4);
     return `<path d="${pelD(o)}" fill="${fill}" stroke="none"/><path d="M${n2(ww+o)},${t}Q${n2(hw+2+o)},${m} ${n2(hw+o)},3M${n2(-ww-o)},${t}Q${n2(-hw-2-o)},${m} ${n2(-hw-o)},3" ${q}/>`
       +`<path d="M${n2(-ww-o)},${t}H${n2(ww+o)}" ${q}${faintTop?SEAM:''}/><path d="M${n2(hw+o)},3Q${n2(hw+o)},${18+o} 0,${16+o}Q${n2(-hw-o)},${18+o} ${n2(-hw-o)},3" ${q}${SEAM}/>`;};
-  add(30,mP,pel(0,C.suit,C.suitS,!UG)+(LG?pel(LG.off,LG.fill,edge(LG.col),false):'')+(UG&&UG.tails?pel(UG.off,UG.fill,edge(UG.col),true):''),'pelvis');
+  add(30,mP,(swim?pel(0,C.skin,C.skinS,skinTorso):pel(0,C.suit,C.suitS,!UG))+(LG?pel(LG.off,LG.fill,edge(LG.col),false):'')+(UG&&(UG.tails||UG.onepiece)?pel(UG.off,UG.fill,edge(UG.col),true):''),'pelvis');
   mark(mP,0,0,hw+2); mark(mP,0,6,12);
 
   /* chest */
@@ -743,7 +924,9 @@ function build(d){
     const q=`fill="none" stroke="${stroke}"`;
     return `<path d="${lft}L${rgt}Z" fill="${fill}" stroke="none"/><path d="${lft}M${rgt}L${-nw-2},${n2(-c-4-o)}" ${q}/><path d="M${n2(-ww-o)},${hem}H${n2(ww+o)}" ${q}${faintHem?SEAM:''}/>`;};
   const co=UG?UG.off:0, cCol=UG?UG.fill:C.suit, cStr=UG?edge(UG.col):C.suitS;
-  let chest=UG?chestSVG(co,UG.hem,UG.fill,edge(UG.col),!!UG.tails)
+  let chest=UG&&!UG.bikini?chestSVG(co,UG.hem,UG.fill,edge(UG.col),!!(UG.tails||UG.onepiece))
+    :swim?chestSVG(0,3,C.skin,C.skinS,true)+`<path d="M-1.6,${n2(-c*0.14)}q1.6,2.2 3.2,0" fill="none" stroke="${C.skinS}" stroke-linecap="round"/>`
+      +(UG?`<path d="M${n2(-cw*0.6)},${n2(-c+29)}L${-nw-3},${n2(-c-3)}M${n2(cw*0.6)},${n2(-c+29)}L${nw+3},${n2(-c-3)}" fill="none" stroke="${edge(UG.col)}" stroke-width="3.6"/><path d="M${n2(-cw*0.6)},${n2(-c+29)}L${-nw-3},${n2(-c-3)}M${n2(cw*0.6)},${n2(-c+29)}L${nw+3},${n2(-c-3)}" fill="none" stroke="${UG.col}" stroke-width="2"/><path d="M${n2(-cw+0.5)},${n2(-c+29)}H${n2(cw-0.5)}L${n2(cw-1.5)},${n2(-c+47)}Q0,${n2(-c+42)} ${n2(-cw+1.5)},${n2(-c+47)}Z" ${G(UG)}/>`:'')
     :chestSVG(0,3,C.suit,C.suitS,!LG)+`<path d="M${-nw-2},${n2(-c-3)}L${nw+2},${n2(-c-3)}" stroke="${C.trim}" stroke-width="2.6" fill="none"/>`;
   if(fem&&Math.abs(st)>0.35){
     /* bust contour: a silhouette bump on the facing side, anchored on the torso's own edge */
@@ -765,7 +948,7 @@ function build(d){
     if(g.neck==='vneck') s+=`<path d="M${-nw-3},${n2(top-1)}L0,${n2(top+24)}L${nw+3},${n2(top-1)}Z" fill="${C.skin}" stroke="${dk}"/>`;
     if(g.neck==='lapel') s+=`<path d="M${-nw-3},${n2(top-1)}L0,${n2(top+34)}L${nw+3},${n2(top-1)}Z" fill="#ece8df" stroke="${dk}"/><path d="M0,${n2(top+34)}V${g.hem}" stroke="${dk}" fill="none"/>`
       +[0.4,0.16].map(k=>`<circle cx="5" cy="${n2(-c*k)}" r="1.9" fill="${dk}" stroke="none"/>`).join('');
-    if(g.neck==='suit'){
+    if(g.neck==='suit'||g.neck==='vest'){
       /* closed jacket: shirt shows in a V; the tie is drawn inside the V in the chest's own frame, so the jacket holds it */
       const a=nw+3, D=c*0.42, y0=n2(top-1);
       s+=`<path d="M${-a},${y0}L0,${n2(top+D)}L${a},${y0}Z" fill="${complement(g.col)}" stroke="${dk}"/>`;
@@ -773,7 +956,7 @@ function build(d){
         const tc=d.tieColor||TIE_COL, k=0.04, yi=(a-2.2+k*8)/(k+a/D), xi=n2(a*(1-yi/D));   /* where the blade meets the V edge */
         s+=`<path d="M-3.4,${n2(top+2)}L3.4,${n2(top+2)}L2.2,${n2(top+8)}L${xi},${n2(top+yi)}L0,${n2(top+D)}L${-xi},${n2(top+yi)}L-2.2,${n2(top+8)}Z" fill="${tc}" stroke="${edge(tc)}"/><path d="M-2.2,${n2(top+8)}H2.2" fill="none" stroke="${edge(tc)}"/>`;
       }
-      s+=[-1,1].map(k=>`<path d="M${k*a},${y0}L0,${n2(top+D)}L${k*(a+9)},${n2(top+D*0.42)}Z" ${G(g)}/>`).join('')
+      s+=(g.neck==='vest'?[]:[-1,1]).map(k=>`<path d="M${k*a},${y0}L0,${n2(top+D)}L${k*(a+9)},${n2(top+D*0.42)}Z" ${G(g)}/>`).join('')
         +`<path d="M0,${n2(top+D)}V${g.hem}" stroke="${dk}" fill="none"/>`+[10,24].map(y=>`<circle cx="4.5" cy="${n2(top+D+y)}" r="1.9" fill="${dk}" stroke="none"/>`).join('');
     }
     if(g.neck==='suitopen'){
@@ -806,20 +989,20 @@ function build(d){
     const top=-c-4-co;
     add(41.5,mChest,`<g transform="translate(${n2(st*(cw+co)*0.45)} 0) scale(${n2(Math.max(Math.abs(ct),0.2))} 1)"><path d="M${-nw-1},${n2(top+1)}Q0,${n2(top+24)} ${nw+1},${n2(top+1)}" fill="none" stroke="${GOLDS}" stroke-width="3.2"/><path d="M${-nw-1},${n2(top+1)}Q0,${n2(top+24)} ${nw+1},${n2(top+1)}" fill="none" stroke="${GOLD}" stroke-width="1.9"/><circle cx="0" cy="${n2(top+13)}" r="3.6" fill="${GOLD}" stroke="${GOLDS}" stroke-width="1"/>${spark(6.5,top+8,5)}</g>`,'torso');
   }
-  if(acc.tie&&!(UG&&UG.neck==='suit')){
+  if(acc.tie&&!(UG&&(UG.neck==='suit'||UG.neck==='vest'))){
     /* necktie: pinned at the collar but drawn in an unrotated frame, so it always hangs straight down */
     const tc=d.tieColor||TIE_COL, p=Mx.pt(mChest,st*(cw+co)*0.45,-c-co+1), k=n2(Math.max(Math.abs(ct),0.45)), L=n2(c*1.05);   /* 0.6 × 1.75 */
     add(41,[1,0,0,1,p[0],p[1]],`<g transform="scale(${k} 1)"><path d="M-3.4,0L3.4,0L2.2,6L5.2,${n2(L-9)}L0,${L}L-5.2,${n2(L-9)}L-2.2,6Z" fill="${tc}" stroke="${edge(tc)}"/><path d="M-2.2,6H2.2" fill="none" stroke="${edge(tc)}"/></g>`,'torso');
     mark([1,0,0,1,p[0],p[1]],0,L,4);
   }
   /* waist ball: sits under both pieces and fills the wedge when they bend apart */
-  add(29,mChest,`<circle cx="0" cy="0" r="${n2(ww+co+0.5)}" ${UG?G(UG):U}/>`,'torso'); mark(mChest,0,0,ww);
+  add(29,mChest,`<circle cx="0" cy="0" r="${n2(ww+co+0.5)}" ${skinTorso?S:UG?G(UG):U}/>`,'torso'); mark(mChest,0,0,ww);
   mark(mChest,-sw,-CH+8,10); mark(mChest,sw,-CH+8,10); mark(mChest,0,-CH*0.4,ww);
 
   /* neck + head */
   const mNeck=Mx.tr(mChest,0,-CH-2,j.neck);
   piv.neck={p:Mx.pt(mChest,0,-CH-2),parent:j.root+j.torso,up:true};
-  add(35,mNeck,`<rect x="${-nw}" y="-20" width="${nw*2}" height="28" ${S}/>`,'neck');
+  add(35,mNeck,`<circle cx="0" cy="2" r="${n2(nw+1.4)}" ${S}/><path d="M${-nw},-20Q${n2(-nw+1.8)},-8 ${n2(-nw-1.4)},3L${n2(nw+1.4)},3Q${n2(nw-1.8)},-8 ${nw},-20Z" fill="${C.skin}" stroke="none"/><path d="M${-nw},-20Q${n2(-nw+1.8)},-8 ${n2(-nw-1.4)},3M${n2(nw+1.4)},3Q${n2(nw-1.8)},-8 ${nw},-20" fill="none" stroke="${C.skinS}"/>`,'neck');   /* waisted neck + round patch at the pivot */
   const flip=d.head==='right'?-1:1;
   const mHead=Mx.mul(mNeck,[HS*flip,0,0,HS,0,-50*HS]);
   const hd=headSVG(d,C);
@@ -848,12 +1031,12 @@ function build(d){
     piv['wrist'+L]={p:Mx.pt(m2,0,FA),parent:base+s+e};
     const r1=11*W,r2=9*W,r3=7*W;
     const ao=UG?Math.min(UG.off,3):0;
-    if(z>40) add(39,mChest,under(sx,sy,r1+(UG?(UG.arm>=1?ao:UG.arm>0?ao+0.5:0):0.5),UG?(UG.arm>0?edge(UG.col):C.skinS):C.suitS));
+    if(z>40) add(39,mChest,under(sx,sy,r1+(UG?(UG.arm>=1?ao:UG.arm>0?ao+0.5:0):0.5),UG?(UG.arm>0?edge(UG.col):C.skinS):swim?C.skinS:C.suitS));
     const full=UG&&UG.arm>=1;
     add(z+1,m1,under(0,UA,r2+(full?ao:0),full?edge(UG.col):C.skinS)+limb(r1,r2,UA,C.skin,C.skinS,'t')+(UG
-      ?(UG.arm>=1?limb(r1+ao,r2+ao,UA,UG.fill,edge(UG.col),'t'):UG.arm>0?cuffed(r1+ao,r2+ao,UA,UG.arm,UG.fill,edge(UG.col),true):'')
-      :cuffed(r1,r2,UA,0.55,C.suit,C.suitS,true)+`<path d="M${n2(-r1+(r1-r2)*0.55-0.5)},${n2(UA*0.55)}H${n2(r1-(r1-r2)*0.55+0.5)}" stroke="${C.trim}" stroke-width="2.2" fill="none"/>`),'shoulder'+L);
-    add(z+2,m2,limb(r2,r3,FA,C.skin,C.skinS,'t')+(UG&&UG.fore?cuffed(r2+ao,r3+ao,FA,UG.fore,UG.fill,edge(UG.col),true):'')
+      ?(UG.arm>=1?limb(r1+ao,r2+ao,UA,SG.fill,edge(SG.col),'t'):UG.arm>0?cuffed(r1+ao,r2+ao,UA,UG.arm,SG.fill,edge(SG.col),true):'')
+      :swim?'':cuffed(r1,r2,UA,0.55,C.suit,C.suitS,true)+`<path d="M${n2(-r1+(r1-r2)*0.55-0.5)},${n2(UA*0.55)}H${n2(r1-(r1-r2)*0.55+0.5)}" stroke="${C.trim}" stroke-width="2.2" fill="none"/>`),'shoulder'+L);
+    add(z+2,m2,limb(r2,r3,FA,C.skin,C.skinS,'t')+(UG&&UG.fore?cuffed(r2+ao,r3+ao,FA,UG.fore,SG.fill,edge(SG.col),true):'')
       +(acc['watch'+L]?`<rect x="${n2(-r3-1.2)}" y="${n2(FA-10)}" width="${n2(r3*2+2.4)}" height="6" rx="1.5" fill="#2b2b2b" stroke="#111" stroke-width=".8"/><circle cx="0" cy="${n2(FA-7)}" r="4.3" fill="#f4f4f2" stroke="#6d7278" stroke-width="1.2"/><path d="M0,${n2(FA-9.5)}V${n2(FA-7)}H1.8" fill="none" stroke="#333" stroke-width=".8"/>`:'')
       +(acc['bracelet'+L]?`<path d="M${n2(-r3-1)},${n2(FA-6)}H${n2(r3+1)}" stroke="${GOLD}" stroke-width="3" stroke-linecap="round" fill="none"/><path d="M${n2(-r3-1)},${n2(FA-6)}H${n2(r3+1)}" stroke="${GOLDS}" stroke-width=".6" stroke-dasharray="1.5 2" fill="none"/>`+spark(side*(r3+5.5),FA-10,4.5):''),'elbow'+L);
     const hs=Math.min(W,1.12);
@@ -877,7 +1060,8 @@ function build(d){
     }
   }
 
-  /* legs */
+  /* legs — not drawn at all inside a car */
+  const noLegs=d.prop==='car', addL=noLegs?()=>{}:add, markL=noLegs?()=>{}:mark;
   for(const [side,L] of [[-1,'R'],[1,'L']]){
     const z=side===(nearLeg||1)?24:20, base=j.root+j.pelvis;
     const h=j['hip'+L], k=j['knee'+L], a=j['ankle'+L];
@@ -898,18 +1082,18 @@ function build(d){
       const dk=edge(FW.col);
       /* sg = which side of the foot is the sole, from the way the foot points */
       const wf=wrapDeg(base+h+k+a), sg=wf>=0?1:-1, P=FW.platform||0;
-      if(P){ shoe=`<path d="M${sg*2},-7L${n2(sg*(fa+FW.off+P))},-7L${n2(sg*(fb+FW.off+P))},${n2(FT+fb)}L${sg*2},${n2(FT+fb+FW.off)}Z" fill="${shade(FW.col,-0.4)}" stroke="${edge(FW.col)}"/>`; mark(m3,sg*(fb+FW.off+P),FT*0.5,2); }
+      if(P){ shoe=`<path d="M${sg*2},-7L${n2(sg*(fa+FW.off+P))},-7L${n2(sg*(fb+FW.off+P))},${n2(FT+fb)}L${sg*2},${n2(FT+fb+FW.off)}Z" fill="${shade(FW.col,-0.4)}" stroke="${edge(FW.col)}"/>`; markL(m3,sg*(fb+FW.off+P),FT*0.5,2); }
       if(FW.kind==='pump'){   /* spike heel, swung 30° toward the toe so heel tip and toe can rest on the floor together */
         const px=sg*fa*0.6, py=2, an=sg*Math.PI/6, dx=sg*(0.4*fa+12), dy=-0.5;
         shoe=`<path transform="rotate(${sg*30} ${n2(px)} ${py})" d="M${n2(sg*fa*0.4)},-4L${n2(sg*(fa+12))},-0.5L${n2(sg*(fa+12))},3L${n2(sg*fa*0.8)},9Z" ${G(FW)}/>`;
-        mark(m3,px+dx*Math.cos(an)-dy*Math.sin(an),py+dx*Math.sin(an)+dy*Math.cos(an),1.5); }
+        markL(m3,px+dx*Math.cos(an)-dy*Math.sin(an),py+dx*Math.sin(an)+dy*Math.cos(an),1.5); }
       if(FW.kind==='closed') shoe+=`<path d="${capsule(fa+FW.off,fb+FW.off,FT)}" ${G(FW)}/>`
         +(FW.accent?`<path d="M${n2(-fb-FW.off)},${n2(FT*0.8)}H${n2(fb+FW.off)}" stroke="${FW.accent}" stroke-width="2.4" fill="none"/>`:'');
       if(FW.kind==='pump') shoe+=`<path d="${lower(fa,fb,FT,9,FW.off)}" ${G(FW)}/>`;
       if(FW.kind==='sandal') shoe=`<path d="M${n2(-fa-1.5)},5H${n2(fa+1.5)}M${n2(-fb-0.5)},${FT-4}H${n2(fb+0.5)}" stroke="${FW.col}" stroke-width="3.4" stroke-linecap="round" fill="none"/>`;
     }
-    add(z+1,m3,under(0,0,r3+(FW&&FW.kind!=='sandal'?FW.off:SK?0.8:0),FW&&FW.kind!=='sandal'?edge(FW.col):SK?edge(SK.col):C.skinS)+`<path d="${capsule(fa,fb,FT)}" ${S}/>`+(SK?`<path d="${capsule(fa+0.8,fb+0.8,FT)}" ${G(SK)}/>`:'')+shoe,'ankle'+L);
-    add(z+2,m2,under(0,0,r2+(LG&&LG.thigh>=1?lo:0),LG&&LG.thigh>=1?edge(LG.col):C.skinS)+limb(r2*0.96,r3,SH,C.skin,C.skinS,'b')
+    addL(z+1,m3,under(0,0,r3+(FW&&FW.kind!=='sandal'?FW.off:SK?0.8:0),FW&&FW.kind!=='sandal'?edge(FW.col):SK?edge(SK.col):C.skinS)+`<path d="${capsule(fa,fb,FT)}" ${S}/>`+(SK?`<path d="${capsule(fa+0.8,fb+0.8,FT)}" ${G(SK)}/>`:'')+shoe,'ankle'+L);
+    addL(z+2,m2,under(0,0,r2+(LG&&LG.thigh>=1?lo:0),LG&&LG.thigh>=1?edge(LG.col):C.skinS)+limb(r2*0.96,r3,SH,C.skin,C.skinS,'b')
       +(SK?lowS(r2*0.96,r3,SH,Math.max(SH*0.74,LG&&LG.shin?SH*LG.shin:0),0.8,SK):'')   /* never over a trouser leg */
       +(LG&&LG.shin?(LG.bell?(()=>{const a=n2(r2*0.96+lo+0.5), rk=n2((r2*0.96+r3)/2+lo), rb=n2(r3+lo+LG.bell), yk=n2(SH*0.42), yb=n2(SH*LG.shin);   /* flared leg */
           return `<path d="M${-a},0A${a},${a} 0 0 1 ${a},0L${rk},${yk}L${rb},${yb}L${-rb},${yb}L${-rk},${yk}Z" ${G(LG)}/>`;})()
@@ -917,10 +1101,10 @@ function build(d){
       /* heel ball: the rounded ankle end takes the shoe's colour */
       +(FW&&FW.kind!=='sandal'&&FW.kind!=='sock'&&!FW.shaft?lowS(r2*0.96,r3,SH,SH,FW.off,FW):'')
       +(FW&&FW.shaft?lowS(r2*0.96,r3,SH,SH*(1-FW.shaft),FW.off,FW):''),'knee'+L);
-    add(z+3,m1,limb(r1,r2,TH,C.skin,C.skinS,'b')+(LG
+    addL(z+3,m1,limb(r1,r2,TH,C.skin,C.skinS,'b')+(LG
       ?(LG.thigh>=1?limb(r1+lo,r2+lo,TH,LG.fill,edge(LG.col),'b'):LG.thigh>0?`<path d="${sleeve(r1+lo,r2+lo,TH,LG.thigh)}" ${G(LG)}/>`:'')
-      :`<path d="${sleeve(r1,r2,TH,0.6)}" ${U}/><path d="M${n2(-r1+(r1-r2)*0.6-0.5)},${n2(TH*0.6)}H${n2(r1-(r1-r2)*0.6+0.5)}" stroke="${C.trim}" stroke-width="2.2" fill="none"/>`),'hip'+L);
-    mark(m1,0,0,r1); mark(m2,0,0,r2); mark(m3,0,0,r3); mark(m3,0,FT,6.8*fs);
+      :swim?'':`<path d="${sleeve(r1,r2,TH,0.6)}" ${U}/><path d="M${n2(-r1+(r1-r2)*0.6-0.5)},${n2(TH*0.6)}H${n2(r1-(r1-r2)*0.6+0.5)}" stroke="${C.trim}" stroke-width="2.2" fill="none"/>`),'hip'+L);
+    markL(m1,0,0,r1); markL(m2,0,0,r2); markL(m3,0,0,r3); markL(m3,0,FT,6.8*fs);
   }
 
   /* loose parts — skirts, coat tails, dress skirts: one panel hung from the hips
@@ -935,6 +1119,7 @@ function build(d){
     add(z,m,`<path d="${top}L${bw},${len}${long?'':hem(len)}${long?'L':''}${-bw},${len}Z" fill="${fc}" stroke="none"/>`
       +(long?`<path d="M${tw},0L${bw},${len}M${-bw},${len}L${-tw},0" fill="none" stroke="${ec}"/>`
             :`<path d="M${tw},0L${bw},${len}${hem(len)}${-bw},${len}L${-tw},0" fill="none" stroke="${ec}"/>`)
+      +(g.pleats&&!long?`<path d="${[-3,-2,-1,0,1,2,3].map(i=>`M${n2(tw*i/4)},-4L${n2(bw*i/4)},${n2(len+(1-Math.abs(i)/4)*3)}`).join('')}" fill="none" stroke="${ec}" stroke-width=".9"/>`:'')   /* pleats fan out from the waist */
       +`<path d="${top}" fill="none" stroke="${ec}"${SEAM}/>`
       +(open?`<path d="M${n2(st*tw*0.45)},-8V${n2(len+2)}" stroke="${ec}" fill="none"/>`:''),'pelvis');
     mark(m,-bw,len,3); mark(m,bw,len,3);
@@ -948,9 +1133,17 @@ function build(d){
     }
   };
 
-  if(LG&&LG.skirt) panel(LG,LG.skirt,LG.flare||0,31);
-  if(UG&&UG.tails) panel(UG,UG.tails,UG.flare||0,32,UG.neck==='lapel'||UG.neck==='suit'||UG.neck==='suitopen');
+  if(!noLegs&&LG&&LG.skirt) panel(LG,LG.skirt,LG.flare||0,31);
+  if(!noLegs&&UG&&UG.tails) panel(UG,UG.tails,UG.flare||0,32,UG.neck==='lapel'||UG.neck==='suit'||UG.neck==='suitopen');
 
+  if(PROPS[d.prop]){
+    let g0=-1e9; for(const [,py,r] of pts) g0=Math.max(g0,py+r);
+    const hip=Mx.pt(mP,0,0), po=d.pelvisOrientation;
+    const list=propSVG(d.prop,d.propColor||PROPS[d.prop].col,{x:hip[0],y:hip[1],g:g0,side:Math.abs(po)>=45,dir:po>0?1:po<0?-1:(d.head==='right'?1:-1),hw});
+    for(const p of list){ parts.push({z:p.z,m:[1,0,0,1,0,0],svg:p.svg});
+      if(p.bottom!==undefined) pts.push([hip[0],p.bottom-1,1]);                       /* bicycle and car wheels become the floor */
+      if(p.span){ pts.push([hip[0]-p.span,g0-10,1]); pts.push([hip[0]+p.span,g0-10,1]); } }   /* keep wide props inside a cropped drawing */
+  }
   if(canes.length){
     /* a cane reaches from the hand to the floor, up to half the character's height.
        If the hand is higher than that, the cane leaves the floor and simply follows the hand. */
@@ -958,7 +1151,8 @@ function build(d){
     const maxLen=(TH+SH+FT*0.8+WA+CH+2+86*HS)/2;
     for(const cn of canes){ const need=gy-cn.gy;
       if(need<=maxLen&&need>=maxLen*0.35) cn.part.svg=cn.it.draw(cn.side,cn.c,need);   /* also let go of the floor when the hand is too low for a sensible cane */
-      else { cn.part.m=cn.mh; cn.part.svg=cn.it.draw(cn.side,cn.c,maxLen); } }
+      else { cn.part.m=cn.it.across?Mx.tr(cn.mh,0,0,cn.mh[1]>=0?-90:90):cn.mh;   /* across: the pole crosses the fist, base toward the floor */
+             cn.part.svg=cn.it.draw(cn.side,cn.c,maxLen); } }
   }
   parts.sort((a,b)=>a.z-b.z);
   const inner=parts.map(p=>`<g transform="matrix(${p.m.map(n2).join(' ')})"${p.joint?` data-joint="${p.joint}"`:''}>${p.svg}</g>`).join('');
@@ -992,12 +1186,12 @@ function pivots(data){
 }
 
 /* ── data ──────────────────────────────────────────────────────────────── */
-const COLOUR_KEYS=['packColor','heldLeftColor','heldRightColor','eyewearColor','gloveColor','upperColor2','lowerColor2','upperColor','lowerColor','footwearColor','headwearColor','sockColor','tieColor'];
+const COLOUR_KEYS=['propColor','packColor','heldLeftColor','heldRightColor','eyewearColor','gloveColor','upperColor2','lowerColor2','upperColor','lowerColor','footwearColor','headwearColor','sockColor','tieColor'];
 function wrapDeg(v){v=Math.round(Number(v)||0);v=((v+180)%360+360)%360-180;return v===-180?180:v;}
 function defaults(){
   const joints={}; JOINTS.forEach(([k])=>joints[k]=STAND[k]||0);
   return {schema:SCHEMA,name:'Sam',bodyType:'male',skin:3,eyeColor:12,hairColor:'4-0',hairStyle:'short',facialHair:'none',eyebrows:'neutral',eyes:'open',mouth:'smile',
-    height:3,weight:3,upperGarment:null,lowerGarment:null,footwear:null,headwear:null,eyewear:null,accessories:[],
+    height:3,weight:3,upperGarment:null,lowerGarment:null,footwear:null,headwear:null,eyewear:null,accessories:[],prop:null,propColor:null,
     upperColor:null,lowerColor:null,footwearColor:null,headwearColor:null,eyewearColor:null,sockColor:null,tieColor:null,gloveColor:null,packColor:null,heldLeftColor:null,heldRightColor:null,
     upperPattern:'plain',upperColor2:null,lowerPattern:'plain',lowerColor2:null,
     head:'front',torsoOrientation:0,pelvisOrientation:0,held:{left:null,right:null},joints};
@@ -1017,6 +1211,7 @@ function normalize(src){
   d.upperGarment=UPPER[src.upperGarment]?src.upperGarment:null;
   d.lowerGarment=LOWER[src.lowerGarment]?src.lowerGarment:null;
   d.footwear=FOOT[src.footwear]?src.footwear:null;
+  d.prop=src.prop==='bicycle'?'bmx':PROPS[src.prop]?src.prop:null;   /* 'bicycle' was the BMX */
   d.headwear=HEADWEAR[src.headwear]?src.headwear:null; d.eyewear=EYEWEAR[src.eyewear]?src.eyewear:null;
   { /* older files: one-sided or unsplit accessory names */
     const OLD={watch:['watchL'],bracelet:['braceletR'],ring:['ringL'],gloves:['glovesL','glovesR'],earrings:['studs']};
@@ -1032,7 +1227,7 @@ function normalize(src){
   d.pelvisOrientation=Math.max(d.torsoOrientation-90,Math.min(d.torsoOrientation+90,d.pelvisOrientation));
   if((d.torsoOrientation>0&&d.head==='left')||(d.torsoOrientation<0&&d.head==='right')) d.head='front';
   const h=src.held||{};
-  const itemId=v=>v==='drumsticks'?'drumstick':v;   /* older files */
+  const itemId=v=>v==='drumsticks'?'drumstick':v==='ball'?'basketball':v;   /* older files */
   d.held={left:ITEMS[itemId(h.left)]?itemId(h.left):null,right:ITEMS[itemId(h.right)]?itemId(h.right):null};
   const sj=src.joints||{}; JOINTS.forEach(([k])=>{ if(k in sj) d.joints[k]=wrapDeg(sj[k]); });
   return d;
@@ -1081,7 +1276,7 @@ function describe(data){
   return `${n} is ${g.length>1?g.slice(0,-1).join(', ')+(groups[0][1].length>1?', and ':' and ')+g[g.length-1]:g[0]}.`;
 }
 
-return {SCHEMA,SKIN,EYES,HAIR,HAIR_STYLES,FACIAL,HEIGHTS,WEIGHTS,HEADS,JOINTS,POSES,ITEMS,UPPER,LOWER,FOOT,OUTFITS,HEADWEAR,EYEWEAR,ACCESSORIES,BROWS,EYE_SHAPES,MOUTHS,EMOTIONS,NEUTRAL_FACE,GLOVE_COL,PACK_COL,ITEM_CATS,PALETTE,PATTERNS,colour2Default,SOCK_COL,TIE_COL,colourName,STAGE,
+return {SCHEMA,SKIN,EYES,HAIR,HAIR_STYLES,FACIAL,HEIGHTS,WEIGHTS,HEADS,JOINTS,POSES,ITEMS,UPPER,LOWER,FOOT,OUTFITS,HEADWEAR,EYEWEAR,ACCESSORIES,BROWS,EYE_SHAPES,MOUTHS,EMOTIONS,NEUTRAL_FACE,GLOVE_COL,PACK_COL,PROPS,ITEM_CATS,PALETTE,PATTERNS,colour2Default,SOCK_COL,TIE_COL,colourName,STAGE,
         defaults,normalize,render,pivots,applyPose,mirror,describe};
 })();
 </script>
@@ -1109,49 +1304,76 @@ function person(o){
   d.hairStyle=pick(fem?['bob','long','ponytail','bun','pigtails','curly','afro','short']:['short','crew','sidepart','buzz','curly','afro','pompadour','bald']);
   d.facialHair=fem?'none':pick(['none','none','none','stubble','moustache','beard','goatee']);
   d.height=pick([2,3,3,4]); d.weight=pick([2,3,3,4]);
+  if(o.outfits){ dress(d,o.outfits,o.keep); return d; }
   const cs=shuffle(COLS);
   d.upperGarment=pick(o.upper||w.upper); d.upperColor=cs[0];
   d.lowerGarment=d.upperGarment==='dress'?null:pick(o.lower||w.lower); d.lowerColor=cs[1];
   d.footwear=pick(w.foot); d.footwearColor=pick(['#000000','#663300','#FFFFFF','#CC0000']);
   return d;
 }
+/* colour families that sit well together, by kind of garment */
+const TONE={dark:['#000000','#000066','#666666','#663300'],denim:['#000066','#0066CC','#666666','#000000'],
+  light:['#FFFFFF','#CCCCFF','#CCFFFF','#FFCCCC','#FFFFCC','#CCFFCC'],bright:['#CC0000','#0066CC','#00CC66','#FFCC00','#FF66CC','#6600CC','#FF6600','#00CCCC'],
+  earth:['#663300','#CCCC66','#666600','#CC6600','#666666'],shoeDark:['#000000','#663300'],shoeAny:['#FFFFFF','#000000','#CC0000','#0066CC']};
+const UPPER_TONE={tshirt:'bright',polo:'bright',tank:'bright',sportstop:'bright',shirt:'light',blouse:'light',coat:['dark','bright'],jacket:'dark',jacketopen:'dark',vest:'dark',dress:'bright',gown:['bright','dark']};
+const LOWER_TONE={jeans:'denim',bellbottoms:'denim',trousers:'dark',chinos:'earth',shorts:['earth','denim','bright'],leggings:'dark',skirt:['bright','dark']};
+const FOOT_TONE={sneakers:'shoeAny',shoes:'shoeDark',boots:'shoeDark',sandals:'shoeDark',heels:['bright','shoeDark'],platforms:'bright',socks:'light'};
+const tone=t=>TONE[Array.isArray(t)?pick(t):t||'bright'];
+/* dress someone from the engine's outfit list: a real outfit, colours that match, and now and then one piece swapped */
+function dress(d,ids,keep){
+  const o=pick(HC.OUTFITS[d.bodyType].filter(x=>!ids||ids.includes(x.id))), w=WARDROBE[d.bodyType];
+  d.upperGarment=o.upperGarment; d.lowerGarment=o.lowerGarment; d.footwear=o.footwear; d.accessories=o.tie?['tie']:[];
+  if(!keep&&d.lowerGarment&&Math.random()<0.3){ if(Math.random()<0.5) d.lowerGarment=pick(w.lower); else d.upperGarment=pick(w.upper.filter(u=>u!=='dress')); }
+  if(!['shirt','vest','jacket','jacketopen'].includes(d.upperGarment)) d.accessories=[];
+  d.lowerColor=d.lowerGarment?pick(tone(LOWER_TONE[d.lowerGarment])):null;
+  let uc, n=0; do{ uc=pick(tone(UPPER_TONE[d.upperGarment])); }while(uc===d.lowerColor&&++n<8);
+  d.upperColor=uc; d.footwearColor=pick(tone(FOOT_TONE[d.footwear])); d.tieColor=pick(TONE.bright);
+  if(['tshirt','shirt','blouse','dress','polo'].includes(d.upperGarment)&&Math.random()<0.2){ d.upperPattern=pick(['vstripes','hstripes','checkered','polka','floral']); d.upperColor2=d.upperColor==='#FFFFFF'?pick(TONE.bright):'#FFFFFF'; }
+  return o.id;
+}
 /* bend an arm so the item in that hand is easy to see */
 function holdPose(d,hand){
   const it=d.held[hand]; if(!it||d.torsoOrientation) return;
   const S=hand==='left'?'L':'R', sg=hand==='left'?-1:1;
   if(it==='umbrella'||it==='parasol'){ d.joints['shoulder'+S]=sg*20; d.joints['elbow'+S]=sg*140; }
-  else if(['cup','phone','tablet','book','multimeter','flashlight','wrench','hammer','ball','screwdriver','paintbrush','spoon','fork','pan','microphone','trumpet','maraca','tambourine','flute','violin','drumstick'].includes(it)){ d.joints['shoulder'+S]=sg*12; d.joints['elbow'+S]=-sg*82; }
+  else if(['cup','mug','bowl','plate','cake','pizzabox','phone','tablet','book','multimeter','flashlight','wrench','hammer','basketball','soccerball','volleyball','beachball','tennisball','baseball','football','screwdriver','paintbrush','spoon','fork','pan','microphone','trumpet','maraca','tambourine','flute','violin','drumstick'].includes(it)){ d.joints['shoulder'+S]=sg*12; d.joints['elbow'+S]=-sg*82; }
 }
 
 /* ── Controlled practice: choose the sentence, or choose the person ────── */
-const HATS=['cap','beanie','sunhat','hardhat','fedora'], SPECS=['glasses','sunglasses','round'];
-const THINGS=['wrench','hammer','book','phone','cup','ball','bag','suitcase','briefcase','teddy','flashlight','purse','tablet','pan','keys'];
-const hatPhrase=(id,c)=>wearPhrase(HC.HEADWEAR,id,c);
+/* basic words only: every garment and item used here has a simple, common name */
+const BASIC={upper:{female:['tshirt','shirt','coat','jacket','dress'],male:['tshirt','shirt','coat','jacket']},
+             lower:{female:['jeans','trousers','shorts','skirt'],male:['jeans','trousers','shorts']}};
+const HATS=['cap','sunhat'], SPECS=['glasses','sunglasses'], NOUN={sunhat:'hat'};
+const THINGS=['book','phone','cup','basketball','bag','suitcase','teddy','keys','guitar'], SIMPLE={basketball:'a ball'};
+const named=(reg,id,col)=>{const g=reg[id], k=HC.colourName(col||g.col), n=NOUN[id]||g.noun; return g.pl?`${k} ${n}`:`${art(k)} ${k} ${n}`;};
+const hatPhrase=(id,c)=>named(HC.HEADWEAR,id,c);
 
 /* One question. kind = which feature is tested; twist = what the two wrong options change. */
 function makeQ(kind,twist,mode){
-  const base=person(kind==='lower'?{upper:['tshirt','shirt','polo','blouse','tank']}:{}), fem=base.bodyType==='female';
-  const He=fem?'She':'He', w=WARDROBE[base.bodyType];
+  const fem=Math.random()<0.5, sex=fem?'female':'male', w={upper:BASIC.upper[sex],lower:BASIC.lower[sex]};
+  const base=person({fem,upper:kind==='lower'?w.upper.filter(x=>x!=='dress'):w.upper,lower:w.lower});
+  const He=fem?'She':'He';
   const others=(list,cur,n)=>shuffle(list.filter(x=>x!==cur)).slice(0,n);
   let vars=[], say;
   if(kind==='upper'||kind==='lower'){
     const G=kind+'Garment', C=kind+'Color', reg=kind==='upper'?HC.UPPER:HC.LOWER, list=(kind==='upper'?w.upper:w.lower).filter(x=>x!=='dress'&&x!=='jacketopen');
     if(!list.includes(base[G])) base[G]=pick(list);
     if(!base.lowerGarment) base.lowerGarment=pick(w.lower);
-    say=d=>`${He}'s wearing ${wearPhrase(reg,d[G],d[C])}.`;
+    say=d=>`${He}'s wearing ${named(reg,d[G],d[C])}.`;
     const g2=others(list.filter(x=>reg[x].noun!==reg[base[G]].noun),base[G],2), c2=others(COLS.filter(c=>c!==base[kind==='upper'?'lowerColor':'upperColor']),base[C],2);
     vars=twist==='thing'?g2.map(g=>({[G]:g})):twist==='colour'?c2.map(c=>({[C]:c})):[{[G]:g2[0]},{[C]:c2[0]}];
   } else if(kind==='head'){
     base.headwear=pick(HATS); base.headwearColor=pick(COLS); if(['afro','bun','pompadour'].includes(base.hairStyle)) base.hairStyle='short';
     say=d=>`${He}'s wearing ${hatPhrase(d.headwear,d.headwearColor)}.`;
     const h2=others(HATS,base.headwear,2), c2=others(COLS,base.headwearColor,2);
-    vars=twist==='thing'?h2.map(h=>({headwear:h})):twist==='colour'?c2.map(c=>({headwearColor:c})):[{headwear:h2[0]},{headwearColor:c2[0]}];
+    vars=twist==='colour'?c2.map(c=>({headwearColor:c})):[{headwear:h2[0]},{headwearColor:c2[0]}];
   } else if(kind==='eye'){
-    base.eyewear=pick(SPECS); say=d=>`${He}'s wearing ${HC.EYEWEAR[d.eyewear].phrase}.`;
-    vars=others(SPECS,base.eyewear,2).map(e=>({eyewear:e}));
+    base.eyewear=pick(SPECS); const hc=pick(COLS);
+    say=d=>`${He}'s wearing ${d.eyewear?HC.EYEWEAR[d.eyewear].phrase:hatPhrase(d.headwear,d.headwearColor)}.`;
+    vars=[{eyewear:others(SPECS,base.eyewear,1)[0]},{eyewear:null,headwear:'cap',headwearColor:hc}];
   } else {
     const hand=pick(['left','right']); base.held[hand]=pick(THINGS);
-    say=d=>{const it=HC.ITEMS[d.held[hand]]; return `${He}'s ${it.verb} ${it.phrase}.`;};
+    say=d=>{const it=HC.ITEMS[d.held[hand]]; return `${He}'s ${it.verb} ${SIMPLE[d.held[hand]]||it.phrase}.`;};
     vars=others(THINGS,base.held[hand],2).map(t=>({held:{left:null,right:null,[hand]:t}}));
   }
   const people=[base].concat(vars.map(v=>Object.assign(clone(base),clone(v))));
@@ -1160,7 +1382,7 @@ function makeQ(kind,twist,mode){
   return {mode,base,sentence:say(base),opts};
 }
 /* easiest → hardest: different things first, then colours, then choosing the person */
-const PLAN=[['upper','thing','A'],['item','thing','A'],['head','thing','A'],['lower','thing','A'],['upper','colour','A'],
+const PLAN=[['upper','thing','A'],['item','thing','A'],['head','mixed','A'],['lower','thing','A'],['upper','colour','A'],
             ['item','thing','B'],['upper','mixed','B'],['eye','thing','B'],['lower','colour','B'],['head','mixed','B']];
 const $=id=>document.getElementById(id);
 let qs=[], qi=0, score=0;
