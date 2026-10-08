@@ -45,6 +45,9 @@
   .ic-glue{ margin-left:-7px; }
   .ic-punct{ margin-left:-3px; }
   .ic-punct:first-child{ margin-left:0; }
+  .ic-cast.ic-four{ grid-template-columns:repeat(4,minmax(0,1fr)); }
+  .ic-cast.ic-four svg{ height:min(34vh,220px); }
+  @media (max-width:560px){ .ic-cast.ic-four{ grid-template-columns:repeat(2,minmax(0,1fr)); } }
 </style>
 </head>
 <body>
@@ -83,14 +86,14 @@
 /* ── Intro conversation: wearing · carrying · holding ───────────────────── */
 const HC=HouseCharacter;
 /* the three people Ben describes — fixed, so the picture always matches the text */
-const mk=(o,j)=>{const d=Object.assign(HC.defaults(),o); Object.assign(d.joints,j||{}); return HC.normalize(d);};
+const mk=(o,j)=>{const d=Object.assign(HC.defaults(),o); /* a guitar is always shown in playing position: +45° grip, left hand on the neck, right hand over the strings */ if(d.held&&d.held.left==='guitar'){ d.heldLeftGrip=45; Object.assign(d.joints,{shoulderL:-13,elbowL:-120,wristL:-111,shoulderR:53,elbowR:-120,wristR:-47}); } Object.assign(d.joints,j||{}); return HC.normalize(d);};
 const CAST=[
   ['Tom',mk({name:'Tom',bodyType:'male',skin:3,hairColor:'3-0',hairStyle:'short',upperGarment:'coat',upperColor:'#0066CC',lowerGarment:'trousers',lowerColor:'#666666',footwear:'shoes',
      held:{left:'suitcase',right:'phone'}},{shoulderR:12,elbowR:-82})],
   ['Lucy',mk({name:'Lucy',bodyType:'female',skin:3,hairColor:'5-7',hairStyle:'ponytail',upperGarment:'dress',upperColor:'#CC0000',footwear:'sandals',accessories:['backpack'],packColor:'#00CC66',mouth:'grin',eyebrows:'raised',
      held:{left:'guitar',right:null}})],
   ['Grandpa',mk({name:'Grandpa',bodyType:'male',skin:3,hairColor:'grey',hairStyle:'sidepart',facialHair:'moustache',eyewear:'glasses',headwear:'fedora',headwearColor:'#663300',height:2,weight:4,
-     upperGarment:'vest',upperColor:'#666666',lowerGarment:'chinos',footwear:'shoes',held:{left:null,right:'cake'}},{shoulderR:12,elbowR:-82})]
+     upperGarment:'vest',upperColor:'#666666',lowerGarment:'chinos',footwear:'shoes',held:{left:null,right:'cake'}},{root:0,pelvis:0,torso:0,neck:0,shoulderL:-39,elbowL:98,wristL:51,shoulderR:43,elbowR:-108,wristR:-39,hipL:0,kneeL:0,ankleL:-35,hipR:0,kneeR:0,ankleR:35})]
 ];
 document.getElementById('icCast').innerHTML=CAST.map(([n,d])=>`<figure>${HC.render(d,{fit:true})}<figcaption>${n}</figcaption></figure>`).join('');
 

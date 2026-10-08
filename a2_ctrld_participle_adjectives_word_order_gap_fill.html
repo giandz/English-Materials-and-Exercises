@@ -61,7 +61,7 @@
 (function(){
 /* ── shared: fixed little pictures for the gap-fill items ───────────────── */
 const HC=HouseCharacter;
-const fig=(o,j,pose)=>{const d=Object.assign(HC.defaults(),o); if(pose) HC.applyPose(d,pose); Object.assign(d.joints,j||{}); return HC.render(HC.normalize(d),{fit:true});};
+const fig=(o,j,pose)=>{const d=Object.assign(HC.defaults(),o); if(pose) HC.applyPose(d,pose); /* a guitar is always shown in playing position: +45° grip, left hand on the neck, right hand over the strings */ if(d.held&&d.held.left==='guitar'){ d.heldLeftGrip=45; Object.assign(d.joints,{shoulderL:-13,elbowL:-120,wristL:-111,shoulderR:53,elbowR:-120,wristR:-47}); } Object.assign(d.joints,j||{}); return HC.render(HC.normalize(d),{fit:true});};
 const SHOW_R={shoulderR:12,elbowR:-82}, SHOW_L={shoulderL:-12,elbowL:82};
 const pic=(svg,say)=>`<div class="gp"><div class="gp-pic">${svg}</div><div class="gp-say">${say||'Look at the picture.'}</div></div>`;
 const A=['Ana','👩‍🦰'], B=['Ben','👨‍🦱'];
@@ -86,7 +86,7 @@ const GF_ITEMS=[
    template:"The {0} holding a guitar is my cousin.",hints:[{accepted:["girl"]}]},
   {category:'pos',direct:pic(fig({bodyType:'male',skin:5,height:2,weight:2,hairStyle:'curly',upperGarment:'polo',upperColor:'#0066CC',lowerGarment:'shorts',footwear:'sneakers',prop:'chair'},null,'chair')),
    template:"The boy sitting {0} a chair is Sam.",hints:[{accepted:["on"]}]},
-  {category:'pos',direct:pic(fig({bodyType:'male',skin:3,hairStyle:'short',facialHair:'beard',upperGarment:'tshirt',upperColor:'#FF6600',lowerGarment:'shorts',footwear:'sneakers',headwear:'bikehelmet',prop:'bmx',propColor:'#0066CC'},{hipL:50,kneeL:-45,ankleL:60,hipR:105,kneeR:-115,ankleR:80,shoulderL:55,elbowL:15,shoulderR:60,elbowR:10,torso:-25,neck:20},'chair')),
+  {category:'pos',direct:pic(fig({bodyType:'male',skin:3,hairStyle:'short',facialHair:'beard',upperGarment:'tshirt',upperColor:'#FF6600',lowerGarment:'shorts',footwear:'sneakers',headwear:'bikehelmet',prop:'bmx',propColor:'#0066CC'},{root:0,pelvis:0,torso:-25,neck:20,shoulderL:19,elbowL:84,wristL:0,shoulderR:46,elbowR:50,wristR:0,hipL:51,kneeL:-70,ankleL:95,hipR:67,kneeR:-123,ankleR:110},'chair')),
    template:"The man riding a {0} is my dad.",hints:[{accepted:["bicycle", "bike"]}]},
   {category:'pos',direct:pic(fig({bodyType:'female',skin:2,hairStyle:'long',hairColor:'8-0',eyewear:'sunglasses',upperGarment:'blouse',lowerGarment:'skirt',lowerColor:'#000000',footwear:'heels',held:{left:'purse',right:null}})),
    template:"The woman {0} sunglasses and carrying a {1} is my boss.",hints:[{accepted:["wearing"]},{accepted:["purse", "bag"]}]},

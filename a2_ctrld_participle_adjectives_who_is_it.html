@@ -142,6 +142,11 @@ function holdPose(d,hand){
   else if(['cup','mug','bowl','plate','cake','pizzabox','phone','tablet','book','multimeter','flashlight','wrench','hammer','basketball','soccerball','volleyball','beachball','tennisball','baseball','football','screwdriver','paintbrush','spoon','fork','pan','microphone','trumpet','maraca','tambourine','flute','violin','drumstick'].includes(it)){ d.joints['shoulder'+S]=sg*12; d.joints['elbow'+S]=-sg*82; }
 }
 
+/* nominal poses, tuned by hand in the poser */
+const RIDE={bmx:{root:0,pelvis:0,torso:-25,neck:20,shoulderL:19,elbowL:84,wristL:0,shoulderR:46,elbowR:50,wristR:0,hipL:51,kneeL:-70,ankleL:95,hipR:67,kneeR:-123,ankleR:110},roadbike:{root:0,pelvis:3,torso:-72,neck:56,shoulderL:98,elbowL:42,wristL:0,shoulderR:109,elbowR:35,wristR:0,hipL:30,kneeL:-50,ankleL:73,hipR:57,kneeR:-123,ankleR:119},mtb:{root:0,pelvis:3,torso:-46,neck:35,shoulderL:85,elbowL:29,wristL:0,shoulderR:82,elbowR:32,wristR:0,hipL:26,kneeL:-38,ankleL:80,hipR:55,kneeR:-123,ankleR:119}};
+const PHONE_POSE={left:{root:0,pelvis:0,torso:0,neck:-25,shoulderL:60,elbowL:52,wristL:6,shoulderR:27,elbowR:139,wristR:-21,hipL:0,kneeL:0,ankleL:-35,hipR:0,kneeR:0,ankleR:35},front:{root:0,pelvis:0,torso:2,neck:0,shoulderL:-24,elbowL:145,wristL:26,shoulderR:0,elbowR:-145,wristR:-33,hipL:0,kneeL:0,ankleL:-35,hipR:0,kneeR:0,ankleR:35}};
+const PARASOL_POSE={root:0,pelvis:0,torso:0,neck:0,shoulderL:-25,elbowL:43,wristL:0,shoulderR:96,elbowR:126,wristR:4,hipL:0,kneeL:0,ankleL:-35,hipR:0,kneeR:0,ankleR:35};
+
 /* ── Freer practice: a busy scene seen from a raised, side-on game angle ── */
 const W=1200, H=700, HORIZON=330;
 /* floor drawn as an oblique plane: depth lines run across, plank/tile lines lean at 45° */
@@ -242,7 +247,7 @@ function cast(sc){
     let pose=seated?'chair':rider?'riding':pick(S.poses); HC.applyPose(d,rider?'chair':pose); if(seated) d.prop=S.seatProp||'chair';   /* the engine's own chair, pinned to the pelvis */
     if(rider){   /* on a bicycle, in profile, feet toward the pedals and hands toward the bar */
       d.prop=pick(['bmx','roadbike','mtb']); d.propColor=pick(TONE.bright);
-      Object.assign(d.joints,{hipL:50,kneeL:-45,ankleL:60,hipR:105,kneeR:-115,ankleR:80,shoulderL:55,elbowL:15,shoulderR:60,elbowR:10,torso:d.prop==='roadbike'?-35:-25,neck:d.prop==='roadbike'?30:20});
+      Object.assign(d.joints,RIDE[d.prop]);
       if(Math.random()<0.5) d.headwear='bikehelmet';
     }
     if(Math.random()<0.5) HC.mirror(d);
@@ -253,6 +258,20 @@ function cast(sc){
     if(teen) for(const h of ['left','right']) if(ADULT_ITEMS.includes(d.held[h])) d.held[h]=pick(['phone','book','basketball','bag']);   /* nothing office-like or grown-up in a teenager's hand */
     if(d.held.left==='box'||d.held.right==='box'){ HC.applyPose(d,'carrying'); if(!seated) pose='carrying'; }
     else ['left','right'].forEach(h=>holdPose(d,h));
+    if(d.held.left==='guitar'||d.held.right==='guitar'){
+      /* guitar: always in the left hand at a +45° grip, with the nominal playing arms (left hand on the neck, right hand over the strings) */
+      if(!seated&&!rider){ HC.applyPose(d,'standing'); pose='standing'; }
+      d.held={left:'guitar',right:null}; d.heldLeftGrip=45; d.heldRightGrip=null;
+      Object.assign(d.joints,{shoulderL:-13,elbowL:-120,wristL:-111,shoulderR:53,elbowR:-120,wristR:-47});
+    }
+    { /* phone and parasol: one nominal standing pose each, item in the right hand */
+      const one=d.held.left||d.held.right;
+      if((one==='phone'||one==='parasol')&&!seated&&!rider){
+        HC.applyPose(d,'standing'); pose='standing'; d.held={left:null,right:one}; d.heldLeftGrip=d.heldRightGrip=null;
+        if(one==='phone'){ d.head=pick(['front','left']); Object.assign(d.joints,PHONE_POSE[d.head]); }
+        else Object.assign(d.joints,PARASOL_POSE);
+      }
+    }
     if(fem) d.facialHair='none';   /* never facial hair on women */
     /* two in eight (one girl, one boy) are teenagers: short or very short, and thin or very thin. Nobody else has both, so "boy" / "girl" is never ambiguous. */
     if(teen){ d.height=pick([1,2]); d.weight=pick([1,2]); d.facialHair='none'; if(d.hairColor==='grey') d.hairColor='4-0'; }
@@ -265,10 +284,7 @@ function cast(sc){
   }
   return out;
 }
-/* ── Controlled practice: find the person the friend describes ─────────── */
-const $=id=>document.getElementById(id);
-const PER_SCENE=4, SCENE_COUNT=3;
-
+/* ── shared: positions, pointing and participle descriptions for a scene ── */
 /* place everyone once per scene; positions are kept so "by the window" stays true */
 function layout(sc,people){
   const S=SCENES[sc], [y0,y1]=S.depth, n=people.length, ys=shuffle(people.map((_,i)=>y0+(y1-y0)*i/(n-1))), slot=(W-200)/(n-1);
@@ -308,6 +324,12 @@ function facts(p,sc){
     if(p.pose==='pointing'&&p.pointAt) f.push(['action','pointing at '+p.pointAt]); }
   return f;
 }
+/* boy / girl for the teenagers (short and thin), man / woman for everyone else */
+const noun=d=>{const fem=d.bodyType==='female'; return isTeen(d)?(fem?'girl':'boy'):(fem?'woman':'man');};
+/* ── Controlled practice: find the person the friend describes ─────────── */
+const $=id=>document.getElementById(id);
+const PER_SCENE=4, SCENE_COUNT=3;
+
 /* visitor lines — {N} name, {s}he, {o} him/her, {p} his/her */
 const OPENERS=[   /* avatars are always people, never objects */
   ['🧑‍🔧','Delivery driver','I have a package for {N}.'],['🧑‍🍳','Pizza delivery','Pizza for {N}!'],['🧔','Taxi driver','Which one is {N}? {S} left {p} phone in my taxi.'],
@@ -339,8 +361,6 @@ function buildGame(){
     }
   }
 }
-/* boy / girl for the teenagers (short and thin), man / woman for everyone else */
-const noun=d=>{const fem=d.bodyType==='female'; return isTeen(d)?(fem?'girl':'boy'):(fem?'woman':'man');};
 const fill=(tpl,p,text)=>{const fem=p.d.bodyType==='female', S=fem?'She':'He';
   return tpl.replace(/\{N\}/g,p.d.name).replace(/\{S\}/g,S).replace(/\{s\}/g,S.toLowerCase()).replace(/\{o\}/g,fem?'her':'him').replace(/\{p\}/g,fem?'her':'his').replace(/\{W\}/g,noun(p.d)).replace(/\{D\}/g,`<strong>${text}</strong>`);};
 

@@ -85,13 +85,13 @@
 (function(){
 /* ── Intro conversation: the woman wearing… / the man holding… ───────────── */
 const HC=HouseCharacter;
-const mk=(o,j,pose)=>{const d=Object.assign(HC.defaults(),o); if(pose) HC.applyPose(d,pose); Object.assign(d.joints,j||{}); return HC.normalize(d);};
+const mk=(o,j,pose)=>{const d=Object.assign(HC.defaults(),o); if(pose) HC.applyPose(d,pose); /* a guitar is always shown in playing position: +45° grip, left hand on the neck, right hand over the strings */ if(d.held&&d.held.left==='guitar'){ d.heldLeftGrip=45; Object.assign(d.joints,{shoulderL:-13,elbowL:-120,wristL:-111,shoulderR:53,elbowR:-120,wristR:-47}); } Object.assign(d.joints,j||{}); return HC.normalize(d);};
 /* four fixed guests, numbered rather than named: the reader matches the names from the text */
 const CAST=[
   mk({bodyType:'female',skin:4,hairColor:'1-0',hairStyle:'long',upperGarment:'dress',upperColor:'#00CC66',footwear:'heels',accessories:['necklace']}),
   mk({bodyType:'male',skin:2,hairColor:'5-0',hairStyle:'pompadour',facialHair:'stubble',upperGarment:'tshirt',upperColor:'#000000',lowerGarment:'jeans',footwear:'boots',held:{left:'guitar',right:null}}),
   mk({bodyType:'female',skin:3,hairColor:'grey',hairStyle:'bun',eyewear:'glasses',weight:4,upperGarment:'blouse',lowerGarment:'skirt',lowerColor:'#660066',footwear:'shoes',prop:'chair'},null,'chair'),
-  mk({bodyType:'male',skin:5,hairColor:'3-0',hairStyle:'curly',height:2,weight:2,headwear:'cap',headwearColor:'#CC0000',upperGarment:'tshirt',upperColor:'#FFCC00',lowerGarment:'shorts',footwear:'sneakers',held:{left:null,right:'pizzabox'}},{shoulderR:12,elbowR:-82})
+  mk({bodyType:'male',skin:5,hairColor:'3-0',hairStyle:'curly',height:2,weight:2,headwear:'cap',headwearColor:'#CC0000',upperGarment:'tshirt',upperColor:'#FFCC00',lowerGarment:'shorts',footwear:'sneakers',held:{left:null,right:'pizzabox'}},{root:0,pelvis:0,torso:0,neck:0,shoulderL:-62,elbowL:100,wristL:71,shoulderR:41,elbowR:-114,wristR:0,hipL:0,kneeL:0,ankleL:-35,hipR:0,kneeR:0,ankleR:35})
 ];
 document.getElementById('icCast').innerHTML=CAST.map((d,i)=>`<figure>${HC.render(d,{fit:true})}<figcaption>${i+1}</figcaption></figure>`).join('');
 

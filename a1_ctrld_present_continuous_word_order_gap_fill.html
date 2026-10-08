@@ -61,7 +61,7 @@
 (function(){
 /* ── shared: fixed little pictures for the gap-fill items ───────────────── */
 const HC=HouseCharacter;
-const fig=(o,j,pose)=>{const d=Object.assign(HC.defaults(),o); if(pose) HC.applyPose(d,pose); Object.assign(d.joints,j||{}); return HC.render(HC.normalize(d),{fit:true});};
+const fig=(o,j,pose)=>{const d=Object.assign(HC.defaults(),o); if(pose) HC.applyPose(d,pose); /* a guitar is always shown in playing position: +45° grip, left hand on the neck, right hand over the strings */ if(d.held&&d.held.left==='guitar'){ d.heldLeftGrip=45; Object.assign(d.joints,{shoulderL:-13,elbowL:-120,wristL:-111,shoulderR:53,elbowR:-120,wristR:-47}); } Object.assign(d.joints,j||{}); return HC.render(HC.normalize(d),{fit:true});};
 const SHOW_R={shoulderR:12,elbowR:-82}, SHOW_L={shoulderL:-12,elbowL:82};
 const pic=(svg,say)=>`<div class="gp"><div class="gp-pic">${svg}</div><div class="gp-say">${say||'Look at the picture.'}</div></div>`;
 const A=['Ana','👩‍🦰'], B=['Ben','👨‍🦱'];
@@ -87,9 +87,9 @@ const GF_ITEMS=[
    template:"She is holding a {0}.",hints:[{accepted:["cup"]}]},
   {category:'pos',direct:pic(fig({bodyType:'male',skin:3,hairStyle:'curly',upperGarment:'polo',upperColor:'#0066CC',lowerGarment:'chinos',footwear:'shoes',headwear:'fedora',headwearColor:'#663300',held:{left:'guitar',right:null}})),
    template:"He is {0} a hat. He is holding a {1}.",hints:[{accepted:["wearing"]},{accepted:["guitar"]}]},
-  {category:'pos',direct:pic(fig({bodyType:'female',skin:2,hairStyle:'long',hairColor:'7-0',upperGarment:'blouse',lowerGarment:'skirt',lowerColor:'#000066',footwear:'heels',accessories:['backpack'],packColor:'#CC0000',held:{left:null,right:'phone'}},SHOW_R)),
+  {category:'pos',direct:pic(fig({bodyType:'female',skin:2,hairStyle:'long',hairColor:'7-0',upperGarment:'blouse',lowerGarment:'skirt',lowerColor:'#000066',footwear:'heels',accessories:['backpack'],packColor:'#CC0000',held:{left:null,right:'phone'}},{root:0,pelvis:0,torso:2,neck:0,shoulderL:-24,elbowL:145,wristL:26,shoulderR:0,elbowR:-145,wristR:-33,hipL:0,kneeL:0,ankleL:-35,hipR:0,kneeR:0,ankleR:35})),
    template:"{0} is carrying a backpack and holding a {1}.",hints:[{accepted:["She"]},{accepted:["phone"]}]},
-  {category:'neg',direct:pic(fig({bodyType:'male',skin:6,hairStyle:'buzz',upperGarment:'tshirt',upperColor:'#FFCC00',lowerGarment:'shorts',footwear:'sandals',held:{left:null,right:'parasol'}},{shoulderR:20,elbowR:140})),
+  {category:'neg',direct:pic(fig({bodyType:'male',skin:6,hairStyle:'buzz',upperGarment:'tshirt',upperColor:'#FFCC00',lowerGarment:'shorts',footwear:'sandals',held:{left:null,right:'parasol'}},{root:0,pelvis:0,torso:0,neck:0,shoulderL:-25,elbowL:43,wristL:0,shoulderR:96,elbowR:126,wristR:4,hipL:0,kneeL:0,ankleL:-35,hipR:0,kneeR:0,ankleR:35})),
    template:"He {0} wearing a hat. He is holding an {1}.",hints:[{accepted:["isn't", "is not"]},{accepted:["umbrella"]}]},
   {category:'q',direct:pic(fig({bodyType:'female',skin:3,hairStyle:'bun',hairColor:'5-0',eyewear:'glasses',upperGarment:'jacket',upperColor:'#666666',lowerGarment:'trousers',footwear:'shoes'})),
    template:"{0} she wearing {1}? — Yes, she is.",hints:[{accepted:["Is"]},{accepted:["glasses"]}]},
