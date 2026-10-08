@@ -505,7 +505,9 @@ const EYEWEAR = {
   glasses:{label:'Glasses',phrase:'glasses',lens:'#CCFFFF',op:0.35,frame:'#2b2b2b'},
   round:{label:'Round glasses',phrase:'round glasses',lens:'#CCFFFF',op:0.35,frame:'#8a5a2b',shape:'round'},
   sunglasses:{label:'Sunglasses',phrase:'sunglasses',lens:'#000000',op:0.92,frame:'#15171a'},
-  aviators:{label:'Aviator sunglasses',phrase:'aviator sunglasses',lens:'#666600',op:0.82,frame:'#b8902c',shape:'aviator'}
+  aviators:{label:'Aviator sunglasses',phrase:'aviator sunglasses',lens:'#666600',op:0.82,frame:'#b8902c',shape:'aviator'},
+  cycling:{label:'Cycling sunglasses',phrase:'cycling sunglasses',lens:'#FF6600',op:0.9,frame:'#222222',shape:'shield'},
+  sports:{label:'Sports sunglasses',phrase:'sports sunglasses',lens:'#0066CC',op:0.9,frame:'#222222',shape:'sport'}
 };
 const HEADWEAR = {
   cap:{label:'Cap',noun:'cap',col:'#0066CC'},
@@ -525,8 +527,32 @@ const ACCESSORIES = {
   elbowpadL:{label:'Elbow pad (L)'},elbowpadR:{label:'Elbow pad (R)'},kneepadL:{label:'Knee pad (L)'},kneepadR:{label:'Knee pad (R)'},
   necklace:{label:'Necklace'},backpack:{label:'Backpack'},fannypack:{label:'Fanny pack'},studs:{label:'Stud earrings'},drops:{label:'Drop earrings'},tie:{label:'Tie'}
 };
+/* rotate a colour's hue by deg degrees */
+function hueRotate(hex,deg){
+  const n=parseInt(hex.slice(1),16), r=(n>>16)/255, g=((n>>8)&255)/255, b=(n&255)/255, mx=Math.max(r,g,b), mn=Math.min(r,g,b), l=(mx+mn)/2, dl=mx-mn;
+  let h=0, sat=0; if(dl){ sat=dl/(1-Math.abs(2*l-1)); h=mx===r?((g-b)/dl)%6:mx===g?(b-r)/dl+2:(r-g)/dl+4; h*=60; }
+  h=((h+deg)%360+360)%360; const c=(1-Math.abs(2*l-1))*sat, x=c*(1-Math.abs((h/60)%2-1)), m=l-c/2;
+  const [R,G,B]=h<60?[c,x,0]:h<120?[x,c,0]:h<180?[0,c,x]:h<240?[0,x,c]:h<300?[x,0,c]:[c,0,x];
+  return '#'+[R,G,B].map(v=>Math.round((v+m)*255).toString(16).padStart(2,'0')).join('').toUpperCase();
+}
 function eyewearSVG(id,side,tint){
   const e=EYEWEAR[id]; if(!e) return '';
+  if(e.shape==='shield'||e.shape==='sport'){
+    /* mirror-tinted lenses: the colour runs from the tint at the outer edges to a 60° hue rotation at the nose,
+       so the front view is symmetrical. The side view shows one half: rotated at the front, plain tint at the temple. */
+    const c=tint||e.lens, c30=hueRotate(c,30), c60=hueRotate(c,60), st=`stroke="${e.frame}" stroke-width="1.4"`, op=`fill-opacity="${e.op}"`;
+    const grad=(id,stops)=>`<linearGradient id="${id}" x1="0" y1="0" x2="1" y2="0">${stops.map(([o,col])=>`<stop offset="${o}" stop-color="${col}"/>`).join('')}</linearGradient>`;
+    const arm=d=>`<path d="${d}" fill="none" stroke="${e.frame}" stroke-width="2.4" stroke-linecap="round"/>`, brow=d=>`<path d="${d}" fill="none" stroke="${e.frame}" stroke-width="2.6" stroke-linecap="round"/>`;
+    const g1='hcg'+(++UID), g2='hcg'+(++UID);
+    if(e.shape==='shield') return side
+      ?grad(g1,[[0,c60],[1,c]])+arm('M-7,-6L8,-5')+`<path d="M-27.5,-9Q-16,-11 -6,-9Q-4,-2 -9,3Q-17,6.5 -27,2.5Q-29,-3 -27.5,-9Z" fill="url(#${g1})" ${op} ${st}/>`+brow('M-27,-8.6Q-16,-10.6 -6.4,-8.6')
+      :grad(g1,[[0,c],[0.25,c30],[0.5,c60],[0.75,c30],[1,c]])+arm('M-21,-6L-29,-5M21,-6L29,-5')+`<path d="M-22,-8.5Q0,-11.5 22,-8.5Q24,0 17.5,4Q9,6.5 3,1.5Q0,-0.5 -3,1.5Q-9,6.5 -17.5,4Q-24,0 -22,-8.5Z" fill="url(#${g1})" ${op} ${st}/>`+brow('M-21.6,-8.2Q0,-11.2 21.6,-8.2');
+    /* sport: two separate angular lenses; m = +1 when the outer corner is on the +x side */
+    const lens=(cx,m,id)=>`<path d="M${cx-m*7.5},-7.5L${cx+m*9},-6.5Q${cx+m*10.5},-1 ${cx+m*6},3.6Q${cx-m},5.6 ${cx-m*7},2Z" fill="url(#${id})" ${op} ${st}/>`;
+    return side
+      ?grad(g1,[[0,c60],[1,c]])+arm('M-7,-5L8,-5')+lens(-16,1,g1)
+      :grad(g1,[[0,c],[1,c60]])+grad(g2,[[0,c60],[1,c]])+arm('M-21,-6L-29,-5M21,-6L29,-5')+lens(-11.5,-1,g1)+lens(11.5,1,g2)+brow('M-4,-5Q0,-7 4,-5');
+  }
   const w=e.shape==='aviator'?1.1:1.6;
   const fr=`fill="${tint||e.lens}" fill-opacity="${e.op}" stroke="${e.frame}" stroke-width="${w}"`, ln=`fill="none" stroke="${e.frame}" stroke-width="${w}" stroke-linecap="round"`;
   /* m = +1 when the outer corner of the lens is on the +x side */
@@ -615,7 +641,7 @@ function headwearSVG(id,side,col){
 
 function headSVG(d,C){
   const side=d.head!=='front', eye=EYES[d.eyeColor-1];
-  const h=hair(d.hairStyle,side?'side':'front',C.hair,d.headwear&&!['headband','bow','headphones','headset'].includes(d.headwear)), fh=facial(d.facialHair,side?'side':'front',C.hair);
+  const h=hair(d.hairStyle,side?'side':'front',C.hair,(d.headwear&&!['headband','bow','headphones','headset'].includes(d.headwear))||d.upperGarment==='hoodieup'), fh=facial(d.facialHair,side?'side':'front',C.hair);
   const S=`fill="${C.skin}" stroke="${C.skinS}"`, lash=shade(C.skin,-0.62);
   const iris=(x,y,r)=>`<circle cx="${x}" cy="${y}" r="${r}" fill="${eye.hex}" stroke="${shade(eye.hex,-0.35)}" stroke-width=".7"/>`
     +(eye.fleck?`<circle cx="${x}" cy="${y}" r="${n2(r*0.62)}" fill="#b58a3c" stroke="none"/>`:'')
@@ -657,10 +683,17 @@ function headSVG(d,C){
   }
   const star=(x,y,a)=>`<path transform="translate(${x} ${y})" d="M0,${-a}Q${n2(a*0.13)},${n2(-a*0.13)} ${a},0Q${n2(a*0.13)},${n2(a*0.13)} 0,${a}Q${n2(-a*0.13)},${n2(a*0.13)} ${-a},0Q${n2(-a*0.13)},${n2(-a*0.13)} 0,${-a}Z" fill="#fffbe0" stroke="#e2b23a" stroke-width=".8"/>`;
   const ear=d.accessories.includes('studs')?(side?[7]:[-30.5,30.5]).map(x=>`<path d="M${x},8V11" stroke="#9c7716" stroke-width="1.2" fill="none"/><circle cx="${x}" cy="13.5" r="3.6" fill="#e2b23a" stroke="#9c7716" stroke-width="1"/>`+star(x+(x<0?-5:5),8.5,5.5)).join(''):'';
+  /* hood up: a shell behind the head and a rim round the face, in the hoodie's colour */
+  let hood=null;
+  if(d.upperGarment==='hoodieup'){ const hc=d.upperColor||UPPER.hoodieup.col, a=`fill="${hc}" stroke="${edge(hc)}"`;
+    hood=side?{back:`<path d="M-14,-42C14,-50 42,-30 40,8Q36,38 8,44L-8,40Z" ${a}/>`,
+               front:`<path d="M-16,-41C12,-49 41,-30 39,8Q35,37 8,43L-9,40Q-1,22 -1,0Q-2,-26 -16,-41Z" ${a}/>`}
+             :{back:`<path d="M-38,22C-43,-32 -24,-49 0,-49C24,-49 43,-32 38,22Q22,44 0,46Q-22,44 -38,22Z" ${a}/>`,
+               front:`<path fill-rule="evenodd" d="M-37,22C-42,-31 -23,-48 0,-48C23,-48 42,-31 37,22Q21,43 0,45Q-21,43 -37,22ZM-26,-2C-26,-25 -14,-33 0,-33C14,-33 26,-25 26,-2C26,15 14,31 0,31C-14,31 -26,15 -26,-2Z" ${a}/>`}; }
   /* drop earrings: pinned at the earlobe, drawn unrotated so they always hang */
   const drops=d.accessories.includes('drops')?(side?[7]:[-30.5,30.5]).map(x=>({x,y:8,svg:`<path d="M0,0V9" stroke="#9c7716" stroke-width="1.3" fill="none"/><path d="M0,8Q-5,16 0,20.5Q5,16 0,8Z" fill="#e2b23a" stroke="#9c7716" stroke-width="1"/>`+star(x<0?-6.5:6.5,11,5.5)})):[];
   return {back:h.back, hang:h.hang, drops,
-          top:headwearSVG(d.headwear,side,d.headwearColor)+ear,   /* headwear sits above all hair, earrings above that */
+          hoodBack:hood&&hood.back, top:headwearSVG(d.headwear,side,d.headwearColor)+(hood?hood.front:'')+ear,   /* headwear sits above all hair, earrings above that */
           front:s+h.front+eyewearSVG(d.eyewear,side,d.eyewearColor)};
 }
 /* ── clothes. off = how far the fitted parts sit outside the body (px).
@@ -679,6 +712,8 @@ const UPPER = {
   croptop:{label:'Crop top',noun:'crop top',col:'#FFCC00',off:1.5,hem:3,arm:0.5,neck:'crew',crop:true},
   croptank:{label:'Crop top (sleeveless)',noun:'crop top',col:'#FF66CC',off:1.2,hem:3,arm:0,neck:'scoop',crop:true},
   dress:{label:'Dress',noun:'dress',col:'#00CCCC',off:1.2,hem:5,arm:0,neck:'scoop',tails:0.8,flare:12},
+  hoodie:{label:'Hoodie (hood down)',noun:'hoodie',col:'#666666',off:3,hem:14,arm:1,fore:0.97,neck:'hood'},
+  hoodieup:{label:'Hoodie (hood up)',noun:'hoodie',col:'#666666',off:3,hem:14,arm:1,fore:0.97,neck:'hood',hoodUp:true},
   gown:{label:'Gown',noun:'gown',col:'#660066',off:1.2,hem:5,arm:0,neck:'vneck',tails:1.85,flare:14},
   vest:{label:'Shirt and vest',noun:'vest',col:'#666666',off:2,hem:6,arm:1,fore:0.95,neck:'vest',vest:1},
   jacket:{label:'Formal jacket (closed)',noun:'jacket',col:'#000066',off:3.5,hem:5,arm:1,fore:0.97,neck:'suit',tails:0.24,flare:2},
@@ -689,6 +724,7 @@ const LOWER = {
   trousers:{label:'Trousers',noun:'trousers',pl:1,col:'#666666',off:2.5,thigh:1,shin:0.97},
   chinos:{label:'Chinos',noun:'chinos',pl:1,col:'#CCCC66',off:2.5,thigh:1,shin:0.94},
   shorts:{label:'Shorts',noun:'shorts',pl:1,col:'#000000',off:3,thigh:0.7},
+  trackpants:{label:'Track pants',noun:'track pants',pl:1,col:'#000066',off:3,thigh:1,shin:0.95,stripe:true},
   bellbottoms:{label:'Bell-bottoms',noun:'bell-bottoms',pl:1,col:'#0066CC',off:2.2,thigh:1,shin:0.98,bell:9},
   bikinibottom:{label:'Bikini bottoms',noun:'bikini bottoms',pl:1,col:'#FF66CC',off:0.5,thigh:0,swim:true},
   swimbriefs:{label:'Swim briefs',noun:'swim briefs',pl:1,col:'#000066',off:0.5,thigh:0,swim:true},
@@ -724,7 +760,7 @@ function colourName(hex){
   return (l<0.3?'dark ':l>0.72&&base!=='pink'?'light ':'')+base;
 }
 /* fabric patterns: base colour + a secondary colour, as SVG pattern fills */
-const PATTERNS=[['plain','Plain'],['vstripes','Vertical stripes'],['hstripes','Horizontal stripes'],['checkered','Checkered'],['polka','Polka dots'],['floral','Floral']];
+const PATTERNS=[['plain','Plain'],['vstripes','Vertical stripes'],['hstripes','Horizontal stripes'],['checkered','Checkered'],['polka','Polka dots'],['floral','Floral'],['sidestripe','Side stripe']];
 const PAT_WORD={vstripes:'striped',hstripes:'striped',checkered:'checkered',polka:'polka-dot',floral:'floral'};
 const colour2Default=c=>colourName(c)==='white'?'#0066CC':'#FFFFFF';
 let UID=0;
@@ -777,6 +813,8 @@ const OUTFITS = {
     {id:'beach',label:'Beach',upperGarment:'tank',lowerGarment:'shorts',footwear:'sandals'},
     {id:'retro',label:'Retro',upperGarment:'shirt',lowerGarment:'bellbottoms',footwear:'platforms'},
     {id:'weekend',label:'Weekend',upperGarment:'polo',lowerGarment:'shorts',footwear:'sneakers'},
+    {id:'tracksuit',label:'Tracksuit',upperGarment:'hoodie',lowerGarment:'trackpants',footwear:'sneakers'},
+    {id:'hooded',label:'Hood up',upperGarment:'hoodieup',lowerGarment:'jeans',footwear:'sneakers'},
     {id:'swim',label:'Swimwear',upperGarment:null,lowerGarment:'swimshorts',footwear:null}],
   female:[
     {id:'casual',label:'Casual',upperGarment:'tshirt',lowerGarment:'jeans',footwear:'sneakers'},
@@ -791,6 +829,8 @@ const OUTFITS = {
     {id:'beach',label:'Beach',upperGarment:'sportstop',lowerGarment:'shorts',footwear:'sandals'},
     {id:'retro',label:'Retro',upperGarment:'blouse',lowerGarment:'bellbottoms',footwear:'platforms'},
     {id:'weekend',label:'Weekend',upperGarment:'tshirt',lowerGarment:'skirt',footwear:'sneakers'},
+    {id:'tracksuit',label:'Tracksuit',upperGarment:'hoodie',lowerGarment:'trackpants',footwear:'sneakers'},
+    {id:'hooded',label:'Hood up',upperGarment:'hoodieup',lowerGarment:'jeans',footwear:'sneakers'},
     {id:'swim',label:'Swimsuit',upperGarment:'swimsuit',lowerGarment:null,footwear:null},
     {id:'bikini',label:'Bikini',upperGarment:'bikinitop',lowerGarment:'bikinibottom',footwear:null}]
 };
@@ -827,7 +867,9 @@ function build(d){
   const dye=(g,c)=>g&&{...g,col:c||g.col};
   const defs=[];
   const paint=(g,pat,c2)=>{ if(!g) return g; g.fill=g.col;
-    if(pat&&pat!=='plain'){const id='hcp'+(++UID); defs.push(patDef(id,pat,g.col,c2||colour2Default(g.col))); g.fill=`url(#${id})`;}
+    /* side stripe: a band down the outside of sleeves and legs in the second colour (track pants always have one) */
+    g.stripeCol=pat==='sidestripe'||(g.stripe&&(!pat||pat==='plain'))?(c2||colour2Default(g.col)):null;
+    if(pat&&pat!=='plain'&&pat!=='sidestripe'){const id='hcp'+(++UID); defs.push(patDef(id,pat,g.col,c2||colour2Default(g.col))); g.fill=`url(#${id})`;}
     return g; };
   const UG0=paint(dye(UPPER[d.upperGarment],d.upperColor),d.upperPattern,d.upperColor2), LG0=paint(dye(LOWER[d.lowerGarment],d.lowerColor),d.lowerPattern,d.lowerColor2), FW=dye(FOOT[d.footwear],d.footwearColor);
   /* swimwear replaces the undersuit: bare skin shows instead. A bikini top brings its bottoms, and a woman in swim shorts gets a top. */
@@ -850,6 +892,8 @@ function build(d){
     return `<path d="${pelD(o)}" fill="${fill}" stroke="none"/><path d="M${n2(ww+o)},${t}Q${n2(hw+2+o)},${m} ${n2(hw+o)},3M${n2(-ww-o)},${t}Q${n2(-hw-2-o)},${m} ${n2(-hw-o)},3" ${q}/>`
       +`<path d="M${n2(-ww-o)},${t}H${n2(ww+o)}" ${q}${faintTop?SEAM:''}/><path d="M${n2(hw+o)},3Q${n2(hw+o)},${18+o} 0,${16+o}Q${n2(-hw-o)},${18+o} ${n2(-hw-o)},3" ${q}${SEAM}/>`;};
   add(30,mP,(swim?pel(0,C.skin,C.skinS,skinTorso):pel(0,C.suit,C.suitS,!UG))+(LG?pel(LG.off,LG.fill,edge(LG.col),false):'')+(UG&&(UG.tails||UG.onepiece)?pel(UG.off,UG.fill,edge(UG.col),true):''),'pelvis');
+  if(LG&&LG.stripeCol&&LG.thigh>0){ const X=(a,b)=>`M${n2(a)},${n2(-WA-1)}L${n2(b)},4`, k=Math.abs(cp), lo=LG.off;
+    add(30.2,mP,`<path d="${X((ww+lo-3.2)*k,(hw+lo-3.2)*k)}${X(-(ww+lo-3.2)*k,-(hw+lo-3.2)*k)}" fill="none" stroke="${LG.stripeCol}" stroke-width="3"/>`,'pelvis'); }
   mark(mP,0,0,hw+2); mark(mP,0,6,12);
 
   /* chest */
@@ -863,6 +907,14 @@ function build(d){
     return `<path d="${lft}L${rgt}Z" fill="${fill}" stroke="none"/><path d="${lft}M${rgt}L${-nw-2},${n2(-c-4-o)}" ${q}/><path d="M${n2(-ww-o)},${hem}H${n2(ww+o)}" ${q}${faintHem?SEAM:''}/>`;};
   /* navel: centred from the front, sliding to the facing edge in profile — distance by the average of the torso and pelvis cosines */
   const sp=Math.sin(d.pelvisOrientation*Math.PI/180), navX=((st+sp)<0?-1:1)*(ww-2)*(1-(Math.abs(ct)+Math.abs(cp))/2);
+  /* Chest-front details (necklines, plackets, pockets, straps, bust arcs) share one transform as the torso turns:
+     they narrow, and they lean toward the facing side — not at all at the collar, more the lower they are.
+     So a neckline always stays round the neck, while a placket or pocket drifts to the front. */
+  const co0=UG?UG.off:0, dKs=Math.max(Math.abs(ct),0.2), dSh=st*(cw+co0)*0.45/(c*0.75), dTop=-c-4-co0;
+  /* the narrowing is anchored on the facing side of the neck: turning left keeps a neckline's left corner on the
+     neck's left edge and pulls the right corner in, and the other way round */
+  const dE=(st<0?-1:1)*(nw+3)*(1-dKs);
+  const detailT=`matrix(${n2(dKs)} 0 ${n2(dSh)} 1 ${n2(dE-dSh*dTop)} 0)`, detailX=(x,y)=>dKs*x+dSh*(y-dTop)+dE;
   const co=UG?UG.off:0, cCol=UG?UG.fill:C.suit, cStr=UG?edge(UG.col):C.suitS;
   let chest=UG&&!UG.bikini&&!crop?chestSVG(co,UG.hem,UG.fill,edge(UG.col),!!(UG.tails||UG.onepiece))
     :(swim||crop)?chestSVG(0,3,C.skin,C.skinS,swim)+`<path d="M${n2(navX-1.6)},${n2(-c*0.14)}q1.6,2.2 3.2,0" fill="none" stroke="${C.skinS}" stroke-linecap="round"/>`
@@ -887,7 +939,7 @@ function build(d){
   }
   {
     const g=UG||{off:0}, dk=UG?edge(g.col):C.suitS, top=-c-4-g.off; let s='';
-    if(g.neck==='crew') s+=`<path d="M${-nw-2},${n2(top+1)}Q0,${n2(top+8)} ${nw+2},${n2(top+1)}" fill="none" stroke="${dk}" stroke-width="2.4"/>`;
+    if(g.neck==='crew') s+=`<path d="M${-nw-2},${n2(top-1)}V${n2(top+1)}Q0,${n2(top+9)} ${nw+2},${n2(top+1)}V${n2(top-1)}Z" fill="${C.skin}" stroke="none"/><path d="M${-nw-2},${n2(top+1)}Q0,${n2(top+9)} ${nw+2},${n2(top+1)}" fill="none" stroke="${dk}" stroke-width="2.4"/>`;   /* skin shows inside the round neck */
     if(g.neck==='scoop') s+=`<path d="M${-nw-5},${n2(top-1)}Q0,${n2(top+26)} ${nw+5},${n2(top-1)}Z" fill="${C.skin}" stroke="${dk}"/>`;
     if(g.neck==='vneck') s+=`<path d="M${-nw-3},${n2(top-1)}L0,${n2(top+24)}L${nw+3},${n2(top-1)}Z" fill="${C.skin}" stroke="${dk}"/>`;
     if(g.neck==='lapel') s+=`<path d="M${-nw-3},${n2(top-1)}L0,${n2(top+34)}L${nw+3},${n2(top-1)}Z" fill="#ece8df" stroke="${dk}"/><path d="M0,${n2(top+34)}V${g.hem}" stroke="${dk}" fill="none"/>`
@@ -908,8 +960,14 @@ function build(d){
       s+=`<path d="M${-a},${y0}L${-w1},${g.hem}L${w1},${g.hem}L${a},${y0}Z" fill="${complement(g.col)}" stroke="${dk}"/><path d="M0,${n2(top+8)}V${g.hem}" stroke="#b9b9b9" fill="none"/>`
         +[-1,1].map(k=>`<path d="M${k*a},${y0}L${n2(k*(a+(w1-a)*0.5))},${n2(y0+hh*0.5)}L${k*(a+11)},${n2(y0+hh*0.22)}Z" ${G(g)}/>`).join('');
     }
+    if(g.neck==='hood'){   /* hoodie front: pouch pocket, drawstrings, and the folded hood round the neck when it is down */
+      const py=n2(-c*0.36);
+      s+=`<path d="M-13,${py}H13L18,${n2(g.hem-5)}H-18Z" fill="none" stroke="${dk}"/>`
+        +(g.hoodUp?'':`<path d="M${-nw-10},${n2(top-3)}Q0,${n2(top+19)} ${nw+10},${n2(top-3)}L${nw+3},${n2(top-5)}Q0,${n2(top+9)} ${-nw-3},${n2(top-5)}Z" ${G(g)}/>`)
+        +`<path d="M-4,${n2(top+9)}V${n2(top+27)}M4,${n2(top+9)}V${n2(top+24)}" fill="none" stroke="#f1f0ec" stroke-width="1.8" stroke-linecap="round"/>`;
+    }
     if(g.placket) s+=`<path d="M0,${n2(top+4)}V${n2(top+4+(g.hem-top-4)*g.placket)}" stroke="${dk}" fill="none"/>`;
-    if(g.neck==='collar') s+=[-1,1].map(k=>`<path d="M${k*(nw+3)},${n2(top-1)}L0,${n2(top+6)}L${k*(nw-1)},${n2(top+14)}Z" ${G(g)}/>`).join('');
+    if(g.neck==='collar') s+=`<path d="M${-nw-1},${n2(top-1)}L0,${n2(top+9)}L${nw+1},${n2(top-1)}Z" fill="${C.skin}" stroke="none"/>`+[-1,1].map(k=>`<path d="M${k*(nw+3)},${n2(top-1)}L0,${n2(top+6)}L${k*(nw-1)},${n2(top+14)}Z" ${G(g)}/>`).join('');
     if(fem&&Math.abs(ct)>0.3){   /* front view of the bust: two arcs, as deep (0.85 × 13·W) as the profile bump sticks out */
       const bx=n2((cw+co)*0.47), h=n2(Math.min(15,(cw+co)*0.44)), y0=n2(-c+38), dp=n2(13*W*1.7), a=x=>`M${n2(x-h)},${y0}Q${n2(x)},${n2(y0+dp)} ${n2(x+h)},${y0}`;
       const xs=Math.abs(st)>0.35?[(st<0?1:-1)*bx]:[-bx,bx];   /* turned: one arc here + the silhouette bump = two, never three */
@@ -919,18 +977,19 @@ function build(d){
       }
       s+=`<path d="${xs.map(a).join('')}" fill="none" stroke="${cStr}" stroke-opacity="${n2(Math.abs(ct))}" stroke-linecap="round"/>`;
     }
-    /* centre-line details slide toward the front and flatten as the torso turns */
-    if(s) chest+=`<g transform="translate(${n2(st*(cw+co)*0.45)} 0) scale(${n2(Math.max(Math.abs(ct),0.2))} 1)">${s}</g>`;
+    /* see detailT above */
+    if(s) chest+=`<g transform="${detailT}">${s}</g>`;
   }
   add(40,mChest,chest,'torso');
+  if(UG&&UG.neck==='hood'&&!UG.hoodUp) add(34.5,mChest,`<ellipse cx="0" cy="${n2(-c-7-co)}" rx="${n2(nw+12)}" ry="10" ${G(UG)}/>`,'torso');   /* the hood lying behind the neck */
   if(acc.backpack){
     /* pack sits behind the torso and slides to the back as the torso turns; straps cross the chest; the loose ends hang */
     const pc=d.packColor||PACK_COL, pe=edge(pc), e=cw+co, pw=n2(e*0.95*(0.45+0.55*Math.abs(ct))), px=n2(-st*(e+pw-3)), yt=n2(-c+4), yb=n2(-c*0.1);
     add(28.5,mChest,`<path d="M${px-pw},${yt+8}Q${px-pw},${yt-8} ${px},${yt-10}Q${px+pw},${yt-8} ${px+pw},${yt+8}V${yb-6}Q${px+pw},${yb} ${px+pw-6},${yb}H${px-pw+6}Q${px-pw},${yb} ${px-pw},${yb-6}Z" fill="${pc}" stroke="${pe}"/><path d="M${n2(px-pw*0.6)},${n2(yb-26)}H${n2(px+pw*0.6)}V${n2(yb-8)}H${n2(px-pw*0.6)}Z" fill="${shade(pc,-0.15)}" stroke="${pe}"/>`,'torso');
-    const ks=Math.max(Math.abs(ct),0.2), gx=st*e*0.45, ys=n2(-c*0.5);
-    add(41.2,mChest,`<g transform="translate(${n2(gx)} 0) scale(${n2(ks)} 1)">`+[-1,1].map(k=>{const dd=`M${n2(k*sw*0.6)},${n2(-c-co-1)}Q${n2(k*e*0.95)},${n2(-c+18)} ${n2(k*e*0.82)},${ys}`;
+    const ys=n2(-c*0.5);
+    add(41.2,mChest,`<g transform="${detailT}">`+[-1,1].map(k=>{const dd=`M${n2(k*sw*0.6)},${n2(-c-co-1)}Q${n2(k*e*0.95)},${n2(-c+18)} ${n2(k*e*0.82)},${ys}`;
       return `<path d="${dd}" fill="none" stroke="${pe}" stroke-width="6.4"/><path d="${dd}" fill="none" stroke="${pc}" stroke-width="4.4"/>`;}).join('')+'</g>','torso');
-    for(const k of [-1,1]){ const p=Mx.pt(mChest,gx+ks*k*e*0.82,-c*0.5);
+    for(const k of [-1,1]){ const p=Mx.pt(mChest,detailX(k*e*0.82,-c*0.5),-c*0.5);
       add(41.3,[1,0,0,1,p[0],p[1]],`<path d="M0,0V16" fill="none" stroke="${pe}" stroke-width="3.8"/><path d="M0,0V16" fill="none" stroke="${pc}" stroke-width="2.2"/>`,'torso'); }
   }
   if(acc.fannypack){
@@ -940,11 +999,11 @@ function build(d){
   }
   if(acc.necklace){   /* its own layer, above every garment and the tie */
     const top=-c-4-co;
-    add(41.5,mChest,`<g transform="translate(${n2(st*(cw+co)*0.45)} 0) scale(${n2(Math.max(Math.abs(ct),0.2))} 1)"><path d="M${-nw-1},${n2(top+1)}Q0,${n2(top+24)} ${nw+1},${n2(top+1)}" fill="none" stroke="${GOLDS}" stroke-width="3.2"/><path d="M${-nw-1},${n2(top+1)}Q0,${n2(top+24)} ${nw+1},${n2(top+1)}" fill="none" stroke="${GOLD}" stroke-width="1.9"/><circle cx="0" cy="${n2(top+13)}" r="3.6" fill="${GOLD}" stroke="${GOLDS}" stroke-width="1"/>${spark(6.5,top+8,5)}</g>`,'torso');
+    add(41.5,mChest,`<g transform="${detailT}"><path d="M${-nw-1},${n2(top+1)}Q0,${n2(top+24)} ${nw+1},${n2(top+1)}" fill="none" stroke="${GOLDS}" stroke-width="3.2"/><path d="M${-nw-1},${n2(top+1)}Q0,${n2(top+24)} ${nw+1},${n2(top+1)}" fill="none" stroke="${GOLD}" stroke-width="1.9"/><circle cx="0" cy="${n2(top+13)}" r="3.6" fill="${GOLD}" stroke="${GOLDS}" stroke-width="1"/>${spark(6.5,top+8,5)}</g>`,'torso');
   }
   if(acc.tie&&!(UG&&(UG.neck==='suit'||UG.neck==='vest'))){
     /* necktie: pinned at the collar but drawn in an unrotated frame, so it always hangs straight down */
-    const tc=d.tieColor||TIE_COL, p=Mx.pt(mChest,st*(cw+co)*0.45,-c-co+1), k=n2(Math.max(Math.abs(ct),0.45)), L=n2(c*1.05);   /* 0.6 × 1.75 */
+    const tc=d.tieColor||TIE_COL, p=Mx.pt(mChest,detailX(0,-c-co+1),-c-co+1), k=n2(Math.max(Math.abs(ct),0.45)), L=n2(c*1.05);   /* 0.6 × 1.75 */
     add(41,[1,0,0,1,p[0],p[1]],`<g transform="scale(${k} 1)"><path d="M-3.4,0L3.4,0L2.2,6L5.2,${n2(L-9)}L0,${L}L-5.2,${n2(L-9)}L-2.2,6Z" fill="${tc}" stroke="${edge(tc)}"/><path d="M-2.2,6H2.2" fill="none" stroke="${edge(tc)}"/></g>`,'torso');
     mark([1,0,0,1,p[0],p[1]],0,L,4);
   }
@@ -955,11 +1014,12 @@ function build(d){
   /* neck + head */
   const mNeck=Mx.tr(mChest,0,-CH-2,j.neck*0.5), mSkull=Mx.tr(mNeck,0,-16,j.neck*0.5);   /* half the tilt at the base of the neck, half under the skull */
   piv.neck={p:Mx.pt(mChest,0,-CH-2),parent:j.root+j.torso,up:true};
-  add(35,mNeck,`<circle cx="0" cy="3" r="${n2(nw+3)}" ${S}/><path d="M${-nw-1},-22Q${n2(-nw+2)},-9 ${n2(-nw-4)},5L${n2(nw+4)},5Q${n2(nw-2)},-9 ${nw+1},-22Z" fill="${C.skin}" stroke="none"/><path d="M${-nw-1},-22Q${n2(-nw+2)},-9 ${n2(-nw-4)},5M${n2(nw+4)},5Q${n2(nw-2)},-9 ${nw+1},-22" fill="none" stroke="${C.skinS}"/><circle cx="0" cy="-16" r="${n2(nw+1)}" fill="${C.skin}" stroke="none"/>`,'neck');   /* flared neck with round patches at the collar and under the skull */
+  add(35,mNeck,`<circle cx="0" cy="4" r="${n2(nw+2)}" fill="${C.skin}" stroke="none"/><path d="M${-nw-1},-22Q${n2(-nw+2)},-9 ${n2(-nw-4)},5L${n2(nw+4)},5Q${n2(nw-2)},-9 ${nw+1},-22Z" fill="${C.skin}" stroke="none"/><path d="M${-nw-1},-22Q${n2(-nw+2)},-9 ${n2(-nw-4)},5M${n2(nw+4)},5Q${n2(nw-2)},-9 ${nw+1},-22" fill="none" stroke="${C.skinS}"/><circle cx="0" cy="-16" r="${n2(nw+1)}" fill="${C.skin}" stroke="none"/>`,'neck');   /* flared neck with round patches at the collar and under the skull */
   const flip=d.head==='right'?-1:1;
   const mHead=Mx.mul(mSkull,[HS*flip,0,0,HS,0,-50*HS+16]);
   const hd=headSVG(d,C);
   if(hd.back) add(0,mHead,hd.back,'neck');
+  if(hd.hoodBack) add(0.7,mHead,hd.hoodBack,'neck');
   add(50,mHead,hd.front,'neck');
   /* bob, long hair and ponytail: each piece is pinned at its own point on the head but drawn unrotated, so it stays attached and falls straight down */
   for(const g of hd.hang){ const p=Mx.pt(mHead,g.x,g.y); add(g.front?50.5:0.5,[HS*flip,0,0,HS,p[0],p[1]],g.svg,'neck'); }
@@ -990,6 +1050,8 @@ function build(d){
       ?(UG.arm>=1?limb(r1+ao,r2+ao,UA,SG.fill,edge(SG.col),'t'):UG.arm>0?cuffed(r1+ao,r2+ao,UA,UG.arm,SG.fill,edge(SG.col),true):'')
       :swim?'':cuffed(r1,r2,UA,0.55,C.suit,C.suitS,true)+`<path d="M${n2(-r1+(r1-r2)*0.55-0.5)},${n2(UA*0.55)}H${n2(r1-(r1-r2)*0.55+0.5)}" stroke="${C.trim}" stroke-width="2.2" fill="none"/>`),'shoulder'+L);
     if(acc['elbowpad'+L]) add(z+2.5,m1,`<rect x="${n2(-r2-3.2)}" y="${n2(UA-13)}" width="${n2(r2*2+6.4)}" height="26" rx="8" fill="#3a3f45" stroke="#16181b"/><ellipse cx="0" cy="${n2(UA)}" rx="${n2(r2*0.7)}" ry="7.5" fill="#6b7279" stroke="#16181b" stroke-width=".8"/>`,'elbow'+L);   /* over the elbow, above both arm segments */
+    if(UG&&UG.stripeCol&&UG.arm>0){ const k=Math.abs(ct), sl=(ra,rb,len,f)=>`<path d="M${n2(side*(ra+ao-3.2)*k)},2L${n2(side*(ra+(rb-ra)*f+ao-3.2)*k)},${n2(len*f-1)}" fill="none" stroke="${UG.stripeCol}" stroke-width="3" stroke-linecap="round"/>`;
+      add(z+1.2,m1,sl(r1,r2,UA,Math.min(UG.arm,1)),'shoulder'+L); if(UG.fore) add(z+2.2,m2,sl(r2,r3,FA,UG.fore),'elbow'+L); }
     add(z+2,m2,limb(r2,r3,FA,C.skin,C.skinS,'t')+(UG&&UG.fore?cuffed(r2+ao,r3+ao,FA,UG.fore,SG.fill,edge(SG.col),true):'')
       +(acc['watch'+L]?`<rect x="${n2(-r3-1.2)}" y="${n2(FA-10)}" width="${n2(r3*2+2.4)}" height="6" rx="1.5" fill="#2b2b2b" stroke="#111" stroke-width=".8"/><circle cx="0" cy="${n2(FA-7)}" r="4.3" fill="#f4f4f2" stroke="#6d7278" stroke-width="1.2"/><path d="M0,${n2(FA-9.5)}V${n2(FA-7)}H1.8" fill="none" stroke="#333" stroke-width=".8"/>`:'')
       +(acc['bracelet'+L]?`<path d="M${n2(-r3-1)},${n2(FA-6)}H${n2(r3+1)}" stroke="${GOLD}" stroke-width="3" stroke-linecap="round" fill="none"/><path d="M${n2(-r3-1)},${n2(FA-6)}H${n2(r3+1)}" stroke="${GOLDS}" stroke-width=".6" stroke-dasharray="1.5 2" fill="none"/>`+spark(side*(r3+5.5),FA-10,4.5):''),'elbow'+L);
@@ -1060,6 +1122,8 @@ function build(d){
       ?(LG.thigh>=1?limb(r1+lo,r2+lo,TH,LG.fill,edge(LG.col),'b'):LG.thigh>0?`<path d="${sleeve(r1+lo,r2+lo,TH,LG.thigh)}" ${G(LG)}/>`:'')
       :swim?'':`<path d="${sleeve(r1,r2,TH,0.6)}" ${U}/><path d="M${n2(-r1+(r1-r2)*0.6-0.5)},${n2(TH*0.6)}H${n2(r1-(r1-r2)*0.6+0.5)}" stroke="${C.trim}" stroke-width="2.2" fill="none"/>`),'hip'+L);
     if(acc['kneepad'+L]) addL(z+3.5,m1,`<rect x="${n2(-r2-3.5)}" y="${n2(TH-15)}" width="${n2(r2*2+7)}" height="30" rx="9" fill="#3a3f45" stroke="#16181b"/><ellipse cx="0" cy="${n2(TH)}" rx="${n2(r2*0.7)}" ry="8.5" fill="#6b7279" stroke="#16181b" stroke-width=".8"/>`,'knee'+L);
+    if(LG&&LG.stripeCol&&LG.thigh>0){ const k=Math.abs(cp), sl=(ra,rb,len,f)=>`<path d="M${n2(side*(ra+lo-3.2)*k)},2L${n2(side*(ra+(rb-ra)*f+lo-3.2)*k)},${n2(len*f-1)}" fill="none" stroke="${LG.stripeCol}" stroke-width="3" stroke-linecap="round"/>`;
+      addL(z+3.2,m1,sl(r1,r2,TH,Math.min(LG.thigh,1)),'hip'+L); if(LG.shin) addL(z+2.2,m2,sl(r2*0.96,r3,SH,LG.shin),'knee'+L); }
     markL(m1,0,0,r1); markL(m2,0,0,r2); markL(m3,0,0,r3); markL(m3,0,FT,6.8*fs);
   }
 
@@ -1209,7 +1273,7 @@ function describe(data){
   const L=ITEMS[d.held.left], R=ITEMS[d.held.right];
   const wear=(g,c,pat,c2)=>{
     let nm=colourName(c||g.col);
-    if(pat&&pat!=='plain'){ const n2nd=colourName(c2||colour2Default(c||g.col)); nm=(pat==='floral'||n2nd===nm?nm:`${nm} and ${n2nd}`)+' '+PAT_WORD[pat]; }
+    if(pat&&pat!=='plain'&&pat!=='sidestripe'){ const n2nd=colourName(c2||colour2Default(c||g.col)); nm=(pat==='floral'||n2nd===nm?nm:`${nm} and ${n2nd}`)+' '+PAT_WORD[pat]; }
     return g.pl?`${nm} ${g.noun}`:`${/^[aeiou]/.test(nm)?'an':'a'} ${nm} ${g.noun}`;};
   if(UPPER[d.upperGarment]) put('wearing',wear(UPPER[d.upperGarment],d.upperColor,d.upperPattern,d.upperColor2));
   if(LOWER[d.lowerGarment]) put('wearing',wear(LOWER[d.lowerGarment],d.lowerColor,d.lowerPattern,d.lowerColor2));

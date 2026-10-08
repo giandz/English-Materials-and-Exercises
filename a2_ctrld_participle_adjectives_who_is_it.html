@@ -98,8 +98,8 @@ const NAMES={female:['Ana','Maya','Sofia','Lucy','Emma','Zoe','Nora','Rosa','Amy
 const art=w=>/^[aeiou]/i.test(w)?'an':'a';
 function wearPhrase(reg,id,col){const g=reg[id], c=HC.colourName(col||g.col); return g.pl?`${c} ${g.noun}`:`${art(c)} ${c} ${g.noun}`;}
 const WARDROBE={
-  female:{upper:['tshirt','blouse','coat','dress','sportstop','jacket','polo'],lower:['jeans','skirt','trousers','shorts','leggings','bellbottoms'],foot:['sneakers','heels','boots','sandals','shoes']},
-  male:{upper:['tshirt','shirt','coat','polo','tank','jacket','jacketopen'],lower:['jeans','trousers','shorts','chinos','bellbottoms'],foot:['sneakers','shoes','boots','sandals']}};
+  female:{upper:['tshirt','blouse','coat','dress','sportstop','jacket','polo','hoodie'],lower:['jeans','skirt','trousers','shorts','leggings','bellbottoms','trackpants'],foot:['sneakers','heels','boots','sandals','shoes']},
+  male:{upper:['tshirt','shirt','coat','polo','tank','jacket','jacketopen','hoodie'],lower:['jeans','trousers','shorts','chinos','bellbottoms','trackpants'],foot:['sneakers','shoes','boots','sandals']}};
 function person(o){
   o=o||{}; const fem=o.fem!==undefined?o.fem:Math.random()<0.5, d=HC.defaults(), w=WARDROBE[fem?'female':'male'];
   d.bodyType=fem?'female':'male'; d.name=o.name||pick(NAMES[d.bodyType]);
@@ -118,8 +118,8 @@ function person(o){
 const TONE={dark:['#000000','#000066','#666666','#663300'],denim:['#000066','#0066CC','#666666','#000000'],
   light:['#FFFFFF','#CCCCFF','#CCFFFF','#FFCCCC','#FFFFCC','#CCFFCC'],bright:['#CC0000','#0066CC','#00CC66','#FFCC00','#FF66CC','#6600CC','#FF6600','#00CCCC'],
   earth:['#663300','#CCCC66','#666600','#CC6600','#666666'],shoeDark:['#000000','#663300'],shoeAny:['#FFFFFF','#000000','#CC0000','#0066CC']};
-const UPPER_TONE={tshirt:'bright',polo:'bright',tank:'bright',sportstop:'bright',shirt:'light',blouse:'light',coat:['dark','bright'],jacket:'dark',jacketopen:'dark',vest:'dark',dress:'bright',gown:['bright','dark']};
-const LOWER_TONE={jeans:'denim',bellbottoms:'denim',trousers:'dark',chinos:'earth',shorts:['earth','denim','bright'],leggings:'dark',skirt:['bright','dark']};
+const UPPER_TONE={tshirt:'bright',polo:'bright',tank:'bright',sportstop:'bright',shirt:'light',blouse:'light',coat:['dark','bright'],jacket:'dark',jacketopen:'dark',vest:'dark',dress:'bright',gown:['bright','dark'],hoodie:['dark','bright'],hoodieup:['dark','bright']};
+const LOWER_TONE={jeans:'denim',bellbottoms:'denim',trousers:'dark',chinos:'earth',shorts:['earth','denim','bright'],leggings:'dark',skirt:['bright','dark'],trackpants:'dark'};
 const FOOT_TONE={sneakers:'shoeAny',shoes:'shoeDark',boots:'shoeDark',sandals:'shoeDark',heels:['bright','shoeDark'],platforms:'bright',socks:'light'};
 const tone=t=>TONE[Array.isArray(t)?pick(t):t||'bright'];
 /* dress someone from the engine's outfit list: a real outfit, colours that match, and now and then one piece swapped */
@@ -131,7 +131,9 @@ function dress(d,ids,keep){
   d.lowerColor=d.lowerGarment?pick(tone(LOWER_TONE[d.lowerGarment])):null;
   let uc, n=0; do{ uc=pick(tone(UPPER_TONE[d.upperGarment])); }while(uc===d.lowerColor&&++n<8);
   d.upperColor=uc; d.footwearColor=pick(tone(FOOT_TONE[d.footwear])); d.tieColor=pick(TONE.bright);
-  if(['tshirt','shirt','blouse','dress','polo'].includes(d.upperGarment)&&Math.random()<0.2){ d.upperPattern=pick(['vstripes','hstripes','checkered','polka','floral']); d.upperColor2=d.upperColor==='#FFFFFF'?pick(TONE.bright):'#FFFFFF'; }
+  if(['tshirt','shirt','blouse','dress','polo'].includes(d.upperGarment)&&Math.random()<0.2){ d.upperPattern=pick(['vstripes','hstripes','checkered','polka','floral','sidestripe']); d.upperColor2=d.upperColor==='#FFFFFF'?pick(TONE.bright):'#FFFFFF'; }
+  if(['shorts','leggings'].includes(d.lowerGarment)&&Math.random()<0.2){ d.lowerPattern='sidestripe'; d.lowerColor2=d.lowerColor==='#FFFFFF'?pick(TONE.bright):'#FFFFFF'; }   /* sporty side stripe */
+  if(d.lowerGarment==='trackpants') d.lowerColor2=pick(['#FFFFFF','#FFCC00','#CC0000','#00CCCC']);
   return o.id;
 }
 /* bend an arm so the item in that hand is easy to see */
@@ -162,7 +164,7 @@ const SCENES={
     targets:[['the street lamp',160,100],['the tree',1053,226],['the bus stop',430,190],['the mailbox',884,318],['the red awning',665,220]],depth:[372,545],
     items:['umbrella','parasol','bag','phone','suitcase','briefcase','cane','purse','cup','box','keys','hat_fedora','book'],
     hats:['cap','beanie','fedora','sunhat','hardhat'],acc:['backpack','fannypack','watchL','tie'],
-    outfits:['casual','office','winter','smart','work','formal','retro','weekend','business'],poses:['standing','standing','walking','walking','waving','pointing','hips'],seats:0,
+    outfits:['casual','office','winter','smart','work','formal','retro','weekend','business','tracksuit','hooded'],poses:['standing','standing','walking','walking','waving','pointing','hips'],seats:0,
     bg(){ let s=`<rect width="${W}" height="${HORIZON}" fill="#bfe3f5"/>`;
       const B=[[0,250,'#d9a066'],[250,300,'#c9d2d9'],[550,230,'#e2c4a0'],[780,420,'#b7c4a3']];
       B.forEach(([x,w,c],i)=>{ const top=[40,10,70,30][i]; s+=`<rect x="${x}" y="${top}" width="${w}" height="${HORIZON-top}" fill="${c}" stroke="#5a5a5a" stroke-width="2"/>`;
@@ -181,7 +183,7 @@ const SCENES={
     targets:[['the window',195,145],['the cake',560,300],['the balloons',1120,150],['the birthday sign',865,95]],depth:[385,672],
     items:['cup','guitar','balloon','microphone','cake','teddy','pizzabox','tambourine','mug','balloon','plate','phone','maraca','box'],
     hats:['bow','fedora','headband','cap','sunhat'],acc:['necklace','drops','studs','braceletR','watchL','tie'],
-    outfits:['formal','summer','retro','smart','casual','waistcoat','business','weekend'],
+    outfits:['formal','summer','retro','smart','casual','waistcoat','business','weekend','tracksuit'],
     poses:['standing','standing','waving','hips','reaching','pointing'],seats:1,
     bg(){ let s=`<rect width="${W}" height="${HORIZON}" fill="#f6dcc8"/><rect x="0" y="${HORIZON-16}" width="${W}" height="16" fill="#b98a55"/>`;
       s+=win(120,70,150,150)+`<rect x="700" y="60" width="330" height="70" rx="8" fill="#fff" stroke="#CC0066" stroke-width="3"/><text x="865" y="108" font-size="38" font-weight="700" text-anchor="middle" fill="#CC0066" font-family="var(--font-sans,sans-serif)">HAPPY BIRTHDAY</text>`;
@@ -198,7 +200,7 @@ const SCENES={
     targets:[['the door',130,200],['the whiteboard',590,155],['the bookshelf',1095,230],['the clock',960,92]],depth:[392,672],
     items:['book','book','tablet','phone','bag','cup','paintbrush','multimeter','keys','briefcase'],
     hats:['cap','headphones','headband','beanie','bow'],acc:['backpack','backpack','watchL','tie','fannypack'],
-    outfits:['casual','sport','smart','summer','waistcoat','office','weekend','beach'],
+    outfits:['casual','sport','smart','summer','waistcoat','office','weekend','beach','tracksuit','hooded'],
     poses:['standing','standing','reaching','pointing','hips','waving'],seats:3,
     bg(){ let s=`<rect width="${W}" height="${HORIZON}" fill="#e6edf1"/><rect x="0" y="${HORIZON-14}" width="${W}" height="14" fill="#8fa3ad"/>`;
       s+=`<rect x="330" y="60" width="520" height="190" fill="#fff" stroke="#7b8790" stroke-width="6"/><text x="590" y="130" font-size="34" text-anchor="middle" fill="#0066CC" font-family="var(--font-sans,sans-serif)">What are you doing?</text><text x="590" y="186" font-size="30" text-anchor="middle" fill="#CC0000" font-family="var(--font-sans,sans-serif)">I'm learning English.</text><rect x="560" y="250" width="90" height="10" fill="#7b8790"/>`;
@@ -231,7 +233,7 @@ const FACES=['joy','trust','serenity','interest','surprise','acceptance','antici
 const allFaces=[HC.NEUTRAL_FACE].concat(...HC.EMOTIONS.map(g=>g[1]));
 
 const isTeen=d=>d.height<=2&&d.weight<=2;
-const TEEN_WEAR=['casual','weekend','sport','summer','beach','swim','bikini'], ADULT_ITEMS=['briefcase','cane','purse','multimeter','suitcase','hat_fedora','mug','cup'];
+const TEEN_WEAR=['casual','weekend','sport','summer','beach','swim','bikini','tracksuit','hooded'], ADULT_ITEMS=['briefcase','cane','purse','multimeter','suitcase','hat_fedora','mug','cup'];
 function cast(sc){
   const S=SCENES[sc], n=8, used={female:[],male:[]}, out=[];
   const items=shuffle(S.items), hats=shuffle(S.hats), hatsM=hats.filter(h=>h!=='bow');   /* no bow hairbands on men */
@@ -249,6 +251,7 @@ function cast(sc){
       d.prop=pick(['bmx','roadbike','mtb']); d.propColor=pick(TONE.bright);
       Object.assign(d.joints,RIDE[d.prop]);
       if(Math.random()<0.5) d.headwear='bikehelmet';
+      if(Math.random()<0.6) d.eyewear=pick(['cycling','sports']);   /* riders often wear sports eyewear */
     }
     if(Math.random()<0.5) HC.mirror(d);
     if(i%4!==3&&!rider){
@@ -276,10 +279,11 @@ function cast(sc){
     /* two in eight (one girl, one boy) are teenagers: short or very short, and thin or very thin. Nobody else has both, so "boy" / "girl" is never ambiguous. */
     if(teen){ d.height=pick([1,2]); d.weight=pick([1,2]); d.facialHair='none'; if(d.hairColor==='grey') d.hairColor='4-0'; }
     else if(isTeen(d)) d.weight=3;
-    if(i%3===0&&!d.headwear){ d.headwear=(fem?hats:hatsM)[i%(fem?hats:hatsM).length]; d.headwearColor=pick(COLS); }
-    if(i%5===1||(sc==='beach'&&i%3===2)) d.eyewear=sc==='beach'?pick(['sunglasses','aviators']):pick(['glasses','sunglasses','round','aviators']);
+    if(i%3===0&&!d.headwear&&d.upperGarment!=='hoodieup'){   /* nothing on top of a raised hood */ d.headwear=(fem?hats:hatsM)[i%(fem?hats:hatsM).length]; d.headwearColor=pick(COLS); }
+    if(i%5===1||(sc==='beach'&&i%3===2)) d.eyewear=d.eyewear||(sc==='beach'?pick(['sunglasses','aviators','sports']):pick(['glasses','sunglasses','round','aviators']));
     if(Math.random()<0.5) d.accessories.push(pick(S.acc.filter(a=>a!=='tie')));   /* the outfit decides about the tie */
     const fid=pick(FACES), f=allFaces.find(e=>e[0]===fid); d.eyebrows=f[2]; d.eyes=f[3]; d.mouth=f[4];
+    if(d.upperGarment==='hoodieup') d.headwear=null;   /* nothing on top of a raised hood, helmets included */
     out.push({d:HC.normalize(d),seated,pose});
   }
   return out;
