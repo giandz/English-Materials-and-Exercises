@@ -194,14 +194,15 @@ function propSVG(id,c,o){   /* o = {x,y: hip point, g: floor, side: profile view
     case 'piano': {   /* the stool is pinned to the pelvis; the piano stands in front of the player, keyboard toward them, always seen from the side */
       const seat=g-sy, W='#b98a55';
       const bench=R(x-26,sy,52,9,'fill="#7a1f1f" stroke="#3d0f0f"',3)+R(x-24,sy+8,48,6,`fill="${c}" stroke="${e}"`)+R(x-21,sy+13,5,seat-13,`fill="${c}" stroke="${e}"`)+R(x+16,sy+13,5,seat-13,`fill="${c}" stroke="${e}"`);
-      /* behind the player: pedals, key bed and keys (the hands go over them) */
+      /* behind the player: pedals and keys (the hands go over them) */
       const back=`<path d="M108,-128L120,-22M100,-128L88,-22" stroke="${e}" stroke-width="5" stroke-linecap="round" fill="none"/><path d="M84,-16H126" stroke="#e2b23a" stroke-width="5" stroke-linecap="round" fill="none"/>`
-        +`<path d="M40,-170Q40,-178 48,-178H92V-128H48Q40,-128 40,-136Z" ${F}/>`
+        +`<path d="M40,-170Q40,-178 48,-178H92V-156H40Z" ${F}/>`   /* only the strip the keys sit in stays behind the hands */
         +R(44,-166,44,9,'fill="#fff" stroke="#555"')+`<path d="M52,-166v9M60,-166v9M68,-166v9M76,-166v9" stroke="#555" stroke-width=".8" fill="none"/><path d="M48,-169H86" stroke="#111" stroke-width="3" fill="none"/>`;
-      /* in front of the player: lid, prop stick, music desk and the case itself */
+      /* in front of the player: lid, prop stick, music desk, the case and the key bed */
       const front=`<path d="M112,-192L452,-318L462,-312L130,-190Z" ${F}/><path d="M300,-192L330,-270" stroke="${e}" stroke-width="4" stroke-linecap="round" fill="none"/>`
         +`<path d="M94,-194L102,-226" stroke="${e}" stroke-width="5" stroke-linecap="round" fill="none"/><path d="M94,-194L102,-226" stroke="${W}" stroke-width="3" stroke-linecap="round" fill="none"/>`
-        +`<path d="M86,-192H440Q470,-192 470,-162V-142Q470,-128 452,-128H86Z" ${F}/>`;
+        +`<path d="M86,-192H440Q470,-192 470,-162V-142Q470,-128 452,-128H86Z" ${F}/>`
+        +`<path d="M40,-157H92V-128H48Q40,-128 40,-136Z" ${F}/>`;   /* key bed: in front of the player, whose legs go under it */
       const legs=R(66,-130,14,124,F,3)+R(424,-130,14,124,F,3)+`<circle cx="73" cy="-5" r="5" ${Mt}/><circle cx="431" cy="-5" r="5" ${Mt}/>`;   /* in front of the player's legs */
       return [{z:-1.5,svg:bench},{z:-1,span:520,svg:at(x,g,back)},{z:34,svg:at(x,g,legs)},{z:90,svg:at(x,g,front)}]; }
     case 'stool': { const legs=`M${n2(x-12)},${sy+6}L${n2(x-21)},${n2(g)}M${n2(x+12)},${sy+6}L${n2(x+21)},${n2(g)}M${n2(x)},${sy+6}V${n2(g)}`;
@@ -525,7 +526,7 @@ const ACCESSORIES = {
   watchL:{label:'Watch (L)'},watchR:{label:'Watch (R)'},braceletL:{label:'Bracelet (L)'},braceletR:{label:'Bracelet (R)'},
   ringL:{label:'Ring (L)'},ringR:{label:'Ring (R)'},glovesL:{label:'Glove (L)'},glovesR:{label:'Glove (R)'},
   elbowpadL:{label:'Elbow pad (L)'},elbowpadR:{label:'Elbow pad (R)'},kneepadL:{label:'Knee pad (L)'},kneepadR:{label:'Knee pad (R)'},
-  necklace:{label:'Necklace'},backpack:{label:'Backpack'},fannypack:{label:'Fanny pack'},studs:{label:'Stud earrings'},drops:{label:'Drop earrings'},tie:{label:'Tie'}
+  necklace:{label:'Necklace'},choker:{label:'Choker'},backpack:{label:'Backpack'},fannypack:{label:'Fanny pack'},studs:{label:'Stud earrings'},drops:{label:'Drop earrings'},tie:{label:'Tie'}
 };
 /* rotate a colour's hue by deg degrees */
 function hueRotate(hex,deg){
@@ -724,6 +725,7 @@ const LOWER = {
   trousers:{label:'Trousers',noun:'trousers',pl:1,col:'#666666',off:2.5,thigh:1,shin:0.97},
   chinos:{label:'Chinos',noun:'chinos',pl:1,col:'#CCCC66',off:2.5,thigh:1,shin:0.94},
   shorts:{label:'Shorts',noun:'shorts',pl:1,col:'#000000',off:3,thigh:0.7},
+  cargopants:{label:'Cargo pants',noun:'cargo pants',pl:1,col:'#666600',off:3.2,thigh:1,shin:0.96,cargo:true},
   trackpants:{label:'Track pants',noun:'track pants',pl:1,col:'#000066',off:3,thigh:1,shin:0.95,stripe:true},
   bellbottoms:{label:'Bell-bottoms',noun:'bell-bottoms',pl:1,col:'#0066CC',off:2.2,thigh:1,shin:0.98,bell:9},
   bikinibottom:{label:'Bikini bottoms',noun:'bikini bottoms',pl:1,col:'#FF66CC',off:0.5,thigh:0,swim:true},
@@ -738,6 +740,7 @@ const FOOT = {
   sneakers:{label:'Sneakers',col:'#FFFFFF',off:2,kind:'closed',accent:'#d0453b'},
   shoes:{label:'Dress shoes',col:'#000000',off:1.5,kind:'closed'},
   boots:{label:'Boots',col:'#663300',off:2.2,kind:'closed',shaft:0.3},
+  hikingboots:{label:'Hiking boots',col:'#CC6600',off:2.8,kind:'closed',shaft:0.2,platform:3,accent:'#663300'},
   sandals:{label:'Sandals',col:'#CC6600',off:0,kind:'sandal'},
   platforms:{label:'Platform shoes',col:'#660066',off:2,kind:'closed',platform:7},
   heels:{label:'Heels',col:'#CC0000',off:1.2,kind:'pump'}
@@ -900,11 +903,11 @@ function build(d){
   const mChest=Mx.tr(mRoot,0,-WA,j.torso);
   piv.torso={p:Mx.pt(mRoot,0,-WA),parent:j.root,up:true};
   const c=n2(CH);
-  const chestSVG=(o,hem,fill,stroke,faintHem)=>{
+  const chestSVG=(o,hem,fill,stroke,faintHem,bare)=>{
     const lft=`M${-nw-2},${n2(-c-4-o)}L${n2(-sw+4)},${n2(-c-o)}Q${n2(-sw-4-o)},${n2(-c+1-o)} ${n2(-sw-3-o)},${n2(-c+12)}L${n2(-cw-o)},${n2(-c+34)}Q${n2(-(ww+o)*1.06)},${n2(-c*0.35)} ${n2(-ww-o)},${hem}`;
     const rgt=`${n2(ww+o)},${hem}Q${n2((ww+o)*1.06)},${n2(-c*0.35)} ${n2(cw+o)},${n2(-c+34)}L${n2(sw+3+o)},${n2(-c+12)}Q${n2(sw+4+o)},${n2(-c+1-o)} ${n2(sw-4)},${n2(-c-o)}L${nw+2},${n2(-c-4-o)}`;
     const q=`fill="none" stroke="${stroke}"`;
-    return `<path d="${lft}L${rgt}Z" fill="${fill}" stroke="none"/><path d="${lft}M${rgt}L${-nw-2},${n2(-c-4-o)}" ${q}/><path d="M${n2(-ww-o)},${hem}H${n2(ww+o)}" ${q}${faintHem?SEAM:''}/>`;};
+    return `<path d="${lft}L${rgt}Z" fill="${fill}" stroke="none"/><path d="${lft}M${rgt}${bare?'':`L${-nw-2},${n2(-c-4-o)}`}" ${q}/><path d="M${n2(-ww-o)},${hem}H${n2(ww+o)}" ${q}${faintHem?SEAM:''}/>`;};
   /* navel: centred from the front, sliding to the facing edge in profile — distance by the average of the torso and pelvis cosines */
   const sp=Math.sin(d.pelvisOrientation*Math.PI/180), navX=((st+sp)<0?-1:1)*(ww-2)*(1-(Math.abs(ct)+Math.abs(cp))/2);
   /* Chest-front details (necklines, plackets, pockets, straps, bust arcs) share one transform as the torso turns:
@@ -917,7 +920,7 @@ function build(d){
   const detailT=`matrix(${n2(dKs)} 0 ${n2(dSh)} 1 ${n2(dE-dSh*dTop)} 0)`, detailX=(x,y)=>dKs*x+dSh*(y-dTop)+dE;
   const co=UG?UG.off:0, cCol=UG?UG.fill:C.suit, cStr=UG?edge(UG.col):C.suitS;
   let chest=UG&&!UG.bikini&&!crop?chestSVG(co,UG.hem,UG.fill,edge(UG.col),!!(UG.tails||UG.onepiece))
-    :(swim||crop)?chestSVG(0,3,C.skin,C.skinS,swim)+`<path d="M${n2(navX-1.6)},${n2(-c*0.14)}q1.6,2.2 3.2,0" fill="none" stroke="${C.skinS}" stroke-linecap="round"/>`
+    :(swim||crop)?chestSVG(0,3,C.skin,C.skinS,swim,true)+`<path d="M${n2(navX-1.6)},${n2(-c*0.14)}q1.6,2.2 3.2,0" fill="none" stroke="${C.skinS}" stroke-linecap="round"/>`
       +(crop?`<path d="M${-nw-2},${n2(-c-4-co)}L${n2(-sw+4)},${n2(-c-co)}Q${n2(-sw-4-co)},${n2(-c+1-co)} ${n2(-sw-3-co)},${n2(-c+12)}L${n2(-cw-co)},${n2(-c+34)}L${n2(-cw-co+1.8)},${n2(-c+56)}H${n2(cw+co-1.8)}L${n2(cw+co)},${n2(-c+34)}L${n2(sw+3+co)},${n2(-c+12)}Q${n2(sw+4+co)},${n2(-c+1-co)} ${n2(sw-4)},${n2(-c-co)}L${nw+2},${n2(-c-4-co)}Z" ${G(UG)}/>`
        :UG?`<path d="M${n2(-cw+0.6)},${n2(-c+41)}H${n2(cw-0.6)}" fill="none" stroke="${edge(UG.col)}" stroke-width="5"/><path d="M${n2(-cw+0.6)},${n2(-c+41)}H${n2(cw-0.6)}" fill="none" stroke="${UG.col}" stroke-width="3.2"/>`:'')
     :chestSVG(0,3,C.suit,C.suitS,!LG)+`<path d="M${-nw-2},${n2(-c-3)}L${nw+2},${n2(-c-3)}" stroke="${C.trim}" stroke-width="2.6" fill="none"/>`;
@@ -940,14 +943,15 @@ function build(d){
   {
     const g=UG||{off:0}, dk=UG?edge(g.col):C.suitS, top=-c-4-g.off; let s='';
     if(g.neck==='crew') s+=`<path d="M${-nw-2},${n2(top-1)}V${n2(top+1)}Q0,${n2(top+9)} ${nw+2},${n2(top+1)}V${n2(top-1)}Z" fill="${C.skin}" stroke="none"/><path d="M${-nw-2},${n2(top+1)}Q0,${n2(top+9)} ${nw+2},${n2(top+1)}" fill="none" stroke="${dk}" stroke-width="2.4"/>`;   /* skin shows inside the round neck */
-    if(g.neck==='scoop') s+=`<path d="M${-nw-5},${n2(top-1)}Q0,${n2(top+26)} ${nw+5},${n2(top-1)}Z" fill="${C.skin}" stroke="${dk}"/>`;
-    if(g.neck==='vneck') s+=`<path d="M${-nw-3},${n2(top-1)}L0,${n2(top+24)}L${nw+3},${n2(top-1)}Z" fill="${C.skin}" stroke="${dk}"/>`;
-    if(g.neck==='lapel') s+=`<path d="M${-nw-3},${n2(top-1)}L0,${n2(top+34)}L${nw+3},${n2(top-1)}Z" fill="#ece8df" stroke="${dk}"/><path d="M0,${n2(top+34)}V${g.hem}" stroke="${dk}" fill="none"/>`
+    const opening=(dd,fill)=>`<path d="${dd}Z" fill="${fill}" stroke="none"/><path d="${dd}" fill="none" stroke="${dk}"/>`;   /* filled, outlined along its lower edge only: no seam across the neck */
+    if(g.neck==='scoop') s+=opening(`M${-nw-5},${n2(top-1)}Q0,${n2(top+26)} ${nw+5},${n2(top-1)}`,C.skin);
+    if(g.neck==='vneck') s+=opening(`M${-nw-3},${n2(top-1)}L0,${n2(top+24)}L${nw+3},${n2(top-1)}`,C.skin);
+    if(g.neck==='lapel') s+=opening(`M${-nw-3},${n2(top-1)}L0,${n2(top+34)}L${nw+3},${n2(top-1)}`,'#ece8df')+`<path d="M0,${n2(top+34)}V${g.hem}" stroke="${dk}" fill="none"/>`
       +[0.4,0.16].map(k=>`<circle cx="5" cy="${n2(-c*k)}" r="1.9" fill="${dk}" stroke="none"/>`).join('');
     if(g.neck==='suit'||g.neck==='vest'){
       /* closed jacket: shirt shows in a V; the tie is drawn inside the V in the chest's own frame, so the jacket holds it */
       const a=nw+3, D=c*0.42, y0=n2(top-1);
-      s+=`<path d="M${-a},${y0}L0,${n2(top+D)}L${a},${y0}Z" fill="${complement(g.col)}" stroke="${dk}"/>`;
+      s+=opening(`M${-a},${y0}L0,${n2(top+D)}L${a},${y0}`,complement(g.col));
       if(acc.tie){
         const tc=d.tieColor||TIE_COL, k=0.04, yi=(a-2.2+k*8)/(k+a/D), xi=n2(a*(1-yi/D));   /* where the blade meets the V edge */
         s+=`<path d="M-3.4,${n2(top+2)}L3.4,${n2(top+2)}L2.2,${n2(top+8)}L${xi},${n2(top+yi)}L0,${n2(top+D)}L${-xi},${n2(top+yi)}L-2.2,${n2(top+8)}Z" fill="${tc}" stroke="${edge(tc)}"/><path d="M-2.2,${n2(top+8)}H2.2" fill="none" stroke="${edge(tc)}"/>`;
@@ -957,7 +961,7 @@ function build(d){
     }
     if(g.neck==='suitopen'){
       const a=nw+3, w1=n2((cw+co)*0.4), y0=n2(top-1), hh=g.hem-y0;
-      s+=`<path d="M${-a},${y0}L${-w1},${g.hem}L${w1},${g.hem}L${a},${y0}Z" fill="${complement(g.col)}" stroke="${dk}"/><path d="M0,${n2(top+8)}V${g.hem}" stroke="#b9b9b9" fill="none"/>`
+      s+=`<path d="M${-a},${y0}L${-w1},${g.hem}L${w1},${g.hem}L${a},${y0}Z" fill="${complement(g.col)}" stroke="none"/><path d="M${-a},${y0}L${-w1},${g.hem}M${w1},${g.hem}L${a},${y0}" fill="none" stroke="${dk}"/><path d="M0,${n2(top+8)}V${g.hem}" stroke="#b9b9b9" fill="none"/>`
         +[-1,1].map(k=>`<path d="M${k*a},${y0}L${n2(k*(a+(w1-a)*0.5))},${n2(y0+hh*0.5)}L${k*(a+11)},${n2(y0+hh*0.22)}Z" ${G(g)}/>`).join('');
     }
     if(g.neck==='hood'){   /* hoodie front: pouch pocket, drawstrings, and the folded hood round the neck when it is down */
@@ -1015,6 +1019,7 @@ function build(d){
   const mNeck=Mx.tr(mChest,0,-CH-2,j.neck*0.5), mSkull=Mx.tr(mNeck,0,-16,j.neck*0.5);   /* half the tilt at the base of the neck, half under the skull */
   piv.neck={p:Mx.pt(mChest,0,-CH-2),parent:j.root+j.torso,up:true};
   add(35,mNeck,`<circle cx="0" cy="4" r="${n2(nw+2)}" fill="${C.skin}" stroke="none"/><path d="M${-nw-1},-22Q${n2(-nw+2)},-9 ${n2(-nw-4)},5L${n2(nw+4)},5Q${n2(nw-2)},-9 ${nw+1},-22Z" fill="${C.skin}" stroke="none"/><path d="M${-nw-1},-22Q${n2(-nw+2)},-9 ${n2(-nw-4)},5M${n2(nw+4)},5Q${n2(nw-2)},-9 ${nw+1},-22" fill="none" stroke="${C.skinS}"/><circle cx="0" cy="-16" r="${n2(nw+1)}" fill="${C.skin}" stroke="none"/>`,'neck');   /* flared neck with round patches at the collar and under the skull */
+  if(acc.choker) add(35.5,mNeck,`<path d="M${n2(-nw-0.4)},-9Q0,-6.5 ${n2(nw+0.4)},-9V-5Q0,-2.5 ${n2(-nw-0.4)},-5Z" fill="#1b1b1b" stroke="#000" stroke-width=".8"/><circle cx="0" cy="-3.6" r="2.2" fill="${GOLD}" stroke="${GOLDS}" stroke-width=".8"/>`,'neck');   /* a band round the neck with a small pendant */
   const flip=d.head==='right'?-1:1;
   const mHead=Mx.mul(mSkull,[HS*flip,0,0,HS,0,-50*HS+16]);
   const hd=headSVG(d,C);
@@ -1122,6 +1127,8 @@ function build(d){
       ?(LG.thigh>=1?limb(r1+lo,r2+lo,TH,LG.fill,edge(LG.col),'b'):LG.thigh>0?`<path d="${sleeve(r1+lo,r2+lo,TH,LG.thigh)}" ${G(LG)}/>`:'')
       :swim?'':`<path d="${sleeve(r1,r2,TH,0.6)}" ${U}/><path d="M${n2(-r1+(r1-r2)*0.6-0.5)},${n2(TH*0.6)}H${n2(r1-(r1-r2)*0.6+0.5)}" stroke="${C.trim}" stroke-width="2.2" fill="none"/>`),'hip'+L);
     if(acc['kneepad'+L]) addL(z+3.5,m1,`<rect x="${n2(-r2-3.5)}" y="${n2(TH-15)}" width="${n2(r2*2+7)}" height="30" rx="9" fill="#3a3f45" stroke="#16181b"/><ellipse cx="0" cy="${n2(TH)}" rx="${n2(r2*0.7)}" ry="8.5" fill="#6b7279" stroke="#16181b" stroke-width=".8"/>`,'knee'+L);
+    if(LG&&LG.cargo){ const k=Math.abs(cp), w=n2(11*Math.max(k,0.55)), px=n2(side*(r1*0.5+lo)*k-w/2), py=n2(TH*0.46), dk=edge(LG.col);   /* a patch pocket on the outside of each thigh */
+      addL(z+3.3,m1,`<rect x="${px}" y="${py}" width="${w}" height="24" rx="1.5" fill="${LG.fill}" stroke="${dk}"/><path d="M${px},${n2(py+7)}h${w}" fill="none" stroke="${dk}"/>`,'hip'+L); }
     if(LG&&LG.stripeCol&&LG.thigh>0){ const k=Math.abs(cp), sl=(ra,rb,len,f)=>`<path d="M${n2(side*(ra+lo-3.2)*k)},2L${n2(side*(ra+(rb-ra)*f+lo-3.2)*k)},${n2(len*f-1)}" fill="none" stroke="${LG.stripeCol}" stroke-width="3" stroke-linecap="round"/>`;
       addL(z+3.2,m1,sl(r1,r2,TH,Math.min(LG.thigh,1)),'hip'+L); if(LG.shin) addL(z+2.2,m2,sl(r2*0.96,r3,SH,LG.shin),'knee'+L); }
     markL(m1,0,0,r1); markL(m2,0,0,r2); markL(m3,0,0,r3); markL(m3,0,FT,6.8*fs);
@@ -1282,7 +1289,7 @@ function describe(data){
   if(EYEWEAR[d.eyewear]) put('wearing',EYEWEAR[d.eyewear].phrase);
   { const has=a=>d.accessories.includes(a), pair=(id,one,two)=>{const n=has(id+'L')+has(id+'R'); if(n) put('wearing',n===2?two:one);};
     pair('watch','a watch','two watches'); pair('bracelet','a bracelet','two bracelets');
-    if(has('necklace')) put('wearing','a necklace');
+    if(has('necklace')) put('wearing','a necklace'); if(has('choker')) put('wearing','a choker');
     if(has('backpack')) put('wearing','a backpack'); if(has('fannypack')) put('wearing','a fanny pack');
     if(has('studs')) put('wearing','stud earrings'); if(has('drops')) put('wearing','drop earrings');
     pair('ring','a ring','two rings');
