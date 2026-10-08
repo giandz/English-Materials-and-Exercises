@@ -278,8 +278,15 @@ function cast(sc){
       const busy=['pointing','waving','reaching'].includes(pose)?(Math.abs(d.joints.shoulderL)>Math.abs(d.joints.shoulderR)?'left':'right'):null;
       const hand=busy?(busy==='left'?'right':'left'):pick(['left','right']); d.held={left:null,right:null,[hand]:items[i%items.length]}; }   /* three in four hold something */
     if(teen) for(const h of ['left','right']) if(ADULT_ITEMS.includes(d.held[h])) d.held[h]=pick(['phone','book','basketball','bag']);   /* nothing office-like or grown-up in a teenager's hand */
-    if(d.held.left==='box'||d.held.right==='box'){ HC.applyPose(d,'carrying'); if(!seated) pose='carrying'; }
-    else ['left','right'].forEach(h=>holdPose(d,h));
+    { /* the pose follows the verb: someone carrying a thing is walking, someone holding a thing is standing */
+      const it=HC.ITEMS[d.held.left||d.held.right], verb=it&&it.verb;
+      if(verb&&!seated&&!rider){
+        const keep=d.held;
+        if(verb==='carrying'&&pose!=='walking'){ pose='walking'; HC.applyPose(d,'walking'); d.held=keep; if(Math.random()<0.5) HC.mirror(d); }
+        else if(verb==='holding'&&pose==='walking'){ pose='standing'; HC.applyPose(d,'standing'); d.held=keep; }
+      }
+    }
+    ['left','right'].forEach(h=>holdPose(d,h));
     if(d.held.left==='guitar'||d.held.right==='guitar'){
       /* guitar: always in the left hand at a +45° grip, with the nominal playing arms (left hand on the neck, right hand over the strings) */
       if(!seated&&!rider){ HC.applyPose(d,'standing'); pose='standing'; }
@@ -342,7 +349,7 @@ function facts(p,sc){
   if(d.accessories.includes('backpack')) f.push(['pack','carrying a backpack']);
   for(const h of ['left','right']){ const it=HC.ITEMS[d.held[h]]; if(it) f.push(['item',`${it.verb} ${it.phrase}`]); }
   if(p.seated) f.push(['seat',sc==='beach'?'sitting on a beach chair':'sitting on a chair']);
-  if(p.place) f.push(['place',(p.seated?'sitting ':'standing ')+p.place]);
+  if(p.place&&(p.seated||!['walking','riding'].includes(p.pose))) f.push(['place',(p.seated?'sitting ':'standing ')+p.place]);   /* only people who really are standing or sitting there */
   if(!p.seated){ const act={waving:'waving',walking:'walking',reaching:'raising a hand',riding:'riding a bicycle'}[p.pose]; if(act) f.push(['action',act]);
     if(p.pose==='pointing'&&p.pointAt) f.push(['action','pointing at '+p.pointAt]); }
   return f;

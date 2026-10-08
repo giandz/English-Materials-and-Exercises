@@ -1067,6 +1067,7 @@ function build(d){
     let ts=side;
     if(near){ if(side!==near) ts=-side; }
     else { const hp=Mx.pt(m3,0,7), bc=Mx.pt(mChest,0,-CH*0.5); ts=(m3[0]*(bc[0]-hp[0])+m3[1]*(bc[1]-hp[1]))>=0?-1:1; }   /* the arm behind the body shows its thumb on the other edge */
+    if(d['thumbFlip'+L]) ts=-ts;   /* manual override: put the thumb on the other edge of this hand */
     const GL=acc['gloves'+L]?{col:d.gloveColor||GLOVE_COL}:null;
     add(z+4,m3,GL?`<ellipse cx="${n2(-ts*6.2*hs)}" cy="7" rx="3.6" ry="6.5" transform="rotate(${ts*24} ${n2(-ts*6.2*hs)} 7)" ${G(GL)}/><ellipse cx="0" cy="9" rx="${n2(7.6*hs+0.8)}" ry="${n2(10.2*hs+0.8)}" ${G(GL)}/><rect x="${n2(-r3-2)}" y="-5" width="${n2(r3*2+4)}" height="8" rx="2.5" ${G(GL)}/>`
       :`<ellipse cx="${n2(-ts*6.2*hs)}" cy="7" rx="3.3" ry="6.2" transform="rotate(${ts*24} ${n2(-ts*6.2*hs)} 7)" ${S}/>${palm(n2(7.6*hs),n2(10.2*hs))}`
@@ -1219,7 +1220,7 @@ function defaults(){
   const joints={}; JOINTS.forEach(([k])=>joints[k]=STAND[k]||0);
   return {schema:SCHEMA,name:'Sam',bodyType:'male',skin:3,eyeColor:12,hairColor:'4-0',hairStyle:'short',facialHair:'none',eyebrows:'neutral',eyes:'open',mouth:'smile',
     height:3,weight:3,upperGarment:null,lowerGarment:null,footwear:null,headwear:null,eyewear:null,accessories:[],prop:null,propColor:null,
-    upperColor:null,lowerColor:null,footwearColor:null,headwearColor:null,eyewearColor:null,sockColor:null,tieColor:null,gloveColor:null,packColor:null,heldLeftGrip:null,heldRightGrip:null,heldLeftColor:null,heldRightColor:null,
+    upperColor:null,lowerColor:null,footwearColor:null,headwearColor:null,eyewearColor:null,sockColor:null,tieColor:null,gloveColor:null,packColor:null,heldLeftGrip:null,heldRightGrip:null,thumbFlipL:false,thumbFlipR:false,heldLeftColor:null,heldRightColor:null,
     upperPattern:'plain',upperColor2:null,lowerPattern:'plain',lowerColor2:null,
     head:'front',torsoOrientation:0,pelvisOrientation:0,held:{left:null,right:null},joints};
 }
@@ -1245,6 +1246,7 @@ function normalize(src){
     const got=Array.isArray(src.accessories)?[].concat(...src.accessories.map(a=>OLD[a]||[a])):[];
     d.accessories=Object.keys(ACCESSORIES).filter(a=>got.includes(a)); }
   for(const k of COLOUR_KEYS) d[k]=hexOK(src[k]);
+  d.thumbFlipL=src.thumbFlipL===true; d.thumbFlipR=src.thumbFlipR===true;
   for(const k of ['heldLeftGrip','heldRightGrip']){ const v=src[k]; d[k]=v===null||v===undefined||v===''||isNaN(Number(v))?null:Math.max(-180,Math.min(180,Math.round(Number(v)/45)*45)); }
   if(Array.isArray(src.accessories)&&src.accessories.includes('socks')&&!d.footwear){ d.footwear='socks'; d.footwearColor=hexOK(src.sockColor); }   /* older files: socks were an accessory */
   for(const k of ['upperPattern','lowerPattern']) d[k]=pick(src[k],PATTERNS.map(p=>p[0]),'plain');
@@ -1271,7 +1273,7 @@ function mirror(data){
   JOINTS.forEach(([k])=>{const m=k.endsWith('L')?k.slice(0,-1)+'R':k.endsWith('R')?k.slice(0,-1)+'L':k;o[k]=wrapDeg(-j[m]);});
   data.joints=o; data.torsoOrientation=-data.torsoOrientation||0; data.pelvisOrientation=-data.pelvisOrientation||0; data.head=data.head==='left'?'right':data.head==='right'?'left':'front';
   data.held={left:data.held.right,right:data.held.left};
-  [data.heldLeftGrip,data.heldRightGrip]=[data.heldRightGrip,data.heldLeftGrip]; [data.heldLeftColor,data.heldRightColor]=[data.heldRightColor,data.heldLeftColor];
+  [data.heldLeftGrip,data.heldRightGrip]=[data.heldRightGrip,data.heldLeftGrip]; [data.thumbFlipL,data.thumbFlipR]=[data.thumbFlipR,data.thumbFlipL]; [data.heldLeftColor,data.heldRightColor]=[data.heldRightColor,data.heldLeftColor];
   return data;
 }
 function describe(data){
