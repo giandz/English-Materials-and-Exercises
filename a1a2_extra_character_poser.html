@@ -122,9 +122,11 @@
         <div class="cp-row"><label for="cpHeldL">Left hand</label><div class="cp-pick"><select class="cp-sel" id="cpHeldL"></select><button type="button" class="cp-sw cp-col" data-key="heldLeftColor" aria-label="Choose item colour"></button></div></div>
         <div class="cp-pal" data-key="heldLeftColor" hidden></div>
         <div class="cp-row"><label for="cpGripL">Left grip</label><select class="cp-sel" id="cpGripL"></select></div>
+        <div class="cp-row"><span class="cp-lab">Left thumb</span><div class="cp-checks"><label><input type="checkbox" id="cpThumbL"> Reverse thumb position</label></div></div>
         <div class="cp-row"><label for="cpHeldR">Right hand</label><div class="cp-pick"><select class="cp-sel" id="cpHeldR"></select><button type="button" class="cp-sw cp-col" data-key="heldRightColor" aria-label="Choose item colour"></button></div></div>
         <div class="cp-pal" data-key="heldRightColor" hidden></div>
         <div class="cp-row"><label for="cpGripR">Right grip</label><select class="cp-sel" id="cpGripR"></select></div>
+        <div class="cp-row"><span class="cp-lab">Right thumb</span><div class="cp-checks"><label><input type="checkbox" id="cpThumbR"> Reverse thumb position</label></div></div>
         <div class="cp-row"><label for="cpOutfit">Outfit</label><select class="cp-sel" id="cpOutfit"></select></div>
         <div class="cp-row"><label for="cpUpper">Upper body</label><div class="cp-pick"><select class="cp-sel" id="cpUpper"></select><button type="button" class="cp-sw cp-col" data-key="upperColor" aria-label="Choose colour"></button></div></div>
         <div class="cp-pal" data-key="upperColor" hidden></div>
@@ -234,7 +236,9 @@
     $(id).innerHTML='<option value="">Default for the item</option>'+HC.GRIPS.map(v=>`<option value="${v}">${gripLabel(v)}</option>`).join('');
     $(id).addEventListener('change',e=>{ch[key]=e.target.value===''?null:+e.target.value;update();});
   });
+  $('cpThumbL').addEventListener('change',e=>{ch.thumbFlipL=e.target.checked;update();}); $('cpThumbR').addEventListener('change',e=>{ch.thumbFlipR=e.target.checked;update();});
   function syncGrips(){
+    $('cpThumbL').checked=!!ch.thumbFlipL; $('cpThumbR').checked=!!ch.thumbFlipR;
     [['cpGripL','heldLeftGrip','left'],['cpGripR','heldRightGrip','right']].forEach(([id,key,hand])=>{
       const it=HC.ITEMS[ch.held[hand]], free=it&&!it.upright&&!it.cane, sel=$(id);
       sel.disabled=!free; sel.value=ch[key]===null?'':String(ch[key]);
