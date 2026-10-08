@@ -151,6 +151,12 @@
         <div class="cp-pal" data-key="gloveColor" hidden></div>
         <div class="cp-row"><span class="cp-lab">Pack colour</span><div class="cp-pick"><button type="button" class="cp-sw cp-col" data-key="packColor" aria-label="Choose pack colour"></button><small id="cpPackLab"></small></div></div>
         <div class="cp-pal" data-key="packColor" hidden></div>
+        <div class="cp-row"><span class="cp-lab">Mascara colour</span><div class="cp-pick"><button type="button" class="cp-sw cp-col" data-key="mascaraColor" aria-label="Choose mascara colour"></button><small class="cp-need" data-acc="mascara"></small></div></div>
+        <div class="cp-pal" data-key="mascaraColor" hidden></div>
+        <div class="cp-row"><span class="cp-lab">Blush colour</span><div class="cp-pick"><button type="button" class="cp-sw cp-col" data-key="blushColor" aria-label="Choose blush colour"></button><small class="cp-need" data-acc="blush"></small></div></div>
+        <div class="cp-pal" data-key="blushColor" hidden></div>
+        <div class="cp-row"><span class="cp-lab">Lipstick colour</span><div class="cp-pick"><button type="button" class="cp-sw cp-col" data-key="lipstickColor" aria-label="Choose lipstick colour"></button><small class="cp-need" data-acc="lipstick"></small></div></div>
+        <div class="cp-pal" data-key="lipstickColor" hidden></div>
       </div>
 
       <div class="cp-panel">
@@ -245,7 +251,8 @@
       sel.options[0].textContent=free?`Default (${gripLabel(it.grip||0)})`:it?'Hangs upright — no grip angle':'Default for the item';
     });
   }
-  const colDefault={propColor:()=>(HC.PROPS[ch.prop]||{}).col,
+  const colDefault={mascaraColor:()=>ch.accessories.includes('mascara')?HC.MASCARA_COL:undefined, blushColor:()=>ch.accessories.includes('blush')?HC.BLUSH_COL:undefined, lipstickColor:()=>ch.accessories.includes('lipstick')?HC.LIPSTICK_COL:undefined,
+    propColor:()=>(HC.PROPS[ch.prop]||{}).col,
     packColor:()=>hasPack()?HC.PACK_COL:undefined,
     heldLeftColor:()=>(HC.ITEMS[ch.held.left]||{}).col, heldRightColor:()=>(HC.ITEMS[ch.held.right]||{}).col,
     upperColor2:()=>col2('upperGarment',HC.UPPER,'upperPattern','upperColor'), lowerColor2:()=>col2('lowerGarment',HC.LOWER,'lowerPattern','lowerColor'),
@@ -265,6 +272,7 @@
       b.disabled=!def; b.style.background=cur||''; b.title=cur?HC.colourName(cur):'';
       const pal=document.querySelector(`.cp-pal[data-key="${k}"]`); if(!def) pal.hidden=true;
       pal.querySelectorAll('button').forEach(x=>x.setAttribute('aria-pressed',String(x.dataset.c===cur)));});
+    document.querySelectorAll('.cp-need').forEach(n=>n.textContent=ch.accessories.includes(n.dataset.acc)?'':'Tick “'+HC.ACCESSORIES[n.dataset.acc].label+'” first');
     $('cpPackLab').textContent=hasPack()?'':'Tick a backpack or fanny pack first';
     $('cpGloveLab').textContent=ch.accessories.some(a=>a.startsWith('gloves'))?'':'Tick a glove first';
     $('cpSockLab').textContent=(HC.FOOT[ch.footwear]||{}).kind==='closed'?'':'For socks under sneakers, shoes or boots';
@@ -281,7 +289,7 @@
   $('cpOutfit').addEventListener('change',e=>{
     const o=e.target.value==='none'?{upperGarment:null,lowerGarment:null,footwear:null}:HC.OUTFITS[ch.bodyType].find(x=>x.id===e.target.value);
     if(o){ch.upperGarment=o.upperGarment;ch.lowerGarment=o.lowerGarment;ch.footwear=o.footwear;ch.upperColor=ch.lowerColor=ch.footwearColor=ch.upperColor2=ch.lowerColor2=null; ch.upperPattern=ch.lowerPattern='plain';
-      ch.accessories=ch.accessories.filter(a=>a!=='tie').concat(o.tie?['tie']:[]);} update();});
+      ch.accessories=ch.accessories.filter(a=>!['tie','mascara','blush','lipstick'].includes(a)).concat(o.tie?['tie']:[],o.makeup?['mascara','blush','lipstick']:[]);} update();});
   { const grouped='<option value="">Nothing</option>'+HC.ITEM_CATS.map(([g,ids])=>`<optgroup label="${g}">${ids.map(id=>`<option value="${id}">${HC.ITEMS[id].label}</option>`).join('')}</optgroup>`).join('');
     $('cpHeldL').innerHTML=grouped; $('cpHeldR').innerHTML=grouped; }
   opts($('cpPreset'),HC.POSES.map(p=>[p.id,p.label]),'Choose a pose…');
