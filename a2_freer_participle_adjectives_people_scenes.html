@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-<title>People Scenes — Freer practice</title>
+<title>Who's Who? — Freer practice</title>
 <script>
 (function(){
   try{
@@ -48,13 +48,15 @@
   .ps-frame{ font-style:italic; color:var(--text-secondary); }
   details.ps-key{ margin-top:14px; } details.ps-key summary{ cursor:pointer; color:var(--text-secondary); }
   details.ps-key li{ margin:4px 0; }
+  .ps-dice{ display:flex; flex-direction:column; align-items:center; margin-top:16px; }
+  .ps-dice .q-card{ width:100%; box-sizing:border-box; text-align:center; }
 </style>
 </head>
 <body>
 <div class="page" id="page">
-  <span class="cefr-tag cefr-a1a2">A1–A2 · Elementary</span>
-  <h1>People scenes</h1>
-  <p class="subtitle">Look at the scene and talk about the people. What are they wearing? What are they carrying or holding? What are they doing?</p>
+  <span class="cefr-tag cefr-a2">A2 · Elementary</span>
+  <h1>Who's who?</h1>
+  <p class="subtitle">Talk about the people in the scene. Say which person you mean with a verb-ing phrase: <em>the woman wearing…, the man holding…, the boy sitting…</em></p>
   <div class="ps-tools" id="psTools">
     <button type="button" data-scene="street">🏙️ Street</button>
     <button type="button" data-scene="party">🎉 Party</button>
@@ -64,21 +66,32 @@
     <button type="button" id="psNew">🔀 New people</button>
   </div>
   <div class="ps-scroll" id="psScene"></div>
+
+  <div class="ps-dice">
+    <div class="q-card" id="qCard"><span class="q-text">Roll the dice for something to say.</span></div>
+    <button class="dice-btn" id="diceBtn" type="button" aria-label="Roll for a new prompt">🎲</button>
+    <div class="roll-count">Rolls: <strong id="rollCount">0</strong></div>
+  </div>
+
   <div class="ps-cols">
-    <div class="ps-box"><h2>Ask your partner</h2><ul id="psQs"></ul></div>
     <div class="ps-box"><h2>Useful language</h2>
       <ul>
-        <li><span class="ps-frame">Who is wearing … ? — … is.</span></li>
-        <li><span class="ps-frame">What is … wearing? — He's / She's wearing … .</span></li>
-        <li><span class="ps-frame">What is … holding / carrying?</span></li>
-        <li><span class="ps-frame">The man / woman / boy / girl wearing … is … .</span></li>
-        <li><span class="ps-frame">Is … sitting or standing? Is … smiling?</span></li>
+        <li><span class="ps-frame">Who's the man / woman / boy / girl …ing … ? — That's … .</span></li>
+        <li><span class="ps-frame">Which one is … ? — He's / She's the one …ing … .</span></li>
+        <li><span class="ps-frame">The woman wearing … is … .</span></li>
+        <li><span class="ps-frame">Do you mean the man holding … or the man carrying … ?</span></li>
+        <li><span class="ps-frame">No, that isn't … . … is the girl sitting … .</span></li>
       </ul>
-      <h2 style="margin-top:14px">Guessing game</h2>
-      <ol><li>Choose one person. Don't say the name.</li><li>Describe the person: clothes, things, actions.</li><li>Your partner says who it is.</li></ol>
+    </div>
+    <div class="ps-box"><h2>Three games</h2>
+      <ol>
+        <li><strong>Ask:</strong> read the question on the card. Your partner finds the person and says the name.</li>
+        <li><strong>Describe:</strong> the card gives you a name. Describe that person without saying the name. Your partner says who it is.</li>
+        <li><strong>True or false?</strong> read the sentence. Your partner checks the picture and corrects it if it is wrong.</li>
+      </ol>
     </div>
   </div>
-  <details class="ps-key"><summary>Teacher's key: who is wearing what</summary><ul id="psKey"></ul></details>
+  <details class="ps-key"><summary>Teacher's key: one sentence for each person</summary><ul id="psKey"></ul></details>
 </div>
 
 <div id="theme-toggle-wrap">
@@ -148,7 +161,6 @@ function holdPose(d,hand){
   if(it==='umbrella'||it==='parasol'){ d.joints['shoulder'+S]=sg*20; d.joints['elbow'+S]=sg*140; }
   else if(['cup','mug','bowl','plate','cake','pizzabox','phone','tablet','book','multimeter','flashlight','wrench','hammer','basketball','soccerball','volleyball','beachball','tennisball','baseball','football','screwdriver','paintbrush','spoon','fork','pan','microphone','trumpet','maraca','tambourine','flute','violin','drumstick'].includes(it)){ d.joints['shoulder'+S]=sg*12; d.joints['elbow'+S]=-sg*82; }
 }
-
 /* ── Freer practice: a busy scene seen from a raised, side-on game angle ── */
 const W=1200, H=700, HORIZON=330;
 /* floor drawn as an oblique plane: depth lines run across, plank/tile lines lean at 45° */
@@ -272,40 +284,85 @@ function cast(sc){
   }
   return out;
 }
-function draw(sc,people){
-  const S=SCENES[sc], [y0,y1]=S.depth, n=people.length;
-  const ys=shuffle(people.map((_,i)=>y0+(y1-y0)*i/(n-1))), slot=(W-200)/(n-1);
-  let figs=[], tags='';
-  people.forEach((p,i)=>{
-    const X=100+slot*i+(Math.random()*40-20), Y=ys[i], s=0.5+0.3*(Y-HORIZON)/(H-HORIZON);
-    const fit=HC.render(p.d,{fit:true}).match(/viewBox="([^"]+)"/)[1].split(' ').map(Number), top=Y-(fit[3]-16)*s;
+/* ── shared: positions, pointing and participle descriptions for a scene ── */
+/* place everyone once per scene; positions are kept so "by the window" stays true */
+function layout(sc,people){
+  const S=SCENES[sc], [y0,y1]=S.depth, n=people.length, ys=shuffle(people.map((_,i)=>y0+(y1-y0)*i/(n-1))), slot=(W-200)/(n-1);
+  people.forEach((p,i)=>{ p.X=100+slot*i+(Math.random()*40-20); p.Y=ys[i]; p.s=0.5+0.3*(p.Y-HORIZON)/(H-HORIZON); aim(p,S);
+    const fit=HC.render(p.d,{fit:true}).match(/viewBox="([^"]+)"/)[1].split(' ').map(Number); p.h=(fit[3]-16)*p.s; p.w=Math.max(70,(fit[2]-16)*p.s); });
+  /* a landmark belongs to the one person standing clearly nearest to it, toward the back of the scene */
+  people.forEach(p=>p.place=null);
+  for(const m of S.marks){
+    const near=people.filter(p=>Math.abs(p.X-m.x)<120&&p.Y<y0+(y1-y0)*0.6).sort((a,b)=>Math.abs(a.X-m.x)-Math.abs(b.X-m.x));
+    if(near.length===1&&Math.abs(near[0].X-m.x)<85&&!near[0].place) near[0].place=m.t;
+  }
+}
+/* someone "pointing" really points: at a named thing in the scene, with the arm on that side, and looks at it */
+function aim(p,S){
+  p.pointAt=null; if(p.pose!=='pointing'||!S.targets) return;
+  const d=p.d, T=pick(S.targets.filter(t=>Math.abs(t[1]-p.X)>90)), arm=T[1]<p.X?'R':'L', other=arm==='R'?'L':'R', hand=arm==='R'?'right':'left', free=arm==='R'?'left':'right';
+  if(d.held[hand]){ d.held={left:null,right:null,[free]:d.held[hand]}; [d.heldLeftGrip,d.heldRightGrip]=[d.heldRightGrip,d.heldLeftGrip]; }
+  Object.assign(d.joints,{torso:0,neck:0,['shoulder'+other]:other==='L'?-8:8,['elbow'+other]:other==='L'?-5:5,['wrist'+other]:0,['elbow'+arm]:0,['wrist'+arm]:0});
+  d.torsoOrientation=0; d.pelvisOrientation=0; d.head=T[1]<p.X?'left':'right';
+  holdPose(d,free);
+  const pv=HC.pivots(d)['shoulder'+arm], sx=p.X+(pv.x-HC.STAGE.cx)*p.s, sy=p.Y+(pv.y-HC.STAGE.ground)*p.s;
+  d.joints['shoulder'+arm]=Math.round(Math.atan2(-(T[1]-sx),T[2]-sy)*180/Math.PI);   /* limb angle 0 = straight down, clockwise */
+  p.d=HC.normalize(d); p.pointAt=T[0];
+}
+/* everything true of one person, as participle phrases: [kind, text] */
+function facts(p,sc){
+  const d=p.d, f=[];
+  if(d.upperGarment) f.push(['top','wearing '+wearPhrase(HC.UPPER,d.upperGarment,d.upperColor)]);
+  if(d.lowerGarment) f.push(['bottom','wearing '+wearPhrase(HC.LOWER,d.lowerGarment,d.lowerColor)]);
+  if(d.headwear) f.push(['hat','wearing '+wearPhrase(HC.HEADWEAR,d.headwear,d.headwearColor)]);
+  if(d.eyewear) f.push(['eyes','wearing '+HC.EYEWEAR[d.eyewear].phrase]);
+  if(d.accessories.includes('backpack')) f.push(['pack','carrying a backpack']);
+  for(const h of ['left','right']){ const it=HC.ITEMS[d.held[h]]; if(it) f.push(['item',`${it.verb} ${it.phrase}`]); }
+  if(p.seated) f.push(['seat',sc==='beach'?'sitting on a beach chair':'sitting on a chair']);
+  if(p.place) f.push(['place',(p.seated?'sitting ':'standing ')+p.place]);
+  if(!p.seated){ const act={waving:'waving',walking:'walking',reaching:'raising a hand',riding:'riding a bicycle'}[p.pose]; if(act) f.push(['action',act]);
+    if(p.pose==='pointing'&&p.pointAt) f.push(['action','pointing at '+p.pointAt]); }
+  return f;
+}
+/* boy / girl for the teenagers (short and thin), man / woman for everyone else */
+const noun=d=>{const fem=d.bodyType==='female'; return isTeen(d)?(fem?'girl':'boy'):(fem?'woman':'man');};
+/* ── Freer practice: who's who, with participle phrases ──────────────────── */
+let scene='street', people=[], uniq=[];
+function draw(sc){
+  const S=SCENES[sc]; let figs=[], tags='';
+  people.forEach(p=>{
     const body=HC.render(p.d).replace(/^<svg [^>]*>/,'').replace(/<\/svg>$/,'');
-    figs.push({Y,svg:`<ellipse cx="${X}" cy="${Y}" rx="${52*s}" ry="${11*s}" fill="#000" opacity=".16"/><g transform="translate(${X-HC.STAGE.cx*s} ${Y-HC.STAGE.ground*s}) scale(${s})">${body}</g>`});
+    figs.push({Y:p.Y,svg:`<ellipse cx="${p.X}" cy="${p.Y}" rx="${52*p.s}" ry="${11*p.s}" fill="#000" opacity=".16"/><g transform="translate(${p.X-HC.STAGE.cx*p.s} ${p.Y-HC.STAGE.ground*p.s}) scale(${p.s})">${body}</g>`});
     const w=p.d.name.length*10+22;
-    tags+=`<g transform="translate(${X} ${Math.max(22,top-16)})"><rect x="${-w/2}" y="-15" width="${w}" height="24" rx="12" fill="#fff" stroke="#333" stroke-width="1.5"/><text y="3" font-size="16" font-weight="700" text-anchor="middle" fill="#1a1a1a" font-family="var(--font-sans,sans-serif)">${p.d.name}</text></g>`;
+    tags+=`<g transform="translate(${p.X} ${Math.max(22,p.Y-p.h-16)})"><rect x="${-w/2}" y="-15" width="${w}" height="24" rx="12" fill="#fff" stroke="#333" stroke-width="1.5"/><text y="3" font-size="16" font-weight="700" text-anchor="middle" fill="#1a1a1a" font-family="var(--font-sans,sans-serif)">${p.d.name}</text></g>`;
   });
   figs.sort((a,b)=>a.Y-b.Y);
-  document.getElementById('psScene').innerHTML=`<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 ${W} ${H}" role="img" aria-label="${S.label} scene with ${n} people">${S.bg()}${figs.map(f=>f.svg).join('')}${tags}</svg>`;
-  /* prompts and key */
-  const qs=[], P=shuffle(people.map(p=>p.d));
-  const up=P.find(d=>d.upperGarment), it=P.find(d=>d.held.left||d.held.right), hat=P.find(d=>d.headwear), lo=P.find(d=>d.lowerGarment&&d!==up), sit=people.find(p=>p.seated);
-  if(up) qs.push(`Who is wearing ${wearPhrase(HC.UPPER,up.upperGarment,up.upperColor)}?`);
-  if(it) qs.push(`What is ${it.name} ${HC.ITEMS[it.held.left||it.held.right].verb}?`);
-  if(hat) qs.push(`Who is wearing ${wearPhrase(HC.HEADWEAR,hat.headwear,hat.headwearColor)}?`);
-  if(lo) qs.push(`What is ${lo.name} wearing?`);
-  qs.push(sit?'Who is sitting? Who is standing?':'Who is walking? Who is standing?');
-  qs.push(`Is ${P[0].name} smiling?`, `How many people are wearing ${pick(S.count||['sneakers','boots','something red','something blue'])}?`);
-  document.getElementById('psQs').innerHTML=qs.map(q=>`<li>${q}</li>`).join('');
-  document.getElementById('psKey').innerHTML=people.map(p=>`<li>${HC.describe(p.d)||p.d.name+' is not wearing anything special.'}</li>`).join('');
+  document.getElementById('psScene').innerHTML=`<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 ${W} ${H}" role="img" aria-label="${S.label} scene with ${people.length} people">${S.bg()}${figs.map(f=>f.svg).join('')}${tags}</svg>`;
 }
-let scene='street', people=[];
-function go(sc,fresh){ scene=sc; if(fresh) people=cast(sc); draw(sc,people);
-  document.querySelectorAll('#psTools [data-scene]').forEach(b=>b.setAttribute('aria-pressed',String(b.dataset.scene===sc))); }
-document.querySelectorAll('#psTools [data-scene]').forEach(b=>b.addEventListener('click',()=>go(b.dataset.scene,true)));
-document.getElementById('psNew').addEventListener('click',()=>go(scene,true));
-go('street',true);
+function go(sc){
+  scene=sc; people=cast(sc); layout(sc,people); draw(sc);
+  /* for each person, the descriptions that fit nobody else in this scene */
+  const all=people.map(p=>facts(p,sc)), count=t=>all.filter(f=>f.some(x=>x[1]===t)).length;
+  uniq=people.map((p,i)=>({p,texts:all[i].filter(x=>count(x[1])===1).map(x=>x[1])})).filter(u=>u.texts.length);
+  document.getElementById('psKey').innerHTML=uniq.map(u=>`<li>${u.p.d.name} is the ${noun(u.p.d)} ${u.texts[0]}.</li>`).join('');
+  document.querySelectorAll('#psTools [data-scene]').forEach(b=>b.setAttribute('aria-pressed',String(b.dataset.scene===sc)));
+  const card=document.getElementById('qCard'); if(card) card.innerHTML='<span class="q-text">Roll the dice for something to say.</span>';
+}
+function prompt(){
+  const u=pick(uniq), t=pick(u.texts), W2=noun(u.p.d), kind=rand(3);
+  if(kind===0) return {icon:'❓',label:'Ask',text:`Who is the ${W2} ${t}?`};
+  if(kind===1) return {icon:'🗣️',label:'Describe',text:`Describe ${u.p.d.name}. Don't say the name!`};
+  const same=people.filter(p=>p!==u.p&&noun(p.d)===W2), liar=same.length&&Math.random()<0.5?pick(same):u.p;
+  return {icon:'✅',label:'True or false?',text:`The ${W2} ${t} is ${liar.d.name}.`};
+}
+document.querySelectorAll('#psTools [data-scene]').forEach(b=>b.addEventListener('click',()=>go(b.dataset.scene)));
+document.getElementById('psNew').addEventListener('click',()=>go(scene));
+go('party');
+if(window.HouseRandomGen) HouseRandomGen.build({pick:prompt});
+else document.getElementById('diceBtn').addEventListener('click',()=>{const q=prompt(); document.getElementById('qCard').innerHTML=`<span class="q-topic">${q.icon} ${q.label}</span> <span class="q-text">${q.text}</span>`;});
 
 })();
 </script>
+<script>if(window.HouseGrammar) HouseGrammar.init();</script>
 </body>
 </html>

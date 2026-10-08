@@ -1,0 +1,107 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<title>The Woman Wearing… — Word order and gap fill</title>
+<script>
+(function(){
+  try{
+    var saved = localStorage.getItem('theme-preference');
+    var theme = (saved === 'light' || saved === 'dark')
+      ? saved
+      : ((window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches) ? 'dark' : 'light');
+    document.documentElement.setAttribute('data-theme', theme);
+    var fs = parseFloat(localStorage.getItem('font-size-preference'));
+    if (fs >= 10 && fs <= 28) document.documentElement.style.setProperty('--fs-base', fs + 'px');
+  }catch(e){}
+})();
+</script>
+<link rel="stylesheet" href="house.css">
+<style>
+/* shared by the word-order + gap-fill pages */
+.drill-tools{display:flex;flex-wrap:wrap;align-items:center;gap:10px;margin:0 0 10px;}
+.score-line{font-size:13px;color:var(--text-secondary);margin:0 0 8px;}
+.gp{display:flex;align-items:flex-end;gap:12px;}
+.gp-pic{flex:none;background:var(--surface-1);border:.5px solid var(--color-border-tertiary);border-radius:12px;padding:12px 34px 4px;}
+.gp-pic svg{display:block;height:150px;width:auto;overflow:visible;}
+.gp-say{font-size:13px;color:var(--text-muted);padding-bottom:6px;}
+</style>
+</head>
+<body class="exercise-page" id="page">
+<span class="cefr-tag cefr-a2">A2 · Elementary</span>
+<div style="padding:.75rem 0 1rem;">
+  <h1>The Woman Wearing… — Practice</h1>
+  <p class="subtitle">Say who you mean with a verb-ing phrase after the noun</p>
+
+  <div class="sec-div">1 · Put the words in order</div>
+  <div class="rule-box">Tap the words, or drag them, to build each sentence. The <strong>-ing</strong> phrase goes straight <strong>after</strong> the person it describes.</div>
+  <div class="drill-tools"><button id="grammarToggle" class="grammar-toggle-btn" type="button">🎨 Show Grammar</button><div class="pos-legend"></div></div>
+  <p class="score-line">Correct: <strong id="woScore">0</strong> / <span id="woTotal">0</span></p>
+  <div id="woItems"></div>
+
+  <div class="sec-div">2 · Look and complete</div>
+  <div class="rule-box">Look at each picture and type the missing word or words. Sometimes it is the <strong>-ing</strong> verb, sometimes the <strong>person</strong>, the <strong>thing</strong>, or a small word like <em>on</em>, <em>is</em> or <em>your</em>. The bar turns green when you are right.</div>
+  <div id="gfItems"></div>
+
+  <footer>The Woman Wearing… — Practice (A2)</footer>
+</div>
+
+<div id="theme-toggle-wrap">
+  <button id="theme-toggle" aria-label="Toggle light/dark mode" title="Toggle light/dark mode">
+    <span id="theme-icon">☀️</span>
+  </button>
+</div>
+<script src="house.js"></script>
+
+<!-- HouseCharacter engine (shared file) -->
+<script src="house-character.js"></script>
+
+<script>
+(function(){
+/* ── shared: fixed little pictures for the gap-fill items ───────────────── */
+const HC=HouseCharacter;
+const fig=(o,j,pose)=>{const d=Object.assign(HC.defaults(),o); if(pose) HC.applyPose(d,pose); Object.assign(d.joints,j||{}); return HC.render(HC.normalize(d),{fit:true});};
+const SHOW_R={shoulderR:12,elbowR:-82}, SHOW_L={shoulderL:-12,elbowL:82};
+const pic=(svg,say)=>`<div class="gp"><div class="gp-pic">${svg}</div><div class="gp-say">${say||'Look at the picture.'}</div></div>`;
+const A=['Ana','👩‍🦰'], B=['Ben','👨‍🦱'];
+const wo=(who,text,pos)=>({speaker:who[0],avatar:who[1],text,pos:pos.split(' ')});
+/* ── A2: present participle phrases used like adjectives ─────────────────── */
+const WO_ITEMS=[
+  wo(A,"The / man / wearing / a / hat / is / my / uncle / .","det noun adj det noun verb det noun none"),
+  wo(B,"The / woman / holding / a / cup / is / my / teacher / .","det noun adj det noun verb det noun none"),
+  wo(A,"The / girl / carrying / a / backpack / is / Lucy / .","det noun adj det noun verb noun none"),
+  wo(B,"The / boy / sitting / on / the / chair / is / my / brother / .","det noun adj prep det noun verb det noun none"),
+  wo(A,"I / know / the / man / standing / by / the / door / .","subject verb det noun adj prep det noun none"),
+  wo(B,"The / woman / wearing / glasses / isn't / my / sister / .","det noun adj noun neg det noun none"),
+  wo(A,"Is / the / man / riding / a / bicycle / your / dad / ?","verb det noun adj det noun det noun none"),
+  wo(B,"Who / is / the / girl / holding / a / guitar / ?","wh verb det noun adj det noun none")
+];
+const GF_ITEMS=[
+  {category:'pos',direct:pic(fig({bodyType:'female',skin:4,hairStyle:'bob',hairColor:'3-0',upperGarment:'coat',upperColor:'#CC0000',lowerGarment:'jeans',footwear:'boots'})),
+   template:"The woman wearing a red {0} is Ana.",hints:[{accepted:["coat"]}]},
+  {category:'pos',direct:pic(fig({bodyType:'male',skin:2,upperGarment:'tshirt',upperColor:'#00CC66',lowerGarment:'jeans',footwear:'sneakers',held:{left:'suitcase',right:null}})),
+   template:"The man {0} a suitcase is my uncle.",hints:[{accepted:["carrying"]}]},
+  {category:'pos',direct:pic(fig({bodyType:'female',skin:3,height:2,weight:2,hairStyle:'pigtails',hairColor:'5-7',upperGarment:'tshirt',upperColor:'#FFCC00',lowerGarment:'shorts',footwear:'sneakers',held:{left:'guitar',right:null}})),
+   template:"The {0} holding a guitar is my cousin.",hints:[{accepted:["girl"]}]},
+  {category:'pos',direct:pic(fig({bodyType:'male',skin:5,height:2,weight:2,hairStyle:'curly',upperGarment:'polo',upperColor:'#0066CC',lowerGarment:'shorts',footwear:'sneakers',prop:'chair'},null,'chair')),
+   template:"The boy sitting {0} a chair is Sam.",hints:[{accepted:["on"]}]},
+  {category:'pos',direct:pic(fig({bodyType:'male',skin:3,hairStyle:'short',facialHair:'beard',upperGarment:'tshirt',upperColor:'#FF6600',lowerGarment:'shorts',footwear:'sneakers',headwear:'bikehelmet',prop:'bmx',propColor:'#0066CC'},{hipL:50,kneeL:-45,ankleL:60,hipR:105,kneeR:-115,ankleR:80,shoulderL:55,elbowL:15,shoulderR:60,elbowR:10,torso:-25,neck:20},'chair')),
+   template:"The man riding a {0} is my dad.",hints:[{accepted:["bicycle", "bike"]}]},
+  {category:'pos',direct:pic(fig({bodyType:'female',skin:2,hairStyle:'long',hairColor:'8-0',eyewear:'sunglasses',upperGarment:'blouse',lowerGarment:'skirt',lowerColor:'#000000',footwear:'heels',held:{left:'purse',right:null}})),
+   template:"The woman {0} sunglasses and carrying a {1} is my boss.",hints:[{accepted:["wearing"]},{accepted:["purse", "bag"]}]},
+  {category:'pos',direct:pic(fig({bodyType:'male',skin:4,hairStyle:'sidepart',eyewear:'glasses',upperGarment:'vest',lowerGarment:'trousers',footwear:'shoes',held:{left:null,right:'book'}},SHOW_R),'The man is my teacher. He is holding a book.'),
+   template:"The man {0} is my teacher.",hints:[{accepted:["holding a book", "holding the book"]}]},
+  {category:'q',direct:pic(fig({bodyType:'female',skin:5,height:2,weight:2,hairStyle:'afro',upperGarment:'dress',upperColor:'#FFCC00',footwear:'sandals'})),
+   template:"Who {0} the girl wearing a yellow {1}? — That's Mia.",hints:[{accepted:["is", "'s"]},{accepted:["dress"]}]},
+  {category:'q',direct:pic(fig({bodyType:'male',skin:3,hairStyle:'crew',upperGarment:'tshirt',upperColor:'#CC0000',lowerGarment:'jeans',footwear:'boots'},null,'carrying')),
+   template:"Is the man carrying the box {0} brother? — No, he {1}.",hints:[{accepted:["your"]},{accepted:["isn't", "is not"]}]}
+];
+if(window.HouseWordOrder) HouseWordOrder.build({container:'woItems',items:WO_ITEMS,scoreEl:'woScore',totalEl:'woTotal'});
+if(window.HouseGapFill) HouseGapFill.build({container:'gfItems',items:GF_ITEMS,labels:{pos:'statement',neg:'negative',q:'question'}});
+
+})();
+</script>
+<script>if(window.HouseGrammar) HouseGrammar.init();</script>
+</body>
+</html>

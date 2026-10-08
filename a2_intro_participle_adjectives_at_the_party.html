@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-<title>At the Station — Intro</title>
+<title>At the Party — Intro</title>
 <script>
 (function(){
   try{
@@ -45,23 +45,26 @@
   .ic-glue{ margin-left:-7px; }
   .ic-punct{ margin-left:-3px; }
   .ic-punct:first-child{ margin-left:0; }
+  .ic-cast.ic-four{ grid-template-columns:repeat(4,minmax(0,1fr)); }
+  .ic-cast.ic-four svg{ height:min(34vh,220px); }
+  @media (max-width:560px){ .ic-cast.ic-four{ grid-template-columns:repeat(2,minmax(0,1fr)); } }
 </style>
 </head>
 <body>
 <div class="page" id="page">
-  <span class="cefr-tag cefr-a1">A1 · Beginner</span>
-  <h1>At the station</h1>
-  <p class="subtitle">Ana and Ben are waiting for Ben's family. Ana doesn't know them. Listen for <span class="ic-target">wearing</span>, <span class="ic-target">carrying</span> and <span class="ic-target">holding</span>.</p>
+  <span class="cefr-tag cefr-a2">A2 · Elementary</span>
+  <h1>At the party</h1>
+  <p class="subtitle">Maya is at Leo's party, but she doesn't know anyone. Notice how Leo says which person he means: <em>the woman <span class="ic-target">wearing</span> the green dress</em>.</p>
 
   <div class="section-label">Before you read</div>
   <div id="preQuestions"></div>
 
-  <div class="section-label">Ben's family</div>
-  <div class="ic-cast" id="icCast"></div>
+  <div class="section-label">Four people at the party</div>
+  <div class="ic-cast ic-four" id="icCast"></div>
 
   <div class="section-label">The conversation</div>
   <div class="ic-tools"><button id="grammarToggle" class="grammar-toggle-btn" type="button">🎨 Show Grammar</button><div class="pos-legend"></div></div>
-  <p class="ic-setting">Ana and Ben are at the train station. The train is here.</p>
+  <p class="ic-setting">Maya and Leo are standing near the door. The music is loud.</p>
   <div id="icTalk"></div>
 
   <div class="section-label">Check your answers</div>
@@ -80,44 +83,41 @@
 
 <script>
 (function(){
-/* ── Intro conversation: wearing · carrying · holding ───────────────────── */
+/* ── Intro conversation: the woman wearing… / the man holding… ───────────── */
 const HC=HouseCharacter;
-/* the three people Ben describes — fixed, so the picture always matches the text */
-const mk=(o,j)=>{const d=Object.assign(HC.defaults(),o); Object.assign(d.joints,j||{}); return HC.normalize(d);};
+const mk=(o,j,pose)=>{const d=Object.assign(HC.defaults(),o); if(pose) HC.applyPose(d,pose); Object.assign(d.joints,j||{}); return HC.normalize(d);};
+/* four fixed guests, numbered rather than named: the reader matches the names from the text */
 const CAST=[
-  ['Tom',mk({name:'Tom',bodyType:'male',skin:3,hairColor:'3-0',hairStyle:'short',upperGarment:'coat',upperColor:'#0066CC',lowerGarment:'trousers',lowerColor:'#666666',footwear:'shoes',
-     held:{left:'suitcase',right:'phone'}},{shoulderR:12,elbowR:-82})],
-  ['Lucy',mk({name:'Lucy',bodyType:'female',skin:3,hairColor:'5-7',hairStyle:'ponytail',upperGarment:'dress',upperColor:'#CC0000',footwear:'sandals',accessories:['backpack'],packColor:'#00CC66',mouth:'grin',eyebrows:'raised',
-     held:{left:'guitar',right:null}})],
-  ['Grandpa',mk({name:'Grandpa',bodyType:'male',skin:3,hairColor:'grey',hairStyle:'sidepart',facialHair:'moustache',eyewear:'glasses',headwear:'fedora',headwearColor:'#663300',height:2,weight:4,
-     upperGarment:'vest',upperColor:'#666666',lowerGarment:'chinos',footwear:'shoes',held:{left:null,right:'cake'}},{shoulderR:12,elbowR:-82})]
+  mk({bodyType:'female',skin:4,hairColor:'1-0',hairStyle:'long',upperGarment:'dress',upperColor:'#00CC66',footwear:'heels',accessories:['necklace']}),
+  mk({bodyType:'male',skin:2,hairColor:'5-0',hairStyle:'pompadour',facialHair:'stubble',upperGarment:'tshirt',upperColor:'#000000',lowerGarment:'jeans',footwear:'boots',held:{left:'guitar',right:null}}),
+  mk({bodyType:'female',skin:3,hairColor:'grey',hairStyle:'bun',eyewear:'glasses',weight:4,upperGarment:'blouse',lowerGarment:'skirt',lowerColor:'#660066',footwear:'shoes',prop:'chair'},null,'chair'),
+  mk({bodyType:'male',skin:5,hairColor:'3-0',hairStyle:'curly',height:2,weight:2,headwear:'cap',headwearColor:'#CC0000',upperGarment:'tshirt',upperColor:'#FFCC00',lowerGarment:'shorts',footwear:'sneakers',held:{left:null,right:'pizzabox'}},{shoulderR:12,elbowR:-82})
 ];
-document.getElementById('icCast').innerHTML=CAST.map(([n,d])=>`<figure>${HC.render(d,{fit:true})}<figcaption>${n}</figcaption></figure>`).join('');
+document.getElementById('icCast').innerHTML=CAST.map((d,i)=>`<figure>${HC.render(d,{fit:true})}<figcaption>${i+1}</figcaption></figure>`).join('');
 
-/* Each line: words tagged word|pos. A trailing * marks the target verbs. _ is a space inside one tag.
-   Tokens starting with ' or n't join the word before; plain punctuation joins too. */
-const A=['a','👩‍🦰','Ana'], B=['b','👨‍🦱','Ben'];
+const A=['a','👩‍🦰','Maya'], B=['b','👨‍🦱','Leo'];
+/* word|pos, * = target (the -ing word that tells us which person) */
 const TALK=[
-  [A,"Who|wh are|aux we|subject waiting|verb for|prep ?"],
-  [B,"My|det brother|noun Tom|noun and|conj my|det sister|noun Lucy|noun . And|conj my|det grandfather|noun ."],
-  [A,"I|subject do|aux n't|neg know|verb them|object . What|wh is|aux Tom|subject wearing|verb* ?"],
-  [B,"He|subject 's|aux wearing|verb* a|det blue|adj coat|noun and|conj grey|adj trousers|noun ."],
-  [A,"Is|aux he|subject carrying|verb* anything|object ?"],
-  [B,"Yes|none , he|subject 's|aux carrying|verb* a|det suitcase|noun . And|conj he|subject 's|aux holding|verb* a|det phone|noun ."],
-  [A,"I|subject can|aux see|verb him|object ! And|conj Lucy|noun ? What|wh 's|aux she|subject wearing|verb* ?"],
-  [B,"She|subject 's|aux wearing|verb* a|det red|adj dress|noun . She|subject 's|aux carrying|verb* a|det backpack|noun ."],
-  [A,"Is|aux she|subject holding|verb* an|det umbrella|noun ?"],
-  [B,"No|neg , she|subject is|aux n't|neg . She|subject 's|aux holding|verb* a|det guitar|noun !"],
-  [A,"A|det guitar|noun ? Oh|none yes|none ! And|conj who|wh 's|aux that|det man|noun ? He|subject 's|aux wearing|verb* a|det brown|adj hat|noun ."],
-  [B,"That|subject 's|aux my|det grandfather|noun . Look|verb — he|subject 's|aux carrying|verb* a|det cake|noun for|prep us|object !"],
-  [A,"Great|adj ! I|subject 'm|aux not|neg carrying|verb* anything|object . I|subject can|aux help|verb him|object ."]
+  [A,"Great|adj party|noun , Leo|noun ! But|conj I|subject do|aux n't|neg know|verb anyone|object here|adverb ."],
+  [B,"No|det problem|noun . I|subject can|aux tell|verb you|object who|wh everyone|subject is|verb ."],
+  [A,"OK|none . Who|wh 's|verb the|det woman|noun wearing|adj* the|det green|adj dress|noun ?"],
+  [B,"That|subject 's|verb my|det cousin|noun Eva|noun . She|subject 's|verb a|det doctor|noun ."],
+  [A,"And|conj the|det man|noun holding|adj* a|det guitar|noun ?"],
+  [B,"The|det man|noun holding|adj* the|det guitar|noun is|verb my|det brother|noun , Dan|noun . He|subject plays|verb in|prep a|det band|noun ."],
+  [A,"Who|wh 's|verb the|det woman|noun sitting|adj* on|prep the|det chair|noun ?"],
+  [B,"The|det woman|noun sitting|adj* on|prep the|det chair|noun is|verb my|det aunt|noun Rosa|noun ."],
+  [A,"Is|verb she|subject the|det woman|noun wearing|adj* glasses|noun ?"],
+  [B,"Yes|none , she|subject is|verb ."],
+  [A,"And|conj who|wh 's|verb the|det boy|noun carrying|adj* the|det pizza|noun box|noun ?"],
+  [B,"The|det boy|noun carrying|adj* the|det pizza|noun box|noun is|verb Sam|noun . He|subject 's|verb my|det neighbour|noun ."],
+  [A,"Thanks|none , Leo|noun ! I|subject want|verb to|none meet|verb the|det man|noun holding|adj* the|det guitar|noun ."],
+  [B,"Come|verb with|prep me|object , then|adverb !"]
 ];
 function line([who,text]){
   let html='';
   text.split(' ').forEach((tok,i)=>{
     const [w,p]=tok.split('|'), word=w.replace(/_/g,' '), glue=i===0||/^('|n't|[.,!?])/.test(word);
-    const target=p&&p.endsWith('*'), pos=p&&p.replace('*','');
-    const joined=/^('|n't)/.test(word);   /* contractions sit tight against the word before */
+    const target=p&&p.endsWith('*'), pos=p&&p.replace('*',''), joined=/^('|n't)/.test(word);
     html+=(glue?'':' ')+(pos?`<span class="pos-hl pos-${pos}${target?' ic-target':''}${joined?' ic-glue':''}">${word}</span>`:`<span class="ic-punct">${word}</span>`);
   });
   return `<div class="bubble-wrap${who[0]==='b'?' right':''}"><div class="avatar av-${who[0]}">${who[1]}</div><div class="bubble-col"><span class="ic-name">${who[2]}</span><div class="bubble ${who[0]==='b'?'right':'left'}">${html}</div></div></div>`;
@@ -125,12 +125,12 @@ function line([who,text]){
 document.getElementById('icTalk').innerHTML=TALK.map(line).join('');
 
 const CQ_ITEMS=[
-  {q:'What is Tom wearing?',opts:['A red coat and blue trousers','A blue coat and grey trousers','A grey coat and a brown hat'],correct:1},
-  {q:'What is Lucy holding?',opts:['An umbrella','A backpack','A guitar'],correct:2},
-  {q:'Who is carrying a cake?',opts:['Tom','Ben\'s grandfather','Lucy'],correct:1}
+  {q:'Who is Eva?',opts:['The woman sitting on the chair','The woman wearing the green dress','The woman holding a guitar'],correct:1},
+  {q:'Who is Leo\'s brother?',opts:['The man holding the guitar','The boy carrying the pizza box','The man wearing glasses'],correct:0},
+  {q:'What is Sam carrying?',opts:['A guitar','A chair','A pizza box'],correct:2}
 ];
 if(window.HouseComprehension) HouseComprehension.build({pre:'preQuestions',quiz:'quiz',items:CQ_ITEMS});
-else {   /* house.js not loaded (file opened on its own): show the questions plainly */
+else {
   document.getElementById('preQuestions').innerHTML='<ol>'+CQ_ITEMS.map(c=>`<li>${c.q}</li>`).join('')+'</ol>';
   document.getElementById('quiz').innerHTML='<ol>'+CQ_ITEMS.map(c=>`<li>${c.q}<ul>${c.opts.map(o=>`<li>${o}</li>`).join('')}</ul></li>`).join('')+'</ol>';
 }

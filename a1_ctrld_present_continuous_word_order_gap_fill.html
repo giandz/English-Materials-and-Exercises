@@ -1,0 +1,106 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<title>Wearing, Carrying, Holding — Word order and gap fill</title>
+<script>
+(function(){
+  try{
+    var saved = localStorage.getItem('theme-preference');
+    var theme = (saved === 'light' || saved === 'dark')
+      ? saved
+      : ((window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches) ? 'dark' : 'light');
+    document.documentElement.setAttribute('data-theme', theme);
+    var fs = parseFloat(localStorage.getItem('font-size-preference'));
+    if (fs >= 10 && fs <= 28) document.documentElement.style.setProperty('--fs-base', fs + 'px');
+  }catch(e){}
+})();
+</script>
+<link rel="stylesheet" href="house.css">
+<style>
+/* shared by the word-order + gap-fill pages */
+.drill-tools{display:flex;flex-wrap:wrap;align-items:center;gap:10px;margin:0 0 10px;}
+.score-line{font-size:13px;color:var(--text-secondary);margin:0 0 8px;}
+.gp{display:flex;align-items:flex-end;gap:12px;}
+.gp-pic{flex:none;background:var(--surface-1);border:.5px solid var(--color-border-tertiary);border-radius:12px;padding:12px 34px 4px;}
+.gp-pic svg{display:block;height:150px;width:auto;overflow:visible;}
+.gp-say{font-size:13px;color:var(--text-muted);padding-bottom:6px;}
+</style>
+</head>
+<body class="exercise-page" id="page">
+<span class="cefr-tag cefr-a1">A1 · Beginner</span>
+<div style="padding:.75rem 0 1rem;">
+  <h1>Wearing, Carrying, Holding — Practice</h1>
+  <p class="subtitle">Build the sentences, then look at the pictures and complete them</p>
+
+  <div class="sec-div">1 · Put the words in order</div>
+  <div class="rule-box">Tap the words, or drag them, to build each sentence. Remember: <strong>am / is / are</strong> + verb-<strong>ing</strong>.</div>
+  <div class="drill-tools"><button id="grammarToggle" class="grammar-toggle-btn" type="button">🎨 Show Grammar</button><div class="pos-legend"></div></div>
+  <p class="score-line">Correct: <strong id="woScore">0</strong> / <span id="woTotal">0</span></p>
+  <div id="woItems"></div>
+
+  <div class="sec-div">2 · Look and complete</div>
+  <div class="rule-box">Look at each picture and type the missing word or words. Sometimes it is the <strong>verb</strong> (wearing, carrying, holding), sometimes the <strong>thing</strong>, the <strong>colour</strong>, or a small word like <em>is</em> or <em>she</em>. The bar turns green when you are right.</div>
+  <div id="gfItems"></div>
+
+  <footer>Wearing, Carrying, Holding — Practice (A1)</footer>
+</div>
+
+<div id="theme-toggle-wrap">
+  <button id="theme-toggle" aria-label="Toggle light/dark mode" title="Toggle light/dark mode">
+    <span id="theme-icon">☀️</span>
+  </button>
+</div>
+<script src="house.js"></script>
+
+<!-- HouseCharacter engine (shared file) -->
+<script src="house-character.js"></script>
+
+<script>
+(function(){
+/* ── shared: fixed little pictures for the gap-fill items ───────────────── */
+const HC=HouseCharacter;
+const fig=(o,j,pose)=>{const d=Object.assign(HC.defaults(),o); if(pose) HC.applyPose(d,pose); Object.assign(d.joints,j||{}); return HC.render(HC.normalize(d),{fit:true});};
+const SHOW_R={shoulderR:12,elbowR:-82}, SHOW_L={shoulderL:-12,elbowL:82};
+const pic=(svg,say)=>`<div class="gp"><div class="gp-pic">${svg}</div><div class="gp-say">${say||'Look at the picture.'}</div></div>`;
+const A=['Ana','👩‍🦰'], B=['Ben','👨‍🦱'];
+const wo=(who,text,pos)=>({speaker:who[0],avatar:who[1],text,pos:pos.split(' ')});
+/* ── A1: present continuous with wearing / carrying / holding ───────────── */
+const WO_ITEMS=[
+  wo(A,"He / is / wearing / a / coat / .","subject aux verb det noun none"),
+  wo(B,"She / is / holding / a / cup / .","subject aux verb det noun none"),
+  wo(A,"They / are / carrying / boxes / .","subject aux verb noun none"),
+  wo(B,"He / is / wearing / a / blue / coat / .","subject aux verb det adj noun none"),
+  wo(A,"I / am / not / carrying / anything / .","subject aux neg verb object none"),
+  wo(B,"She / isn't / wearing / a / hat / .","subject neg verb det noun none"),
+  wo(A,"Is / he / holding / a / phone / ?","aux subject verb det noun none"),
+  wo(B,"What / is / she / wearing / ?","wh aux subject verb none"),
+  wo(A,"What / are / they / carrying / ?","wh aux subject verb none")
+];
+const GF_ITEMS=[
+  {category:'pos',direct:pic(fig({bodyType:'female',skin:4,hairStyle:'bob',hairColor:'3-0',upperGarment:'coat',upperColor:'#CC0000',lowerGarment:'jeans',footwear:'boots'})),
+   template:"She is wearing a {0} coat.",hints:[{accepted:["red"]}]},
+  {category:'pos',direct:pic(fig({bodyType:'male',skin:2,upperGarment:'tshirt',upperColor:'#00CC66',lowerGarment:'jeans',footwear:'sneakers',held:{left:'suitcase',right:null}})),
+   template:"He {0} a suitcase.",hints:[{accepted:["is carrying", "'s carrying"]}]},
+  {category:'pos',direct:pic(fig({bodyType:'female',skin:5,hairStyle:'ponytail',hairColor:'1-0',upperGarment:'tshirt',upperColor:'#6600CC',lowerGarment:'shorts',footwear:'sneakers',held:{left:null,right:'cup'}},SHOW_R)),
+   template:"She is holding a {0}.",hints:[{accepted:["cup"]}]},
+  {category:'pos',direct:pic(fig({bodyType:'male',skin:3,hairStyle:'curly',upperGarment:'polo',upperColor:'#0066CC',lowerGarment:'chinos',footwear:'shoes',headwear:'fedora',headwearColor:'#663300',held:{left:'guitar',right:null}})),
+   template:"He is {0} a hat. He is holding a {1}.",hints:[{accepted:["wearing"]},{accepted:["guitar"]}]},
+  {category:'pos',direct:pic(fig({bodyType:'female',skin:2,hairStyle:'long',hairColor:'7-0',upperGarment:'blouse',lowerGarment:'skirt',lowerColor:'#000066',footwear:'heels',accessories:['backpack'],packColor:'#CC0000',held:{left:null,right:'phone'}},SHOW_R)),
+   template:"{0} is carrying a backpack and holding a {1}.",hints:[{accepted:["She"]},{accepted:["phone"]}]},
+  {category:'neg',direct:pic(fig({bodyType:'male',skin:6,hairStyle:'buzz',upperGarment:'tshirt',upperColor:'#FFCC00',lowerGarment:'shorts',footwear:'sandals',held:{left:null,right:'parasol'}},{shoulderR:20,elbowR:140})),
+   template:"He {0} wearing a hat. He is holding an {1}.",hints:[{accepted:["isn't", "is not"]},{accepted:["umbrella"]}]},
+  {category:'q',direct:pic(fig({bodyType:'female',skin:3,hairStyle:'bun',hairColor:'5-0',eyewear:'glasses',upperGarment:'jacket',upperColor:'#666666',lowerGarment:'trousers',footwear:'shoes'})),
+   template:"{0} she wearing {1}? — Yes, she is.",hints:[{accepted:["Is"]},{accepted:["glasses"]}]},
+  {category:'q',direct:pic(fig({bodyType:'male',skin:4,hairStyle:'crew',upperGarment:'tshirt',upperColor:'#CC0000',lowerGarment:'jeans',footwear:'boots'},null,'carrying')),
+   template:"What is {0} carrying? — He is carrying a {1}.",hints:[{accepted:["he"]},{accepted:["box"]}]}
+];
+if(window.HouseWordOrder) HouseWordOrder.build({container:'woItems',items:WO_ITEMS,scoreEl:'woScore',totalEl:'woTotal'});
+if(window.HouseGapFill) HouseGapFill.build({container:'gfItems',items:GF_ITEMS,labels:{pos:'statement',neg:'negative',q:'question'}});
+
+})();
+</script>
+<script>if(window.HouseGrammar) HouseGrammar.init();</script>
+</body>
+</html>
