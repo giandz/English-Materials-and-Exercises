@@ -834,7 +834,7 @@ const UPPER = {
 };
 const LOWER = {
   jeans:{label:'Jeans',noun:'jeans',pl:1,col:'#000066',off:2.2,thigh:1,shin:0.96},
-  trousers:{label:'Trousers',noun:'trousers',pl:1,col:'#666666',off:2.5,thigh:1,shin:0.97},
+  trousers:{label:'Trousers',crease:true,noun:'trousers',pl:1,col:'#666666',off:2.5,thigh:1,shin:0.97},
   chinos:{label:'Chinos',noun:'chinos',pl:1,col:'#CCCC66',off:2.5,thigh:1,shin:0.94},
   shorts:{label:'Shorts',noun:'shorts',pl:1,col:'#000000',off:3,thigh:0.7},
   cargopants:{label:'Cargo pants',noun:'cargo pants',pl:1,col:'#666600',off:3.2,thigh:1,shin:0.96,cargo:true},
@@ -1007,6 +1007,10 @@ function build(d){
     return `<path d="${pelD(o)}" fill="${fill}" stroke="none"/><path d="M${n2(ww+o)},${t}Q${n2(hw+2+o)},${m} ${n2(hw+o)},3M${n2(-ww-o)},${t}Q${n2(-hw-2-o)},${m} ${n2(-hw-o)},3" ${q}/>`
       +`<path d="M${n2(-ww-o)},${t}H${n2(ww+o)}" ${q}${faintTop?SEAM:''}/><path d="M${n2(hw+o)},3Q${n2(hw+o)},${18+o} 0,${16+o}Q${n2(-hw-o)},${18+o} ${n2(-hw-o)},3" ${q}${SEAM}/>`;};
   add(30,mP,(swim?pel(0,C.skin,C.skinS,skinTorso):pel(0,C.suit,C.suitS,!UG))+(LG?pel(LG.off,LG.fill,edge(LG.col),false):'')+(UG&&(UG.tails||UG.onepiece)?pel(UG.off,UG.fill,edge(UG.col),true):''),'pelvis');
+  /* dress trousers: two short pleats each side of the fly, and a pressed crease down the front of each leg (drawn with the legs) */
+  const creaseCol=g=>{ const v=parseInt(g.col.slice(1),16), lum=((v>>16)*0.3+((v>>8)&255)*0.59+(v&255)*0.11)/255; return lum<0.3?shade(g.col,0.45):shade(g.col,-0.4); };
+  if(LG&&LG.crease){ const k=Math.abs(cp), q=Math.sin(d.pelvisOrientation*Math.PI/180)*ww*0.35, pl=x=>`M${n2(x*k+q)},${n2(-WA+1)}L${n2(x*0.92*k+q)},${n2(-WA+15)}`;
+    add(30.2,mP,`<path d="${[-0.62,-0.4,0.4,0.62].map(t=>pl(t*ww)).join('')}" fill="none" stroke="${creaseCol(LG)}" stroke-width="1.1" stroke-linecap="round"/>`,'pelvis'); }
   if(LG&&LG.stripeCol&&LG.thigh>0){ const X=(a,b)=>`M${n2(a)},${n2(-WA-1)}L${n2(b)},4`, k=Math.abs(cp), lo=LG.off;
     add(30.2,mP,`<path d="${X((ww+lo-3.2)*k,(hw+lo-3.2)*k)}${X(-(ww+lo-3.2)*k,-(hw+lo-3.2)*k)}" fill="none" stroke="${LG.stripeCol}" stroke-width="3"/>`,'pelvis'); }
   mark(mP,0,0,hw+2); mark(mP,0,6,12);
@@ -1244,6 +1248,8 @@ function build(d){
     if(acc['kneepad'+L]) addL(z+3.5,m1,`<rect x="${n2(-r2-3.5)}" y="${n2(TH-15)}" width="${n2(r2*2+7)}" height="30" rx="9" fill="#3a3f45" stroke="#16181b"/><ellipse cx="0" cy="${n2(TH)}" rx="${n2(r2*0.7)}" ry="8.5" fill="#6b7279" stroke="#16181b" stroke-width=".8"/>`,'knee'+L);
     if(LG&&LG.cargo){ const k=Math.abs(cp), w=n2(11*Math.max(k,0.55)), px=n2(side*(r1*0.5+lo)*k-w/2), py=n2(TH*0.46), dk=edge(LG.col);   /* a patch pocket on the outside of each thigh */
       addL(z+3.3,m1,`<rect x="${px}" y="${py}" width="${w}" height="24" rx="1.5" fill="${LG.fill}" stroke="${dk}"/><path d="M${px},${n2(py+7)}h${w}" fill="none" stroke="${dk}"/>`,'hip'+L); }
+    if(LG&&LG.crease){ const q=Math.sin(d.pelvisOrientation*Math.PI/180), cr=(ra,rb,len,f,y0)=>`<path d="M${n2(q*(ra+lo-2.5))},${y0}L${n2(q*(ra+(rb-ra)*f+lo-2.5))},${n2(len*f-1)}" fill="none" stroke="${creaseCol(LG)}" stroke-width="1.1" stroke-linecap="round"/>`;
+      addL(z+3.2,m1,cr(r1,r2,TH,1,10),'hip'+L); if(LG.shin) addL(z+2.2,m2,cr(r2*0.96,r3,SH,LG.shin,2),'knee'+L); }
     if(LG&&LG.stripeCol&&LG.thigh>0){ const k=Math.abs(cp), sl=(ra,rb,len,f)=>`<path d="M${n2(side*(ra+lo-3.2)*k)},2L${n2(side*(ra+(rb-ra)*f+lo-3.2)*k)},${n2(len*f-1)}" fill="none" stroke="${LG.stripeCol}" stroke-width="3" stroke-linecap="round"/>`;
       addL(z+3.2,m1,sl(r1,r2,TH,Math.min(LG.thigh,1)),'hip'+L); if(LG.shin) addL(z+2.2,m2,sl(r2*0.96,r3,SH,LG.shin),'knee'+L); }
     markL(m1,0,0,r1); markL(m2,0,0,r2); markL(m3,0,0,r3); markL(m3,0,FT,6.8*fs);
