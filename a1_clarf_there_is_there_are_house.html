@@ -33,6 +33,16 @@
 .mark{ font-weight:700; margin-right:5px; }
 .rule-box p{ margin:0 0 6px; }
 .rule-box p:last-child{ margin-bottom:0; }
+/* emoji pictures above the sentences: ❌ laid over a thing = there isn't one */
+.emo-row{ display:flex; flex-wrap:wrap; align-items:center; justify-content:center; gap:2px 6px; font-size:1.7rem; line-height:1.15; margin:10px 0 2px; }
+.emo-row .emo-sep{ font-size:1rem; font-weight:700; color:var(--text-secondary); padding:0 2px; }
+.emo-no{ position:relative; display:inline-block; }
+.emo-no .emo-x{ position:absolute; inset:0; display:flex; align-items:center; justify-content:center; font-size:.95em; opacity:.7; }
+.rule-line{ display:grid; grid-template-columns:8rem 1fr; align-items:center; gap:4px 10px; margin:0 0 8px; }
+.rule-line:last-child{ margin-bottom:0; }
+.rule-line .emo-row{ font-size:1.25rem; margin:0; justify-content:flex-start; flex-wrap:nowrap; }
+.rule-line p{ margin:0; }
+@media (max-width:520px){ .rule-line{ grid-template-columns:1fr; } }
 </style>
 </head>
 <body>
@@ -54,15 +64,7 @@
   <div class="score-bar"><span>Correct: <strong id="fcScore">0</strong> / <span id="fcTotal">0</span></span></div>
   <div id="formClarf"></div>
 
-  <div class="rule-box">
-    <p><strong>One thing:</strong> <span class="tgt">There is</span> (<span class="tgt">There's</span>) + a / an: <span class="tgt">There's</span> a sofa.</p>
-    <p><strong>Two or more:</strong> <span class="tgt">There are</span> + two, three, four…: <span class="tgt">There are</span> four chairs.</p>
-    <p><strong>Negative:</strong> <span class="tgt">There isn't</span> a bathtub. · <span class="tgt">There aren't</span> any chairs.</p>
-    <p><strong>Question:</strong> <span class="tgt">Is there</span> a TV? — Yes, there is. / No, there isn't.<br>
-       <span class="tgt">Are there</span> any plants? — Yes, there are. / No, there aren't.</p>
-    <p><strong>How many?</strong> How many chairs <span class="tgt">are there</span>? — <span class="tgt">There are</span> four.</p>
-    <p>Short answers have no contraction: Yes, there <strong>is</strong>. (not <s>Yes, there's.</s>)</p>
-  </div>
+  <div class="rule-box" id="ruleBox"></div>
 
   <div class="sec-div">Common mistakes</div>
   <div id="mistakes"></div>
@@ -108,13 +110,19 @@ const bathroom = o => HousePicture.room({
     .concat(o.bathtub ? [{ type: 'bathtub', x: 1.5, y: 1.5, dir: 1 }] : [])
 });
 
+/* emoji pictures: a string is shown as it is; { no: '🪑' } puts a ❌ over it; { sep: '→' } is a small word or sign */
+const emo = list => '<div class="emo-row" aria-hidden="true">' + list.map(e =>
+  typeof e === 'string' ? '<span>' + e + '</span>'
+  : e.no ? '<span class="emo-no">' + e.no + '<span class="emo-x">❌</span></span>'
+  : '<span class="emo-sep">' + e.sep + '</span>').join('') + '</div>';
+
 const GALLERY = [
-  { title: 'There’s + one thing', sentence: '<span class="tgt">There’s</span> a sofa in the living room.', house: living({ rug: true }) },
-  { title: 'There are + more things', sentence: '<span class="tgt">There are</span> four chairs in the kitchen.', house: kitchen(4) },
-  { title: 'There isn’t', sentence: '<span class="tgt">There isn’t</span> a bathtub. <span class="tgt">There’s</span> a shower.', house: bathroom({ shower: true }) },
-  { title: 'There aren’t any', sentence: '<span class="tgt">There aren’t</span> any chairs in the kitchen.', house: kitchen(0) },
-  { title: 'Is there…?', sentence: '“<span class="tgt">Is there</span> a TV?” “Yes, there is.”', house: living({ tv: true }) },
-  { title: 'How many…?', sentence: '“How many plants <span class="tgt">are there</span>?” “<span class="tgt">There are</span> three.”', house: living({ plants: 3 }) }
+  { title: 'There’s + one thing', sentence: '<span class="tgt">There’s</span> a sofa in the living room.', house: living({ rug: true }), emo: ['🛋️'] },
+  { title: 'There are + more things', sentence: '<span class="tgt">There are</span> four chairs in the kitchen.', house: kitchen(4), emo: ['🪑', '🪑', '🪑', '🪑'] },
+  { title: 'There isn’t', sentence: '<span class="tgt">There isn’t</span> a bathtub. <span class="tgt">There’s</span> a shower.', house: bathroom({ shower: true }), emo: [{ no: '🛁' }, { sep: '·' }, '🚿'] },
+  { title: 'There aren’t any', sentence: '<span class="tgt">There aren’t</span> any chairs in the kitchen.', house: kitchen(0), emo: [{ no: '🪑' }] },
+  { title: 'Is there…?', sentence: '“<span class="tgt">Is there</span> a TV?” “Yes, there is.”', house: living({ tv: true }), emo: ['📺', '❓', { sep: '→' }, '✅'] },
+  { title: 'How many…?', sentence: '“How many plants <span class="tgt">are there</span>?” “<span class="tgt">There are</span> three.”', house: living({ plants: 3 }), emo: ['🪴', '❓', { sep: '→' }, '🪴', '🪴', '🪴'] }
 ];
 const gallery = document.getElementById('galleryGrid');
 GALLERY.forEach(g => {
@@ -122,9 +130,20 @@ GALLERY.forEach(g => {
   card.className = 'prep-card';
   card.innerHTML = '<div class="prep-word">' + g.title + '</div>' +
     HousePicture.svg(g.house, { focus: true, aspect: 4 / 3, alt: g.sentence.replace(/<[^>]+>/g, '') }) +
-    '<div class="prep-sentence">' + g.sentence + '</div>';
+    emo(g.emo) + '<div class="prep-sentence">' + g.sentence + '</div>';
   gallery.appendChild(card);
 });
+
+/* ── the rule ──────────────────────────────────────────────────────────── */
+const RULES = [
+  { emo: ['🛋️'], html: '<strong>One thing:</strong> <span class="tgt">There is</span> (<span class="tgt">There’s</span>) + a / an: <span class="tgt">There’s</span> a sofa.' },
+  { emo: ['🪑', '🪑', '🪑', '🪑'], html: '<strong>Two or more:</strong> <span class="tgt">There are</span> + two, three, four…: <span class="tgt">There are</span> four chairs.' },
+  { emo: [{ no: '🛁' }, { no: '🪑' }], html: '<strong>Negative:</strong> <span class="tgt">There isn’t</span> a bathtub. · <span class="tgt">There aren’t</span> any chairs.' },
+  { emo: ['📺', '❓'], html: '<strong>Question:</strong> <span class="tgt">Is there</span> a TV? — Yes, there is. / No, there isn’t.<br><span class="tgt">Are there</span> any plants? — Yes, there are. / No, there aren’t.' },
+  { emo: ['🪑', '❓', { sep: '→' }, '4️⃣'], html: '<strong>How many?</strong> How many chairs <span class="tgt">are there</span>? — <span class="tgt">There are</span> four.' },
+  { emo: ['✅'], html: 'Short answers have no contraction: Yes, there <strong>is</strong>. (not <s>Yes, there’s.</s>)' }
+];
+document.getElementById('ruleBox').innerHTML = RULES.map(r => '<div class="rule-line">' + emo(r.emo) + '<p>' + r.html + '</p></div>').join('');
 
 /* ── concept checking questions ────────────────────────────────────────── */
 HouseCCQ.build({

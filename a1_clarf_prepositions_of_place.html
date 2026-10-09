@@ -25,6 +25,10 @@
 .prep-sentence{ font-size:.9333rem; color:var(--text-primary); margin:6px 4px 0; line-height:1.5; }
 /* the target language is the lesson, so it stays coloured (not a grammar-toggle colour) */
 .tgt{ color:var(--pos-prep); font-weight:700; }
+.tgt-thing{ color:var(--pos-wh); font-weight:700; }   /* the thing we talk about */
+.tgt-place{ color:var(--pos-noun); font-weight:700; }      /* the furniture it is on / under / next to… */
+.tgt-key{ display:flex; flex-wrap:wrap; gap:6px 14px; font-size:.8667rem; margin:0 0 10px; }
+.tgt-key span{ padding:2px 9px; border-radius:999px; background:var(--surface-2); border:1px solid var(--color-border-tertiary); }
 
 .pair-card{ background:var(--surface-2); border:1px solid var(--color-border-tertiary); border-radius:12px; padding:10px 12px; margin-bottom:8px; }
 .pair-line{ font-size:.9333rem; line-height:1.7; padding:2px 0; }
@@ -43,6 +47,7 @@
 
   <div class="sec-div">Look</div>
   <p class="subtitle">Where are the things? Look at the pictures.</p>
+  <div class="tgt-key"><span class="tgt-thing">the thing</span><span class="tgt">the preposition</span><span class="tgt-place">the furniture (the place)</span></div>
   <div class="prep-grid" id="prepGrid"></div>
 
   <div class="sec-div">Check the meaning</div>
@@ -55,11 +60,11 @@
   <div id="formClarf"></div>
 
   <div class="rule-box">
-    <p><strong>Where is</strong> the lamp? → <strong>It's</strong> <span class="tgt">on</span> the side table.</p>
-    <p><strong>Where are</strong> the books? → <strong>They're</strong> <span class="tgt">under</span> the table.</p>
-    <p>The preposition goes <strong>before the place</strong>: <span class="tgt">on</span> the table, <span class="tgt">in</span> the bookcase.</p>
-    <p>Some have two or three words: <span class="tgt">next to</span> the sofa, <span class="tgt">in front of</span> the sofa.</p>
-    <p><span class="tgt">between</span> has two places: <span class="tgt">between</span> the sofa <strong>and</strong> the armchair.</p>
+    <p><strong>Where is</strong> <span class="tgt-thing">the lamp</span>? → <strong>It's</strong> <span class="tgt">on</span> <span class="tgt-place">the side table</span>.</p>
+    <p><strong>Where are</strong> <span class="tgt-thing">the books</span>? → <strong>They're</strong> <span class="tgt">under</span> <span class="tgt-place">the table</span>.</p>
+    <p>The <span class="tgt">preposition</span> goes <strong>before the <span class="tgt-place">place</span></strong>: <span class="tgt">on</span> <span class="tgt-place">the table</span>, <span class="tgt">in</span> <span class="tgt-place">the bookcase</span>.</p>
+    <p>Some have two or three words: <span class="tgt">next to</span> <span class="tgt-place">the sofa</span>, <span class="tgt">in front of</span> <span class="tgt-place">the sofa</span>.</p>
+    <p><span class="tgt">between</span> has two places: <span class="tgt">between</span> <span class="tgt-place">the sofa</span> <strong>and</strong> <span class="tgt-place">the armchair</span>.</p>
   </div>
 
   <div class="sec-div">Common mistakes</div>
@@ -117,19 +122,19 @@ const mini = (cols, furniture, appliances, rows) => HousePicture.room({ cols, ro
 
 /* ── the gallery ───────────────────────────────────────────────────────── */
 const GALLERY = [
-  { prep: 'in', sentence: 'The books are <span class="tgt">in</span> the bookcase.',
+  { prep: 'in', sentence: '<span class="tgt-thing">The books</span> are <span class="tgt">in</span> <span class="tgt-place">the bookcase</span>.',
     house: mini(3, [{ type: 'bookshelf', x: 1.5, y: 0.5, dir: 2, items: [it('books', 0, 'L'), it('books', 1, 'R')] }]) },
-  { prep: 'on', sentence: 'The lamp is <span class="tgt">on</span> the side table.',
+  { prep: 'on', sentence: '<span class="tgt-thing">The lamp</span> is <span class="tgt">on</span> <span class="tgt-place">the side table</span>.',
     house: mini(3, [{ type: 'sidetable', x: 1.5, y: 1.5, dir: 2, items: [it('lamp', 0)] }]) },
-  { prep: 'under', sentence: 'The books are <span class="tgt">under</span> the table.',
+  { prep: 'under', sentence: '<span class="tgt-thing">The books</span> are <span class="tgt">under</span> <span class="tgt-place">the table</span>.',
     house: mini(4, [{ type: 'table', x: 2, y: 1, dir: 0, items: [it('books', 1)] }]) },
-  { prep: 'next to', sentence: 'The side table is <span class="tgt">next to</span> the sofa.',
+  { prep: 'next to', sentence: '<span class="tgt-thing">The side table</span> is <span class="tgt">next to</span> <span class="tgt-place">the sofa</span>.',
     house: mini(4, [{ type: 'loveseat', x: 1.5, y: 0.5, dir: 2 }, { type: 'sidetable', x: 2.5, y: 0.5, dir: 2 }]) },
-  { prep: 'between', sentence: 'The side table is <span class="tgt">between</span> the sofa and the armchair.',
+  { prep: 'between', sentence: '<span class="tgt-thing">The side table</span> is <span class="tgt">between</span> <span class="tgt-place">the sofa</span> and <span class="tgt-place">the armchair</span>.',
     house: mini(5, [{ type: 'loveseat', x: 1.5, y: 0.5, dir: 2 }, { type: 'sidetable', x: 2.5, y: 0.5, dir: 2 }, { type: 'armchair', x: 3.5, y: 0.5, dir: 2 }]) },
-  { prep: 'behind', sentence: 'The bookcase is <span class="tgt">behind</span> the sofa.',
+  { prep: 'behind', sentence: '<span class="tgt-thing">The bookcase</span> is <span class="tgt">behind</span> <span class="tgt-place">the sofa</span>.',
     house: mini(3, [{ type: 'bookshelf', x: 1.5, y: 0.5, dir: 2 }, { type: 'loveseat', x: 1.5, y: 1.5, dir: 2 }]) },
-  { prep: 'in front of', sentence: 'The rug is <span class="tgt">in front of</span> the sofa.',
+  { prep: 'in front of', sentence: '<span class="tgt-thing">The rug</span> is <span class="tgt">in front of</span> <span class="tgt-place">the sofa</span>.',
     house: mini(4, [{ type: 'loveseat', x: 1.5, y: 0.5, dir: 2 }], [{ type: 'rug', x: 1.5, y: 1.5, dir: 0 }]) }
 ];
 const gallery = document.getElementById('prepGrid');
@@ -146,36 +151,36 @@ GALLERY.forEach(g => {
 HouseCCQ.build({
   container: 'ccq',
   items: [
-    { sentence: 'The books are under the table.',
+    { sentence: '<span class="tgt-thing">The books</span> are <span class="tgt">under</span> <span class="tgt-place">the table</span>.',
       questions: [
         { q: 'Are the books on top of the table?', opts: ['Yes', 'No'], correct: 1,
           why: 'Under = lower than the table. On = on top of it.' }
       ] },
-    { sentence: 'The books are in the bookcase.',
+    { sentence: '<span class="tgt-thing">The books</span> are <span class="tgt">in</span> <span class="tgt-place">the bookcase</span>.',
       questions: [
         { q: 'Are the books inside the bookcase?', opts: ['Yes', 'No'], correct: 0,
           why: 'In = inside something.' }
       ] },
-    { sentence: 'The side table is next to the sofa.',
+    { sentence: '<span class="tgt-thing">The side table</span> is <span class="tgt">next to</span> <span class="tgt-place">the sofa</span>.',
       questions: [
         { q: 'Is the side table near the sofa?', opts: ['Yes', 'No'], correct: 0,
           why: 'Next to = very near, at the side.' },
         { q: 'Is the side table on the sofa?', opts: ['Yes', 'No'], correct: 1,
           why: 'It is at the side of the sofa, on the floor.' }
       ] },
-    { sentence: 'The side table is between the sofa and the armchair.',
+    { sentence: '<span class="tgt-thing">The side table</span> is <span class="tgt">between</span> <span class="tgt-place">the sofa</span> and <span class="tgt-place">the armchair</span>.',
       questions: [
         { q: 'Is the side table next to the sofa?', opts: ['Yes', 'No'], correct: 0,
           why: 'Between = in the middle. The sofa is on one side…' },
         { q: 'Is the side table next to the armchair?', opts: ['Yes', 'No'], correct: 0,
           why: '…and the armchair is on the other side.' }
       ] },
-    { sentence: 'The bookcase is behind the sofa.',
+    { sentence: '<span class="tgt-thing">The bookcase</span> is <span class="tgt">behind</span> <span class="tgt-place">the sofa</span>.',
       questions: [
         { q: 'You are in front of the sofa. Is the sofa nearer to you than the bookcase?', opts: ['Yes', 'No'], correct: 0,
           why: 'Behind = at the back. The sofa is first, then the bookcase.' }
       ] },
-    { sentence: 'The rug is in front of the sofa.',
+    { sentence: '<span class="tgt-thing">The rug</span> is <span class="tgt">in front of</span> <span class="tgt-place">the sofa</span>.',
       questions: [
         { q: 'You sit on the sofa. Can you see the rug?', opts: ['Yes', 'No'], correct: 0,
           why: 'In front of = at the front. It is the opposite of behind.' }

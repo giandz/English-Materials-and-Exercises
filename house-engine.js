@@ -217,6 +217,8 @@ html[data-theme="dark"] .m-porc.fl{ fill:#cfd3d6; }  html[data-theme="dark"] .m-
 .deco-keys{ fill:#2c3035; stroke:none; }
 .m-pot.fl{ fill:#bf6a43; stroke:#8e4a2c; stroke-width:.5; }  .m-pot.fr{ fill:#9c5333; stroke:#8e4a2c; stroke-width:.5; }  .m-pot.ft{ fill:#5a3d2b; stroke:#8e4a2c; stroke-width:.5; }
 .m-leaf.fl{ fill:#5f9e4c; stroke:#3f7231; stroke-width:.5; }  .m-leaf.fr{ fill:#4a813a; stroke:#3f7231; stroke-width:.5; }  .m-leaf.ft{ fill:#76b762; stroke:#3f7231; stroke-width:.5; }
+.m-potrim.fr{ fill:#b05f3b; stroke:#8e4a2c; stroke-width:.5; }  .m-potrim.ft{ fill:#4a3222; stroke:#8e4a2c; stroke-width:.6; }
+.plant-vein{ stroke:#3f7231; stroke-width:.6; fill:none; opacity:.55; }
 .m-pages.fl, .m-pages.fr, .m-pages.ft{ fill:#f4efe2; stroke:#d6ceba; stroke-width:.4; }
 .m-bk1.fl, .m-bk1.ft{ fill:#b83c3c; stroke:#7f2626; stroke-width:.4; }  .m-bk1.fr{ fill:#962f2f; stroke:#7f2626; stroke-width:.4; }
 .m-bk2.fl, .m-bk2.ft{ fill:#3463a3; stroke:#21436f; stroke-width:.4; }  .m-bk2.fr{ fill:#284f84; stroke:#21436f; stroke-width:.4; }
@@ -808,7 +810,7 @@ html[data-theme="dark"] .stair-rail{ stroke:#c9a77e; }
       // 🪴 objects: small things that go anywhere an appliance can
       rug:       { w: 2.0,  d: 1.4,  h: 0.01, floorOnly: true, obj: true },  // lies on the floor, under furniture
       cushion:   { w: 0.35, d: 0.35, h: 0.12, obj: true },   // a throw pillow — fits a chair, armchair, loveseat or couch seat
-      planter:   { w: 0.26, d: 0.26, h: 0.38, obj: true },
+      planter:   { w: 0.26, d: 0.26, h: 0.42, obj: true },
       book:      { w: 0.22, d: 0.16, h: 0.035, obj: true },  // one book lying flat
       books:     { w: 0.2,  d: 0.16, h: 0.24, obj: true }    // four books standing up
     };
@@ -851,7 +853,9 @@ html[data-theme="dark"] .stair-rail{ stroke:#c9a77e; }
       if (type === 'standlamp') return [P_(-0.14, 0.14, -0.14, 0.14, 0, 0.04, 'lampbase'), P_(-0.018, 0.018, -0.018, 0.018, 0.04, 1.3, 'lampbase'), P_(-0.18, 0.18, -0.18, 0.18, 1.3, 1.5, 'shade')];
       if (type === 'cushion') return [P_(-0.175, 0.175, -0.175, 0.175, 0, 0.12, 'cushion', { tp: 'cushion' })];
       if (type === 'rug') return [P_(-1, 1, -0.7, 0.7, 0, 0.01, 'rug', { tp: 'rug' })];
-      if (type === 'planter') return [P_(-0.09, 0.09, -0.09, 0.09, 0, 0.16, 'pot'), P_(-0.13, 0.13, -0.13, 0.13, 0.16, 0.28, 'leaf'), P_(-0.085, 0.085, -0.085, 0.085, 0.28, 0.38, 'leaf')];
+      if (type === 'planter') return [   // a round terracotta pot with a rim, and leaves fanning out of it
+        P_(-0.085, 0.085, -0.085, 0.085, 0, 0.13, 'pot', { cyl: 'mat' }), P_(-0.1, 0.1, -0.1, 0.1, 0.13, 0.16, 'potrim', { cyl: 'mat' }),
+        P_(-0.16, 0.16, -0.16, 0.16, 0.155, 0.42, 'leaf', { plant: true })];
       if (type === 'book') return [P_(-0.11, 0.11, -0.08, 0.08, 0, 0.005, 'bk1'), P_(-0.105, 0.11, -0.075, 0.075, 0.005, 0.03, 'pages'), P_(-0.11, 0.11, -0.08, 0.08, 0.03, 0.035, 'bk1')];
       if (type === 'books') return [[-0.1, -0.055, 0.22, 'bk1'], [-0.05, -0.005, 0.24, 'bk2'], [0, 0.045, 0.2, 'bk3'], [0.05, 0.095, 0.23, 'bk4']]
         .map(([u0, u1, h, m]) => P_(u0, u1, -0.08, 0.08, 0, h, m, { front, fdeco: 'spine' }));
@@ -1676,6 +1680,28 @@ html[data-theme="dark"] .stair-rail{ stroke:#c9a77e; }
       return `<path class="m-${bx.m} fr" d="M${(sx - rx).toFixed(2)} ${st.toFixed(2)}V${sb.toFixed(2)}A${rx.toFixed(2)} ${ry.toFixed(2)} 0 0 0 ${(sx + rx).toFixed(2)} ${sb.toFixed(2)}V${st.toFixed(2)}Z"/>` +
              `<ellipse class="m-${bx.m} ft" cx="${sx.toFixed(2)}" cy="${st.toFixed(2)}" rx="${rx.toFixed(2)}" ry="${ry.toFixed(2)}"/>`;
     }
+    // a leafy house plant: pointed leaves fanning up and out from the soil, drawn
+    // in screen space (a leaf is a curve, not a box), back leaves darker
+    const PLANT_LEAVES = [
+      // [angle from upright (deg), length 0–1, half-width 0–1, face]
+      [-60, 0.82, 0.3, 'fr'], [-22, 0.98, 0.28, 'fr'], [20, 0.94, 0.28, 'fr'], [58, 0.84, 0.3, 'fr'],
+      [-84, 0.66, 0.32, 'fl'], [-42, 0.88, 0.3, 'fl'], [-2, 1.0, 0.27, 'ft'], [38, 0.86, 0.3, 'fl'], [82, 0.64, 0.32, 'ft']
+    ];
+    function plantSVG(bx) {
+      const cx = (bx.x0 + bx.x1) / 2, cy = (bx.y0 + bx.y1) / 2;
+      const [a, b] = rotPt(cx, cy), [sx, sy] = P(a, b, bx.z0);
+      const H = (bx.z1 - bx.z0) * ZS, W = Math.SQRT2 * (bx.x1 - bx.x0) / 2 * HW;
+      return PLANT_LEAVES.map(([deg, len, hw, face]) => {
+        const t = deg * Math.PI / 180;
+        const tx = sx + Math.sin(t) * W * len, ty = sy - Math.cos(t) * H * len;     // tip
+        const dx = tx - sx, dy = ty - sy, L = Math.hypot(dx, dy) || 1;
+        const nx = -dy / L * L * hw, ny = dx / L * L * hw;                          // across the leaf
+        const mx = sx + dx * 0.45, my = sy + dy * 0.45;                             // widest point
+        const f = v => v.toFixed(2);
+        return `<path class="m-${bx.m} ${face}" d="M${f(sx)} ${f(sy)}Q${f(mx + nx)} ${f(my + ny)} ${f(tx)} ${f(ty)}Q${f(mx - nx)} ${f(my - ny)} ${f(sx)} ${f(sy)}Z"/>` +
+               `<path class="plant-vein" d="M${f(sx)} ${f(sy)}L${f(sx + dx * 0.8)} ${f(sy + dy * 0.8)}"/>`;
+      }).join('');
+    }
     function cylSVG(bx) {
       const cx = (bx.x0 + bx.x1) / 2, cy = (bx.y0 + bx.y1) / 2, R = (bx.x1 - bx.x0) / 2;
       const [a, b] = rotPt(cx, cy), [sx, st] = P(a, b, bx.z1), sb = P(a, b, bx.z0)[1];
@@ -1691,6 +1717,7 @@ html[data-theme="dark"] .stair-rail{ stroke:#c9a77e; }
     //   bx.deco a decoration for the long visible face
     //   bx.cyl  draw as a round column instead of a box
     function boxSVG(bx) {
+      if (bx.plant) return plantSVG(bx);
       if (bx.cyl === 'mat') return cylMatSVG(bx);
       if (bx.cyl) return cylSVG(bx);
       const { a0, a1, b0, b1 } = rotBox(bx), z0 = bx.z0, z1 = bx.z1, mt = 'm-' + (bx.mt || bx.m);
