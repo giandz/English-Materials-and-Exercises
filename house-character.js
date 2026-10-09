@@ -133,7 +133,7 @@ function ring(cx,cy,rx,ry,a0,a1,n,r){
 /* props stand on the floor. Chair, stool and bicycle are pinned to the pelvis; the rest stand next to the character. */
 const PROPS={chair:{label:'Chair',col:'#CC9966'},stool:{label:'Stool',col:'#CC9966'},desk:{label:'School desk',col:'#CC9966'},
   beachchair:{label:'Beach chair',col:'#FF6600'},stroller:{label:'Stroller',col:'#0066CC'},bmx:{label:'BMX bicycle',col:'#CC0000'},roadbike:{label:'Road bicycle',col:'#0066CC'},
-  mtb:{label:'Mountain bicycle',col:'#00CC66'},piano:{label:'Grand piano and stool',col:'#000000'},drums:{label:'Drum set',col:'#CC0000'},keyboard:{label:'Electronic keyboard',col:'#333333'},scooter:{label:'Scooter',col:'#CC0000'},skateboard:{label:'Skateboard',col:'#00CC66'},car:{label:'Car',col:'#CC0000'}};
+  mtb:{label:'Mountain bicycle',col:'#00CC66'},piano:{label:'Grand piano and stool',col:'#000000'},drums:{label:'Drum set',col:'#CC0000'},keyboard:{label:'Electronic keyboard',col:'#333333'},micstand:{label:'Microphone stand (empty)',col:'#333333'},scooter:{label:'Scooter',col:'#CC0000'},skateboard:{label:'Skateboard',col:'#00CC66'},car:{label:'Car',col:'#CC0000'}};
 /* Side-view bicycle geometry in stage pixels (about 227 px per metre), saddle at the origin, facing +x.
    G floor · R wheel radius · tw tyre width · A/F rear and front axle · BB bottom bracket · J where seat stays and top tube meet the seat tube ·
    HT/HB head tube top and bottom · bar handlebar point · k drawing scale */
@@ -191,6 +191,12 @@ function propSVG(id,c,o){   /* o = {x,y: hip point, g: floor, side: profile view
       const sling=`M${n2(x-dir*56)},${n2(y-74)}Q${n2(x-dir*22)},${n2(sy+10)} ${n2(x+dir*2)},${n2(sy+6)}L${n2(x+dir*46)},${n2(sy-2)}`;
       return [{z:-1,span:70,svg:frame(`M${n2(x-dir*60)},${n2(y-80)}L${n2(x+dir*34)},${n2(g)}M${n2(x+dir*50)},${n2(sy-6)}L${n2(x-dir*44)},${n2(g)}`)
         +`<path d="${sling}" fill="none" stroke="${e}" stroke-width="9.4" stroke-linecap="round"/><path d="${sling}" fill="none" stroke="${c}" stroke-width="7" stroke-linecap="round"/><path d="${sling}" fill="none" stroke="#fff" stroke-opacity=".85" stroke-width="7" stroke-dasharray="9 11"/>`}]; }
+    case 'micstand': {   /* an empty stand on the floor in front of the character, up to about shoulder height; behind the arms so a hand can rest on it */
+      const h=Math.max(150,Math.min(300,g-y+96)), X=side?x+dir*54:x;
+      const pole=dd=>`<path d="${dd}" fill="none" stroke="${e}" stroke-width="5.6" stroke-linecap="round"/><path d="${dd}" fill="none" stroke="${c}" stroke-width="3.4" stroke-linecap="round"/>`;
+      return [{z:45,span:side?90:30,svg:at(X,g,pole(`M0,-16L-24,-1M0,-16L24,-1M0,-16V-3`)+pole(`M0,-16V${-h}`)
+        +`<rect x="-4" y="${n2(-h*0.56)}" width="8" height="12" rx="2" ${Mt}/>`
+        +`<path d="M0,${-h}l-9,-9" fill="none" stroke="${e}" stroke-width="5" stroke-linecap="round"/><path d="M-12.5,-${h+5.5}a5,5 0 1 0 7,-7" fill="none" stroke="#111" stroke-width="2.6" stroke-linecap="round"/><circle cx="0" cy="${-h}" r="3" ${Mt}/>`)}]; }
     case 'keyboard': {   /* electronic keyboard on a folding X stand. It stands on the floor at about waist height, lower for a seated player. */
       const h=Math.max(130,Math.min(215,g-y+12)), tube=dd=>`<path d="${dd}" fill="none" stroke="#111" stroke-width="6.4" stroke-linecap="round"/><path d="${dd}" fill="none" stroke="#3a3f45" stroke-width="4" stroke-linecap="round"/>`;
       if(side){   /* seen from its end: the slab in section, the stand edge-on */
