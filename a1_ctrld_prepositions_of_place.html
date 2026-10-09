@@ -64,7 +64,7 @@ const mini = (house, alt) => '<div class="mini-pic">' + HousePicture.svg(house, 
 const SOFA = (x, items) => ({ type: 'loveseat', x: x == null ? 1.5 : x, y: 0.5, dir: 2, items });
 const SIDE = (x, items, y) => ({ type: 'sidetable', x, y: y == null ? 0.5 : y, dir: 2, items });
 const ARM = (x, items) => ({ type: 'armchair', x, y: 0.5, dir: 2, items });
-const TABLE = items => ({ type: 'table', x: 2, y: 1, dir: 0, items });
+const TABLE = items => ({ type: 'coffeetable', x: 2, y: 1, dir: 0, items });   // the coffee table
 
 const S = {
   lampOnSide:     scene(3, [SIDE(1.5, [it('lamp', 0)], 1.5)]),
@@ -83,6 +83,9 @@ const S = {
   notBetween1:    scene(5, [SIDE(0.5), SOFA(), ARM(3.5)]),
   notBetween2:    scene(5, [SOFA(), ARM(3.5), SIDE(4.5)]),
   rugFront:       scene(4, [SOFA()], [{ type: 'rug', x: 1.5, y: 1.5, dir: 0 }]),
+  coffeeFront:    scene(4, [SOFA(), { type: 'coffeetable', x: 1.5, y: 1.5, dir: 2, items: [it('planter', 0, 'L')] }]),
+  coffeeNext:     scene(4, [SOFA(), { type: 'coffeetable', x: 3, y: 1, dir: 1, items: [it('planter', 0, 'L')] }]),
+  coffeeBehind:   scene(4, [{ type: 'coffeetable', x: 1.5, y: 0.5, dir: 2, items: [it('planter', 0, 'L')] }, { type: 'loveseat', x: 1.5, y: 1.5, dir: 2 }]),
   plantOnSide:    scene(3, [SIDE(1.5, [it('planter', 0)], 1.5)]),
   plantUnderSide: scene(3, [SIDE(1.5, [it('planter', 1)], 1.5)]),
   plantNextSide:  scene(3, [SIDE(1.5, [], 1.5)], [{ type: 'planter', x: 2, y: 2, dir: 0 }]),
@@ -93,7 +96,7 @@ const S = {
 const PC_ITEMS = [
   { picture: S.lampOnSide, opts: CLOSE,
     options: ['The lamp is on the side table.', 'The lamp is under the side table.', 'The lamp is next to the side table.'], correct: 0 },
-  { sentence: 'The books are under the table.', opts: CLOSE,
+  { sentence: 'The books are under the coffee table.', opts: CLOSE,
     pictures: [S.booksUnder, S.booksOn, S.booksNext], correct: 0 },
   { picture: S.plantNextSofa, opts: CLOSE,
     options: ['The plant is behind the sofa.', 'The plant is next to the sofa.', 'The plant is on the sofa.'], correct: 1 },
@@ -105,6 +108,8 @@ const PC_ITEMS = [
     pictures: [S.between, S.notBetween1, S.notBetween2], correct: 0 },
   { picture: S.rugFront, opts: CLOSE,
     options: ['The rug is behind the sofa.', 'The rug is in front of the sofa.', 'The rug is on the sofa.'], correct: 1 },
+  { sentence: 'The coffee table is in front of the sofa.', opts: CLOSE,
+    pictures: [S.coffeeFront, S.coffeeNext, S.coffeeBehind], correct: 0 },
   { sentence: 'The plant is under the side table.', opts: CLOSE,
     pictures: [S.plantOnSide, S.plantUnderSide, S.plantNextSide], correct: 1 }
 ];
@@ -114,8 +119,8 @@ HousePictureChoice.build({ container: 'pcItems', items: PC_ITEMS, scoreEl: 'pcSc
 const WO_ITEMS = [
   { context: mini(S.lampOnSide, 'A lamp and a side table'),
     text: 'The / lamp / is / on / the / side table', pos: ['det', 'noun', 'verb', 'prep', 'det', 'noun'] },
-  { context: mini(S.booksUnder, 'Books and a table'),
-    text: 'The / books / are / under / the / table', pos: ['det', 'noun', 'verb', 'prep', 'det', 'noun'] },
+  { context: mini(S.booksUnder, 'Books and a coffee table'),
+    text: 'The / books / are / under / the / coffee table', pos: ['det', 'noun', 'verb', 'prep', 'det', 'noun'] },
   { context: mini(S.plantNextSofa, 'A plant and a sofa'),
     text: 'The / plant / is / next / to / the / sofa', pos: ['det', 'noun', 'verb', 'prep', 'prep', 'det', 'noun'] },
   { context: mini(S.bookcaseBehind, 'A bookcase and a sofa'),
@@ -136,8 +141,8 @@ const GF_ITEMS = [
     template: 'The lamp is {0} the side table.', hints: [{ accepted: ['on'] }] },
   { direct: look(S.booksIn, 'A bookcase with books'),
     template: 'The books are {0} the bookcase.', hints: [{ accepted: ['in'] }] },
-  { direct: look(S.booksUnder, 'Books and a table'),
-    template: 'The books are {0} the table.', hints: [{ accepted: ['under'] }] },
+  { direct: look(S.booksUnder, 'Books and a coffee table'),
+    template: 'The books are {0} the coffee table.', hints: [{ accepted: ['under'] }] },
   { direct: look(S.plantNextSofa, 'A plant and a sofa'),
     template: 'The plant is {0} the sofa.', hints: [{ accepted: ['next to', 'beside'] }] },
   { direct: look(S.bookcaseBehind, 'A bookcase and a sofa'),

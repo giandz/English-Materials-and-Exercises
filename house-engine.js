@@ -474,7 +474,7 @@ html[data-theme="dark"] .stair-rail{ stroke:#c9a77e; }
       gate:   { emoji: '', word: 'Gate', hint: 'Tap a fence to put a gate in it (it takes the fence’s style), or tap an empty line for a gate on its own. Tap a gate to open it, then again to change which way it opens; after the fourth way it closes.' },
       fence:  { emoji: '🚧', word: 'Fence',  hint: 'Drag along the grid lines to build a fence or handrail. A space closed in by fences is a garden on the ground floor and a balcony on upper floors.' },
       column: { emoji: '🪵', word: 'Column', hint: 'Tap a grid corner or the middle of a square to add a column. Walls meet a corner column neatly.' },
-      table:  { emoji: '🍽️', word: 'Table', hint: 'Tap a grid corner or the middle of a square to put a table there (1.2 × 0.8 m). Tap it again to turn it, or press R before you tap. Drag it to move it.' },
+      table:  { emoji: '🍽️', word: 'Dining table', hint: 'Tap a grid corner or the middle of a square to put a dining table there (1.2 × 0.8 m). Tap it again to turn it, or press R before you tap. Drag it to move it.' },
       chair:  { emoji: '🪑', word: 'Chair', hint: 'Tap a grid corner or the middle of a square to put a chair there. Tap it again to turn it (the back goes round), or press R before you tap. Drag it to move it.' },
       bed:    { emoji: '🛏️', word: 'Bed',   hint: 'Tap a grid corner or the middle of a square to put a double bed there (1.4 × 2 m). Tap it again to turn it, or press R before you tap. Drag it to move it.' },
       armchair: { emoji: '', word: 'Armchair', hint: 'Tap a grid corner or the middle of a square to put an armchair there. Tap it again to turn it (the back goes round), or press R before you tap. Drag it to move it.' },
@@ -487,6 +487,7 @@ html[data-theme="dark"] .stair-rail{ stroke:#c9a77e; }
       tvstand:   { emoji: '', word: 'TV stand', hint: 'Tap a grid corner or the middle of a square to put a TV stand there (1.2 m). It has a shelf inside and a top for a television. Tap it again to turn it. Drag it to move it.' },
       dresser:   { emoji: '', word: 'Dresser', hint: 'Tap a grid corner or the middle of a square to put a chest of drawers there (1 m wide). Its top takes appliances and objects. Tap it again to turn it. Drag it to move it.' },
       wardrobe:  { emoji: '', word: 'Wardrobe', hint: 'Tap a grid corner or the middle of a square to put a tall two-door wardrobe there (1 × 0.6 m, 2 m high). Tap it again to turn it. Drag it to move it.' },
+      coffeetable: { emoji: '', word: 'Coffee table', hint: 'Tap a grid corner or the middle of a square to put a low coffee table (1 × 0.55 m) there — in front of a sofa. Its top takes appliances and objects, like books or a plant, and small things fit under it. Tap it again to turn it. Drag it to move it.' },
       sidetable: { emoji: '', word: 'Side table', hint: 'Tap a grid corner or the middle of a square to put a small side table (an end table, 0.5 m) there — next to a sofa or an armchair. Its top takes appliances and objects, like a lamp or books, and small things fit under it. Tap it again to turn it. Drag it to move it.' },
       nightstand: { emoji: '', word: 'Nightstand', hint: 'Tap a grid corner or the middle of a square to put a nightstand with two drawers there. Its top takes an appliance, like a lamp. Tap it again to turn it. Drag it to move it.' },
       mirrorcab: { emoji: '🪞', word: 'Mirror cabinet', hint: 'Tap a wall, on the side you want, to hang a bathroom cabinet with a mirror door on it. It can go over a washbasin. Tap it again to move it to the other side of the wall.' },
@@ -662,6 +663,7 @@ html[data-theme="dark"] .stair-rail{ stroke:#c9a77e; }
       countertop: { w: 1.0, d: 0.6, h: 0.9, line: true, levels: [{ z: 0.9, top: true }] },
       tvstand:   { w: 1.2, d: 0.42, h: 0.5, inner: 1.15, innerD: 0.38, levels: [{ z: 0.06, clear: 0.4 }, { z: 0.5, top: true }] },
       nightstand: { w: 0.45, d: 0.4, h: 0.55, levels: [{ z: 0.55, top: true }] },
+      coffeetable: { w: 1.0, d: 0.55, h: 0.42, levels: [{ z: 0.42, top: true }, { z: 0, under: true, clear: 0.37, uw: 0.84, ud: 0.44 }] },   // low, in front of a sofa
       sidetable:  { w: 0.5, d: 0.5, h: 0.55, levels: [{ z: 0.55, top: true }, { z: 0, under: true, clear: 0.5, uw: 0.4, ud: 0.4 }] },   // a couch end table
       // bathroom
       toilet:    { w: 0.4,  d: 0.7,  h: 0.8,  bath: true },
@@ -678,7 +680,7 @@ html[data-theme="dark"] .stair-rail{ stroke:#c9a77e; }
       waterheater: { w: 0.5, d: 0.16, h: 0.65, wall: true, appl: true, hangZ: 1.3, pickZ: 1.6 },  // tankless, with hot/cold valves
       wallcabinet: { w: 0.8, d: 0.32, h: 0.7,  wall: true, hangZ: 1.5, pickZ: 1.75 }   // upper kitchen cabinet, same doors as the countertop's base
     };
-    const FURN_ORDER = ['table', 'chair', 'officechair', 'bed', 'nightstand', 'sidetable', 'dresser', 'wardrobe', 'armchair', 'loveseat', 'couch', 'bookshelf', 'tvstand', 'wallshelf', 'countertop', 'toilet', 'washbasin', 'bathtub', 'shower', 'mirrorcab', 'acwindow', 'acsplit', 'accondenser', 'exhaustfan', 'radiator', 'waterheater', 'wallcabinet'];
+    const FURN_ORDER = ['table', 'chair', 'officechair', 'bed', 'nightstand', 'sidetable', 'coffeetable', 'dresser', 'wardrobe', 'armchair', 'loveseat', 'couch', 'bookshelf', 'tvstand', 'wallshelf', 'countertop', 'toilet', 'washbasin', 'bathtub', 'shower', 'mirrorcab', 'acwindow', 'acsplit', 'accondenser', 'exhaustfan', 'radiator', 'waterheater', 'wallcabinet'];
     const hung = o => !!FURN[o.type].wall;          // hangs on a wall (shelf, shower) instead of standing on the floor
     const SHELF_Z = 1.2;   // a wall shelf's board sits this high: anything lower than LOW_ENOUGH can stand under it
     const LOW_ENOUGH = 1.15;
@@ -738,6 +740,7 @@ html[data-theme="dark"] .stair-rail{ stroke:#c9a77e; }
       if (f.type === 'dresser') return [P_(-0.5, 0.5, -0.25, 0.25, 0.04, 0.85, 'furn', { front: SIDE_OF_DIR[fr.dir], fdeco: 'dresser' }), P_(-0.47, 0.47, -0.22, 0.22, 0, 0.04, 'furn')];
       if (f.type === 'wardrobe') return [P_(-0.5, 0.5, -0.3, 0.3, 0.05, 2.0, 'furn', { front: SIDE_OF_DIR[fr.dir], fdeco: 'wardrobe' }), P_(-0.47, 0.47, -0.27, 0.27, 0, 0.05, 'furn')];
       if (f.type === 'sidetable') return [...legs(0.21, 0.21, 0.025, 0.51), P_(-0.25, 0.25, -0.25, 0.25, 0.51, 0.55, 'furn')];
+      if (f.type === 'coffeetable') return [...legs(0.44, 0.22, 0.03, 0.38), P_(-0.5, 0.5, -0.275, 0.275, 0.38, 0.42, 'furn')];
       if (f.type === 'nightstand') return [P_(-0.225, 0.225, -0.2, 0.2, 0, 0.55, 'furn', { front: SIDE_OF_DIR[fr.dir], fdeco: 'drawers' })];
       if (f.type === 'mirrorcab') return [P_(-0.3, 0.3, -0.075, 0.06, 1.2, 1.9, 'cab', { front: SIDE_OF_DIR[fr.dir], fdeco: 'mirror' })];
       if (f.type === 'acwindow') return [P_(-0.275, 0.275, -0.14, 0.14, 1.3, 1.68, 'utility', { front: SIDE_OF_DIR[fr.dir], fdeco: 'acwindow' })];
@@ -2822,6 +2825,8 @@ html[data-theme="dark"] .stair-rail{ stroke:#c9a77e; }
         } else if (f.type === 'wardrobe') {
           // a hanging rail along the middle, with a few hangers across it
           g += ln(-0.45, 0, 0.45, 0, 'bp-furnthin') + [-0.3, -0.1, 0.1, 0.3].map(u => ln(u - 0.05, -0.2, u + 0.05, 0.2, 'bp-furnthin')).join('');
+        } else if (f.type === 'coffeetable') {
+          g += [[-1, -1], [1, -1], [1, 1], [-1, 1]].map(([a, b]) => { const [lx, ly] = furnPt(f, a * 0.44, b * 0.22); return `<circle class="bp-furnthin" cx="${f_(lx)}" cy="${f_(ly)}" r="${f_(0.03)}"/>`; }).join('');
         } else if (f.type === 'sidetable') {
           g += [[-1, -1], [1, -1], [1, 1], [-1, 1]].map(([a, b]) => { const [lx, ly] = furnPt(f, a * 0.21, b * 0.21); return `<circle class="bp-furnthin" cx="${f_(lx)}" cy="${f_(ly)}" r="${f_(0.03)}"/>`; }).join('');
         } else if (f.type === 'nightstand') {
@@ -3155,6 +3160,7 @@ html[data-theme="dark"] .stair-rail{ stroke:#c9a77e; }
        focus   true (or metres)  close-up: crop to the furniture plus that much floor
                         round it (0.6 m by default)
        aspect  width / height of the frame, e.g. 4/3 (default: whatever fits)
+       box     [x, y, w, h]  use exactly this frame (screen units)
        alt     text for screen readers
      The picture follows the page's light/dark theme on its own.
 
@@ -3303,6 +3309,7 @@ html[data-theme="dark"] .stair-rail{ stroke:#c9a77e; }
       const pad = 12;
       box = [x0 - pad, y0 - pad, x1 - x0 + 2 * pad, y1 - y0 + 2 * pad];
     }
+    if (opts.box) box = opts.box.slice();   // the caller's own frame (the viewer keeps one frame for every floor)
     // a fixed shape (width / height), so a row of pictures lines up: widen or
     // heighten the frame round its middle — never crop
     if (box && opts.aspect) {
@@ -3366,8 +3373,15 @@ html[data-theme="dark"] .stair-rail{ stroke:#c9a77e; }
     }
     return {
       app: 'house-builder', version: 12, cols, rows,
-      floors: [{ level: 0, edges: [...edges.values()], floorStyles, furniture: spec.furniture || [], appliances: spec.appliances || [] }]
+      floors: [{ level: spec.level || 0, edges: [...edges.values()], floorStyles, furniture: spec.furniture || [], appliances: spec.appliances || [], stairs: spec.stairs || [] }]
     };
+  }
+  /* HousePicture.house({ cols, rows, floors: [ {level: 0, …room spec}, {level: 1, …} ] })
+     — a house of several floors, each written like HousePicture.room (stairs
+     go on the floor they start from: stairs: [{ r, c, dir, type: 'straight' }]). */
+  function house(spec) {
+    return { app: 'house-builder', version: 12, cols: spec.cols, rows: spec.rows,
+      floors: spec.floors.map(f => room(Object.assign({ cols: spec.cols, rows: spec.rows }, f)).floors[0]) };
   }
 
   /* HousePicture.thing(type, opts) — one piece on its own, for a word card:
@@ -3502,6 +3516,191 @@ html[data-theme="dark"] .stair-rail{ stroke:#c9a77e; }
     });
   }
 
-  global.HousePicture = { svg: pictureSvg, draw: pictureDraw, room, thing };
+
+  /* ══════════════════════════════════════════════════════════════════════════
+     HOUSE VIEWER — a house picture you can look round: drag to move it,
+     pinch / wheel / ± to zoom, turn it, change floor, and choose how the
+     walls are shown. For freer practice, where students talk about a whole
+     house rather than one sentence's worth of it.
+
+       const v = HouseViewer.build({
+         container: 'viewer',
+         house,                                 // a saved house, or HousePicture.room(…)
+         level: 0,                              // the floor shown first
+         walls: 'cutout',                       // 'cutout' | 'down' | 'full'
+         labels: [{ level: 0, x, y, text }],    // words on the floor (per floor)
+         floorNames: { 0: 'Downstairs', 1: 'Upstairs' },   // optional
+         alt: 'A house'
+       });
+       v.set(house, { labels })                 // show another house
+     ══════════════════════════════════════════════════════════════════════════ */
+  const HV_STYLE_ID = 'house-viewer-styles';
+  const HV_CSS = `
+.hv{ position:relative; border-radius:var(--border-radius-lg, 12px); background:var(--iso-bg); overflow:hidden; user-select:none; -webkit-user-select:none; }
+.hv-stage{ display:block; width:100%; aspect-ratio:4 / 3; max-height:72vh; touch-action:none; cursor:grab; }
+.hv-stage.dragging{ cursor:grabbing; }
+.hv-stage .house-pic{ width:100%; height:100%; border-radius:0; }
+.hv-tools{ position:absolute; top:10px; left:10px; display:flex; gap:6px; flex-wrap:wrap; }
+.hv-btn{ width:38px; height:38px; border-radius:50%; border:1px solid var(--border, #ddd); background:var(--surface-1, #fff); color:var(--text-primary, #222);
+  font:inherit; font-size:1.0667rem; line-height:1; display:flex; align-items:center; justify-content:center; cursor:pointer; box-shadow:0 1px 4px rgba(0,0,0,.12); padding:0; }
+.hv-btn[aria-pressed="true"]{ border-color:var(--text-accent, #2563eb); box-shadow:0 0 0 2px var(--text-accent, #2563eb); }
+.hv-btn:disabled{ opacity:.35; cursor:default; }
+.hv-pill{ position:absolute; bottom:10px; display:flex; align-items:center; gap:2px; padding:3px; border-radius:999px; border:1px solid var(--border, #ddd);
+  background:var(--surface-1, #fff); box-shadow:0 1px 4px rgba(0,0,0,.12); }
+.hv-pill .hv-btn{ width:32px; height:32px; box-shadow:none; border:none; background:transparent; font-size:1.0667rem; font-weight:700; }
+.hv-zoom{ left:10px; }
+.hv-floor{ right:10px; }
+.hv-read{ min-width:3.6em; text-align:center; font-size:.8667rem; font-weight:600; color:var(--text-secondary, #555); background:none; border:none; cursor:pointer; font-family:inherit; padding:0 4px; }
+.hv-floor .hv-read{ min-width:6.5em; cursor:default; }
+@media (max-width:520px){ .hv-stage{ aspect-ratio:1 / 1; } .hv-btn{ width:34px; height:34px; } .hv-floor .hv-read{ min-width:5.5em; } }   /* taller on a phone: room for the controls */
+`;
+  function viewerBuild(o) {
+    const host = typeof o.container === 'string' ? document.getElementById(o.container) : o.container;
+    if (!host) return null;
+    if (!document.getElementById(HV_STYLE_ID)) {
+      const st = document.createElement('style'); st.id = HV_STYLE_ID; st.textContent = HV_CSS; document.head.appendChild(st);
+    }
+    catalog = catalog || create();
+    const LI = catalog.LEVEL_INFO;
+    const view = { house: null, levels: [0], level: o.level || 0, walls: o.walls || 'cutout', rot: 0, labels: o.labels || [], base: null, vb: null };
+    host.innerHTML =
+      '<div class="hv">' +
+        '<div class="hv-stage" role="img"></div>' +
+        '<div class="hv-tools">' +
+          '<button type="button" class="hv-btn" data-act="rotl" title="Turn left" aria-label="Turn left">⟲</button>' +
+          '<button type="button" class="hv-btn" data-act="rotr" title="Turn right" aria-label="Turn right">⟳</button>' +
+          '<button type="button" class="hv-btn" data-act="down" title="Walls down" aria-label="Walls down" aria-pressed="false">🧱</button>' +
+          '<button type="button" class="hv-btn" data-act="cut" title="Cut the front walls" aria-label="Cut the front walls" aria-pressed="false">✂️</button>' +
+        '</div>' +
+        '<div class="hv-pill hv-zoom"><button type="button" class="hv-btn" data-act="zout" aria-label="Zoom out">−</button>' +
+          '<button type="button" class="hv-read" data-act="zreset" title="Reset the view">100%</button>' +
+          '<button type="button" class="hv-btn" data-act="zin" aria-label="Zoom in">+</button></div>' +
+        '<div class="hv-pill hv-floor"><button type="button" class="hv-btn" data-act="fdown" aria-label="Floor below">▼</button>' +
+          '<span class="hv-read" aria-live="polite"></span>' +
+          '<button type="button" class="hv-btn" data-act="fup" aria-label="Floor above">▲</button></div>' +
+      '</div>';
+    const stage = host.querySelector('.hv-stage');
+    const q = a => host.querySelector('[data-act="' + a + '"]');
+    const floorName = L => (o.floorNames && o.floorNames[L]) || LI[L].name;
+
+    // one frame for all the floors (at this angle), so changing floor doesn't jump
+    const fit = ([x, y, w, h]) => { const A = 4 / 3; return w / h < A ? [x + w / 2 - h * A / 2, y, h * A, h] : [x, y + h / 2 - w / A / 2, w, w / A]; };
+    function frames() {
+      let b = null;
+      view.frames = {};
+      view.levels.forEach(L => {
+        const m = pictureSvg(view.house, { level: L, rot: view.rot, walls: 'full' }).match(/viewBox="([^"]+)"/);
+        const [x, y, w, h] = m[1].split(' ').map(Number);
+        view.frames[L] = fit([x, y, w, h]);
+        b = b ? [Math.min(b[0], x), Math.min(b[1], y), Math.max(b[0] + b[2], x + w) - Math.min(b[0], x), Math.max(b[1] + b[3], y + h) - Math.min(b[1], y)] : [x, y, w, h];
+      });
+      return fit(b);
+    }
+    function draw() {
+      if (view.auto) setVB(view.frames[view.level], true);   // not moved by hand: frame the floor shown
+      const labels = view.labels.filter(l => (l.level || 0) === view.level);
+      stage.innerHTML = pictureSvg(view.house, { level: view.level, rot: view.rot, walls: view.walls, labels, box: view.vb, alt: o.alt });
+      const svg = stage.firstElementChild;
+      svg.setAttribute('preserveAspectRatio', 'xMidYMid meet');
+      stage.setAttribute('aria-label', (o.alt || 'A house') + ' — ' + floorName(view.level));
+      host.querySelector('.hv-floor .hv-read').textContent = floorName(view.level);
+      const i = view.levels.indexOf(view.level);
+      q('fdown').disabled = i <= 0; q('fup').disabled = i >= view.levels.length - 1;
+      host.querySelector('.hv-floor').style.display = view.levels.length > 1 ? '' : 'none';
+      q('down').setAttribute('aria-pressed', String(view.walls === 'down'));
+      q('cut').setAttribute('aria-pressed', String(view.walls === 'cutout'));
+      zoomRead();
+    }
+    function setVB(vb, auto) {
+      if (!auto) view.auto = false;
+      const B = view.base;
+      const w = Math.min(B[2], Math.max(B[2] / 6, vb[2])), h = w * B[3] / B[2];
+      let cx = vb[0] + vb[2] / 2, cy = vb[1] + vb[3] / 2;
+      cx = Math.min(B[0] + B[2], Math.max(B[0], cx)); cy = Math.min(B[1] + B[3], Math.max(B[1], cy));   // keep the house in view
+      view.vb = [cx - w / 2, cy - h / 2, w, h];
+      const svg = stage.firstElementChild;
+      if (svg) svg.setAttribute('viewBox', view.vb.map(v => v.toFixed(1)).join(' '));
+      zoomRead();
+    }
+    // 100% = the floor's own frame
+    function zoomRead() { if (view.frames && view.vb) host.querySelector('.hv-zoom .hv-read').textContent = Math.round(view.frames[view.level][2] / view.vb[2] * 100) + '%'; }
+    function zoomAt(f, sx, sy) {   // f > 1 zooms in; (sx, sy) a point in the stage, 0–1
+      const [x, y, w, h] = view.vb, px = x + w * sx, py = y + h * sy, nw = w / f, nh = h / f;
+      setVB([px - nw * sx, py - nh * sy, nw, nh]);
+    }
+    function reset() { view.base = frames(); view.auto = true; draw(); }
+
+    host.querySelector('.hv').addEventListener('click', e => {
+      const b = e.target.closest('[data-act]'); if (!b || b.disabled) return;
+      const act = b.dataset.act, i = view.levels.indexOf(view.level);
+      if (act === 'rotl' || act === 'rotr') { view.rot = (view.rot + (act === 'rotr' ? 1 : 3)) % 4; reset(); return; }
+      if (act === 'down') view.walls = view.walls === 'down' ? 'full' : 'down';
+      else if (act === 'cut') view.walls = view.walls === 'cutout' ? 'full' : 'cutout';
+      else if (act === 'fdown') view.level = view.levels[i - 1];
+      else if (act === 'fup') view.level = view.levels[i + 1];
+      else if (act === 'zin') { zoomAt(1.4, 0.5, 0.5); return; }
+      else if (act === 'zout') { zoomAt(1 / 1.4, 0.5, 0.5); return; }
+      else if (act === 'zreset') { view.auto = true; setVB(view.frames[view.level], true); return; }
+      draw();
+    });
+
+    // drag to move, two fingers to pinch, wheel to zoom
+    const ptrs = new Map();
+    let last = null;
+    const rel = e => { const r = stage.getBoundingClientRect(); return [(e.clientX - r.left) / r.width, (e.clientY - r.top) / r.height, r]; };
+    function snapshot() {
+      const ps = [...ptrs.values()];
+      if (ps.length === 1) return { x: ps[0].x, y: ps[0].y };
+      const [a, b] = ps;
+      return { x: (a.x + b.x) / 2, y: (a.y + b.y) / 2, d: Math.hypot(a.x - b.x, a.y - b.y) };
+    }
+    function endAll() { ptrs.clear(); last = null; stage.classList.remove('dragging'); }
+    stage.addEventListener('pointerdown', e => {
+      if (e.button != null && e.button > 0) return;
+      ptrs.set(e.pointerId, { x: e.clientX, y: e.clientY });
+      try { stage.setPointerCapture(e.pointerId); } catch (err) { /* capture is a nicety */ }
+      last = snapshot(); stage.classList.add('dragging');
+    });
+    stage.addEventListener('pointermove', e => {
+      if (!ptrs.has(e.pointerId)) return;
+      ptrs.set(e.pointerId, { x: e.clientX, y: e.clientY });
+      const now = snapshot(), r = stage.getBoundingClientRect();
+      // the stage shows vb at "meet": one screen pixel is this many picture units
+      const k = Math.max(view.vb[2] / r.width, view.vb[3] / r.height);
+      let [x, y, w, h] = view.vb;
+      x -= (now.x - last.x) * k; y -= (now.y - last.y) * k;
+      setVB([x, y, w, h]);
+      if (now.d && last.d) zoomAt(now.d / last.d, (now.x - r.left) / r.width, (now.y - r.top) / r.height);
+      last = now;
+    });
+    const up = e => { ptrs.delete(e.pointerId); last = ptrs.size ? snapshot() : null; if (!ptrs.size) stage.classList.remove('dragging'); };
+    stage.addEventListener('pointerup', up);
+    stage.addEventListener('pointercancel', up);
+    stage.addEventListener('lostpointercapture', up);
+    window.addEventListener('blur', endAll);
+    stage.addEventListener('wheel', e => {
+      e.preventDefault();
+      const [sx, sy] = rel(e);
+      zoomAt(Math.pow(1.0018, -e.deltaY), sx, sy);
+    }, { passive: false });
+    stage.addEventListener('dblclick', e => { const [sx, sy] = rel(e); zoomAt(1.6, sx, sy); });
+
+    function set(house, opts) {
+      opts = opts || {};
+      view.house = house;
+      if (opts.labels) view.labels = opts.labels;
+      view.levels = (house.floors || []).filter(f => (f.edges || []).length || (f.furniture || []).length || (f.appliances || []).length)
+        .map(f => f.level).sort((a, b) => a - b);
+      if (!view.levels.length) view.levels = [0];
+      if (opts.level != null) view.level = opts.level;
+      if (!view.levels.includes(view.level)) view.level = view.levels.includes(0) ? 0 : view.levels[0];
+      reset();
+    }
+    set(o.house, {});
+    return { set, get level() { return view.level; }, setLevel(L) { if (view.levels.includes(L)) { view.level = L; draw(); } } };
+  }
+
+  global.HousePicture = { svg: pictureSvg, draw: pictureDraw, room, house, thing };
+  global.HouseViewer = { build: viewerBuild };
   global.HousePictureChoice = { build: choiceBuild };
 })(window);

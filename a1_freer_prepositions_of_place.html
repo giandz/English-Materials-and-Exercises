@@ -1,0 +1,236 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<title>Where Is It? — Freer Practice</title>
+<script>
+(function(){
+  try{
+    var saved = localStorage.getItem('theme-preference');
+    var theme = (saved === 'light' || saved === 'dark')
+      ? saved
+      : ((window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches) ? 'dark' : 'light');
+    document.documentElement.setAttribute('data-theme', theme);
+  }catch(e){ /* localStorage/matchMedia unavailable — CSS media query still applies */ }
+})();
+</script>
+<link rel="stylesheet" href="house.css">
+<style>
+.house-actions{ display:flex; flex-wrap:wrap; justify-content:center; gap:8px; margin:10px 0 1.2rem; }
+.house-btn{ font:inherit; font-size:.9333rem; font-weight:600; padding:8px 16px; border-radius:999px; cursor:pointer;
+  border:1px solid var(--border); background:var(--surface-1); color:var(--text-primary); }
+.house-btn[aria-pressed="true"]{ border-color:var(--text-accent); color:var(--text-accent); }
+.viewer-wrap{ position:relative; }
+.viewer-wrap.hidden .hv-stage{ filter:blur(14px) grayscale(.4); }
+.viewer-wrap.hidden::after{ content:'🙈 Student B: no looking!'; position:absolute; inset:0; display:flex; align-items:center; justify-content:center;
+  font-size:1.2rem; font-weight:700; color:var(--text-primary); pointer-events:none; }
+.q-card details{ margin-top:4px; font-size:.9333rem; color:var(--text-secondary); }
+.q-card summary{ cursor:pointer; color:var(--text-accent); font-weight:600; }
+.q-card .q-answer{ margin-top:6px; font-weight:600; color:var(--good); }
+.how{ font-size:.9rem; }
+.how ol{ margin:4px 0 0; padding-left:1.3rem; }
+</style>
+</head>
+<body>
+<div class="page" id="page">
+  <span class="cefr-tag cefr-a1">A1 · Beginner</span>
+  <h1>Where Is It?</h1>
+  <p class="subtitle">Talk about where things are: in · on · under · next to · between · behind · in front of</p>
+
+  <div class="rule-box how">
+    <strong>How to play</strong> (with a partner)
+    <ol>
+      <li>Student A looks at the house. Student B doesn't look.</li>
+      <li>Student B rolls 🎲 and asks the question. Student A answers.</li>
+      <li>Look at the house together. Is the answer correct?</li>
+      <li>Change roles. Make a new house 🏠 and play again!</li>
+    </ol>
+  </div>
+
+  <div class="sec-div">The house</div>
+  <p class="subtitle">Drag to move. Pinch or use − + to zoom. ▲ ▼ change floor. 🧱 ✂️ change the walls.</p>
+  <div class="viewer-wrap" id="viewerWrap"><div id="viewer"></div></div>
+  <div class="house-actions">
+    <button type="button" class="house-btn" id="newHouse">🏠 New house</button>
+    <button type="button" class="house-btn" id="hideHouse" aria-pressed="false">🙈 Hide the house</button>
+  </div>
+  <p class="subtitle" style="text-align:center">Look for: 💡 the lamp · 💻 the laptop · 📚 the books · 📕 the book · 🪴 the plant · 🟨 the cushion</p>
+
+  <div class="sec-div">Talk about it</div>
+  <button type="button" class="dice-btn" id="diceBtn" aria-label="Roll for a question">🎲</button>
+  <div class="roll-count">Questions: <strong id="rollCount">0</strong></div>
+  <div class="q-card" id="qCard"><span class="q-placeholder">Roll the dice for a question about the house.</span></div>
+
+  <footer>Where Is It? — Freer Practice (A1)</footer>
+</div>
+
+<div id="theme-toggle-wrap">
+  <button id="theme-toggle" aria-label="Toggle light/dark mode" title="Toggle light/dark mode">
+    <span id="theme-icon">☀️</span>
+  </button>
+</div>
+<script src="house.js"></script>
+<script src="house-engine.js"></script>
+<script>
+/* ══ A new house every time ═════════════════════════════════════════════
+   The furniture stays where it is (so its names are easy to learn);
+   six small things — a lamp, a laptop, books, a book, a plant and a
+   cushion — go to random places: on, under, in, next to, in front of…
+   Every place is one the builder itself accepts, so nothing is dropped. */
+const it = (type, level, slot) => ({ type, level, slot: slot || 'C', dir: 0 });
+const rnd = n => Math.floor(Math.random() * n);
+const shuffle = arr => { const a = arr.slice(); for (let i = a.length - 1; i > 0; i--) { const j = rnd(i + 1); [a[i], a[j]] = [a[j], a[i]]; } return a; };
+const TILE = (r0, r1, c0, c1) => { const f = {}; for (let r = r0; r < r1; r++) for (let c = c0; c < c1; c++) f[r + ',' + c] = 'tile'; return f; };
+
+const THINGS = [
+  { type: 'lamp', name: 'the lamp', plural: false },
+  { type: 'laptop', name: 'the laptop', plural: false },
+  { type: 'books', name: 'the books', plural: true },
+  { type: 'book', name: 'the book', plural: false },
+  { type: 'planter', name: 'the plant', plural: false },
+  { type: 'cushion', name: 'the cushion', plural: false }
+];
+// where a thing can go: on / under / in a piece (its level and slots), or a spot on the floor
+const SPOTS = [
+  { phrase: 'on the side table',       furn: 'side', level: 0, slots: ['C'],      fits: ['lamp', 'planter', 'books', 'book', 'laptop'] },
+  { phrase: 'under the side table',    furn: 'side', level: 1, slots: ['C'],      fits: ['book', 'books', 'cushion', 'planter', 'laptop'] },
+  { phrase: 'on the coffee table',     furn: 'coffee', level: 0, slots: ['L', 'R'], fits: ['lamp', 'planter', 'books', 'book', 'laptop'] },
+  { phrase: 'under the coffee table',  furn: 'coffee', level: 1, slots: ['L', 'R'], fits: ['book', 'books', 'cushion', 'laptop'] },
+  { phrase: 'on the sofa',             furn: 'sofa', level: 0, slots: ['L', 'R'],   fits: ['cushion', 'book', 'laptop'] },
+  { phrase: 'on the armchair',         furn: 'arm', level: 0, slots: ['C'],         fits: ['cushion', 'book', 'laptop'] },
+  { phrase: 'in the bookcase',         furn: 'bookcase', level: 0, slots: ['L', 'R'], fits: ['books', 'book', 'planter'] },
+  { phrase: 'on the bookcase',         furn: 'bookcase', level: 2, slots: ['C'],    fits: ['planter', 'lamp', 'books'] },
+  { phrase: 'on the dining table',     furn: 'table', level: 0, slots: ['L', 'R'],  fits: ['lamp', 'planter', 'books', 'book', 'laptop'] },
+  { phrase: 'under the dining table',  furn: 'table', level: 1, slots: ['L', 'R'],  fits: ['cushion', 'book', 'books', 'planter', 'laptop'] },
+  { phrase: 'on the nightstand',       furn: 'night', level: 0, slots: ['C'],       fits: ['lamp', 'planter', 'books', 'book'], up: true },
+  { phrase: 'in front of the TV',      floor: { level: 0, x: 5.5, y: 2.5 },          fits: ['planter', 'cushion', 'books'] },
+  { phrase: 'next to the sofa',        floor: { level: 0, x: 5.5, y: 0.5 },          fits: ['planter', 'books'] },
+  { phrase: 'in front of the fridge',  floor: { level: 0, x: 3.5, y: 1.5 },          fits: ['planter'] },
+  { phrase: 'next to the bed',         floor: { level: 1, x: 2.5, y: 1.5 },          fits: ['planter', 'books', 'cushion'], up: true }
+];
+
+function makeHouse() {
+  const F = {
+    sofa:     { type: 'loveseat', x: 6.5, y: 0.5, dir: 2, items: [] },
+    side:     { type: 'sidetable', x: 7.5, y: 0.5, dir: 2, items: [] },
+    coffee:   { type: 'coffeetable', x: 6.5, y: 1.5, dir: 2, items: [] },
+    arm:      { type: 'armchair', x: 7, y: 3, dir: 3, items: [] },
+    tv:       { type: 'tvstand', x: 4.5, y: 2.5, dir: 1, items: [it('tv', 1)] },
+    bookcase: { type: 'bookshelf', x: 4.5, y: 4.5, dir: 1, items: [] },
+    table:    { type: 'table', x: 2, y: 2, dir: 0, items: [] },
+    night:    { type: 'nightstand', x: 2.5, y: 0.5, dir: 2, items: [] }
+  };
+  const floor = { 0: [], 1: [] };
+  // give each thing a place: try the places in a random order, take the first free one it fits
+  const used = new Set(), placed = [];
+  shuffle(THINGS).forEach(t => {
+    for (const s of shuffle(SPOTS)) {
+      if (!s.fits.includes(t.type)) continue;
+      if (s.floor) {
+        const k = s.phrase; if (used.has(k)) continue;
+        used.add(k); floor[s.floor.level].push({ type: t.type, x: s.floor.x, y: s.floor.y, dir: 2 });
+      } else {
+        const slot = s.slots.find(sl => !used.has(s.furn + s.level + sl));
+        if (!slot) continue;
+        used.add(s.furn + s.level + slot);
+        F[s.furn].items.push(it(t.type, s.level, slot));
+      }
+      placed.push({ thing: t, spot: s });
+      return;
+    }
+  });
+  const rug = Math.random() < 0.6;
+  const house = HousePicture.house({ cols: 8, rows: 6, floors: [
+    { level: 0, lines: [[4, 0, 4, 6], [0, 4, 4, 4]], floors: TILE(0, 4, 0, 4),
+      openings: [['h', 4, 0, 'gap'], ['v', 5, 4, 'gap'], ['h', 0, 1, 'window'], ['h', 0, 6, 'window'], ['v', 1, 0, 'window']],
+      stairs: [{ r: 5, c: 3, dir: 3, type: 'straight' }],
+      furniture: [
+        { type: 'countertop', edge: { o: 'h', r: 0, c: 0 }, side: 'p', insets: [0.08, 0], items: [it('sink', 0)] },
+        { type: 'countertop', edge: { o: 'h', r: 0, c: 1 }, side: 'p', items: [it('stove', 0)] },
+        { type: 'countertop', edge: { o: 'h', r: 0, c: 2 }, side: 'p', items: [it('microwave', 0)] },
+        F.table,
+        { type: 'chair', x: 1, y: 2, dir: 1 }, { type: 'chair', x: 3, y: 2, dir: 3 }, { type: 'chair', x: 2, y: 1, dir: 2 }, { type: 'chair', x: 2, y: 3, dir: 0 },
+        F.sofa, F.side, F.coffee, F.arm, F.tv, F.bookcase
+      ],
+      appliances: [{ type: 'fridge', x: 3.5, y: 0.5, dir: 2 }].concat(rug ? [{ type: 'rug', x: 6.5, y: 1.5, dir: 0 }] : [], floor[0]) },
+    { level: 1, lines: [[4, 0, 4, 6], [0, 4, 8, 4]], floors: TILE(4, 6, 4, 8),
+      openings: [['h', 4, 0, 'gap'], ['v', 4, 4, 'gap'], ['v', 3, 4, 'gap'], ['h', 0, 2, 'window'], ['h', 0, 5, 'window'], ['v', 2, 0, 'window']],
+      furniture: [
+        { type: 'bed', x: 1.5, y: 1.5, dir: 2 }, F.night, { type: 'wardrobe', x: 0.5, y: 2.5, dir: 1 },
+        { type: 'bed', x: 5.5, y: 1.5, dir: 2 }, { type: 'nightstand', x: 6.5, y: 0.5, dir: 2 },
+        { type: 'toilet', x: 7.5, y: 4.5, dir: 2 }, { type: 'washbasin', x: 5.5, y: 4.5, dir: 2 }, { type: 'bathtub', x: 6.5, y: 5.5, dir: 1 }
+      ],
+      appliances: floor[1] }
+  ] });
+  const labels = [
+    { level: 0, x: 0.9, y: 1.2, text: 'kitchen' }, { level: 0, x: 6.5, y: 4.3, text: 'living room' },
+    { level: 1, x: 3.2, y: 2.6, text: 'bedroom' }, { level: 1, x: 5.3, y: 3.0, text: 'bedroom' }, { level: 1, x: 7.1, y: 5.2, text: 'bathroom' }
+  ];
+  return { house, labels, placed, rug };
+}
+
+/* ══ Questions about THIS house, with the answers worked out from it ══ */
+const ASK = '👥 Ask your partner', TELL = '🗣️ Tell your partner', YOU = '🏡 Talk about your home';
+const cap = s => s[0].toUpperCase() + s.slice(1);
+function makePrompts(h) {
+  const out = [];
+  h.placed.forEach(({ thing: t, spot: s }) => {
+    const be = t.plural ? 'are' : 'is', pr = t.plural ? 'They’re' : 'It’s', where = s.up ? ' (upstairs)' : '';
+    out.push({ icon: ASK, text: (t.plural ? 'Where are ' : 'Where’s ') + t.name + '?', answer: pr + ' ' + s.phrase + '.' + where });
+    // a yes / no question: sometimes true, usually not
+    const others = SPOTS.filter(o => o !== s && o.fits.includes(t.type));
+    if (Math.random() < 0.35 || !others.length) out.push({ icon: ASK, text: cap(be) + ' ' + t.name + ' ' + s.phrase + '?', answer: 'Yes, ' + (t.plural ? 'they are.' : 'it is.') });
+    else { const o = others[rnd(others.length)]; out.push({ icon: ASK, text: cap(be) + ' ' + t.name + ' ' + o.phrase + '?', answer: 'No, ' + (t.plural ? 'they aren’t. They’re ' : 'it isn’t. It’s ') + s.phrase + '.' }); }
+  });
+  // what is on / under a piece of furniture?
+  [['on the coffee table', 'What’s on the coffee table?'], ['under the dining table', 'What’s under the dining table?'], ['on the sofa', 'What’s on the sofa?']].forEach(([ph, q]) => {
+    const here = h.placed.filter(p => p.spot.phrase === ph).map(p => p.thing.name);
+    out.push({ icon: ASK, text: q, answer: here.length ? cap(here.join(' and ')) + '.' : 'Nothing!' });
+  });
+  out.push(
+    { icon: ASK, text: 'Where’s the coffee table?', answer: 'It’s in front of the sofa.' },
+    { icon: ASK, text: 'Where’s the side table?', answer: 'It’s next to the sofa.' },
+    { icon: ASK, text: 'Where’s the TV?', answer: 'It’s on the TV stand, in the living room.' }
+  );
+  if (h.rug) out.push({ icon: ASK, text: 'Where’s the rug?', answer: 'It’s under the coffee table.' });
+  out.push(
+    { icon: TELL, text: 'Choose a thing in the house — don’t say it! Your partner asks: “Is it on the sofa?” You answer: “Yes, it is.” / “No, it isn’t.”' },
+    { icon: TELL, text: 'Move a thing (only in your head!). Say: “Now the plant is under the coffee table.” Your partner points to the new place.' },
+    { icon: TELL, text: 'Describe the living room. Say three sentences: “The … is next to / in front of / on …”' },
+    { icon: YOU, text: 'Where’s your phone now? Where are your keys?' },
+    { icon: YOU, text: 'Describe your living room. Where’s the sofa? Where’s the TV?' },
+    { icon: YOU, text: 'Describe your bedroom. What’s next to your bed?' }
+  );
+  return out;
+}
+
+/* ══ Wiring ══════════════════════════════════════════════════════════════ */
+let H = makeHouse(), PROMPTS = makePrompts(H), deck = [];
+const viewer = HouseViewer.build({
+  container: 'viewer', house: H.house, labels: H.labels, alt: 'A house with two floors',
+  floorNames: { 0: 'Downstairs', 1: 'Upstairs' }
+});
+function nextPrompt() {
+  if (!deck.length) deck = shuffle(PROMPTS);
+  return deck.pop();
+}
+HouseRandomGen.build({
+  pick: nextPrompt,
+  render: p => '<span class="q-topic">' + p.icon + '</span><span class="q-text">' + p.text + '</span>' +
+    (p.answer ? '<details><summary>Show the answer</summary><div class="q-answer">' + p.answer + '</div></details>' : '')
+});
+document.getElementById('newHouse').addEventListener('click', () => {
+  H = makeHouse(); PROMPTS = makePrompts(H); deck = [];
+  viewer.set(H.house, { labels: H.labels, level: 0 });
+  document.getElementById('qCard').innerHTML = '<span class="q-placeholder">A new house! Roll the dice for a question.</span>';
+});
+document.getElementById('hideHouse').addEventListener('click', e => {
+  const on = document.getElementById('viewerWrap').classList.toggle('hidden');
+  e.currentTarget.setAttribute('aria-pressed', String(on));
+  e.currentTarget.textContent = on ? '👀 Show the house' : '🙈 Hide the house';
+});
+</script>
+<script>HouseGrammar.init();</script>
+</body>
+</html>

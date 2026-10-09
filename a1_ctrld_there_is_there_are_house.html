@@ -58,7 +58,7 @@
 /* ── rooms, all built by the House Builder engine ──────────────────────── */
 const it = (type, level, slot) => ({ type, level, slot: slot || 'C', dir: 0 });
 const TILE = (rows, cols) => { const f = {}; for (let r = 0; r < rows; r++) for (let c = 0; c < cols; c++) f[r + ',' + c] = 'tile'; return f; };
-// a kitchen with a table and 0–4 chairs round it
+// a kitchen with a dining table and 0–4 chairs round it
 const CHAIRS = [{ x: 1, y: 2, dir: 1 }, { x: 3, y: 2, dir: 3 }, { x: 2, y: 1, dir: 2 }, { x: 2, y: 3, dir: 0 }];
 const kitchen = (chairs, table) => HousePicture.room({
   cols: 4, rows: 4, floors: TILE(4, 4),
@@ -107,11 +107,11 @@ HousePictureChoice.build({ container: 'pcItems', items: PC_ITEMS, scoreEl: 'pcSc
 const WO_ITEMS = [
   { context: mini(living({ rug: true }), 'A living room with a sofa'),
     text: 'There / is / a / sofa / in / the / living room', pos: ['subject', 'verb', 'det', 'noun', 'prep', 'det', 'noun'] },
-  { context: mini(kitchen(4), 'A kitchen with a table and four chairs'),
+  { context: mini(kitchen(4), 'A kitchen with a dining table and four chairs'),
     text: 'There / are / four / chairs / in / the / kitchen', pos: ['subject', 'verb', 'det', 'noun', 'prep', 'det', 'noun'] },
   { context: mini(bathroom({ shower: true }), 'A bathroom with a shower'),
     text: 'There / isn’t / a / bathtub', pos: ['subject', 'neg', 'det', 'noun'] },
-  { context: mini(kitchen(0), 'A kitchen with a table'),
+  { context: mini(kitchen(0), 'A kitchen with a dining table'),
     text: 'There / aren’t / any / chairs', pos: ['subject', 'neg', 'det', 'noun'] },
   { context: mini(living({ tv: true }), 'A living room with a sofa and a TV') + 'Ask about the TV.',
     text: 'Is / there / a / TV / ?', pos: ['verb', 'subject', 'det', 'noun', 'none'] },
@@ -125,17 +125,17 @@ const look = (house, alt) => mini(house, alt) + 'Look at the picture.';
 const GF_ITEMS = [
   { direct: look(living({ rug: true }), 'A living room with a sofa'),
     template: 'There {0} a sofa in the living room.', hints: [{ accepted: ['is', '’s', "'s"] }] },
-  { direct: look(kitchen(4), 'A kitchen with a table and four chairs'),
+  { direct: look(kitchen(4), 'A kitchen with a dining table and four chairs'),
     template: 'There {0} four chairs in the kitchen.', hints: [{ accepted: ['are'] }] },
   { direct: look(bathroom({ shower: true }), 'A bathroom with a shower'),
     template: 'There {0} a bathtub. There’s a shower.', hints: [{ accepted: ['isn’t', "isn't", 'is not'] }] },
-  { direct: look(kitchen(0), 'A kitchen with a table'),
+  { direct: look(kitchen(0), 'A kitchen with a dining table'),
     template: 'There {0} {1} chairs in the kitchen.', hints: [{ accepted: ['aren’t', "aren't", 'are not'] }, { accepted: ['any'] }] },
   { direct: look(living({ tv: true }), 'A living room with a sofa and a TV'),
     template: '“{0} {1} a TV in the living room?” “Yes, there is.”', hints: [{ accepted: ['Is'] }, { accepted: ['there'] }] },
   { direct: look(living({ plants: 3 }), 'A living room with a sofa and plants'),
     template: '“How many plants {0} {1}?” “There are three.”', hints: [{ accepted: ['are'] }, { accepted: ['there'] }] },
-  { direct: look(kitchen(0), 'A kitchen with a table'),
+  { direct: look(kitchen(0), 'A kitchen with a dining table'),
     template: '“{0} there any chairs in the kitchen?” “No, there {1}.”', hints: [{ accepted: ['Are'] }, { accepted: ['aren’t', "aren't"] }] }
 ];
 HouseGapFill.build({ container: 'gfItems', items: GF_ITEMS });
