@@ -1,0 +1,127 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<title>Mia's New Apartment — There Is / There Are</title>
+<script>
+(function(){
+  try{
+    var saved = localStorage.getItem('theme-preference');
+    var theme = (saved === 'light' || saved === 'dark')
+      ? saved
+      : ((window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches) ? 'dark' : 'light');
+    document.documentElement.setAttribute('data-theme', theme);
+  }catch(e){ /* localStorage/matchMedia unavailable — CSS media query still applies */ }
+})();
+</script>
+<link rel="stylesheet" href="house.css">
+<style>
+.scene{ max-width:600px; margin:0 auto .5rem; }
+.scene-caption{ text-align:center; font-size:.8333rem; color:var(--text-secondary); margin:0 0 1.2rem; }
+</style>
+</head>
+<body>
+<div class="page" id="page">
+  <span class="cefr-tag cefr-a1">A1 · Beginner</span>
+  <h1>Mia's New Apartment</h1>
+  <p class="subtitle">Mia has a new apartment. She talks to her grandma on a video call.</p>
+
+  <div class="sec-div">Before you read</div>
+  <div id="preQuestions"></div>
+
+  <div class="sec-div">The conversation</div>
+  <div class="scene" id="flatPic"></div>
+  <p class="scene-caption">Mia's apartment</p>
+
+  <button class="grammar-toggle-btn" id="grammarToggle">🎨 Show Grammar</button>
+  <div class="pos-legend"></div>
+
+  <div id="conversation"></div>
+
+  <div class="sec-div">Check your answers</div>
+  <div id="quiz"></div>
+
+  <footer>Mia's New Apartment — There Is / There Are (A1)</footer>
+</div>
+
+<div id="theme-toggle-wrap">
+  <button id="theme-toggle" aria-label="Toggle light/dark mode" title="Toggle light/dark mode">
+    <span id="theme-icon">☀️</span>
+  </button>
+</div>
+<script src="house.js"></script>
+<script src="house-engine.js"></script>
+<script>
+const it = (type, level, slot) => ({ type, level, slot: slot || 'C', dir: 0 });
+const TILE = (r0, r1, c0, c1) => { const f = {}; for (let r = r0; r < r1; r++) for (let c = c0; c < c1; c++) f[r + ',' + c] = 'tile'; return f; };
+
+/* Mia's apartment, as she shows it: one bedroom, four kitchen chairs, two plants, a shower and no bathtub */
+const FLAT = HousePicture.room({
+  cols: 8, rows: 7, lines: [[4, 0, 4, 4], [0, 4, 8, 4], [3, 4, 3, 7]],
+  openings: [['v', 3, 4, 'gap'], ['v', 6, 3, 'gap'], ['h', 4, 7, 'gap'], ['h', 0, 6, 'window'], ['v', 1, 0, 'window'], ['h', 7, 5, 'window']],
+  floors: Object.assign(TILE(0, 4, 0, 4), TILE(4, 7, 0, 3)),
+  furniture: [
+    { type: 'countertop', edge: { o: 'h', r: 0, c: 0 }, side: 'p', insets: [0.08, 0], items: [it('sink', 0)] },
+    { type: 'countertop', edge: { o: 'h', r: 0, c: 1 }, side: 'p', items: [it('microwave', 0)] },
+    { type: 'countertop', edge: { o: 'h', r: 0, c: 2 }, side: 'p', items: [it('stove', 0)] },
+    { type: 'table', x: 2, y: 2, dir: 0 },
+    { type: 'chair', x: 1, y: 2, dir: 1 }, { type: 'chair', x: 3, y: 2, dir: 3 }, { type: 'chair', x: 2, y: 1, dir: 2 }, { type: 'chair', x: 2, y: 3, dir: 0 },
+    { type: 'loveseat', x: 6.5, y: 0.5, dir: 2 },
+    { type: 'tvstand', x: 4.5, y: 1.5, dir: 1, items: [it('tv', 1)] },
+    { type: 'shower', edge: { o: 'v', r: 5, c: 0 }, side: 'p' },
+    { type: 'toilet', x: 1.5, y: 4.5, dir: 2 }, { type: 'washbasin', x: 2.5, y: 4.5, dir: 2 },
+    { type: 'bed', x: 5.5, y: 5.5, dir: 2 }, { type: 'nightstand', x: 4.5, y: 4.5, dir: 2, items: [it('lamp', 0)] }
+  ],
+  appliances: [{ type: 'fridge', x: 3.5, y: 0.5, dir: 2 },
+    { type: 'planter', x: 5.5, y: 0.5, dir: 0 }, { type: 'planter', x: 7.5, y: 0.5, dir: 0 }, { type: 'rug', x: 6.5, y: 2.5, dir: 0 }]
+});
+HousePicture.draw('flatPic', FLAT, {
+  alt: "Mia's apartment: a kitchen, a living room, a bathroom and a bedroom",
+  labels: [{ x: 0.9, y: 1.3, text: 'kitchen' }, { x: 6.3, y: 3.5, text: 'living room' }, { x: 1.5, y: 6.4, text: 'bathroom' }, { x: 4.2, y: 6.6, text: 'bedroom' }]
+});
+
+/* Conversation lines. [words/pos] marks a part of speech for the grammar colours. */
+const SPEAKERS = {
+  Grandma: { avatar: '👩‍🦳', av: 'av-c', side: 'left' },
+  Mia: { avatar: '🙋', av: 'av-b', side: 'right' }
+};
+const LINES = [
+  ['Grandma', '[Hi/none], [Mia/noun]! [Show/verb] [me/object] [your new apartment/noun]!'],
+  ['Mia', '[Hi/none], [Grandma/noun]! [OK/none]. [This/subject] [is/verb] [the living room/noun]. [There’s/subject] [a/det] [sofa/noun], [and/conj] [there’s/subject] [a/det] [TV/noun].'],
+  ['Grandma', '[It’s/subject] [nice/adj]! [Are/verb] [there/subject] [any/det] [plants/noun]?'],
+  ['Mia', '[Yes/none], [there/subject] [are/verb]. [There/subject] [are/verb] [two/det] [plants/noun], [next to/prep] [the sofa/noun].'],
+  ['Grandma', '[How many/wh] [bedrooms/noun] [are/verb] [there/subject]?'],
+  ['Mia', '[There’s/subject] [one/det] [bedroom/noun]. [It’s/subject] [small/adj], [but/conj] [there’s/subject] [a/det] [big/adj] [bed/noun]!'],
+  ['Grandma', '[And/conj] [the kitchen/noun]? [Is/verb] [there/subject] [a/det] [table/noun]?'],
+  ['Mia', '[Yes/none], [there/subject] [is/verb]. [And/conj] [there/subject] [are/verb] [four/det] [chairs/noun] [in/prep] [the kitchen/noun].'],
+  ['Grandma', '[Four/det] [chairs/noun]! [Good/adj] — [there’s/subject] [a/det] [chair/noun] [for/prep] [me/object]!'],
+  ['Mia', '[Of course/none]!'],
+  ['Grandma', '[Is/verb] [there/subject] [a/det] [bathtub/noun] [in/prep] [the bathroom/noun]?'],
+  ['Mia', '[No/none], [there/subject] [isn’t/neg]. [There’s/subject] [a/det] [shower/noun].'],
+  ['Grandma', '[Are/verb] [there/subject] [any/det] [pictures/noun] [on/prep] [the walls/noun]?'],
+  ['Mia', '[No/none], [there/subject] [aren’t/neg] [any/det] [pictures/noun]. [Not yet/time]!'],
+  ['Grandma', '[OK/none]. [See/verb] [you/object] [on Sunday/time], [Mia/noun]!']
+];
+const conv = document.getElementById('conversation');
+LINES.forEach(([who, text]) => {
+  const s = SPEAKERS[who], right = s.side === 'right';
+  const html = text.replace(/\[([^\/\]]+)\/(\w+)\]/g, '<span class="pos-hl pos-$2">$1</span>');
+  conv.insertAdjacentHTML('beforeend',
+    '<div class="bubble-wrap' + (right ? ' right' : '') + '">' +
+      '<div class="avatar ' + s.av + '">' + s.avatar + '</div>' +
+      '<div class="bubble-col"><div class="bname' + (right ? ' right' : '') + '">' + who + '</div>' +
+      '<div class="bubble ' + (right ? 'right' : 'left') + '">' + html + '</div></div>' +
+    '</div>');
+});
+
+const CQ_ITEMS = [
+  { q: 'How many bedrooms are there in Mia’s apartment?', opts: ['two', 'one', 'four'], correct: 1 },
+  { q: 'How many chairs are there in the kitchen?', opts: ['four', 'two', 'one'], correct: 0 },
+  { q: 'Is there a bathtub in the bathroom?', opts: ['Yes, there is.', 'No, there isn’t. There’s a shower.', 'Yes, there are two.'], correct: 1 }
+];
+HouseComprehension.build({ pre: 'preQuestions', quiz: 'quiz', items: CQ_ITEMS });
+</script>
+<script>HouseGrammar.init();</script>
+</body>
+</html>

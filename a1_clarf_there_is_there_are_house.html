@@ -1,0 +1,205 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<title>There Is / There Are — Clarification</title>
+<script>
+(function(){
+  try{
+    var saved = localStorage.getItem('theme-preference');
+    var theme = (saved === 'light' || saved === 'dark')
+      ? saved
+      : ((window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches) ? 'dark' : 'light');
+    document.documentElement.setAttribute('data-theme', theme);
+  }catch(e){ /* localStorage/matchMedia unavailable — CSS media query still applies */ }
+})();
+</script>
+<link rel="stylesheet" href="house.css">
+<style>
+/* picture gallery: one preposition per card */
+.prep-grid{ display:grid; grid-template-columns:repeat(2, minmax(0, 1fr)); gap:10px; margin:0 0 1.4rem; }
+@media (max-width:520px){ .prep-grid{ grid-template-columns:1fr; } }
+.prep-card{ border:1px solid var(--color-border-tertiary); border-radius:12px; background:var(--surface-2); padding:8px 8px 10px; }
+.prep-word{ font-size:1rem; font-weight:700; color:var(--text-accent); margin:2px 4px 4px; }
+.prep-sentence{ font-size:.9333rem; color:var(--text-primary); margin:6px 4px 0; line-height:1.5; }
+/* the target language is the lesson, so it stays coloured (not a grammar-toggle colour) */
+.tgt{ color:var(--text-accent); font-weight:700; }
+
+.pair-card{ background:var(--surface-2); border:1px solid var(--color-border-tertiary); border-radius:12px; padding:10px 12px; margin-bottom:8px; }
+.pair-line{ font-size:.9333rem; line-height:1.7; padding:2px 0; }
+.pair-line.no{ color:var(--bad); }
+.pair-line.yes{ color:var(--good); font-weight:600; }
+.mark{ font-weight:700; margin-right:5px; }
+.rule-box p{ margin:0 0 6px; }
+.rule-box p:last-child{ margin-bottom:0; }
+</style>
+</head>
+<body>
+<div class="page" id="page">
+  <span class="cefr-tag cefr-a1">A1 · Beginner</span>
+  <h1>There Is / There Are</h1>
+  <p class="subtitle">Say what is in a room: there's a sofa · there are four chairs</p>
+
+  <div class="sec-div">Look</div>
+  <p class="subtitle">What is in the rooms? Look at the pictures.</p>
+  <div class="prep-grid" id="galleryGrid"></div>
+
+  <div class="sec-div">Check the meaning</div>
+  <p class="subtitle">Read the sentence. Answer the questions.</p>
+  <div id="ccq"></div>
+
+  <div class="sec-div">Look at the form</div>
+  <p class="subtitle">What is each part of the sentence? Drag a label (or tap a label, then tap a box).</p>
+  <div class="score-bar"><span>Correct: <strong id="fcScore">0</strong> / <span id="fcTotal">0</span></span></div>
+  <div id="formClarf"></div>
+
+  <div class="rule-box">
+    <p><strong>One thing:</strong> <span class="tgt">There is</span> (<span class="tgt">There's</span>) + a / an: <span class="tgt">There's</span> a sofa.</p>
+    <p><strong>Two or more:</strong> <span class="tgt">There are</span> + two, three, four…: <span class="tgt">There are</span> four chairs.</p>
+    <p><strong>Negative:</strong> <span class="tgt">There isn't</span> a bathtub. · <span class="tgt">There aren't</span> any chairs.</p>
+    <p><strong>Question:</strong> <span class="tgt">Is there</span> a TV? — Yes, there is. / No, there isn't.<br>
+       <span class="tgt">Are there</span> any plants? — Yes, there are. / No, there aren't.</p>
+    <p><strong>How many?</strong> How many chairs <span class="tgt">are there</span>? — <span class="tgt">There are</span> four.</p>
+    <p>Short answers have no contraction: Yes, there <strong>is</strong>. (not <s>Yes, there's.</s>)</p>
+  </div>
+
+  <div class="sec-div">Common mistakes</div>
+  <div id="mistakes"></div>
+
+  <div class="sec-div">Error hunt</div>
+  <p class="subtitle">Every sentence has one mistake. Tap a word — or a space between words — to fix it. Then press OK.</p>
+  <div class="score-bar"><span>Fixed: <strong id="errorScore">0</strong> / <span id="errorTotal">0</span></span></div>
+  <div id="errorHuntItems"></div>
+
+  <footer>There Is / There Are — Clarification (A1)</footer>
+</div>
+
+<div id="theme-toggle-wrap">
+  <button id="theme-toggle" aria-label="Toggle light/dark mode" title="Toggle light/dark mode">
+    <span id="theme-icon">☀️</span>
+  </button>
+</div>
+<script src="house.js"></script>
+<script src="house-engine.js"></script>
+<script>
+const it = (type, level, slot) => ({ type, level, slot: slot || 'C', dir: 0 });
+const TILE = (rows, cols) => { const f = {}; for (let r = 0; r < rows; r++) for (let c = 0; c < cols; c++) f[r + ',' + c] = 'tile'; return f; };
+
+/* ── rooms for the pictures ────────────────────────────────────────────── */
+// a kitchen with a table and 0–4 chairs round it
+const CHAIRS = [{ x: 1, y: 2, dir: 1 }, { x: 3, y: 2, dir: 3 }, { x: 2, y: 1, dir: 2 }, { x: 2, y: 3, dir: 0 }];
+const kitchen = (chairs, table) => HousePicture.room({
+  cols: 4, rows: 4, floors: TILE(4, 4),
+  furniture: (table === false ? [] : [{ type: 'table', x: 2, y: 2, dir: 0 }]).concat(CHAIRS.slice(0, chairs).map(c => Object.assign({ type: 'chair' }, c))),
+  appliances: [{ type: 'fridge', x: 3.5, y: 0.5, dir: 2 }]
+});
+// a living room with a sofa, and some plants, a TV…
+const PLANTS = [{ x: 3.5, y: 1.5 }, { x: 2.5, y: 0.5 }, { x: 0.5, y: 1.5 }, { x: 3.5, y: 2.5 }];   // with a TV, only the right-hand spots are free
+const living = o => HousePicture.room({
+  cols: 4, rows: 3,
+  furniture: [{ type: 'loveseat', x: o.tv ? 2.5 : 1.5, y: 0.5, dir: 2 }].concat(o.tv ? [{ type: 'tvstand', x: 0.5, y: 1.5, dir: 1, items: [it('tv', 1, 'C')] }] : []),
+  appliances: PLANTS.filter(p => !o.tv || p.x === 3.5).slice(0, o.plants || 0).map(p => Object.assign({ type: 'planter', dir: 0 }, p)).concat(o.rug ? [{ type: 'rug', x: 1.5, y: 1.5, dir: 0 }] : [])
+});
+const bathroom = o => HousePicture.room({
+  cols: 3, rows: 3, floors: TILE(3, 3),
+  furniture: [{ type: 'toilet', x: 0.5, y: 0.5, dir: 2 }, { type: 'washbasin', x: 2.5, y: 0.5, dir: 2 }]
+    .concat(o.shower ? [{ type: 'shower', edge: { o: 'h', r: 0, c: 1 }, side: 'p' }] : [])
+    .concat(o.bathtub ? [{ type: 'bathtub', x: 1.5, y: 1.5, dir: 1 }] : [])
+});
+
+const GALLERY = [
+  { title: 'There’s + one thing', sentence: '<span class="tgt">There’s</span> a sofa in the living room.', house: living({ rug: true }) },
+  { title: 'There are + more things', sentence: '<span class="tgt">There are</span> four chairs in the kitchen.', house: kitchen(4) },
+  { title: 'There isn’t', sentence: '<span class="tgt">There isn’t</span> a bathtub. <span class="tgt">There’s</span> a shower.', house: bathroom({ shower: true }) },
+  { title: 'There aren’t any', sentence: '<span class="tgt">There aren’t</span> any chairs in the kitchen.', house: kitchen(0) },
+  { title: 'Is there…?', sentence: '“<span class="tgt">Is there</span> a TV?” “Yes, there is.”', house: living({ tv: true }) },
+  { title: 'How many…?', sentence: '“How many plants <span class="tgt">are there</span>?” “<span class="tgt">There are</span> three.”', house: living({ plants: 3 }) }
+];
+const gallery = document.getElementById('galleryGrid');
+GALLERY.forEach(g => {
+  const card = document.createElement('div');
+  card.className = 'prep-card';
+  card.innerHTML = '<div class="prep-word">' + g.title + '</div>' +
+    HousePicture.svg(g.house, { focus: true, aspect: 4 / 3, alt: g.sentence.replace(/<[^>]+>/g, '') }) +
+    '<div class="prep-sentence">' + g.sentence + '</div>';
+  gallery.appendChild(card);
+});
+
+/* ── concept checking questions ────────────────────────────────────────── */
+HouseCCQ.build({
+  container: 'ccq',
+  items: [
+    { sentence: 'There are four chairs in the kitchen.',
+      questions: [
+        { q: 'Is there one chair?', opts: ['Yes', 'No'], correct: 1,
+          why: 'There are = more than one. Here, four.' }
+      ] },
+    { sentence: 'There’s a sofa in the living room.',
+      questions: [
+        { q: 'Is it one sofa?', opts: ['Yes', 'No'], correct: 0,
+          why: 'There’s (there is) + a = one thing.' }
+      ] },
+    { sentence: 'There isn’t a bathtub in the bathroom.',
+      questions: [
+        { q: 'Can you have a bath in this bathroom?', opts: ['Yes', 'No'], correct: 1,
+          why: 'There isn’t a bathtub = zero bathtubs. No bathtub, no bath!' }
+      ] },
+    { sentence: 'Are there any plants in the living room?',
+      questions: [
+        { q: 'Do we know: are there plants?', opts: ['Yes', 'No'], correct: 1,
+          why: 'It is a question. We want to know.' }
+      ] }
+  ]
+});
+
+/* ── form ──────────────────────────────────────────────────────────────── */
+HouseFormClarf.build({
+  container: 'formClarf', scoreEl: 'fcScore', totalEl: 'fcTotal',
+  pool: ['wh', 'subject', 'verb', 'neg', 'det', 'noun'],
+  items: [
+    { form: 'aff', parts: [['There', 'subject'], ['is', 'verb'], ['a', 'det'], ['sofa', 'noun'], ['in the living room.', null]] },
+    { form: 'aff', parts: [['There', 'subject'], ['are', 'verb'], ['four', 'det'], ['chairs', 'noun'], ['in the kitchen.', null]] },
+    { form: 'neg', parts: [['There', 'subject'], ['isn’t', 'neg'], ['a', 'det'], ['bathtub', 'noun'], ['.', null]] },
+    { form: 'q',   parts: [['Are', 'verb'], ['there', 'subject'], ['any', 'det'], ['plants', 'noun'], ['?', null]] },
+    { form: 'wh',  parts: [['How many', 'wh'], ['chairs', 'noun'], ['are', 'verb'], ['there', 'subject'], ['?', null]] }
+  ]
+});
+
+/* ── common mistakes ───────────────────────────────────────────────────── */
+const MISTAKES = [
+  ['Have a sofa in the living room.', 'There’s a sofa in the living room.'],
+  ['There is two chairs.', 'There are two chairs.'],
+  ['There are a table.', 'There’s a table.'],
+  ['There have three bedrooms.', 'There are three bedrooms.'],
+  ['There isn’t chairs.', 'There aren’t any chairs.'],
+  ['Is there any chairs?', 'Are there any chairs?'],
+  ['Yes, there’s.', 'Yes, there is.'],
+  ['How many chairs there are?', 'How many chairs are there?']
+];
+document.getElementById('mistakes').innerHTML = MISTAKES.map(([no, yes]) =>
+  '<div class="pair-card"><div class="pair-line no"><span class="mark">✗</span>' + no + '</div>' +
+  '<div class="pair-line yes"><span class="mark">✓</span>' + yes + '</div></div>').join('');
+
+/* ── error hunt ────────────────────────────────────────────────────────── */
+const EH_ITEMS = [
+  { words: ['There', 'is', 'two', 'chairs', 'in', 'the', 'kitchen', '.'],
+    error: { type: 'wrong', wordIndex: 1, options: ['are', 'am', 'be'], correct: 'are' } },
+  { words: ['There', 'are', 'a', 'table', 'in', 'the', 'kitchen', '.'],
+    error: { type: 'wrong', wordIndex: 1, options: ['is', 'am', 'be'], correct: 'is' } },
+  { words: ['Have', 'a', 'sofa', 'in', 'the', 'living', 'room', '.'],
+    error: { type: 'wrong', wordIndex: 0, options: ['There’s', 'It', 'Is'], correct: 'There’s' } },
+  { words: ['There', 'aren’t', 'chairs', 'in', 'the', 'bedroom', '.'],
+    error: { type: 'missing', gapIndex: 2, options: ['any', 'a', 'one'], correct: 'any' } },
+  { words: ['Is', 'there', 'any', 'plants', '?'],
+    error: { type: 'wrong', wordIndex: 0, options: ['Are', 'Am', 'Do'], correct: 'Are' } },
+  { words: ['Yes,', 'there’s', '.'],
+    error: { type: 'wrong', wordIndex: 1, options: ['there is', 'there are', 'it’s'], correct: 'there is' } },
+  { words: ['How', 'many', 'chairs', 'there', 'are', '?'],
+    error: { type: 'misplaced', wordIndex: 4, targetGapIndex: 3 } }
+];
+HouseErrorHunt.build({ container: 'errorHuntItems', items: EH_ITEMS, scoreEl: 'errorScore', totalEl: 'errorTotal' });
+</script>
+<script>HouseGrammar.init();</script>
+</body>
+</html>

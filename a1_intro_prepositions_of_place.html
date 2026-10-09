@@ -3,11 +3,8 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-<title>Prepositions Of Place — Introduction</title>
+<title>Where Are My Books? — Prepositions of Place</title>
 <script>
-// Applies the saved/system theme to <html> as early as possible, before the
-// stylesheet below paints anything, so there's no flash of the wrong theme.
-// Self-contained: no dependency on any external script.
 (function(){
   try{
     var saved = localStorage.getItem('theme-preference');
@@ -15,132 +12,38 @@
       ? saved
       : ((window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches) ? 'dark' : 'light');
     document.documentElement.setAttribute('data-theme', theme);
-    // Same idea for the text size: apply it before house.css paints, so a
-    // person who chose 28px doesn't watch the page reflow from 14px on load.
-    var fs = parseFloat(localStorage.getItem('font-size-preference'));
-    if (fs >= 10 && fs <= 28){
-      document.documentElement.style.setProperty('--fs-base', fs + 'px');
-    }
   }catch(e){ /* localStorage/matchMedia unavailable — CSS media query still applies */ }
 })();
 </script>
 <link rel="stylesheet" href="house.css">
 <style>
-/* matching */
-  .match-grid{display:grid;grid-template-columns:1fr 1fr;gap:16px;margin-bottom:1rem;}
-  .match-col-label{font-size:0.7333rem;font-weight:500;text-transform:uppercase;letter-spacing:.05em;color:var(--text-muted);margin-bottom:8px;}
-  .img-card{border:.5px solid var(--border);border-radius:12px;overflow:hidden;cursor:pointer;transition:border-color .12s;}
-  .img-card:hover{border-color:var(--color-border-primary);}
-  .img-card.selected{border-color:var(--text-accent);}
-  .img-card.correct{border: 4px solid var(--color-border-success);pointer-events:none;}
-  .img-card.wrong{border-color:var(--color-border-danger);animation:shake .3s;}
-  .img-slot{height:80px;background:var(--surface-1);display:flex;flex-direction:column;align-items:center;justify-content:center;gap:4px;border-bottom:.5px solid var(--border);}
-  .img-slot img{width:100%;height:100%;object-fit:contain;padding:6px;display:none;}
-  .img-slot .ph-icon{font-size:1.4667rem;color:var(--text-muted);}
-  .img-slot .ph-name{font-size:0.6667rem;color:var(--text-muted);font-family:var(--font-mono);}
-  .img-label{font-size:0.8rem;font-weight:500;text-align:center;padding:6px 8px;color:var(--color-text-secondary);}
-  .img-grid-wrap{display:flex;flex-direction:column;gap:7px;}
-
-  /* gap fill */
-  .gap-para{background:var(--surface-2);border:.5px solid var(--border);border-radius:12px;padding:1rem 1.25rem;font-size:0.9333rem;line-height:2.5;margin-bottom:1rem;}
-  .bank{display:flex;flex-wrap:wrap;gap:6px;margin-bottom:1rem;}
-  .bank-chip{font-size:0.8667rem;padding:4px 11px;border-radius:20px;background:var(--surface-1);border:.5px solid var(--border);color:var(--color-text-secondary);}
-  .ex-bar{display:flex;gap:8px;align-items:center;flex-wrap:wrap;}
-  .score-msg{font-size:0.8667rem;color:var(--color-text-secondary);}
-  .ak-body{padding:10px 14px;display:flex;flex-direction:column;gap:2px;}
-  .ak-row{display:flex;gap:10px;align-items:baseline;padding:4px 0;border-bottom:.5px solid var(--border);font-size:0.8667rem;}
-  .ak-row:last-child{border-bottom:none;}
-  .ak-num{color:var(--text-muted);min-width:20px;}
-  .ak-ans{font-weight:500;color:var(--text-accent);min-width:80px;}
-  .ak-note{color:var(--text-muted);}
-  details summary{user-select:none;list-style:none;display:flex;justify-content:space-between;align-items:center;}
-  details summary::-webkit-details-marker{display:none;}
-  @keyframes shake{0%,100%{transform:translateX(0)}25%{transform:translateX(-5px)}75%{transform:translateX(5px)}}
-  @media(max-width:480px){.match-grid{grid-template-columns:1fr;}}
+.scene{ max-width:560px; margin:0 auto .5rem; }
+.scene-caption{ text-align:center; font-size:.8333rem; color:var(--text-secondary); margin:0 0 1.2rem; }
 </style>
 </head>
-<body class="exercise-page" id="page">
-<span class="cefr-tag cefr-a1">A1 · Beginner</span>
-<div style="padding:.75rem 0 1rem;">
+<body>
+<div class="page" id="page">
+  <span class="cefr-tag cefr-a1">A1 · Beginner</span>
+  <h1>Where Are My Books?</h1>
+  <p class="subtitle">Leo and Ana are in the living room. Leo can't find his books.</p>
 
-<!-- ══ CONVERSATION ══ -->
   <div class="sec-div">Before you read</div>
-  <p class="subtitle">Read these three questions first. Keep them in mind while you read.</p>
-  <div id="preQuestions" class="prequiz"></div>
+  <div id="preQuestions"></div>
 
-  <button id="grammarToggle" class="grammar-toggle-btn">🎨 Show Grammar</button>
+  <div class="sec-div">The conversation</div>
+  <div class="scene" id="roomPic"></div>
+  <p class="scene-caption">Leo and Ana's living room</p>
+
+  <button class="grammar-toggle-btn" id="grammarToggle">🎨 Show Grammar</button>
   <div class="pos-legend"></div>
-<div class="sec-div">conversation</div>
-<div class="setting-chip">🏠 looking for things around the house</div>
 
-<div class="bubble-wrap left">
-  <div class="avatar av-a">👩</div>
-  <div><div class="bname">A</div>
-  <div class="bubble left">Have you seen my keys? I can't find them anywhere!</div></div>
-</div>
+  <div id="conversation"></div>
 
-<div class="bubble-wrap right">
-  <div class="avatar av-b">👨</div>
-  <div><div class="bname right">B</div>
-  <div class="bubble right">Did you look <span class="pos-hl pos-prep">on</span> the <span class="pos-hl pos-noun">table</span>? I think I saw them there.</div></div>
-</div>
-
-<div class="bubble-wrap left">
-  <div class="avatar av-a">👩</div>
-  <div><div class="bname">A</div>
-  <div class="bubble left">Yes, I looked <span class="pos-hl pos-prep">on</span> the <span class="pos-hl pos-noun">table</span> and <span class="pos-hl pos-prep">under</span> the <span class="pos-hl pos-noun">sofa</span>. Nothing!</div></div>
-</div>
-
-<div class="bubble-wrap right">
-  <div class="avatar av-b">👨</div>
-  <div><div class="bname right">B</div>
-  <div class="bubble right">What about <span class="pos-hl pos-prep">next to</span> the <span class="pos-hl pos-noun">lamp</span>? Or <span class="pos-hl pos-prep">behind</span> the <span class="pos-hl pos-noun">armchair</span>?</div></div>
-</div>
-
-<div class="bubble-wrap left">
-  <div class="avatar av-a">👩</div>
-  <div><div class="bname">A</div>
-  <div class="bubble left">Oh wait — the cat! She always hides things. Where is she?</div></div>
-</div>
-
-<div class="bubble-wrap right">
-  <div class="avatar av-b">👨</div>
-  <div><div class="bname right">B</div>
-  <div class="bubble right">She's <span class="pos-hl pos-prep">on</span> the <span class="pos-hl pos-noun">sofa</span>, <span class="pos-hl pos-prep">between</span> the <span class="pos-hl pos-noun">cushions</span>. Ha!</div></div>
-</div>
-
-<div class="bubble-wrap left">
-  <div class="avatar av-a">👩</div>
-  <div><div class="bname">A</div>
-  <div class="bubble left">Found the keys! They were <span class="pos-hl pos-prep">under</span> the <span class="pos-hl pos-noun">cushion</span> — right <span class="pos-hl pos-prep">next to</span> the cat!</div></div>
-</div>
-
-<div class="bubble-wrap right">
-  <div class="avatar av-b">👨</div>
-  <div><div class="bname right">B</div>
-  <div class="bubble right">What's that <span class="pos-hl pos-prep">in</span> the <span class="pos-hl pos-noun">basket</span> <span class="pos-hl pos-prep">in front of</span> the <span class="pos-hl pos-noun">shelf</span>?</div></div>
-</div>
-
-<div class="bubble-wrap left">
-  <div class="avatar av-a">👩</div>
-  <div><div class="bname">A</div>
-  <div class="bubble left">My phone charger! And look — my book is <span class="pos-hl pos-prep">behind</span> the <span class="pos-hl pos-noun">plant</span> <span class="pos-hl pos-prep">on</span> the <span class="pos-hl pos-noun">shelf</span>.</div></div>
-</div>
-
-<div class="bubble-wrap right">
-  <div class="avatar av-b">👨</div>
-  <div><div class="bname right">B</div>
-  <div class="bubble right">The cat is <span class="pos-hl pos-prep">above</span> the <span class="pos-hl pos-noun">fridge</span> now. She moved fast!</div></div>
-</div>
-
-<div class="bubble-wrap left">
-  <div class="avatar av-a">👩</div>
-  <div><div class="bname">A</div>
-  <div class="bubble left">She loves it up there. There's a blanket <span class="pos-hl pos-prep">on top of</span> the <span class="pos-hl pos-noun">fridge</span> — it's her favourite spot!</div></div>
-</div>
   <div class="sec-div">Check your answers</div>
-  <p class="subtitle">The same three questions — now choose the correct answer.</p>
   <div id="quiz"></div>
+
+  <footer>Where Are My Books? — Prepositions of Place (A1)</footer>
+</div>
 
 <div id="theme-toggle-wrap">
   <button id="theme-toggle" aria-label="Toggle light/dark mode" title="Toggle light/dark mode">
@@ -148,42 +51,63 @@
   </button>
 </div>
 <script src="house.js"></script>
+<script src="house-engine.js"></script>
 <script>
-/* The same three questions run before and after the conversation:
-   as a plain list first (setting a purpose for reading), then with
-   three options each once the text has been read. */
-const CQ_ITEMS = [
-  {
-    "q": "Where does the speaker look for the keys first?",
-    "opts": [
-      "Behind the armchair",
-      "On the table and under the sofa",
-      "In the basket"
-    ],
-    "correct": 1
-  },
-  {
-    "q": "Where were the keys finally found?",
-    "opts": [
-      "Under a cushion, next to the cat",
-      "Behind the plant on the shelf",
-      "On top of the fridge"
-    ],
-    "correct": 0
-  },
-  {
-    "q": "Where does the cat move to at the end?",
-    "opts": [
-      "Between the cushions",
-      "In front of the shelf",
-      "Above the fridge"
-    ],
-    "correct": 2
-  }
-];
+const it = (type, level, slot) => ({ type, level, slot: slot || 'C', dir: 0 });
 
+/* The room as the conversation ends: the books are under the side table. */
+HousePicture.draw('roomPic', HousePicture.room({
+  cols: 5, rows: 4, openings: [['h', 0, 3, 'window']],
+  furniture: [
+    { type: 'bookshelf', x: 1.5, y: 0.5, dir: 2 },
+    { type: 'loveseat',  x: 1.5, y: 1.5, dir: 2, items: [it('cushion', 0, 'R')] },
+    { type: 'sidetable', x: 2.5, y: 1.5, dir: 2, items: [it('lamp', 0), it('books', 1)] },
+    { type: 'armchair',  x: 4, y: 3, dir: 3 },
+    { type: 'tvstand',   x: 0.5, y: 2.5, dir: 1, items: [it('tv', 1)] }
+  ],
+  appliances: [{ type: 'planter', x: 3.5, y: 1.5, dir: 0 }, { type: 'rug', x: 2, y: 3, dir: 0 }]
+}), { alt: 'A living room. The books are under the side table, next to the sofa.' });
+
+/* Conversation lines. [words/pos] marks a part of speech for the grammar colours. */
+const SPEAKERS = {
+  Leo: { avatar: '👨‍🦱', av: 'av-a', side: 'left' },
+  Ana: { avatar: '🙋', av: 'av-b', side: 'right' }
+};
+const LINES = [
+  ['Leo', '[Ana/noun], [where/wh] [are/verb] [my books/noun]?'],
+  ['Ana', '[Are/verb] [they/subject] [on/prep] [the table/noun]?'],
+  ['Leo', '[No/none], [they/subject] [aren’t/neg].'],
+  ['Ana', '[Look/verb] [in/prep] [the bookcase/noun].'],
+  ['Leo', '[They/subject] [aren’t/neg] [in/prep] [the bookcase/noun].'],
+  ['Ana', '[Are/verb] [they/subject] [under/prep] [the sofa/noun]?'],
+  ['Leo', '[No/none]… [Oh/none], [here/adverb] [they/subject] [are/verb]! [They’re/subject] [under/prep] [the side table/noun], [next to/prep] [the sofa/noun].'],
+  ['Ana', '[Good/adj]! [Now/time], [where’s/wh] [my phone/noun]?'],
+  ['Leo', '[Is/verb] [it/subject] [behind/prep] [the cushion/noun]?'],
+  ['Ana', '[Yes/none]! [Here/adverb] [it/subject] [is/verb]. [Thanks/none]! [And/conj] [my bag/noun]?'],
+  ['Leo', '[It’s/subject] [in front of/prep] [the TV/noun].'],
+  ['Ana', '[Great/adj]. [Now/time] [I/subject] [need/verb] [my glasses/noun]. [Where/wh] [are/verb] [they/subject]?'],
+  ['Leo', '[Ana/noun]! [They’re/subject] [on/prep] [your head/noun]!'],
+  ['Ana', '[Oh/none]! 😄']
+];
+const conv = document.getElementById('conversation');
+LINES.forEach(([who, text]) => {
+  const s = SPEAKERS[who], right = s.side === 'right';
+  const html = text.replace(/\[([^\/\]]+)\/(\w+)\]/g, '<span class="pos-hl pos-$2">$1</span>');
+  conv.insertAdjacentHTML('beforeend',
+    '<div class="bubble-wrap' + (right ? ' right' : '') + '">' +
+      '<div class="avatar ' + s.av + '">' + s.avatar + '</div>' +
+      '<div class="bubble-col"><div class="bname' + (right ? ' right' : '') + '">' + who + '</div>' +
+      '<div class="bubble ' + (right ? 'right' : 'left') + '">' + html + '</div></div>' +
+    '</div>');
+});
+
+const CQ_ITEMS = [
+  { q: 'What is Leo looking for?', opts: ['his glasses', 'his books', 'his phone'], correct: 1 },
+  { q: 'Where are Leo’s books?', opts: ['in the bookcase', 'on the table', 'under the side table'], correct: 2 },
+  { q: 'Where are Ana’s glasses?', opts: ['on her head', 'behind the cushion', 'in front of the TV'], correct: 0 }
+];
 HouseComprehension.build({ pre: 'preQuestions', quiz: 'quiz', items: CQ_ITEMS });
-HouseGrammar.init();
 </script>
+<script>HouseGrammar.init();</script>
 </body>
 </html>

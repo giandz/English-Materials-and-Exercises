@@ -1,0 +1,156 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<title>In the Living Room — Vocabulary</title>
+<script>
+(function(){
+  try{
+    var saved = localStorage.getItem('theme-preference');
+    var theme = (saved === 'light' || saved === 'dark')
+      ? saved
+      : ((window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches) ? 'dark' : 'light');
+    document.documentElement.setAttribute('data-theme', theme);
+  }catch(e){ /* localStorage/matchMedia unavailable — CSS media query still applies */ }
+})();
+</script>
+<link rel="stylesheet" href="house.css">
+<style>
+/* word cards: a picture of the thing, its name, tap to hear it */
+.vocab-grid{ display:grid; grid-template-columns:repeat(auto-fill, minmax(118px, 1fr)); gap:10px; margin:0 0 1.4rem; }
+.vocab-card{
+  display:flex; flex-direction:column; align-items:center; gap:6px; padding:8px 8px 10px;
+  border:1px solid var(--color-border-tertiary); border-radius:12px; background:var(--surface-2);
+  color:var(--text-primary); font:inherit; cursor:pointer; -webkit-appearance:none; appearance:none;
+  transition:box-shadow .12s ease;
+}
+.vocab-card .house-pic{ border-radius:9px; }
+.vocab-word{ font-size:1rem; font-weight:600; }
+.vocab-word small{ display:block; font-size:.7333rem; font-weight:500; color:var(--text-muted); }
+.vocab-card.is-speaking{ box-shadow:0 0 0 2px var(--text-accent); }
+.vocab-card.is-speaking .vocab-word{ animation:vocab-say .35s ease; }
+@keyframes vocab-say{ 0%,100%{ transform:translateY(0); } 40%{ transform:translateY(-3px) scale(1.08); } }
+@media (prefers-reduced-motion: reduce){ .vocab-card.is-speaking .vocab-word{ animation:none; } }
+.no-speech .vocab-card{ cursor:default; }
+.scene{ max-width:640px; margin:0 auto 1.2rem; }
+</style>
+</head>
+<body>
+<div class="page" id="page">
+  <span class="cefr-tag cefr-a1">A1 · Beginner</span>
+  <h1>In the Living Room</h1>
+  <p class="subtitle">Words for the things in a living room</p>
+
+  <div class="sec-div">Words</div>
+  <p class="subtitle">🔊 Tap a card to hear the word.</p>
+  <div class="vocab-grid" id="vocabGrid"></div>
+
+  <div class="sec-div">Find them in the room</div>
+  <p class="subtitle">Look at the picture. Match the numbers and the words.</p>
+  <div class="scene" id="roomPic"></div>
+
+  <div class="score-bar"><span>Matched: <strong id="matchScore">0</strong> / <span id="matchTotal">0</span></span></div>
+  <div class="win-msg" id="matchWin">🎉 Great! You know all the words.</div>
+  <div class="match-grid">
+    <div><div class="match-col-label">Number</div><div class="match-col" id="matchLeft"></div></div>
+    <div><div class="match-col-label">Word</div><div class="match-col" id="matchRight"></div></div>
+  </div>
+  <div class="feedback" id="matchFeedback"></div>
+
+  <div class="sec-div">What is it?</div>
+  <p class="subtitle">Look and choose.</p>
+  <div class="score-bar"><span>Correct: <strong id="pcScore">0</strong> / <span id="pcTotal">0</span></span></div>
+  <div id="pcItems"></div>
+
+  <footer>In the Living Room — Vocabulary (A1)</footer>
+</div>
+
+<div id="theme-toggle-wrap">
+  <button id="theme-toggle" aria-label="Toggle light/dark mode" title="Toggle light/dark mode">
+    <span id="theme-icon">☀️</span>
+  </button>
+</div>
+<script src="house.js"></script>
+<script src="house-engine.js"></script>
+<script>
+const it = (type, level, slot) => ({ type, level, slot: slot || 'C', dir: 0 });
+const T = HousePicture.thing;
+
+/* ── the words ─────────────────────────────────────────────────────────── */
+const WORDS = [
+  { word: 'sofa',       pic: T('loveseat') },
+  { word: 'armchair',   pic: T('armchair') },
+  { word: 'cushion',    pic: T('cushion') },
+  { word: 'side table', pic: T('sidetable') },
+  { word: 'lamp',       pic: T('lamp') },
+  { word: 'bookcase',   pic: T('bookshelf', { items: [it('books', 1, 'L')] }) },
+  { word: 'book',       pic: T('book') },
+  { word: 'books',      pic: T('books'), note: 'more than one' },
+  { word: 'plant',      pic: T('planter') },
+  { word: 'rug',        pic: T('rug') },
+  { word: 'TV',         pic: T('tv') },
+  { word: 'table',      pic: T('table') },
+  { word: 'chair',      pic: T('chair') }
+];
+const grid = document.getElementById('vocabGrid');
+WORDS.forEach(w => {
+  const b = document.createElement('button');
+  b.type = 'button';
+  b.className = 'vocab-card';
+  b.dataset.say = w.word === 'TV' ? 'T V' : w.word;
+  b.setAttribute('aria-label', w.word);
+  b.innerHTML = HousePicture.svg(w.pic, { alt: w.word }) +
+    '<span class="vocab-word">' + w.word + (w.note ? '<small>' + w.note + '</small>' : '') + '</span>';
+  grid.appendChild(b);
+});
+
+/* ── the room, with numbers ────────────────────────────────────────────── */
+const LIVING_ROOM = HousePicture.room({
+  cols: 5, rows: 4, openings: [['h', 0, 3, 'window']],
+  furniture: [
+    { type: 'bookshelf', x: 1.5, y: 0.5, dir: 2, items: [it('books', 1, 'L')] },
+    { type: 'loveseat',  x: 1.5, y: 1.5, dir: 2, items: [it('cushion', 0, 'R')] },
+    { type: 'sidetable', x: 2.5, y: 1.5, dir: 2, items: [it('lamp', 0)] },
+    { type: 'armchair',  x: 3.5, y: 1.5, dir: 2 },
+    { type: 'tvstand',   x: 0.5, y: 2.5, dir: 1, items: [it('tv', 1)] }
+  ],
+  appliances: [
+    { type: 'planter', x: 4.5, y: 1.5, dir: 0 },
+    { type: 'rug', x: 2, y: 3, dir: 0 }
+  ]
+});
+const NUMBERED = [
+  { n: '1', word: 'sofa',       at: { x: 1.3, y: 1.6, z: 0.62 } },
+  { n: '2', word: 'lamp',       at: { x: 2.5, y: 1.5, z: 1.2 } },
+  { n: '3', word: 'armchair',   at: { x: 3.5, y: 1.6, z: 0.62 } },
+  { n: '4', word: 'bookcase',   at: { x: 1.1, y: 0.5, z: 1.45 } },
+  { n: '5', word: 'rug',        at: { x: 2.4, y: 3.3, z: 0 } },
+  { n: '6', word: 'plant',      at: { x: 4.5, y: 1.5, z: 0.6 } },
+  { n: '7', word: 'TV',         at: { x: 0.5, y: 2.5, z: 1.3 } },
+  { n: '8', word: 'side table', at: { x: 2.7, y: 1.85, z: 0.15 } }
+];
+HousePicture.draw('roomPic', LIVING_ROOM, {
+  alt: 'A living room with numbers on the things',
+  labels: NUMBERED.map(p => Object.assign({ text: p.n, num: true }, p.at))
+});
+HouseMatching.build({
+  left: 'matchLeft', right: 'matchRight',
+  pairs: NUMBERED.map(p => ({ id: p.n, left: p.n, right: p.word })),
+  scoreEl: 'matchScore', totalEl: 'matchTotal', winEl: 'matchWin', feedbackEl: 'matchFeedback'
+});
+
+/* ── what is it? ───────────────────────────────────────────────────────── */
+const PC_ITEMS = [
+  { picture: T('armchair'), options: ['an armchair', 'a sofa', 'a chair'], correct: 0 },
+  { sentence: 'Which one is a <strong>lamp</strong>?', pictures: [T('lamp'), T('planter'), T('cushion')], correct: 0 },
+  { picture: T('sidetable'), options: ['a table', 'a side table', 'a bookcase'], correct: 1 },
+  { sentence: 'Which one is a <strong>rug</strong>?', pictures: [T('cushion'), T('book'), T('rug')], correct: 2 },
+  { picture: T('books'), options: ['a book', 'a bookcase', 'books'], correct: 2 },
+  { sentence: 'Which one is a <strong>sofa</strong>?', pictures: [T('chair'), T('loveseat'), T('armchair')], correct: 1 }
+];
+HousePictureChoice.build({ container: 'pcItems', items: PC_ITEMS, scoreEl: 'pcScore', totalEl: 'pcTotal' });
+</script>
+<script>HouseGrammar.init();</script>
+</body>
+</html>

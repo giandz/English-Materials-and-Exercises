@@ -3,11 +3,8 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-<title>Prepositions Of Place — Clarification</title>
+<title>Prepositions of Place — Clarification</title>
 <script>
-// Applies the saved/system theme to <html> as early as possible, before the
-// stylesheet below paints anything, so there's no flash of the wrong theme.
-// Self-contained: no dependency on any external script.
 (function(){
   try{
     var saved = localStorage.getItem('theme-preference');
@@ -15,161 +12,209 @@
       ? saved
       : ((window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches) ? 'dark' : 'light');
     document.documentElement.setAttribute('data-theme', theme);
-    // Same idea for the text size: apply it before house.css paints, so a
-    // person who chose 28px doesn't watch the page reflow from 14px on load.
-    var fs = parseFloat(localStorage.getItem('font-size-preference'));
-    if (fs >= 10 && fs <= 28){
-      document.documentElement.style.setProperty('--fs-base', fs + 'px');
-    }
   }catch(e){ /* localStorage/matchMedia unavailable — CSS media query still applies */ }
 })();
 </script>
 <link rel="stylesheet" href="house.css">
 <style>
-/* Recovered page-specific rules. */
+/* picture gallery: one preposition per card */
+.prep-grid{ display:grid; grid-template-columns:repeat(2, minmax(0, 1fr)); gap:10px; margin:0 0 1.4rem; }
+@media (max-width:520px){ .prep-grid{ grid-template-columns:1fr; } }
+.prep-card{ border:1px solid var(--color-border-tertiary); border-radius:12px; background:var(--surface-2); padding:8px 8px 10px; }
+.prep-word{ font-size:1.0667rem; font-weight:700; color:var(--pos-prep); margin:2px 4px 4px; }
+.prep-sentence{ font-size:.9333rem; color:var(--text-primary); margin:6px 4px 0; line-height:1.5; }
+/* the target language is the lesson, so it stays coloured (not a grammar-toggle colour) */
+.tgt{ color:var(--pos-prep); font-weight:700; }
 
-.setting-chip{display:inline-flex;align-items:center;gap:5px;font-size:0.8rem;padding:3px 10px;border-radius:20px;background:var(--surface-1);border:.5px solid var(--border);color:var(--color-text-secondary);margin-bottom:1rem;}
-  .hl-prep{font-weight:500;color:var(--text-accent);}
-  .hl-obj{font-weight:500;color:var(--color-text-success);}
-
-  /* Matching: the cards, columns and connector lines all come from house.css.
-     Only the picture cards need anything extra — a tighter box around the
-     image, and a filename placeholder (the img's alt) while the art is
-     still to be drawn. */
-  /* One row height for both columns, derived from the picture: the sentence
-     card and the picture card then line up row for row, so a matched pair's
-     connector line runs straight across. Cards still grow if a sentence wraps. */
-  :root{ --match-img-h:78px; --match-row-h:calc(var(--match-img-h) + 15px); }
-  #sent-list .match-card,
-  #img-list .match-card{min-height:var(--match-row-h);}
-  #img-list .match-card{padding:6px;font-family:var(--font-mono);font-size:0.6667rem;color:var(--text-muted);text-align:center;}
-  #img-list .match-card > span{flex:1 1 auto;min-width:0;}
-  .match-img{display:block;width:100%;height:var(--match-img-h);object-fit:contain;}
-
-  /* gap fill */
-  .gap-para{background:var(--surface-2);border:.5px solid var(--border);border-radius:12px;padding:1rem 1.25rem;font-size:0.9333rem;line-height:2.5;margin-bottom:1rem;}
-  .bank{display:flex;flex-wrap:wrap;gap:6px;margin-bottom:1rem;}
-  .bank-chip{font-size:0.8667rem;padding:4px 11px;border-radius:20px;background:var(--surface-1);border:.5px solid var(--border);color:var(--color-text-secondary);}
-  .ak-body{padding:10px 14px;display:flex;flex-direction:column;gap:2px;}
-  .ak-row{display:flex;gap:10px;align-items:baseline;padding:4px 0;border-bottom:.5px solid var(--border);font-size:0.8667rem;}
-  .ak-row:last-child{border-bottom:none;}
-  .ak-num{color:var(--text-muted);min-width:20px;}
-  .ak-ans{font-weight:500;color:var(--text-accent);min-width:80px;}
-  .ak-note{color:var(--text-muted);}
-  details summary{user-select:none;list-style:none;display:flex;justify-content:space-between;align-items:center;}
-  details summary::-webkit-details-marker{display:none;}
+.pair-card{ background:var(--surface-2); border:1px solid var(--color-border-tertiary); border-radius:12px; padding:10px 12px; margin-bottom:8px; }
+.pair-line{ font-size:.9333rem; line-height:1.7; padding:2px 0; }
+.pair-line.no{ color:var(--bad); }
+.pair-line.yes{ color:var(--good); font-weight:600; }
+.mark{ font-weight:700; margin-right:5px; }
+.rule-box p{ margin:0 0 6px; }
+.rule-box p:last-child{ margin-bottom:0; }
 </style>
 </head>
-<body class="exercise-page" id="page">
-<span class="cefr-tag cefr-a1">A1 · Beginner</span>
+<body>
+<div class="page" id="page">
+  <span class="cefr-tag cefr-a1">A1 · Beginner</span>
+  <h1>Prepositions of Place</h1>
+  <p class="subtitle">in · on · under · next to · between · behind · in front of</p>
 
-<!-- ══ MATCHING ══ -->
-<div class="sec-div">exercise 1 — match the sentence to the picture</div>
-<div style="font-size:0.8667rem;color:var(--color-text-secondary);margin-bottom:1rem;">Click a sentence, then click the matching picture.</div>
+  <div class="sec-div">Look</div>
+  <p class="subtitle">Where are the things? Look at the pictures.</p>
+  <div class="prep-grid" id="prepGrid"></div>
 
-<div class="score-bar">
-  <span>Matched: <strong id="matchScore">0</strong> / <span id="matchTotal">0</span></span>
-  <button id="reset-match">↺ Reset</button>
-</div>
+  <div class="sec-div">Check the meaning</div>
+  <p class="subtitle">Read the sentence. Answer the questions.</p>
+  <div id="ccq"></div>
 
-<div class="win-msg" id="matchWin">🎉 All matched!</div>
+  <div class="sec-div">Look at the form</div>
+  <p class="subtitle">What is each part of the sentence? Drag a label (or tap a label, then tap a box).</p>
+  <div class="score-bar"><span>Correct: <strong id="fcScore">0</strong> / <span id="fcTotal">0</span></span></div>
+  <div id="formClarf"></div>
 
-<div class="match-grid">
-  <div>
-    <div class="match-col-label">Sentences</div>
-    <div class="match-col" id="sent-list"></div>
+  <div class="rule-box">
+    <p><strong>Where is</strong> the lamp? → <strong>It's</strong> <span class="tgt">on</span> the side table.</p>
+    <p><strong>Where are</strong> the books? → <strong>They're</strong> <span class="tgt">under</span> the table.</p>
+    <p>The preposition goes <strong>before the place</strong>: <span class="tgt">on</span> the table, <span class="tgt">in</span> the bookcase.</p>
+    <p>Some have two or three words: <span class="tgt">next to</span> the sofa, <span class="tgt">in front of</span> the sofa.</p>
+    <p><span class="tgt">between</span> has two places: <span class="tgt">between</span> the sofa <strong>and</strong> the armchair.</p>
   </div>
-  <div>
-    <div class="match-col-label">Pictures</div>
-    <div class="match-col" id="img-list"></div>
-  </div>
-</div>
-
-<div class="feedback" id="match-fb"></div>
-
 
   <div class="sec-div">Common mistakes</div>
-  <div class="pair-card"><div class="pair-line no"><span class="mark">✗</span>The book is in the table.</div><div class="pair-line yes"><span class="mark">✓</span>The book is on the table.</div></div>
-  <div class="pair-card"><div class="pair-line no"><span class="mark">✗</span>The cat is under of the chair.</div><div class="pair-line yes"><span class="mark">✓</span>The cat is under the chair.</div></div>
-  <div class="pair-card"><div class="pair-line no"><span class="mark">✗</span>I live at Mexico.</div><div class="pair-line yes"><span class="mark">✓</span>I live in Mexico.</div></div>
-  <div class="pair-card"><div class="pair-line no"><span class="mark">✗</span>The bank is in front the park.</div><div class="pair-line yes"><span class="mark">✓</span>The bank is in front of the park.</div></div>
-  <div class="pair-card"><div class="pair-line no"><span class="mark">✗</span>She is on the kitchen.</div><div class="pair-line yes"><span class="mark">✓</span>She is in the kitchen.</div></div>
+  <div class="pair-card">
+    <div class="pair-line no"><span class="mark">✗</span>The lamp is next the sofa.</div>
+    <div class="pair-line yes"><span class="mark">✓</span>The lamp is next to the sofa.</div>
+  </div>
+  <div class="pair-card">
+    <div class="pair-line no"><span class="mark">✗</span>The bookcase is behind of the sofa.</div>
+    <div class="pair-line yes"><span class="mark">✓</span>The bookcase is behind the sofa.</div>
+  </div>
+  <div class="pair-card">
+    <div class="pair-line no"><span class="mark">✗</span>The rug is in front the sofa.</div>
+    <div class="pair-line yes"><span class="mark">✓</span>The rug is in front of the sofa.</div>
+  </div>
+  <div class="pair-card">
+    <div class="pair-line no"><span class="mark">✗</span>The books are under of the table.</div>
+    <div class="pair-line yes"><span class="mark">✓</span>The books are under the table.</div>
+  </div>
+  <div class="pair-card">
+    <div class="pair-line no"><span class="mark">✗</span>The lamp is in the table.</div>
+    <div class="pair-line yes"><span class="mark">✓</span>The lamp is on the table.</div>
+  </div>
+  <div class="pair-card">
+    <div class="pair-line no"><span class="mark">✗</span>The lamp is on table.</div>
+    <div class="pair-line yes"><span class="mark">✓</span>The lamp is on the table.</div>
+  </div>
+  <div class="pair-card">
+    <div class="pair-line no"><span class="mark">✗</span>Where the books are?</div>
+    <div class="pair-line yes"><span class="mark">✓</span>Where are the books?</div>
+  </div>
+  <div class="pair-card">
+    <div class="pair-line no"><span class="mark">✗</span>The table is between the sofa or the armchair.</div>
+    <div class="pair-line yes"><span class="mark">✓</span>The table is between the sofa and the armchair.</div>
+  </div>
 
+  <div class="sec-div">Error hunt</div>
+  <p class="subtitle">Every sentence has one mistake. Tap a word — or a space between words — to fix it. Then press OK.</p>
+  <div class="score-bar"><span>Fixed: <strong id="errorScore">0</strong> / <span id="errorTotal">0</span></span></div>
+  <div id="errorHuntItems"></div>
 
-  <div class="sec-div">Find the mistake</div>
-  <div class="rule-box">Every sentence below has <strong>one or two mistakes</strong>. Tap the word you think is wrong and choose the correct one. When you think the sentence is right, press <strong>OK</strong>.</div>
-  <div class="score-bar"><span>Corrected: <strong id="ehScore">0</strong> / <span id="ehTotal">0</span></span></div>
-  <div id="errorHunt"></div>
+  <footer>Prepositions of Place — Clarification (A1)</footer>
+</div>
 
-  <div id="theme-toggle-wrap">
+<div id="theme-toggle-wrap">
   <button id="theme-toggle" aria-label="Toggle light/dark mode" title="Toggle light/dark mode">
     <span id="theme-icon">☀️</span>
   </button>
 </div>
 <script src="house.js"></script>
+<script src="house-engine.js"></script>
 <script>
+const it = (type, level, slot) => ({ type, level, slot: slot || 'C', dir: 0 });
+const mini = (cols, furniture, appliances, rows) => HousePicture.room({ cols, rows: rows || 3, furniture, appliances: appliances || [] });
+
+/* ── the gallery ───────────────────────────────────────────────────────── */
+const GALLERY = [
+  { prep: 'in', sentence: 'The books are <span class="tgt">in</span> the bookcase.',
+    house: mini(3, [{ type: 'bookshelf', x: 1.5, y: 0.5, dir: 2, items: [it('books', 0, 'L'), it('books', 1, 'R')] }]) },
+  { prep: 'on', sentence: 'The lamp is <span class="tgt">on</span> the side table.',
+    house: mini(3, [{ type: 'sidetable', x: 1.5, y: 1.5, dir: 2, items: [it('lamp', 0)] }]) },
+  { prep: 'under', sentence: 'The books are <span class="tgt">under</span> the table.',
+    house: mini(4, [{ type: 'table', x: 2, y: 1, dir: 0, items: [it('books', 1)] }]) },
+  { prep: 'next to', sentence: 'The side table is <span class="tgt">next to</span> the sofa.',
+    house: mini(4, [{ type: 'loveseat', x: 1.5, y: 0.5, dir: 2 }, { type: 'sidetable', x: 2.5, y: 0.5, dir: 2 }]) },
+  { prep: 'between', sentence: 'The side table is <span class="tgt">between</span> the sofa and the armchair.',
+    house: mini(5, [{ type: 'loveseat', x: 1.5, y: 0.5, dir: 2 }, { type: 'sidetable', x: 2.5, y: 0.5, dir: 2 }, { type: 'armchair', x: 3.5, y: 0.5, dir: 2 }]) },
+  { prep: 'behind', sentence: 'The bookcase is <span class="tgt">behind</span> the sofa.',
+    house: mini(3, [{ type: 'bookshelf', x: 1.5, y: 0.5, dir: 2 }, { type: 'loveseat', x: 1.5, y: 1.5, dir: 2 }]) },
+  { prep: 'in front of', sentence: 'The rug is <span class="tgt">in front of</span> the sofa.',
+    house: mini(4, [{ type: 'loveseat', x: 1.5, y: 0.5, dir: 2 }], [{ type: 'rug', x: 1.5, y: 1.5, dir: 0 }]) }
+];
+const gallery = document.getElementById('prepGrid');
+GALLERY.forEach(g => {
+  const card = document.createElement('div');
+  card.className = 'prep-card';
+  card.innerHTML = '<div class="prep-word">' + g.prep + '</div>' +
+    HousePicture.svg(g.house, { focus: true, aspect: 4 / 3, alt: g.sentence.replace(/<[^>]+>/g, '') }) +
+    '<div class="prep-sentence">' + g.sentence + '</div>';
+  gallery.appendChild(card);
+});
+
+/* ── concept checking questions ────────────────────────────────────────── */
+HouseCCQ.build({
+  container: 'ccq',
+  items: [
+    { sentence: 'The books are under the table.',
+      questions: [
+        { q: 'Are the books on top of the table?', opts: ['Yes', 'No'], correct: 1,
+          why: 'Under = lower than the table. On = on top of it.' }
+      ] },
+    { sentence: 'The books are in the bookcase.',
+      questions: [
+        { q: 'Are the books inside the bookcase?', opts: ['Yes', 'No'], correct: 0,
+          why: 'In = inside something.' }
+      ] },
+    { sentence: 'The side table is next to the sofa.',
+      questions: [
+        { q: 'Is the side table near the sofa?', opts: ['Yes', 'No'], correct: 0,
+          why: 'Next to = very near, at the side.' },
+        { q: 'Is the side table on the sofa?', opts: ['Yes', 'No'], correct: 1,
+          why: 'It is at the side of the sofa, on the floor.' }
+      ] },
+    { sentence: 'The side table is between the sofa and the armchair.',
+      questions: [
+        { q: 'Is the side table next to the sofa?', opts: ['Yes', 'No'], correct: 0,
+          why: 'Between = in the middle. The sofa is on one side…' },
+        { q: 'Is the side table next to the armchair?', opts: ['Yes', 'No'], correct: 0,
+          why: '…and the armchair is on the other side.' }
+      ] },
+    { sentence: 'The bookcase is behind the sofa.',
+      questions: [
+        { q: 'You are in front of the sofa. Is the sofa nearer to you than the bookcase?', opts: ['Yes', 'No'], correct: 0,
+          why: 'Behind = at the back. The sofa is first, then the bookcase.' }
+      ] },
+    { sentence: 'The rug is in front of the sofa.',
+      questions: [
+        { q: 'You sit on the sofa. Can you see the rug?', opts: ['Yes', 'No'], correct: 0,
+          why: 'In front of = at the front. It is the opposite of behind.' }
+      ] }
+  ]
+});
+
+/* ── form ──────────────────────────────────────────────────────────────── */
+HouseFormClarf.build({
+  container: 'formClarf', scoreEl: 'fcScore', totalEl: 'fcTotal',
+  pool: ['wh', 'subject', 'verb', 'neg', 'prep', 'noun'],
+  items: [
+    { form: 'aff', parts: [['The lamp', 'subject'], ['is', 'verb'], ['on', 'prep'], ['the side table', 'noun'], ['.', null]] },
+    { form: 'aff', parts: [['The rug', 'subject'], ['is', 'verb'], ['in front of', 'prep'], ['the sofa', 'noun'], ['.', null]] },
+    { form: 'neg', parts: [['The books', 'subject'], ['aren’t', 'neg'], ['under', 'prep'], ['the table', 'noun'], ['.', null]] },
+    { form: 'q',   parts: [['Is', 'verb'], ['the plant', 'subject'], ['next to', 'prep'], ['the armchair', 'noun'], ['?', null]] },
+    { form: 'wh',  parts: [['Where', 'wh'], ['are', 'verb'], ['the books', 'subject'], ['?', null]] }
+  ]
+});
+
+/* ── error hunt ────────────────────────────────────────────────────────── */
 const EH_ITEMS = [
-  {
-    "words": ["The", "book", "is", "in", "the", "table", "."],
-    "errors": [ { "type": "wrong", "wordIndex": 3, "options": ["on", "in", "at"], "correct": "on" } ]
-  },
-  {
-    "words": ["The", "cat", "is", "under", "of", "the", "chair", "."],
-    "errors": [ { "type": "extra", "wordIndex": 4 } ]
-  },
-  {
-    "words": ["I", "live", "at", "Mexico", "."],
-    "errors": [ { "type": "wrong", "wordIndex": 2, "options": ["in", "at", "on"], "correct": "in" } ]
-  },
-  {
-    "words": ["The", "bank", "is", "in", "front", "the", "park", "."],
-    "errors": [ { "type": "missing", "gapIndex": 5, "options": ["of", "at", "to"], "correct": "of" } ]
-  },
-  {
-    "words": ["She", "is", "on", "the", "kitchen", "."],
-    "errors": [ { "type": "wrong", "wordIndex": 2, "options": ["in", "on", "at"], "correct": "in" } ]
-  },
-  {
-    "words": ["The", "keys", "are", "next", "the", "door", "."],
-    "errors": [ { "type": "missing", "gapIndex": 4, "options": ["to", "at", "of"], "correct": "to" } ]
-  }
+  { words: ['The', 'lamp', 'is', 'next', 'the', 'sofa', '.'],
+    error: { type: 'missing', gapIndex: 4, options: ['to', 'of', 'at'], correct: 'to' } },
+  { words: ['The', 'bookcase', 'is', 'behind', 'of', 'the', 'sofa', '.'],
+    error: { type: 'extra', wordIndex: 4 } },
+  { words: ['The', 'rug', 'is', 'in', 'front', 'the', 'sofa', '.'],
+    error: { type: 'missing', gapIndex: 5, options: ['of', 'to', 'at'], correct: 'of' } },
+  { words: ['The', 'books', 'is', 'under', 'the', 'table', '.'],
+    error: { type: 'wrong', wordIndex: 2, options: ['are', 'am', 'be'], correct: 'are' } },
+  { words: ['The', 'lamp', 'is', 'on', 'table', '.'],
+    error: { type: 'missing', gapIndex: 4, options: ['the', 'of', 'to'], correct: 'the' } },
+  { words: ['Where', 'the', 'books', 'are', '?'],
+    error: { type: 'misplaced', wordIndex: 3, targetGapIndex: 1 } },
+  { words: ['The', 'plant', 'is', 'between', 'the', 'sofa', 'or', 'the', 'armchair', '.'],
+    error: { type: 'wrong', wordIndex: 6, options: ['and', 'with', 'to'], correct: 'and' } }
 ];
-
-HouseErrorHunt.build({
-  container: "errorHunt",
-  items: EH_ITEMS,
-  scoreEl: "ehScore",
-  totalEl: "ehTotal"
-});
+HouseErrorHunt.build({ container: 'errorHuntItems', items: EH_ITEMS, scoreEl: 'errorScore', totalEl: 'errorTotal' });
 </script>
-<script>
-const MATCH_PAIRS = [
-  { id:"m1", prep:"on",          sentence:"The cat is on the sofa.",          file:"eng_mats_images/cat_on_sofa.png"          },
-  { id:"m2", prep:"under",       sentence:"The cat is under the table.",      file:"eng_mats_images/cat_under_table.png"      },
-  { id:"m3", prep:"next_to",     sentence:"The cat is next to the sofa.",     file:"eng_mats_images/cat_next_to_sofa.png"     },
-  { id:"m4", prep:"behind",      sentence:"The cat is behind the plant.",     file:"eng_mats_images/cat_behind_plant.png"     },
-  { id:"m5", prep:"between",     sentence:"The cat is between the cushions.", file:"eng_mats_images/cat_between_cushions.png" },
-  { id:"m6", prep:"in_front_of", sentence:"The cat is in front of the sofa.", file:"eng_mats_images/cat_in_front_of_sofa.png" },
-  { id:"m7", prep:"above",       sentence:"The cat is above the sofa.",       file:"eng_mats_images/cat_above_sofa.png"       },
-  { id:"m8", prep:"on_top_of",   sentence:"The cat is on top of the sofa.",   file:"eng_mats_images/cat_on_top_of_sofa.png"   }
-];
-
-HouseMatching.build({
-  left: 'sent-list', right: 'img-list',
-  // The right-hand card is the picture itself. Its alt text is the file name,
-  // not a description: a described image would hand the student the answer,
-  // and until the art exists the browser shows that name as the placeholder.
-  pairs: MATCH_PAIRS.map(function (p) {
-    return {
-      id: p.id,
-      sentence: p.sentence,
-      picture: '<img class="match-img" src="' + p.file + '" alt="' + p.file.split('/').pop() + '">'
-    };
-  }),
-  leftKey: 'sentence', rightKey: 'picture',
-  scoreEl: 'matchScore', totalEl: 'matchTotal',
-  winEl: 'matchWin', feedbackEl: 'match-fb', resetBtn: 'reset-match'
-});
-</script>
+<script>HouseGrammar.init();</script>
 </body>
 </html>

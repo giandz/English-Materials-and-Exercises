@@ -1368,17 +1368,6 @@
 
    Bands are drawn behind the line and the events, so an event placed within
    `from`..`to` reads as happening during that period.
-
-   Future forms (going to, will, present continuous for plans) need room after
-   now. `nowAt` moves the NOW marker along the line (default 1 = the right end,
-   as on every past-tense page); everything to its right is the future, which
-   ends in an arrow labelled `endLabel` (default 'Future'):
-
-     HouseTimeline.build({ container: 'timeline', nowAt: 0.5,
-       events: [{ at: 0.2, emoji: '💭', label: 'you decided' },
-                { at: 0.8, emoji: '🎉', label: 'the party' }] });
-
-   With `nowAt`, `at` is still 0 = start of line, 1 = end of line.
    ══════════════════════════════════════════════════════════════════════════ */
 (function (global) {
   'use strict';
@@ -1482,21 +1471,6 @@
       fill: 'var(--color-text-secondary)', 'text-anchor': 'middle'
     }, opts.startLabel || 'Past'));
 
-    // Where NOW sits. Past-tense pages leave it at the end of the line; future
-    // pages move it left so the events after it read as still to come.
-    var nowAt = (typeof opts.nowAt === 'number') ? Math.max(0, Math.min(1, opts.nowAt)) : 1;
-    var XN = xAt(nowAt);
-    if (nowAt < 1) {
-      svg.appendChild(el('path', {
-        d: 'M' + (X1 + 12) + ' ' + Y + ' L' + (X1 - 2) + ' ' + (Y - 7) + ' L' + (X1 - 2) + ' ' + (Y + 7) + ' Z',
-        fill: 'var(--color-border-secondary)'
-      }));
-      svg.appendChild(el('text', {
-        x: X1, y: Y + 25, 'font-size': 12,
-        fill: 'var(--color-text-secondary)', 'text-anchor': 'middle'
-      }, opts.endLabel || 'Future'));
-    }
-
     // ── point events ─────────────────────────────────────────────────────
     events.forEach(function (ev) {
       if (ev.kind === 'span') return;
@@ -1522,17 +1496,17 @@
     // ── the NOW marker ───────────────────────────────────────────────────
     if (opts.nowLabel !== false) {
       svg.appendChild(el('line', {
-        x1: XN, y1: Y, x2: XN, y2: Y - 40,
+        x1: X1, y1: Y, x2: X1, y2: Y - 40,
         stroke: 'var(--text-accent)', 'stroke-width': 2.5
       }));
-      svg.appendChild(el('circle', { cx: XN, cy: Y, r: 7, fill: 'var(--text-accent)' }));
+      svg.appendChild(el('circle', { cx: X1, cy: Y, r: 7, fill: 'var(--text-accent)' }));
       svg.appendChild(el('text', {
-        x: XN, y: Y - 60, 'font-size': 13, 'font-weight': 700,
+        x: X1, y: Y - 60, 'font-size': 13, 'font-weight': 700,
         fill: 'var(--text-accent)', 'text-anchor': 'middle'
       }, opts.nowLabel || 'NOW'));
       if (opts.nowNote) {
         svg.appendChild(el('text', {
-          x: XN, y: Y + 26, 'font-size': 10.5,
+          x: X1, y: Y + 26, 'font-size': 10.5,
           fill: 'var(--color-text-secondary)', 'text-anchor': 'middle'
         }, opts.nowNote));
       }
@@ -1784,6 +1758,7 @@
   global.HouseFormClarf = { build: build, LABELS: LABELS };
 })(window);
 
+
 /* ══════════════════════════════════════════════════════════════════════════
    HOUSE ERROR HUNT — missing / extra / misplaced / wrong-form word.
 
@@ -1824,37 +1799,12 @@
        prompt: 'optional hint shown once above all the sentences'
      });
 
-   A sentence can have any number of independent errors, tappable and
-   resolvable in any order — the sentence only counts as fixed once every
-   one of them is. Item shape:
-     { words: [...], errors: [] }                     // no mistake
-     { words: [...], errors: [ <error>, <error>, ... ] }
-   where each <error> is one of:
-     { type:'missing',   gapIndex,  options, correct, alwaysCap? }
-       // Several missing words can share one gap (e.g. "two bread" →
-       // "two loaves of bread"): give each its own `missing` error with the
-       // same gapIndex. They're offered one at a time in array order, so
-       // list them left to right; each lands after the previous one.
-       // alwaysCap (boolean, `missing` only): inserting the first word into
-       // gapIndex 0 pushes the sentence's old first word to second place,
-       // so it loses its capital letter — unless that word is always
-       // capitalized regardless of position (e.g. "I"), in which case set
-       // alwaysCap: true to leave it untouched. No effect at any other gap.
-     { type:'extra',     wordIndex }
-     { type:'misplaced', wordIndex, targetGapIndex, alwaysCap? }
-       // alwaysCap: 'first' | 'second' | 'both' — only needed when the move
-       // crosses the sentence-initial boundary and one of the two words
-       // involved is always capitalized regardless of position (e.g. "I",
-       // or a language/nationality name). 'first' protects
-       // item.words[wordIndex] (the word named above) from ever losing its
-       // capital; 'second' protects its swap counterpart instead; 'both'
-       // protects either. Tapping either word of an adjacent swap (see
-       // above) still resolves correctly either way. Omit for ordinary
-       // words, which capitalize/decapitalize normally.
-     { type:'wrong',     wordIndex, options, correct }
-   A single error is also accepted directly as the older, singular shape —
-   `{ words: [...], error: null }` or `{ words: [...], error: <error> }` —
-   for pages written before multi-error sentences existed; both forms work.
+   Item shape — one of:
+     { words: [...], error: null }                                     // no mistake
+     { words: [...], error: { type:'missing',   gapIndex,  options, correct } }
+     { words: [...], error: { type:'extra',     wordIndex } }
+     { words: [...], error: { type:'misplaced', wordIndex, targetGapIndex } }
+     { words: [...], error: { type:'wrong',     wordIndex, options, correct } }
    ══════════════════════════════════════════════════════════════════════════ */
 (function (global) {
   'use strict';
@@ -1878,10 +1828,9 @@
     + '.eh2-gap.no-dot{ cursor:default; }'
     + '.eh2-gap.no-dot:hover{ background:transparent; border-color:transparent; }'
     + '.eh2-gap.no-dot::after, .eh2-gap.no-dot:hover::after{ content:none; }'
-    + '.eh2-menu{ display:none; position:absolute; z-index:20; flex-wrap:wrap; align-items:center; justify-content:center; gap:6px; width:max-content; max-width:min(240px, 88vw); padding:8px 10px; background:var(--surface-1); border-radius:10px; border:1px solid var(--border); box-shadow:0 6px 18px rgba(0,0,0,0.16); }'
+    + '.eh2-menu{ display:none; position:absolute; z-index:20; transform:translateX(-50%); flex-wrap:wrap; align-items:center; justify-content:center; gap:6px; width:max-content; max-width:min(240px, 88vw); padding:8px 10px; background:var(--surface-1); border-radius:10px; border:1px solid var(--border); box-shadow:0 6px 18px rgba(0,0,0,0.16); }'
     + '.eh2-menu.open{ display:flex; }'
-    + '.eh2-menu::before{ content:""; position:absolute; top:-6px; left:var(--eh2-arrow-left, 50%); transform:translateX(-50%); border-left:6px solid transparent; border-right:6px solid transparent; border-bottom:6px solid var(--surface-1); }'
-    + '.eh2-menu.flip::before{ top:auto; bottom:-6px; border-bottom:none; border-top:6px solid var(--surface-1); }'
+    + '.eh2-menu::before{ content:""; position:absolute; top:-6px; left:50%; transform:translateX(-50%); border-left:6px solid transparent; border-right:6px solid transparent; border-bottom:6px solid var(--surface-1); }'
     + '.eh2-menu-hint{ width:100%; text-align:center; font-size:14px; font-weight:700; color:var(--text-primary); margin-bottom:2px; }'
     + '.eh2-menu-btn{ font-family:inherit; font-size:13px; font-weight:600; padding:6px 12px; border-radius:999px; border:1px solid var(--border); background:var(--surface-2); color:var(--text-primary); cursor:pointer; }'
     + '.eh2-menu-btn:hover{ background:var(--color-background-tertiary); }'
@@ -1967,89 +1916,16 @@
       wrap.appendChild(verdictEl);
       listEl.appendChild(wrap);
 
-      // Back-compat: a single `error` (object or null) is treated as a
-      // one-element (or empty) `errors` list, so existing pages using the
-      // singular field keep working unchanged.
-      var errorsList = item.errors || (item.error ? [item.error] : []);
-      var errorResolved = errorsList.map(function () { return false; });
-      var resolved = errorsList.length === 0; // nothing to fix: already "solved"
-      var activeTarget = null;    // { kind: 'word'|'gap', index, errorIndex }
+      var resolved = !item.error; // error-free sentences start already "solved"
+      var activeTarget = null;    // { kind: 'word'|'gap', index }
       var pickingDestination = false;
       var anchorEl = null;
       var gapEls = [];
-      // Where the next word inserted into a given gap should go: right after
-      // whatever was inserted there last (initially the gap itself), so
-      // several missing words sharing one gap read left to right.
-      var gapTail = {};
       var wordEls = [];
-
-      function updateResolved() {
-        resolved = errorResolved.length === 0 || errorResolved.every(function (r) { return r; });
-      }
-
-      // A "misplaced" error only ever names one word as the tappable one,
-      // but when the fix is really just two adjacent words trading places,
-      // either word is an equally valid thing for a student to tap first.
-      // This detects that case algebraically from the single error
-      // definition (no second, mirrored error entry needed) and returns
-      // the {wordIndex, targetGapIndex} to actually act on for whichever
-      // word was tapped — or null if `tappedWordIndex` isn't part of this
-      // error at all.
-      function misplacedEffective(e, tappedWordIndex) {
-        if (e.type !== 'misplaced') return null;
-        if (tappedWordIndex === e.wordIndex) {
-          return { wordIndex: e.wordIndex, targetGapIndex: e.targetGapIndex };
-        }
-        if (e.targetGapIndex === e.wordIndex + 2 && tappedWordIndex === e.wordIndex + 1) {
-          // The word moves past its right-hand neighbor — that neighbor can
-          // equally be tapped and moved to land just before the original.
-          return { wordIndex: tappedWordIndex, targetGapIndex: e.wordIndex };
-        }
-        if (e.targetGapIndex === e.wordIndex - 1 && tappedWordIndex === e.wordIndex - 1) {
-          // The word moves before its left-hand neighbor — that neighbor
-          // can equally be tapped and moved to land just after the original.
-          return { wordIndex: tappedWordIndex, targetGapIndex: e.wordIndex + 1 };
-        }
-        return null;
-      }
-
-      // "first" always refers to item.words[e.wordIndex] (the word named in
-      // the error data), "second" to its swap counterpart — regardless of
-      // which of the two the student actually tapped. `effWordIndex` is
-      // whichever one is being moved *this time* (see misplacedEffective),
-      // so this resolves e.alwaysCap ('first'|'second'|'both', or absent)
-      // into concrete moved/other protection for THIS specific move.
-      function alwaysCapFlags(e, effWordIndex) {
-        var cap = e.alwaysCap;
-        if (!cap || cap === 'none') return { moved: false, other: false };
-        var movedIsFirst = effWordIndex === e.wordIndex;
-        if (cap === 'both') return { moved: true, other: true };
-        if (cap === 'first') return { moved: movedIsFirst, other: !movedIsFirst };
-        if (cap === 'second') return { moved: !movedIsFirst, other: movedIsFirst };
-        return { moved: false, other: false };
-      }
-
-      function findErrorForWord(i) {
-        for (var k = 0; k < errorsList.length; k++) {
-          if (errorResolved[k]) continue;
-          var e = errorsList[k];
-          if ((e.type === 'extra' || e.type === 'wrong') && e.wordIndex === i) return k;
-          if (e.type === 'misplaced' && misplacedEffective(e, i)) return k;
-        }
-        return -1;
-      }
-      function findErrorForGap(i) {
-        for (var k = 0; k < errorsList.length; k++) {
-          if (errorResolved[k]) continue;
-          var e = errorsList[k];
-          if (e.type === 'missing' && e.gapIndex === i) return k;
-        }
-        return -1;
-      }
 
       function buildSentenceDOM() {
         sentEl.innerHTML = '';
-        gapEls.length = 0; wordEls.length = 0; gapTail = {};
+        gapEls.length = 0; wordEls.length = 0;
         for (var i = 0; i <= item.words.length; i++) {
           (function (i) {
             var gap = document.createElement('span');
@@ -2071,6 +1947,18 @@
         }
       }
 
+      function isErrorWord(i) {
+        var e = item.error;
+        if (!e) return false;
+        return (e.type === 'extra' && e.wordIndex === i) ||
+               (e.type === 'misplaced' && e.wordIndex === i) ||
+               (e.type === 'wrong' && e.wordIndex === i);
+      }
+      function isErrorGap(i) {
+        var e = item.error;
+        return !!e && e.type === 'missing' && e.gapIndex === i;
+      }
+
       function closeMenu() {
         menuEl.classList.remove('open');
         menuEl.innerHTML = '';
@@ -2085,37 +1973,14 @@
       // arrow pointing up into that chip — recalculated whenever the menu's
       // content changes (action list → word choices → "where to?"), since
       // the popover's own size can change even though the anchor doesn't.
-      // On a narrow/mobile viewport, perfectly centering on the chip can
-      // push part of the menu off-screen, so its left edge (and, if needed,
-      // whether it sits above or below the chip) is clamped to the
-      // viewport; the arrow is repositioned separately so it still points
-      // at the chip's actual center even when the box itself has shifted.
       function positionMenu() {
         if (!anchorEl) return;
-        var pad = 8;
         var itemRect = wrap.getBoundingClientRect();
         var chipRect = anchorEl.getBoundingClientRect();
-        var menuRect = menuEl.getBoundingClientRect();
-        var vw = document.documentElement.clientWidth;
-        var vh = document.documentElement.clientHeight;
-
-        var chipCenterX = chipRect.left + chipRect.width / 2;
-        var desiredLeft = chipCenterX - menuRect.width / 2;
-        var clampedLeft = Math.max(pad, Math.min(desiredLeft, vw - menuRect.width - pad));
-
-        var below = chipRect.bottom + 8;
-        var fitsBelow = below + menuRect.height + pad <= vh;
-        var fitsAbove = chipRect.top - menuRect.height - 8 >= pad;
-        var showAbove = !fitsBelow && fitsAbove;
-        var topAbs = showAbove ? (chipRect.top - menuRect.height - 8) : below;
-
-        menuEl.style.left = (clampedLeft - itemRect.left) + 'px';
-        menuEl.style.top = (topAbs - itemRect.top) + 'px';
-        menuEl.classList.toggle('flip', showAbove);
-
-        var arrowPad = 12;
-        var arrowLeft = Math.max(arrowPad, Math.min(chipCenterX - clampedLeft, menuRect.width - arrowPad));
-        menuEl.style.setProperty('--eh2-arrow-left', arrowLeft + 'px');
+        var centerX = chipRect.left + chipRect.width / 2 - itemRect.left;
+        var bottomY = chipRect.bottom - itemRect.top;
+        menuEl.style.left = centerX + 'px';
+        menuEl.style.top = (bottomY + 8) + 'px';
       }
 
       function flashWrong(elements) {
@@ -2130,35 +1995,31 @@
 
       function onWordClick(i) {
         if (resolved || pickingDestination) { closeMenu(); return; }
-        var errIdx = findErrorForWord(i);
-        if (errIdx === -1) return; // correct word: nothing happens
-        openActionMenu('word', i, errIdx);
+        if (!isErrorWord(i)) return; // correct word: nothing happens
+        openActionMenu('word', i);
       }
 
       function onGapClick(i) {
         if (pickingDestination) {
-          var e = errorsList[activeTarget.errorIndex];
-          var eff = misplacedEffective(e, activeTarget.index); // whichever word was actually tapped
+          var e = item.error;
           // The two gaps immediately touching the word itself aren't real
           // destinations — moving it there is a no-op. They were never
           // offered as options (see startDestinationPick), so a click here
           // shouldn't register as an attempt at all, right or wrong.
-          if (i === eff.wordIndex || i === eff.wordIndex + 1) return;
-          if (i === eff.targetGapIndex) {
-            performMove(eff.wordIndex, i, alwaysCapFlags(e, eff.wordIndex));
-            errorResolved[activeTarget.errorIndex] = true;
-            updateResolved();
+          if (i === e.wordIndex || i === e.wordIndex + 1) return;
+          if (e.type === 'misplaced' && i === e.targetGapIndex) {
+            performMove(e.wordIndex, i);
+            resolved = true;
             closeMenu();
           } else {
-            flashWrong([wordEls[eff.wordIndex], gapEls[i]]);
+            flashWrong([wordEls[e.wordIndex], gapEls[i]]);
             closeMenu();
           }
           return;
         }
         if (resolved) return;
-        var errIdx = findErrorForGap(i);
-        if (errIdx === -1) return; // correct/empty gap: nothing happens
-        openActionMenu('gap', i, errIdx);
+        if (!isErrorGap(i)) return; // correct/empty gap: nothing happens
+        openActionMenu('gap', i);
       }
 
       function makeActionBtn(emoji, label, handler) {
@@ -2176,10 +2037,10 @@
         return b;
       }
 
-      function openActionMenu(kind, index, errIdx, anchorOverride) {
+      function openActionMenu(kind, index) {
         closeMenu();
-        activeTarget = { kind: kind, index: index, errorIndex: errIdx };
-        anchorEl = anchorOverride || (kind === 'word' ? wordEls[index] : gapEls[index]);
+        activeTarget = { kind: kind, index: index };
+        anchorEl = kind === 'word' ? wordEls[index] : gapEls[index];
         anchorEl.classList.add('active-target');
         menuEl.classList.add('open');
 
@@ -2196,9 +2057,9 @@
       }
 
       function handleAction(action) {
+        var e = item.error;
         var t = activeTarget;
         if (!t) return;
-        var e = errorsList[t.errorIndex];
         var targetEl = t.kind === 'word' ? wordEls[t.index] : gapEls[t.index];
 
         if (action === 'insert') {
@@ -2215,8 +2076,7 @@
         if (action === 'delete') {
           if (e.type === 'extra' && t.kind === 'word' && t.index === e.wordIndex) {
             removeWordAndGaps(t.index);
-            errorResolved[t.errorIndex] = true;
-            updateResolved();
+            resolved = true;
             closeMenu();
           } else {
             flashWrong([targetEl]);
@@ -2225,7 +2085,7 @@
           return;
         }
         if (action === 'move') {
-          if (e.type === 'misplaced' && t.kind === 'word' && misplacedEffective(e, t.index)) {
+          if (e.type === 'misplaced' && t.kind === 'word' && t.index === e.wordIndex) {
             startDestinationPick();
           } else {
             flashWrong([targetEl]);
@@ -2247,13 +2107,12 @@
           b.textContent = opt;
           b.addEventListener('click', function () {
             if (opt === e.correct) {
-              if (mode === 'gap') insertWordAt(e.gapIndex, opt, e.alwaysCap);
+              if (mode === 'gap') insertWordAt(e.gapIndex, opt);
               else replaceWordAt(e.wordIndex, opt);
-              errorResolved[activeTarget.errorIndex] = true;
-              updateResolved();
+              resolved = true;
               closeMenu();
             } else {
-              var el = mode === 'gap' ? (anchorEl || gapEls[e.gapIndex]) : wordEls[e.wordIndex];
+              var el = mode === 'gap' ? gapEls[e.gapIndex] : wordEls[e.wordIndex];
               flashWrong([el]);
               closeMenu();
             }
@@ -2271,53 +2130,28 @@
         menuEl.appendChild(hint);
         menuEl.classList.add('open');
         pickingDestination = true;
-        var e = errorsList[activeTarget.errorIndex];
-        var eff = misplacedEffective(e, activeTarget.index); // whichever word was actually tapped
+        var e = item.error;
         gapEls.forEach(function (g, i) {
           // A gap right after sentence-ending punctuation isn't a real
           // position in the sentence — never offer it as a move destination.
           if (i > 0 && ENDERS.indexOf(item.words[i - 1]) !== -1) return;
           // Nor are the two gaps immediately touching the word being moved —
           // dropping it right back next to itself doesn't move anything.
-          if (i === eff.wordIndex || i === eff.wordIndex + 1) return;
+          if (i === e.wordIndex || i === e.wordIndex + 1) return;
           g.classList.add('target-pick');
         });
         positionMenu();
       }
 
-      function insertWordAt(gapIndex, word, alwaysCap) {
-        // Only the very first word to land in gap 0 can push the sentence's
-        // original first word out of position — a second missing word
-        // chained after it (via gapTail) lands later in the sentence and
-        // doesn't touch capitalization at all.
-        var pushesOldFirst = gapIndex === 0 && !gapTail[0] && wordEls[0];
-        var displayWord = (gapIndex === 0) ? capitalizeFirst(word) : word;
-
+      function insertWordAt(gapIndex, word) {
         var chip = document.createElement('span');
         chip.className = 'eh2-word inserted';
-        chip.textContent = displayWord;
-        (gapTail[gapIndex] || gapEls[gapIndex]).insertAdjacentElement('afterend', chip);
+        chip.textContent = word;
+        gapEls[gapIndex].insertAdjacentElement('afterend', chip);
 
-        if (pushesOldFirst && alwaysCap !== true) {
-          wordEls[0].textContent = decapitalizeFirst(wordEls[0].textContent);
-        }
-
-        // The slot after the new word stands in for the gap it was inserted
-        // into: if more missing words remain for that same gap, tapping it
-        // offers the next one (see findErrorForGap: array order = reading
-        // order). Otherwise it stays inert, like any other empty gap.
         var dot = document.createElement('span');
         dot.className = 'eh2-gap';
-        dot.addEventListener('click', function () { onInsertedGapClick(gapIndex, dot); });
         chip.insertAdjacentElement('afterend', dot);
-        gapTail[gapIndex] = dot;
-      }
-
-      function onInsertedGapClick(gapIndex, el) {
-        if (resolved || pickingDestination) return;
-        var errIdx = findErrorForGap(gapIndex);
-        if (errIdx === -1) return;
-        openActionMenu('gap', gapIndex, errIdx, el);
       }
 
       function replaceWordAt(i, word) {
@@ -2351,8 +2185,7 @@
         wordEl.parentNode.removeChild(wordEl);
       }
 
-      function performMove(wordIndex, targetGapIndex, capFlags) {
-        capFlags = capFlags || { moved: false, other: false };
+      function performMove(wordIndex, targetGapIndex) {
         var originalWord = item.words[wordIndex];
         var wasFirst = wordIndex === 0;
         var willBeFirst = targetGapIndex === 0;
@@ -2364,12 +2197,10 @@
 
         // A word moving into (or out of) the very first slot needs its
         // capitalization updated to match: sentence-initial words are
-        // capitalized, everything else isn't — UNLESS it's marked
-        // `alwaysCap` (e.g. "I", or a language/nationality name), in which
-        // case it never loses its capital letter, only ever gains one.
+        // capitalized, everything else isn't.
         var displayWord = willBeFirst
           ? capitalizeFirst(originalWord)
-          : (wasFirst && !capFlags.moved ? decapitalizeFirst(originalWord) : originalWord);
+          : (wasFirst ? decapitalizeFirst(originalWord) : originalWord);
 
         var chip = document.createElement('span');
         chip.className = 'eh2-word moved-in';
@@ -2382,10 +2213,8 @@
 
         if (willBeFirst && currentFirstWordEl && currentFirstWordEl.parentNode) {
           // Another word used to be first — it no longer is, so it loses
-          // its capital letter (unless that word is itself `alwaysCap`).
-          if (!capFlags.other) {
-            currentFirstWordEl.textContent = decapitalizeFirst(currentFirstWordEl.textContent);
-          }
+          // its capital letter.
+          currentFirstWordEl.textContent = decapitalizeFirst(currentFirstWordEl.textContent);
         } else if (wasFirst && !willBeFirst) {
           // The moved word WAS first and has left; whichever word is now
           // at the front of the sentence needs to gain a capital letter.
@@ -2396,7 +2225,7 @@
 
       okBtn.addEventListener('click', function () {
         if (resolved) {
-          verdictEl.textContent = errorsList.length ? '✓ Fixed!' : '✓ Correct — nothing was wrong!';
+          verdictEl.textContent = item.error ? '✓ Fixed!' : '✓ Correct — nothing was wrong!';
           verdictEl.className = 'eh2-verdict correct';
           wrap.classList.add('correct');
           if (!counted.has(idx)) {
@@ -2413,8 +2242,7 @@
 
       resetBtn.addEventListener('click', function () {
         closeMenu();
-        errorResolved = errorResolved.map(function () { return false; });
-        updateResolved();
+        resolved = !item.error;
         verdictEl.textContent = '';
         verdictEl.className = 'eh2-verdict';
         wrap.classList.remove('correct');
@@ -2524,296 +2352,6 @@
 
 
 /* ══════════════════════════════════════════════════════════════════════════
-   HOUSE MEMORY — picture / word memory game (vocabulary intro pages)
-   Every card starts face down. Each pair is one emoji card and one word card;
-   turning over a matching picture and word keeps both open, says the word
-   (HouseSpeak), and adds it to a vocabulary list under the game. A wrong pair
-   flashes, then turns back over.
-
-   Long sets are split into rounds so a board stays small enough for A1
-   (8 pairs = a 4 × 4 grid). Rounds can be played in any order; a finished
-   round is ticked, and the vocabulary list keeps every round's words grouped
-   under the round's name, in the round's own order — not in the order the
-   pairs happened to be found. Replaying a round never duplicates a word.
-
-     HouseMemory.build({
-       container: 'memory',            // game: round picker, score, board, buttons
-       vocab: 'vocab',                 // optional: where the word list is built
-       rounds: [
-         { name: 'Around town', pairs: [['🏠','house'], ['🏫','school'], …] },
-         { name: 'Shops',       pairs: [['🛒','super\u00ADmarket'], …] }
-       ]
-     });
-
-   A single board needs no rounds:  HouseMemory.build({ container, vocab, pairs:[…] })
-
-   A pair is [emoji, word] or {emoji, word, say}. `say` is what HouseSpeak reads
-   when it differs from the word; soft hyphens (\u00AD) in a word are allowed —
-   they let long words break neatly inside a small card — and are stripped
-   before the word is spoken or compared.
-
-   Optional: columns (4), back ('🧭'), speak (true), labels:{…}, onComplete(i, tries).
-   Returns { start(i) }.
-   ══════════════════════════════════════════════════════════════════════════ */
-(function (global) {
-  'use strict';
-
-  var DEFAULT_LABELS = {
-    howTo: '',
-    pairs: 'Pairs', tries: 'Tries',
-    again: '↺ Play again', next: 'Next round →',
-    empty: 'Your words will appear here.',
-    hint: 'Tap a word to hear it.',
-    roundWin: '🎉 Well done! Round {n} in {tries} tries.',
-    boardWin: '🎉 Well done! {tries} tries.',
-    allWin: '🎉 Great! You know all {total} words!',
-    hidden: 'Hidden card'
-  };
-
-  function el(id) { return typeof id === 'string' ? document.getElementById(id) : id; }
-  function plain(s) { return String(s).replace(/\u00AD/g, ''); }
-  function fill(tpl, vars) {
-    return tpl.replace(/\{(\w+)\}/g, function (m, k) { return vars[k] != null ? vars[k] : m; });
-  }
-  function shuffle(arr) {
-    var a = arr.slice();
-    for (var i = a.length - 1; i > 0; i--) {
-      var j = Math.floor(Math.random() * (i + 1));
-      var t = a[i]; a[i] = a[j]; a[j] = t;
-    }
-    return a;
-  }
-  function normPair(p) {
-    if (Array.isArray(p)) return { emoji: p[0], word: p[1], say: plain(p[2] || p[1]) };
-    return { emoji: p.emoji, word: p.word, say: plain(p.say || p.word) };
-  }
-  function node(tag, cls, html) {
-    var n = document.createElement(tag);
-    if (cls) n.className = cls;
-    if (html != null) n.innerHTML = html;
-    return n;
-  }
-
-  function build(opts) {
-    var host = el(opts.container);
-    if (!host) return null;
-
-    var labels = {};
-    Object.keys(DEFAULT_LABELS).forEach(function (k) { labels[k] = DEFAULT_LABELS[k]; });
-    if (opts.labels) Object.keys(opts.labels).forEach(function (k) { labels[k] = opts.labels[k]; });
-
-    var rounds = (opts.rounds || [{ name: '', pairs: opts.pairs || [] }]).map(function (r) {
-      return { name: r.name || '', pairs: (r.pairs || []).map(normPair) };
-    });
-    var multi = rounds.length > 1;
-    var backFace = opts.back || '🧭';
-    var speak = opts.speak !== false;
-    var total = rounds.reduce(function (n, r) { return n + r.pairs.length; }, 0);
-
-    // ── game markup ────────────────────────────────────────────────────
-    host.classList.add('mem-wrap');
-    host.innerHTML = '';
-
-    var roundRow = null;
-    if (multi) {
-      roundRow = node('div', 'mem-rounds');
-      rounds.forEach(function (r, i) {
-        var b = node('button', 'mem-round-btn', (i + 1) + '. ' + r.name);
-        b.type = 'button';
-        b.addEventListener('click', function () { start(i); });
-        roundRow.appendChild(b);
-      });
-      host.appendChild(roundRow);
-    }
-
-    var bar = node('div', 'score-bar',
-      '<span>' + labels.pairs + ': <strong class="mem-score">0</strong> / <span class="mem-total">0</span></span>' +
-      '<span>' + labels.tries + ': <strong class="mem-tries">0</strong></span>');
-    host.appendChild(bar);
-    var scoreEl = bar.querySelector('.mem-score');
-    var totalEl = bar.querySelector('.mem-total');
-    var triesEl = bar.querySelector('.mem-tries');
-
-    var winEl = node('div', 'win-msg');
-    host.appendChild(winEl);
-
-    var board = node('div', 'mem-board');
-    if (opts.columns) board.style.gridTemplateColumns = 'repeat(' + opts.columns + ', minmax(0,1fr))';
-    host.appendChild(board);
-
-    var actions = node('div', 'mem-actions');
-    var againBtn = node('button', '', labels.again); againBtn.type = 'button';
-    var nextBtn = node('button', '', labels.next); nextBtn.type = 'button'; nextBtn.hidden = true;
-    actions.appendChild(againBtn);
-    actions.appendChild(nextBtn);
-    host.appendChild(actions);
-
-    // ── vocabulary markup ──────────────────────────────────────────────
-    var vocabHost = el(opts.vocab), vocabEmpty = null, vocabGroups = null;
-    if (vocabHost) {
-      vocabHost.classList.add('mem-vocab');
-      vocabHost.innerHTML = '';
-      if (labels.hint) vocabHost.appendChild(node('p', 'subtitle', labels.hint));
-      vocabEmpty = node('p', 'mem-vocab-empty', labels.empty);
-      vocabHost.appendChild(vocabEmpty);
-      vocabGroups = node('div', 'mem-vocab-groups');
-      vocabHost.appendChild(vocabGroups);
-    }
-
-    // ── state ──────────────────────────────────────────────────────────
-    var learned = {}, doneRounds = {};
-    var current = 0, open = [], lock = false, found = 0, tries = 0, timers = [];
-
-    function clearTimers() { timers.forEach(clearTimeout); timers = []; }
-
-    function paintRounds() {
-      if (!roundRow) return;
-      Array.prototype.forEach.call(roundRow.children, function (b, i) {
-        b.classList.toggle('active', i === current);
-        b.classList.toggle('done', !!doneRounds[i]);
-      });
-    }
-
-    function makeCard(k, kind, pair) {
-      var card = node('button', 'mem-card');
-      card.type = 'button';
-      card.dataset.id = k;
-      card.dataset.kind = kind;
-      card.setAttribute('aria-label', labels.hidden);
-      card.innerHTML =
-        '<span class="mem-inner">' +
-          '<span class="mem-face mem-back" aria-hidden="true">' + backFace + '</span>' +
-          '<span class="mem-face mem-front ' + (kind === 'emoji' ? 'is-emoji' : 'is-word') + '">' +
-            (kind === 'emoji' ? pair.emoji : pair.word) +
-          '</span>' +
-        '</span>';
-      card._pair = pair;
-      card.addEventListener('click', function () { flip(card); });
-      return card;
-    }
-
-    function start(i) {
-      clearTimers();
-      current = i; open = []; lock = false; found = 0; tries = 0;
-      var pairs = rounds[i].pairs;
-      scoreEl.textContent = 0;
-      totalEl.textContent = pairs.length;
-      triesEl.textContent = 0;
-      winEl.classList.remove('show');
-      nextBtn.hidden = true;
-
-      var cards = [];
-      pairs.forEach(function (p, k) {
-        cards.push(makeCard(k, 'emoji', p));
-        cards.push(makeCard(k, 'word', p));
-      });
-      board.innerHTML = '';
-      shuffle(cards).forEach(function (c) { board.appendChild(c); });
-      paintRounds();
-    }
-
-    function flip(card) {
-      if (lock || card.classList.contains('flipped') || card.classList.contains('matched')) return;
-      card.classList.add('flipped');
-      card.setAttribute('aria-label', card.dataset.kind === 'emoji' ? card._pair.emoji : card._pair.say);
-      open.push(card);
-      if (open.length < 2) return;
-
-      tries++;
-      triesEl.textContent = tries;
-      var a = open[0], b = open[1];
-      open = [];
-
-      if (a.dataset.id === b.dataset.id && a.dataset.kind !== b.dataset.kind) {
-        [a, b].forEach(function (c) { c.classList.remove('flipped'); c.classList.add('matched'); });
-        found++;
-        scoreEl.textContent = found;
-        addWord(current, a._pair);
-        if (speak && global.HouseSpeak) global.HouseSpeak.speak(a._pair.say);
-        if (found === rounds[current].pairs.length) finish();
-      } else {
-        lock = true;
-        timers.push(setTimeout(function () { a.classList.add('miss'); b.classList.add('miss'); }, 350));
-        timers.push(setTimeout(function () {
-          [a, b].forEach(function (c) {
-            c.classList.remove('flipped', 'miss');
-            c.setAttribute('aria-label', labels.hidden);
-          });
-          lock = false;
-        }, 1100));
-      }
-    }
-
-    function finish() {
-      doneRounds[current] = true;
-      paintRounds();
-      var doneCount = Object.keys(doneRounds).length;
-      var next = -1;
-      for (var i = 0; i < rounds.length; i++) { if (!doneRounds[i]) { next = i; break; } }
-
-      winEl.textContent = (multi && doneCount === rounds.length)
-        ? fill(labels.allWin, { total: total })
-        : fill(multi ? labels.roundWin : labels.boardWin, { n: current + 1, tries: tries });
-      winEl.classList.add('show');
-
-      nextBtn.hidden = next === -1;
-      nextBtn.onclick = function () { start(next); };
-      if (opts.onComplete) opts.onComplete(current, tries);
-    }
-
-    // ── vocabulary list ────────────────────────────────────────────────
-    function listFor(ri) {
-      var g = vocabGroups.querySelector('[data-round="' + ri + '"]');
-      if (g) return g.querySelector('.mem-vocab-list');
-      g = node('div', 'mem-vocab-group');
-      g.dataset.round = ri;
-      if (rounds[ri].name) g.appendChild(node('div', 'mem-vocab-title', rounds[ri].name));
-      g.appendChild(node('div', 'mem-vocab-list'));
-      // Groups stay in round order, whatever order the rounds were played in.
-      var after = null;
-      Array.prototype.some.call(vocabGroups.children, function (c) {
-        if (+c.dataset.round > ri) { after = c; return true; }
-        return false;
-      });
-      vocabGroups.insertBefore(g, after);
-      return g.querySelector('.mem-vocab-list');
-    }
-
-    function addWord(ri, pair) {
-      if (!vocabGroups) return;
-      var key = ri + '|' + pair.say;
-      if (learned[key]) return;
-      learned[key] = true;
-      vocabEmpty.hidden = true;
-
-      var list = listFor(ri);
-      var item = node('div', 'mem-vocab-item',
-        '<span class="mem-v-emoji">' + pair.emoji + '</span><span class="mem-v-word">' + pair.word + '</span>');
-      item.dataset.say = pair.say;          // HouseSpeak's delegated listener picks this up
-      item.setAttribute('aria-label', pair.say);
-
-      // Each group keeps the round's own order, not the order pairs were found.
-      var order = rounds[ri].pairs.map(function (p) { return p.say; });
-      var pos = order.indexOf(pair.say);
-      var after = null;
-      Array.prototype.some.call(list.children, function (c) {
-        if (order.indexOf(c.dataset.say) > pos) { after = c; return true; }
-        return false;
-      });
-      list.insertBefore(item, after);
-    }
-
-    againBtn.addEventListener('click', function () { start(current); });
-
-    start(0);
-    return { start: start };
-  }
-
-  global.HouseMemory = { build: build };
-})(window);
-
-
-/* ══════════════════════════════════════════════════════════════════════════
    HOUSE FAVICON
    Sets a level-appropriate favicon by reading the `cefr-*` class already
    present on the `.cefr-tag` element. No configuration needed — just drop
@@ -2904,3 +2442,4 @@
   // time this runs — no DOMContentLoaded guard needed.
   inject();
 })();
+

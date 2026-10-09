@@ -1,0 +1,145 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<title>There Is / There Are — Controlled Practice</title>
+<script>
+(function(){
+  try{
+    var saved = localStorage.getItem('theme-preference');
+    var theme = (saved === 'light' || saved === 'dark')
+      ? saved
+      : ((window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches) ? 'dark' : 'light');
+    document.documentElement.setAttribute('data-theme', theme);
+  }catch(e){ /* localStorage/matchMedia unavailable — CSS media query still applies */ }
+})();
+</script>
+<link rel="stylesheet" href="house.css">
+<style>
+/* the small picture each word-order / gap-fill item is about */
+.mini-pic{ max-width:240px; margin:2px 0 8px; }
+.mini-pic .house-pic{ border-radius:10px; }
+</style>
+</head>
+<body>
+<div class="page" id="page">
+  <span class="cefr-tag cefr-a1">A1 · Beginner</span>
+  <h1>What Is in the Room?</h1>
+  <p class="subtitle">Practise: there's · there are · there isn't · there aren't any · is there…? · how many…?</p>
+
+  <div class="sec-div">1 · Look and choose</div>
+  <p class="subtitle">Choose the correct sentence — or the correct picture.</p>
+  <div class="score-bar"><span>Correct: <strong id="pcScore">0</strong> / <span id="pcTotal">0</span></span></div>
+  <div id="pcItems"></div>
+
+  <div class="sec-div">2 · Put the words in order</div>
+  <p class="subtitle">Look at the picture. Make the sentence.</p>
+  <button class="grammar-toggle-btn" id="grammarToggle">🎨 Hide Grammar</button>
+  <div class="pos-legend"></div>
+  <div class="score-bar"><span>Correct: <strong id="woScore">0</strong> / <span id="woTotal">0</span></span></div>
+  <div id="woItems"></div>
+
+  <div class="sec-div">3 · Write the missing words</div>
+  <p class="subtitle">Look at the picture. Write the words.</p>
+  <div id="gfItems"></div>
+
+  <footer>There Is / There Are — Controlled Practice (A1)</footer>
+</div>
+
+<div id="theme-toggle-wrap">
+  <button id="theme-toggle" aria-label="Toggle light/dark mode" title="Toggle light/dark mode">
+    <span id="theme-icon">☀️</span>
+  </button>
+</div>
+<script src="house.js"></script>
+<script src="house-engine.js"></script>
+<script>
+/* ── rooms, all built by the House Builder engine ──────────────────────── */
+const it = (type, level, slot) => ({ type, level, slot: slot || 'C', dir: 0 });
+const TILE = (rows, cols) => { const f = {}; for (let r = 0; r < rows; r++) for (let c = 0; c < cols; c++) f[r + ',' + c] = 'tile'; return f; };
+// a kitchen with a table and 0–4 chairs round it
+const CHAIRS = [{ x: 1, y: 2, dir: 1 }, { x: 3, y: 2, dir: 3 }, { x: 2, y: 1, dir: 2 }, { x: 2, y: 3, dir: 0 }];
+const kitchen = (chairs, table) => HousePicture.room({
+  cols: 4, rows: 4, floors: TILE(4, 4),
+  furniture: (table === false ? [] : [{ type: 'table', x: 2, y: 2, dir: 0 }]).concat(CHAIRS.slice(0, chairs).map(c => Object.assign({ type: 'chair' }, c))),
+  appliances: [{ type: 'fridge', x: 3.5, y: 0.5, dir: 2 }]
+});
+// a living room with a sofa, and some plants, a TV…
+const PLANTS = [{ x: 3.5, y: 1.5 }, { x: 2.5, y: 0.5 }, { x: 0.5, y: 1.5 }, { x: 3.5, y: 2.5 }];   // with a TV, only the right-hand spots are free
+const living = o => HousePicture.room({
+  cols: 4, rows: 3,
+  furniture: [{ type: 'loveseat', x: o.tv ? 2.5 : 1.5, y: 0.5, dir: 2 }].concat(o.tv ? [{ type: 'tvstand', x: 0.5, y: 1.5, dir: 1, items: [it('tv', 1, 'C')] }] : []),
+  appliances: PLANTS.filter(p => !o.tv || p.x === 3.5).slice(0, o.plants || 0).map(p => Object.assign({ type: 'planter', dir: 0 }, p)).concat(o.rug ? [{ type: 'rug', x: 1.5, y: 1.5, dir: 0 }] : [])
+});
+const bathroom = o => HousePicture.room({
+  cols: 3, rows: 3, floors: TILE(3, 3),
+  furniture: [{ type: 'toilet', x: 0.5, y: 0.5, dir: 2 }, { type: 'washbasin', x: 2.5, y: 0.5, dir: 2 }]
+    .concat(o.shower ? [{ type: 'shower', edge: { o: 'h', r: 0, c: 1 }, side: 'p' }] : [])
+    .concat(o.bathtub ? [{ type: 'bathtub', x: 1.5, y: 1.5, dir: 1 }] : [])
+});
+
+const CLOSE = { focus: true, aspect: 4 / 3 };
+const mini = (house, alt) => '<div class="mini-pic">' + HousePicture.svg(house, Object.assign({ alt }, CLOSE)) + '</div>';
+
+/* ── 1 · look and choose ───────────────────────────────────────────────── */
+const PC_ITEMS = [
+  { sentence: 'There are two chairs in the kitchen.', opts: CLOSE,
+    pictures: [kitchen(2), kitchen(4), kitchen(1)], correct: 0 },
+  { picture: bathroom({ bathtub: true }), opts: CLOSE,
+    options: ['There’s a bathtub.', 'There isn’t a bathtub.', 'There are two bathtubs.'], correct: 0 },
+  { sentence: 'There isn’t a TV in the living room.', opts: CLOSE,
+    pictures: [living({ tv: true }), living({ plants: 1 }), living({ tv: true, plants: 1 })], correct: 1 },
+  { picture: living({ plants: 3 }), opts: CLOSE,
+    options: ['There are three plants.', 'There’s one plant.', 'There aren’t any plants.'], correct: 0 },
+  { sentence: 'There aren’t any chairs in the kitchen.', opts: CLOSE,
+    pictures: [kitchen(0), kitchen(1), kitchen(3)], correct: 0 },
+  { picture: kitchen(1), opts: CLOSE,
+    options: ['There are four chairs.', 'There’s one chair.', 'There aren’t any chairs.'], correct: 1 },
+  { sentence: 'There’s a shower, but there isn’t a bathtub.', opts: CLOSE,
+    pictures: [bathroom({ shower: true }), bathroom({ shower: true, bathtub: true }), bathroom({ bathtub: true })], correct: 0 },
+  { picture: living({ rug: true }), opts: CLOSE,
+    options: ['“Is there a rug?” “Yes, there is.”', '“Is there a rug?” “No, there isn’t.”', '“Are there any rugs?” “Yes, there is.”'], correct: 0 }
+];
+HousePictureChoice.build({ container: 'pcItems', items: PC_ITEMS, scoreEl: 'pcScore', totalEl: 'pcTotal' });
+
+/* ── 2 · word order ────────────────────────────────────────────────────── */
+const WO_ITEMS = [
+  { context: mini(living({ rug: true }), 'A living room with a sofa'),
+    text: 'There / is / a / sofa / in / the / living room', pos: ['subject', 'verb', 'det', 'noun', 'prep', 'det', 'noun'] },
+  { context: mini(kitchen(4), 'A kitchen with a table and four chairs'),
+    text: 'There / are / four / chairs / in / the / kitchen', pos: ['subject', 'verb', 'det', 'noun', 'prep', 'det', 'noun'] },
+  { context: mini(bathroom({ shower: true }), 'A bathroom with a shower'),
+    text: 'There / isn’t / a / bathtub', pos: ['subject', 'neg', 'det', 'noun'] },
+  { context: mini(kitchen(0), 'A kitchen with a table'),
+    text: 'There / aren’t / any / chairs', pos: ['subject', 'neg', 'det', 'noun'] },
+  { context: mini(living({ tv: true }), 'A living room with a sofa and a TV') + 'Ask about the TV.',
+    text: 'Is / there / a / TV / ?', pos: ['verb', 'subject', 'det', 'noun', 'none'] },
+  { context: mini(living({ plants: 3 }), 'A living room with a sofa and plants') + 'Ask about the number of plants.',
+    text: 'How many / plants / are / there / ?', pos: ['wh', 'noun', 'verb', 'subject', 'none'] }
+];
+HouseWordOrder.build({ container: 'woItems', items: WO_ITEMS, scoreEl: 'woScore', totalEl: 'woTotal' });
+
+/* ── 3 · gap fill (easiest first) ──────────────────────────────────────── */
+const look = (house, alt) => mini(house, alt) + 'Look at the picture.';
+const GF_ITEMS = [
+  { direct: look(living({ rug: true }), 'A living room with a sofa'),
+    template: 'There {0} a sofa in the living room.', hints: [{ accepted: ['is', '’s', "'s"] }] },
+  { direct: look(kitchen(4), 'A kitchen with a table and four chairs'),
+    template: 'There {0} four chairs in the kitchen.', hints: [{ accepted: ['are'] }] },
+  { direct: look(bathroom({ shower: true }), 'A bathroom with a shower'),
+    template: 'There {0} a bathtub. There’s a shower.', hints: [{ accepted: ['isn’t', "isn't", 'is not'] }] },
+  { direct: look(kitchen(0), 'A kitchen with a table'),
+    template: 'There {0} {1} chairs in the kitchen.', hints: [{ accepted: ['aren’t', "aren't", 'are not'] }, { accepted: ['any'] }] },
+  { direct: look(living({ tv: true }), 'A living room with a sofa and a TV'),
+    template: '“{0} {1} a TV in the living room?” “Yes, there is.”', hints: [{ accepted: ['Is'] }, { accepted: ['there'] }] },
+  { direct: look(living({ plants: 3 }), 'A living room with a sofa and plants'),
+    template: '“How many plants {0} {1}?” “There are three.”', hints: [{ accepted: ['are'] }, { accepted: ['there'] }] },
+  { direct: look(kitchen(0), 'A kitchen with a table'),
+    template: '“{0} there any chairs in the kitchen?” “No, there {1}.”', hints: [{ accepted: ['Are'] }, { accepted: ['aren’t', "aren't"] }] }
+];
+HouseGapFill.build({ container: 'gfItems', items: GF_ITEMS });
+</script>
+<script>HouseGrammar.init();</script>
+</body>
+</html>

@@ -1,0 +1,169 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<title>Rooms and Things in a House — Vocabulary</title>
+<script>
+(function(){
+  try{
+    var saved = localStorage.getItem('theme-preference');
+    var theme = (saved === 'light' || saved === 'dark')
+      ? saved
+      : ((window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches) ? 'dark' : 'light');
+    document.documentElement.setAttribute('data-theme', theme);
+  }catch(e){ /* localStorage/matchMedia unavailable — CSS media query still applies */ }
+})();
+</script>
+<link rel="stylesheet" href="house.css">
+<style>
+/* word cards: a picture of the thing, its name, tap to hear it */
+.vocab-group{ font-size:.8rem; font-weight:700; text-transform:uppercase; letter-spacing:.04em; color:var(--text-muted); margin:0 0 8px; }
+.vocab-grid{ display:grid; grid-template-columns:repeat(auto-fill, minmax(118px, 1fr)); gap:10px; margin:0 0 1.2rem; }
+.vocab-card{
+  display:flex; flex-direction:column; align-items:center; gap:6px; padding:8px 8px 10px;
+  border:1px solid var(--color-border-tertiary); border-radius:12px; background:var(--surface-2);
+  color:var(--text-primary); font:inherit; cursor:pointer; -webkit-appearance:none; appearance:none;
+  transition:box-shadow .12s ease;
+}
+.vocab-card .house-pic{ border-radius:9px; }
+.vocab-word{ font-size:1rem; font-weight:600; }
+.vocab-card.is-speaking{ box-shadow:0 0 0 2px var(--text-accent); }
+.vocab-card.is-speaking .vocab-word{ animation:vocab-say .35s ease; }
+@keyframes vocab-say{ 0%,100%{ transform:translateY(0); } 40%{ transform:translateY(-3px) scale(1.08); } }
+@media (prefers-reduced-motion: reduce){ .vocab-card.is-speaking .vocab-word{ animation:none; } }
+.no-speech .vocab-card{ cursor:default; }
+.scene{ max-width:640px; margin:0 auto 1.2rem; }
+</style>
+</head>
+<body>
+<div class="page" id="page">
+  <span class="cefr-tag cefr-a1">A1 · Beginner</span>
+  <h1>Rooms and Things in a House</h1>
+  <p class="subtitle">Words for the rooms in a house, and the things in them</p>
+
+  <div class="sec-div">The rooms</div>
+  <p class="subtitle">Look at the picture. Match the letters and the rooms.</p>
+  <div class="scene" id="flatPic"></div>
+  <div class="score-bar"><span>Matched: <strong id="roomScore">0</strong> / <span id="roomTotal">0</span></span></div>
+  <div class="win-msg" id="roomWin">🎉 Great! You know the rooms.</div>
+  <div class="match-grid">
+    <div><div class="match-col-label">Letter</div><div class="match-col" id="roomLeft"></div></div>
+    <div><div class="match-col-label">Room</div><div class="match-col" id="roomRight"></div></div>
+  </div>
+  <div class="feedback" id="roomFeedback"></div>
+
+  <div class="sec-div">The things</div>
+  <p class="subtitle">🔊 Tap a card to hear the word.</p>
+  <div id="vocabGroups"></div>
+
+  <div class="sec-div">Which room?</div>
+  <p class="subtitle">Where is it in a house? Choose the room.</p>
+  <div class="score-bar"><span>Correct: <strong id="pcScore">0</strong> / <span id="pcTotal">0</span></span></div>
+  <div id="pcItems"></div>
+
+  <footer>Rooms and Things in a House — Vocabulary (A1)</footer>
+</div>
+
+<div id="theme-toggle-wrap">
+  <button id="theme-toggle" aria-label="Toggle light/dark mode" title="Toggle light/dark mode">
+    <span id="theme-icon">☀️</span>
+  </button>
+</div>
+<script src="house.js"></script>
+<script src="house-engine.js"></script>
+<script>
+const it = (type, level, slot) => ({ type, level, slot: slot || 'C', dir: 0 });
+const T = HousePicture.thing;
+// a piece that stands against a wall line (a countertop) or hangs on one (a shower),
+// shown on its own in a little 3 × 3 room
+const onWall = (piece, room) => HousePicture.room({ cols: 3, rows: 3, furniture: [piece] });
+const TILE = (r0, r1, c0, c1) => { const f = {}; for (let r = r0; r < r1; r++) for (let c = c0; c < c1; c++) f[r + ',' + c] = 'tile'; return f; };
+
+/* ── the flat: kitchen, living room, bathroom, bedroom ─────────────────── */
+const FLAT = HousePicture.room({
+  cols: 8, rows: 7, lines: [[4, 0, 4, 4], [0, 4, 8, 4], [3, 4, 3, 7]],
+  openings: [['v', 3, 4, 'gap'], ['v', 6, 3, 'gap'], ['h', 4, 7, 'gap'], ['h', 0, 6, 'window'], ['v', 1, 0, 'window'], ['h', 7, 5, 'window']],
+  floors: Object.assign(TILE(0, 4, 0, 4), TILE(4, 7, 0, 3)),
+  furniture: [
+    { type: 'countertop', edge: { o: 'h', r: 0, c: 0 }, side: 'p', insets: [0.08, 0], items: [it('sink', 0)] },
+    { type: 'countertop', edge: { o: 'h', r: 0, c: 1 }, side: 'p', items: [it('microwave', 0)] },
+    { type: 'countertop', edge: { o: 'h', r: 0, c: 2 }, side: 'p', items: [it('stove', 0)] },
+    { type: 'table', x: 2, y: 2, dir: 0 },
+    { type: 'chair', x: 1, y: 2, dir: 1 }, { type: 'chair', x: 3, y: 2, dir: 3 }, { type: 'chair', x: 2, y: 1, dir: 2 }, { type: 'chair', x: 2, y: 3, dir: 0 },
+    { type: 'loveseat', x: 6.5, y: 0.5, dir: 2 },
+    { type: 'tvstand', x: 4.5, y: 1.5, dir: 1, items: [it('tv', 1)] },
+    { type: 'shower', edge: { o: 'v', r: 5, c: 0 }, side: 'p' },
+    { type: 'toilet', x: 1.5, y: 4.5, dir: 2 }, { type: 'washbasin', x: 2.5, y: 4.5, dir: 2 },
+    { type: 'bed', x: 5.5, y: 5.5, dir: 2 }, { type: 'nightstand', x: 4.5, y: 4.5, dir: 2, items: [it('lamp', 0)] }
+  ],
+  appliances: [{ type: 'fridge', x: 3.5, y: 0.5, dir: 2 },
+    { type: 'planter', x: 5.5, y: 0.5, dir: 0 }, { type: 'planter', x: 7.5, y: 0.5, dir: 0 }, { type: 'rug', x: 6.5, y: 2.5, dir: 0 }]
+});
+const ROOMS = [
+  { letter: 'A', room: 'kitchen',     at: { x: 0.8, y: 1.3 } },
+  { letter: 'B', room: 'living room', at: { x: 6.5, y: 3.5 } },
+  { letter: 'C', room: 'bathroom',    at: { x: 1.5, y: 6.4 } },
+  { letter: 'D', room: 'bedroom',     at: { x: 4, y: 6.5 } }
+];
+HousePicture.draw('flatPic', FLAT, {
+  alt: 'A flat with four rooms, marked A, B, C and D',
+  labels: ROOMS.map(r => Object.assign({ text: r.letter, num: true }, r.at))
+});
+HouseMatching.build({
+  left: 'roomLeft', right: 'roomRight',
+  pairs: ROOMS.map(r => ({ id: r.letter, left: r.letter, right: r.room })),
+  scoreEl: 'roomScore', totalEl: 'roomTotal', winEl: 'roomWin', feedbackEl: 'roomFeedback'
+});
+
+/* ── the things, room by room ──────────────────────────────────────────── */
+const STOVE = onWall({ type: 'countertop', edge: { o: 'h', r: 1, c: 1 }, side: 'p', items: [it('stove', 0)] });
+const SINK = onWall({ type: 'countertop', edge: { o: 'h', r: 1, c: 1 }, side: 'p', items: [it('sink', 0)] });
+const SHOWER = onWall({ type: 'shower', edge: { o: 'h', r: 0, c: 1 }, side: 'p' });
+const GROUPS = [
+  { name: 'Kitchen', words: [
+    { word: 'fridge', pic: T('fridge') }, { word: 'stove', pic: STOVE }, { word: 'sink', pic: SINK },
+    { word: 'microwave', pic: T('microwave') }, { word: 'table', pic: T('table') }, { word: 'chair', pic: T('chair') }] },
+  { name: 'Bathroom', words: [
+    { word: 'toilet', pic: T('toilet') }, { word: 'shower', pic: SHOWER, focus: true }, { word: 'bathtub', pic: T('bathtub', { dir: 1 }) },
+    { word: 'washbasin', pic: T('washbasin') }] },
+  { name: 'Bedroom', words: [
+    { word: 'bed', pic: T('bed') }, { word: 'wardrobe', pic: T('wardrobe') }, { word: 'nightstand', pic: T('nightstand', { items: [it('lamp', 0)] }) }] },
+  { name: 'Living room', words: [
+    { word: 'sofa', pic: T('loveseat') }, { word: 'armchair', pic: T('armchair') }, { word: 'TV', pic: T('tv') }, { word: 'plant', pic: T('planter') }] }
+];
+const host = document.getElementById('vocabGroups');
+GROUPS.forEach(g => {
+  host.insertAdjacentHTML('beforeend', '<div class="vocab-group">' + g.name + '</div>');
+  const grid = document.createElement('div');
+  grid.className = 'vocab-grid';
+  g.words.forEach(w => {
+    const b = document.createElement('button');
+    b.type = 'button';
+    b.className = 'vocab-card';
+    b.dataset.say = w.word === 'TV' ? 'T V' : w.word;
+    b.setAttribute('aria-label', w.word);
+    // countertops and showers need a wall line, so they come out of a small room, cropped square
+    const wall = w.pic.floors[0].furniture.some(f => f.edge);
+    b.innerHTML = HousePicture.svg(w.pic, wall ? { focus: 0.3, aspect: 1, alt: w.word } : { alt: w.word }) +
+      '<span class="vocab-word">' + w.word + '</span>';
+    grid.appendChild(b);
+  });
+  host.appendChild(grid);
+});
+
+/* ── which room? ───────────────────────────────────────────────────────── */
+const RM = ['the kitchen', 'the bathroom', 'the bedroom', 'the living room'];
+const PC_ITEMS = [
+  { picture: T('fridge'), prompt: 'Where is it?', options: [RM[0], RM[1], RM[2]], correct: 0 },
+  { picture: T('bed'), prompt: 'Where is it?', options: [RM[3], RM[0], RM[2]], correct: 2 },
+  { picture: T('toilet'), prompt: 'Where is it?', options: [RM[2], RM[1], RM[3]], correct: 1 },
+  { picture: T('loveseat'), prompt: 'Where is it?', options: [RM[1], RM[2], RM[3]], correct: 2 },
+  { picture: STOVE, opts: { focus: 0.3, aspect: 1 }, prompt: 'Where is it?', options: [RM[0], RM[3], RM[1]], correct: 0 },
+  { picture: T('wardrobe'), prompt: 'Where is it?', options: [RM[0], RM[2], RM[1]], correct: 1 }
+];
+HousePictureChoice.build({ container: 'pcItems', items: PC_ITEMS, scoreEl: 'pcScore', totalEl: 'pcTotal' });
+</script>
+<script>HouseGrammar.init();</script>
+</body>
+</html>

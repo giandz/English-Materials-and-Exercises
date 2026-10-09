@@ -1,0 +1,175 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<title>Prepositions Of Place — Clarification</title>
+<script>
+// Applies the saved/system theme to <html> as early as possible, before the
+// stylesheet below paints anything, so there's no flash of the wrong theme.
+// Self-contained: no dependency on any external script.
+(function(){
+  try{
+    var saved = localStorage.getItem('theme-preference');
+    var theme = (saved === 'light' || saved === 'dark')
+      ? saved
+      : ((window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches) ? 'dark' : 'light');
+    document.documentElement.setAttribute('data-theme', theme);
+    // Same idea for the text size: apply it before house.css paints, so a
+    // person who chose 28px doesn't watch the page reflow from 14px on load.
+    var fs = parseFloat(localStorage.getItem('font-size-preference'));
+    if (fs >= 10 && fs <= 28){
+      document.documentElement.style.setProperty('--fs-base', fs + 'px');
+    }
+  }catch(e){ /* localStorage/matchMedia unavailable — CSS media query still applies */ }
+})();
+</script>
+<link rel="stylesheet" href="house.css">
+<style>
+/* Recovered page-specific rules. */
+
+.setting-chip{display:inline-flex;align-items:center;gap:5px;font-size:0.8rem;padding:3px 10px;border-radius:20px;background:var(--surface-1);border:.5px solid var(--border);color:var(--color-text-secondary);margin-bottom:1rem;}
+  .hl-prep{font-weight:500;color:var(--text-accent);}
+  .hl-obj{font-weight:500;color:var(--color-text-success);}
+
+  /* Matching: the cards, columns and connector lines all come from house.css.
+     Only the picture cards need anything extra — a tighter box around the
+     image, and a filename placeholder (the img's alt) while the art is
+     still to be drawn. */
+  /* One row height for both columns, derived from the picture: the sentence
+     card and the picture card then line up row for row, so a matched pair's
+     connector line runs straight across. Cards still grow if a sentence wraps. */
+  :root{ --match-img-h:78px; --match-row-h:calc(var(--match-img-h) + 15px); }
+  #sent-list .match-card,
+  #img-list .match-card{min-height:var(--match-row-h);}
+  #img-list .match-card{padding:6px;font-family:var(--font-mono);font-size:0.6667rem;color:var(--text-muted);text-align:center;}
+  #img-list .match-card > span{flex:1 1 auto;min-width:0;}
+  .match-img{display:block;width:100%;height:var(--match-img-h);object-fit:contain;}
+
+  /* gap fill */
+  .gap-para{background:var(--surface-2);border:.5px solid var(--border);border-radius:12px;padding:1rem 1.25rem;font-size:0.9333rem;line-height:2.5;margin-bottom:1rem;}
+  .bank{display:flex;flex-wrap:wrap;gap:6px;margin-bottom:1rem;}
+  .bank-chip{font-size:0.8667rem;padding:4px 11px;border-radius:20px;background:var(--surface-1);border:.5px solid var(--border);color:var(--color-text-secondary);}
+  .ak-body{padding:10px 14px;display:flex;flex-direction:column;gap:2px;}
+  .ak-row{display:flex;gap:10px;align-items:baseline;padding:4px 0;border-bottom:.5px solid var(--border);font-size:0.8667rem;}
+  .ak-row:last-child{border-bottom:none;}
+  .ak-num{color:var(--text-muted);min-width:20px;}
+  .ak-ans{font-weight:500;color:var(--text-accent);min-width:80px;}
+  .ak-note{color:var(--text-muted);}
+  details summary{user-select:none;list-style:none;display:flex;justify-content:space-between;align-items:center;}
+  details summary::-webkit-details-marker{display:none;}
+</style>
+</head>
+<body class="exercise-page" id="page">
+<span class="cefr-tag cefr-a1">A1 · Beginner</span>
+
+<!-- ══ MATCHING ══ -->
+<div class="sec-div">exercise 1 — match the sentence to the picture</div>
+<div style="font-size:0.8667rem;color:var(--color-text-secondary);margin-bottom:1rem;">Click a sentence, then click the matching picture.</div>
+
+<div class="score-bar">
+  <span>Matched: <strong id="matchScore">0</strong> / <span id="matchTotal">0</span></span>
+  <button id="reset-match">↺ Reset</button>
+</div>
+
+<div class="win-msg" id="matchWin">🎉 All matched!</div>
+
+<div class="match-grid">
+  <div>
+    <div class="match-col-label">Sentences</div>
+    <div class="match-col" id="sent-list"></div>
+  </div>
+  <div>
+    <div class="match-col-label">Pictures</div>
+    <div class="match-col" id="img-list"></div>
+  </div>
+</div>
+
+<div class="feedback" id="match-fb"></div>
+
+
+  <div class="sec-div">Common mistakes</div>
+  <div class="pair-card"><div class="pair-line no"><span class="mark">✗</span>The book is in the table.</div><div class="pair-line yes"><span class="mark">✓</span>The book is on the table.</div></div>
+  <div class="pair-card"><div class="pair-line no"><span class="mark">✗</span>The cat is under of the chair.</div><div class="pair-line yes"><span class="mark">✓</span>The cat is under the chair.</div></div>
+  <div class="pair-card"><div class="pair-line no"><span class="mark">✗</span>I live at Mexico.</div><div class="pair-line yes"><span class="mark">✓</span>I live in Mexico.</div></div>
+  <div class="pair-card"><div class="pair-line no"><span class="mark">✗</span>The bank is in front the park.</div><div class="pair-line yes"><span class="mark">✓</span>The bank is in front of the park.</div></div>
+  <div class="pair-card"><div class="pair-line no"><span class="mark">✗</span>She is on the kitchen.</div><div class="pair-line yes"><span class="mark">✓</span>She is in the kitchen.</div></div>
+
+
+  <div class="sec-div">Find the mistake</div>
+  <div class="rule-box">Every sentence below has <strong>one or two mistakes</strong>. Tap the word you think is wrong and choose the correct one. When you think the sentence is right, press <strong>OK</strong>.</div>
+  <div class="score-bar"><span>Corrected: <strong id="ehScore">0</strong> / <span id="ehTotal">0</span></span></div>
+  <div id="errorHunt"></div>
+
+  <div id="theme-toggle-wrap">
+  <button id="theme-toggle" aria-label="Toggle light/dark mode" title="Toggle light/dark mode">
+    <span id="theme-icon">☀️</span>
+  </button>
+</div>
+<script src="house.js"></script>
+<script>
+const EH_ITEMS = [
+  {
+    "words": ["The", "book", "is", "in", "the", "table", "."],
+    "errors": [ { "type": "wrong", "wordIndex": 3, "options": ["on", "in", "at"], "correct": "on" } ]
+  },
+  {
+    "words": ["The", "cat", "is", "under", "of", "the", "chair", "."],
+    "errors": [ { "type": "extra", "wordIndex": 4 } ]
+  },
+  {
+    "words": ["I", "live", "at", "Mexico", "."],
+    "errors": [ { "type": "wrong", "wordIndex": 2, "options": ["in", "at", "on"], "correct": "in" } ]
+  },
+  {
+    "words": ["The", "bank", "is", "in", "front", "the", "park", "."],
+    "errors": [ { "type": "missing", "gapIndex": 5, "options": ["of", "at", "to"], "correct": "of" } ]
+  },
+  {
+    "words": ["She", "is", "on", "the", "kitchen", "."],
+    "errors": [ { "type": "wrong", "wordIndex": 2, "options": ["in", "on", "at"], "correct": "in" } ]
+  },
+  {
+    "words": ["The", "keys", "are", "next", "the", "door", "."],
+    "errors": [ { "type": "missing", "gapIndex": 4, "options": ["to", "at", "of"], "correct": "to" } ]
+  }
+];
+
+HouseErrorHunt.build({
+  container: "errorHunt",
+  items: EH_ITEMS,
+  scoreEl: "ehScore",
+  totalEl: "ehTotal"
+});
+</script>
+<script>
+const MATCH_PAIRS = [
+  { id:"m1", prep:"on",          sentence:"The cat is on the sofa.",          file:"eng_mats_images/cat_on_sofa.png"          },
+  { id:"m2", prep:"under",       sentence:"The cat is under the table.",      file:"eng_mats_images/cat_under_table.png"      },
+  { id:"m3", prep:"next_to",     sentence:"The cat is next to the sofa.",     file:"eng_mats_images/cat_next_to_sofa.png"     },
+  { id:"m4", prep:"behind",      sentence:"The cat is behind the plant.",     file:"eng_mats_images/cat_behind_plant.png"     },
+  { id:"m5", prep:"between",     sentence:"The cat is between the cushions.", file:"eng_mats_images/cat_between_cushions.png" },
+  { id:"m6", prep:"in_front_of", sentence:"The cat is in front of the sofa.", file:"eng_mats_images/cat_in_front_of_sofa.png" },
+  { id:"m7", prep:"above",       sentence:"The cat is above the sofa.",       file:"eng_mats_images/cat_above_sofa.png"       },
+  { id:"m8", prep:"on_top_of",   sentence:"The cat is on top of the sofa.",   file:"eng_mats_images/cat_on_top_of_sofa.png"   }
+];
+
+HouseMatching.build({
+  left: 'sent-list', right: 'img-list',
+  // The right-hand card is the picture itself. Its alt text is the file name,
+  // not a description: a described image would hand the student the answer,
+  // and until the art exists the browser shows that name as the placeholder.
+  pairs: MATCH_PAIRS.map(function (p) {
+    return {
+      id: p.id,
+      sentence: p.sentence,
+      picture: '<img class="match-img" src="' + p.file + '" alt="' + p.file.split('/').pop() + '">'
+    };
+  }),
+  leftKey: 'sentence', rightKey: 'picture',
+  scoreEl: 'matchScore', totalEl: 'matchTotal',
+  winEl: 'matchWin', feedbackEl: 'match-fb', resetBtn: 'reset-match'
+});
+</script>
+</body>
+</html>
