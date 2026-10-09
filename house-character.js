@@ -133,7 +133,7 @@ function ring(cx,cy,rx,ry,a0,a1,n,r){
 /* props stand on the floor. Chair, stool and bicycle are pinned to the pelvis; the rest stand next to the character. */
 const PROPS={chair:{label:'Chair',col:'#CC9966'},stool:{label:'Stool',col:'#CC9966'},desk:{label:'School desk',col:'#CC9966'},
   beachchair:{label:'Beach chair',col:'#FF6600'},stroller:{label:'Stroller',col:'#0066CC'},bmx:{label:'BMX bicycle',col:'#CC0000'},roadbike:{label:'Road bicycle',col:'#0066CC'},
-  mtb:{label:'Mountain bicycle',col:'#00CC66'},piano:{label:'Grand piano and stool',col:'#000000'},drums:{label:'Drum set',col:'#CC0000'},keyboard:{label:'Electronic keyboard',col:'#333333'},scooter:{label:'Scooter',col:'#CC0000'},car:{label:'Car',col:'#CC0000'}};
+  mtb:{label:'Mountain bicycle',col:'#00CC66'},piano:{label:'Grand piano and stool',col:'#000000'},drums:{label:'Drum set',col:'#CC0000'},keyboard:{label:'Electronic keyboard',col:'#333333'},scooter:{label:'Scooter',col:'#CC0000'},skateboard:{label:'Skateboard',col:'#00CC66'},car:{label:'Car',col:'#CC0000'}};
 /* Side-view bicycle geometry in stage pixels (about 227 px per metre), saddle at the origin, facing +x.
    G floor · R wheel radius · tw tyre width · A/F rear and front axle · BB bottom bracket · J where seat stays and top tube meet the seat tube ·
    HT/HB head tube top and bottom · bar handlebar point · k drawing scale */
@@ -264,6 +264,11 @@ function propSVG(id,c,o){   /* o = {x,y: hip point, g: floor, side: profile view
     case 'stroller': { const X=side?x+dir*170:x+o.hw+112;
       return side?[{z:90,span:260,svg:at(X,g,`<path d="M-30,-70L-56,-104" stroke="#333" stroke-width="4" stroke-linecap="round" fill="none"/><path d="M-62,-102L-50,-106" stroke="#111" stroke-width="6" stroke-linecap="round" fill="none"/><path d="M-22,-36L-24,-14M22,-36L24,-14M-22,-36L24,-14" stroke="#555" stroke-width="3" fill="none"/><path d="M-32,-72H32Q32,-36 0,-34Q-32,-36 -32,-72Z" ${F}/><path d="M-2,-72A34,34 0 0 1 32,-106L32,-72Z" ${D}/>`+wheel(-24,-13,13,3)+wheel(24,-13,13,3),2)}]
         :[{z:-1,span:o.hw+180,svg:at(X,g,`<path d="M-22,-104H22" stroke="#111" stroke-width="6" stroke-linecap="round" fill="none"/><path d="M-22,-104L-24,-70M22,-104L24,-70" stroke="#333" stroke-width="4" fill="none"/><ellipse cx="-24" cy="-13" rx="4.5" ry="13" ${T}/><ellipse cx="24" cy="-13" rx="4.5" ry="13" ${T}/><path d="M-26,-112Q0,-128 26,-112V-78H-26Z" ${D}/><rect x="-28" y="-80" width="56" height="48" rx="8" ${F}/><path d="M-22,-34V-20M22,-34V-20" stroke="#555" stroke-width="3" fill="none"/>`,2,false)}]; }
+    case 'skateboard': {   /* the character stands on the deck, so the wheels (not the feet) are on the floor */
+      const wh=(cx)=>`<circle cx="${cx}" cy="9.5" r="5.5" fill="#f1ede0" stroke="#5f6870"/><circle cx="${cx}" cy="9.5" r="1.6" ${Mt} stroke-width=".6"/>`;
+      return side
+        ?[{z:19,bottom:g+15,span:70,svg:at(x,g,`<path d="M-38,5.5v3M38,5.5v3" stroke="#5f6870" stroke-width="5" fill="none"/>${wh(-38)}${wh(38)}<path d="M-64,-7Q-58,0 -48,0H48Q58,0 64,-7L66,-4Q60,5.5 48,5.5H-48Q-60,5.5 -66,-4Z" ${F}/><path d="M-62,-6Q-57,0 -48,0H48Q57,0 62,-6" fill="none" stroke="#222" stroke-width="1.6"/>`)}]
+        :[{z:19,bottom:g+15,span:20,svg:at(x,g,`<path d="M-15,8H15" stroke="#5f6870" stroke-width="4" fill="none"/><rect x="-19" y="4" width="7" height="11" rx="3" fill="#f1ede0" stroke="#5f6870"/><rect x="12" y="4" width="7" height="11" rx="3" fill="#f1ede0" stroke="#5f6870"/><rect x="-13" y="0" width="26" height="5.5" rx="2.5" ${F}/><path d="M-12,0.6H12" stroke="#222" stroke-width="1.6" fill="none"/>`,1,false)}]; }
     case 'scooter': return side
       ?[{z:24,span:150,svg:at(x,g,wheel(-66,-22,22,5)+wheel(80,-22,22,5)+tube('M-58,-24H58L80,-22',7)+`<path d="M80,-22L66,-236" stroke="#5f6870" stroke-width="8" stroke-linecap="round" fill="none"/><path d="M80,-22L66,-236" stroke="#b4bcc4" stroke-width="5" stroke-linecap="round" fill="none"/><path d="M54,-238H78" stroke="#111" stroke-width="8" stroke-linecap="round" fill="none"/>`)}]
       :[{z:33,span:60,svg:at(x,g,`<ellipse cx="0" cy="-22" rx="6" ry="22" ${T}/>`+R(-16,-30,32,8,F,3)+`<path d="M0,-30V-236" stroke="#5f6870" stroke-width="8" fill="none"/><path d="M0,-30V-236" stroke="#b4bcc4" stroke-width="5" fill="none"/>`,1,false)},
@@ -279,7 +284,7 @@ function propSVG(id,c,o){   /* o = {x,y: hip point, g: floor, side: profile view
 }
 const ITEM_CATS=[['Tools',['wrench','hammer','screwdriver','pliers','paintbrush','flashlight','multimeter','solderingiron','toolbox']],
   ['Kitchen',['fork','knife','spoon','pan','cup','mug','bowl','plate','cake','pizzabox']],['Everyday',['book','phone','tablet','keys','balloon','teddy']],
-  ['Sports',['beachball','soccerball','basketball','volleyball','football','tennisball','baseball','tennisracket','baseballbat','mitt']],
+  ['Sports',['beachball','soccerball','basketball','volleyball','football','tennisball','baseball','tennisracket','baseballbat','mitt','skateboard']],
   ['Cleaning',['broom','mop','duster']],
   ['Bags and luggage',['box','bag','purse','briefcase','suitcase']],['Umbrellas and canes',['cane','parasol','umbrella','parasolclosed','umbrellaclosed']],
   ['Music',['boombox','microphone','micstand','guitar','electricguitar','bass','violin','viola','cello','doublebass','violinbow','mandolin','bongos','accordion','concertina','trumpet','flute','tambourine','maraca','drumstick']],
@@ -428,6 +433,8 @@ const ITEMS = (()=>{
     `<g transform="translate(0 -30) scale(1 1.25)"><path d="M-2.2,-9H2.2L6.4,84Q6.6,100 0,100Q-6.6,100 -6.4,84Z" ${F(c)}/><ellipse cx="0" cy="-10" rx="4" ry="2.6" ${F(c)}/></g>`},   /* 25% longer; held 1.5 hand lengths up from the knob */
   mitt:{label:'Baseball mitt',noun:'baseball mitt',phrase:'a baseball mitt',verb:'holding',col:'#663300',draw:(s,c)=>
     `<path d="M-13,2Q-19,-12 -11,-16Q-6,-17 -5,-9Q-3,-22 3,-21Q8,-20 7,-9Q11,-18 15,-14Q19,-9 15,4Q22,10 18,22Q12,34 -2,33Q-16,31 -17,16Q-18,8 -13,2Z" ${F(c)}/><path d="M-5,-9V2M7,-9V1M15,4Q8,10 -2,9Q-10,8 -13,2" stroke="${edge(c)}" fill="none"/>`},
+  skateboard:{label:'Skateboard',behindArms:true,noun:'skateboard',phrase:'a skateboard',verb:'carrying',col:'#00CC66',draw:(s,c)=>   /* carried by one end, wheels turned away from the body */
+    `<path d="M${s*4},8h${s*4}M${s*4},86h${s*4}" stroke="#5f6870" stroke-width="5" fill="none"/><circle cx="${s*9.5}" cy="8" r="5.5" fill="#f1ede0" stroke="#5f6870"/><circle cx="${s*9.5}" cy="86" r="5.5" fill="#f1ede0" stroke="#5f6870"/><path d="M${-s*7},-18Q0,-12 0,-2V96Q0,106 ${-s*7},112L${-s*4},114Q${s*5.5},108 ${s*5.5},96V-2Q${s*5.5},-14 ${-s*4},-20Z" ${F(c)}/><path d="M${-s*6},-17Q0,-11 0,-2V96Q0,105 ${-s*6},111" fill="none" stroke="#222" stroke-width="1.6"/>`},
   /* cleaning — long handles run through the fist; no floor rule */
   broom:{label:'Broom',behindArms:true,noun:'broom',phrase:'a broom',verb:'holding',col:'#FFCC00',draw:(s,c)=>
     `<g transform="scale(1 1.25)"><rect x="-2.4" y="-70" width="4.8" height="162" rx="2" ${wood}/><path d="M-9,90H9L17,128H-17Z" ${F(c)}/><path d="M-9,96H9" stroke="#CC0000" stroke-width="3" fill="none"/><path d="M-9,104L-11,127M-3,104L-4,127M3,104L4,127M9,104L11,127" stroke="${edge(c)}" stroke-width=".8" fill="none"/></g>`},
@@ -786,9 +793,9 @@ function headSVG(d,C){
   /* hood up: a shell behind the head and a rim round the face, in the hoodie's colour */
   let hood=null;
   if(d.upperGarment==='hoodieup'){ const hc=d.upperColor||UPPER.hoodieup.col, a=`fill="${hc}" stroke="${edge(hc)}"`;
-    hood=side?{back:`<path d="M-14,-42C14,-50 42,-30 40,8Q36,38 8,44L-8,40Z" ${a}/>`,
-               front:`<path d="M-16,-41C12,-49 41,-30 39,8Q35,37 8,43L-9,40Q-1,22 -1,0Q-2,-26 -16,-41Z" ${a}/>`}
-             :{back:`<path d="M-38,22C-43,-32 -24,-49 0,-49C24,-49 43,-32 38,22Q22,44 0,46Q-22,44 -38,22Z" ${a}/>`,
+    hood=side?{back:`<path d="M-14,-42C14,-50 42,-30 40,8Q38,40 22,56H-10L-8,40Z" ${a}/>`,
+               front:`<path d="M-16,-41C12,-49 41,-30 39,8Q37,40 21,56H-11Q-6,48 -9,40Q-1,22 -1,0Q-2,-26 -16,-41Z" ${a}/>`}
+             :{back:`<path d="M-38,22C-43,-32 -24,-49 0,-49C24,-49 43,-32 38,22Q34,44 22,56H-22Q-34,44 -38,22Z" ${a}/>`,
                front:`<path fill-rule="evenodd" d="M-37,22C-42,-31 -23,-48 0,-48C23,-48 42,-31 37,22Q21,43 0,45Q-21,43 -37,22ZM-26,-2C-26,-25 -14,-33 0,-33C14,-33 26,-25 26,-2C26,15 14,31 0,31C-14,31 -26,15 -26,-2Z" ${a}/>`}; }
   /* drop earrings: pinned at the earlobe, drawn unrotated so they always hang */
   const drops=d.accessories.includes('drops')?(side?[7]:[-30.5,30.5]).map(x=>({x,y:8,svg:`<path d="M0,0V9" stroke="#9c7716" stroke-width="1.3" fill="none"/><path d="M0,8Q-5,16 0,20.5Q5,16 0,8Z" fill="#e2b23a" stroke="#9c7716" stroke-width="1"/>`+star(x<0?-6.5:6.5,11,5.5)})):[];
@@ -1065,8 +1072,8 @@ function build(d){
     }
     if(g.neck==='hood'){   /* hoodie front: pouch pocket, drawstrings, and the folded hood round the neck when it is down */
       const py=n2(-c*0.36);
-      s+=`<path d="M-13,${py}H13L18,${n2(g.hem-5)}H-18Z" fill="none" stroke="${dk}"/>`
-        +(g.hoodUp?'':`<path d="M${-nw-10},${n2(top-3)}Q0,${n2(top+19)} ${nw+10},${n2(top-3)}L${nw+3},${n2(top-5)}Q0,${n2(top+9)} ${-nw-3},${n2(top-5)}Z" ${G(g)}/>`)
+      if(Math.abs(ct)>0.3) s+=`<path d="M-13,${py}H13L18,${n2(g.hem-5)}H-18Z" fill="none" stroke="${dk}"/>`   /* pocket, collar and strings are on the front: not drawn in profile */
+        +(g.hoodUp?`<path d="M${-nw-8},${n2(top-2)}Q0,${n2(top+13)} ${nw+8},${n2(top-2)}" fill="none" stroke="${dk}"/>`:`<path d="M${-nw-10},${n2(top-3)}Q0,${n2(top+19)} ${nw+10},${n2(top-3)}L${nw+3},${n2(top-5)}Q0,${n2(top+9)} ${-nw-3},${n2(top-5)}Z" ${G(g)}/>`)
         +`<path d="M-4,${n2(top+9)}V${n2(top+27)}M4,${n2(top+9)}V${n2(top+24)}" fill="none" stroke="#f1f0ec" stroke-width="1.8" stroke-linecap="round"/>`;
     }
     if(g.placket) s+=`<path d="M0,${n2(top+4)}V${n2(top+4+(g.hem-top-4)*g.placket)}" stroke="${dk}" fill="none"/>`;
@@ -1084,6 +1091,7 @@ function build(d){
     if(s) chest+=`<g transform="${detailT}">${s}</g>`;
   }
   add(40,mChest,chest,'torso');
+  if(UG&&UG.hoodUp) add(36,mChest,`<path d="M${n2(-nw-8)},${n2(-c-1-co)}Q${n2(-nw-7)},${n2(-c-16-co)} ${n2(-nw-4)},${n2(-c-30-co)}H${n2(nw+4)}Q${n2(nw+7)},${n2(-c-16-co)} ${n2(nw+8)},${n2(-c-1-co)}Z" ${G(UG)}/>`,'torso');   /* hood up: the hood's neck, covering the skin between collar and chin from every side */
   if(UG&&UG.neck==='hood'&&!UG.hoodUp) add(34.5,mChest,`<ellipse cx="0" cy="${n2(-c-7-co)}" rx="${n2(nw+12)}" ry="10" ${G(UG)}/>`,'torso');   /* the hood lying behind the neck */
   if(acc.backpack){
     /* pack sits behind the torso and slides to the back as the torso turns; straps cross the chest; the loose ends hang */
@@ -1122,6 +1130,7 @@ function build(d){
   const flip=d.head==='right'?-1:1;
   const mHead=Mx.mul(mSkull,[HS*flip,0,0,HS,0,-50*HS+16]);
   const hd=headSVG(d,C);
+  if(d.upperGarment==='hoodieup'){ hd.back=''; hd.hang=[]; }   /* under a raised hood, no hair hangs out: nothing behind the head, no loose lengths */
   if(hd.back) add(0,mHead,hd.back,'neck');
   if(hd.hoodBack) add(0.7,mHead,hd.hoodBack,'neck');
   add(50,mHead,hd.front,'neck');
