@@ -257,7 +257,7 @@ const SCENES={
     outfits:['formal','summer','retro','smart','casual','waistcoat','business','weekend','tracksuit'],
     poses:['standing','standing','waving','hips','reaching','pointing'],seats:1,
     bg(){ let s=`<rect width="${W}" height="${HORIZON}" fill="#f6dcc8"/><rect x="0" y="${HORIZON-16}" width="${W}" height="16" fill="#b98a55"/>`;
-      s+=win(120,70,150,150)+`<rect x="380" y="60" width="330" height="70" rx="8" fill="#fff" stroke="#CC0066" stroke-width="3"/><text x="545" y="108" font-size="38" font-weight="700" text-anchor="middle" fill="#CC0066" font-family="var(--font-sans,sans-serif)">Happy Birthday</text>`;
+      s+=win(120,70,150,150)+`<rect x="380" y="60" width="330" height="70" rx="8" fill="#fff" stroke="#CC0066" stroke-width="3"/><text x="545" y="108" font-size="38" font-weight="700" text-anchor="middle" fill="#CC0066" font-family="var(--font-sans,sans-serif)">HAPPY BIRTHDAY</text>`;
       const c=['#CC0000','#FFCC00','#0066CC','#00CC66','#FF66CC','#6600CC'], sag=x=>Math.round(14+34*Math.abs(Math.sin(x/W*Math.PI*3)));
       let line='M0,14'; for(let x=20;x<=W;x+=20) line+=`L${x},${sag(x)}`;
       s+=`<path d="${line}" stroke="#7a5a3a" stroke-width="2" fill="none"/>`;
@@ -299,7 +299,7 @@ const SCENES={
       /* sandcastle */
       s+=`<path d="M820,${SAND+52}V${SAND+24}h10v-8h8v8h14v-18h8v-8h8v8h8v18h14v-8h8v8h10V${SAND+52}Z" fill="#e3c77e" stroke="#b79a52" stroke-width="2"/><path d="M866,${SAND-2}v-16l12,5-12,5" fill="#CC0000" stroke="#7a0000"/>`;
       return s; }}
-  ,restaurant:{label:'Restaurant',stageX:[366,836],depth:[448,672],marks:[{x:150,t:'by the window'},{x:1030,t:'next to the plant'}],
+  ,restaurant:{label:'Restaurant',seatTable:true,stageX:[366,836],depth:[448,672],marks:[{x:150,t:'by the window'},{x:1030,t:'next to the plant'}],
     targets:[['the window',150,160],['the chandelier',250,64],['the plant',1030,290],['the stage',600,300]],
     items:['plate','mug','cup','fork','spoon','phone','purse','keys','cake','book','plate','cup'],
     hats:['fedora','headband','bow','fedora','headband'],acc:['necklace','drops','studs','braceletR','watchL','choker'],
@@ -314,13 +314,29 @@ const SCENES={
       s+=floor(HORIZON,H,'#7d3a3a','#662c2c',120);
       s+=`<path d="M1014,${HORIZON+24}h32l-5,34h-22z" fill="#8a5a3a" stroke="#5e3b24" stroke-width="2"/>`+[[-30,-36],[-12,-58],[10,-62],[30,-40],[0,-30]].map(([dx,dy])=>`<path d="M1030,${HORIZON+26}Q${1030+dx*0.4},${HORIZON+26+dy} ${1030+dx},${HORIZON+26+dy}Q${1030+dx*0.8},${HORIZON+26+dy*0.4} 1030,${HORIZON+26}Z" fill="#3f9a4a" stroke="#2a6e33" stroke-width="2"/>`).join('');
       s+=stage(366,836);
-      [[214,HORIZON+86],[1000,HORIZON+120]].forEach(([x,y])=>{ s+=`<path d="M${x-58},${y}V${y+44}Q${x},${y+60} ${x+58},${y+44}V${y}Z" fill="#f4f4f2" stroke="#b9b9b9" stroke-width="2"/><ellipse cx="${x}" cy="${y}" rx="58" ry="15" fill="#ffffff" stroke="#b9b9b9" stroke-width="2"/><rect x="${x-2}" y="${y-24}" width="4" height="20" fill="#f4f1d0" stroke="#b9b9b9"/><ellipse cx="${x}" cy="${y-28}" rx="3" ry="5" fill="#FFCC00"/><ellipse cx="${x-26}" cy="${y+2}" rx="14" ry="4" fill="#fff" stroke="#b9b9b9"/><ellipse cx="${x+26}" cy="${y+3}" rx="14" ry="4" fill="#fff" stroke="#b9b9b9"/>`; });
       return s; }}
 };
 const FACES=['joy','trust','serenity','interest','surprise','acceptance','anticipation','neutral'];
 const allFaces=[HC.NEUTRAL_FACE].concat(...HC.EMOTIONS.map(g=>g[1]));
 
 /* ground shadow: a small one under a person; for a driver, one long shadow under the whole car instead */
+/* a dining table for a seated guest: drawn with that person, at their size, on the floor line of their chair, on the side they face.
+   Real proportions against the figure: top about 75 cm high and 80 cm across, so it clears the knees and reaches the midriff. */
+/* a seated guest whose table would fall off the edge of the picture turns round to face inward */
+function faceTable(sc,p,X,s){
+  if(!SCENES[sc].seatTable||!p.seated) return;
+  const tx=X+(p.d.pelvisOrientation>0?1:-1)*128*s;
+  if(tx<100*s+10||tx>W-100*s-10) p.d=HC.normalize(HC.mirror(p.d));
+}
+function tableFor(sc,p,X,Y,s){
+  if(!SCENES[sc].seatTable||!p.seated) return '';
+  const dir=p.d.pelvisOrientation>0?1:-1;
+  return `<g pointer-events="none" transform="translate(${X+dir*128*s} ${Y}) scale(${s})"><ellipse cx="0" cy="2" rx="100" ry="13" fill="#000" opacity=".16"/>`
+    +`<ellipse cx="0" cy="-4" rx="42" ry="9" fill="#3a2a1c" stroke="#1d140c" stroke-width="2"/><rect x="-7" y="-112" width="14" height="108" fill="#3a2a1c" stroke="#1d140c" stroke-width="2"/>`
+    +`<path d="M-94,-172V-116Q-62,-98 -47,-112Q-24,-94 0,-108Q24,-94 47,-112Q62,-98 94,-116V-172Z" fill="#f4f4f2" stroke="#b9b9b9" stroke-width="2"/><ellipse cx="0" cy="-172" rx="94" ry="19" fill="#ffffff" stroke="#b9b9b9" stroke-width="2"/>`
+    +`<rect x="-3" y="-212" width="6" height="34" fill="#f4f1d0" stroke="#b9b9b9"/><ellipse cx="0" cy="-219" rx="4.5" ry="8" fill="#FFCC00"/><ellipse cx="0" cy="-176" rx="12" ry="3.5" fill="#c9a23a"/>`
+    +`<ellipse cx="${-dir*50}" cy="-171" rx="26" ry="6" fill="#fff" stroke="#b9b9b9" stroke-width="1.6"/><ellipse cx="${dir*50}" cy="-173" rx="26" ry="6" fill="#fff" stroke="#b9b9b9" stroke-width="1.6"/></g>`;
+}
 function shadow(p,X,Y,s,cls){
   const car=p.pose==='driving', dir=p.d.pelvisOrientation>0?1:-1;
   return `<ellipse${cls?` class="${cls}"`:''} cx="${car?X-dir*102*s:X}" cy="${car?Y+4*s:Y}" rx="${(car?500:54)*s}" ry="${(car?20:12)*s}" fill="#000" opacity="${car?.22:.16}"/>`;
@@ -427,7 +443,7 @@ function layout(sc,people){
   }
   /* sizes and pointing are worked out last, from the final positions */
   people.forEach(p=>{ if(p.fixed) Object.assign(p,p.fixed); else aim(p,S);   /* musicians keep their place on the stage */
-    const fit=HC.render(p.d,{fit:true}).match(/viewBox="([^"]+)"/)[1].split(' ').map(Number); p.h=(fit[3]-16)*p.s; p.w=Math.max(70,(fit[2]-16)*p.s); });
+    faceTable(sc,p,p.X,p.s); const fit=HC.render(p.d,{fit:true}).match(/viewBox="([^"]+)"/)[1].split(' ').map(Number); p.h=(fit[3]-16)*p.s; p.w=Math.max(70,(fit[2]-16)*p.s); });
 }
 /* someone "pointing" really points: at a named thing in the scene, with the arm on that side, and looks at it */
 function aim(p,S){
@@ -465,6 +481,7 @@ function draw(sc){
   const S=SCENES[sc]; let figs=[], tags='';
   people.forEach(p=>{
     const body=HC.render(p.d).replace(/^<svg [^>]*>/,'').replace(/<\/svg>$/,'');
+    { const t=tableFor(sc,p,p.X,p.Y,p.s); if(t) figs.push({Y:p.Y+0.5,svg:t}); }
     figs.push({Y:p.Y,svg:`${shadow(p,p.X,p.Y,p.s)}<g transform="translate(${p.X-HC.STAGE.cx*p.s} ${p.Y-HC.STAGE.ground*p.s}) scale(${p.s})">${body}</g>`});
     const w=p.d.name.length*10+22;
     tags+=`<g transform="translate(${p.X} ${Math.max(22,p.Y-p.h-16)})"><rect x="${-w/2}" y="-15" width="${w}" height="24" rx="12" fill="#fff" stroke="#333" stroke-width="1.5"/><text y="3" font-size="16" font-weight="700" text-anchor="middle" fill="#1a1a1a" font-family="var(--font-sans,sans-serif)">${p.d.name}</text></g>`;
