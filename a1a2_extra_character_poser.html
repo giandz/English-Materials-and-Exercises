@@ -246,7 +246,7 @@
   function syncGrips(){
     $('cpThumbL').checked=!!ch.thumbFlipL; $('cpThumbR').checked=!!ch.thumbFlipR;
     [['cpGripL','heldLeftGrip','left'],['cpGripR','heldRightGrip','right']].forEach(([id,key,hand])=>{
-      const it=HC.ITEMS[ch.held[hand]], free=it&&!it.upright&&!it.cane, sel=$(id);
+      const it=HC.ITEMS[ch.held[hand]], free=it&&!it.upright&&!it.cane&&!it.hand, sel=$(id);
       sel.disabled=!free; sel.value=ch[key]===null?'':String(ch[key]);
       sel.options[0].textContent=free?`Default (${gripLabel(it.grip||0)})`:it?'Hangs upright — no grip angle':'Default for the item';
     });
@@ -290,7 +290,8 @@
     const o=e.target.value==='none'?{upperGarment:null,lowerGarment:null,footwear:null}:HC.OUTFITS[ch.bodyType].find(x=>x.id===e.target.value);
     if(o){ch.upperGarment=o.upperGarment;ch.lowerGarment=o.lowerGarment;ch.footwear=o.footwear;ch.upperColor=ch.lowerColor=ch.footwearColor=ch.upperColor2=ch.lowerColor2=null; ch.upperPattern=ch.lowerPattern='plain';
       ch.accessories=ch.accessories.filter(a=>!['tie','mascara','blush','lipstick'].includes(a)).concat(o.tie?['tie']:[],o.makeup?['mascara','blush','lipstick']:[]);} update();});
-  { const grouped='<option value="">Nothing</option>'+HC.ITEM_CATS.map(([g,ids])=>`<optgroup label="${g}">${ids.map(id=>`<option value="${id}">${HC.ITEMS[id].label}</option>`).join('')}</optgroup>`).join('');
+  { /* an empty hand is the resting hand, so that choice sits with the other hand shapes */
+    const grouped=HC.ITEM_CATS.map(([g,ids])=>`<optgroup label="${g}">${g==='Hand shapes'?'<option value="">Hand: resting</option>':''}${ids.map(id=>`<option value="${id}">${HC.ITEMS[id].label}</option>`).join('')}</optgroup>`).join('');
     $('cpHeldL').innerHTML=grouped; $('cpHeldR').innerHTML=grouped; }
   opts($('cpPreset'),HC.POSES.map(p=>[p.id,p.label]),'Choose a pose…');
   $('cpHead').innerHTML=HC.HEADS.map(h=>`<button type="button" data-v="${h}">${h[0].toUpperCase()+h.slice(1)}</button>`).join('');
