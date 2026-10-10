@@ -288,7 +288,7 @@ function propSVG(id,c,o){   /* o = {x,y: hip point, g: floor, side: profile view
   }
   return [];
 }
-const ITEM_CATS=[['Tools',['wrench','hammer','screwdriver','pliers','paintbrush','flashlight','multimeter','solderingiron','toolbox']],
+const ITEM_CATS=[['Hand shapes',['hand_closed','hand_open','hand_point','hand_pointback']],['Tools',['wrench','hammer','screwdriver','pliers','paintbrush','flashlight','multimeter','solderingiron','toolbox']],
   ['Kitchen',['fork','knife','spoon','pan','cup','mug','bowl','plate','cake','pizzabox']],['Everyday',['book','phone','tablet','keys','balloon','teddy']],
   ['Sports',['beachball','soccerball','basketball','volleyball','football','tennisball','baseball','tennisracket','baseballbat','mitt','skateboard']],
   ['Cleaning',['broom','mop','duster']],
@@ -364,6 +364,12 @@ const ITEMS = (()=>{
     `<path d="M0,-11Q${-s*10},-26 ${-s*4},-38T${-s*12},-58" fill="none" stroke="#222" stroke-width="2" stroke-linecap="round"/><rect x="-1.8" y="18" width="3.6" height="26" ${metal}/><path d="M-1.8,44H1.8L0,54Z" ${metal}/><rect x="-4" y="16" width="8" height="5" rx="1" fill="#222" stroke="#000" stroke-width=".8"/><rect x="-4.4" y="-11" width="8.8" height="28" rx="3.6" ${F(c)}/>`},
   toolbox:{label:'Toolbox',noun:'toolbox',plural:'toolboxes',phrase:'a toolbox',verb:'carrying',upright:true,col:'#CC0000',draw:(s,c)=>
     `<path d="M-18,14V4Q-18,0 -14,0H14Q18,0 18,4V14" fill="none" stroke="#111" stroke-width="5.4"/><path d="M-18,14V4Q-18,0 -14,0H14Q18,0 18,4V14" fill="none" stroke="#444" stroke-width="3"/><path d="M-40,26L-34,12H34L40,26Z" ${F(shade(c,-0.18))}/><rect x="-42" y="26" width="84" height="34" rx="3" ${F(c)}/><path d="M-42,34H42" stroke="${edge(c)}" fill="none"/><rect x="-28" y="27" width="9" height="10" rx="1.5" ${metal}/><rect x="19" y="27" width="9" height="10" rx="1.5" ${metal}/>`},
+  /* hand shapes — chosen like a held item, but they are not objects: they replace the drawing of the hand (see handShape) */
+  hand_closed:{label:'Hand: closed',hand:'closed'},   /* the fist an empty hand used to have; a hand holding an object is always closed */
+  hand_rest:{label:'Hand: resting',hand:'rest'},        /* the default for an empty hand, so it is not listed */
+  hand_open:{label:'Hand: palm outstretched',hand:'open'},
+  hand_point:{label:'Hand: pointing',hand:'point'},
+  hand_pointback:{label:'Hand: pointing (back of hand)',hand:'pointback'},
   /* kitchen */
   fork:{label:'Fork',noun:'fork',phrase:'a fork',verb:'holding',col:'#CCCCCC',draw:(s,c)=>
     handle(1.7,30,F(c))+`<path d="M-4.6,29H4.6V46H3V35H0.8V46H-0.8V35H-3V46H-4.6Z" ${F(c)}/>`},
@@ -1187,14 +1193,42 @@ function build(d){
     else { const hp=Mx.pt(m3,0,7), bc=Mx.pt(mChest,0,-CH*0.5); ts=(m3[0]*(bc[0]-hp[0])+m3[1]*(bc[1]-hp[1]))>=0?-1:1; }   /* the arm behind the body shows its thumb on the other edge */
     if(d['thumbFlip'+L]) ts=-ts;   /* manual override: put the thumb on the other edge of this hand */
     const GL=acc['gloves'+L]?{col:d.gloveColor||GLOVE_COL}:null;
-    add(z+4,m3,GL?`<ellipse cx="${n2(-ts*6.2*hs)}" cy="7" rx="3.6" ry="6.5" transform="rotate(${ts*24} ${n2(-ts*6.2*hs)} 7)" ${G(GL)}/><ellipse cx="0" cy="9" rx="${n2(7.6*hs+0.8)}" ry="${n2(10.2*hs+0.8)}" ${G(GL)}/><rect x="${n2(-r3-2)}" y="-5" width="${n2(r3*2+4)}" height="8" rx="2.5" ${G(GL)}/>`
+    /* Alternative hand shapes. Frame: wrist at the origin, fingers toward +y, thumb on the -ts edge.
+       rest  = relaxed, fingers together and slightly curled · open = palm shown, fingers spread, thumb out · point = fist with the index finger out */
+    const hIt=ITEMS[d.held[side>0?'left':'right']], shape=hIt?(hIt.hand&&hIt.hand!=='closed'?hIt.hand:null):'rest';   /* empty hand → resting; holding something, or 'closed' → fist */
+    const handShape=kind=>{ const A=GL?G(GL):S, k=hs, t=-ts;
+      const fin=(x,y,len,ang,w)=>`<rect x="${n2(-w/2)}" y="0" width="${n2(w)}" height="${n2(len*k)}" rx="${n2(w/2)}" transform="translate(${n2(x*k)} ${n2(y*k)}) rotate(${ang})" ${A}/>`;
+      /* palm: filled, with its outline faint where fingers or wrist join it and solid only on its free edges
+         (both sides, or — for a fist — the whole knuckle side), so no seam shows between palm and fingers */
+      const eC=GL?edge(GL.col):C.skinS, fC=GL?GL.col:C.skin;
+      const pal=(a,b,solid)=>{ if(GL){a+=0.8;b+=0.8;} const xs=y=>n2(a*Math.sqrt(Math.max(0,1-Math.pow((y-9)/b,2))));
+        return `<ellipse cx="0" cy="9" rx="${n2(a)}" ry="${n2(b)}" fill="${fC}" stroke="${eC}"${SEAM}/>`
+          +(solid==='sides'?`<path d="M${-xs(4.5)},4.5A${n2(a)},${n2(b)} 0 0 0 ${-xs(12.5)},12.5M${xs(4.5)},4.5A${n2(a)},${n2(b)} 0 0 1 ${xs(12.5)},12.5" fill="none" stroke="${eC}"/>`
+            :`<path d="M0,${n2(9-b)}A${n2(a)},${n2(b)} 0 0 ${solid>0?1:0} 0,${n2(9+b)}" fill="none" stroke="${eC}"/>`)
+          +(GL?`<rect x="${n2(-r3-2)}" y="-5" width="${n2(r3*2+4)}" height="8" rx="2.5" ${G(GL)}/>`:''); };
+      /* a ring sits on the ring finger: third from the thumb */
+      const ring=(x,y)=>acc['ring'+L]&&!GL?`<path d="M${n2(x*k-2.6)},${n2(y*k)}H${n2(x*k+2.6)}" stroke="${GOLDS}" stroke-width="3.8" stroke-linecap="round" fill="none"/><path d="M${n2(x*k-2.6)},${n2(y*k)}H${n2(x*k+2.6)}" stroke="${GOLD}" stroke-width="2.4" stroke-linecap="round" fill="none"/><path transform="translate(${n2(x*k)} ${n2(y*k)})" d="M0,-3.6Q0.5,-0.5 3.6,0Q0.5,0.5 0,3.6Q-0.5,0.5 -3.6,0Q-0.5,-0.5 0,-3.6Z" fill="#fffbe0" stroke="${GOLD}" stroke-width=".6"/>`:'';
+      if(kind==='open') return fin(t*5.2,6,12,t*-62,4.2)+fin(t*5,13,14.5,t*-17,3.9)+fin(t*1.8,14.5,16.5,t*-6,3.9)+fin(-t*1.7,14.5,15.5,t*6,3.9)+fin(-t*4.8,13,12,t*18,3.6)+pal(7.8*k,8.6*k,'sides')+ring(-t*2.1,20);
+      if(kind==='pointback')   /* the same pointing fist seen from behind: smooth back of the hand, the thumb mostly hidden */
+        return `<ellipse cx="${n2(t*6.4*k)}" cy="${n2(9.5*k)}" rx="${n2(2.6*k)}" ry="${n2(5.6*k)}" transform="rotate(${t*-10} ${n2(t*6.4*k)} ${n2(9.5*k)})" ${A}/>`
+          +fin(t*3.4,10,18.5,0,4.1)+pal(7.6*k,8.2*k,-t)
+          +ring(-t*3.4,10.2);
+      if(kind==='point') return fin(t*3.4,10,18.5,0,4.1)+pal(7.6*k,8.2*k,-t)
+        +`<path d="M${n2(-t*0.2*k)},${n2(14.5*k)}q${n2(-t*2.2*k)},${n2(2.6*k)} ${n2(-t*4.6*k)},0M${n2(-t*0.6*k)},${n2(10.6*k)}q${n2(-t*2.6*k)},${n2(2.4*k)} ${n2(-t*5.2*k)},0" fill="none" stroke="${GL?edge(GL.col):C.skinS}" stroke-width=".9" stroke-linecap="round"/>`
+        +`<ellipse cx="${n2(t*4.6*k)}" cy="${n2(10*k)}" rx="${n2(3.1*k)}" ry="${n2(5.4*k)}" transform="rotate(${t*-58} ${n2(t*4.6*k)} ${n2(10*k)})" ${A}/>`+ring(-t*3.2,12.6);
+      /* rest: the four fingers together as one soft shape, a little curled toward the thumb side, with the thumb lying alongside */
+      return `<ellipse cx="${n2(t*6.8*k)}" cy="${n2(10.5*k)}" rx="${n2(3*k)}" ry="${n2(7.2*k)}" transform="rotate(${t*-12} ${n2(t*6.8*k)} ${n2(10.5*k)})" ${A}/>`
+        +`<path d="M${n2(-6.6*k)},${n2(11*k)}V${n2(19*k)}Q${n2(-6.6*k)},${n2(25.6*k)} ${n2(t*0.8*k)},${n2(25.6*k)}Q${n2(6.6*k)},${n2(25.6*k)} ${n2(6.6*k)},${n2(19*k)}V${n2(11*k)}Z" ${A}/>`
+        +`<path d="M${n2(-3.3*k)},${n2(17*k)}V${n2(24.4*k)}M0,${n2(17*k)}V${n2(25*k)}M${n2(3.3*k)},${n2(17*k)}V${n2(24.4*k)}" fill="none" stroke="${GL?edge(GL.col):C.skinS}" stroke-width=".9" stroke-linecap="round"/>`
+        +pal(7.4*k,8.4*k,'sides')+ring(-t*1.65,19.5); };
+    add(z+4,m3,shape?handShape(shape):GL?`<ellipse cx="${n2(-ts*6.2*hs)}" cy="7" rx="3.6" ry="6.5" transform="rotate(${ts*24} ${n2(-ts*6.2*hs)} 7)" ${G(GL)}/><ellipse cx="0" cy="9" rx="${n2(7.6*hs+0.8)}" ry="${n2(10.2*hs+0.8)}" ${G(GL)}/><rect x="${n2(-r3-2)}" y="-5" width="${n2(r3*2+4)}" height="8" rx="2.5" ${G(GL)}/>`
       :`<ellipse cx="${n2(-ts*6.2*hs)}" cy="7" rx="3.3" ry="6.2" transform="rotate(${ts*24} ${n2(-ts*6.2*hs)} 7)" ${S}/>${palm(n2(7.6*hs),n2(10.2*hs))}`
-      +(acc['ring'+L]&&!GL?`<path d="M-3.5,14.5H5.5" stroke="${GOLDS}" stroke-width="5" stroke-linecap="round" fill="none"/><path d="M-3.5,14.5H5.5" stroke="${GOLD}" stroke-width="3.4" stroke-linecap="round" fill="none"/>`
-        +`<path transform="translate(${side*8.5} 8.5)" d="M0,-7Q0.9,-0.9 7,0Q0.9,0.9 0,7Q-0.9,0.9 -7,0Q-0.9,-0.9 0,-7Z" fill="#fffbe0" stroke="${GOLD}" stroke-width=".8"/><path transform="translate(${side*14} 1.5)" d="M0,-3.2Q0.4,-0.4 3.2,0Q0.4,0.4 0,3.2Q-0.4,0.4 -3.2,0Q-0.4,-0.4 0,-3.2Z" fill="#fffbe0" stroke="${GOLD}" stroke-width=".6"/>`:''),'wrist'+L);
-    mark(m1,0,0,r1); mark(m2,0,0,r2); mark(m3,0,0,r3); mark(m3,0,12,9);
+      +(acc['ring'+L]&&!GL?`<path d="M${n2(-ts*-0.4-2.6)},14.5H${n2(-ts*-0.4+2.6)}" stroke="${GOLDS}" stroke-width="3.8" stroke-linecap="round" fill="none"/><path d="M${n2(-ts*-0.4-2.6)},14.5H${n2(-ts*-0.4+2.6)}" stroke="${GOLD}" stroke-width="2.4" stroke-linecap="round" fill="none"/>`
+        +`<path transform="translate(${n2(-ts*-0.4)} 14.5)" d="M0,-3.6Q0.5,-0.5 3.6,0Q0.5,0.5 0,3.6Q-0.5,0.5 -3.6,0Q-0.5,-0.5 0,-3.6Z" fill="#fffbe0" stroke="${GOLD}" stroke-width=".6"/>`:''),'wrist'+L);
+    mark(m1,0,0,r1); mark(m2,0,0,r2); mark(m3,0,0,r3); mark(m3,0,12,9); if(shape) mark(m3,0,24,6);
     const it=ITEMS[d.held[side>0?'left':'right']], ic=it&&(d[side>0?'heldLeftColor':'heldRightColor']||it.col);
     const gsel=d[side>0?'heldLeftGrip':'heldRightGrip'], grip=it?(gsel===null||gsel===undefined?(it.grip||0):gsel):0;
-    if(it){
+    if(it&&!it.hand){
       const g=Mx.pt(m3,0,10);
       add(z+3, it.upright?[1,0,0,1,g[0],g[1]]:Mx.tr(m3,0,10,-side*grip), it.cane?'':it.draw(side,ic), 'wrist'+L);
       if(it.cane) canes.push({part:parts[parts.length-1],gy:g[1],side,c:ic,it,mh:Mx.mul(m3,[1,0,0,1,0,10])});
@@ -1399,7 +1433,7 @@ function mirror(data){
 function describe(data){
   const d=normalize(data), n=d.name||'This person', groups=[];
   const put=(verb,phrase)=>{const g=groups[groups.length-1]; if(g&&g[0]===verb) g[1].push(phrase); else groups.push([verb,[phrase]]);};
-  const L=ITEMS[d.held.left], R=ITEMS[d.held.right];
+  const L=(ITEMS[d.held.left]||{}).hand?null:ITEMS[d.held.left], R=(ITEMS[d.held.right]||{}).hand?null:ITEMS[d.held.right];   /* a hand shape is not something held */
   const wear=(g,c,pat,c2)=>{
     let nm=colourName(c||g.col);
     if(pat&&pat!=='plain'&&pat!=='sidestripe'){ const n2nd=colourName(c2||colour2Default(c||g.col)); nm=(pat==='floral'||n2nd===nm?nm:`${nm} and ${n2nd}`)+' '+PAT_WORD[pat]; }

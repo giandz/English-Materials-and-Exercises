@@ -335,6 +335,8 @@ function faceTable(sc,p,X,s){
 }
 /* food that is set down on the table instead of held: where each item's own drawing has to go to sit centred on the charger plate */
 const ON_TABLE={plate:[16,-174],cake:[20,-172],bowl:[14,-182]};
+/* the object someone holds, if any — a hand shape (pointing, open palm…) is not an object */
+const heldThing=d=>[d.held.left,d.held.right].find(h=>h&&!(HC.ITEMS[h]||{}).hand)||null;
 function tableFor(sc,p,X,Y,s){
   const kind=SCENES[sc].seatTable; if(!kind||!p.seated) return '';
   const dir=p.d.pelvisOrientation>0?1:-1;
@@ -363,7 +365,7 @@ function nearArm(p,body,X,Y,s){
 }
 function shadow(p,X,Y,s,cls){
   const car=p.pose==='driving', dir=p.d.pelvisOrientation>0?1:-1;
-  return `<ellipse${cls?` class="${cls}"`:''} cx="${car?X-dir*102*s:X}" cy="${car?Y+4*s:Y}" rx="${(car?500:54)*s}" ry="${(car?20:12)*s}" fill="#000" opacity="${car?.22:.16}"/>`;
+  return `<ellipse${cls?` class="${cls}"`:''} cx="${car?X-dir*102*s:X}" cy="${car?Y-4*s:Y-9*s}" rx="${(car?500:54)*s}" ry="${(car?20:13)*s}" fill="#000" opacity="${car?.22:.16}"/>`;
 }
 const isTeen=d=>d.height<=2&&d.weight<=2;
 const TEEN_WEAR=['casual','weekend','sport','summer','beach','swim','bikini','tracksuit','hooded'], ADULT_ITEMS=['briefcase','cane','purse','multimeter','suitcase','hat_fedora','mug','cup'];
@@ -437,6 +439,9 @@ function cast(sc){
     const fid=pick(FACES), f=allFaces.find(e=>e[0]===fid); d.eyebrows=f[2]; d.eyes=f[3]; d.mouth=f[4];
     if(d.upperGarment==='hoodieup') d.headwear=null;   /* nothing on top of a raised hood, helmets included */
     if(d.headwear) for(const h of ['left','right']) if(String(d.held[h]).startsWith('hat_')) d.held[h]=pick(['phone','book','bag','keys']);   /* wearing a hat: not holding one too */
+    { /* hand shapes: a pointing arm points, a waving or raised arm shows an open palm; other empty hands rest by default */
+      const sh={pointing:'hand_point',waving:'hand_open',reaching:'hand_open'}[pose];
+      if(sh&&!seated&&!rider&&!skater){ const h=Math.abs(d.joints.shoulderL)>Math.abs(d.joints.shoulderR)?'left':'right'; if(!d.held[h]) d.held[h]=sh; } }
     for(const [h,k] of [['left','heldLeftGrip'],['right','heldRightGrip']]) if(['fork','knife','spoon'].includes(d.held[h])) d[k]=45;   /* cutlery is held at an angle, not straight along the hand */
     out.push({d:HC.normalize(d),seated,pose});
   }
@@ -493,11 +498,12 @@ function layout(sc,people){
 /* someone "pointing" really points: at a named thing in the scene, with the arm on that side, and looks at it */
 function aim(p,S){
   p.pointAt=null; if(p.pose!=='pointing'||!S.targets) return;
-  const d=p.d, T=pick(S.targets.filter(t=>Math.abs(t[1]-p.X)>90)), arm=T[1]<p.X?'R':'L', other=arm==='R'?'L':'R', hand=arm==='R'?'right':'left', free=arm==='R'?'left':'right';
+  const d=p.d; for(const h of ['left','right']) if((HC.ITEMS[d.held[h]]||{}).hand) d.held[h]=null;   /* the hand shape is set again below, on the arm that ends up pointing */
+  const T=pick(S.targets.filter(t=>Math.abs(t[1]-p.X)>90)), arm=T[1]<p.X?'R':'L', other=arm==='R'?'L':'R', hand=arm==='R'?'right':'left', free=arm==='R'?'left':'right';
   if(d.held[hand]){ d.held={left:null,right:null,[free]:d.held[hand]}; [d.heldLeftGrip,d.heldRightGrip]=[d.heldRightGrip,d.heldLeftGrip]; }
   Object.assign(d.joints,{torso:0,neck:0,['shoulder'+other]:other==='L'?-8:8,['elbow'+other]:other==='L'?-5:5,['wrist'+other]:0,['elbow'+arm]:0,['wrist'+arm]:0});
   d.torsoOrientation=0; d.pelvisOrientation=0; d.head=T[1]<p.X?'left':'right';
-  holdPose(d,free);
+  holdPose(d,free); d.held[hand]='hand_point';
   const pv=HC.pivots(d)['shoulder'+arm], sx=p.X+(pv.x-HC.STAGE.cx)*p.s, sy=p.Y+(pv.y-HC.STAGE.ground)*p.s;
   d.joints['shoulder'+arm]=Math.round(Math.atan2(-(T[1]-sx),T[2]-sy)*180/Math.PI);   /* limb angle 0 = straight down, clockwise */
   p.d=HC.normalize(d); p.pointAt=T[0];
@@ -511,7 +517,7 @@ function facts(p,sc){
   if(d.headwear) f.push(['hat','wearing '+wearPhrase(HC.HEADWEAR,d.headwear,d.headwearColor)]);
   if(d.eyewear) f.push(['eyes','wearing '+HC.EYEWEAR[d.eyewear].phrase]);
   if(d.accessories.includes('backpack')) f.push(['pack','carrying a backpack']);
-  for(const h of ['left','right']){ const it=HC.ITEMS[d.held[h]]; if(it) f.push(['item',`${it.verb} ${it.phrase}`]); }
+  for(const h of ['left','right']){ const it=HC.ITEMS[d.held[h]]; if(it&&!it.hand) f.push(['item',`${it.verb} ${it.phrase}`]); }
   if(p.seated) f.push(['seat',sc==='beach'?'sitting on a beach chair':'sitting on a chair']);
   if(p.place&&(p.seated||!['walking','riding','skating','driving'].includes(p.pose))) f.push(['place',(p.seated?'sitting ':'standing ')+p.place]);   /* only people who really are standing or sitting there */
   if(!p.seated){ const act={waving:'waving',walking:'walking',reaching:'raising a hand',riding:'riding a bicycle',skating:'riding a skateboard',driving:'driving a car'}[p.pose]; if(act) f.push(['action',act]);
