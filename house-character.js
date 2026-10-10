@@ -215,7 +215,8 @@ function propSVG(id,c,o){   /* o = {x,y: hip point, g: floor, side: profile view
       /* controls strip along the lower edge, redrawn on the front layer */
       const panel=`<path d="M${-W2},${n2(-h+18.5)}H${W2}V${-h+21}Q${W2},${-h+26} ${W2-5},${-h+26}H${-W2+5}Q${-W2},${-h+26} ${-W2},${-h+21}Z" ${F}/><rect x="-26" y="${n2(-h+19.5)}" width="52" height="4.5" rx="1" fill="#7fd0e6" stroke="none"/>`+[-120,-104,-88,88,104,120].map(k=>`<circle cx="${k}" cy="${n2(-h+21.7)}" r="1.8" fill="#b4bcc4" stroke="none"/>`).join('');
       /* keys and the top edge sit behind the arms, so the hands rest on them; the stand and the controls strip are in front of the hands */
-      return [{z:45,span:W2+10,svg:at(x,g,slab,1,false)},{z:90,svg:at(x,g,stand+panel,1,false)}]; }   /* the keyboard itself is flipped top to bottom: keys along the top edge, controls below */
+      const fl=b=>o.flip?`<g transform="scale(-1 1)">${b}</g>`:b;   /* a mirrored player gets a mirrored keyboard */
+      return [{z:45,span:W2+10,svg:at(x,g,fl(slab),1,false)},{z:90,svg:at(x,g,fl(stand+panel),1,false)}]; }   /* the keyboard itself is flipped top to bottom: keys along the top edge, controls below */
     case 'drums': {   /* the throne is pinned to the pelvis; the kit stands in front of the drummer, in side or front view. The colour is only the drum shells. */
       const seat=g-sy, H='fill="#f3ead8" stroke="#5f6870"', K='#d7b54a', KS='#8c7220';
       const stand=dd=>`<path d="${dd}" fill="none" stroke="#5f6870" stroke-width="4" stroke-linecap="round"/><path d="${dd}" fill="none" stroke="#b4bcc4" stroke-width="2" stroke-linecap="round"/>`;
@@ -237,7 +238,7 @@ function propSVG(id,c,o){   /* o = {x,y: hip point, g: floor, side: profile view
           +`<circle cx="0" cy="-73.6" r="73.6" fill="#2b2b2b" stroke="#111"/><circle cx="0" cy="-73.6" r="65.5" fill="#f3ead8" stroke="#5f6870"/><circle cx="0" cy="-73.6" r="23" fill="none" stroke="#b9b29c" stroke-width="1.2"/>`
           +[0,45,90,135,180,225,270,315].map(a=>{const r=a*Math.PI/180; return `<rect x="-2" y="-4" width="4" height="8" transform="translate(${n2(69.6*Math.cos(r))} ${n2(-73.6+69.6*Math.sin(r))}) rotate(${a+90})" ${Mt} stroke-width=".6"/>`;}).join('')
           +stand('M-60,-25L-76,0M60,-25L76,0');                                                                   /* bass drum: we see its front head, so no shell colour here */
-        return [{z:-1.5,svg:throne},{z:90,span:170,svg:at(x,g,kit,1,false)}];
+        return [{z:-1.5,svg:throne},{z:90,span:170,svg:at(x,g,o.flip?`<g transform="scale(-1 1)">${kit}</g>`:kit,1,false)}];   /* a mirrored drummer gets a mirrored kit */
       }
       const back=stand('M24,0V-196M24,-10L8,0M24,-10L40,0')+cym(24,-190,0,32.4)+cym(24,-195,0,32.4)
         +stand('M176,0L170,-210M172,-14L158,0M172,-14L190,0')+cym(170,-212,8,48)
@@ -267,7 +268,7 @@ function propSVG(id,c,o){   /* o = {x,y: hip point, g: floor, side: profile view
       return [{z:-1,svg:tube(legs,4.4)+R(x-17,(sy+g)/2,34,4,D,2)+R(x-20,sy,40,8,F,4)}]; }
     case 'desk': { const X=side?x+dir*74:x, w=side?52:82, h=150;   /* a real desk height: about 75 cm */
       return [{z:90,span:side?130:w,svg:R(X-w+6,g-h+6,6,h-6,Mt)+R(X+w-12,g-h+6,6,h-6,Mt)+(side?'':R(X-w+10,g-h+8,w*2-20,46,D))+R(X-w+10,g-h+22,w*2-20,6,D)+R(X-w,g-h,w*2,10,F,2)}]; }
-    case 'stroller': { const X=side?x+dir*170:x+o.hw+112;
+    case 'stroller': { const X=side?x+dir*170:x+(o.flip?-1:1)*(o.hw+112);
       return side?[{z:90,span:260,svg:at(X,g,`<path d="M-30,-70L-56,-104" stroke="#333" stroke-width="4" stroke-linecap="round" fill="none"/><path d="M-62,-102L-50,-106" stroke="#111" stroke-width="6" stroke-linecap="round" fill="none"/><path d="M-22,-36L-24,-14M22,-36L24,-14M-22,-36L24,-14" stroke="#555" stroke-width="3" fill="none"/><path d="M-32,-72H32Q32,-36 0,-34Q-32,-36 -32,-72Z" ${F}/><path d="M-2,-72A34,34 0 0 1 32,-106L32,-72Z" ${D}/>`+wheel(-24,-13,13,3)+wheel(24,-13,13,3),2)}]
         :[{z:-1,span:o.hw+180,svg:at(X,g,`<path d="M-22,-104H22" stroke="#111" stroke-width="6" stroke-linecap="round" fill="none"/><path d="M-22,-104L-24,-70M22,-104L24,-70" stroke="#333" stroke-width="4" fill="none"/><ellipse cx="-24" cy="-13" rx="4.5" ry="13" ${T}/><ellipse cx="24" cy="-13" rx="4.5" ry="13" ${T}/><path d="M-26,-112Q0,-128 26,-112V-78H-26Z" ${D}/><rect x="-28" y="-80" width="56" height="48" rx="8" ${F}/><path d="M-22,-34V-20M22,-34V-20" stroke="#555" stroke-width="3" fill="none"/>`,2,false)}]; }
     case 'skateboard': {   /* the character stands on the deck, so the wheels (not the feet) are on the floor */
@@ -460,23 +461,23 @@ const ITEMS = (()=>{
   micstand:{label:'Microphone stand',across:true,noun:'microphone stand',phrase:'a microphone stand',verb:'holding',upright:true,cane:true,col:'#333333',draw:(s,c,len)=>   /* same floor rule as the cane */
     `<path d="M0,-48V${n2(len-2)}" stroke="${edge(c)}" stroke-width="4.6" stroke-linecap="round" fill="none"/><path d="M0,-48V${n2(len-2)}" stroke="${c}" stroke-width="2.8" stroke-linecap="round" fill="none"/><path d="M-20,${n2(len-1.5)}L0,${n2(len-12)}L20,${n2(len-1.5)}" stroke="${c}" stroke-width="3.4" stroke-linecap="round" stroke-linejoin="round" fill="none"/>`
     +`<g transform="translate(0 -48) rotate(${-s*35})"><path d="M-2.4,4H2.4L3.2,-14H-3.2Z" fill="#333" stroke="#111"/><circle cx="0" cy="-19" r="6.6" ${metal}/></g>`},
-  guitar:{label:'Guitar',grip:90,behindArms:true,noun:'guitar',phrase:'a guitar',verb:'holding',col:'#CC6600',draw:(s,c)=>
+  guitar:{label:'Guitar',handed:true,grip:90,behindArms:true,noun:'guitar',phrase:'a guitar',verb:'holding',col:'#CC6600',draw:(s,c)=>
     `<g transform="scale(1.3)" stroke-width="1"><path d="M-5,-48H5L4,-34H-4Z" fill="#3a2a1c" stroke="#1d140c"/><rect x="-3" y="-35" width="6" height="84" fill="#5a3d22" stroke="#2e1e0f"/><g transform="translate(0 44) scale(1.25) translate(0 -44)"><path d="M0,44C-18,42 -19,58 -15,66C-26,72 -26,106 0,107C26,106 26,72 15,66C19,58 18,42 0,44Z" ${F(c)}/><circle cx="0" cy="68" r="6.5" fill="#2a1a0e" stroke="none"/><rect x="-8" y="88" width="16" height="4" fill="#3a2a1c" stroke="none"/></g><path d="M-1.6,-34V101M1.6,-34V101" stroke="#e8e2d0" stroke-width=".6" fill="none"/></g>`},
-  electricguitar:{label:'Electric guitar',behindArms:true,grip:90,noun:'electric guitar',phrase:'an electric guitar',verb:'holding',col:'#0066CC',draw:(s,c)=>solid(c,{k:1.25,nut:-36,joint:39,head:22,strings:6,
+  electricguitar:{label:'Electric guitar',handed:true,behindArms:true,grip:90,noun:'electric guitar',phrase:'an electric guitar',verb:'holding',col:'#0066CC',draw:(s,c)=>solid(c,{k:1.25,nut:-36,joint:39,head:22,strings:6,
     body:'M-5,38C-8,30 -16,25 -19,29C-23,35 -20,46 -18,52C-16,60 -24,66 -24,78C-24,92 -12,98 0,98C12,98 24,92 24,78C24,66 17,60 18,52C20,44 20,38 16,34C12,31 8,34 5,40Z',
     guard:'M-4,44L9,43Q16,51 15,62Q14,75 4,83Q-7,85 -11,74Q-13,59 -4,44Z',pickups:[[52,0],[62,0],[72,-8]],bridge:80,knobs:[[11,77],[14,84],[9,89]]})},
-  bass:{label:'Bass guitar',behindArms:true,grip:90,noun:'bass guitar',phrase:'a bass guitar',verb:'holding',col:'#CC0000',draw:(s,c)=>solid(c,{k:1.2,nut:-48,joint:52,head:26,strings:4,
+  bass:{label:'Bass guitar',handed:true,behindArms:true,grip:90,noun:'bass guitar',phrase:'a bass guitar',verb:'holding',col:'#CC0000',draw:(s,c)=>solid(c,{k:1.2,nut:-48,joint:52,head:26,strings:4,
     body:'M-5,50C-8,40 -17,29 -22,33C-27,39 -23,52 -20,60C-18,68 -26,74 -26,88C-26,104 -13,112 0,112C13,112 26,104 26,88C26,74 18,68 19,60C21,52 21,46 17,42C13,39 8,44 5,52Z',
     guard:'M-4,57L8,56Q16,63 15,75Q13,87 3,91Q-8,91 -11,81Q-13,67 -4,57Z',pickups:[[74,0,-3],[78,0,3]],bridge:99,knobs:[[10,92],[13,99]]})},
-  violin:{label:'Violin',behindArms:true,grip:90,noun:'violin',phrase:'a violin',verb:'holding',col:'#CC6600',draw:(s,c)=>viol(c,1,{chin:1})},
-  viola:{label:'Viola',behindArms:true,grip:90,noun:'viola',phrase:'a viola',verb:'holding',col:'#CC6600',draw:(s,c)=>viol(c,1.18,{chin:1})},
-  cello:{label:'Cello',behindArms:true,grip:180,noun:'cello',phrase:'a cello',verb:'holding',col:'#CC6600',draw:(s,c)=>viol(c,3.6,{pin:12})},          /* default grip 180°: raise the hand to the neck and the body hangs down to its end pin */
-  doublebass:{label:'Double bass',behindArms:true,grip:180,noun:'double bass',plural:'double basses',phrase:'a double bass',verb:'holding',col:'#663300',draw:(s,c)=>viol(c,5.4,{pin:3,bass:1})},
+  violin:{label:'Violin',handed:true,behindArms:true,grip:90,noun:'violin',phrase:'a violin',verb:'holding',col:'#CC6600',draw:(s,c)=>viol(c,1,{chin:1})},
+  viola:{label:'Viola',handed:true,behindArms:true,grip:90,noun:'viola',phrase:'a viola',verb:'holding',col:'#CC6600',draw:(s,c)=>viol(c,1.18,{chin:1})},
+  cello:{label:'Cello',handed:true,behindArms:true,grip:180,noun:'cello',phrase:'a cello',verb:'holding',col:'#CC6600',draw:(s,c)=>viol(c,3.6,{pin:12})},          /* default grip 180°: raise the hand to the neck and the body hangs down to its end pin */
+  doublebass:{label:'Double bass',handed:true,behindArms:true,grip:180,noun:'double bass',plural:'double basses',phrase:'a double bass',verb:'holding',col:'#663300',draw:(s,c)=>viol(c,5.4,{pin:3,bass:1})},
   bongos:{label:'Bongos',phrase:'bongos',plural:'pairs of bongos',verb:'holding',upright:true,col:'#CC6600',draw:(s,c)=>   /* two small drums joined side by side, held across the body */
     `<g transform="translate(${-s*30},-4)"><rect x="-4" y="-4" width="8" height="12" fill="#3a2a1c" stroke="#1d140c"/><path d="M-26,-12H-4L-6,16H-24Z" ${F(c)}/><path d="M3,-13H29L27,18H5Z" ${F(c)}/><ellipse cx="-15" cy="-12" rx="11.5" ry="3" fill="#f3ead8" stroke="${MS}"/><ellipse cx="16" cy="-13" rx="13.5" ry="3.4" fill="#f3ead8" stroke="${MS}"/><path d="M-25,-7H-5M4,-8H28" stroke="${MS}" stroke-width="1.6" fill="none"/></g>`},
   violinbow:{label:'Violin bow',noun:'violin bow',phrase:'a violin bow',verb:'holding',col:'#663300',draw:(s,c)=>
     `<path d="M${s*3.4},-6V110" stroke="#f1ede0" stroke-width="1.6" fill="none"/><path d="M0,-10V112Q0,116 ${s*3.4},112" stroke="${edge(c)}" stroke-width="3.2" stroke-linecap="round" fill="none"/><path d="M0,-10V112Q0,116 ${s*3.4},112" stroke="${c}" stroke-width="1.8" stroke-linecap="round" fill="none"/><rect x="${s>0?0:-5}" y="-8" width="5" height="9" rx="1" fill="#222" stroke="#000" stroke-width=".8"/>`},
-  mandolin:{label:'Mandolin',grip:90,behindArms:true,noun:'mandolin',phrase:'a mandolin',verb:'holding',col:'#CC9966',draw:(s,c)=>
+  mandolin:{label:'Mandolin',handed:true,grip:90,behindArms:true,noun:'mandolin',phrase:'a mandolin',verb:'holding',col:'#CC9966',draw:(s,c)=>
     `<g><path d="M-4.5,-34H4.5L3.5,-22H-3.5Z" fill="#3a2a1c" stroke="#1d140c"/><rect x="-2.6" y="-23" width="5.2" height="54" fill="#5a3d22" stroke="#2e1e0f"/><path d="M0,26C-9,28 -20,40 -20,54C-20,68 -10,76 0,76C10,76 20,68 20,54C20,40 9,28 0,26Z" ${F(c)}/><ellipse cx="0" cy="48" rx="5.5" ry="4" fill="#2a1a0e" stroke="none"/><rect x="-6" y="63" width="12" height="3" fill="#3a2a1c" stroke="none"/><path d="M-1.3,-22V65M1.3,-22V65" stroke="#e8e2d0" stroke-width=".6" fill="none"/></g>`},
   accordion:{label:'Piano accordion',noun:'accordion',phrase:'an accordion',verb:'holding',upright:true,col:'#CC0000',draw:(s,c)=>   /* sits across the body, like the box */
     `<g transform="translate(${-s*34},-8)"><path d="M-14,-24H14V24H-14Z" fill="#e9e4d6" stroke="#6b6557"/><path d="M-9,-24V24M-4.5,-24V24M0,-24V24M4.5,-24V24M9,-24V24" stroke="#6b6557" fill="none"/><rect x="-36" y="-27" width="22" height="54" rx="3" ${F(c)}/><rect x="14" y="-27" width="22" height="54" rx="3" ${F(c)}/><rect x="-32" y="-22" width="7" height="44" fill="#fff" stroke="#333" stroke-width=".8"/><path d="M-32,-15H-25M-32,-8H-25M-32,-1H-25M-32,6H-25M-32,13H-25" stroke="#333" stroke-width=".8" fill="none"/>`
@@ -1164,7 +1165,7 @@ function build(d){
        drawn first, so the other arm and hand (and a bow) come out in front of the instrument */
     const strung=h=>{const t=ITEMS[d.held[h]]; return !!(t&&t.behindArms);};
     const low=near?0:strung('left')&&!strung('right')?1:strung('right')&&!strung('left')?-1:0;
-    const z=near&&side!==near?10:near?70:low?(side===low?60:70):(side===1?70:60);
+    const z=near&&side!==near?10:near?70:low?(side===low?60:70):(side===(d.flipped?-1:1)?70:60);   /* front view: left arm on top, or the right one in a mirrored pose */
     const base=j.root+j.torso, s=j['shoulder'+L], e=j['elbow'+L], w=j['wrist'+L];
     const sx=side*shx, sy=-CH+12;
     const m1=Mx.tr(mChest,sx,sy,s), m2=Mx.tr(m1,0,UA,e), m3=Mx.tr(m2,0,FA,w);
@@ -1230,7 +1231,7 @@ function build(d){
     const gsel=d[side>0?'heldLeftGrip':'heldRightGrip'], grip=it?(gsel===null||gsel===undefined?(it.grip||0):gsel):0;
     if(it&&!it.hand){
       const g=Mx.pt(m3,0,10);
-      add(z+3, it.upright?[1,0,0,1,g[0],g[1]]:Mx.tr(m3,0,10,-side*grip), it.cane?'':it.draw(side,ic), 'wrist'+L);
+      add(z+3, it.upright?[1,0,0,1,g[0],g[1]]:Mx.tr(m3,0,10,-side*grip), it.cane?'':it.handed&&side<0?`<g transform="scale(-1 1)">${it.draw(1,ic)}</g>`:it.draw(side,ic), 'wrist'+L);
       if(it.cane) canes.push({part:parts[parts.length-1],gy:g[1],side,c:ic,it,mh:Mx.mul(m3,[1,0,0,1,0,10])});
     }
   }
@@ -1321,7 +1322,7 @@ function build(d){
   if(PROPS[d.prop]){
     let g0=-1e9; for(const [,py,r] of pts) g0=Math.max(g0,py+r);
     const hip=Mx.pt(mP,0,0), po=d.pelvisOrientation;
-    const list=propSVG(d.prop,d.propColor||PROPS[d.prop].col,{x:hip[0],y:hip[1],g:g0,side:Math.abs(po)>=45,dir:po>0?1:po<0?-1:(d.head==='right'?1:-1),hw});
+    const list=propSVG(d.prop,d.propColor||PROPS[d.prop].col,{x:hip[0],y:hip[1],g:g0,side:Math.abs(po)>=45,dir:po>0?1:po<0?-1:(d.head==='right'?1:-1),hw,flip:d.flipped});
     for(const p of list){ parts.push({z:p.z,m:[1,0,0,1,0,0],svg:p.svg});
       if(p.bottom!==undefined) pts.push([hip[0],p.bottom-1,1]);                       /* bicycle and car wheels become the floor */
       if(p.span){ pts.push([hip[0]-p.span,g0-10,1]); pts.push([hip[0]+p.span,g0-10,1]); } }   /* keep wide props inside a cropped drawing */
@@ -1374,7 +1375,7 @@ function defaults(){
   const joints={}; JOINTS.forEach(([k])=>joints[k]=STAND[k]||0);
   return {schema:SCHEMA,name:'Sam',bodyType:'male',skin:3,eyeColor:12,hairColor:'4-0',hairStyle:'short',facialHair:'none',eyebrows:'neutral',eyes:'open',mouth:'smile',
     height:3,weight:3,upperGarment:null,lowerGarment:null,footwear:null,headwear:null,eyewear:null,accessories:[],prop:null,propColor:null,
-    upperColor:null,lowerColor:null,footwearColor:null,headwearColor:null,eyewearColor:null,sockColor:null,tieColor:null,gloveColor:null,packColor:null,mascaraColor:null,blushColor:null,lipstickColor:null,heldLeftGrip:null,heldRightGrip:null,thumbFlipL:false,thumbFlipR:false,heldLeftColor:null,heldRightColor:null,
+    upperColor:null,lowerColor:null,footwearColor:null,headwearColor:null,eyewearColor:null,sockColor:null,tieColor:null,gloveColor:null,packColor:null,mascaraColor:null,blushColor:null,lipstickColor:null,heldLeftGrip:null,heldRightGrip:null,thumbFlipL:false,thumbFlipR:false,flipped:false,heldLeftColor:null,heldRightColor:null,
     upperPattern:'plain',upperColor2:null,lowerPattern:'plain',lowerColor2:null,
     head:'front',torsoOrientation:0,pelvisOrientation:0,held:{left:null,right:null},joints};
 }
@@ -1400,7 +1401,7 @@ function normalize(src){
     const got=Array.isArray(src.accessories)?[].concat(...src.accessories.map(a=>OLD[a]||[a])):[];
     d.accessories=Object.keys(ACCESSORIES).filter(a=>got.includes(a)); }
   for(const k of COLOUR_KEYS) d[k]=hexOK(src[k]);
-  d.thumbFlipL=src.thumbFlipL===true; d.thumbFlipR=src.thumbFlipR===true;
+  d.thumbFlipL=src.thumbFlipL===true; d.thumbFlipR=src.thumbFlipR===true; d.flipped=src.flipped===true;
   for(const k of ['heldLeftGrip','heldRightGrip']){ const v=src[k]; d[k]=v===null||v===undefined||v===''||isNaN(Number(v))?null:Math.max(-180,Math.min(180,Math.round(Number(v)/45)*45)); }
   if(Array.isArray(src.accessories)&&src.accessories.includes('socks')&&!d.footwear){ d.footwear='socks'; d.footwearColor=hexOK(src.sockColor); }   /* older files: socks were an accessory */
   for(const k of ['upperPattern','lowerPattern']) d[k]=pick(src[k],PATTERNS.map(p=>p[0]),'plain');
@@ -1428,6 +1429,9 @@ function mirror(data){
   data.joints=o; data.torsoOrientation=-data.torsoOrientation||0; data.pelvisOrientation=-data.pelvisOrientation||0; data.head=data.head==='left'?'right':data.head==='right'?'left':'front';
   data.held={left:data.held.right,right:data.held.left};
   [data.heldLeftGrip,data.heldRightGrip]=[data.heldRightGrip,data.heldLeftGrip]; [data.thumbFlipL,data.thumbFlipR]=[data.thumbFlipR,data.thumbFlipL]; [data.heldLeftColor,data.heldRightColor]=[data.heldRightColor,data.heldLeftColor];
+  /* everything else with a side swaps too: watches, bracelets, rings, gloves, pads; and the pose remembers it is a mirror image */
+  data.accessories=(data.accessories||[]).map(a=>/[a-z]L$/.test(a)&&ACCESSORIES[a.slice(0,-1)+'R']?a.slice(0,-1)+'R':/[a-z]R$/.test(a)&&ACCESSORIES[a.slice(0,-1)+'L']?a.slice(0,-1)+'L':a);
+  data.flipped=!data.flipped;
   return data;
 }
 function describe(data){
