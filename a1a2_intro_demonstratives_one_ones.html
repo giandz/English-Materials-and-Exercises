@@ -1,0 +1,124 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<title>At the Clothes Shop — This One / That One</title>
+<script>
+(function(){
+  try{
+    var saved = localStorage.getItem('theme-preference');
+    var theme = (saved === 'light' || saved === 'dark')
+      ? saved
+      : ((window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches) ? 'dark' : 'light');
+    document.documentElement.setAttribute('data-theme', theme);
+  }catch(e){ /* localStorage/matchMedia unavailable — CSS media query still applies */ }
+})();
+</script>
+<link rel="stylesheet" href="house.css">
+<style>
+/* here / there picture: a person, the things near them, the things far from them */
+.dm-scene{ display:flex; align-items:stretch; gap:8px; padding:10px 12px; margin:0 0 8px; border-radius:12px; background:var(--surface-1); border:1px solid var(--border); font-style:normal; }
+.dm-side{ display:flex; flex-direction:column; justify-content:flex-end; gap:4px; }
+.dm-far{ align-items:flex-end; }
+.dm-row{ display:flex; align-items:flex-end; gap:6px; }
+.dm-me{ font-size:2.2rem; line-height:1; }
+.dm-item{ display:inline-flex; flex-direction:column; align-items:center; gap:2px; }
+.dm-thing{ display:inline-flex; align-items:center; justify-content:center; width:1.8em; height:1.8em; border-radius:50%; font-size:1.5rem; line-height:1; background:var(--surface-2); border:2px solid var(--color-border-primary); }
+.dm-far .dm-thing{ font-size:1.05rem; }
+.dm-tag{ font-size:.7rem; font-weight:600; color:var(--text-secondary); white-space:nowrap; }
+.dm-cap{ font-size:.7333rem; font-weight:700; letter-spacing:.04em; text-transform:uppercase; color:var(--text-muted); }
+.dm-gap{ flex:1; min-width:24px; align-self:center; border-top:2px dashed var(--color-border-primary); }
+.scene-caption{ text-align:center; font-size:.8333rem; color:var(--text-secondary); margin:0 0 1.2rem; }
+</style>
+</head>
+<body>
+<div class="page" id="page">
+  <span class="cefr-tag cefr-a1a2">A1/A2 · Elementary</span>
+  <h1>At the Clothes Shop</h1>
+  <p class="subtitle">Leo and his friend Ana are in a clothes shop. Leo needs a new jacket.</p>
+
+  <div class="sec-div">Before you read</div>
+  <div id="preQuestions"></div>
+
+  <div class="sec-div">The conversation</div>
+  <div id="shopPic"></div>
+  <p class="scene-caption">Leo in the shop</p>
+
+  <button class="grammar-toggle-btn" id="grammarToggle">🎨 Show Grammar</button>
+  <div class="pos-legend"></div>
+
+  <div id="conversation"></div>
+
+  <div class="sec-div">Check your answers</div>
+  <div id="quiz"></div>
+
+  <footer>At the Clothes Shop — This One / That One (A1/A2)</footer>
+</div>
+
+<div id="theme-toggle-wrap">
+  <button id="theme-toggle" aria-label="Toggle light/dark mode" title="Toggle light/dark mode">
+    <span id="theme-icon">☀️</span>
+  </button>
+</div>
+<script src="house.js"></script>
+<script>
+/* ── here / there picture ──────────────────────────────────────────────── */
+const COL = { red: '#e5484d', blue: '#3b82f6', green: '#22a55b', yellow: '#f5c518', black: '#2b2b2e', white: '#ffffff', pink: '#f472b6', brown: '#92562c' };
+const thing = t => '<span class="dm-item"><span class="dm-thing"' + (t.c ? ' style="background:' + COL[t.c] + '"' : '') + '>' + t.e + '</span>' +
+  (t.tag ? '<span class="dm-tag">' + t.tag + '</span>' : '') + '</span>';
+const scene = (near, far, alt) => '<div class="dm-scene" role="img" aria-label="' + alt + '">' +
+  '<div class="dm-side dm-near"><div class="dm-row"><span class="dm-me">🧍</span>' + near.map(thing).join('') + '</div><div class="dm-cap">👇 here</div></div>' +
+  (far.length ? '<div class="dm-gap"></div><div class="dm-side dm-far"><div class="dm-row">' + far.map(thing).join('') + '</div><div class="dm-cap">there 👉</div></div>' : '') +
+  '</div>';
+
+document.getElementById('shopPic').innerHTML = scene(
+  [{ e: '🧥', c: 'black', tag: 'black · $90' }, { e: '👟', c: 'green', tag: 'green' }],
+  [{ e: '🧥', c: 'blue', tag: 'blue · $30' }, { e: '👟', c: 'white', tag: 'white' }, { e: '👟', c: 'brown', tag: 'brown' }],
+  'Leo is next to a black jacket and green shoes. A blue jacket, white shoes and brown shoes are far from him.');
+
+/* Conversation lines. [words/pos] marks a part of speech for the grammar colours. */
+const SPEAKERS = {
+  Ana: { avatar: '👩‍🦱', av: 'av-c', side: 'left' },
+  Leo: { avatar: '🙋', av: 'av-b', side: 'right' }
+};
+const LINES = [
+  ['Ana', '[Hi/none], [Leo/noun]! [What/wh] [do/aux] [you/subject] [need/verb]?'],
+  ['Leo', '[I/subject] [need/verb] [a/det] [new/adj] [jacket/noun]. [Look at/verb] [this/det] [one/noun]!'],
+  ['Ana', '[This/det] [black/adj] [one/noun]? [It’s/subject] [nice/adj]. [How much/wh] [is/verb] [it/subject]?'],
+  ['Leo', '[Oh no/none]! [It’s/subject] [90 dollars/complement]. [This/det] [one/noun] [is/verb] [too/adverb] [expensive/adj].'],
+  ['Ana', '[What about/wh] [that/det] [one/noun]? [The/det] [blue/adj] [one/noun], [next to/prep] [the door/noun].'],
+  ['Leo', '[That/det] [one/noun] [is/verb] [cheap/adj], [but/conj] [it’s/subject] [too/adverb] [small/adj].'],
+  ['Ana', '[OK/none]. [Do/aux] [you/subject] [like/verb] [these/det] [shoes/noun]?'],
+  ['Leo', '[No/none], [I/subject] [don’t/neg] [like/verb] [these/det] [ones/noun]. [I/subject] [like/verb] [those/det] [ones/noun], [on/prep] [the shelf/noun].'],
+  ['Ana', '[Which/wh] [ones/noun]? [The/det] [white/adj] [ones/noun] [or/conj] [the/det] [brown/adj] [ones/noun]?'],
+  ['Leo', '[The/det] [white/adj] [ones/noun]. [And/conj] [can/aux] [you/subject] [pass/verb] [me/object] [a/det] [scarf/noun], [please/none]?'],
+  ['Ana', '[This/det] [one/noun]?'],
+  ['Leo', '[No/none], [I/subject] [don’t/neg] [like/verb] [that/det] [one/noun]. [Pass/verb] [me/object] [the/det] [red/adj] [one/noun], [please/none].'],
+  ['Ana', '[Here you are/none]. [The/det] [red/adj] [one/noun] [is/verb] [only/adverb] [10 dollars/complement]!'],
+  ['Leo', '[Great/none]! [I/subject] [want/verb] [the/det] [red/adj] [scarf/noun] [and/conj] [the/det] [white/adj] [shoes/noun].'],
+  ['Ana', '[And/conj] [the jacket/noun]?'],
+  ['Leo', '[Not today/time]!']
+];
+const conv = document.getElementById('conversation');
+LINES.forEach(([who, text]) => {
+  const s = SPEAKERS[who], right = s.side === 'right';
+  const html = text.replace(/\[([^\/\]]+)\/(\w+)\]/g, '<span class="pos-hl pos-$2">$1</span>');
+  conv.insertAdjacentHTML('beforeend',
+    '<div class="bubble-wrap' + (right ? ' right' : '') + '">' +
+      '<div class="avatar ' + s.av + '">' + s.avatar + '</div>' +
+      '<div class="bubble-col"><div class="bname' + (right ? ' right' : '') + '">' + who + '</div>' +
+      '<div class="bubble ' + (right ? 'right' : 'left') + '">' + html + '</div></div>' +
+    '</div>');
+});
+
+const CQ_ITEMS = [
+  { q: 'The black jacket: what is the problem?', opts: ['It’s too small.', 'It’s too expensive.', 'It’s too cheap.'], correct: 1 },
+  { q: 'Which shoes does Leo like?', opts: ['the white ones', 'the brown ones', 'the black ones'], correct: 0 },
+  { q: 'Which scarf does Leo want?', opts: ['the blue one', 'the white one', 'the red one'], correct: 2 }
+];
+HouseComprehension.build({ pre: 'preQuestions', quiz: 'quiz', items: CQ_ITEMS });
+</script>
+<script>HouseGrammar.init();</script>
+</body>
+</html>

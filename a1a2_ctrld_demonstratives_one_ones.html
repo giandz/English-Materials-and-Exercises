@@ -1,0 +1,143 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<title>This One or That One? — Controlled Practice</title>
+<script>
+(function(){
+  try{
+    var saved = localStorage.getItem('theme-preference');
+    var theme = (saved === 'light' || saved === 'dark')
+      ? saved
+      : ((window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches) ? 'dark' : 'light');
+    document.documentElement.setAttribute('data-theme', theme);
+  }catch(e){ /* localStorage/matchMedia unavailable — CSS media query still applies */ }
+})();
+</script>
+<link rel="stylesheet" href="house.css">
+<style>
+/* here / there picture: a person, the things near them, the things far from them */
+.dm-scene{ display:flex; align-items:stretch; gap:8px; padding:10px 12px; margin:0 0 8px; border-radius:12px; background:var(--surface-1); border:1px solid var(--border); font-style:normal; font-weight:400; max-width:340px; }
+.dm-side{ display:flex; flex-direction:column; justify-content:flex-end; gap:4px; }
+.dm-far{ align-items:flex-end; }
+.dm-row{ display:flex; align-items:flex-end; gap:6px; }
+.dm-me{ font-size:2.2rem; line-height:1; }
+.dm-item{ display:inline-flex; flex-direction:column; align-items:center; gap:2px; }
+.dm-thing{ display:inline-flex; align-items:center; justify-content:center; width:1.8em; height:1.8em; border-radius:50%; font-size:1.5rem; line-height:1; background:var(--surface-2); border:2px solid var(--color-border-primary); }
+.dm-far .dm-thing{ font-size:1.05rem; }
+.dm-tag{ font-size:.7rem; font-weight:600; color:var(--text-secondary); white-space:nowrap; }
+.dm-cap{ font-size:.7333rem; font-weight:700; letter-spacing:.04em; text-transform:uppercase; color:var(--text-muted); }
+.dm-gap{ flex:1; min-width:24px; align-self:center; border-top:2px dashed var(--color-border-primary); }
+.blank{ display:inline-block; min-width:3.5em; border-bottom:2px solid var(--color-border-primary); }
+</style>
+</head>
+<body>
+<div class="page" id="page">
+  <span class="cefr-tag cefr-a1a2">A1/A2 · Elementary</span>
+  <h1>This One or That One?</h1>
+  <p class="subtitle">Practise: this · that · these · those · one · ones · which one…?</p>
+
+  <div class="sec-div">1 · Look and choose</div>
+  <p class="subtitle">Look at the picture. Choose the correct words.</p>
+  <div id="pcItems"></div>
+
+  <div class="sec-div">2 · Put the words in order</div>
+  <p class="subtitle">Make the sentence.</p>
+  <button class="grammar-toggle-btn" id="grammarToggle">🎨 Hide Grammar</button>
+  <div class="pos-legend"></div>
+  <div class="score-bar"><span>Correct: <strong id="woScore">0</strong> / <span id="woTotal">0</span></span></div>
+  <div id="woItems"></div>
+
+  <div class="sec-div">3 · Write the missing words</div>
+  <p class="subtitle">Read the sentence. Write the words.</p>
+  <div id="gfItems"></div>
+
+  <footer>This One or That One? — Controlled Practice (A1/A2)</footer>
+</div>
+
+<div id="theme-toggle-wrap">
+  <button id="theme-toggle" aria-label="Toggle light/dark mode" title="Toggle light/dark mode">
+    <span id="theme-icon">☀️</span>
+  </button>
+</div>
+<script src="house.js"></script>
+<script>
+/* ── here / there picture ──────────────────────────────────────────────── */
+const COL = { red: '#e5484d', blue: '#3b82f6', green: '#22a55b', yellow: '#f5c518', black: '#2b2b2e', white: '#ffffff', pink: '#f472b6', brown: '#92562c' };
+const thing = t => '<span class="dm-item"><span class="dm-thing"' + (t.c ? ' style="background:' + COL[t.c] + '"' : '') + '>' + t.e + '</span>' +
+  (t.tag ? '<span class="dm-tag">' + t.tag + '</span>' : '') + '</span>';
+const scene = (near, far, alt) => '<div class="dm-scene" role="img" aria-label="' + alt + '">' +
+  '<div class="dm-side dm-near"><div class="dm-row"><span class="dm-me">🧍</span>' + near.map(thing).join('') + '</div><div class="dm-cap">👇 here</div></div>' +
+  (far.length ? '<div class="dm-gap"></div><div class="dm-side dm-far"><div class="dm-row">' + far.map(thing).join('') + '</div><div class="dm-cap">there 👉</div></div>' : '') +
+  '</div>';
+const BLANK = '<span class="blank">&nbsp;</span>';
+
+// the pictures used on this page
+const P = {
+  nearJacket: scene([{ e: '🧥' }], [], 'A person with one jacket near them'),
+  farBag: scene([], [{ e: '👜' }], 'A person. One bag is far from them'),
+  nearShoes: scene([{ e: '👟' }, { e: '👟' }], [], 'A person with shoes near them'),
+  farBoots: scene([], [{ e: '👢' }, { e: '👢' }], 'A person. Boots are far from them'),
+  nearCap: scene([{ e: '🧢' }], [], 'A person with one cap near them'),
+  scarves: scene([{ e: '🧣', c: 'blue', tag: 'blue' }], [{ e: '🧣', c: 'red', tag: 'red' }], 'A person with a blue scarf near them. A red scarf is far from them'),
+  farGloves: scene([], [{ e: '🧤' }, { e: '🧤' }], 'A person. Gloves are far from them'),
+  farJacket: scene([], [{ e: '🧥', tag: '$200' }], 'A person. One jacket is far from them. It is 200 dollars'),
+  nearSocks: scene([{ e: '🧦' }, { e: '🧦' }], [], 'A person with socks near them'),
+  bags: scene([{ e: '👜', tag: 'small' }], [{ e: '👜', tag: 'big' }], 'A person with a small bag near them. A big bag is far from them')
+};
+
+/* ── 1 · look and choose ───────────────────────────────────────────────── */
+const PC_ITEMS = [
+  { q: P.nearJacket + 'I like ' + BLANK + ' jacket.', opts: ['that', 'this', 'these'], correct: 1 },
+  { q: P.farBag + BLANK + ' bag is nice.', opts: ['That', 'This', 'Those'], correct: 0 },
+  { q: P.nearShoes + BLANK + ' shoes are cheap.', opts: ['This', 'Those', 'These'], correct: 2 },
+  { q: P.farBoots + 'Look at ' + BLANK + ' boots!', opts: ['those', 'these', 'that'], correct: 0 },
+  { q: P.nearCap + 'I need a cap. I like ' + BLANK + '.', opts: ['those ones', 'this one', 'this ones'], correct: 1 },
+  { q: P.scarves + 'I don’t like the blue scarf. I like ' + BLANK + '.', opts: ['the red', 'the red ones', 'the red one'], correct: 2 },
+  { q: P.farGloves + 'I need gloves. Can I see ' + BLANK + ', please?', opts: ['those ones', 'that one', 'these ones'], correct: 0 },
+  { q: 'Which ' + BLANK + ' do you want: the black shoes or the white shoes?', opts: ['one', 'ones', 'this'], correct: 1 }
+];
+HouseComprehension.build({ quiz: 'pcItems', items: PC_ITEMS });
+
+/* ── 2 · word order ────────────────────────────────────────────────────── */
+const WO_ITEMS = [
+  { context: P.nearCap + 'Talk about the cap.',
+    text: 'I / like / this / one', pos: ['subject', 'verb', 'det', 'noun'] },
+  { context: P.farJacket + 'Talk about the jacket.',
+    text: 'That / one / is / too / expensive', pos: ['det', 'noun', 'verb', 'adverb', 'adj'] },
+  { context: P.nearSocks + 'Talk about the socks.',
+    text: 'I / don’t / like / these / ones', pos: ['subject', 'neg', 'verb', 'det', 'noun'] },
+  { context: P.bags + 'This bag is too small.',
+    text: 'I / need / a / big / one', pos: ['subject', 'verb', 'det', 'adj', 'noun'] },
+  { context: P.scarves + 'Ask for the scarf over there.',
+    text: 'Can / you / pass / me / the / red / one / ?', pos: ['aux', 'subject', 'verb', 'object', 'det', 'adj', 'noun', 'none'] },
+  { context: P.farBoots + 'Ask your friend about the boots.',
+    text: 'Which / ones / do / you / like / ?', pos: ['wh', 'noun', 'aux', 'subject', 'verb', 'none'] }
+];
+HouseWordOrder.build({ container: 'woItems', items: WO_ITEMS, scoreEl: 'woScore', totalEl: 'woTotal' });
+
+/* ── 3 · gap fill (easiest first) ──────────────────────────────────────── */
+const GF_ITEMS = [
+  { direct: P.nearJacket + 'Look at the picture.',
+    template: 'I like {0} jacket.', hints: [{ accepted: ['this'] }] },
+  { direct: P.farBoots + 'Look at the picture.',
+    template: '{0} boots are nice.', hints: [{ accepted: ['Those'] }] },
+  { direct: 'Don’t say “bag” again.',
+    template: 'This bag is too small. I need a big {0}.', hints: [{ accepted: ['one'] }] },
+  { direct: 'Don’t say “boots” again.',
+    template: 'I don’t like the black boots. I like the brown {0}.', hints: [{ accepted: ['ones'] }] },
+  { direct: P.nearCap + 'Look at the picture. Don’t say “cap” again.',
+    template: '“Which cap do you want?” “{0} {1}, please.”', hints: [{ accepted: ['This'] }, { accepted: ['one'] }] },
+  { direct: P.farGloves + 'Look at the picture. Don’t say “gloves” again.',
+    template: '“Which gloves do you like?” “I like {0} {1}.”', hints: [{ accepted: ['those'] }, { accepted: ['ones'] }] },
+  { direct: 'Don’t say “pen” again. Careful: no “a” here!',
+    template: '“I need a pen.” “Sorry, I don’t have {0}.”', hints: [{ accepted: ['one'] }] },
+  { direct: 'Write the question words.',
+    template: '“{0} {1} is your bag?” “The blue one.”', hints: [{ accepted: ['Which'] }, { accepted: ['one'] }] }
+];
+HouseGapFill.build({ container: 'gfItems', items: GF_ITEMS });
+</script>
+<script>HouseGrammar.init();</script>
+</body>
+</html>

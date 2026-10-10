@@ -1,0 +1,220 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<title>This One / That One / These Ones / Those Ones — Clarification</title>
+<script>
+(function(){
+  try{
+    var saved = localStorage.getItem('theme-preference');
+    var theme = (saved === 'light' || saved === 'dark')
+      ? saved
+      : ((window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches) ? 'dark' : 'light');
+    document.documentElement.setAttribute('data-theme', theme);
+  }catch(e){ /* localStorage/matchMedia unavailable — CSS media query still applies */ }
+})();
+</script>
+<link rel="stylesheet" href="house.css">
+<style>
+/* here / there picture: a person, the things near them, the things far from them */
+.dm-scene{ display:flex; align-items:stretch; gap:8px; padding:10px 12px; margin:0 0 8px; border-radius:12px; background:var(--surface-1); border:1px solid var(--border); font-style:normal; }
+.dm-side{ display:flex; flex-direction:column; justify-content:flex-end; gap:4px; }
+.dm-far{ align-items:flex-end; }
+.dm-row{ display:flex; align-items:flex-end; gap:6px; }
+.dm-me{ font-size:2.2rem; line-height:1; }
+.dm-item{ display:inline-flex; flex-direction:column; align-items:center; gap:2px; }
+.dm-thing{ display:inline-flex; align-items:center; justify-content:center; width:1.8em; height:1.8em; border-radius:50%; font-size:1.5rem; line-height:1; background:var(--surface-2); border:2px solid var(--color-border-primary); }
+.dm-far .dm-thing{ font-size:1.05rem; }
+.dm-tag{ font-size:.7rem; font-weight:600; color:var(--text-secondary); white-space:nowrap; }
+.dm-cap{ font-size:.7333rem; font-weight:700; letter-spacing:.04em; text-transform:uppercase; color:var(--text-muted); }
+.dm-gap{ flex:1; min-width:24px; align-self:center; border-top:2px dashed var(--color-border-primary); }
+
+/* picture gallery: one idea per card */
+.dm-grid{ display:grid; grid-template-columns:repeat(2, minmax(0, 1fr)); gap:10px; margin:0 0 1.4rem; }
+@media (max-width:520px){ .dm-grid{ grid-template-columns:1fr; } }
+.dm-card{ border:1px solid var(--color-border-tertiary); border-radius:12px; background:var(--surface-2); padding:8px 8px 10px; }
+.dm-word{ font-size:1rem; font-weight:700; color:var(--text-accent); margin:2px 4px 6px; }
+.dm-sentence{ font-size:.9333rem; color:var(--text-primary); margin:6px 4px 0; line-height:1.5; }
+/* the target language is the lesson, so it stays coloured (not a grammar-toggle colour) */
+.tgt{ color:var(--text-accent); font-weight:700; }
+
+/* the four words in one table */
+.dm-table{ display:grid; grid-template-columns:auto 1fr 1fr; gap:6px; margin:0 0 10px; font-size:.9333rem; }
+.dm-table > div{ padding:6px 8px; border-radius:8px; text-align:center; background:var(--surface-2); border:1px solid var(--color-border-tertiary); }
+.dm-table .dm-th{ background:none; border:none; font-size:.7333rem; font-weight:700; text-transform:uppercase; letter-spacing:.04em; color:var(--text-muted); }
+.rule-box p{ margin:0 0 6px; }
+.rule-box p:last-child{ margin-bottom:0; }
+</style>
+</head>
+<body>
+<div class="page" id="page">
+  <span class="cefr-tag cefr-a1a2">A1/A2 · Elementary</span>
+  <h1>This One / That One / These Ones / Those Ones</h1>
+  <p class="subtitle">Talk about things here and there — and don't say the noun again: I like this one · pass me the red one</p>
+
+  <div class="sec-div">Look</div>
+  <p class="subtitle">Where are the things? How many are there? Look at the pictures.</p>
+  <div class="dm-grid" id="galleryGrid"></div>
+
+  <div class="sec-div">Check the meaning</div>
+  <p class="subtitle">Read the sentence. Answer the questions.</p>
+  <div id="ccq"></div>
+
+  <div class="sec-div">Look at the form</div>
+  <p class="subtitle">What is each part of the sentence? Drag a label (or tap a label, then tap a box).</p>
+  <div class="score-bar"><span>Correct: <strong id="fcScore">0</strong> / <span id="fcTotal">0</span></span></div>
+  <div id="formClarf"></div>
+
+  <div class="rule-box" id="ruleBox"></div>
+
+  <div class="sec-div">Common mistakes</div>
+  <div id="mistakes"></div>
+
+  <div class="sec-div">Error hunt</div>
+  <p class="subtitle">Some sentences have one mistake. Some are correct! Tap a word — or a space between words — to fix it. Then press OK.</p>
+  <div class="score-bar"><span>Done: <strong id="errorScore">0</strong> / <span id="errorTotal">0</span></span></div>
+  <div id="errorHuntItems"></div>
+
+  <footer>This One / That One / These Ones / Those Ones — Clarification (A1/A2)</footer>
+</div>
+
+<div id="theme-toggle-wrap">
+  <button id="theme-toggle" aria-label="Toggle light/dark mode" title="Toggle light/dark mode">
+    <span id="theme-icon">☀️</span>
+  </button>
+</div>
+<script src="house.js"></script>
+<script>
+/* ── here / there picture ──────────────────────────────────────────────── */
+const COL = { red: '#e5484d', blue: '#3b82f6', green: '#22a55b', yellow: '#f5c518', black: '#2b2b2e', white: '#ffffff', pink: '#f472b6', brown: '#92562c' };
+const thing = t => '<span class="dm-item"><span class="dm-thing"' + (t.c ? ' style="background:' + COL[t.c] + '"' : '') + '>' + t.e + '</span>' +
+  (t.tag ? '<span class="dm-tag">' + t.tag + '</span>' : '') + '</span>';
+const scene = (near, far, alt) => '<div class="dm-scene" role="img" aria-label="' + alt + '">' +
+  '<div class="dm-side dm-near"><div class="dm-row"><span class="dm-me">🧍</span>' + near.map(thing).join('') + '</div><div class="dm-cap">👇 here</div></div>' +
+  (far.length ? '<div class="dm-gap"></div><div class="dm-side dm-far"><div class="dm-row">' + far.map(thing).join('') + '</div><div class="dm-cap">there 👉</div></div>' : '') +
+  '</div>';
+const T = s => '<span class="tgt">' + s + '</span>';
+
+/* ── the pictures ──────────────────────────────────────────────────────── */
+const GALLERY = [
+  { title: 'this one — one thing, here',
+    pic: scene([{ e: '🧥' }], [], 'A person with one jacket near them'),
+    sentence: 'I need a jacket. I like ' + T('this one') + '.' },
+  { title: 'that one — one thing, there',
+    pic: scene([], [{ e: '🧥' }], 'A person. One jacket is far from them'),
+    sentence: 'I need a jacket, but ' + T('that one') + ' is too expensive.' },
+  { title: 'these ones — two or more, here',
+    pic: scene([{ e: '👟' }, { e: '👟' }], [], 'A person with shoes near them'),
+    sentence: 'I need new shoes. ' + T('These ones') + ' are nice.' },
+  { title: 'those ones — two or more, there',
+    pic: scene([], [{ e: '👟' }, { e: '👟' }], 'A person. Shoes are far from them'),
+    sentence: 'Can I see ' + T('those ones') + ', please?' },
+  { title: 'the + red / big / new… + one',
+    pic: scene([{ e: '🧣', c: 'blue', tag: 'blue' }], [{ e: '🧣', c: 'red', tag: 'red' }], 'A person with a blue scarf near them. A red scarf is far from them'),
+    sentence: 'I don’t like this scarf. Pass me ' + T('the red one') + ', please.' },
+  { title: 'Which one? · Which ones?',
+    pic: scene([{ e: '👜', c: 'green', tag: 'green' }, { e: '👜', c: 'yellow', tag: 'yellow' }], [], 'A person with a green bag and a yellow bag'),
+    sentence: '“' + T('Which one') + ' is your bag?” “' + T('The green one') + '.”' }
+];
+const gallery = document.getElementById('galleryGrid');
+GALLERY.forEach(g => {
+  gallery.insertAdjacentHTML('beforeend',
+    '<div class="dm-card"><div class="dm-word">' + g.title + '</div>' + g.pic + '<div class="dm-sentence">' + g.sentence + '</div></div>');
+});
+
+/* ── concept checking questions ────────────────────────────────────────── */
+HouseCCQ.build({
+  container: 'ccq',
+  items: [
+    { sentence: 'I like this one.',
+      questions: [
+        { q: 'Is the thing near me?', opts: ['Yes', 'No'], correct: 0,
+          why: 'This = here, near me.' },
+        { q: 'How many things?', opts: ['One', 'Two or more'], correct: 0,
+          why: 'This one = one thing.' }
+      ] },
+    { sentence: 'Can you pass me those ones?',
+      questions: [
+        { q: 'Are the things near me?', opts: ['Yes', 'No'], correct: 1,
+          why: 'Those = there, not near me.' },
+        { q: 'How many things?', opts: ['One', 'Two or more'], correct: 1,
+          why: 'Those ones = two or more things.' }
+      ] },
+    { sentence: 'I don’t like the blue jacket. I like the red one.',
+      questions: [
+        { q: 'What is “one” here?', opts: ['a jacket', 'the number 1'], correct: 0,
+          why: 'One = jacket. We don’t say “jacket” again.' }
+      ] },
+    { sentence: 'Ana has a scarf in her hand. Leo says: “I don’t like that one.”',
+      questions: [
+        { q: 'Is the scarf near Leo?', opts: ['Yes', 'No'], correct: 1,
+          why: 'The scarf is near Ana, not near Leo. So Ana says “this one” and Leo says “that one”.' }
+      ] }
+  ]
+});
+
+/* ── form ──────────────────────────────────────────────────────────────── */
+HouseFormClarf.build({
+  container: 'formClarf', scoreEl: 'fcScore', totalEl: 'fcTotal',
+  pool: ['wh', 'subject', 'verb', 'neg', 'det', 'adj', 'noun'],
+  items: [
+    { form: 'aff', parts: [['This', 'det'], ['jacket', 'noun'], ['is', 'verb'], ['nice', 'adj'], ['.', null]] },
+    { form: 'aff', parts: [['This', 'det'], ['one', 'noun'], ['is', 'verb'], ['nice', 'adj'], ['.', null]] },
+    { form: 'aff', parts: [['I', 'subject'], ['like', 'verb'], ['the', 'det'], ['red', 'adj'], ['one', 'noun'], ['.', null]] },
+    { form: 'neg', parts: [['I', 'subject'], ['don’t', 'neg'], ['like', 'verb'], ['those', 'det'], ['ones', 'noun'], ['.', null]] },
+    { form: 'wh',  parts: [['Which', 'wh'], ['ones', 'noun'], ['are', 'verb'], ['cheap', 'adj'], ['?', null]] }
+  ]
+});
+
+/* ── the rule ──────────────────────────────────────────────────────────── */
+document.getElementById('ruleBox').innerHTML =
+  '<div class="dm-table">' +
+    '<div class="dm-th"></div><div class="dm-th">👇 here</div><div class="dm-th">there 👉</div>' +
+    '<div class="dm-th">one thing</div><div>' + T('this') + ' jacket<br>' + T('this one') + '</div><div>' + T('that') + ' jacket<br>' + T('that one') + '</div>' +
+    '<div class="dm-th">two or more</div><div>' + T('these') + ' shoes<br>' + T('these ones') + '</div><div>' + T('those') + ' shoes<br>' + T('those ones') + '</div>' +
+  '</div>' +
+  '<p><strong>One / ones go in the place of the noun.</strong> We don’t say the noun again: I need a jacket. I like this ' + T('one') + '. (= this jacket)</p>' +
+  '<p><strong>One thing:</strong> ' + T('one') + '. <strong>Two or more things:</strong> ' + T('ones') + '.</p>' +
+  '<p><strong>With a colour, big, new, cheap…:</strong> the red ' + T('one') + ' · the white ' + T('ones') + ' · a big ' + T('one') + '</p>' +
+  '<p><strong>Questions:</strong> ' + T('Which one') + ' do you want? · ' + T('Which ones') + ' do you like?</p>' +
+  '<p><strong>No “a” before “one”:</strong> “Do you have a pen?” “Yes, I have ' + T('one') + '.” (not <s>a one</s>) — but: I have ' + T('a blue one') + '.</p>' +
+  '<p><strong>Good to know:</strong> “these ones” and “those ones” are OK when you speak. You can say only “these” and “those”, too: I like those.</p>';
+
+/* ── common mistakes ───────────────────────────────────────────────────── */
+const MISTAKES = [
+  ['I like this shoes.', 'I like these shoes.'],
+  ['That ones are too small.', 'Those ones are too small.'],
+  ['I like these one.', 'I like these ones.'],
+  ['I don’t like the blue jacket. I like the red.', 'I don’t like the blue jacket. I like the red one.'],
+  ['The white shoes are nice, but the black one are cheap.', 'The white shoes are nice, but the black ones are cheap.'],
+  ['This one jacket is nice.', 'This one is nice. / This jacket is nice.'],
+  ['“Do you have a pen?” “Yes, I have a one.”', '“Do you have a pen?” “Yes, I have one.”'],
+  ['Which ones is your bag?', 'Which one is your bag?']
+];
+document.getElementById('mistakes').innerHTML = MISTAKES.map(([no, yes]) =>
+  '<div class="pair-card"><div class="pair-line no"><span class="mark">✗</span>' + no + '</div>' +
+  '<div class="pair-line yes"><span class="mark">✓</span>' + yes + '</div></div>').join('');
+
+/* ── error hunt (A1/A2: two sentences are already correct) ─────────────── */
+const EH_ITEMS = [
+  { words: ['I', 'like', 'this', 'shoes', '.'],
+    error: { type: 'wrong', wordIndex: 2, options: ['these', 'that', 'it'], correct: 'these' } },
+  { words: ['That', 'ones', 'are', 'too', 'small', '.'],
+    error: { type: 'wrong', wordIndex: 0, options: ['Those', 'This', 'It'], correct: 'Those' } },
+  { words: ['I', 'don’t', 'like', 'the', 'blue', 'jacket', '.', 'I', 'like', 'the', 'red', '.'],
+    error: { type: 'missing', gapIndex: 11, options: ['one', 'ones', 'it'], correct: 'one' } },
+  { words: ['Which', 'one', 'do', 'you', 'like', '?'], error: null },
+  { words: ['I', 'need', 'a', 'pen', '.', 'Do', 'you', 'have', 'a', 'one', '?'],
+    error: { type: 'extra', wordIndex: 8 } },
+  { words: ['The', 'white', 'shoes', 'are', 'nice,', 'but', 'the', 'black', 'one', 'are', 'cheap', '.'],
+    error: { type: 'wrong', wordIndex: 8, options: ['ones', 'shoe', 'it'], correct: 'ones' } },
+  { words: ['Can', 'you', 'pass', 'me', 'those', 'ones,', 'please', '?'], error: null },
+  { words: ['I', 'want', 'the', 'one', 'red', '.'],
+    error: { type: 'misplaced', wordIndex: 3, targetGapIndex: 5 } }
+];
+HouseErrorHunt.build({ container: 'errorHuntItems', items: EH_ITEMS, scoreEl: 'errorScore', totalEl: 'errorTotal' });
+</script>
+<script>HouseGrammar.init();</script>
+</body>
+</html>

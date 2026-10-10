@@ -1,0 +1,149 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<title>Which One Do You Want? — Freer Practice</title>
+<script>
+(function(){
+  try{
+    var saved = localStorage.getItem('theme-preference');
+    var theme = (saved === 'light' || saved === 'dark')
+      ? saved
+      : ((window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches) ? 'dark' : 'light');
+    document.documentElement.setAttribute('data-theme', theme);
+  }catch(e){ /* localStorage/matchMedia unavailable — CSS media query still applies */ }
+})();
+</script>
+<link rel="stylesheet" href="house.css">
+<style>
+/* here / there picture: a person, the things near them, the things far from them */
+.dm-scene{ display:flex; align-items:stretch; gap:8px; padding:10px 12px; margin:0 0 8px; border-radius:12px; background:var(--surface-1); border:1px solid var(--border); font-style:normal; }
+.dm-side{ display:flex; flex-direction:column; justify-content:flex-end; gap:4px; }
+.dm-far{ align-items:flex-end; }
+.dm-row{ display:flex; align-items:flex-end; gap:6px; }
+.dm-me{ font-size:2.2rem; line-height:1; }
+.dm-item{ display:inline-flex; flex-direction:column; align-items:center; gap:2px; }
+.dm-thing{ display:inline-flex; align-items:center; justify-content:center; width:1.8em; height:1.8em; border-radius:50%; font-size:1.5rem; line-height:1; background:var(--surface-2); border:2px solid var(--color-border-primary); }
+.dm-far .dm-thing{ font-size:1.05rem; }
+.dm-tag{ font-size:.7rem; font-weight:600; color:var(--text-secondary); white-space:nowrap; }
+.dm-cap{ font-size:.7333rem; font-weight:700; letter-spacing:.04em; text-transform:uppercase; color:var(--text-muted); }
+.dm-gap{ flex:1; min-width:24px; align-self:center; border-top:2px dashed var(--color-border-primary); }
+.q-card .dm-scene{ width:100%; max-width:440px; text-align:left; }
+.q-words{ font-size:.8667rem; color:var(--text-secondary); line-height:1.6; }
+.q-words strong{ color:var(--text-accent); }
+.how{ font-size:.9rem; }
+.how ol{ margin:4px 0 0; padding-left:1.3rem; }
+.model{ font-size:.9rem; line-height:1.7; }
+</style>
+</head>
+<body>
+<div class="page" id="page">
+  <span class="cefr-tag cefr-a1a2">A1/A2 · Elementary</span>
+  <h1>Which One Do You Want?</h1>
+  <p class="subtitle">Talk in a shop and in your classroom: this one · that one · these ones · those ones · the red one</p>
+
+  <div class="rule-box how">
+    <strong>How to play</strong> (with a partner)
+    <ol>
+      <li>Roll 🎲. Look at the card.</li>
+      <li>🛍️ card: Student A is 🧍 the customer. Student B works in the shop. Talk about the things here and there.</li>
+      <li>🏫 card: talk about real things in the room.</li>
+      <li>Change roles. Roll again!</li>
+    </ol>
+  </div>
+
+  <div class="rule-box model">
+    <strong>You can say</strong><br>
+    A: I need a scarf. How much is this one?<br>
+    B: The blue one? It’s 20 dollars.<br>
+    A: And that one?<br>
+    B: The red one is 8 dollars.<br>
+    A: This one is too expensive. I want the red one, please.
+  </div>
+
+  <div class="sec-div">Talk about it</div>
+  <button type="button" class="dice-btn" id="diceBtn" aria-label="Roll for a card">🎲</button>
+  <div class="roll-count">Cards: <strong id="rollCount">0</strong></div>
+  <div class="q-card" id="qCard"><span class="q-placeholder">Roll the dice for a card.</span></div>
+
+  <footer>Which One Do You Want? — Freer Practice (A1/A2)</footer>
+</div>
+
+<div id="theme-toggle-wrap">
+  <button id="theme-toggle" aria-label="Toggle light/dark mode" title="Toggle light/dark mode">
+    <span id="theme-icon">☀️</span>
+  </button>
+</div>
+<script src="house.js"></script>
+<script>
+/* ── here / there picture ──────────────────────────────────────────────── */
+const COL = { red: '#e5484d', blue: '#3b82f6', green: '#22a55b', yellow: '#f5c518', black: '#2b2b2e', white: '#ffffff', pink: '#f472b6', brown: '#92562c' };
+const thing = t => '<span class="dm-item"><span class="dm-thing"' + (t.c ? ' style="background:' + COL[t.c] + '"' : '') + '>' + t.e + '</span>' +
+  (t.tag ? '<span class="dm-tag">' + t.tag + '</span>' : '') + '</span>';
+const scene = (near, far, alt) => '<div class="dm-scene" role="img" aria-label="' + alt + '">' +
+  '<div class="dm-side dm-near"><div class="dm-row"><span class="dm-me">🧍</span>' + near.map(thing).join('') + '</div><div class="dm-cap">👇 here</div></div>' +
+  (far.length ? '<div class="dm-gap"></div><div class="dm-side dm-far"><div class="dm-row">' + far.map(thing).join('') + '</div><div class="dm-cap">there 👉</div></div>' : '') +
+  '</div>';
+
+/* ══ A new shop every roll ═══════════════════════════════════════════════
+   One kind of thing, four of them in four colours with four prices:
+   two near the customer (this / these) and two far away (that / those). */
+const rnd = n => Math.floor(Math.random() * n);
+const pickN = (arr, n) => { const a = arr.slice(); for (let i = a.length - 1; i > 0; i--) { const j = rnd(i + 1); [a[i], a[j]] = [a[j], a[i]]; } return a.slice(0, n); };
+const TYPES = [
+  { e: '🧥', many: 'jackets', need: 'a new jacket' },
+  { e: '🧣', many: 'scarves', need: 'a scarf' },
+  { e: '🧢', many: 'caps', need: 'a cap' },
+  { e: '👜', many: 'bags', need: 'a new bag' },
+  { e: '👕', many: 'T-shirts', need: 'a T-shirt' },
+  { e: '☂️', many: 'umbrellas', need: 'an umbrella' },
+  { e: '👟', many: 'shoes', need: 'new shoes', pl: true },
+  { e: '👢', many: 'boots', need: 'new boots', pl: true },
+  { e: '🧤', many: 'gloves', need: 'gloves', pl: true },
+  { e: '🧦', many: 'socks', need: 'socks', pl: true }
+];
+const PRICES = [5, 8, 10, 12, 15, 20, 25, 30, 40, 50, 70, 90];
+
+function shopCard() {
+  const t = TYPES[rnd(TYPES.length)];
+  const cols = pickN(Object.keys(COL), 4), prices = pickN(PRICES, 4);
+  const items = cols.map((c, i) => ({ e: t.e, c, tag: c + ' · $' + prices[i] }));
+  const one = t.pl ? 'ones' : 'one';
+  return {
+    key: t.many + cols.join(''),
+    topic: '🛍️ In the shop',
+    pic: scene(items.slice(0, 2), items.slice(2), 'A customer with two ' + t.many + ' near them: ' + cols[0] + ' and ' + cols[1] +
+      '. Two ' + t.many + ' are far from them: ' + cols[2] + ' and ' + cols[3] + '.'),
+    text: 'You need ' + t.need + '. Which ' + one + ' do you want?',
+    words: (t.pl ? '<strong>these ones</strong> · <strong>those ones</strong>' : '<strong>this one</strong> · <strong>that one</strong>') +
+      ' · the ' + cols[0] + ' ' + one + ' · the ' + cols[2] + ' ' + one + ' · the cheap ' + one + ' · too expensive'
+  };
+}
+
+const ROOM = [
+  'Look at the pens on the table. Which one is your pen? Which ones are your partner’s pens?',
+  'Point to two bags in the room. Which one do you like? Why?',
+  'Look at your shoes and your partner’s shoes. Talk about them: “These ones are… Those ones are…”',
+  'Look at the chairs in the room. Which one is your chair? Is that one free?',
+  'Show two photos on your phone. Your partner asks: “Which one do you like?”',
+  'Think of two phones: a big one and a small one. Which one do you want? Why?',
+  'Look out of the window. Talk about the cars or the houses: “I like that one. I don’t like those ones.”',
+  'Put three things on the table. Your partner says: “Pass me the … one, please.”'
+];
+function roomCard() {
+  const text = ROOM[rnd(ROOM.length)];
+  return { key: text, topic: '🏫 In the room', text };
+}
+
+HouseRandomGen.build({
+  pick: () => Math.random() < 0.7 ? shopCard() : roomCard(),
+  key: p => p.key,
+  render: p => '<span class="q-topic">' + p.topic + '</span>' + (p.pic || '') +
+    '<span class="q-text">' + p.text + '</span>' +
+    (p.words ? '<span class="q-words">' + p.words + '</span>' : '')
+});
+</script>
+<script>HouseGrammar.init();</script>
+</body>
+</html>
