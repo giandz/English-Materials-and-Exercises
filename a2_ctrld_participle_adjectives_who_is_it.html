@@ -247,12 +247,15 @@ const SCENES={
       s+=`<path d="M430,${HORIZON+6}H690L712,${HORIZON+44}H408Z" fill="#fff" stroke="#999" stroke-width="2"/><rect x="408" y="${HORIZON+44}" width="304" height="52" fill="#f4f4f4" stroke="#999" stroke-width="2"/>`;
       s+=`<rect x="520" y="${HORIZON-42}" width="80" height="50" rx="6" fill="#f7c6d9" stroke="#b05a80" stroke-width="2"/><path d="M520,${HORIZON-26}q10,10 20,0t20,0t20,0t20,0" stroke="#fff" stroke-width="4" fill="none"/>`+[538,560,582].map(x=>`<rect x="${x-2}" y="${HORIZON-60}" width="4" height="18" fill="#0066CC"/><ellipse cx="${x}" cy="${HORIZON-65}" rx="3.5" ry="6" fill="#FFCC00"/>`).join('');
       return s; }},
-  classroom:{label:'Classroom',marks:[{x:130,t:'by the door'},{x:590,t:'in front of the whiteboard'},{x:1095,t:'next to the bookshelf'}],
+  classroom:{label:'Classroom',seatTable:'desk',seatSpots(){   /* rows of chairs, all facing the same way; the front row is offset the way a real row recedes */
+      const back=[330,590,850].map(X=>({X,Y:568,dir:-1})), front=shuffle([400,690,980]).slice(0,2).sort((a,b)=>a-b).map(X=>({X,Y:655,dir:-1}));
+      return shuffle(back.concat(front)); },
+    marks:[{x:130,t:'by the door'},{x:590,t:'in front of the whiteboard'},{x:1095,t:'next to the bookshelf'}],
     targets:[['the door',130,200],['the whiteboard',590,155],['the bookshelf',1095,230],['the clock',960,92]],depth:[392,672],
     items:['book','book','tablet','phone','bag','cup','paintbrush','multimeter','keys','briefcase'],
     hats:['cap','headphones','headband','beanie','bow'],acc:['backpack','backpack','watchL','tie','fannypack'],
     outfits:['casual','sport','smart','summer','waistcoat','office','weekend','beach','tracksuit','hooded'],
-    poses:['standing','standing','reaching','pointing','hips','waving'],seats:3,
+    poses:['standing','standing','reaching','pointing','hips','waving'],seats:5,
     bg(){ let s=`<rect width="${W}" height="${HORIZON}" fill="#e6edf1"/><rect x="0" y="${HORIZON-14}" width="${W}" height="14" fill="#8fa3ad"/>`;
       s+=`<rect x="330" y="60" width="520" height="190" fill="#fff" stroke="#7b8790" stroke-width="6"/><text x="590" y="130" font-size="34" text-anchor="middle" fill="#0066CC" font-family="var(--font-sans,sans-serif)">What are you doing?</text><text x="590" y="186" font-size="30" text-anchor="middle" fill="#CC0000" font-family="var(--font-sans,sans-serif)">I'm learning English.</text><rect x="560" y="250" width="90" height="10" fill="#7b8790"/>`;
       s+=`<rect x="70" y="96" width="120" height="${HORIZON-110}" fill="#b98a55" stroke="#6e4a26" stroke-width="3"/><rect x="92" y="118" width="76" height="60" fill="#bcdcf0" stroke="#6e4a26" stroke-width="2"/><circle cx="172" cy="226" r="5" fill="#e2b23a"/>`;
@@ -279,12 +282,19 @@ const SCENES={
       /* sandcastle */
       s+=`<path d="M820,${SAND+52}V${SAND+24}h10v-8h8v8h14v-18h8v-8h8v8h8v18h14v-8h8v8h10V${SAND+52}Z" fill="#e3c77e" stroke="#b79a52" stroke-width="2"/><path d="M866,${SAND-2}v-16l12,5-12,5" fill="#CC0000" stroke="#7a0000"/>`;
       return s; }}
-  ,restaurant:{label:'Restaurant',seatTable:true,stageX:[366,836],depth:[448,672],marks:[{x:150,t:'by the window'},{x:1030,t:'next to the plant'}],
+  ,restaurant:{label:'Restaurant',seatTable:'table',seatSpots(){   /* three tables across the front of the room: two couples facing each other, and one guest alone at the third */
+      const sc=Y=>0.5+0.3*(Y-HORIZON)/(H-HORIZON), solo=rand(3), spots=[];
+      [[300,640],[600,660],[900,644]].forEach(([x,y],i)=>{ const o=128*sc(y), d=pick([1,-1]);
+        if(i===solo) spots.push({X:x-d*o,Y:y,dir:d}); else spots.push({X:x-o,Y:y,dir:1},{X:x+o,Y:y,dir:-1}); });
+      return spots; },
+    standAt(){   /* people on their feet stand at the back wall, in the open floor either side of the stage, clear of the chairs */
+      return [[110,452],[300,464],[900,462],[1095,452]].map(([x,y])=>[x+Math.random()*16-8,y+Math.random()*8]); },
+    stageX:[366,836],depth:[448,672],marks:[{x:110,t:'by the window'},{x:1095,t:'next to the plant'}],
     targets:[['the window',150,160],['the chandelier',250,64],['the plant',1030,290],['the stage',600,300]],
-    items:['plate','mug','cup','fork','spoon','phone','purse','keys','cake','book','plate','cup'],
+    items:['plate','mug','cup','fork','spoon','phone','purse','keys','cake','book','plate','bowl'],
     hats:['fedora','headband','bow','fedora','headband'],acc:['necklace','drops','studs','braceletR','watchL','choker'],
     outfits:['formal','business','office','waistcoat','formal','smart','summer','business'],count:['a tie','a dress','something black','glasses'],
-    poses:['standing','standing','hips','waving','pointing'],seats:3,
+    poses:['standing','standing','hips','waving','pointing'],seats:5,
     band(){ const front=shuffle(['violinist','cellist','bassist','mandolinist','singer']).slice(0,2);   /* one at the piano, two in front */
       return [[front[0],424,STAGE_Y,STAGE_S],[front[1],506,STAGE_Y+4,STAGE_S],[pick(['pianist','piano_singer']),792,STAGE_Y,STAGE_S]]; },
     bg(){ let s=`<rect width="${W}" height="${HORIZON}" fill="#6b2f3a"/><rect x="0" y="${HORIZON-64}" width="${W}" height="64" fill="#4a2028"/><rect x="0" y="${HORIZON-68}" width="${W}" height="6" fill="#c9a23a"/>`;
@@ -302,20 +312,54 @@ const allFaces=[HC.NEUTRAL_FACE].concat(...HC.EMOTIONS.map(g=>g[1]));
 /* ground shadow: a small one under a person; for a driver, one long shadow under the whole car instead */
 /* a dining table for a seated guest: drawn with that person, at their size, on the floor line of their chair, on the side they face.
    Real proportions against the figure: top about 75 cm high and 80 cm across, so it clears the knees and reaches the midriff. */
+/* Where people on their feet may stand in a scene with dining tables: never in the strip of floor a table and its chairs
+   occupy (so nobody is beside, behind-and-touching or in front of a seated guest). They stand in the open middle of the room,
+   in two staggered rows, and at most two of them at the back wall on a side whose table is the one nearer the viewer. */
+function standSpots(S,people){
+  if(S.standAt) return shuffle(S.standAt());   /* the scene names its own standing places */
+  if(S.seatTable!=='table') return null;
+  const n=people.filter(p=>!p.fixed).length, [y0,y1]=S.depth, tabs=[], back=[]; let L=60, R=W-60;
+  people.filter(p=>p.seated&&p.fixed).forEach(p=>{ const tx=p.fixed.X+(p.d.pelvisOrientation>0?1:-1)*128*p.fixed.s; if(!tabs.some(t=>Math.abs(t.x-tx)<4)) tabs.push({x:tx,y:p.fixed.Y,r:200*p.fixed.s}); });
+  tabs.forEach(t=>{ const far=t.y>y0+170, j=()=>Math.random()*24;
+    if(t.x<W/2){ L=Math.max(L,t.x+t.r+80); if(far) back.push([70+j(),y0+j()*0.6],[255+j(),y0+j()*0.6]); }
+    else { R=Math.min(R,t.x-t.r-80); if(far) back.push([925+j(),y0+j()*0.6],[1105+j(),y0+j()*0.6]); } });
+  const spots=shuffle(back).slice(0,Math.max(0,Math.min(2,n-3))), k=n-spots.length;
+  for(let i=0;i<k;i++) spots.push([L+(i+0.5)*(R-L)/k+(Math.random()*16-8), y1-6-(i%2)*56-Math.random()*8]);
+  return shuffle(spots);
+}
 /* a seated guest whose table would fall off the edge of the picture turns round to face inward */
 function faceTable(sc,p,X,s){
   if(!SCENES[sc].seatTable||!p.seated) return;
   const tx=X+(p.d.pelvisOrientation>0?1:-1)*128*s;
   if(tx<100*s+10||tx>W-100*s-10) p.d=HC.normalize(HC.mirror(p.d));
 }
+/* food that is set down on the table instead of held: where each item's own drawing has to go to sit centred on the charger plate */
+const ON_TABLE={plate:[16,-174],cake:[20,-172],bowl:[14,-182]};
 function tableFor(sc,p,X,Y,s){
-  if(!SCENES[sc].seatTable||!p.seated) return '';
+  const kind=SCENES[sc].seatTable; if(!kind||!p.seated) return '';
   const dir=p.d.pelvisOrientation>0?1:-1;
-  return `<g pointer-events="none" transform="translate(${X+dir*128*s} ${Y}) scale(${s})"><ellipse cx="0" cy="2" rx="100" ry="13" fill="#000" opacity=".16"/>`
+  if(kind==='desk')   /* a school desk in front of each seated student, seen from the side */
+    return `<g pointer-events="none" transform="translate(${X+dir*98*s} ${Y}) scale(${s})"><ellipse cx="0" cy="2" rx="60" ry="8" fill="#000" opacity=".14"/>`
+      +`<path d="M-42,-138V0M42,-138V0" fill="none" stroke="#5f6870" stroke-width="7"/><path d="M-42,-138V0M42,-138V0" fill="none" stroke="#b4bcc4" stroke-width="4"/><path d="M-50,-2H-34M34,-2H50" stroke="#5f6870" stroke-width="5" stroke-linecap="round"/>`
+      +`<rect x="-46" y="-136" width="92" height="20" fill="#b98a55" stroke="#6e4a26" stroke-width="2"/><rect x="-56" y="-148" width="112" height="12" rx="3" fill="#d9a86c" stroke="#6e4a26" stroke-width="2"/></g>`;
+  return `<g pointer-events="none" transform="translate(${X+dir*128*s} ${Y}) scale(${s})">`+(p.noTable?'':`<ellipse cx="0" cy="2" rx="100" ry="13" fill="#000" opacity=".16"/>`
     +`<ellipse cx="0" cy="-4" rx="42" ry="9" fill="#3a2a1c" stroke="#1d140c" stroke-width="2"/><rect x="-7" y="-112" width="14" height="108" fill="#3a2a1c" stroke="#1d140c" stroke-width="2"/>`
     +`<path d="M-94,-172V-116Q-62,-98 -47,-112Q-24,-94 0,-108Q24,-94 47,-112Q62,-98 94,-116V-172Z" fill="#f4f4f2" stroke="#b9b9b9" stroke-width="2"/><ellipse cx="0" cy="-172" rx="94" ry="19" fill="#ffffff" stroke="#b9b9b9" stroke-width="2"/>`
     +`<rect x="-3" y="-212" width="6" height="34" fill="#f4f1d0" stroke="#b9b9b9"/><ellipse cx="0" cy="-219" rx="4.5" ry="8" fill="#FFCC00"/><ellipse cx="0" cy="-176" rx="12" ry="3.5" fill="#c9a23a"/>`
-    +`<ellipse cx="${-dir*50}" cy="-171" rx="26" ry="6" fill="#fff" stroke="#b9b9b9" stroke-width="1.6"/><ellipse cx="${dir*50}" cy="-173" rx="26" ry="6" fill="#fff" stroke="#b9b9b9" stroke-width="1.6"/></g>`;
+    +`<ellipse cx="${-dir*50}" cy="-171" rx="26" ry="6" fill="#fff" stroke="#b9b9b9" stroke-width="1.6"/><ellipse cx="${dir*50}" cy="-173" rx="26" ry="6" fill="#fff" stroke="#b9b9b9" stroke-width="1.6"/>`)   /* p.noTable: the table itself is already drawn for the guest opposite; only this guest's food is added */
+    +(p.onTable?`<g transform="translate(${-dir*50+ON_TABLE[p.onTable][0]} ${ON_TABLE[p.onTable][1]})" stroke-width="1.3" stroke-linejoin="round">${HC.ITEMS[p.onTable].draw(1,HC.ITEMS[p.onTable].col)}</g>`:'')+`</g>`;   /* their plate of food sits on the charger plate on their side */
+}
+/* the arm on the viewer's side, drawn again on top of the table or desk so it is in front of it */
+function nearArm(p,body,X,Y,s){
+  const N=p.d.torsoOrientation<-30?'L':p.d.torsoOrientation>30?'R':''; if(!N) return '';
+  /* the engine puts every body part in one wrapper group, so the arm's parts are one level down inside it */
+  const w0=body.indexOf('<g '), wrap=w0<0?'':body.slice(w0,body.indexOf('>',w0)+1); if(!wrap) return '';
+  const want=['shoulder'+N,'elbow'+N,'wrist'+N], re=/<g[\s>]|<\/g>/g; let out='', depth=0, start=-1, keep=false, m;
+  re.lastIndex=w0;
+  while((m=re.exec(body))){
+    if(m[0]==='</g>'){ depth--; if(depth===1&&keep) out+=body.slice(start,m.index+4); if(depth===0) break; }
+    else { if(depth===1){ start=m.index; const j=/data-joint="([^"]+)"/.exec(body.slice(m.index,body.indexOf('>',m.index)+1)); keep=!!j&&want.includes(j[1]); } depth++; } }
+  return out?`<g pointer-events="none" transform="translate(${X-HC.STAGE.cx*s} ${Y-HC.STAGE.ground*s}) scale(${s})">${wrap}${out}</g></g>`:'';
 }
 function shadow(p,X,Y,s,cls){
   const car=p.pose==='driving', dir=p.d.pelvisOrientation>0?1:-1;
@@ -393,6 +437,7 @@ function cast(sc){
     const fid=pick(FACES), f=allFaces.find(e=>e[0]===fid); d.eyebrows=f[2]; d.eyes=f[3]; d.mouth=f[4];
     if(d.upperGarment==='hoodieup') d.headwear=null;   /* nothing on top of a raised hood, helmets included */
     if(d.headwear) for(const h of ['left','right']) if(String(d.held[h]).startsWith('hat_')) d.held[h]=pick(['phone','book','bag','keys']);   /* wearing a hat: not holding one too */
+    for(const [h,k] of [['left','heldLeftGrip'],['right','heldRightGrip']]) if(['fork','knife','spoon'].includes(d.held[h])) d[k]=45;   /* cutlery is held at an angle, not straight along the hand */
     out.push({d:HC.normalize(d),seated,pose});
   }
   if(S.carY&&Math.random()<0.6){   /* at most one car, driving along the road in front */
@@ -401,6 +446,24 @@ function cast(sc){
     d.prop='car'; d.propColor=pick(TONE.bright); d.held={left:null,right:null}; if(Math.random()<0.5) HC.mirror(d);
     out.push({d:HC.normalize(d),seated:false,pose:'driving',noTarget:true,fixed:{X:330+rand(540),Y:S.carY,s:0.56}});
   }
+  if(S.seatSpots){ const spots=S.seatSpots();   /* seated people take fixed places, turned the way the place faces */
+    out.filter(p=>p.seated).forEach((p,i)=>{ const q=spots[i]; if(!q) return;
+      if((p.d.pelvisOrientation>0?1:-1)!==q.dir) p.d=HC.normalize(HC.mirror(p.d));
+      p.fixed={X:q.X,Y:q.Y,s:0.5+0.3*(q.Y-HORIZON)/(H-HORIZON)};
+      if(S.seatTable==='table'){   /* at a dining table: the plate goes on the table; anything else is held in the near hand, above the table top */
+        const d=p.d, sg=d.pelvisOrientation>0?-1:1, near=sg>0?'left':'right', N=sg>0?'L':'R', Fa=sg>0?'R':'L';
+        const it=d.held.left||d.held.right, grip=d.held.left?d.heldLeftGrip:d.heldRightGrip;
+        d.held={left:null,right:null}; d.heldLeftGrip=d.heldRightGrip=null;
+        if(['plate','cake','bowl'].includes(it)) p.onTable=it; else if(it){ d.held[near]=it; d[near==='left'?'heldLeftGrip':'heldRightGrip']=grip; }
+        const up=it&&!p.onTable;
+        Object.assign(d.joints,{['shoulder'+Fa]:sg*26,['elbow'+Fa]:sg*62,['wrist'+Fa]:0,['shoulder'+N]:sg*(up?40:22),['elbow'+N]:sg*(up?82:66),['wrist'+N]:0});
+        p.d=HC.normalize(d); }
+    });
+    if(S.seatTable==='table'){   /* one table per position: a guest whose table would land where another guest's already stands does not get a second one */
+      const placed=[];
+      out.filter(p=>p.seated&&p.fixed).forEach(p=>{ const tx=p.fixed.X+(p.d.pelvisOrientation>0?1:-1)*128*p.fixed.s;
+        if(placed.some(t=>Math.abs(t[0]-tx)<4&&Math.abs(t[1]-p.fixed.Y)<4)) p.noTable=true; else placed.push([tx,p.fixed.Y]); });
+    } }
   if(S.band) for(const [id,X,Y,s] of S.band()){
     const d=musician(id), key=d.bodyType, name=pick(NAMES[key].filter(x=>!used[key].includes(x))); used[key].push(name); d.name=name;
     out.push({d,seated:false,pose:'playing',role:ROLE[id],fixed:{X,Y,s}});
@@ -412,8 +475,10 @@ function cast(sc){
 function layout(sc,people){
   const S=SCENES[sc], [y0,y1]=S.depth, reg=people.filter(p=>!p.fixed), n=reg.length, ys=shuffle(reg.map((_,i)=>y0+(y1-y0)*i/(n-1))), slot=(W-200)/(n-1);
   reg.forEach((p,i)=>{ p.X=100+slot*i+(Math.random()*40-20); p.Y=ys[i];
+    if(S.seatSpots&&!S.stageX) p.Y=y0+Math.random()*44;   /* where the seats are in rows, people on their feet stand at the back wall, clear of the chairs */
     if(S.stageX&&p.X>S.stageX[0]-30&&p.X<S.stageX[1]+30) p.Y=y1-Math.random()*64;   /* in front of the stage: stay at the very front, so the band is not hidden */
     p.s=0.5+0.3*(p.Y-HORIZON)/(H-HORIZON); });
+  { const sp=standSpots(S,people); if(sp) reg.forEach((p,i)=>{ p.X=sp[i][0]; p.Y=sp[i][1]; p.s=0.5+0.3*(p.Y-HORIZON)/(H-HORIZON); }); }   /* dining tables: keep clear of the seated guests */
   /* a landmark belongs to the one person standing clearly nearest to it, toward the back of the scene */
   people.forEach(p=>p.place=null);
   for(const m of S.marks){
@@ -497,7 +562,7 @@ function drawScene(r){
   const S=SCENES[r.sc]; let figs=[], tags='';
   r.people.forEach((p,i)=>{
     const body=HC.render(p.d).replace(/^<svg [^>]*>/,'').replace(/<\/svg>$/,'');
-    { const t=tableFor(r.sc,p,p.X,p.Y,p.s); if(t) figs.push({Y:p.Y+0.5,svg:t}); }
+    { const t=tableFor(r.sc,p,p.X,p.Y,p.s); if(t) figs.push({Y:p.Y+0.5,svg:t+nearArm(p,body,p.X,p.Y,p.s)}); }
     figs.push({Y:p.Y,svg:`<g class="wp-person" data-i="${i}" tabindex="0" role="button" aria-label="Person ${i+1}">${shadow(p,p.X,p.Y,p.s,'wp-ring')}`
       +`<g transform="translate(${p.X-HC.STAGE.cx*p.s} ${p.Y-HC.STAGE.ground*p.s}) scale(${p.s})">${body}</g>`
       +`<rect class="wp-hit" x="${p.X-p.w/2}" y="${p.Y-p.h-6}" width="${p.w}" height="${p.h+14}" rx="10" fill="#fff" fill-opacity="0" stroke="none"/></g>`});
