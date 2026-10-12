@@ -1799,12 +1799,37 @@
        prompt: 'optional hint shown once above all the sentences'
      });
 
-   Item shape — one of:
-     { words: [...], error: null }                                     // no mistake
-     { words: [...], error: { type:'missing',   gapIndex,  options, correct } }
-     { words: [...], error: { type:'extra',     wordIndex } }
-     { words: [...], error: { type:'misplaced', wordIndex, targetGapIndex } }
-     { words: [...], error: { type:'wrong',     wordIndex, options, correct } }
+   A sentence can have any number of independent errors, tappable and
+   resolvable in any order — the sentence only counts as fixed once every
+   one of them is. Item shape:
+     { words: [...], errors: [] }                     // no mistake
+     { words: [...], errors: [ <error>, <error>, ... ] }
+   where each <error> is one of:
+     { type:'missing',   gapIndex,  options, correct, alwaysCap? }
+       // Several missing words can share one gap (e.g. "two bread" →
+       // "two loaves of bread"): give each its own `missing` error with the
+       // same gapIndex. They're offered one at a time in array order, so
+       // list them left to right; each lands after the previous one.
+       // alwaysCap (boolean, `missing` only): inserting the first word into
+       // gapIndex 0 pushes the sentence's old first word to second place,
+       // so it loses its capital letter — unless that word is always
+       // capitalized regardless of position (e.g. "I"), in which case set
+       // alwaysCap: true to leave it untouched. No effect at any other gap.
+     { type:'extra',     wordIndex }
+     { type:'misplaced', wordIndex, targetGapIndex, alwaysCap? }
+       // alwaysCap: 'first' | 'second' | 'both' — only needed when the move
+       // crosses the sentence-initial boundary and one of the two words
+       // involved is always capitalized regardless of position (e.g. "I",
+       // or a language/nationality name). 'first' protects
+       // item.words[wordIndex] (the word named above) from ever losing its
+       // capital; 'second' protects its swap counterpart instead; 'both'
+       // protects either. Tapping either word of an adjacent swap (see
+       // above) still resolves correctly either way. Omit for ordinary
+       // words, which capitalize/decapitalize normally.
+     { type:'wrong',     wordIndex, options, correct }
+   A single error is also accepted directly as the older, singular shape —
+   `{ words: [...], error: null }` or `{ words: [...], error: <error> }` —
+   for pages written before multi-error sentences existed; both forms work.
    ══════════════════════════════════════════════════════════════════════════ */
 (function (global) {
   'use strict';
@@ -1828,9 +1853,10 @@
     + '.eh2-gap.no-dot{ cursor:default; }'
     + '.eh2-gap.no-dot:hover{ background:transparent; border-color:transparent; }'
     + '.eh2-gap.no-dot::after, .eh2-gap.no-dot:hover::after{ content:none; }'
-    + '.eh2-menu{ display:none; position:absolute; z-index:20; transform:translateX(-50%); flex-wrap:wrap; align-items:center; justify-content:center; gap:6px; width:max-content; max-width:min(240px, 88vw); padding:8px 10px; background:var(--surface-1); border-radius:10px; border:1px solid var(--border); box-shadow:0 6px 18px rgba(0,0,0,0.16); }'
+    + '.eh2-menu{ display:none; position:absolute; z-index:20; flex-wrap:wrap; align-items:center; justify-content:center; gap:6px; width:max-content; max-width:min(240px, 88vw); padding:8px 10px; background:var(--surface-1); border-radius:10px; border:1px solid var(--border); box-shadow:0 6px 18px rgba(0,0,0,0.16); }'
     + '.eh2-menu.open{ display:flex; }'
-    + '.eh2-menu::before{ content:""; position:absolute; top:-6px; left:50%; transform:translateX(-50%); border-left:6px solid transparent; border-right:6px solid transparent; border-bottom:6px solid var(--surface-1); }'
+    + '.eh2-menu::before{ content:""; position:absolute; top:-6px; left:var(--eh2-arrow-left, 50%); transform:translateX(-50%); border-left:6px solid transparent; border-right:6px solid transparent; border-bottom:6px solid var(--surface-1); }'
+    + '.eh2-menu.flip::before{ top:auto; bottom:-6px; border-bottom:none; border-top:6px solid var(--surface-1); }'
     + '.eh2-menu-hint{ width:100%; text-align:center; font-size:14px; font-weight:700; color:var(--text-primary); margin-bottom:2px; }'
     + '.eh2-menu-btn{ font-family:inherit; font-size:13px; font-weight:600; padding:6px 12px; border-radius:999px; border:1px solid var(--border); background:var(--surface-2); color:var(--text-primary); cursor:pointer; }'
     + '.eh2-menu-btn:hover{ background:var(--color-background-tertiary); }'
@@ -1916,16 +1942,89 @@
       wrap.appendChild(verdictEl);
       listEl.appendChild(wrap);
 
-      var resolved = !item.error; // error-free sentences start already "solved"
-      var activeTarget = null;    // { kind: 'word'|'gap', index }
+      // Back-compat: a single `error` (object or null) is treated as a
+      // one-element (or empty) `errors` list, so existing pages using the
+      // singular field keep working unchanged.
+      var errorsList = item.errors || (item.error ? [item.error] : []);
+      var errorResolved = errorsList.map(function () { return false; });
+      var resolved = errorsList.length === 0; // nothing to fix: already "solved"
+      var activeTarget = null;    // { kind: 'word'|'gap', index, errorIndex }
       var pickingDestination = false;
       var anchorEl = null;
       var gapEls = [];
+      // Where the next word inserted into a given gap should go: right after
+      // whatever was inserted there last (initially the gap itself), so
+      // several missing words sharing one gap read left to right.
+      var gapTail = {};
       var wordEls = [];
+
+      function updateResolved() {
+        resolved = errorResolved.length === 0 || errorResolved.every(function (r) { return r; });
+      }
+
+      // A "misplaced" error only ever names one word as the tappable one,
+      // but when the fix is really just two adjacent words trading places,
+      // either word is an equally valid thing for a student to tap first.
+      // This detects that case algebraically from the single error
+      // definition (no second, mirrored error entry needed) and returns
+      // the {wordIndex, targetGapIndex} to actually act on for whichever
+      // word was tapped — or null if `tappedWordIndex` isn't part of this
+      // error at all.
+      function misplacedEffective(e, tappedWordIndex) {
+        if (e.type !== 'misplaced') return null;
+        if (tappedWordIndex === e.wordIndex) {
+          return { wordIndex: e.wordIndex, targetGapIndex: e.targetGapIndex };
+        }
+        if (e.targetGapIndex === e.wordIndex + 2 && tappedWordIndex === e.wordIndex + 1) {
+          // The word moves past its right-hand neighbor — that neighbor can
+          // equally be tapped and moved to land just before the original.
+          return { wordIndex: tappedWordIndex, targetGapIndex: e.wordIndex };
+        }
+        if (e.targetGapIndex === e.wordIndex - 1 && tappedWordIndex === e.wordIndex - 1) {
+          // The word moves before its left-hand neighbor — that neighbor
+          // can equally be tapped and moved to land just after the original.
+          return { wordIndex: tappedWordIndex, targetGapIndex: e.wordIndex + 1 };
+        }
+        return null;
+      }
+
+      // "first" always refers to item.words[e.wordIndex] (the word named in
+      // the error data), "second" to its swap counterpart — regardless of
+      // which of the two the student actually tapped. `effWordIndex` is
+      // whichever one is being moved *this time* (see misplacedEffective),
+      // so this resolves e.alwaysCap ('first'|'second'|'both', or absent)
+      // into concrete moved/other protection for THIS specific move.
+      function alwaysCapFlags(e, effWordIndex) {
+        var cap = e.alwaysCap;
+        if (!cap || cap === 'none') return { moved: false, other: false };
+        var movedIsFirst = effWordIndex === e.wordIndex;
+        if (cap === 'both') return { moved: true, other: true };
+        if (cap === 'first') return { moved: movedIsFirst, other: !movedIsFirst };
+        if (cap === 'second') return { moved: !movedIsFirst, other: movedIsFirst };
+        return { moved: false, other: false };
+      }
+
+      function findErrorForWord(i) {
+        for (var k = 0; k < errorsList.length; k++) {
+          if (errorResolved[k]) continue;
+          var e = errorsList[k];
+          if ((e.type === 'extra' || e.type === 'wrong') && e.wordIndex === i) return k;
+          if (e.type === 'misplaced' && misplacedEffective(e, i)) return k;
+        }
+        return -1;
+      }
+      function findErrorForGap(i) {
+        for (var k = 0; k < errorsList.length; k++) {
+          if (errorResolved[k]) continue;
+          var e = errorsList[k];
+          if (e.type === 'missing' && e.gapIndex === i) return k;
+        }
+        return -1;
+      }
 
       function buildSentenceDOM() {
         sentEl.innerHTML = '';
-        gapEls.length = 0; wordEls.length = 0;
+        gapEls.length = 0; wordEls.length = 0; gapTail = {};
         for (var i = 0; i <= item.words.length; i++) {
           (function (i) {
             var gap = document.createElement('span');
@@ -1947,18 +2046,6 @@
         }
       }
 
-      function isErrorWord(i) {
-        var e = item.error;
-        if (!e) return false;
-        return (e.type === 'extra' && e.wordIndex === i) ||
-               (e.type === 'misplaced' && e.wordIndex === i) ||
-               (e.type === 'wrong' && e.wordIndex === i);
-      }
-      function isErrorGap(i) {
-        var e = item.error;
-        return !!e && e.type === 'missing' && e.gapIndex === i;
-      }
-
       function closeMenu() {
         menuEl.classList.remove('open');
         menuEl.innerHTML = '';
@@ -1973,14 +2060,37 @@
       // arrow pointing up into that chip — recalculated whenever the menu's
       // content changes (action list → word choices → "where to?"), since
       // the popover's own size can change even though the anchor doesn't.
+      // On a narrow/mobile viewport, perfectly centering on the chip can
+      // push part of the menu off-screen, so its left edge (and, if needed,
+      // whether it sits above or below the chip) is clamped to the
+      // viewport; the arrow is repositioned separately so it still points
+      // at the chip's actual center even when the box itself has shifted.
       function positionMenu() {
         if (!anchorEl) return;
+        var pad = 8;
         var itemRect = wrap.getBoundingClientRect();
         var chipRect = anchorEl.getBoundingClientRect();
-        var centerX = chipRect.left + chipRect.width / 2 - itemRect.left;
-        var bottomY = chipRect.bottom - itemRect.top;
-        menuEl.style.left = centerX + 'px';
-        menuEl.style.top = (bottomY + 8) + 'px';
+        var menuRect = menuEl.getBoundingClientRect();
+        var vw = document.documentElement.clientWidth;
+        var vh = document.documentElement.clientHeight;
+
+        var chipCenterX = chipRect.left + chipRect.width / 2;
+        var desiredLeft = chipCenterX - menuRect.width / 2;
+        var clampedLeft = Math.max(pad, Math.min(desiredLeft, vw - menuRect.width - pad));
+
+        var below = chipRect.bottom + 8;
+        var fitsBelow = below + menuRect.height + pad <= vh;
+        var fitsAbove = chipRect.top - menuRect.height - 8 >= pad;
+        var showAbove = !fitsBelow && fitsAbove;
+        var topAbs = showAbove ? (chipRect.top - menuRect.height - 8) : below;
+
+        menuEl.style.left = (clampedLeft - itemRect.left) + 'px';
+        menuEl.style.top = (topAbs - itemRect.top) + 'px';
+        menuEl.classList.toggle('flip', showAbove);
+
+        var arrowPad = 12;
+        var arrowLeft = Math.max(arrowPad, Math.min(chipCenterX - clampedLeft, menuRect.width - arrowPad));
+        menuEl.style.setProperty('--eh2-arrow-left', arrowLeft + 'px');
       }
 
       function flashWrong(elements) {
@@ -1995,31 +2105,35 @@
 
       function onWordClick(i) {
         if (resolved || pickingDestination) { closeMenu(); return; }
-        if (!isErrorWord(i)) return; // correct word: nothing happens
-        openActionMenu('word', i);
+        var errIdx = findErrorForWord(i);
+        if (errIdx === -1) return; // correct word: nothing happens
+        openActionMenu('word', i, errIdx);
       }
 
       function onGapClick(i) {
         if (pickingDestination) {
-          var e = item.error;
+          var e = errorsList[activeTarget.errorIndex];
+          var eff = misplacedEffective(e, activeTarget.index); // whichever word was actually tapped
           // The two gaps immediately touching the word itself aren't real
           // destinations — moving it there is a no-op. They were never
           // offered as options (see startDestinationPick), so a click here
           // shouldn't register as an attempt at all, right or wrong.
-          if (i === e.wordIndex || i === e.wordIndex + 1) return;
-          if (e.type === 'misplaced' && i === e.targetGapIndex) {
-            performMove(e.wordIndex, i);
-            resolved = true;
+          if (i === eff.wordIndex || i === eff.wordIndex + 1) return;
+          if (i === eff.targetGapIndex) {
+            performMove(eff.wordIndex, i, alwaysCapFlags(e, eff.wordIndex));
+            errorResolved[activeTarget.errorIndex] = true;
+            updateResolved();
             closeMenu();
           } else {
-            flashWrong([wordEls[e.wordIndex], gapEls[i]]);
+            flashWrong([wordEls[eff.wordIndex], gapEls[i]]);
             closeMenu();
           }
           return;
         }
         if (resolved) return;
-        if (!isErrorGap(i)) return; // correct/empty gap: nothing happens
-        openActionMenu('gap', i);
+        var errIdx = findErrorForGap(i);
+        if (errIdx === -1) return; // correct/empty gap: nothing happens
+        openActionMenu('gap', i, errIdx);
       }
 
       function makeActionBtn(emoji, label, handler) {
@@ -2037,10 +2151,10 @@
         return b;
       }
 
-      function openActionMenu(kind, index) {
+      function openActionMenu(kind, index, errIdx, anchorOverride) {
         closeMenu();
-        activeTarget = { kind: kind, index: index };
-        anchorEl = kind === 'word' ? wordEls[index] : gapEls[index];
+        activeTarget = { kind: kind, index: index, errorIndex: errIdx };
+        anchorEl = anchorOverride || (kind === 'word' ? wordEls[index] : gapEls[index]);
         anchorEl.classList.add('active-target');
         menuEl.classList.add('open');
 
@@ -2057,9 +2171,9 @@
       }
 
       function handleAction(action) {
-        var e = item.error;
         var t = activeTarget;
         if (!t) return;
+        var e = errorsList[t.errorIndex];
         var targetEl = t.kind === 'word' ? wordEls[t.index] : gapEls[t.index];
 
         if (action === 'insert') {
@@ -2076,7 +2190,8 @@
         if (action === 'delete') {
           if (e.type === 'extra' && t.kind === 'word' && t.index === e.wordIndex) {
             removeWordAndGaps(t.index);
-            resolved = true;
+            errorResolved[t.errorIndex] = true;
+            updateResolved();
             closeMenu();
           } else {
             flashWrong([targetEl]);
@@ -2085,7 +2200,7 @@
           return;
         }
         if (action === 'move') {
-          if (e.type === 'misplaced' && t.kind === 'word' && t.index === e.wordIndex) {
+          if (e.type === 'misplaced' && t.kind === 'word' && misplacedEffective(e, t.index)) {
             startDestinationPick();
           } else {
             flashWrong([targetEl]);
@@ -2107,12 +2222,13 @@
           b.textContent = opt;
           b.addEventListener('click', function () {
             if (opt === e.correct) {
-              if (mode === 'gap') insertWordAt(e.gapIndex, opt);
+              if (mode === 'gap') insertWordAt(e.gapIndex, opt, e.alwaysCap);
               else replaceWordAt(e.wordIndex, opt);
-              resolved = true;
+              errorResolved[activeTarget.errorIndex] = true;
+              updateResolved();
               closeMenu();
             } else {
-              var el = mode === 'gap' ? gapEls[e.gapIndex] : wordEls[e.wordIndex];
+              var el = mode === 'gap' ? (anchorEl || gapEls[e.gapIndex]) : wordEls[e.wordIndex];
               flashWrong([el]);
               closeMenu();
             }
@@ -2130,28 +2246,53 @@
         menuEl.appendChild(hint);
         menuEl.classList.add('open');
         pickingDestination = true;
-        var e = item.error;
+        var e = errorsList[activeTarget.errorIndex];
+        var eff = misplacedEffective(e, activeTarget.index); // whichever word was actually tapped
         gapEls.forEach(function (g, i) {
           // A gap right after sentence-ending punctuation isn't a real
           // position in the sentence — never offer it as a move destination.
           if (i > 0 && ENDERS.indexOf(item.words[i - 1]) !== -1) return;
           // Nor are the two gaps immediately touching the word being moved —
           // dropping it right back next to itself doesn't move anything.
-          if (i === e.wordIndex || i === e.wordIndex + 1) return;
+          if (i === eff.wordIndex || i === eff.wordIndex + 1) return;
           g.classList.add('target-pick');
         });
         positionMenu();
       }
 
-      function insertWordAt(gapIndex, word) {
+      function insertWordAt(gapIndex, word, alwaysCap) {
+        // Only the very first word to land in gap 0 can push the sentence's
+        // original first word out of position — a second missing word
+        // chained after it (via gapTail) lands later in the sentence and
+        // doesn't touch capitalization at all.
+        var pushesOldFirst = gapIndex === 0 && !gapTail[0] && wordEls[0];
+        var displayWord = (gapIndex === 0) ? capitalizeFirst(word) : word;
+
         var chip = document.createElement('span');
         chip.className = 'eh2-word inserted';
-        chip.textContent = word;
-        gapEls[gapIndex].insertAdjacentElement('afterend', chip);
+        chip.textContent = displayWord;
+        (gapTail[gapIndex] || gapEls[gapIndex]).insertAdjacentElement('afterend', chip);
 
+        if (pushesOldFirst && alwaysCap !== true) {
+          wordEls[0].textContent = decapitalizeFirst(wordEls[0].textContent);
+        }
+
+        // The slot after the new word stands in for the gap it was inserted
+        // into: if more missing words remain for that same gap, tapping it
+        // offers the next one (see findErrorForGap: array order = reading
+        // order). Otherwise it stays inert, like any other empty gap.
         var dot = document.createElement('span');
         dot.className = 'eh2-gap';
+        dot.addEventListener('click', function () { onInsertedGapClick(gapIndex, dot); });
         chip.insertAdjacentElement('afterend', dot);
+        gapTail[gapIndex] = dot;
+      }
+
+      function onInsertedGapClick(gapIndex, el) {
+        if (resolved || pickingDestination) return;
+        var errIdx = findErrorForGap(gapIndex);
+        if (errIdx === -1) return;
+        openActionMenu('gap', gapIndex, errIdx, el);
       }
 
       function replaceWordAt(i, word) {
@@ -2185,7 +2326,8 @@
         wordEl.parentNode.removeChild(wordEl);
       }
 
-      function performMove(wordIndex, targetGapIndex) {
+      function performMove(wordIndex, targetGapIndex, capFlags) {
+        capFlags = capFlags || { moved: false, other: false };
         var originalWord = item.words[wordIndex];
         var wasFirst = wordIndex === 0;
         var willBeFirst = targetGapIndex === 0;
@@ -2197,10 +2339,12 @@
 
         // A word moving into (or out of) the very first slot needs its
         // capitalization updated to match: sentence-initial words are
-        // capitalized, everything else isn't.
+        // capitalized, everything else isn't — UNLESS it's marked
+        // `alwaysCap` (e.g. "I", or a language/nationality name), in which
+        // case it never loses its capital letter, only ever gains one.
         var displayWord = willBeFirst
           ? capitalizeFirst(originalWord)
-          : (wasFirst ? decapitalizeFirst(originalWord) : originalWord);
+          : (wasFirst && !capFlags.moved ? decapitalizeFirst(originalWord) : originalWord);
 
         var chip = document.createElement('span');
         chip.className = 'eh2-word moved-in';
@@ -2213,8 +2357,10 @@
 
         if (willBeFirst && currentFirstWordEl && currentFirstWordEl.parentNode) {
           // Another word used to be first — it no longer is, so it loses
-          // its capital letter.
-          currentFirstWordEl.textContent = decapitalizeFirst(currentFirstWordEl.textContent);
+          // its capital letter (unless that word is itself `alwaysCap`).
+          if (!capFlags.other) {
+            currentFirstWordEl.textContent = decapitalizeFirst(currentFirstWordEl.textContent);
+          }
         } else if (wasFirst && !willBeFirst) {
           // The moved word WAS first and has left; whichever word is now
           // at the front of the sentence needs to gain a capital letter.
@@ -2225,7 +2371,7 @@
 
       okBtn.addEventListener('click', function () {
         if (resolved) {
-          verdictEl.textContent = item.error ? '✓ Fixed!' : '✓ Correct — nothing was wrong!';
+          verdictEl.textContent = errorsList.length ? '✓ Fixed!' : '✓ Correct — nothing was wrong!';
           verdictEl.className = 'eh2-verdict correct';
           wrap.classList.add('correct');
           if (!counted.has(idx)) {
@@ -2242,7 +2388,8 @@
 
       resetBtn.addEventListener('click', function () {
         closeMenu();
-        resolved = !item.error;
+        errorResolved = errorResolved.map(function () { return false; });
+        updateResolved();
         verdictEl.textContent = '';
         verdictEl.className = 'eh2-verdict';
         wrap.classList.remove('correct');
