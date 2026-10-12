@@ -62,6 +62,7 @@
     <button type="button" data-scene="party">🎉 Party</button>
     <button type="button" data-scene="classroom">🏫 Classroom</button>
     <button type="button" data-scene="beach">🏖️ Beach</button>
+    <button type="button" data-scene="ski">⛷️ Ski resort</button>
     <button type="button" data-scene="restaurant">🍽️ Restaurant</button>
     <span class="ps-gap"></span>
     <button type="button" id="psNew">🔀 New people</button>
@@ -143,6 +144,14 @@ const UPPER_TONE={tshirt:'bright',polo:'bright',tank:'bright',sportstop:'bright'
 const LOWER_TONE={jeans:'denim',bellbottoms:'denim',trousers:'dark',chinos:'earth',shorts:['earth','denim','bright'],leggings:'dark',skirt:['bright','dark'],trackpants:'dark',cargopants:'earth'};
 const FOOT_TONE={sneakers:'shoeAny',shoes:'shoeDark',boots:'shoeDark',sandals:'shoeDark',heels:['bright','shoeDark'],platforms:'bright',socks:'light',hikingboots:['shoeDark','earth']};
 const tone=t=>TONE[Array.isArray(t)?pick(t):t||'bright'];
+/* dressed for the snow: a warm top and trousers, boots, often gloves and a scarf */
+function winterize(d){
+  if(!d.upperGarment||['tshirt','tank','polo','sportstop','blouse','shirt','dress','croptop','croptank','gown','bikinitop','swimsuit'].includes(d.upperGarment)){ d.upperGarment=pick(['coat','hoodie','jacket','coat']); d.upperColor=pick(tone(UPPER_TONE[d.upperGarment])); d.upperPattern='plain'; }
+  if(!d.lowerGarment||['shorts','skirt','swimshorts','bikinibottom','leggings'].includes(d.lowerGarment)){ d.lowerGarment=pick(['trackpants','jeans','cargopants','trousers']); d.lowerColor=pick(tone(LOWER_TONE[d.lowerGarment])); d.lowerPattern='plain'; }
+  d.footwear=pick(['boots','hikingboots']); d.footwearColor=pick(TONE.shoeDark);
+  if(Math.random()<0.5){ d.accessories.push('glovesL','glovesR'); d.gloveColor=pick(COLS); }
+  if(Math.random()<0.4&&!d.accessories.includes('scarf')){ d.accessories.push('scarf'); d.scarfColor=pick(TONE.bright); }
+}
 const LIP_COLS=['#CC0000','#CC0066','#FF6666','#990033','#CC3333'];
 /* dress someone from the engine's outfit list: a real outfit, colours that match, and now and then one piece swapped */
 function dress(d,ids,keep){
@@ -325,6 +334,26 @@ const SCENES={
       s+=`<path d="M1014,${HORIZON+24}h32l-5,34h-22z" fill="#8a5a3a" stroke="#5e3b24" stroke-width="2"/>`+[[-30,-36],[-12,-58],[10,-62],[30,-40],[0,-30]].map(([dx,dy])=>`<path d="M1030,${HORIZON+26}Q${1030+dx*0.4},${HORIZON+26+dy} ${1030+dx},${HORIZON+26+dy}Q${1030+dx*0.8},${HORIZON+26+dy*0.4} 1030,${HORIZON+26}Z" fill="#3f9a4a" stroke="#2a6e33" stroke-width="2"/>`).join('');
       s+=stage(366,836);
       return s; }}
+  ,ski:{label:'Ski resort',snow:true,marks:[{x:150,t:'next to the snowman'},{x:1085,t:'next to the pine tree'},{x:640,t:'in front of the lodge'}],
+    targets:[['the snowman',150,300],['the pine tree',1085,200],['the lodge',640,200],['the chairlift',300,130],['the mountains',960,150]],depth:[392,672],
+    items:['skis','snowboard','skipole','mug','cup','phone','bag','skis','snowboard','mug','book','box'],
+    hats:['beanie','beanie','skimask','skimask','headband','beanie','headphones'],acc:['scarf','backpack','watchL','scarf','fannypack'],
+    outfits:['winter','winter','tracksuit','hooded','winter','smart'],count:['a scarf','a beanie','gloves','something red'],
+    poses:['standing','standing','walking','waving','hips','pointing'],seats:0,
+    bg(){ let s=`<rect width="${W}" height="${HORIZON}" fill="#cfe9fb"/>`;
+      [[-60,330,150],[200,420,80],[520,360,120],[820,460,60],[1050,300,110]].forEach(([x,w,top])=>{   /* mountains, snow on the peaks */
+        s+=`<path d="M${x},${HORIZON}L${x+w/2},${top}L${x+w},${HORIZON}Z" fill="#8d9bab" stroke="#6b7887" stroke-width="2"/><path d="M${x+w/2},${top}L${x+w/2-w*0.16},${top+(HORIZON-top)*0.3}l${w*0.06},-9l${w*0.05},12l${w*0.05},-11l${w*0.06},9Z" fill="#fff" stroke="#c9d6e2" stroke-width="1.5"/>`; });
+      s+=`<path d="M0,${HORIZON-40}L470,40" stroke="#333" stroke-width="2" fill="none"/>`;   /* chairlift */
+      for(let k=1;k<4;k++){ const x=470*k/4, y=HORIZON-40-(HORIZON-80)*k/4; s+=`<rect x="${x-4}" y="${y}" width="8" height="${HORIZON-y}" fill="#555"/>`; }
+      for(let k=0;k<6;k++){ const x=50+k*80, y=HORIZON-40-(HORIZON-80)*x/470; s+=`<path d="M${x},${y}v22" stroke="#333" stroke-width="2"/><path d="M${x-12},${y+22}h24v9h-24z" fill="#CC0000" stroke="#7a0000"/>`; }
+      s+=`<rect x="520" y="${HORIZON-120}" width="240" height="120" fill="#8a5a3a" stroke="#4e321f" stroke-width="3"/><path d="M496,${HORIZON-116}L640,${HORIZON-210}L784,${HORIZON-116}Z" fill="#6e4628" stroke="#3d2614" stroke-width="3"/><path d="M502,${HORIZON-120}L640,${HORIZON-205}L778,${HORIZON-120}" stroke="#fff" stroke-width="9" fill="none"/>`
+        +[545,610,690].map(x=>win(x,HORIZON-96,42,36,'#ffe9a6')).join('')+`<rect x="626" y="${HORIZON-58}" width="30" height="58" fill="#4e321f"/><rect x="580" y="${HORIZON-140}" width="120" height="24" rx="5" fill="#fff" stroke="#4e321f" stroke-width="2"/><text x="640" y="${HORIZON-123}" font-size="15" font-weight="700" text-anchor="middle" fill="#4e321f" font-family="var(--font-sans,sans-serif)">SKI LODGE</text>`;
+      const pine=(x,y,k)=>`<g transform="translate(${x} ${y}) scale(${k})"><rect x="-6" y="-26" width="12" height="26" fill="#6b4a2f"/><path d="M0,-160L-42,-70H-22L-54,-24H54L22,-70H42Z" fill="#2f6e45" stroke="#1f4a2e" stroke-width="2"/><path d="M0,-160L-19,-124H19Z" fill="#fff"/></g>`;
+      [830,900,1180].forEach(x=>{ s+=pine(x,HORIZON+4,0.9); });
+      s+=floor(HORIZON,H,'#f6f9fc','#dfe8f0',110);
+      s+=pine(1085,HORIZON+60,1.35);
+      s+=`<g transform="translate(150 ${HORIZON+52})"><circle cx="0" cy="-26" r="26" fill="#fff" stroke="#b9c7d4" stroke-width="2"/><circle cx="0" cy="-70" r="19" fill="#fff" stroke="#b9c7d4" stroke-width="2"/><circle cx="0" cy="-103" r="14" fill="#fff" stroke="#b9c7d4" stroke-width="2"/><circle cx="-5" cy="-106" r="2" fill="#222"/><circle cx="5" cy="-106" r="2" fill="#222"/><path d="M0,-103l13,3l-13,2z" fill="#FF6600"/><path d="M-12,-114h24v-5h-17v-15h11v15" fill="#222"/><path d="M-14,-90q14,7 28,0" stroke="#CC0000" stroke-width="5" fill="none"/><path d="M-18,-70L-48,-88M18,-70L48,-88" stroke="#6b4a2f" stroke-width="3"/></g>`;
+      return s; }}
 };
 const FACES=['joy','trust','serenity','interest','surprise','acceptance','anticipation','neutral'];
 const allFaces=[HC.NEUTRAL_FACE].concat(...HC.EMOTIONS.map(g=>g[1]));
@@ -405,6 +434,7 @@ function cast(sc){
     const teen=i===2||i===5, casual=S.outfits.filter(o=>TEEN_WEAR.includes(o));
     const d=person({fem,name,outfits:teen?(casual.length?casual:['casual','weekend']):S.outfits,keep:S.keep||teen});
     if(S.barefoot) d.footwear=pick([null,null,'sandals']);
+    if(S.snow) winterize(d);
     const seated=i<S.seats;
     const rider=!seated&&!!S.bikes&&i===Math.max(S.seats,3);   /* one cyclist, placed mid-scene so the bicycle is not cut off at the edge */
     const skater=!seated&&!rider&&!!S.bikes&&i===5&&Math.random()<0.5;   /* where there are bicycles, the teenage boy is sometimes on a skateboard */
@@ -475,6 +505,7 @@ function cast(sc){
     if(!pointedItem&&!seated&&!rider&&!skater&&d.torsoOrientation===0&&['standing','hips'].includes(pose)){
       const it=heldThing(d), set=POINT_SETS[POINTABLE[it]];
       if(set){ if(d.held.left===it) HC.mirror(d);   /* bring the object to the right hand first */
+        d.flipped=false;   /* front view: the left (pointing) arm is drawn over the right one; a mirror below swaps both together */
         Object.assign(d.joints,set.j); d.held={left:'hand_pointback',right:it}; d.heldRightGrip=set.grip; d.heldLeftGrip=null;
         if(Math.random()<0.5) HC.mirror(d);
         pose='pointing-item'; pointedItem=true; } }
@@ -482,6 +513,13 @@ function cast(sc){
       const sh={pointing:'hand_pointback',waving:'hand_open',reaching:'hand_open'}[pose];
       if(sh&&!seated&&!rider&&!skater){ const h=Math.abs(d.joints.shoulderL)>Math.abs(d.joints.shoulderR)?'left':'right'; if(!d.held[h]) d.held[h]=sh; } }
     for(const [h,k] of [['left','heldLeftGrip'],['right','heldRightGrip']]) if(['fork','knife','spoon'].includes(d.held[h])) d[k]=45;   /* cutlery is held at an angle, not straight along the hand */
+    if(S.snow&&!seated&&(i===3||(i===6&&Math.random()<0.6))){   /* one or two people skiing or snowboarding, in poses tuned in the poser */
+      const board=Math.random()<0.4; d.held={left:null,right:null}; d.heldLeftGrip=d.heldRightGrip=null; d.flipped=false;
+      if(board){ HC.applyPose(d,'standing'); d.prop='snowboard'; Object.assign(d.joints,{shoulderL:-60,elbowL:-20,wristL:0,shoulderR:60,elbowR:20,wristR:0}); pose='snowboarding'; }
+      else { HC.applyPose(d,'profile'); d.prop='skis'; d.held={left:'skipole',right:'skipole'};
+        Object.assign(d.joints,{hipL:-25,kneeL:35,hipR:-22,kneeR:38,torso:-12,neck:10,shoulderL:30,elbowL:30,wristL:0,shoulderR:34,elbowR:26,wristR:0}); pose='skiing'; }
+      d.propColor=pick(TONE.bright); if(Math.random()<0.5) HC.mirror(d); }
+    if((HC.HEADWEAR[d.headwear]||{}).mask) d.eyewear=Math.random()<0.5?'sports':null;   /* under a ski mask: sports sunglasses or nothing */
     out.push({d:HC.normalize(d),seated,pose});
   }
   if(S.carY&&Math.random()<0.6){   /* at most one car, driving along the road in front */
@@ -557,10 +595,11 @@ function facts(p,sc){
   if(d.headwear) f.push(['hat','wearing '+wearPhrase(HC.HEADWEAR,d.headwear,d.headwearColor)]);
   if(d.eyewear) f.push(['eyes','wearing '+HC.EYEWEAR[d.eyewear].phrase]);
   if(d.accessories.includes('backpack')) f.push(['pack','carrying a backpack']);
+  if(d.accessories.includes('scarf')){ const sc=[...new Set(HC.scarfColours(d.scarfColor||HC.SCARF_COL).map(HC.colourName))]; f.push(['scarf',`wearing a ${sc.length>1?sc.slice(0,-1).join(', ')+' and '+sc[sc.length-1]:sc[0]} scarf`]); }
   for(const h of ['left','right']){ const it=HC.ITEMS[d.held[h]]; if(it&&!it.hand) f.push(['item',`${it.verb} ${it.phrase}`]); }
   if(p.seated) f.push(['seat',sc==='beach'?'sitting on a beach chair':'sitting on a chair']);
-  if(p.place&&(p.seated||!['walking','riding','skating','driving'].includes(p.pose))) f.push(['place',(p.seated?'sitting ':'standing ')+p.place]);   /* only people who really are standing or sitting there */
-  if(!p.seated){ const act={waving:'waving',walking:'walking',reaching:'raising a hand',riding:'riding a bicycle',skating:'riding a skateboard',driving:'driving a car',mopping:'mopping the floor',sweeping:'sweeping the floor'}[p.pose]; if(act) f.push(['action',act]);
+  if(p.place&&(p.seated||!['walking','riding','skating','driving','skiing','snowboarding'].includes(p.pose))) f.push(['place',(p.seated?'sitting ':'standing ')+p.place]);   /* only people who really are standing or sitting there */
+  if(!p.seated){ const act={waving:'waving',walking:'walking',reaching:'raising a hand',riding:'riding a bicycle',skating:'riding a skateboard',skiing:'skiing',snowboarding:'snowboarding',driving:'driving a car',mopping:'mopping the floor',sweeping:'sweeping the floor'}[p.pose]; if(act) f.push(['action',act]);
     if(p.pose==='pointing'&&p.pointAt) f.push(['action','pointing at '+p.pointAt]);
     if(p.pose==='pointing-item'&&heldThing(d)) f.push(['action','pointing at '+HC.ITEMS[heldThing(d)].phrase]); }
   return f;

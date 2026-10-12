@@ -1,0 +1,872 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<title>Find the Person — Freer practice</title>
+<script>
+(function(){
+  try{
+    var saved = localStorage.getItem('theme-preference');
+    var theme = (saved === 'light' || saved === 'dark')
+      ? saved
+      : ((window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches) ? 'dark' : 'light');
+    document.documentElement.setAttribute('data-theme', theme);
+    var fs = parseFloat(localStorage.getItem('font-size-preference'));
+    if (fs >= 10 && fs <= 28) document.documentElement.style.setProperty('--fs-base', fs + 'px');
+  }catch(e){}
+})();
+</script>
+<link rel="stylesheet" href="house.css">
+<style>
+  /* Zero-specificity fallbacks: only apply if house.css is missing. */
+  :where(:root){
+    --color-background-primary:#fff; --color-background-tertiary:#eeeef0;
+    --color-background-info:#e6f1fb; --color-border-primary:#d4d4d8;
+    --text-primary:#1a1a1a; --text-secondary:#5b5b60; --text-muted:#8b8b90; --text-accent:#185fa5;
+    --surface-1:#f7f7f8; --surface-2:#fff; --border:#e3e3e6; --radius:12px;
+    --bad:#b0392f; --good:#2f7d3a;
+    --font-sans:-apple-system,BlinkMacSystemFont,"Segoe UI",Helvetica,Arial,sans-serif;
+    --font-mono:"SF Mono","JetBrains Mono",Menlo,Consolas,monospace;
+  }
+  :where(body){ font-family:var(--font-sans); color:var(--text-primary); background:var(--color-background-primary); margin:0; line-height:1.5; }
+  :where(.page){ max-width:1000px; margin:0 auto; padding:28px 20px 80px; }
+
+  /* Page-specific: everything is ps- prefixed. */
+  .page{ max-width:1100px; }
+  .ps-tools{ display:flex; flex-wrap:wrap; gap:8px; align-items:center; margin:14px 0 10px; }
+  .ps-tools button{ font-size:0.9rem; padding:7px 14px; }
+  .ps-tools button[aria-pressed="true"]{ background:var(--color-background-info); border-color:var(--text-accent); color:var(--text-accent); }
+  .ps-tools .ps-gap{ flex:1; }
+  .ps-scroll{ overflow-x:auto; border:1px solid var(--border); border-radius:var(--radius); background:var(--surface-1); }
+  .ps-scroll svg{ display:block; width:100%; min-width:860px; height:auto; }
+  .ps-cols{ display:grid; grid-template-columns:minmax(0,1fr); gap:14px; margin-top:16px; }
+  @media (min-width:760px){ .ps-cols{ grid-template-columns:1fr 1fr; } }
+  .ps-box{ border:1px solid var(--border); border-radius:var(--radius); background:var(--surface-2); padding:14px 16px; }
+  .ps-box h2{ font-size:0.7857rem; font-weight:600; letter-spacing:.06em; text-transform:uppercase; color:var(--text-muted); margin:0 0 8px; }
+  .ps-box ul, .ps-box ol{ margin:0; padding-left:1.2em; } .ps-box li{ margin:5px 0; }
+  .ps-frame{ font-style:italic; color:var(--text-secondary); }
+  details.ps-key{ margin-top:14px; } details.ps-key summary{ cursor:pointer; color:var(--text-secondary); }
+  details.ps-key li{ margin:4px 0; }
+  .ps-dice-unused{ display:flex; flex-direction:column; align-items:center; margin-top:16px; }
+  .ps-dice .q-card{ width:100%; box-sizing:border-box; text-align:center; }
+
+  .fp-tools{ display:flex; flex-wrap:wrap; gap:8px; align-items:center; margin:12px 0; }
+  .fp-tools button{ font-size:0.9rem; padding:7px 14px; }
+  .fp-tools button[aria-pressed="true"]{ background:var(--color-background-info); border-color:var(--text-accent); color:var(--text-accent); }
+  .fp-tools label{ font-size:0.9rem; color:var(--text-secondary); display:flex; align-items:center; gap:6px; }
+  .fp-gap{ flex:1; }
+  #fpThemes{ display:flex; flex-wrap:wrap; gap:8px; }
+  #fpStart{ font-weight:700; }
+  .fp-clock{ font-variant-numeric:tabular-nums; font-weight:700; font-size:1.35rem; min-width:3.6em; text-align:center; }
+  .fp-clock.fp-low{ color:var(--bad); }
+  .fp-best{ font-size:0.85rem; color:var(--text-muted); }
+  .fp-task{ border:1px solid var(--border); border-left:5px solid var(--text-accent); border-radius:var(--radius); background:var(--surface-2); padding:12px 16px; font-size:1.15rem; margin:10px 0 4px; }
+  .fp-task p{ margin:0; }
+  details.fp-vi{ margin:6px 0; } details.fp-vi summary{ cursor:pointer; color:var(--text-secondary); }
+  .fp-pic{ display:inline-block; margin-top:8px; border:1px solid var(--border); border-radius:var(--radius); background:var(--surface-1); padding:6px 14px; }
+  .fp-pic svg{ display:block; height:240px; width:auto; }
+  .fp-note{ min-height:1.4em; margin:4px 0 8px; font-size:0.9rem; color:var(--text-secondary); }
+  .fp-note.bad{ color:var(--bad); }
+  .fp-scroll{ overflow-x:auto; border:1px solid var(--border); border-radius:var(--radius); background:var(--surface-1); }
+  .fp-stage{ position:relative; min-width:900px; overflow:hidden; cursor:crosshair; touch-action:manipulation; }
+  .fp-stage #fpSvg{ display:block; width:100%; height:auto; }
+  .fp-stage.fp-blur #fpSvg{ filter:blur(10px); pointer-events:none; }
+  .fp-cover{ position:absolute; inset:0; display:flex; align-items:center; justify-content:center; pointer-events:none; }
+  .fp-cover[hidden]{ display:none; }
+  .fp-cover span{ background:var(--surface-2); color:var(--text-primary); border:1px solid var(--border); border-radius:999px; padding:10px 20px; font-size:1.05rem; box-shadow:0 4px 18px rgba(0,0,0,.18); }
+  .fp-loupe{ position:absolute; width:230px; height:230px; border-radius:50%; overflow:hidden; border:4px solid #333; box-shadow:0 6px 22px rgba(0,0,0,.35); pointer-events:none; background:#fff; }
+  .fp-loupe svg{ display:block; width:100%; height:100%; }
+  .fp-result{ margin-top:14px; }
+  .fp-result h2{ font-size:1.2rem; margin:0 0 6px; text-transform:none; letter-spacing:0; color:var(--text-primary); }
+  .fp-score{ font-size:1.3rem; }
+  .fp-break{ border-collapse:collapse; margin:6px 0; font-size:0.9rem; }
+  .fp-break td, .fp-break th{ padding:3px 14px 3px 0; text-align:left; border-bottom:1px solid var(--border); }
+  .fp-break td:last-child, .fp-break th:last-child{ text-align:right; font-variant-numeric:tabular-nums; }
+  .fp-say{ color:var(--text-secondary); }
+</style>
+</head>
+<body>
+<div class="page" id="page">
+  <span class="cefr-tag cefr-a2">A2 · Elementary</span>
+  <h1>Find the person</h1>
+  <p class="subtitle">About a hundred people, one description. Read who you are looking for, press <strong>Start</strong> and click the person before the time runs out.</p>
+  <div class="fp-tools"><div id="fpThemes"></div><span class="fp-gap"></span><button type="button" id="fpNew">🔀 New crowd</button></div>
+  <div class="fp-task"><p id="fpTask">Building the crowd…</p></div>
+  <details class="fp-vi" id="fpVi"><summary id="fpViSum">👤 What does the person look like?</summary><div class="fp-pic" id="fpPic"></div></details>
+  <div class="fp-tools">
+    <button type="button" id="fpStart">🎬 Start</button>
+    <span class="fp-clock" id="fpClock" aria-live="off">2:00</span>
+    <label>Time limit <select id="fpLimit"></select></label>
+    <button type="button" id="fpMag" aria-pressed="false">🔍 Magnify</button>
+    <button type="button" id="fpEasy">🐣 Easier</button>
+    <span class="fp-gap"></span><span class="fp-best" id="fpBest"></span>
+  </div>
+  <p class="fp-note" id="fpNote" role="status"></p>
+  <div class="fp-scroll">
+    <div class="fp-stage fp-blur" id="fpStage">
+      <svg id="fpSvg" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 6000 3300" role="img" aria-label="A crowd of about a hundred people"></svg>
+      <div class="fp-cover" id="fpCover"><span>Building the crowd…</span></div>
+      <div class="fp-loupe" id="fpLoupe" hidden><svg id="fpLoupeSvg" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100"><use href="#fpView"/></svg></div>
+    </div>
+  </div>
+  <div class="ps-box fp-result" id="fpResult" hidden></div>
+
+  <div class="ps-cols">
+    <div class="ps-box"><h2>How to play</h2>
+      <ol>
+        <li>Read the description. Before you start, you can open the picture of the person.</li>
+        <li>Press <strong>🎬 Start</strong>. The picture closes and the clock starts.</li>
+        <li>Click the person. A wrong click costs 5 seconds.</li>
+        <li>Need help? <strong>🔍 Magnify</strong> shows a bigger view under the pointer. <strong>🐣 Easier</strong> turns part of the picture grey: the person isn’t there. You can use it three times.</li>
+      </ol>
+    </div>
+    <div class="ps-box"><h2>Score</h2>
+      <ul>
+        <li>Up to 1000 points, for the time you have left.</li>
+        <li>🔍 Magnifying glass: ×0.85</li>
+        <li>🐣 Easier: ×0.8 each time</li>
+        <li>👤 Opening the picture after you start: ×0.6</li>
+      </ul>
+      <h2 style="margin-top:12px">Say it</h2>
+      <ul>
+        <li><span class="ps-frame">I’m looking for the woman wearing … and holding … .</span></li>
+        <li><span class="ps-frame">There she is! She’s on the left, at the back.</span></li>
+        <li><span class="ps-frame">Is it the man carrying …? — No, he’s wearing … .</span></li>
+      </ul>
+    </div>
+  </div>
+</div>
+
+<div id="theme-toggle-wrap">
+  <button id="theme-toggle" aria-label="Toggle light/dark mode" title="Toggle light/dark mode">
+    <span id="theme-icon">☀️</span>
+  </button>
+</div>
+<script src="house.js"></script>
+
+<!-- HouseCharacter engine (shared file) -->
+<script src="house-character.js"></script>
+
+<script>
+(function(){
+const HC=HouseCharacter;
+const COL={red:'#CC0000',blue:'#0066CC',green:'#00CC66',yellow:'#FFCC00',black:'#000000',white:'#FFFFFF',pink:'#FF66CC',purple:'#6600CC',orange:'#FF6600',grey:'#666666',brown:'#663300'};
+const COLS=Object.values(COL);
+const rand=n=>Math.floor(Math.random()*n), pick=a=>a[rand(a.length)];
+const shuffle=a=>{a=a.slice();for(let i=a.length-1;i>0;i--){const j=rand(i+1);[a[i],a[j]]=[a[j],a[i]];}return a;};
+const clone=o=>JSON.parse(JSON.stringify(o));
+const NAMES={female:['Ana','Maya','Sofia','Lucy','Emma','Zoe','Nora','Rosa','Amy','Lina','Kim','Eva','Mia','Sara','Julia','Carla'],
+             male:['Leo','Sam','Tom','Omar','Luis','Ben','Dan','Max','Ivan','Raj','Ken','Noah','Pablo','Hugo','Alex','Marco']};
+const art=w=>/^[aeiou]/i.test(w)?'an':'a';
+function wearPhrase(reg,id,col){const g=reg[id], c=HC.colourName(col||g.col); return g.pl?`${c} ${g.noun}`:`${art(c)} ${c} ${g.noun}`;}
+const WARDROBE={
+  female:{upper:['tshirt','blouse','coat','dress','sportstop','jacket','polo','hoodie'],lower:['jeans','skirt','trousers','shorts','leggings','bellbottoms','trackpants','cargopants'],foot:['sneakers','heels','boots','sandals','shoes','hikingboots']},
+  male:{upper:['tshirt','shirt','coat','polo','tank','jacket','jacketopen','hoodie'],lower:['jeans','trousers','shorts','chinos','bellbottoms','trackpants','cargopants'],foot:['sneakers','shoes','boots','sandals','hikingboots']}};
+function person(o){
+  o=o||{}; const fem=o.fem!==undefined?o.fem:Math.random()<0.5, d=HC.defaults(), w=WARDROBE[fem?'female':'male'];
+  d.bodyType=fem?'female':'male'; d.name=o.name||pick(NAMES[d.bodyType]);
+  d.skin=1+rand(6); d.eyeColor=1+rand(16); d.hairColor=pick(['1-0','3-0','4-0','5-0','6-0','7-0','8-0','5-7','7-77','grey']);
+  d.hairStyle=pick(fem?['bob','long','ponytail','bun','pigtails','curly','afro','short']:['short','crew','sidepart','buzz','curly','afro','pompadour','bald']);
+  d.facialHair=fem?'none':pick(['none','none','none','stubble','moustache','beard','goatee']);
+  d.height=pick([2,3,3,4]); d.weight=pick([2,3,3,4]);
+  if(o.outfits){ dress(d,o.outfits,o.keep); return d; }
+  const cs=shuffle(COLS);
+  d.upperGarment=pick(o.upper||w.upper); d.upperColor=cs[0];
+  d.lowerGarment=d.upperGarment==='dress'?null:pick(o.lower||w.lower); d.lowerColor=cs[1];
+  d.footwear=pick(w.foot); d.footwearColor=pick(['#000000','#663300','#FFFFFF','#CC0000']);
+  return d;
+}
+/* colour families that sit well together, by kind of garment */
+const TONE={dark:['#000000','#000066','#666666','#663300'],denim:['#000066','#0066CC','#666666','#000000'],
+  light:['#FFFFFF','#CCCCFF','#CCFFFF','#FFCCCC','#FFFFCC','#CCFFCC'],bright:['#CC0000','#0066CC','#00CC66','#FFCC00','#FF66CC','#6600CC','#FF6600','#00CCCC'],
+  earth:['#663300','#CCCC66','#666600','#CC6600','#666666'],shoeDark:['#000000','#663300'],shoeAny:['#FFFFFF','#000000','#CC0000','#0066CC']};
+const UPPER_TONE={tshirt:'bright',polo:'bright',tank:'bright',sportstop:'bright',shirt:'light',blouse:'light',coat:['dark','bright'],jacket:'dark',jacketopen:'dark',vest:'dark',dress:'bright',gown:['bright','dark'],hoodie:['dark','bright'],hoodieup:['dark','bright']};
+const LOWER_TONE={jeans:'denim',bellbottoms:'denim',trousers:'dark',chinos:'earth',shorts:['earth','denim','bright'],leggings:'dark',skirt:['bright','dark'],trackpants:'dark',cargopants:'earth'};
+const FOOT_TONE={sneakers:'shoeAny',shoes:'shoeDark',boots:'shoeDark',sandals:'shoeDark',heels:['bright','shoeDark'],platforms:'bright',socks:'light',hikingboots:['shoeDark','earth']};
+const tone=t=>TONE[Array.isArray(t)?pick(t):t||'bright'];
+/* dressed for the snow: a warm top and trousers, boots, often gloves and a scarf */
+function winterize(d){
+  if(!d.upperGarment||['tshirt','tank','polo','sportstop','blouse','shirt','dress','croptop','croptank','gown','bikinitop','swimsuit'].includes(d.upperGarment)){ d.upperGarment=pick(['coat','hoodie','jacket','coat']); d.upperColor=pick(tone(UPPER_TONE[d.upperGarment])); d.upperPattern='plain'; }
+  if(!d.lowerGarment||['shorts','skirt','swimshorts','bikinibottom','leggings'].includes(d.lowerGarment)){ d.lowerGarment=pick(['trackpants','jeans','cargopants','trousers']); d.lowerColor=pick(tone(LOWER_TONE[d.lowerGarment])); d.lowerPattern='plain'; }
+  d.footwear=pick(['boots','hikingboots']); d.footwearColor=pick(TONE.shoeDark);
+  if(Math.random()<0.5){ d.accessories.push('glovesL','glovesR'); d.gloveColor=pick(COLS); }
+  if(Math.random()<0.4&&!d.accessories.includes('scarf')){ d.accessories.push('scarf'); d.scarfColor=pick(TONE.bright); }
+}
+const LIP_COLS=['#CC0000','#CC0066','#FF6666','#990033','#CC3333'];
+/* dress someone from the engine's outfit list: a real outfit, colours that match, and now and then one piece swapped */
+function dress(d,ids,keep){
+  const o=pick(HC.OUTFITS[d.bodyType].filter(x=>!ids||ids.includes(x.id))), w=WARDROBE[d.bodyType];
+  d.upperGarment=o.upperGarment; d.lowerGarment=o.lowerGarment; d.footwear=o.footwear; d.accessories=o.tie?['tie']:[];
+  if(!keep&&d.lowerGarment&&Math.random()<0.3){ if(Math.random()<0.5) d.lowerGarment=pick(w.lower); else d.upperGarment=pick(w.upper.filter(u=>u!=='dress')); }
+  if(!['shirt','vest','jacket','jacketopen'].includes(d.upperGarment)) d.accessories=[];
+  d.lowerColor=d.lowerGarment?pick(tone(LOWER_TONE[d.lowerGarment])):null;
+  let uc, n=0; do{ uc=pick(tone(UPPER_TONE[d.upperGarment])); }while(uc===d.lowerColor&&++n<8);
+  d.upperColor=uc; d.footwearColor=pick(tone(FOOT_TONE[d.footwear])); d.tieColor=pick(TONE.bright);
+  if(['tshirt','shirt','blouse','dress','polo'].includes(d.upperGarment)&&Math.random()<0.2){ d.upperPattern=pick(['vstripes','hstripes','checkered','polka','floral','sidestripe']); d.upperColor2=d.upperColor==='#FFFFFF'?pick(TONE.bright):'#FFFFFF'; }
+  if(['shorts','leggings'].includes(d.lowerGarment)&&Math.random()<0.2){ d.lowerPattern='sidestripe'; d.lowerColor2=d.lowerColor==='#FFFFFF'?pick(TONE.bright):'#FFFFFF'; }   /* sporty side stripe */
+  if(d.lowerGarment==='trackpants') d.lowerColor2=pick(['#FFFFFF','#FFCC00','#CC0000','#00CCCC']);
+  if(d.bodyType==='female'&&o.makeup){   /* dressier outfits come with make-up */
+    d.accessories.push('lipstick'); d.lipstickColor=pick(LIP_COLS);
+    if(Math.random()<0.8) d.accessories.push('mascara'); if(Math.random()<0.55) d.accessories.push('blush');
+  }
+  return o.id;
+}
+/* bend an arm so the item in that hand is easy to see */
+function holdPose(d,hand){
+  const it=d.held[hand]; if(!it||d.torsoOrientation) return;
+  const S=hand==='left'?'L':'R', sg=hand==='left'?-1:1;
+  if(it==='umbrella'||it==='parasol'){ d.joints['shoulder'+S]=sg*20; d.joints['elbow'+S]=sg*140; }
+  else if(['cup','mug','bowl','plate','cake','pizzabox','phone','tablet','book','multimeter','flashlight','wrench','hammer','basketball','soccerball','volleyball','beachball','tennisball','baseball','football','screwdriver','paintbrush','spoon','fork','pan','microphone','trumpet','maraca','tambourine','flute','violin','drumstick'].includes(it)){ d.joints['shoulder'+S]=sg*12; d.joints['elbow'+S]=-sg*82; }
+}
+
+/* nominal poses, tuned by hand in the poser */
+const RIDE={bmx:{root:0,pelvis:0,torso:-25,neck:20,shoulderL:19,elbowL:84,wristL:0,shoulderR:46,elbowR:50,wristR:0,hipL:51,kneeL:-70,ankleL:95,hipR:67,kneeR:-123,ankleR:110},roadbike:{root:0,pelvis:3,torso:-72,neck:56,shoulderL:98,elbowL:42,wristL:0,shoulderR:109,elbowR:35,wristR:0,hipL:30,kneeL:-50,ankleL:73,hipR:57,kneeR:-123,ankleR:119},mtb:{root:0,pelvis:3,torso:-46,neck:35,shoulderL:85,elbowL:29,wristL:0,shoulderR:82,elbowR:32,wristR:0,hipL:26,kneeL:-38,ankleL:80,hipR:55,kneeR:-123,ankleR:119}};
+const PHONE_POSE={left:{root:0,pelvis:0,torso:0,neck:-25,shoulderL:60,elbowL:52,wristL:6,shoulderR:27,elbowR:139,wristR:-21,hipL:0,kneeL:0,ankleL:-35,hipR:0,kneeR:0,ankleR:35},front:{root:0,pelvis:0,torso:2,neck:0,shoulderL:-24,elbowL:145,wristL:26,shoulderR:0,elbowR:-145,wristR:-33,hipL:0,kneeL:0,ankleL:-35,hipR:0,kneeR:0,ankleR:35}};
+const PARASOL_POSE={root:0,pelvis:0,torso:0,neck:0,shoulderL:-25,elbowL:43,wristL:0,shoulderR:96,elbowR:126,wristR:4,hipL:0,kneeL:0,ankleL:-35,hipR:0,kneeR:0,ankleR:35};
+/* ── musicians posed by hand in the poser. Their poses, grips, props and instruments are kept exactly;
+      looks (skin, hair, colours, sometimes a garment) are varied each time. ── */
+const MUSICIANS={"bassist":{"schema":"house-character/1","name":"Bassist","bodyType":"female","skin":3,"eyeColor":12,"hairColor":"4-0","hairStyle":"long","facialHair":"none","eyebrows":"raised","eyes":"open","mouth":"rest","height":3,"weight":3,"upperGarment":"gown","lowerGarment":null,"footwear":"heels","headwear":null,"eyewear":null,"accessories":["necklace","choker","drops"],"prop":null,"propColor":null,"upperColor":null,"lowerColor":null,"footwearColor":null,"headwearColor":null,"eyewearColor":null,"sockColor":null,"tieColor":null,"gloveColor":null,"packColor":null,"heldLeftGrip":90,"heldRightGrip":-45,"thumbFlipL":false,"thumbFlipR":true,"heldLeftColor":null,"heldRightColor":null,"upperPattern":"plain","upperColor2":null,"lowerPattern":"plain","lowerColor2":null,"head":"front","torsoOrientation":-20,"pelvisOrientation":0,"held":{"left":"doublebass","right":"violinbow"},"joints":{"root":0,"pelvis":3,"torso":2,"neck":-7,"shoulderL":-140,"elbowL":-55,"wristL":-69,"shoulderR":40,"elbowR":-58,"wristR":-18,"hipL":-3,"kneeL":-1,"ankleL":-76,"hipR":-1,"kneeR":-4,"ankleR":75}},"cellist":{"schema":"house-character/1","name":"Cellist","bodyType":"female","skin":3,"eyeColor":12,"hairColor":"4-0","hairStyle":"long","facialHair":"none","eyebrows":"raised","eyes":"open","mouth":"rest","height":3,"weight":3,"upperGarment":"gown","lowerGarment":null,"footwear":"heels","headwear":null,"eyewear":null,"accessories":["necklace","choker","drops"],"prop":"stool","propColor":null,"upperColor":null,"lowerColor":null,"footwearColor":null,"headwearColor":null,"eyewearColor":null,"sockColor":null,"tieColor":null,"gloveColor":null,"packColor":null,"heldLeftGrip":90,"heldRightGrip":-45,"thumbFlipL":true,"thumbFlipR":false,"heldLeftColor":null,"heldRightColor":null,"upperPattern":"plain","upperColor2":null,"lowerPattern":"plain","lowerColor2":null,"head":"front","torsoOrientation":-30,"pelvisOrientation":-5,"held":{"left":"cello","right":"violinbow"},"joints":{"root":0,"pelvis":4,"torso":0,"neck":0,"shoulderL":-119,"elbowL":-121,"wristL":-23,"shoulderR":62,"elbowR":-78,"wristR":-22,"hipL":-30,"kneeL":48,"ankleL":-105,"hipR":16,"kneeR":-30,"ankleR":99}},"drummer":{"schema":"house-character/1","name":"Drummer","bodyType":"male","skin":3,"eyeColor":12,"hairColor":"4-0","hairStyle":"crew","facialHair":"none","eyebrows":"angry","eyes":"open","mouth":"sneer","height":3,"weight":3,"upperGarment":"tshirt","lowerGarment":"cargopants","footwear":"sneakers","headwear":null,"eyewear":"aviators","accessories":[],"prop":"drums","propColor":"#FF0000","upperColor":"#000000","lowerColor":"#FFCC66","footwearColor":null,"headwearColor":null,"eyewearColor":"#666666","sockColor":null,"tieColor":"#66CCCC","gloveColor":null,"packColor":null,"heldLeftGrip":-45,"heldRightGrip":-45,"thumbFlipL":true,"thumbFlipR":false,"heldLeftColor":null,"heldRightColor":null,"upperPattern":"plain","upperColor2":null,"lowerPattern":"plain","lowerColor2":null,"head":"front","torsoOrientation":-30,"pelvisOrientation":-5,"held":{"left":"drumstick","right":"drumstick"},"joints":{"root":0,"pelvis":4,"torso":5,"neck":-9,"shoulderL":63,"elbowL":38,"wristL":2,"shoulderR":26,"elbowR":-124,"wristR":17,"hipL":-52,"kneeL":62,"ankleL":-98,"hipR":34,"kneeR":-57,"ankleR":106}},"hip_hop_vocalist":{"schema":"house-character/1","name":"Hip hop vocalist","bodyType":"male","skin":3,"eyeColor":12,"hairColor":"4-0","hairStyle":"crew","facialHair":"none","eyebrows":"angry","eyes":"angry","mouth":"u","height":3,"weight":3,"upperGarment":"hoodieup","lowerGarment":"trackpants","footwear":"sneakers","headwear":null,"eyewear":"sports","accessories":["necklace"],"prop":null,"propColor":null,"upperColor":"#0000CC","lowerColor":"#0000CC","footwearColor":"#FFFFFF","headwearColor":null,"eyewearColor":"#FF0000","sockColor":null,"tieColor":null,"gloveColor":null,"packColor":null,"heldLeftGrip":90,"heldRightGrip":90,"thumbFlipL":true,"thumbFlipR":false,"heldLeftColor":null,"heldRightColor":null,"upperPattern":"sidestripe","upperColor2":null,"lowerPattern":"plain","lowerColor2":null,"head":"left","torsoOrientation":-30,"pelvisOrientation":-5,"held":{"left":null,"right":"microphone"},"joints":{"root":0,"pelvis":4,"torso":-9,"neck":-13,"shoulderL":-145,"elbowL":-127,"wristL":-32,"shoulderR":80,"elbowR":128,"wristR":14,"hipL":-29,"kneeL":32,"ankleL":-79,"hipR":14,"kneeR":-26,"ankleR":82}},"keyboard_player":{"schema":"house-character/1","name":"Keyboard player","bodyType":"male","skin":3,"eyeColor":12,"hairColor":"4-0","hairStyle":"afro","facialHair":"none","eyebrows":"neutral","eyes":"open","mouth":"e","height":3,"weight":3,"upperGarment":"jacketopen","lowerGarment":"jeans","footwear":"shoes","headwear":null,"eyewear":"glasses","accessories":["tie"],"prop":"keyboard","propColor":null,"upperColor":null,"lowerColor":null,"footwearColor":null,"headwearColor":null,"eyewearColor":"#FFCC00","sockColor":null,"tieColor":"#66CCCC","gloveColor":null,"packColor":null,"heldLeftGrip":90,"heldRightGrip":90,"thumbFlipL":false,"thumbFlipR":false,"heldLeftColor":null,"heldRightColor":null,"upperPattern":"plain","upperColor2":null,"lowerPattern":"plain","lowerColor2":null,"head":"front","torsoOrientation":-30,"pelvisOrientation":-5,"held":{"left":null,"right":null},"joints":{"root":0,"pelvis":4,"torso":-1,"neck":-1,"shoulderL":-54,"elbowL":38,"wristL":13,"shoulderR":29,"elbowR":-73,"wristR":28,"hipL":-7,"kneeL":7,"ankleL":-73,"hipR":5,"kneeR":-11,"ankleR":63}},"mandolinist":{"schema":"house-character/1","name":"Mandolinist","bodyType":"female","skin":3,"eyeColor":12,"hairColor":"4-0","hairStyle":"long","facialHair":"none","eyebrows":"raised","eyes":"open","mouth":"rest","height":3,"weight":3,"upperGarment":"gown","lowerGarment":null,"footwear":"heels","headwear":null,"eyewear":null,"accessories":["necklace","choker","drops"],"prop":null,"propColor":null,"upperColor":null,"lowerColor":null,"footwearColor":null,"headwearColor":null,"eyewearColor":null,"sockColor":null,"tieColor":null,"gloveColor":null,"packColor":null,"heldLeftGrip":null,"heldRightGrip":-180,"thumbFlipL":false,"thumbFlipR":true,"heldLeftColor":null,"heldRightColor":null,"upperPattern":"plain","upperColor2":null,"lowerPattern":"plain","lowerColor2":null,"head":"front","torsoOrientation":-20,"pelvisOrientation":0,"held":{"left":"mandolin","right":null},"joints":{"root":0,"pelvis":3,"torso":0,"neck":0,"shoulderL":-34,"elbowL":166,"wristL":5,"shoulderR":64,"elbowR":-120,"wristR":-41,"hipL":-3,"kneeL":-1,"ankleL":-76,"hipR":-1,"kneeR":-4,"ankleR":75}},"pianist":{"schema":"house-character/1","name":"Pianist","bodyType":"female","skin":3,"eyeColor":12,"hairColor":"4-0","hairStyle":"long","facialHair":"none","eyebrows":"raised","eyes":"open","mouth":"rest","height":3,"weight":3,"upperGarment":"dress","lowerGarment":null,"footwear":"shoes","headwear":null,"eyewear":null,"accessories":["necklace","choker","drops"],"prop":"piano","propColor":null,"upperColor":null,"lowerColor":null,"footwearColor":null,"headwearColor":null,"eyewearColor":null,"sockColor":null,"tieColor":null,"gloveColor":null,"packColor":null,"heldLeftGrip":null,"heldRightGrip":-90,"thumbFlipL":false,"thumbFlipR":false,"heldLeftColor":null,"heldRightColor":null,"upperPattern":"plain","upperColor2":null,"lowerPattern":"plain","lowerColor2":null,"head":"left","torsoOrientation":-70,"pelvisOrientation":0,"held":{"left":null,"right":null},"joints":{"root":0,"pelvis":0,"torso":-2,"neck":-18,"shoulderL":33,"elbowL":92,"wristL":2,"shoulderR":-9,"elbowR":119,"wristR":-47,"hipL":80,"kneeL":-106,"ankleL":112,"hipR":97,"kneeR":-104,"ankleR":105}},"piano_singer":{"schema":"house-character/1","name":"Piano singer","bodyType":"female","skin":3,"eyeColor":12,"hairColor":"4-0","hairStyle":"long","facialHair":"none","eyebrows":"raised","eyes":"closed","mouth":"o","height":3,"weight":3,"upperGarment":"gown","lowerGarment":null,"footwear":"heels","headwear":null,"eyewear":null,"accessories":["drops"],"prop":"piano","propColor":null,"upperColor":null,"lowerColor":null,"footwearColor":null,"headwearColor":null,"eyewearColor":null,"sockColor":null,"tieColor":null,"gloveColor":null,"packColor":null,"heldLeftGrip":null,"heldRightGrip":45,"thumbFlipL":false,"thumbFlipR":false,"heldLeftColor":null,"heldRightColor":null,"upperPattern":"plain","upperColor2":null,"lowerPattern":"plain","lowerColor2":null,"head":"left","torsoOrientation":-60,"pelvisOrientation":0,"held":{"left":null,"right":"microphone"},"joints":{"root":0,"pelvis":-12,"torso":10,"neck":29,"shoulderL":14,"elbowL":78,"wristL":-22,"shoulderR":74,"elbowR":123,"wristR":12,"hipL":80,"kneeL":-127,"ankleL":129,"hipR":77,"kneeR":-149,"ankleR":103}},"rock_bassist":{"schema":"house-character/1","name":"Rock bassist","bodyType":"male","skin":3,"eyeColor":12,"hairColor":"4-0","hairStyle":"long","facialHair":"goatee","eyebrows":"angry","eyes":"open","mouth":"grin","height":3,"weight":3,"upperGarment":"tshirt","lowerGarment":"cargopants","footwear":"sneakers","headwear":null,"eyewear":null,"accessories":[],"prop":null,"propColor":"#FF0000","upperColor":"#000000","lowerColor":"#FFCC66","footwearColor":null,"headwearColor":null,"eyewearColor":"#666666","sockColor":null,"tieColor":"#66CCCC","gloveColor":null,"packColor":null,"heldLeftGrip":90,"heldRightGrip":-45,"thumbFlipL":true,"thumbFlipR":false,"heldLeftColor":null,"heldRightColor":null,"upperPattern":"plain","upperColor2":null,"lowerPattern":"plain","lowerColor2":null,"head":"front","torsoOrientation":-30,"pelvisOrientation":-5,"held":{"left":"bass","right":null},"joints":{"root":0,"pelvis":4,"torso":9,"neck":5,"shoulderL":-63,"elbowL":57,"wristL":174,"shoulderR":27,"elbowR":-87,"wristR":17,"hipL":-23,"kneeL":22,"ankleL":-60,"hipR":9,"kneeR":-21,"ankleR":78}},"rock_guitarist":{"schema":"house-character/1","name":"Rock guitarist","bodyType":"male","skin":3,"eyeColor":12,"hairColor":"4-0","hairStyle":"pompadour","facialHair":"none","eyebrows":"angry","eyes":"open","mouth":"grin","height":3,"weight":3,"upperGarment":"tshirt","lowerGarment":"cargopants","footwear":"sneakers","headwear":"headband","eyewear":null,"accessories":[],"prop":null,"propColor":"#FF0000","upperColor":"#000000","lowerColor":"#FFCC66","footwearColor":null,"headwearColor":"#CC0000","eyewearColor":"#666666","sockColor":null,"tieColor":"#66CCCC","gloveColor":null,"packColor":null,"heldLeftGrip":90,"heldRightGrip":-45,"thumbFlipL":true,"thumbFlipR":false,"heldLeftColor":null,"heldRightColor":null,"upperPattern":"plain","upperColor2":null,"lowerPattern":"plain","lowerColor2":null,"head":"front","torsoOrientation":-30,"pelvisOrientation":-5,"held":{"left":"electricguitar","right":null},"joints":{"root":0,"pelvis":4,"torso":-17,"neck":23,"shoulderL":-3,"elbowL":-93,"wristL":-95,"shoulderR":31,"elbowR":-114,"wristR":17,"hipL":-15,"kneeL":22,"ankleL":-83,"hipR":9,"kneeR":-21,"ankleR":78}},"rock_vocalist":{"schema":"house-character/1","name":"Rock vocalist","bodyType":"male","skin":3,"eyeColor":12,"hairColor":"4-0","hairStyle":"pompadour","facialHair":"moustache","eyebrows":"angry","eyes":"closed","mouth":"ai","height":3,"weight":3,"upperGarment":"blouse","lowerGarment":"bellbottoms","footwear":"shoes","headwear":null,"eyewear":null,"accessories":[],"prop":null,"propColor":"#FF0000","upperColor":"#FFFFFF","lowerColor":"#FFFFFF","footwearColor":null,"headwearColor":"#CC0000","eyewearColor":"#666666","sockColor":null,"tieColor":"#66CCCC","gloveColor":null,"packColor":null,"heldLeftGrip":90,"heldRightGrip":-45,"thumbFlipL":true,"thumbFlipR":false,"heldLeftColor":null,"heldRightColor":null,"upperPattern":"sidestripe","upperColor2":"#FF0000","lowerPattern":"sidestripe","lowerColor2":"#FF0000","head":"right","torsoOrientation":30,"pelvisOrientation":-5,"held":{"left":"micstand","right":null},"joints":{"root":0,"pelvis":5,"torso":29,"neck":17,"shoulderL":-35,"elbowL":139,"wristL":38,"shoulderR":46,"elbowR":-29,"wristR":32,"hipL":-70,"kneeL":92,"ankleL":-81,"hipR":56,"kneeR":-17,"ankleR":27}},"singer":{"schema":"house-character/1","name":"Singer","bodyType":"female","skin":3,"eyeColor":12,"hairColor":"4-0","hairStyle":"long","facialHair":"none","eyebrows":"raised","eyes":"closed","mouth":"o","height":3,"weight":3,"upperGarment":"gown","lowerGarment":null,"footwear":"heels","headwear":null,"eyewear":null,"accessories":["mascara","blush","lipstick","necklace","choker","drops"],"prop":"stool","propColor":null,"upperColor":null,"lowerColor":null,"footwearColor":null,"headwearColor":null,"eyewearColor":null,"sockColor":null,"tieColor":null,"gloveColor":null,"packColor":null,"mascaraColor":null,"blushColor":null,"lipstickColor":null,"heldLeftGrip":null,"heldRightGrip":45,"thumbFlipL":true,"thumbFlipR":false,"heldLeftColor":null,"heldRightColor":null,"upperPattern":"plain","upperColor2":null,"lowerPattern":"plain","lowerColor2":null,"head":"left","torsoOrientation":-60,"pelvisOrientation":0,"held":{"left":null,"right":"microphone"},"joints":{"root":0,"pelvis":14,"torso":9,"neck":22,"shoulderL":-132,"elbowL":-35,"wristL":25,"shoulderR":72,"elbowR":129,"wristR":-8,"hipL":44,"kneeL":-95,"ankleL":108,"hipR":43,"kneeR":-134,"ankleR":103}},"violinist":{"schema":"house-character/1","name":"Violinist","bodyType":"female","skin":3,"eyeColor":12,"hairColor":"4-0","hairStyle":"long","facialHair":"none","eyebrows":"raised","eyes":"open","mouth":"rest","height":3,"weight":3,"upperGarment":"gown","lowerGarment":null,"footwear":"heels","headwear":null,"eyewear":null,"accessories":["necklace","choker","drops"],"prop":null,"propColor":null,"upperColor":null,"lowerColor":null,"footwearColor":null,"headwearColor":null,"eyewearColor":null,"sockColor":null,"tieColor":null,"gloveColor":null,"packColor":null,"heldLeftGrip":-45,"heldRightGrip":45,"thumbFlipL":false,"thumbFlipR":true,"heldLeftColor":null,"heldRightColor":null,"upperPattern":"plain","upperColor2":null,"lowerPattern":"plain","lowerColor2":null,"head":"front","torsoOrientation":-20,"pelvisOrientation":0,"held":{"left":"violinbow","right":"violin"},"joints":{"root":0,"pelvis":3,"torso":2,"neck":-7,"shoulderL":14,"elbowL":96,"wristL":22,"shoulderR":49,"elbowR":105,"wristR":65,"hipL":-3,"kneeL":-1,"ankleL":-76,"hipR":-1,"kneeR":-4,"ankleR":75}}};
+const ROLE={singer:'singing',piano_singer:'singing',pianist:'playing the piano',mandolinist:'playing the mandolin',violinist:'playing the violin',bassist:'playing the double bass',
+  cellist:'playing the cello',hip_hop_vocalist:'singing',keyboard_player:'playing the keyboard',drummer:'playing the drums',rock_guitarist:'playing the electric guitar',
+  rock_vocalist:'singing',rock_bassist:'playing the bass guitar'};
+const SWAP={gown:['gown','gown','dress'],dress:['dress','gown'],tshirt:['tshirt','tshirt','tank','polo'],cargopants:['cargopants','jeans','trackpants'],jeans:['jeans','trousers'],
+  blouse:['blouse','shirt'],bellbottoms:['bellbottoms','jeans'],hoodieup:['hoodieup','hoodie'],jacketopen:['jacketopen','vest']};
+function musician(id){
+  const d=HC.normalize(clone(MUSICIANS[id]));
+  if(Math.random()<0.1){   /* now and then the same part is played by someone of the other sex, dressed to match */
+    if(d.bodyType==='female'){ d.bodyType='male';
+      if(['gown','dress','blouse','sportstop','croptop','croptank'].includes(d.upperGarment)) d.upperGarment=pick(['shirt','jacket','vest']);
+      if(!d.lowerGarment||['skirt','pleatedskirt','leggings'].includes(d.lowerGarment)) d.lowerGarment='trousers';
+      if(d.footwear==='heels') d.footwear='shoes';
+      d.accessories=d.accessories.filter(a=>!['mascara','blush','lipstick','drops','studs','choker','necklace'].includes(a)).concat(d.upperGarment==='jacket'?[]:['tie']);
+      d.hairStyle=pick(['short','crew','sidepart','curly','pompadour']);
+    } else { d.bodyType='female'; d.facialHair='none';
+      if(['shirt','vest','tank'].includes(d.upperGarment)) d.upperGarment=pick(['blouse','tshirt']);
+      d.accessories=d.accessories.filter(a=>a!=='tie');
+      d.hairStyle=pick(['long','bob','ponytail','bun','curly']);
+    }
+  }
+  const fem=d.bodyType==='female';
+  d.skin=1+rand(6); d.eyeColor=1+rand(16); d.hairColor=pick(['1-0','3-0','4-0','5-0','6-0','7-0','8-0','5-7','7-77']);
+  if(Math.random()<0.5) d.hairStyle=pick(fem?['long','bob','ponytail','bun','curly','pigtails']:['short','crew','sidepart','curly','pompadour','long','afro']);
+  if(!fem&&Math.random()<0.4) d.facialHair=pick(['none','stubble','moustache','goatee','beard']);
+  if(fem) d.facialHair='none';
+  if(SWAP[d.upperGarment]&&(fem||!['gown','dress','blouse'].includes(d.upperGarment))) d.upperGarment=pick(fem?SWAP[d.upperGarment]:SWAP[d.upperGarment].filter(g=>!['gown','dress','blouse'].includes(g)));
+  if(SWAP[d.lowerGarment]) d.lowerGarment=pick(SWAP[d.lowerGarment]);
+  if(Math.random()<0.75){ d.upperColor=pick(tone(UPPER_TONE[d.upperGarment])); if(d.lowerGarment) d.lowerColor=pick(tone(LOWER_TONE[d.lowerGarment])); }
+  if(fem){ d.accessories=d.accessories.filter(a=>!['mascara','blush','lipstick'].includes(a)).concat(['lipstick','mascara'],Math.random()<0.6?['blush']:[]); d.lipstickColor=pick(LIP_COLS); }
+  return HC.normalize(d);
+}
+/* ── Freer practice: a busy scene seen from a raised, side-on game angle ── */
+const W=1200, H=700, HORIZON=330;
+/* floor drawn as an oblique plane: depth lines run across, plank/tile lines lean at 45° */
+function floor(y0,y1,fill,line,step){
+  let s=`<rect x="0" y="${y0}" width="${W}" height="${y1-y0}" fill="${fill}"/>`, d='';
+  for(let x=-(y1-y0);x<W+step;x+=step) d+=`M${x+(y1-y0)},${y0}L${x},${y1}`;
+  for(let y=y0,g=26;y<y1;y+=g,g*=1.22) d+=`M0,${Math.round(y)}H${W}`;
+  return s+`<path d="${d}" stroke="${line}" stroke-width="1.5" fill="none"/>`;
+}
+const win=(x,y,w,h,c)=>`<rect x="${x}" y="${y}" width="${w}" height="${h}" fill="${c||'#bcdcf0'}" stroke="#5a5a5a" stroke-width="2"/><path d="M${x+w/2},${y}V${y+h}M${x},${y+h/2}H${x+w}" stroke="#5a5a5a" stroke-width="1.5"/>`;
+/* a small music stage against the back wall: curtain, raised platform, two spotlights. Musicians stand at y = STAGE_Y. */
+const STAGE_Y=HORIZON+46, STAGE_S=0.5;
+function stage(x0,x1){
+  const T=HORIZON+16, F=HORIZON+54; let folds='';
+  for(let x=x0+34;x<x1-20;x+=28) folds+=`M${x},118V${T}`;
+  return `<rect x="${x0+12}" y="112" width="${x1-x0-24}" height="${T-112}" fill="#7a1f2b" stroke="#4a1019" stroke-width="2"/><path d="${folds}" stroke="#5e1620" stroke-width="2" fill="none"/><rect x="${x0+4}" y="104" width="${x1-x0-8}" height="14" rx="4" fill="#c9a23a" stroke="#8c6d1c" stroke-width="2"/>`
+    +[[x0+70,1],[x1-70,-1]].map(([x,k])=>`<path d="M${x-10},120h20l${k*70+26},${T-124}h-${72}z" fill="#FFF3B0" fill-opacity=".16"/><path d="M${x-9},118h18l-4,12h-10z" fill="#333" stroke="#111"/>`).join('')
+    +`<path d="M${x0+22},${T}H${x1-22}L${x1},${F}H${x0}Z" fill="#a9744a" stroke="#5e3b24" stroke-width="2"/><rect x="${x0}" y="${F}" width="${x1-x0}" height="22" fill="#6e4628" stroke="#3d2614" stroke-width="2"/>`;
+}
+const SCENES={
+  street:{label:'Street',marks:[{x:122,t:'next to the street lamp'},{x:1053,t:'next to the tree'},{x:430,t:'next to the bus stop'},{x:884,t:'next to the mailbox'}],bikes:1,
+    targets:[['the street lamp',160,100],['the tree',1053,226],['the bus stop',430,190],['the mailbox',884,318],['the red awning',665,220]],depth:[372,545],
+    items:['umbrella','parasol','bag','phone','suitcase','briefcase','cane','purse','cup','box','keys','hat_fedora','book','skateboard'],carY:660,
+    hats:['cap','beanie','fedora','sunhat','hardhat'],acc:['backpack','fannypack','watchL','tie'],
+    outfits:['casual','office','winter','smart','work','formal','retro','weekend','business','tracksuit','hooded'],poses:['standing','standing','walking','walking','waving','pointing','hips'],seats:0,
+    bg(){ let s=`<rect width="${W}" height="${HORIZON}" fill="#bfe3f5"/>`;
+      const B=[[0,250,'#d9a066'],[250,300,'#c9d2d9'],[550,230,'#e2c4a0'],[780,420,'#b7c4a3']];
+      B.forEach(([x,w,c],i)=>{ const top=[40,10,70,30][i]; s+=`<rect x="${x}" y="${top}" width="${w}" height="${HORIZON-top}" fill="${c}" stroke="#5a5a5a" stroke-width="2"/>`;
+        for(let wx=x+26;wx+50<x+w;wx+=78) for(let wy=top+24;wy<170;wy+=72) s+=win(wx,wy,50,46);
+        s+=`<rect x="${x+w/2-24}" y="238" width="48" height="92" fill="#6b4a2f" stroke="#3d2a1a" stroke-width="2"/><circle cx="${x+w/2+14}" cy="286" r="3" fill="#e2b23a"/>`; });
+      s+=`<path d="M560,205H770L756,236H574Z" fill="#CC0000" stroke="#7a0000" stroke-width="2"/><rect x="590" y="244" width="60" height="56" fill="#bcdcf0" stroke="#5a5a5a" stroke-width="2"/>`;
+      s+=floor(HORIZON,572,'#d9d8d2','#b9b8b0',120)+`<rect x="0" y="572" width="${W}" height="14" fill="#9c9b94"/><rect x="0" y="586" width="${W}" height="${H-586}" fill="#5c6066"/>`;
+      for(let x=30;x<W;x+=150) s+=`<path d="M${x+18},640H${x+98}L${x+80},656H${x}Z" fill="#f2f2ee"/>`;
+      s+=`<rect x="118" y="120" width="8" height="250" fill="#3f4347"/><path d="M122,122Q122,96 156,96" stroke="#3f4347" stroke-width="6" fill="none"/><ellipse cx="160" cy="100" rx="16" ry="8" fill="#ffe9a6" stroke="#3f4347" stroke-width="2"/>`;
+      s+=`<rect x="1046" y="250" width="14" height="110" fill="#6b4a2f"/><circle cx="1053" cy="226" r="52" fill="#5fa45a" stroke="#3d6e3a" stroke-width="2"/><circle cx="1018" cy="252" r="30" fill="#5fa45a" stroke="#3d6e3a" stroke-width="2"/><circle cx="1090" cy="250" r="32" fill="#5fa45a" stroke="#3d6e3a" stroke-width="2"/>`;
+      /* bus stop sign and mailbox: one-of-a-kind things to stand next to and point at */
+      s+=`<rect x="427" y="176" width="6" height="190" fill="#5f6870"/><rect x="398" y="150" width="64" height="44" rx="6" fill="#0066CC" stroke="#003d7a" stroke-width="2"/><text x="430" y="181" font-size="22" font-weight="700" text-anchor="middle" fill="#fff" font-family="var(--font-sans,sans-serif)">BUS</text>`;
+      s+=`<rect x="879" y="330" width="10" height="34" fill="#5f6870"/><path d="M862,332V306Q862,294 874,294H894Q906,294 906,306V332Z" fill="#CC0000" stroke="#7a0000" stroke-width="2"/><rect x="870" y="306" width="28" height="5" rx="2" fill="#7a0000"/>`;
+      return s; }},
+  party:{label:'Party',stageX:[742,1172],cleaner:true,band(){ const st=pick(['rock_guitarist','rock_bassist']), back=pick(['drummer','keyboard_player']);
+      const voc=pick(['rock_vocalist','hip_hop_vocalist']);   /* the rock vocalist stands with legs wide apart: keep both feet on the platform */
+      return [[voc,voc==='rock_vocalist'?846:812,STAGE_Y-2,STAGE_S],[st,932,STAGE_Y,STAGE_S],[back,back==='drummer'?1072:1060,STAGE_Y-6,STAGE_S]]; },
+    marks:[{x:195,t:'by the window'},{x:560,t:'next to the cake'},{x:60,t:'next to the balloons'}],
+    targets:[['the window',195,145],['the cake',560,300],['the balloons',76,135],['the birthday sign',545,95],['the stage',955,300]],depth:[440,672],
+    items:['cup','guitar','balloon','microphone','cake','teddy','pizzabox','tambourine','mug','balloon','plate','phone','maraca','box'],
+    hats:['bow','fedora','headband','cap','sunhat'],acc:['necklace','drops','studs','braceletR','watchL','tie'],
+    outfits:['formal','summer','retro','smart','casual','waistcoat','business','weekend','tracksuit'],
+    poses:['standing','standing','waving','hips','reaching','pointing'],seats:1,
+    bg(){ let s=`<rect width="${W}" height="${HORIZON}" fill="#f6dcc8"/><rect x="0" y="${HORIZON-16}" width="${W}" height="16" fill="#b98a55"/>`;
+      s+=win(120,70,150,150)+`<rect x="380" y="60" width="330" height="70" rx="8" fill="#fff" stroke="#CC0066" stroke-width="3"/><text x="545" y="108" font-size="38" font-weight="700" text-anchor="middle" fill="#CC0066" font-family="var(--font-sans,sans-serif)">HAPPY BIRTHDAY</text>`;
+      const c=['#CC0000','#FFCC00','#0066CC','#00CC66','#FF66CC','#6600CC'], sag=x=>Math.round(14+34*Math.abs(Math.sin(x/W*Math.PI*3)));
+      let line='M0,14'; for(let x=20;x<=W;x+=20) line+=`L${x},${sag(x)}`;
+      s+=`<path d="${line}" stroke="#7a5a3a" stroke-width="2" fill="none"/>`;
+      for(let i=0;i<24;i++){ const x=25+i*50; s+=`<path d="M${x-13},${sag(x)}h26l-13,30z" fill="${c[i%6]}" stroke="#5a5a5a"/>`; }
+      [[60,150,'#CC0000'],[92,120,'#FFCC00'],[1120,140,'#0066CC'],[1152,170,'#00CC66'],[1088,180,'#FF66CC']].forEach(([x,y,k])=>{ s+=`<path d="M${x},${y+30}Q${x+8},${y+90} ${x},${HORIZON-16}" stroke="#777" fill="none"/><ellipse cx="${x}" cy="${y}" rx="24" ry="30" fill="${k}" stroke="#5a5a5a" stroke-width="1.5"/>`; });
+      s+=floor(HORIZON,H,'#cfa070','#a97c4f',90)+stage(742,1172);
+      s+=`<path d="M430,${HORIZON+6}H690L712,${HORIZON+44}H408Z" fill="#fff" stroke="#999" stroke-width="2"/><rect x="408" y="${HORIZON+44}" width="304" height="52" fill="#f4f4f4" stroke="#999" stroke-width="2"/>`;
+      s+=`<rect x="520" y="${HORIZON-42}" width="80" height="50" rx="6" fill="#f7c6d9" stroke="#b05a80" stroke-width="2"/><path d="M520,${HORIZON-26}q10,10 20,0t20,0t20,0t20,0" stroke="#fff" stroke-width="4" fill="none"/>`+[538,560,582].map(x=>`<rect x="${x-2}" y="${HORIZON-60}" width="4" height="18" fill="#0066CC"/><ellipse cx="${x}" cy="${HORIZON-65}" rx="3.5" ry="6" fill="#FFCC00"/>`).join('');
+      return s; }},
+  classroom:{label:'Classroom',seatTable:'desk',seatSpots(){   /* rows of chairs, all facing the same way; the front row is offset the way a real row recedes */
+      const back=[330,590,850].map(X=>({X,Y:568,dir:-1})), front=shuffle([400,690,980]).slice(0,2).sort((a,b)=>a-b).map(X=>({X,Y:655,dir:-1}));
+      return shuffle(back.concat(front)); },
+    marks:[{x:130,t:'by the door'},{x:590,t:'in front of the whiteboard'},{x:1095,t:'next to the bookshelf'}],
+    targets:[['the door',130,200],['the whiteboard',590,155],['the bookshelf',1095,230],['the clock',960,92]],depth:[392,672],
+    items:['book','book','tablet','phone','bag','cup','paintbrush','multimeter','keys','briefcase'],
+    hats:['cap','headphones','headband','beanie','bow'],acc:['backpack','backpack','watchL','tie','fannypack'],
+    outfits:['casual','sport','smart','summer','waistcoat','office','weekend','beach','tracksuit','hooded'],
+    poses:['standing','standing','reaching','pointing','hips','waving'],seats:5,
+    bg(){ let s=`<rect width="${W}" height="${HORIZON}" fill="#e6edf1"/><rect x="0" y="${HORIZON-14}" width="${W}" height="14" fill="#8fa3ad"/>`;
+      s+=`<rect x="330" y="60" width="520" height="190" fill="#fff" stroke="#7b8790" stroke-width="6"/><text x="590" y="130" font-size="34" text-anchor="middle" fill="#0066CC" font-family="var(--font-sans,sans-serif)">What are you doing?</text><text x="590" y="186" font-size="30" text-anchor="middle" fill="#CC0000" font-family="var(--font-sans,sans-serif)">I'm learning English.</text><rect x="560" y="250" width="90" height="10" fill="#7b8790"/>`;
+      s+=`<rect x="70" y="96" width="120" height="${HORIZON-110}" fill="#b98a55" stroke="#6e4a26" stroke-width="3"/><rect x="92" y="118" width="76" height="60" fill="#bcdcf0" stroke="#6e4a26" stroke-width="2"/><circle cx="172" cy="226" r="5" fill="#e2b23a"/>`;
+      s+=`<circle cx="960" cy="92" r="32" fill="#fff" stroke="#333" stroke-width="4"/><path d="M960,92V70M960,92L976,100" stroke="#333" stroke-width="3" stroke-linecap="round"/>`;
+      s+=`<rect x="1030" y="150" width="130" height="${HORIZON-164}" fill="#c9a676" stroke="#6e4a26" stroke-width="3"/>`+[186,232,278].map(y=>`<path d="M1030,${y}H1160" stroke="#6e4a26" stroke-width="3"/>`+['#CC0000','#0066CC','#00CC66','#FFCC00','#6600CC','#FF6600'].map((k,i)=>`<rect x="${1040+i*19}" y="${y-30}" width="14" height="30" fill="${k}" stroke="#333"/>`).join('')).join('');
+      s+=floor(HORIZON,H,'#d7d2c4','#b8b2a2',110);
+      return s; }},
+  beach:{label:'Beach',marks:[{x:238,t:'under the beach umbrella'},{x:1120,t:'next to the palm tree'},{x:866,t:'next to the sandcastle'}],bikes:1,
+    targets:[['the beach umbrella',238,190],['the palm tree',1126,150],['the sandcastle',866,372],['the sun',1040,78]],depth:[392,672],keep:true,barefoot:true,seatProp:'beachchair',
+    items:['beachball','volleyball','parasol','book','bag','guitar','boombox','soccerball','cup','phone','beachball','tennisracket','skateboard'],
+    hats:['sunhat','cap','headband','sunhat','bow'],acc:['fannypack','watchL','necklace','braceletR'],
+    outfits:['swim','bikini','beach','swim'],count:['sunglasses','a hat','something red','something blue'],
+    poses:['standing','standing','waving','hips','walking','reaching'],seats:2,
+    bg(){ const SEA=228, SAND=HORIZON+14;
+      let s=`<rect width="${W}" height="${SEA}" fill="#bfe8fb"/><circle cx="1040" cy="78" r="46" fill="#FFDD55" stroke="#e8b800" stroke-width="2"/>`;
+      [[180,70,1],[520,46,0.8],[800,96,0.7]].forEach(([x,y,k])=>{ s+=`<g transform="translate(${x} ${y}) scale(${k})" fill="#fff"><ellipse cx="0" cy="0" rx="60" ry="20"/><ellipse cx="-34" cy="-12" rx="30" ry="20"/><ellipse cx="22" cy="-18" rx="36" ry="24"/></g>`; });
+      s+=`<rect x="0" y="${SEA}" width="${W}" height="${SAND-SEA}" fill="#2f9bd6"/><rect x="0" y="${SEA}" width="${W}" height="14" fill="#1f7fb8"/>`;
+      for(let r=0;r<4;r++){ let d=''; const y=SEA+30+r*24; for(let x=(r%2)*60-40;x<W;x+=120) d+=`M${x},${y}q15,-9 30,0t30,0`; s+=`<path d="${d}" stroke="#fff" stroke-opacity=".7" stroke-width="2.5" fill="none"/>`; }
+      { let d=`M0,${SAND+4}`; for(let x=0;x<W;x+=80) d+=`q20,-12 40,0t40,0`; s+=floor(SAND,H,'#f1dca7','#dfc78c',130)+`<path d="${d}V${SAND-8}H0Z" fill="#fff" fill-opacity=".85"/>`; }
+      /* beach umbrella */
+      s+=`<path d="M236,214L214,${SAND+60}" stroke="#7a5a3a" stroke-width="6" stroke-linecap="round"/><path d="M110,236Q130,150 240,144Q350,150 366,244Q334,226 302,238Q270,222 238,236Q206,222 174,234Q142,224 110,236Z" fill="#CC0000" stroke="#7a0000" stroke-width="2"/><path d="M240,144Q200,180 174,234M240,144Q244,190 238,236M240,144Q284,180 302,238" stroke="#fff" stroke-width="10" stroke-opacity=".85" fill="none"/>`;
+      /* palm tree */
+      s+=`<path d="M1120,${SAND+40}Q1096,250 1126,150" stroke="#8a6534" stroke-width="18" stroke-linecap="round" fill="none"/>`+[[-80,-10],[-60,-56],[-8,-76],[52,-58],[82,-8],[40,30],[-46,30]].map(([dx,dy])=>`<path d="M1126,150Q${1126+dx*0.5},${150+dy-20} ${1126+dx},${150+dy}Q${1126+dx*0.5},${150+dy*0.5+6} 1126,150Z" fill="#3f9a4a" stroke="#2a6e33" stroke-width="2"/>`).join('');
+      /* sandcastle */
+      s+=`<path d="M820,${SAND+52}V${SAND+24}h10v-8h8v8h14v-18h8v-8h8v8h8v18h14v-8h8v8h10V${SAND+52}Z" fill="#e3c77e" stroke="#b79a52" stroke-width="2"/><path d="M866,${SAND-2}v-16l12,5-12,5" fill="#CC0000" stroke="#7a0000"/>`;
+      return s; }}
+  ,restaurant:{label:'Restaurant',seatTable:'table',seatSpots(){   /* three tables across the front of the room: two couples facing each other, and one guest alone at the third */
+      const sc=Y=>0.5+0.3*(Y-HORIZON)/(H-HORIZON), solo=rand(3), spots=[];
+      [[300,640],[600,660],[900,644]].forEach(([x,y],i)=>{ const o=128*sc(y), d=pick([1,-1]);
+        if(i===solo) spots.push({X:x-d*o,Y:y,dir:d}); else spots.push({X:x-o,Y:y,dir:1},{X:x+o,Y:y,dir:-1}); });
+      return spots; },
+    standAt(){   /* people on their feet stand at the back wall, in the open floor either side of the stage, clear of the chairs */
+      return [[110,452],[300,464],[900,462],[1095,452]].map(([x,y])=>[x+Math.random()*16-8,y+Math.random()*8]); },
+    stageX:[366,836],depth:[448,672],marks:[{x:110,t:'by the window'},{x:1095,t:'next to the plant'}],
+    targets:[['the window',150,160],['the chandelier',250,64],['the plant',1030,290],['the stage',600,300]],
+    items:['plate','mug','cup','fork','spoon','phone','purse','keys','cake','book','plate','bowl'],
+    hats:['fedora','headband','bow','fedora','headband'],acc:['necklace','drops','studs','braceletR','watchL','choker'],
+    outfits:['formal','business','office','waistcoat','formal','smart','summer','business'],count:['a tie','a dress','something black','glasses'],
+    poses:['standing','standing','hips','waving','pointing'],seats:5,
+    band(){ const front=shuffle(['violinist','cellist','bassist','mandolinist','singer']).slice(0,2);   /* one at the piano, two in front */
+      return [[front[0],424,STAGE_Y,STAGE_S],[front[1],506,STAGE_Y+4,STAGE_S],[pick(['pianist','piano_singer']),792,STAGE_Y,STAGE_S]]; },
+    bg(){ let s=`<rect width="${W}" height="${HORIZON}" fill="#6b2f3a"/><rect x="0" y="${HORIZON-64}" width="${W}" height="64" fill="#4a2028"/><rect x="0" y="${HORIZON-68}" width="${W}" height="6" fill="#c9a23a"/>`;
+      s+=`<rect x="90" y="70" width="120" height="170" fill="#1d2a4a" stroke="#c9a23a" stroke-width="5"/><path d="M150,70V240M90,155H210" stroke="#c9a23a" stroke-width="3"/><circle cx="182" cy="104" r="12" fill="#f4f1d0"/><path d="M84,64Q112,150 84,244H70V64ZM216,64Q188,150 216,244H230V64Z" fill="#c9a23a" stroke="#8c6d1c" stroke-width="2"/>`;
+      [250,950].forEach(x=>{ s+=`<path d="M${x},0V38" stroke="#c9a23a" stroke-width="4"/><path d="M${x-44},64Q${x},30 ${x+44},64Q${x},84 ${x-44},64Z" fill="#c9a23a" stroke="#8c6d1c" stroke-width="2"/>`+[-34,-12,12,34].map(k=>`<ellipse cx="${x+k}" cy="${74-Math.abs(k)*0.12}" rx="5" ry="9" fill="#FFF3B0" stroke="#e8c84a"/>`).join(''); });
+      s+=`<rect x="1068" y="96" width="92" height="70" fill="#e9dcc0" stroke="#c9a23a" stroke-width="5"/><path d="M1076,152l22,-30l16,18l12,-10l26,22z" fill="#5fa45a"/>`;
+      s+=floor(HORIZON,H,'#7d3a3a','#662c2c',120);
+      s+=`<path d="M1014,${HORIZON+24}h32l-5,34h-22z" fill="#8a5a3a" stroke="#5e3b24" stroke-width="2"/>`+[[-30,-36],[-12,-58],[10,-62],[30,-40],[0,-30]].map(([dx,dy])=>`<path d="M1030,${HORIZON+26}Q${1030+dx*0.4},${HORIZON+26+dy} ${1030+dx},${HORIZON+26+dy}Q${1030+dx*0.8},${HORIZON+26+dy*0.4} 1030,${HORIZON+26}Z" fill="#3f9a4a" stroke="#2a6e33" stroke-width="2"/>`).join('');
+      s+=stage(366,836);
+      return s; }}
+  ,ski:{label:'Ski resort',snow:true,marks:[{x:150,t:'next to the snowman'},{x:1085,t:'next to the pine tree'},{x:640,t:'in front of the lodge'}],
+    targets:[['the snowman',150,300],['the pine tree',1085,200],['the lodge',640,200],['the chairlift',300,130],['the mountains',960,150]],depth:[392,672],
+    items:['skis','snowboard','skipole','mug','cup','phone','bag','skis','snowboard','mug','book','box'],
+    hats:['beanie','beanie','skimask','skimask','headband','beanie','headphones'],acc:['scarf','backpack','watchL','scarf','fannypack'],
+    outfits:['winter','winter','tracksuit','hooded','winter','smart'],count:['a scarf','a beanie','gloves','something red'],
+    poses:['standing','standing','walking','waving','hips','pointing'],seats:0,
+    bg(){ let s=`<rect width="${W}" height="${HORIZON}" fill="#cfe9fb"/>`;
+      [[-60,330,150],[200,420,80],[520,360,120],[820,460,60],[1050,300,110]].forEach(([x,w,top])=>{   /* mountains, snow on the peaks */
+        s+=`<path d="M${x},${HORIZON}L${x+w/2},${top}L${x+w},${HORIZON}Z" fill="#8d9bab" stroke="#6b7887" stroke-width="2"/><path d="M${x+w/2},${top}L${x+w/2-w*0.16},${top+(HORIZON-top)*0.3}l${w*0.06},-9l${w*0.05},12l${w*0.05},-11l${w*0.06},9Z" fill="#fff" stroke="#c9d6e2" stroke-width="1.5"/>`; });
+      s+=`<path d="M0,${HORIZON-40}L470,40" stroke="#333" stroke-width="2" fill="none"/>`;   /* chairlift */
+      for(let k=1;k<4;k++){ const x=470*k/4, y=HORIZON-40-(HORIZON-80)*k/4; s+=`<rect x="${x-4}" y="${y}" width="8" height="${HORIZON-y}" fill="#555"/>`; }
+      for(let k=0;k<6;k++){ const x=50+k*80, y=HORIZON-40-(HORIZON-80)*x/470; s+=`<path d="M${x},${y}v22" stroke="#333" stroke-width="2"/><path d="M${x-12},${y+22}h24v9h-24z" fill="#CC0000" stroke="#7a0000"/>`; }
+      s+=`<rect x="520" y="${HORIZON-120}" width="240" height="120" fill="#8a5a3a" stroke="#4e321f" stroke-width="3"/><path d="M496,${HORIZON-116}L640,${HORIZON-210}L784,${HORIZON-116}Z" fill="#6e4628" stroke="#3d2614" stroke-width="3"/><path d="M502,${HORIZON-120}L640,${HORIZON-205}L778,${HORIZON-120}" stroke="#fff" stroke-width="9" fill="none"/>`
+        +[545,610,690].map(x=>win(x,HORIZON-96,42,36,'#ffe9a6')).join('')+`<rect x="626" y="${HORIZON-58}" width="30" height="58" fill="#4e321f"/><rect x="580" y="${HORIZON-140}" width="120" height="24" rx="5" fill="#fff" stroke="#4e321f" stroke-width="2"/><text x="640" y="${HORIZON-123}" font-size="15" font-weight="700" text-anchor="middle" fill="#4e321f" font-family="var(--font-sans,sans-serif)">SKI LODGE</text>`;
+      const pine=(x,y,k)=>`<g transform="translate(${x} ${y}) scale(${k})"><rect x="-6" y="-26" width="12" height="26" fill="#6b4a2f"/><path d="M0,-160L-42,-70H-22L-54,-24H54L22,-70H42Z" fill="#2f6e45" stroke="#1f4a2e" stroke-width="2"/><path d="M0,-160L-19,-124H19Z" fill="#fff"/></g>`;
+      [830,900,1180].forEach(x=>{ s+=pine(x,HORIZON+4,0.9); });
+      s+=floor(HORIZON,H,'#f6f9fc','#dfe8f0',110);
+      s+=pine(1085,HORIZON+60,1.35);
+      s+=`<g transform="translate(150 ${HORIZON+52})"><circle cx="0" cy="-26" r="26" fill="#fff" stroke="#b9c7d4" stroke-width="2"/><circle cx="0" cy="-70" r="19" fill="#fff" stroke="#b9c7d4" stroke-width="2"/><circle cx="0" cy="-103" r="14" fill="#fff" stroke="#b9c7d4" stroke-width="2"/><circle cx="-5" cy="-106" r="2" fill="#222"/><circle cx="5" cy="-106" r="2" fill="#222"/><path d="M0,-103l13,3l-13,2z" fill="#FF6600"/><path d="M-12,-114h24v-5h-17v-15h11v15" fill="#222"/><path d="M-14,-90q14,7 28,0" stroke="#CC0000" stroke-width="5" fill="none"/><path d="M-18,-70L-48,-88M18,-70L48,-88" stroke="#6b4a2f" stroke-width="3"/></g>`;
+      return s; }}
+};
+const FACES=['joy','trust','serenity','interest','surprise','acceptance','anticipation','neutral'];
+const allFaces=[HC.NEUTRAL_FACE].concat(...HC.EMOTIONS.map(g=>g[1]));
+
+/* ground shadow: a small one under a person; for a driver, one long shadow under the whole car instead */
+/* a dining table for a seated guest: drawn with that person, at their size, on the floor line of their chair, on the side they face.
+   Real proportions against the figure: top about 75 cm high and 80 cm across, so it clears the knees and reaches the midriff. */
+/* Where people on their feet may stand in a scene with dining tables: never in the strip of floor a table and its chairs
+   occupy (so nobody is beside, behind-and-touching or in front of a seated guest). They stand in the open middle of the room,
+   in two staggered rows, and at most two of them at the back wall on a side whose table is the one nearer the viewer. */
+function standSpots(S,people){
+  if(S.standAt) return shuffle(S.standAt());   /* the scene names its own standing places */
+  if(S.seatTable!=='table') return null;
+  const n=people.filter(p=>!p.fixed).length, [y0,y1]=S.depth, tabs=[], back=[]; let L=60, R=W-60;
+  people.filter(p=>p.seated&&p.fixed).forEach(p=>{ const tx=p.fixed.X+(p.d.pelvisOrientation>0?1:-1)*128*p.fixed.s; if(!tabs.some(t=>Math.abs(t.x-tx)<4)) tabs.push({x:tx,y:p.fixed.Y,r:200*p.fixed.s}); });
+  tabs.forEach(t=>{ const far=t.y>y0+170, j=()=>Math.random()*24;
+    if(t.x<W/2){ L=Math.max(L,t.x+t.r+80); if(far) back.push([70+j(),y0+j()*0.6],[255+j(),y0+j()*0.6]); }
+    else { R=Math.min(R,t.x-t.r-80); if(far) back.push([925+j(),y0+j()*0.6],[1105+j(),y0+j()*0.6]); } });
+  const spots=shuffle(back).slice(0,Math.max(0,Math.min(2,n-3))), k=n-spots.length;
+  for(let i=0;i<k;i++) spots.push([L+(i+0.5)*(R-L)/k+(Math.random()*16-8), y1-6-(i%2)*56-Math.random()*8]);
+  return shuffle(spots);
+}
+/* a seated guest whose table would fall off the edge of the picture turns round to face inward */
+function faceTable(sc,p,X,s){
+  if(!SCENES[sc].seatTable||!p.seated) return;
+  const tx=X+(p.d.pelvisOrientation>0?1:-1)*128*s;
+  if(tx<100*s+10||tx>W-100*s-10) p.d=HC.normalize(HC.mirror(p.d));
+}
+/* food that is set down on the table instead of held: where each item's own drawing has to go to sit centred on the charger plate */
+const ON_TABLE={plate:[16,-174],cake:[20,-172],bowl:[14,-182]};
+/* the object someone holds, if any — a hand shape (pointing, open palm…) is not an object */
+/* pointing at something in your own hand: three arm sets, by the kind of object */
+const POINT_SETS={bowl:{grip:null,j:{shoulderL:19,elbowL:99,wristL:0,shoulderR:9,elbowR:125,wristR:39}},
+  small:{grip:null,j:{shoulderL:36,elbowL:102,wristL:0,shoulderR:102,elbowR:100,wristR:78}},
+  tool:{grip:45,j:{shoulderL:36,elbowL:77,wristL:9,shoulderR:18,elbowR:117,wristR:9}}};
+const POINTABLE={bowl:'bowl',cup:'bowl',mug:'bowl',keys:'small',teddy:'small',toolbox:'small',tennisball:'small',baseball:'small',book:'small',tablet:'small',
+  wrench:'tool',hammer:'tool',screwdriver:'tool',pliers:'tool',paintbrush:'tool',flashlight:'tool',fork:'tool',knife:'tool',spoon:'tool'};
+const heldThing=d=>[d.held.left,d.held.right].find(h=>h&&!(HC.ITEMS[h]||{}).hand)||null;
+function tableFor(sc,p,X,Y,s){
+  const kind=SCENES[sc].seatTable; if(!kind||!p.seated) return '';
+  const dir=p.d.pelvisOrientation>0?1:-1;
+  if(kind==='desk')   /* a school desk in front of each seated student, seen from the side */
+    return `<g pointer-events="none" transform="translate(${X+dir*98*s} ${Y}) scale(${s})"><ellipse cx="0" cy="2" rx="60" ry="8" fill="#000" opacity=".14"/>`
+      +`<path d="M-42,-138V0M42,-138V0" fill="none" stroke="#5f6870" stroke-width="7"/><path d="M-42,-138V0M42,-138V0" fill="none" stroke="#b4bcc4" stroke-width="4"/><path d="M-50,-2H-34M34,-2H50" stroke="#5f6870" stroke-width="5" stroke-linecap="round"/>`
+      +`<rect x="-46" y="-136" width="92" height="20" fill="#b98a55" stroke="#6e4a26" stroke-width="2"/><rect x="-56" y="-148" width="112" height="12" rx="3" fill="#d9a86c" stroke="#6e4a26" stroke-width="2"/></g>`;
+  return `<g pointer-events="none" transform="translate(${X+dir*128*s} ${Y}) scale(${s})">`+(p.noTable?'':`<ellipse cx="0" cy="2" rx="100" ry="13" fill="#000" opacity=".16"/>`
+    +`<ellipse cx="0" cy="-4" rx="42" ry="9" fill="#3a2a1c" stroke="#1d140c" stroke-width="2"/><rect x="-7" y="-112" width="14" height="108" fill="#3a2a1c" stroke="#1d140c" stroke-width="2"/>`
+    +`<path d="M-94,-172V-116Q-62,-98 -47,-112Q-24,-94 0,-108Q24,-94 47,-112Q62,-98 94,-116V-172Z" fill="#f4f4f2" stroke="#b9b9b9" stroke-width="2"/><ellipse cx="0" cy="-172" rx="94" ry="19" fill="#ffffff" stroke="#b9b9b9" stroke-width="2"/>`
+    +`<rect x="-3" y="-212" width="6" height="34" fill="#f4f1d0" stroke="#b9b9b9"/><ellipse cx="0" cy="-219" rx="4.5" ry="8" fill="#FFCC00"/><ellipse cx="0" cy="-176" rx="12" ry="3.5" fill="#c9a23a"/>`
+    +`<ellipse cx="${-dir*50}" cy="-171" rx="26" ry="6" fill="#fff" stroke="#b9b9b9" stroke-width="1.6"/><ellipse cx="${dir*50}" cy="-173" rx="26" ry="6" fill="#fff" stroke="#b9b9b9" stroke-width="1.6"/>`)   /* p.noTable: the table itself is already drawn for the guest opposite; only this guest's food is added */
+    +(p.onTable?`<g transform="translate(${-dir*50+ON_TABLE[p.onTable][0]} ${ON_TABLE[p.onTable][1]})" stroke-width="1.3" stroke-linejoin="round">${HC.ITEMS[p.onTable].draw(1,HC.ITEMS[p.onTable].col)}</g>`:'')+`</g>`;   /* their plate of food sits on the charger plate on their side */
+}
+/* the arm on the viewer's side, drawn again on top of the table or desk so it is in front of it */
+function nearArm(p,body,X,Y,s){
+  const N=p.d.torsoOrientation<-30?'L':p.d.torsoOrientation>30?'R':''; if(!N) return '';
+  /* the engine puts every body part in one wrapper group, so the arm's parts are one level down inside it */
+  const w0=body.indexOf('<g '), wrap=w0<0?'':body.slice(w0,body.indexOf('>',w0)+1); if(!wrap) return '';
+  const want=['shoulder'+N,'elbow'+N,'wrist'+N], re=/<g[\s>]|<\/g>/g; let out='', depth=0, start=-1, keep=false, m;
+  re.lastIndex=w0;
+  while((m=re.exec(body))){
+    if(m[0]==='</g>'){ depth--; if(depth===1&&keep) out+=body.slice(start,m.index+4); if(depth===0) break; }
+    else { if(depth===1){ start=m.index; const j=/data-joint="([^"]+)"/.exec(body.slice(m.index,body.indexOf('>',m.index)+1)); keep=!!j&&want.includes(j[1]); } depth++; } }
+  return out?`<g pointer-events="none" transform="translate(${X-HC.STAGE.cx*s} ${Y-HC.STAGE.ground*s}) scale(${s})">${wrap}${out}</g></g>`:'';
+}
+function shadow(p,X,Y,s,cls){
+  const car=p.pose==='driving', dir=p.d.pelvisOrientation>0?1:-1;
+  return `<ellipse${cls?` class="${cls}"`:''} cx="${car?X-dir*102*s:X}" cy="${car?Y-4*s:Y-9*s}" rx="${(car?500:54)*s}" ry="${(car?20:13)*s}" fill="#000" opacity="${car?.22:.16}"/>`;
+}
+const isTeen=d=>d.height<=2&&d.weight<=2;
+const TEEN_WEAR=['casual','weekend','sport','summer','beach','swim','bikini','tracksuit','hooded'], ADULT_ITEMS=['briefcase','cane','purse','multimeter','suitcase','hat_fedora','mug','cup'];
+function cast(sc){
+  const S=SCENES[sc], n=8, used={female:[],male:[]}, out=[]; let pointedItem=false;
+  const items=shuffle(S.items), hats=shuffle(S.hats), hatsM=hats.filter(h=>h!=='bow');   /* no bow hairbands on men */
+  for(let i=0;i<n;i++){
+    const fem=i%2===0, pool=NAMES[fem?'female':'male'].filter(x=>!used[fem?'female':'male'].includes(x)), name=pick(pool);
+    used[fem?'female':'male'].push(name);
+    /* teenagers (one girl, one boy) only get casual outfits, with no formal piece swapped in */
+    const teen=i===2||i===5, casual=S.outfits.filter(o=>TEEN_WEAR.includes(o));
+    const d=person({fem,name,outfits:teen?(casual.length?casual:['casual','weekend']):S.outfits,keep:S.keep||teen});
+    if(S.barefoot) d.footwear=pick([null,null,'sandals']);
+    if(S.snow) winterize(d);
+    const seated=i<S.seats;
+    const rider=!seated&&!!S.bikes&&i===Math.max(S.seats,3);   /* one cyclist, placed mid-scene so the bicycle is not cut off at the edge */
+    const skater=!seated&&!rider&&!!S.bikes&&i===5&&Math.random()<0.5;   /* where there are bicycles, the teenage boy is sometimes on a skateboard */
+    let pose=seated?'chair':rider?'riding':skater?'skating':pick(S.poses); HC.applyPose(d,rider?'chair':skater?'profile':pose);
+    if(skater){ d.prop='skateboard'; d.propColor=pick(TONE.bright); Object.assign(d.joints,{hipL:20,kneeL:-25,hipR:-25,kneeR:-20,shoulderL:-40,shoulderR:50,torso:-8}); } if(seated) d.prop=S.seatProp||'chair';   /* the engine's own chair, pinned to the pelvis */
+    if(rider){   /* on a bicycle, in profile, feet toward the pedals and hands toward the bar */
+      d.prop=pick(['bmx','roadbike','mtb']); d.propColor=pick(TONE.bright);
+      Object.assign(d.joints,RIDE[d.prop]);
+      if(Math.random()<0.5) d.headwear='bikehelmet';
+      if(Math.random()<0.6) d.eyewear=pick(['cycling','sports']);   /* riders often wear sports eyewear */
+    }
+    if(Math.random()<0.5) HC.mirror(d);
+    if(i%4!==3&&!rider&&!skater){   /* nobody on wheels carries anything, so never a skateboard under the arm of someone riding one */
+      /* an arm that is pointing, waving or raised stays free: the item goes in the other hand */
+      const busy=['pointing','waving','reaching'].includes(pose)?(Math.abs(d.joints.shoulderL)>Math.abs(d.joints.shoulderR)?'left':'right'):null;
+      const hand=busy?(busy==='left'?'right':'left'):pick(['left','right']); d.held={left:null,right:null,[hand]:items[i%items.length]}; }   /* three in four hold something */
+    if(teen) for(const h of ['left','right']) if(ADULT_ITEMS.includes(d.held[h])) d.held[h]=pick(['phone','book','basketball','bag']);   /* nothing office-like or grown-up in a teenager's hand */
+    { /* the pose follows the verb: someone carrying a thing is walking, someone holding a thing is standing */
+      const it=HC.ITEMS[d.held.left||d.held.right], verb=it&&it.verb;
+      if(verb&&!seated&&!rider&&!skater){
+        const keep=d.held;
+        if(verb==='carrying'&&pose!=='walking'){ pose='walking'; HC.applyPose(d,'walking'); d.held=keep; if(Math.random()<0.5) HC.mirror(d); }
+        else if(verb==='holding'&&pose==='walking'){ pose='standing'; HC.applyPose(d,'standing'); d.held=keep; }
+      }
+    }
+    { /* a plate of food, a pizza box or a cake is held out in front on both hands, away from the body.
+         That only reads from the side, so these characters are shown in profile: walking if they carry it, standing if they hold it. */
+      const one=d.held.left||d.held.right;
+      if(['plate','pizzabox','cake'].includes(one)&&!seated&&!rider&&!skater){
+        const walk=HC.ITEMS[one].verb==='carrying'; HC.applyPose(d,walk?'walking':'profile'); pose=walk?'walking':'standing';
+        d.held={left:one,right:null}; d.heldLeftGrip=d.heldRightGrip=null;
+        Object.assign(d.joints,{shoulderL:50,elbowL:40,wristL:0,shoulderR:44,elbowR:40,wristR:0});   /* both forearms level and forward; the free hand sits just under the item */
+        if(Math.random()<0.5) HC.mirror(d);
+      }
+    }
+    ['left','right'].forEach(h=>holdPose(d,h));
+    if(d.held.left==='guitar'||d.held.right==='guitar'){
+      /* guitar: always in the left hand at a +45° grip, with the nominal playing arms (left hand on the neck, right hand over the strings) */
+      if(!seated&&!rider&&!skater){ HC.applyPose(d,'standing'); pose='standing'; }
+      d.held={left:'guitar',right:null}; d.heldLeftGrip=45; d.heldRightGrip=null;
+      Object.assign(d.joints,{shoulderL:-13,elbowL:-120,wristL:-111,shoulderR:53,elbowR:-120,wristR:-47});
+    }
+    { /* phone and parasol: one nominal standing pose each, item in the right hand */
+      const one=d.held.left||d.held.right;
+      if((one==='phone'||one==='parasol')&&!seated&&!rider&&!skater){
+        HC.applyPose(d,'standing'); pose='standing'; d.held={left:null,right:one}; d.heldLeftGrip=d.heldRightGrip=null;
+        if(one==='phone'){ d.head=pick(['front','left']); Object.assign(d.joints,PHONE_POSE[d.head]); }
+        else Object.assign(d.joints,PARASOL_POSE);
+      }
+    }
+    if(fem) d.facialHair='none';   /* never facial hair on women */
+    /* two in eight (one girl, one boy) are teenagers: short or very short, and thin or very thin. Nobody else has both, so "boy" / "girl" is never ambiguous. */
+    if(teen){ d.height=pick([1,2]); d.weight=pick([1,2]); d.facialHair='none'; if(d.hairColor==='grey') d.hairColor='4-0'; }
+    else if(isTeen(d)) d.weight=3;
+    if(i%3===0&&!d.headwear&&d.upperGarment!=='hoodieup'){   /* nothing on top of a raised hood */ d.headwear=(fem?hats:hatsM)[i%(fem?hats:hatsM).length]; d.headwearColor=pick(COLS); }
+    if(i%5===1||(sc==='beach'&&i%3===2)) d.eyewear=d.eyewear||(sc==='beach'?pick(['sunglasses','aviators','sports']):pick(['glasses','sunglasses','round','aviators']));
+    if(Math.random()<0.5) d.accessories.push(pick(S.acc.filter(a=>a!=='tie')));   /* the outfit decides about the tie */
+    const fid=pick(FACES), f=allFaces.find(e=>e[0]===fid); d.eyebrows=f[2]; d.eyes=f[3]; d.mouth=f[4];
+    if(d.upperGarment==='hoodieup') d.headwear=null;   /* nothing on top of a raised hood, helmets included */
+    if(d.headwear) for(const h of ['left','right']) if(String(d.held[h]).startsWith('hat_')) d.held[h]=pick(['phone','book','bag','keys']);   /* wearing a hat: not holding one too */
+    if(S.cleaner&&i===6){   /* one guest is sweeping or mopping the floor, in a pose tuned by hand in the poser */
+      const tool=pick(['mop','broom']); HC.applyPose(d,'standing'); d.prop=null;
+      Object.assign(d.joints,{root:0,pelvis:0,torso:25,neck:13,shoulderL:-54,elbowL:15,wristL:86,shoulderR:-36,elbowR:-57,wristR:-7,hipL:-6,kneeL:6,ankleL:-66,hipR:10,kneeR:-4,ankleR:64});
+      d.held={left:tool,right:'hand_closed'}; d.heldLeftGrip=90; d.heldRightGrip=null; pose=tool==='mop'?'mopping':'sweeping';
+      d.head='right'; }   /* always works toward the right, looking that way */
+    /* one person per scene, if someone suitable turns up, points at the thing in their own other hand.
+       The arms come from poses tuned by hand in the poser: object in the right hand, left hand pointing; half the time the whole pose is mirrored. */
+    if(!pointedItem&&!seated&&!rider&&!skater&&d.torsoOrientation===0&&['standing','hips'].includes(pose)){
+      const it=heldThing(d), set=POINT_SETS[POINTABLE[it]];
+      if(set){ if(d.held.left===it) HC.mirror(d);   /* bring the object to the right hand first */
+        d.flipped=false;   /* front view: the left (pointing) arm is drawn over the right one; a mirror below swaps both together */
+        Object.assign(d.joints,set.j); d.held={left:'hand_pointback',right:it}; d.heldRightGrip=set.grip; d.heldLeftGrip=null;
+        if(Math.random()<0.5) HC.mirror(d);
+        pose='pointing-item'; pointedItem=true; } }
+    { /* hand shapes: a pointing arm points, a waving or raised arm shows an open palm; other empty hands rest by default */
+      const sh={pointing:'hand_pointback',waving:'hand_open',reaching:'hand_open'}[pose];
+      if(sh&&!seated&&!rider&&!skater){ const h=Math.abs(d.joints.shoulderL)>Math.abs(d.joints.shoulderR)?'left':'right'; if(!d.held[h]) d.held[h]=sh; } }
+    for(const [h,k] of [['left','heldLeftGrip'],['right','heldRightGrip']]) if(['fork','knife','spoon'].includes(d.held[h])) d[k]=45;   /* cutlery is held at an angle, not straight along the hand */
+    if(S.snow&&!seated&&(i===3||(i===6&&Math.random()<0.6))){   /* one or two people skiing or snowboarding, in poses tuned in the poser */
+      const board=Math.random()<0.4; d.held={left:null,right:null}; d.heldLeftGrip=d.heldRightGrip=null; d.flipped=false;
+      if(board){ HC.applyPose(d,'standing'); d.prop='snowboard'; Object.assign(d.joints,{shoulderL:-60,elbowL:-20,wristL:0,shoulderR:60,elbowR:20,wristR:0}); pose='snowboarding'; }
+      else { HC.applyPose(d,'profile'); d.prop='skis'; d.held={left:'skipole',right:'skipole'};
+        Object.assign(d.joints,{hipL:-25,kneeL:35,hipR:-22,kneeR:38,torso:-12,neck:10,shoulderL:30,elbowL:30,wristL:0,shoulderR:34,elbowR:26,wristR:0}); pose='skiing'; }
+      d.propColor=pick(TONE.bright); if(Math.random()<0.5) HC.mirror(d); }
+    if((HC.HEADWEAR[d.headwear]||{}).mask) d.eyewear=Math.random()<0.5?'sports':null;   /* under a ski mask: sports sunglasses or nothing */
+    out.push({d:HC.normalize(d),seated,pose});
+  }
+  if(S.carY&&Math.random()<0.6){   /* at most one car, driving along the road in front */
+    const fem=Math.random()<0.5, key=fem?'female':'male', name=pick(NAMES[key].filter(x=>!used[key].includes(x))); used[key].push(name);
+    const d=person({fem,name,outfits:S.outfits,keep:true}); HC.applyPose(d,'chair'); Object.assign(d.joints,{shoulderL:60,elbowL:20,shoulderR:60,elbowR:20});
+    d.prop='car'; d.propColor=pick(TONE.bright); d.held={left:null,right:null}; if(Math.random()<0.5) HC.mirror(d);
+    out.push({d:HC.normalize(d),seated:false,pose:'driving',noTarget:true,fixed:{X:330+rand(540),Y:S.carY,s:0.56}});
+  }
+  if(S.seatSpots){ const spots=S.seatSpots();   /* seated people take fixed places, turned the way the place faces */
+    out.filter(p=>p.seated).forEach((p,i)=>{ const q=spots[i]; if(!q) return;
+      if((p.d.pelvisOrientation>0?1:-1)!==q.dir) p.d=HC.normalize(HC.mirror(p.d));
+      p.fixed={X:q.X,Y:q.Y,s:0.5+0.3*(q.Y-HORIZON)/(H-HORIZON)};
+      if(S.seatTable==='table'){   /* at a dining table: the plate goes on the table; anything else is held in the near hand, above the table top */
+        const d=p.d, sg=d.pelvisOrientation>0?-1:1, near=sg>0?'left':'right', N=sg>0?'L':'R', Fa=sg>0?'R':'L';
+        const it=d.held.left||d.held.right, grip=d.held.left?d.heldLeftGrip:d.heldRightGrip;
+        d.held={left:null,right:null}; d.heldLeftGrip=d.heldRightGrip=null;
+        if(['plate','cake','bowl'].includes(it)) p.onTable=it; else if(it){ d.held[near]=it; d[near==='left'?'heldLeftGrip':'heldRightGrip']=grip; }
+        const up=it&&!p.onTable;
+        Object.assign(d.joints,{['shoulder'+Fa]:sg*26,['elbow'+Fa]:sg*62,['wrist'+Fa]:0,['shoulder'+N]:sg*(up?40:22),['elbow'+N]:sg*(up?82:66),['wrist'+N]:0});
+        p.d=HC.normalize(d); }
+    });
+    if(S.seatTable==='table'){   /* one table per position: a guest whose table would land where another guest's already stands does not get a second one */
+      const placed=[];
+      out.filter(p=>p.seated&&p.fixed).forEach(p=>{ const tx=p.fixed.X+(p.d.pelvisOrientation>0?1:-1)*128*p.fixed.s;
+        if(placed.some(t=>Math.abs(t[0]-tx)<4&&Math.abs(t[1]-p.fixed.Y)<4)) p.noTable=true; else placed.push([tx,p.fixed.Y]); });
+    } }
+  if(S.band) for(const [id,X,Y,s] of S.band()){
+    let d=musician(id); if(!['pianist','piano_singer'].includes(id)&&Math.random()<0.5) d=HC.normalize(HC.mirror(d));   /* any musician may be a mirror image; the pianist stays put because the piano has to fit on the stage */
+    const key=d.bodyType, name=pick(NAMES[key].filter(x=>!used[key].includes(x))); used[key].push(name); d.name=name;
+    out.push({d,seated:false,pose:'playing',role:ROLE[id],fixed:{X,Y,s}});
+  }
+  return out;
+}
+/* everything true of one person, as participle phrases: [kind, text] */
+function facts(p,sc){
+  const d=p.d, f=[];
+  if(p.role) f.push(['action',p.role]);   /* a musician on the stage */
+  if(d.upperGarment) f.push(['top','wearing '+wearPhrase(HC.UPPER,d.upperGarment,d.upperColor)]);
+  if(d.lowerGarment) f.push(['bottom','wearing '+wearPhrase(HC.LOWER,d.lowerGarment,d.lowerColor)]);
+  if(d.headwear) f.push(['hat','wearing '+wearPhrase(HC.HEADWEAR,d.headwear,d.headwearColor)]);
+  if(d.eyewear) f.push(['eyes','wearing '+HC.EYEWEAR[d.eyewear].phrase]);
+  if(d.accessories.includes('backpack')) f.push(['pack','carrying a backpack']);
+  if(d.accessories.includes('scarf')){ const sc=[...new Set(HC.scarfColours(d.scarfColor||HC.SCARF_COL).map(HC.colourName))]; f.push(['scarf',`wearing a ${sc.length>1?sc.slice(0,-1).join(', ')+' and '+sc[sc.length-1]:sc[0]} scarf`]); }
+  for(const h of ['left','right']){ const it=HC.ITEMS[d.held[h]]; if(it&&!it.hand) f.push(['item',`${it.verb} ${it.phrase}`]); }
+  if(p.seated) f.push(['seat',sc==='beach'?'sitting on a beach chair':'sitting on a chair']);
+  if(p.place&&(p.seated||!['walking','riding','skating','driving','skiing','snowboarding'].includes(p.pose))) f.push(['place',(p.seated?'sitting ':'standing ')+p.place]);   /* only people who really are standing or sitting there */
+  if(!p.seated){ const act={waving:'waving',walking:'walking',reaching:'raising a hand',riding:'riding a bicycle',skating:'riding a skateboard',skiing:'skiing',snowboarding:'snowboarding',driving:'driving a car',mopping:'mopping the floor',sweeping:'sweeping the floor'}[p.pose]; if(act) f.push(['action',act]);
+    if(p.pose==='pointing'&&p.pointAt) f.push(['action','pointing at '+p.pointAt]);
+    if(p.pose==='pointing-item'&&heldThing(d)) f.push(['action','pointing at '+HC.ITEMS[heldThing(d)].phrase]); }
+  return f;
+}
+/* boy / girl for the teenagers (short and thin), man / woman for everyone else */
+const noun=d=>{const fem=d.bodyType==='female'; return isTeen(d)?(fem?'girl':'boy'):(fem?'woman':'man');};
+/* ── Find the person: about a hundred people, one description, a time limit ──────────────
+   The crowd stands in a world five times as wide and five times as deep as the regular scenes, at the
+   same figure sizes, and the whole world is shown in the same frame, so everyone appears at 0.2× size. */
+const WW=6000, WH=3300, HOR=760, COUNT=100;
+const sizeAt=Y=>0.5+0.3*(Y-HOR)/(WH-HOR);
+const LIMITS=[60,90,120,180];
+const PEN={miss:5, magnify:0.85, easier:0.8, picture:0.6};   /* seconds lost per wrong click; score multipliers */
+function floorW(y0,y1,fill,line,step){
+  let s=`<rect x="0" y="${y0}" width="${WW}" height="${y1-y0}" fill="${fill}"/>`, d='';
+  for(let x=-(y1-y0);x<WW+step;x+=step) d+=`M${x+(y1-y0)},${y0}L${x},${y1}`;
+  for(let y=y0,g=60;y<y1;y+=g,g*=1.16) d+=`M0,${Math.round(y)}H${WW}`;
+  return s+`<path d="${d}" stroke="${line}" stroke-width="4" fill="none"/>`;
+}
+const winW=(x,y,w,h,c)=>`<rect x="${x}" y="${y}" width="${w}" height="${h}" fill="${c||'#bcdcf0'}" stroke="#5a5a5a" stroke-width="5"/><path d="M${x+w/2},${y}V${y+h}M${x},${y+h/2}H${x+w}" stroke="#5a5a5a" stroke-width="4"/>`;
+const tree=(x,y,k)=>`<g transform="translate(${x} ${y}) scale(${k})"><rect x="-14" y="-110" width="28" height="110" fill="#6b4a2f"/><circle cx="0" cy="-150" r="70" fill="#5fa45a" stroke="#3d6e3a" stroke-width="4"/><circle cx="-48" cy="-112" r="42" fill="#5fa45a" stroke="#3d6e3a" stroke-width="4"/><circle cx="50" cy="-116" r="44" fill="#5fa45a" stroke="#3d6e3a" stroke-width="4"/></g>`;
+const pine=(x,y,k)=>`<g transform="translate(${x} ${y}) scale(${k})"><rect x="-14" y="-70" width="28" height="70" fill="#6b4a2f"/><path d="M0,-420L-110,-180H-60L-140,-60H140L60,-180H110Z" fill="#2f6e45" stroke="#1f4a2e" stroke-width="5"/><path d="M0,-420L-50,-330H50Z" fill="#fff"/><path d="M-110,-180h50l-20,-20zM110,-180h-50l20,-20z" fill="#fff"/></g>`;
+const THEMES={
+  street:{label:'🏙️ Street',base:'street',bg(){
+    let s=`<rect width="${WW}" height="${HOR}" fill="#bfe3f5"/>`;
+    const cols=['#d9a066','#c9d2d9','#e2c4a0','#b7c4a3','#d8b4b4','#c4c0de','#e8d9a8'], awn=['#CC0000','#0066CC','#00CC66','#FF6600','#6600CC'];
+    for(let x=0,i=0;x<WW;i++){ const w=380+(i*137%5)*60, top=60+(i*71%4)*70;
+      s+=`<rect x="${x}" y="${top}" width="${w}" height="${HOR-top}" fill="${cols[i%cols.length]}" stroke="#5a5a5a" stroke-width="5"/>`;
+      for(let wx=x+40;wx+90<x+w;wx+=140) for(let wy=top+50;wy<HOR-260;wy+=150) s+=winW(wx,wy,90,90);
+      s+=`<rect x="${x+w/2-60}" y="${HOR-210}" width="120" height="210" fill="#6b4a2f" stroke="#3d2a1a" stroke-width="5"/>`;
+      if(i%2) s+=`<path d="M${x+30},${HOR-300}H${x+w-30}l-30,70H${x+60}Z" fill="${awn[i%awn.length]}" stroke="#333" stroke-width="4"/>`;
+      x+=w; }
+    s+=floorW(HOR,WH,'#d9d8d2','#b9b8b0',300);
+    for(let x=300;x<WW;x+=1200) s+=`<rect x="${x-9}" y="${HOR-420}" width="18" height="460" fill="#3f4347"/><ellipse cx="${x}" cy="${HOR-430}" rx="40" ry="22" fill="#ffe9a6" stroke="#3f4347" stroke-width="5"/>`;
+    for(let x=900;x<WW;x+=1200) s+=tree(x,HOR+40,1.3);
+    return s; }},
+  ski:{label:'⛷️ Ski resort',base:'ski',
+    bg(){
+    let s=`<rect width="${WW}" height="${HOR}" fill="#cfe9fb"/>`;
+    [[-200,1100,520],[700,1500,300],[1700,1250,420],[2700,1700,260],[3800,1300,380],[4700,1600,280],[5500,1200,460]].forEach(([x,w,top])=>{   /* mountains, snow on top */
+      s+=`<path d="M${x},${HOR}L${x+w/2},${top}L${x+w},${HOR}Z" fill="#8d9bab" stroke="#6b7887" stroke-width="5"/><path d="M${x+w/2},${top}L${x+w/2-w*0.16},${top+(HOR-top)*0.32}l${w*0.06},-30l${w*0.05},40l${w*0.05},-36l${w*0.06},${30}Z" fill="#fff" stroke="#c9d6e2" stroke-width="4"/>`; });
+    /* ski lift: cable, pylons and chairs */
+    s+=`<path d="M0,${HOR-120}L${WW*0.42},120" stroke="#333" stroke-width="5" fill="none"/>`;
+    for(let k=1;k<4;k++){ const x=WW*0.42*k/4, y=HOR-120-(HOR-240)*k/4; s+=`<rect x="${x-10}" y="${y}" width="20" height="${HOR-y}" fill="#555"/>`; }
+    for(let k=0;k<7;k++){ const x=180+k*330, y=HOR-120-(HOR-240)*x/(WW*0.42); s+=`<path d="M${x},${y}v60" stroke="#333" stroke-width="4"/><path d="M${x-36},${y+60}h72v24h-72z" fill="#CC0000" stroke="#7a0000" stroke-width="3"/>`; }
+    /* lodge */
+    const L=WW*0.62; s+=`<rect x="${L}" y="${HOR-330}" width="900" height="330" fill="#8a5a3a" stroke="#4e321f" stroke-width="6"/><path d="M${L-80},${HOR-320}L${L+450},${HOR-600}L${L+980},${HOR-320}Z" fill="#6e4628" stroke="#3d2614" stroke-width="6"/><path d="M${L-60},${HOR-330}L${L+450},${HOR-590}L${L+960},${HOR-330}" stroke="#fff" stroke-width="26" fill="none"/>`
+      +[0,1,2].map(i=>winW(L+90+i*270,HOR-260,150,120,'#ffe9a6')).join('')+`<rect x="${L+400}" y="${HOR-150}" width="100" height="150" fill="#4e321f"/><rect x="${L+260}" y="${HOR-380}" width="380" height="64" rx="10" fill="#fff" stroke="#4e321f" stroke-width="5"/><text x="${L+450}" y="${HOR-334}" font-size="44" font-weight="700" text-anchor="middle" fill="#4e321f" font-family="var(--font-sans,sans-serif)">SKI LODGE</text>`;
+    for(let x=WW*0.47;x<WW;x+=260) if(x<L-140||x>L+1040) s+=pine(x,HOR+10,1.2);
+    s+=floorW(HOR,WH,'#f6f9fc','#dfe8f0',300);
+    return s; }},
+  beach:{label:'🏖️ Beach',base:'beach',bg(){
+    const SEA=HOR-300;
+    let s=`<rect width="${WW}" height="${SEA}" fill="#bfe8fb"/><circle cx="${WW-700}" cy="200" r="120" fill="#FFDD55" stroke="#e8b800" stroke-width="5"/>`;
+    for(let x=500;x<WW-900;x+=1300) s+=`<g transform="translate(${x} ${140+(x%3)*30}) scale(2.4)" fill="#fff"><ellipse cx="0" cy="0" rx="60" ry="20"/><ellipse cx="-34" cy="-12" rx="30" ry="20"/><ellipse cx="22" cy="-18" rx="36" ry="24"/></g>`;
+    s+=`<rect x="0" y="${SEA}" width="${WW}" height="${HOR-SEA}" fill="#2f9bd6"/><rect x="0" y="${SEA}" width="${WW}" height="30" fill="#1f7fb8"/>`;
+    for(let r=0;r<4;r++){ let d=''; const y=SEA+70+r*60; for(let x=(r%2)*150-100;x<WW;x+=300) d+=`M${x},${y}q38,-22 75,0t75,0`; s+=`<path d="${d}" stroke="#fff" stroke-opacity=".7" stroke-width="6" fill="none"/>`; }
+    s+=floorW(HOR,WH,'#f1dca7','#dfc78c',320);
+    { let d=`M0,${HOR+10}`; for(let x=0;x<WW;x+=200) d+=`q50,-30 100,0t100,0`; s+=`<path d="${d}V${HOR-20}H0Z" fill="#fff" fill-opacity=".85"/>`; }
+    const um=['#CC0000','#0066CC','#FFCC00','#00CC66'];
+    for(let x=500,i=0;x<WW;x+=1100,i++) s+=`<g transform="translate(${x} ${HOR+60}) scale(1.6)"><path d="M0,-170L-10,0" stroke="#7a5a3a" stroke-width="6" stroke-linecap="round"/><path d="M-120,-150Q-100,-236 0,-240Q100,-236 120,-150Q90,-166 60,-154Q30,-170 0,-156Q-30,-170 -60,-156Q-90,-166 -120,-150Z" fill="${um[i%4]}" stroke="#333" stroke-width="3"/></g>`;
+    return s; }}
+};
+for(const k in THEMES) SCENES['find_'+k]=Object.assign({},SCENES[THEMES[k].base],THEMES[k].cfg||{},{seats:0,bikes:0,carY:0,cleaner:false,band:null,seatSpots:null,standAt:null,seatTable:null});
+
+
+/* things standing among the crowd, drawn at the same perspective size as the people (origin: the middle of the base) */
+const DECOR={
+  street:[
+    [()=>tree(0,0,2.2),300,520],
+    [()=>`<rect x="-130" y="-70" width="260" height="22" rx="6" fill="#8a5a3a" stroke="#4e321f" stroke-width="4"/><rect x="-130" y="-118" width="260" height="20" rx="6" fill="#8a5a3a" stroke="#4e321f" stroke-width="4"/><path d="M-110,-48V0M110,-48V0M-110,-98V-70M110,-98V-70" stroke="#3f4347" stroke-width="10"/>`,260,120],
+    [()=>`<rect x="-100" y="-80" width="200" height="80" fill="#9c9b94" stroke="#5f5e58" stroke-width="4"/>`+[-70,-30,10,50,80].map((x,i)=>`<circle cx="${x}" cy="${-96-(i%2)*14}" r="20" fill="${['#CC0000','#FFCC00','#FF66CC','#6600CC','#FF6600'][i]}" stroke="#333" stroke-width="3"/>`).join('')+`<path d="M-90,-84q90,-40 180,0" stroke="#3d6e3a" stroke-width="10" fill="none"/>`,200,130],
+    [()=>`<rect x="-120" y="-200" width="240" height="150" rx="10" fill="#f2f2ee" stroke="#555" stroke-width="5"/><path d="M-140,-200L-110,-270H110L140,-200Z" fill="#CC0000" stroke="#7a0000" stroke-width="5"/><text x="0" y="-115" font-size="44" font-weight="700" text-anchor="middle" fill="#CC0000" font-family="var(--font-sans,sans-serif)">HOT DOGS</text><circle cx="-80" cy="-28" r="28" fill="#333"/><circle cx="80" cy="-28" r="28" fill="#333"/>`,280,270]],
+  ski:[
+    [()=>pine(0,0,1.25),340,530],
+    [()=>`<circle cx="0" cy="-70" r="70" fill="#fff" stroke="#b9c7d4" stroke-width="5"/><circle cx="0" cy="-190" r="52" fill="#fff" stroke="#b9c7d4" stroke-width="5"/><circle cx="0" cy="-280" r="38" fill="#fff" stroke="#b9c7d4" stroke-width="5"/><circle cx="-12" cy="-288" r="5" fill="#222"/><circle cx="12" cy="-288" r="5" fill="#222"/><path d="M0,-280l34,8l-34,6z" fill="#FF6600"/><path d="M-30,-310h60v-14h-46v-40h32v40" fill="#222"/><path d="M-36,-244q36,18 72,0" stroke="#CC0000" stroke-width="14" fill="none"/><path d="M-50,-190L-130,-240M50,-190L130,-240" stroke="#6b4a2f" stroke-width="7"/>`,270,370],
+    [()=>`<rect x="-150" y="-40" width="300" height="16" fill="#8a5a3a"/><path d="M-140,-24V0M140,-24V0" stroke="#4e321f" stroke-width="10"/>`+[-120,-80,-40,0,40,80,120].map((x,i)=>`<rect x="${x-5}" y="-300" width="10" height="290" rx="4" fill="${['#CC0000','#0066CC','#FFCC00','#00CC66','#6600CC','#FF6600','#000000'][i]}" stroke="#333" stroke-width="2"/>`).join(''),310,300],
+    [()=>`<path d="M-130,-60H110Q150,-60 150,-90" stroke="#CC0000" stroke-width="12" fill="none"/><rect x="-120" y="-60" width="230" height="30" rx="6" fill="#8a5a3a" stroke="#4e321f" stroke-width="4"/><path d="M-130,-12H140" stroke="#555" stroke-width="8" stroke-linecap="round"/><path d="M-100,-30v18M80,-30v18" stroke="#555" stroke-width="6"/>`,300,100],
+    [()=>`<rect x="-8" y="-330" width="16" height="330" fill="#6b4a2f"/><path d="M-130,-320H110l30,30-30,30H-130Z" fill="#0066CC" stroke="#003d7a" stroke-width="4"/><text x="-10" y="-276" font-size="40" font-weight="700" text-anchor="middle" fill="#fff" font-family="var(--font-sans,sans-serif)">SKI SCHOOL</text>`,290,340]],
+  beach:[
+    [()=>`<path d="M0,-400L-8,0" stroke="#7a5a3a" stroke-width="10" stroke-linecap="round"/><path d="M-200,-360Q-170,-500 0,-506Q170,-500 200,-360Q150,-386 100,-366Q50,-392 0,-370Q-50,-392 -100,-366Q-150,-386 -200,-360Z" fill="${pick(['#CC0000','#0066CC','#FFCC00','#00CC66','#FF66CC'])}" stroke="#333" stroke-width="5"/>`,400,510],
+    [()=>{ const c=pick(['#CC0000','#0066CC','#00CC66','#FF66CC','#FFCC00']); return `<path d="M-150,0L-110,-50H150L110,0Z" fill="${c}" stroke="#333" stroke-width="4"/><path d="M-120,-12H120M-100,-36H140" stroke="#fff" stroke-width="8"/>`; },300,50],
+    [()=>`<path d="M-110,0V-60h22v-18h18v18h30v-44h18v-18h18v18h18v44h30v-18h18v18h22V0Z" fill="#e3c77e" stroke="#b79a52" stroke-width="4"/><path d="M0,-120v-40l28,12-28,12" fill="#CC0000" stroke="#7a0000" stroke-width="3"/>`,220,160],
+    [()=>`<path d="M-30,0Q-56,-220 0,-430Q56,-220 30,0Z" fill="${pick(['#FF6600','#00CCCC','#FFCC00','#CC0066'])}" stroke="#333" stroke-width="5"/><path d="M0,-400V-20" stroke="#fff" stroke-width="8"/>`,110,430]]
+};
+/* the crowd: rows across the ground, staggered so heads show between the people in front */
+function crowd(theme){
+  let ppl=[]; while(ppl.length<COUNT) ppl=ppl.concat(cast('find_'+theme).filter(p=>!p.fixed));
+  ppl=ppl.slice(0,COUNT);
+  const rows=10, cols=12, M=300, cw=(WW-2*M)/cols, y0=HOR+330, y1=WH-50, slots=[];
+  for(let r=0;r<rows;r++) for(let c=0;c<cols;c++) slots.push({X:M+(c+0.5+(r%2?0.22:-0.22))*cw+(Math.random()-0.5)*cw*0.36, Y:y0+(y1-y0)*r/(rows-1)+(Math.random()-0.5)*60});
+  const sl=shuffle(slots), C=HC.STAGE.cx, G=HC.STAGE.ground;
+  ppl.forEach((p,i)=>{ p.X=Math.max(M*0.6,Math.min(WW-M*0.6,sl[i].X)); p.Y=sl[i].Y; p.s=sizeAt(p.Y); p.i=i;
+  });
+  /* the slots nobody stands in get a bench, a tree, a table, an umbrella… */
+  const things=sl.slice(COUNT).map(q=>{ const [f,w,h]=pick(DECOR[theme]), s=sizeAt(q.Y);
+    return {X:q.X,Y:q.Y,s,svg:f(),box:[q.X-w/2*s,q.Y-h*s,w*s,h*s]}; });
+  return {ppl,things};
+}
+const overlap=(a,b)=>Math.max(0,Math.min(a[0]+a[2],b[0]+b[2])-Math.max(a[0],b[0]))*Math.max(0,Math.min(a[1]+a[3],b[1]+b[3])-Math.max(a[1],b[1]));
+/* the person to find must not be hidden: little of their head and upper body behind anyone in front */
+function visible(t,ppl,things){
+  const [x,y,w,h]=t.box, reg=[x+w*0.2,y,w*0.6,h*0.55]; let cov=0;
+  for(const p of ppl.concat(things||[])) if(p!==t&&p.Y>t.Y) cov+=overlap(reg,p.box);
+  return cov/(reg[2]*reg[3])<0.3;
+}
+/* the description: the fewest participle phrases (two, if possible) that fit this person and nobody else */
+const ORDER={top:0,bottom:1,hat:2,eyes:3,scarf:4,pack:5,item:6,action:7};
+const factsOf=p=>facts(p,'find').filter(f=>f[0] in ORDER);
+function combos(a,k){ if(k===1) return a.map(x=>[x]); const out=[]; a.forEach((x,i)=>combos(a.slice(i+1),k-1).forEach(c=>out.push([x].concat(c)))); return out; }
+/* "wearing a red hat and wearing glasses" → "wearing a red hat and glasses" */
+const list=a=>a.length<3?a.join(' and '):a.slice(0,-1).join(', ')+' and '+a[a.length-1];
+function phrase(combo){
+  const ph=combo.slice().sort((a,b)=>ORDER[a[0]]-ORDER[b[0]]).map(f=>f[1]), wear=ph.filter(t=>t.startsWith('wearing ')).map(t=>t.slice(8)), rest=ph.filter(t=>!t.startsWith('wearing '));
+  return list((wear.length?['wearing '+list(wear)]:[]).concat(rest));
+}
+function chooseTarget(cands,things,everyone){
+  const all=everyone.map(p=>({p,n:noun(p.d),f:factsOf(p)})); all.forEach(o=>o.t=o.f.map(f=>f[1]));
+  for(const c of shuffle(all.filter(o=>cands.includes(o.p)))){ if(!c.f.length||!visible(c.p,everyone,things)) continue;
+    for(const k of [2,3,1]) for(const combo of shuffle(combos(c.f,k)).filter(cb=>!(cb.some(f=>f[0]==='item')&&cb.some(f=>f[1].startsWith('pointing at ')))))   /* not "holding a mug and pointing at a mug" */
+      if(all.filter(o=>o.n===c.n&&combo.every(f=>o.t.includes(f[1]))).length===1){
+        return {p:c.p, text:`the ${c.n} ${phrase(combo)}`}; } }
+  return null;
+}
+
+/* ── the round ── */
+const $=id=>document.getElementById(id);
+let theme='street', ppl=[], things=[], found=[], target=null, st=null, timer=0;
+const fmt=s=>{ s=Math.max(0,Math.ceil(s)); return `${Math.floor(s/60)}:${String(s%60).padStart(2,'0')}`; };
+function best(){ try{ return +localStorage.getItem('find-person-best-'+theme)||0; }catch(e){ return 0; } }
+function saveBest(v){ try{ if(v>best()) localStorage.setItem('find-person-best-'+theme,String(v)); }catch(e){} }
+/* a new crowd, drawn once; then a person to find in it */
+function newRound(){
+  clearInterval(timer); st=null; syncButtons();
+  $('fpStage').classList.add('fp-blur'); $('fpCover').hidden=false; $('fpCover').innerHTML='<span>Building the crowd…</span>';
+  setTimeout(()=>{
+    for(let tries=0;tries<5;tries++){
+      ({ppl,things}=crowd(theme));
+      const figs=ppl.concat(things).sort((a,b)=>a.Y-b.Y).map(p=>{ if(p.svg) return `<g transform="translate(${p.X} ${p.Y}) scale(${p.s})">${p.svg}</g>`; const body=HC.render(p.d).replace(/^<svg [^>]*>/,'').replace(/<\/svg>$/,'');
+        return `<g data-i="${p.i}">${shadow(p,p.X,p.Y,p.s)}<g transform="translate(${p.X-HC.STAGE.cx*p.s} ${p.Y-HC.STAGE.ground*p.s}) scale(${p.s})">${body}</g></g>`; }).join('');
+      $('fpSvg').innerHTML=`<defs><filter id="fpGrey" color-interpolation-filters="sRGB"><feColorMatrix type="saturate" values="0"/></filter><clipPath id="fpClip"><rect id="fpClipRect" x="0" y="0" width="${WW}" height="${WH}"/></clipPath></defs>`
+        +`<g id="fpView"><use href="#fpWorld" id="fpGreyUse" filter="url(#fpGrey)" display="none" class="fp-grey"/><g id="fpColour"><g id="fpWorld">${THEMES[theme].bg()}${figs}<g id="fpMarks"></g></g></g></g>`;
+      /* each person's box, measured from the drawing itself */
+      ppl.forEach(p=>{ const b=$('fpWorld').querySelector(`[data-i="${p.i}"] > g`).getBBox(), t=p.X-HC.STAGE.cx*p.s, u=p.Y-HC.STAGE.ground*p.s;
+        p.box=[t+b.x*p.s, u+b.y*p.s, b.width*p.s, b.height*p.s]; });
+      found=[]; if(newTarget()) return;
+    }
+  },30);
+}
+/* the next person to look for in the same crowd: never one already found or shown */
+function newTarget(){
+  clearInterval(timer);
+  target=chooseTarget(ppl.filter(p=>!found.includes(p)),things,ppl); if(!target){ note('Nobody else in this crowd can be described in a unique way. Try 🔀 New crowd.'); return false; }
+  found.push(target.p);
+  $('fpMarks').innerHTML=''; $('fpTask').innerHTML=`Find <strong>${target.text}</strong>.`;
+  $('fpPic').innerHTML=HC.render(target.p.d,{fit:true});
+  st={limit:+$('fpLimit').value, running:false, done:false, lost:0, t0:0, magnify:false, easier:0, picture:false, region:[0,0,WW,WH], misses:0};
+  easierView(false); $('fpStage').classList.add('fp-blur'); $('fpCover').hidden=false;
+  $('fpVi').open=false; $('fpResult').hidden=true; $('fpResult').innerHTML='';
+  $('fpCover').innerHTML='<span>Read the description, then press <b>🎬 Start</b>.</span>';
+  $('fpClock').textContent=fmt(st.limit); $('fpClock').className='fp-clock';
+  $('fpBest').textContent=best()?`Best: ${best()}`:'';
+  setMag(false); syncButtons(); note('');
+  return true;
+}
+function syncButtons(){
+  const run=!!(st&&st.running);
+  $('fpStart').disabled=!st||st.running; $('fpStart').textContent=st&&st.done?'🔁 Again':'🎬 Start'; $('fpMag').disabled=!st||!(st.running||st.done);
+  $('fpEasy').disabled=!run||st.easier>=3; $('fpEasy').textContent=`🐣 Easier${st&&st.easier?` (${3-st.easier} left)`:''}`;
+  $('fpLimit').disabled=run;
+  $('fpViSum').textContent=run?`👤 Show the person (score ×${PEN.picture})`:'👤 What does the person look like?';
+}
+const note=(t,cls)=>{ const n=$('fpNote'); n.textContent=t; n.className='fp-note'+(cls?' '+cls:''); };
+function remaining(){ return st.limit-st.lost-(st.running?(performance.now()-st.t0)/1000:0); }
+function start(){
+  if(!st||st.running||st.done) return;
+  st.running=true; st.t0=performance.now(); $('fpVi').open=false;   /* the picture hides when the clock starts */
+  $('fpStage').classList.remove('fp-blur'); $('fpCover').hidden=true;
+  timer=setInterval(tick,100); syncButtons(); tick();
+}
+function tick(){ const r=remaining(); $('fpClock').textContent=fmt(r); $('fpClock').classList.toggle('fp-low',r<=10); if(r<=0) finish(false); }
+function finish(found){
+  if(!st||st.done) return;
+  const left=Math.max(0,remaining()); clearInterval(timer); st.running=false; st.done=true;
+  $('fpStage').classList.remove('fp-blur'); $('fpCover').hidden=true; easierView(false);
+  const b=target.p.box; $('fpMarks').insertAdjacentHTML('beforeend',`<ellipse cx="${b[0]+b[2]/2}" cy="${b[1]+b[3]/2}" rx="${b[2]/2+70}" ry="${b[3]/2+70}" fill="none" stroke="#222" stroke-width="26"/><ellipse cx="${b[0]+b[2]/2}" cy="${b[1]+b[3]/2}" rx="${b[2]/2+70}" ry="${b[3]/2+70}" fill="none" stroke="#FFCC00" stroke-width="14"/>`);
+  const base=found?Math.round(1000*left/st.limit):0, rows=[[`Time left: ${fmt(Math.floor(left))} of ${fmt(st.limit)}`+(st.misses?` (${st.misses} wrong click${st.misses>1?'s':''}, −${st.misses*PEN.miss} s)`:''),`${base}`]];
+  let score=base;
+  if(st.magnify){ score*=PEN.magnify; rows.push(['🔍 Magnifying glass used',`×${PEN.magnify}`]); }
+  if(st.easier){ const m=Math.pow(PEN.easier,st.easier); score*=m; rows.push([`🐣 Easier used ${st.easier}×`,`×${+m.toFixed(2)}`]); }
+  if(st.picture){ score*=PEN.picture; rows.push(['👤 Picture opened during the search',`×${PEN.picture}`]); }
+  score=Math.round(score); if(found) saveBest(score);
+  $('fpResult').innerHTML=`<h2>${found?'🎉 You found them!':'⏰ Time’s up!'}</h2><p>${found?'':'Here is '+target.text+'. '}Score: <strong class="fp-score">${score}</strong> / 1000</p>`
+    +`<table class="fp-break">${rows.map(r=>`<tr><td>${r[0]}</td><td>${r[1]}</td></tr>`).join('')}<tr><th>Score</th><th>${score}</th></tr></table>`
+    +`<p class="fp-say">Say it: <em>“${target.text.charAt(0).toUpperCase()+target.text.slice(1)} is ${found?'here':'there'}, ${b[0]+b[2]/2<WW/3?'on the left':b[0]+b[2]/2>WW*2/3?'on the right':'in the middle'}${b[1]+b[3]<HOR+(WH-HOR)*0.45?', at the back':b[1]+b[3]>HOR+(WH-HOR)*0.75?', at the front':''}.”</em></p>`;
+  $('fpResult').hidden=false; $('fpBest').textContent=best()?`Best: ${best()}`:''; syncButtons(); note('');
+}
+/* where on the world was the pointer? */
+function worldAt(ev){ const r=$('fpSvg').getBoundingClientRect(); return [(ev.clientX-r.left)/r.width*WW,(ev.clientY-r.top)/r.height*WH]; }
+function clickScene(ev){
+  if(!st||!st.running) return;
+  const [x,y]=worldAt(ev), g=ev.target.closest&&ev.target.closest('[data-i]'), b=target.p.box;
+  if(ev.target.closest&&ev.target.closest('.fp-grey')) return note('The person isn’t in the grey part.');
+  const inCore=x>b[0]+b[2]*0.2&&x<b[0]+b[2]*0.8&&y>b[1]&&y<b[1]+b[3];
+  if((g&&+g.dataset.i===target.p.i)||(!g&&inCore)) return finish(true);
+  st.lost+=PEN.miss; st.misses++; tick();
+  $('fpMarks').insertAdjacentHTML('beforeend',`<g class="fp-miss" transform="translate(${x} ${y})"><path d="M-40,-40L40,40M40,-40L-40,40" stroke="#222" stroke-width="26" stroke-linecap="round"/><path d="M-40,-40L40,40M40,-40L-40,40" stroke="#CC0000" stroke-width="14" stroke-linecap="round"/></g>`);
+  setTimeout(()=>{ const m=$('fpMarks').querySelector('.fp-miss'); if(m) m.remove(); },900);
+  note(`No, that isn’t the person. −${PEN.miss} seconds.`,'bad');
+}
+/* 🐣 Easier: grey out a part of the view where the person is not; each press keeps about half of what is left */
+function easier(){
+  if(!st||!st.running||st.easier>=3) return;
+  const b=target.p.box, pad=60; let [x,y,w,h]=st.region;
+  const cut=(a,len,t0,t1)=>{ let c=a+len*(0.4+Math.random()*0.2); if(c>t0-pad&&c<t1+pad) c=(c-(t0-pad)<(t1+pad)-c)?t0-pad:t1+pad;
+    if(c<a+len*0.15||c>a+len*0.85) return null; return (t0+t1)/2<c?[a,c-a]:[c,a+len-c]; };
+  let r=null; const wide=w/WW>=h/(WH-HOR);
+  for(const ax of wide?['x','y']:['y','x']){ r=ax==='x'?cut(x,w,b[0],b[0]+b[2]):cut(y,h,b[1],b[1]+b[3]); if(r){ if(ax==='x'){ x=r[0]; w=r[1]; } else { y=r[0]; h=r[1]; } break; } }
+  if(!r) return note('The search area can’t get any smaller.');
+  st.region=[x,y,w,h]; st.easier++; easierView(true); syncButtons();
+  note(`Search area: about ${Math.round(100*w*h/(WW*WH))}% of the picture. Score ×${PEN.easier}.`);
+}
+function easierView(on){
+  const rc=$('fpClipRect'); if(!rc) return;
+  if(on){ const [x,y,w,h]=st.region; rc.setAttribute('x',x); rc.setAttribute('y',y); rc.setAttribute('width',w); rc.setAttribute('height',h);
+    $('fpColour').setAttribute('clip-path','url(#fpClip)'); $('fpGreyUse').removeAttribute('display'); }
+  else { $('fpColour').removeAttribute('clip-path'); $('fpGreyUse').setAttribute('display','none'); }
+}
+/* 🔍 Magnify: a round loupe that follows the pointer and shows the same view, three and a half times bigger */
+const LOUPE=230, ZOOM=3.5;
+function setMag(on){ $('fpMag').setAttribute('aria-pressed',String(on)); $('fpStage').classList.toggle('fp-magnify',on); if(!on) $('fpLoupe').hidden=true;
+  if(on&&st&&st.running&&!st.magnify){ st.magnify=true; note(`Magnifying glass on. Score ×${PEN.magnify}.`); } }
+function moveLoupe(ev){
+  if($('fpMag').getAttribute('aria-pressed')!=='true') return;
+  const r=$('fpSvg').getBoundingClientRect(), sr=$('fpStage').getBoundingClientRect(), L=$('fpLoupe');
+  if(ev.clientX<r.left||ev.clientX>r.right||ev.clientY<r.top||ev.clientY>r.bottom){ L.hidden=true; return; }
+  const [x,y]=worldAt(ev), vw=LOUPE/(r.width/WW)/ZOOM;
+  $('fpLoupeSvg').setAttribute('viewBox',`${x-vw/2} ${y-vw/2} ${vw} ${vw}`);
+  L.style.left=(ev.clientX-sr.left-LOUPE/2)+'px'; L.style.top=(ev.clientY-sr.top-LOUPE/2)+'px'; L.hidden=false;
+}
+
+/* wiring */
+$('fpThemes').innerHTML=Object.entries(THEMES).map(([k,t])=>`<button type="button" data-theme="${k}" aria-pressed="${k===theme}">${t.label}</button>`).join('');
+$('fpThemes').addEventListener('click',ev=>{ const b=ev.target.closest('[data-theme]'); if(!b) return; theme=b.dataset.theme;
+  $('fpThemes').querySelectorAll('button').forEach(x=>x.setAttribute('aria-pressed',String(x===b))); newRound(); });
+$('fpLimit').innerHTML=LIMITS.map(s=>`<option value="${s}"${s===120?' selected':''}>${fmt(s)}</option>`).join('');
+$('fpLimit').addEventListener('change',()=>{ if(st&&!st.running&&!st.done){ st.limit=+$('fpLimit').value; $('fpClock').textContent=fmt(st.limit); } });
+$('fpNew').addEventListener('click',newRound);
+$('fpStart').addEventListener('click',()=>{ if(st&&st.done) newTarget(); else start(); });
+$('fpEasy').addEventListener('click',easier);
+$('fpMag').addEventListener('click',()=>setMag($('fpMag').getAttribute('aria-pressed')!=='true'));
+$('fpSvg').addEventListener('click',clickScene);
+$('fpStage').addEventListener('pointermove',moveLoupe);
+$('fpStage').addEventListener('pointerleave',()=>{ $('fpLoupe').hidden=true; });
+$('fpVi').addEventListener('toggle',()=>{ if(st&&st.running&&$('fpVi').open&&!st.picture){ st.picture=true; note(`Picture opened. Score ×${PEN.picture}.`,'bad'); } });
+newRound();
+
+})();
+</script>
+<script>if(window.HouseGrammar) HouseGrammar.init();</script>
+</body>
+</html>

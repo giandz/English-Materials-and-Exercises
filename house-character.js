@@ -133,7 +133,7 @@ function ring(cx,cy,rx,ry,a0,a1,n,r){
 /* props stand on the floor. Chair, stool and bicycle are pinned to the pelvis; the rest stand next to the character. */
 const PROPS={chair:{label:'Chair',col:'#CC9966'},stool:{label:'Stool',col:'#CC9966'},desk:{label:'School desk',col:'#CC9966'},
   beachchair:{label:'Beach chair',col:'#FF6600'},stroller:{label:'Stroller',col:'#0066CC'},bmx:{label:'BMX bicycle',col:'#CC0000'},roadbike:{label:'Road bicycle',col:'#0066CC'},
-  mtb:{label:'Mountain bicycle',col:'#00CC66'},piano:{label:'Grand piano and stool',col:'#000000'},drums:{label:'Drum set',col:'#CC0000'},keyboard:{label:'Electronic keyboard',col:'#333333'},micstand:{label:'Microphone stand (empty)',col:'#333333'},scooter:{label:'Scooter',col:'#CC0000'},skateboard:{label:'Skateboard',col:'#00CC66'},car:{label:'Car',col:'#CC0000'}};
+  mtb:{label:'Mountain bicycle',col:'#00CC66'},piano:{label:'Grand piano and stool',col:'#000000'},skis:{label:'Skis (standing on them)',col:'#CC0000'},snowboard:{label:'Snowboard (standing on it)',col:'#0066CC'},drums:{label:'Drum set',col:'#CC0000'},keyboard:{label:'Electronic keyboard',col:'#333333'},micstand:{label:'Microphone stand (empty)',col:'#333333'},scooter:{label:'Scooter',col:'#CC0000'},skateboard:{label:'Skateboard',col:'#00CC66'},car:{label:'Car',col:'#CC0000'}};
 /* Side-view bicycle geometry in stage pixels (about 227 px per metre), saddle at the origin, facing +x.
    G floor · R wheel radius · tw tyre width · A/F rear and front axle · BB bottom bracket · J where seat stays and top tube meet the seat tube ·
    HT/HB head tube top and bottom · bar handlebar point · k drawing scale */
@@ -276,6 +276,18 @@ function propSVG(id,c,o){   /* o = {x,y: hip point, g: floor, side: profile view
       return side
         ?[{z:19,bottom:g+15,span:70,svg:at(x,g,`<path d="M-38,5.5v3M38,5.5v3" stroke="#5f6870" stroke-width="5" fill="none"/>${wh(-38)}${wh(38)}<path d="M-64,-7Q-58,0 -48,0H48Q58,0 64,-7L66,-4Q60,5.5 48,5.5H-48Q-60,5.5 -66,-4Z" ${F}/><path d="M-62,-6Q-57,0 -48,0H48Q57,0 62,-6" fill="none" stroke="#222" stroke-width="1.6"/>`)}]
         :[{z:19,bottom:g+15,span:20,svg:at(x,g,`<path d="M-15,8H15" stroke="#5f6870" stroke-width="4" fill="none"/><rect x="-19" y="4" width="7" height="11" rx="3" fill="#f1ede0" stroke="#5f6870"/><rect x="12" y="4" width="7" height="11" rx="3" fill="#f1ede0" stroke="#5f6870"/><rect x="-13" y="0" width="26" height="5.5" rx="2.5" ${F}/><path d="M-12,0.6H12" stroke="#222" stroke-width="1.6" fill="none"/>`,1,false)}]; }
+    case 'skis': {   /* standing on a pair of skis: tips curl up in front; seen from the front, the tips come toward the viewer */
+      const fx=n2(Math.max(10,(o.hw||24)*0.55));
+      const ski=(dx,dy,f)=>`<path d="M${-200+dx},${dy}H${168+dx}Q${192+dx},${dy} ${202+dx},${dy-15}L${208+dx},${dy-12}Q${198+dx},${dy+6} ${168+dx},${dy+6}H${-200+dx}Q${-205+dx},${dy+6} ${-205+dx},${dy+3}Q${-205+dx},${dy} ${-200+dx},${dy}Z" ${f}/>`;
+      return side
+        ?[{z:19,bottom:g+6,span:205,svg:at(x,g,ski(-12,-2,D)+ski(0,0,F)+R(-20,-7,40,7,T,2)+`<path d="M-160,3H150" stroke="#fff" stroke-opacity=".5" stroke-width="1.6" fill="none"/>`)}]
+        :[{z:19,bottom:g+6,span:fx+10,svg:at(x,g,[-fx,+fx].map(X=>`<path d="M${X-8},-2H${X+8}V16Q${X+8},28 ${X},30Q${X-8},28 ${X-8},16Z" ${F}/><rect x="${X-9}" y="-5" width="18" height="7" rx="2" ${T}/><path d="M${X},2V24" stroke="#fff" stroke-opacity=".5" stroke-width="1.6" fill="none"/>`).join(''),1,false)}]; }
+    case 'snowboard': {   /* both feet on one board, across the stance: long from the front, end-on in profile */
+      const fx=n2(Math.max(14,(o.hw||24)*0.75));
+      return side
+        ?[{z:19,bottom:g+8,span:32,svg:at(x,g,`<rect x="-30" y="0" width="60" height="8" rx="4" ${F}/><rect x="-22" y="-6" width="44" height="7" rx="2" ${T}/>`)}]
+        :[{z:19,bottom:g+8,span:170,svg:at(x,g,`<path d="M-150,0H150Q168,0 170,-10L176,-8Q172,8 150,8H-150Q-172,8 -176,-8L-170,-10Q-168,0 -150,0Z" ${F}/><path d="M-120,4H-40M40,4H120" stroke="#fff" stroke-opacity=".6" stroke-width="2.4" fill="none"/>`
+            +[-fx,fx].map(X=>R(X-13,-6,26,7,T,2)).join(''),1,false)}]; }
     case 'scooter': return side
       ?[{z:24,span:150,svg:at(x,g,wheel(-66,-22,22,5)+wheel(80,-22,22,5)+tube('M-58,-24H58L80,-22',7)+`<path d="M80,-22L66,-236" stroke="#5f6870" stroke-width="8" stroke-linecap="round" fill="none"/><path d="M80,-22L66,-236" stroke="#b4bcc4" stroke-width="5" stroke-linecap="round" fill="none"/><path d="M54,-238H78" stroke="#111" stroke-width="8" stroke-linecap="round" fill="none"/>`)}]
       :[{z:33,span:60,svg:at(x,g,`<ellipse cx="0" cy="-22" rx="6" ry="22" ${T}/>`+R(-16,-30,32,8,F,3)+`<path d="M0,-30V-236" stroke="#5f6870" stroke-width="8" fill="none"/><path d="M0,-30V-236" stroke="#b4bcc4" stroke-width="5" fill="none"/>`,1,false)},
@@ -290,8 +302,8 @@ function propSVG(id,c,o){   /* o = {x,y: hip point, g: floor, side: profile view
   return [];
 }
 const ITEM_CATS=[['Hand shapes',['hand_closed','hand_open','hand_point','hand_pointback']],['Tools',['wrench','hammer','screwdriver','pliers','paintbrush','flashlight','multimeter','solderingiron','toolbox']],
-  ['Kitchen',['fork','knife','spoon','pan','cup','mug','bowl','plate','cake','pizzabox']],['Everyday',['book','phone','tablet','keys','balloon','teddy']],
-  ['Sports',['beachball','soccerball','basketball','volleyball','football','tennisball','baseball','tennisracket','baseballbat','mitt','skateboard']],
+  ['Kitchen',['fork','knife','spoon','pan','cup','mug','bowl','plate','cake','pizzabox']],['Everyday',['book','newspaper','newspaperfolded','magazine','magazineopen','phone','tablet','keys','balloon','teddy']],
+  ['Sports',['beachball','soccerball','basketball','volleyball','football','tennisball','baseball','tennisracket','baseballbat','mitt','skateboard','skis','snowboard','skipole']],
   ['Cleaning',['broom','mop','duster']],
   ['Bags and luggage',['box','bag','purse','briefcase','suitcase']],['Umbrellas and canes',['cane','parasol','umbrella','parasolclosed','umbrellaclosed']],
   ['Music',['boombox','microphone','micstand','guitar','electricguitar','bass','violin','viola','cello','doublebass','violinbow','mandolin','bongos','accordion','concertina','trumpet','flute','tambourine','maraca','drumstick']],
@@ -393,6 +405,37 @@ const ITEMS = (()=>{
   pizzabox:{label:'Pizza box',noun:'pizza box',plural:'pizza boxes',phrase:'a pizza box',verb:'carrying',upright:true,col:'#CC9966',draw:(s,c)=>
     `<g transform="translate(${-s*30},-1)"><rect x="-33" y="-10" width="66" height="12" rx="1.5" ${F(c)}/><path d="M-33,-5.5H33" stroke="${edge(c)}" fill="none"/><circle cx="0" cy="-5" r="3.6" fill="#CC0000" stroke="none"/></g>`},
   /* everyday */
+  newspaper:{label:'Newspaper (open)',noun:'newspaper',phrase:'a newspaper',verb:'reading',upright:true,col:'#F4F1E8',draw:(s,c,d)=>{   /* a broadsheet held open in front, with a black-and-white photo */
+    const x0=s>0?-112:-8, txt=(x,y,w,n)=>Array.from({length:n},(_,i)=>`M${x},${y+i*4.2}h${w}`).join('');
+    return `<rect x="${x0}" y="-50" width="120" height="88" fill="${c}" stroke="#8a8578"/><path d="M${x0+60},-50V38" stroke="#b8b3a6" fill="none"/>`
+      +`<text x="${x0+60}" y="-39" font-size="10" font-weight="700" font-family="Georgia, 'Times New Roman', serif" text-anchor="middle" fill="#1b1b1b">THE DAILY NEWS</text><path d="M${x0+4},-35h112M${x0+4},-33.6h112" stroke="#1b1b1b" stroke-width=".6" fill="none"/>`
+      +`<rect x="${x0+5}" y="-30" width="50" height="5" fill="#1b1b1b"/>`+pressPhoto(d,7,x0+5,-22,50,40,true)
+      +`<path d="${txt(x0+5,22,50,4)}${txt(x0+65,-29,50,14)}${txt(x0+65,33.5,50,1)}" stroke="#77736a" stroke-width="1.6" fill="none"/><rect x="${x0+65}" y="-25" width="50" height="4" fill="#1b1b1b" transform="translate(0 -6)"/>`; }},
+  newspaperfolded:{label:'Newspaper (folded)',noun:'newspaper',phrase:'a newspaper',verb:'holding',col:'#F4F1E8',draw:(s,c)=>
+    `<g transform="translate(${-s*12},6)"><rect x="-14" y="-6" width="28" height="44" rx="1" fill="${c}" stroke="#8a8578"/><path d="M-14,-6l3,2h22l3,-2" fill="none" stroke="#b8b3a6"/><rect x="-11" y="0" width="22" height="4" fill="#1b1b1b"/><path d="M-11,8h22M-11,12h22M-11,16h22M-11,20h12M-11,25h22M-11,29h22M-11,33h17" stroke="#77736a" stroke-width="1.4" fill="none"/></g>`},
+  magazine:{label:'Magazine (closed)',noun:'magazine',phrase:'a magazine',verb:'holding',col:'#CC0066',draw:(s,c,d)=>{   /* a glossy cover in full colour; turns with the hand, so it can be held at any angle */
+    const x0=-22, music=(()=>{let h=3; for(const ch of String(d&&d.name||'')) h=(h*31+ch.charCodeAt(0))>>>0; return h%4>=2;})();
+    return `<g transform="translate(${-s*16},-2)">`+pressPhoto(d,3,x0,-6,44,48,false)+`<rect x="${x0}" y="-17" width="44" height="59" fill="none" stroke="#555"/>`
+      +`<rect x="${x0}" y="-17" width="44" height="11" fill="${c}"/><text x="0" y="-8.5" font-size="9.5" font-weight="900" font-family="Helvetica, Arial, sans-serif" text-anchor="middle" fill="#fff" letter-spacing=".4">${music?'MUSIC':'STYLE'}</text>`
+      +`<path d="M${x0+4},34h17M${x0+4},37.5h11" stroke="#fff" stroke-width="1.8" fill="none"/></g>`; }},
+  magazineopen:{label:'Magazine (open)',noun:'magazine',phrase:'a magazine',verb:'reading',upright:true,col:'#CC0066',draw:(s,c,d)=>{   /* a double-page spread held open in front: colour photo on the left, article on the right */
+    const x0=s>0?-98:-8, W=106, H=72, y0=-42, txt=(x,y,w,n)=>Array.from({length:n},(_,i)=>`M${x},${y+i*4}h${w}`).join('');
+    return `<rect x="${x0}" y="${y0}" width="${W}" height="${H}" fill="#fdfcf9" stroke="#8a8578"/>`
+      +pressPhoto(d,11,x0+3,y0+3,48,H-6,false)
+      +`<path d="M${x0+W/2},${y0}V${y0+H}" stroke="#c9c4b8" stroke-width="1.4" fill="none"/>`
+      +`<rect x="${x0+57}" y="${y0+5}" width="44" height="6" fill="${c}"/><rect x="${x0+57}" y="${y0+14}" width="30" height="3.5" fill="#333"/>`
+      +`<path d="${txt(x0+57,y0+23,20,11)}${txt(x0+81,y0+23,20,6)}${txt(x0+81,y0+55,20,3)}" stroke="#8d8a83" stroke-width="1.4" fill="none"/>`
+      +`<rect x="${x0+81}" y="${y0+45}" width="20" height="6" fill="${c}" fill-opacity=".25"/>`; }},
+  skis:{label:'Skis',noun:'skis',phrase:'skis',plural:'pairs of skis',verb:'holding',upright:true,col:'#CC0000',draw:(s,c)=>{   /* a pair standing on the ground beside the hand, tips up */
+    const x=s>0?-6:-12, e=edge(c);
+    return [0,11].map(k=>`<path d="M${x+k},232V-196Q${x+k},-214 ${x+k+5},-222L${x+k+9},-218Q${x+k+9},-206 ${x+k+9},-196V232Z" fill="${c}" stroke="${e}" stroke-width="1.6"/>`).join('')
+      +`<rect x="${x-2}" y="120" width="24" height="16" rx="3" fill="#333" stroke="#111"/><path d="M${x+2},-150v300M${x+13},-150v300" stroke="#fff" stroke-opacity=".55" stroke-width="2"/>`; }},
+  snowboard:{label:'Snowboard',noun:'snowboard',phrase:'a snowboard',verb:'holding',upright:true,col:'#0066CC',draw:(s,c)=>{   /* standing on its tail beside the hand */
+    const x=s>0?-26:-6;
+    return `<rect x="${x}" y="-205" width="32" height="437" rx="16" fill="${c}" stroke="${edge(c)}" stroke-width="1.8"/><path d="M${x+5},-120L${x+27},-60M${x+5},-90L${x+27},-30" stroke="#fff" stroke-width="6" stroke-opacity=".8"/>`
+      +[40,150].map(y=>`<rect x="${x+3}" y="${y}" width="26" height="20" rx="4" fill="#333" stroke="#111"/>`).join(''); }},
+  skipole:{label:'Ski pole',noun:'ski pole',phrase:'a ski pole',plural:'ski poles',pairPhrase:'ski poles',verb:'holding',upright:true,col:'#333333',draw:(s,c)=>   /* one pole, from the hand down to the snow */
+    `<path d="M0,-14L5,232" stroke="#9aa3ad" stroke-width="3.4" stroke-linecap="round"/><ellipse cx="4.6" cy="212" rx="10" ry="3.2" fill="none" stroke="#333" stroke-width="2.2"/><rect x="-5" y="-26" width="10" height="22" rx="4" fill="${c}" stroke="${edge(c)}"/><path d="M-5,-24Q-11,-12 -5,-4" fill="none" stroke="${c}" stroke-width="1.6"/>`},
   book:{label:'Book',noun:'book',phrase:'a book',verb:'holding',col:'#CC0000',draw:(s,c)=>
     `<rect x="-15" y="-10" width="30" height="42" rx="2" ${F(c)}/><path d="M-11,-10V32" stroke="${edge(c)}" fill="none"/><rect x="-5" y="-2" width="14" height="5" fill="#f1dcc0" stroke="none"/>`},
   phone:{label:'Phone',noun:'phone',phrase:'a phone',verb:'holding',col:'#333333',draw:(s,c)=>
@@ -634,14 +677,17 @@ const HEADWEAR = {
   headband:{label:'Headband',noun:'headband',col:'#FF66CC'},
   bow:{label:'Bow hairband',noun:'bow hairband',col:'#CC0000'},
   headphones:{label:'Headphones',noun:'headphones',pl:1,col:'#333333'},
-  headset:{label:'Headset',noun:'headset',col:'#333333'}
+  headset:{label:'Headset',noun:'headset',col:'#333333'},
+  skimask:{label:'Ski mask',noun:'ski mask',col:'#333333',mask:true}
 };
 const ACCESSORIES = {
   watchL:{label:'Watch (L)'},watchR:{label:'Watch (R)'},braceletL:{label:'Bracelet (L)'},braceletR:{label:'Bracelet (R)'},
   ringL:{label:'Ring (L)'},ringR:{label:'Ring (R)'},glovesL:{label:'Glove (L)'},glovesR:{label:'Glove (R)'},
   elbowpadL:{label:'Elbow pad (L)'},elbowpadR:{label:'Elbow pad (R)'},kneepadL:{label:'Knee pad (L)'},kneepadR:{label:'Knee pad (R)'},
-  mascara:{label:'Mascara'},blush:{label:'Blush'},lipstick:{label:'Lipstick'},necklace:{label:'Necklace'},choker:{label:'Choker'},backpack:{label:'Backpack'},fannypack:{label:'Fanny pack'},studs:{label:'Stud earrings'},drops:{label:'Drop earrings'},tie:{label:'Tie'}
+  mascara:{label:'Mascara'},blush:{label:'Blush'},lipstick:{label:'Lipstick'},necklace:{label:'Necklace'},choker:{label:'Choker'},backpack:{label:'Backpack'},fannypack:{label:'Fanny pack'},studs:{label:'Stud earrings'},drops:{label:'Drop earrings'},scarf:{label:'Scarf'},tie:{label:'Tie'}
 };
+/* a scarf's three stripes: the chosen colour and the two a third of the colour wheel away (white and black for a grey) */
+function scarfColours(c){ const n=parseInt(c.slice(1),16), r=n>>16, g=(n>>8)&255, b=n&255; return Math.max(r,g,b)-Math.min(r,g,b)<24?[c,'#FFFFFF','#000000']:[c,hueRotate(c,120),hueRotate(c,240)]; }
 /* rotate a colour's hue by deg degrees */
 function hueRotate(hex,deg){
   const n=parseInt(hex.slice(1),16), r=(n>>16)/255, g=((n>>8)&255)/255, b=(n&255)/255, mx=Math.max(r,g,b), mn=Math.min(r,g,b), l=(mx+mn)/2, dl=mx-mn;
@@ -749,6 +795,12 @@ function headwearSVG(id,side,col){
       const mic=id!=='headset'?'':side?`<path d="M0,10Q-10,24 -25,21" fill="none" stroke="${h.col}" stroke-width="2.2" stroke-linecap="round"/><ellipse cx="-27" cy="21" rx="3.6" ry="2.8" ${B}/>`
         :`<path d="M-32,11Q-30,25 -14,24" fill="none" stroke="${h.col}" stroke-width="2.2" stroke-linecap="round"/><ellipse cx="-12" cy="24" rx="3.6" ry="2.8" ${B}/>`;
       return t+band+cups+mic+'</g>'; }
+    case 'skimask': {   /* a balaclava: covers the whole head, ears and neck, with one opening for the eyes */
+      const knit=`<path d="${side?'M-24,-30Q4,-40 26,-28M-26,22Q2,30 24,20':'M-26,-30Q0,-40 26,-30M-28,24Q0,32 28,24'}" fill="none" stroke="${dk}" stroke-opacity=".45" stroke-width="1.4"/>`;
+      const m=side
+        ?`<path fill-rule="evenodd" d="M-31,-6C-32,-34 -16,-41 2,-41C22,-41 36,-26 34,4C33,20 30,30 24,38L24,46H-10L-9,38C-22,36 -32,26 -33,10L-38,6L-31,-6ZM-33,-10H-4Q-2,-2 -4,6H-34Q-36,-2 -33,-10Z" ${A}/>`
+        :`<path fill-rule="evenodd" d="M-36,2C-36,-30 -20,-41 0,-41C20,-41 36,-30 36,2C36,20 31,31 22,37L21,46H-21L-22,37C-31,31 -36,20 -36,2ZM-23,-10H23Q27,-2 23,7H-23Q-27,-2 -23,-10Z" ${A}/>`;
+      return t+m+knit+'</g>'; }
     case 'headband': return t+`<path d="M-30.5,-19Q0,-30 30.5,-19L30.5,-13Q0,-24 -30.5,-13Z" ${A}/></g>`;
   }
   return '';
@@ -812,9 +864,10 @@ function headSVG(d,C){
                front:`<path fill-rule="evenodd" d="M-37,22C-42,-31 -23,-48 0,-48C23,-48 42,-31 37,22Q21,43 0,45Q-21,43 -37,22ZM-26,-2C-26,-25 -14,-33 0,-33C14,-33 26,-25 26,-2C26,15 14,31 0,31C-14,31 -26,15 -26,-2Z" ${a}/>`}; }
   /* drop earrings: pinned at the earlobe, drawn unrotated so they always hang */
   const drops=d.accessories.includes('drops')?(side?[7]:[-30.5,30.5]).map(x=>({x,y:8,svg:`<path d="M0,0V9" stroke="#9c7716" stroke-width="1.3" fill="none"/><path d="M0,8Q-5,16 0,20.5Q5,16 0,8Z" fill="#e2b23a" stroke="#9c7716" stroke-width="1"/>`+star(x<0?-6.5:6.5,11,5.5)})):[];
-  return {back:h.back, hang:h.hang, drops,
-          hoodBack:hood&&hood.back, top:headwearSVG(d.headwear,side,d.headwearColor)+(hood?hood.front:'')+ear,   /* headwear sits above all hair, earrings above that */
-          front:s+h.front+eyewearSVG(d.eyewear,side,d.eyewearColor)};
+  const masked=(HEADWEAR[d.headwear]||{}).mask;
+  return {back:h.back, hang:h.hang, drops:masked?[]:drops,
+          hoodBack:hood&&hood.back, top:headwearSVG(d.headwear,side,d.headwearColor)+(hood?hood.front:'')+(masked?eyewearSVG(d.eyewear,side,d.eyewearColor):ear),   /* headwear sits above all hair, earrings above that */
+          front:s+h.front+(masked?'':eyewearSVG(d.eyewear,side,d.eyewearColor))};   /* over a ski mask, glasses are drawn on top of it */
 }
 /* ── clothes. off = how far the fitted parts sit outside the body (px).
       arm / fore / thigh / shin = fraction of that segment covered (1 = all).
@@ -864,7 +917,7 @@ const FOOT = {
   platforms:{label:'Platform shoes',col:'#660066',off:2,kind:'closed',platform:7},
   heels:{label:'Heels',col:'#CC0000',off:1.2,kind:'pump'}
 };
-const SOCK_COL='#FFFFFF', TIE_COL='#CC0000', GLOVE_COL='#663300', PACK_COL='#CC6600', MASCARA_COL='#000000', BLUSH_COL='#FF6666', LIPSTICK_COL='#CC0000';
+const SOCK_COL='#FFFFFF', TIE_COL='#CC0000', SCARF_COL='#CC0000', GLOVE_COL='#663300', PACK_COL='#CC6600', MASCARA_COL='#000000', BLUSH_COL='#FF6666', LIPSTICK_COL='#CC0000';
 /* 64 web-safe colours: every mix of the levels 00, 66, CC and FF */
 const PALETTE=[]; for(const r of ['00','66','CC','FF']) for(const g of ['00','66','CC','FF']) for(const b of ['00','66','CC','FF']) PALETTE.push('#'+r+g+b);
 /* a learner-level colour word for any hex */
@@ -1135,6 +1188,11 @@ function build(d){
     add(41,[1,0,0,1,p[0],p[1]],`<g transform="scale(${k} 1)"><path d="M-3.4,0L3.4,0L2.2,6L5.2,${n2(L-9)}L0,${L}L-5.2,${n2(L-9)}L-2.2,6Z" fill="${tc}" stroke="${edge(tc)}"/><path d="M-2.2,6H2.2" fill="none" stroke="${edge(tc)}"/></g>`,'torso');
     mark([1,0,0,1,p[0],p[1]],0,L,4);
   }
+  if(acc.scarf){   /* a knitted scarf in three colours a third of the colour wheel apart: wrapped round the neck, one end hanging down the chest */
+    const sc=scarfColours(d.scarfColor||SCARF_COL), p=Mx.pt(mChest,detailX(0,-c-co+1),-c-co+1), k=n2(Math.max(Math.abs(ct),0.45)), L=n2(c*0.95), W=13;
+    let bands=''; for(let y=4,i=0;y<L-6;y+=7,i++) bands+=`<rect x="0" y="${y}" width="${W}" height="7" fill="${sc[i%3]}" stroke="none"/>`;
+    add(41.9,[1,0,0,1,p[0],p[1]],`<g transform="scale(${k} 1) translate(${n2(nw*0.35)} 0) rotate(-4)">${bands}<rect x="0" y="0" width="${W}" height="${L-6}" fill="none" stroke="${edge(sc[0])}"/><path d="${Array.from({length:5},(_,i)=>`M${1.5+i*2.5},${L-6}v6`).join('')}" stroke="${sc[0]}" stroke-width="1.6" fill="none"/></g>`,'torso');
+  }
   /* waist ball: sits under both pieces and fills the wedge when they bend apart */
   add(29,mChest,`<circle cx="0" cy="0" r="${n2(ww+co+0.5)}" ${skinTorso?S:UG?G(UG):U}/>`,'torso'); mark(mChest,0,0,ww);
   mark(mChest,-sw,-CH+8,10); mark(mChest,sw,-CH+8,10); mark(mChest,0,-CH*0.4,ww);
@@ -1144,10 +1202,13 @@ function build(d){
   piv.neck={p:Mx.pt(mChest,0,-CH-2),parent:j.root+j.torso,up:true};
   add(35,mNeck,`<circle cx="0" cy="4" r="${n2(nw+2)}" fill="${C.skin}" stroke="none"/><path d="M${-nw-1},-22Q${n2(-nw+2)},-9 ${n2(-nw-4)},5L${n2(nw+4)},5Q${n2(nw-2)},-9 ${nw+1},-22Z" fill="${C.skin}" stroke="none"/><path d="M${-nw-1},-22Q${n2(-nw+2)},-9 ${n2(-nw-4)},5M${n2(nw+4)},5Q${n2(nw-2)},-9 ${nw+1},-22" fill="none" stroke="${C.skinS}"/><circle cx="0" cy="-16" r="${n2(nw+1)}" fill="${C.skin}" stroke="none"/>`,'neck');   /* flared neck with round patches at the collar and under the skull */
   if(acc.choker) add(35.5,mNeck,`<path d="M${n2(-nw-0.4)},-9Q0,-6.5 ${n2(nw+0.4)},-9V-5Q0,-2.5 ${n2(-nw-0.4)},-5Z" fill="#1b1b1b" stroke="#000" stroke-width=".8"/><circle cx="0" cy="-3.6" r="2.2" fill="${GOLD}" stroke="${GOLDS}" stroke-width=".8"/>`,'neck');   /* a band round the neck with a small pendant */
+  if(acc.scarf){ const sc=scarfColours(d.scarfColor||SCARF_COL);   /* the scarf's wrap, round the base of the neck */
+    add(42.2,mNeck,`<path d="M${n2(-nw-7)},-10Q0,-4 ${n2(nw+7)},-10L${n2(nw+8)},7Q0,14 ${n2(-nw-8)},7Z" fill="${sc[0]}" stroke="${edge(sc[0])}"/><path d="M${n2(-nw-7.5)},-4Q0,2 ${n2(nw+7.5)},-4V0Q0,6 ${n2(-nw-7.5)},0Z" fill="${sc[1]}" stroke="none"/><path d="M${n2(-nw-8)},2Q0,8 ${n2(nw+8)},2V5Q0,11 ${n2(-nw-8)},5Z" fill="${sc[2]}" stroke="none"/>`,'neck');
+  }
   const flip=d.head==='right'?-1:1;
   const mHead=Mx.mul(mSkull,[HS*flip,0,0,HS,0,-50*HS+16]);
   const hd=headSVG(d,C);
-  if(d.upperGarment==='hoodieup'){ hd.back=''; hd.hang=[]; }   /* under a raised hood, no hair hangs out: nothing behind the head, no loose lengths */
+  if(d.upperGarment==='hoodieup'||(HEADWEAR[d.headwear]||{}).mask){ hd.back=''; hd.hang=[]; }   /* under a raised hood, no hair hangs out: nothing behind the head, no loose lengths */
   if(hd.back) add(0,mHead,hd.back,'neck');
   if(hd.hoodBack) add(0.7,mHead,hd.hoodBack,'neck');
   add(50,mHead,hd.front,'neck');
@@ -1231,7 +1292,7 @@ function build(d){
     const gsel=d[side>0?'heldLeftGrip':'heldRightGrip'], grip=it?(gsel===null||gsel===undefined?(it.grip||0):gsel):0;
     if(it&&!it.hand){
       const g=Mx.pt(m3,0,10);
-      add(z+3, it.upright?[1,0,0,1,g[0],g[1]]:Mx.tr(m3,0,10,-side*grip), it.cane?'':it.handed&&side<0?`<g transform="scale(-1 1)">${it.draw(1,ic)}</g>`:it.draw(side,ic), 'wrist'+L);
+      add(z+3, it.upright?[1,0,0,1,g[0],g[1]]:Mx.tr(m3,0,10,-side*grip), it.cane?'':it.handed&&side<0?`<g transform="scale(-1 1)">${it.draw(1,ic,d)}</g>`:it.draw(side,ic,d), 'wrist'+L);
       if(it.cane) canes.push({part:parts[parts.length-1],gy:g[1],side,c:ic,it,mh:Mx.mul(m3,[1,0,0,1,0,10])});
     }
   }
@@ -1348,6 +1409,25 @@ const STAGE={w:600,h:590,cx:300,ground:550};
 
 function esc(s){return String(s).replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));}
 
+/* ── pictures printed in newspapers and magazines ────────────────────────────────────────────────
+   Each is a real render of a character: two formal close-ups and two musicians (poses from the poser).
+   Which one a reader holds depends on their name, so the same person always holds the same issue. */
+const PRESS=[
+  {close:true,bg:'#d9e4ee',data:{bodyType:'male',skin:3,hairStyle:'sidepart',hairColor:'3-0',upperGarment:'jacket',upperColor:'#000066',lowerGarment:'trousers',footwear:'shoes',accessories:['tie'],tieColor:'#CC0000',mouth:'smile'}},
+  {close:true,bg:'#f2dde6',data:{bodyType:'female',skin:4,hairStyle:'bun',hairColor:'1-0',upperGarment:'gown',upperColor:'#660066',accessories:['necklace','drops','lipstick','mascara'],footwear:'heels',mouth:'smile'}},
+  {close:false,bg:'#e9e0d0',data:{"schema":"house-character/1","bodyType":"female","skin":3,"eyeColor":12,"hairColor":"4-0","hairStyle":"long","facialHair":"none","eyebrows":"raised","eyes":"open","mouth":"rest","height":3,"weight":3,"upperGarment":"gown","lowerGarment":null,"footwear":"heels","headwear":null,"eyewear":null,"accessories":["necklace","choker","drops"],"prop":null,"propColor":null,"upperColor":null,"lowerColor":null,"footwearColor":null,"headwearColor":null,"eyewearColor":null,"sockColor":null,"tieColor":null,"gloveColor":null,"packColor":null,"heldLeftGrip":-45,"heldRightGrip":45,"thumbFlipL":false,"thumbFlipR":true,"heldLeftColor":null,"heldRightColor":null,"upperPattern":"plain","upperColor2":null,"lowerPattern":"plain","lowerColor2":null,"head":"front","torsoOrientation":-20,"pelvisOrientation":0,"held":{"left":"violinbow","right":"violin"},"joints":{"root":0,"pelvis":3,"torso":2,"neck":-7,"shoulderL":14,"elbowL":96,"wristL":22,"shoulderR":49,"elbowR":105,"wristR":65,"hipL":-3,"kneeL":-1,"ankleL":-76,"hipR":-1,"kneeR":-4,"ankleR":75}}},
+  {close:false,bg:'#2b2b2b',data:{"schema":"house-character/1","bodyType":"male","skin":3,"eyeColor":12,"hairColor":"4-0","hairStyle":"pompadour","facialHair":"none","eyebrows":"angry","eyes":"open","mouth":"grin","height":3,"weight":3,"upperGarment":"tshirt","lowerGarment":"cargopants","footwear":"sneakers","headwear":"headband","eyewear":null,"accessories":[],"prop":null,"propColor":"#FF0000","upperColor":"#000000","lowerColor":"#FFCC66","footwearColor":null,"headwearColor":"#CC0000","eyewearColor":"#666666","sockColor":null,"tieColor":"#66CCCC","gloveColor":null,"packColor":null,"heldLeftGrip":90,"heldRightGrip":-45,"thumbFlipL":true,"thumbFlipR":false,"heldLeftColor":null,"heldRightColor":null,"upperPattern":"plain","upperColor2":null,"lowerPattern":"plain","lowerColor2":null,"head":"front","torsoOrientation":-30,"pelvisOrientation":-5,"held":{"left":"electricguitar","right":null},"joints":{"root":0,"pelvis":4,"torso":-17,"neck":23,"shoulderL":-3,"elbowL":-93,"wristL":-95,"shoulderR":31,"elbowR":-114,"wristR":17,"hipL":-15,"kneeL":22,"ankleL":-83,"hipR":9,"kneeR":-21,"ankleR":78}}}];
+const PRESS_CACHE={};
+function pressPhoto(d,salt,x,y,w,h,mono){
+  let hsh=salt>>>0; for(const ch of String(d&&d.name||'')) hsh=(hsh*31+ch.charCodeAt(0))>>>0;
+  const i=hsh%PRESS.length, P=PRESS[i];
+  if(!PRESS_CACHE[i]){ const b=build(normalize(P.data)), [x0,y0,x1,y1]=b.box, nk=b.piv&&b.piv.neck&&b.piv.neck.p, cx=nk?nk[0]:(x0+x1)/2;
+    PRESS_CACHE[i]={vb:P.close?[cx-60,y0-4,120,126]:[x0-12,y0-12,x1-x0+24,y1-y0+24],body:b.defs+`<g stroke-width="1.3" stroke-linejoin="round" stroke-linecap="round">${b.inner}</g>`}; }
+  const C=PRESS_CACHE[i], fid='hcmono'+(++UID);
+  return (mono?`<filter id="${fid}"><feColorMatrix type="saturate" values="0"/></filter>`:'')
+    +`<g${mono?` filter="url(#${fid})"`:''}><rect x="${x}" y="${y}" width="${w}" height="${h}" fill="${P.bg}"/><svg x="${x}" y="${y}" width="${w}" height="${h}" viewBox="${C.vb.map(n2).join(' ')}" preserveAspectRatio="${P.close?'xMidYMin slice':'xMidYMid meet'}">${C.body}</svg></g>`;
+}
+
 function render(data,opts){
   opts=opts||{}; const d=normalize(data), b=build(d);
   const wrap=`stroke-width="1.3" stroke-linejoin="round" stroke-linecap="round"`;
@@ -1369,13 +1449,13 @@ function pivots(data){
 }
 
 /* ── data ──────────────────────────────────────────────────────────────── */
-const COLOUR_KEYS=['mascaraColor','blushColor','lipstickColor','propColor','packColor','heldLeftColor','heldRightColor','eyewearColor','gloveColor','upperColor2','lowerColor2','upperColor','lowerColor','footwearColor','headwearColor','sockColor','tieColor'];
+const COLOUR_KEYS=['mascaraColor','blushColor','lipstickColor','propColor','packColor','heldLeftColor','heldRightColor','eyewearColor','gloveColor','upperColor2','lowerColor2','upperColor','lowerColor','footwearColor','headwearColor','sockColor','tieColor','scarfColor'];
 function wrapDeg(v){v=Math.round(Number(v)||0);v=((v+180)%360+360)%360-180;return v===-180?180:v;}
 function defaults(){
   const joints={}; JOINTS.forEach(([k])=>joints[k]=STAND[k]||0);
   return {schema:SCHEMA,name:'Sam',bodyType:'male',skin:3,eyeColor:12,hairColor:'4-0',hairStyle:'short',facialHair:'none',eyebrows:'neutral',eyes:'open',mouth:'smile',
     height:3,weight:3,upperGarment:null,lowerGarment:null,footwear:null,headwear:null,eyewear:null,accessories:[],prop:null,propColor:null,
-    upperColor:null,lowerColor:null,footwearColor:null,headwearColor:null,eyewearColor:null,sockColor:null,tieColor:null,gloveColor:null,packColor:null,mascaraColor:null,blushColor:null,lipstickColor:null,heldLeftGrip:null,heldRightGrip:null,thumbFlipL:false,thumbFlipR:false,flipped:false,heldLeftColor:null,heldRightColor:null,
+    upperColor:null,lowerColor:null,footwearColor:null,headwearColor:null,eyewearColor:null,sockColor:null,tieColor:null,scarfColor:null,gloveColor:null,packColor:null,mascaraColor:null,blushColor:null,lipstickColor:null,heldLeftGrip:null,heldRightGrip:null,thumbFlipL:false,thumbFlipR:false,flipped:false,heldLeftColor:null,heldRightColor:null,
     upperPattern:'plain',upperColor2:null,lowerPattern:'plain',lowerColor2:null,
     head:'front',torsoOrientation:0,pelvisOrientation:0,held:{left:null,right:null},joints};
 }
@@ -1396,6 +1476,7 @@ function normalize(src){
   d.footwear=FOOT[src.footwear]?src.footwear:null;
   d.prop=src.prop==='bicycle'?'bmx':PROPS[src.prop]?src.prop:null;   /* 'bicycle' was the BMX */
   d.headwear=HEADWEAR[src.headwear]?src.headwear:null; d.eyewear=EYEWEAR[src.eyewear]?src.eyewear:null;
+  if(src.headwear==='skimaskglasses'){ d.headwear='skimask'; if(!d.eyewear) d.eyewear='cycling'; }   /* the old combined ski mask with glasses */
   { /* older files: one-sided or unsplit accessory names */
     const OLD={watch:['watchL'],bracelet:['braceletR'],ring:['ringL'],gloves:['glovesL','glovesR'],earrings:['studs'],shoulderpadL:['elbowpadL'],shoulderpadR:['elbowpadR']};
     const got=Array.isArray(src.accessories)?[].concat(...src.accessories.map(a=>OLD[a]||[a])):[];
@@ -1456,10 +1537,11 @@ function describe(data){
     pair('ring','a ring','two rings');
     pair('elbowpad','an elbow pad','elbow pads'); pair('kneepad','a knee pad','knee pads');
     if(has('tie')) put('wearing',`a ${colourName(d.tieColor||TIE_COL)} tie`);
+    if(has('scarf')){ const sc=[...new Set(scarfColours(d.scarfColor||SCARF_COL).map(colourName))]; put('wearing',`a ${sc.length>1?sc.slice(0,-1).join(', ')+' and '+sc[sc.length-1]:sc[0]} scarf`); }
     const g=colourName(d.gloveColor||GLOVE_COL); pair('gloves',`${/^[aeiou]/.test(g)?'an':'a'} ${g} glove`,`${g} gloves`); }
   /* a hand item is named with its colour only when one was picked */
   const hold=(it,c)=>{ if(!c||!it.noun) return it.phrase; const nm=colourName(c); return `${/^[aeiou]/.test(nm)?'an':'a'} ${nm} ${it.noun}`; };
-  if(L&&R&&d.held.left===d.held.right) put(L.verb,`two ${L.plural||L.noun+'s'}`);
+  if(L&&R&&d.held.left===d.held.right) put(L.verb,L.pairPhrase||`two ${L.plural||L.noun+'s'}`);
   else { if(R) put(R.verb,hold(R,d.heldRightColor)); if(L) put(L.verb,hold(L,d.heldLeftColor)); }
   if(!groups.length) return '';
   const list=a=>a.length>1?a.slice(0,-1).join(', ')+' and '+a[a.length-1]:a[0];
@@ -1467,7 +1549,7 @@ function describe(data){
   return `${n} is ${g.length>1?g.slice(0,-1).join(', ')+(groups[0][1].length>1?', and ':' and ')+g[g.length-1]:g[0]}.`;
 }
 
-return {SCHEMA,SKIN,EYES,HAIR,HAIR_STYLES,FACIAL,HEIGHTS,WEIGHTS,HEADS,JOINTS,POSES,ITEMS,UPPER,LOWER,FOOT,OUTFITS,HEADWEAR,EYEWEAR,ACCESSORIES,BROWS,EYE_SHAPES,MOUTHS,EMOTIONS,NEUTRAL_FACE,GLOVE_COL,PACK_COL,MASCARA_COL,BLUSH_COL,LIPSTICK_COL,PROPS,GRIPS,ITEM_CATS,PALETTE,PATTERNS,colour2Default,SOCK_COL,TIE_COL,colourName,STAGE,
+return {scarfColours,SCHEMA,SKIN,EYES,HAIR,HAIR_STYLES,FACIAL,HEIGHTS,WEIGHTS,HEADS,JOINTS,POSES,ITEMS,UPPER,LOWER,FOOT,OUTFITS,HEADWEAR,EYEWEAR,ACCESSORIES,BROWS,EYE_SHAPES,MOUTHS,EMOTIONS,NEUTRAL_FACE,GLOVE_COL,PACK_COL,SCARF_COL,MASCARA_COL,BLUSH_COL,LIPSTICK_COL,PROPS,GRIPS,ITEM_CATS,PALETTE,PATTERNS,colour2Default,SOCK_COL,TIE_COL,colourName,STAGE,
         defaults,normalize,render,pivots,applyPose,mirror,describe};
 })();
 window.HouseCharacter = HouseCharacter;
