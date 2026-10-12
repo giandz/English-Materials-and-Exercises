@@ -1,0 +1,139 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<title>Comparatives and Superlatives — Controlled Practice</title>
+<script>
+(function(){
+  try{
+    var saved = localStorage.getItem('theme-preference');
+    var theme = (saved === 'light' || saved === 'dark')
+      ? saved
+      : ((window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches) ? 'dark' : 'light');
+    document.documentElement.setAttribute('data-theme', theme);
+    var fs = parseFloat(localStorage.getItem('font-size-preference'));
+    if (fs >= 10 && fs <= 28) document.documentElement.style.setProperty('--fs-base', fs + 'px');
+  }catch(e){ /* localStorage/matchMedia unavailable — CSS media query still applies */ }
+})();
+</script>
+<link rel="stylesheet" href="house.css">
+<style>
+.houses-details{ margin:0 0 .5rem; }
+.houses-details .houses-body{ padding:10px 10px 0; }
+.data{ display:grid; grid-template-columns:auto 1fr; gap:0 8px; font-size:.8667rem; font-style:normal; color:var(--text-secondary); line-height:1.6; margin:4px 0 6px; }
+.data .g{ letter-spacing:-1px; white-space:nowrap; }
+.blank{ display:inline-block; min-width:3.5em; border-bottom:2px solid var(--color-border-primary); }
+.quiz-q .q-text .data{ font-weight:400; }
+</style>
+</head>
+<body>
+<div class="page" id="page">
+  <span class="cefr-tag cefr-a1a2">A1/A2 · Elementary</span>
+  <h1>Which House Is Better?</h1>
+  <p class="subtitle">Practise: bigger than · more expensive than · the biggest · the most expensive</p>
+
+  <details class="houses-details" open>
+    <summary>🏘️ The three houses</summary>
+    <div class="houses-body" id="listings"></div>
+  </details>
+
+  <div class="sec-div">1 · Choose</div>
+  <p class="subtitle">Look at the houses. Choose the correct answer.</p>
+  <div id="pcItems"></div>
+
+  <div class="sec-div">2 · Put the words in order</div>
+  <p class="subtitle">Make the sentence.</p>
+  <button class="grammar-toggle-btn" id="grammarToggle">🎨 Hide Grammar</button>
+  <div class="pos-legend"></div>
+  <div class="score-bar"><span>Correct: <strong id="woScore">0</strong> / <span id="woTotal">0</span></span></div>
+  <div id="woItems"></div>
+
+  <div class="sec-div">3 · Write the missing words</div>
+  <p class="subtitle">Use the word in brackets. Write the correct form.</p>
+  <div id="gfItems"></div>
+
+  <footer>Comparatives and Superlatives — Controlled Practice (A1/A2)</footer>
+</div>
+
+<div id="theme-toggle-wrap">
+  <button id="theme-toggle" aria-label="Toggle light/dark mode" title="Toggle light/dark mode">
+    <span id="theme-icon">☀️</span>
+  </button>
+</div>
+<script src="house.js"></script>
+<script src="house-engine.js"></script>
+<script src="city-engine.js"></script>
+<script src="listing-kit.js"></script>
+<script>
+const [MAIN, OAK, FARM] = ListingKit.EXAMPLES;
+const BLANK = '<span class="blank">&nbsp;</span>';
+const money = ListingKit.money;
+ListingKit.renderCards('listings', ListingKit.EXAMPLES);
+
+// a few lines of data to look at, above a question
+const G = (x, k) => '<span class="g">' + ListingKit.gauge(k, x.gauges[k]) + '</span>';
+const data = rows => '<div class="data">' + rows.map(([a, b]) => '<span>' + a + '</span><span>' + b + '</span>').join('') + '</div>';
+
+/* ── 1 · choose ────────────────────────────────────────────────────────── */
+const PC_ITEMS = [
+  { q: data([['📐 Main Street', '40 m²'], ['📐 Oak Lane', '96 m²']]) + 'Main Street is ' + BLANK + ' than Oak Lane.',
+    opts: ['smaller', 'the smallest', 'more small'], correct: 0 },
+  { q: data([['📅 Oak Lane', '2015'], ['📅 Main Street', '1960'], ['📅 Farm Road', '1925']]) + 'Farm Road is ' + BLANK + ' house.',
+    opts: ['older', 'the oldest', 'the most old'], correct: 1 },
+  { q: data([['💲 Oak Lane', money(OAK.facts.price)], ['💲 Main Street', money(MAIN.facts.price)]]) + 'Oak Lane is ' + BLANK + ' than Main Street.',
+    opts: ['expensiver', 'the most expensive', 'more expensive'], correct: 2 },
+  { q: data([['🔊 Main Street', G(MAIN, 'noise')], ['🔊 Oak Lane', G(OAK, 'noise')]]) + 'Oak Lane is ' + BLANK + ' than Main Street.',
+    opts: ['quieter', 'noisier', 'the quietest'], correct: 0 },
+  { q: data([['🛡️ Main Street', G(MAIN, 'safety')], ['🛡️ Oak Lane', G(OAK, 'safety')], ['🛡️ Farm Road', G(FARM, 'safety')]]) + 'Which neighborhood is the safest?',
+    opts: ['Main Street', 'Oak Lane', 'Farm Road'], correct: 1 },
+  { q: data([['📍 Main Street', '1 km'], ['📍 Oak Lane', '9 km'], ['📍 Farm Road', '30 km']]) + 'Main Street is ' + BLANK + ' to the city center.',
+    opts: ['the nearest', 'nearer', 'the most near'], correct: 0 },
+  { q: data([['📐 Farm Road', '54 m²'], ['📐 Main Street', '40 m²']]) + 'Is Farm Road bigger than Main Street?',
+    opts: ['Yes, it is.', 'No, it isn’t.', 'Yes, it’s the biggest.'], correct: 0 },
+  { q: data([['🌳 Main Street', G(MAIN, 'parks')], ['🌳 Oak Lane', G(OAK, 'parks')], ['🌳 Farm Road', G(FARM, 'parks')]]) + 'Farm Road is ' + BLANK + ' neighborhood.',
+    opts: ['greener', 'the greenest', 'the most green'], correct: 1 }
+];
+HouseComprehension.build({ quiz: 'pcItems', items: PC_ITEMS });
+
+/* ── 2 · word order ────────────────────────────────────────────────────── */
+const WO_ITEMS = [
+  { context: 'Compare the sizes: 96 m² and 40 m².',
+    text: 'Oak Lane / is / bigger / than / Main Street', pos: ['subject', 'verb', 'adj', 'conj', 'noun'] },
+  { context: 'Compare the three prices.',
+    text: 'Farm Road / is / the / cheapest / house', pos: ['subject', 'verb', 'det', 'adj', 'noun'] },
+  { context: 'Compare the noise.',
+    text: 'Farm Road / is / quieter / than / Main Street', pos: ['subject', 'verb', 'adj', 'conj', 'noun'] },
+  { context: 'Compare two prices.',
+    text: 'Main Street / is / more / expensive / than / Farm Road', pos: ['subject', 'verb', 'adverb', 'adj', 'conj', 'noun'] },
+  { context: 'Ask about the years.',
+    text: 'Is / Oak Lane / newer / than / Farm Road / ?', pos: ['verb', 'subject', 'adj', 'conj', 'noun', 'none'] },
+  { context: 'Ask about all three neighborhoods.',
+    text: 'Which / neighborhood / is / the / safest / ?', pos: ['wh', 'noun', 'verb', 'det', 'adj', 'none'] }
+];
+HouseWordOrder.build({ container: 'woItems', items: WO_ITEMS, scoreEl: 'woScore', totalEl: 'woTotal' });
+
+/* ── 3 · gap fill (easiest first) ──────────────────────────────────────── */
+const GF_ITEMS = [
+  { direct: 'Look at the years: 1960 and 1925.',
+    template: 'Main Street is {0} than Farm Road. (new)', hints: [{ accepted: ['newer'] }] },
+  { direct: 'Look at the sizes: 96 m² and 54 m².',
+    template: 'Oak Lane is {0} than Farm Road. (big)', hints: [{ accepted: ['bigger'] }] },
+  { direct: 'Look at all three prices.',
+    template: 'Farm Road is the {0} house. (cheap)', hints: [{ accepted: ['cheapest'] }] },
+  { direct: 'Look at the 🛡️ safety colors for Oak Lane and Main Street.',
+    template: 'Oak Lane is {0} than Main Street. (safe)', hints: [{ accepted: ['safer'] }] },
+  { direct: 'Look at the 🔊 noise colors for all three neighborhoods.',
+    template: 'Main Street is the {0} neighborhood. (noisy)', hints: [{ accepted: ['noisiest'] }] },
+  { direct: 'Look at the prices of Oak Lane and Farm Road. Two words!',
+    template: 'Oak Lane is {0} {1} than Farm Road. (expensive)', hints: [{ accepted: ['more'] }, { accepted: ['expensive'] }] },
+  { direct: 'Look at the kilometers. This word is irregular.',
+    template: 'Farm Road is the {0} from the city center. (far)', hints: [{ accepted: ['farthest', 'furthest'] }] },
+  { direct: 'Ask a question about all three houses. This word is irregular.',
+    template: '“{0} house is the {1} for a big family?” “Oak Lane. It has four bedrooms.” (good)', hints: [{ accepted: ['Which'] }, { accepted: ['best'] }] }
+];
+HouseGapFill.build({ container: 'gfItems', items: GF_ITEMS });
+</script>
+<script>HouseGrammar.init();</script>
+</body>
+</html>

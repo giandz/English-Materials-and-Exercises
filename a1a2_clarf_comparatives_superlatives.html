@@ -1,0 +1,229 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<title>Comparatives and Superlatives — Clarification</title>
+<script>
+(function(){
+  try{
+    var saved = localStorage.getItem('theme-preference');
+    var theme = (saved === 'light' || saved === 'dark')
+      ? saved
+      : ((window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches) ? 'dark' : 'light');
+    document.documentElement.setAttribute('data-theme', theme);
+    var fs = parseFloat(localStorage.getItem('font-size-preference'));
+    if (fs >= 10 && fs <= 28) document.documentElement.style.setProperty('--fs-base', fs + 'px');
+  }catch(e){ /* localStorage/matchMedia unavailable — CSS media query still applies */ }
+})();
+</script>
+<link rel="stylesheet" href="house.css">
+<style>
+/* the target language is the lesson, so it stays coloured (not a grammar-toggle colour) */
+.tgt{ color:var(--text-accent); font-weight:700; }
+.cmp-grid{ display:grid; grid-template-columns:repeat(2, minmax(0, 1fr)); gap:10px; margin-bottom:1.2rem; }
+@media (max-width:560px){ .cmp-grid{ grid-template-columns:1fr; } }
+.cmp-col h3{ margin:0 0 6px; font-size:.9333rem; }
+.cmp-col h3 small{ display:block; font-weight:500; color:var(--text-secondary); font-size:.8rem; }
+.cmp{ border:1px solid var(--color-border-tertiary); border-radius:12px; background:var(--surface-2); padding:8px 10px; margin-bottom:8px; }
+.cmp-data{ display:grid; grid-template-columns:auto 1fr; gap:0 8px; font-size:.8333rem; color:var(--text-secondary); line-height:1.6; }
+.cmp-data .g{ letter-spacing:-1px; white-space:nowrap; }
+.cmp-sent{ font-size:.9667rem; color:var(--text-primary); margin-top:4px; line-height:1.5; }
+.spell{ display:grid; grid-template-columns:minmax(0, 1.3fr) repeat(3, minmax(0, 1fr)); gap:4px; margin:0 0 10px; font-size:.8667rem; }
+.spell > div{ padding:5px 7px; border-radius:7px; background:var(--surface-2); border:1px solid var(--color-border-tertiary); }
+.spell .sh{ background:none; border:none; font-size:.7rem; font-weight:700; letter-spacing:.04em; text-transform:uppercase; color:var(--text-muted); }
+.spell .rule{ color:var(--text-secondary); }
+.spell .rule:empty{ background:none; border:none; }
+@media (max-width:560px){ .spell{ grid-template-columns:repeat(3, minmax(0, 1fr)); } .spell .rule{ grid-column:1 / -1; background:none; border:none; padding:6px 2px 0; font-weight:600; } .spell .sh.rh, .spell .rule:empty{ display:none; } }
+.rule-box p{ margin:0 0 6px; }
+.rule-box p:last-child{ margin-bottom:0; }
+</style>
+</head>
+<body>
+<div class="page" id="page">
+  <span class="cefr-tag cefr-a1a2">A1/A2 · Elementary</span>
+  <h1>Comparatives and Superlatives</h1>
+  <p class="subtitle">Compare houses and neighborhoods: bigger than · more expensive than · the biggest · the most expensive</p>
+
+  <div class="sec-div">Look</div>
+  <p class="subtitle">Three houses are for sale. Look at the houses and their neighborhoods. The red pin 📍 shows the house on the map. Look inside the houses: press ✂️, then ▼ ▲ to change floor.</p>
+  <div id="listings"></div>
+
+  <div class="sec-div">Compare</div>
+  <p class="subtitle">Read the sentences. Look at the numbers and the colors.</p>
+  <div class="cmp-grid">
+    <div class="cmp-col"><h3>Two houses<small>-er than · more … than</small></h3><div id="cmpTwo"></div></div>
+    <div class="cmp-col"><h3>Three houses (or more)<small>the -est · the most …</small></h3><div id="cmpAll"></div></div>
+  </div>
+
+  <div class="sec-div">Check the meaning</div>
+  <p class="subtitle">Read the sentence. Answer the questions.</p>
+  <div id="ccq"></div>
+
+  <div class="sec-div">Look at the form</div>
+  <p class="subtitle">What is each part of the sentence? Drag a label (or tap a label, then tap a box).</p>
+  <div class="score-bar"><span>Correct: <strong id="fcScore">0</strong> / <span id="fcTotal">0</span></span></div>
+  <div id="formClarf"></div>
+
+  <div class="rule-box" id="ruleBox"></div>
+
+  <div class="sec-div">Common mistakes</div>
+  <div id="mistakes"></div>
+
+  <div class="sec-div">Error hunt</div>
+  <p class="subtitle">Some sentences have a mistake. Some are correct! Tap a word — or a space between words — to fix it. Then press OK.</p>
+  <div class="score-bar"><span>Done: <strong id="errorScore">0</strong> / <span id="errorTotal">0</span></span></div>
+  <div id="errorHuntItems"></div>
+
+  <footer>Comparatives and Superlatives — Clarification (A1/A2)</footer>
+</div>
+
+<div id="theme-toggle-wrap">
+  <button id="theme-toggle" aria-label="Toggle light/dark mode" title="Toggle light/dark mode">
+    <span id="theme-icon">☀️</span>
+  </button>
+</div>
+<script src="house.js"></script>
+<script src="house-engine.js"></script>
+<script src="city-engine.js"></script>
+<script src="listing-kit.js"></script>
+<script>
+const [MAIN, OAK, FARM] = ListingKit.EXAMPLES;
+const T = s => '<span class="tgt">' + s + '</span>';
+const money = ListingKit.money;
+
+/* ── the three listings ────────────────────────────────────────────────── */
+ListingKit.renderCards('listings', ListingKit.EXAMPLES);
+
+/* ── compare: the data, then the sentence ──────────────────────────────── */
+const G = (x, k) => '<span class="g">' + ListingKit.gauge(k, x.gauges[k]) + '</span>';
+const row = (label, value) => '<span>' + label + '</span><span>' + value + '</span>';
+const cmp = (rows, sentence) => '<div class="cmp"><div class="cmp-data">' + rows.join('') + '</div><div class="cmp-sent">' + sentence + '</div></div>';
+
+document.getElementById('cmpTwo').innerHTML = [
+  cmp([row('📐 Main Street', '40 m²'), row('📐 Oak Lane', '96 m²')], 'Oak Lane is ' + T('bigger than') + ' Main Street.'),
+  cmp([row('💲 Farm Road', money(FARM.facts.price)), row('💲 Oak Lane', money(OAK.facts.price))], 'Farm Road is ' + T('cheaper than') + ' Oak Lane.'),
+  cmp([row('🔊 Main Street', G(MAIN, 'noise')), row('🔊 Farm Road', G(FARM, 'noise'))], 'Main Street is ' + T('noisier than') + ' Farm Road.'),
+  cmp([row('🛡️ Oak Lane', G(OAK, 'safety')), row('🛡️ Main Street', G(MAIN, 'safety'))], 'Oak Lane is ' + T('safer than') + ' Main Street.'),
+  cmp([row('💲 Main Street', money(MAIN.facts.price)), row('💲 Farm Road', money(FARM.facts.price))], 'Main Street is ' + T('more expensive than') + ' Farm Road.'),
+  cmp([row('📍 Farm Road', '30 km'), row('📍 Oak Lane', '9 km')], 'Farm Road is ' + T('farther') + ' from the city center ' + T('than') + ' Oak Lane.')
+].join('');
+
+document.getElementById('cmpAll').innerHTML = [
+  cmp([row('📐 Main Street', '40 m²'), row('📐 Farm Road', '54 m²'), row('📐 Oak Lane', '96 m²')], 'Oak Lane is ' + T('the biggest') + ' house.'),
+  cmp([row('📅 Oak Lane', '2015'), row('📅 Main Street', '1960'), row('📅 Farm Road', '1925')], 'Farm Road is ' + T('the oldest') + ' house.'),
+  cmp([row('🔊 Main Street', G(MAIN, 'noise')), row('🔊 Oak Lane', G(OAK, 'noise')), row('🔊 Farm Road', G(FARM, 'noise'))], 'Farm Road is ' + T('the quietest') + ' neighborhood.'),
+  cmp([row('🏭 Main Street', G(MAIN, 'pollution')), row('🏭 Oak Lane', G(OAK, 'pollution')), row('🏭 Farm Road', G(FARM, 'pollution'))], 'Main Street is ' + T('the dirtiest') + ' neighborhood.'),
+  cmp([row('💲 Farm Road', money(FARM.facts.price)), row('💲 Main Street', money(MAIN.facts.price)), row('💲 Oak Lane', money(OAK.facts.price))], 'Oak Lane is ' + T('the most expensive') + ' house.'),
+  cmp([row('📍 Main Street', '1 km'), row('📍 Oak Lane', '9 km'), row('📍 Farm Road', '30 km')], 'Main Street is ' + T('the nearest') + ' to the city center.')
+].join('');
+
+/* ── concept checking questions ────────────────────────────────────────── */
+HouseCCQ.build({
+  container: 'ccq',
+  items: [
+    { sentence: 'Oak Lane is bigger than Main Street.',
+      questions: [
+        { q: 'Are the two houses the same size?', opts: ['Yes', 'No'], correct: 1,
+          why: 'Bigger than = not the same. Oak Lane is 96 m². Main Street is 40 m².' },
+        { q: 'Which house is smaller?', opts: ['Oak Lane', 'Main Street'], correct: 1,
+          why: 'Oak Lane is bigger, so Main Street is smaller.' }
+      ] },
+    { sentence: 'Main Street is more expensive than Farm Road.',
+      questions: [
+        { q: 'Which house costs less money?', opts: ['Main Street', 'Farm Road'], correct: 1,
+          why: 'Main Street is $160,000. Farm Road is $90,000. Farm Road is cheaper.' }
+      ] },
+    { sentence: 'Farm Road is the cheapest house.',
+      questions: [
+        { q: 'Is Farm Road cheaper than Oak Lane?', opts: ['Yes', 'No'], correct: 0,
+          why: 'The cheapest = cheaper than all the other houses.' },
+        { q: 'Is Farm Road cheaper than Main Street?', opts: ['Yes', 'No'], correct: 0,
+          why: 'Yes. It is cheaper than ALL the other houses — Oak Lane and Main Street.' }
+      ] },
+    { sentence: 'Oak Lane is the biggest of the three houses.',
+      questions: [
+        { q: 'How many houses do we compare?', opts: ['Two', 'Three or more'], correct: 1,
+          why: 'The biggest = we compare three or more things. With two things, we say “bigger than”.' }
+      ] }
+  ]
+});
+
+/* ── form ──────────────────────────────────────────────────────────────── */
+HouseFormClarf.build({
+  container: 'formClarf', scoreEl: 'fcScore', totalEl: 'fcTotal',
+  pool: ['wh', 'subject', 'verb', 'adverb', 'adj', 'conj', 'det', 'noun'],
+  items: [
+    { form: 'aff', parts: [['Oak Lane', 'subject'], ['is', 'verb'], ['bigger', 'adj'], ['than', 'conj'], ['Main Street', 'noun'], ['.', null]] },
+    { form: 'aff', parts: [['Main Street', 'subject'], ['is', 'verb'], ['more', 'adverb'], ['expensive', 'adj'], ['than', 'conj'], ['Farm Road', 'noun'], ['.', null]] },
+    { form: 'aff', parts: [['Oak Lane', 'subject'], ['is', 'verb'], ['the', 'det'], ['biggest', 'adj'], ['house', 'noun'], ['.', null]] },
+    { form: 'aff', parts: [['Oak Lane', 'subject'], ['is', 'verb'], ['the', 'det'], ['most', 'adverb'], ['expensive', 'adj'], ['house', 'noun'], ['.', null]] },
+    { form: 'wh',  parts: [['Which', 'wh'], ['house', 'noun'], ['is', 'verb'], ['the', 'det'], ['cheapest', 'adj'], ['?', null]] }
+  ]
+});
+
+/* ── the rule ──────────────────────────────────────────────────────────── */
+const SPELL = [
+  ['Short words: + <strong>-er</strong> / <strong>-est</strong>', 'cheap', 'cheaper', 'the cheapest'],
+  ['', 'old', 'older', 'the oldest'],
+  ['Words ending in <strong>-e</strong>: + <strong>-r</strong> / <strong>-st</strong>', 'safe', 'safer', 'the safest'],
+  ['One vowel + one consonant at the end: <strong>double</strong> it', 'big', 'bigger', 'the biggest'],
+  ['Words ending in <strong>-y</strong>: y → <strong>i</strong>', 'noisy', 'noisier', 'the noisiest'],
+  ['', 'dirty', 'dirtier', 'the dirtiest'],
+  ['Long words: <strong>more</strong> / <strong>the most</strong>', 'expensive', 'more expensive', 'the most expensive'],
+  ['', 'dangerous', 'more dangerous', 'the most dangerous'],
+  ['Irregular: learn them!', 'good', 'better', 'the best'],
+  ['', 'bad', 'worse', 'the worst'],
+  ['', 'far', 'farther', 'the farthest']
+];
+document.getElementById('ruleBox').innerHTML =
+  '<div class="spell"><div class="sh rh"></div><div class="sh">adjective</div><div class="sh">comparative</div><div class="sh">superlative</div>' +
+  SPELL.map(([rule, a, b, c]) => (rule ? '<div class="rule">' + rule + '</div>' : '<div class="rule" aria-hidden="true"></div>') +
+    '<div>' + a + '</div><div>' + T(b) + '</div><div>' + T(c) + '</div>').join('') + '</div>' +
+  '<p><strong>Two things:</strong> comparative + ' + T('than') + ': Oak Lane is bigger ' + T('than') + ' Main Street.</p>' +
+  '<p><strong>Three or more things:</strong> ' + T('the') + ' + superlative: Oak Lane is ' + T('the') + ' biggest house.</p>' +
+  '<p><strong>Questions:</strong> ' + T('Which') + ' house is ' + T('cheaper') + ', Oak Lane or Farm Road? · ' + T('Which') + ' house is ' + T('the cheapest') + '?</p>' +
+  '<p><strong>Good to know:</strong> quiet, clean and friendly can take -er: quieter, cleaner, friendlier (or more friendly).</p>';
+
+/* ── common mistakes ───────────────────────────────────────────────────── */
+const MISTAKES = [
+  ['Oak Lane is more big than Main Street.', 'Oak Lane is bigger than Main Street.'],
+  ['Main Street is expensiver than Farm Road.', 'Main Street is more expensive than Farm Road.'],
+  ['Farm Road is cheaper that Oak Lane.', 'Farm Road is cheaper than Oak Lane.'],
+  ['Main Street is more noisier than Farm Road.', 'Main Street is noisier than Farm Road.'],
+  ['Farm Road is oldest house.', 'Farm Road is the oldest house.'],
+  ['Oak Lane is the more expensive house of the three.', 'Oak Lane is the most expensive house of the three.'],
+  ['Main Street is noisyer.', 'Main Street is noisier.'],
+  ['Oak Lane is the bigest house.', 'Oak Lane is the biggest house.'],
+  ['My neighborhood is gooder than your neighborhood.', 'My neighborhood is better than your neighborhood.'],
+  ['Farm Road is more far from the city center.', 'Farm Road is farther from the city center.']
+];
+document.getElementById('mistakes').innerHTML = MISTAKES.map(([no, yes]) =>
+  '<div class="pair-card"><div class="pair-line no"><span class="mark">✗</span>' + no + '</div>' +
+  '<div class="pair-line yes"><span class="mark">✓</span>' + yes + '</div></div>').join('');
+
+/* ── error hunt (A1/A2: some sentences are already correct) ────────────── */
+const EH_ITEMS = [
+  { words: ['Main', 'Street', 'is', 'noisy', 'than', 'Farm', 'Road', '.'],
+    error: { type: 'wrong', wordIndex: 3, options: ['noisier', 'noisiest', 'more noisy'], correct: 'noisier' } },
+  { words: ['Farm', 'Road', 'is', 'cheaper', 'that', 'Oak', 'Lane', '.'],
+    error: { type: 'wrong', wordIndex: 4, options: ['than', 'then', 'as'], correct: 'than' } },
+  { words: ['Main', 'Street', 'is', 'the', 'noisiest', 'neighborhood', '.'], error: null },
+  { words: ['Farm', 'Road', 'is', 'oldest', 'house', '.'],
+    error: { type: 'missing', gapIndex: 3, options: ['the', 'a', 'than'], correct: 'the' } },
+  { words: ['Oak', 'Lane', 'is', 'the', 'bigest', 'house', '.'],
+    error: { type: 'wrong', wordIndex: 4, options: ['biggest', 'bigger', 'most big'], correct: 'biggest' } },
+  { words: ['Is', 'Oak', 'Lane', 'safer', 'than', 'Main', 'Street', '?'], error: null },
+  { words: ['Main', 'Street', 'is', 'expensiver', 'than', 'Farm', 'Road', '.'],
+    error: { type: 'wrong', wordIndex: 3, options: ['more expensive', 'most expensive', 'expensivest'], correct: 'more expensive' } },
+  { words: ['Main', 'Street', 'is', 'more', 'dirtier', 'than', 'Oak', 'Lane', '.'],
+    error: { type: 'extra', wordIndex: 3 } },
+  { words: ['Farm', 'Road', 'is', 'than', 'farther', 'Oak', 'Lane', '.'],
+    error: { type: 'misplaced', wordIndex: 3, targetGapIndex: 5 } },
+  { words: ['Which', 'house', 'is', 'the', 'cheapest', '?'], error: null }
+];
+HouseErrorHunt.build({ container: 'errorHuntItems', items: EH_ITEMS, scoreEl: 'errorScore', totalEl: 'errorTotal' });
+</script>
+<script>HouseGrammar.init();</script>
+</body>
+</html>

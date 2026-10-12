@@ -3528,11 +3528,16 @@ html[data-theme="dark"] .stair-rail{ stroke:#c9a77e; }
          house,                                 // a saved house, or HousePicture.room(…)
          level: 0,                              // the floor shown first
          walls: 'cutout',                       // 'cutout' | 'down' | 'full'
+         roofs: false,                          // true: start with the roof on (a house seen from outside)
          labels: [{ level: 0, x, y, text }],    // words on the floor (per floor)
          floorNames: { 0: 'Downstairs', 1: 'Upstairs' },   // optional
          alt: 'A house'
        });
        v.set(house, { labels })                 // show another house
+
+     The 🏠 button puts the roof on or takes it off. Cutting the walls (✂️)
+     or putting them down (🧱) takes the roof off, so you can look in; the
+     roof goes back on with the walls up.
      ══════════════════════════════════════════════════════════════════════════ */
   const HV_STYLE_ID = 'house-viewer-styles';
   const HV_CSS = `
@@ -3562,7 +3567,7 @@ html[data-theme="dark"] .stair-rail{ stroke:#c9a77e; }
     }
     catalog = catalog || create();
     const LI = catalog.LEVEL_INFO;
-    const view = { house: null, levels: [0], level: o.level || 0, walls: o.walls || 'cutout', rot: 0, labels: o.labels || [], base: null, vb: null };
+    const view = { house: null, levels: [0], level: o.level || 0, walls: o.walls || (o.roofs ? 'full' : 'cutout'), roofs: !!o.roofs, rot: 0, labels: o.labels || [], base: null, vb: null };
     host.innerHTML =
       '<div class="hv">' +
         '<div class="hv-stage" role="img"></div>' +
@@ -3571,6 +3576,7 @@ html[data-theme="dark"] .stair-rail{ stroke:#c9a77e; }
           '<button type="button" class="hv-btn" data-act="rotr" title="Turn right" aria-label="Turn right">⟳</button>' +
           '<button type="button" class="hv-btn" data-act="down" title="Walls down" aria-label="Walls down" aria-pressed="false">🧱</button>' +
           '<button type="button" class="hv-btn" data-act="cut" title="Cut the front walls" aria-label="Cut the front walls" aria-pressed="false">✂️</button>' +
+          '<button type="button" class="hv-btn" data-act="roof" title="Roof on / off" aria-label="Roof" aria-pressed="false">🏠</button>' +
         '</div>' +
         '<div class="hv-pill hv-zoom"><button type="button" class="hv-btn" data-act="zout" aria-label="Zoom out">−</button>' +
           '<button type="button" class="hv-read" data-act="zreset" title="Reset the view">100%</button>' +
@@ -3589,7 +3595,7 @@ html[data-theme="dark"] .stair-rail{ stroke:#c9a77e; }
       let b = null;
       view.frames = {};
       view.levels.forEach(L => {
-        const m = pictureSvg(view.house, { level: L, rot: view.rot, walls: 'full' }).match(/viewBox="([^"]+)"/);
+        const m = pictureSvg(view.house, { level: L, rot: view.rot, walls: 'full', roofs: view.roofs }).match(/viewBox="([^"]+)"/);
         const [x, y, w, h] = m[1].split(' ').map(Number);
         view.frames[L] = fit([x, y, w, h]);
         b = b ? [Math.min(b[0], x), Math.min(b[1], y), Math.max(b[0] + b[2], x + w) - Math.min(b[0], x), Math.max(b[1] + b[3], y + h) - Math.min(b[1], y)] : [x, y, w, h];
@@ -3599,7 +3605,7 @@ html[data-theme="dark"] .stair-rail{ stroke:#c9a77e; }
     function draw() {
       if (view.auto) setVB(view.frames[view.level], true);   // not moved by hand: frame the floor shown
       const labels = view.labels.filter(l => (l.level || 0) === view.level);
-      stage.innerHTML = pictureSvg(view.house, { level: view.level, rot: view.rot, walls: view.walls, labels, box: view.vb, alt: o.alt });
+      stage.innerHTML = pictureSvg(view.house, { level: view.level, rot: view.rot, walls: view.walls, roofs: view.roofs, labels, box: view.vb, alt: o.alt });
       const svg = stage.firstElementChild;
       svg.setAttribute('preserveAspectRatio', 'xMidYMid meet');
       stage.setAttribute('aria-label', (o.alt || 'A house') + ' — ' + floorName(view.level));
@@ -3609,6 +3615,7 @@ html[data-theme="dark"] .stair-rail{ stroke:#c9a77e; }
       host.querySelector('.hv-floor').style.display = view.levels.length > 1 ? '' : 'none';
       q('down').setAttribute('aria-pressed', String(view.walls === 'down'));
       q('cut').setAttribute('aria-pressed', String(view.walls === 'cutout'));
+      q('roof').setAttribute('aria-pressed', String(view.roofs));
       zoomRead();
     }
     function setVB(vb, auto) {
@@ -3634,6 +3641,8 @@ html[data-theme="dark"] .stair-rail{ stroke:#c9a77e; }
       const b = e.target.closest('[data-act]'); if (!b || b.disabled) return;
       const act = b.dataset.act, i = view.levels.indexOf(view.level);
       if (act === 'rotl' || act === 'rotr') { view.rot = (view.rot + (act === 'rotr' ? 1 : 3)) % 4; reset(); return; }
+      if (act === 'roof') { view.roofs = !view.roofs; if (view.roofs) view.walls = 'full'; reset(); return; }
+      if ((act === 'down' || act === 'cut') && view.roofs) { view.roofs = false; view.walls = act === 'down' ? 'down' : 'cutout'; reset(); return; }
       if (act === 'down') view.walls = view.walls === 'down' ? 'full' : 'down';
       else if (act === 'cut') view.walls = view.walls === 'cutout' ? 'full' : 'cutout';
       else if (act === 'fdown') view.level = view.levels[i - 1];

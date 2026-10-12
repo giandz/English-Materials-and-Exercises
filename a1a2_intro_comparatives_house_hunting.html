@@ -1,0 +1,104 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<title>Which House? — Comparatives and Superlatives</title>
+<script>
+(function(){
+  try{
+    var saved = localStorage.getItem('theme-preference');
+    var theme = (saved === 'light' || saved === 'dark')
+      ? saved
+      : ((window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches) ? 'dark' : 'light');
+    document.documentElement.setAttribute('data-theme', theme);
+    var fs = parseFloat(localStorage.getItem('font-size-preference'));
+    if (fs >= 10 && fs <= 28) document.documentElement.style.setProperty('--fs-base', fs + 'px');
+  }catch(e){ /* localStorage/matchMedia unavailable — CSS media query still applies */ }
+})();
+</script>
+<link rel="stylesheet" href="house.css">
+<style>
+.houses-details{ margin:0 0 1rem; }
+.houses-details .houses-body{ padding:10px 10px 0; }
+</style>
+</head>
+<body>
+<div class="page" id="page">
+  <span class="cefr-tag cefr-a1a2">A1/A2 · Elementary</span>
+  <h1>Which House?</h1>
+  <p class="subtitle">Sofia and Daniel want to buy a house. They look at three ads.</p>
+
+  <div class="sec-div">Before you read</div>
+  <div id="preQuestions"></div>
+
+  <div class="sec-div">The conversation</div>
+  <details class="houses-details">
+    <summary>🏘️ The three ads</summary>
+    <div class="houses-body" id="listings"></div>
+  </details>
+
+  <button class="grammar-toggle-btn" id="grammarToggle">🎨 Show Grammar</button>
+  <div class="pos-legend"></div>
+
+  <div id="conversation"></div>
+
+  <div class="sec-div">Check your answers</div>
+  <div id="quiz"></div>
+
+  <footer>Which House? — Comparatives and Superlatives (A1/A2)</footer>
+</div>
+
+<div id="theme-toggle-wrap">
+  <button id="theme-toggle" aria-label="Toggle light/dark mode" title="Toggle light/dark mode">
+    <span id="theme-icon">☀️</span>
+  </button>
+</div>
+<script src="house.js"></script>
+<script src="house-engine.js"></script>
+<script src="city-engine.js"></script>
+<script src="listing-kit.js"></script>
+<script>
+// the same three houses as the clarification and the controlled practice
+ListingKit.renderCards('listings', ListingKit.EXAMPLES);
+
+/* Conversation lines. [words/pos] marks a part of speech for the grammar colours. */
+const SPEAKERS = {
+  Daniel: { avatar: '👨‍🦱', av: 'av-a', side: 'left' },
+  Sofia: { avatar: '🙋', av: 'av-b', side: 'right' }
+};
+const LINES = [
+  ['Daniel', '[Look/verb], [Sofia/noun]! [There are/verb] [three/det] [houses/noun] [for sale/none]. [Which/wh] [one/noun] [do/aux] [you/subject] [like/verb]?'],
+  ['Sofia', '[I/subject] [like/verb] [Oak Lane/noun]. [It’s/subject] [bigger/adj] [than/conj] [the other houses/noun]. [It/subject] [has/verb] [four/det] [bedrooms/noun]!'],
+  ['Daniel', '[Yes/none], [it’s/subject] [the/det] [biggest/adj], [but/conj] [it’s/subject] [also/adverb] [the/det] [most/adverb] [expensive/adj]. [It’s/subject] [$240,000/complement].'],
+  ['Sofia', '[Hmm/none]. [What about/wh] [Main Street/noun]? [It’s/subject] [cheaper/adj].'],
+  ['Daniel', '[It’s/subject] [in the city center/prep], [so/conj] [it’s/subject] [nearer/adj] [to/prep] [my office/noun]. [But/conj] [the neighborhood/noun] [is/verb] [very/adverb] [noisy/adj].'],
+  ['Sofia', '[Yes/none], [it’s/subject] [the/det] [noisiest/adj] — [and/conj] [the/det] [dirtiest/adj]! [Look at/verb] [the colors/noun].'],
+  ['Daniel', '[What about/wh] [Farm Road/noun]? [It’s/subject] [the/det] [cheapest/adj] [house/noun]. [Only/adverb] [$90,000/complement]!'],
+  ['Sofia', '[And/conj] [the countryside/noun] [is/verb] [quieter/adj] [and/conj] [cleaner/adj] [than/conj] [the city/noun].'],
+  ['Daniel', '[That’s true/none]. [But/conj] [it’s/subject] [the/det] [oldest/adj] [house/noun], [and/conj] [it’s/subject] [the/det] [farthest/adj] [from/prep] [the city center/noun]. [Thirty kilometers/complement]!'],
+  ['Sofia', '[OK/none]. [So/conj] [Oak Lane/noun] [is/verb] [more/adverb] [expensive/adj], [but/conj] [it’s/subject] [safer/adj] [than/conj] [Main Street/noun], [and/conj] [it/subject] [has/verb] [a garden/noun] [and/conj] [a pool/noun].'],
+  ['Daniel', '[You’re right/none]. [It’s/subject] [the/det] [best/adj] [house/noun] [for/prep] [us/object]. [Let’s call/verb] [them/object]!']
+];
+const conv = document.getElementById('conversation');
+LINES.forEach(([who, text]) => {
+  const s = SPEAKERS[who], right = s.side === 'right';
+  const html = text.replace(/\[([^\/\]]+)\/(\w+)\]/g, '<span class="pos-hl pos-$2">$1</span>');
+  conv.insertAdjacentHTML('beforeend',
+    '<div class="bubble-wrap' + (right ? ' right' : '') + '">' +
+      '<div class="avatar ' + s.av + '">' + s.avatar + '</div>' +
+      '<div class="bubble-col"><div class="bname' + (right ? ' right' : '') + '">' + who + '</div>' +
+      '<div class="bubble ' + (right ? 'right' : 'left') + '">' + html + '</div></div>' +
+    '</div>');
+});
+
+const CQ_ITEMS = [
+  { q: 'Which house is the cheapest?', opts: ['Main Street', 'Oak Lane', 'Farm Road'], correct: 2 },
+  { q: 'What is the problem with Main Street?', opts: ['It’s the most expensive house.', 'The neighborhood is noisy and dirty.', 'It’s far from the city center.'], correct: 1 },
+  { q: 'Which house do Sofia and Daniel choose?', opts: ['Oak Lane', 'Farm Road', 'Main Street'], correct: 0 }
+];
+HouseComprehension.build({ pre: 'preQuestions', quiz: 'quiz', items: CQ_ITEMS });
+</script>
+<script>HouseGrammar.init();</script>
+</body>
+</html>

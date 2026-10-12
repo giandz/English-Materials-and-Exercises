@@ -1,0 +1,163 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<title>Houses and Neighborhoods — Adjectives</title>
+<script>
+(function(){
+  try{
+    var saved = localStorage.getItem('theme-preference');
+    var theme = (saved === 'light' || saved === 'dark')
+      ? saved
+      : ((window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches) ? 'dark' : 'light');
+    document.documentElement.setAttribute('data-theme', theme);
+    var fs = parseFloat(localStorage.getItem('font-size-preference'));
+    if (fs >= 10 && fs <= 28) document.documentElement.style.setProperty('--fs-base', fs + 'px');
+  }catch(e){ /* localStorage/matchMedia unavailable — CSS media query still applies */ }
+})();
+</script>
+<link rel="stylesheet" href="house.css">
+<style>
+/* dictionary: one entry per pair, opened when the pair is matched */
+.dict{ display:grid; grid-template-columns:repeat(2, minmax(0, 1fr)); gap:10px; align-items:start; }
+@media (max-width:560px){ .dict{ grid-template-columns:1fr; } }
+.dict-pair{ border:1px solid var(--color-border-tertiary); border-radius:12px; background:var(--surface-2); padding:10px 12px; }
+.dict-pair.locked{ background:var(--surface-1); border-style:dashed; color:var(--text-muted); font-size:.8667rem; display:flex; align-items:center; justify-content:center; min-height:5.5rem; text-align:center; }
+.dict-pair.open{ animation:dict-in .35s ease; }
+@keyframes dict-in{ from{ opacity:0; transform:translateY(4px); } to{ opacity:1; transform:none; } }
+.dict-entry + .dict-entry{ border-top:1px solid var(--color-border-tertiary); margin-top:8px; padding-top:8px; }
+.dict-head{ display:flex; align-items:baseline; gap:6px; flex-wrap:wrap; }
+.dict-word{ font-size:1.0667rem; font-weight:700; color:var(--text-accent); }
+.dict-pos{ font-size:.7333rem; font-style:italic; color:var(--text-muted); }
+.dict-emoji{ font-size:1.0667rem; }
+.dict-def{ font-size:.9rem; color:var(--text-primary); margin:2px 0 0; line-height:1.5; }
+.dict-ex{ font-size:.8667rem; color:var(--text-secondary); font-style:italic; margin:2px 0 0; line-height:1.5; }
+.talk{ font-size:.9333rem; }
+.talk-q{ font-size:1.1333rem; font-weight:700; color:var(--text-primary); margin:0 0 8px; }
+.talk ul{ margin:4px 0 0; padding-left:1.2rem; }
+.talk li{ margin-bottom:4px; }
+.model{ font-size:.9rem; line-height:1.7; }
+.match-grid{ margin-bottom:.8rem; }
+</style>
+</head>
+<body>
+<div class="page" id="page">
+  <span class="cefr-tag cefr-a1a2">A1/A2 · Elementary</span>
+  <h1>Houses and Neighborhoods</h1>
+  <p class="subtitle">Words to describe a house and the place around it: big · small · quiet · noisy · safe · dangerous…</p>
+
+  <div class="sec-div">Match the opposites</div>
+  <p class="subtitle">Tap a word on the left. Then tap its opposite on the right.</p>
+  <div class="score-bar">
+    <span>Matched: <strong id="mScore">0</strong> / <span id="mTotal">0</span></span>
+    <button type="button" id="mReset">↺ Start again</button>
+  </div>
+  <div class="win-msg" id="mWin">🎉 Well done! You matched all the opposites.</div>
+  <div class="match-grid">
+    <div><div class="match-col-label">Word</div><div class="match-col" id="leftCol"></div></div>
+    <div><div class="match-col-label">Opposite</div><div class="match-col" id="rightCol"></div></div>
+  </div>
+  <div class="feedback" id="mFeedback"></div>
+
+  <div class="sec-div">What do they mean?</div>
+  <p class="subtitle">Match a pair. Its meaning opens here.</p>
+  <div class="dict" id="dict"></div>
+
+  <div class="sec-div">Talk about it</div>
+  <div class="rule-box talk">
+    <p class="talk-q">🏘️ What is your neighborhood like?</p>
+    Talk with a partner. Use the words on this page.
+    <ul>
+      <li>Is your neighborhood quiet or noisy? Is it safe?</li>
+      <li>Is it near the city center, or far from it?</li>
+      <li>Are the houses new or old? Are they big or small?</li>
+      <li>Are the houses cheap or expensive?</li>
+      <li>Are your neighbors friendly?</li>
+      <li>What is your house or apartment like? Is it bright or dark?</li>
+    </ul>
+  </div>
+  <div class="rule-box model">
+    <strong>You can say</strong><br>
+    A: What is your neighborhood like?<br>
+    B: It’s quiet and safe, but it’s far from the city center.<br>
+    A: Are the houses big?<br>
+    B: No, they’re small, but they’re cheap. And the neighbors are very friendly!
+  </div>
+
+  <footer>Houses and Neighborhoods — Adjectives (A1/A2)</footer>
+</div>
+
+<div id="theme-toggle-wrap">
+  <button id="theme-toggle" aria-label="Toggle light/dark mode" title="Toggle light/dark mode">
+    <span id="theme-icon">☀️</span>
+  </button>
+</div>
+<script src="house.js"></script>
+<script>
+/* Each pair: two words, with a learner's-dictionary meaning and an example for each. */
+const PAIRS = [
+  { id: 'big',   left: 'big',       leftEmoji: '🏰', right: 'small',     rightEmoji: '🛖',
+    defs: [['big', 'adjective', 'large in size', 'Their house is big. It has five bedrooms.'],
+           ['small', 'adjective', 'not large in size', 'My apartment is small: one room and a kitchen.']] },
+  { id: 'new',   left: 'new',       leftEmoji: '✨', right: 'old',       rightEmoji: '🏚️',
+    defs: [['new', 'adjective', 'built or made a short time ago', 'These houses are new. They were built last year.'],
+           ['old', 'adjective', 'built or made a long time ago', 'Our house is very old. It is from 1920.']] },
+  { id: 'cheap', left: 'cheap',     leftEmoji: '🪙', right: 'expensive', rightEmoji: '💎',
+    defs: [['cheap', 'adjective', 'costing only a little money', 'Houses are cheap here, so many young families buy them.'],
+           ['expensive', 'adjective', 'costing a lot of money', 'Apartments in the city center are very expensive.']] },
+  { id: 'quiet', left: 'quiet',     leftEmoji: '🤫', right: 'noisy',     rightEmoji: '📢',
+    defs: [['quiet', 'adjective', 'with very little noise', 'My street is quiet at night. I sleep very well.'],
+           ['noisy', 'adjective', 'with a lot of loud sound', 'I live next to a big road. It’s very noisy.']] },
+  { id: 'safe',  left: 'safe',      leftEmoji: '🛡️', right: 'dangerous', rightEmoji: '⚠️',
+    defs: [['safe', 'adjective', 'where nothing bad will happen to you', 'It’s safe to walk here at night.'],
+           ['dangerous', 'adjective', 'where something bad can happen to you', 'This road is dangerous for children. The cars go very fast.']] },
+  { id: 'clean', left: 'clean',     leftEmoji: '🧼', right: 'dirty',     rightEmoji: '🗑️',
+    defs: [['clean', 'adjective', 'with no dirt, trash or pollution', 'The streets are very clean in my town.'],
+           ['dirty', 'adjective', 'not clean; with dirt, trash or pollution', 'The river is dirty. You can’t swim in it.']] },
+  { id: 'bright', left: 'bright',   leftEmoji: '☀️', right: 'dark',      rightEmoji: '🌑',
+    defs: [['bright', 'adjective', 'full of light', 'The living room is bright. It has big windows.'],
+           ['dark', 'adjective', 'with little or no light', 'The basement is dark. Turn on the light!']] },
+  { id: 'near',  left: 'near',      leftEmoji: '👣', right: 'far',       rightEmoji: '🛣️',
+    defs: [['near', 'adjective', 'a short distance away', 'The school is near my house. I walk there.'],
+           ['far', 'adjective', 'a long distance away', 'The beach is far from here. It’s two hours by car.']] },
+  { id: 'beautiful', left: 'beautiful', leftEmoji: '🌸', right: 'ugly', rightEmoji: '🥀',
+    defs: [['beautiful', 'adjective', 'very nice to look at', 'They have a beautiful garden with lots of flowers.'],
+           ['ugly', 'adjective', 'not nice to look at', 'That building is ugly. It’s gray and it has no windows.']] },
+  { id: 'friendly', left: 'friendly', leftEmoji: '😊', right: 'unfriendly', rightEmoji: '😠',
+    defs: [['friendly', 'adjective', 'kind and nice to other people', 'Our neighbors are friendly. They always say hello.'],
+           ['unfriendly', 'adjective', 'not kind or nice to other people', 'The man next door is unfriendly. He never smiles.']] }
+];
+
+/* ── the dictionary: a locked card per pair, in the matching order ─────── */
+const dict = document.getElementById('dict');
+function lockAll() {
+  dict.innerHTML = PAIRS.map(p => '<div class="dict-pair locked" data-id="' + p.id + '">🔒 Match a pair to see its meaning.</div>').join('');
+}
+function openPair(id) {
+  const card = dict.querySelector('.dict-pair[data-id="' + id + '"]');
+  if (!card || !card.classList.contains('locked')) return;
+  const p = PAIRS.find(x => x.id === id);
+  const emo = [p.leftEmoji, p.rightEmoji];
+  card.className = 'dict-pair open';
+  card.innerHTML = p.defs.map(([word, pos, def, ex], i) =>
+    '<div class="dict-entry"><div class="dict-head"><span class="dict-emoji" aria-hidden="true">' + emo[i] + '</span>' +
+    '<span class="dict-word">' + word + '</span><span class="dict-pos">' + pos + '</span></div>' +
+    '<p class="dict-def">' + def + '</p><p class="dict-ex">' + ex + '</p></div>').join('');
+  // opened cards move up, in the order they were matched; locked ones wait below
+  const firstLocked = dict.querySelector('.dict-pair.locked');
+  if (firstLocked) dict.insertBefore(card, firstLocked); else dict.appendChild(card);
+}
+lockAll();
+
+HouseMatching.build({
+  left: 'leftCol', right: 'rightCol', pairs: PAIRS,
+  scoreEl: 'mScore', totalEl: 'mTotal', winEl: 'mWin', feedbackEl: 'mFeedback', resetBtn: 'mReset',
+  onScore: done => {
+    if (done === 0) { lockAll(); return; }
+    document.querySelectorAll('#leftCol .match-card.matched').forEach(c => openPair(c.dataset.id));
+  }
+});
+</script>
+</body>
+</html>

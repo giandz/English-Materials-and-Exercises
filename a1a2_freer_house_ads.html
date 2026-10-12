@@ -1,0 +1,219 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<title>House Ads — Freer Practice</title>
+<script>
+(function(){
+  try{
+    var saved = localStorage.getItem('theme-preference');
+    var theme = (saved === 'light' || saved === 'dark')
+      ? saved
+      : ((window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches) ? 'dark' : 'light');
+    document.documentElement.setAttribute('data-theme', theme);
+    var fs = parseFloat(localStorage.getItem('font-size-preference'));
+    if (fs >= 10 && fs <= 28) document.documentElement.style.setProperty('--fs-base', fs + 'px');
+  }catch(e){ /* localStorage/matchMedia unavailable — CSS media query still applies */ }
+})();
+</script>
+<link rel="stylesheet" href="house.css">
+<style>
+.how{ font-size:.9rem; }
+.how ol{ margin:4px 0 0; padding-left:1.3rem; }
+.model{ font-size:.9rem; line-height:1.7; }
+.ads-actions{ display:flex; justify-content:center; margin:0 0 1rem; }
+.ads-btn{ font-size:.9333rem; font-weight:600; padding:8px 16px; }
+.q-card details{ margin-top:4px; font-size:.9333rem; color:var(--text-secondary); }
+.q-card summary{ cursor:pointer; color:var(--text-accent); font-weight:600; }
+.q-card .q-answer{ margin-top:6px; padding:0 10px 8px; font-weight:600; color:var(--good); line-height:1.5; }
+.q-help{ font-size:.8667rem; color:var(--text-secondary); line-height:1.5; }
+</style>
+</head>
+<body>
+<div class="page" id="page">
+  <span class="cefr-tag cefr-a1a2">A1/A2 · Elementary</span>
+  <h1>House Ads</h1>
+  <p class="subtitle">Read three ads for houses. Compare the houses and their neighborhoods: bigger · cheaper · the safest · the most expensive…</p>
+
+  <div class="rule-box how">
+    <strong>How to play</strong> (with a partner)
+    <ol>
+      <li>Read the three ads: the text, the house, the map 📍 and the colors. Look inside the houses with ✂️ and ▼ ▲.</li>
+      <li>Roll 🎲. Answer the question, or talk about it with your partner.</li>
+      <li>👥 cards have an answer. Check it!</li>
+      <li>Want new houses? Press 🔄 New ads.</li>
+    </ol>
+  </div>
+
+  <div class="rule-box model">
+    <strong>You can say</strong><br>
+    A: Which house is better for a family?<br>
+    B: House B. It’s bigger than house A, and the neighborhood is safer.<br>
+    A: Yes, but it’s more expensive. House C is the cheapest.<br>
+    B: That’s true, but it’s the farthest from the city center!
+  </div>
+
+  <div class="sec-div">The ads</div>
+  <div id="ads"></div>
+  <div class="ads-actions"><button type="button" class="ads-btn" id="newAds">🔄 New ads</button></div>
+
+  <div class="sec-div">Talk about it</div>
+  <button type="button" class="dice-btn" id="diceBtn" aria-label="Roll for a question">🎲</button>
+  <div class="roll-count">Questions: <strong id="rollCount">0</strong></div>
+  <div class="q-card" id="qCard"><span class="q-placeholder">Roll the dice for a question about the three houses.</span></div>
+
+  <footer>House Ads — Freer Practice (A1/A2)</footer>
+</div>
+
+<div id="theme-toggle-wrap">
+  <button id="theme-toggle" aria-label="Toggle light/dark mode" title="Toggle light/dark mode">
+    <span id="theme-icon">☀️</span>
+  </button>
+</div>
+<script src="house.js"></script>
+<script src="house-engine.js"></script>
+<script src="city-engine.js"></script>
+<script src="listing-kit.js"></script>
+<script>
+const rnd = n => Math.floor(Math.random() * n);
+const shuffle = arr => { const a = arr.slice(); for (let i = a.length - 1; i > 0; i--) { const j = rnd(i + 1); [a[i], a[j]] = [a[j], a[i]]; } return a; };
+const LETTERS = ['A', 'B', 'C'];
+const money = ListingKit.money;
+
+/* ══ Three ads, from three different kinds of neighborhood ═══════════════ */
+let ADS = [];
+function newAds() {
+  ADS = shuffle(ListingKit.AREA_TYPES).slice(0, 3).map((type, i) => Object.assign(ListingKit.random(Math.random, type), { letter: LETTERS[i] }));
+  ListingKit.renderCards('ads', ADS, { ad: true, tag: x => x.letter });
+}
+
+/* ══ What we can compare, and the words for it ════════════════════════════
+   value(x): the number; more: the comparative when the number is higher;
+   less: when it is lower; most / least: the superlatives; show(x): the
+   number as people say it. what: 'house' or 'neighborhood'. */
+const METRICS = [
+  { key: 'size', what: 'house', value: x => x.facts.size, show: x => x.facts.size + ' m²',
+    more: 'bigger', less: 'smaller', most: 'the biggest', least: 'the smallest', same: 'the same size' },
+  { key: 'price', what: 'house', value: x => x.facts.price, show: x => money(x.facts.price),
+    more: 'more expensive', less: 'cheaper', most: 'the most expensive', least: 'the cheapest', same: 'the same price' },
+  { key: 'year', what: 'house', value: x => x.facts.year, show: x => 'built in ' + x.facts.year,
+    more: 'newer', less: 'older', most: 'the newest', least: 'the oldest', same: 'the same age' },
+  { key: 'km', what: 'house', value: x => x.facts.km, show: x => x.facts.km + ' km from the center',
+    more: 'farther from the city center', less: 'nearer to the city center', most: 'the farthest from the city center', least: 'the nearest to the city center', same: 'the same distance from the center' },
+  { key: 'noise', what: 'neighborhood', value: x => x.gauges.noise, show: x => ListingKit.gauge('noise', x.gauges.noise),
+    more: 'noisier', less: 'quieter', most: 'the noisiest', least: 'the quietest', same: 'the same' },
+  { key: 'safety', what: 'neighborhood', value: x => x.gauges.safety, show: x => ListingKit.gauge('safety', x.gauges.safety),
+    more: 'safer', less: 'more dangerous', most: 'the safest', least: 'the most dangerous', same: 'the same' },
+  { key: 'parks', what: 'neighborhood', value: x => x.gauges.parks, show: x => ListingKit.gauge('parks', x.gauges.parks),
+    more: 'greener', less: 'less green', most: 'the greenest', least: null, same: 'the same' },
+  { key: 'pollution', what: 'neighborhood', value: x => x.gauges.pollution, show: x => ListingKit.gauge('pollution', x.gauges.pollution),
+    more: 'dirtier', less: 'cleaner', most: 'the dirtiest', least: 'the cleanest', same: 'the same' }
+];
+const cap = s => s.charAt(0).toUpperCase() + s.slice(1);
+const join = names => names.length === 1 ? names[0] : names.slice(0, -1).join(', ') + ' and ' + names[names.length - 1];
+
+// "Which house is the biggest?"
+function superlative(m, top) {
+  const word = top ? m.most : m.least;
+  if (!word) return null;
+  const best = top ? Math.max(...ADS.map(m.value)) : Math.min(...ADS.map(m.value));
+  const winners = ADS.filter(x => m.value(x) === best);
+  const name = winners.map(x => x.letter);
+  const all = ADS.map(x => x.letter + ': ' + m.show(x)).join(' · ');
+  const where = m.what === 'house' ? 'house' : 'neighborhood';
+  const answer = winners.length === ADS.length
+    ? 'They are all ' + m.same + '! (' + all + ')'
+    : (winners.length === 1 ? cap(where) + ' ' + name[0] + ' is ' : cap(where) + 's ' + join(name) + ' are ') + word + '. (' + all + ')';
+  const q = /^the (nearest|farthest)/.test(word)
+    ? 'Which house is ' + word + '?'
+    : 'Which ' + where + ' is ' + word + '?';
+  return { icon: ASK, text: q, answer };
+}
+
+// "Is house A bigger than house C?"
+function comparative(m) {
+  const [a, b] = shuffle(ADS).slice(0, 2);
+  const higher = rnd(2) === 0;
+  const word = higher ? m.more : m.less;
+  const va = m.value(a), vb = m.value(b);
+  const subject = m.what === 'house' ? 'house ' + a.letter : 'neighborhood ' + a.letter;
+  const other = m.what === 'house' ? 'house ' + b.letter : 'neighborhood ' + b.letter;
+  // "farther from the city center than" — the "than" goes after the whole phrase
+  const q = 'Is ' + subject + ' ' + word + ' than ' + other + '?';
+  const data = ' (' + a.letter + ': ' + m.show(a) + ' · ' + b.letter + ': ' + m.show(b) + ')';
+  let answer;
+  if (va === vb) answer = 'No, it isn’t. They are ' + m.same + '.' + data;
+  else if ((va > vb) === higher) answer = 'Yes, it is.' + data;
+  else answer = 'No, it isn’t. It’s ' + (higher ? m.less : m.more) + '.' + data;
+  return { icon: ASK, text: q, answer };
+}
+
+// "Which is cheaper, house A or house B?"
+function whichOfTwo(m) {
+  const [a, b] = shuffle(ADS).slice(0, 2);
+  const higher = rnd(2) === 0;
+  const word = higher ? m.more : m.less;
+  const va = m.value(a), vb = m.value(b);
+  const thing = m.what;
+  const data = ' (' + a.letter + ': ' + m.show(a) + ' · ' + b.letter + ': ' + m.show(b) + ')';
+  const winner = va === vb ? null : ((va > vb) === higher ? a : b);
+  return {
+    icon: ASK, text: 'Which ' + thing + ' is ' + word + ': ' + thing + ' ' + a.letter + ' or ' + thing + ' ' + b.letter + '?',
+    answer: winner ? cap(thing) + ' ' + winner.letter + ' is ' + word + '.' + data : 'They are ' + m.same + '.' + data
+  };
+}
+
+const ASK = '👥 Ask your partner', TALK = '🗣️ Discuss', YOU = '🏡 Talk about you';
+function talkPrompts() {
+  const [a, b] = shuffle(ADS);
+  const budget = [100000, 150000, 200000, 250000][rnd(4)];
+  const canBuy = ADS.filter(x => x.facts.price <= budget).map(x => 'house ' + x.letter);
+  return [
+    { icon: TALK, text: '👨‍👩‍👧‍👦 A family with three children and a dog wants a house. Which house is the best for them? Why?' },
+    { icon: TALK, text: '🚶 You work in the city center. You don’t have a car. Which house is the best for you? Why?' },
+    { icon: TALK, text: '👵 Your grandparents want a quiet and safe home. Compare two houses for them.' },
+    { icon: TALK, text: '💰 You have ' + money(budget) + '. Which houses can you buy? Which one is the best?',
+      answer: canBuy.length ? 'You can buy ' + join(canBuy) + '.' : 'Sorry — all three houses are too expensive!' },
+    { icon: TALK, text: 'Say three differences between house ' + a.letter + ' and house ' + b.letter + '.',
+      help: 'House ' + a.letter + ' is … than house ' + b.letter + '. The neighborhood is …' },
+    { icon: TALK, text: 'Which house is the worst? Why? Use three adjectives.' },
+    { icon: TALK, text: '🎓 A student wants a cheap house near the city center. Which house is better for her? Why?' },
+    { icon: YOU, text: 'Which house do YOU want? Compare it with the other two houses.' },
+    { icon: YOU, text: 'Which neighborhood is the most like your neighborhood? Why?' },
+    { icon: YOU, text: 'Compare your home with house ' + a.letter + '. Is your home bigger? Older? Noisier?' }
+  ];
+}
+
+// one roll: a factual question (with the answer worked out) or a discussion card
+let deck = [];
+function buildDeck() {
+  const facts = [];
+  METRICS.forEach(m => {
+    [superlative(m, true), superlative(m, false)].forEach(x => { if (x) facts.push(Object.assign(x, { key: 'sup-' + m.key + x.text })); });
+  });
+  const cmp = shuffle(METRICS).slice(0, 6).map((m, i) => i % 2 ? comparative(m) : whichOfTwo(m));
+  // half facts, half talk, all shuffled
+  return shuffle(shuffle(facts).slice(0, 8).concat(cmp, talkPrompts()));
+}
+function nextPrompt() {
+  if (!deck.length) deck = buildDeck();
+  return deck.pop();
+}
+
+newAds();
+HouseRandomGen.build({
+  pick: nextPrompt,
+  key: p => p.text,
+  render: p => '<span class="q-topic">' + p.icon + '</span><span class="q-text">' + p.text + '</span>' +
+    (p.help ? '<span class="q-help">' + p.help + '</span>' : '') +
+    (p.answer ? '<details><summary>Show the answer</summary><div class="q-answer">' + p.answer + '</div></details>' : '')
+});
+document.getElementById('newAds').addEventListener('click', () => {
+  newAds();
+  deck = [];
+  document.getElementById('qCard').innerHTML = '<span class="q-placeholder">New houses! Roll the dice for a question.</span>';
+});
+</script>
+</body>
+</html>
