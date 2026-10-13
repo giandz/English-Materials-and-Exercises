@@ -13,14 +13,15 @@ The two `*_people_scenes_folder.html` pages choose their people from this folder
 "cast": { "pose": "playing", "musician": "violinist", "role": "playing the violin" }
 ```
 
-* **pose** is one of: standing, walking, waving, hips, reaching, pointing, pointing-item, mopping, sweeping, seated, riding, skating, driving or playing. It decides where the person goes in the scene and which action appears in the key. If you leave it out, the page works it out from what the character has:
+* **pose** is one of: standing, walking, waving, hips, reaching, pointing, pointing-item, mopping, sweeping, seated, riding, skating, skiing, snowboarding, driving or playing. It decides where the person goes in the scene and which action appears in the key. If you leave it out, the page works it out from what the character has:
   * a chair or beach chair: seated
   * a bicycle: riding
   * a skateboard: skating
+  * skis or a snowboard under the feet: skiing or snowboarding
   * a car: driving
   * a mop or broom: mopping or sweeping
   * anything else: standing
-* **scenes** names the scenes the person can appear in: street, party, classroom, beach or restaurant. Leave it out to allow any scene that suits the pose. Bicycles and skateboards only appear on the street and the beach, cars only on the street, and seated people only where there are seats.
+* **scenes** names the scenes the person can appear in: street, party, classroom, beach, restaurant or ski. Leave it out to allow any scene that suits the pose. Bicycles and skateboards only appear on the street and the beach, skis and snowboards only at the ski resort, cars only on the street, and seated people only where there are seats.
 * **musician** names the place on the stage the person can fill:
   * party stage: rock_guitarist, rock_bassist, drummer, keyboard_player, rock_vocalist or hip_hop_vocalist
   * restaurant stage: violinist, cellist, bassist, mandolinist, singer, pianist or piano_singer
