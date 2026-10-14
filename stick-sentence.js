@@ -38,7 +38,7 @@ const PRESETS = {
   woman:   { headwear:'longhair', skirt:true },
   boy:     { age:'child', headwear:'cap' },
   girl:    { age:'child', headwear:'pigtails', skirt:true },
-  grandpa: { hunchback:true, held:{ front:'cane' } },
+  grandpa: { hunchback:true, headwear:'strawhat', held:{ front:'cane' } },
   grandma: { hunchback:true, headwear:'bun', skirt:true, held:{ front:'cane' } }
 };
 const COLOURS = {}; SC.PALETTE.forEach(c => { COLOURS[SC.colourName(c)] = c; });
