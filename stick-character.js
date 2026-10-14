@@ -259,7 +259,7 @@ function headwearSVG(id,col){
     const t0=-b-r, t1=-b+r+0.55*H;
     return `<path d="M${n2(p0[0]+v[0]*t0)},${n2(p0[1]+v[1]*t0)}L${n2(p0[0]+v[0]*t1)},${n2(p0[1]+v[1]*t1)}" ${st}/>`; }
   if(id==='tophat') return `<path d="M${n2(-0.62*H)},${n2(-R+1)}H${n2(0.62*H)}M${n2(-0.32*H)},${n2(-R+1)}V${n2(-R-0.75*H)}H${n2(0.32*H)}V${n2(-R+1)}" ${st}/>`;
-  if(id==='strawhat') return `<path d="M${n2(-1.05*H)},${n2(-0.45*R)}Q0,${n2(-0.7*R)} ${n2(1.05*H)},${n2(-0.45*R)}M${n2(-0.45*H)},${n2(-0.58*R)}Q${n2(-0.45*H)},${n2(-R-0.55*H)} 0,${n2(-R-0.55*H)}Q${n2(0.45*H)},${n2(-R-0.55*H)} ${n2(0.45*H)},${n2(-0.58*R)}" ${st}/>`;
+  if(id==='strawhat') return `<path d="M${n2(-1.05*H)},${n2(-0.45*R)}Q0,${n2(-0.7*R)} ${n2(1.05*H)},${n2(-0.45*R)}M${n2(-0.45*H)},${n2(-0.58*R)}Q${n2(-0.45*H)},${n2(-R-0.3*H)} 0,${n2(-R-0.3*H)}Q${n2(0.45*H)},${n2(-R-0.3*H)} ${n2(0.45*H)},${n2(-0.58*R)}" ${st}/>`;
   if(id==='chefhat'){ const b=-0.62*R, top=b-0.42*H;   /* a band round the head, and a puffy top */
     return `<path d="M${n2(-0.42*H)},${n2(b)}V${n2(top)}H${n2(0.42*H)}V${n2(b)}" ${st}/><path d="M${n2(-0.42*H)},${n2(top)}C${n2(-0.95*H)},${n2(top-0.3*H)} ${n2(-0.8*H)},${n2(top-1.35*H)} ${n2(-0.3*H)},${n2(top-1.15*H)}C${n2(-0.2*H)},${n2(top-1.6*H)} ${n2(0.3*H)},${n2(top-1.6*H)} ${n2(0.3*H)},${n2(top-1.15*H)}C${n2(0.8*H)},${n2(top-1.35*H)} ${n2(0.95*H)},${n2(top-0.3*H)} ${n2(0.42*H)},${n2(top)}" ${st}/>`; }
   const at=(a,r)=>`${n2(r*Math.sin(rad(a)))},${n2(-r*Math.cos(rad(a)))}`;
@@ -375,7 +375,7 @@ function build(data){
   /* an arrow pointing down at the figure: 1.5 heads wide and 2 heads tall outside the line, its tip at least a quarter head
      above the highest part of the figure (head, hat or raised hands); arrowUp lifts it further */
   let arrowSvg='', arrowTip=null;
-  if(d.arrow){ const hatH={tophat:0.95,chefhat:1.6,strawhat:0.75,afro:0.75,mohawk:0.7,bun:0.55,ponytail:0.9,bow:0.5,longhairbow:0.5,pigtails:0.5}[d.headwear]||0.15;
+  if(d.arrow){ const hatH={tophat:0.95,chefhat:1.6,strawhat:0.5,afro:0.75,mohawk:0.7,bun:0.55,ponytail:0.9,bow:0.5,longhairbow:0.5,pigtails:0.5}[d.headwear]||0.15;
     const hc=W(k.head), tops=[hc[1]-R-S/2-hatH*H].concat([k.armF.hand,k.armB.hand,k.armF.el,k.armB.el].map(W).filter(p=>Math.abs(p[0]-hc[0])<0.9*H).map(p=>p[1]-S/2));
     const tip=[hc[0],Math.min(...tops)-0.25*H-d.arrowUp], i=S/2, w=0.75*H-i, sh=0.28*H, hh=0.95*H;
     const P2=p=>`${n2(p[0])},${n2(p[1])}`, y0=tip[1]-2*H+i, y1=tip[1]-hh, ty=tip[1]-i;
