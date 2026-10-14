@@ -1,0 +1,104 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<title>Pass It On! — Reported Speech</title>
+<script>
+(function(){
+  try{
+    var saved = localStorage.getItem('theme-preference');
+    var theme = (saved === 'light' || saved === 'dark')
+      ? saved
+      : ((window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches) ? 'dark' : 'light');
+    document.documentElement.setAttribute('data-theme', theme);
+    var fs = parseFloat(localStorage.getItem('font-size-preference'));
+    if (fs >= 10 && fs <= 28) document.documentElement.style.setProperty('--fs-base', fs + 'px');
+  }catch(e){ /* localStorage/matchMedia unavailable — CSS media query still applies */ }
+})();
+</script>
+<link rel="stylesheet" href="house.css">
+<style>
+.q-card .ss-line{ justify-content:center; font-size:1.2667rem; font-weight:600; }
+</style>
+</head>
+<body>
+<div class="page" id="page">
+  <span class="cefr-tag cefr-a1a2">A1/A2 · Elementary</span>
+  <h1>Pass It On!</h1>
+  <p class="subtitle">Tell your partner what people said.</p>
+
+  <div class="rule-box">
+    <p><strong>How to play (groups of 3):</strong></p>
+    <p>1. Student A rolls 🎲 and reads the words to Student B. Student C does not look!</p>
+    <p>2. Student B tells Student C: “<b>Ben said he was hungry.</b>”</p>
+    <p>3. Student C answers the question on the card. Then change roles.</p>
+  </div>
+
+  <div class="q-card" id="qCard"><span class="q-placeholder">Roll the dice to start.</span></div>
+  <button class="dice-btn" id="diceBtn" aria-label="Roll">🎲</button>
+  <div class="roll-count">Rolls: <strong id="rollCount">0</strong></div>
+
+  <div class="sec-div">Now you</div>
+  <div class="rule-box">
+    <p>Ask your partner three questions: Are you hungry? · Do you have a pet? · What are you reading now?</p>
+    <p>Then tell the class: “<b>Ana told me she was hungry. She said she had a cat.</b>”</p>
+  </div>
+
+  <footer>Pass It On! — Reported Speech: Statements (A1/A2)</footer>
+</div>
+
+<div id="theme-toggle-wrap">
+  <button id="theme-toggle" aria-label="Toggle light/dark mode" title="Toggle light/dark mode">
+    <span id="theme-icon">☀️</span>
+  </button>
+</div>
+<script src="house.js"></script>
+<script src="stick-character.js"></script>
+<script src="stick-sentence.js"></script>
+<script>
+const PEOPLE = [
+  { id:'ben',     cast:{ base:'boy',     colour:'#FF6600' }, name:'Ben',     he:'he' },
+  { id:'lily',    cast:{ base:'girl',    colour:'#FF66CC' }, name:'Lily',    he:'she' },
+  { id:'grandma', cast:{ base:'grandma' },                   name:'Grandma', he:'she' },
+  { id:'grandpa', cast:{ base:'grandpa' },                   name:'Grandpa', he:'he' },
+  { id:'mia',     cast:{ base:'woman',   colour:'#6600CC' }, name:'Mia',     he:'she' },
+  { id:'leo',     cast:{ base:'man',     colour:'#0066CC' }, name:'Leo',     he:'he' }
+];
+const cast = { sis:{ base:'woman', colour:'#00CCCC' } }; PEOPLE.forEach(p => { cast[p.id] = p.cast; });
+StickSentence.cast(cast);
+
+/* what they say: {who} is the speaker's figure; feel = bubble on "I" */
+const SAYS = [
+  { s:'{I|@:sad} am hungry.',               q:'Is he or she hungry?' },
+  { s:'{I|@:happy} have a new bike.',        q:'What is new?' },
+  { s:'{I|@:tired} am very tired today.',    q:'How does he or she feel?' },
+  { s:'{I|@:book} am reading a good book.',   q:'What is he or she doing?' },
+  { s:'{I|@} don’t like pizza.',             q:'Does he or she like pizza?' },
+  { s:'{My|@} {sister|sis} lives in Canada.',      q:'Where does the sister live?' },
+  { s:'{I|@:phone} am waiting for a phone call.', q:'What is he or she waiting for?' },
+  { s:'{I|@:happy} love the sea.',           q:'What does he or she love?' },
+  { s:'{My|@} dog is very old.',             q:'Is the dog young?' },
+  { s:'{We|@,%} are late for school!',       q:'Who is late?' },
+  { s:'{We|@,%} don’t have any money.',      q:'Do they have money?' },
+  { s:'{You|%:happy} look great today!',     q:'Who looks great?' }
+];
+
+HouseRandomGen.build({
+  pick: () => {
+    const p = HouseRandomGen.pickFrom(PEOPLE);
+    let o; do { o = HouseRandomGen.pickFrom(PEOPLE); } while (o === p);
+    return { p, o, say: HouseRandomGen.pickFrom(SAYS) };
+  },
+  key: x => x.p.id + x.say.s,
+  render: ({ p, o, say }) => {
+    const line = say.s.replace(/@/g, p.id).replace(/%/g, o.id);
+    const to = /%/.test(say.s) && say.s.indexOf('You') === 0 ? ' (to ' + o.name + ')' : '';
+    return '<span class="q-topic">💬 ' + p.name + ' says' + to + '</span>' +
+      StickSentence.html('{' + p.name + ':|' + p.id + ':say} “' + line + '”') +
+      '<span class="q-prompt">Tell your partner: “' + p.name + ' said …” · ' + say.q + '</span>';
+  }
+});
+</script>
+</body>
+</html>

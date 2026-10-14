@@ -1,0 +1,209 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<title>Reported Speech: Statements — Clarification</title>
+<script>
+(function(){
+  try{
+    var saved = localStorage.getItem('theme-preference');
+    var theme = (saved === 'light' || saved === 'dark')
+      ? saved
+      : ((window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches) ? 'dark' : 'light');
+    document.documentElement.setAttribute('data-theme', theme);
+    var fs = parseFloat(localStorage.getItem('font-size-preference'));
+    if (fs >= 10 && fs <= 28) document.documentElement.style.setProperty('--fs-base', fs + 'px');
+  }catch(e){ /* localStorage/matchMedia unavailable — CSS media query still applies */ }
+})();
+</script>
+<link rel="stylesheet" href="house.css">
+<style>
+/* the target language is the lesson, so it stays coloured (not a grammar-toggle colour) */
+.tgt{ color:var(--text-accent); font-weight:700; }
+.rs-pair{ border:1px solid var(--color-border-tertiary); border-radius:12px; background:var(--surface-2); padding:10px 12px; margin-bottom:10px; font-size:.9667rem; }
+.rs-row{ display:flex; gap:10px; align-items:flex-end; padding:4px 0; }
+.rs-row + .rs-row{ border-top:.5px dashed var(--color-border-secondary); margin-top:4px; padding-top:8px; }
+.rs-lab{ flex:0 0 4.6em; font-size:.7rem; font-weight:700; letter-spacing:.04em; text-transform:uppercase; color:var(--text-muted); padding-bottom:.25em; }
+.bs{ display:grid; grid-template-columns:minmax(0,1fr) auto minmax(0,1fr); gap:4px 8px; align-items:center; margin:0 0 10px; font-size:.8667rem; }
+.bs > div{ padding:5px 8px; border-radius:7px; background:var(--surface-2); border:1px solid var(--color-border-tertiary); }
+.bs .h{ background:none; border:none; font-size:.7rem; font-weight:700; letter-spacing:.04em; text-transform:uppercase; color:var(--text-muted); }
+.bs .ar{ background:none; border:none; color:var(--text-muted); padding:0; }
+.rs-row b{ color:var(--text-accent); }
+.rule-box p{ margin:0 0 6px; }
+.rule-box p:last-child{ margin-bottom:0; }
+</style>
+</head>
+<body>
+<div class="page" id="page">
+  <span class="cefr-tag cefr-a1a2">A1/A2 · Elementary</span>
+  <h1>Reported Speech: Statements</h1>
+  <p class="subtitle">Tell someone what another person said: “I am tired.” → She said she was tired.</p>
+
+  <div class="sec-div">Look</div>
+  <p class="subtitle">The family from the conversation. Read their words. Then read what Mia tells Leo.</p>
+  <div id="pairs"></div>
+
+  <div class="sec-div">Check the meaning</div>
+  <p class="subtitle">Read the sentence. Answer the questions.</p>
+  <div id="ccq"></div>
+
+  <div class="sec-div">Look at the form</div>
+  <p class="subtitle">What is each part of the sentence? Drag a label (or tap a label, then tap a box).</p>
+  <div class="score-bar"><span>Correct: <strong id="fcScore">0</strong> / <span id="fcTotal">0</span></span></div>
+  <div id="formClarf"></div>
+
+  <div class="rule-box" id="ruleBox"></div>
+
+  <div class="sec-div">Common mistakes</div>
+  <div id="mistakes"></div>
+
+  <div class="sec-div">Error hunt</div>
+  <p class="subtitle">Some sentences have a mistake. Some are correct! Tap a word — or a space between words — to fix it. Then press OK.</p>
+  <div class="score-bar"><span>Done: <strong id="errorScore">0</strong> / <span id="errorTotal">0</span></span></div>
+  <div id="errorHuntItems"></div>
+
+  <footer>Reported Speech: Statements — Clarification (A1/A2)</footer>
+</div>
+
+<div id="theme-toggle-wrap">
+  <button id="theme-toggle" aria-label="Toggle light/dark mode" title="Toggle light/dark mode">
+    <span id="theme-icon">☀️</span>
+  </button>
+</div>
+<script src="house.js"></script>
+<script src="stick-character.js"></script>
+<script src="stick-sentence.js"></script>
+<script>
+StickSentence.cast({
+  mia:     { base:'woman',   colour:'#6600CC', label:'Mia' },
+  leo:     { base:'man',     colour:'#0066CC', label:'Leo' },
+  grandma: { base:'grandma', label:'Grandma' },
+  grandpa: { base:'grandpa', label:'Grandpa' },
+  sam:     { base:'man',     colour:'#00CC66', label:'Sam' },
+  dad:     { base:'man',     colour:'#663300', label:'Dad' },
+  mum:     { base:'woman',   colour:'#CC0000', label:'Mom' }
+});
+const S = StickSentence.html;
+const T = s => '<span class="tgt">' + s + '</span>';
+
+/* ── look: their words, then the report ────────────────────────────────── */
+const PAIRS = [
+  ['{Grandma:|grandma:say} “{I|grandma:tired} <b>am</b> very tired.”',
+   '{She|grandma:say} said {she|grandma:tired} <b>was</b> very tired.'],
+  ['{Mom and Dad:|dad:say,mum:say} “{We|dad:happy,mum:happy} <b>are</b> in Spain!”',
+   '{They|dad:say,mum:say} said {they|dad:happy,mum:happy} <b>were</b> in Spain.'],
+  ['{Sam:|sam:say:arrow,mia:left,grandpa:left} “{I|sam:happy} <b>have</b> a new job.”',
+   '{Sam|sam:say} told {us|mia,grandpa} that {he|sam:happy} <b>had</b> a new job.'],
+  ['{Sam:|sam:say} “{I|sam} <b>work</b> in a hospital.”',
+   '{He|sam:say} said {he|sam} <b>worked</b> in a hospital.'],
+  ['{Grandpa:|grandpa:say} “{I|grandpa:tablet} <b>am&nbsp;learning</b> to use a tablet.”',
+   '{He|grandpa:say} said {he|grandpa:tablet} <b>was&nbsp;learning</b> to use a tablet.'],
+  ['{Grandma:|grandma:say:arrow,mia:left} “{You|mia:happy} <b>look</b> great, Mia!”',
+   '{Grandma|grandma:say} told {me|mia} {I|mia:happy} <b>looked</b> great.'],
+  ['{Mom:|mum:say} “{I|mum:sad} <b>don’t&nbsp;like</b> the food.”',
+   '{She|mum:say} said {she|mum:sad} <b>didn’t&nbsp;like</b> the food.']
+];
+document.getElementById('pairs').innerHTML = PAIRS.map(([said, report]) =>
+  '<div class="rs-pair"><div class="rs-row"><span class="rs-lab">They said</span>' + S(said) + '</div>' +
+  '<div class="rs-row"><span class="rs-lab">Mia says</span>' + S(report) + '</div></div>').join('');
+
+/* ── concept checking questions ────────────────────────────────────────── */
+HouseCCQ.build({
+  container: 'ccq',
+  items: [
+    { sentence: S('{My|mia} {grandma|grandma:say} said {she|grandma:tired} was tired.'),
+      questions: [
+        { q: 'Are these Grandma’s words?', opts: ['Yes', 'No'], correct: 0,
+          why: 'Yes. Grandma said: “I am tired.” Now Mia tells Leo.' },
+        { q: 'Who is speaking now?', opts: ['Grandma', 'Mia'], correct: 1,
+          why: 'Mia is speaking now. So “I” becomes “she”.' },
+        { q: 'Did Grandma speak before now?', opts: ['Yes', 'No'], correct: 0,
+          why: 'Yes — on Sunday. “Said” is past, so “am” becomes “was”.' }
+      ] },
+    { sentence: S('{Sam|sam:say} told {us|mia,grandpa} {he|sam:happy} had a new job.'),
+      questions: [
+        { q: 'Does Sam have the job now?', opts: ['Yes, probably', 'No'], correct: 0,
+          why: 'Probably yes! We say “had” because “told” is past — not because the job is finished.' }
+      ] },
+    { sentence: S('{He|sam:say} told {me|mia} {he|sam} worked in a hospital.'),
+      questions: [
+        { q: 'Can we say “He said me”?', opts: ['Yes', 'No'], correct: 1,
+          why: 'No. Say + what: He said he worked there. Tell + a person: He told me he worked there.' }
+      ] }
+  ]
+});
+
+/* ── form ──────────────────────────────────────────────────────────────── */
+HouseFormClarf.build({
+  container: 'formClarf', scoreEl: 'fcScore', totalEl: 'fcTotal',
+  pool: ['subject', 'verb', 'object', 'conj', 'adj', 'prep', 'adverb'],
+  items: [
+    { form: 'aff', parts: [['My grandma', 'subject'], ['said', 'verb'], ['she', 'subject'], ['was', 'verb'], ['tired', 'adj'], ['.', null]] },
+    { form: 'aff', parts: [['Sam', 'subject'], ['told', 'verb'], ['us', 'object'], ['that', 'conj'], ['he', 'subject'], ['had', 'verb'], ['a new job', 'object'], ['.', null]] },
+    { form: 'aff', parts: [['They', 'subject'], ['said', 'verb'], ['that', 'conj'], ['they', 'subject'], ['were', 'verb'], ['in Spain', 'prep'], ['.', null]] },
+    { form: 'aff', parts: [['Grandpa', 'subject'], ['told', 'verb'], ['me', 'object'], ['he', 'subject'], ['was learning', 'verb'], ['very', 'adverb'], ['fast', 'adverb'], ['.', null]] }
+  ]
+});
+
+/* ── the rule ──────────────────────────────────────────────────────────── */
+const BS = [
+  ['I <b>am</b> tired.', 'She said she ' + T('was') + ' tired.'],
+  ['He <b>is</b> at home.', 'She said he ' + T('was') + ' at home.'],
+  ['We <b>are</b> in Spain.', 'They said they ' + T('were') + ' in Spain.'],
+  ['I <b>work</b> in a hospital.', 'He said he ' + T('worked') + ' in a hospital.'],
+  ['She <b>has</b> a cat.', 'He said she ' + T('had') + ' a cat.'],
+  ['I <b>don’t like</b> it.', 'She said she ' + T('didn’t like') + ' it.'],
+  ['I <b>am learning</b> to swim.', 'He said he ' + T('was learning') + ' to swim.']
+];
+document.getElementById('ruleBox').innerHTML =
+  '<p><strong>Present → past.</strong> We use <b>said</b> or <b>told</b> (past), so the verb goes back to the past too:</p>' +
+  '<div class="bs"><div class="h">They said</div><div class="ar"></div><div class="h">You say</div>' +
+  BS.map(([a, b]) => '<div>“' + a + '”</div><div class="ar">→</div><div>' + b + '</div>').join('') + '</div>' +
+  '<p><strong>am / is → was</strong> · <strong>are → were</strong> · <strong>have / has → had</strong> · <strong>work → worked</strong> · <strong>don’t / doesn’t → didn’t</strong> · <strong>am / is / are + -ing → was / were + -ing</strong></p>' +
+  '<p><strong>said</strong> + (that) + sentence: He ' + T('said') + ' (that) he was busy.</p>' +
+  '<p><strong>told</strong> + person + (that) + sentence: He ' + T('told me') + ' (that) he was busy. · She ' + T('told us') + ' … · They ' + T('told Leo') + ' …</p>' +
+  '<p><strong>“That” is OK, or you can leave it out.</strong> She said ' + T('(that)') + ' she was tired.</p>' +
+  '<p><strong>Change the people words too.</strong> Who is speaking now? I → he / she · we → they · my → his / her · you → I / me (when they talk to you).</p>';
+
+/* ── common mistakes ───────────────────────────────────────────────────── */
+const MISTAKES = [
+  ['She said she is tired.', 'She said she was tired.'],
+  ['He said me he had a new job.', 'He told me he had a new job.'],
+  ['He told that he had a new job.', 'He told us that he had a new job.'],
+  ['Grandma told to me I looked great.', 'Grandma told me I looked great.'],
+  ['She said she didn’t liked the food.', 'She said she didn’t like the food.'],
+  ['Sam said he work in a hospital.', 'Sam said he worked in a hospital.'],
+  ['Mom and Dad said we were in Spain.', 'Mom and Dad said they were in Spain.'],
+  ['Grandma said I was very tired. (Grandma is tired)', 'Grandma said she was very tired.'],
+  ['He said he learning to use a tablet.', 'He said he was learning to use a tablet.']
+];
+document.getElementById('mistakes').innerHTML = MISTAKES.map(([no, yes]) =>
+  '<div class="pair-card"><div class="pair-line no"><span class="mark">✗</span>' + no + '</div>' +
+  '<div class="pair-line yes"><span class="mark">✓</span>' + yes + '</div></div>').join('');
+
+/* ── error hunt (A1/A2: some sentences are already correct) ────────────── */
+const EH_ITEMS = [
+  { words: ['She', 'said', 'she', 'is', 'tired', '.'],
+    error: { type: 'wrong', wordIndex: 3, options: ['was', 'were', 'be'], correct: 'was' } },
+  { words: ['He', 'said', 'me', 'he', 'had', 'a', 'new', 'job', '.'],
+    error: { type: 'wrong', wordIndex: 1, options: ['told', 'say', 'tell'], correct: 'told' } },
+  { words: ['They', 'said', 'they', 'were', 'in', 'Spain', '.'], error: null },
+  { words: ['Sam', 'told', 'that', 'he', 'was', 'happy', '.'],
+    error: { type: 'missing', gapIndex: 2, options: ['us', 'to', 'said'], correct: 'us' } },
+  { words: ['Mom', 'said', 'she', 'didn’t', 'liked', 'the', 'food', '.'],
+    error: { type: 'wrong', wordIndex: 4, options: ['like', 'likes', 'liking'], correct: 'like' } },
+  { words: ['My', 'dad', 'told', 'to', 'me', 'he', 'was', 'busy', '.'],
+    error: { type: 'extra', wordIndex: 3 } },
+  { words: ['Anna', 'said', 'she', 'was', 'working', 'at', 'home', '.'], error: null },
+  { words: ['We', 'said', 'we', 'are', 'hungry', '.'],
+    error: { type: 'wrong', wordIndex: 3, options: ['were', 'was', 'be'], correct: 'were' } },
+  { words: ['Grandpa', 'told', 'me', 'he', 'learning', 'fast', '.'],
+    error: { type: 'missing', gapIndex: 4, options: ['was', 'is', 'were'], correct: 'was' } },
+  { words: ['Leo', 'told', 'me', 'he', 'worked', 'in', 'a', 'shop', '.'], error: null }
+];
+HouseErrorHunt.build({ container: 'errorHuntItems', items: EH_ITEMS, scoreEl: 'errorScore', totalEl: 'errorTotal' });
+</script>
+<script>HouseGrammar.init();</script>
+</body>
+</html>

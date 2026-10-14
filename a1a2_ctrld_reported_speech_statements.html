@@ -1,0 +1,140 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<title>Reported Speech: Statements — Controlled Practice</title>
+<script>
+(function(){
+  try{
+    var saved = localStorage.getItem('theme-preference');
+    var theme = (saved === 'light' || saved === 'dark')
+      ? saved
+      : ((window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches) ? 'dark' : 'light');
+    document.documentElement.setAttribute('data-theme', theme);
+    var fs = parseFloat(localStorage.getItem('font-size-preference'));
+    if (fs >= 10 && fs <= 28) document.documentElement.style.setProperty('--fs-base', fs + 'px');
+  }catch(e){ /* localStorage/matchMedia unavailable — CSS media query still applies */ }
+})();
+</script>
+<link rel="stylesheet" href="house.css">
+<style>
+.blank{ display:inline-block; min-width:3em; border-bottom:2px solid var(--color-border-primary); }
+.said{ font-weight:400; margin-bottom:8px; padding-bottom:8px; border-bottom:.5px dashed var(--color-border-secondary); }
+.item-context .ss-line, .direct .ss-line{ font-style:normal; color:var(--text-primary); font-size:.9667rem; }
+.gf-item .sentence .ss-line{ align-items:flex-end; }
+</style>
+</head>
+<body>
+<div class="page" id="page">
+  <span class="cefr-tag cefr-a1a2">A1/A2 · Elementary</span>
+  <h1>What Did They Say? — Practice</h1>
+  <p class="subtitle">Practise: “I am tired.” → She said she was tired.</p>
+
+  <div class="sec-div">1 · Choose</div>
+  <p class="subtitle">Read what the person said. Choose the right word.</p>
+  <div id="pcItems"></div>
+
+  <div class="sec-div">2 · Put the words in order</div>
+  <p class="subtitle">Read what the person said. Make the sentence. Tell a friend.</p>
+  <button class="grammar-toggle-btn" id="grammarToggle">🎨 Hide Grammar</button>
+  <div class="pos-legend"></div>
+  <div class="score-bar"><span>Correct: <strong id="woScore">0</strong> / <span id="woTotal">0</span></span></div>
+  <div id="woItems"></div>
+
+  <div class="sec-div">3 · Write the missing words</div>
+  <p class="subtitle">Read what the person said. Write the missing words.</p>
+  <div id="gfItems"></div>
+
+  <footer>Reported Speech: Statements — Controlled Practice (A1/A2)</footer>
+</div>
+
+<div id="theme-toggle-wrap">
+  <button id="theme-toggle" aria-label="Toggle light/dark mode" title="Toggle light/dark mode">
+    <span id="theme-icon">☀️</span>
+  </button>
+</div>
+<script src="house.js"></script>
+<script src="stick-character.js"></script>
+<script src="stick-sentence.js"></script>
+<script>
+StickSentence.cast({
+  mia:     { base:'woman',   colour:'#6600CC', label:'Mia' },
+  leo:     { base:'man',     colour:'#0066CC', label:'Leo' },
+  grandma: { base:'grandma', label:'Grandma' },
+  grandpa: { base:'grandpa', label:'Grandpa' },
+  sam:     { base:'man',     colour:'#00CC66', label:'Sam' },
+  dad:     { base:'man',     colour:'#663300', label:'Dad' },
+  mum:     { base:'woman',   colour:'#CC0000', label:'Mom' },
+  ben:     { base:'boy',     colour:'#FF6600', label:'Ben' },
+  leobro:  { base:'man',     colour:'#00CCCC', label:'Leo’s brother' },
+  lily:    { base:'girl',    colour:'#FF66CC', label:'Lily' }
+});
+const S = StickSentence.html;
+const BLANK = '<span class="blank">&nbsp;</span>';
+const said = m => '<div class="said">' + S(m) + '</div>';
+
+/* ── 1 · choose ────────────────────────────────────────────────────────── */
+const PC_ITEMS = [
+  { q: said('{Ben:|ben:say} “{I|ben:sad} am hungry.”') + S('{Ben|ben:say} said {he|ben:sad} ____ hungry.').replace('____', BLANK),
+    opts: ['is', 'was', 'were'], correct: 1 },
+  { q: said('{Lily:|lily:say} “{We|lily,ben} are late!”') + S('{Lily|lily:say} said {they|lily,ben} ____ late.').replace('____', BLANK),
+    opts: ['were', 'are', 'was'], correct: 0 },
+  { q: said('{Dad:|dad:say:arrow,mia:left,sam:left} “{I|dad:happy} have a new car.”') + S('{Dad|dad:say} told {us|mia,sam} ____ had a new car.').replace('____', BLANK),
+    opts: ['I', 'we', 'he'], correct: 2 },
+  { q: said('{Mom:|mum:say:arrow,mia:left} “{I|mum:book} work in a school.”') + S('{Mom|mum:say} ____ {me|mia} she worked in a school.').replace('____', BLANK),
+    opts: ['said', 'told', 'say'], correct: 1 },
+  { q: said('{Grandpa:|grandpa:say} “{I|grandpa:tired} don’t like the cold.”') + S('{He|grandpa:say} said {he|grandpa:tired} ____ like the cold.').replace('____', BLANK),
+    opts: ['don’t', 'doesn’t', 'didn’t'], correct: 2 },
+  { q: said('{Sam:|sam:say} “{My|sam} {sister|mia} is a doctor.”') + S('{Sam|sam:say} said ____ {sister|mia} was a doctor.').replace('____', BLANK),
+    opts: ['my', 'his', 'her'], correct: 1 },
+  { q: said('{Mia:|mia:say} “{I|mia:phone} am talking to Leo.”') + S('{Mia|mia:say} said {she|mia:phone} ____ talking to Leo.').replace('____', BLANK),
+    opts: ['was', 'is', 'were'], correct: 0 },
+  { q: said('{Grandma:|grandma:say:arrow,leo:left} “{You|leo:happy} look great, Leo!”') + S('{Leo:|leo} “{Grandma|grandma:say} told {me|leo} ____ looked great.”').replace('____', BLANK),
+    opts: ['you', 'I', 'she'], correct: 1 }
+];
+HouseComprehension.build({ quiz: 'pcItems', items: PC_ITEMS });
+
+/* ── 2 · word order ────────────────────────────────────────────────────── */
+const WO_ITEMS = [
+  { context: S('{Lily:|lily:say} “{I|lily:happy} am happy.”'),
+    text: 'Lily / said / she / was / happy', pos: ['subject', 'verb', 'subject', 'verb', 'adj'] },
+  { context: S('{Sam:|sam:say} “{I|sam} live in London.”'),
+    text: 'Sam / said / he / lived / in London', pos: ['subject', 'verb', 'subject', 'verb', 'prep'] },
+  { context: S('{Mom and Dad:|mum:say:arrow,dad:say:arrow,mia:left} “{We|mum,dad} are at the beach.”'),
+    text: 'They / told / me / they / were / at the beach', pos: ['subject', 'verb', 'object', 'subject', 'verb', 'prep'] },
+  { context: S('{Ben:|ben:say} “{I|ben:sad} don’t like carrots.”'),
+    text: 'Ben / said / he / didn’t / like / carrots', pos: ['subject', 'verb', 'subject', 'aux', 'verb', 'object'] },
+  { context: S('{Grandma:|grandma:say:arrow,mia:left,leo:left} “{I|grandma:book} am reading a good book.”'),
+    text: 'Grandma / told / us / that / she / was reading / a good book', pos: ['subject', 'verb', 'object', 'conj', 'subject', 'verb', 'object'] },
+  { context: S('{Leo:|leo:say} “{My|leo} {brother|leobro:phone} has a new phone.”'),
+    text: 'Leo / said / his / brother / had / a new phone', pos: ['subject', 'verb', 'det', 'noun', 'verb', 'object'] }
+];
+HouseWordOrder.build({ container: 'woItems', items: WO_ITEMS, scoreEl: 'woScore', totalEl: 'woTotal' });
+
+/* ── 3 · gap fill (easiest first; the gaps move around the sentence) ───── */
+/* the reported sentence carries figures too: ____0, ____1 mark the gaps */
+const gaps = m => S(m).replace(/____(\d)/g, '{$1}');
+const GF_ITEMS = [
+  { direct: S('{Ben:|ben:say} “{I|ben:tired} am tired.”'),
+    template: gaps('{Ben|ben:say} said {he|ben:tired} ____0 tired.'), hints: [{ accepted: ['was'] }] },
+  { direct: S('{Lily:|lily:say} “{I|lily:cup} like hot chocolate.”'),
+    template: gaps('{Lily|lily:say} said ____0 liked hot chocolate.'), hints: [{ accepted: ['she'] }] },
+  { direct: S('{Mom:|mum:say:arrow,mia:left} “{We|mum,dad:happy} are in Spain!”'),
+    template: gaps('{Mom|mum:say} ____0 {me|mia} {they|mum,dad:happy} were in Spain.'), hints: [{ accepted: ['told'] }] },
+  { direct: S('{Sam:|sam:say:arrow,mia:left,leo:left} “{I|sam} have two cats.”'),
+    template: gaps('{Sam|sam:say} told {us|mia,leo} he ____0 two cats.'), hints: [{ accepted: ['had'] }] },
+  { direct: S('{Grandpa:|grandpa:say} “{My|grandpa} back hurts.”'),
+    template: gaps('{Grandpa|grandpa:say} said ____0 back ____1.'), hints: [{ accepted: ['his'] }, { accepted: ['hurt'] }] },
+  { direct: S('{Dad:|dad:say} “{I|dad} don’t work on Saturdays.”'),
+    template: gaps('{Dad|dad:say} said {he|dad} ____0 work on Saturdays.'), hints: [{ accepted: ['didn’t', "didn't", 'did not'] }] },
+  { direct: S('{Mia:|mia:say:arrow,ben:left} “{Leo|leo} is playing the guitar.”'),
+    template: gaps('{Mia|mia:say} ____0 {me|ben} {Leo|leo} ____1 playing the guitar.'), hints: [{ accepted: ['told'] }, { accepted: ['was'] }] },
+  { direct: S('{Leo:|leo:say:arrow,mia:left} “{You|mia:happy} are a good friend, Mia.”'),
+    template: gaps('{Mia:|mia:happy} “{Leo|leo:say} ____0 {me|mia} ____1 ____2 a good friend.”'), hints: [{ accepted: ['told'] }, { accepted: ['I'] }, { accepted: ['was'] }] }
+];
+HouseGapFill.build({ container: 'gfItems', items: GF_ITEMS });
+</script>
+<script>HouseGrammar.init();</script>
+</body>
+</html>

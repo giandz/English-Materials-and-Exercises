@@ -1,0 +1,268 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<title>Stick Figure Poser — Extra</title>
+<script>
+(function(){
+  try{
+    var saved = localStorage.getItem('theme-preference');
+    var theme = (saved === 'light' || saved === 'dark')
+      ? saved
+      : ((window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches) ? 'dark' : 'light');
+    document.documentElement.setAttribute('data-theme', theme);
+    var fs = parseFloat(localStorage.getItem('font-size-preference'));
+    if (fs >= 10 && fs <= 28) document.documentElement.style.setProperty('--fs-base', fs + 'px');
+  }catch(e){}
+})();
+</script>
+<link rel="stylesheet" href="house.css">
+<style>
+  /* Zero-specificity fallbacks: only apply if house.css is missing. */
+  :where(:root){
+    --color-background-primary:#fff; --color-background-tertiary:#eeeef0;
+    --color-background-info:#e6f1fb; --color-border-primary:#d4d4d8;
+    --text-primary:#1a1a1a; --text-secondary:#5b5b60; --text-muted:#8b8b90; --text-accent:#185fa5;
+    --surface-1:#f7f7f8; --surface-2:#fff; --border:#e3e3e6; --radius:12px;
+    --bad:#b0392f; --good:#2f7d3a;
+    --font-sans:-apple-system,BlinkMacSystemFont,"Segoe UI",Helvetica,Arial,sans-serif;
+    --font-mono:"SF Mono","JetBrains Mono",Menlo,Consolas,monospace;
+  }
+  :where(body){ font-family:var(--font-sans); color:var(--text-primary); background:var(--color-background-primary); margin:0; line-height:1.5; }
+  :where(.page){ max-width:1000px; margin:0 auto; padding:28px 20px 80px; }
+
+  /* Page-specific: everything is cp- prefixed. */
+  .page{ max-width:1000px; }
+  .cp-layout{ display:grid; grid-template-columns:minmax(0,1fr); gap:18px; margin-top:14px; }
+  @media (min-width:780px){
+    .cp-layout{ grid-template-columns:minmax(0,1.05fr) minmax(0,1fr); align-items:start; }
+    .cp-stage-col{ position:sticky; top:14px; }
+  }
+  .cp-stage{ background:var(--surface-1); border:1px solid var(--border); border-radius:var(--radius); overflow:hidden; color:var(--text-muted); }
+  .cp-stage svg{ display:block; width:100%; height:auto; touch-action:none; -webkit-user-select:none; user-select:none; }
+  .cp-stage{ --stick-head:#fff; }
+  [data-theme="dark"] .cp-stage{ --stick-head:#fff; }
+  .cp-stage [data-joint], .cp-stage [data-bubble]{ cursor:grab; }
+  .cp-stage [data-arrow]{ cursor:ns-resize; }
+  .cp-stage.dragging [data-joint]{ cursor:grabbing; }
+  .cp-caption{ font-size:1.05rem; font-weight:600; text-align:center; margin:10px 0 2px; min-height:1.5em; }
+  .cp-hint{ font-size:0.8rem; color:var(--text-muted); text-align:center; margin:0; }
+
+  .cp-panel{ border:1px solid var(--border); border-radius:var(--radius); background:var(--surface-2); padding:12px 14px; margin-bottom:12px; }
+  .cp-panel h2{ font-size:0.7857rem; font-weight:600; letter-spacing:.06em; text-transform:uppercase; color:var(--text-muted); margin:0 0 10px; }
+  .cp-row{ display:grid; grid-template-columns:7.2rem minmax(0,1fr); gap:8px; align-items:center; margin:7px 0; }
+  .cp-row > label, .cp-row > .cp-lab{ font-size:0.8571rem; color:var(--text-secondary); }
+  .cp-note{ font-size:0.75rem; color:var(--text-muted); margin:-4px 0 8px; line-height:1.4; }
+  .cp-row small{ display:block; font-size:0.72rem; color:var(--text-muted); }
+  .cp-in, .cp-sel{ box-sizing:border-box; width:100%; font:inherit; font-size:0.9rem; padding:6px 8px; border:1px solid var(--color-border-primary); border-radius:8px; background:var(--color-background-primary); color:var(--text-primary); }
+  .cp-sel:disabled{ opacity:.55; }
+  .cp-swatches{ display:flex; flex-wrap:wrap; gap:5px; }
+  .cp-sw{ width:24px; height:24px; min-width:0; padding:0; border-radius:50%; border:1px solid rgba(0,0,0,.25); cursor:pointer; }
+  .cp-sw[aria-pressed="true"]{ outline:2px solid var(--text-accent); outline-offset:2px; }
+  .cp-checks{ display:flex; flex-wrap:wrap; gap:4px 12px; font-size:0.8571rem; }
+  .cp-checks label{ display:flex; align-items:center; gap:4px; cursor:pointer; }
+  .cp-pick{ display:flex; gap:8px; align-items:center; }
+  .cp-pick .cp-sw{ flex:none; border-radius:6px; }
+  .cp-pick .cp-sw:disabled{ opacity:.3; cursor:default; background:transparent !important; }
+  .cp-pal{ display:grid; grid-template-columns:repeat(16,1fr); gap:3px; margin:2px 0 10px; }
+  .cp-pal[hidden]{ display:none; }
+  .cp-pal button{ aspect-ratio:1; min-width:0; padding:0; border:1px solid rgba(128,128,128,.5); border-radius:4px; cursor:pointer; }
+  .cp-pal button[aria-pressed="true"]{ outline:2px solid var(--text-accent); outline-offset:1px; }
+  .cp-seg{ display:flex; gap:4px; }
+  .cp-seg button{ flex:1; font-size:0.8571rem; padding:6px 4px; }
+  .cp-seg button:disabled{ opacity:.35; cursor:not-allowed; }
+  .cp-seg button[aria-pressed="true"]{ background:var(--color-background-info); border-color:var(--text-accent); color:var(--text-accent); }
+  .cp-btns{ display:flex; flex-wrap:wrap; gap:6px; }
+  .cp-btns button{ font-size:0.8571rem; padding:6px 10px; }
+  .cp-joint{ display:grid; grid-template-columns:7.2rem minmax(0,1fr) 3.6rem; gap:8px; align-items:center; margin:3px 0; font-size:0.8rem; color:var(--text-secondary); }
+  .cp-joint input[type=range]{ width:100%; }
+  .cp-joint input[type=number]{ width:100%; font:inherit; font-size:0.8rem; padding:2px 4px; border:1px solid var(--color-border-primary); border-radius:6px; background:var(--color-background-primary); color:var(--text-primary); }
+  .cp-group{ font-size:0.72rem; font-weight:600; color:var(--text-muted); margin:10px 0 2px; }
+  details.cp-det > summary{ cursor:pointer; font-size:0.8571rem; color:var(--text-secondary); margin-top:8px; }
+  .cp-json{ width:100%; min-height:11rem; font-family:var(--font-mono); font-size:0.75rem; line-height:1.45; padding:8px; border:1px solid var(--color-border-primary); border-radius:8px; background:var(--surface-1); color:var(--text-primary); resize:vertical; box-sizing:border-box; -webkit-user-select:text; user-select:text; }
+  .cp-msg{ font-size:0.8rem; min-height:1.3em; margin:6px 0 0; color:var(--text-muted); }
+  .cp-msg.err{ color:var(--bad); } .cp-msg.ok{ color:var(--good); }
+</style>
+</head>
+<body>
+<div class="page" id="page">
+  <span class="cefr-tag cefr-a1a2">A1–A2 · Elementary</span>
+  <h1>Stick figure poser</h1>
+  <p class="subtitle">Draw quick stick people for any lesson: pose them, give them a cap, a skirt, a frying pan or a feeling, and save them as JSON or SVG.</p>
+
+  <div class="cp-layout">
+    <div class="cp-stage-col">
+      <div class="cp-stage" id="spStage"></div>
+      <p class="cp-caption" id="spCaption"></p>
+      <p class="cp-hint">Drag an arm, a leg, the body or the head to bend it. “Front” is the arm or leg nearer the viewer.</p>
+    </div>
+    <div>
+      <div class="cp-panel">
+        <h2>Figure</h2>
+        <div class="cp-row"><label for="spName">Name</label><input class="cp-in" id="spName" type="text" maxlength="40"></div>
+        <div class="cp-row"><span class="cp-lab">Age</span><div class="cp-seg" id="spAge"><button type="button" data-v="adult">Adult · 3.5 heads</button><button type="button" data-v="child">Child · 2.5 heads</button></div></div>
+        <div class="cp-row"><span class="cp-lab">Facing</span><div class="cp-seg" id="spFacing"><button type="button" data-v="left">◀ Left</button><button type="button" data-v="right">Right ▶</button></div></div>
+        <div class="cp-row"><span class="cp-lab">Colour</span><div class="cp-swatches" id="spColour"></div></div>
+      </div>
+      <div class="cp-panel">
+        <h2>Look</h2>
+        <div class="cp-row"><label for="spHat">Head<small>Hats and hair</small></label><select class="cp-sel" id="spHat"></select></div>
+        <div class="cp-row"><label for="spHatA">Hat angle<small id="spHatLab"></small></label><input id="spHatA" type="range" min="-180" max="180" step="5"></div>
+        <div class="cp-row"><label for="spFace">Bubble<small>In a speech bubble: drag it to move it</small></label><div class="cp-pick"><select class="cp-sel" id="spFace"></select><button type="button" id="spBubReset" style="font-size:.8rem;padding:5px 8px;white-space:nowrap">Reset bubble</button></div></div>
+        <div class="cp-row"><label for="spArrow">Above the head<small>Drag it up or down</small></label><select class="cp-sel" id="spArrow"><option value="">Nothing</option><option value="arrow">Arrow</option><option value="selector">Selector (triangle)</option></select></div>
+        <div class="cp-row"><label for="spCar">Vehicle</label><select class="cp-sel" id="spCar"></select></div>
+        <div class="cp-row"><span class="cp-lab">Options</span><div class="cp-checks">
+          <label><input type="checkbox" id="spSkirt"> Skirt</label>
+          <label><input type="checkbox" id="spDress"> Dress</label>
+          <label><input type="checkbox" id="spPack"> Backpack</label>
+          <label><input type="checkbox" id="spHunch"> Hunchback</label>
+          <label><input type="checkbox" id="spChair"> Chair</label>
+          <label><input type="checkbox" id="spSweat"> Sweat drops</label>
+          <label><input type="checkbox" id="spReact"> Reaction lines</label></div></div>
+      </div>
+      <div class="cp-panel">
+        <h2>Hands</h2>
+        <div class="cp-row"><label for="spHeldF">Front hand</label><div class="cp-pick"><select class="cp-sel" id="spHeldF"></select><button type="button" class="cp-sw" id="spColF" aria-label="Choose colour for the front hand's item"></button></div></div>
+        <div class="cp-pal" id="spPalF" hidden></div>
+        <div class="cp-row"><label for="spGripF">Front grip<small id="spGripFLab"></small></label><input id="spGripF" type="range" min="-180" max="180" step="5"></div>
+        <div class="cp-row"><label for="spHeldB">Back hand</label><div class="cp-pick"><select class="cp-sel" id="spHeldB"></select><button type="button" class="cp-sw" id="spColB" aria-label="Choose colour for the back hand's item"></button></div></div>
+        <div class="cp-pal" id="spPalB" hidden></div>
+        <div class="cp-row"><label for="spGripB">Back grip<small id="spGripBLab"></small></label><input id="spGripB" type="range" min="-180" max="180" step="5"></div>
+      </div>
+      <div class="cp-panel">
+        <h2>Pose</h2>
+        <div class="cp-row"><label for="spPreset">Preset</label><select class="cp-sel" id="spPreset"></select></div>
+        <div class="cp-row"><label for="spLift">Above the floor<small id="spLiftLab"></small></label><input id="spLift" type="range" min="0" max="3" step="0.05"></div>
+        <div class="cp-btns"><button id="spMirror" type="button">⇄ Turn round</button><button id="spReset" type="button">Reset pose</button></div>
+        <details class="cp-det"><summary>Joint angles</summary><p class="cp-note" style="margin-top:6px">Positive = forward. Limbs: 0° hangs straight down. Body and head: 0° is upright. Every joint turns all the way round.</p><div id="spJoints"></div></details>
+      </div>
+      <div class="cp-panel">
+        <h2>Figure data</h2>
+        <div class="cp-btns">
+          <button id="spSave" type="button">💾 Save JSON</button>
+          <button id="spLoad" type="button">📂 Load JSON</button>
+          <button id="spCopy" type="button">Copy</button>
+          <button id="spSvg" type="button">Export SVG</button>
+          <button id="spNew" type="button">New figure</button>
+        </div>
+        <input id="spFile" type="file" accept=".json,application/json" hidden>
+        <details class="cp-det"><summary>View / paste JSON</summary>
+          <textarea class="cp-json" id="spJson" spellcheck="false"></textarea>
+          <div class="cp-btns"><button id="spApply" type="button">Apply pasted JSON</button></div>
+        </details>
+        <p class="cp-msg" id="spMsg" role="status"></p>
+      </div>
+    </div>
+  </div>
+</div>
+
+<div id="theme-toggle-wrap">
+  <button id="theme-toggle" aria-label="Toggle light/dark mode" title="Toggle light/dark mode">
+    <span id="theme-icon">☀️</span>
+  </button>
+</div>
+<script src="house.js"></script>
+
+<!-- StickCharacter engine (shared file) -->
+<script src="stick-character.js"></script>
+<script>
+(function(){
+const SC=StickCharacter, $=id=>document.getElementById(id), stage=$('spStage');
+let ch=SC.defaults(); SC.applyPose(ch,'standing');
+const opt=(v,l)=>`<option value="${v}">${l}</option>`;
+$('spArrow').addEventListener('change',e=>{ch.arrow=e.target.value||null;update();});
+$('spCar').innerHTML=opt('','None')+opt('bicycle','Bicycle')+opt('skateboard','Skateboard')+Object.entries(SC.CARS).map(([k,v])=>opt(k,v.label)).join('');
+$('spCar').addEventListener('change',e=>{const v=e.target.value; ch.car=!!SC.CARS[v]; ch.bike=v==='bicycle'; ch.skate=v==='skateboard'; if(ch.car) ch.carType=v; if(v) ch.chair=false; update();});
+$('spHat').innerHTML=opt('','None')+Object.entries(SC.HEADWEAR).map(([k,v])=>opt(k,v.label)).join('');
+$('spFace').innerHTML=opt('','None')+Object.entries(SC.EMOTIONS).map(([k,v])=>opt(k,SC.BUBBLE_LABELS[k]||v.charAt(0).toUpperCase()+v.slice(1))).join('');
+['spHeldF','spHeldB'].forEach(id=>$(id).innerHTML=opt('','Nothing')+Object.entries(SC.ITEMS).map(([k,v])=>opt(k,v.label)).join(''));
+$('spPreset').innerHTML=opt('','(custom)')+Object.entries(SC.POSES).map(([k,v])=>opt(k,v.label)).join('');
+$('spColour').innerHTML=SC.PALETTE.filter(c=>c!=='#FFFFFF').map(c=>`<button type="button" class="cp-sw" data-c="${c}" style="background:${c}" title="${SC.colourName(c)}" aria-label="${SC.colourName(c)}"></button>`).join('');
+['F','B'].forEach(k=>$('spPal'+k).innerHTML=SC.PALETTE.map(c=>`<button type="button" data-c="${c}" style="background:${c}" title="${SC.colourName(c)}" aria-label="${SC.colourName(c)}"></button>`).join(''));
+$('spPalF').style.gridTemplateColumns=$('spPalB').style.gridTemplateColumns='repeat(12,1fr)';
+$('spJoints').innerHTML=SC.JOINTS.map(([k,l,lo,hi])=>`<div class="cp-joint"><span>${l}</span><input type="range" min="${lo}" max="${hi}" data-j="${k}" aria-label="${l}"><input type="number" min="${lo}" max="${hi}" data-j="${k}" aria-label="${l} in degrees"></div>`).join('');
+
+function update(skipName){
+  ch=SC.normalize(ch);
+  stage.innerHTML=SC.render(ch,{ground:true});
+  $('spCaption').textContent=SC.describe(ch);
+  if(!skipName) $('spName').value=ch.name;
+  $('spAge').querySelectorAll('button').forEach(b=>b.setAttribute('aria-pressed',String(b.dataset.v===ch.age)));
+  $('spFacing').querySelectorAll('button').forEach(b=>b.setAttribute('aria-pressed',String(b.dataset.v===ch.facing)));
+  $('spColour').querySelectorAll('button').forEach(b=>b.setAttribute('aria-pressed',String(b.dataset.c===ch.colour)));
+  $('spHat').value=ch.headwear||''; $('spFace').value=ch.emotion||'';
+  $('spSkirt').checked=ch.skirt; $('spDress').checked=ch.dress; $('spPack').checked=ch.backpack; $('spHunch').checked=ch.hunchback; $('spChair').checked=ch.chair; $('spCar').value=ch.car?ch.carType:ch.bike?'bicycle':ch.skate?'skateboard':''; $('spSweat').checked=ch.sweat; $('spReact').checked=ch.reaction; $('spArrow').value=ch.arrow||'';
+  [['F','front'],['B','back']].forEach(([k,h])=>{ const it=SC.ITEMS[ch.held[h]], c=ch.itemColour[h]||(it&&it.col);
+    $('spHeld'+k).value=ch.held[h]||''; const b=$('spCol'+k); b.disabled=!it; b.style.background=it?c:'transparent'; if(!it) $('spPal'+k).hidden=true;
+    $('spPal'+k).querySelectorAll('button').forEach(x=>x.setAttribute('aria-pressed',String(x.dataset.c===c))); });
+  $('spLift').value=ch.lift; $('spLiftLab').textContent=ch.lift?ch.lift.toFixed(2).replace(/0$/,'')+' heads':'On the floor';
+  $('spHatA').value=ch.hatAngle; $('spHatA').disabled=!ch.headwear; $('spHatLab').textContent=ch.headwear?ch.hatAngle+'°':'Choose a hat or hair first';
+  $('spBubReset').disabled=!ch.emotion||(!ch.bubbleX&&!ch.bubbleY);
+  [['F','front'],['B','back']].forEach(([k,h])=>{ const it=SC.ITEMS[ch.held[h]], free=it&&!it.upright;
+    $('spGrip'+k).disabled=!free; $('spGrip'+k).value=ch.grip[h]; $('spGrip'+k+'Lab').textContent=!it?'':free?ch.grip[h]+'°':'Always upright'; });
+  $('spJoints').querySelectorAll('[data-j]').forEach(i=>{ if(i!==document.activeElement||i.type==='range') i.value=ch.joints[i.dataset.j]; });
+  if(document.activeElement!==$('spJson')) $('spJson').value=JSON.stringify(ch,null,2);
+}
+const custom=()=>{$('spPreset').value='';};
+$('spName').addEventListener('input',e=>{ch.name=e.target.value;update(true);});
+$('spAge').addEventListener('click',e=>{const b=e.target.closest('button'); if(b){ch.age=b.dataset.v;update();}});
+$('spFacing').addEventListener('click',e=>{const b=e.target.closest('button'); if(b){ch.facing=b.dataset.v;update();}});
+$('spColour').addEventListener('click',e=>{const b=e.target.closest('button'); if(b){ch.colour=b.dataset.c;update();}});
+$('spHat').addEventListener('change',e=>{ch.headwear=e.target.value||null;update();});
+$('spFace').addEventListener('change',e=>{ch.emotion=e.target.value||null;update();});
+[['spDress','dress'],['spSkirt','skirt'],['spPack','backpack'],['spHunch','hunchback'],['spChair','chair'],['spSweat','sweat'],['spReact','reaction']].forEach(([id,k])=>$(id).addEventListener('change',e=>{ch[k]=e.target.checked; if(e.target.checked&&k==='dress') ch.skirt=false; if(e.target.checked&&k==='skirt') ch.dress=false; if(e.target.checked&&k==='car'){ ch.bike=false; ch.chair=false; } if(e.target.checked&&k==='chair'){ ch.car=false; ch.bike=false; ch.skate=false; } update();}));
+[['F','front'],['B','back']].forEach(([k,h])=>{
+  $('spHeld'+k).addEventListener('change',e=>{ch.held[h]=e.target.value||null; ch.itemColour[h]=null; ch.grip[h]=0; update();});
+  $('spCol'+k).addEventListener('click',()=>{ $('spPal'+k).hidden=!$('spPal'+k).hidden; });
+  $('spPal'+k).addEventListener('click',e=>{const b=e.target.closest('button'); if(!b) return; ch.itemColour[h]=b.dataset.c; $('spPal'+k).hidden=true; update();});
+});
+$('spLift').addEventListener('input',e=>{ch.lift=+e.target.value;update();});
+$('spHatA').addEventListener('input',e=>{ch.hatAngle=+e.target.value;update();});
+$('spBubReset').addEventListener('click',()=>{ch.bubbleX=ch.bubbleY=0;update();});
+[['F','front'],['B','back']].forEach(([k,h])=>$('spGrip'+k).addEventListener('input',e=>{ch.grip[h]=+e.target.value;update();}));
+$('spPreset').addEventListener('change',e=>{ if(e.target.value){ SC.applyPose(ch,e.target.value); update(); } });
+$('spMirror').addEventListener('click',()=>{SC.mirror(ch);update();});
+$('spReset').addEventListener('click',()=>{SC.applyPose(ch,'standing');$('spPreset').value='standing';update();});
+$('spJoints').addEventListener('input',e=>{const k=e.target.dataset.j; if(!k) return; ch.joints[k]=+e.target.value||0; custom(); update();});
+
+/* drag a limb, the body or the head to turn its joint */
+let drag=null;
+const pointer=e=>{ const svg=stage.querySelector('svg'), m=svg.getScreenCTM().inverse(); return [e.clientX*m.a+e.clientY*m.c+m.e, e.clientX*m.b+e.clientY*m.d+m.f]; };
+stage.addEventListener('pointerdown',e=>{ const arr=e.target.closest('[data-arrow]'); if(arr){ drag={arrow:true,id:e.pointerId,p0:pointer(e),u0:ch.arrowUp}; try{stage.setPointerCapture(e.pointerId);}catch(_){} e.preventDefault(); return; }
+  const bub=e.target.closest('[data-bubble]'), g=e.target.closest('[data-joint]'); if(!g&&!bub) return;
+  drag=bub?{bubble:true,id:e.pointerId,p0:pointer(e),x0:ch.bubbleX,y0:ch.bubbleY,f:ch.facing==='left'?-1:1}:{joint:g.dataset.joint,id:e.pointerId}; try{stage.setPointerCapture(e.pointerId);}catch(_){} stage.classList.add('dragging'); e.preventDefault(); });
+stage.addEventListener('pointermove',e=>{ if(!drag||e.pointerId!==drag.id) return;
+  const [x,y]=pointer(e);
+  if(drag.arrow){ ch.arrowUp=Math.max(0,Math.round(drag.u0-(y-drag.p0[1]))); update(); return; }
+  if(drag.bubble){ ch.bubbleX=Math.round(drag.x0+(x-drag.p0[0])*drag.f); ch.bubbleY=Math.round(drag.y0+(y-drag.p0[1])); update(); return; }
+  const piv=SC.pivots(ch); ch.joints[drag.joint]=SC.angleTo(piv,drag.joint,x,y); custom(); update(); });
+const endDrag=()=>{ if(!drag) return; try{stage.releasePointerCapture(drag.id);}catch(_){} drag=null; stage.classList.remove('dragging'); };
+['pointerup','pointercancel','lostpointercapture'].forEach(t=>stage.addEventListener(t,endDrag)); window.addEventListener('blur',endDrag);
+
+/* JSON and SVG out, JSON in */
+const msg=(t,cls)=>{const m=$('spMsg'); m.textContent=t; m.className='cp-msg'+(cls?' '+cls:'');};
+function download(name,text,type){ const a=document.createElement('a'); a.href=URL.createObjectURL(new Blob([text],{type})); a.download=name; document.body.appendChild(a); a.click(); a.remove(); setTimeout(()=>URL.revokeObjectURL(a.href),1000); }
+const slug=()=>(ch.name||'stick-figure').toLowerCase().replace(/[^a-z0-9]+/g,'-').replace(/^-|-$/g,'')||'stick-figure';
+function load(text){
+  let o; try{o=JSON.parse(text);}catch(e){msg('That isn’t valid JSON — nothing was changed.','err');return;}
+  if(!o||typeof o!=='object'||Array.isArray(o)){msg('That JSON isn’t a stick figure — nothing was changed.','err');return;}
+  ch=SC.normalize(o); custom(); $('spJson').blur(); update();
+  msg(`Loaded ${ch.name||'figure'}.`+(o.schema&&o.schema!==SC.SCHEMA?' (Different format — unknown fields were reset.)':''),'ok');
+}
+$('spSave').addEventListener('click',()=>{download(slug()+'.json',JSON.stringify(ch,null,2),'application/json');msg('Saved '+slug()+'.json','ok');});
+$('spSvg').addEventListener('click',()=>{download(slug()+'.svg',SC.render(ch,{fit:true}),'image/svg+xml');msg('Exported '+slug()+'.svg','ok');});
+$('spLoad').addEventListener('click',()=>$('spFile').click());
+$('spFile').addEventListener('change',e=>{const f=e.target.files[0]; if(!f) return; const r=new FileReader(); r.onload=()=>load(r.result); r.onerror=()=>msg('Couldn’t read that file.','err'); r.readAsText(f); e.target.value='';});
+$('spApply').addEventListener('click',()=>load($('spJson').value));
+$('spCopy').addEventListener('click',()=>{ const t=JSON.stringify(ch,null,2);
+  (navigator.clipboard?navigator.clipboard.writeText(t):Promise.reject()).then(()=>msg('JSON copied.','ok'),()=>msg('Copy isn’t available here — open “View / paste JSON” and copy from there.','err')); });
+$('spNew').addEventListener('click',()=>{ch=SC.defaults();SC.applyPose(ch,'standing');$('spPreset').value='standing';update();msg('Started a new figure.');});
+
+$('spPreset').value='standing';
+update();
+})();
+</script>
+<script>if(window.HouseGrammar) HouseGrammar.init();</script>
+</body>
+</html>

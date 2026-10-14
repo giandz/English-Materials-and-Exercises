@@ -1,0 +1,113 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<title>What Did They Say? — Reported Speech</title>
+<script>
+(function(){
+  try{
+    var saved = localStorage.getItem('theme-preference');
+    var theme = (saved === 'light' || saved === 'dark')
+      ? saved
+      : ((window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches) ? 'dark' : 'light');
+    document.documentElement.setAttribute('data-theme', theme);
+    var fs = parseFloat(localStorage.getItem('font-size-preference'));
+    if (fs >= 10 && fs <= 28) document.documentElement.style.setProperty('--fs-base', fs + 'px');
+  }catch(e){ /* localStorage/matchMedia unavailable — CSS media query still applies */ }
+})();
+</script>
+<link rel="stylesheet" href="house.css">
+<style>
+.cast-row{ display:flex; flex-wrap:wrap; gap:14px 18px; justify-content:center; margin:0 0 1rem; padding:10px; background:var(--surface-1); border:1px solid var(--border); border-radius:var(--border-radius-lg); font-size:.8667rem; }
+</style>
+</head>
+<body>
+<div class="page" id="page">
+  <span class="cefr-tag cefr-a1a2">A1/A2 · Elementary</span>
+  <h1>What Did They Say?</h1>
+  <p class="subtitle">Mia tells Leo about her weekend with her family.</p>
+
+  <div class="sec-div">Before you read</div>
+  <div id="preQuestions"></div>
+
+  <div class="sec-div">The people</div>
+  <div class="cast-row" id="castRow"></div>
+
+  <div class="sec-div">The conversation</div>
+  <button class="grammar-toggle-btn" id="grammarToggle">🎨 Show Grammar</button>
+  <div class="pos-legend"></div>
+
+  <div id="conversation"></div>
+
+  <div class="sec-div">Check your answers</div>
+  <div id="quiz"></div>
+
+  <footer>What Did They Say? — Reported Speech: Statements (A1/A2)</footer>
+</div>
+
+<div id="theme-toggle-wrap">
+  <button id="theme-toggle" aria-label="Toggle light/dark mode" title="Toggle light/dark mode">
+    <span id="theme-icon">☀️</span>
+  </button>
+</div>
+<script src="house.js"></script>
+<script src="stick-character.js"></script>
+<script src="stick-sentence.js"></script>
+<script>
+/* the same family on every page of this lesson */
+StickSentence.cast({
+  mia:     { base:'woman',   colour:'#6600CC', label:'Mia' },
+  leo:     { base:'man',     colour:'#0066CC', label:'Leo' },
+  grandma: { base:'grandma', label:'Grandma' },
+  grandpa: { base:'grandpa', label:'Grandpa' },
+  sam:     { base:'man',     colour:'#00CC66', label:'Sam' },
+  dad:     { base:'man',     colour:'#663300', label:'Dad' },
+  mum:     { base:'woman',   colour:'#CC0000', label:'Mom' }
+});
+
+document.getElementById('castRow').innerHTML = [
+  '{Mia|mia}', '{Leo|leo}', '{Grandma|grandma}', '{Grandpa|grandpa}', '{Sam (Mia’s brother)|sam}', '{Mom and Dad|mum,dad}'
+].map(StickSentence.html).join('');
+
+const SPEAKERS = {
+  Leo: { avatar: '👨‍🦱', av: 'av-a', side: 'left' },
+  Mia: { avatar: '🙋‍♀️', av: 'av-b', side: 'right' }
+};
+/* {words|figures} puts stick figures over the words; [words/pos] marks the grammar colours */
+const LINES = [
+  ['Leo', '[Hi/none], {[Mia/noun]!|mia} [How/wh] [was/verb] {[your/det]|mia} [weekend/noun]?'],
+  ['Mia', '[It/subject] [was/verb] [nice/adj]. {[I/subject]|mia} [visited/verb] {[my/det]|mia} {[grandparents/object].|grandpa,grandma}'],
+  ['Leo', '[Oh/none], [how/wh] [are/verb] {[they/subject]?|grandpa,grandma}'],
+  ['Mia', '{[My/det]|mia} {[grandma/subject]|grandma:say} [said/verb] {[she/subject]|grandma:tired} [was/verb] [very/adverb] [tired/adj].'],
+  ['Leo', '[Oh no/none]! [And/conj] {[your/det]|mia} {[grandpa/noun]?|grandpa}'],
+  ['Mia', '{[He/subject]|grandpa:say} [told/verb] {[me/object]|mia} {[he/subject]|grandpa:happy} [felt/verb] [great/adj]. {[He/subject]|grandpa:tablet} [said/verb] {[he/subject]|grandpa:tablet} [was learning/verb] [to use/verb] [a tablet/noun]!'],
+  ['Leo', '[Ha/none]! [That’s/subject] [great/adj]. [Did/aux] {[you/subject]|mia} [see/verb] {[your/det]|mia} {[brother/object]|sam} [too/adverb]?'],
+  ['Mia', '[Yes/none]. {[Sam/subject]|sam:say} [told/verb] {[us/object]|mia,grandma,grandpa} [that/conj] {[he/subject]|sam:happy} [had/verb] [a new job/object].'],
+  ['Leo', '[Cool/none]! [Where/wh] [does/aux] {[he/subject]|sam} [work/verb]?'],
+  ['Mia', '{[He/subject]|sam:say} [said/verb] {[he/subject]|sam} [worked/verb] [in a hospital/prep].'],
+  ['Leo', '[And/conj] [what about/wh] {[your/det]|mia} {[parents/noun]?|dad,mum}'],
+  ['Mia', '{[They/subject]|dad:phone,mum} [called/verb] {[me/object].|mia:phone} {[They/subject]|dad:say,mum:say} [said/verb] {[they/subject]|dad:happy,mum:happy} [were/verb] [in Spain/prep]! {[My/det]|mia} {[mom/subject]|mum:say} [told/verb] {[me/object]|mia} [the hotel/subject] [was/verb] [beautiful/adj].'],
+  ['Leo', '{[We/subject]|leo,mia} [need/verb] [a vacation/object] [too/adverb]!']
+];
+const conv = document.getElementById('conversation');
+LINES.forEach(([who, text]) => {
+  const s = SPEAKERS[who], right = s.side === 'right';
+  conv.insertAdjacentHTML('beforeend',
+    '<div class="bubble-wrap' + (right ? ' right' : '') + '">' +
+      '<div class="avatar ' + s.av + '">' + s.avatar + '</div>' +
+      '<div class="bubble-col"><div class="bname' + (right ? ' right' : '') + '">' + who + '</div>' +
+      '<div class="bubble ' + (right ? 'right' : 'left') + '">' + StickSentence.html(text) + '</div></div>' +
+    '</div>');
+});
+
+const CQ_ITEMS = [
+  { q: 'How was Mia’s grandma?', opts: ['She was very tired.', 'She felt great.', 'She was in Spain.'], correct: 0 },
+  { q: 'Where does Sam work?', opts: ['In a hotel', 'In a hospital', 'At home'], correct: 1 },
+  { q: 'What did Mia’s mom say?', opts: ['The hotel was beautiful.', 'She had a new job.', 'She was tired.'], correct: 0 }
+];
+HouseComprehension.build({ pre: 'preQuestions', quiz: 'quiz', items: CQ_ITEMS });
+</script>
+<script>HouseGrammar.init();</script>
+</body>
+</html>
