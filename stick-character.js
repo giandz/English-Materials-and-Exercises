@@ -322,7 +322,12 @@ function build(data){
     if(d.sweat) for(const a of (d.reaction?[-95,-140,100]:[-60,-115,95])){ const c=at(a,R+0.5*H+0.35*H);   /* a drop flying outward, its point toward the head */
       m+=`<path transform="translate(${P(c)}) rotate(${a})" d="M0,16C8,5 12,-4 12,-9A12,12 0 1 0 -12,-9C-12,-4 -8,5 0,16Z" fill="none" stroke="#3BA0E6" stroke-width="${S}" stroke-linejoin="round"/>`; }
     s+=`<g transform="${headT}">${m}</g>`; }
-  s+=`<g transform="${headT}"><circle cx="0" cy="0" r="${n2(R)}" ${st} data-joint="neck"/><circle cx="0" cy="0" r="${n2(R)}" fill="transparent" stroke="none" data-joint="neck"/>${d.headwear?`<g transform="rotate(${d.hatAngle})">${headwearSVG(d.headwear,col)}</g>`:''}</g>`;
+  /* a straw hat hides the top of the head: everything above its brim is masked out of the head circle */
+  let headMask='';
+  if(d.headwear==='strawhat'){ const hm='stkh'+(++MASK);
+    s+=`<mask id="${hm}" maskUnits="userSpaceOnUse" x="-2000" y="-2000" width="4000" height="4000"><rect x="-2000" y="-2000" width="4000" height="4000" fill="#fff"/><g transform="${headT} rotate(${d.hatAngle})"><path d="M${n2(-1.05*H)},${n2(-0.45*R)}Q0,${n2(-0.7*R)} ${n2(1.05*H)},${n2(-0.45*R)}V${n2(-2*H)}H${n2(-1.05*H)}Z" fill="#000"/></g></mask>`;
+    headMask=` mask="url(#${hm})"`; }
+  s+=`<g${headMask}><g transform="${headT}"><circle cx="0" cy="0" r="${n2(R)}" ${st} data-joint="neck"/></g></g><g transform="${headT}"><circle cx="0" cy="0" r="${n2(R)}" fill="transparent" stroke="none" data-joint="neck"/>${d.headwear?`<g transform="rotate(${d.hatAngle})">${headwearSVG(d.headwear,col)}</g>`:''}</g>`;
   /* things that turn with the hand: drawn here, in the figure's own frame, along the forearm plus the grip angle */
   const turning=(h,arm)=>{ const id=d.held[h]; if(!id||ITEMS[id].upright) return '';
     const th=-(arm.a2+d.grip[h]);
