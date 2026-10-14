@@ -14,7 +14,7 @@
      happy, sad, tired …   a feeling in the bubble (any StickCharacter emotion)
      me                    the front hand points at the figure's own head (added on its own over "I")
      arrow / selector      an arrow (or triangle) pointing down at the figure
-     left / right          which way the figure faces (figures right after "told" face left
+     left / right          which way the figure faces (figures right after "told" or "asked" face left
                            on their own, toward the speaker)
      waving, sitting …     a pose (any StickCharacter pose)
      phone, cup, book …    a thing in the front hand (any StickCharacter item)
@@ -157,7 +157,8 @@ function place(d, want){
 }
 
 const isSpeaking = d => !!d.emotion;
-function figs(specs){
+function figs(specs, opts){
+  opts = opts || {};
   const data = specs.split(',').map(figData), n = data.length;
   const talkers = data.filter(isSpeaking).length;
   let middle = 0;
@@ -179,13 +180,27 @@ function figs(specs){
     xs.push(x === -Infinity ? xs[j - 1] : x);
   }
   const all = parts.flatMap((p, i) => p.boxes.map(b => [b[0] + xs[i], b[1], b[2] + xs[i], b[3]]));
+  /* standing on the word after a possessive ("my sister"): an arrow at head height points back to the owner on the left.
+     The arrow is the one from stick-character.js (a shaft with two legs, 1.5 heads wide, 2 heads long), turned to point left */
+  let back = '';
+  if (opts.backArrow) {
+    const half = 0.75 * HS, len = 2 * HS, cy = parts[0].body[1] + 0.6 * HS;
+    const row = [-Infinity, cy - half, Infinity, cy + half];
+    const lefts = parts[0].boxes.filter(bx => vhit(bx, row)).map(bx => bx[0]);
+    const tip = Math.min(...lefts) - GAP - len;
+    const i = HS / 8, w = half - i, hh = 0.95 * HS, col = data[0].colour === '#222222' ? 'currentColor' : data[0].colour;
+    back = '<g transform="translate(' + num(tip) + ' ' + num(cy) + ') rotate(90)">' +
+      '<path d="M0,' + num(-len + i) + 'V' + num(-i) + 'M' + num(-w) + ',' + num(-hh) + 'L0,' + num(-i) + 'L' + num(w) + ',' + num(-hh) +
+      '" fill="none" stroke="' + col + '" stroke-width="' + num(HS / 4) + '" stroke-linecap="round" stroke-linejoin="round"/></g>';
+    all.push([tip, cy - half, tip + len, cy + half]);
+  }
   const bodies = parts.map((p, i) => [p.body[0] + xs[i], p.body[2] + xs[i]]);
   const mid = (Math.min(...bodies.map(b => b[0])) + Math.max(...bodies.map(b => b[1]))) / 2;
   const reach = Math.max(mid - Math.min(...all.map(b => b[0])), Math.max(...all.map(b => b[2])) - mid) + GAP / 2;
   const top = Math.min(...all.map(b => b[1])) - HS / 8, bottom = ST.ground + HS / 4;
   const vb = [num(mid - reach), num(top), num(2 * reach), num(bottom - top)];
   const svg = '<svg xmlns="http://www.w3.org/2000/svg" viewBox="' + vb.join(' ') + '" overflow="visible">' +
-    parts.map((p, i) => '<g transform="translate(' + num(xs[i]) + ' 0)">' + p.inner + '</g>').join('') + '</svg>';
+    parts.map((p, i) => '<g transform="translate(' + num(xs[i]) + ' 0)">' + p.inner + '</g>').join('') + back + '</svg>';
   return '<span class="ss-figs" role="img" aria-label="' + parts.map(p => p.label).join(' ') + '" style="width:' +
     (vb[2] * K).toFixed(3) + 'em;height:' + (vb[3] * K).toFixed(3) + 'em">' + svg + '</span>';
 }
@@ -195,18 +210,22 @@ function figure(spec){ return figs(spec); }
 
 const pos = s => s.replace(/\[([^\/\]]+)\/(\w+)\]/g, '<span class="pos-hl pos-$2">$1</span>');
 
+/* the word before decides: after a possessive adjective the figures get an arrow back to its owner */
+const POSSESSIVE = /^(my|your|his|her|our|their)$/;
+
 function html(markup){
   const out = [];
   const re = /\{([^|}]+)\|([^}]+)\}([^\s\[{]*)|((?:\[[^\]]+\]|[^\s\[{]+)+)/g;
   let m, prev = '';
   while ((m = re.exec(markup))) {
     if (m[4]) { out.push('<span class="ss-unit"><span class="ss-txt">' + pos(m[4]) + '</span></span>'); prev = text(m[4]).toLowerCase(); continue; }
-    /* after "told", the listeners turn to face the speaker */
-    if (prev === 'told') m[2] = m[2].split(',').map(sp => /:(left|right)\b/.test(sp) ? sp : sp + ':left').join(',');
+    /* after "told" or "asked", the listeners turn to face the speaker */
+    if (prev === 'told' || prev === 'asked') m[2] = m[2].split(',').map(sp => /:(left|right)\b/.test(sp) ? sp : sp + ':left').join(',');
     /* a figure standing on "I" points at its own head */
     if (/^i$/i.test(text(m[1]).replace(/[^A-Za-z]/g, '')) && !m[2].includes(',')) m[2] += ':me';
-    prev = '';
-    out.push('<span class="ss-unit ss-has">' + figs(m[2]) + '<span class="ss-txt">' + pos(m[1]) + m[3] + '</span></span>');
+    const backArrow = POSSESSIVE.test(prev);
+    prev = /\/(object|subject)\]/.test(m[1]) ? '' : text(m[1]).toLowerCase().replace(/[^a-z]/g, '');   /* "her" tagged as an object is not a possessive */
+    out.push('<span class="ss-unit ss-has">' + figs(m[2], { backArrow }) + '<span class="ss-txt">' + pos(m[1]) + m[3] + '</span></span>');
   }
   return '<span class="ss-line">' + out.join('') + '</span>';
 }

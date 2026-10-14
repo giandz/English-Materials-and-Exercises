@@ -1,0 +1,114 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<title>Who Asked You? — Reported Speech</title>
+<script>
+(function(){
+  try{
+    var saved = localStorage.getItem('theme-preference');
+    var theme = (saved === 'light' || saved === 'dark')
+      ? saved
+      : ((window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches) ? 'dark' : 'light');
+    document.documentElement.setAttribute('data-theme', theme);
+    var fs = parseFloat(localStorage.getItem('font-size-preference'));
+    if (fs >= 10 && fs <= 28) document.documentElement.style.setProperty('--fs-base', fs + 'px');
+  }catch(e){ /* localStorage/matchMedia unavailable — CSS media query still applies */ }
+})();
+</script>
+<link rel="stylesheet" href="house.css">
+<style>
+.q-card .ss-line{ justify-content:center; font-size:1.2667rem; font-weight:600; }
+</style>
+</head>
+<body>
+<div class="page" id="page">
+  <span class="cefr-tag cefr-a1a2">A1/A2 · Elementary</span>
+  <h1>Who Asked You?</h1>
+  <p class="subtitle">Tell your partner what people asked or told someone to do.</p>
+
+  <div class="rule-box">
+    <p><strong>How to play (groups of 3):</strong></p>
+    <p>1. Student A rolls 🎲 and reads the words to Student B, like the person on the card. Student C does not look!</p>
+    <p>2. Student B tells Student C: “<b>Mom asked Ben to close the door.</b>” or “<b>Dad told Lily not to run.</b>”</p>
+    <p>3. Student C does the action (or mimes it!). Then change roles.</p>
+  </div>
+
+  <div class="q-card" id="qCard"><span class="q-placeholder">Roll the dice to start.</span></div>
+  <button class="dice-btn" id="diceBtn" aria-label="Roll">🎲</button>
+  <div class="roll-count">Rolls: <strong id="rollCount">0</strong></div>
+
+  <div class="sec-div">Now you</div>
+  <div class="rule-box">
+    <p>Think about this week. What did your family, your teacher or your boss ask you to do? What did they tell you not to do?</p>
+    <p>Tell your partner three things: “<b>My mom asked me to buy bread. My boss told me not to be late.</b>”</p>
+  </div>
+
+  <footer>Who Asked You? — Reported Speech: Requests (A1/A2)</footer>
+</div>
+
+<div id="theme-toggle-wrap">
+  <button id="theme-toggle" aria-label="Toggle light/dark mode" title="Toggle light/dark mode">
+    <span id="theme-icon">☀️</span>
+  </button>
+</div>
+<script src="house.js"></script>
+<script src="stick-character.js"></script>
+<script src="stick-sentence.js"></script>
+<script>
+/* the same family on every page of this lesson */
+StickSentence.cast({
+  ben:     { base:'boy',     colour:'#FF6600', label:'Ben' },
+  lily:    { base:'girl',    colour:'#FF66CC', label:'Lily' },
+  mum:     { base:'woman',   colour:'#CC0000', label:'Mom' },
+  dad:     { base:'man',     colour:'#663300', label:'Dad' },
+  grandma: { base:'grandma', label:'Grandma' },
+  grandpa: { base:'grandpa', label:'Grandpa' },
+  teacher: { base:'woman',   colour:'#666666', label:'The teacher' },
+  mia:     { base:'woman',   colour:'#6600CC', label:'Mia' },
+  leo:     { base:'man',     colour:'#0066CC', label:'Leo' },
+  sam:     { base:'man',     colour:'#00CC66', label:'Sam' }
+});
+
+const PEOPLE = [
+  { id:'ben', name:'Ben' }, { id:'lily', name:'Lily' }, { id:'mum', name:'Mom' }, { id:'dad', name:'Dad' },
+  { id:'grandma', name:'Grandma' }, { id:'grandpa', name:'Grandpa' }, { id:'teacher', name:'The teacher' }
+];
+
+/* what they say: @ is the speaker, % the person they talk to; polite ones go with "asked", orders with "told" */
+const SAYS = [
+  { s:'Please open the window.',          k:'asked' },
+  { s:'Please help {me|@} with the dishes.', k:'asked' },
+  { s:'Please turn off the TV.',          k:'asked' },
+  { s:'Please wait for {me|@}.',          k:'asked' },
+  { s:'Please speak slowly.',             k:'asked' },
+  { s:'Please call {me|@} tonight.',      k:'asked' },
+  { s:'Close {your|%} book.',             k:'told' },
+  { s:'Sit down, please.',                k:'asked' },
+  { s:'Don’t eat {my|@} sandwich!',       k:'told' },
+  { s:'Don’t be late!',                   k:'told' },
+  { s:'Don’t touch {my|@} phone!',        k:'told' },
+  { s:'Don’t forget {your|%} keys!',      k:'told' },
+  { s:'Stand up!',                        k:'told' },
+  { s:'Don’t run in the house!',          k:'told' }
+];
+
+HouseRandomGen.build({
+  pick: () => {
+    const p = HouseRandomGen.pickFrom(PEOPLE);
+    let o; do { o = HouseRandomGen.pickFrom(PEOPLE); } while (o === p);
+    return { p, o, say: HouseRandomGen.pickFrom(SAYS) };
+  },
+  key: x => x.p.id + x.o.id + x.say.s,
+  render: ({ p, o, say }) => {
+    const line = say.s.replace(/@/g, p.id).replace(/%/g, o.id);
+    const neg = /^Don’t/.test(say.s) ? ' not to …' : ' to …';
+    return '<span class="q-topic">💬 ' + p.name + ' → ' + o.name + '</span>' +
+      StickSentence.html('{' + p.name + ':|' + p.id + ':say:arrow,' + o.id + ':left} “' + line + '”') +
+      '<span class="q-prompt">Tell your partner: “' + p.name + ' ' + say.k + ' ' + o.name.replace(/^The /, 'the ') + neg + '”</span>';
+  }
+});
+</script>
+</body>
+</html>

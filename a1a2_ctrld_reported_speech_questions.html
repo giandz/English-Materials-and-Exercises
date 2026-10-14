@@ -1,0 +1,141 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<title>Reported Speech: Questions — Controlled Practice</title>
+<script>
+(function(){
+  try{
+    var saved = localStorage.getItem('theme-preference');
+    var theme = (saved === 'light' || saved === 'dark')
+      ? saved
+      : ((window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches) ? 'dark' : 'light');
+    document.documentElement.setAttribute('data-theme', theme);
+    var fs = parseFloat(localStorage.getItem('font-size-preference'));
+    if (fs >= 10 && fs <= 28) document.documentElement.style.setProperty('--fs-base', fs + 'px');
+  }catch(e){ /* localStorage/matchMedia unavailable — CSS media query still applies */ }
+})();
+</script>
+<link rel="stylesheet" href="house.css">
+<style>
+.blank{ display:inline-block; min-width:3em; border-bottom:2px solid var(--color-border-primary); }
+.said{ font-weight:400; margin-bottom:8px; padding-bottom:8px; border-bottom:.5px dashed var(--color-border-secondary); }
+.item-context .ss-line, .direct .ss-line{ font-style:normal; color:var(--text-primary); font-size:.9667rem; }
+</style>
+</head>
+<body>
+<div class="page" id="page">
+  <span class="cefr-tag cefr-a1a2">A1/A2 · Elementary</span>
+  <h1>What Did They Ask? — Practice</h1>
+  <p class="subtitle">Practise: “Where is Ben?” → He asked me where Ben was. · “Are you tired?” → He asked Mom if she was tired.</p>
+
+  <div class="sec-div">1 · Choose</div>
+  <p class="subtitle">Read the question. Choose the right words.</p>
+  <div id="pcItems"></div>
+
+  <div class="sec-div">2 · Put the words in order</div>
+  <p class="subtitle">Read the question. Make the sentence. Tell a friend.</p>
+  <button class="grammar-toggle-btn" id="grammarToggle">🎨 Hide Grammar</button>
+  <div class="pos-legend"></div>
+  <div class="score-bar"><span>Correct: <strong id="woScore">0</strong> / <span id="woTotal">0</span></span></div>
+  <div id="woItems"></div>
+
+  <div class="sec-div">3 · Write the missing words</div>
+  <p class="subtitle">Read the question. Write the missing words.</p>
+  <div id="gfItems"></div>
+
+  <footer>Reported Speech: Questions — Controlled Practice (A1/A2)</footer>
+</div>
+
+<div id="theme-toggle-wrap">
+  <button id="theme-toggle" aria-label="Toggle light/dark mode" title="Toggle light/dark mode">
+    <span id="theme-icon">☀️</span>
+  </button>
+</div>
+<script src="house.js"></script>
+<script src="stick-character.js"></script>
+<script src="stick-sentence.js"></script>
+<script>
+/* the same family on every page of this lesson */
+StickSentence.cast({
+  ben:     { base:'boy',     colour:'#FF6600', label:'Ben' },
+  lily:    { base:'girl',    colour:'#FF66CC', label:'Lily' },
+  mum:     { base:'woman',   colour:'#CC0000', label:'Mom' },
+  dad:     { base:'man',     colour:'#663300', label:'Dad' },
+  grandma: { base:'grandma', label:'Grandma' },
+  grandpa: { base:'grandpa', label:'Grandpa' },
+  teacher: { base:'woman',   colour:'#666666', label:'The teacher' },
+  mia:     { base:'woman',   colour:'#6600CC', label:'Mia' },
+  leo:     { base:'man',     colour:'#0066CC', label:'Leo' },
+  sam:     { base:'man',     colour:'#00CC66', label:'Sam' }
+});
+
+const S = StickSentence.html;
+const BLANK = '<span class="blank">&nbsp;</span>';
+const said = m => '<div class="said">' + S(m) + '</div>';
+const rep = m => S(m).replace('____', BLANK);
+
+/* ── 1 · choose ────────────────────────────────────────────────────────── */
+const PC_ITEMS = [
+  { q: said('{Mom:|mum:say:arrow,ben:left} “Are {you|ben} hungry, Ben?”') + rep('{Mom|mum:say} asked {me|ben} ____ {I|ben} was hungry.'),
+    opts: ['if', 'that', 'do'], correct: 0 },
+  { q: said('{Grandpa:|grandpa:say:arrow,lily:left} “Where is {Dad?|dad}”') + rep('{He|grandpa:say} asked {me|lily} where {Dad|dad} ____.'),
+    opts: ['is', 'was', 'were'], correct: 1 },
+  { q: said('{The teacher:|teacher:say:arrow,ben:left} “What is {your|ben} name?”') + rep('{She|teacher:say} asked {me|ben} what ____ name was.'),
+    opts: ['your', 'my', 'his'], correct: 1 },
+  { q: said('{Leo:|leo:say:arrow,mia:left} “Do {you|mia} like pizza?”') + rep('{Leo|leo:say} asked {me|mia} if {I|mia} ____ pizza.'),
+    opts: ['like', 'liked', 'did like'], correct: 1 },
+  { q: said('{Sam:|sam:say:arrow,leo:left} “What are {you|leo:book} doing?”') + rep('{Sam|sam:say} asked {me|leo} what ____.'),
+    opts: ['I was doing', 'was I doing', 'am I doing'], correct: 0 },
+  { q: said('{Grandma:|grandma:say:arrow,ben:left,lily:left} “Are {you|ben,lily} happy, kids?”') + rep('{She|grandma:say} asked {us|ben,lily} if ____ happy.'),
+    opts: ['you were', 'we were', 'were we'], correct: 1 },
+  { q: said('{Dad:|dad:say:arrow,mum:left} “What time is it?”') + rep('{Dad|dad:say} asked {Mom|mum} what time ____.'),
+    opts: ['it was', 'was it', 'is it'], correct: 0 },
+  { q: said('{Mia:|mia:say:arrow,sam:left} “Do {you|sam} play soccer?”') + rep('{Mia|mia:say} ____ {Sam|sam} if {he|sam} played soccer.'),
+    opts: ['asked', 'said', 'told'], correct: 0 }
+];
+HouseComprehension.build({ quiz: 'pcItems', items: PC_ITEMS });
+
+/* ── 2 · word order ────────────────────────────────────────────────────── */
+const WO_ITEMS = [
+  { context: S('{Grandma:|grandma:say:arrow,lily:left} “How old are {you,|lily} Lily?”'),
+    text: 'Grandma / asked / me / how old / I / was', pos: ['subject', 'verb', 'object', 'wh', 'subject', 'verb'] },
+  { context: S('{Grandpa:|grandpa:say:arrow,mum:left} “Are {you|mum:tired} tired?”'),
+    text: 'He / asked / Mom / if / she / was / tired', pos: ['subject', 'verb', 'object', 'conj', 'subject', 'verb', 'adj'] },
+  { context: S('{Leo:|leo:say:arrow,mia:left} “Where do {you|mia} work, Mia?”'),
+    text: 'Leo / asked / me / where / I / worked', pos: ['subject', 'verb', 'object', 'wh', 'subject', 'verb'] },
+  { context: S('{Mom:|mum:say:arrow,ben:left,lily:left} “Do {you|ben,lily} want ice cream?”'),
+    text: 'Mom / asked / us / if / we / wanted / ice cream', pos: ['subject', 'verb', 'object', 'conj', 'subject', 'verb', 'object'] },
+  { context: S('{The teacher:|teacher:say:arrow,ben:left} “What are {you|ben:book} reading, Ben?”'),
+    text: 'The teacher / asked / me / what / I / was reading', pos: ['subject', 'verb', 'object', 'wh', 'subject', 'verb'] },
+  { context: S('{Sam:|sam:say:arrow,leo:left} “Is {Mia|mia} at home?”'),
+    text: 'Sam / asked / me / if / Mia / was / at home', pos: ['subject', 'verb', 'object', 'conj', 'subject', 'verb', 'prep'] }
+];
+HouseWordOrder.build({ container: 'woItems', items: WO_ITEMS, scoreEl: 'woScore', totalEl: 'woTotal' });
+
+/* ── 3 · gap fill (easiest first; the gaps move around the sentence) ───── */
+const gaps = m => S(m).replace(/____(\d)/g, '{$1}');
+const GF_ITEMS = [
+  { direct: S('{Grandma:|grandma:say:arrow,lily:left} “Are {you|lily} cold, Lily?”'),
+    template: gaps('{Grandma|grandma:say} asked {me|lily} ____0 {I|lily} was cold.'), hints: [{ accepted: ['if', 'whether'] }] },
+  { direct: S('{Leo:|leo:say:arrow,mia:left} “Where is {my|leo} phone?”'),
+    template: gaps('{Leo|leo:say} asked {me|mia} where {his|leo} phone ____0.'), hints: [{ accepted: ['was'] }] },
+  { direct: S('{The teacher:|teacher:say:arrow,ben:left} “What do {you|ben} want to be?”'),
+    template: gaps('{She|teacher:say} asked {me|ben} what {I|ben} ____0 to be.'), hints: [{ accepted: ['wanted'] }] },
+  { direct: S('{Mom:|mum:say:arrow,lily:left} “Do {you|lily} have {your|lily} keys?”'),
+    template: gaps('{Mom|mum:say} asked {me|lily} if {I|lily} ____0 ____1 keys.'), hints: [{ accepted: ['had'] }, { accepted: ['my'] }] },
+  { direct: S('{Dad:|dad:say:arrow,ben:left,lily:left} “Are {you|ben,lily} ready, kids?”'),
+    template: gaps('{Dad|dad:say} asked {us|ben,lily} if ____0 ____1 ready.'), hints: [{ accepted: ['we'] }, { accepted: ['were'] }] },
+  { direct: S('{Sam:|sam:say:arrow,leo:left} “What time does the movie start?”'),
+    template: gaps('{Sam|sam:say} ____0 {me|leo} what time the movie ____1.'), hints: [{ accepted: ['asked'] }, { accepted: ['started'] }] },
+  { direct: S('{Grandpa:|grandpa:say:arrow,mum:left} “Is {Ben|ben} sleeping?”'),
+    template: gaps('{He|grandpa:say} asked {Mom|mum} ____0 {Ben|ben} ____1 sleeping.'), hints: [{ accepted: ['if', 'whether'] }, { accepted: ['was'] }] },
+  { direct: S('{Mia:|mia:say:arrow,leo:left} “Why are {you|leo:sad} sad, Leo?”'),
+    template: gaps('{Mia|mia:say} asked {me|leo} why ____0 ____1 sad.'), hints: [{ accepted: ['I'] }, { accepted: ['was'] }] }
+];
+HouseGapFill.build({ container: 'gfItems', items: GF_ITEMS });
+</script>
+<script>HouseGrammar.init();</script>
+</body>
+</html>

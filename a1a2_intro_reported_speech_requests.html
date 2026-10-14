@@ -1,0 +1,112 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<title>Mom Asked Me to Clean My Room — Reported Speech</title>
+<script>
+(function(){
+  try{
+    var saved = localStorage.getItem('theme-preference');
+    var theme = (saved === 'light' || saved === 'dark')
+      ? saved
+      : ((window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches) ? 'dark' : 'light');
+    document.documentElement.setAttribute('data-theme', theme);
+    var fs = parseFloat(localStorage.getItem('font-size-preference'));
+    if (fs >= 10 && fs <= 28) document.documentElement.style.setProperty('--fs-base', fs + 'px');
+  }catch(e){ /* localStorage/matchMedia unavailable — CSS media query still applies */ }
+})();
+</script>
+<link rel="stylesheet" href="house.css">
+<style>
+.cast-row{ display:flex; flex-wrap:wrap; gap:14px 18px; justify-content:center; margin:0 0 1rem; padding:10px; background:var(--surface-1); border:1px solid var(--border); border-radius:var(--border-radius-lg); font-size:.8667rem; }
+</style>
+</head>
+<body>
+<div class="page" id="page">
+  <span class="cefr-tag cefr-a1a2">A1/A2 · Elementary</span>
+  <h1>Mom Asked Me to Clean My Room</h1>
+  <p class="subtitle">Grandma and Grandpa are coming for dinner. Ben tells his sister Lily what everyone wants.</p>
+
+  <div class="sec-div">Before you read</div>
+  <div id="preQuestions"></div>
+
+  <div class="sec-div">The people</div>
+  <div class="cast-row" id="castRow"></div>
+
+  <div class="sec-div">The conversation</div>
+  <button class="grammar-toggle-btn" id="grammarToggle">🎨 Show Grammar</button>
+  <div class="pos-legend"></div>
+
+  <div id="conversation"></div>
+
+  <div class="sec-div">Check your answers</div>
+  <div id="quiz"></div>
+
+  <footer>Mom Asked Me to Clean My Room — Reported Speech: Requests (A1/A2)</footer>
+</div>
+
+<div id="theme-toggle-wrap">
+  <button id="theme-toggle" aria-label="Toggle light/dark mode" title="Toggle light/dark mode">
+    <span id="theme-icon">☀️</span>
+  </button>
+</div>
+<script src="house.js"></script>
+<script src="stick-character.js"></script>
+<script src="stick-sentence.js"></script>
+<script>
+/* the same family on every page of this lesson */
+StickSentence.cast({
+  ben:     { base:'boy',     colour:'#FF6600', label:'Ben' },
+  lily:    { base:'girl',    colour:'#FF66CC', label:'Lily' },
+  mum:     { base:'woman',   colour:'#CC0000', label:'Mom' },
+  dad:     { base:'man',     colour:'#663300', label:'Dad' },
+  grandma: { base:'grandma', label:'Grandma' },
+  grandpa: { base:'grandpa', label:'Grandpa' },
+  teacher: { base:'woman',   colour:'#666666', label:'The teacher' },
+  mia:     { base:'woman',   colour:'#6600CC', label:'Mia' },
+  leo:     { base:'man',     colour:'#0066CC', label:'Leo' },
+  sam:     { base:'man',     colour:'#00CC66', label:'Sam' }
+});
+
+document.getElementById('castRow').innerHTML = [
+  '{Ben|ben}', '{Lily (Ben’s sister)|lily}', '{Mom and Dad|mum,dad}', '{Grandma and Grandpa|grandma,grandpa}'
+].map(StickSentence.html).join('');
+
+const SPEAKERS = {
+  Lily: { avatar: '👧', av: 'av-b', side: 'left' },
+  Ben:  { avatar: '👦', av: 'av-a', side: 'right' }
+};
+/* {words|figures} puts stick figures over the words; [words/pos] marks the grammar colours */
+const LINES = [
+  ['Lily', '{[Ben/noun]!|ben} [Why/wh] [are/aux] {[you/subject]|ben} [cleaning/verb] {[your/det]|ben} [room/noun]?'],
+  ['Ben', '{[Mom/subject]|mum:say} [asked/verb] {[me/object]|ben} [to clean/verb] [it/object]. {[Grandma/subject]|grandma} [and/conj] {[Grandpa/subject]|grandpa} [are coming/verb] [for dinner/prep].'],
+  ['Lily', '[Oh no/none]. [What/wh] [else/adverb] [did/aux] {[she/subject]|mum} [say/verb]?'],
+  ['Ben', '{[She/subject]|mum:say} [told/verb] {[us/object]|ben,lily} [not/neg] [to play/verb] [video games/object] [today/time]. [And/conj] {[she/subject]|mum:say} [asked/verb] {[you/object]|lily} [to help/verb] {[Dad/object]|dad} [in the kitchen/prep].'],
+  ['Lily', '{[Me/object]?|lily:surprised:me} [But/conj] {[I/subject]|lily:book} [am doing/verb] {[my/det]|lily} [homework/object]!'],
+  ['Ben', '[Sorry/none]! {[Dad/subject]|dad:say} [asked/verb] {[Mom/object]|mum} [to tell/verb] {[you/object].|lily} {[He/subject]|dad:say} [told/verb] {[me/object]|ben} [to set/verb] [the table/object] [too/adverb].'],
+  ['Lily', '[OK/none]. [Did/aux] {[Grandpa/subject]|grandpa:phone} [call/verb]?'],
+  ['Ben', '[Yes/none]. {[He/subject]|grandpa:say} [asked/verb] {[us/object]|ben,lily} [to bring/verb] {[our/det]|ben,lily} [photos/object]. [And/conj] {[he/subject]|grandpa:say} [told/verb] {[Grandma/object]|grandma} [not/neg] [to forget/verb] {[her/det]|grandma} [glasses/object]!'],
+  ['Lily', '[Ha/none]! [Come on/verb]. {[Mom/subject]|mum:say} [told/verb] {[us/object]|ben,lily} [not/neg] [to be/verb] [late/adj]!']
+];
+const conv = document.getElementById('conversation');
+LINES.forEach(([who, text]) => {
+  const s = SPEAKERS[who], right = s.side === 'right';
+  conv.insertAdjacentHTML('beforeend',
+    '<div class="bubble-wrap' + (right ? ' right' : '') + '">' +
+      '<div class="avatar ' + s.av + '">' + s.avatar + '</div>' +
+      '<div class="bubble-col"><div class="bname' + (right ? ' right' : '') + '">' + who + '</div>' +
+      '<div class="bubble ' + (right ? 'right' : 'left') + '">' + StickSentence.html(text) + '</div></div>' +
+    '</div>');
+});
+
+const CQ_ITEMS = [
+  { q: 'What did Mom ask Ben to do?', opts: ['Clean his room', 'Set the table', 'Help Dad in the kitchen'], correct: 0 },
+  { q: 'What did Mom tell the kids not to do?', opts: ['Be early', 'Play video games', 'Call Grandpa'], correct: 1 },
+  { q: 'What did Grandpa ask the kids to bring?', opts: ['Grandma’s glasses', 'Their video games', 'Their photos'], correct: 2 }
+];
+HouseComprehension.build({ pre: 'preQuestions', quiz: 'quiz', items: CQ_ITEMS });
+</script>
+<script>HouseGrammar.init();</script>
+</body>
+</html>

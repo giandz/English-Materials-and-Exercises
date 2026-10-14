@@ -1,0 +1,219 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<title>Reported Speech: Questions — Clarification</title>
+<script>
+(function(){
+  try{
+    var saved = localStorage.getItem('theme-preference');
+    var theme = (saved === 'light' || saved === 'dark')
+      ? saved
+      : ((window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches) ? 'dark' : 'light');
+    document.documentElement.setAttribute('data-theme', theme);
+    var fs = parseFloat(localStorage.getItem('font-size-preference'));
+    if (fs >= 10 && fs <= 28) document.documentElement.style.setProperty('--fs-base', fs + 'px');
+  }catch(e){ /* localStorage/matchMedia unavailable — CSS media query still applies */ }
+})();
+</script>
+<link rel="stylesheet" href="house.css">
+<style>
+/* the target language is the lesson, so it stays coloured (not a grammar-toggle colour) */
+.tgt{ color:var(--text-accent); font-weight:700; }
+.rs-pair{ border:1px solid var(--color-border-tertiary); border-radius:12px; background:var(--surface-2); padding:10px 12px; margin-bottom:10px; font-size:.9667rem; }
+.rs-row{ display:flex; gap:10px; align-items:flex-end; padding:4px 0; }
+.rs-row + .rs-row{ border-top:.5px dashed var(--color-border-secondary); margin-top:4px; padding-top:8px; }
+.rs-lab{ flex:0 0 4.6em; font-size:.7rem; font-weight:700; letter-spacing:.04em; text-transform:uppercase; color:var(--text-muted); padding-bottom:.25em; }
+.rs-row b{ color:var(--text-accent); }
+.rs-kind{ font-size:.7rem; font-weight:700; letter-spacing:.04em; text-transform:uppercase; color:var(--text-muted); margin:1rem 0 .4rem; }
+.bs{ display:grid; grid-template-columns:minmax(0,1fr) auto minmax(0,1fr); gap:4px 8px; align-items:center; margin:0 0 10px; font-size:.8667rem; }
+.bs > div{ padding:5px 8px; border-radius:7px; background:var(--surface-2); border:1px solid var(--color-border-tertiary); }
+.bs .h{ background:none; border:none; font-size:.7rem; font-weight:700; letter-spacing:.04em; text-transform:uppercase; color:var(--text-muted); }
+.bs .ar{ background:none; border:none; color:var(--text-muted); padding:0; }
+.rule-box p{ margin:0 0 6px; }
+.rule-box p:last-child{ margin-bottom:0; }
+</style>
+</head>
+<body>
+<div class="page" id="page">
+  <span class="cefr-tag cefr-a1a2">A1/A2 · Elementary</span>
+  <h1>Reported Speech: Questions</h1>
+  <p class="subtitle">Tell someone what another person asked: “Where is Ben?” → He asked me where Ben was. · “Are you tired?” → He asked Mom if she was tired.</p>
+
+  <div class="sec-div">Look</div>
+  <p class="subtitle">The family dinner. Read the questions. Then read what Lily tells Ben.</p>
+  <div id="pairs"></div>
+
+  <div class="sec-div">Check the meaning</div>
+  <p class="subtitle">Read the sentence. Answer the questions.</p>
+  <div id="ccq"></div>
+
+  <div class="sec-div">Look at the form</div>
+  <p class="subtitle">What is each part of the sentence? Drag a label (or tap a label, then tap a box).</p>
+  <div class="score-bar"><span>Correct: <strong id="fcScore">0</strong> / <span id="fcTotal">0</span></span></div>
+  <div id="formClarf"></div>
+
+  <div class="rule-box" id="ruleBox"></div>
+
+  <div class="sec-div">Common mistakes</div>
+  <div id="mistakes"></div>
+
+  <div class="sec-div">Error hunt</div>
+  <p class="subtitle">Some sentences have a mistake. Some are correct! Tap a word — or a space between words — to fix it. Then press OK.</p>
+  <div class="score-bar"><span>Done: <strong id="errorScore">0</strong> / <span id="errorTotal">0</span></span></div>
+  <div id="errorHuntItems"></div>
+
+  <footer>Reported Speech: Questions — Clarification (A1/A2)</footer>
+</div>
+
+<div id="theme-toggle-wrap">
+  <button id="theme-toggle" aria-label="Toggle light/dark mode" title="Toggle light/dark mode">
+    <span id="theme-icon">☀️</span>
+  </button>
+</div>
+<script src="house.js"></script>
+<script src="stick-character.js"></script>
+<script src="stick-sentence.js"></script>
+<script>
+/* the same family on every page of this lesson */
+StickSentence.cast({
+  ben:     { base:'boy',     colour:'#FF6600', label:'Ben' },
+  lily:    { base:'girl',    colour:'#FF66CC', label:'Lily' },
+  mum:     { base:'woman',   colour:'#CC0000', label:'Mom' },
+  dad:     { base:'man',     colour:'#663300', label:'Dad' },
+  grandma: { base:'grandma', label:'Grandma' },
+  grandpa: { base:'grandpa', label:'Grandpa' },
+  teacher: { base:'woman',   colour:'#666666', label:'The teacher' },
+  mia:     { base:'woman',   colour:'#6600CC', label:'Mia' },
+  leo:     { base:'man',     colour:'#0066CC', label:'Leo' },
+  sam:     { base:'man',     colour:'#00CC66', label:'Sam' }
+});
+
+const S = StickSentence.html;
+const T = s => '<span class="tgt">' + s + '</span>';
+
+/* ── look: the question (the speaker with the person they ask), then Lily’s report ── */
+const WH = [
+  ['{Grandma:|grandma:say:arrow,lily:left} “How old are {you,|lily} Lily?”',
+   '{Grandma|grandma:say} asked {me|lily} <b>how&nbsp;old</b> {I|lily} <b>was</b>.'],
+  ['{Grandma:|grandma:say:arrow,lily:left} “What is {your|lily} favorite subject?”',
+   '{She|grandma:say} asked {me|lily} <b>what</b> {my|lily} favorite subject <b>was</b>.'],
+  ['{Grandpa:|grandpa:say:arrow,lily:left} “Where is {Ben?|ben}”',
+   '{He|grandpa:say} asked {me|lily} <b>where</b> {Ben|ben} <b>was</b>.'],
+  ['{Grandpa:|grandpa:say:arrow,dad:left} “What are {you|dad:pan} cooking?”',
+   '{He|grandpa:say} asked {Dad|dad} <b>what</b> {he|dad:pan} <b>was&nbsp;cooking</b>.']
+];
+const YN = [
+  ['{Grandma:|grandma:say:arrow,lily:left} “Do {you|lily} like {your|lily} {teacher?|teacher}”',
+   '{She|grandma:say} asked {me|lily} <b>if</b> {I|lily} <b>liked</b> {my|lily} {teacher.|teacher}'],
+  ['{Grandpa:|grandpa:say:arrow,mum:left} “Are {you|mum:tired} tired?”',
+   '{He|grandpa:say} asked {Mom|mum} <b>if</b> {she|mum:tired} <b>was</b> tired.'],
+  ['{Grandma:|grandma:say:arrow,mum:left} “Do {the kids|ben,lily} watch a lot of TV?”',
+   '{She|grandma:say} asked {Mom|mum} <b>if</b> {we|ben,lily} <b>watched</b> a lot of TV.']
+];
+const pair = ([q, r]) => '<div class="rs-pair"><div class="rs-row"><span class="rs-lab">They asked</span>' + S(q) + '</div>' +
+  '<div class="rs-row"><span class="rs-lab">Lily says</span>' + S(r) + '</div></div>';
+document.getElementById('pairs').innerHTML =
+  '<div class="rs-kind">Wh- questions (what, where, how old …)</div>' + WH.map(pair).join('') +
+  '<div class="rs-kind">Yes / no questions (Do you …? Are you …?)</div>' + YN.map(pair).join('');
+
+/* ── concept checking questions ────────────────────────────────────────── */
+HouseCCQ.build({
+  container: 'ccq',
+  items: [
+    { sentence: S('{Grandma|grandma:say} asked {me|lily} how old {I|lily} was.'),
+      questions: [
+        { q: 'Is Lily asking a question now?', opts: ['Yes', 'No'], correct: 1,
+          why: 'No. Lily is telling Ben about a question. So there is no question mark (?), and the order is like a normal sentence: I was.' },
+        { q: 'Did Grandma say “How old was I?”', opts: ['Yes', 'No'], correct: 1,
+          why: 'No. Grandma said “How old are you?” Lily changes “you” to “I” and “are” to “was”.' }
+      ] },
+    { sentence: S('{He|grandpa:say} asked {Mom|mum} if {she|mum:tired} was tired.'),
+      questions: [
+        { q: 'Did Grandpa say the word “if”?', opts: ['Yes', 'No'], correct: 1,
+          why: 'No. He said “Are you tired?” We add “if” when we report a yes / no question.' },
+        { q: 'Do we know Mom’s answer?', opts: ['Yes', 'No'], correct: 1,
+          why: 'No. We only know the question.' }
+      ] },
+    { sentence: S('{He|grandpa:say} asked {Dad|dad} what {he|dad:pan} was cooking.'),
+      questions: [
+        { q: 'Who was cooking?', opts: ['Grandpa', 'Dad'], correct: 1,
+          why: 'Dad. Grandpa asked: “What are you cooking?”' }
+      ] }
+  ]
+});
+
+/* ── form ──────────────────────────────────────────────────────────────── */
+HouseFormClarf.build({
+  container: 'formClarf', scoreEl: 'fcScore', totalEl: 'fcTotal',
+  pool: ['wh', 'subject', 'verb', 'object', 'conj', 'adj'],
+  items: [
+    { form: 'wh', parts: [['Grandma', 'subject'], ['asked', 'verb'], ['me', 'object'], ['how old', 'wh'], ['I', 'subject'], ['was', 'verb'], ['.', null]] },
+    { form: 'wh', parts: [['He', 'subject'], ['asked', 'verb'], ['me', 'object'], ['where', 'wh'], ['Ben', 'subject'], ['was', 'verb'], ['.', null]] },
+    { form: 'q', parts: [['He', 'subject'], ['asked', 'verb'], ['Mom', 'object'], ['if', 'conj'], ['she', 'subject'], ['was', 'verb'], ['tired', 'adj'], ['.', null]] },
+    { form: 'q', parts: [['She', 'subject'], ['asked', 'verb'], ['me', 'object'], ['if', 'conj'], ['I', 'subject'], ['liked', 'verb'], ['my teacher', 'object'], ['.', null]] }
+  ]
+});
+
+/* ── the rule ──────────────────────────────────────────────────────────── */
+const BS = [
+  ['How old <b>are you</b>?', 'She asked me how old ' + T('I was') + '.'],
+  ['Where <b>is Ben</b>?', 'He asked me where ' + T('Ben was') + '.'],
+  ['What <b>are you cooking</b>?', 'He asked Dad what ' + T('he was cooking') + '.'],
+  ['What <b>do you want</b>?', 'She asked me what ' + T('I wanted') + '.'],
+  ['<b>Are you</b> tired?', 'He asked Mom ' + T('if she was') + ' tired.'],
+  ['<b>Do you like</b> your teacher?', 'She asked me ' + T('if I liked') + ' my teacher.'],
+  ['<b>Does Ben play</b> soccer?', 'She asked ' + T('if Ben played') + ' soccer.']
+];
+document.getElementById('ruleBox').innerHTML =
+  '<div class="bs"><div class="h">They asked</div><div class="ar"></div><div class="h">You say</div>' +
+  BS.map(([a, b]) => '<div>“' + a + '”</div><div class="ar">→</div><div>' + b + '</div>').join('') + '</div>' +
+  '<p><strong>Wh- questions:</strong> asked (+ person) + ' + T('wh- word') + ' + subject + verb. He asked me where ' + T('Ben was') + ' — not “where was Ben”.</p>' +
+  '<p><strong>Yes / no questions:</strong> asked (+ person) + ' + T('if') + ' + subject + verb. He asked Mom ' + T('if') + ' she was tired.</p>' +
+  '<p><strong>The order is like a normal sentence:</strong> subject first, then the verb. And no question mark — use a full stop (.).</p>' +
+  '<p><strong>do / does goes away:</strong> “What do you want?” → what I ' + T('wanted') + ' · “Do you like …?” → if I ' + T('liked') + ' …</p>' +
+  '<p><strong>Present → past</strong>, like other reported speech: is / am → was · are → were · like → liked · are cooking → was cooking.</p>' +
+  '<p><strong>The person after “asked” is OK, or you can leave it out:</strong> She asked (' + T('me') + ') if I liked my teacher. Don’t use “said” for questions.</p>' +
+  '<p><strong>Change the people words.</strong> Who is speaking now? you → I / me · your → my.</p>';
+
+/* ── common mistakes ───────────────────────────────────────────────────── */
+const MISTAKES = [
+  ['She asked me how old was I.', 'She asked me how old I was.'],
+  ['He asked me where was Ben.', 'He asked me where Ben was.'],
+  ['She asked me do I like my teacher.', 'She asked me if I liked my teacher.'],
+  ['She asked me if I like my teacher.', 'She asked me if I liked my teacher.'],
+  ['He asked Mom was she tired?', 'He asked Mom if she was tired.'],
+  ['She asked me what did I want.', 'She asked me what I wanted.'],
+  ['He asked to Dad what he was cooking.', 'He asked Dad what he was cooking.'],
+  ['She asked me how old I was?', 'She asked me how old I was.'],
+  ['She said me what my favorite subject was.', 'She asked me what my favorite subject was.']
+];
+document.getElementById('mistakes').innerHTML = MISTAKES.map(([no, yes]) =>
+  '<div class="pair-card"><div class="pair-line no"><span class="mark">✗</span>' + no + '</div>' +
+  '<div class="pair-line yes"><span class="mark">✓</span>' + yes + '</div></div>').join('');
+
+/* ── error hunt (A1/A2: some sentences are already correct) ────────────── */
+const EH_ITEMS = [
+  { words: ['She', 'asked', 'me', 'how', 'old', 'was', 'I', '.'],
+    error: { type: 'misplaced', wordIndex: 5, targetGapIndex: 7 } },
+  { words: ['He', 'asked', 'me', 'where', 'Ben', 'is', '.'],
+    error: { type: 'wrong', wordIndex: 5, options: ['was', 'were', 'be'], correct: 'was' } },
+  { words: ['She', 'asked', 'me', 'if', 'I', 'liked', 'my', 'teacher', '.'], error: null },
+  { words: ['He', 'asked', 'Mom', 'she', 'was', 'tired', '.'],
+    error: { type: 'missing', gapIndex: 3, options: ['if', 'that', 'do'], correct: 'if' } },
+  { words: ['She', 'asked', 'me', 'what', 'I', 'want', '.'],
+    error: { type: 'wrong', wordIndex: 5, options: ['wanted', 'wants', 'to want'], correct: 'wanted' } },
+  { words: ['He', 'asked', 'to', 'Dad', 'what', 'he', 'was', 'cooking', '.'],
+    error: { type: 'extra', wordIndex: 2 } },
+  { words: ['Grandma', 'asked', 'if', 'we', 'watched', 'a', 'lot', 'of', 'TV', '.'], error: null },
+  { words: ['She', 'said', 'me', 'what', 'my', 'favorite', 'subject', 'was', '.'],
+    error: { type: 'wrong', wordIndex: 1, options: ['asked', 'told', 'say'], correct: 'asked' } },
+  { words: ['He', 'asked', 'me', 'if', 'I', 'like', 'soccer', '.'],
+    error: { type: 'wrong', wordIndex: 5, options: ['liked', 'likes', 'liking'], correct: 'liked' } }
+];
+HouseErrorHunt.build({ container: 'errorHuntItems', items: EH_ITEMS, scoreEl: 'errorScore', totalEl: 'errorTotal' });
+</script>
+<script>HouseGrammar.init();</script>
+</body>
+</html>

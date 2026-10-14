@@ -1,0 +1,209 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<title>Reported Speech: Requests — Clarification</title>
+<script>
+(function(){
+  try{
+    var saved = localStorage.getItem('theme-preference');
+    var theme = (saved === 'light' || saved === 'dark')
+      ? saved
+      : ((window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches) ? 'dark' : 'light');
+    document.documentElement.setAttribute('data-theme', theme);
+    var fs = parseFloat(localStorage.getItem('font-size-preference'));
+    if (fs >= 10 && fs <= 28) document.documentElement.style.setProperty('--fs-base', fs + 'px');
+  }catch(e){ /* localStorage/matchMedia unavailable — CSS media query still applies */ }
+})();
+</script>
+<link rel="stylesheet" href="house.css">
+<style>
+/* the target language is the lesson, so it stays coloured (not a grammar-toggle colour) */
+.tgt{ color:var(--text-accent); font-weight:700; }
+.rs-pair{ border:1px solid var(--color-border-tertiary); border-radius:12px; background:var(--surface-2); padding:10px 12px; margin-bottom:10px; font-size:.9667rem; }
+.rs-row{ display:flex; gap:10px; align-items:flex-end; padding:4px 0; }
+.rs-row + .rs-row{ border-top:.5px dashed var(--color-border-secondary); margin-top:4px; padding-top:8px; }
+.rs-lab{ flex:0 0 4.6em; font-size:.7rem; font-weight:700; letter-spacing:.04em; text-transform:uppercase; color:var(--text-muted); padding-bottom:.25em; }
+.rs-row b{ color:var(--text-accent); }
+.bs{ display:grid; grid-template-columns:minmax(0,1fr) auto minmax(0,1fr); gap:4px 8px; align-items:center; margin:0 0 10px; font-size:.8667rem; }
+.bs > div{ padding:5px 8px; border-radius:7px; background:var(--surface-2); border:1px solid var(--color-border-tertiary); }
+.bs .h{ background:none; border:none; font-size:.7rem; font-weight:700; letter-spacing:.04em; text-transform:uppercase; color:var(--text-muted); }
+.bs .ar{ background:none; border:none; color:var(--text-muted); padding:0; }
+.rule-box p{ margin:0 0 6px; }
+.rule-box p:last-child{ margin-bottom:0; }
+</style>
+</head>
+<body>
+<div class="page" id="page">
+  <span class="cefr-tag cefr-a1a2">A1/A2 · Elementary</span>
+  <h1>Reported Speech: Requests</h1>
+  <p class="subtitle">Tell someone what another person wants: “Please clean your room.” → Mom asked me to clean my room.</p>
+
+  <div class="sec-div">Look</div>
+  <p class="subtitle">The family from the conversation. Read their words. Then read what Ben or Lily says.</p>
+  <div id="pairs"></div>
+
+  <div class="sec-div">Check the meaning</div>
+  <p class="subtitle">Read the sentence. Answer the questions.</p>
+  <div id="ccq"></div>
+
+  <div class="sec-div">Look at the form</div>
+  <p class="subtitle">What is each part of the sentence? Drag a label (or tap a label, then tap a box).</p>
+  <div class="score-bar"><span>Correct: <strong id="fcScore">0</strong> / <span id="fcTotal">0</span></span></div>
+  <div id="formClarf"></div>
+
+  <div class="rule-box" id="ruleBox"></div>
+
+  <div class="sec-div">Common mistakes</div>
+  <div id="mistakes"></div>
+
+  <div class="sec-div">Error hunt</div>
+  <p class="subtitle">Some sentences have a mistake. Some are correct! Tap a word — or a space between words — to fix it. Then press OK.</p>
+  <div class="score-bar"><span>Done: <strong id="errorScore">0</strong> / <span id="errorTotal">0</span></span></div>
+  <div id="errorHuntItems"></div>
+
+  <footer>Reported Speech: Requests — Clarification (A1/A2)</footer>
+</div>
+
+<div id="theme-toggle-wrap">
+  <button id="theme-toggle" aria-label="Toggle light/dark mode" title="Toggle light/dark mode">
+    <span id="theme-icon">☀️</span>
+  </button>
+</div>
+<script src="house.js"></script>
+<script src="stick-character.js"></script>
+<script src="stick-sentence.js"></script>
+<script>
+/* the same family on every page of this lesson */
+StickSentence.cast({
+  ben:     { base:'boy',     colour:'#FF6600', label:'Ben' },
+  lily:    { base:'girl',    colour:'#FF66CC', label:'Lily' },
+  mum:     { base:'woman',   colour:'#CC0000', label:'Mom' },
+  dad:     { base:'man',     colour:'#663300', label:'Dad' },
+  grandma: { base:'grandma', label:'Grandma' },
+  grandpa: { base:'grandpa', label:'Grandpa' },
+  teacher: { base:'woman',   colour:'#666666', label:'The teacher' },
+  mia:     { base:'woman',   colour:'#6600CC', label:'Mia' },
+  leo:     { base:'man',     colour:'#0066CC', label:'Leo' },
+  sam:     { base:'man',     colour:'#00CC66', label:'Sam' }
+});
+
+const S = StickSentence.html;
+const T = s => '<span class="tgt">' + s + '</span>';
+
+/* ── look: their words (the speaker with the people they talk to), then the report ── */
+const PAIRS = [
+  ['{Mom:|mum:say:arrow,ben:left} “Please clean {your|ben} room, Ben.”',
+   '{Mom|mum:say} asked {me|ben} <b>to&nbsp;clean</b> {my|ben} room.', 'Ben says'],
+  ['{Mom:|mum:say:arrow,ben:left,lily:left} “Don’t play video games today!”',
+   '{She|mum:say} told {us|ben,lily} <b>not&nbsp;to&nbsp;play</b> video games.', 'Ben says'],
+  ['{Dad:|dad:say:arrow,mum:left} “Please tell {Lily.|lily}”',
+   '{Dad|dad:say} asked {Mom|mum} <b>to&nbsp;tell</b> {me.|lily}', 'Lily says'],
+  ['{Grandpa:|grandpa:say:arrow,ben:left,lily:left} “Bring {your|ben,lily} photos, kids.”',
+   '{He|grandpa:say} asked {us|ben,lily} <b>to&nbsp;bring</b> {our|ben,lily} photos.', 'Ben says'],
+  ['{Grandpa:|grandpa:say:arrow,grandma:left} “Don’t forget {your|grandma} glasses!”',
+   '{He|grandpa:say} told {Grandma|grandma} <b>not&nbsp;to&nbsp;forget</b> {her|grandma} glasses.', 'Ben says'],
+  ['{The teacher:|teacher:say:arrow,lily:left} “Please open {your|lily} book.”',
+   '{The teacher|teacher:say} asked {me|lily} <b>to&nbsp;open</b> {my|lily} book.', 'Lily says']
+];
+document.getElementById('pairs').innerHTML = PAIRS.map(([said, report, who]) =>
+  '<div class="rs-pair"><div class="rs-row"><span class="rs-lab">They said</span>' + S(said) + '</div>' +
+  '<div class="rs-row"><span class="rs-lab">' + who + '</span>' + S(report) + '</div></div>').join('');
+
+/* ── concept checking questions ────────────────────────────────────────── */
+HouseCCQ.build({
+  container: 'ccq',
+  items: [
+    { sentence: S('{Mom|mum:say} asked {me|ben} to clean {my|ben} room.'),
+      questions: [
+        { q: 'Who cleans the room?', opts: ['Mom', 'Ben'], correct: 1,
+          why: 'Ben. The person after “asked” does the action.' },
+        { q: 'Was Mom polite?', opts: ['Yes, probably', 'No'], correct: 0,
+          why: 'Probably. “Asked” is for a polite request: “Please clean your room.”' }
+      ] },
+    { sentence: S('{She|mum:say} told {us|ben,lily} not to play video games.'),
+      questions: [
+        { q: 'Can the kids play video games today?', opts: ['Yes', 'No'], correct: 1,
+          why: 'No. “Not to play” = Mom said “Don’t play!”' },
+        { q: 'Is it a request or an order?', opts: ['A request', 'An order'], correct: 1,
+          why: 'An order. We often use “told” for orders and rules: “Don’t …!”, “Sit down!”' }
+      ] },
+    { sentence: S('{Dad|dad:say} asked {Mom|mum} to tell {Lily.|lily}'),
+      questions: [
+        { q: 'Who speaks to Lily?', opts: ['Dad', 'Mom'], correct: 1,
+          why: 'Mom. Dad asked Mom, and Mom tells Lily.' }
+      ] }
+  ]
+});
+
+/* ── form ──────────────────────────────────────────────────────────────── */
+HouseFormClarf.build({
+  container: 'formClarf', scoreEl: 'fcScore', totalEl: 'fcTotal',
+  pool: ['subject', 'verb', 'object', 'neg', 'det', 'noun'],
+  items: [
+    { form: 'aff', parts: [['Mom', 'subject'], ['asked', 'verb'], ['me', 'object'], ['to clean', 'verb'], ['my', 'det'], ['room', 'noun'], ['.', null]] },
+    { form: 'neg', parts: [['She', 'subject'], ['told', 'verb'], ['us', 'object'], ['not', 'neg'], ['to play', 'verb'], ['video games', 'object'], ['.', null]] },
+    { form: 'aff', parts: [['Grandpa', 'subject'], ['asked', 'verb'], ['us', 'object'], ['to bring', 'verb'], ['our', 'det'], ['photos', 'noun'], ['.', null]] },
+    { form: 'neg', parts: [['He', 'subject'], ['told', 'verb'], ['Grandma', 'object'], ['not', 'neg'], ['to forget', 'verb'], ['her', 'det'], ['glasses', 'noun'], ['.', null]] }
+  ]
+});
+
+/* ── the rule ──────────────────────────────────────────────────────────── */
+const BS = [
+  ['<b>Please</b> clean your room.', 'Mom ' + T('asked me to clean') + ' my room.'],
+  ['<b>Sit down</b>, kids.', 'She ' + T('told us to sit') + ' down.'],
+  ['<b>Don’t play</b> video games!', 'She ' + T('told us not to play') + ' video games.'],
+  ['Please <b>don’t shout</b>.', 'Grandma ' + T('asked us not to shout') + '.'],
+  ['Please <b>help</b> me.', 'Grandpa ' + T('asked Grandma to help') + ' him.']
+];
+document.getElementById('ruleBox').innerHTML =
+  '<p><strong>asked / told + person + to + verb</strong></p>' +
+  '<div class="bs"><div class="h">They said</div><div class="ar"></div><div class="h">You say</div>' +
+  BS.map(([a, b]) => '<div>“' + a + '”</div><div class="ar">→</div><div>' + b + '</div>').join('') + '</div>' +
+  '<p><strong>Negative:</strong> Don’t … → ' + T('not to') + ' + verb: She told us ' + T('not to play') + '.</p>' +
+  '<p><strong>asked</strong> = a polite request (Please …). <strong>told</strong> = an order or a rule (Do it! Don’t …!).</p>' +
+  '<p><strong>Always a person</strong> after asked / told: asked ' + T('me') + ', told ' + T('us') + ', asked ' + T('Grandma') + '.</p>' +
+  '<p><strong>The verb after “to” doesn’t change:</strong> to clean, to play, to be — never “to cleaned”.</p>' +
+  '<p><strong>“Please” goes away.</strong> The word “asked” already says it.</p>' +
+  '<p><strong>Change the people words.</strong> Who is speaking now? your → my / his / her / our · me → him / her.</p>';
+
+/* ── common mistakes ───────────────────────────────────────────────────── */
+const MISTAKES = [
+  ['Mom asked me clean my room.', 'Mom asked me to clean my room.'],
+  ['She told us don’t play video games.', 'She told us not to play video games.'],
+  ['He asked to me to help.', 'He asked me to help.'],
+  ['Dad told to bring the photos.', 'Dad told us to bring the photos.'],
+  ['Grandpa said us to bring our photos.', 'Grandpa asked us to bring our photos.'],
+  ['She asked me to cleaned my room.', 'She asked me to clean my room.'],
+  ['He told me not forget my keys.', 'He told me not to forget my keys.'],
+  ['Mom asked me to clean your room. (Ben’s room)', 'Mom asked me to clean my room.']
+];
+document.getElementById('mistakes').innerHTML = MISTAKES.map(([no, yes]) =>
+  '<div class="pair-card"><div class="pair-line no"><span class="mark">✗</span>' + no + '</div>' +
+  '<div class="pair-line yes"><span class="mark">✓</span>' + yes + '</div></div>').join('');
+
+/* ── error hunt (A1/A2: some sentences are already correct) ────────────── */
+const EH_ITEMS = [
+  { words: ['Mom', 'asked', 'me', 'clean', 'my', 'room', '.'],
+    error: { type: 'missing', gapIndex: 3, options: ['to', 'for', 'that'], correct: 'to' } },
+  { words: ['She', 'told', 'us', 'don’t', 'play', 'video', 'games', '.'],
+    error: { type: 'wrong', wordIndex: 3, options: ['not to', 'no', 'doesn’t'], correct: 'not to' } },
+  { words: ['Grandpa', 'asked', 'us', 'to', 'bring', 'our', 'photos', '.'], error: null },
+  { words: ['He', 'told', 'to', 'me', 'to', 'wait', '.'],
+    error: { type: 'extra', wordIndex: 2 } },
+  { words: ['Dad', 'said', 'me', 'to', 'set', 'the', 'table', '.'],
+    error: { type: 'wrong', wordIndex: 1, options: ['told', 'say', 'tell'], correct: 'told' } },
+  { words: ['She', 'asked', 'me', 'to', 'helped', 'her', '.'],
+    error: { type: 'wrong', wordIndex: 4, options: ['help', 'helping', 'helps'], correct: 'help' } },
+  { words: ['The', 'teacher', 'told', 'us', 'not', 'to', 'talk', '.'], error: null },
+  { words: ['He', 'told', 'me', 'not', 'forget', 'my', 'keys', '.'],
+    error: { type: 'missing', gapIndex: 4, options: ['to', 'for', 'do'], correct: 'to' } },
+  { words: ['Mom', 'asked', 'to', 'Ben', 'clean', 'his', 'room', '.'],
+    error: { type: 'misplaced', wordIndex: 2, targetGapIndex: 4 } }
+];
+HouseErrorHunt.build({ container: 'errorHuntItems', items: EH_ITEMS, scoreEl: 'errorScore', totalEl: 'errorTotal' });
+</script>
+<script>HouseGrammar.init();</script>
+</body>
+</html>
