@@ -1,0 +1,242 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<title>Object Pronouns: tell and let … know — Clarification</title>
+<script>
+(function(){
+  try{
+    var saved = localStorage.getItem('theme-preference');
+    var theme = (saved === 'light' || saved === 'dark')
+      ? saved
+      : ((window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches) ? 'dark' : 'light');
+    document.documentElement.setAttribute('data-theme', theme);
+    var fs = parseFloat(localStorage.getItem('font-size-preference'));
+    if (fs >= 10 && fs <= 28) document.documentElement.style.setProperty('--fs-base', fs + 'px');
+  }catch(e){ /* localStorage/matchMedia unavailable — CSS media query still applies */ }
+})();
+</script>
+<link rel="stylesheet" href="house.css">
+<style>
+/* the target language is the lesson, so it stays coloured (not a grammar-toggle colour) */
+.tgt{ color:var(--text-accent); font-weight:700; }
+.kind{ border:1px solid var(--color-border-tertiary); border-radius:14px; background:var(--surface-1); padding:10px 12px 4px; margin-bottom:14px; }
+.kind h3{ margin:0 0 2px; font-size:.9667rem; }
+.kind .kind-sub{ font-size:.8rem; color:var(--text-secondary); margin:0 0 8px; }
+.chain{ display:flex; justify-content:center; padding:6px 0 10px; font-size:.9667rem; }
+.chain .ss-line{ align-items:flex-end; column-gap:.6em; }
+.rs-pair{ border:1px solid var(--color-border-tertiary); border-radius:12px; background:var(--surface-2); padding:10px 12px; margin-bottom:10px; font-size:.9667rem; }
+.rs-row{ display:flex; gap:10px; align-items:flex-end; padding:4px 0; }
+.rs-row + .rs-row{ border-top:.5px dashed var(--color-border-secondary); margin-top:4px; padding-top:8px; }
+.rs-lab{ flex:0 0 5.4em; font-size:.7rem; font-weight:700; letter-spacing:.04em; text-transform:uppercase; color:var(--text-muted); padding-bottom:.25em; }
+.rs-row b{ color:var(--text-accent); }
+.rs-note{ font-size:.8rem; color:var(--color-text-info); background:var(--color-background-info); border-radius:var(--border-radius-md); padding:5px 9px; margin-top:6px; }
+.pron{ display:grid; grid-template-columns:repeat(auto-fill, minmax(118px, 1fr)); gap:8px; margin:0 0 1rem; }
+.pron > div{ display:flex; flex-direction:column; align-items:center; justify-content:flex-end; gap:2px; border:1px solid var(--color-border-tertiary); border-radius:10px; background:var(--surface-2); padding:8px 6px; font-size:.9667rem; }
+.pron .ex{ font-size:.75rem; color:var(--text-secondary); text-align:center; }
+.rule-box p{ margin:0 0 6px; }
+.rule-box p:last-child{ margin-bottom:0; }
+</style>
+</head>
+<body>
+<div class="page" id="page">
+  <span class="cefr-tag cefr-a1a2">A1/A2 · Elementary</span>
+  <h1>Object Pronouns: tell me, let him know</h1>
+  <p class="subtitle">me · you · him · her · it · us · them — after tell and let … know</p>
+
+  <div class="sec-div">Look: two kinds of message</div>
+  <p class="subtitle">Read the messages from the phone call. Look at the people.</p>
+  <div class="kind">
+    <h3>1 · Direct: I talk to you</h3>
+    <p class="kind-sub">The two people are talking. The message is for the listener — or for the speaker. We use <b>me</b>, <b>you</b>, <b>us</b>.</p>
+    <div id="direct"></div>
+  </div>
+  <div class="kind">
+    <h3>2 · Relaying a message: A → B → C</h3>
+    <p class="kind-sub">The message is for a person who is not there. B is the messenger. We use <b>him</b>, <b>her</b>, <b>them</b>.</p>
+    <div class="chain" id="chain"></div>
+    <div id="relay"></div>
+  </div>
+
+  <div class="sec-div">The pronouns</div>
+  <p class="subtitle">After tell and let, use these words.</p>
+  <div class="pron" id="pron"></div>
+
+  <div class="sec-div">Check the meaning</div>
+  <p class="subtitle">Read the sentence. Answer the questions.</p>
+  <div id="ccq"></div>
+
+  <div class="sec-div">Look at the form</div>
+  <p class="subtitle">What is each part of the sentence? Drag a label (or tap a label, then tap a box).</p>
+  <div class="score-bar"><span>Correct: <strong id="fcScore">0</strong> / <span id="fcTotal">0</span></span></div>
+  <div id="formClarf"></div>
+
+  <div class="rule-box" id="ruleBox"></div>
+
+  <div class="sec-div">Common mistakes</div>
+  <div id="mistakes"></div>
+
+  <div class="sec-div">Error hunt</div>
+  <p class="subtitle">Some sentences have a mistake. Some are correct! Tap a word — or a space between words — to fix it. Then press OK.</p>
+  <div class="score-bar"><span>Done: <strong id="errorScore">0</strong> / <span id="errorTotal">0</span></span></div>
+  <div id="errorHuntItems"></div>
+
+  <footer>Object Pronouns with tell and let … know — Clarification (A1/A2)</footer>
+</div>
+
+<div id="theme-toggle-wrap">
+  <button id="theme-toggle" aria-label="Toggle light/dark mode" title="Toggle light/dark mode">
+    <span id="theme-icon">☀️</span>
+  </button>
+</div>
+<script src="house.js"></script>
+<script src="stick-character.js"></script>
+<script src="stick-sentence.js"></script>
+<script>
+/* the same family on every page of this lesson */
+StickSentence.cast({
+  ben:     { base:'boy',     colour:'#FF6600', label:'Ben' },
+  lily:    { base:'girl',    colour:'#FF66CC', label:'Lily' },
+  mum:     { base:'woman',   colour:'#CC0000', label:'Mom' },
+  dad:     { base:'man',     colour:'#663300', label:'Dad' },
+  grandma: { base:'grandma', label:'Grandma' },
+  grandpa: { base:'grandpa', label:'Grandpa' },
+  teacher: { base:'woman',   colour:'#666666', label:'The teacher' },
+  mia:     { base:'woman',   colour:'#6600CC', label:'Mia' },
+  leo:     { base:'man',     colour:'#0066CC', label:'Leo' },
+  sam:     { base:'man',     colour:'#00CC66', label:'Sam' }
+});
+
+const S = StickSentence.html;
+const T = s => '<span class="tgt">' + s + '</span>';
+const card = (rows, note) => '<div class="rs-pair">' +
+  rows.map(([lab, m]) => '<div class="rs-row"><span class="rs-lab">' + lab + '</span>' + S(m) + '</div>').join('') +
+  (note ? '<div class="rs-note">' + note + '</div>' : '') + '</div>';
+
+/* ── 1 · direct: the speaker and the listener ──────────────────────────── */
+document.getElementById('direct').innerHTML = [
+  card([['Mom → Ben', '{Mom:|mum:phone:say:arrow,ben:left:phone} “Let {<b>me</b>|mum:me} know when you finish.”']],
+       '<b>me</b> = Mom. She is talking.'),
+  card([['Ben → Mom', '{Ben:|ben:phone:say:arrow,mum:left:phone} “OK. I’ll text {<b>you.</b>|mum:phone}”']],
+       '<b>you</b> = Mom. She is listening.'),
+  card([['Lily → Ben', '{Lily:|lily:say:arrow,ben:left} “Thanks for telling {<b>me.</b>|lily:me}”']],
+       '<b>me</b> = Lily. She is talking.'),
+  card([['Ben → teacher', '{Ben:|ben:say:arrow,teacher:left} “Please tell {<b>us</b>|ben,lily} the answer.”']],
+       '<b>us</b> = Ben and Lily. Ben is talking for the two of them.')
+].join('');
+
+/* ── 2 · relaying: A → B (the messenger) → C ───────────────────────────── */
+document.getElementById('chain').innerHTML = S('{A: Mom|mum:phone:say} → {B: Ben|ben:phone} → {C: Lily|lily}');
+document.getElementById('relay').innerHTML = [
+  card([['Mom → Ben', '{Mom:|mum:phone:say:arrow,ben:left:phone} “Tell {Lily|lily} I’m late.”'],
+        ['Ben → Mom', '{Ben:|ben:phone:say} “OK, I’ll tell {<b>her.</b>|lily}”'],
+        ['Ben → Lily', '{Ben:|ben:say:arrow,lily:left} “{Mom|mum:phone:sad} is late.”']],
+       '<b>her</b> = Lily. She isn’t on the phone. Ben gives her the message later.'),
+  card([['Mom → Ben', '{Mom:|mum:phone:say:arrow,ben:left:phone} “Let {Dad|dad} know the pizza is in the fridge.”'],
+        ['Ben → Mom', '{Ben:|ben:phone:say} “No problem. I’ll let {<b>him</b>|dad} know.”']],
+       '<b>him</b> = Dad. He isn’t on the phone.'),
+  card([['Mom → Ben', '{Mom:|mum:phone:say:arrow,ben:left:phone} “Tell {Grandma and Grandpa|grandma,grandpa} we can’t come.”'],
+        ['Ben → Mom', '{Ben:|ben:phone:say} “Sure, I’ll tell {<b>them.</b>|grandma,grandpa}”']],
+       '<b>them</b> = Grandma and Grandpa. They aren’t on the phone.')
+].join('');
+
+/* ── the pronouns, with the people over them ───────────────────────────── */
+const PRON = [
+  ['I → {me|mia:me}', 'Tell me.'], ['you → {you|leo:left}', 'I’ll tell you.'], ['he → {him|dad}', 'Let him know.'],
+  ['she → {her|lily}', 'Tell her.'], ['it → it', 'The pizza? Dad can eat it.'], ['we → {us|ben,lily}', 'Let us know.'],
+  ['they → {them|grandma,grandpa}', 'Tell them.']
+];
+document.getElementById('pron').innerHTML = PRON.map(([w, ex]) => '<div>' + S(w) + '<span class="ex">' + ex + '</span></div>').join('');
+
+/* ── concept checking questions ────────────────────────────────────────── */
+HouseCCQ.build({
+  container: 'ccq',
+  items: [
+    { sentence: S('{Mom:|mum:phone:say:arrow,ben:left:phone} “Please tell {Lily|lily} I’m late.”'),
+      questions: [
+        { q: 'Is Lily on the phone?', opts: ['Yes', 'No'], correct: 1,
+          why: 'No. Mom talks to Ben. The message is for Lily.' },
+        { q: 'Who talks to Lily next?', opts: ['Mom', 'Ben'], correct: 1,
+          why: 'Ben. He is the messenger: he gives Lily the message.' },
+        { q: 'Who is late?', opts: ['Mom', 'Lily'], correct: 0,
+          why: 'Mom. “I” is Mom, the person speaking.' }
+      ] },
+    { sentence: S('{Ben:|ben:phone:say} “OK, I’ll let {him|dad} know.” (him = Dad)'),
+      questions: [
+        { q: 'Is Dad in the conversation?', opts: ['Yes', 'No'], correct: 1,
+          why: 'No. We use him / her / them for a person who is not there.' }
+      ] },
+    { sentence: S('{Mom:|mum:phone:say:arrow,ben:left:phone} “Let {me|mum:me} know when you finish.”'),
+      questions: [
+        { q: 'Who wants the information?', opts: ['Mom', 'Ben'], correct: 0,
+          why: 'Mom. “Me” is the person speaking.' },
+        { q: 'Is it a message for another person?', opts: ['Yes', 'No'], correct: 1,
+          why: 'No. It’s direct: Ben gives the information to Mom.' }
+      ] }
+  ]
+});
+
+/* ── form ──────────────────────────────────────────────────────────────── */
+HouseFormClarf.build({
+  container: 'formClarf', scoreEl: 'fcScore', totalEl: 'fcTotal',
+  pool: ['subject', 'aux', 'verb', 'object', 'adj', 'prep', 'neg'],
+  items: [
+    { form: 'aff', parts: [['Tell', 'verb'], ['her', 'object'], ['I', 'subject'], ['am', 'verb'], ['late', 'adj'], ['.', null]] },
+    { form: 'aff', parts: [['I', 'subject'], ['will', 'aux'], ['let', 'verb'], ['him', 'object'], ['know', 'verb'], ['.', null]] },
+    { form: 'aff', parts: [['Let', 'verb'], ['me', 'object'], ['know', 'verb'], ['the pizza', 'subject'], ['is', 'verb'], ['in the fridge', 'prep'], ['.', null]] },
+    { form: 'q', parts: [['Can', 'aux'], ['you', 'subject'], ['tell', 'verb'], ['them', 'object'], ['we', 'subject'], ['can’t', 'neg'], ['come', 'verb'], ['?', null]] }
+  ]
+});
+
+/* ── the rule ──────────────────────────────────────────────────────────── */
+document.getElementById('ruleBox').innerHTML =
+  '<p><strong>tell + person (+ message):</strong> Tell ' + T('her') + ' I’m late. · I’ll tell ' + T('them') + ' now.</p>' +
+  '<p><strong>let + person + know (+ message):</strong> Let ' + T('him') + ' know the pizza is in the fridge. · Let ' + T('me') + ' know.</p>' +
+  '<p><strong>After tell and let, use object pronouns:</strong> me, you, him, her, it, us, them — not I, he, she, we, they.</p>' +
+  '<p><strong>No “to”:</strong> tell ' + T('her') + ' (not tell to her) · let ' + T('him') + ' know (not let him to know). The person comes before “know”.</p>' +
+  '<p><strong>Direct:</strong> me, you, us = the people in the conversation. “Let ' + T('me') + ' know.” “I’ll tell ' + T('you') + '.”</p>' +
+  '<p><strong>Relaying a message:</strong> him, her, them = a person who is not there. You are the messenger. “Tell ' + T('her') + ' I’m late.” “I’ll let ' + T('him') + ' know.”</p>' +
+  '<p><strong>tell or say?</strong> tell + person: tell ' + T('her') + '. say + words: say “hi” · say hi ' + T('to') + ' her.</p>';
+
+/* ── common mistakes ───────────────────────────────────────────────────── */
+const MISTAKES = [
+  ['Tell she I’m late.', 'Tell her I’m late.'],
+  ['I’ll tell to him.', 'I’ll tell him.'],
+  ['Let him to know, please.', 'Let him know, please.'],
+  ['Let know them, please.', 'Let them know, please.'],
+  ['Please let I know.', 'Please let me know.'],
+  ['Say her the news.', 'Tell her the news.'],
+  ['Can you tell they we can’t come?', 'Can you tell them we can’t come?'],
+  ['Say hi to she.', 'Say hi to her.'],
+  ['Mom: “Tell Lily I’m late.” Ben: “OK, I’ll tell you.”', 'Ben: “OK, I’ll tell her.” (Lily isn’t on the phone.)']
+];
+document.getElementById('mistakes').innerHTML = MISTAKES.map(([no, yes]) =>
+  '<div class="pair-card"><div class="pair-line no"><span class="mark">✗</span>' + no + '</div>' +
+  '<div class="pair-line yes"><span class="mark">✓</span>' + yes + '</div></div>').join('');
+
+/* ── error hunt (A1/A2: some sentences are already correct) ────────────── */
+const EH_ITEMS = [
+  { words: ['Tell', 'she', 'I’m', 'late', '.'],
+    error: { type: 'wrong', wordIndex: 1, options: ['her', 'he', 'hers'], correct: 'her' } },
+  { words: ['I’ll', 'tell', 'to', 'him', '.'],
+    error: { type: 'extra', wordIndex: 2 } },
+  { words: ['Let', 'him', 'know', 'the', 'pizza', 'is', 'in', 'the', 'fridge', '.'], error: null },
+  { words: ['Please', 'let', 'know', 'me', '.'],
+    error: { type: 'misplaced', wordIndex: 3, targetGapIndex: 2 } },
+  { words: ['Say', 'her', 'the', 'news', '.'],
+    error: { type: 'wrong', wordIndex: 0, options: ['Tell', 'Speak', 'Talk'], correct: 'Tell' } },
+  { words: ['Can', 'you', 'tell', 'they', 'we', 'can’t', 'come', '?'],
+    error: { type: 'wrong', wordIndex: 3, options: ['them', 'their', 'theirs'], correct: 'them' } },
+  { words: ['Please', 'let', 'us', 'know', '.'], error: null },
+  { words: ['Let', 'him', 'to', 'know', '.'],
+    error: { type: 'extra', wordIndex: 2 } },
+  { words: ['Mom', 'asked', 'me', 'to', 'tell', 'you', '.'], error: null },
+  { words: ['Let', 'me', 'knows', '.'],
+    error: { type: 'wrong', wordIndex: 2, options: ['know', 'to know', 'knowing'], correct: 'know' } }
+];
+HouseErrorHunt.build({ container: 'errorHuntItems', items: EH_ITEMS, scoreEl: 'errorScore', totalEl: 'errorTotal' });
+</script>
+<script>HouseGrammar.init();</script>
+</body>
+</html>

@@ -1,0 +1,141 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<title>Object Pronouns: tell and let … know — Controlled Practice</title>
+<script>
+(function(){
+  try{
+    var saved = localStorage.getItem('theme-preference');
+    var theme = (saved === 'light' || saved === 'dark')
+      ? saved
+      : ((window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches) ? 'dark' : 'light');
+    document.documentElement.setAttribute('data-theme', theme);
+    var fs = parseFloat(localStorage.getItem('font-size-preference'));
+    if (fs >= 10 && fs <= 28) document.documentElement.style.setProperty('--fs-base', fs + 'px');
+  }catch(e){ /* localStorage/matchMedia unavailable — CSS media query still applies */ }
+})();
+</script>
+<link rel="stylesheet" href="house.css">
+<style>
+.blank{ display:inline-block; min-width:3em; border-bottom:2px solid var(--color-border-primary); }
+.said{ font-weight:400; margin-bottom:8px; padding-bottom:8px; border-bottom:.5px dashed var(--color-border-secondary); }
+.item-context .ss-line, .direct .ss-line{ font-style:normal; color:var(--text-primary); font-size:.9667rem; }
+</style>
+</head>
+<body>
+<div class="page" id="page">
+  <span class="cefr-tag cefr-a1a2">A1/A2 · Elementary</span>
+  <h1>Tell Him, Tell Her — Practice</h1>
+  <p class="subtitle">Practise: tell me · tell her · let him know · let them know</p>
+
+  <div class="sec-div">1 · Choose</div>
+  <p class="subtitle">Read the message. Choose the right word.</p>
+  <div id="pcItems"></div>
+
+  <div class="sec-div">2 · Put the words in order</div>
+  <p class="subtitle">Read the message. Make the answer.</p>
+  <button class="grammar-toggle-btn" id="grammarToggle">🎨 Hide Grammar</button>
+  <div class="pos-legend"></div>
+  <div class="score-bar"><span>Correct: <strong id="woScore">0</strong> / <span id="woTotal">0</span></span></div>
+  <div id="woItems"></div>
+
+  <div class="sec-div">3 · Write the missing words</div>
+  <p class="subtitle">Read about the people. Write the missing words.</p>
+  <div id="gfItems"></div>
+
+  <footer>Object Pronouns with tell and let … know — Controlled Practice (A1/A2)</footer>
+</div>
+
+<div id="theme-toggle-wrap">
+  <button id="theme-toggle" aria-label="Toggle light/dark mode" title="Toggle light/dark mode">
+    <span id="theme-icon">☀️</span>
+  </button>
+</div>
+<script src="house.js"></script>
+<script src="stick-character.js"></script>
+<script src="stick-sentence.js"></script>
+<script>
+/* the same family on every page of this lesson */
+StickSentence.cast({
+  ben:     { base:'boy',     colour:'#FF6600', label:'Ben' },
+  lily:    { base:'girl',    colour:'#FF66CC', label:'Lily' },
+  mum:     { base:'woman',   colour:'#CC0000', label:'Mom' },
+  dad:     { base:'man',     colour:'#663300', label:'Dad' },
+  grandma: { base:'grandma', label:'Grandma' },
+  grandpa: { base:'grandpa', label:'Grandpa' },
+  teacher: { base:'woman',   colour:'#666666', label:'The teacher' },
+  mia:     { base:'woman',   colour:'#6600CC', label:'Mia' },
+  leo:     { base:'man',     colour:'#0066CC', label:'Leo' },
+  sam:     { base:'man',     colour:'#00CC66', label:'Sam' }
+});
+
+const S = StickSentence.html;
+const BLANK = '<span class="blank">&nbsp;</span>';
+const said = m => '<div class="said">' + S(m) + '</div>';
+const rep = m => S(m).replace('____', BLANK);
+
+/* ── 1 · choose ────────────────────────────────────────────────────────── */
+const PC_ITEMS = [
+  { q: said('{Mom:|mum:phone:say:arrow,ben:left:phone} “Tell {Lily|lily} I’m late.”') + rep('{Ben:|ben:phone} “OK, I’ll tell ____.”'),
+    opts: ['her', 'she', 'him'], correct: 0 },
+  { q: said('{Dad:|dad:say:arrow,ben:left} “Let {Grandpa|grandpa} know the game is at six.”') + rep('{Ben:|ben} “Sure, I’ll let ____ know.”'),
+    opts: ['he', 'him', 'them'], correct: 1 },
+  { q: said('{Lily:|lily:say:arrow,ben:left} “Please let {me|lily:me} know when dinner is ready.”') + rep('{Ben:|ben} “OK, I’ll let ____ know.”'),
+    opts: ['me', 'her', 'you'], correct: 2 },
+  { q: said('{The teacher:|teacher:say:arrow,lily:left} “Tell {your|lily} {parents|mum,dad} the trip is on Friday.”') + rep('{Lily:|lily} “OK, I’ll tell ____ tonight.”'),
+    opts: ['they', 'them', 'their'], correct: 1 },
+  { q: said('{Leo:|leo:say:arrow,mia:left} “Tell {me|leo:me} about the party!”') + rep('{Mia:|mia} “OK, I’ll tell ____ later.”'),
+    opts: ['you', 'me', 'him'], correct: 0 },
+  { q: said('{Mom:|mum:phone:say:arrow,ben:left,lily:left} “Let {me|mum:phone:me} know when {you|ben,lily} get home.”') + rep('{Ben:|ben} “OK, we’ll let ____ know.”'),
+    opts: ['us', 'you', 'her'], correct: 1 },
+  { q: said('{Ben|ben} and {Lily|lily} want to know the answer.') + rep('{Ben:|ben:say:arrow,teacher:left} “Please tell ____ the answer!”'),
+    opts: ['we', 'our', 'us'], correct: 2 },
+  { q: said('{Grandma:|grandma:say:arrow,mia:left} “{Leo and Sam|leo,sam} are late. Call them!”') + rep('{Mia:|mia:phone} “OK, I’ll ____ them dinner is ready.”'),
+    opts: ['tell', 'say', 'let'], correct: 0 }
+];
+HouseComprehension.build({ quiz: 'pcItems', items: PC_ITEMS });
+
+/* ── 2 · word order ────────────────────────────────────────────────────── */
+const WO_ITEMS = [
+  { context: S('{Mom:|mum:phone:say:arrow,ben:left:phone} “Tell {Lily|lily} I’m late.”'),
+    text: 'I’ll / tell / her / now', pos: ['subject', 'verb', 'object', 'time'] },
+  { context: S('{Dad:|dad:say:arrow,ben:left} “Let {Grandpa|grandpa} know the game is at six.”'),
+    text: 'OK, / I’ll / let / him / know', pos: ['none', 'subject', 'verb', 'object', 'verb'] },
+  { context: S('{Mom:|mum:phone:say:arrow,ben:left:phone} “Let {me|mum:phone:me} know when you finish.”'),
+    text: 'Sure, / I’ll / let / you / know', pos: ['none', 'subject', 'verb', 'object', 'verb'] },
+  { context: S('{The teacher:|teacher:say:arrow,lily:left} “Tell {your|lily} {parents|mum,dad} the trip is on Friday.”'),
+    text: 'I’ll / tell / them / tonight', pos: ['subject', 'verb', 'object', 'time'] },
+  { context: S('{Grandma|grandma} doesn’t know the news. {Ben|ben:say:arrow,lily:left} asks {Lily.|lily}'),
+    text: 'Can / you / tell / her / the news / ?', pos: ['aux', 'subject', 'verb', 'object', 'object', 'none'] },
+  { context: S('{Ben|ben} and {Lily|lily} want the answer. {Ben|ben:say:arrow,teacher:left} talks to the teacher.'),
+    text: 'Please / let / us / know / the answer', pos: ['none', 'verb', 'object', 'verb', 'object'] }
+];
+HouseWordOrder.build({ container: 'woItems', items: WO_ITEMS, scoreEl: 'woScore', totalEl: 'woTotal' });
+
+/* ── 3 · gap fill (easiest first; the gaps move around the sentence) ───── */
+const gaps = m => S(m).replace(/____(\d)/g, '{$1}');
+const GF_ITEMS = [
+  { direct: S('{Mom:|mum:phone:say:arrow,ben:left:phone} “Tell {Lily|lily} I’m late.”'),
+    template: gaps('{Ben:|ben:phone} “OK, I’ll tell ____0.”'), hints: [{ accepted: ['her'] }] },
+  { direct: S('{Dad:|dad:say:arrow,ben:left} “Let {Grandpa|grandpa} know the game is at six.”'),
+    template: gaps('{Ben:|ben} “Sure, I’ll let ____0 know.”'), hints: [{ accepted: ['him'] }] },
+  { direct: S('{Grandma:|grandma:say:arrow,ben:left} “Tell {your|ben} {parents|mum,dad} dinner is ready.”'),
+    template: gaps('{Ben:|ben} “OK, I’ll tell ____0.”'), hints: [{ accepted: ['them'] }] },
+  { direct: S('{The teacher:|teacher:say:arrow,lily:left} “What’s {your|lily} name?”'),
+    template: gaps('{Lily:|lily:me} “I can tell ____0: I’m Lily!”'), hints: [{ accepted: ['you'] }] },
+  { direct: S('{Ben|ben} and {Lily|lily} want the answer. {Ben|ben:say:arrow,teacher:left} talks to the teacher.'),
+    template: gaps('{Ben:|ben:say} “Please ____0 ____1 the answer!”'), hints: [{ accepted: ['tell'] }, { accepted: ['us'] }] },
+  { direct: S('{Leo|leo:phone} needs some information from {Mia:|mia} When is she free?'),
+    template: gaps('{Leo:|leo:phone:say:arrow,mia:left} “Mia, please let ____0 ____1 when you are free.”'), hints: [{ accepted: ['me'] }, { accepted: ['know'] }] },
+  { direct: S('{Mom|mum:phone} is on the bus. {Dad|dad} is at home. {Ben|ben:phone} talks to {Mom.|mum:phone}'),
+    template: gaps('{Ben:|ben:phone:say} “Don’t worry, Mom. I’ll ____0 ____1 ____2 you’re on the bus.”'), hints: [{ accepted: ['let'] }, { accepted: ['him'] }, { accepted: ['know'] }] },
+  { direct: S('{Sam|sam} and {Mia|mia} want the plan for Saturday. {Leo|leo} has the plan.'),
+    template: gaps('{Leo:|leo:say:arrow,sam:left,mia:left} “OK! I’ll ____0 ____1 everything.”'), hints: [{ accepted: ['tell'] }, { accepted: ['you'] }] }
+];
+HouseGapFill.build({ container: 'gfItems', items: GF_ITEMS });
+</script>
+<script>HouseGrammar.init();</script>
+</body>
+</html>

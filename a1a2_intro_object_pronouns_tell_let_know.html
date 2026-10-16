@@ -1,0 +1,130 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<title>Can You Tell Her? — Object Pronouns</title>
+<script>
+(function(){
+  try{
+    var saved = localStorage.getItem('theme-preference');
+    var theme = (saved === 'light' || saved === 'dark')
+      ? saved
+      : ((window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches) ? 'dark' : 'light');
+    document.documentElement.setAttribute('data-theme', theme);
+    var fs = parseFloat(localStorage.getItem('font-size-preference'));
+    if (fs >= 10 && fs <= 28) document.documentElement.style.setProperty('--fs-base', fs + 'px');
+  }catch(e){ /* localStorage/matchMedia unavailable — CSS media query still applies */ }
+})();
+</script>
+<link rel="stylesheet" href="house.css">
+<style>
+.cast-row{ display:flex; flex-wrap:wrap; gap:14px 18px; justify-content:center; margin:0 0 1rem; padding:10px; background:var(--surface-1); border:1px solid var(--border); border-radius:var(--border-radius-lg); font-size:.8667rem; }
+</style>
+</head>
+<body>
+<div class="page" id="page">
+  <span class="cefr-tag cefr-a1a2">A1/A2 · Elementary</span>
+  <h1>Can You Tell Her?</h1>
+  <p class="subtitle">Mom is on the bus. She calls Ben with some messages for the family.</p>
+
+  <div class="sec-div">Before you read</div>
+  <div id="preQuestions"></div>
+
+  <div class="sec-div">The people</div>
+  <div class="cast-row" id="castRow"></div>
+
+  <div class="sec-div">The conversation</div>
+  <button class="grammar-toggle-btn" id="grammarToggle">🎨 Show Grammar</button>
+  <div class="pos-legend"></div>
+
+  <div class="setting-chip">📱 On the phone</div>
+  <div id="conversation1"></div>
+  <div class="setting-chip">🏠 Ten minutes later, at home</div>
+  <div id="conversation2"></div>
+
+  <div class="sec-div">Check your answers</div>
+  <div id="quiz"></div>
+
+  <footer>Can You Tell Her? — Object Pronouns with tell and let … know (A1/A2)</footer>
+</div>
+
+<div id="theme-toggle-wrap">
+  <button id="theme-toggle" aria-label="Toggle light/dark mode" title="Toggle light/dark mode">
+    <span id="theme-icon">☀️</span>
+  </button>
+</div>
+<script src="house.js"></script>
+<script src="stick-character.js"></script>
+<script src="stick-sentence.js"></script>
+<script>
+/* the same family on every page of this lesson */
+StickSentence.cast({
+  ben:     { base:'boy',     colour:'#FF6600', label:'Ben' },
+  lily:    { base:'girl',    colour:'#FF66CC', label:'Lily' },
+  mum:     { base:'woman',   colour:'#CC0000', label:'Mom' },
+  dad:     { base:'man',     colour:'#663300', label:'Dad' },
+  grandma: { base:'grandma', label:'Grandma' },
+  grandpa: { base:'grandpa', label:'Grandpa' },
+  teacher: { base:'woman',   colour:'#666666', label:'The teacher' },
+  mia:     { base:'woman',   colour:'#6600CC', label:'Mia' },
+  leo:     { base:'man',     colour:'#0066CC', label:'Leo' },
+  sam:     { base:'man',     colour:'#00CC66', label:'Sam' }
+});
+
+document.getElementById('castRow').innerHTML = [
+  '{Mom|mum:phone}', '{Ben|ben:phone}', '{Lily (Ben’s sister)|lily}', '{Dad|dad}', '{Grandma and Grandpa|grandma,grandpa}'
+].map(StickSentence.html).join('');
+
+const SPEAKERS = {
+  Mom:  { cast: 'mum', avatar: '👩', av: 'av-c', side: 'left' },
+  Ben:  { cast: 'ben', avatar: '👦', av: 'av-a', side: 'right' },
+  Lily: { cast: 'lily', avatar: '👧', av: 'av-b', side: 'left' }
+};
+/* each speaker's avatar takes the colour of their stick figure (overrides the house.css av-* colours) */
+const avStyle = s => { const c = (StickSentence.cast()[s.cast] || {}).colour;
+  return c ? 'background:' + c + '40;box-shadow:inset 0 0 0 2px ' + c : ''; };
+
+/* {words|figures} puts stick figures over the words; [words/pos] marks the grammar colours */
+const CALL = [
+  ['Mom', '[Hi/none], {[Ben/noun]!|ben:phone} {[I’m/subject]|mum:phone} [on the bus/prep], [and/conj] {[I’m/subject]|mum:phone:sad} [late/adj]. [Please/none] [tell/verb] {[Lily/object].|lily}'],
+  ['Ben', '[OK/none], {[I’ll/subject]|ben:phone} [tell/verb] {[her/object].|lily}'],
+  ['Mom', '[And/conj] [let/verb] {[Dad/object]|dad} [know/verb] [the pizza/subject] [is/verb] [in the fridge/prep]. {[He/subject]|dad} [can heat/verb] [it/object] [up/none].'],
+  ['Ben', '[No problem/none]. {[I’ll/subject]|ben:phone} [let/verb] {[him/object]|dad} [know/verb].'],
+  ['Mom', '[Can/aux] {[you/subject]|ben:phone} [call/verb] {[Grandma and Grandpa/object]?|grandma,grandpa} [Tell/verb] {[them/object]|grandma,grandpa} {[we/subject]|mum,dad,ben,lily} [can’t come/verb] [on Sunday/time].'],
+  ['Ben', '[Sure/none]. {[I’ll/subject]|ben:phone} [tell/verb] {[them/object]|grandma,grandpa} [now/time].'],
+  ['Mom', '[Thanks/none]! [And/conj] [let/verb] {[me/object]|mum:phone:me} [know/verb] [when/conj] {[you/subject]|ben:book} [finish/verb] {[your/det]|ben} [homework/object].'],
+  ['Ben', '[OK/none], [Mom/noun]. {[I’ll/subject]|ben:phone} [text/verb] {[you/object].|mum:phone} [Bye/none]!']
+];
+const HOME = [
+  ['Lily', '[Was/verb] [that/subject] {[Mom/complement]?|mum:phone}'],
+  ['Ben', '[Yes/none]. {[She/subject]|mum:phone} [asked/verb] {[me/object]|ben:me} [to tell/verb] {[you/object]|lily} {[she’s/subject]|mum:sad} [late/adj].'],
+  ['Lily', '[Oh/none]. [Thanks for/none] [telling/verb] {[me/object].|lily:me}'],
+  ['Ben', '{[Dad/subject]|dad} [is coming/verb] [home/adverb] [at seven/time]. [Can/aux] {[you/subject]|lily} [let/verb] {[him/object]|dad} [know/verb] [the pizza/subject] [is/verb] [in the fridge/prep]? {[I/subject]|ben:phone} [need/verb] [to call/verb] {[Grandma and Grandpa/object].|grandma,grandpa}'],
+  ['Lily', '[Sure/none]. {[I’ll/subject]|lily} [tell/verb] {[him/object].|dad} [And/conj] [please/none] [say/verb] [hi/object] [to/prep] {[them/object]|grandma,grandpa} [from/prep] {[me/object]!|lily:me}']
+];
+const draw = (id, lines) => {
+  const conv = document.getElementById(id);
+  lines.forEach(([who, text]) => {
+    const s = SPEAKERS[who], right = s.side === 'right';
+    conv.insertAdjacentHTML('beforeend',
+      '<div class="bubble-wrap' + (right ? ' right' : '') + '">' +
+        '<div class="avatar ' + s.av + '" style="' + avStyle(s) + '">' + s.avatar + '</div>' +
+        '<div class="bubble-col"><div class="bname' + (right ? ' right' : '') + '">' + who + '</div>' +
+        '<div class="bubble ' + (right ? 'right' : 'left') + '">' + StickSentence.html(text) + '</div></div>' +
+      '</div>');
+  });
+};
+draw('conversation1', CALL);
+draw('conversation2', HOME);
+
+const CQ_ITEMS = [
+  { q: 'Why does Mom call Ben?', opts: ['She is late.', 'She wants pizza.', 'She is at Grandma’s house.'], correct: 0 },
+  { q: 'What message is for Grandma and Grandpa?', opts: ['The pizza is in the fridge.', 'The family can’t come on Sunday.', 'Mom is on the bus.'], correct: 1 },
+  { q: 'Who will tell Dad about the pizza?', opts: ['Mom', 'Ben', 'Lily'], correct: 2 }
+];
+HouseComprehension.build({ pre: 'preQuestions', quiz: 'quiz', items: CQ_ITEMS });
+</script>
+<script>HouseGrammar.init();</script>
+</body>
+</html>

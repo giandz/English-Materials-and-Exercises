@@ -1,0 +1,126 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<title>Pass the Message! — Object Pronouns (one-on-one)</title>
+<script>
+(function(){
+  try{
+    var saved = localStorage.getItem('theme-preference');
+    var theme = (saved === 'light' || saved === 'dark')
+      ? saved
+      : ((window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches) ? 'dark' : 'light');
+    document.documentElement.setAttribute('data-theme', theme);
+    var fs = parseFloat(localStorage.getItem('font-size-preference'));
+    if (fs >= 10 && fs <= 28) document.documentElement.style.setProperty('--fs-base', fs + 'px');
+  }catch(e){ /* localStorage/matchMedia unavailable — CSS media query still applies */ }
+})();
+</script>
+<link rel="stylesheet" href="house.css">
+<style>
+.q-card .ss-line{ justify-content:center; font-size:1.2667rem; font-weight:600; }
+.q-card details.check{ margin-top:4px; width:100%; max-width:420px; text-align:left; }
+.q-card .check-body{ padding:8px 12px; font-size:.9667rem; }
+.q-card .check-body p{ margin:0 0 4px; }
+</style>
+</head>
+<body>
+<div class="page" id="page">
+  <span class="cefr-tag cefr-a1a2">A1/A2 · Elementary</span>
+  <h1>Pass the Message!</h1>
+  <p class="subtitle">One-on-one: you are the messenger. Get a message, answer, then pass it on.</p>
+
+  <div class="rule-box">
+    <p><strong>How to play (teacher + student):</strong></p>
+    <p>1. Roll 🎲. The teacher is the first person on the card and reads the message to you.</p>
+    <p>2. You answer: “<b>OK, I’ll tell her.</b>” or “<b>Sure, I’ll let them know.</b>”</p>
+    <p>3. Now the teacher is the person who gets the message. Give it to them: “<b>Lily, Mom says dinner is ready.</b>”</p>
+    <p>4. Press 👀 to check your answers. Then roll again.</p>
+  </div>
+
+  <div class="q-card" id="qCard"><span class="q-placeholder">Roll the dice to start.</span></div>
+  <button class="dice-btn" id="diceBtn" aria-label="Roll">🎲</button>
+  <div class="roll-count">Rolls: <strong id="rollCount">0</strong></div>
+
+  <div class="sec-div">Now you</div>
+  <div class="rule-box">
+    <p><strong>Your people:</strong> Tell the teacher about three people in your life (a friend, a family member, a coworker…).</p>
+    <p>The teacher gives you messages for them: “Tell your sister the class is on Monday.” You answer: “<b>OK, I’ll tell her.</b>”</p>
+    <p><strong>Change roles:</strong> Now you give the teacher messages for people in their life: “<b>Please tell your son I like his drawing.</b>” “<b>Can you let your friends know about the party?</b>”</p>
+  </div>
+
+  <footer>Pass the Message! — Object Pronouns with tell and let … know (A1/A2) · one-on-one</footer>
+</div>
+
+<div id="theme-toggle-wrap">
+  <button id="theme-toggle" aria-label="Toggle light/dark mode" title="Toggle light/dark mode">
+    <span id="theme-icon">☀️</span>
+  </button>
+</div>
+<script src="house.js"></script>
+<script src="stick-character.js"></script>
+<script src="stick-sentence.js"></script>
+<script>
+/* the same family on every page of this lesson */
+StickSentence.cast({
+  ben:     { base:'boy',     colour:'#FF6600', label:'Ben' },
+  lily:    { base:'girl',    colour:'#FF66CC', label:'Lily' },
+  mum:     { base:'woman',   colour:'#CC0000', label:'Mom' },
+  dad:     { base:'man',     colour:'#663300', label:'Dad' },
+  grandma: { base:'grandma', label:'Grandma' },
+  grandpa: { base:'grandpa', label:'Grandpa' },
+  teacher: { base:'woman',   colour:'#666666', label:'The teacher' },
+  mia:     { base:'woman',   colour:'#6600CC', label:'Mia' },
+  leo:     { base:'man',     colour:'#0066CC', label:'Leo' },
+  sam:     { base:'man',     colour:'#00CC66', label:'Sam' }
+});
+
+/* the student is always the messenger: a plain figure called "You" */
+StickSentence.cast({ you: { base:'man', label:'You' } });
+const PEOPLE = [
+  { id:'ben', name:'Ben', subj:'he' }, { id:'lily', name:'Lily', subj:'she' }, { id:'mum', name:'Mom', subj:'she' },
+  { id:'dad', name:'Dad', subj:'he' }, { id:'grandma', name:'Grandma', subj:'she' }, { id:'grandpa', name:'Grandpa', subj:'he' },
+  { id:'teacher', name:'the teacher', subj:'she' }
+];
+const OBJ = { he:'him', she:'her' };
+/* who gets the message: one person, or two (them) */
+const GROUPS = PEOPLE.map(p => ({ ids:[p.id], name:p.name, obj:OBJ[p.subj] })).concat([
+  { ids:['grandma', 'grandpa'], name:'Grandma and Grandpa', obj:'them' },
+  { ids:['mum', 'dad'], name:'Mom and Dad', obj:'them' },
+  { ids:['ben', 'lily'], name:'Ben and Lily', obj:'them' }
+]);
+/* the message, and how it sounds when the messenger passes it on (a = the person who sent it) */
+const MESSAGES = [
+  ['dinner is ready'], ['the bus is late'], ['the party is on Saturday'], ['the movie starts at eight'],
+  ['it’s raining'], ['the game is at six'], ['there’s no school tomorrow'], ['the cat is in the garden'],
+  ['the pizza is in the fridge'],
+  ['I’m late', a => a.subj + '’s late'], ['I need help', a => a.subj + ' needs help'], ['I have a surprise', a => a.subj + ' has a surprise']
+].map(([m, pass]) => ({ m, pass: pass || (() => m) }));
+const cap = s => s.charAt(0).toUpperCase() + s.slice(1);
+
+HouseRandomGen.build({
+  pick: () => {
+    const a = HouseRandomGen.pickFrom(PEOPLE);
+    let c; do { c = HouseRandomGen.pickFrom(GROUPS); } while (c.ids.includes(a.id));
+    return { a, c, msg: HouseRandomGen.pickFrom(MESSAGES), let: Math.random() < 0.5 };
+  },
+  key: x => x.a.id + x.c.name + x.msg.m,
+  render: ({ a, c, msg, let: useLet }) => {
+    const who = '{' + c.name + '|' + c.ids.join(',') + '}';
+    const msgFig = msg.m.replace(/^I(’m)?\b/, m => '{' + m + '|' + a.id + '}');   /* "I" in the message is the person who sends it */
+    const line = '{' + cap(a.name) + ':|' + a.id + ':say:arrow,you:left} “' +
+      (useLet ? 'Let ' + who + ' know ' + msgFig + '.' : 'Tell ' + who + ' ' + msgFig + '.') + '”';
+    const answer = useLet ? 'Sure, I’ll let ' + c.obj + ' know.' : 'OK, I’ll tell ' + c.obj + '.';
+    const pass = cap(c.name) + ', ' + a.name + ' says ' + msg.pass(a) + '.';
+    return '<span class="q-topic">📨 ' + cap(a.name) + ' → you → ' + c.name + '</span>' +
+      StickSentence.html(line) +
+      '<span class="q-prompt">1 · Answer ' + a.name + ': “' + (useLet ? 'Sure, I’ll let … know.' : 'OK, I’ll tell …') + '” (him? her? them?)<br>' +
+      '2 · Now give ' + c.name + ' the message.</span>' +
+      '<details class="check"><summary>👀 Check</summary><div class="check-body">' +
+      '<p>1 · “' + answer + '”</p><p>2 · “' + pass + '”</p></div></details>';
+  }
+});
+</script>
+</body>
+</html>

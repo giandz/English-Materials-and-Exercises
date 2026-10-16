@@ -74,9 +74,13 @@ document.getElementById('castRow').innerHTML = [
 ].map(StickSentence.html).join('');
 
 const SPEAKERS = {
-  Ben:  { avatar: '👦', av: 'av-a', side: 'left' },
-  Lily: { avatar: '👧', av: 'av-b', side: 'right' }
+  Ben:  { cast: 'ben', avatar: '👦', av: 'av-a', side: 'left' },
+  Lily: { cast: 'lily', avatar: '👧', av: 'av-b', side: 'right' }
 };
+/* each speaker's avatar takes the colour of their stick figure (overrides the house.css av-* colours) */
+const avStyle = s => { const c = (StickSentence.cast()[s.cast] || {}).colour;
+  return c ? 'background:' + c + '40;box-shadow:inset 0 0 0 2px ' + c : ''; };
+
 /* {words|figures} puts stick figures over the words; [words/pos] marks the grammar colours */
 const LINES = [
   ['Ben', '{[Lily/noun],|lily} [what/wh] [did/aux] {[Grandma/subject]|grandma} [ask/verb] {[you/object]|lily} [at dinner/prep]?'],
@@ -98,7 +102,7 @@ LINES.forEach(([who, text]) => {
   const s = SPEAKERS[who], right = s.side === 'right';
   conv.insertAdjacentHTML('beforeend',
     '<div class="bubble-wrap' + (right ? ' right' : '') + '">' +
-      '<div class="avatar ' + s.av + '">' + s.avatar + '</div>' +
+      '<div class="avatar ' + s.av + '" style="' + avStyle(s) + '">' + s.avatar + '</div>' +
       '<div class="bubble-col"><div class="bname' + (right ? ' right' : '') + '">' + who + '</div>' +
       '<div class="bubble ' + (right ? 'right' : 'left') + '">' + StickSentence.html(text) + '</div></div>' +
     '</div>');

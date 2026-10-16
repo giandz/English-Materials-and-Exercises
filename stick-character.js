@@ -84,7 +84,7 @@ const colourName=c=>NAMES[String(c||'').toUpperCase()]||'coloured';
 const isCol=c=>typeof c==='string'&&/^#[0-9a-fA-F]{6}$/.test(c);
 
 function defaults(){
-  return {schema:SCHEMA,name:'Sam',age:'adult',facing:'right',colour:'#222222',headwear:null,longHair:false,skirt:false,hunchback:false,backpack:false,dress:false,emotion:null,sweat:false,reaction:false,
+  return {schema:SCHEMA,name:'Sam',age:'adult',facing:'right',colour:'#222222',headwear:null,longHair:false,skirt:false,hunchback:false,backpack:false,dress:false,emotion:null,sweat:false,reaction:false,sleep:false,inBed:false,
     held:{front:null,back:null},itemColour:{front:null,back:null},grip:{front:0,back:0},hatAngle:0,bubbleX:0,bubbleY:0,chair:false,bike:false,skate:false,arrow:null,arrowUp:0,car:false,carType:'car',carColour:null,lift:0,bikeColour:null,joints:Object.assign({},STAND)};
 }
 function normalize(src){
@@ -94,7 +94,7 @@ function normalize(src){
   d.colour=isCol(src.colour)?src.colour.toUpperCase():d.colour;
   d.headwear=HEADWEAR[src.headwear]?src.headwear:null; d.emotion=src.emotion in EMOTIONS?src.emotion:src.face in EMOTIONS?src.face:null;
   d.longHair=false; if(src.longHair===true&&!d.headwear) d.headwear='longhair'; d.skirt=src.skirt===true; d.hunchback=src.hunchback===true; d.backpack=src.backpack===true; { const l=Number(src.lift); d.lift=Number.isFinite(l)?Math.max(0,Math.min(3,Math.round(l*20)/20)):0; }   /* height above the floor, in heads */ d.dress=src.dress===true; if(d.dress) d.skirt=false;   /* a dress or a skirt, not both */ d.bike=src.bike===true; d.skate=src.skate===true; d.arrow=src.arrow===true?'arrow':['arrow','selector'].includes(src.arrow)?src.arrow:null; { const a=Number(src.arrowUp); d.arrowUp=Number.isFinite(a)?Math.round(Math.max(0,Math.min(STAGE.h,a))):0; } d.car=src.car===true||!!CARS[src.car]; d.carType=CARS[src.carType]?src.carType:CARS[src.car]?src.car:'car'; d.carColour=isCol(src.carColour)?src.carColour.toUpperCase():null; if(d.car){ d.bike=false; } d.bikeColour=isCol(src.bikeColour)?src.bikeColour.toUpperCase():null;
-  if(src.held&&(src.held.front==='bicycle'||src.held.back==='bicycle')) d.bike=true;   /* older files: the bicycle was a hand item */ d.chair=src.chair===true; d.sweat=src.sweat===true; d.reaction=src.reaction===true;
+  if(src.held&&(src.held.front==='bicycle'||src.held.back==='bicycle')) d.bike=true;   /* older files: the bicycle was a hand item */ d.chair=src.chair===true; d.sweat=src.sweat===true; d.reaction=src.reaction===true; d.sleep=src.sleep===true; d.inBed=src.inBed===true; if(d.inBed){ d.car=false; d.bike=false; d.skate=false; d.chair=false; }
   for(const h of ['front','back']){ d.held[h]=src.held&&ITEMS[src.held[h]]?src.held[h]:null; d.itemColour[h]=src.itemColour&&isCol(src.itemColour[h])?src.itemColour[h].toUpperCase():null; }
   for(const h of ['front','back']){ const g=Number(src.grip&&src.grip[h]); d.grip[h]=Number.isFinite(g)?wrap(g):0; }
   { const a=Number(src.hatAngle); d.hatAngle=Number.isFinite(a)?wrap(a):0; }
@@ -138,7 +138,11 @@ const carGeo=(k,type)=>{ const x=k.hip[0], g=k.hip[1]+1.2*H, r=0.38*H, top=k.hea
     suv:{belt:-0.2,roof:0.6,front:3.0,rear:-2.6,cabF:1.4,cabR:-2.55,hood:2.15,trunk:-2.6,wF:2.0,wR:-1.7,box:true}}[type]||{};
   const q=v=>x+v*H;
   return {g,r,belt:k.hip[1]+T.belt*H,roof:top-Math.max(T.roof,0.5)*H,front:q(T.front),rear:q(T.rear),bottom:g-0.55*H,cabF:q(T.cabF),cabR:q(T.cabR),hood:q(T.hood),trunk:q(T.trunk),wF:q(T.wF),wR:q(T.wR),bed:T.bed,box:T.box,wheel:[x+1.05*H,k.hip[1]-0.7*H]}; };
+/* a bed seen side on: the head on the pillow, the body under the sheet toward the foot of the bed, a single-line post at the head end */
+const bedGeo=k=>{ const dir=k.hip[0]>=k.sh[0]?1:-1, x=k.sh[0]-dir*0.75*H, top=k.sh[1]+R+S/2+0.17*H, bot=top+0.45*H;   /* fixed to the shoulders, so the head can lift off the pillow */
+  return {dir,x,top,bot,floor:bot+0.6*H,head:x-dir*1.0*H,foot:x+dir*4.6*H}; };
 function lowest(k,d){
+  if(d.inBed) return bedGeo(k).floor+S/2;
   if(d.car) return carGeo(k,d.carType).g+S/2;
   if(d.skate) return Math.max(k.legF.foot[1],k.legB.foot[1])+S/2+0.5*H;   /* standing on a skateboard: deck and wheels under the feet */   /* in a car, the wheels stand on the floor */
   if(d.bike) return bikeGeo(k,d).g+S/2;   /* on a bicycle, the wheels stand on the floor */
@@ -171,12 +175,16 @@ function skirtPts(k,d){   /* a triangle from the hip; its lower side, half the h
 }
 /* things in the hands: outlines only, in the same marker. Upright things are drawn in the stage frame at the hand;
    the others in the hand's frame, where +y runs on along the forearm */
-function itemSVG(id,c,hand,ground,col,f){   /* upright things */
+function itemSVG(id,c,hand,ground,col,f,u){   /* upright things */
   const [x,y]=hand, st=`stroke="${c}" stroke-width="${S}" stroke-linecap="round" stroke-linejoin="round" fill="none"`, ln=`fill="none" stroke="${col}" stroke-width="${S}" stroke-linecap="round" stroke-linejoin="round"`;
   switch(id){
     case 'balloon': return `<path d="M${x},${y}Q${x+8},${y-34} ${x},${y-62}" ${ln}/><ellipse cx="${x}" cy="${y-92}" rx="24" ry="29" ${st}/>`;
     case 'bag': return `<path d="M${x-10},${y+16}L${x},${y}L${x+10},${y+16}" ${ln}/><rect x="${x-21}" y="${y+16}" width="42" height="32" rx="4" ${st}/>`;
-    case 'cane': return `<path d="M${x},${n2(ground)}V${y-4}q0,-14 ${13*f},-14t${12*f},12" ${st}/>`;   /* the hook turns with the figure */
+    case 'cane': {   /* the hook curls back toward the figure; the hand sits on the arc where the forearm meets it square
+         (along the arc's radius), so the cane moves to the hand and the arm keeps its length */
+      const r=(0.25*H+S)/2; let th=Math.atan2(-u[1],-u[0]); th=((th%(2*Math.PI))+2*Math.PI)%(2*Math.PI); if(th<Math.PI) th=th<Math.PI/2?2*Math.PI:Math.PI;   /* only the upper half of the hook can be held */
+      const cx=x-r*Math.cos(th), cy=y-r*Math.sin(th), sx=cx+f*r, tx=cx-f*r;
+      return `<path d="M${n2(sx)},${n2(Math.max(ground,cy))}V${n2(cy)}A${n2(r)},${n2(r)} 0 0 ${f>0?0:1} ${n2(tx)},${n2(cy)}v${n2(0.3*H)}" ${st}/>`; }
     case 'umbrella': {   /* J-hook handle in the hand; the shaft stops at the canopy's edge and shows again as a tip above it */
       const X=v=>n2(x-f*v), top=y-93;   /* the J hook curls the opposite way to the cane's */
       return `<path d="M${X(-13)},${y+10}Q${X(-13)},${y+22} ${X(-6)},${y+22}Q${x},${y+22} ${x},${y+12}V${y-64}M${x},${top}V${n2(top-0.5*H)}" ${ln}/>`
@@ -341,7 +349,7 @@ function build(data){
   /* upright things stay straight up whatever the arm does: drawn in the stage frame, so they are not mirrored */
   let held='';
   for(const [h,arm] of [['back',k.armB],['front',k.armF]]){ const id=d.held[h]; if(!id||!ITEMS[id].upright) continue;
-    held+=`<g>${itemSVG(id,d.itemColour[h]||ITEMS[id].col,W(arm.hand),STAGE.ground-S/2-d.lift*H,col,f)}</g>`; }
+    held+=`<g>${itemSVG(id,d.itemColour[h]||ITEMS[id].col,W(arm.hand),STAGE.ground-S/2-d.lift*H,col,f,[f*Math.sin(rad(arm.a2)),Math.cos(rad(arm.a2))])}</g>`; }
   let bub=null;
   if(d.emotion){   /* the bubble goes in front of the head, unless a raised hand (and what it holds) is there: then behind */
     const hc=W(k.head), raised=s=>[k.armF.hand,k.armB.hand].map(W).filter(p=>p[1]<hc[1]+0.2*H&&(p[0]-hc[0])*s>-0.3*H).length;
@@ -384,7 +392,22 @@ function build(data){
       ?`<path data-arrow="1" d="M${n2(tip[0]-w)},${n2(y1)}H${n2(tip[0]+w)}L${P2([tip[0],ty])}Z" fill="transparent" stroke="${col}" stroke-width="${S}" stroke-linejoin="round"/>`
       :`<path data-arrow="1" d="M${n2(tip[0])},${n2(y0)}V${n2(ty)}M${n2(tip[0]-w)},${n2(y1)}L${P2([tip[0],ty])}L${n2(tip[0]+w)},${n2(y1)}" fill="none" stroke="${col}" stroke-width="${S}" stroke-linecap="round" stroke-linejoin="round"/><path data-arrow="1" d="M${n2(tip[0]-w)},${n2(y0)}H${n2(tip[0]+w)}V${n2(ty)}H${n2(tip[0]-w)}Z" fill="transparent" stroke="none"/>`;
     arrowTip=tip; }
-  const inner=`<g transform="translate(${STAGE.cx} ${n2(gy)}) scale(${f} 1)">${s}${carOut}</g>`+held+(bub?bub.svg:'')+arrowSvg;
+  if(d.inBed){ const b=bedGeo(k), D=b.dir, N=n2, bid='stkb'+(++MASK), wood=`fill="none" stroke="#8a5a3a" stroke-width="${S}" stroke-linecap="round" stroke-linejoin="round"`;
+    const px=b.x-D*0.05*H, sheetTop=b.top-0.5*H;
+    /* only the head and neck show: everything else of the figure (and anything held) is under the sheet */
+    s=`<mask id="${bid}" maskUnits="userSpaceOnUse" x="-2000" y="-2000" width="4000" height="4000"><rect x="-2000" y="-2000" width="4000" height="4000" fill="#000"/><g transform="${headT}"><circle r="${N(R+S/2)}" fill="#fff"/><g transform="rotate(${d.hatAngle})">${d.headwear?headwearSVG(d.headwear,'#fff'):''}</g></g><path d="M${P(k.neckEnd)}L${P(k.sh)}" stroke="#fff" stroke-width="${S}" stroke-linecap="round"/></mask><g mask="url(#${bid})">${s}</g>`;
+    held=''; 
+    carOut=`<path d="M${N(b.head)},${N(b.floor)}V${N(b.top-1.4*H)}M${N(b.head)},${N(b.top)}H${N(b.foot)}V${N(b.bot)}H${N(b.head)}M${N(b.head+D*0.3*H)},${N(b.bot)}V${N(b.floor)}M${N(b.foot-D*0.3*H)},${N(b.bot)}V${N(b.floor)}" ${wood}/>`
+      +`<ellipse cx="${N(px)}" cy="${N(b.top-0.21*H)}" rx="${N(0.68*H)}" ry="${N(0.21*H)}" ${st}/>`
+      +`<path d="M${N(k.sh[0])},${N(b.top)}L${N(k.sh[0])},${N(Math.min(k.sh[1]-0.25*H,b.top))}Q${N(k.sh[0]+D*0.25*H)},${N(sheetTop-0.1*H)} ${N(k.sh[0]+D*1.0*H)},${N(sheetTop)}T${N(b.foot-D*0.6*H)},${N(sheetTop+0.1*H)}Q${N(b.foot)},${N(sheetTop+0.15*H)} ${N(b.foot+D*0.05*H)},${N(b.bot)}" ${st}/>`;
+    pts.push([b.head,b.floor],[b.foot,b.floor],[b.head,b.top-1.4*H]); }
+  /* sleeping: three Zs rising in a zig-zag above the head, each bigger than the last; they stay upright whatever the head does */
+  let zz='';
+  if(d.sleep){ const hc=W(k.head), base=hc[1]-R-S/2-0.35*H;
+    [[0.55,0,0.32],[1.05,-0.75,0.42],[0.6,-1.65,0.54]].forEach(([dx,dy,z])=>{ const x=hc[0]+f*dx*H, y=base+dy*H, h=z*H/2;
+      zz+=`<path d="M${n2(x-h)},${n2(y-h)}H${n2(x+h)}L${n2(x-h)},${n2(y+h)}H${n2(x+h)}" fill="none" stroke="${col}" stroke-width="${S}" stroke-linecap="round" stroke-linejoin="round"/>`;
+      pts.push([(x-STAGE.cx)*f,y-gy-h-H*1.6]); }); }
+  const inner=`<g transform="translate(${STAGE.cx} ${n2(gy)}) scale(${f} 1)">${s}${carOut}</g>`+held+zz+(bub?bub.svg:'')+arrowSvg;
   const wp=pts.map(W), xs=wp.map(p=>p[0]), ys=wp.map(p=>p[1]);
   if(bub){ xs.push(bub.box[0]+H*0.9,bub.box[2]-H*0.9); ys.push(bub.box[1]+H*1.9); }
   if(arrowTip){ ys.push(arrowTip[1]-(d.arrow==='selector'?0.95*H:2*H)+H*1.9-S); }
@@ -412,7 +435,8 @@ function describe(data){
   for(const k of ['front','back']) if(d.held[k]) h.push(ITEMS[d.held[k]].phrase);
   const list=a=>a.length>1?a.slice(0,-1).join(', ')+' and '+a[a.length-1]:a[0];
   const parts=[]; if(w.length) parts.push('wearing '+list(w)); if(h.length) parts.push('holding '+list(h));
-  if(d.chair) parts.push('sitting on a chair'); if(d.bike) parts.push('riding a bicycle'); if(d.skate) parts.push('riding a skateboard'); if(d.car) parts.push('driving '+CARS[d.carType].noun);
+  if(d.chair) parts.push('sitting on a chair'); if(d.inBed) parts.push('lying in bed'); if(d.bike) parts.push('riding a bicycle'); if(d.skate) parts.push('riding a skateboard'); if(d.car) parts.push('driving '+CARS[d.carType].noun);
+  if(d.sleep) parts.unshift('sleeping');
   const n=d.name||'This person', all=parts.length>1?parts.slice(0,-1).join(', ')+', and '+parts[parts.length-1]:parts[0];
   if(d.emotion&&EMOTIONS[d.emotion]) return `${n} is ${EMOTIONS[d.emotion]}`+(parts.length?` and is ${all}.`:'.');
   return parts.length?`${n} is ${all}.`:'';

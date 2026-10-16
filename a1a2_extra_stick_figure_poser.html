@@ -118,8 +118,10 @@
           <label><input type="checkbox" id="spPack"> Backpack</label>
           <label><input type="checkbox" id="spHunch"> Hunchback</label>
           <label><input type="checkbox" id="spChair"> Chair</label>
+          <label><input type="checkbox" id="spBed"> In bed</label>
           <label><input type="checkbox" id="spSweat"> Sweat drops</label>
-          <label><input type="checkbox" id="spReact"> Reaction lines</label></div></div>
+          <label><input type="checkbox" id="spReact"> Reaction lines</label>
+          <label><input type="checkbox" id="spSleep"> Sleeping (Zzz)</label></div></div>
       </div>
       <div class="cp-panel">
         <h2>Hands</h2>
@@ -192,7 +194,7 @@ function update(skipName){
   $('spFacing').querySelectorAll('button').forEach(b=>b.setAttribute('aria-pressed',String(b.dataset.v===ch.facing)));
   $('spColour').querySelectorAll('button').forEach(b=>b.setAttribute('aria-pressed',String(b.dataset.c===ch.colour)));
   $('spHat').value=ch.headwear||''; $('spFace').value=ch.emotion||'';
-  $('spSkirt').checked=ch.skirt; $('spDress').checked=ch.dress; $('spPack').checked=ch.backpack; $('spHunch').checked=ch.hunchback; $('spChair').checked=ch.chair; $('spCar').value=ch.car?ch.carType:ch.bike?'bicycle':ch.skate?'skateboard':''; $('spSweat').checked=ch.sweat; $('spReact').checked=ch.reaction; $('spArrow').value=ch.arrow||'';
+  $('spSkirt').checked=ch.skirt; $('spDress').checked=ch.dress; $('spPack').checked=ch.backpack; $('spHunch').checked=ch.hunchback; $('spChair').checked=ch.chair; $('spBed').checked=ch.inBed; $('spCar').value=ch.car?ch.carType:ch.bike?'bicycle':ch.skate?'skateboard':''; $('spSweat').checked=ch.sweat; $('spReact').checked=ch.reaction; $('spSleep').checked=ch.sleep; $('spArrow').value=ch.arrow||'';
   [['F','front'],['B','back']].forEach(([k,h])=>{ const it=SC.ITEMS[ch.held[h]], c=ch.itemColour[h]||(it&&it.col);
     $('spHeld'+k).value=ch.held[h]||''; const b=$('spCol'+k); b.disabled=!it; b.style.background=it?c:'transparent'; if(!it) $('spPal'+k).hidden=true;
     $('spPal'+k).querySelectorAll('button').forEach(x=>x.setAttribute('aria-pressed',String(x.dataset.c===c))); });
@@ -211,7 +213,7 @@ $('spFacing').addEventListener('click',e=>{const b=e.target.closest('button'); i
 $('spColour').addEventListener('click',e=>{const b=e.target.closest('button'); if(b){ch.colour=b.dataset.c;update();}});
 $('spHat').addEventListener('change',e=>{ch.headwear=e.target.value||null;update();});
 $('spFace').addEventListener('change',e=>{ch.emotion=e.target.value||null;update();});
-[['spDress','dress'],['spSkirt','skirt'],['spPack','backpack'],['spHunch','hunchback'],['spChair','chair'],['spSweat','sweat'],['spReact','reaction']].forEach(([id,k])=>$(id).addEventListener('change',e=>{ch[k]=e.target.checked; if(e.target.checked&&k==='dress') ch.skirt=false; if(e.target.checked&&k==='skirt') ch.dress=false; if(e.target.checked&&k==='car'){ ch.bike=false; ch.chair=false; } if(e.target.checked&&k==='chair'){ ch.car=false; ch.bike=false; ch.skate=false; } update();}));
+[['spDress','dress'],['spSkirt','skirt'],['spPack','backpack'],['spHunch','hunchback'],['spChair','chair'],['spBed','inBed'],['spSweat','sweat'],['spReact','reaction'],['spSleep','sleep']].forEach(([id,k])=>$(id).addEventListener('change',e=>{ch[k]=e.target.checked; if(e.target.checked&&k==='dress') ch.skirt=false; if(e.target.checked&&k==='skirt') ch.dress=false; if(e.target.checked&&k==='car'){ ch.bike=false; ch.chair=false; } if(e.target.checked&&k==='chair'){ ch.car=false; ch.bike=false; ch.skate=false; ch.inBed=false; } if(e.target.checked&&k==='inBed'){ SC.applyPose(ch,'lying'); ch.inBed=true; ch.car=false; ch.bike=false; ch.skate=false; ch.chair=false; $('spPreset').value='lying'; } update();}));
 [['F','front'],['B','back']].forEach(([k,h])=>{
   $('spHeld'+k).addEventListener('change',e=>{ch.held[h]=e.target.value||null; ch.itemColour[h]=null; ch.grip[h]=0; update();});
   $('spCol'+k).addEventListener('click',()=>{ $('spPal'+k).hidden=!$('spPal'+k).hidden; });
