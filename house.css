@@ -656,27 +656,42 @@ input.gap.wrong{ border-bottom-color:var(--bad); color:var(--bad); }
 .word-chip.pos-neg{ background:var(--pos-neg-bg); color:var(--pos-neg); border-color:var(--pos-neg); }
 .word-chip.pos-none{ background:var(--pos-none-bg); color:var(--pos-none); border-color:var(--color-border-secondary); }
 
+/* Inline highlights must not change the layout of the sentence, on or off.
+   So the span takes up exactly the room its words would take without it:
+     · display:inline, no padding, no margin — word spacing is the font's own
+       space, the same between tagged and untagged words;
+     · the tint is the background plus a box-shadow "halo" (--hl-spread) that
+       paints a little past the letters but takes up no space, so it never
+       pushes the neighbouring words apart;
+     · emphasis is a thin text stroke, not font-weight — a heavier weight is a
+       wider word, which made lines reflow when the toggle was pressed.
+   box-decoration-break:clone keeps the rounded tint whole on a multi-word span
+   that wraps onto the next line. */
 .pos-hl{
-  display:inline-block; padding:0 4px; border-radius:5px; font-weight:600;
-  background:transparent; color:inherit;
-  transition:background .15s linear, color .15s linear;
+  --hl-bg:transparent; --hl-spread:.08em;
+  display:inline; padding:0; margin:0; border-radius:.22em;
+  font-weight:inherit;
+  background:var(--hl-bg); box-shadow:0 0 0 var(--hl-spread) var(--hl-bg);
+  -webkit-text-stroke:.03em currentColor;
+  -webkit-box-decoration-break:clone; box-decoration-break:clone;
+  transition:background-color .15s linear, box-shadow .15s linear, color .15s linear;
 }
-.pos-hl.pos-wh{ background:var(--pos-wh-bg); color:var(--pos-wh); }
-.pos-hl.pos-aux{ background:var(--pos-aux-bg); color:var(--pos-aux); }
-.pos-hl.pos-verb{ background:var(--pos-verb-bg); color:var(--pos-verb); }
-.pos-hl.pos-part{ background:var(--pos-part-bg); color:var(--pos-part); }
-.pos-hl.pos-subject{ background:var(--pos-subject-bg); color:var(--pos-subject); }
-.pos-hl.pos-object{ background:var(--pos-object-bg); color:var(--pos-object); }
-.pos-hl.pos-complement{ background:var(--pos-complement-bg); color:var(--pos-complement); }
-.pos-hl.pos-noun{ background:var(--pos-noun-bg); color:var(--pos-noun); }
-.pos-hl.pos-adj{ background:var(--pos-adj-bg); color:var(--pos-adj); }
-.pos-hl.pos-adverb{ background:var(--pos-adverb-bg); color:var(--pos-adverb); }
-.pos-hl.pos-prep{ background:var(--pos-prep-bg); color:var(--pos-prep); }
-.pos-hl.pos-det{ background:var(--pos-det-bg); color:var(--pos-det); }
-.pos-hl.pos-conj{ background:var(--pos-conj-bg); color:var(--pos-conj); }
-.pos-hl.pos-time{ background:var(--pos-time-bg); color:var(--pos-time); }
-.pos-hl.pos-neg{ background:var(--pos-neg-bg); color:var(--pos-neg); }
-.pos-hl.pos-none{ background:var(--pos-none-bg); color:var(--pos-none); }
+.pos-hl.pos-wh{ --hl-bg:var(--pos-wh-bg); color:var(--pos-wh); }
+.pos-hl.pos-aux{ --hl-bg:var(--pos-aux-bg); color:var(--pos-aux); }
+.pos-hl.pos-verb{ --hl-bg:var(--pos-verb-bg); color:var(--pos-verb); }
+.pos-hl.pos-part{ --hl-bg:var(--pos-part-bg); color:var(--pos-part); }
+.pos-hl.pos-subject{ --hl-bg:var(--pos-subject-bg); color:var(--pos-subject); }
+.pos-hl.pos-object{ --hl-bg:var(--pos-object-bg); color:var(--pos-object); }
+.pos-hl.pos-complement{ --hl-bg:var(--pos-complement-bg); color:var(--pos-complement); }
+.pos-hl.pos-noun{ --hl-bg:var(--pos-noun-bg); color:var(--pos-noun); }
+.pos-hl.pos-adj{ --hl-bg:var(--pos-adj-bg); color:var(--pos-adj); }
+.pos-hl.pos-adverb{ --hl-bg:var(--pos-adverb-bg); color:var(--pos-adverb); }
+.pos-hl.pos-prep{ --hl-bg:var(--pos-prep-bg); color:var(--pos-prep); }
+.pos-hl.pos-det{ --hl-bg:var(--pos-det-bg); color:var(--pos-det); }
+.pos-hl.pos-conj{ --hl-bg:var(--pos-conj-bg); color:var(--pos-conj); }
+.pos-hl.pos-time{ --hl-bg:var(--pos-time-bg); color:var(--pos-time); }
+.pos-hl.pos-neg{ --hl-bg:var(--pos-neg-bg); color:var(--pos-neg); }
+.pos-hl.pos-none{ --hl-bg:var(--pos-none-bg); color:var(--pos-none); }
 
 /* ── Grammar toggle ────────────────────────────────────────────────────── */
 .grammar-toggle-btn{
@@ -742,7 +757,9 @@ input.gap.wrong{ border-bottom-color:var(--bad); color:var(--bad); }
 .grammar-hidden .pos-hl.pos-time,
 .grammar-hidden .pos-hl.pos-neg,
 .grammar-hidden .pos-hl.pos-none{
-  background:transparent !important; color:inherit !important;
+  --hl-bg:transparent !important;
+  background:transparent !important; box-shadow:none !important;
+  color:inherit !important; -webkit-text-stroke:0 !important;
 }
 .grammar-hidden .pos-legend{ display:none; }
 
