@@ -24,10 +24,14 @@
               place: 0,         which cushion of a sofa (0 = the left one seen from the front)
               bed: i,           asleep in bed number i of that floor: lying on the mattress,
                                 head on the pillow, eyes closed, under the duvet
-              side: 0 | 1,      which half of a double bed (left / right seen from its foot)
+              side: 0 | 1,      which half of a double bed (left / right seen from its foot); leave it out
+                                for the middle. A single bed (narrower than 1.2 m) is always the middle
+              bunk: 'top',      in a bunk bed: the top bed (default: the bottom one)
               swim: true,       in a swimming pool: standing on the bottom with the water just
                                 under the shoulders; below the surface the body shows only faintly
-              opacity: 1,       0–1, how solid the person is drawn (a guess, a memory, a ghost)
+              opacity: 1,       0–1, how solid the person is drawn (a guess, a memory, a ghost);
+                                below 0.5 the figure also gets a dashed outline in the colour opposite
+                                the page, as strong as the figure is faint (see ghost)
               tag: '…' }]       a name tag above the head ('' for none; see opts.tags)
    opts    everything HousePicture.svg takes (rot, level, walls, keep, roofs,
            labels, focus, aspect, box, alt), plus
@@ -39,6 +43,8 @@
              split  1     the split skew: both halves of the body lifted from the centre line (0–1)
              flat   true  keep the authored pose (no retargeting, no split)
              back   false never use the back view
+             ghostLine 1.2 width of the dashed outline round people drawn below 50 % (screen px)
+             ghostDash 2.6 length of its dashes (screen px)
              around m     close-up on the people: frame them plus m metres of floor round them
 
    HOW IT WORKS
@@ -514,7 +520,7 @@
     const who = people.map((p, i) => {
       const L = p.level || 0;
       if (L > st.level || !stBy[L]) return null;   // floors above the one shown are not drawn
-      const bed = p.bed != null && st.floors[L] && st.floors[L].furniture[p.bed] && st.floors[L].furniture[p.bed].type === 'bed' ? st.floors[L].furniture[p.bed] : null;
+      const bed = p.bed != null && st.floors[L] && st.floors[L].furniture[p.bed] && isBed(st.floors[L].furniture[p.bed].type) ? st.floors[L].furniture[p.bed] : null;
       if (bed) return sleeper(p, i, L, bed);
       const seat = p.seat != null && st.floors[L] ? st.floors[L].furniture[p.seat] : null;
       const thigh = seat ? (() => { const pv = global.HouseCharacter.pivots(p.character); return Math.hypot(pv.kneeL.x - pv.hipL.x, pv.kneeL.y - pv.hipL.y) / PX_PER_M; })() : 0;
@@ -557,13 +563,16 @@
       const d = HC.normalize(p.character), stand = (HC.POSES.find(q => q.id === 'standing') || { joints: {} }).joints;
       HC.JOINTS.forEach(([k]) => { d.joints[k] = stand[k] || 0; });
       Object.assign(d, { torsoOrientation: 0, pelvisOrientation: 0, head: 'front', back: false, eyes: 'closed', eyebrows: 'neutral', mouth: 'rest', held: { left: null, right: null }, prop: null });
-      const u = p.side === 0 || p.side === 'left' ? -0.34 : p.side === 1 || p.side === 'right' ? 0.34 : 0;
+      // a single bed: in the middle. A double bed: in the middle, or on one half (side 0 / 1)
+      const bw = eng.FURN[f.type].w, half = bw >= 1.2 ? bw / 4 : 0;
+      const zo = f.type === 'bunkbed' && (p.bunk === 'top' || p.bunk === 1) ? 0.9 : 0;   // the top bunk is 0.9 m higher
+      const u = p.side === 0 || p.side === 'left' ? -half : p.side === 1 || p.side === 'right' ? half : 0;
       const [x, y] = eng.furnPt(f, u, 0);
       const type = 'hc3d_person_' + i;
       eng.FURN[type] = { w: FOOT, d: FOOT, h: 0.7, levels: [{ z: 0 }] };
       stBy[L].furniture.push({ f: { type, X: x * 2, Y: y * 2, dir: 0, items: [] }, cls: 'hc3d-ref hc3d-ref-' + i, idx: -1 });
       stBy[L].furniture[p.bed].cls += ' hc3d-seat-' + i;
-      return { p, i, L, d: HC.normalize(d), sleep: { f, u }, x, y, z: 0, warp: { split: 0 } };
+      return { p, i, L, d: HC.normalize(d), sleep: { f, u, zo }, x, y, z: 0, warp: { split: 0 } };
     }
 
     let markup = eng.renderIso(stBy, rmBy);
@@ -573,7 +582,8 @@
     /* Seated people are drawn right after their seat, so the seat and its legs are under
        them. When they face away, the backrest (and a sofa's near armrest) is between them
        and the viewer: those parts' outlines are cut out of the person (see occluders). */
-    who.forEach(w => {
+    const depth = w => w.sleep ? eng.scr(w.x, w.y, 0)[1] : 0;
+    who.slice().sort((a, b) => depth(b) - depth(a)).forEach(w => {
       if (w.p.seat == null && !w.sleep) return;
       const me = findGroup(markup, 'hc3d-ref hc3d-ref-' + w.i + '"'), sm = new RegExp('hc3d-seat-' + w.i + '(?=["\\s])').exec(markup), seat = sm ? sm.index : -1;
       if (!me || seat < 0) return;
@@ -602,6 +612,8 @@
         art = `<g transform="translate(${sx.toFixed(2)} ${sy.toFixed(2)}) scale(${scale.toFixed(5)}) translate(${-STAGE_X} ${-STAGE_GROUND})">${maskLowerLegs(inner, outer, w.cut.legs, ns + 'legs' + w.i)}</g>`;
         if (w.cut.body.length) art = hideMask(ns + 'cut' + w.i, w.cut.body) + `<g mask="url(#${ns}cut${w.i})">${art}</g>`;
       }
+      const op = opacityOf(w.p);
+      if (op < 1) art = ghost(ns + 'ghost' + w.i, op, art, opts);
       if (w.p.swim) {
         /* Above the water the person is drawn as usual; below it only faintly, as if seen
            through the water, and rings of ripples spread from where the body meets the surface. */
@@ -618,8 +630,7 @@
           + `<clipPath id="${dn}"><path clip-rule="evenodd" d="M-9999 ${wy.toFixed(2)}H9999V9999H-9999Z${ellD}"/></clipPath>`
           + `<g clip-path="url(#${dn})" opacity=".2">${art}</g>${ripple}<g clip-path="url(#${up})">${art}</g>`;
       }
-      const op = w.p.opacity != null ? ` opacity="${Math.max(0, Math.min(1, +w.p.opacity)).toFixed(3)}"` : '';
-      art = `<g class="hc3d-person" data-name="${esc(w.d.name)}"${op}>${shadow}${art}</g>`;
+      art = `<g class="hc3d-person" data-name="${esc(w.d.name)}"${op < 1 ? ` data-opacity="${op.toFixed(2)}"` : ''}>${shadow && op < 1 ? `<g opacity="${op.toFixed(3)}">${shadow}</g>` : shadow}${art}</g>`;
       const g = findGroup(markup, 'hc3d-ref hc3d-ref-' + w.i + '"');
       if (g) markup = markup.slice(0, g[0]) + art + markup.slice(g[1]);
       else markup += art;   // not on a floor that is drawn in this sort: on top
@@ -635,13 +646,14 @@
       /* The head is drawn the normal way (round things look the same from any side), full size,
          turned in the picture so the body runs toward the headboard; only the head and neck
          are kept, the duvet covers the rest. */
-      const { f, u } = w.sleep, pv = HC.pivots(w.d), P = (uu, vv) => eng.furnPt(f, uu, vv);
-      const zb = eng.baseZ(w.L), S0 = eng.scr(...P(u, -0.58), zb + 0.6), S1 = eng.scr(...P(u, -1.58), zb + 0.6);
+      const { f, u, zo } = w.sleep, pv = HC.pivots(w.d), P = (uu, vv) => eng.furnPt(f, uu, vv);
+      const bw2 = eng.FURN[f.type].w / 2, bd2 = eng.FURN[f.type].d / 2, hv = -bd2 + 0.42;   // the bed's half sizes; the neck's spot
+      const zb = eng.baseZ(w.L) + zo, S0 = eng.scr(...P(u, hv), zb + 0.6), S1 = eng.scr(...P(u, hv - 1), zb + 0.6);
       /* The bed's length and width are not at right angles on screen (they cross at about 127°).
          The neck cut must lie along the duvet's top edge, which runs across the bed, so the head is
          turned to put its shoulder line on the bed's width — crown on the headboard's side. */
       const thH = Math.atan2(S1[1] - S0[1], S1[0] - S0[0]);                        // toward the headboard on screen
-      const Sw = eng.scr(...P(u + 1, -0.58), zb + 0.6), thW = Math.atan2(Sw[1] - S0[1], Sw[0] - S0[0]);   // across the bed
+      const Sw = eng.scr(...P(u + 1, hv), zb + 0.6), thW = Math.atan2(Sw[1] - S0[1], Sw[0] - S0[0]);   // across the bed
       const near_ = a => Math.abs(Math.atan2(Math.sin(a - thH), Math.cos(a - thH)));
       const th = near_(thW + Math.PI / 2) < near_(thW - Math.PI / 2) ? thW + Math.PI / 2 : thW - Math.PI / 2;
       const ax = pv.neck.x - pv.root.x, ay = pv.neck.y - pv.root.y, ph = Math.atan2(ay, ax), al = Math.hypot(ax, ay) || 1;
@@ -654,38 +666,70 @@
       const head = `<clipPath id="${cid}"><path d="M${cut.map(c => c[0].toFixed(1) + ' ' + c[1].toFixed(1)).join('L')}Z"/></clipPath>`
         + `<g transform="translate(${S0[0].toFixed(2)} ${S0[1].toFixed(2)}) rotate(${deg(th)}) scale(${scale.toFixed(5)}) rotate(${deg(-ph)}) translate(${(-pv.neck.x).toFixed(2)} ${(-pv.neck.y).toFixed(2)})"><g clip-path="url(#${cid})">${art}</g></g>`;
       const g = findGroup(markup, 'hc3d-ref hc3d-ref-' + w.i + '"');
-      let html = `${head}${duvetLump(f, u, w.L)}`;
+      /* Below full certainty the head is faded and outlined (the person), the duvet only
+         faded: the outline belongs to the character, not to the bedding. */
+      const op = opacityOf(w.p), gid = ns + 'ghost' + w.i;
+      const headArt = op < 1 ? ghost(gid, op, head, opts) : head;
+      const duvet = duvetLump(f, u, w.L, zo);
+      let html = headArt + (op < 1 ? `<g opacity="${op.toFixed(3)}">${duvet}</g>` : duvet);
       // when the headboard is nearer the camera than the pillow, it hides part of the sleeper
       const near = (vv) => eng.scr(...P(u, vv), zb)[1];
-      if (near(-0.97) > near(-0.75)) {
+      if (near(-bd2 + 0.03) > near(hv - 0.17)) {
         const pts = [];
-        [-0.7, 0.7].forEach(uu => [-1, -0.94].forEach(vv => [0, 0.95].forEach(z => pts.push(eng.scr(...P(uu, vv), zb + z)))));
+        [-bw2, bw2].forEach(uu => [-bd2, -bd2 + 0.06].forEach(vv => (f.type === 'bunkbed' ? [0.3, 0.72] : [0, 0.95]).forEach(z => pts.push(eng.scr(...P(uu, vv), zb + z)))));
         html = hideMask(ns + 'hb' + w.i, [hull(pts)]) + `<g mask="url(#${ns}hb${w.i})">${html}</g>`;
       }
-      const op = w.p.opacity != null ? ` opacity="${Math.max(0, Math.min(1, +w.p.opacity)).toFixed(3)}"` : '';
-      html = `<g class="hc3d-person hc3d-asleep" data-name="${esc(w.d.name)}"${op}>${html}</g>`;
+      if (f.type === 'bunkbed') {
+        /* The whole bunk bed is one piece in the depth sort, so whatever of it is between the
+           camera and the sleeper is cut out of them: for the bottom bunk the top bed over it;
+           for both, the posts, the ladder and the top bed's guard rails on the camera's side. */
+        const zf = eng.baseZ(w.L), box = (u0, u1, v0, v1, z0, z1) => {
+          const q = []; [u0, u1].forEach(a => [v0, v1].forEach(b => [z0, z1].forEach(z => q.push(eng.scr(...P(a, b), zf + z))))); return hull(q); };
+        const at = (uu, vv) => eng.scr(...P(uu, vv), zf)[1], front = (uu, vv) => at(uu, vv) > at(u, (vv > 0 ? 0.3 : -0.3));
+        const polys = zo ? [] : [box(-0.5, 0.5, -1, 1, 1.06, 1.42)];   // the top bed's frame, mattress and duvet
+        [[-1, -1], [1, -1], [1, 1], [-1, 1]].forEach(([a, b]) => {
+          if (front(a * 0.47, b * 0.97)) polys.push(box(a * 0.47 - 0.03, a * 0.47 + 0.03, b * 0.97 - 0.03, b * 0.97 + 0.03, 0, 1.65));
+        });
+        if (front(-0.5, 0.65)) {   // the ladder, up the left long side near the foot end
+          polys.push(box(-0.52, -0.48, 0.42, 0.46, 0, 1.5), box(-0.52, -0.48, 0.84, 0.88, 0, 1.5));
+          [0.32, 0.62, 0.92, 1.22].forEach(z => polys.push(box(-0.515, -0.485, 0.46, 0.84, z, z + 0.035)));
+        }
+        if (zo) {   // the top bed's guard rails
+          if (front(0.5, 0)) polys.push(box(0.47, 0.5, -0.94, 0.94, 1.44, 1.5));
+          if (front(-0.5, -0.3)) polys.push(box(-0.5, -0.47, -0.94, 0.38, 1.44, 1.5));
+        }
+        if (polys.length) html = hideMask(ns + 'bunk' + w.i, polys) + `<g mask="url(#${ns}bunk${w.i})">${html}</g>`;
+      }
+      html = `<g class="hc3d-person hc3d-asleep" data-name="${esc(w.d.name)}"${op < 1 ? ` data-opacity="${op.toFixed(2)}"` : ''}>${html}</g>`;
       if (g) markup = markup.slice(0, g[0]) + html + markup.slice(g[1]); else markup += html;
-      const hd = eng.scr(...P(u, -0.75), zb + 0.6), corners = [[-0.7, -1], [0.7, -1], [0.7, 1], [-0.7, 1]].map(([a, b]) => eng.scr(...P(a, b), zb));
+      const hd = eng.scr(...P(u, hv - 0.17), zb + 0.6), corners = [[-bw2, -bd2], [bw2, -bd2], [bw2, bd2], [-bw2, bd2]].map(([a, b]) => eng.scr(...P(a, b), zb));
       w.screen = { x0: Math.min(...corners.map(c => c[0])), x1: Math.max(...corners.map(c => c[0])), y0: hd[1] - 30, y1: Math.max(...corners.map(c => c[1])) };
       const tag = w.L !== st.level ? '' : w.p.tag != null ? w.p.tag : (opts.tags ? w.d.name : '');
       if (tag) tags.push(`<text class="pic-label hc3d-tag" x="${hd[0].toFixed(1)}" y="${(hd[1] - 24).toFixed(1)}">${esc(tag)}</text>`);
     }
-    /* A duvet pulled up to the sleeper's chest: a soft box over their half of the bed, in the
-       engine's own duvet colours (m-duvet), with the faces the camera sees. */
-    function duvetLump(f, u, L) {
-      const z0 = eng.baseZ(L) + 0.5, z1 = z0 + 0.14, u0 = u === 0 ? -0.66 : u - 0.32, u1 = u === 0 ? 0.66 : u + 0.32, v0 = -0.5, v1 = 0.97;
+    /* The duvet over a sleeper: a soft lump the width of one person, as wide as the shoulders
+       at the top and narrowing toward the feet, its sides sloping down to the sheet at 45°, from the chest to the foot of the bed, in the
+       engine's own duvet colours (m-duvet), with the faces the camera sees. Two people in a
+       double bed make two lumps side by side. */
+    function duvetLump(f, u, L, zo) {
+      const H = 0.12, bd2 = eng.FURN[f.type].d / 2, z0 = eng.baseZ(L) + (zo || 0) + 0.5, z1 = z0 + H, v0 = -bd2 + 0.5, v1 = bd2 - 0.03;
+      const SH = 0.29, FT = 0.22;   // half-widths at the shoulders and at the feet, where it meets the sheet (m)
       const W = (uu, vv, z) => eng.scr(...eng.furnPt(f, uu, vv), z), pts = q => q.map(([x, y]) => x.toFixed(2) + ',' + y.toFixed(2)).join(' ');
-      const sides = [[[u0, v0], [u1, v0]], [[u1, v0], [u1, v1]], [[u1, v1], [u0, v1]], [[u0, v1], [u0, v0]]];
+      // the outline on the sheet, and the top: every side slopes in at 45°, so the top is H smaller all round
+      const C = [[u - SH, v0], [u + SH, v0], [u + FT, v1], [u - FT, v1]];
+      const T = [[u - SH + H, v0 + H], [u + SH - H, v0 + H], [u + FT - H, v1 - H], [u - FT + H, v1 - H]];
+      const sides = [[0, 1], [1, 2], [2, 3], [3, 0]];
       let out = '';
-      sides.forEach(([a, b]) => {
-        const q = [W(a[0], a[1], z0), W(b[0], b[1], z0), W(b[0], b[1], z1), W(a[0], a[1], z1)];
-        // outward-facing toward the camera: the bottom edge, walked from a to b, has the box on its upper side on screen
-        const cx = (q[0][0] + q[1][0]) / 2, cy = (q[0][1] + q[1][1]) / 2, m = W((u0 + u1) / 2, (v0 + v1) / 2, z0);
+      sides.forEach(([i, j]) => {
+        const a = C[i], b = C[j];
+        const q = [W(a[0], a[1], z0), W(b[0], b[1], z0), W(T[j][0], T[j][1], z1), W(T[i][0], T[i][1], z1)];
+        // outward-facing toward the camera: the bottom edge, walked from a to b, has the lump on its upper side on screen
+        const cx = (q[0][0] + q[1][0]) / 2, cy = (q[0][1] + q[1][1]) / 2, m = W(u, (v0 + v1) / 2, z0);
         if (cy <= m[1] + 0.01) return;
         out += `<polygon class="m-duvet ${cx < m[0] ? 'fl' : 'fr'}" points="${pts(q)}"/>`;
       });
-      const top = [W(u0, v0, z1), W(u1, v0, z1), W(u1, v1, z1), W(u0, v1, z1)];
-      const fold = [W(u0, v0 + 0.12, z1), W(u1, v0 + 0.12, z1)];
+      const top = T.map(([uu, vv]) => W(uu, vv, z1));
+      const fold = [W(u - SH + H + 0.01, v0 + H + 0.1, z1), W(u + SH - H - 0.01, v0 + H + 0.1, z1)];
       return out + `<polygon class="m-duvet ft" points="${pts(top)}"/><path d="M${fold[0][0].toFixed(2)} ${fold[0][1].toFixed(2)}L${fold[1][0].toFixed(2)} ${fold[1][1].toFixed(2)}" stroke="rgba(0,0,0,.15)" stroke-width="1.2" fill="none"/>`;
     }
 
@@ -748,6 +792,31 @@
     const alt = esc(opts.alt || 'A picture of people in a room');
     return `<svg class="house-pic" xmlns="http://www.w3.org/2000/svg" viewBox="${x.toFixed(1)} ${y.toFixed(1)} ${w.toFixed(1)} ${hh.toFixed(1)}" role="img" aria-label="${alt}"${clashes ? ` data-clashes="${clashes}"` : ''}>${markup}</svg>`;
   }
+
+  /* A person drawn less than fully solid (opacity < 1: a guess, a memory) is faded. Below
+     50 % they also get a dashed outline round the outside of the figure, so even a faint
+     ghost reads as a person. The line takes the colour opposite the page (the page's text
+     colour, or --hc3d-ghost-line) and the alpha the figure lost: a 30 % figure gets a 70 %
+     line. The outline is a ring just inside the edge of the figure's silhouette (a filter: the
+     silhouette minus itself shrunk), so the figure stays its own size; the dashes
+     come from masking that ring with a fine checkerboard, which breaks a line of any
+     direction into short dashes. */
+  const GHOST_LINE_BELOW = 0.5;
+  function ghost(id, op, art, opts) {
+    const width = opts.ghostLine || 1.2, dash = opts.ghostDash || 2.6, faded = `<g opacity="${op.toFixed(3)}">${art}</g>`;
+    if (op >= GHOST_LINE_BELOW) return faded;
+    const ring = `<filter id="${id}f" x="-25%" y="-25%" width="150%" height="150%" color-interpolation-filters="sRGB">`
+      + `<feMorphology in="SourceAlpha" operator="erode" radius="${width.toFixed(2)}" result="shrunk"/>`
+      + `<feComposite in="SourceAlpha" in2="shrunk" operator="out" result="ring"/>`
+      + `<feFlood style="flood-color:var(--hc3d-ghost-line, var(--color-text-primary, #1a1a1a))" flood-opacity="${(1 - op).toFixed(3)}"/>`
+      + `<feComposite in2="ring" operator="in"/></filter>`
+      + `<pattern id="${id}p" patternUnits="userSpaceOnUse" width="${2 * dash}" height="${2 * dash}">`
+      + `<rect width="${dash}" height="${dash}" fill="#fff"/><rect x="${dash}" y="${dash}" width="${dash}" height="${dash}" fill="#fff"/></pattern>`
+      + `<mask id="${id}m" maskUnits="userSpaceOnUse" x="-9999" y="-9999" width="19998" height="19998"><rect x="-9999" y="-9999" width="19998" height="19998" fill="url(#${id}p)"/></mask>`;
+    return faded + ring + `<g mask="url(#${id}m)"><g filter="url(#${id}f)">${art}</g></g>`;
+  }
+  const isBed = t => /bed/i.test(t) && !/bedside/i.test(t);   // bed, and the single and double beds
+  const opacityOf = p => p.opacity != null ? Math.max(0, Math.min(1, +p.opacity)) : 1;
 
   function pictureDraw(el, house, people, opts) {
     if (typeof el === 'string') el = document.getElementById(el);

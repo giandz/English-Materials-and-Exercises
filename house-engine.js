@@ -476,7 +476,9 @@ html[data-theme="dark"] .stair-rail{ stroke:#c9a77e; }
       column: { emoji: '🪵', word: 'Column', hint: 'Tap a grid corner or the middle of a square to add a column. Walls meet a corner column neatly.' },
       table:  { emoji: '🍽️', word: 'Dining table', hint: 'Tap a grid corner or the middle of a square to put a dining table there (1.2 × 0.8 m). Tap it again to turn it, or press R before you tap. Drag it to move it.' },
       chair:  { emoji: '🪑', word: 'Chair', hint: 'Tap a grid corner or the middle of a square to put a chair there. Tap it again to turn it (the back goes round), or press R before you tap. Drag it to move it.' },
-      bed:    { emoji: '🛏️', word: 'Bed',   hint: 'Tap a grid corner or the middle of a square to put a double bed there (1.4 × 2 m). Tap it again to turn it, or press R before you tap. Drag it to move it.' },
+      singlebed: { emoji: '', word: 'Single bed', hint: 'Tap a grid corner or the middle of a square to put a single bed there (0.9 × 2 m). Things can go on it, like a book or a cushion. Tap it again to turn it, or press R before you tap. Drag it to move it.' },
+      bed:    { emoji: '', word: 'Double bed', hint: 'Tap a grid corner or the middle of a square to put a double bed there (1.4 × 2 m). Things can go on it, like a book or a cushion. Tap it again to turn it, or press R before you tap. Drag it to move it.' },
+      bunkbed: { emoji: '', word: 'Bunk bed', hint: 'Tap a grid corner or the middle of a square to put a bunk bed there: two single beds, one on top of the other, with a ladder (1 × 2 m, 1.65 m high). Things can go on the bottom bed or the top bed. Tap it again to turn it, or press R before you tap. Drag it to move it.' },
       armchair: { emoji: '', word: 'Armchair', hint: 'Tap a grid corner or the middle of a square to put an armchair there. Tap it again to turn it (the back goes round), or press R before you tap. Drag it to move it.' },
       loveseat: { emoji: '', word: 'Loveseat', hint: 'Tap a grid corner or the middle of a square to put a two-seat loveseat there (1.5 m). Tap it again to turn it, or press R before you tap. Drag it to move it.' },
       couch:    { emoji: '', word: 'Couch',    hint: 'Tap a grid corner or the middle of a square to put a three-seat couch there (2.1 m). Tap it again to turn it, or press R before you tap. Drag it to move it.' },
@@ -513,7 +515,7 @@ html[data-theme="dark"] .stair-rail{ stroke:#c9a77e; }
       watertank:   { emoji: '', word: 'Water tank', hint: 'A water tank with a pump beside it. Tap the floor. Tap it again to turn it. Drag it to move it.' },
       waterheater: { emoji: '', word: 'Water heater (tankless)', hint: 'Tap a wall, on the side you want, to mount a tankless electric water heater on it, with its hot and cold valves. Tap it again to move it to the other side of the wall.' },
       rug:       { emoji: '', word: 'Rug', hint: 'A 2 × 1.4 m rug on the floor. It can go under furniture, but not under walls. Tap it again to turn it. Drag it to move it.' },
-      cushion:   { emoji: '', word: 'Cushion', hint: 'A throw pillow for a chair, armchair, loveseat or couch seat. Tap the seat. Tap it again to turn it. Drag it to move it.' },
+      cushion:   { emoji: '', word: 'Cushion', hint: 'A throw pillow for a chair, armchair, loveseat or couch seat, or a bed. Tap the seat or the bed. Tap it again to turn it. Drag it to move it.' },
       toilet:    { emoji: '🚽', word: 'Toilet', hint: 'Tap a grid corner or the middle of a square to put a toilet there, tank at the back. Tap it again to turn it, or press R before you tap. Drag it to move it.' },
       washbasin: { emoji: '', word: 'Washbasin', hint: 'Tap a grid corner or the middle of a square to put a washbasin on a pedestal there, tap at the back. Tap it again to turn it. Drag it to move it.' },
       bathtub:   { emoji: '🛁', word: 'Bathtub', hint: 'Tap a grid corner or the middle of a square to put a bathtub there (0.75 × 1.7 m), taps at the back end. Tap it again to turn it. Drag it to move it.' },
@@ -652,7 +654,11 @@ html[data-theme="dark"] .stair-rail{ stroke:#c9a77e; }
       table: { w: 1.2, d: 0.8, h: 0.75, levels: [{ z: 0.75, top: true }, { z: 0, under: true, clear: 0.7, uw: 0.92, ud: 0.6 }] },
       chair: { w: 0.45, d: 0.45, h: 0.92, inner: 0.45, innerD: 0.4, levels: [{ z: 0.47, single: true, v: 0.02 }, { z: 0, under: true, single: true, clear: 0.42, uw: 0.33, ud: 0.33 }] },
       officechair: { w: 0.6, d: 0.6, h: 1.05, inner: 0.48, innerD: 0.42, levels: [{ z: 0.5, single: true, v: 0.02 }] },
-      bed:   { w: 1.4, d: 2.0, h: 0.95 },
+      // beds: the front is the foot end. 'bed' is the double bed (its old name, so saved houses still open).
+      // Things lie on the duvet, towards the foot end (v), clear of the pillows.
+      singlebed: { w: 0.9, d: 2.0, h: 0.9, levels: [{ z: 0.51, v: 0.3 }] },
+      bed:   { w: 1.4, d: 2.0, h: 0.95, levels: [{ z: 0.51, v: 0.3 }] },
+      bunkbed: { w: 1.04, d: 2.0, h: 1.65, inner: 0.88, levels: [{ z: 0.48, v: 0.3, clear: 0.55 }, { z: 1.38, v: 0.3 }] },
       armchair: { w: 0.85, d: 0.85, h: 0.82, seats: 1, inner: 0.53, innerD: 0.6, levels: [{ z: 0.44, single: true, v: 0.1 }] },
       loveseat: { w: 1.5, d: 0.85, h: 0.82, seats: 2, levels: [{ z: 0.44, v: 0.05 }] },
       couch:    { w: 2.1, d: 0.9, h: 0.82, seats: 3, levels: [{ z: 0.44, v: 0.05 }] },
@@ -680,7 +686,7 @@ html[data-theme="dark"] .stair-rail{ stroke:#c9a77e; }
       waterheater: { w: 0.5, d: 0.16, h: 0.65, wall: true, appl: true, hangZ: 1.3, pickZ: 1.6 },  // tankless, with hot/cold valves
       wallcabinet: { w: 0.8, d: 0.32, h: 0.7,  wall: true, hangZ: 1.5, pickZ: 1.75 }   // upper kitchen cabinet, same doors as the countertop's base
     };
-    const FURN_ORDER = ['table', 'chair', 'officechair', 'bed', 'nightstand', 'sidetable', 'coffeetable', 'dresser', 'wardrobe', 'armchair', 'loveseat', 'couch', 'bookshelf', 'tvstand', 'wallshelf', 'countertop', 'toilet', 'washbasin', 'bathtub', 'shower', 'mirrorcab', 'acwindow', 'acsplit', 'accondenser', 'exhaustfan', 'radiator', 'waterheater', 'wallcabinet'];
+    const FURN_ORDER = ['table', 'chair', 'officechair', 'singlebed', 'bed', 'bunkbed', 'nightstand', 'sidetable', 'coffeetable', 'dresser', 'wardrobe', 'armchair', 'loveseat', 'couch', 'bookshelf', 'tvstand', 'wallshelf', 'countertop', 'toilet', 'washbasin', 'bathtub', 'shower', 'mirrorcab', 'acwindow', 'acsplit', 'accondenser', 'exhaustfan', 'radiator', 'waterheater', 'wallcabinet'];
     const hung = o => !!FURN[o.type].wall;          // hangs on a wall (shelf, shower) instead of standing on the floor
     const SHELF_Z = 1.2;   // a wall shelf's board sits this high: anything lower than LOW_ENOUGH can stand under it
     const LOW_ENOUGH = 1.15;
@@ -777,10 +783,27 @@ html[data-theme="dark"] .stair-rail{ stroke:#c9a77e; }
         for (let i = 0; i < seats; i++) parts.push(P_(-hw + a + i * cw + 0.006, -hw + a + (i + 1) * cw - 0.006, -hd + bd, hd - 0.01, 0.24, 0.44, 'cush'));
         return parts;
       }
-      return [   // bed: headboard at the back, frame, mattress, duvet over the foot end, two pillows
-        P_(-0.7, 0.7, -1.0, -0.94, 0, 0.95, 'furn'), P_(-0.7, 0.7, -0.94, 1.0, 0, 0.28, 'furn'),
-        P_(-0.66, 0.66, -0.92, 0.97, 0.28, 0.48, 'linen'), P_(-0.68, 0.68, -0.35, 0.99, 0.48, 0.51, 'duvet'),
-        P_(-0.62, -0.06, -0.9, -0.6, 0.48, 0.58, 'linen'), P_(0.06, 0.62, -0.9, -0.6, 0.48, 0.58, 'linen')];
+      if (f.type === 'bunkbed') {
+        // four corner posts, two single beds (frame, mattress, duvet, pillow), head and foot boards,
+        // a guard rail round the top bed, and a ladder up one long side near the foot end
+        const one = z => [P_(-0.47, 0.47, -0.97, 0.97, z, z + 0.16, 'furn'), P_(-0.45, 0.45, -0.95, 0.95, z + 0.16, z + 0.32, 'linen'),
+          P_(-0.46, 0.46, -0.3, 0.96, z + 0.32, z + 0.35, 'duvet'), P_(-0.34, 0.34, -0.92, -0.66, z + 0.32, z + 0.42, 'linen')];
+        const posts = [[-1, -1], [1, -1], [1, 1], [-1, 1]].map(([a, b]) => P_(a * 0.47 - 0.03, a * 0.47 + 0.03, b * 0.97 - 0.03, b * 0.97 + 0.03, 0, 1.65, 'furn'));
+        const ladder = [P_(-0.52, -0.48, 0.42, 0.46, 0, 1.5, 'furn'), P_(-0.52, -0.48, 0.84, 0.88, 0, 1.5, 'furn'),
+          ...[0.32, 0.62, 0.92, 1.22].map(z => P_(-0.515, -0.485, 0.46, 0.84, z, z + 0.035, 'furn'))];
+        return [...posts, ...one(0.16), ...one(1.06),
+          P_(-0.44, 0.44, -1.0, -0.95, 0.32, 0.8, 'furn'), P_(-0.44, 0.44, -1.0, -0.95, 1.22, 1.6, 'furn'),   // head boards
+          P_(-0.44, 0.44, 0.95, 1.0, 1.22, 1.5, 'furn'),                                                       // foot board, top bed
+          P_(0.47, 0.5, -0.94, 0.94, 1.44, 1.5, 'furn'), P_(-0.5, -0.47, -0.94, 0.38, 1.44, 1.5, 'furn'),       // guard rails (open by the ladder)
+          ...ladder];
+      }
+      // single and double bed: headboard at the back, frame, mattress, duvet over the foot end, one pillow or two
+      const hw = FURN[f.type].w / 2;
+      return [
+        P_(-hw, hw, -1.0, -0.94, 0, FURN[f.type].h, 'furn'), P_(-hw, hw, -0.94, 1.0, 0, 0.28, 'furn'),
+        P_(-hw + 0.04, hw - 0.04, -0.92, 0.97, 0.28, 0.48, 'linen'), P_(-hw + 0.02, hw - 0.02, -0.35, 0.99, 0.48, 0.51, 'duvet'),
+        ...(hw > 0.5 ? [P_(-hw + 0.08, -0.06, -0.9, -0.6, 0.48, 0.58, 'linen'), P_(0.06, hw - 0.08, -0.9, -0.6, 0.48, 0.58, 'linen')]
+                     : [P_(-hw + 0.1, hw - 0.1, -0.9, -0.6, 0.48, 0.58, 'linen')])];
     }
     /* ═══════════════ APPLIANCES ═══════════════
        On the floor an appliance is { type, X, Y, dir } on a column spot, like
@@ -2811,9 +2834,13 @@ html[data-theme="dark"] .stair-rail{ stroke:#c9a77e; }
           g += rect(furnLocal(f, -hw, -hw + a, -hd + bd, hd), 'bp-furnthin') + rect(furnLocal(f, hw - a, hw, -hd + bd, hd), 'bp-furnthin');
           for (let i = 1; i < seats; i++) g += ln(-hw + a + i * cw, -hd + bd, -hw + a + i * cw, hd, 'bp-furnthin');
         }
-        else if (f.type === 'bed') {
-          g += ln(-0.7, -0.97, 0.7, -0.97, 'bp-furnline') + ln(-0.7, -0.35, 0.7, -0.35, 'bp-furnthin');
-          g += rect(furnLocal(f, -0.62, -0.06, -0.9, -0.6), 'bp-furnthin') + rect(furnLocal(f, 0.06, 0.62, -0.9, -0.6), 'bp-furnthin');
+        else if (f.type === 'bed' || f.type === 'singlebed' || f.type === 'bunkbed') {
+          // headboard, duvet fold, pillow(s); a bunk bed also shows its ladder
+          const hw = f.type === 'bunkbed' ? 0.47 : FURN[f.type].w / 2;
+          g += ln(-hw, -0.97, hw, -0.97, 'bp-furnline') + ln(-hw, -0.35, hw, -0.35, 'bp-furnthin');
+          g += hw > 0.5 ? rect(furnLocal(f, -hw + 0.08, -0.06, -0.9, -0.6), 'bp-furnthin') + rect(furnLocal(f, 0.06, hw - 0.08, -0.9, -0.6), 'bp-furnthin')
+                        : rect(furnLocal(f, -0.34, 0.34, -0.9, -0.62), 'bp-furnthin');
+          if (f.type === 'bunkbed') g += ln(-0.5, 0.42, -0.5, 0.88, 'bp-furnline') + [0.53, 0.65, 0.77].map(v => ln(-0.52, v, -0.46, v, 'bp-furnthin')).join('');
         } else if (f.type === 'bookshelf') {
           g += ln(-0.42, -0.19, 0.42, -0.19, 'bp-furnline') + ln(-0.3, -0.12, -0.3, 0.17, 'bp-furnthin') + ln(0, -0.12, 0, 0.17, 'bp-furnthin') + ln(0.3, -0.12, 0.3, 0.17, 'bp-furnthin');
         } else if (f.type === 'officechair') {
