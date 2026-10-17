@@ -1,0 +1,139 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<title>House Detectives — Deduction</title>
+<script>
+(function(){
+  try{
+    var saved = localStorage.getItem('theme-preference');
+    var theme = (saved === 'light' || saved === 'dark')
+      ? saved
+      : ((window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches) ? 'dark' : 'light');
+    document.documentElement.setAttribute('data-theme', theme);
+    var fs = parseFloat(localStorage.getItem('font-size-preference'));
+    if (fs >= 10 && fs <= 28) document.documentElement.style.setProperty('--fs-base', fs + 'px');
+  }catch(e){ /* localStorage/matchMedia unavailable — CSS media query still applies */ }
+})();
+</script>
+<link rel="stylesheet" href="house.css">
+<style>
+.q-card{ padding:22px 18px; }
+.clues{ list-style:none; margin:0; padding:0; text-align:left; display:flex; flex-direction:column; gap:7px; max-width:440px; }
+.clues li{ font-size:1rem; line-height:1.45; background:var(--surface-1); border:1px solid var(--border); border-radius:10px; padding:7px 11px; }
+.who-pic{ width:120px; }
+.reveal-btn{ font-weight:600; }
+.reveal{ width:100%; max-width:420px; }
+.reveal .house-pic{ margin-bottom:6px; }
+.reveal-cap{ font-size:1.0667rem; font-weight:600; }
+.useful{ display:flex; flex-wrap:wrap; gap:6px; margin-top:6px; }
+.useful span{ font-size:.8rem; padding:3px 10px; border-radius:999px; background:var(--surface-2); border:1px solid var(--border); }
+.house-wrap{ margin:0 0 1rem; }
+</style>
+</head>
+<body>
+<div class="page" id="page">
+  <span class="cefr-tag cefr-a2b1">A2/B1 · Pre-intermediate</span>
+  <h1>House Detectives</h1>
+  <p class="subtitle">Somebody is somewhere in the house. Read the clues. Where are they? What are they doing?</p>
+
+  <div class="house-wrap" id="houseMap"></div>
+
+  <div class="rule-box">
+    <p><strong>How to play (pairs):</strong></p>
+    <p>1. Roll 🎲 and read the clues together.</p>
+    <p>2. Talk: where can’t they be? Where might they be? Where must they be? “<b>She can’t be in the backyard — it’s raining. She might be in the kitchen …</b>”</p>
+    <p>3. Agree on one answer and say how sure you are (for example 75%: “<b>She’s probably cooking.</b>”).</p>
+    <p>4. Press 👀 to see the answer. Then roll again.</p>
+    <div class="useful"><span>must be</span><span>might / may / could be</span><span>can’t be</span><span>definitely</span><span>probably</span><span>probably isn’t</span><span>maybe</span><span>perhaps</span></div>
+  </div>
+
+  <div class="q-card" id="qCard"><span class="q-placeholder">Roll the dice to start.</span></div>
+  <button class="dice-btn" id="diceBtn" aria-label="Roll">🎲</button>
+  <div class="roll-count">Rolls: <strong id="rollCount">0</strong></div>
+
+  <div class="sec-div">Now you</div>
+  <div class="rule-box">
+    <p>Think of a person you know. Where are they now? Give your partner three clues: “<b>It’s 6 o’clock. She loves cooking. Her car isn’t at home.</b>”</p>
+    <p>Your partner guesses: “<b>She can’t be at home. She might be at the supermarket. She’s probably buying food for dinner!</b>”</p>
+    <p>Then talk: Where might your teacher be on Saturday afternoon? What could your best friend be doing right now?</p>
+  </div>
+
+  <footer>House Detectives — Deduction with Modals (A2/B1)</footer>
+</div>
+
+<div id="theme-toggle-wrap">
+  <button id="theme-toggle" aria-label="Toggle light/dark mode" title="Toggle light/dark mode">
+    <span id="theme-icon">☀️</span>
+  </button>
+</div>
+<script src="house.js"></script>
+<script src="house-engine.js"></script>
+<script src="house-character.js"></script>
+<script src="house-character-3d.js"></script>
+<script src="deduction-house.js"></script>
+<script>
+const D = DeductionHouse;
+D.injectStyles();
+document.getElementById('houseMap').innerHTML = D.house([], { labels: true, alt: 'The family’s house: a kitchen, a living room, a bedroom, a bathroom, a study and a backyard with a pool' });
+
+/* What each person might be doing — and the clues each thing leaves.
+   for:  points to it ("must") · hint: makes it possible ("might") · against: rules it out ("can’t") */
+const PEOPLE = {
+  julia: ['cooking', 'swimming', 'tv', 'reading', 'napping', 'working', 'garden'],
+  juan:  ['cooking', 'swimming', 'tv', 'reading', 'napping', 'working', 'garden', 'shower'],
+  rosa:  ['cooking', 'tv', 'reading', 'napping', 'garden'],
+  lucas: ['swimming', 'tv', 'gaming', 'shower', 'garden', 'reading']
+};
+const CLUES = {
+  cooking:  { for: ['🍳 You can smell onions.', '🔊 You can hear something in a frying pan.'], hint: ['🕕 It’s nearly dinner time.'], against: ['🍽️ The kitchen is dark and very clean.'] },
+  swimming: { for: ['💦 You can hear splashing outside.', '🩴 [Name]’s towel isn’t in the bathroom.'], hint: ['☀️ It’s a very hot day.'], against: ['🩱 [Name]’s swimsuit is dry, on the bed.', '☔ It’s raining hard.'] },
+  tv:       { for: ['📺 You can hear a baseball game on TV.'], hint: ['⚽ There’s a big game today.'], against: ['📺 The TV is broken.'] },
+  reading:  { for: ['📚 [Name]’s new book isn’t on the shelf.'], hint: ['🤫 The house is very quiet.'], against: ['👓 [Name]’s reading glasses are in the car.'] },
+  napping:  { for: ['🚪 The bedroom door is closed and you can hear snoring.'], hint: ['🥱 [Name] was very tired at lunch.'], against: ['🛏️ The bedroom door is open and the bed is empty.'] },
+  working:  { for: ['⌨️ You can hear typing in the study.'], hint: ['📅 [Name] has a lot of work this week.'], against: ['💻 The laptop is in the car.'] },
+  gaming:   { for: ['🎮 You can hear game music in the study.'], hint: ['🆕 [Name] has a new game.'], against: ['🎮 The game controller is in your bag.'] },
+  shower:   { for: ['🚿 You can hear water in the bathroom.'], hint: ['⚽ [Name] played soccer this morning.'], against: ['🚿 The bathroom door is open and it’s dry.'] },
+  garden:   { for: ['🌱 There’s fresh mud by the back door.'], hint: ['🌤️ It’s a beautiful sunny afternoon.'], against: ['🥾 [Name]’s gardening boots are by the front door.', '☔ It’s raining hard.'] }
+};
+const pick = HouseRandomGen.pickFrom;
+const shuffle = a => { a = a.slice(); for (let i = a.length - 1; i > 0; i--) { const j = Math.floor(Math.random() * (i + 1)); [a[i], a[j]] = [a[j], a[i]]; } return a; };
+
+function mystery() {
+  const who = pick(Object.keys(PEOPLE)), acts = PEOPLE[who], act = pick(acts);
+  const others = shuffle(acts.filter(a => a !== act));
+  // one clue for the answer (strong or weak), two that rule things out, one red herring
+  const clues = [Math.random() < 0.6 ? pick(CLUES[act].for) : pick(CLUES[act].hint)];
+  others.slice(0, 2).forEach(a => clues.push(pick(CLUES[a].against)));
+  if (others[2]) clues.push(pick(CLUES[others[2]].hint));
+  const used = new Set(), name = D.CAST[who].name;
+  const list = shuffle(clues).filter(c => !used.has(c) && used.add(c))
+    .filter(c => !(act === 'swimming' && c.startsWith('☔')) && !(act === 'garden' && c.startsWith('☔')))
+    .map(c => c.replace(/\[Name\]/g, name));
+  return { who, act, clues: list };
+}
+
+let current = null;
+HouseRandomGen.build({
+  pick: mystery,
+  key: m => m.who + m.act,
+  render: m => {
+    current = m;
+    const c = D.CAST[m.who];
+    return '<span class="q-topic">🔎 Where is ' + c.name + ' (' + c.role + ')?</span>' +
+      '<ul class="clues">' + m.clues.map(x => '<li>' + x + '</li>').join('') + '</ul>' +
+      '<span class="q-prompt">Where must / might / can’t ' + c.he + ' be? What is ' + c.he + ' doing?</span>' +
+      '<button class="reveal-btn" id="revealBtn">👀 Show the answer</button><div class="reveal" id="reveal"></div>';
+  }
+});
+document.getElementById('qCard').addEventListener('click', e => {
+  if (!e.target.closest('#revealBtn') || !current) return;
+  const a = D.ACTS[current.act], c = D.CAST[current.who];
+  document.getElementById('reveal').innerHTML = D.scene(a.room, [{ who: current.who, act: current.act }], { around: 1.3, aspect: 4 / 3 }) +
+    '<div class="reveal-cap">' + a.emoji + ' ' + c.name + ' was ' + (a.ing.startsWith('in ') ? a.ing : a.ing + ' in ' + (current.act === 'swimming' ? 'the pool' : D.ROOMS[a.room].word)) + '!</div>';
+  e.target.closest('#revealBtn').remove();
+});
+</script>
+</body>
+</html>

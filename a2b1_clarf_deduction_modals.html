@@ -1,0 +1,213 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<title>Deduction: must, might, can’t — Clarification</title>
+<script>
+(function(){
+  try{
+    var saved = localStorage.getItem('theme-preference');
+    var theme = (saved === 'light' || saved === 'dark')
+      ? saved
+      : ((window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches) ? 'dark' : 'light');
+    document.documentElement.setAttribute('data-theme', theme);
+    var fs = parseFloat(localStorage.getItem('font-size-preference'));
+    if (fs >= 10 && fs <= 28) document.documentElement.style.setProperty('--fs-base', fs + 'px');
+  }catch(e){ /* localStorage/matchMedia unavailable — CSS media query still applies */ }
+})();
+</script>
+<link rel="stylesheet" href="house.css">
+<style>
+/* the target language is the lesson, so it stays coloured (not a grammar-toggle colour) */
+.tgt{ color:var(--text-accent); font-weight:700; }
+.ex-card{ border:1px solid var(--color-border-tertiary); border-radius:12px; background:var(--surface-2); padding:10px 12px 12px; margin-bottom:12px; }
+.ex-say{ font-size:1rem; font-weight:600; line-height:1.5; }
+.ex-why{ font-size:.8333rem; color:var(--text-secondary); margin-top:2px; }
+.ex-why::before{ content:'🔎 '; }
+.cert{ display:grid; grid-template-columns:auto minmax(0,1fr) minmax(0,1.3fr); gap:4px 10px; align-items:center; margin:4px 0 10px; font-size:.8667rem; }
+.cert > div{ padding:5px 8px; border-radius:7px; background:var(--surface-2); border:1px solid var(--color-border-tertiary); }
+.cert .h{ background:none; border:none; font-size:.7rem; font-weight:700; letter-spacing:.04em; text-transform:uppercase; color:var(--text-muted); }
+.cert .pc{ font-family:var(--font-mono); font-weight:700; color:#fff; text-align:center; border:none; }
+.rule-box p{ margin:0 0 6px; }
+.rule-box p:last-child{ margin-bottom:0; }
+.rule-box h3{ margin:.8rem 0 .3rem; color:var(--text-primary); }
+.rule-box h3:first-child{ margin-top:0; }
+</style>
+</head>
+<body>
+<div class="page" id="page">
+  <span class="cefr-tag cefr-a2b1">A2/B1 · Pre-intermediate</span>
+  <h1>Deduction: must, might, can’t</h1>
+  <p class="subtitle">We use these words when we are not 100% sure. We guess from what we can see, hear or know.</p>
+
+  <div class="sec-div">How sure are you?</div>
+  <p class="subtitle">The same guess: “Dad … in the pool.” The more sure you are, the more you can see him.</p>
+  <div id="meter"></div>
+
+  <div class="sec-div">Look</div>
+  <p class="subtitle">What does the speaker think? Why? Read the sentence and look at the thought bubble.</p>
+  <div id="examples"></div>
+
+  <div class="sec-div">Check the meaning</div>
+  <p class="subtitle">Read the sentence. Answer the questions.</p>
+  <div id="ccq"></div>
+
+  <div class="sec-div">Look at the form</div>
+  <p class="subtitle">What is each part of the sentence? Drag a label (or tap a label, then tap a box).</p>
+  <div class="score-bar"><span>Correct: <strong id="fcScore">0</strong> / <span id="fcTotal">0</span></span></div>
+  <div id="formClarf"></div>
+
+  <div class="rule-box" id="ruleBox"></div>
+
+  <div class="sec-div">Common mistakes</div>
+  <div id="mistakes"></div>
+
+  <div class="sec-div">Error hunt</div>
+  <p class="subtitle">Some sentences have a mistake. Some are correct! Tap a word — or a space between words — to fix it. Then press OK.</p>
+  <div class="score-bar"><span>Done: <strong id="errorScore">0</strong> / <span id="errorTotal">0</span></span></div>
+  <div id="errorHuntItems"></div>
+
+  <footer>Deduction with Modals — Clarification (A2/B1)</footer>
+</div>
+
+<div id="theme-toggle-wrap">
+  <button id="theme-toggle" aria-label="Toggle light/dark mode" title="Toggle light/dark mode">
+    <span id="theme-icon">☀️</span>
+  </button>
+</div>
+<script src="house.js"></script>
+<script src="house-engine.js"></script>
+<script src="house-character.js"></script>
+<script src="house-character-3d.js"></script>
+<script src="deduction-house.js"></script>
+<script>
+const D = DeductionHouse;
+const T = s => '<span class="tgt">' + s + '</span>';
+
+/* ── the scale ─────────────────────────────────────────────────────────── */
+document.getElementById('meter').innerHTML = D.meter({ who: 'juan', act: 'swimming' });
+
+/* ── examples: sentence, reason, thought bubble ───────────────────────── */
+const EXAMPLES = [
+  ['Mom ' + T('is definitely') + ' in the kitchen.', 'I saw her a moment ago.', [{ who: 'julia', act: 'cooking', pct: 100 }]],
+  ['Lucas ' + T('must be') + ' in the shower.', 'I can hear him singing. He always sings in the shower.', [{ who: 'lucas', act: 'shower', pct: 95 }]],
+  ['Dad' + T('’s probably') + ' in the pool.', 'His towel isn’t here.', [{ who: 'juan', act: 'swimming', pct: 75 }]],
+  ['Grandma ' + T('might be') + ' asleep. / ' + T('Maybe') + ' she’s asleep. / ' + T('Perhaps') + ' she’s asleep.', 'She often takes a nap after lunch — but I don’t know.', [{ who: 'rosa', act: 'napping', pct: 40 }]],
+  ['Dad ' + T('could be') + ' swimming, or he ' + T('may be') + ' working.', 'Two ideas. I think swimming is more likely.', [{ who: 'juan', act: 'swimming', pct: 50 }, { who: 'juan', act: 'working', pct: 30 }]],
+  ['Lucas ' + T('probably isn’t') + ' in the study.', 'The light is off — but he sometimes plays games in the dark.', [{ who: 'lucas', act: 'gaming', pct: 25 }]],
+  ['Grandma ' + T('can’t be') + ' in the backyard.', 'Her gardening boots are here, by the door.', [{ who: 'rosa', act: 'garden', pct: 0 }]]
+];
+document.getElementById('examples').innerHTML = EXAMPLES.map(([say, why, think]) =>
+  '<div class="ex-card"><div class="ex-say">' + say + '</div><div class="ex-why">' + why + '</div>' + D.bubble(think) + '</div>').join('');
+
+/* ── concept checking questions ────────────────────────────────────────── */
+HouseCCQ.build({
+  container: 'ccq',
+  items: [
+    { sentence: 'Lucas must be in the shower. I can hear him singing.',
+      questions: [
+        { q: 'Is the speaker very sure?', opts: ['Yes', 'No'], correct: 0,
+          why: 'Yes. She has a good reason: she can hear him.' },
+        { q: 'Did she see Lucas in the shower?', opts: ['Yes', 'No'], correct: 1,
+          why: 'No. <b>must</b> = I didn’t see it, but I’m sure it’s true. If you saw it, say <b>He’s definitely in the shower</b>.' }
+      ] },
+    { sentence: 'Dad might be in the pool.',
+      questions: [
+        { q: 'Is it possible that Dad is in the pool?', opts: ['Yes', 'No'], correct: 0,
+          why: 'Yes — maybe he is.' },
+        { q: 'Is it possible that Dad is in the kitchen?', opts: ['Yes', 'No'], correct: 0,
+          why: 'Yes! <b>might</b> = maybe true, maybe not true. <b>may</b> and <b>could</b> are the same here.' }
+      ] },
+    { sentence: 'Grandma can’t be in the backyard. Her boots are here.',
+      questions: [
+        { q: 'Is it possible that Grandma is in the backyard?', opts: ['Yes', 'No'], correct: 1,
+          why: 'No. <b>can’t</b> = I’m sure it’s not true.' },
+        { q: 'Can we say “Grandma mustn’t be in the backyard” here?', opts: ['Yes', 'No'], correct: 1,
+          why: 'No. <b>mustn’t</b> means “it’s not allowed”. For a guess, the opposite of <b>must</b> is <b>can’t</b>.' }
+      ] },
+    { sentence: 'Maybe she’s asleep.',
+      questions: [
+        { q: 'Is it the same as “She may be asleep”?', opts: ['Yes', 'No'], correct: 0,
+          why: 'Yes. <b>Maybe</b> (one word) goes at the start. <b>may be</b> (two words) goes after the person: She may be …' },
+        { q: 'Is the speaker sure?', opts: ['Yes', 'No'], correct: 1,
+          why: 'No. Maybe and perhaps = about 30–50% sure.' }
+      ] }
+  ]
+});
+
+/* ── form ──────────────────────────────────────────────────────────────── */
+HouseFormClarf.build({
+  container: 'formClarf', scoreEl: 'fcScore', totalEl: 'fcTotal',
+  pool: ['subject', 'aux', 'verb', 'neg', 'adverb', 'object', 'adj', 'prep'],
+  items: [
+    { form: 'aff', parts: [['He', 'subject'], ['must', 'aux'], ['be', 'verb'], ['in the pool', 'prep'], ['.', null]] },
+    { form: 'aff', parts: [['She', 'subject'], ['might', 'aux'], ['be', 'verb'], ['watching', 'verb'], ['TV', 'object'], ['.', null]] },
+    { form: 'neg', parts: [['Grandma', 'subject'], ['can’t', 'aux'], ['be', 'verb'], ['in the backyard', 'prep'], ['.', null]] },
+    { form: 'neg', parts: [['He', 'subject'], ['might', 'aux'], ['not', 'neg'], ['be', 'verb'], ['at home', 'prep'], ['.', null]] },
+    { form: 'aff', parts: [['Dad', 'subject'], ['is', 'verb'], ['probably', 'adverb'], ['in the pool', 'prep'], ['.', null]] },
+    { form: 'neg', parts: [['Lucas', 'subject'], ['probably', 'adverb'], ['isn’t', 'neg'], ['in the study', 'prep'], ['.', null]] },
+    { form: 'aff', parts: [['Perhaps', 'adverb'], ['she', 'subject'], ['is', 'verb'], ['asleep', 'adj'], ['.', null]] }
+  ]
+});
+
+/* ── the rule ──────────────────────────────────────────────────────────── */
+const C = pct => '<div class="pc" style="background:' + D.colourOf(pct) + '">' + pct + '%</div>';
+const CERT = [
+  [100, 'definitely · certainly', 'He’s ' + T('definitely') + ' at home. I saw him.'],
+  [95, 'must', 'He ' + T('must be') + ' at home. His car is outside.'],
+  [75, 'probably', 'He’s ' + T('probably') + ' at home.'],
+  [40, 'might · may · could<br>maybe · perhaps · possibly', 'He ' + T('might be') + ' at home. · ' + T('Perhaps') + ' he’s at home.'],
+  [25, 'probably not', 'He ' + T('probably isn’t') + ' at home.'],
+  [0, 'can’t · definitely not', 'He ' + T('can’t be') + ' at home. His car isn’t here.']
+];
+document.getElementById('ruleBox').innerHTML =
+  '<h3>How sure?</h3>' +
+  '<div class="cert"><div class="h">sure</div><div class="h">words</div><div class="h">example</div>' +
+  CERT.map(([p, w, e]) => C(p) + '<div><strong>' + w + '</strong></div><div>' + e + '</div>').join('') + '</div>' +
+  '<h3>Modal verbs</h3>' +
+  '<p><strong>must / might / may / could / can’t + be</strong> + a place or an adjective: She ' + T('must be') + ' at home. · He ' + T('can’t be') + ' tired.</p>' +
+  '<p><strong>must / might / may / could / can’t + be + -ing</strong> (doing it now): He ' + T('might be swimming') + '. · She ' + T('could be cooking') + '.</p>' +
+  '<p>The modal never changes: he must (not <s>musts</s>) · no <b>to</b>: must be (not <s>must to be</s>).</p>' +
+  '<p><strong>Negative:</strong> ' + T('can’t') + ' = I’m sure it’s not true. ' + T('might not / may not') + ' = maybe it’s not true. (Don’t use <b>mustn’t</b> for a guess.)</p>' +
+  '<h3>Adverbs</h3>' +
+  '<p><strong>definitely / certainly / probably</strong> go after <b>is / are</b>, but before <b>isn’t / aren’t</b>: He’s ' + T('probably') + ' in the pool. · He ' + T('probably') + ' isn’t in the study.</p>' +
+  '<p>With other verbs, they go before the verb: She ' + T('definitely') + ' saw him.</p>' +
+  '<p><strong>maybe / perhaps</strong> usually go at the start: ' + T('Maybe') + ' he’s in the pool. · ' + T('Perhaps') + ' she’s asleep.</p>' +
+  '<p><strong>Maybe</strong> (one word, at the start) = <strong>may be</strong> (two words, after the person): ' + T('Maybe') + ' she’s asleep. = She ' + T('may be') + ' asleep.</p>';
+
+/* ── common mistakes ───────────────────────────────────────────────────── */
+const MISTAKES = [
+  ['He must to be in the pool.', 'He must be in the pool.'],
+  ['He musts be at home.', 'He must be at home.'],
+  ['She might sleeping.', 'She might be sleeping.'],
+  ['Grandma mustn’t be in the backyard. Her boots are here.', 'Grandma can’t be in the backyard. Her boots are here.'],
+  ['Grandma can be in her bedroom. (= maybe)', 'Grandma could / might be in her bedroom.'],
+  ['He maybe is in the pool.', 'Maybe he’s in the pool. / He may be in the pool.'],
+  ['He isn’t probably in the study.', 'He probably isn’t in the study.'],
+  ['Definitely Mom is in the kitchen.', 'Mom is definitely in the kitchen.'],
+  ['Dad could is cooking.', 'Dad could be cooking.']
+];
+document.getElementById('mistakes').innerHTML = MISTAKES.map(([no, yes]) =>
+  '<div class="pair-card"><div class="pair-line no"><span class="mark">✗</span>' + no + '</div>' +
+  '<div class="pair-line yes"><span class="mark">✓</span>' + yes + '</div></div>').join('');
+
+/* ── error hunt (some sentences are already correct) ───────────────────── */
+const EH_ITEMS = [
+  { words: ['He', 'must', 'to', 'be', 'at', 'home', '.'], error: { type: 'extra', wordIndex: 2 } },
+  { words: ['She', 'might', 'sleeping', '.'], error: { type: 'missing', gapIndex: 2, options: ['be', 'is', 'to'], correct: 'be' } },
+  { words: ['Lucas', 'must', 'be', 'in', 'the', 'bathroom', '.'], error: null },
+  { words: ['Grandma', 'mustn’t', 'be', 'in', 'the', 'backyard', '.'],
+    error: { type: 'wrong', wordIndex: 1, options: ['can’t', 'doesn’t', 'isn’t'], correct: 'can’t' } },
+  { words: ['He', 'isn’t', 'probably', 'in', 'the', 'study', '.'], error: { type: 'misplaced', wordIndex: 2, targetGapIndex: 1 } },
+  { words: ['Maybe', 'she', 'is', 'watching', 'TV', '.'], error: null },
+  { words: ['Dad', 'could', 'is', 'cooking', '.'], error: { type: 'wrong', wordIndex: 2, options: ['be', 'being', 'are'], correct: 'be' } },
+  { words: ['They', 'definitely', 'are', 'in', 'the', 'pool', '.'], error: { type: 'misplaced', wordIndex: 1, targetGapIndex: 3 } },
+  { words: ['It', 'can’t', 'be', 'Dad', '.', 'He', 'never', 'sings', '.'], error: null },
+  { words: ['He', 'musts', 'be', 'swimming', '.'], error: { type: 'wrong', wordIndex: 1, options: ['must', 'is', 'did'], correct: 'must' } }
+];
+HouseErrorHunt.build({ container: 'errorHuntItems', items: EH_ITEMS, scoreEl: 'errorScore', totalEl: 'errorTotal' });
+</script>
+<script>HouseGrammar.init();</script>
+</body>
+</html>

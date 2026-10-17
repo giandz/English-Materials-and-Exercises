@@ -1,0 +1,127 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<title>Where Is Everyone? — Controlled Practice</title>
+<script>
+(function(){
+  try{
+    var saved = localStorage.getItem('theme-preference');
+    var theme = (saved === 'light' || saved === 'dark')
+      ? saved
+      : ((window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches) ? 'dark' : 'light');
+    document.documentElement.setAttribute('data-theme', theme);
+    var fs = parseFloat(localStorage.getItem('font-size-preference'));
+    if (fs >= 10 && fs <= 28) document.documentElement.style.setProperty('--fs-base', fs + 'px');
+  }catch(e){ /* localStorage/matchMedia unavailable — CSS media query still applies */ }
+})();
+</script>
+<link rel="stylesheet" href="house.css">
+<style>
+.clue{ font-weight:400; color:var(--text-secondary); font-size:.9rem; }
+.quiz-q .dh-think{ margin-bottom:10px; }
+.pct-tag{ display:inline-block; font-family:var(--font-mono); font-size:.8rem; font-weight:700; color:#fff; padding:1px 7px; border-radius:999px; margin-left:4px; font-style:normal; }
+</style>
+</head>
+<body>
+<div class="page" id="page">
+  <span class="cefr-tag cefr-a2b1">A2/B1 · Pre-intermediate</span>
+  <h1>Where Is Everyone? — Practice</h1>
+  <p class="subtitle">Practice: He <b>must</b> be … · She <b>might</b> be … · He <b>can’t</b> be … · <b>probably</b> · <b>maybe</b></p>
+
+  <div class="sec-div">1 · Choose</div>
+  <p class="subtitle">Read the clue. Look at the thought bubble: how sure is the speaker? Choose the best sentence.</p>
+  <div id="pcItems"></div>
+
+  <div class="sec-div">2 · Put the words in order</div>
+  <p class="subtitle">Read the clue. Make the sentence.</p>
+  <button class="grammar-toggle-btn" id="grammarToggle">🎨 Hide Grammar</button>
+  <div class="pos-legend"></div>
+  <div class="score-bar"><span>Correct: <strong id="woScore">0</strong> / <span id="woTotal">0</span></span></div>
+  <div id="woItems"></div>
+
+  <div class="sec-div">3 · Write the missing words</div>
+  <p class="subtitle">Read the clue. The number shows how sure you are. Write the missing words.</p>
+  <div id="gfItems"></div>
+
+  <footer>Deduction with Modals — Controlled Practice (A2/B1)</footer>
+</div>
+
+<div id="theme-toggle-wrap">
+  <button id="theme-toggle" aria-label="Toggle light/dark mode" title="Toggle light/dark mode">
+    <span id="theme-icon">☀️</span>
+  </button>
+</div>
+<script src="house.js"></script>
+<script src="house-engine.js"></script>
+<script src="house-character.js"></script>
+<script src="house-character-3d.js"></script>
+<script src="deduction-house.js"></script>
+<script>
+const D = DeductionHouse;
+const clue = s => '<div class="clue">' + s + '</div>';
+const pct = p => '<span class="pct-tag" style="background:' + D.colourOf(p) + '">' + p + '%</span>';
+
+/* ── 1 · choose ────────────────────────────────────────────────────────── */
+const PC_ITEMS = [
+  { q: clue('👀 I can see her through the window.') + D.bubble([{ who: 'julia', act: 'cooking', pct: 100 }]),
+    opts: ['Mom is definitely cooking.', 'Mom might be cooking.', 'Mom can’t be cooking.'], correct: 0 },
+  { q: clue('🔊 Someone is singing in the bathroom. Lucas always sings!') + D.bubble([{ who: 'lucas', act: 'shower', pct: 95 }]),
+    opts: ['Lucas might be in the shower.', 'Lucas must be in the shower.', 'Lucas can’t be in the shower.'], correct: 1 },
+  { q: clue('🥾 Grandma’s gardening boots are by the door.') + D.bubble([{ who: 'rosa', act: 'garden', pct: 0 }]),
+    opts: ['Grandma must be in the backyard.', 'Grandma is probably in the backyard.', 'Grandma can’t be in the backyard.'], correct: 2 },
+  { q: clue('🤷 It’s a hot day — but I don’t really know.') + D.bubble([{ who: 'juan', act: 'swimming', pct: 40 }]),
+    opts: ['Dad must be swimming.', 'Dad might be swimming.', 'Dad can’t be swimming.'], correct: 1 },
+  { q: clue('📺 I can hear the TV. Grandma loves her afternoon show.') + D.bubble([{ who: 'rosa', act: 'tv', pct: 75 }]),
+    opts: ['Grandma must to be watching TV.', 'Grandma definitely isn’t watching TV.', 'Grandma’s probably watching TV.'], correct: 2 },
+  { q: clue('💡 The light in the study is off.') + D.bubble([{ who: 'lucas', act: 'gaming', pct: 25 }]),
+    opts: ['Lucas probably isn’t playing games.', 'Lucas is definitely playing games.', 'Lucas isn’t probably playing games.'], correct: 0 },
+  { q: clue('💻 Dad sometimes works on Saturdays.') + D.bubble([{ who: 'juan', act: 'working', pct: 40 }]),
+    opts: ['Dad maybe is working.', 'Perhaps Dad is working.', 'Dad must working.'], correct: 1 },
+  { q: clue('😴 Grandma often takes a nap. But the TV is on…') + D.bubble([{ who: 'rosa', act: 'napping', pct: 50 }, { who: 'rosa', act: 'tv', pct: 30 }]),
+    opts: ['She can’t be asleep, and she must be watching TV.', 'She may be asleep, or she could be watching TV.', 'She is definitely asleep.'], correct: 1 }
+];
+HouseComprehension.build({ quiz: 'pcItems', items: PC_ITEMS });
+
+/* ── 2 · word order ────────────────────────────────────────────────────── */
+const WO_ITEMS = [
+  { context: '🚗 Dad’s car is outside.', text: 'He / must / be / at home', pos: ['subject', 'aux', 'verb', 'prep'] },
+  { context: '🥾 Her boots are here.', text: 'She / can’t / be / in the backyard', pos: ['subject', 'aux', 'verb', 'prep'] },
+  { context: '📺 I can hear the TV.', text: 'Grandma / is / probably / in the living room', pos: ['subject', 'verb', 'adverb', 'prep'] },
+  { context: '🍳 I can smell pancakes.', text: 'Mom / must / be / cooking / pancakes', pos: ['subject', 'aux', 'verb', 'verb', 'object'] },
+  { context: '🤷 I’m not sure.', text: 'Maybe / Lucas / is / playing / games', pos: ['adverb', 'subject', 'verb', 'verb', 'object'] },
+  { context: '💡 The study light is off.', text: 'Lucas / probably / isn’t / in the study', pos: ['subject', 'adverb', 'neg', 'prep'] },
+  { context: '🏊 His towel isn’t in the bathroom.', text: 'Dad / might / be / swimming / in the pool', pos: ['subject', 'aux', 'verb', 'verb', 'prep'] }
+];
+HouseWordOrder.build({ container: 'woItems', items: WO_ITEMS, scoreEl: 'woScore', totalEl: 'woTotal' });
+
+/* ── 3 · gap fill (easiest first) ──────────────────────────────────────── */
+const AP = w => [w, w.replace(/’/g, "'")];   // curly or straight apostrophe
+const GF_ITEMS = [
+  { direct: '🔊 I can hear him singing in the shower. ' + pct(95),
+    template: 'Lucas {0} be in the bathroom.', hints: [{ accepted: ['must'] }] },
+  { direct: '🥾 Her gardening boots are by the door. ' + pct(0),
+    template: 'Grandma {0} be in the backyard.', hints: [{ accepted: AP('can’t').concat(['cannot']) }] },
+  { direct: '👀 I saw her a moment ago. ' + pct(100),
+    template: 'Mom is {0} in the kitchen.', hints: [{ accepted: ['definitely', 'certainly'] }] },
+  { direct: '🤷 I don’t know — it’s possible. ' + pct(40),
+    template: 'Dad {0} be at work.', hints: [{ accepted: ['might', 'may', 'could'] }] },
+  { direct: '📺 I can hear the TV. ' + pct(75),
+    template: 'Grandma is {0} watching TV.', hints: [{ accepted: ['probably'] }] },
+  { direct: '🏊 It’s a hot day. ' + pct(40),
+    template: 'Dad might {0} swimming.', hints: [{ accepted: ['be'] }] },
+  { direct: '😴 She often sleeps after lunch. ' + pct(40) + ' (one word, at the start)',
+    template: '{0} she’s asleep.', hints: [{ accepted: ['Perhaps', 'Maybe', 'Possibly', 'perhaps', 'maybe', 'possibly'] }] },
+  { direct: '💡 The light is off. ' + pct(25),
+    template: 'Lucas {0} {1} in the study.', hints: [{ accepted: ['probably'] }, { accepted: AP('isn’t') }] },
+  { direct: '🍳 I can smell pancakes. ' + pct(95),
+    template: 'Mom {0} {1} cooking.', hints: [{ accepted: ['must'] }, { accepted: ['be'] }] },
+  { direct: '🚗 His car isn’t outside. ' + pct(0),
+    template: 'Dad {0} {1} at home.', hints: [{ accepted: AP('can’t').concat(['cannot']) }, { accepted: ['be'] }] }
+];
+HouseGapFill.build({ container: 'gfItems', items: GF_ITEMS });
+</script>
+<script>HouseGrammar.init();</script>
+</body>
+</html>

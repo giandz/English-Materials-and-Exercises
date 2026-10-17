@@ -560,6 +560,32 @@ function hair(style,view,col,hat){
   const H=(inFront,x,y,svg)=>hang.push({front:inFront,x,y,svg:`<g transform="translate(${-x} ${-y})">${svg}</g>`});
   const hangP=(fillD,strokeD)=>`<path d="${fillD}" fill="${col}" stroke="none"/><path d="${strokeD}" fill="none" stroke="${st}"/>`;
   if(style==='bald') return {back,front,hang};
+  if(view==='back'){   /* seen from behind: hair covers the back of the skull; long lengths and tails fall in front of the body */
+    const cov=(yb,a)=>p(`M-31.5,${yb}C-32.5,-30 -18,-40 0,-40C18,-40 32.5,-30 31.5,${yb}Q0,${yb+7} -31.5,${yb}Z`,a);
+    if(hat&&(style==='afro'||style==='curly'||style==='bun'||style==='pompadour')){
+      front=cov(12);
+      if(style==='afro') front+=`<g ${A}><path d="M-42.5,-16A43,43 0 0 0 42.5,-16Z"/>${ring(0,-10,43,43,-6,186,9,9.5)}</g>`;
+      if(style==='curly') front+=`<g ${A}>${ring(0,-4,29,30,-10,190,8,8.5)}</g>`;
+      if(style==='bun') front+=`<circle cx="0" cy="27" r="13" ${A}/>`;
+      return {back,front,hang};
+    }
+    switch(style){
+      case 'buzz': front=`<path d="M-30,6C-31,-29 -17,-37.5 0,-37.5C17,-37.5 31,-29 30,6Q0,12 -30,6Z" fill="${col}" opacity=".55"/>`; break;
+      case 'crew': front=cov(8); break;
+      case 'short': front=p('M-31.5,8C-32.5,-30 -18,-40 0,-40C18,-40 32.5,-30 31.5,8L24,12L17,9L10,13L3,10L-4,13L-11,9L-18,12L-25,9Z'); break;
+      case 'sidepart': front=cov(10); break;
+      case 'pompadour': front=p('M-23,-21C-28,-44 -13,-55 2,-53C17,-52 27,-42 23,-23Z')+cov(8); break;
+      case 'curly': front=cov(6,B)+`<g ${A}>${ring(0,-6,27,32,0,360,14,9.5)}${ring(0,-10,11,13,0,360,6,8)}</g>`; break;
+      case 'afro': front=`<g ${A}><circle cx="0" cy="-10" r="43"/>${ring(0,-10,43,43,0,354,15,9.5)}${ring(0,-10,22,22,0,330,7,8)}</g>`; break;
+      case 'bob': H(true,0,-2,`<circle cx="0" cy="-2" r="34" ${A}/>`+p('M-35,-12Q-36,-22 -29,-22L29,-22Q36,-22 35,-12L36,26Q36,32 28,32L-28,32Q-36,32 -36,26Z')); front=cov(10); break;
+      case 'long': H(true,0,-2,`<circle cx="0" cy="-2" r="34" ${A}/>`+p('M-34,-12Q-35,-22 -28,-22L28,-22Q35,-22 34,-12L36,74Q0,88 -36,74Z')); front=cov(10); break;
+      case 'ponytail': front=cov(8); H(true,0,-12,p('M-6,-10C-12,14 -9,40 -3,56Q0,62 3,56C9,40 12,14 6,-10Z')+`<circle cx="0" cy="-12" r="6.5" ${A}/>`); break;
+      case 'bun': front=cov(6)+`<circle cx="0" cy="-30" r="12" ${A}/>`; break;
+      case 'pigtails': front=cov(6);
+        [1,-1].forEach(k=>H(true,k*29,-8,p(`M${k*26},-11C${k*42},-11 ${k*45},40 ${k*40},74Q${k*35},79 ${k*32},72C${k*35},44 ${k*33},8 ${k*25},-2Z`)+`<circle cx="${k*29}" cy="-8" r="6" ${A}/>`)); break;
+    }
+    return {back,front,hang};
+  }
   if(hat&&(style==='afro'||style==='curly'||style==='bun'||style==='pompadour')){
     /* under a hat: nothing above the brim, the volume moves to the sides and nape */
     const F=view==='front', cx=F?0:5;
@@ -768,13 +794,13 @@ const EMOTIONS=[
   ['Anticipation',[['interest','Interest','skeptical','open','smile'],['anticipation','Anticipation','raised','open','cdg'],['vigilance','Vigilance','angry','wide','mbp']]]
 ];
 const NEUTRAL_FACE=['neutral','Neutral','neutral','open','rest'];
-function headwearSVG(id,side,col){
+function headwearSVG(id,side,col,rear){
   let h=HEADWEAR[id]; if(!h) return ''; h={...h,col:col||h.col};
   const dk=edge(h.col), A=`fill="${h.col}" stroke="${dk}"`, B=`fill="${shade(h.col,-0.18)}" stroke="${dk}"`;
   const t=side?'<g transform="translate(2 0)">':'<g>';
   switch(id){
     case 'beanie': return t+`<path d="M-32,-14C-34,-54 34,-54 32,-14Z" ${A}/><rect x="-33.5" y="-23" width="67" height="11" rx="4" ${B}/></g>`;
-    case 'cap': return t+`<path d="M-31,-17C-33,-53 33,-53 31,-17Z" ${A}/>`+(side?'':`<path d="M-27,-18Q0,-6 27,-18Q0,-25 -27,-18Z" ${B}/>`)+'</g>'
+    case 'cap': return t+`<path d="M-31,-17C-33,-53 33,-53 31,-17Z" ${A}/>`+(rear?`<path d="M-7,-17Q0,-27 7,-17" fill="none" stroke="${dk}"/>`:side?'':`<path d="M-27,-18Q0,-6 27,-18Q0,-25 -27,-18Z" ${B}/>`)+'</g>'
       +(side?`<path d="M-28,-24L-48,-19Q-56,-16 -50,-14L-27,-16Z" ${B}/>`:'');
     case 'sunhat': return t+`<ellipse cx="0" cy="-21" rx="54" ry="7.5" ${A}/><path d="M-27,-21C-29,-53 29,-53 27,-21Z" ${A}/><path d="M-27,-22.5Q0,-16 27,-22.5L27.4,-28Q0,-21.5 -27.4,-28Z" fill="#8a5a3b" stroke="none"/></g>`;
     case 'hardhat': return t+`<path d="M-32,-16C-34,-56 34,-56 32,-16Z" ${A}/><path d="M-4,-45Q0,-47.5 4,-45V-17H-4Z" ${B}/><path d="M-37,-17H37Q38,-11 32,-11H-32Q-38,-11 -37,-17Z" ${A}/></g>`;
@@ -792,14 +818,14 @@ function headwearSVG(id,side,col){
         return t+band+`<g transform="translate(${bx} ${by})"><path d="M0,0L-13,-8Q-15,0 -13,8Z" ${A}/><path d="M0,0L13,-8Q15,0 13,8Z" ${A}/><circle r="3.6" ${B}/></g></g>`; }
       const cups=side?`<ellipse cx="4" cy="2" rx="9.5" ry="11.5" ${A}/><ellipse cx="4" cy="2" rx="5.5" ry="7.5" ${B}/>`
         :[-1,1].map(k=>`<rect x="${k>0?28.5:-36.5}" y="-9" width="8" height="22" rx="3.5" ${A}/>`).join('');
-      const mic=id!=='headset'?'':side?`<path d="M0,10Q-10,24 -25,21" fill="none" stroke="${h.col}" stroke-width="2.2" stroke-linecap="round"/><ellipse cx="-27" cy="21" rx="3.6" ry="2.8" ${B}/>`
+      const mic=id!=='headset'||rear?'':side?`<path d="M0,10Q-10,24 -25,21" fill="none" stroke="${h.col}" stroke-width="2.2" stroke-linecap="round"/><ellipse cx="-27" cy="21" rx="3.6" ry="2.8" ${B}/>`
         :`<path d="M-32,11Q-30,25 -14,24" fill="none" stroke="${h.col}" stroke-width="2.2" stroke-linecap="round"/><ellipse cx="-12" cy="24" rx="3.6" ry="2.8" ${B}/>`;
       return t+band+cups+mic+'</g>'; }
     case 'skimask': {   /* a balaclava: covers the whole head, ears and neck, with one opening for the eyes */
       const knit=`<path d="${side?'M-24,-30Q4,-40 26,-28M-26,22Q2,30 24,20':'M-26,-30Q0,-40 26,-30M-28,24Q0,32 28,24'}" fill="none" stroke="${dk}" stroke-opacity=".45" stroke-width="1.4"/>`;
       const m=side
         ?`<path fill-rule="evenodd" d="M-31,-6C-32,-34 -16,-41 2,-41C22,-41 36,-26 34,4C33,20 30,30 24,38L24,46H-10L-9,38C-22,36 -32,26 -33,10L-38,6L-31,-6ZM-33,-10H-4Q-2,-2 -4,6H-34Q-36,-2 -33,-10Z" ${A}/>`
-        :`<path fill-rule="evenodd" d="M-36,2C-36,-30 -20,-41 0,-41C20,-41 36,-30 36,2C36,20 31,31 22,37L21,46H-21L-22,37C-31,31 -36,20 -36,2ZM-23,-10H23Q27,-2 23,7H-23Q-27,-2 -23,-10Z" ${A}/>`;
+        :`<path fill-rule="evenodd" d="M-36,2C-36,-30 -20,-41 0,-41C20,-41 36,-30 36,2C36,20 31,31 22,37L21,46H-21L-22,37C-31,31 -36,20 -36,2Z${rear?'':'M-23,-10H23Q27,-2 23,7H-23Q-27,-2 -23,-10Z'}" ${A}/>`;   /* from behind: no eye opening */
       return t+m+knit+'</g>'; }
     case 'headband': return t+`<path d="M-30.5,-19Q0,-30 30.5,-19L30.5,-13Q0,-24 -30.5,-13Z" ${A}/></g>`;
   }
@@ -807,8 +833,8 @@ function headwearSVG(id,side,col){
 }
 
 function headSVG(d,C){
-  const side=d.head!=='front', eye=EYES[d.eyeColor-1];
-  const h=hair(d.hairStyle,side?'side':'front',C.hair,(d.headwear&&!['headband','bow','headphones','headset'].includes(d.headwear))||d.upperGarment==='hoodieup'), fh=facial(d.facialHair,side?'side':'front',C.hair);
+  const side=d.head!=='front', eye=EYES[d.eyeColor-1], rear=!!d.back&&!side;   /* rear: the back of the head */
+  const h=hair(d.hairStyle,side?'side':rear?'back':'front',C.hair,(d.headwear&&!['headband','bow','headphones','headset'].includes(d.headwear))||d.upperGarment==='hoodieup'), fh=rear?'':facial(d.facialHair,side?'side':'front',C.hair);
   const S=`fill="${C.skin}" stroke="${C.skinS}"`, lash=shade(C.skin,-0.62);
   const iris=(x,y,r)=>`<circle cx="${x}" cy="${y}" r="${r}" fill="${eye.hex}" stroke="${shade(eye.hex,-0.35)}" stroke-width=".7"/>`
     +(eye.fleck?`<circle cx="${x}" cy="${y}" r="${n2(r*0.62)}" fill="#b58a3c" stroke="none"/>`:'')
@@ -837,7 +863,10 @@ function headSVG(d,C){
     return `<path d="M${n2(x+o*hw)},${B[0]}Q${x},${B[2]} ${n2(x-o*hw)},${B[1]}" fill="none" stroke="${C.brow}" stroke-width="2.3" stroke-linecap="round"/>`;};
   const bk=d.eyebrows, ek=d.eyes, mouth=mouthSVG(d.mouth,mk('lipstick')?(d.lipstickColor||LIPSTICK_COL):C.lip);
   let s='';
-  if(!side){
+ if(rear){   /* the back of the head: ears and skull, no face */
+    s+=`<ellipse cx="-29.5" cy="1" rx="5" ry="7.5" ${S}/><ellipse cx="29.5" cy="1" rx="5" ry="7.5" ${S}/>`
+     + `<path d="M-29,-4C-29,-30 -17,-36 0,-36C17,-36 29,-30 29,-4C29,16 16,35 0,35C-16,35 -29,16 -29,-4Z" ${S}/>`;
+  } else if(!side){
     s+=`<ellipse cx="-29.5" cy="1" rx="5" ry="7.5" ${S}/><ellipse cx="29.5" cy="1" rx="5" ry="7.5" ${S}/>`
      + `<path d="M-29,-4C-29,-30 -17,-36 0,-36C17,-36 29,-30 29,-4C29,16 16,35 0,35C-16,35 -29,16 -29,-4Z" ${S}/>`
      + blushAt(-17)+blushAt(17) + fh
@@ -865,9 +894,11 @@ function headSVG(d,C){
   /* drop earrings: pinned at the earlobe, drawn unrotated so they always hang */
   const drops=d.accessories.includes('drops')?(side?[7]:[-30.5,30.5]).map(x=>({x,y:8,svg:`<path d="M0,0V9" stroke="#9c7716" stroke-width="1.3" fill="none"/><path d="M0,8Q-5,16 0,20.5Q5,16 0,8Z" fill="#e2b23a" stroke="#9c7716" stroke-width="1"/>`+star(x<0?-6.5:6.5,11,5.5)})):[];
   const masked=(HEADWEAR[d.headwear]||{}).mask;
+  if(rear&&hood) hood={back:'',front:hood.back};   /* hood up, from behind: the hood's shell covers the whole head */
+  const glasses=rear?(EYEWEAR[d.eyewear]?(()=>{const fc=d.eyewearColor||EYEWEAR[d.eyewear].frame; return `<path d="M-34.5,-4.5L-28.5,-3.5M34.5,-4.5L28.5,-3.5" fill="none" stroke="${fc}" stroke-width="2.4" stroke-linecap="round"/>`;})():''):eyewearSVG(d.eyewear,side,d.eyewearColor);   /* from behind only the temple arms show, over the ears */
   return {back:h.back, hang:h.hang, drops:masked?[]:drops,
-          hoodBack:hood&&hood.back, top:headwearSVG(d.headwear,side,d.headwearColor)+(hood?hood.front:'')+(masked?eyewearSVG(d.eyewear,side,d.eyewearColor):ear),   /* headwear sits above all hair, earrings above that */
-          front:s+h.front+(masked?'':eyewearSVG(d.eyewear,side,d.eyewearColor))};   /* over a ski mask, glasses are drawn on top of it */
+          hoodBack:hood&&hood.back, top:headwearSVG(d.headwear,side,d.headwearColor,rear)+(hood?hood.front:'')+(masked?glasses:ear),   /* headwear sits above all hair, earrings above that */
+          front:s+h.front+(masked?'':glasses)};   /* over a ski mask, glasses are drawn on top of it */
 }
 /* ── clothes. off = how far the fitted parts sit outside the body (px).
       arm / fore / thigh / shin = fraction of that segment covered (1 = all).
@@ -1025,6 +1056,9 @@ function build(d){
   const nw=[8,8.5,9,10,11][wk], hx0=hw0*0.5, hx=hx0*cp, shx=(sw0-1)*ct;
   const nearLeg=d.pelvisOrientation<-30?1:d.pelvisOrientation>30?-1:0;
   const near=d.torsoOrientation<-30?1:d.torsoOrientation>30?-1:0;   /* which side faces the viewer */
+  /* back view: the figure is built as from the front and mirrored at the end (an orthographic view from behind is the
+     mirror image of the front one); only the depth order flips, and front-only details give way to back ones */
+  const BK=!!d.back, zNear=BK?-near:near, zNearLeg=BK?-nearLeg:nearLeg;
   const WA=30*H, CH=84*H, UA=60*H, FA=54*H, TH=86*H, SH=82*H, FT=27.5;   /* feet: 22 × 1.25 */
   const skin=SKIN[d.skin-1].hex, hairHex=(HAIR.find(x=>x.id===d.hairColor)||HAIR[0]).hex;
   const C={skin, skinS:shade(skin,-0.28), lip:shade(skin,-0.42), hair:hairHex, brow:shade(hairHex,-0.25),
@@ -1039,7 +1073,7 @@ function build(d){
   /* pelvis swings from the waist, carrying the legs */
   const mP=Mx.mul(Mx.tr(mRoot,0,-WA,j.pelvis),[1,0,0,1,0,WA]);
   piv.pelvis={p:Mx.pt(mRoot,0,-WA),parent:j.root};
-  const dye=(g,c)=>g&&{...g,col:c||g.col};
+  const dye=(g,c)=>g&&{...g,col:c||g.col}, sp0=Math.sin(d.pelvisOrientation*Math.PI/180);
   const defs=[];
   const paint=(g,pat,c2)=>{ if(!g) return g; g.fill=g.col;
     /* side stripe: a band down the outside of sleeves and legs in the second colour (track pants always have one) */
@@ -1069,10 +1103,16 @@ function build(d){
   add(30,mP,(swim?pel(0,C.skin,C.skinS,skinTorso):pel(0,C.suit,C.suitS,!UG))+(LG?pel(LG.off,LG.fill,edge(LG.col),false):'')+(UG&&(UG.tails||UG.onepiece)?pel(UG.off,UG.fill,edge(UG.col),true):''),'pelvis');
   /* dress trousers: two short pleats each side of the fly, and a pressed crease down the front of each leg (drawn with the legs) */
   const creaseCol=g=>{ const v=parseInt(g.col.slice(1),16), lum=((v>>16)*0.3+((v>>8)&255)*0.59+(v&255)*0.11)/255; return lum<0.3?shade(g.col,0.45):shade(g.col,-0.4); };
-  if(LG&&LG.crease){ const k=Math.abs(cp), q=Math.sin(d.pelvisOrientation*Math.PI/180)*ww*0.35, pl=x=>`M${n2(x*k+q)},${n2(-WA+1)}L${n2(x*0.92*k+q)},${n2(-WA+15)}`;
+  if(LG&&LG.crease&&!BK){ const k=Math.abs(cp), q=Math.sin(d.pelvisOrientation*Math.PI/180)*ww*0.35, pl=x=>`M${n2(x*k+q)},${n2(-WA+1)}L${n2(x*0.92*k+q)},${n2(-WA+15)}`;
     add(30.2,mP,`<path d="${[-0.62,-0.4,0.4,0.62].map(t=>pl(t*ww)).join('')}" fill="none" stroke="${creaseCol(LG)}" stroke-width="1.1" stroke-linecap="round"/>`,'pelvis'); }
   if(LG&&LG.stripeCol&&LG.thigh>0){ const X=(a,b)=>`M${n2(a)},${n2(-WA-1)}L${n2(b)},4`, k=Math.abs(cp), lo=LG.off;
     add(30.2,mP,`<path d="${X((ww+lo-3.2)*k,(hw+lo-3.2)*k)}${X(-(ww+lo-3.2)*k,-(hw+lo-3.2)*k)}" fill="none" stroke="${LG.stripeCol}" stroke-width="3"/>`,'pelvis'); }
+  if(BK&&LG&&LG.pl&&!LG.swim&&LG.thigh>0){   /* from behind: the seat seam, and patch pockets on jeans and casual trousers */
+    const k=Math.abs(cp), q=-sp0*ww*0.35, dk=edge(LG.col), y0=n2(-WA*0.62);
+    let b=`<path d="M${n2(q)},${n2(-WA+2)}V15" fill="none" stroke="${dk}"/>`;
+    if(['jeans','chinos','cargopants','shorts','bellbottoms','trousers'].includes(d.lowerGarment))
+      b+=[-1,1].map(i=>{const x=q+i*ww*0.5*k, w=7.5*Math.max(k,0.4); return `<path d="M${n2(x-w)},${y0}H${n2(x+w)}V${n2(y0+15)}L${n2(x)},${n2(y0+19)}L${n2(x-w)},${n2(y0+15)}Z" fill="none" stroke="${dk}"/>`;}).join('');
+    add(30.2,mP,b,'pelvis'); }
   mark(mP,0,0,hw+2); mark(mP,0,6,12);
 
   /* chest */
@@ -1096,7 +1136,7 @@ function build(d){
   const detailT=`matrix(${n2(dKs)} 0 ${n2(dSh)} 1 ${n2(dE-dSh*dTop)} 0)`, detailX=(x,y)=>dKs*x+dSh*(y-dTop)+dE;
   const co=UG?UG.off:0, cCol=UG?UG.fill:C.suit, cStr=UG?edge(UG.col):C.suitS;
   let chest=UG&&!UG.bikini&&!crop?chestSVG(co,UG.hem,UG.fill,edge(UG.col),!!(UG.tails||UG.onepiece))
-    :(swim||crop)?chestSVG(0,3,C.skin,C.skinS,swim,true)+`<path d="M${n2(navX-1.6)},${n2(-c*0.14)}q1.6,2.2 3.2,0" fill="none" stroke="${C.skinS}" stroke-linecap="round"/>`
+    :(swim||crop)?chestSVG(0,3,C.skin,C.skinS,swim,true)+(BK?'':`<path d="M${n2(navX-1.6)},${n2(-c*0.14)}q1.6,2.2 3.2,0" fill="none" stroke="${C.skinS}" stroke-linecap="round"/>`)
       +(crop?`<path d="M${-nw-2},${n2(-c-4-co)}L${n2(-sw+4)},${n2(-c-co)}Q${n2(-sw-4-co)},${n2(-c+1-co)} ${n2(-sw-3-co)},${n2(-c+12)}L${n2(-cw-co)},${n2(-c+34)}L${n2(-cw-co+1.8)},${n2(-c+56)}H${n2(cw+co-1.8)}L${n2(cw+co)},${n2(-c+34)}L${n2(sw+3+co)},${n2(-c+12)}Q${n2(sw+4+co)},${n2(-c+1-co)} ${n2(sw-4)},${n2(-c-co)}L${nw+2},${n2(-c-4-co)}Z" ${G(UG)}/>`
        :UG?`<path d="M${n2(-cw+0.6)},${n2(-c+41)}H${n2(cw-0.6)}" fill="none" stroke="${edge(UG.col)}" stroke-width="5"/><path d="M${n2(-cw+0.6)},${n2(-c+41)}H${n2(cw-0.6)}" fill="none" stroke="${UG.col}" stroke-width="3.2"/>`:'')
     :chestSVG(0,3,C.suit,C.suitS,!LG)+`<path d="M${-nw-2},${n2(-c-3)}L${nw+2},${n2(-c-3)}" stroke="${C.trim}" stroke-width="2.6" fill="none"/>`;
@@ -1118,6 +1158,15 @@ function build(d){
   }
   {
     const g=UG||{off:0}, dk=UG?edge(g.col):C.suitS, top=-c-4-g.off; let s='';
+    if(BK){   /* from behind: a plain back neckline or collar band, a centre seam on jackets, the hood lying on the back, a bikini's back strap */
+      const nk=g.neck;
+      if(['collar','lapel','suit','suitopen','vest'].includes(nk)) s+=`<path d="M${-nw-4},${n2(top-1)}H${nw+4}L${nw+3},${n2(top+6)}Q0,${n2(top+9)} ${-nw-3},${n2(top+6)}Z" ${G(g)}/>`;
+      else if(UG&&!UG.bikini&&nk!=='hood') s+=`<path d="M${-nw-2},${n2(top+1)}Q0,${n2(top+5)} ${nw+2},${n2(top+1)}" fill="none" stroke="${dk}" stroke-width="${nk==='crew'?2.4:1.3}"/>`;
+      if(['lapel','suit','suitopen'].includes(nk)) s+=`<path d="M0,${n2(top+8)}V${g.hem}" stroke="${dk}" fill="none"/>`;
+      if(nk==='hood'&&!g.hoodUp) s+=`<path d="M${-nw-11},${n2(top-3)}Q${-nw-15},${n2(top+24)} 0,${n2(top+34)}Q${nw+15},${n2(top+24)} ${nw+11},${n2(top-3)}Q0,${n2(top+4)} ${-nw-11},${n2(top-3)}Z" ${G(g)}/><path d="M${-nw-6},${n2(top+2)}Q0,${n2(top+24)} ${nw+6},${n2(top+2)}" fill="none" stroke="${dk}"/>`;
+      if(UG&&UG.bikini){ const yb=n2(-c+44), band=`M${n2(-cw-co+1)},${yb}H${n2(cw+co-1)}`, ties=`M${-nw-1},${n2(-c-3)}L-2,${n2(-c+8)}M${nw+1},${n2(-c-3)}L2,${n2(-c+8)}`;
+        s+=`<path d="${band}" fill="none" stroke="${dk}" stroke-width="6"/><path d="${band}" fill="none" stroke="${UG.col}" stroke-width="4.2"/><path d="${ties}" fill="none" stroke="${dk}" stroke-width="3.2"/><path d="${ties}" fill="none" stroke="${UG.col}" stroke-width="1.8"/>`; }
+    } else {
     if(g.neck==='crew') s+=`<path d="M${-nw-2},${n2(top-1)}V${n2(top+1)}Q0,${n2(top+9)} ${nw+2},${n2(top+1)}V${n2(top-1)}Z" fill="${C.skin}" stroke="none"/><path d="M${-nw-2},${n2(top+1)}Q0,${n2(top+9)} ${nw+2},${n2(top+1)}" fill="none" stroke="${dk}" stroke-width="2.4"/>`;   /* skin shows inside the round neck */
     const opening=(dd,fill)=>`<path d="${dd}Z" fill="${fill}" stroke="none"/><path d="${dd}" fill="none" stroke="${dk}"/>`;   /* filled, outlined along its lower edge only: no seam across the neck */
     if(g.neck==='scoop') s+=opening(`M${-nw-5},${n2(top-1)}Q0,${n2(top+26)} ${nw+5},${n2(top-1)}`,C.skin);
@@ -1157,6 +1206,7 @@ function build(d){
       }
       s+=`<path d="${xs.map(a).join('')}" fill="none" stroke="${cStr}" stroke-opacity="${n2(Math.abs(ct))}" stroke-linecap="round"/>`;
     }
+    }
     /* see detailT above */
     if(s) chest+=`<g transform="${detailT}">${s}</g>`;
   }
@@ -1166,29 +1216,29 @@ function build(d){
   if(acc.backpack){
     /* pack sits behind the torso and slides to the back as the torso turns; straps cross the chest; the loose ends hang */
     const pc=d.packColor||PACK_COL, pe=edge(pc), e=cw+co, pw=n2(e*0.95*(0.45+0.55*Math.abs(ct))), px=n2(-st*(e+pw-3)), yt=n2(-c+4), yb=n2(-c*0.1);
-    add(28.5,mChest,`<path d="M${px-pw},${yt+8}Q${px-pw},${yt-8} ${px},${yt-10}Q${px+pw},${yt-8} ${px+pw},${yt+8}V${yb-6}Q${px+pw},${yb} ${px+pw-6},${yb}H${px-pw+6}Q${px-pw},${yb} ${px-pw},${yb-6}Z" fill="${pc}" stroke="${pe}"/><path d="M${n2(px-pw*0.6)},${n2(yb-26)}H${n2(px+pw*0.6)}V${n2(yb-8)}H${n2(px-pw*0.6)}Z" fill="${shade(pc,-0.15)}" stroke="${pe}"/>`,'torso');
+    add(BK?41.6:28.5,mChest,`<path d="M${px-pw},${yt+8}Q${px-pw},${yt-8} ${px},${yt-10}Q${px+pw},${yt-8} ${px+pw},${yt+8}V${yb-6}Q${px+pw},${yb} ${px+pw-6},${yb}H${px-pw+6}Q${px-pw},${yb} ${px-pw},${yb-6}Z" fill="${pc}" stroke="${pe}"/><path d="M${n2(px-pw*0.6)},${n2(yb-26)}H${n2(px+pw*0.6)}V${n2(yb-8)}H${n2(px-pw*0.6)}Z" fill="${shade(pc,-0.15)}" stroke="${pe}"/>`,'torso');
     const ys=n2(-c*0.5);
-    add(41.2,mChest,`<g transform="${detailT}">`+[-1,1].map(k=>{const dd=`M${n2(k*sw*0.6)},${n2(-c-co-1)}Q${n2(k*e*0.95)},${n2(-c+18)} ${n2(k*e*0.82)},${ys}`;
+    if(!BK) add(41.2,mChest,`<g transform="${detailT}">`+[-1,1].map(k=>{const dd=`M${n2(k*sw*0.6)},${n2(-c-co-1)}Q${n2(k*e*0.95)},${n2(-c+18)} ${n2(k*e*0.82)},${ys}`;
       return `<path d="${dd}" fill="none" stroke="${pe}" stroke-width="6.4"/><path d="${dd}" fill="none" stroke="${pc}" stroke-width="4.4"/>`;}).join('')+'</g>','torso');
-    for(const k of [-1,1]){ const p=Mx.pt(mChest,detailX(k*e*0.82,-c*0.5),-c*0.5);
+    if(!BK) for(const k of [-1,1]){ const p=Mx.pt(mChest,detailX(k*e*0.82,-c*0.5),-c*0.5);
       add(41.3,[1,0,0,1,p[0],p[1]],`<path d="M0,0V16" fill="none" stroke="${pe}" stroke-width="3.8"/><path d="M0,0V16" fill="none" stroke="${pc}" stroke-width="2.2"/>`,'torso'); }
   }
   if(acc.fannypack){
     const pc=d.packColor||PACK_COL, pe=edge(pc), o=Math.max(LG?LG.off:0,UG&&UG.tails?UG.off:0)+0.8, sp=Math.sin(d.pelvisOrientation*Math.PI/180);
     const y=n2(-WA+9), bw=n2((ww+hw)/2+o+1), pw=n2(13*(0.55+0.45*Math.abs(cp))), px=n2(sp*(bw-4));
-    add(41.4,mP,`<path d="M${-bw},${y-2.5}H${bw}V${y+2.5}H${-bw}Z" fill="${pc}" stroke="${pe}"/><rect x="${n2(px-pw)}" y="${y-5}" width="${n2(pw*2)}" height="15" rx="6" fill="${pc}" stroke="${pe}"/><path d="M${n2(px-pw+3.5)},${y+1}H${n2(px+pw-3.5)}" fill="none" stroke="${pe}"/>`,'pelvis');
+    add(41.4,mP,`<path d="M${-bw},${y-2.5}H${bw}V${y+2.5}H${-bw}Z" fill="${pc}" stroke="${pe}"/>`+(BK&&Math.abs(sp)<0.7?'':`<rect x="${n2(px-pw)}" y="${y-5}" width="${n2(pw*2)}" height="15" rx="6" fill="${pc}" stroke="${pe}"/><path d="M${n2(px-pw+3.5)},${y+1}H${n2(px+pw-3.5)}" fill="none" stroke="${pe}"/>`),'pelvis');
   }
-  if(acc.necklace){   /* its own layer, above every garment and the tie */
+  if(acc.necklace&&!BK){   /* its own layer, above every garment and the tie */
     const top=-c-4-co;
     add(41.5,mChest,`<g transform="${detailT}"><path d="M${-nw-1},${n2(top+1)}Q0,${n2(top+24)} ${nw+1},${n2(top+1)}" fill="none" stroke="${GOLDS}" stroke-width="3.2"/><path d="M${-nw-1},${n2(top+1)}Q0,${n2(top+24)} ${nw+1},${n2(top+1)}" fill="none" stroke="${GOLD}" stroke-width="1.9"/><circle cx="0" cy="${n2(top+13)}" r="3.6" fill="${GOLD}" stroke="${GOLDS}" stroke-width="1"/>${spark(6.5,top+8,5)}</g>`,'torso');
   }
-  if(acc.tie&&!(UG&&(UG.neck==='suit'||UG.neck==='vest'))){
+  if(acc.tie&&!BK&&!(UG&&(UG.neck==='suit'||UG.neck==='vest'))){
     /* necktie: pinned at the collar but drawn in an unrotated frame, so it always hangs straight down */
     const tc=d.tieColor||TIE_COL, p=Mx.pt(mChest,detailX(0,-c-co+1),-c-co+1), k=n2(Math.max(Math.abs(ct),0.45)), L=n2(c*1.05);   /* 0.6 × 1.75 */
     add(41,[1,0,0,1,p[0],p[1]],`<g transform="scale(${k} 1)"><path d="M-3.4,0L3.4,0L2.2,6L5.2,${n2(L-9)}L0,${L}L-5.2,${n2(L-9)}L-2.2,6Z" fill="${tc}" stroke="${edge(tc)}"/><path d="M-2.2,6H2.2" fill="none" stroke="${edge(tc)}"/></g>`,'torso');
     mark([1,0,0,1,p[0],p[1]],0,L,4);
   }
-  if(acc.scarf){   /* a knitted scarf in three colours a third of the colour wheel apart: wrapped round the neck, one end hanging down the chest */
+  if(acc.scarf&&!BK){   /* a knitted scarf in three colours a third of the colour wheel apart: wrapped round the neck, one end hanging down the chest */
     const sc=scarfColours(d.scarfColor||SCARF_COL), p=Mx.pt(mChest,detailX(0,-c-co+1),-c-co+1), k=n2(Math.max(Math.abs(ct),0.45)), L=n2(c*0.95), W=13;
     let bands=''; for(let y=4,i=0;y<L-6;y+=7,i++) bands+=`<rect x="0" y="${y}" width="${W}" height="7" fill="${sc[i%3]}" stroke="none"/>`;
     add(41.9,[1,0,0,1,p[0],p[1]],`<g transform="scale(${k} 1) translate(${n2(nw*0.35)} 0) rotate(-4)">${bands}<rect x="0" y="0" width="${W}" height="${L-6}" fill="none" stroke="${edge(sc[0])}"/><path d="${Array.from({length:5},(_,i)=>`M${1.5+i*2.5},${L-6}v6`).join('')}" stroke="${sc[0]}" stroke-width="1.6" fill="none"/></g>`,'torso');
@@ -1201,7 +1251,7 @@ function build(d){
   const mNeck=Mx.tr(mChest,0,-CH-2,j.neck*0.5), mSkull=Mx.tr(mNeck,0,-16,j.neck*0.5);   /* half the tilt at the base of the neck, half under the skull */
   piv.neck={p:Mx.pt(mChest,0,-CH-2),parent:j.root+j.torso,up:true};
   add(35,mNeck,`<circle cx="0" cy="4" r="${n2(nw+2)}" fill="${C.skin}" stroke="none"/><path d="M${-nw-1},-22Q${n2(-nw+2)},-9 ${n2(-nw-4)},5L${n2(nw+4)},5Q${n2(nw-2)},-9 ${nw+1},-22Z" fill="${C.skin}" stroke="none"/><path d="M${-nw-1},-22Q${n2(-nw+2)},-9 ${n2(-nw-4)},5M${n2(nw+4)},5Q${n2(nw-2)},-9 ${nw+1},-22" fill="none" stroke="${C.skinS}"/><circle cx="0" cy="-16" r="${n2(nw+1)}" fill="${C.skin}" stroke="none"/>`,'neck');   /* flared neck with round patches at the collar and under the skull */
-  if(acc.choker) add(35.5,mNeck,`<path d="M${n2(-nw-0.4)},-9Q0,-6.5 ${n2(nw+0.4)},-9V-5Q0,-2.5 ${n2(-nw-0.4)},-5Z" fill="#1b1b1b" stroke="#000" stroke-width=".8"/><circle cx="0" cy="-3.6" r="2.2" fill="${GOLD}" stroke="${GOLDS}" stroke-width=".8"/>`,'neck');   /* a band round the neck with a small pendant */
+  if(acc.choker) add(35.5,mNeck,`<path d="M${n2(-nw-0.4)},-9Q0,-6.5 ${n2(nw+0.4)},-9V-5Q0,-2.5 ${n2(-nw-0.4)},-5Z" fill="#1b1b1b" stroke="#000" stroke-width=".8"/>`+(BK?'':`<circle cx="0" cy="-3.6" r="2.2" fill="${GOLD}" stroke="${GOLDS}" stroke-width=".8"/>`),'neck');   /* a band round the neck with a small pendant */
   if(acc.scarf){ const sc=scarfColours(d.scarfColor||SCARF_COL);   /* the scarf's wrap, round the base of the neck */
     add(42.2,mNeck,`<path d="M${n2(-nw-7)},-10Q0,-4 ${n2(nw+7)},-10L${n2(nw+8)},7Q0,14 ${n2(-nw-8)},7Z" fill="${sc[0]}" stroke="${edge(sc[0])}"/><path d="M${n2(-nw-7.5)},-4Q0,2 ${n2(nw+7.5)},-4V0Q0,6 ${n2(-nw-7.5)},0Z" fill="${sc[1]}" stroke="none"/><path d="M${n2(-nw-8)},2Q0,8 ${n2(nw+8)},2V5Q0,11 ${n2(-nw-8)},5Z" fill="${sc[2]}" stroke="none"/>`,'neck');
   }
@@ -1213,11 +1263,12 @@ function build(d){
   if(hd.hoodBack) add(0.7,mHead,hd.hoodBack,'neck');
   add(50,mHead,hd.front,'neck');
   /* bob, long hair and ponytail: each piece is pinned at its own point on the head but drawn unrotated, so it stays attached and falls straight down */
-  for(const g of hd.hang){ const p=Mx.pt(mHead,g.x,g.y); add(g.front?50.5:0.5,[HS*flip,0,0,HS,p[0],p[1]],g.svg,'neck'); }
+  const hz=BK&&d.head==='front'?25:0;   /* back view: hanging hair (and what sits on it) goes over the arms */
+  for(const g of hd.hang){ const p=Mx.pt(mHead,g.x,g.y); add(g.front?50.5+hz:0.5,[HS*flip,0,0,HS,p[0],p[1]],g.svg,'neck'); }
 
 
-  if(hd.top) add(50.7,mHead,hd.top,'neck');
-  for(const g of hd.drops){ const p=Mx.pt(mHead,g.x,g.y); add(50.8,[HS*flip,0,0,HS,p[0],p[1]],g.svg,'neck'); }
+  if(hd.top) add(50.7+hz,mHead,hd.top,'neck');
+  for(const g of hd.drops){ const p=Mx.pt(mHead,g.x,g.y); add(50.8+hz,[HS*flip,0,0,HS,p[0],p[1]],g.svg,'neck'); }
   mark(mHead,0,0,d.hairStyle==='afro'?52:40); if(d.headwear) mark(mHead,0,-8,d.headwear==='sunhat'?56:45);
 
   /* arms */
@@ -1226,7 +1277,7 @@ function build(d){
        drawn first, so the other arm and hand (and a bow) come out in front of the instrument */
     const strung=h=>{const t=ITEMS[d.held[h]]; return !!(t&&t.behindArms);};
     const low=near?0:strung('left')&&!strung('right')?1:strung('right')&&!strung('left')?-1:0;
-    const z=near&&side!==near?10:near?70:low?(side===low?60:70):(side===(d.flipped?-1:1)?70:60);   /* front view: left arm on top, or the right one in a mirrored pose */
+    const z=zNear&&side!==zNear?10:zNear?70:low?(side===low?60:70):(side===(d.flipped!==BK?-1:1)?70:60);   /* front view: left arm on top, or the right one in a mirrored pose */
     const base=j.root+j.torso, s=j['shoulder'+L], e=j['elbow'+L], w=j['wrist'+L];
     const sx=side*shx, sy=-CH+12;
     const m1=Mx.tr(mChest,sx,sy,s), m2=Mx.tr(m1,0,UA,e), m3=Mx.tr(m2,0,FA,w);
@@ -1300,7 +1351,7 @@ function build(d){
   /* legs — not drawn at all inside a car */
   const noLegs=d.prop==='car', addL=noLegs?()=>{}:add, markL=noLegs?()=>{}:mark;
   for(const [side,L] of [[-1,'R'],[1,'L']]){
-    const z=side===(nearLeg||1)?24:20, base=j.root+j.pelvis;
+    const z=side===(zNearLeg||(BK?-1:1))?24:20, base=j.root+j.pelvis;
     const h=j['hip'+L], k=j['knee'+L], a=j['ankle'+L];
     /* high heels tip the foot 20° toe-down, so at a flat-foot ankle angle the heel tip and the toe both reach the floor */
     const pitch=FW&&FW.kind==='pump'?(wrapDeg(base+h+k+a)>=0?20:-20):0;
@@ -1384,7 +1435,8 @@ function build(d){
     let g0=-1e9; for(const [,py,r] of pts) g0=Math.max(g0,py+r);
     const hip=Mx.pt(mP,0,0), po=d.pelvisOrientation;
     const list=propSVG(d.prop,d.propColor||PROPS[d.prop].col,{x:hip[0],y:hip[1],g:g0,side:Math.abs(po)>=45,dir:po>0?1:po<0?-1:(d.head==='right'?1:-1),hw,flip:d.flipped});
-    for(const p of list){ parts.push({z:p.z,m:[1,0,0,1,0,0],svg:p.svg});
+    const over=BK&&Math.abs(po)<45&&['chair','beachchair','stool'].includes(d.prop);   /* back view: the seat and its backrest are between the viewer and the sitter */
+    for(const p of list){ parts.push({z:over?95:p.z,m:[1,0,0,1,0,0],svg:p.svg});
       if(p.bottom!==undefined) pts.push([hip[0],p.bottom-1,1]);                       /* bicycle and car wheels become the floor */
       if(p.span){ pts.push([hip[0]-p.span,g0-10,1]); pts.push([hip[0]+p.span,g0-10,1]); } }   /* keep wide props inside a cropped drawing */
   }
@@ -1399,10 +1451,11 @@ function build(d){
              cn.part.svg=cn.it.draw(cn.side,cn.c,maxLen); } }
   }
   parts.sort((a,b)=>a.z-b.z);
-  const inner=parts.map(p=>`<g transform="matrix(${p.m.map(n2).join(' ')})"${p.joint?` data-joint="${p.joint}"`:''}>${p.svg}</g>`).join('');
+  let inner=parts.map(p=>`<g transform="matrix(${p.m.map(n2).join(' ')})"${p.joint?` data-joint="${p.joint}"`:''}>${p.svg}</g>`).join('');
   let x0=1e9,y0=1e9,x1=-1e9,y1=-1e9;
   for(const [x,y,r] of pts){x0=Math.min(x0,x-r);y0=Math.min(y0,y-r);x1=Math.max(x1,x+r);y1=Math.max(y1,y+r);}
-  return {inner,piv,box:[x0,y0,x1,y1],defs:defs.length?`<defs>${defs.join('')}</defs>`:''};
+  if(BK){ for(const k in piv) piv[k]={...piv[k],p:[-piv[k].p[0],piv[k].p[1]],mirror:true}; [x0,x1]=[-x1,-x0]; }   /* back view: mirror the finished front build */
+  return {inner:BK?`<g transform="scale(-1 1)">${inner}</g>`:inner,piv,box:[x0,y0,x1,y1],defs:defs.length?`<defs>${defs.join('')}</defs>`:''};
 }
 
 const STAGE={w:600,h:590,cx:300,ground:550};
@@ -1444,7 +1497,7 @@ function render(data,opts){
 
 function pivots(data){
   const d=normalize(data), b=build(d), ty=STAGE.ground-b.box[3], out={};
-  for(const k in b.piv) out[k]={x:b.piv[k].p[0]+STAGE.cx,y:b.piv[k].p[1]+ty,parent:b.piv[k].parent,up:!!b.piv[k].up};
+  for(const k in b.piv) out[k]={x:b.piv[k].p[0]+STAGE.cx,y:b.piv[k].p[1]+ty,parent:b.piv[k].parent,up:!!b.piv[k].up,mirror:!!b.piv[k].mirror};
   return out;
 }
 
@@ -1455,7 +1508,7 @@ function defaults(){
   const joints={}; JOINTS.forEach(([k])=>joints[k]=STAND[k]||0);
   return {schema:SCHEMA,name:'Sam',bodyType:'male',skin:3,eyeColor:12,hairColor:'4-0',hairStyle:'short',facialHair:'none',eyebrows:'neutral',eyes:'open',mouth:'smile',
     height:3,weight:3,upperGarment:null,lowerGarment:null,footwear:null,headwear:null,eyewear:null,accessories:[],prop:null,propColor:null,
-    upperColor:null,lowerColor:null,footwearColor:null,headwearColor:null,eyewearColor:null,sockColor:null,tieColor:null,scarfColor:null,gloveColor:null,packColor:null,mascaraColor:null,blushColor:null,lipstickColor:null,heldLeftGrip:null,heldRightGrip:null,thumbFlipL:false,thumbFlipR:false,flipped:false,heldLeftColor:null,heldRightColor:null,
+    upperColor:null,lowerColor:null,footwearColor:null,headwearColor:null,eyewearColor:null,sockColor:null,tieColor:null,scarfColor:null,gloveColor:null,packColor:null,mascaraColor:null,blushColor:null,lipstickColor:null,heldLeftGrip:null,heldRightGrip:null,thumbFlipL:false,thumbFlipR:false,flipped:false,back:false,heldLeftColor:null,heldRightColor:null,
     upperPattern:'plain',upperColor2:null,lowerPattern:'plain',lowerColor2:null,
     head:'front',torsoOrientation:0,pelvisOrientation:0,held:{left:null,right:null},joints};
 }
@@ -1482,7 +1535,7 @@ function normalize(src){
     const got=Array.isArray(src.accessories)?[].concat(...src.accessories.map(a=>OLD[a]||[a])):[];
     d.accessories=Object.keys(ACCESSORIES).filter(a=>got.includes(a)); }
   for(const k of COLOUR_KEYS) d[k]=hexOK(src[k]);
-  d.thumbFlipL=src.thumbFlipL===true; d.thumbFlipR=src.thumbFlipR===true; d.flipped=src.flipped===true;
+  d.thumbFlipL=src.thumbFlipL===true; d.thumbFlipR=src.thumbFlipR===true; d.flipped=src.flipped===true; d.back=src.back===true;
   for(const k of ['heldLeftGrip','heldRightGrip']){ const v=src[k]; d[k]=v===null||v===undefined||v===''||isNaN(Number(v))?null:Math.max(-180,Math.min(180,Math.round(Number(v)/45)*45)); }
   if(Array.isArray(src.accessories)&&src.accessories.includes('socks')&&!d.footwear){ d.footwear='socks'; d.footwearColor=hexOK(src.sockColor); }   /* older files: socks were an accessory */
   for(const k of ['upperPattern','lowerPattern']) d[k]=pick(src[k],PATTERNS.map(p=>p[0]),'plain');
