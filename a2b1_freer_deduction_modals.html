@@ -81,21 +81,27 @@ document.getElementById('houseMap').innerHTML = D.house([], { labels: true, alt:
 /* What each person might be doing — and the clues each thing leaves.
    for:  points to it ("must") · hint: makes it possible ("might") · against: rules it out ("can’t") */
 const PEOPLE = {
-  julia: ['cooking', 'swimming', 'tv', 'reading', 'napping', 'working', 'garden'],
-  juan:  ['cooking', 'swimming', 'tv', 'reading', 'napping', 'working', 'garden', 'shower'],
-  rosa:  ['cooking', 'tv', 'reading', 'napping', 'garden'],
-  lucas: ['swimming', 'tv', 'gaming', 'shower', 'garden', 'reading']
+  julia: ['cooking', 'swimming', 'tv', 'reading', 'napping', 'working', 'garden', 'dishes', 'phone', 'sunbathing', 'yoga'],
+  juan:  ['cooking', 'swimming', 'tv', 'reading', 'napping', 'working', 'garden', 'shower', 'dishes', 'phone', 'sunbathing'],
+  rosa:  ['cooking', 'tv', 'reading', 'napping', 'garden', 'dishes', 'phone', 'yoga'],
+  lucas: ['swimming', 'tv', 'gaming', 'shower', 'garden', 'reading', 'homework', 'snack', 'phone']
 };
 const CLUES = {
-  cooking:  { for: ['🍳 You can smell onions.', '🔊 You can hear something in a frying pan.'], hint: ['🕕 It’s nearly dinner time.'], against: ['🍽️ The kitchen is dark and very clean.'] },
-  swimming: { for: ['💦 You can hear splashing outside.', '🩴 [Name]’s towel isn’t in the bathroom.'], hint: ['☀️ It’s a very hot day.'], against: ['🩱 [Name]’s swimsuit is dry, on the bed.', '☔ It’s raining hard.'] },
-  tv:       { for: ['📺 You can hear a baseball game on TV.'], hint: ['⚽ There’s a big game today.'], against: ['📺 The TV is broken.'] },
-  reading:  { for: ['📚 [Name]’s new book isn’t on the shelf.'], hint: ['🤫 The house is very quiet.'], against: ['👓 [Name]’s reading glasses are in the car.'] },
-  napping:  { for: ['🚪 The bedroom door is closed and you can hear snoring.'], hint: ['🥱 [Name] was very tired at lunch.'], against: ['🛏️ The bedroom door is open and the bed is empty.'] },
-  working:  { for: ['⌨️ You can hear typing in the study.'], hint: ['📅 [Name] has a lot of work this week.'], against: ['💻 The laptop is in the car.'] },
-  gaming:   { for: ['🎮 You can hear game music in the study.'], hint: ['🆕 [Name] has a new game.'], against: ['🎮 The game controller is in your bag.'] },
-  shower:   { for: ['🚿 You can hear water in the bathroom.'], hint: ['⚽ [Name] played soccer this morning.'], against: ['🚿 The bathroom door is open and it’s dry.'] },
-  garden:   { for: ['🌱 There’s fresh mud by the back door.'], hint: ['🌤️ It’s a beautiful sunny afternoon.'], against: ['🥾 [Name]’s gardening boots are by the front door.', '☔ It’s raining hard.'] }
+  cooking:  { for: ['🍳 You can smell onions.', '🔊 You can hear something in a frying pan.', '🧅 There are onion skins next to the trash can.'], hint: ['🕕 It’s nearly dinner time.', '🛒 [Name] bought eggs and tomatoes this morning.'], against: ['🍽️ The kitchen is dark and very clean.', '🍕 There’s a pizza delivery box by the door.'] },
+  swimming: { for: ['💦 You can hear splashing outside.', '🩴 [Name]’s towel isn’t in the bathroom.', '🥽 [Name]’s swimming goggles aren’t on the shelf.'], hint: ['☀️ It’s a very hot day.'], against: ['🩱 [Name]’s swimsuit is dry, on the bed.', '☔ It’s raining hard.', '🚫 The pool is empty — it’s being cleaned.'] },
+  tv:       { for: ['📺 You can hear a baseball game on TV.', '🍿 You can smell popcorn in the living room.'], hint: ['⚽ There’s a big game today.', '🎬 [Name]’s favorite show starts at 5.'], against: ['📺 The TV is broken.', '🔌 The power is off in the living room.'] },
+  reading:  { for: ['📚 [Name]’s new book isn’t on the shelf.', '💡 The reading lamp in the living room is on.'], hint: ['🤫 The house is very quiet.'], against: ['👓 [Name]’s reading glasses are in the car.'] },
+  napping:  { for: ['🚪 The bedroom door is closed and you can hear snoring.', '🌙 The bedroom curtains are closed in the middle of the day.'], hint: ['🥱 [Name] was very tired at lunch.', '🌃 [Name] went to bed very late last night.'], against: ['🛏️ The bedroom door is open and the bed is empty.'] },
+  working:  { for: ['⌨️ You can hear typing in the study.', '☕ There’s a hot coffee on the desk.'], hint: ['📅 [Name] has a lot of work this week.'], against: ['💻 The laptop is in the car.'] },
+  gaming:   { for: ['🎮 You can hear game music in the study.', '🏆 Someone just shouted “I won!”'], hint: ['🆕 [Name] has a new game.'], against: ['🎮 The game controller is in your bag.'] },
+  shower:   { for: ['🚿 You can hear water in the bathroom.', '🧴 You can smell shampoo in the hall.'], hint: ['⚽ [Name] played soccer this morning.'], against: ['🚿 The bathroom door is open and it’s dry.', '💧 There’s no hot water today.'] },
+  garden:   { for: ['🌱 There’s fresh mud by the back door.', '🌷 You can hear someone digging outside.'], hint: ['🌤️ It’s a beautiful sunny afternoon.', '🌻 [Name] bought new plants yesterday.'], against: ['🥾 [Name]’s gardening boots are by the front door.', '☔ It’s raining hard.'] },
+  dishes:   { for: ['🍽️ You can hear plates and running water in the kitchen.', '🫧 There are soap bubbles on the kitchen floor.'], hint: ['🍝 The family had a big lunch.'], against: ['🍽️ The dishwasher is on — nobody washes by hand today.', '🚰 The water is off in the kitchen.'] },
+  phone:    { for: ['📱 You can hear someone talking and laughing — but nobody else is there.'], hint: ['📞 Aunt Sofia always calls on Sundays.', '🎂 It’s [Name]’s best friend’s birthday.'], against: ['📱 [Name]’s phone is on the kitchen counter.', '🔋 [Name]’s phone battery is dead.'] },
+  homework: { for: ['📝 You can hear a pencil and a calculator in the study.', '📚 [Name]’s math book isn’t in the school bag.'], hint: ['✏️ [Name] has a test tomorrow.'], against: ['🎒 [Name]’s school bag is in the car.'] },
+  snack:    { for: ['🍪 You can hear the fridge door and a plate on the counter.', '🍞 There are crumbs on the kitchen floor.'], hint: ['🍔 [Name] didn’t eat lunch.'], against: ['🧊 The fridge is completely empty.'] },
+  sunbathing: { for: ['🧴 You can smell sunscreen by the back door.', '🕶️ [Name]’s sunglasses aren’t on the shelf.'], hint: ['☀️ It’s a hot, sunny day.'], against: ['☁️ It’s cold and cloudy.', '☔ It’s raining hard.'] },
+  yoga:     { for: ['🧘 You can hear calm music in the backyard.', '🟣 [Name]’s yoga mat isn’t in the closet.'], hint: ['📅 [Name] does yoga every Sunday.'], against: ['🟣 [Name]’s yoga mat is in the car.', '☔ It’s raining hard.'] }
 };
 const pick = HouseRandomGen.pickFrom;
 const shuffle = a => { a = a.slice(); for (let i = a.length - 1; i > 0; i--) { const j = Math.floor(Math.random() * (i + 1)); [a[i], a[j]] = [a[j], a[i]]; } return a; };
@@ -109,7 +115,7 @@ function mystery() {
   if (others[2]) clues.push(pick(CLUES[others[2]].hint));
   const used = new Set(), name = D.CAST[who].name;
   const list = shuffle(clues).filter(c => !used.has(c) && used.add(c))
-    .filter(c => !(act === 'swimming' && c.startsWith('☔')) && !(act === 'garden' && c.startsWith('☔')))
+    .filter(c => !(['swimming', 'garden', 'sunbathing', 'yoga'].includes(act) && (c.startsWith('☔') || c.startsWith('☁️'))))
     .map(c => c.replace(/\[Name\]/g, name));
   return { who, act, clues: list };
 }

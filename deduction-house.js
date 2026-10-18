@@ -113,6 +113,15 @@
     working:  { room: 'study', seat: 0, emoji: '💻', ing: 'working', pose: 'chair' },
     gaming:   { room: 'study', seat: 0, emoji: '🎮', ing: 'playing games', pose: 'chair' },
     study:    { room: 'study', x: 2.5, y: 1.2, facing: 'S', emoji: '💻', ing: 'in the study' },
+    dishes:   { room: 'kitchen', x: 0.55, y: 1.05, facing: 'S', emoji: '🍽️', ing: 'washing the dishes',
+                joints: { shoulderR: 15, elbowR: 30, shoulderL: -12, elbowL: -30 }, armOver: 'right' },
+    snack:    { room: 'kitchen', x: 2.45, y: 1.65, facing: 'S', emoji: '🍪', ing: 'having a snack', held: { left: null, right: 'plate' },
+                joints: { shoulderR: 40, elbowR: 50 } },
+    phone:    { room: 'living', x: 2.45, y: 1.6, facing: 'S', emoji: '📱', ing: 'on the phone', held: { left: null, right: 'phone' },
+                joints: { shoulderR: 20, elbowR: 140 } },
+    homework: { room: 'study', seat: 0, emoji: '📝', ing: 'doing homework', pose: 'chair', held: { left: null, right: 'book' } },
+    sunbathing: { room: 'garden', seat: 0, emoji: '☀️', ing: 'sunbathing', pose: 'chair', swimwear: true },
+    yoga:     { room: 'garden', x: 4.6, y: 0.75, facing: 'S', emoji: '🧘', ing: 'doing yoga', pose: 'warrior' },
     leaving:  { room: 'study', x: 2.45, y: 1.5, facing: 'E', emoji: '🚪', ing: 'going out', pose: 'walking', doors: true },
     rushing:  { room: 'study', x: 2.45, y: 1.5, facing: 'E', emoji: '🏃', ing: 'leaving in a hurry', pose: 'running', doors: true }
   };
@@ -290,22 +299,40 @@
   /* Things people leave behind — the evidence for deductions about the past. Each is a
      "now" for pastBubble (a room, what is lying in it, a caption). */
   const EVIDENCE = {
-    watch:     { room: 'kitchen', cap: '⌚ Dad’s watch on the counter', around: 0.4,
-                 items: [{ garment: 'watch', who: 'juan', on: 0, at: [0.38, 0.05], scale: 5 }] },
+    watch:     { room: 'kitchen', cap: '⌚ Dad’s watch on the counter', around: 0.18,
+                 items: [{ garment: 'watch', who: 'juan', on: 0, at: [0.38, 0.05], scale: 2.2, highlight: true }] },
     shorts:    { room: 'bedroom', cap: '🩳 wet swim shorts on the floor', around: 0.7,
-                 items: [{ garment: 'lower', who: 'lucas', wear: { lowerGarment: 'swimshorts', lowerColor: '#FF6600' }, x: 2.6, y: 1.75, angle: 25, scale: 1.4 }] },
+                 items: [{ garment: 'lower', who: 'lucas', wear: { lowerGarment: 'swimshorts', lowerColor: '#FF6600' }, x: 2.55, y: 0.75, angle: 25, scale: 1.4, highlight: true }] },
     boots:     { room: 'study', cap: '🥾 Grandma’s gardening boots — clean and dry', around: 0.6,
-                 items: [{ garment: 'footwear', who: 'rosa', wear: { footwear: 'boots', footwearColor: '#336633' }, x: 2.55, y: 0.45, facing: 'W', scale: 1.4 }] },
-    backdoor:  { room: 'study', cap: '🚪 the back door is open', doors: true, around: 0.8, opts: { rot: 3, aroundAt: [[2.75, 1.5]] } },
-    glasses:   { room: 'study', cap: '👓 Grandma’s glasses on the desk', around: 0.6,
-                 items: [{ garment: 'glasses', who: 'rosa', wear: { eyewear: 'glasses' }, on: 1, at: [-0.35, 0.1], scale: 3 }] },
+                 items: [{ garment: 'footwear', who: 'rosa', wear: { footwear: 'boots', footwearColor: '#336633' }, x: 2.55, y: 0.45, facing: 'W', scale: 1.4, highlight: true }] },
+    backdoor:  { room: 'study', cap: '🚪 the back door is open', doors: true, around: 0.1, opts: { rot: 3, aroundAt: [[3, 0.6, 0], [3, 2.4, 0], [3, 0.6, 2.45], [3, 2.4, 2.45]], marks: [{ edge: { o: 'v', r: 1, c: 3 }, kind: 'door' }] } },
+    glasses:   { room: 'study', cap: '👓 Grandma’s glasses on the desk', around: 0.25,
+                 items: [{ garment: 'glasses', who: 'rosa', wear: { eyewear: 'glasses' }, on: 1, at: [-0.35, 0.1], scale: 1.6, highlight: true }] },
     jacket:    { room: 'bedroom', cap: '🧥 Dad’s work jacket on the bed', around: 0.9,
-                 items: [{ garment: 'upper', who: 'juan', wear: { upperGarment: 'jacket', upperColor: '#333333' }, on: 0, at: [0.1, 0.3], angle: -10 }] },
+                 items: [{ garment: 'upper', who: 'juan', wear: { upperGarment: 'jacket', upperColor: '#333333' }, on: 0, at: [0.1, 0.3], angle: -10, highlight: true }] },
     dress:     { room: 'bedroom', cap: '👗 Mom’s party dress on the bed', around: 0.9,
-                 items: [{ garment: 'upper', who: 'julia', wear: { upperGarment: 'dress', upperColor: '#6600CC' }, on: 0, at: [0.15, 0.25], angle: 12 },
-                         { garment: 'footwear', who: 'julia', wear: { footwear: 'heels', footwearColor: '#CC0000' }, x: 2.5, y: 2.65, facing: 'SW', scale: 1.5 }] },
+                 items: [{ garment: 'upper', who: 'julia', wear: { upperGarment: 'dress', upperColor: '#6600CC' }, on: 0, at: [0.15, 0.25], angle: 12, highlight: true },
+                         { garment: 'footwear', who: 'julia', wear: { footwear: 'heels', footwearColor: '#CC0000' }, x: 2.6, y: 1.45, facing: 'SW', scale: 1.5, highlight: true }] },
+    cap:       { room: 'kitchen', cap: '🧢 Lucas’s soccer cap on the counter', around: 0.3,
+                 items: [{ garment: 'headwear', who: 'lucas', wear: { headwear: 'cap', headwearColor: '#0066CC' }, on: 0, at: [0.36, 0.05], scale: 1.5, highlight: true }] },
+    hoodie:    { room: 'living', cap: '🧥 Lucas’s hoodie on the couch', around: 0.6,
+                 items: [{ garment: 'upper', who: 'lucas', on: 0, at: [0.45, 0.1], angle: 15, highlight: true }] },
+    scarf:     { room: 'living', cap: '🧣 Grandma’s scarf on the couch', around: 0.5,
+                 items: [{ garment: 'accessory', item: 'scarf', who: 'rosa', wear: { scarfColor: '#CC0000' }, on: 0, at: [-0.5, 0.1], scale: 1.2, highlight: true }] },
+    tie:       { room: 'bedroom', cap: '👔 Dad’s tie on the bed', around: 0.5,
+                 items: [{ garment: 'accessory', item: 'tie', who: 'juan', wear: { tieColor: '#CC0000' }, on: 0, at: [0.2, 0.2], scale: 1.4, angle: 30, highlight: true }] },
+    backpack:  { room: 'study', cap: '🎒 Lucas’s school bag on the floor', around: 0.5,
+                 items: [{ garment: 'accessory', item: 'backpack', who: 'lucas', wear: { packColor: '#006600' }, x: 2.5, y: 0.5, scale: 1.2, highlight: true }] },
+    gloves:    { room: 'kitchen', cap: '🧤 a muddy gardening glove on the counter', around: 0.3,
+                 items: [{ garment: 'accessory', item: 'glovesR', who: 'rosa', wear: { gloveColor: '#669933' }, on: 0, at: [0.36, 0.05], scale: 1.5, highlight: true }] },
+    swimsuit:  { room: 'garden', cap: '👙 Mom’s swimsuit on the garden chair', around: 0.45,
+                 items: [{ garment: 'upper', who: 'julia', wear: { upperGarment: 'swimsuit', upperColor: '#00CCCC' }, on: 0, scale: 0.9, highlight: true }] },
+    sandals:   { room: 'garden', cap: '🩴 Dad’s sandals by the pool', around: 0.5,
+                 items: [{ garment: 'footwear', who: 'juan', wear: { footwear: 'sandals', footwearColor: '#996633' }, x: 2.5, y: 0.6, facing: 'S', scale: 1.4, highlight: true }] },
+    backshut:  { room: 'study', cap: '🔒 the back door is locked', doors: true, closed: true, around: 0.1,
+                 opts: { rot: 3, aroundAt: [[3, 0.6, 0], [3, 2.4, 0], [3, 0.6, 2.45], [3, 2.4, 2.45]], marks: [{ edge: { o: 'v', r: 1, c: 3 }, kind: 'door' }] } },
     sneakers:  { room: 'study', cap: '👟 Lucas’s sneakers by the back door', around: 0.6,
-                 items: [{ garment: 'footwear', who: 'lucas', x: 2.55, y: 0.45, facing: 'W', scale: 1.5 }] }
+                 items: [{ garment: 'footwear', who: 'lucas', x: 2.55, y: 0.45, facing: 'W', scale: 1.5, highlight: true }] }
   };
 
   /* A thought about the past (past modals of deduction): on the left, in sepia, what the
@@ -318,13 +345,14 @@
     opts = opts || {};
     const pics = { rot: 0, aspect: 4 / 3, around: 1.1 }, n = typeof spec.now === 'string' ? EVIDENCE[spec.now] : (spec.now || {});
     const past = (spec.past || []).map(p => panel(p, Object.assign({}, pics, p.opts))).join('');
-    const nowOpts = Object.assign({}, pics, { items: n.items, doors: n.doors, closed: n.closed, around: n.around !== undefined ? n.around : 0.9 }, n.opts);
+    // keep: 0 — no stub of the front walls, so nothing pointed out hides behind one
+    const nowOpts = Object.assign({}, pics, { keep: 0, items: n.items, doors: n.doors, closed: n.closed, around: n.around !== undefined ? n.around : 0.9 }, n.opts);
     if (nowOpts.around == null) delete nowOpts.around;
     const now = `<div class="dh-panel dh-now">${scene(n.room, n.people || [], nowOpts)}<div class="dh-cap">${n.cap || ''}</div></div>`;
     return `<div class="dh-think dh-split${(spec.past || []).length > 1 ? ' dh-many' : ''}${opts.side === 'right' ? ' right' : ''}" aria-label="${opts.label || 'What the speaker thinks happened'}"><div class="dh-cloud">`
-      + `<div class="dh-side dh-was"><span class="dh-when">⏪ before</span><div class="dh-panels">${past}</div></div>`
+      + `<div class="dh-side dh-was"><span class="dh-when">⏳ before</span><div class="dh-panels">${past}</div></div>`
       + `<div class="dh-arrow" aria-hidden="true"><span class="dh-arr">⟶</span><small>time passes</small></div>`
-      + `<div class="dh-side dh-is"><span class="dh-when">👀 now</span>${now}</div></div></div>`;
+      + `<div class="dh-side dh-is"><span class="dh-when">⌛ now</span>${now}</div></div></div>`;
   }
 
   /* The scale on the clarification page: the same guess drawn at five levels of certainty. */

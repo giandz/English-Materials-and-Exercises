@@ -92,7 +92,37 @@ const CASES = [
   { now: 'dress', clues: ['🏷️ There’s a new price tag on the floor.', '📖 Mom’s book isn’t on the shelf.'],
     truth: { who: 'julia', act: 'reading' }, story: 'Mom tried on her new dress, then stayed home and read her book.' },
   { now: 'sneakers', clues: ['🎮 The game controller is warm.', '🔊 You can hear game music in the study.'],
-    truth: { who: 'lucas', act: 'gaming' }, story: 'Lucas didn’t go out — he played video games all day.' }
+    truth: { who: 'lucas', act: 'gaming' }, story: 'Lucas didn’t go out — he played video games all day.' },
+  { now: 'watch', clues: ['🚿 The bathroom floor is wet.', '🧴 You can smell shampoo in the hall.'],
+    truth: { who: 'juan', act: 'shower' }, story: 'Dad took off his watch to have a shower. He didn’t go out at all!' },
+  { now: 'cap', clues: ['⚽ There’s mud on the kitchen floor.', '🍌 Two bananas are missing from the fruit bowl.'],
+    truth: { who: 'lucas', act: 'snack' }, story: 'Lucas came home from soccer and had a big snack.' },
+  { now: 'hoodie', clues: ['📺 The TV is still warm.', '🥤 There’s an empty glass by the couch.'],
+    truth: { who: 'lucas', act: 'tv' }, story: 'Lucas got hot, took off his hoodie and watched TV all afternoon.' },
+  { now: 'scarf', clues: ['🌬️ It was cold and windy this morning.', '🛏️ The bedroom curtains are closed.'],
+    truth: { who: 'rosa', act: 'napping' }, story: 'Grandma came back from a cold walk and had a long nap.' },
+  { now: 'tie', clues: ['💼 Dad’s work bag is in the study.', '📞 There was a two-hour video call on the laptop.'],
+    truth: { who: 'juan', act: 'working' }, story: 'Dad had an important video call, so he worked from home all day.' },
+  { now: 'backpack', clues: ['📚 A math book is open on the desk.', '✏️ There are pencil shavings on the floor.'],
+    truth: { who: 'lucas', act: 'homework' }, story: 'Lucas came home from school and did his math homework.' },
+  { now: 'gloves', clues: ['🌷 There are new flowers next to the pool.', '🚰 The garden hose is still wet.'],
+    truth: { who: 'rosa', act: 'garden' }, story: 'Grandma planted new flowers in the backyard.' },
+  { now: 'swimsuit', clues: ['🧴 The sunscreen is open on the table.', '🕶️ Mom’s sunglasses aren’t on the shelf.'],
+    truth: { who: 'julia', act: 'sunbathing' }, story: 'Mom sat in the sun in the backyard and read a magazine.' },
+  { now: 'sandals', clues: ['💧 There are wet footprints next to the pool.', '🏖️ A big towel is missing from the bathroom.'],
+    truth: { who: 'juan', act: 'swimming' }, story: 'Dad went for a swim after work.' },
+  { now: 'backshut', clues: ['🔑 The key is on the inside of the door.', '🎮 The game controller is still warm.'],
+    truth: { who: 'lucas', act: 'gaming' }, story: 'Nobody went out that way — Lucas played video games all afternoon.' },
+  { now: 'boots', clues: ['☔ It rained all day.', '📖 Grandma’s book is open on the couch.'],
+    truth: { who: 'rosa', act: 'reading' }, story: 'It was raining, so Grandma stayed inside and read her book.' },
+  { now: 'sneakers', clues: ['🩴 His flip-flops aren’t by the door.', '💦 You can hear splashing outside.'],
+    truth: { who: 'lucas', act: 'swimming' }, story: 'Lucas put on his flip-flops and went swimming.' },
+  { now: 'glasses', clues: ['🥞 You can smell pancakes.', '📻 The radio is on in the kitchen.'],
+    truth: { who: 'rosa', act: 'cooking' }, story: 'Grandma made pancakes. She doesn’t need her glasses to cook!' },
+  { now: 'jacket', clues: ['🍽️ There are clean plates on the counter.', '🫧 The kitchen sink is still wet.'],
+    truth: { who: 'juan', act: 'dishes' }, story: 'Dad changed his clothes and washed the dishes.' },
+  { now: 'dress', clues: ['📱 Mom’s phone shows a one-hour call with Aunt Sofia.', '💬 There’s a message: “I LOVE your new dress!”'],
+    truth: { who: 'julia', act: 'phone' }, story: 'Mom tried on her new dress and called Aunt Sofia to tell her about it.' }
 ];
 
 let current = null;
@@ -102,7 +132,7 @@ HouseRandomGen.build({
   render: c => {
     current = c;
     const e = D.EVIDENCE[c.now];
-    const pic = D.scene(e.room, [], Object.assign({ aspect: 4 / 3, items: e.items, doors: e.doors, around: e.around === undefined ? 0.9 : e.around }, e.opts));
+    const pic = D.scene(e.room, [], Object.assign({ aspect: 4 / 3, keep: 0, items: e.items, doors: e.doors, around: e.around === undefined ? 0.9 : e.around }, e.opts));
     return '<span class="q-topic">🔎 What happened here?</span>' +
       '<div class="evidence">' + pic + '</div>' +
       '<ul class="clues"><li>' + e.cap + '</li>' + c.clues.map(x => '<li>' + x + '</li>').join('') + '</ul>' +
@@ -113,7 +143,7 @@ HouseRandomGen.build({
 document.getElementById('qCard').addEventListener('click', e => {
   if (!e.target.closest('#revealBtn') || !current) return;
   const t = current.truth, a = D.ACTS[t.act];
-  document.getElementById('reveal').innerHTML = '<div class="reveal-tag">⏪ Before</div>' +
+  document.getElementById('reveal').innerHTML = '<div class="reveal-tag">⏳ Before</div>' +
     D.scene(a.room, [{ who: t.who, act: t.act }], Object.assign({ around: 1.2, aspect: 4 / 3, doors: a.doors }, t.opts)) +
     '<div class="reveal-cap">' + a.emoji + ' ' + current.story + '</div>';
   e.target.closest('#revealBtn').remove();
