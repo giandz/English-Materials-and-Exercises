@@ -1,0 +1,126 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<title>What Happened Here? — Past Deduction</title>
+<script>
+(function(){
+  try{
+    var saved = localStorage.getItem('theme-preference');
+    var theme = (saved === 'light' || saved === 'dark')
+      ? saved
+      : ((window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches) ? 'dark' : 'light');
+    document.documentElement.setAttribute('data-theme', theme);
+    var fs = parseFloat(localStorage.getItem('font-size-preference'));
+    if (fs >= 10 && fs <= 28) document.documentElement.style.setProperty('--fs-base', fs + 'px');
+  }catch(e){ /* localStorage/matchMedia unavailable — CSS media query still applies */ }
+})();
+</script>
+<link rel="stylesheet" href="house.css">
+<style>
+.cast-row{ display:grid; grid-template-columns:repeat(4, minmax(0,1fr)); gap:8px; margin:0 0 1rem; }
+.cast-card{ background:var(--surface-1); border:1px solid var(--border); border-radius:var(--border-radius-lg); padding:6px 6px 8px; text-align:center; font-size:.8rem; color:var(--text-secondary); }
+.cast-card b{ display:block; color:var(--text-primary); font-size:.8667rem; }
+.cast-card svg{ display:block; width:100%; height:auto; }
+.bubble-wrap > .bubble-col{ max-width:92%; }
+.bubble-wrap.has-think{ align-items:flex-start; }
+.bubble-wrap.has-think .avatar{ margin-top:1.15rem; }
+.key-line{ font-size:.8333rem; color:var(--text-secondary); margin:0 0 .8rem; }
+@media (max-width:520px){ .cast-row{ grid-template-columns:repeat(2, minmax(0,1fr)); } }
+</style>
+</head>
+<body>
+<div class="page" id="page">
+  <span class="cefr-tag cefr-b1">B1 · Intermediate</span>
+  <h1>What Happened Here?</h1>
+  <p class="subtitle">Mom and Ana come home after a weekend away. Nobody is home, and there are clues everywhere.</p>
+
+  <div class="sec-div">Before you read</div>
+  <div id="preQuestions"></div>
+
+  <div class="sec-div">The family</div>
+  <div class="cast-row" id="castRow"></div>
+
+  <div class="sec-div">The conversation</div>
+  <div class="setting-chip"><span class="section-icon">🧳</span> Sunday evening — back from Aunt Sofia’s house</div>
+  <p class="key-line">In the thought bubbles: <b>before</b> (brown, like an old photo) is what the speaker thinks happened, and the number is how sure she is. <b>Now</b> is what she can see.</p>
+  <button class="grammar-toggle-btn" id="grammarToggle">🎨 Show Grammar</button>
+  <div class="pos-legend"></div>
+
+  <div id="conversation"></div>
+
+  <div class="sec-div">Check your answers</div>
+  <div id="quiz"></div>
+
+  <footer>What Happened Here? — Past Modals of Deduction (B1)</footer>
+</div>
+
+<div id="theme-toggle-wrap">
+  <button id="theme-toggle" aria-label="Toggle light/dark mode" title="Toggle light/dark mode">
+    <span id="theme-icon">☀️</span>
+  </button>
+</div>
+<script src="house.js"></script>
+<script src="house-engine.js"></script>
+<script src="house-character.js"></script>
+<script src="house-character-3d.js"></script>
+<script src="deduction-house.js"></script>
+<script>
+const D = DeductionHouse;
+D.injectStyles();
+
+document.getElementById('castRow').innerHTML = [['julia', 'kitchen'], ['juan', 'living'], ['rosa', 'bedroom'], ['lucas', 'study']].map(([who, act]) =>
+  '<div class="cast-card">' + D.scene(D.ACTS[act].room, [{ who, act }], { around: 0.55, aspect: 1 }) +
+  '<b>' + D.CAST[who].name + '</b>' + D.CAST[who].role + '</div>').join('');
+
+/* [words/pos] marks the grammar colours */
+const tag = s => s.replace(/\[([^\]\/]+)\/(\w+)\]/g, '<span class="pos-hl pos-$2">$1</span>');
+const SPEAKERS = {
+  Mom: { avatar: '👩', av: 'av-a', side: 'left' },
+  Ana: { avatar: '🙋‍♀️', av: 'av-b', side: 'right' }
+};
+/* each line: speaker, text, and (optional) the thought bubble: { past: [{who, act, pct}], now: evidence } */
+const R3 = { rot: 3 };
+const LINES = [
+  ['Ana', 'We’re home! … Hello? Dad? Lucas? Grandma? … Nobody’s here.'],
+  ['Mom', 'That’s strange. Look — Dad’s watch is on the counter. He never goes out without it. [He/subject] [must/aux] [have/aux] [left/part] [in a hurry/prep].',
+    { past: [{ who: 'juan', act: 'rushing', pct: 95, opts: R3 }], now: 'watch' }],
+  ['Ana', 'Maybe the hospital called him. [He/subject] [might/aux] [have/aux] [gone/part] [to work/prep].'],
+  ['Mom', 'Hmm. But his work jacket is here, on the bed. [He/subject] [can’t/aux] [have/aux] [gone/part] [to work/prep] — he always wears it at the hospital.',
+    { past: [{ who: 'juan', act: 'leaving', pct: 0, opts: R3 }], now: 'jacket' }],
+  ['Ana', 'OK, Detective Mom! What about Lucas? His swim shorts are on the floor, and they’re still wet. [He/subject] [must/aux] [have/aux] [been/part] [swimming/verb].',
+    { past: [{ who: 'lucas', act: 'swimming', pct: 95 }], now: 'shorts' }],
+  ['Mom', 'And the back door is open. [He/subject] [probably/adverb] [forgot/verb] to close it again. He always does!',
+    { past: [{ who: 'lucas', act: 'leaving', pct: 75, opts: R3 }], now: 'backdoor' }],
+  ['Ana', 'And Grandma? Her gardening boots are here, and they’re clean. So [she/subject] [can’t/aux] [have/aux] [worked/part] [in the backyard/prep] today.',
+    { past: [{ who: 'rosa', act: 'garden', pct: 0 }], now: 'boots' }],
+  ['Mom', 'Her glasses are on the desk, too. [She/subject] [couldn’t/aux] [have/aux] [read/part] without them. [She/subject] [may/aux] [have/aux] [watched/part] TV, or [she/subject] [could/aux] [have/aux] [had/part] a nap.',
+    { past: [{ who: 'rosa', act: 'tv', pct: 40 }, { who: 'rosa', act: 'napping', pct: 40 }], now: 'glasses' }],
+  ['Ana', 'Wait, my phone! A message from Dad: “At the sports center with Lucas and Grandma. We went swimming! Back at seven.”'],
+  ['Mom', 'Ha! So he [definitely/adverb] [didn’t/neg] [go/verb] to work. And Grandma went swimming? I [must/aux] [have/aux] [been/part] wrong about the TV!'],
+  ['Ana', 'Well, we were right about the wet shorts. Not bad, detective!']
+];
+const conv = document.getElementById('conversation');
+LINES.forEach(([who, text, think]) => {
+  const s = SPEAKERS[who], right = s.side === 'right';
+  conv.insertAdjacentHTML('beforeend',
+    '<div class="bubble-wrap' + (right ? ' right' : '') + (think ? ' has-think' : '') + '">' +
+      '<div class="avatar ' + s.av + '">' + s.avatar + '</div>' +
+      '<div class="bubble-col"><div class="bname' + (right ? ' right' : '') + '">' + (who === 'Mom' ? 'Mom (Julia)' : who) + '</div>' +
+      '<div class="bubble ' + (right ? 'right' : 'left') + '">' + tag(text) + '</div>' +
+      (think ? D.pastBubble(think, { side: s.side, label: who + ' thinks' }) : '') +
+      '</div>' +
+    '</div>');
+});
+
+const CQ_ITEMS = [
+  { q: 'Why does Mom think Dad left in a hurry?', opts: ['His watch is on the counter.', 'The back door is open.', 'His car isn’t outside.'], correct: 0 },
+  { q: 'Why can’t Grandma have worked in the backyard?', opts: ['It was raining.', 'Her gardening boots are clean.', 'Her glasses are on the desk.'], correct: 1 },
+  { q: 'Where was the family?', opts: ['At the hospital', 'At the sports center', 'At Aunt Sofia’s house'], correct: 1 }
+];
+HouseComprehension.build({ pre: 'preQuestions', quiz: 'quiz', items: CQ_ITEMS });
+</script>
+<script>HouseGrammar.init();</script>
+</body>
+</html>

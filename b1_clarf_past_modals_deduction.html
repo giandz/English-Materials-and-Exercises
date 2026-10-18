@@ -1,0 +1,232 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<title>Past Deduction: must have, might have, can’t have — Clarification</title>
+<script>
+(function(){
+  try{
+    var saved = localStorage.getItem('theme-preference');
+    var theme = (saved === 'light' || saved === 'dark')
+      ? saved
+      : ((window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches) ? 'dark' : 'light');
+    document.documentElement.setAttribute('data-theme', theme);
+    var fs = parseFloat(localStorage.getItem('font-size-preference'));
+    if (fs >= 10 && fs <= 28) document.documentElement.style.setProperty('--fs-base', fs + 'px');
+  }catch(e){ /* localStorage/matchMedia unavailable — CSS media query still applies */ }
+})();
+</script>
+<link rel="stylesheet" href="house.css">
+<style>
+/* the target language is the lesson, so it stays coloured (not a grammar-toggle colour) */
+.tgt{ color:var(--text-accent); font-weight:700; }
+.ex-card{ border:1px solid var(--color-border-tertiary); border-radius:12px; background:var(--surface-2); padding:10px 12px 12px; margin-bottom:12px; }
+.ex-say{ font-size:1rem; font-weight:600; line-height:1.5; }
+.ex-why{ font-size:.8333rem; color:var(--text-secondary); margin-top:2px; }
+.ex-why::before{ content:'🔎 '; }
+.vs{ display:grid; grid-template-columns:minmax(0,1fr) minmax(0,1fr); gap:10px; margin-bottom:1rem; }
+.vs-col{ border:1px solid var(--color-border-tertiary); border-radius:12px; background:var(--surface-2); padding:10px 12px; min-width:0; }
+.vs-col h3{ margin:0 0 .2rem; font-size:.8rem; text-transform:uppercase; letter-spacing:.05em; color:var(--text-muted); }
+.vs-col .dh-think{ margin-left:auto; margin-right:auto; }
+.vs-col .dh-split .dh-panel{ width:118px; flex-basis:118px; }
+.vs-col .dh-split .dh-arrow small{ display:none; }
+.vs-col .dh-cap{ font-size:.7333rem; }
+.cert{ display:grid; grid-template-columns:auto minmax(0,1fr) minmax(0,1.4fr); gap:4px 10px; align-items:center; margin:4px 0 10px; font-size:.8667rem; }
+.cert > div{ padding:5px 8px; border-radius:7px; background:var(--surface-2); border:1px solid var(--color-border-tertiary); }
+.cert .h{ background:none; border:none; font-size:.7rem; font-weight:700; letter-spacing:.04em; text-transform:uppercase; color:var(--text-muted); }
+.cert .pc{ font-family:var(--font-mono); font-weight:700; color:#fff; text-align:center; border:none; }
+.rule-box p{ margin:0 0 6px; }
+.rule-box p:last-child{ margin-bottom:0; }
+.rule-box h3{ margin:.8rem 0 .3rem; color:var(--text-primary); }
+.rule-box h3:first-child{ margin-top:0; }
+@media (max-width:640px){ .vs{ grid-template-columns:1fr; } }
+</style>
+</head>
+<body>
+<div class="page" id="page">
+  <span class="cefr-tag cefr-b1">B1 · Intermediate</span>
+  <h1>Past Deduction: must have, might have, can’t have</h1>
+  <p class="subtitle">We use these when we are not 100% sure what happened. We look at the evidence now and guess about the past.</p>
+
+  <div class="sec-div">Now or before?</div>
+  <p class="subtitle">Compare. On the left, a guess about now. On the right, a guess about the past.</p>
+  <div class="vs" id="vs"></div>
+
+  <div class="sec-div">Look</div>
+  <p class="subtitle">Before (brown, like an old photo) is the speaker’s guess. Now is the evidence. The number shows how sure the speaker is.</p>
+  <div id="examples"></div>
+
+  <div class="sec-div">Check the meaning</div>
+  <p class="subtitle">Read the sentence. Answer the questions.</p>
+  <div id="ccq"></div>
+
+  <div class="sec-div">Look at the form</div>
+  <p class="subtitle">What is each part of the sentence? Drag a label (or tap a label, then tap a box).</p>
+  <div class="score-bar"><span>Correct: <strong id="fcScore">0</strong> / <span id="fcTotal">0</span></span></div>
+  <div id="formClarf"></div>
+
+  <div class="rule-box" id="ruleBox"></div>
+
+  <div class="sec-div">Common mistakes</div>
+  <div id="mistakes"></div>
+
+  <div class="sec-div">Error hunt</div>
+  <p class="subtitle">Some sentences have a mistake. Some are correct! Tap a word — or a space between words — to fix it. Then press OK.</p>
+  <div class="score-bar"><span>Done: <strong id="errorScore">0</strong> / <span id="errorTotal">0</span></span></div>
+  <div id="errorHuntItems"></div>
+
+  <footer>Past Modals of Deduction — Clarification (B1)</footer>
+</div>
+
+<div id="theme-toggle-wrap">
+  <button id="theme-toggle" aria-label="Toggle light/dark mode" title="Toggle light/dark mode">
+    <span id="theme-icon">☀️</span>
+  </button>
+</div>
+<script src="house.js"></script>
+<script src="house-engine.js"></script>
+<script src="house-character.js"></script>
+<script src="house-character-3d.js"></script>
+<script src="deduction-house.js"></script>
+<script>
+const D = DeductionHouse;
+D.injectStyles();
+const T = s => '<span class="tgt">' + s + '</span>';
+const R3 = { rot: 3 };
+
+/* ── now vs before ─────────────────────────────────────────────────────── */
+document.getElementById('vs').innerHTML =
+  '<div class="vs-col"><h3>A guess about now</h3><div class="ex-say">Lucas ' + T('must be') + ' swimming.</div>' +
+  '<div class="ex-why">I can hear splashing in the pool.</div>' + D.bubble([{ who: 'lucas', act: 'swimming', pct: 95 }]) + '</div>' +
+  '<div class="vs-col"><h3>A guess about the past</h3><div class="ex-say">Lucas ' + T('must have been') + ' swimming.</div>' +
+  '<div class="ex-why">His swim shorts are on the floor, and they’re wet.</div>' + D.pastBubble({ past: [{ who: 'lucas', act: 'swimming', pct: 95 }], now: 'shorts' }) + '</div>';
+
+/* ── examples: sentence, evidence, split bubble ───────────────────────── */
+const EXAMPLES = [
+  ['Lucas ' + T('definitely went') + ' out. I saw him.', 'You saw it, so you are 100% sure: use the past simple.',
+    { past: [{ who: 'lucas', act: 'leaving', pct: 100, opts: R3 }], now: 'backdoor' }],
+  ['Dad ' + T('must have left') + ' in a hurry.', 'His watch is on the counter. He never goes out without it.',
+    { past: [{ who: 'juan', act: 'rushing', pct: 95, opts: R3 }], now: 'watch' }],
+  ['Lucas ' + T('probably forgot') + ' to close the back door.', 'He often forgets.',
+    { past: [{ who: 'lucas', act: 'leaving', pct: 75, opts: R3 }], now: 'backdoor' }],
+  ['Grandma ' + T('might have watched') + ' TV, or she ' + T('could have had') + ' a nap.', 'Her glasses are on the desk — but I don’t really know.',
+    { past: [{ who: 'rosa', act: 'tv', pct: 40 }, { who: 'rosa', act: 'napping', pct: 40 }], now: 'glasses' }],
+  ['Mom ' + T('may have been getting') + ' ready for a party.', 'Her party dress is on the bed — but maybe she just bought it.',
+    { past: [{ who: 'julia', act: 'bedroom', pct: 40, cap: '👗 getting ready' }], now: 'dress' }],
+  ['Lucas ' + T('probably didn’t go') + ' out.', 'His sneakers are by the door — but he has other shoes.',
+    { past: [{ who: 'lucas', act: 'leaving', pct: 25, opts: R3 }], now: 'sneakers' }],
+  ['Grandma ' + T('can’t have worked') + ' in the backyard.', 'Her gardening boots are clean and dry.',
+    { past: [{ who: 'rosa', act: 'garden', pct: 0 }], now: 'boots' }]
+];
+document.getElementById('examples').innerHTML = EXAMPLES.map(([say, why, think]) =>
+  '<div class="ex-card"><div class="ex-say">' + say + '</div><div class="ex-why">' + why + '</div>' + D.pastBubble(think) + '</div>').join('');
+
+/* ── concept checking questions ────────────────────────────────────────── */
+HouseCCQ.build({
+  container: 'ccq',
+  items: [
+    { sentence: 'Dad must have left in a hurry.',
+      questions: [
+        { q: 'Is this about now or the past?', opts: ['Now', 'The past'], correct: 1,
+          why: 'The past. <b>must have + past participle</b> = a guess about something that happened before now.' },
+        { q: 'Did Mom see Dad leave?', opts: ['Yes', 'No'], correct: 1,
+          why: 'No. She sees his watch <b>now</b>, and she guesses what happened.' },
+        { q: 'Is she very sure?', opts: ['Yes', 'No'], correct: 0,
+          why: 'Yes — about 95%. She has a good reason.' }
+      ] },
+    { sentence: 'Grandma might have watched TV.',
+      questions: [
+        { q: 'Is it possible that she did something different?', opts: ['Yes', 'No'], correct: 0,
+          why: 'Yes. <b>might / may / could have</b> = maybe it happened, maybe not.' }
+      ] },
+    { sentence: 'She can’t have worked in the backyard.',
+      questions: [
+        { q: 'Is it possible that she worked in the backyard?', opts: ['Yes', 'No'], correct: 1,
+          why: 'No. <b>can’t have / couldn’t have</b> = I’m sure it didn’t happen.' },
+        { q: 'Can we say “She mustn’t have worked” here?', opts: ['Yes', 'No'], correct: 1,
+          why: 'No. For a guess, the opposite of <b>must have</b> is <b>can’t have</b>.' }
+      ] },
+    { sentence: 'He could have gone to work.',
+      questions: [
+        { q: 'Did he go to work?', opts: ['Yes', 'We don’t know'], correct: 1,
+          why: 'We don’t know — it’s a possibility. Compare: <b>He could go to work</b> (past simple of can) = he was able to.' }
+      ] }
+  ]
+});
+
+/* ── form ──────────────────────────────────────────────────────────────── */
+HouseFormClarf.build({
+  container: 'formClarf', scoreEl: 'fcScore', totalEl: 'fcTotal',
+  pool: ['subject', 'aux', 'part', 'verb', 'neg', 'adverb', 'prep', 'object'],
+  items: [
+    { form: 'aff', parts: [['He', 'subject'], ['must', 'aux'], ['have', 'aux'], ['left', 'part'], ['in a hurry', 'prep'], ['.', null]] },
+    { form: 'aff', parts: [['She', 'subject'], ['might', 'aux'], ['have', 'aux'], ['watched', 'part'], ['TV', 'object'], ['.', null]] },
+    { form: 'aff', parts: [['He', 'subject'], ['must', 'aux'], ['have', 'aux'], ['been', 'part'], ['swimming', 'verb'], ['.', null]] },
+    { form: 'neg', parts: [['She', 'subject'], ['can’t', 'aux'], ['have', 'aux'], ['worked', 'part'], ['in the backyard', 'prep'], ['.', null]] },
+    { form: 'neg', parts: [['He', 'subject'], ['may', 'aux'], ['not', 'neg'], ['have', 'aux'], ['seen', 'part'], ['it', 'object'], ['.', null]] },
+    { form: 'aff', parts: [['Lucas', 'subject'], ['probably', 'adverb'], ['forgot', 'verb'], ['.', null]] }
+  ]
+});
+
+/* ── the rule ──────────────────────────────────────────────────────────── */
+const C = pct => '<div class="pc" style="background:' + D.colourOf(pct) + '">' + pct + '%</div>';
+const CERT = [
+  [100, 'definitely + past simple', 'He ' + T('definitely left') + '. I saw him.'],
+  [95, 'must have + past participle', 'He ' + T('must have left') + ' in a hurry.'],
+  [75, 'probably + past simple', 'He ' + T('probably forgot') + ' his watch.'],
+  [40, 'might / may / could have + past participle', 'He ' + T('might have gone') + ' to work.'],
+  [25, 'probably didn’t + verb', 'He ' + T('probably didn’t go') + ' to work.'],
+  [0, 'can’t / couldn’t have + past participle', 'He ' + T('can’t have gone') + ' to work.']
+];
+document.getElementById('ruleBox').innerHTML =
+  '<h3>How sure?</h3>' +
+  '<div class="cert"><div class="h">sure</div><div class="h">form</div><div class="h">example</div>' +
+  CERT.map(([p, w, e]) => C(p) + '<div><strong>' + w + '</strong></div><div>' + e + '</div>').join('') + '</div>' +
+  '<h3>Form</h3>' +
+  '<p><strong>modal + have + past participle</strong>: He ' + T('must have left') + '. · She ' + T('might have watched') + ' TV. · He ' + T('can’t have gone') + '.</p>' +
+  '<p><strong>modal + have been + -ing</strong> (an activity in progress): He ' + T('must have been swimming') + '.</p>' +
+  '<p><strong>modal + have been + place / adjective</strong>: She ' + T('may have been') + ' at a party. · He ' + T('must have been') + ' tired.</p>' +
+  '<p><b>have</b> never changes (not <s>has</s>, not <s>had</s>), and the verb is the past participle: gone, left, been, seen, forgotten, worked.</p>' +
+  '<p><strong>Negative:</strong> ' + T('can’t have / couldn’t have') + ' = I’m sure it didn’t happen. ' + T('might not have / may not have') + ' = maybe it didn’t happen. (Don’t use <b>mustn’t have</b> for a guess.)</p>' +
+  '<h3>Now or before?</h3>' +
+  '<p>Now: He ' + T('must be') + ' at work. · Before now: He ' + T('must have been') + ' at work.</p>' +
+  '<p>Now: She ' + T('might be') + ' sleeping. · Before now: She ' + T('might have been') + ' sleeping.</p>' +
+  '<h3>Adverbs</h3>' +
+  '<p><strong>definitely / probably</strong> + past simple. They go before the verb, and before <b>didn’t</b>: He ' + T('probably forgot') + '. · He ' + T('probably didn’t') + ' see it.</p>' +
+  '<p><strong>maybe / perhaps</strong> + past simple, at the start: ' + T('Maybe') + ' he forgot. = He ' + T('might have forgotten') + '.</p>';
+
+/* ── common mistakes ───────────────────────────────────────────────────── */
+const MISTAKES = [
+  ['He must have went to work.', 'He must have gone to work.'],
+  ['He must had left in a hurry.', 'He must have left in a hurry.'],
+  ['She can’t have work in the backyard.', 'She can’t have worked in the backyard.'],
+  ['She mustn’t have worked in the backyard. Her boots are clean.', 'She can’t have worked in the backyard. Her boots are clean.'],
+  ['He might have been swim.', 'He might have been swimming.'],
+  ['He must left his watch.', 'He must have left his watch.'],
+  ['He can have gone to work. (= maybe)', 'He could / might / may have gone to work.'],
+  ['He must to have forgotten.', 'He must have forgotten.'],
+  ['Lucas forgot probably to close the door.', 'Lucas probably forgot to close the door.']
+];
+document.getElementById('mistakes').innerHTML = MISTAKES.map(([no, yes]) =>
+  '<div class="pair-card"><div class="pair-line no"><span class="mark">✗</span>' + no + '</div>' +
+  '<div class="pair-line yes"><span class="mark">✓</span>' + yes + '</div></div>').join('');
+
+/* ── error hunt (some sentences are already correct) ───────────────────── */
+const EH_ITEMS = [
+  { words: ['He', 'must', 'have', 'went', 'to', 'work', '.'], error: { type: 'wrong', wordIndex: 3, options: ['gone', 'go', 'going'], correct: 'gone' } },
+  { words: ['She', 'might', 'have', 'watched', 'TV', '.'], error: null },
+  { words: ['He', 'must', 'left', 'in', 'a', 'hurry', '.'], error: { type: 'missing', gapIndex: 2, options: ['have', 'had', 'has'], correct: 'have' } },
+  { words: ['She', 'mustn’t', 'have', 'worked', 'outside', '.'], error: { type: 'wrong', wordIndex: 1, options: ['can’t', 'doesn’t', 'didn’t'], correct: 'can’t' } },
+  { words: ['Lucas', 'must', 'have', 'been', 'swimming', '.'], error: null },
+  { words: ['He', 'might', 'have', 'been', 'swim', '.'], error: { type: 'wrong', wordIndex: 4, options: ['swimming', 'swam', 'swum'], correct: 'swimming' } },
+  { words: ['She', 'must', 'to', 'have', 'forgotten', 'it', '.'], error: { type: 'extra', wordIndex: 2 } },
+  { words: ['He', 'forgot', 'probably', 'to', 'close', 'it', '.'], error: { type: 'misplaced', wordIndex: 2, targetGapIndex: 1 } },
+  { words: ['They', 'can’t', 'have', 'gone', 'far', '.'], error: null },
+  { words: ['She', 'may', 'has', 'been', 'asleep', '.'], error: { type: 'wrong', wordIndex: 2, options: ['have', 'had', 'having'], correct: 'have' } }
+];
+HouseErrorHunt.build({ container: 'errorHuntItems', items: EH_ITEMS, scoreEl: 'errorScore', totalEl: 'errorTotal' });
+</script>
+<script>HouseGrammar.init();</script>
+</body>
+</html>

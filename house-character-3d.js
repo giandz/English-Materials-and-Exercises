@@ -29,6 +29,17 @@
               bunk: 'top',      in a bunk bed: the top bed (default: the bottom one)
               swim: true,       in a swimming pool: standing on the bottom with the water just
                                 under the shoulders; below the surface the body shows only faintly
+              garment: 'footwear' | 'upper' | 'lower' | 'headwear' | 'eyewear' | 'watch' | 'accessory',
+                                not a person but one piece of their clothing, on its own:
+                                footwear stands on the floor (which: 'left' / 'right' for one
+                                shoe or boot), with an opening drawn across the top; the others
+                                lie flat, top toward `facing`, gently wrinkled (wrinkle: 2.5, 0 = none;
+                                angle: a turn in degrees). on: i lays or stands it on furniture
+                                number i (at: [u, v] there, e.g. a jacket on a bed). 'accessory' takes
+                                item: an accessory id ('watch' is item 'watchL'); scale: 2 draws a small
+                                thing bigger than life so it can be seen
+              armOver: 'right', that arm (and anything in its hand) drawn on top of the picture,
+                                e.g. a cook reaching over a counter (only when facing the camera)
               opacity: 1,       0–1, how solid the person is drawn (a guess, a memory, a ghost);
                                 below 0.5 the figure also gets a dashed outline in the colour opposite
                                 the page, as strong as the figure is faint (see ghost)
@@ -398,6 +409,163 @@
     }).replace(/<\/(rect|circle|ellipse|line|polyline|polygon)>/g, '</path>');
   }
 
+  /* ── Garments on their own ────────────────────────────────────────────────────────
+     A garment is cut out of a character's drawing by drawing the character twice, with
+     and without it, and keeping only what the first drawing has that the second lacks.
+     The two drawings are matched group by group (the joints, in order); inside each group
+     the shapes are matched in order too (a longest common subsequence), so the skin under
+     a sleeve, which both drawings have, is left out, and only the cloth is kept. Group
+     transforms are taken from the drawing with the garment (shoes, for one, lift the body
+     a little), so the garment sits where the character wore it. */
+  const GARMENT_KEY = { footwear: 'footwear', shoes: 'footwear', boots: 'footwear', upper: 'upperGarment', top: 'upperGarment',
+    lower: 'lowerGarment', bottoms: 'lowerGarment', headwear: 'headwear', hat: 'headwear',
+    eyewear: 'eyewear', glasses: 'eyewear', accessory: 'accessories', watch: 'accessories' };
+  const stripSvg = s => s.replace(/^<svg[^>]*>/, '').replace(/<\/svg>$/, '').replace(/<title>[\s\S]*?<\/title>/, '');
+  function topElements(s) {   // the top-level elements of a piece of markup, as strings
+    const out = [], re = /<(\/?)([a-zA-Z]+)(?:\s[^>]*?)?(\/?)>/g;
+    let depth = 0, start = 0;
+    for (let m; (m = re.exec(s));) {
+      if (m[1]) { if (--depth === 0) out.push(s.slice(start, re.lastIndex)); }
+      else if (m[3]) { if (depth === 0) out.push(s.slice(m.index, re.lastIndex)); }
+      else { if (depth === 0) start = m.index; depth++; }
+    }
+    return out;
+  }
+  const openTag = s => (s.match(/^<[^>]*>/) || [''])[0];
+  const isGroup = s => /^<g[\s>]/.test(s);
+  const groupLabel = s => (openTag(s).match(/data-joint="([^"]+)"/) || [, 'g'])[1];
+  const innerOf = s => s.slice(openTag(s).length, s.lastIndexOf('</'));
+  // the elements of `a` that are not in `b` (groups are compared recursively)
+  function diffMarkup(a, b, keepGroup) {
+    const A = topElements(a), B = topElements(b), out = [];
+    // groups pair up by label, k-th with k-th
+    const seen = {}, byLabel = {};
+    B.filter(isGroup).forEach(g => { (byLabel[groupLabel(g)] = byLabel[groupLabel(g)] || []).push(g); });
+    const plainB = B.filter(x => !isGroup(x));
+    // LCS over the non-group elements, to keep order-sensitive duplicates straight
+    const plainA = A.filter(x => !isGroup(x)), n = plainA.length, m = plainB.length;
+    const T = Array.from({ length: n + 1 }, () => new Int32Array(m + 1));
+    for (let i = n - 1; i >= 0; i--) for (let j = m - 1; j >= 0; j--) T[i][j] = plainA[i] === plainB[j] ? T[i + 1][j + 1] + 1 : Math.max(T[i + 1][j], T[i][j + 1]);
+    const matched = new Set();
+    for (let i = 0, j = 0; i < n && j < m;) {
+      if (plainA[i] === plainB[j]) { matched.add(i); i++; j++; } else if (T[i + 1][j] >= T[i][j + 1]) i++; else j++;
+    }
+    let pi = 0;
+    A.forEach(x => {
+      if (!isGroup(x)) { if (!matched.has(pi++)) out.push(x); return; }
+      const lab = groupLabel(x), k = seen[lab] = (seen[lab] || 0) + 1;
+      if (keepGroup && !keepGroup(lab)) return;
+      const twin = (byLabel[lab] || [])[k - 1];
+      const kept = twin ? diffMarkup(innerOf(x), innerOf(twin), null) : innerOf(x);
+      if (kept) out.push(openTag(x) + kept + '</g>');
+    });
+    return out.join('');
+  }
+  /* garmentArt(d, key, side): the markup of one garment of character d (as HouseCharacter.render
+     draws it, without the <svg> wrapper). side 'L' / 'R' keeps one side's joints only (one boot). */
+  function garmentArt(d, key, side) {
+    const HC = global.HouseCharacter;
+    // only that garment is worn (nothing over or under it to change its shape), on a body
+    // with nothing in its hands; then the same body without it
+    d = Object.assign(JSON.parse(JSON.stringify(d)), { upperGarment: null, lowerGarment: null, footwear: null, headwear: null, eyewear: null,
+      accessories: [], held: { left: null, right: null }, prop: null }, { [key]: d[key] });
+    const bare = JSON.parse(JSON.stringify(d)); bare[key] = null;
+    const w = stripSvg(HC.render(d)), n = stripSvg(HC.render(bare));
+    const wi = w.indexOf('<g'), ni = n.indexOf('<g'), outerW = w.slice(wi), outerN = n.slice(ni);
+    const other = side === 'L' ? 'R' : side === 'R' ? 'L' : null;
+    const keep = other ? lab => !(lab.length > 1 && lab.endsWith(other) && /^(ankle|knee|hip|shoulder|elbow|wrist)/.test(lab)) : null;
+    return w.slice(0, wi) + openTag(outerW) + diffMarkup(innerOf(outerW), innerOf(outerN), keep) + '</g>';
+  }
+  /* The cut-out keeps a few shapes that are not cloth: skin seen through an opening (a
+     V-neck) or drawn over the garment. Drawing the garment a second time in another colour
+     shows which fills belong to it (they change) and which do not (they stay): skin is
+     dropped, other fixed fills with no outline (an opening) become the garment's lining. */
+  const hueOf = hex => { const n = parseInt(hex.slice(1), 16), r = (n >> 16) / 255, g = ((n >> 8) & 255) / 255, b = (n & 255) / 255;
+    const mx = Math.max(r, g, b), mn = Math.min(r, g, b), dl = mx - mn; if (dl < 0.08) return null;
+    return ((mx === r ? ((g - b) / dl) % 6 : mx === g ? (b - r) / dl + 2 : (r - g) / dl + 4) * 60 + 360) % 360; };
+  const hueGap = (a, b) => { const x = hueOf(a), y = hueOf(b); if (x == null || y == null) return x === y ? 0 : 180; const d = Math.abs(x - y) % 360; return Math.min(d, 360 - d); };
+  const COLOR_OF = { upperGarment: 'upperColor', lowerGarment: 'lowerColor', footwear: 'footwearColor', headwear: 'headwearColor' };
+  function looseGarment(d, key, side) {
+    const HC = global.HouseCharacter, ck = COLOR_OF[key];
+    const art = garmentArt(d, key, side);
+    if (!ck) return art;
+    const alt = JSON.parse(JSON.stringify(d)); alt[ck] = d[ck] === '#00FF00' ? '#FF00FF' : '#00FF00';
+    const art2 = garmentArt(alt, key, side);
+    const els = s2 => s2.match(/<[a-zA-Z]+(?:\s[^>]*)?\/?>/g) || [];
+    const A = els(art), B = els(art2);
+    if (A.length !== B.length) return art;
+    const skin = ((HC.SKIN || []).find(k => k.id === d.skin) || {}).hex || '';
+    const own = d[ck] || (key === 'footwear' && HC.FOOT[d.footwear] ? HC.FOOT[d.footwear].col : '#666666');
+    let k = 0;
+    return art.replace(/<[a-zA-Z]+(?:\s[^>]*)?\/?>/g, tag => {
+      const other = B[k++], f1 = attr(tag, 'fill'), f2 = attr(other || '', 'fill');
+      if (!f1 || !/^#/.test(f1)) return tag;
+      // a top's neck opening is drawn in a colour that goes with the top (a shirt under a
+      // jacket); lying on its own, the opening shows the top's own lining instead
+      if (f1 !== f2) return key === 'upperGarment' && attr(tag, 'stroke') === 'none' && hueGap(f1, own) > 60 ? tag.replace(/\sfill="[^"]*"/, ` fill="${darken(own, 0.55)}"`) : tag;
+      if (skin && f1.toLowerCase() === skin.toLowerCase()) return tag.replace(/\sfill="[^"]*"/, ' fill="none"').replace(/\sstroke="[^"]*"/, ' stroke="none"').replace(/^<([a-zA-Z]+)/, '<$1 display="none"');
+      if (attr(tag, 'stroke') === 'none') return tag.replace(/\sfill="[^"]*"/, ` fill="${darken(own, 0.55)}"`);
+      return tag;
+    });
+  }
+  /* Every point of every shape in a piece of markup, in its outermost coordinates. */
+  function artPoints(art) {
+    const stack = [{ m: [1, 0, 0, 1, 0, 0], skip: 0 }], pts = [];
+    art.replace(/<(\/?)([a-zA-Z]+)((?:\s+[^\s=>\/]+="[^"]*")*)\s*(\/?)>/g, (tag, close, name, attrs, self) => {
+      const top = stack[stack.length - 1];
+      if (close) { if (stack.length > 1) stack.pop(); return tag; }
+      if (top.skip || OPAQUE.has(name)) { if (!self) stack.push({ m: top.m, skip: 1 }); return tag; }
+      const m = mmul(top.m, parseTransform(attr(tag, 'transform')));
+      if (!self) stack.push({ m, skip: 0 });
+      if (name === 'g' || !GEOM[name]) return tag;
+      const d0 = shapePath(name, tag); if (!d0) return tag;
+      pathToCubics(d0).forEach(sp => { pts.push(mapPt(m, ...sp.start)); sp.segs.forEach(q => pts.push(mapPt(m, q[0], q[1]), mapPt(m, q[2], q[3]), mapPt(m, q[4], q[5]))); });
+      return tag;
+    });
+    return pts;
+  }
+  /* Bend every shape of a piece of markup by fn([x, y]) → [x', y'] (outermost coordinates):
+     the same path rewriting as the split skew, for any displacement — here, wrinkles. */
+  function warpArt(art, fn) {
+    const stack = [{ m: [1, 0, 0, 1, 0, 0], skip: 0 }], f = v => +v.toFixed(2);
+    return art.replace(/<(\/?)([a-zA-Z]+)((?:\s+[^\s=>\/]+="[^"]*")*)\s*(\/?)>/g, (tag, close, name, attrs, self) => {
+      const top = stack[stack.length - 1];
+      if (close) { if (stack.length > 1) stack.pop(); return tag; }
+      if (top.skip || OPAQUE.has(name)) { if (!self) stack.push({ m: top.m, skip: 1 }); return tag; }
+      const m = mmul(top.m, parseTransform(attr(tag, 'transform')));
+      if (!self) stack.push({ m, skip: 0 });
+      if (name === 'g' || !GEOM[name]) return tag;
+      const d0 = shapePath(name, tag), inv = minv(m); if (!d0 || !inv) return tag;
+      const W = (x, y) => { const g = fn(mapPt(m, x, y)); return mapPt(inv, g[0], g[1]); };
+      const d1 = pathToCubics(d0).map(sp => {
+        const segs = []; let q0 = sp.start;
+        sp.segs.forEach(q => { splitSeg(q0, q, m, segs, 0); q0 = [q[4], q[5]]; });
+        const st = W(...sp.start);
+        return `M${f(st[0])},${f(st[1])}` + segs.map(q => { const a = W(q[0], q[1]), b = W(q[2], q[3]), c = W(q[4], q[5]);
+          return `C${f(a[0])},${f(a[1])} ${f(b[0])},${f(b[1])} ${f(c[0])},${f(c[1])}`; }).join('') + (sp.closed ? 'Z' : '');
+      }).join('');
+      let rest = attrs; GEOM[name].forEach(k => { rest = rest.replace(new RegExp('\\s' + k + '="[^"]*"'), ''); });
+      const fillNone = (name === 'line' || name === 'polyline') && !/\sfill="/.test(rest) ? ' fill="none"' : '';
+      return `<path d="${d1}"${rest}${fillNone}${self ? '/' : ''}>`;
+    }).replace(/<\/(rect|circle|ellipse|line|polyline|polygon)>/g, '</path>');
+  }
+  const darken = (hex, f) => { const n = parseInt(String(hex || '#666666').slice(1), 16); const c = k => Math.round(((n >> k) & 255) * f);
+    return '#' + ((1 << 24) | (c(16) << 16) | (c(8) << 8) | c(0)).toString(16).slice(1); };
+  /* Loose shoes and boots have an opening: an ellipse (a circle on the floor, seen at the
+     camera's angle) across the top of each one, the inside in shadow. */
+  function toplines(d, side) {
+    const HC = global.HouseCharacter, F = (HC.FOOT || {})[d.footwear];
+    if (!F || F.kind === 'sandal' || F.kind === 'sock') return '';
+    const col = d.footwearColor || F.col;
+    return (side ? [side] : ['L', 'R']).map(sd => {
+      const pts = artPoints(garmentArt(d, 'footwear', sd)); if (!pts.length) return '';
+      const y0 = Math.min(...pts.map(p => p[1])), y1 = Math.max(...pts.map(p => p[1])), band = Math.max(3, 0.12 * (y1 - y0));
+      const xs = pts.filter(p => p[1] <= y0 + band).map(p => p[0]), x0 = Math.min(...xs), x1 = Math.max(...xs);
+      const rx = Math.max(3, (x1 - x0) / 2 * 0.92), ry = rx * 0.45;
+      return `<ellipse cx="${((x0 + x1) / 2).toFixed(2)}" cy="${(y0 + ry * 0.35).toFixed(2)}" rx="${rx.toFixed(2)}" ry="${ry.toFixed(2)}" fill="${darken(col, 0.45)}" stroke="${darken(col, 0.3)}"/>`;
+    }).join('');
+  }
+
   /* Where a person sits on a piece of furniture: sitting back, with the hips placed so the
      knees come to the seat's front edge (thigh = the sitter's own thigh length, in metres),
      never closer than 5 cm to the backrest; on a sofa, on cushion number `place`. At the
@@ -522,6 +690,7 @@
       if (L > st.level || !stBy[L]) return null;   // floors above the one shown are not drawn
       const bed = p.bed != null && st.floors[L] && st.floors[L].furniture[p.bed] && isBed(st.floors[L].furniture[p.bed].type) ? st.floors[L].furniture[p.bed] : null;
       if (bed) return sleeper(p, i, L, bed);
+      if (p.garment) return garmentItem(p, i, L);
       const seat = p.seat != null && st.floors[L] ? st.floors[L].furniture[p.seat] : null;
       const thigh = seat ? (() => { const pv = global.HouseCharacter.pivots(p.character); return Math.hypot(pv.kneeL.x - pv.hipL.x, pv.kneeL.y - pv.hipL.y) / PX_PER_M; })() : 0;
       const sp = seat ? seatSpot(eng, seat, p.place, thigh) : null;
@@ -575,6 +744,86 @@
       return { p, i, L, d: HC.normalize(d), sleep: { f, u, zo }, x, y, z: 0, warp: { split: 0 } };
     }
 
+    /* A garment on its own (people entries with garment: …):
+         footwear — standing upright where it was put, a pair or one shoe (which: 'left' / 'right'),
+                    turned the way `facing` says, with an opening across the top of each;
+         anything else — lying flat (a jacket on a bed, trousers on the floor), its top
+                    (collar, waistband) toward `facing`, slightly wrinkled (wrinkle: stage px).
+       on: i puts it on furniture number i (on its top; at: [u, v] in the piece's frame, and
+       by default the top points to the piece's back, e.g. a bed's headboard). */
+    function garmentItem(p, i, L) {
+      const key = GARMENT_KEY[p.garment] || p.garment;
+      let d = HC.normalize(p.character);
+      if (key === 'accessories') d.accessories = [p.item || (p.garment === 'watch' ? 'watchL' : (d.accessories || [])[0])].filter(Boolean);
+      if (!d[key] || (Array.isArray(d[key]) && !d[key].length)) return null;
+      const stand = (HC.POSES.find(q => q.id === 'standing') || { joints: {} }).joints;
+      HC.JOINTS.forEach(([k]) => { d.joints[k] = stand[k] || 0; });
+      Object.assign(d, { torsoOrientation: 0, pelvisOrientation: 0, head: 'front', back: false, held: { left: null, right: null }, prop: null });
+      const f = p.on != null && st.floors[L] ? st.floors[L].furniture[p.on] : null;
+      const lv = f ? (eng.FURN[f.type].levels || []) : [];
+      const surf = f ? ((lv.find(l => l.top) || lv[0] || { z: eng.FURN[f.type].h }).z) : 0;
+      const at = p.at || [0, f && isBed(f.type) ? 0.25 : 0];
+      const [x, y] = f ? eng.furnPt(f, at[0], at[1]) : [p.x || 0, p.y || 0];
+      const side = p.which === 'left' || p.which === 'L' ? 'L' : p.which === 'right' || p.which === 'R' ? 'R' : null;
+      const type = 'hc3d_person_' + i, flat = key !== 'footwear';
+      eng.FURN[type] = { w: 0.3, d: 0.3, h: flat ? 0.05 : 0.4, levels: [{ z: 0 }] };
+      stBy[L].furniture.push({ f: { type, X: x * 2, Y: y * 2, dir: 0, items: [] }, cls: 'hc3d-ref hc3d-ref-' + i, idx: -1 });
+      if (f) stBy[L].furniture[p.on].cls += ' hc3d-seat-' + i;
+      const out = { p, i, L, x, y, z: (p.z || 0) + surf, onF: !!f, garment: { key, side, flat, f } };
+      if (flat) {
+        // laid out: arms a little away from the body, legs a little apart
+        Object.assign(d.joints, { shoulderL: -24, elbowL: -6, shoulderR: 24, elbowR: 6, hipL: -5, hipR: 5, ankleL: 0, ankleR: 0 });
+        return Object.assign(out, { d, warp: { split: 0 } });
+      }
+      const vp = viewPlan(d, p.facing != null ? p.facing : 'S', st.rot, opts);
+      return Object.assign(out, { d: vp.d, warp: vp.warp, away: vp.away, ex: extent(vp.d) });
+    }
+    function drawGarment(w) {
+      const g = w.garment, op = opacityOf(w.p), zb = eng.baseZ(w.L) + w.z;
+      const lineW = `stroke-width="${(line / scale).toFixed(2)}" stroke-linejoin`;
+      let html;
+      if (!g.flat) {
+        // upright, like the person who wore it but with nobody inside
+        const [sx, sy] = eng.scr(w.x, w.y, zb);
+        let art = looseGarment(w.d, 'footwear', g.side).replace('stroke-width="1.3" stroke-linejoin', lineW) + toplines(w.d, g.side);
+        if (w.warp.split) art = warpBody(art, w.warp, HC.pivots(w.d).neck.x);
+        art = `<g transform="translate(${sx.toFixed(2)} ${sy.toFixed(2)}) scale(${(scale * (+w.p.scale || 1)).toFixed(5)}) translate(${-STAGE_X} ${-STAGE_GROUND})">${art}</g>`;
+        const sh = `<ellipse cx="${sx.toFixed(2)}" cy="${sy.toFixed(2)}" rx="${(0.2 * eng.HW).toFixed(2)}" ry="${(0.2 * eng.HH).toFixed(2)}" fill="#000" fill-opacity=".12"/>`;
+        html = sh + (op < 1 ? ghost(ns + 'ghost' + w.i, op, art, opts) : art);
+        w.screen = { x0: sx - 15, x1: sx + 15, y0: sy - 25, y1: sy + 4 };
+      } else {
+        // flat on the floor or on top of a piece of furniture: the drawing laid on that plane
+        let art = looseGarment(w.d, g.key);
+        const amp = w.p.wrinkle != null ? +w.p.wrinkle : 2.5, ph = (w.i * 1.7) % 6.28;
+        if (amp) art = warpArt(art, ([x, y]) => [x + amp * Math.sin(y / 17 + ph) + 0.5 * amp * Math.sin(y / 7.3 + 2 * ph),
+          y + 0.6 * amp * Math.sin(x / 13 + ph) + 0.4 * amp * Math.sin((x + y) / 9.1)]);
+        const pts = artPoints(art); if (!pts.length) return;
+        const cx = (Math.min(...pts.map(q => q[0])) + Math.max(...pts.map(q => q[0]))) / 2, cy = (Math.min(...pts.map(q => q[1])) + Math.max(...pts.map(q => q[1]))) / 2;
+        // the plane's axes: stage x → u, stage y (down the garment) → v, both turned to the facing
+        let U, V, O = [w.x, w.y];
+        if (g.f && w.p.facing == null) {
+          const a = eng.furnPt(g.f, 0, 0), b = eng.furnPt(g.f, 1, 0), c = eng.furnPt(g.f, 0, 1);
+          U = [b[0] - a[0], b[1] - a[1]]; V = [c[0] - a[0], c[1] - a[1]];   // top toward the piece's back
+        } else {
+          const t = facingDeg(w.p.facing != null ? w.p.facing : 'N') * Math.PI / 180, fx = Math.sin(t), fy = -Math.cos(t);
+          V = [-fx, -fy]; U = [-fy, fx];
+        }
+        const ang = (w.p.angle || 0) * Math.PI / 180, ca = Math.cos(ang), sa = Math.sin(ang);
+        [U, V] = [[U[0] * ca + V[0] * sa, U[1] * ca + V[1] * sa], [V[0] * ca - U[0] * sa, V[1] * ca - U[1] * sa]];
+        const zz = zb + 0.006, S0 = eng.scr(O[0], O[1], zz), SU = eng.scr(O[0] + U[0], O[1] + U[1], zz), SV = eng.scr(O[0] + V[0], O[1] + V[1], zz);
+        const k = (+w.p.scale || 1) / PX_PER_M;   // scale: drawn larger than life (a watch, a pair of glasses)
+        const a = (SU[0] - S0[0]) * k, b = (SU[1] - S0[1]) * k, c = (SV[0] - S0[0]) * k, dd = (SV[1] - S0[1]) * k;
+        const M = [a, b, c, dd, S0[0] - a * cx - c * cy, S0[1] - b * cx - dd * cy].map(v => v.toFixed(5)).join(' ');
+        art = art.replace('stroke-width="1.3" stroke-linejoin', lineW);
+        art = `<g transform="matrix(${M})">${art}</g>`;
+        html = op < 1 ? ghost(ns + 'ghost' + w.i, op, art, opts) : art;
+        w.screen = { x0: S0[0] - 20, x1: S0[0] + 20, y0: S0[1] - 12, y1: S0[1] + 12 };
+      }
+      html = `<g class="hc3d-garment" data-name="${esc(w.d.name)}" data-garment="${g.key}">${html}</g>`;
+      const at = findGroup(markup, 'hc3d-ref hc3d-ref-' + w.i + '"');
+      if (at) markup = markup.slice(0, at[0]) + html + markup.slice(at[1]); else markup += html;
+    }
+
     let markup = eng.renderIso(stBy, rmBy);
     const ns = 'hc3d' + (++seq) + '-';
     markup = markup.replace(/id="([^"]+)"/g, (m, id) => `id="${ns}${id}"`).replace(/url\(#([^)]+)\)/g, (m, id) => `url(#${ns}${id})`);
@@ -582,26 +831,48 @@
     /* Seated people are drawn right after their seat, so the seat and its legs are under
        them. When they face away, the backrest (and a sofa's near armrest) is between them
        and the viewer: those parts' outlines are cut out of the person (see occluders). */
-    const depth = w => w.sleep ? eng.scr(w.x, w.y, 0)[1] : 0;
+    const depth = w => w.sleep || w.onF ? eng.scr(w.x, w.y, 0)[1] : 0;
     who.slice().sort((a, b) => depth(b) - depth(a)).forEach(w => {
-      if (w.p.seat == null && !w.sleep) return;
+      if (w.p.seat == null && !w.sleep && !w.onF) return;
       const me = findGroup(markup, 'hc3d-ref hc3d-ref-' + w.i + '"'), sm = new RegExp('hc3d-seat-' + w.i + '(?=["\\s])').exec(markup), seat = sm ? sm.index : -1;
       if (!me || seat < 0) return;
       const sStart = markup.lastIndexOf('<g class="it', seat), sEnd = groupEnd(markup, sStart), g = markup.slice(me[0], me[1]);
       if (me[0] < sStart) markup = markup.slice(0, me[0]) + markup.slice(me[1], sEnd) + g + markup.slice(sEnd);
-      if (w.away) w.cut = occluders(eng, st.floors[w.L].furniture[w.p.seat], w.L);
+      if (w.away && w.p.seat != null) w.cut = occluders(eng, st.floors[w.L].furniture[w.p.seat], w.L);
     });
 
     // swap each stand-in for its person
-    const tags = [];
+    const tags = [], overs = [];
     who.forEach(w => {
       if (w.sleep) return drawSleeper(w);
+      if (w.garment) return drawGarment(w);
       const [sx, sy] = eng.scr(w.x, w.y, eng.baseZ(w.L) + w.z);
       // the drawing's insides, moved into a plain transformed group: a nested <svg> would be
       // resized by any page CSS aimed at svg elements (svg{width:100%} and the like)
       let art = HC.render(w.d).replace(/^<svg[^>]*>/, '').replace(/<\/svg>$/, '').replace(/<title>[\s\S]*?<\/title>/, '')
         .replace('stroke-width="1.3" stroke-linejoin', `stroke-width="${(line / scale).toFixed(2)}" stroke-linejoin`);
       if (w.warp.split) art = warpBody(art, w.warp, HC.pivots(w.d).neck.x);
+      /* armOver: one arm (and what its hand holds) is lifted out of the figure and drawn on top
+         of the whole picture, e.g. a cook's arm reaching over the counter to the stove. Only
+         when the person faces the camera: from behind, that arm is on the far side of them. */
+      let armArt = '';
+      const fwd = (() => { const r = facingDeg(w.p.facing != null ? w.p.facing : 'S') * Math.PI / 180, a0 = eng.scr(w.x, w.y, 0), a1 = eng.scr(w.x + Math.sin(r), w.y - Math.cos(r), 0); return a1[1] - a0[1]; })();
+      if (w.p.armOver && !w.away && fwd > 0) {
+        const sd = /^l/i.test(w.p.armOver) ? 'L' : 'R', want = new RegExp(`^<g[^>]*data-joint="(shoulder|elbow|wrist)${sd}"`);
+        let out = '', k = 0;
+        const body = art.replace(/^(<g[^>]*>)([\s\S]*)(<\/g>)$/, (m0, open, mid, close) => {
+          for (let i = 0; i < mid.length;) {
+            const j = mid.indexOf('<g', i);
+            if (j < 0) { out += mid.slice(i); break; }
+            out += mid.slice(i, j);
+            const e = groupEnd(mid, j), g = mid.slice(j, e);
+            if (want.test(g)) armArt += g; else out += g;
+            i = e; k++;
+          }
+          return open + out + close;
+        });
+        if (armArt) { art = body; armArt = art.match(/^<g[^>]*>/)[0] + armArt + '</g>'; }
+      }
       const inner = art;
       art = `<g transform="translate(${sx.toFixed(2)} ${sy.toFixed(2)}) scale(${scale.toFixed(5)}) translate(${-STAGE_X} ${-STAGE_GROUND})">${art}</g>`;
       const [hx, hy] = eng.scr(w.x, w.y, eng.baseZ(w.L));   // the shadow stays on the floor, also under a seated person
@@ -614,6 +885,10 @@
       }
       const op = opacityOf(w.p);
       if (op < 1) art = ghost(ns + 'ghost' + w.i, op, art, opts);
+      if (armArt) {
+        const a = `<g transform="translate(${sx.toFixed(2)} ${sy.toFixed(2)}) scale(${scale.toFixed(5)}) translate(${-STAGE_X} ${-STAGE_GROUND})">${armArt}</g>`;
+        overs.push(`<g class="hc3d-arm-over" data-name="${esc(w.d.name)}">${op < 1 ? ghost(ns + 'ghostarm' + w.i, op, a, opts) : a}</g>`);
+      }
       if (w.p.swim) {
         /* Above the water the person is drawn as usual; below it only faintly, as if seen
            through the water, and rings of ripples spread from where the body meets the surface. */
@@ -739,7 +1014,7 @@
       const [sx, sy] = eng.scr(l.x, l.y, zl + (l.z || 0));
       markup += `<text class="pic-label${l.num ? ' pic-num' : ''}" x="${sx.toFixed(1)}" y="${sy.toFixed(1)}">${esc(l.text)}</text>`;
     });
-    markup += tags.join('');
+    markup += overs.join('') + tags.join('');
 
     // frame: the floor shown, up to the walls or the tallest thing — people included
     const FL = st.level >= 0 ? st.floors[st.level] : null, zf = st.level >= 0 ? eng.baseZ(st.level) : 0;
@@ -763,7 +1038,7 @@
       });
       FL.appliances.forEach(a => pieces.push([eng.applRect(a), 0, eng.APPL[a.type].h]));
       let b;
-      const near = who.filter(w => w.L === st.level);
+      const near = who.filter(w => w.L === st.level).concat((opts.aroundAt || []).map(([x, y]) => ({ x, y })));   // aroundAt: other spots to frame
       if (opts.around != null && near.length) {
         // close-up on the people: their spots plus that many metres of room round them
         const m = Number(opts.around) || 0;
@@ -825,5 +1100,5 @@
     return el.firstElementChild;
   }
 
-  global.HouseCharacter3D = { svg: pictureSvg, draw: pictureDraw, viewData, viewPlan, yawFor, PX_PER_M };
+  global.HouseCharacter3D = { svg: pictureSvg, draw: pictureDraw, viewData, viewPlan, yawFor, garmentArt, looseGarment, PX_PER_M };
 })(typeof window !== 'undefined' ? window : globalThis);

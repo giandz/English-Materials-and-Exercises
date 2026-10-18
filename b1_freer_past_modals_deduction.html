@@ -1,0 +1,123 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<title>What Happened Here? — Freer Practice</title>
+<script>
+(function(){
+  try{
+    var saved = localStorage.getItem('theme-preference');
+    var theme = (saved === 'light' || saved === 'dark')
+      ? saved
+      : ((window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches) ? 'dark' : 'light');
+    document.documentElement.setAttribute('data-theme', theme);
+    var fs = parseFloat(localStorage.getItem('font-size-preference'));
+    if (fs >= 10 && fs <= 28) document.documentElement.style.setProperty('--fs-base', fs + 'px');
+  }catch(e){ /* localStorage/matchMedia unavailable — CSS media query still applies */ }
+})();
+</script>
+<link rel="stylesheet" href="house.css">
+<style>
+.q-card{ padding:22px 18px; }
+.evidence{ width:100%; max-width:340px; }
+.clues{ list-style:none; margin:0; padding:0; text-align:left; display:flex; flex-direction:column; gap:7px; max-width:440px; }
+.clues li{ font-size:1rem; line-height:1.45; background:var(--surface-1); border:1px solid var(--border); border-radius:10px; padding:7px 11px; }
+.reveal-btn{ font-weight:600; }
+.reveal{ width:100%; max-width:420px; }
+.reveal .house-pic{ filter:sepia(.9) saturate(.7) contrast(.96); margin-bottom:6px; }
+.reveal-tag{ font-size:.7rem; font-weight:700; letter-spacing:.06em; text-transform:uppercase; color:var(--text-muted); }
+.reveal-cap{ font-size:1.0667rem; font-weight:600; }
+.useful{ display:flex; flex-wrap:wrap; gap:6px; margin-top:6px; }
+.useful span{ font-size:.8rem; padding:3px 10px; border-radius:999px; background:var(--surface-2); border:1px solid var(--border); }
+</style>
+</head>
+<body>
+<div class="page" id="page">
+  <span class="cefr-tag cefr-b1">B1 · Intermediate</span>
+  <h1>What Happened Here?</h1>
+  <p class="subtitle">You come home. Nobody is there, but there are clues. What happened while you were out?</p>
+
+  <div class="rule-box">
+    <p><strong>How to play (pairs):</strong></p>
+    <p>1. Roll 🎲. Look at the picture and read the clues together.</p>
+    <p>2. Talk about the past: what must have happened? What might have happened? What can’t have happened? “<b>He must have left in a hurry. He might have gone to work.</b>”</p>
+    <p>3. Agree on one story and say how sure you are (for example 75%: “<b>He probably forgot his watch.</b>”).</p>
+    <p>4. Press 👀 to see what really happened. Were you right? Then roll again.</p>
+    <div class="useful"><span>must have + -ed / gone</span><span>might / may / could have …</span><span>can’t / couldn’t have …</span><span>must have been + -ing</span><span>definitely went</span><span>probably forgot</span><span>probably didn’t …</span></div>
+  </div>
+
+  <div class="q-card" id="qCard"><span class="q-placeholder">Roll the dice to start.</span></div>
+  <button class="dice-btn" id="diceBtn" aria-label="Roll">🎲</button>
+  <div class="roll-count">Rolls: <strong id="rollCount">0</strong></div>
+
+  <div class="sec-div">Now you</div>
+  <div class="rule-box">
+    <p>Think of something strange that you found once: a door left open, a broken cup, food missing from the fridge. Tell your partner the clues, but not the answer.</p>
+    <p>Your partner guesses: “<b>Your cat must have broken it! Your brother might have eaten it. It can’t have been the wind.</b>”</p>
+    <p>Then talk: Why might your teacher have chosen this job? Why could the last person who used this classroom have left so quickly?</p>
+  </div>
+
+  <footer>What Happened Here? — Past Modals of Deduction (B1)</footer>
+</div>
+
+<div id="theme-toggle-wrap">
+  <button id="theme-toggle" aria-label="Toggle light/dark mode" title="Toggle light/dark mode">
+    <span id="theme-icon">☀️</span>
+  </button>
+</div>
+<script src="house.js"></script>
+<script src="house-engine.js"></script>
+<script src="house-character.js"></script>
+<script src="house-character-3d.js"></script>
+<script src="deduction-house.js"></script>
+<script>
+const D = DeductionHouse;
+D.injectStyles();
+
+/* Each case: the evidence (a picture of now), two more clues, and what really happened. */
+const CASES = [
+  { now: 'watch', clues: ['🚗 Dad’s car isn’t outside.', '📞 There’s a missed call from the hospital on the home phone.'],
+    truth: { who: 'juan', act: 'rushing', opts: { rot: 3 } }, story: 'The hospital called Dad, and he left in a hurry.' },
+  { now: 'shorts', clues: ['☀️ It was very hot yesterday.', '💧 There are wet footprints in the hall.'],
+    truth: { who: 'lucas', act: 'swimming' }, story: 'Lucas went swimming in the pool.' },
+  { now: 'boots', clues: ['📺 The TV is still warm.', '🌧️ It rained all afternoon.'],
+    truth: { who: 'rosa', act: 'tv' }, story: 'Grandma stayed inside and watched TV all afternoon.' },
+  { now: 'glasses', clues: ['🔇 The house is very quiet.', '🥱 Grandma was tired at lunch.'],
+    truth: { who: 'rosa', act: 'napping' }, story: 'Grandma took off her glasses and had a long nap.' },
+  { now: 'backdoor', clues: ['⚽ Lucas’s ball isn’t in his room.', '🌳 There’s a ball in the neighbor’s yard.'],
+    truth: { who: 'lucas', act: 'leaving', opts: { rot: 3 } }, story: 'Lucas ran out to play and forgot to close the door.' },
+  { now: 'jacket', clues: ['💻 The laptop in the study is still on.', '☕ There’s a cold coffee on the desk.'],
+    truth: { who: 'juan', act: 'working' }, story: 'Dad didn’t go to the hospital — he worked from home.' },
+  { now: 'dress', clues: ['🏷️ There’s a new price tag on the floor.', '📖 Mom’s book isn’t on the shelf.'],
+    truth: { who: 'julia', act: 'reading' }, story: 'Mom tried on her new dress, then stayed home and read her book.' },
+  { now: 'sneakers', clues: ['🎮 The game controller is warm.', '🔊 You can hear game music in the study.'],
+    truth: { who: 'lucas', act: 'gaming' }, story: 'Lucas didn’t go out — he played video games all day.' }
+];
+
+let current = null;
+HouseRandomGen.build({
+  items: CASES,
+  key: c => c.now,
+  render: c => {
+    current = c;
+    const e = D.EVIDENCE[c.now];
+    const pic = D.scene(e.room, [], Object.assign({ aspect: 4 / 3, items: e.items, doors: e.doors, around: e.around === undefined ? 0.9 : e.around }, e.opts));
+    return '<span class="q-topic">🔎 What happened here?</span>' +
+      '<div class="evidence">' + pic + '</div>' +
+      '<ul class="clues"><li>' + e.cap + '</li>' + c.clues.map(x => '<li>' + x + '</li>').join('') + '</ul>' +
+      '<span class="q-prompt">What must / might / can’t have happened?</span>' +
+      '<button class="reveal-btn" id="revealBtn">👀 Show what happened</button><div class="reveal" id="reveal"></div>';
+  }
+});
+document.getElementById('qCard').addEventListener('click', e => {
+  if (!e.target.closest('#revealBtn') || !current) return;
+  const t = current.truth, a = D.ACTS[t.act];
+  document.getElementById('reveal').innerHTML = '<div class="reveal-tag">⏪ Before</div>' +
+    D.scene(a.room, [{ who: t.who, act: t.act }], Object.assign({ around: 1.2, aspect: 4 / 3, doors: a.doors }, t.opts)) +
+    '<div class="reveal-cap">' + a.emoji + ' ' + current.story + '</div>';
+  e.target.closest('#revealBtn').remove();
+});
+</script>
+</body>
+</html>

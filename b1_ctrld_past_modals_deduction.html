@@ -1,0 +1,149 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<title>What Happened Here? — Controlled Practice</title>
+<script>
+(function(){
+  try{
+    var saved = localStorage.getItem('theme-preference');
+    var theme = (saved === 'light' || saved === 'dark')
+      ? saved
+      : ((window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches) ? 'dark' : 'light');
+    document.documentElement.setAttribute('data-theme', theme);
+    var fs = parseFloat(localStorage.getItem('font-size-preference'));
+    if (fs >= 10 && fs <= 28) document.documentElement.style.setProperty('--fs-base', fs + 'px');
+  }catch(e){ /* localStorage/matchMedia unavailable — CSS media query still applies */ }
+})();
+</script>
+<link rel="stylesheet" href="house.css">
+<style>
+.clue{ font-weight:400; color:var(--text-secondary); font-size:.9rem; }
+.quiz-q .dh-think{ margin-bottom:10px; }
+.pct-tag{ display:inline-block; font-family:var(--font-mono); font-size:.8rem; font-weight:700; color:#fff; padding:1px 7px; border-radius:999px; margin-left:4px; font-style:normal; }
+</style>
+</head>
+<body>
+<div class="page" id="page">
+  <span class="cefr-tag cefr-b1">B1 · Intermediate</span>
+  <h1>What Happened Here? — Practice</h1>
+  <p class="subtitle">Practice: He <b>must have</b> left … · She <b>might have</b> been … · He <b>can’t have</b> gone … · He <b>probably</b> forgot …</p>
+
+  <div class="sec-div">1 · Choose</div>
+  <p class="subtitle">Read the clue. Look at the thought bubble: what happened before, and how sure is the speaker? Choose the best sentence.</p>
+  <div id="pcItems"></div>
+
+  <div class="sec-div">2 · Match</div>
+  <p class="subtitle">Match the clue with the best guess about the past.</p>
+  <div class="score-bar"><span>Matched: <strong id="mScore">0</strong> / <span id="mTotal">0</span></span><button id="mReset">↺ Again</button></div>
+  <div class="win-msg" id="mWin">🎉 All matched!</div>
+  <div class="match-grid">
+    <div><div class="match-col-label">Now (the clue)</div><div class="match-col" id="mLeft"></div></div>
+    <div><div class="match-col-label">Before (the guess)</div><div class="match-col" id="mRight"></div></div>
+  </div>
+  <div class="feedback" id="mFeedback"></div>
+
+  <div class="sec-div">3 · Put the words in order</div>
+  <p class="subtitle">Read the clue. Make the sentence.</p>
+  <button class="grammar-toggle-btn" id="grammarToggle">🎨 Hide Grammar</button>
+  <div class="pos-legend"></div>
+  <div class="score-bar"><span>Correct: <strong id="woScore">0</strong> / <span id="woTotal">0</span></span></div>
+  <div id="woItems"></div>
+
+  <div class="sec-div">4 · Write the missing words</div>
+  <p class="subtitle">Read the clue. The number shows how sure you are. Use the verb in brackets.</p>
+  <div id="gfItems"></div>
+
+  <footer>Past Modals of Deduction — Controlled Practice (B1)</footer>
+</div>
+
+<div id="theme-toggle-wrap">
+  <button id="theme-toggle" aria-label="Toggle light/dark mode" title="Toggle light/dark mode">
+    <span id="theme-icon">☀️</span>
+  </button>
+</div>
+<script src="house.js"></script>
+<script src="house-engine.js"></script>
+<script src="house-character.js"></script>
+<script src="house-character-3d.js"></script>
+<script src="deduction-house.js"></script>
+<script>
+const D = DeductionHouse;
+D.injectStyles();
+const R3 = { rot: 3 };
+const clue = s => '<div class="clue">' + s + '</div>';
+const pct = p => '<span class="pct-tag" style="background:' + D.colourOf(p) + '">' + p + '%</span>';
+
+/* ── 1 · choose ────────────────────────────────────────────────────────── */
+const PC_ITEMS = [
+  { q: clue('⌚ Dad’s watch is on the counter. He never forgets it.') + D.pastBubble({ past: [{ who: 'juan', act: 'rushing', pct: 95, opts: R3 }], now: 'watch' }),
+    opts: ['He must have left in a hurry.', 'He can’t have left in a hurry.', 'He must leave in a hurry.'], correct: 0 },
+  { q: clue('🥾 Grandma’s gardening boots are clean and dry.') + D.pastBubble({ past: [{ who: 'rosa', act: 'garden', pct: 0 }], now: 'boots' }),
+    opts: ['She must have worked in the backyard.', 'She can’t have worked in the backyard.', 'She might have worked in the backyard.'], correct: 1 },
+  { q: clue('🩳 Lucas’s swim shorts are on the floor. They’re wet.') + D.pastBubble({ past: [{ who: 'lucas', act: 'swimming', pct: 95 }], now: 'shorts' }),
+    opts: ['He might be swimming.', 'He must have been swimming.', 'He must have swimming.'], correct: 1 },
+  { q: clue('👓 Grandma’s glasses are on the desk. Maybe she watched TV, maybe not.') + D.pastBubble({ past: [{ who: 'rosa', act: 'tv', pct: 40 }], now: 'glasses' }),
+    opts: ['She definitely watched TV.', 'She can’t have watched TV.', 'She may have watched TV.'], correct: 2 },
+  { q: clue('🚪 The back door is open. Lucas often forgets to close it.') + D.pastBubble({ past: [{ who: 'lucas', act: 'leaving', pct: 75, opts: R3 }], now: 'backdoor' }),
+    opts: ['He probably forgot to close it.', 'He forgot probably to close it.', 'He mustn’t have closed it.'], correct: 0 },
+  { q: clue('🧥 Dad’s work jacket is on the bed. He always wears it at work.') + D.pastBubble({ past: [{ who: 'juan', act: 'leaving', pct: 0, opts: R3 }], now: 'jacket' }),
+    opts: ['He couldn’t have gone to work.', 'He must have gone to work.', 'He can’t go to work.'], correct: 0 },
+  { q: clue('👗 Mom’s party dress is on the bed — or did she just buy it?') + D.pastBubble({ past: [{ who: 'julia', act: 'bedroom', pct: 40, cap: '👗 getting ready' }], now: 'dress' }),
+    opts: ['She must have been getting ready for a party.', 'She might have been getting ready for a party.', 'She can’t have been getting ready for a party.'], correct: 1 },
+  { q: clue('👟 Lucas’s sneakers are by the door, but he has other shoes.') + D.pastBubble({ past: [{ who: 'lucas', act: 'leaving', pct: 25, opts: R3 }], now: 'sneakers' }),
+    opts: ['He probably didn’t go out.', 'He definitely went out.', 'He must have gone out.'], correct: 0 }
+];
+HouseComprehension.build({ quiz: 'pcItems', items: PC_ITEMS });
+
+/* ── 2 · match ─────────────────────────────────────────────────────────── */
+HouseMatching.build({
+  left: 'mLeft', right: 'mRight', scoreEl: 'mScore', totalEl: 'mTotal', resetBtn: 'mReset', winEl: 'mWin', feedbackEl: 'mFeedback',
+  pairs: [
+    { left: 'His watch is on the counter.', leftEmoji: '⌚', right: 'He must have left in a hurry.' },
+    { left: 'Her boots are clean and dry.', leftEmoji: '🥾', right: 'She can’t have worked in the backyard.' },
+    { left: 'His swim shorts are wet.', leftEmoji: '🩳', right: 'He must have been swimming.' },
+    { left: 'The back door is open.', leftEmoji: '🚪', right: 'Someone probably forgot to close it.' },
+    { left: 'Her glasses are on the desk.', leftEmoji: '👓', right: 'She couldn’t have read her book.' },
+    { left: 'The kitchen smells of pancakes.', leftEmoji: '🥞', right: 'Someone must have made breakfast.' }
+  ]
+});
+
+/* ── 3 · word order ────────────────────────────────────────────────────── */
+const WO_ITEMS = [
+  { context: '⌚ His watch is on the counter.', text: 'He / must / have / left / in a hurry', pos: ['subject', 'aux', 'aux', 'part', 'prep'] },
+  { context: '🥾 Her boots are clean.', text: 'She / can’t / have / worked / in the backyard', pos: ['subject', 'aux', 'aux', 'part', 'prep'] },
+  { context: '🩳 His shorts are wet.', text: 'He / must / have / been / swimming', pos: ['subject', 'aux', 'aux', 'part', 'verb'] },
+  { context: '🚪 The back door is open.', text: 'Lucas / probably / forgot / to close / it', pos: ['subject', 'adverb', 'verb', 'verb', 'object'] },
+  { context: '🤷 I’m not sure.', text: 'She / might / have / watched / TV', pos: ['subject', 'aux', 'aux', 'part', 'object'] },
+  { context: '🧥 His jacket is here.', text: 'He / may / not / have / gone / to work', pos: ['subject', 'aux', 'neg', 'aux', 'part', 'prep'] }
+];
+HouseWordOrder.build({ container: 'woItems', items: WO_ITEMS, scoreEl: 'woScore', totalEl: 'woTotal' });
+
+/* ── 4 · gap fill (easiest first) ──────────────────────────────────────── */
+const AP = w => [w, w.replace(/’/g, "'")];   // curly or straight apostrophe
+const GF_ITEMS = [
+  { direct: '⌚ His watch is on the counter. ' + pct(95),
+    template: 'He {0} have left in a hurry.', hints: [{ accepted: ['must'] }] },
+  { direct: '🥾 Her boots are clean and dry. ' + pct(0),
+    template: 'She {0} have worked in the backyard.', hints: [{ accepted: AP('can’t').concat(AP('couldn’t'), ['cannot', 'could not']) }] },
+  { direct: '🤷 I don’t know. ' + pct(40) + ' (go)',
+    template: 'Dad might have {0} to work.', hints: [{ accepted: ['gone'] }] },
+  { direct: '🚪 The back door is open. ' + pct(75) + ' (forget)',
+    template: 'Lucas {0} {1} to close it.', hints: [{ accepted: ['probably'] }, { accepted: ['forgot'] }] },
+  { direct: '🩳 His swim shorts are wet. ' + pct(95) + ' (swim)',
+    template: 'He must have {0} {1}.', hints: [{ accepted: ['been'] }, { accepted: ['swimming'] }] },
+  { direct: '😴 The TV is still on and it’s very quiet. ' + pct(40) + ' (fall)',
+    template: 'Grandma {0} have {1} asleep.', hints: [{ accepted: ['may', 'might', 'could'] }, { accepted: ['fallen'] }] },
+  { direct: '👀 I saw him leave. ' + pct(100) + ' (go)',
+    template: 'He {0} {1} out.', hints: [{ accepted: ['definitely'] }, { accepted: ['went'] }] },
+  { direct: '🧥 His work jacket is on the bed. ' + pct(0) + ' (go)',
+    template: 'He {0} {1} {2} to work.', hints: [{ accepted: AP('can’t').concat(AP('couldn’t'), ['cannot']) }, { accepted: ['have'] }, { accepted: ['gone'] }] },
+  { direct: '👟 His sneakers are by the door, but he has other shoes. ' + pct(25) + ' (go)',
+    template: 'He {0} {1} {2} out.', hints: [{ accepted: ['probably'] }, { accepted: AP('didn’t').concat(['did not']) }, { accepted: ['go'] }] }
+];
+HouseGapFill.build({ container: 'gfItems', items: GF_ITEMS });
+</script>
+<script>HouseGrammar.init();</script>
+</body>
+</html>

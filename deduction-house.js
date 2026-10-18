@@ -97,7 +97,7 @@
   const STAND = { shoulderL: -8, elbowL: -5, shoulderR: 8, elbowR: 5, ankleL: -35, ankleR: 35 };
   const ACTS = {
     cooking:  { room: 'kitchen', x: 1.5, y: 1.05, facing: 'S', emoji: '🍳', ing: 'cooking',
-                joints: { shoulderR: 15, elbowR: -100, shoulderL: -15, elbowL: 100 }, held: { left: 'spoon', right: 'pan' } },
+                joints: { shoulderR: 15, elbowR: 30, shoulderL: -15, elbowL: 100 }, held: { left: 'spoon', right: 'pan' }, armOver: 'right' },
     kitchen:  { room: 'kitchen', x: 0.6, y: 1.05, facing: 'S', emoji: '🍳', ing: 'in the kitchen' },
     swimming: { room: 'garden', x: 2.5, y: 2.1, facing: 'S', swim: true, emoji: '🏊', ing: 'swimming',
                 joints: { shoulderL: -62, elbowL: -10, shoulderR: 62, elbowR: 10 } },
@@ -112,10 +112,12 @@
     bathroom: { room: 'bathroom', x: 0.5, y: 0.6, facing: 'S', emoji: '🚿', ing: 'in the bathroom' },
     working:  { room: 'study', seat: 0, emoji: '💻', ing: 'working', pose: 'chair' },
     gaming:   { room: 'study', seat: 0, emoji: '🎮', ing: 'playing games', pose: 'chair' },
-    study:    { room: 'study', x: 2.5, y: 1.2, facing: 'S', emoji: '💻', ing: 'in the study' }
+    study:    { room: 'study', x: 2.5, y: 1.2, facing: 'S', emoji: '💻', ing: 'in the study' },
+    leaving:  { room: 'study', x: 2.45, y: 1.5, facing: 'E', emoji: '🚪', ing: 'going out', pose: 'walking', doors: true },
+    rushing:  { room: 'study', x: 2.45, y: 1.5, facing: 'E', emoji: '🏃', ing: 'leaving in a hurry', pose: 'running', doors: true }
   };
 
-  function person(spec, local) {
+  function person(spec, local, rot) {
     const who = CAST[spec.who], a = ACTS[spec.act];
     if (!who || !a) return null;
     let d = JSON.parse(JSON.stringify(who.c));
@@ -130,6 +132,8 @@
     else if (a.bed != null) { p.bed = a.bed + (local ? 0 : seatOffset(a.room)); }
     else { p.x = a.x + ox; p.y = a.y + oy; p.facing = a.facing; }
     if (a.swim) p.swim = true;
+    // the cook's arm reaches over the counter to the stove: drawn on top in the front view only
+    if (a.armOver && !(((rot || 0) % 4 + 4) % 4)) p.armOver = a.armOver;
     if (spec.pct != null) p.opacity = opacityOf(spec.pct);
     return p;
   }
@@ -149,7 +153,8 @@
     for (let c = x0; c < x0 + w; c++) { put('h', y0, c, type); put('h', y0 + h, c, type); }
     for (let r = y0; r < y0 + h; r++) { put('v', r, x0, type); put('v', r, x0 + w, type); }
   }
-  function build(rooms, local) {
+  function build(rooms, local, bo) {
+    bo = bo || {};
     const edges = new Map(), fl = { level: 0, edges: [], floorStyles: [], furniture: [], appliances: [], stairs: [], pools: [] };
     let cols = COLS, rows = ROWS;
     if (local) { cols = Math.max(3, ROOMS[rooms[0]].at[2]); rows = Math.max(3, ROOMS[rooms[0]].at[3]); }   // the engine needs at least 3 × 3
@@ -165,9 +170,9 @@
       (R.openings || []).forEach(([o, r, c, type]) => {
         const k = o + ':' + (r + oy) + ':' + (c + ox);
         if (!edges.has(k)) return;
-        if (local && type === 'door') return;   // a room on its own: no open doors in the way
+        if (local && type === 'door' && !bo.doors) return;   // a room on its own: no open doors in the way
         const e = { o, r: r + oy, c: c + ox, type, sides: WALL };
-        if (type === 'door') e.swing = 0;
+        if (type === 'door') { e.swing = 0; if (bo.closed) e.closed = true; }
         edges.set(k, e);
       });
       if (R.floor) for (let r = 0; r < R.at[3]; r++) for (let c = 0; c < R.at[2]; c++) fl.floorStyles.push({ r: r + oy, c: c + ox, style: R.floor });
@@ -179,20 +184,37 @@
     return { app: 'house-builder', version: 12, cols, rows, floors: [fl] };
   }
   const cache = {};
-  const roomHouse = id => cache[id] || (cache[id] = build([id], true));
+  const roomHouse = (id, o) => { o = o || {}; const k = id + (o.doors ? (o.closed ? ':shut' : ':open') : '');
+    return cache[k] || (cache[k] = build([id], true, o)); };
   const wholeHouse = () => cache._all || (cache._all = build(ORDER, false));
 
+  /* Things left lying around (opts.items): one piece of someone's clothing, from the family's
+     own wardrobe, through house-character-3d.js's loose garments.
+       { garment: 'footwear' | 'upper' | 'lower' | 'watch' | 'glasses' | …, who: 'juan',
+         wear: { footwear: 'boots', … }   (what it is, if not what they usually wear),
+         x, y (room metres) or on: furniture number in the room, at: [u, v],
+         facing, angle, which, scale, pct }                                              */
+  function thing(it, local) {
+    const who = CAST[it.who]; if (!who) return null;
+    const R = ROOMS[it.room], [ox, oy] = local || !R ? [0, 0] : R.at;
+    const t = Object.assign({}, it, { character: Object.assign(JSON.parse(JSON.stringify(who.c)), it.wear || {}) });
+    if (it.on != null) t.on = it.on + (local || !R ? 0 : seatOffset(it.room)); else { t.x = (it.x || 0) + ox; t.y = (it.y || 0) + oy; }
+    if (it.pct != null) t.opacity = opacityOf(it.pct);
+    delete t.who; delete t.wear; delete t.room; delete t.pct;
+    return t;
+  }
   function scene(room, people, opts) {
     opts = Object.assign({ rot: 0, walls: 'cutout', line: 0.7 }, opts || {});
-    const list = (people || []).map(p => person(p, true)).filter(Boolean);
-    return H3.svg(roomHouse(room), list, Object.assign({ alt: altOf(people, ROOMS[room].word) }, opts));
+    const list = (people || []).map(p => person(p, true, opts.rot)).filter(Boolean)
+      .concat((opts.items || []).map(it => thing(it, true)).filter(Boolean));
+    return H3.svg(roomHouse(room, opts), list, Object.assign({ alt: altOf(people, ROOMS[room].word) }, opts));
   }
   // where each room's name is written on the floor of the whole-house picture (house metres)
   const LABEL_AT = { kitchen: [1.3, 1.05], living: [4.5, 1.6], bedroom: [7.6, 2.75], bathroom: [2.3, 3.6], study: [2.2, 6.65], garden: [7.8, 4.2] };
   function house(people, opts) {
     opts = Object.assign({ rot: 0, walls: 'cutout', line: 0.6 }, opts || {});
     if (opts.labels === true) opts.labels = ORDER.map(k => ({ x: LABEL_AT[k][0], y: LABEL_AT[k][1], text: ROOMS[k].word.replace(/^the /, '') }));
-    const list = (people || []).map(p => person(p, false)).filter(Boolean);
+    const list = (people || []).map(p => person(p, false, opts.rot)).filter(Boolean);
     return H3.svg(wholeHouse(), list, Object.assign({ alt: altOf(people, 'the house and backyard') }, opts));
   }
   function altOf(people, where) {
@@ -227,6 +249,22 @@
 .dh-words span{ display:block; font-weight:400; color:var(--text-secondary); font-size:.7333rem; }
 .dh-ramp{ height:8px; border-radius:4px; margin:8px 2px 4px; background:linear-gradient(90deg, hsl(120deg 60% 36%), hsl(60deg 75% 42%), hsl(0deg 75% 45%)); }
 .dh-ramp-l{ display:flex; justify-content:space-between; font-size:.7333rem; color:var(--text-muted); }
+.dh-split .dh-cloud{ flex-wrap:nowrap; align-items:stretch; gap:6px; }
+.dh-side{ display:flex; flex-direction:column; align-items:center; gap:5px; border-radius:20px; padding:6px; min-width:0; }
+.dh-was{ background:rgba(160,120,60,.12); }
+.dh-was .house-pic{ filter:sepia(.9) saturate(.7) contrast(.96); }
+.dh-panels{ display:flex; gap:6px; justify-content:center; }
+.dh-split .dh-panel{ flex:0 1 190px; width:190px; }
+.dh-think.dh-many{ width:100%; }
+.dh-many .dh-cloud{ width:100%; }
+.dh-many .dh-was{ flex:2 1 0; } .dh-many .dh-is{ flex:1 1 0; }
+.dh-many .dh-panel{ flex:1 1 0; width:auto; min-width:0; }
+.dh-when{ font-size:.7rem; font-weight:700; letter-spacing:.06em; text-transform:uppercase; color:var(--text-muted); }
+.dh-arrow{ display:flex; flex-direction:column; align-items:center; justify-content:center; color:var(--text-muted); flex:0 0 auto; }
+.dh-arr{ font-size:1.8rem; line-height:1; }
+.dh-arrow small{ font-size:.6667rem; white-space:nowrap; }
+@media (max-width:640px){ .dh-split .dh-cloud{ flex-direction:column; align-items:center; } .dh-arr{ transform:rotate(90deg); } .dh-split .dh-panel{ width:170px; flex-basis:170px; }
+  .dh-many .dh-was, .dh-many .dh-is{ flex:none; width:100%; } .dh-many .dh-panel{ flex:1 1 0; width:auto; } .dh-many .dh-is .dh-panel{ max-width:200px; } }
 @media (max-width:520px){ .dh-scale{ grid-template-columns:repeat(3, minmax(0,1fr)); } .dh-panel{ flex-basis:150px; width:150px; } }
 `;
   function injectStyles() {
@@ -238,7 +276,7 @@
 
   function panel(p, opts) {
     const a = ACTS[p.act] || {}, cap = p.cap != null ? p.cap : ((a.emoji ? a.emoji + ' ' : '') + a.ing);
-    return `<div class="dh-panel" style="--dh-c:${colourOf(p.pct)}">${scene(a.room, [p], opts)}`
+    return `<div class="dh-panel" style="--dh-c:${colourOf(p.pct)}">${scene(a.room, [p], Object.assign({ doors: a.doors }, opts))}`
       + `<span class="dh-pct">${p.pct}%</span><div class="dh-cap">${cap}</div><div class="dh-bar"><i style="width:${p.pct}%"></i></div></div>`;
   }
   function bubble(panels, opts) {
@@ -247,6 +285,46 @@
     const pics = { rot: opts.rot != null ? opts.rot : 0, aspect: 4 / 3, around: opts.around != null ? opts.around : 1.1 };
     return `<div class="dh-think${opts.side === 'right' ? ' right' : ''}" aria-label="${opts.label || 'What the speaker thinks'}"><div class="dh-cloud">`
       + panels.map(p => panel(p, Object.assign({}, pics, p.opts))).join('') + '</div></div>';
+  }
+
+  /* Things people leave behind — the evidence for deductions about the past. Each is a
+     "now" for pastBubble (a room, what is lying in it, a caption). */
+  const EVIDENCE = {
+    watch:     { room: 'kitchen', cap: '⌚ Dad’s watch on the counter', around: 0.4,
+                 items: [{ garment: 'watch', who: 'juan', on: 0, at: [0.38, 0.05], scale: 5 }] },
+    shorts:    { room: 'bedroom', cap: '🩳 wet swim shorts on the floor', around: 0.7,
+                 items: [{ garment: 'lower', who: 'lucas', wear: { lowerGarment: 'swimshorts', lowerColor: '#FF6600' }, x: 2.6, y: 1.75, angle: 25, scale: 1.4 }] },
+    boots:     { room: 'study', cap: '🥾 Grandma’s gardening boots — clean and dry', around: 0.6,
+                 items: [{ garment: 'footwear', who: 'rosa', wear: { footwear: 'boots', footwearColor: '#336633' }, x: 2.55, y: 0.45, facing: 'W', scale: 1.4 }] },
+    backdoor:  { room: 'study', cap: '🚪 the back door is open', doors: true, around: 0.8, opts: { rot: 3, aroundAt: [[2.75, 1.5]] } },
+    glasses:   { room: 'study', cap: '👓 Grandma’s glasses on the desk', around: 0.6,
+                 items: [{ garment: 'glasses', who: 'rosa', wear: { eyewear: 'glasses' }, on: 1, at: [-0.35, 0.1], scale: 3 }] },
+    jacket:    { room: 'bedroom', cap: '🧥 Dad’s work jacket on the bed', around: 0.9,
+                 items: [{ garment: 'upper', who: 'juan', wear: { upperGarment: 'jacket', upperColor: '#333333' }, on: 0, at: [0.1, 0.3], angle: -10 }] },
+    dress:     { room: 'bedroom', cap: '👗 Mom’s party dress on the bed', around: 0.9,
+                 items: [{ garment: 'upper', who: 'julia', wear: { upperGarment: 'dress', upperColor: '#6600CC' }, on: 0, at: [0.15, 0.25], angle: 12 },
+                         { garment: 'footwear', who: 'julia', wear: { footwear: 'heels', footwearColor: '#CC0000' }, x: 2.5, y: 2.65, facing: 'SW', scale: 1.5 }] },
+    sneakers:  { room: 'study', cap: '👟 Lucas’s sneakers by the back door', around: 0.6,
+                 items: [{ garment: 'footwear', who: 'lucas', x: 2.55, y: 0.45, facing: 'W', scale: 1.5 }] }
+  };
+
+  /* A thought about the past (past modals of deduction): on the left, in sepia, what the
+     speaker thinks happened, with how sure they are (one picture per guess); an arrow for the
+     time in between; on the right, in full colour, what they can see now — the evidence.
+       pastBubble({ past: [{ who, act, pct, cap? }],
+                    now:  { room, items: [loose things], cap, doors, closed, people } }, { side }) */
+  function pastBubble(spec, opts) {
+    injectStyles();
+    opts = opts || {};
+    const pics = { rot: 0, aspect: 4 / 3, around: 1.1 }, n = typeof spec.now === 'string' ? EVIDENCE[spec.now] : (spec.now || {});
+    const past = (spec.past || []).map(p => panel(p, Object.assign({}, pics, p.opts))).join('');
+    const nowOpts = Object.assign({}, pics, { items: n.items, doors: n.doors, closed: n.closed, around: n.around !== undefined ? n.around : 0.9 }, n.opts);
+    if (nowOpts.around == null) delete nowOpts.around;
+    const now = `<div class="dh-panel dh-now">${scene(n.room, n.people || [], nowOpts)}<div class="dh-cap">${n.cap || ''}</div></div>`;
+    return `<div class="dh-think dh-split${(spec.past || []).length > 1 ? ' dh-many' : ''}${opts.side === 'right' ? ' right' : ''}" aria-label="${opts.label || 'What the speaker thinks happened'}"><div class="dh-cloud">`
+      + `<div class="dh-side dh-was"><span class="dh-when">⏪ before</span><div class="dh-panels">${past}</div></div>`
+      + `<div class="dh-arrow" aria-hidden="true"><span class="dh-arr">⟶</span><small>time passes</small></div>`
+      + `<div class="dh-side dh-is"><span class="dh-when">👀 now</span>${now}</div></div></div>`;
   }
 
   /* The scale on the clarification page: the same guess drawn at five levels of certainty. */
@@ -266,6 +344,6 @@
       + '</div><div class="dh-ramp"></div><div class="dh-ramp-l"><span>sure it’s true</span><span>sure it’s not true</span></div></div>';
   }
 
-  global.DeductionHouse = { ROOMS, CAST, ACTS, LEVELS, scene, house, bubble, meter, colourOf, opacityOf, injectStyles,
+  global.DeductionHouse = { ROOMS, CAST, ACTS, LEVELS, EVIDENCE, scene, house, bubble, pastBubble, meter, colourOf, opacityOf, injectStyles,
     houseData: wholeHouse, roomData: roomHouse };
 })(typeof window !== 'undefined' ? window : globalThis);
