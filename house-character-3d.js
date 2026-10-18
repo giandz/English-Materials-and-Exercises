@@ -24,26 +24,7 @@
               place: 0,         which cushion of a sofa (0 = the left one seen from the front)
               bed: i,           asleep in bed number i of that floor: lying on the mattress,
                                 head on the pillow, eyes closed, under the duvet
-              side: 0 | 1,      which half of a double bed (left / right seen from its foot); leave it out
-                                for the middle. A single bed (narrower than 1.2 m) is always the middle
-              bunk: 'top',      in a bunk bed: the top bed (default: the bottom one)
-              swim: true,       in a swimming pool: standing on the bottom with the water just
-                                under the shoulders; below the surface the body shows only faintly
-              garment: 'footwear' | 'upper' | 'lower' | 'headwear' | 'eyewear' | 'watch' | 'accessory',
-                                not a person but one piece of their clothing, on its own:
-                                footwear stands on the floor (which: 'left' / 'right' for one
-                                shoe or boot), with an opening drawn across the top; the others
-                                lie flat, top toward `facing`, gently wrinkled (wrinkle: 2.5, 0 = none;
-                                angle: a turn in degrees). on: i lays or stands it on furniture
-                                number i (at: [u, v] there, e.g. a jacket on a bed). 'accessory' takes
-                                item: an accessory id ('watch' is item 'watchL'); scale: 2 draws a small
-                                thing bigger than life so it can be seen
-              highlight: true,  (garments) an outline round it in the highlight colour: the thing pointed out
-              armOver: 'right', that arm (and anything in its hand) drawn on top of the picture,
-                                e.g. a cook reaching over a counter (only when facing the camera)
-              opacity: 1,       0–1, how solid the person is drawn (a guess, a memory, a ghost);
-                                below 0.5 the figure also gets a dashed outline in the colour opposite
-                                the page, as strong as the figure is faint (see ghost)
+              side: 0 | 1,      which half of a double bed (left / right seen from its foot)
               tag: '…' }]       a name tag above the head ('' for none; see opts.tags)
    opts    everything HousePicture.svg takes (rot, level, walls, keep, roofs,
            labels, focus, aspect, box, alt), plus
@@ -55,11 +36,6 @@
              split  1     the split skew: both halves of the body lifted from the centre line (0–1)
              flat   true  keep the authored pose (no retargeting, no split)
              back   false never use the back view
-             ghostLine 1.2 width of the dashed outline round people drawn below 50 % (screen px)
-             ghostDash 2.6 length of its dashes (screen px)
-             marks  [{ edge: { o, r, c }, kind: 'door' | 'window' } | { furniture: i } | { box: [x0, y0, x1, y1, z0, z1] }]
-                          things in the house pointed out with a highlight outline
-             around m     close-up on the people: frame them plus m metres of floor round them
 
    HOW IT WORKS
    1. Each person is a flat picture (a billboard) drawn by HouseCharacter.render,
@@ -97,7 +73,6 @@
   const PX_PER_M = 405.33 / 1.72;   // HouseCharacter stage px per metre: an 'Average' person (405 px) is 1.72 m
   const FOOT = 0.4;                  // the stand-in's footprint (m)
   const STAGE_X = 300, STAGE_GROUND = 550;   // HouseCharacter.STAGE
-  const WATER_Z = -0.15;             // a pool's water surface, below the ground (house-engine.js)
   const DIRS = { N: 0, NE: 45, E: 90, SE: 135, S: 180, SW: 225, W: 270, NW: 315 };
 
   const PIC_STYLE_ID = 'house-character-3d-styles';
@@ -412,202 +387,6 @@
     }).replace(/<\/(rect|circle|ellipse|line|polyline|polygon)>/g, '</path>');
   }
 
-  /* ── Garments on their own ────────────────────────────────────────────────────────
-     A garment is cut out of a character's drawing by drawing the character twice, with
-     and without it, and keeping only what the first drawing has that the second lacks.
-     The two drawings are matched group by group (the joints, in order); inside each group
-     the shapes are matched in order too (a longest common subsequence), so the skin under
-     a sleeve, which both drawings have, is left out, and only the cloth is kept. Group
-     transforms are taken from the drawing with the garment (shoes, for one, lift the body
-     a little), so the garment sits where the character wore it. */
-  const GARMENT_KEY = { footwear: 'footwear', shoes: 'footwear', boots: 'footwear', upper: 'upperGarment', top: 'upperGarment',
-    lower: 'lowerGarment', bottoms: 'lowerGarment', headwear: 'headwear', hat: 'headwear',
-    eyewear: 'eyewear', glasses: 'eyewear', accessory: 'accessories', watch: 'accessories' };
-  const stripSvg = s => s.replace(/^<svg[^>]*>/, '').replace(/<\/svg>$/, '').replace(/<title>[\s\S]*?<\/title>/, '');
-  function topElements(s) {   // the top-level elements of a piece of markup, as strings
-    const out = [], re = /<(\/?)([a-zA-Z]+)(?:\s[^>]*?)?(\/?)>/g;
-    let depth = 0, start = 0;
-    for (let m; (m = re.exec(s));) {
-      if (m[1]) { if (--depth === 0) out.push(s.slice(start, re.lastIndex)); }
-      else if (m[3]) { if (depth === 0) out.push(s.slice(m.index, re.lastIndex)); }
-      else { if (depth === 0) start = m.index; depth++; }
-    }
-    return out;
-  }
-  const openTag = s => (s.match(/^<[^>]*>/) || [''])[0];
-  const isGroup = s => /^<g[\s>]/.test(s);
-  const groupLabel = s => (openTag(s).match(/data-joint="([^"]+)"/) || [, 'g'])[1];
-  const innerOf = s => s.slice(openTag(s).length, s.lastIndexOf('</'));
-  // the elements of `a` that are not in `b` (groups are compared recursively)
-  function diffMarkup(a, b, keepGroup) {
-    const A = topElements(a), B = topElements(b), out = [];
-    // groups pair up by label, k-th with k-th
-    const seen = {}, byLabel = {};
-    B.filter(isGroup).forEach(g => { (byLabel[groupLabel(g)] = byLabel[groupLabel(g)] || []).push(g); });
-    const plainB = B.filter(x => !isGroup(x));
-    // LCS over the non-group elements, to keep order-sensitive duplicates straight
-    const plainA = A.filter(x => !isGroup(x)), n = plainA.length, m = plainB.length;
-    const T = Array.from({ length: n + 1 }, () => new Int32Array(m + 1));
-    for (let i = n - 1; i >= 0; i--) for (let j = m - 1; j >= 0; j--) T[i][j] = plainA[i] === plainB[j] ? T[i + 1][j + 1] + 1 : Math.max(T[i + 1][j], T[i][j + 1]);
-    const matched = new Set();
-    for (let i = 0, j = 0; i < n && j < m;) {
-      if (plainA[i] === plainB[j]) { matched.add(i); i++; j++; } else if (T[i + 1][j] >= T[i][j + 1]) i++; else j++;
-    }
-    let pi = 0;
-    A.forEach(x => {
-      if (!isGroup(x)) { if (!matched.has(pi++)) out.push(x); return; }
-      const lab = groupLabel(x), k = seen[lab] = (seen[lab] || 0) + 1;
-      if (keepGroup && !keepGroup(lab)) return;
-      const twin = (byLabel[lab] || [])[k - 1];
-      const kept = twin ? diffMarkup(innerOf(x), innerOf(twin), keepGroup) : keepGroup ? diffMarkup(innerOf(x), '', keepGroup) : innerOf(x);   // (a back view nests the joints one level deeper)
-      if (kept) out.push(openTag(x) + kept + '</g>');
-    });
-    return out.join('');
-  }
-  /* garmentArt(d, key, side): the markup of one garment of character d (as HouseCharacter.render
-     draws it, without the <svg> wrapper). side 'L' / 'R' keeps one side's joints only (one boot). */
-  function garmentArt(d, key, side) {
-    const HC = global.HouseCharacter;
-    // only that garment is worn (nothing over or under it to change its shape), on a body
-    // with nothing in its hands; then the same body without it
-    d = Object.assign(JSON.parse(JSON.stringify(d)), { upperGarment: null, lowerGarment: null, footwear: null, headwear: null, eyewear: null,
-      accessories: [], held: { left: null, right: null }, prop: null }, { [key]: d[key] });
-    const bare = JSON.parse(JSON.stringify(d)); bare[key] = null;
-    const w = stripSvg(HC.render(d)), n = stripSvg(HC.render(bare));
-    const wi = w.indexOf('<g'), ni = n.indexOf('<g'), outerW = w.slice(wi), outerN = n.slice(ni);
-    const other = side === 'L' ? 'R' : side === 'R' ? 'L' : null;
-    const keep = other ? lab => !(lab.length > 1 && lab.endsWith(other) && /^(ankle|knee|hip|shoulder|elbow|wrist)/.test(lab)) : null;
-    return w.slice(0, wi) + openTag(outerW) + diffMarkup(innerOf(outerW), innerOf(outerN), keep) + '</g>';
-  }
-  /* The cut-out keeps a few shapes that are not cloth: skin seen through an opening (a
-     V-neck) or drawn over the garment. Drawing the garment a second time in another colour
-     shows which fills belong to it (they change) and which do not (they stay): skin is
-     dropped, other fixed fills with no outline (an opening) become the garment's lining. */
-  const hueOf = hex => { const n = parseInt(hex.slice(1), 16), r = (n >> 16) / 255, g = ((n >> 8) & 255) / 255, b = (n & 255) / 255;
-    const mx = Math.max(r, g, b), mn = Math.min(r, g, b), dl = mx - mn; if (dl < 0.08) return null;
-    return ((mx === r ? ((g - b) / dl) % 6 : mx === g ? (b - r) / dl + 2 : (r - g) / dl + 4) * 60 + 360) % 360; };
-  const hueGap = (a, b) => { const x = hueOf(a), y = hueOf(b); if (x == null || y == null) return x === y ? 0 : 180; const d = Math.abs(x - y) % 360; return Math.min(d, 360 - d); };
-  const COLOR_OF = { upperGarment: 'upperColor', lowerGarment: 'lowerColor', footwear: 'footwearColor', headwear: 'headwearColor' };
-  function looseGarment(d, key, side) {
-    const HC = global.HouseCharacter, ACC = { scarf: 'scarfColor', tie: 'tieColor', glovesL: 'gloveColor', glovesR: 'gloveColor', backpack: 'packColor', fannypack: 'packColor' };
-    const ck = COLOR_OF[key] || (key === 'accessories' ? ACC[(d.accessories || [])[0]] : null);
-    const art = garmentArt(d, key, side);
-    if (!ck) return art;
-    const alt = JSON.parse(JSON.stringify(d)); alt[ck] = d[ck] === '#00FF00' ? '#FF00FF' : '#00FF00';
-    const art2 = garmentArt(alt, key, side);
-    const els = s2 => s2.match(/<[a-zA-Z]+(?:\s[^>]*)?\/?>/g) || [];
-    const A = els(art), B = els(art2);
-    if (A.length !== B.length) return art;
-    const skin = ((HC.SKIN || []).find(k => k.id === d.skin) || {}).hex || '';
-    const own = d[ck] || (key === 'footwear' && HC.FOOT[d.footwear] ? HC.FOOT[d.footwear].col : '#666666');
-    let k = 0;
-    return art.replace(/<[a-zA-Z]+(?:\s[^>]*)?\/?>/g, tag => {
-      const other = B[k++], f1 = attr(tag, 'fill'), f2 = attr(other || '', 'fill');
-      // a line that stays the same colour whatever the garment's colour is the body's (a leg's
-      // outline under swim shorts): cloth lines follow the cloth
-      const s1 = attr(tag, 'stroke'), s2 = attr(other || '', 'stroke');
-      // a hat or a scarf changes how the hair and head are drawn: whatever doesn't take the
-      // item's colour is not the item
-      if ((key === 'headwear' || key === 'accessories') && !/^<g[\s>]/.test(tag) && f1 === f2 && s1 === s2) return tag.replace(/^<([a-zA-Z]+)/, '<$1 display="none"');
-      if ((key === 'upperGarment' || key === 'lowerGarment') && !/^<g[\s>]/.test(tag) && (!f1 || f1 === 'none') && s1 && /^#/.test(s1) && s1 === s2)
-        return tag.replace(/^<([a-zA-Z]+)/, '<$1 display="none"');
-      if (!f1 || !/^#/.test(f1)) return tag;
-      // a top's neck opening is drawn in a colour that goes with the top (a shirt under a
-      // jacket); lying on its own, the opening shows the top's own lining instead
-      if (f1 !== f2) return key === 'upperGarment' && attr(tag, 'stroke') === 'none' && hueGap(f1, own) > 60 ? tag.replace(/\sfill="[^"]*"/, ` fill="${darken(own, 0.55)}"`) : tag;
-      if (skin && f1.toLowerCase() === skin.toLowerCase()) return tag.replace(/\sfill="[^"]*"/, ' fill="none"').replace(/\sstroke="[^"]*"/, ' stroke="none"').replace(/^<([a-zA-Z]+)/, '<$1 display="none"');
-      if (attr(tag, 'stroke') === 'none') return tag.replace(/\sfill="[^"]*"/, ` fill="${darken(own, 0.55)}"`);
-      return tag;
-    });
-  }
-  /* Every point of every shape in a piece of markup, in its outermost coordinates. */
-  function artPoints(art) {
-    const stack = [{ m: [1, 0, 0, 1, 0, 0], skip: 0 }], pts = [];
-    art.replace(/<(\/?)([a-zA-Z]+)((?:\s+[^\s=>\/]+="[^"]*")*)\s*(\/?)>/g, (tag, close, name, attrs, self) => {
-      const top = stack[stack.length - 1];
-      if (close) { if (stack.length > 1) stack.pop(); return tag; }
-      if (top.skip || OPAQUE.has(name)) { if (!self) stack.push({ m: top.m, skip: 1 }); return tag; }
-      const m = mmul(top.m, parseTransform(attr(tag, 'transform')));
-      if (!self) stack.push({ m, skip: 0 });
-      if (name === 'g' || !GEOM[name]) return tag;
-      const d0 = shapePath(name, tag); if (!d0) return tag;
-      // points on the curves themselves (control points can lie well outside a shape)
-      pathToCubics(d0).forEach(sp => {
-        let p0 = sp.start; pts.push(mapPt(m, ...p0));
-        sp.segs.forEach(q => {
-          [0.125, 0.25, 0.375, 0.5, 0.625, 0.75, 0.875, 1].forEach(t => { const u = 1 - t;
-            pts.push(mapPt(m, u * u * u * p0[0] + 3 * u * u * t * q[0] + 3 * u * t * t * q[2] + t * t * t * q[4],
-                              u * u * u * p0[1] + 3 * u * u * t * q[1] + 3 * u * t * t * q[3] + t * t * t * q[5])); });
-          p0 = [q[4], q[5]];
-        });
-      });
-      return tag;
-    });
-    return pts;
-  }
-  /* Bend every shape of a piece of markup by fn([x, y]) → [x', y'] (outermost coordinates):
-     the same path rewriting as the split skew, for any displacement — here, wrinkles. */
-  function warpArt(art, fn) {
-    const stack = [{ m: [1, 0, 0, 1, 0, 0], skip: 0 }], f = v => +v.toFixed(2);
-    return art.replace(/<(\/?)([a-zA-Z]+)((?:\s+[^\s=>\/]+="[^"]*")*)\s*(\/?)>/g, (tag, close, name, attrs, self) => {
-      const top = stack[stack.length - 1];
-      if (close) { if (stack.length > 1) stack.pop(); return tag; }
-      if (top.skip || OPAQUE.has(name)) { if (!self) stack.push({ m: top.m, skip: 1 }); return tag; }
-      const m = mmul(top.m, parseTransform(attr(tag, 'transform')));
-      if (!self) stack.push({ m, skip: 0 });
-      if (name === 'g' || !GEOM[name]) return tag;
-      const d0 = shapePath(name, tag), inv = minv(m); if (!d0 || !inv) return tag;
-      const W = (x, y) => { const g = fn(mapPt(m, x, y)); return mapPt(inv, g[0], g[1]); };
-      const d1 = pathToCubics(d0).map(sp => {
-        const segs = []; let q0 = sp.start;
-        sp.segs.forEach(q => { splitSeg(q0, q, m, segs, 0); q0 = [q[4], q[5]]; });
-        const st = W(...sp.start);
-        return `M${f(st[0])},${f(st[1])}` + segs.map(q => { const a = W(q[0], q[1]), b = W(q[2], q[3]), c = W(q[4], q[5]);
-          return `C${f(a[0])},${f(a[1])} ${f(b[0])},${f(b[1])} ${f(c[0])},${f(c[1])}`; }).join('') + (sp.closed ? 'Z' : '');
-      }).join('');
-      let rest = attrs; GEOM[name].forEach(k => { rest = rest.replace(new RegExp('\\s' + k + '="[^"]*"'), ''); });
-      const fillNone = (name === 'line' || name === 'polyline') && !/\sfill="/.test(rest) ? ' fill="none"' : '';
-      return `<path d="${d1}"${rest}${fillNone}${self ? '/' : ''}>`;
-    }).replace(/<\/(rect|circle|ellipse|line|polyline|polygon)>/g, '</path>');
-  }
-  const darken = (hex, f) => { const n = parseInt(String(hex || '#666666').slice(1), 16); const c = k => Math.round(((n >> k) & 255) * f);
-    return '#' + ((1 << 24) | (c(16) << 16) | (c(8) << 8) | c(0)).toString(16).slice(1); };
-  /* Where the bottom of one shin is (stage x), in the character's drawing without shoes. */
-  function shinFoot(d, sd) {
-    const HC = global.HouseCharacter, bare = Object.assign(JSON.parse(JSON.stringify(d)), { footwear: null });
-    const w = stripSvg(HC.render(bare)), wi = w.indexOf('<g'), outer = w.slice(wi);
-    const art = openTag(outer) + diffMarkup(innerOf(outer), '', lab => lab === 'g' || lab === 'knee' + sd) + '</g>';
-    const pts = artPoints(art); if (!pts.length) return null;
-    const yb = Math.max(...pts.map(p => p[1])), low = pts.filter(p => p[1] >= yb - 12);
-    return low.reduce((s2, p) => s2 + p[0], 0) / low.length;
-  }
-  /* Loose shoes and boots have an opening: an ellipse (a circle on the floor, seen at the
-     camera's angle) across the top of each one, the inside in shadow. */
-  function toplines(d, side) {
-    const HC = global.HouseCharacter, F = (HC.FOOT || {})[d.footwear];
-    if (!F || F.kind === 'sandal' || F.kind === 'sock') return '';
-    const col = d.footwearColor || F.col;
-    // one opening per shoe: each side's shoe on its own, the opening across the top of its shaft
-    return (side ? [side] : ['L', 'R']).map(sd => {
-      const pts = artPoints(garmentArt(d, 'footwear', sd)); if (!pts.length) return '';
-      const y0 = Math.min(...pts.map(p => p[1])), H = Math.max(...pts.map(p => p[1])) - y0, band = Math.max(2.5, 0.08 * H);
-      // in a side or back view the toe can reach as high as the opening: split the top band at
-      // its widest gap and keep the widest piece (the shaft or the heel collar, not the toe)
-      // (y0 / band are taken again over the shoe near the shin: in profile the toe can be the highest point)
-      const legX0 = shinFoot(d, sd), nearLeg = legX0 == null ? pts : pts.filter(p => Math.abs(p[0] - legX0) <= 14);
-      const yTop = nearLeg.length ? Math.min(...nearLeg.map(p => p[1])) : y0;
-      const top = nearLeg.filter(p => p[1] <= yTop + band).sort((a, b) => a[0] - b[0]), parts = [[top[0]]];
-      for (let k = 1; k < top.length; k++) (top[k][0] - top[k - 1][0] > 3.5 ? parts[parts.push([]) - 1] : parts[parts.length - 1]).push(top[k]);
-      // the piece the leg goes into: nearest to the bottom of the shin in the same drawing without shoes
-      const mid = q => (q[0][0] + q[q.length - 1][0]) / 2, legX = legX0;
-      const span = q => q[q.length - 1][0] - q[0][0];
-      const best = legX == null ? parts.reduce((a, b) => span(b) > span(a) ? b : a) : parts.reduce((a, b) => Math.abs(mid(b) - legX) < Math.abs(mid(a) - legX) ? b : a);
-      const x0 = best[0][0], x1 = best[best.length - 1][0], ty = Math.min(...best.map(p => p[1]));
-      const rx = Math.max(2.5, (x1 - x0) / 2 * 0.82), ry = rx * 0.45;
-      return `<ellipse cx="${((x0 + x1) / 2).toFixed(2)}" cy="${(ty + ry * 0.6).toFixed(2)}" rx="${rx.toFixed(2)}" ry="${ry.toFixed(2)}" fill="${darken(col, 0.45)}" stroke="${darken(col, 0.3)}"/>`;
-    }).join('');
-  }
-
   /* Where a person sits on a piece of furniture: sitting back, with the hips placed so the
      knees come to the seat's front edge (thigh = the sitter's own thigh length, in metres),
      never closer than 5 cm to the backrest; on a sofa, on cushion number `place`. At the
@@ -730,9 +509,8 @@
     const who = people.map((p, i) => {
       const L = p.level || 0;
       if (L > st.level || !stBy[L]) return null;   // floors above the one shown are not drawn
-      const bed = p.bed != null && st.floors[L] && st.floors[L].furniture[p.bed] && isBed(st.floors[L].furniture[p.bed].type) ? st.floors[L].furniture[p.bed] : null;
+      const bed = p.bed != null && st.floors[L] && st.floors[L].furniture[p.bed] && st.floors[L].furniture[p.bed].type === 'bed' ? st.floors[L].furniture[p.bed] : null;
       if (bed) return sleeper(p, i, L, bed);
-      if (p.garment) return garmentItem(p, i, L);
       const seat = p.seat != null && st.floors[L] ? st.floors[L].furniture[p.seat] : null;
       const thigh = seat ? (() => { const pv = global.HouseCharacter.pivots(p.character); return Math.hypot(pv.kneeL.x - pv.hipL.x, pv.kneeL.y - pv.hipL.y) / PX_PER_M; })() : 0;
       const sp = seat ? seatSpot(eng, seat, p.place, thigh) : null;
@@ -745,11 +523,6 @@
         const root = global.HouseCharacter.pivots(d).root, hipH = (STAGE_GROUND - (root.y + 16)) / PX_PER_M;
         out.z += sp.z - hipH;
       }
-      if (p.swim) {
-        // in a swimming pool: standing on the bottom, the water just under the shoulders
-        const neckH = (STAGE_GROUND - global.HouseCharacter.pivots(d).neck.y) / PX_PER_M;
-        out.z = WATER_Z - (neckH - 0.13);
-      }
       if (!stBy[L]) return out;
       const type = 'hc3d_person_' + i;
       eng.FURN[type] = { w: FOOT, d: FOOT, h: H, levels: [{ z: Math.max(0, H + Math.max(0, out.z) - 1.8) }] };
@@ -758,7 +531,7 @@
       const proxy = { type, X: out.x * 2, Y: out.y * 2, dir: 0, items: [{ type: 'fridge', lvl: 0, slot: 'C', rdir: 0 }] };
       stBy[L].furniture.push({ f: proxy, cls: 'hc3d-ref hc3d-ref-' + i, idx: -1 });
       if (p.seat != null && stBy[L].furniture[p.seat]) stBy[L].furniture[p.seat].cls += ' hc3d-seat-' + i;
-      else if (!p.swim) {
+      else {
         const prev = st.level; st.level = L;
         if (!eng.furnValid(proxy, L)) { clashes++; console.warn('HouseCharacter3D: ' + (out.d.name || 'a person') + ' is standing in something (a wall, furniture or stairs).'); }
         st.level = prev;
@@ -774,102 +547,13 @@
       const d = HC.normalize(p.character), stand = (HC.POSES.find(q => q.id === 'standing') || { joints: {} }).joints;
       HC.JOINTS.forEach(([k]) => { d.joints[k] = stand[k] || 0; });
       Object.assign(d, { torsoOrientation: 0, pelvisOrientation: 0, head: 'front', back: false, eyes: 'closed', eyebrows: 'neutral', mouth: 'rest', held: { left: null, right: null }, prop: null });
-      // a single bed: in the middle. A double bed: in the middle, or on one half (side 0 / 1)
-      const bw = eng.FURN[f.type].w, half = bw >= 1.2 ? bw / 4 : 0;
-      const zo = f.type === 'bunkbed' && (p.bunk === 'top' || p.bunk === 1) ? 0.9 : 0;   // the top bunk is 0.9 m higher
-      const u = p.side === 0 || p.side === 'left' ? -half : p.side === 1 || p.side === 'right' ? half : 0;
+      const u = p.side === 0 || p.side === 'left' ? -0.34 : p.side === 1 || p.side === 'right' ? 0.34 : 0;
       const [x, y] = eng.furnPt(f, u, 0);
       const type = 'hc3d_person_' + i;
       eng.FURN[type] = { w: FOOT, d: FOOT, h: 0.7, levels: [{ z: 0 }] };
       stBy[L].furniture.push({ f: { type, X: x * 2, Y: y * 2, dir: 0, items: [] }, cls: 'hc3d-ref hc3d-ref-' + i, idx: -1 });
       stBy[L].furniture[p.bed].cls += ' hc3d-seat-' + i;
-      return { p, i, L, d: HC.normalize(d), sleep: { f, u, zo }, x, y, z: 0, warp: { split: 0 } };
-    }
-
-    /* A garment on its own (people entries with garment: …):
-         footwear — standing upright where it was put, a pair or one shoe (which: 'left' / 'right'),
-                    turned the way `facing` says, with an opening across the top of each;
-         anything else — lying flat (a jacket on a bed, trousers on the floor), its top
-                    (collar, waistband) toward `facing`, slightly wrinkled (wrinkle: stage px).
-       on: i puts it on furniture number i (on its top; at: [u, v] in the piece's frame, and
-       by default the top points to the piece's back, e.g. a bed's headboard). */
-    function garmentItem(p, i, L) {
-      const key = GARMENT_KEY[p.garment] || p.garment;
-      let d = HC.normalize(p.character);
-      if (key === 'accessories') d.accessories = [].concat(p.item || (p.garment === 'watch' ? 'watchL' : (d.accessories || [])[0])).filter(Boolean);   // item: one id or a list (a pair of gloves)
-      if (!d[key] || (Array.isArray(d[key]) && !d[key].length)) return null;
-      const stand = (HC.POSES.find(q => q.id === 'standing') || { joints: {} }).joints;
-      HC.JOINTS.forEach(([k]) => { d.joints[k] = stand[k] || 0; });
-      Object.assign(d, { torsoOrientation: 0, pelvisOrientation: 0, head: 'front', back: false, held: { left: null, right: null }, prop: null });
-      const f = p.on != null && st.floors[L] ? st.floors[L].furniture[p.on] : null;
-      const lv = f ? (eng.FURN[f.type].levels || []) : [];
-      const surf = f ? ((lv.find(l => l.top) || lv[0] || { z: eng.FURN[f.type].h }).z) : 0;
-      const at = p.at || [0, f && isBed(f.type) ? 0.25 : 0];
-      const [x, y] = f ? eng.furnPt(f, at[0], at[1]) : [p.x || 0, p.y || 0];
-      const side = p.which === 'left' || p.which === 'L' ? 'L' : p.which === 'right' || p.which === 'R' ? 'R' : null;
-      const type = 'hc3d_person_' + i, flat = key !== 'footwear';
-      eng.FURN[type] = { w: 0.3, d: 0.3, h: flat ? 0.05 : 0.4, levels: [{ z: 0 }] };
-      stBy[L].furniture.push({ f: { type, X: x * 2, Y: y * 2, dir: 0, items: [] }, cls: 'hc3d-ref hc3d-ref-' + i, idx: -1 });
-      if (f) stBy[L].furniture[p.on].cls += ' hc3d-seat-' + i;
-      const out = { p, i, L, x, y, z: (p.z || 0) + surf, onF: !!f, garment: { key, side, flat, f } };
-      if (flat) {
-        // laid out: arms a little away from the body, legs a little apart
-        Object.assign(d.joints, { shoulderL: -24, elbowL: -6, shoulderR: 24, elbowR: 6, hipL: -5, hipR: 5, ankleL: 0, ankleR: 0 });
-        return Object.assign(out, { d, warp: { split: 0 } });
-      }
-      const vp = viewPlan(d, p.facing != null ? p.facing : 'S', st.rot, opts);
-      return Object.assign(out, { d: vp.d, warp: vp.warp, away: vp.away, ex: extent(vp.d) });
-    }
-    function drawGarment(w) {
-      const g = w.garment, op = opacityOf(w.p), zb = eng.baseZ(w.L) + w.z;
-      const lineW = `stroke-width="${(line / scale).toFixed(2)}" stroke-linejoin`;
-      let html;
-      if (!g.flat) {
-        // upright, like the person who wore it but with nobody inside
-        const [sx, sy] = eng.scr(w.x, w.y, zb);
-        let art = looseGarment(w.d, 'footwear', g.side).replace('stroke-width="1.3" stroke-linejoin', lineW) + toplines(w.d, g.side);
-        if (w.warp.split) art = warpBody(art, w.warp, HC.pivots(w.d).neck.x);
-        const kk = scale * (+w.p.scale || 1), bp = artPoints(art).map(([px, py]) => [sx + (px - STAGE_X) * kk, sy + (py - STAGE_GROUND) * kk]);
-        art = `<g transform="translate(${sx.toFixed(2)} ${sy.toFixed(2)}) scale(${kk.toFixed(5)}) translate(${-STAGE_X} ${-STAGE_GROUND})">${art}</g>`;
-        const sh = `<ellipse cx="${sx.toFixed(2)}" cy="${sy.toFixed(2)}" rx="${(0.2 * eng.HW).toFixed(2)}" ry="${(0.2 * eng.HH).toFixed(2)}" fill="#000" fill-opacity=".12"/>`;
-        html = sh + (op < 1 ? ghost(ns + 'ghost' + w.i, op, art, opts) : art);
-        // its box on screen: what the framing (around) closes in on
-        w.screen = bp.length ? { x0: Math.min(...bp.map(q => q[0])) - 3, x1: Math.max(...bp.map(q => q[0])) + 3, y0: Math.min(...bp.map(q => q[1])) - 3, y1: Math.max(sy + 3, ...bp.map(q => q[1])) + 3 }
-          : { x0: sx - 15, x1: sx + 15, y0: sy - 25, y1: sy + 4 };
-      } else {
-        // flat on the floor or on top of a piece of furniture: the drawing laid on that plane
-        let art = looseGarment(w.d, g.key);
-        const amp = w.p.wrinkle != null ? +w.p.wrinkle : (g.key === 'eyewear' || g.key === 'accessories' ? 0 : 2.5),   // hard things don't crease
-           ph = (w.i * 1.7) % 6.28;
-        if (amp) art = warpArt(art, ([x, y]) => [x + amp * Math.sin(y / 17 + ph) + 0.5 * amp * Math.sin(y / 7.3 + 2 * ph),
-          y + 0.6 * amp * Math.sin(x / 13 + ph) + 0.4 * amp * Math.sin((x + y) / 9.1)]);
-        const pts = artPoints(art); if (!pts.length) return;
-        const cx = (Math.min(...pts.map(q => q[0])) + Math.max(...pts.map(q => q[0]))) / 2, cy = (Math.min(...pts.map(q => q[1])) + Math.max(...pts.map(q => q[1]))) / 2;
-        // the plane's axes: stage x → u, stage y (down the garment) → v, both turned to the facing
-        let U, V, O = [w.x, w.y];
-        if (g.f && w.p.facing == null) {
-          const a = eng.furnPt(g.f, 0, 0), b = eng.furnPt(g.f, 1, 0), c = eng.furnPt(g.f, 0, 1);
-          U = [b[0] - a[0], b[1] - a[1]]; V = [c[0] - a[0], c[1] - a[1]];   // top toward the piece's back
-        } else {
-          const t = facingDeg(w.p.facing != null ? w.p.facing : 'N') * Math.PI / 180, fx = Math.sin(t), fy = -Math.cos(t);
-          V = [-fx, -fy]; U = [-fy, fx];
-        }
-        const ang = (w.p.angle || 0) * Math.PI / 180, ca = Math.cos(ang), sa = Math.sin(ang);
-        [U, V] = [[U[0] * ca + V[0] * sa, U[1] * ca + V[1] * sa], [V[0] * ca - U[0] * sa, V[1] * ca - U[1] * sa]];
-        const zz = zb + 0.006, S0 = eng.scr(O[0], O[1], zz), SU = eng.scr(O[0] + U[0], O[1] + U[1], zz), SV = eng.scr(O[0] + V[0], O[1] + V[1], zz);
-        const k = (+w.p.scale || 1) / PX_PER_M;   // scale: drawn larger than life (a watch, a pair of glasses)
-        const a = (SU[0] - S0[0]) * k, b = (SU[1] - S0[1]) * k, c = (SV[0] - S0[0]) * k, dd = (SV[1] - S0[1]) * k;
-        const M = [a, b, c, dd, S0[0] - a * cx - c * cy, S0[1] - b * cx - dd * cy].map(v => v.toFixed(5)).join(' ');
-        art = art.replace('stroke-width="1.3" stroke-linejoin', lineW);
-        art = `<g transform="matrix(${M})">${art}</g>`;
-        html = op < 1 ? ghost(ns + 'ghost' + w.i, op, art, opts) : art;
-        const Mn = M.split(' ').map(Number), bp = pts.map(([px, py]) => mapPt(Mn, px, py));
-        w.screen = { x0: Math.min(...bp.map(q => q[0])) - 3, x1: Math.max(...bp.map(q => q[0])) + 3, y0: Math.min(...bp.map(q => q[1])) - 3, y1: Math.max(...bp.map(q => q[1])) + 3 };
-      }
-      if (w.p.highlight) html = highlightWrap(ns + 'hl' + w.i, html, opts);
-      html = `<g class="hc3d-garment" data-name="${esc(w.d.name)}" data-garment="${g.key}">${html}</g>`;
-      const at = findGroup(markup, 'hc3d-ref hc3d-ref-' + w.i + '"');
-      if (at) markup = markup.slice(0, at[0]) + html + markup.slice(at[1]); else markup += html;
+      return { p, i, L, d: HC.normalize(d), sleep: { f, u }, x, y, z: 0, warp: { split: 0 } };
     }
 
     let markup = eng.renderIso(stBy, rmBy);
@@ -879,81 +563,36 @@
     /* Seated people are drawn right after their seat, so the seat and its legs are under
        them. When they face away, the backrest (and a sofa's near armrest) is between them
        and the viewer: those parts' outlines are cut out of the person (see occluders). */
-    const depth = w => w.sleep || w.onF ? eng.scr(w.x, w.y, 0)[1] : 0;
-    who.slice().sort((a, b) => depth(b) - depth(a)).forEach(w => {
-      if (w.p.seat == null && !w.sleep && !w.onF) return;
+    who.forEach(w => {
+      if (w.p.seat == null && !w.sleep) return;
       const me = findGroup(markup, 'hc3d-ref hc3d-ref-' + w.i + '"'), sm = new RegExp('hc3d-seat-' + w.i + '(?=["\\s])').exec(markup), seat = sm ? sm.index : -1;
       if (!me || seat < 0) return;
       const sStart = markup.lastIndexOf('<g class="it', seat), sEnd = groupEnd(markup, sStart), g = markup.slice(me[0], me[1]);
       if (me[0] < sStart) markup = markup.slice(0, me[0]) + markup.slice(me[1], sEnd) + g + markup.slice(sEnd);
-      if (w.away && w.p.seat != null) w.cut = occluders(eng, st.floors[w.L].furniture[w.p.seat], w.L);
+      if (w.away) w.cut = occluders(eng, st.floors[w.L].furniture[w.p.seat], w.L);
     });
 
     // swap each stand-in for its person
-    const tags = [], overs = [];
+    const tags = [];
     who.forEach(w => {
       if (w.sleep) return drawSleeper(w);
-      if (w.garment) return drawGarment(w);
       const [sx, sy] = eng.scr(w.x, w.y, eng.baseZ(w.L) + w.z);
       // the drawing's insides, moved into a plain transformed group: a nested <svg> would be
       // resized by any page CSS aimed at svg elements (svg{width:100%} and the like)
       let art = HC.render(w.d).replace(/^<svg[^>]*>/, '').replace(/<\/svg>$/, '').replace(/<title>[\s\S]*?<\/title>/, '')
         .replace('stroke-width="1.3" stroke-linejoin', `stroke-width="${(line / scale).toFixed(2)}" stroke-linejoin`);
       if (w.warp.split) art = warpBody(art, w.warp, HC.pivots(w.d).neck.x);
-      /* armOver: one arm (and what its hand holds) is lifted out of the figure and drawn on top
-         of the whole picture, e.g. a cook's arm reaching over the counter to the stove. Only
-         when the person faces the camera: from behind, that arm is on the far side of them. */
-      let armArt = '';
-      const fwd = (() => { const r = facingDeg(w.p.facing != null ? w.p.facing : 'S') * Math.PI / 180, a0 = eng.scr(w.x, w.y, 0), a1 = eng.scr(w.x + Math.sin(r), w.y - Math.cos(r), 0); return a1[1] - a0[1]; })();
-      if (w.p.armOver && !w.away && fwd > 0) {
-        const sd = /^l/i.test(w.p.armOver) ? 'L' : 'R', want = new RegExp(`^<g[^>]*data-joint="(shoulder|elbow|wrist)${sd}"`);
-        let out = '', k = 0;
-        const body = art.replace(/^(<g[^>]*>)([\s\S]*)(<\/g>)$/, (m0, open, mid, close) => {
-          for (let i = 0; i < mid.length;) {
-            const j = mid.indexOf('<g', i);
-            if (j < 0) { out += mid.slice(i); break; }
-            out += mid.slice(i, j);
-            const e = groupEnd(mid, j), g = mid.slice(j, e);
-            if (want.test(g)) armArt += g; else out += g;
-            i = e; k++;
-          }
-          return open + out + close;
-        });
-        if (armArt) { art = body; armArt = art.match(/^<g[^>]*>/)[0] + armArt + '</g>'; }
-      }
       const inner = art;
       art = `<g transform="translate(${sx.toFixed(2)} ${sy.toFixed(2)}) scale(${scale.toFixed(5)}) translate(${-STAGE_X} ${-STAGE_GROUND})">${art}</g>`;
       const [hx, hy] = eng.scr(w.x, w.y, eng.baseZ(w.L));   // the shadow stays on the floor, also under a seated person
-      const shadow = opts.shadow === false || w.p.seat != null || w.p.swim ? '' : `<ellipse cx="${hx.toFixed(2)}" cy="${hy.toFixed(2)}" rx="${(0.32 * eng.HW).toFixed(2)}" ry="${(0.32 * eng.HH).toFixed(2)}" fill="#000" fill-opacity=".14"/>`;
+      const shadow = opts.shadow === false || w.p.seat != null ? '' : `<ellipse cx="${hx.toFixed(2)}" cy="${hy.toFixed(2)}" rx="${(0.32 * eng.HW).toFixed(2)}" ry="${(0.32 * eng.HH).toFixed(2)}" fill="#000" fill-opacity=".14"/>`;
       if (w.cut && (w.cut.body.length || w.cut.legs.length)) {
         // facing away on a seat: the shins and feet hang behind the whole seat, the back is behind the backrest
         const outer = mmul(mmul([1, 0, 0, 1, sx, sy], [scale, 0, 0, scale, 0, 0]), [1, 0, 0, 1, -STAGE_X, -STAGE_GROUND]);
         art = `<g transform="translate(${sx.toFixed(2)} ${sy.toFixed(2)}) scale(${scale.toFixed(5)}) translate(${-STAGE_X} ${-STAGE_GROUND})">${maskLowerLegs(inner, outer, w.cut.legs, ns + 'legs' + w.i)}</g>`;
         if (w.cut.body.length) art = hideMask(ns + 'cut' + w.i, w.cut.body) + `<g mask="url(#${ns}cut${w.i})">${art}</g>`;
       }
-      const op = opacityOf(w.p);
-      if (op < 1) art = ghost(ns + 'ghost' + w.i, op, art, opts);
-      if (armArt) {
-        const a = `<g transform="translate(${sx.toFixed(2)} ${sy.toFixed(2)}) scale(${scale.toFixed(5)}) translate(${-STAGE_X} ${-STAGE_GROUND})">${armArt}</g>`;
-        overs.push(`<g class="hc3d-arm-over" data-name="${esc(w.d.name)}">${op < 1 ? ghost(ns + 'ghostarm' + w.i, op, a, opts) : a}</g>`);
-      }
-      if (w.p.swim) {
-        /* Above the water the person is drawn as usual; below it only faintly, as if seen
-           through the water, and rings of ripples spread from where the body meets the surface. */
-        // the water line (and its ripples) drawn a little up the chest from where the plane meets the body
-        const [wx, wy0] = eng.scr(w.x, w.y, eng.baseZ(w.L) + WATER_Z), wy = wy0 - 0.09 * eng.ZS, up = ns + 'up' + w.i, dn = ns + 'dn' + w.i;
-        const ripple = `<ellipse cx="${wx.toFixed(2)}" cy="${wy.toFixed(2)}" rx="${(0.36 * eng.HW).toFixed(2)}" ry="${(0.36 * eng.HH).toFixed(2)}" fill="#fff" fill-opacity=".28" stroke="#fff" stroke-opacity=".85" stroke-width="1.1"/>`
-          + `<ellipse cx="${wx.toFixed(2)}" cy="${wy.toFixed(2)}" rx="${(0.6 * eng.HW).toFixed(2)}" ry="${(0.6 * eng.HH).toFixed(2)}" fill="none" stroke="#fff" stroke-opacity=".45" stroke-width=".8"/>`;
-        /* The water meets the body in an ellipse round the torso (a circle on the water,
-           seen at an angle), concentric with the ripples: its near half dips down the
-           body, so the water line curves round the chest instead of cutting straight across. */
-        const erx = (0.26 * eng.HW).toFixed(2), ery = (0.26 * eng.HH).toFixed(2), ell = `<ellipse cx="${wx.toFixed(2)}" cy="${wy.toFixed(2)}" rx="${erx}" ry="${ery}"/>`;
-        const ellD = `M${(wx - +erx).toFixed(2)} ${wy.toFixed(2)}a${erx} ${ery} 0 1 0 ${(2 * erx).toFixed(2)} 0a${erx} ${ery} 0 1 0 ${(-2 * erx).toFixed(2)} 0Z`;
-        art = `<clipPath id="${up}"><rect x="-9999" y="-9999" width="19998" height="${(wy + 9999).toFixed(2)}"/>${ell}</clipPath>`
-          + `<clipPath id="${dn}"><path clip-rule="evenodd" d="M-9999 ${wy.toFixed(2)}H9999V9999H-9999Z${ellD}"/></clipPath>`
-          + `<g clip-path="url(#${dn})" opacity=".2">${art}</g>${ripple}<g clip-path="url(#${up})">${art}</g>`;
-      }
-      art = `<g class="hc3d-person" data-name="${esc(w.d.name)}"${op < 1 ? ` data-opacity="${op.toFixed(2)}"` : ''}>${shadow && op < 1 ? `<g opacity="${op.toFixed(3)}">${shadow}</g>` : shadow}${art}</g>`;
+      art = `<g class="hc3d-person" data-name="${esc(w.d.name)}">${shadow}${art}</g>`;
       const g = findGroup(markup, 'hc3d-ref hc3d-ref-' + w.i + '"');
       if (g) markup = markup.slice(0, g[0]) + art + markup.slice(g[1]);
       else markup += art;   // not on a floor that is drawn in this sort: on top
@@ -969,16 +608,9 @@
       /* The head is drawn the normal way (round things look the same from any side), full size,
          turned in the picture so the body runs toward the headboard; only the head and neck
          are kept, the duvet covers the rest. */
-      const { f, u, zo } = w.sleep, pv = HC.pivots(w.d), P = (uu, vv) => eng.furnPt(f, uu, vv);
-      const bw2 = eng.FURN[f.type].w / 2, bd2 = eng.FURN[f.type].d / 2, hv = -bd2 + 0.42;   // the bed's half sizes; the neck's spot
-      const zb = eng.baseZ(w.L) + zo, S0 = eng.scr(...P(u, hv), zb + 0.6), S1 = eng.scr(...P(u, hv - 1), zb + 0.6);
-      /* The bed's length and width are not at right angles on screen (they cross at about 127°).
-         The neck cut must lie along the duvet's top edge, which runs across the bed, so the head is
-         turned to put its shoulder line on the bed's width — crown on the headboard's side. */
-      const thH = Math.atan2(S1[1] - S0[1], S1[0] - S0[0]);                        // toward the headboard on screen
-      const Sw = eng.scr(...P(u + 1, hv), zb + 0.6), thW = Math.atan2(Sw[1] - S0[1], Sw[0] - S0[0]);   // across the bed
-      const near_ = a => Math.abs(Math.atan2(Math.sin(a - thH), Math.cos(a - thH)));
-      const th = near_(thW + Math.PI / 2) < near_(thW - Math.PI / 2) ? thW + Math.PI / 2 : thW - Math.PI / 2;
+      const { f, u } = w.sleep, pv = HC.pivots(w.d), P = (uu, vv) => eng.furnPt(f, uu, vv);
+      const zb = eng.baseZ(w.L), S0 = eng.scr(...P(u, -0.58), zb + 0.6), S1 = eng.scr(...P(u, -1.58), zb + 0.6);
+      const th = Math.atan2(S1[1] - S0[1], S1[0] - S0[0]);                         // headboard direction on screen
       const ax = pv.neck.x - pv.root.x, ay = pv.neck.y - pv.root.y, ph = Math.atan2(ay, ax), al = Math.hypot(ax, ay) || 1;
       const ux = ax / al, uy = ay / al, keep = 14;                                    // keep the drawing beyond 14 px below the neck
       const cut = [[pv.neck.x - keep * ux - 999 * uy, pv.neck.y - keep * uy + 999 * ux], [pv.neck.x - keep * ux + 999 * uy, pv.neck.y - keep * uy - 999 * ux],
@@ -989,70 +621,37 @@
       const head = `<clipPath id="${cid}"><path d="M${cut.map(c => c[0].toFixed(1) + ' ' + c[1].toFixed(1)).join('L')}Z"/></clipPath>`
         + `<g transform="translate(${S0[0].toFixed(2)} ${S0[1].toFixed(2)}) rotate(${deg(th)}) scale(${scale.toFixed(5)}) rotate(${deg(-ph)}) translate(${(-pv.neck.x).toFixed(2)} ${(-pv.neck.y).toFixed(2)})"><g clip-path="url(#${cid})">${art}</g></g>`;
       const g = findGroup(markup, 'hc3d-ref hc3d-ref-' + w.i + '"');
-      /* Below full certainty the head is faded and outlined (the person), the duvet only
-         faded: the outline belongs to the character, not to the bedding. */
-      const op = opacityOf(w.p), gid = ns + 'ghost' + w.i;
-      const headArt = op < 1 ? ghost(gid, op, head, opts) : head;
-      const duvet = duvetLump(f, u, w.L, zo);
-      let html = headArt + (op < 1 ? `<g opacity="${op.toFixed(3)}">${duvet}</g>` : duvet);
+      let html = `${head}${duvetLump(f, u, w.L)}`;
       // when the headboard is nearer the camera than the pillow, it hides part of the sleeper
       const near = (vv) => eng.scr(...P(u, vv), zb)[1];
-      if (near(-bd2 + 0.03) > near(hv - 0.17)) {
+      if (near(-0.97) > near(-0.75)) {
         const pts = [];
-        [-bw2, bw2].forEach(uu => [-bd2, -bd2 + 0.06].forEach(vv => (f.type === 'bunkbed' ? [0.3, 0.72] : [0, 0.95]).forEach(z => pts.push(eng.scr(...P(uu, vv), zb + z)))));
+        [-0.7, 0.7].forEach(uu => [-1, -0.94].forEach(vv => [0, 0.95].forEach(z => pts.push(eng.scr(...P(uu, vv), zb + z)))));
         html = hideMask(ns + 'hb' + w.i, [hull(pts)]) + `<g mask="url(#${ns}hb${w.i})">${html}</g>`;
       }
-      if (f.type === 'bunkbed') {
-        /* The whole bunk bed is one piece in the depth sort, so whatever of it is between the
-           camera and the sleeper is cut out of them: for the bottom bunk the top bed over it;
-           for both, the posts, the ladder and the top bed's guard rails on the camera's side. */
-        const zf = eng.baseZ(w.L), box = (u0, u1, v0, v1, z0, z1) => {
-          const q = []; [u0, u1].forEach(a => [v0, v1].forEach(b => [z0, z1].forEach(z => q.push(eng.scr(...P(a, b), zf + z))))); return hull(q); };
-        const at = (uu, vv) => eng.scr(...P(uu, vv), zf)[1], front = (uu, vv) => at(uu, vv) > at(u, (vv > 0 ? 0.3 : -0.3));
-        const polys = zo ? [] : [box(-0.5, 0.5, -1, 1, 1.06, 1.42)];   // the top bed's frame, mattress and duvet
-        [[-1, -1], [1, -1], [1, 1], [-1, 1]].forEach(([a, b]) => {
-          if (front(a * 0.47, b * 0.97)) polys.push(box(a * 0.47 - 0.03, a * 0.47 + 0.03, b * 0.97 - 0.03, b * 0.97 + 0.03, 0, 1.65));
-        });
-        if (front(-0.5, 0.65)) {   // the ladder, up the left long side near the foot end
-          polys.push(box(-0.52, -0.48, 0.42, 0.46, 0, 1.5), box(-0.52, -0.48, 0.84, 0.88, 0, 1.5));
-          [0.32, 0.62, 0.92, 1.22].forEach(z => polys.push(box(-0.515, -0.485, 0.46, 0.84, z, z + 0.035)));
-        }
-        if (zo) {   // the top bed's guard rails
-          if (front(0.5, 0)) polys.push(box(0.47, 0.5, -0.94, 0.94, 1.44, 1.5));
-          if (front(-0.5, -0.3)) polys.push(box(-0.5, -0.47, -0.94, 0.38, 1.44, 1.5));
-        }
-        if (polys.length) html = hideMask(ns + 'bunk' + w.i, polys) + `<g mask="url(#${ns}bunk${w.i})">${html}</g>`;
-      }
-      html = `<g class="hc3d-person hc3d-asleep" data-name="${esc(w.d.name)}"${op < 1 ? ` data-opacity="${op.toFixed(2)}"` : ''}>${html}</g>`;
+      html = `<g class="hc3d-person hc3d-asleep" data-name="${esc(w.d.name)}">${html}</g>`;
       if (g) markup = markup.slice(0, g[0]) + html + markup.slice(g[1]); else markup += html;
-      const hd = eng.scr(...P(u, hv - 0.17), zb + 0.6), corners = [[-bw2, -bd2], [bw2, -bd2], [bw2, bd2], [-bw2, bd2]].map(([a, b]) => eng.scr(...P(a, b), zb));
+      const hd = eng.scr(...P(u, -0.75), zb + 0.6), corners = [[-0.7, -1], [0.7, -1], [0.7, 1], [-0.7, 1]].map(([a, b]) => eng.scr(...P(a, b), zb));
       w.screen = { x0: Math.min(...corners.map(c => c[0])), x1: Math.max(...corners.map(c => c[0])), y0: hd[1] - 30, y1: Math.max(...corners.map(c => c[1])) };
       const tag = w.L !== st.level ? '' : w.p.tag != null ? w.p.tag : (opts.tags ? w.d.name : '');
       if (tag) tags.push(`<text class="pic-label hc3d-tag" x="${hd[0].toFixed(1)}" y="${(hd[1] - 24).toFixed(1)}">${esc(tag)}</text>`);
     }
-    /* The duvet over a sleeper: a soft lump the width of one person, as wide as the shoulders
-       at the top and narrowing toward the feet, its sides sloping down to the sheet at 45°, from the chest to the foot of the bed, in the
-       engine's own duvet colours (m-duvet), with the faces the camera sees. Two people in a
-       double bed make two lumps side by side. */
-    function duvetLump(f, u, L, zo) {
-      const H = 0.12, bd2 = eng.FURN[f.type].d / 2, z0 = eng.baseZ(L) + (zo || 0) + 0.5, z1 = z0 + H, v0 = -bd2 + 0.5, v1 = bd2 - 0.03;
-      const SH = 0.29, FT = 0.22;   // half-widths at the shoulders and at the feet, where it meets the sheet (m)
+    /* A duvet pulled up to the sleeper's chest: a soft box over their half of the bed, in the
+       engine's own duvet colours (m-duvet), with the faces the camera sees. */
+    function duvetLump(f, u, L) {
+      const z0 = eng.baseZ(L) + 0.5, z1 = z0 + 0.14, u0 = u === 0 ? -0.66 : u - 0.32, u1 = u === 0 ? 0.66 : u + 0.32, v0 = -0.5, v1 = 0.97;
       const W = (uu, vv, z) => eng.scr(...eng.furnPt(f, uu, vv), z), pts = q => q.map(([x, y]) => x.toFixed(2) + ',' + y.toFixed(2)).join(' ');
-      // the outline on the sheet, and the top: every side slopes in at 45°, so the top is H smaller all round
-      const C = [[u - SH, v0], [u + SH, v0], [u + FT, v1], [u - FT, v1]];
-      const T = [[u - SH + H, v0 + H], [u + SH - H, v0 + H], [u + FT - H, v1 - H], [u - FT + H, v1 - H]];
-      const sides = [[0, 1], [1, 2], [2, 3], [3, 0]];
+      const sides = [[[u0, v0], [u1, v0]], [[u1, v0], [u1, v1]], [[u1, v1], [u0, v1]], [[u0, v1], [u0, v0]]];
       let out = '';
-      sides.forEach(([i, j]) => {
-        const a = C[i], b = C[j];
-        const q = [W(a[0], a[1], z0), W(b[0], b[1], z0), W(T[j][0], T[j][1], z1), W(T[i][0], T[i][1], z1)];
-        // outward-facing toward the camera: the bottom edge, walked from a to b, has the lump on its upper side on screen
-        const cx = (q[0][0] + q[1][0]) / 2, cy = (q[0][1] + q[1][1]) / 2, m = W(u, (v0 + v1) / 2, z0);
+      sides.forEach(([a, b]) => {
+        const q = [W(a[0], a[1], z0), W(b[0], b[1], z0), W(b[0], b[1], z1), W(a[0], a[1], z1)];
+        // outward-facing toward the camera: the bottom edge, walked from a to b, has the box on its upper side on screen
+        const cx = (q[0][0] + q[1][0]) / 2, cy = (q[0][1] + q[1][1]) / 2, m = W((u0 + u1) / 2, (v0 + v1) / 2, z0);
         if (cy <= m[1] + 0.01) return;
         out += `<polygon class="m-duvet ${cx < m[0] ? 'fl' : 'fr'}" points="${pts(q)}"/>`;
       });
-      const top = T.map(([uu, vv]) => W(uu, vv, z1));
-      const fold = [W(u - SH + H + 0.01, v0 + H + 0.1, z1), W(u + SH - H - 0.01, v0 + H + 0.1, z1)];
+      const top = [W(u0, v0, z1), W(u1, v0, z1), W(u1, v1, z1), W(u0, v1, z1)];
+      const fold = [W(u0, v0 + 0.12, z1), W(u1, v0 + 0.12, z1)];
       return out + `<polygon class="m-duvet ft" points="${pts(top)}"/><path d="M${fold[0][0].toFixed(2)} ${fold[0][1].toFixed(2)}L${fold[1][0].toFixed(2)} ${fold[1][1].toFixed(2)}" stroke="rgba(0,0,0,.15)" stroke-width="1.2" fill="none"/>`;
     }
 
@@ -1062,29 +661,7 @@
       const [sx, sy] = eng.scr(l.x, l.y, zl + (l.z || 0));
       markup += `<text class="pic-label${l.num ? ' pic-num' : ''}" x="${sx.toFixed(1)}" y="${sy.toFixed(1)}">${esc(l.text)}</text>`;
     });
-    markup += overs.join('') + marks() + tags.join('');
-    /* marks: things in the house pointed out with the same highlight line — a door, a window,
-       a piece of furniture or any box: [{ edge: { o, r, c }, kind: 'door' | 'window' } |
-       { furniture: i } | { box: [x0, y0, x1, y1, z0, z1] }] on the floor shown. The line is the
-       outline of the thing's box as the camera sees it, drawn over the picture. */
-    function marks() {
-      const zf = eng.baseZ(st.level), FL = st.floors[st.level];
-      return (opts.marks || []).map(m => {
-        let b = m.box;
-        if (m.edge) {
-          const { o, r, c } = m.edge, t = 0.09, [z0, z1] = m.kind === 'window' ? [0.9, 2.1] : [0, 2.1];
-          b = o === 'v' ? [c - t, r + 0.04, c + t, r + 0.96, z0, z1] : [c + 0.04, r - t, c + 0.96, r + t, z0, z1];
-        } else if (m.furniture != null && FL && FL.furniture[m.furniture]) {
-          const f = FL.furniture[m.furniture], R = eng.furnRect(f);
-          b = [R.x0, R.y0, R.x1, R.y1, 0, eng.FURN[f.type].wall ? eng.FURN[f.type].hangZ + eng.FURN[f.type].h / 2 : eng.FURN[f.type].h];
-        }
-        if (!b) return '';
-        const pts = [];
-        [b[0], b[2]].forEach(x => [b[1], b[3]].forEach(y => [b[4], b[5]].forEach(z => pts.push(eng.scr(x, y, zf + z)))));
-        const h = hull(pts).map(p => p[0].toFixed(1) + ',' + p[1].toFixed(1)).join(' ');
-        return `<polygon class="hc3d-mark" points="${h}" fill="var(--hc3d-highlight, #f59e0b)" fill-opacity=".12" stroke="var(--hc3d-highlight, #f59e0b)" stroke-width="__HLW__" stroke-linejoin="round"/>`;
-      }).join('');
-    }
+    markup += tags.join('');
 
     // frame: the floor shown, up to the walls or the tallest thing — people included
     const FL = st.level >= 0 ? st.floors[st.level] : null, zf = st.level >= 0 ? eng.baseZ(st.level) : 0;
@@ -1108,14 +685,7 @@
       });
       FL.appliances.forEach(a => pieces.push([eng.applRect(a), 0, eng.APPL[a.type].h]));
       let b;
-      const near = who.filter(w => w.L === st.level).concat((opts.aroundAt || []).map(([x, y, z]) => ({ x, y, z: z || 0 })));   // aroundAt: other spots [x, y, z] to frame
-      if (opts.around != null && near.length) {
-        // close-up on the people: their spots plus that many metres of room round them
-        const m = Number(opts.around) || 0;
-        // at the height each one is at (a watch on a counter is framed on the counter, not the floor under it)
-        const rs = near.map(w => [{ x0: Math.max(0, w.x - m), x1: Math.min(st.COLS, w.x + m), y0: Math.max(0, w.y - m), y1: Math.min(st.ROWS, w.y + m) }, w.z || 0, w.z || 0]);
-        b = screenBox(rs);
-      } else if (opts.focus) {
+      if (opts.focus) {
         const m = opts.focus === true ? 0.6 : Number(opts.focus);
         const rs = pieces.concat(who.filter(w => w.L === st.level).map(w => [{ x0: w.x - FOOT / 2, x1: w.x + FOOT / 2, y0: w.y - FOOT / 2, y1: w.y + FOOT / 2 }, 0, 0]));
         const u = rs.reduce((a, [r]) => ({ x0: Math.min(a.x0, r.x0), y0: Math.min(a.y0, r.y0), x1: Math.max(a.x1, r.x1), y1: Math.max(a.y1, r.y1) }), { x0: Infinity, y0: Infinity, x1: -Infinity, y1: -Infinity });
@@ -1126,7 +696,7 @@
         b = screenBox([[{ x0: 0, y0: 0, x1: st.COLS, y1: st.ROWS }, -zf - 0.3, zTop + 0.05]]);   // down to the ground: an upper floor shows the house under it
       }
       b = addPeople(b);
-      const pad = opts.focus || opts.around != null ? 8 : 12;
+      const pad = opts.focus ? 8 : 12;
       box = [b[0] - pad, b[1] - pad, b[2] - b[0] + 2 * pad, b[3] - b[1] + 2 * pad];
     }
     if (opts.box) box = opts.box.slice();
@@ -1135,49 +705,9 @@
       box = bw / bh < opts.aspect ? [bx + bw / 2 - bh * opts.aspect / 2, by, bh * opts.aspect, bh] : [bx, by + bh / 2 - bw / opts.aspect / 2, bw, bw / opts.aspect];
     }
     const [x, y, w, hh] = box || [0, 0, 100, 100];
-    markup = markup.replace(/__HLR__/g, (opts.highlightLine || w / 110).toFixed(2));
-    markup = markup.replace(/stroke-width="__HLW__"/g, `stroke-width="${((opts.highlightLine || w / 110) * 1.1).toFixed(2)}"`);
     const alt = esc(opts.alt || 'A picture of people in a room');
     return `<svg class="house-pic" xmlns="http://www.w3.org/2000/svg" viewBox="${x.toFixed(1)} ${y.toFixed(1)} ${w.toFixed(1)} ${hh.toFixed(1)}" role="img" aria-label="${alt}"${clashes ? ` data-clashes="${clashes}"` : ''}>${markup}</svg>`;
   }
-
-  /* A person drawn less than fully solid (opacity < 1: a guess, a memory) is faded. Below
-     50 % they also get a dashed outline round the outside of the figure, so even a faint
-     ghost reads as a person. The line takes the colour opposite the page (the page's text
-     colour, or --hc3d-ghost-line) and the alpha the figure lost: a 30 % figure gets a 70 %
-     line. The outline is a ring just inside the edge of the figure's silhouette (a filter: the
-     silhouette minus itself shrunk), so the figure stays its own size; the dashes
-     come from masking that ring with a fine checkerboard, which breaks a line of any
-     direction into short dashes. */
-  const GHOST_LINE_BELOW = 0.5;
-  function ghost(id, op, art, opts) {
-    const width = opts.ghostLine || 1.2, dash = opts.ghostDash || 2.6, faded = `<g opacity="${op.toFixed(3)}">${art}</g>`;
-    if (op >= GHOST_LINE_BELOW) return faded;
-    const ring = `<filter id="${id}f" x="-25%" y="-25%" width="150%" height="150%" color-interpolation-filters="sRGB">`
-      + `<feMorphology in="SourceAlpha" operator="erode" radius="${width.toFixed(2)}" result="shrunk"/>`
-      + `<feComposite in="SourceAlpha" in2="shrunk" operator="out" result="ring"/>`
-      + `<feFlood style="flood-color:var(--hc3d-ghost-line, var(--color-text-primary, #1a1a1a))" flood-opacity="${(1 - op).toFixed(3)}"/>`
-      + `<feComposite in2="ring" operator="in"/></filter>`
-      + `<pattern id="${id}p" patternUnits="userSpaceOnUse" width="${2 * dash}" height="${2 * dash}">`
-      + `<rect width="${dash}" height="${dash}" fill="#fff"/><rect x="${dash}" y="${dash}" width="${dash}" height="${dash}" fill="#fff"/></pattern>`
-      + `<mask id="${id}m" maskUnits="userSpaceOnUse" x="-9999" y="-9999" width="19998" height="19998"><rect x="-9999" y="-9999" width="19998" height="19998" fill="url(#${id}p)"/></mask>`;
-    return faded + ring + `<g mask="url(#${id}m)"><g filter="url(#${id}f)">${art}</g></g>`;
-  }
-  /* An object pointed out (highlight: true): an outline in the highlight colour drawn round
-     its outside (--hc3d-highlight, amber by default), the thing itself untouched. */
-  function highlightWrap(id, html, opts) {
-    // the width is filled in once the picture's frame is known (__HLR__), so a close-up
-    // doesn't get a fat line: about 1/110 of the picture's width
-    return `<filter id="${id}" x="-40%" y="-40%" width="180%" height="180%" color-interpolation-filters="sRGB">`
-      + `<feMorphology in="SourceAlpha" operator="dilate" radius="__HLR__" result="grown"/>`
-      + `<feComposite in="grown" in2="SourceAlpha" operator="out" result="ring"/>`
-      + `<feFlood style="flood-color:var(--hc3d-highlight, #f59e0b)"/>`
-      + `<feComposite in2="ring" operator="in" result="line"/>`
-      + `<feMerge><feMergeNode in="line"/><feMergeNode in="SourceGraphic"/></feMerge></filter>`
-      + `<g filter="url(#${id})">${html}</g>`;
-  }
-  const isBed = t => /bed/i.test(t) && !/bedside/i.test(t);   // bed, and the single and double beds
-  const opacityOf = p => p.opacity != null ? Math.max(0, Math.min(1, +p.opacity)) : 1;
 
   function pictureDraw(el, house, people, opts) {
     if (typeof el === 'string') el = document.getElementById(el);
@@ -1186,5 +716,5 @@
     return el.firstElementChild;
   }
 
-  global.HouseCharacter3D = { svg: pictureSvg, draw: pictureDraw, viewData, viewPlan, yawFor, garmentArt, looseGarment, artPoints, shinFoot, PX_PER_M };
+  global.HouseCharacter3D = { svg: pictureSvg, draw: pictureDraw, viewData, viewPlan, yawFor, PX_PER_M };
 })(typeof window !== 'undefined' ? window : globalThis);
