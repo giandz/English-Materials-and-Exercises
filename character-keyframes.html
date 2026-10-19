@@ -216,10 +216,12 @@ button[aria-pressed="true"]{ background:var(--color-background-info); color:var(
 /* ⧉ moves a setting onto a timeline of its own */
 .tk{ width:1.7em; height:1.7em; padding:0; min-width:0; font-size:.8rem; line-height:1; border-radius:6px; color:var(--text-muted); background:transparent; border:1px solid transparent; }
 .tk:hover{ border-color:var(--border); background:var(--surface-1); color:var(--text-primary); }
-.tracked .tk{ color:#fff; background:var(--text-accent); border-color:var(--text-accent); }
-.tracked > label{ color:var(--text-accent) !important; font-weight:600; }
+.tracked .tk{ color:#fff; background:var(--c, var(--text-accent)); border-color:var(--c, var(--text-accent)); }
+.tracked > label{ color:var(--c, var(--text-accent)) !important; font-weight:600; }
 .acc-head{ display:flex; justify-content:space-between; align-items:center; font-size:.7667rem; color:var(--text-secondary); margin-bottom:4px; }
-.acc-head.tracked span{ color:var(--text-accent); font-weight:600; }
+.graphed .tk{ color:#fff; background:var(--c); border-color:var(--c); }
+.graphed > label, .acc-head.graphed span{ color:var(--c) !important; font-weight:600; }
+.acc-head.tracked span{ color:var(--c, var(--text-accent)); font-weight:600; }
 .tl-tools{ display:flex; flex-wrap:wrap; align-items:center; gap:6px; margin:8px 0 0; font-size:.8rem; color:var(--text-secondary); }
 .tl-tools select{ font-family:inherit; font-size:.8rem; padding:4px 6px; max-width:16rem;
   border:1px solid var(--color-border-secondary); border-radius:var(--border-radius-md); background:var(--color-background-primary); color:var(--text-primary); }
@@ -232,6 +234,16 @@ button[aria-pressed="true"]{ background:var(--color-background-info); color:var(
 #tl .tbtn.merge:hover{ fill:var(--text-accent); }
 #tl .dia rect.sq{ fill:var(--surface-2); stroke:var(--text-secondary); stroke-width:1.4; }
 #tl .dia.cur rect.sq{ fill:var(--pos-verb); stroke:var(--pos-verb); }
+/* own timelines in the dope sheet: each in its colour, the same one it has on the graph */
+#tl .lane.tr{ fill:var(--c); fill-opacity:.07; }
+#tl .lane.tr.act{ stroke:var(--c); stroke-width:1.6; }
+#tl .span.tr{ fill:var(--c); fill-opacity:.16; }
+#tl .tlab.tr{ fill:var(--c); font-weight:600; }
+#tl .tlab.tr.act{ font-weight:800; }
+#tl .dia.tr path, #tl .dia.tr rect.sq{ stroke:var(--c); stroke-width:1.8; }
+#tl .dia.tr .na{ stroke:var(--c); }
+#tl .dia.tr.cur path, #tl .dia.tr.cur rect.sq{ fill:var(--c); stroke:var(--c); }
+#tl .dia.tr.cur .na{ fill:none; }
 .frow.chk input{ justify-self:start; accent-color:var(--text-accent); width:1.05rem; height:1.05rem; margin:0; }
 .sub{ font-size:.6667rem; font-weight:700; letter-spacing:.05em; text-transform:uppercase; color:var(--text-muted); margin:10px 0 4px; }
 .sub:first-child{ margin-top:0; }
@@ -302,7 +314,7 @@ button[aria-pressed="true"]{ background:var(--color-background-info); color:var(
       </div>
 
       <div class="ke-tlbar" id="tlbar">
-        <span class="seg" id="viewSeg"><button data-v="dope" aria-pressed="true">◆ Keyframes</button><button data-v="graph" aria-pressed="false">📈 Graph</button></span>
+        <span class="seg" id="viewSeg"><button data-v="dope" aria-pressed="true">◆ Dope Sheet</button><button data-v="graph" aria-pressed="false">📈 Graph</button></span>
         <span class="gonly"><select id="gAdd" aria-label="Add a setting to the graph"></select></span>
         <span class="gonly glegend" id="gLegend"></span>
         <span class="gonly muted">Drag a point to change its value or frame · click a curve between two points to pick its easing · double-click to add a point to the selected curve</span>
@@ -714,7 +726,14 @@ function dropTrack(k){
 }
 document.addEventListener('click', e => {
   const b = e.target.closest('.tk'); if(!b) return;
-  e.preventDefault(); pause(); splitTrack(b.dataset.param);
+  e.preventDefault(); pause();
+  /* ⧉ follows the timeline view: a timeline of its own in the dope sheet, a series in the graph */
+  if(view === 'graph'){
+    const k = b.dataset.param, had = seriesOf(k) && seriesOf(k).on;
+    addSeries(k, true); activate(k); closeEz();
+    syncGraphBar(); syncPanel(); syncTracksUI(); drawTimeline(); drawKeybar();
+    if(!had) flash(`${plabel(k)} is on the graph now.`);
+  } else splitTrack(b.dataset.param);
 });
 $('bTrack').onclick = () => { const k = $('trackSel').value; if(k){ pause(); splitTrack(k); } };
 function syncTracksUI(){
@@ -722,10 +741,15 @@ function syncTracksUI(){
   sel.innerHTML = '<option value="">Choose a setting…</option>' + paramList().filter(([k]) => !trackOf(k))
     .map(([k, l]) => `<option value="${k}">${esc(l)}</option>`).join('');
   sel.value = paramList().some(([k]) => k === cur) && !trackOf(cur) ? cur : '';
+  const graph = typeof view !== 'undefined' && view === 'graph';
   for(const b of document.querySelectorAll('.tk')){
-    const on = !!trackOf(b.dataset.param);
-    b.parentNode.classList.toggle('tracked', on);
-    b.title = on ? 'Has its own timeline (select it)' : 'Move to a timeline of its own';
+    const k = b.dataset.param, x = graph && seriesOf(k);
+    const tracked = !graph && !!trackOf(k), graphed = !!(x && x.on);
+    b.parentNode.classList.toggle('tracked', tracked);
+    b.parentNode.classList.toggle('graphed', graphed);
+    if(graphed || tracked) b.parentNode.style.setProperty('--c', gColor(colorOf(k))); else b.parentNode.style.removeProperty('--c');
+    b.title = graph ? (graphed ? 'On the graph (select it)' : 'Add to the graph')
+                    : (tracked ? 'Has its own timeline (select it)' : 'Move to a timeline of its own');
   }
 }
 function changed(){ autosave(); drawStage(); drawTimeline(); drawKeybar(); syncPanel(); syncTracksUI(); }
@@ -821,7 +845,7 @@ stage.addEventListener('pointerdown', e => {
   const g = e.target.closest('.h'); if(!g || playing) return;
   e.preventDefault();
   selJoint = g.dataset.j; drawHandles(); syncPanel();
-  if(view === 'graph' && gParam !== selJoint){ addSeries(selJoint, true); activate(selJoint); syncGraphBar(); drawTimeline(); drawKeybar(); }
+  if(view === 'graph' && gParam !== selJoint){ addSeries(selJoint, true); activate(selJoint); syncGraphBar(); syncTracksUI(); drawTimeline(); drawKeybar(); }
   drag = {j:selJoint, last:null};
   try{ stage.setPointerCapture(e.pointerId); }catch(_){}
 });
@@ -859,7 +883,7 @@ function laneDiamonds(K, y, laneId, numeric, main){
     const x = fx(k.frame), cur = k.frame === frame && lane === laneId ? ' cur' : '';
     const inK = i === 0 ? null : k.easeIn, outK = i === K.length - 1 ? null : k.easeOut;
     const tip = main ? `Keyframe ${k.frame}` : `${k.frame}: ${typeof k.value === 'object' ? JSON.stringify(k.value) : k.value}`;
-    s += `<g class="dia${cur}" data-lane="${laneId || ''}" data-i="${i}"><title>${esc(tip)}</title>`
+    s += `<g class="dia${cur}${laneId ? ' tr' : ''}"${laneId ? ` style="--c:${gColor(colorOf(laneId))}"` : ''} data-lane="${laneId || ''}" data-i="${i}"><title>${esc(tip)}</title>`
       + `<rect x="${x-9}" y="${y-11}" width="18" height="22" fill="transparent" stroke="none"/>`
       + (numeric
         ? `<path${inK ? '' : ' class="na"'} d="${diamondPath(x, y, 8, 'in', inK || 'linear')}"/>`
@@ -892,11 +916,11 @@ function drawTimeline(){
   const lanes = [{id:null, name:'Main', K:S.keys}, ...T.map(t => ({id:t.param, name:plabel(t.param), K:t.keys}))];
   let s = '';
   lanes.forEach((L, i) => {
-    const y = laneY(i), act = T.length && lane === L.id ? ' act' : '';
-    s += `<rect class="lane${act}" data-li="${i}" x="${GUT}" y="${y-12}" width="${TW - GUT - PAD}" height="24" rx="5"/>`;
-    if(L.K.length > 1) s += `<rect class="span" x="${fx(L.K[0].frame)}" y="${y-12}" width="${fx(L.K[L.K.length-1].frame) - fx(L.K[0].frame)}" height="24" pointer-events="none"/>`;
+    const y = laneY(i), act = T.length && lane === L.id ? ' act' : '', tr = L.id ? ' tr' : '', cs = L.id ? ` style="--c:${gColor(colorOf(L.id))}"` : '';
+    s += `<rect class="lane${act}${tr}"${cs} data-li="${i}" x="${GUT}" y="${y-12}" width="${TW - GUT - PAD}" height="24" rx="5"/>`;
+    if(L.K.length > 1) s += `<rect class="span${tr}"${cs} x="${fx(L.K[0].frame)}" y="${y-12}" width="${fx(L.K[L.K.length-1].frame) - fx(L.K[0].frame)}" height="24" pointer-events="none"/>`;
     if(T.length){
-      s += `<text class="tlab${act}" x="8" y="${y+4}"><title>${esc(L.name)}</title>${esc(short(L.name, L.id ? 13 : 18))}</text>`;
+      s += `<text class="tlab${act}${tr}"${cs} x="8" y="${y+4}"><title>${esc(L.name)}</title>${esc(short(L.name, L.id ? 13 : 18))}</text>`;
       if(L.id) s += `<text class="tbtn merge" data-act="merge" data-param="${L.id}" x="${GUT-30}" y="${y+5}"><title>Merge back into Main</title>⤴</text>`
         + `<text class="tbtn" data-act="drop" data-param="${L.id}" x="${GUT-15}" y="${y+5}"><title>Remove this timeline</title>✕</text>`;
     }
@@ -961,11 +985,25 @@ const POS_COLS = ['wh','aux','verb','part','subject','object','complement','noun
 const gColor = i => `var(--pos-${POS_COLS[i % POS_COLS.length]})`;
 let gSeries = [{p:'shoulderR', c:0, on:true}];   /* what the graph shows, in legend order */
 try{ const g = JSON.parse(localStorage.getItem('house-keyframes-graph') || 'null'); if(Array.isArray(g) && g.length) gSeries = g.filter(x => x && typeof x.p === 'string'); }catch(e){}
+/* one colour per setting, shared by the graph and the dope sheet, so a setting looks the same in both.
+   A new setting takes the first colour nobody on screen is using. */
+let COLS = {};
+try{ COLS = JSON.parse(localStorage.getItem('house-keyframes-colours') || '{}') || {}; }catch(e){}
+for(const x of gSeries) if(!(x.p in COLS)) COLS[x.p] = x.c;
+function colorOf(p){
+  if(!(p in COLS)){
+    const used = new Set([...gSeries.map(x => COLS[x.p]), ...(S && S.tracks || []).map(t => COLS[t.param])].filter(v => v !== undefined));
+    let c = 0; while(used.has(c)) c++;
+    COLS[p] = c; try{ localStorage.setItem('house-keyframes-colours', JSON.stringify(COLS)); }catch(e){}
+  }
+  return COLS[p];
+}
+for(const x of gSeries) x.c = colorOf(x.p);
 const saveSeries = () => { try{ localStorage.setItem('house-keyframes-graph', JSON.stringify(gSeries)); }catch(e){} };
 const seriesOf = p => gSeries.find(x => x.p === p);
 function addSeries(p, active){
   let x = seriesOf(p);
-  if(!x){ const used = gSeries.map(y => y.c); let c = 0; while(used.includes(c)) c++; x = {p, c, on:true}; gSeries.push(x); }
+  if(!x){ x = {p, c:colorOf(p), on:true}; gSeries.push(x); }
   x.on = true; if(active) gParam = p; gRange = null; saveSeries();
 }
 /* the keyframes a setting is drawn from: its own timeline, or Main */
@@ -1032,12 +1070,12 @@ function setView(v){
     if(!seriesOf(gParam)) gParam = (gSeries.find(x => x.on) || gSeries[0] || {}).p || gParam;
     lane = trackOf(gParam) ? gParam : null;
   }
-  syncGraphBar(); drawTimeline(); drawKeybar();
+  syncGraphBar(); syncTracksUI(); drawTimeline(); drawKeybar();
 }
 $('viewSeg').addEventListener('click', e => { const b = e.target.closest('button'); if(b) setView(b.dataset.v); });
 $('gAdd').addEventListener('change', () => {
   const p = $('gAdd').value; if(!p) return;
-  addSeries(p, true); activate(p); closeEz(); syncPanel(); syncGraphBar(); drawTimeline(); drawKeybar();
+  addSeries(p, true); activate(p); closeEz(); syncPanel(); syncGraphBar(); syncTracksUI(); drawTimeline(); drawKeybar();
 });
 $('gLegend').addEventListener('click', e => {
   const chip = e.target.closest('.gchip'); if(!chip) return;
@@ -1046,7 +1084,7 @@ $('gLegend').addEventListener('click', e => {
   if(e.target.closest('.geye')) x.on = !x.on;
   else if(e.target.closest('.gx')){ gSeries = gSeries.filter(y => y !== x); if(gParam === x.p && gSeries[0]) activate(gSeries[0].p); }
   else { x.on = true; activate(x.p); }
-  gRange = null; saveSeries(); syncPanel(); syncGraphBar(); drawTimeline(); drawKeybar();
+  gRange = null; saveSeries(); syncPanel(); syncGraphBar(); syncTracksUI(); drawTimeline(); drawKeybar();
 });
 const niceStep = span => { const r = span / 5, p = Math.pow(10, Math.floor(Math.log10(r))), m = r / p; return (m < 1.5 ? 1 : m < 3.5 ? 2 : m < 7.5 ? 5 : 10) * p; };
 let gy = null;   /* value → y on the shared scale, kept for the pointer handlers */
