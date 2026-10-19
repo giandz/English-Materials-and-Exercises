@@ -1,0 +1,981 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<title>Character Keyframes</title>
+<script>
+(function(){
+  try{
+    var saved = localStorage.getItem('theme-preference');
+    var theme = (saved === 'light' || saved === 'dark')
+      ? saved
+      : ((window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches) ? 'dark' : 'light');
+    document.documentElement.setAttribute('data-theme', theme);
+    var fs = parseFloat(localStorage.getItem('font-size-preference'));
+    if (fs >= 10 && fs <= 28) document.documentElement.style.setProperty('--fs-base', fs + 'px');
+  }catch(e){ /* localStorage/matchMedia unavailable — CSS media query still applies */ }
+})();
+</script>
+<link rel="stylesheet" href="house.css">
+<style>
+/* ── page-specific: the keyframe editor ─────────────────────────────────── */
+.ke-page{ max-width:1120px; margin:0 auto; padding:20px 14px 40px; }
+.ke-layout{ display:grid; grid-template-columns:minmax(0,1fr) 300px; gap:16px; align-items:start; }
+@media (max-width:860px){ .ke-layout{ grid-template-columns:minmax(0,1fr); } }
+
+.ke-stage{
+  position:relative; width:100%; max-width:560px; margin:0 auto; aspect-ratio:600/590;
+  background:var(--surface-1); border:1px solid var(--border); border-radius:var(--radius);
+  overflow:hidden; color:var(--text-muted); touch-action:none;
+}
+.ke-stage > #figure, .ke-stage > #handles{ position:absolute; inset:0; width:100%; height:100%; }
+.ke-stage > #figure svg{ width:100%; height:100%; display:block; }
+#handles{ pointer-events:none; }
+#handles .h{ pointer-events:all; cursor:grab; }
+#handles .h circle, #handles .h path{ fill:var(--text-accent); fill-opacity:.28; stroke:var(--text-accent); stroke-width:1.6; }
+#handles .h:hover circle, #handles .h:hover path{ fill-opacity:.55; }
+#handles .h.on circle, #handles .h.on path{ fill:var(--pos-verb); fill-opacity:.85; stroke:var(--pos-verb); }
+#handles .ring{ fill:none; stroke:var(--pos-verb); stroke-width:1.4; stroke-dasharray:4 4; pointer-events:none; }
+.ke-stage.playing #handles{ display:none; }
+.ke-badge{
+  position:absolute; left:10px; top:10px; font-size:.7333rem; font-weight:600; padding:2px 9px;
+  border-radius:20px; background:var(--surface-2); border:1px solid var(--border); color:var(--text-secondary);
+}
+.ke-badge.key{ color:var(--pos-verb); border-color:var(--pos-verb); }
+.ke-hint{ font-size:.7667rem; color:var(--text-muted); text-align:center; margin:6px 0 0; }
+
+/* transport */
+.ke-transport{ display:flex; flex-wrap:wrap; align-items:center; gap:6px; margin:12px 0 8px; }
+.ke-transport .grp{ display:inline-flex; gap:4px; align-items:center; }
+.ke-transport button{ min-width:2.6em; }
+.ke-transport .play{ min-width:5.6em; font-weight:600; }
+button[aria-pressed="true"]{ background:var(--color-background-info); color:var(--color-text-info); border-color:var(--color-border-info); }
+.ke-readout{ font-family:var(--font-mono); font-size:.8rem; color:var(--text-secondary); margin-left:auto; white-space:nowrap; }
+.ke-num{ display:inline-flex; align-items:center; gap:4px; font-size:.7667rem; color:var(--text-secondary); }
+.ke-num input{
+  width:4.2em; font-family:var(--font-mono); font-size:.8rem; padding:3px 6px;
+  border:1px solid var(--color-border-secondary); border-radius:var(--border-radius-md);
+  background:var(--color-background-primary); color:var(--text-primary);
+}
+
+/* timeline */
+.ke-timeline{
+  background:var(--surface-2); border:1px solid var(--border); border-radius:var(--radius);
+  padding:4px 0; user-select:none; touch-action:none;
+}
+#tl{ display:block; width:100%; height:78px; cursor:pointer; }
+#tl .tick{ stroke:var(--color-border-primary); }
+#tl .tick.big{ stroke:var(--text-muted); }
+#tl .lbl{ fill:var(--text-muted); font-family:var(--font-mono); font-size:10px; }
+#tl .track{ fill:var(--surface-1); }
+#tl .span{ fill:var(--color-background-info); }
+#tl .dia{ cursor:grab; }
+#tl .dia path{ fill:var(--surface-2); stroke:var(--text-secondary); stroke-width:1.4; }
+#tl .dia .na{ fill:none; stroke:var(--text-muted); stroke-dasharray:2 2; stroke-opacity:.6; }
+#tl .dia.cur path{ fill:var(--pos-verb); stroke:var(--pos-verb); }
+#tl .dia.cur .na{ fill:none; stroke:var(--pos-verb); }
+#tl .ph{ stroke:var(--bad); stroke-width:1.6; pointer-events:none; }
+#tl .phk{ fill:var(--bad); cursor:ew-resize; }
+
+/* keyframe bar */
+.ke-keybar{
+  display:flex; flex-wrap:wrap; align-items:center; gap:10px 14px; margin-top:10px;
+  padding:10px 12px; background:var(--surface-1); border:1px solid var(--border); border-radius:var(--radius);
+}
+.ke-keybar .title{ font-size:.8667rem; font-weight:600; }
+.ke-keybar .muted{ font-size:.8rem; color:var(--text-muted); }
+.ease{ display:inline-flex; align-items:center; gap:6px; font-size:.8rem; color:var(--text-secondary); }
+.seg{ display:inline-flex; border:1px solid var(--border); border-radius:999px; overflow:hidden; }
+.seg button{ border:none; border-radius:0; padding:4px 11px; font-size:.8rem; background:var(--surface-2); }
+.seg button + button{ border-left:1px solid var(--border); }
+.seg button[aria-pressed="true"]{ background:var(--text-accent); color:#fff; }
+.seg button:disabled{ opacity:.4; cursor:not-allowed; }
+.curves{ display:inline-flex; gap:8px; margin-left:auto; }
+.curve{ display:flex; flex-direction:column; align-items:center; gap:2px; font-size:.6667rem; color:var(--text-muted); }
+.curve svg{ width:64px; height:40px; background:var(--surface-2); border:1px solid var(--border); border-radius:6px; }
+.curve .c{ fill:none; stroke:var(--pos-verb); stroke-width:2; }
+.curve .g{ fill:none; stroke:var(--color-border-primary); stroke-dasharray:2 2; }
+
+/* side panel */
+.ke-side details{ margin-top:0; margin-bottom:10px; background:var(--surface-2); }
+.ke-side summary{ font-size:.8667rem; }
+.ke-body{ padding:8px 12px 10px; }
+.jrow{ display:grid; grid-template-columns:6.6em minmax(0,1fr) 3.6em; align-items:center; gap:6px; padding:2px 4px; border-radius:6px; }
+.jrow label{ font-size:.7667rem; color:var(--text-secondary); white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
+.jrow input[type=range]{ width:100%; accent-color:var(--text-accent); margin:0; }
+.jrow input[type=number]{
+  width:100%; font-family:var(--font-mono); font-size:.7667rem; padding:2px 4px; text-align:right;
+  border:1px solid var(--color-border-secondary); border-radius:6px;
+  background:var(--color-background-primary); color:var(--text-primary);
+}
+.jrow.on{ background:var(--pos-verb-bg); }
+.jrow.on label{ color:var(--text-primary); font-weight:600; }
+.jgroup{ font-size:.6667rem; font-weight:700; letter-spacing:.05em; text-transform:uppercase; color:var(--text-muted); margin:8px 4px 2px; }
+.jgroup:first-child{ margin-top:0; }
+.frow{ display:grid; grid-template-columns:6.6em minmax(0,1fr); align-items:center; gap:6px; margin-bottom:6px; }
+.frow label{ font-size:.7667rem; color:var(--text-secondary); }
+.ke-side select{
+  font-family:inherit; font-size:.8rem; padding:4px 6px; width:100%;
+  border:1px solid var(--color-border-secondary); border-radius:var(--border-radius-md);
+  background:var(--color-background-primary); color:var(--text-primary);
+}
+.btnrow{ display:flex; flex-wrap:wrap; gap:6px; margin-top:6px; }
+.note{ font-size:.7333rem; color:var(--text-muted); margin:6px 0 0; line-height:1.45; }
+.kbd{ font-family:var(--font-mono); font-size:.7rem; padding:0 4px; border:1px solid var(--border); border-radius:4px; background:var(--surface-1); }
+.ke-caption{ font-size:.8667rem; color:var(--text-secondary); text-align:center; margin:4px 0 0; min-height:1.4em; }
+.scope{ display:flex; flex-wrap:wrap; align-items:center; gap:6px 8px; padding:9px 12px; margin-bottom:10px;
+  background:var(--color-background-info); color:var(--color-text-info); border:1px solid var(--color-border-info); border-radius:var(--border-radius-md); font-size:.8rem; }
+.scope .note{ flex:1 1 100%; margin:0; color:inherit; opacity:.85; }
+.ke-side [hidden]{ display:none !important; }
+.frow input[type=text]{ width:100%; font-size:.8rem; padding:4px 6px; }
+.frow.chk{ grid-template-columns:6.6em minmax(0,1fr); }
+.frow.chk input{ justify-self:start; accent-color:var(--text-accent); width:1.05rem; height:1.05rem; margin:0; }
+.sub{ font-size:.6667rem; font-weight:700; letter-spacing:.05em; text-transform:uppercase; color:var(--text-muted); margin:10px 0 4px; }
+.sub:first-child{ margin-top:0; }
+.accs{ display:grid; grid-template-columns:1fr 1fr; gap:2px 8px; margin-bottom:6px; }
+.accs label{ display:flex; align-items:center; gap:5px; font-size:.7667rem; color:var(--text-secondary); cursor:pointer; }
+.accs input{ accent-color:var(--text-accent); margin:0; }
+.sw{ display:inline-flex; align-items:center; gap:7px; width:100%; justify-content:flex-start; padding:3px 8px 3px 4px; border-radius:var(--border-radius-md); font-size:.7667rem; font-weight:400; }
+.sw i{ width:1.4em; height:1.4em; border-radius:4px; border:1px solid var(--color-border-primary); flex:0 0 auto; }
+.sw i.auto{ background:linear-gradient(135deg,transparent 46%,var(--bad) 46%,var(--bad) 54%,transparent 54%),var(--surface-2); }
+#pal{ position:fixed; z-index:1100; display:none; padding:8px; width:15.5rem; background:var(--surface-2); border:1px solid var(--border); border-radius:var(--border-radius-md); box-shadow:0 6px 20px rgba(0,0,0,.18); }
+#pal.open{ display:block; }
+#pal .grid{ display:grid; grid-template-columns:repeat(8,1fr); gap:3px; }
+#pal .grid button{ padding:0; aspect-ratio:1; border-radius:4px; border:1px solid rgba(0,0,0,.18); min-width:0; }
+#pal .grid button.cur{ outline:2px solid var(--text-accent); outline-offset:1px; }
+#pal .def{ width:100%; margin-top:6px; font-size:.7667rem; padding:3px 8px; }
+#tl .lk{ fill:var(--text-accent); }
+.ke-msg{ font-size:.7667rem; color:var(--good); min-height:1.2em; margin-top:4px; }
+</style>
+</head>
+<body>
+<div class="ke-page" id="page">
+  <h1>Character Keyframes</h1>
+  <p class="subtitle">Pose the house character, set keyframes on the timeline, and play the animation.</p>
+
+  <div class="ke-layout">
+    <div>
+      <div class="ke-stage" id="stage">
+        <div id="figure"></div>
+        <svg id="handles" viewBox="0 0 600 590"></svg>
+        <span class="ke-badge" id="badge"></span>
+      </div>
+      <p class="ke-caption" id="caption"></p>
+      <p class="ke-hint">Drag around a dot to turn that joint. Changing anything on a frame without a keyframe adds one.</p>
+
+      <div class="ke-transport">
+        <span class="grp">
+          <button id="bStart" title="First frame (Home)">⏮</button>
+          <button id="bPrevKey" title="Previous keyframe (Shift + ←)">◀◆</button>
+          <button id="bPrev" title="Previous frame (←)">◀</button>
+          <button id="bPlay" class="play" title="Play / pause (Space)">▶ Play</button>
+          <button id="bNext" title="Next frame (→)">▶</button>
+          <button id="bNextKey" title="Next keyframe (Shift + →)">◆▶</button>
+          <button id="bEnd" title="Last frame (End)">⏭</button>
+        </span>
+        <button id="bLoop" aria-pressed="true" title="Play the animation again and again">🔁 Loop</button>
+        <label class="ke-num">FPS <input type="number" id="fps" min="1" max="60" step="1"></label>
+        <label class="ke-num">Frames <input type="number" id="len" min="1" max="1200" step="1"></label>
+        <span class="ke-readout" id="readout"></span>
+      </div>
+
+      <div class="ke-timeline" id="tlWrap"><svg id="tl"></svg></div>
+
+      <div class="ke-keybar" id="keybar"></div>
+    </div>
+
+    <aside class="ke-side">
+      <details open>
+        <summary>🦴 Pose, rotation and facing</summary>
+        <div class="ke-body" id="joints"></div>
+      </details>
+      <details open>
+        <summary>🙂 Face</summary>
+        <div class="ke-body" id="face"></div>
+      </details>
+      <div class="scope">Look changes go on
+        <span class="seg" id="scope"><button data-v="this" aria-pressed="true">This keyframe</button><button data-v="all" aria-pressed="false">Every keyframe</button></span>
+        <p class="note">Clothes, colours, items and props are keyframed: a change holds until the next keyframe, with no in-between. Choose “Every keyframe” to change the whole animation at once.</p>
+      </div>
+      <div id="look"></div>
+      <details>
+        <summary>🧍 Pose presets</summary>
+        <div class="ke-body">
+          <select id="preset"></select>
+          <div class="btnrow">
+            <button id="bPreset">Use on this frame</button>
+            <button id="bMirror" title="Swap left and right">↔️ Mirror pose</button>
+          </div>
+          <p class="note">Joint angles and turns move smoothly between keyframes. Everything else (face, clothes, items…) changes at the keyframe.</p>
+        </div>
+      </details>
+      <details open>
+        <summary>💾 Files</summary>
+        <div class="ke-body">
+          <div class="btnrow">
+            <button id="bSave">Save animation</button>
+            <button id="bLoad">Open…</button>
+            <button id="bChar" title="A character file saved from the poser">Load character…</button>
+          </div>
+          <div class="btnrow">
+            <button id="bUndo" title="Undo (Ctrl + Z)">↶ Undo</button>
+            <button id="bRedo" title="Redo (Ctrl + Shift + Z)">↷ Redo</button>
+            <button id="bNew" title="Remove every keyframe">🗑️ New</button>
+          </div>
+          <input type="file" id="fileAnim" accept=".json,application/json" hidden>
+          <input type="file" id="fileChar" accept=".json,application/json" hidden>
+          <div class="ke-msg" id="msg"></div>
+          <p class="note">
+            <span class="kbd">Space</span> play/pause · <span class="kbd">←</span><span class="kbd">→</span> frame ·
+            <span class="kbd">Shift</span>+<span class="kbd">←</span><span class="kbd">→</span> keyframe ·
+            <span class="kbd">K</span> add keyframe · <span class="kbd">Del</span> delete keyframe
+          </p>
+        </div>
+      </details>
+    </aside>
+  </div>
+
+  <div id="pal" role="dialog" aria-label="Colours"><div class="grid"></div><button class="def">Default colour</button></div>
+  <footer>Character Keyframes — house character animation editor</footer>
+</div>
+
+<div id="theme-toggle-wrap">
+  <button id="theme-toggle" aria-label="Toggle light/dark mode" title="Toggle light/dark mode">
+    <span id="theme-icon">☀️</span>
+  </button>
+</div>
+<script src="house.js"></script>
+<script src="house-character.js"></script>
+<script>
+/* ══════════════════════════════════════════════════════════════════════════
+   Keyframe editor for HouseCharacter.
+
+   Animation file (schema 'house-animation/1'):
+     { schema, fps, length,            length = last frame number (frames run 0…length)
+       loop,                           play again and again
+       character,                      a house-character/1 object (appearance; its pose is ignored)
+       keys: [{ frame, easeIn, easeOut, pose }] }
+   pose = every house-character field except schema and name: joints, turns, face,
+          body, hair, clothes, colours, accessories, held items, grips, prop, view
+
+   Between two keyframes A → B every number moves along a cubic curve whose
+   start follows A.easeOut and whose end follows B.easeIn:
+     linear  handle at 1/3 or 2/3 of the way (straight line when both are linear)
+     cubic   flat handle: the motion starts (or arrives) slowly
+   Joint angles take the short way round. Every other field holds until the next keyframe.
+   ══════════════════════════════════════════════════════════════════════════ */
+(function(){
+'use strict';
+const HC = HouseCharacter;
+const SCHEMA = 'house-animation/1';
+const JOINT_IDS = HC.JOINTS.map(j => j[0]);
+/* numbers that ease between keyframes besides the joint angles */
+const TURNS = [['torsoOrientation','Torso rotation'],['pelvisOrientation','Pelvis rotation'],['lift','Lift (cm)']];
+const RANGE = {torsoOrientation:[-90,90], pelvisOrientation:[-90,90], lift:[0,60]};   /* more would push the head off the top of the stage */
+const PX_PER_CM = 2.27;   /* the engine draws about 227 px to the metre */
+const cap = h => h[0].toUpperCase() + h.slice(1);
+/* stepped (held) settings shown with the turns */
+const FACING = [['head','Head facing',HC.HEADS.map(h => [h, cap(h)])],
+                ['back','Body facing',[['false','Toward the viewer'],['true','Away (back view)']]],
+                ['flipped','Mirror image',[['false','No'],['true','Yes']]]];
+const STEPS = [['eyebrows','Eyebrows',HC.BROWS],['eyes','Eyes',HC.EYE_SHAPES],['mouth','Mouth',HC.MOUTHS]];
+const GROUPS = [['Rotation and lift',['torsoOrientation','pelvisOrientation','lift']],
+  ['Lean and tilt',['root','torso','pelvis','neck']],
+  ['Left arm',['shoulderL','elbowL','wristL']],['Right arm',['shoulderR','elbowR','wristR']],
+  ['Left leg',['hipL','kneeL','ankleL']],['Right leg',['hipR','kneeR','ankleR']]];
+const LABEL = {...Object.fromEntries([...HC.JOINTS, ...TURNS]), root:'Whole body tilt', torso:'Torso lean', pelvis:'Pelvis lean'};
+const STORE = 'house-keyframes-autosave';
+const $ = id => document.getElementById(id);
+
+/* ── state ─────────────────────────────────────────────────────────────── */
+let S = null;                 /* {character, fps, length, loop, keys} — everything that is saved */
+let frame = 0, playing = false, selJoint = null;
+let undo = [], redo = [], lastPush = 0, lastTag = null;
+
+function starterCharacter(){
+  const c = HC.defaults();
+  Object.assign(c, {name:'Sam', upperGarment:'tshirt', upperColor:'#0066CC', lowerGarment:'jeans', footwear:'sneakers'});
+  return c;
+}
+/* a keyframe holds every field of the character except its name */
+const FIELDS = Object.keys(HC.defaults()).filter(k => k !== 'schema' && k !== 'name');
+const POSE_FIELDS = ['joints','torsoOrientation','pelvisOrientation','lift','head','back','flipped','eyebrows','eyes','mouth'];
+const LOOK_FIELDS = FIELDS.filter(k => !POSE_FIELDS.includes(k));
+function poseOf(c){
+  const n = HC.normalize(c), p = {};
+  for(const k of FIELDS) p[k] = n[k];
+  p.lift = Math.max(0, Math.min(60, Number(c && c.lift) || 0));   /* the editor's own field: height above the floor */
+  return clonePose(p);
+}
+function clonePose(p){ return {...p, joints:{...p.joints}, held:{...(p.held || {})}, accessories:[...(p.accessories || [])]}; }
+function fresh(){
+  const c = starterCharacter();
+  const wave = clonePose(poseOf(c));
+  const p1 = clonePose(wave); Object.assign(p1.joints, {shoulderR:125, elbowR:40, wristR:10}); p1.mouth = 'grin'; p1.eyebrows = 'raised';
+  const p2 = clonePose(p1); Object.assign(p2.joints, {elbowR:85});
+  return {character:c, fps:24, length:48, loop:true, keys:[
+    {frame:0, easeIn:'linear', easeOut:'cubic', pose:wave},
+    {frame:12, easeIn:'cubic', easeOut:'cubic', pose:p1},
+    {frame:24, easeIn:'cubic', easeOut:'cubic', pose:p2},
+    {frame:36, easeIn:'cubic', easeOut:'cubic', pose:clonePose(p1)},
+    {frame:48, easeIn:'cubic', easeOut:'linear', pose:clonePose(wave)}]};
+}
+/* validates a loaded or stored animation */
+function sanitize(a){
+  if(!a || typeof a !== 'object') return null;
+  if(a.schema === HC.SCHEMA || (a.joints && !a.keys)){   /* a plain character file */
+    const c = HC.normalize(a);
+    return {character:c, fps:24, length:48, loop:true, keys:[{frame:0, easeIn:'linear', easeOut:'linear', pose:poseOf(c)}]};
+  }
+  const c = HC.normalize(a.character || starterCharacter());
+  const int = (v, lo, hi, d) => { v = Math.round(Number(v)); return v >= lo && v <= hi ? v : d; };
+  const ez = v => v === 'cubic' ? 'cubic' : 'linear';
+  const base = poseOf(c);
+  const keys = [];
+  for(const k of Array.isArray(a.keys) ? a.keys : []){
+    const f = int(k && k.frame, 0, 100000, null); if(f === null || keys.some(x => x.frame === f)) continue;
+    const p = poseOf({...c, ...(k.pose || {}), joints:{...(k.pose && k.pose.joints || {})}});
+    /* normalize may fold a head that faces against the torso; keep what the file says if it is valid */
+    if(k.pose && HC.HEADS.includes(k.pose.head)) p.head = k.pose.head;
+    keys.push({frame:f, easeIn:ez(k.easeIn), easeOut:ez(k.easeOut), pose:p});
+  }
+  keys.sort((x, y) => x.frame - y.frame);
+  if(!keys.length) keys.push({frame:0, easeIn:'linear', easeOut:'linear', pose:base});
+  const last = keys[keys.length - 1].frame;
+  return {character:c, fps:int(a.fps, 1, 60, 24), length:Math.max(int(a.length, 1, 100000, 48), last, 1), loop:a.loop !== false, keys};
+}
+
+/* ── interpolation ─────────────────────────────────────────────────────── */
+function ease(s, out, inn){   /* cubic Bézier in value, handles at s = 1/3 and 2/3 */
+  const y1 = out === 'cubic' ? 0 : 1/3, y2 = inn === 'cubic' ? 1 : 2/3, u = 1 - s;
+  return 3*u*u*s*y1 + 3*u*s*s*y2 + s*s*s;
+}
+const wrap = v => ((v + 180) % 360 + 360) % 360 - 180;
+function poseAt(f){
+  const K = S.keys;
+  if(f <= K[0].frame) return clonePose(K[0].pose);
+  if(f >= K[K.length-1].frame) return clonePose(K[K.length-1].pose);
+  let i = 0; while(K[i+1].frame <= f) i++;
+  const A = K[i], B = K[i+1];
+  if(f === A.frame) return clonePose(A.pose);
+  const e = ease((f - A.frame) / (B.frame - A.frame), A.easeOut, B.easeIn);
+  const p = clonePose(A.pose);   /* face and head hold */
+  for(const j of JOINT_IDS) p.joints[j] = A.pose.joints[j] + wrap(B.pose.joints[j] - A.pose.joints[j]) * e;
+  for(const [t] of TURNS) p[t] = A.pose[t] + (B.pose[t] - A.pose[t]) * e;
+  return p;
+}
+const keyIndexAt = f => S.keys.findIndex(k => k.frame === f);
+function dataAt(f){ return {...poseAt(f), schema:HC.SCHEMA, name:S.character.name}; }
+const lookKey = p => JSON.stringify(LOOK_FIELDS.map(k => p[k]));
+
+/* ── undo / autosave ───────────────────────────────────────────────────── */
+const snap = () => JSON.stringify(S);
+/* one undo step per gesture: quick repeated edits of the same thing (a slider drag, a joint drag) merge */
+function pushUndo(tag){
+  const now = performance.now();
+  if(!tag || tag !== lastTag || now - lastPush > 600){ undo.push(snap()); if(undo.length > 200) undo.shift(); redo = []; }
+  lastPush = now; lastTag = tag || null;
+}
+function restore(json){ S = sanitize(JSON.parse(json)); frame = Math.min(frame, S.length); refreshAll(); }
+function doUndo(){ if(!undo.length) return; redo.push(snap()); restore(undo.pop()); lastTag = null; }
+function doRedo(){ if(!redo.length) return; undo.push(snap()); restore(redo.pop()); lastTag = null; }
+let saveTimer = 0;
+function autosave(){ clearTimeout(saveTimer); saveTimer = setTimeout(() => { try{ localStorage.setItem(STORE, snap()); }catch(e){} }, 300); }
+
+/* ── editing ───────────────────────────────────────────────────────────── */
+function ensureKey(){   /* the keyframe at the playhead, made from the current in-between pose if needed */
+  let i = keyIndexAt(frame);
+  if(i < 0){
+    S.keys.push({frame, easeIn:'linear', easeOut:'linear', pose:poseAt(frame)});
+    S.keys.sort((a, b) => a.frame - b.frame); i = keyIndexAt(frame);
+    for(const j of JOINT_IDS) S.keys[i].pose.joints[j] = Math.round(S.keys[i].pose.joints[j]);
+    for(const [t] of TURNS) S.keys[i].pose[t] = Math.round(S.keys[i].pose[t]);
+  }
+  return S.keys[i];
+}
+function setParam(k, v){
+  pushUndo('set:' + k);
+  const key = ensureKey();
+  if(JOINT_IDS.includes(k)) key.pose.joints[k] = wrap(Math.round(v));
+  else if(RANGE[k]) key.pose[k] = Math.max(RANGE[k][0], Math.min(RANGE[k][1], Math.round(v)));
+  else if(k === 'back' || k === 'flipped') key.pose[k] = v === true || v === 'true';
+  else key.pose[k] = v;
+  changed();
+}
+/* several pose fields in one step (an emotion sets brows, eyes and mouth) */
+function setPose(obj){ pushUndo(); const key = ensureKey(); Object.assign(key.pose, obj); changed(); }
+
+/* look fields: on every keyframe, or only on the one at the playhead (made if needed).
+   path is a field name, 'held.left' / 'held.right', or 'acc:<id>' to switch an accessory on or off */
+let scope = 'this';
+function applyLook(t, path, v){
+  if(path.startsWith('acc:')){ const id = path.slice(4); t.accessories = (t.accessories || []).filter(a => a !== id); if(v) t.accessories.push(id); }
+  else if(path.startsWith('held.')){ t.held = {...(t.held || {}), [path.slice(5)]: v}; }
+  else t[path] = v;
+}
+function setLook(path, v){
+  pushUndo('look:' + path + ':' + scope);
+  if(path === 'name'){ S.character.name = String(v).slice(0, 40); autosave(); drawStage(); return; }
+  if(scope === 'all'){ for(const k of S.keys) applyLook(k.pose, path, v); applyLook(S.character, path, v); }
+  else applyLook(ensureKey().pose, path, v);
+  changed();
+}
+function setLooks(obj){   /* an outfit: several fields at once */
+  pushUndo();
+  const targets = scope === 'all' ? [...S.keys.map(k => k.pose), S.character] : [ensureKey().pose];
+  for(const t of targets) for(const k in obj) applyLook(t, k, obj[k]);
+  changed();
+}
+$('scope').addEventListener('click', e => {
+  const b = e.target.closest('button'); if(!b) return; scope = b.dataset.v;
+  for(const x of $('scope').children) x.setAttribute('aria-pressed', String(x === b));
+});
+function addKey(){ pushUndo(); ensureKey(); changed(); }
+function deleteKey(){
+  const i = keyIndexAt(frame); if(i < 0) return;
+  if(S.keys.length === 1){ flash('An animation needs at least one keyframe.'); return; }
+  pushUndo(); S.keys.splice(i, 1); changed();
+}
+function setEase(which, v){
+  const i = keyIndexAt(frame); if(i < 0) return;
+  pushUndo(); S.keys[i][which] = v; changed();
+}
+function applyWholePose(p){
+  pushUndo(); const key = ensureKey();
+  key.pose = {...key.pose, ...p, joints:{...key.pose.joints, ...p.joints}}; changed();
+}
+function mirrorPose(){   /* the engine's mirror: joints, turns, head, and whatever is held or worn on one side */
+  const d = dataAt(frame), m = poseOf(HC.mirror(HC.normalize(d))); m.lift = d.lift;
+  pushUndo(); const key = ensureKey(); key.pose = m; changed();
+}
+function changed(){ autosave(); drawStage(); drawTimeline(); drawKeybar(); syncPanel(); }
+
+/* ── stage ─────────────────────────────────────────────────────────────── */
+const fig = $('figure'), hsv = $('handles'), stage = $('stage');
+function drawStage(){
+  const d = dataAt(frame);
+  fig.innerHTML = lifted(HC.render(d, {ground:true}), d.lift);
+  $('caption').textContent = HC.describe(d);
+  const k = keyIndexAt(frame) >= 0;
+  $('badge').textContent = k ? '◆ Keyframe' : 'In-between';
+  $('badge').className = 'ke-badge' + (k ? ' key' : '');
+  if(!playing) drawHandles(d);
+}
+/* lift: the engine stands the figure on the floor, so raise its main group and leave a shadow behind */
+function lifted(svg, cm){
+  const px = (cm || 0) * PX_PER_CM; if(!px) return svg;
+  const k = 1 / (1 + px / 160);
+  const shadow = `<ellipse cx="300" cy="550" rx="${(70 * k).toFixed(1)}" ry="${(9 * k).toFixed(1)}" fill="currentColor" fill-opacity="${(0.35 * k).toFixed(2)}"/>`;
+  return svg.replace(/<g transform="translate\(([-\d.]+) ([-\d.]+)\)"/, (m, x, y) => shadow + `<g transform="translate(${x} ${(+y - px).toFixed(2)})"`);
+}
+let piv = {};
+function drawHandles(d){
+  d = d || dataAt(frame);
+  piv = HC.pivots(d);
+  const up = (d.lift || 0) * PX_PER_CM;
+  if(up) for(const k in piv) piv[k] = {...piv[k], y:piv[k].y - up};
+  let s = '';
+  for(const j of JOINT_IDS){
+    const p = piv[j]; if(!p) continue;
+    const on = selJoint === j ? ' on' : '';
+    let shape;
+    /* pelvis and torso turn about the same point: bottom half and top half of one dot */
+    if(j === 'torso') shape = `<path d="M${p.x-8},${p.y}A8,8 0 0 1 ${p.x+8},${p.y}Z"/>`;
+    else if(j === 'pelvis') shape = `<path d="M${p.x+8},${p.y}A8,8 0 0 1 ${p.x-8},${p.y}Z"/>`;
+    else shape = `<circle cx="${p.x}" cy="${p.y}" r="${j === 'root' ? 9 : 7}"/>`;
+    s += `<g class="h${on}" data-j="${j}"><title>${LABEL[j]}</title>${shape}</g>`;
+  }
+  if(selJoint && piv[selJoint]) s += `<circle class="ring" cx="${piv[selJoint].x}" cy="${piv[selJoint].y}" r="34"/>`;
+  hsv.innerHTML = s;
+}
+function svgPoint(e){
+  const m = hsv.getScreenCTM(); if(!m) return {x:0, y:0};
+  const pt = hsv.createSVGPoint(); pt.x = e.clientX; pt.y = e.clientY;
+  const r = pt.matrixTransform(m.inverse()); return {x:r.x, y:r.y};
+}
+let drag = null;
+stage.addEventListener('pointerdown', e => {
+  const g = e.target.closest('.h'); if(!g || playing) return;
+  e.preventDefault();
+  selJoint = g.dataset.j; drawHandles(); syncPanel();
+  drag = {j:selJoint, last:null};
+  try{ stage.setPointerCapture(e.pointerId); }catch(_){}
+});
+stage.addEventListener('pointermove', e => {
+  if(!drag) return;
+  const p = piv[drag.j]; if(!p) return;
+  const q = svgPoint(e), dx = q.x - p.x, dy = q.y - p.y;
+  if(Math.hypot(dx, dy) < 14){ drag.last = null; return; }   /* too close to the pivot to read an angle */
+  const a = Math.atan2(dy, dx) * 180 / Math.PI;
+  if(drag.last !== null){
+    let da = wrap(a - drag.last); if(p.mirror) da = -da;
+    if(Math.abs(da) >= 0.5){
+      const cur = keyIndexAt(frame) >= 0 ? S.keys[keyIndexAt(frame)].pose.joints[drag.j] : Math.round(poseAt(frame).joints[drag.j]);
+      setParam(drag.j, cur + da); drag.last = a;
+    }
+  } else drag.last = a;
+});
+const endDrag = () => { drag = null; };
+stage.addEventListener('pointerup', endDrag);
+stage.addEventListener('pointercancel', endDrag);
+stage.addEventListener('lostpointercapture', endDrag);
+window.addEventListener('blur', endDrag);
+
+/* ── timeline ──────────────────────────────────────────────────────────── */
+const tl = $('tl'), PAD = 16, RULER = 26, KEYY = 54;
+let TW = 600;
+const fx = f => PAD + f / S.length * (TW - 2*PAD);
+const xf = x => Math.max(0, Math.min(S.length, Math.round((x - PAD) / (TW - 2*PAD) * S.length)));
+/* a diamond: left half shows the ease into the key, right half the ease out of it (pointed = linear, round = cubic) */
+function diamondPath(x, y, r, side, kind){
+  const s = side === 'in' ? -1 : 1;
+  /* left open, so the outline has no seam down the middle */
+  if(kind === 'cubic') return `M${x},${y-r}A${r},${r} 0 0 ${s > 0 ? 1 : 0} ${x},${y+r}`;
+  return `M${x},${y-r}L${x + s*r},${y}L${x},${y+r}`;
+}
+function drawTimeline(){
+  TW = Math.max(240, tl.clientWidth || 600);
+  const H = 78; tl.setAttribute('viewBox', `0 0 ${TW} ${H}`);
+  const px = (TW - 2*PAD) / S.length;
+  const steps = [1,2,4,5,6,10,12,24,48,60,120,240,480,600,1200];
+  const lab = steps.find(s => s * px >= 46) || steps[steps.length-1];
+  const minor = steps.find(s => s * px >= 6) || lab;
+  let s = `<rect class="track" x="${PAD}" y="${KEYY-12}" width="${TW - 2*PAD}" height="24" rx="5"/>`;
+  const K = S.keys;
+  if(K.length > 1) s += `<rect class="span" x="${fx(K[0].frame)}" y="${KEYY-12}" width="${fx(K[K.length-1].frame) - fx(K[0].frame)}" height="24"/>`;
+  for(let f = 0; f <= S.length; f += minor){
+    const big = f % lab === 0, x = fx(f);
+    s += `<line class="tick${big ? ' big' : ''}" x1="${x}" x2="${x}" y1="${big ? 12 : 17}" y2="${RULER}"/>`;
+    if(big) s += `<text class="lbl" x="${x}" y="9" text-anchor="middle">${f}</text>`;
+  }
+  if(S.length % lab) s += `<text class="lbl" x="${fx(S.length)}" y="9" text-anchor="end">${S.length}</text><line class="tick big" x1="${fx(S.length)}" x2="${fx(S.length)}" y1="12" y2="${RULER}"/>`;
+  K.forEach((k, i) => {
+    const x = fx(k.frame), cur = k.frame === frame ? ' cur' : '';
+    const inK = i === 0 ? null : k.easeIn, outK = i === K.length - 1 ? null : k.easeOut;
+    s += `<g class="dia${cur}" data-i="${i}"><title>Keyframe ${k.frame}</title>`
+      + `<rect x="${x-9}" y="${KEYY-11}" width="18" height="22" fill="transparent" stroke="none"/>`
+      + `<path${inK ? '' : ' class="na"'} d="${diamondPath(x, KEYY, 8, 'in', inK || 'linear')}"/>`
+      + `<path${outK ? '' : ' class="na"'} d="${diamondPath(x, KEYY, 8, 'out', outK || 'linear')}"/>`
+      + (i > 0 && lookKey(k.pose) !== lookKey(K[i-1].pose) ? `<circle class="lk" cx="${x}" cy="${KEYY-15}" r="2.6"><title>The look changes here</title></circle>` : '')
+      + `</g>`;
+  });
+  const x = fx(frame);
+  s += `<line class="ph" x1="${x}" x2="${x}" y1="14" y2="${H-2}"/><path class="phk" d="M${x-6},12H${x+6}V20L${x},26L${x-6},20Z"/>`;
+  tl.innerHTML = s;
+  $('readout').textContent = `Frame ${frame} / ${S.length} · ${(frame / S.fps).toFixed(2)} s`;
+}
+let tdrag = null;
+function tlX(e){ const r = tl.getBoundingClientRect(); return (e.clientX - r.left) / r.width * TW; }
+tl.addEventListener('pointerdown', e => {
+  e.preventDefault();
+  const g = e.target.closest('.dia');
+  if(g){ const k = S.keys[+g.dataset.i]; tdrag = {key:k, from:k.frame, moved:false, undoPushed:false}; goto(k.frame); }
+  else { tdrag = {scrub:true}; pause(); goto(xf(tlX(e))); }
+  try{ tl.setPointerCapture(e.pointerId); }catch(_){}
+});
+tl.addEventListener('pointermove', e => {
+  if(!tdrag) return;
+  const f = xf(tlX(e));
+  if(tdrag.scrub){ if(f !== frame) goto(f); return; }
+  if(f === tdrag.key.frame || S.keys.some(k => k !== tdrag.key && k.frame === f)) return;   /* one keyframe per frame */
+  if(!tdrag.undoPushed){ pushUndo(); tdrag.undoPushed = true; }
+  pause(); tdrag.key.frame = f; tdrag.moved = true;
+  S.keys.sort((a, b) => a.frame - b.frame);
+  frame = f; changed();
+});
+const endT = () => { tdrag = null; };
+tl.addEventListener('pointerup', endT);
+tl.addEventListener('pointercancel', endT);
+tl.addEventListener('lostpointercapture', endT);
+window.addEventListener('blur', endT);
+if(window.ResizeObserver) new ResizeObserver(() => drawTimeline()).observe($('tlWrap'));
+else window.addEventListener('resize', drawTimeline);
+
+/* ── keyframe bar: add / delete, easing in and out ─────────────────────── */
+function curveSVG(out, inn){
+  let d = 'M2,38'; for(let i = 1; i <= 24; i++){ const s = i/24; d += `L${(2 + s*60).toFixed(1)},${(38 - ease(s, out, inn)*36).toFixed(1)}`; }
+  return `<svg viewBox="0 0 64 40"><path class="g" d="M2,38L62,2"/><path class="c" d="${d}"/></svg>`;
+}
+function seg(which, val, disabled){
+  return `<span class="seg" data-ease="${which}">` + ['linear','cubic'].map(v =>
+    `<button data-v="${v}" aria-pressed="${!disabled && val === v}"${disabled ? ' disabled' : ''}>${v === 'linear' ? 'Linear' : 'Cubic'}</button>`).join('') + '</span>';
+}
+function drawKeybar(){
+  const i = keyIndexAt(frame), K = S.keys, bar = $('keybar');
+  if(i < 0){
+    bar.innerHTML = `<span class="title">No keyframe on frame ${frame}</span><button id="kAdd">◆ Add keyframe</button>`
+      + `<span class="muted">This frame is in-between: the character moves here from the keyframes on each side.</span>`;
+    return;
+  }
+  const k = K[i], first = i === 0, last = i === K.length - 1;
+  bar.innerHTML = `<span class="title">◆ Keyframe ${k.frame}</span>`
+    + `<span class="ease">Ease in ${seg('easeIn', k.easeIn, first)}</span>`
+    + `<span class="ease">Ease out ${seg('easeOut', k.easeOut, last)}</span>`
+    + `<button id="kDel">Delete</button>`
+    + `<span class="curves">`
+    + (first ? '' : `<span class="curve">${curveSVG(K[i-1].easeOut, k.easeIn)}into ◆</span>`)
+    + (last ? '' : `<span class="curve">${curveSVG(k.easeOut, K[i+1].easeIn)}out of ◆</span>`)
+    + `</span>`;
+}
+$('keybar').addEventListener('click', e => {
+  const b = e.target.closest('button'); if(!b || b.disabled) return;
+  if(b.id === 'kAdd') addKey();
+  else if(b.id === 'kDel') deleteKey();
+  else if(b.dataset.v) setEase(b.closest('.seg').dataset.ease, b.dataset.v);
+});
+
+/* ── side panel ────────────────────────────────────────────────────────── */
+function buildPanel(){
+  let h = '';
+  for(const [g, ids] of GROUPS){
+    h += `<div class="jgroup">${g}</div>`;
+    for(const id of ids){
+      const [lo, hi] = RANGE[id] || [-180, 180];
+      h += `<div class="jrow" data-k="${id}"><label for="r_${id}" title="${LABEL[id]}">${LABEL[id]}</label>`
+        + `<input type="range" id="r_${id}" min="${lo}" max="${hi}" step="1">`
+        + `<input type="number" id="n_${id}" min="${lo}" max="${hi}" step="1" aria-label="${LABEL[id]}"></div>`;
+    }
+    if(g === 'Rotation and lift') h += FACING.map(([k, label, list]) =>
+      `<div class="frow"><label for="s_${k}">${label}</label><select id="s_${k}">`
+      + list.map(([v, l]) => `<option value="${v}">${l}</option>`).join('') + '</select></div>').join('')
+      + `<p class="note" id="facingNote" hidden>The head can’t face away from the way the torso is turned, so it shows facing front.</p>`;
+  }
+  $('joints').innerHTML = h;
+  $('face').innerHTML = STEPS.map(([k, label, list]) =>
+    `<div class="frow"><label for="s_${k}">${label}</label><select id="s_${k}">`
+    + list.map(([v, l]) => `<option value="${v}">${l}</option>`).join('') + '</select></div>').join('')
+    + `<div class="frow"><label for="s_emotion">Emotion</label><select id="s_emotion"><option value="">Choose…</option>`
+    + `<option value="neutral">${HC.NEUTRAL_FACE[1]}</option>`
+    + HC.EMOTIONS.map(([g, list]) => `<optgroup label="${g}">` + list.map(e => `<option value="${e[0]}">${e[1]}</option>`).join('') + '</optgroup>').join('')
+    + `</select></div>`
+    + `<p class="note">These change at keyframes, with no easing — handy for lip-sync with the A · I · E · O mouth shapes.</p>`;
+  buildLook();
+  $('preset').innerHTML = HC.POSES.map(p => `<option value="${p.id}">${p.label}</option>`).join('');
+}
+function syncPanel(){
+  const p = poseAt(frame);
+  for(const [, ids] of GROUPS) for(const id of ids){
+    const v = Math.round(JOINT_IDS.includes(id) ? p.joints[id] : p[id] || 0);
+    const r = $('r_'+id), n = $('n_'+id);
+    if(document.activeElement !== r) r.value = v;
+    if(document.activeElement !== n) n.value = v;
+    r.parentNode.classList.toggle('on', selJoint === id);
+  }
+  for(const [k] of STEPS) $('s_'+k).value = p[k];
+  for(const [k] of FACING) $('s_'+k).value = String(p[k]);
+  $('facingNote').hidden = HC.normalize(p).head === p.head;
+  syncLook(p);
+}
+$('joints').addEventListener('change', e => {
+  const id = e.target.id; if(!id || !id.startsWith('s_')) return;
+  pause(); setParam(id.slice(2), e.target.value);
+});
+$('joints').addEventListener('input', e => {
+  const row = e.target.closest('.jrow'); if(!row || e.target.value === '' || isNaN(+e.target.value)) return;
+  pause(); setParam(row.dataset.k, +e.target.value);
+});
+$('joints').addEventListener('focusin', e => {
+  const row = e.target.closest('.jrow'); if(!row) return;
+  const k = row.dataset.k; if(JOINT_IDS.includes(k) && selJoint !== k){ selJoint = k; if(!playing) drawHandles(); syncPanel(); }
+});
+$('face').addEventListener('change', e => {
+  const id = e.target.id; if(!id.startsWith('s_')) return; pause();
+  if(id === 's_emotion'){
+    const all = [HC.NEUTRAL_FACE, ...HC.EMOTIONS.flatMap(g => g[1])], em = all.find(x => x[0] === e.target.value);
+    if(em) setPose({eyebrows:em[2], eyes:em[3], mouth:em[4]});
+    e.target.value = ''; return;
+  }
+  setParam(id.slice(2), e.target.value);
+});
+$('bPreset').onclick = () => {
+  const id = $('preset').value, c = HC.applyPose(HC.normalize(dataAt(frame)), id);
+  const p = {joints:c.joints, torsoOrientation:c.torsoOrientation, pelvisOrientation:c.pelvisOrientation, head:c.head};
+  if((HC.POSES.find(x => x.id === id) || {}).held) p.held = {...c.held};
+  pause(); applyWholePose(p);
+};
+$('bMirror').onclick = () => { pause(); mirrorPose(); };
+
+/* ── look: everything else the poser can set ───────────────────────────── */
+const objOpts = o => Object.keys(o).map(k => [k, o[k].label]);
+const itemOn = (p, side) => { const it = HC.ITEMS[(p.held || {})[side]]; return it && !it.hand ? it : null; };
+const hasAcc = (p, ...ids) => ids.some(a => (p.accessories || []).includes(a));
+function hand(side, L){
+  return [{sub:side === 'left' ? 'Left hand' : 'Right hand'},
+    {k:'held.'+side, t:'item', l:'Holding'},
+    {k:'held'+L+'Color', t:'col', l:'Colour', show:p => itemOn(p, side), def:p => itemOn(p, side).col},
+    {k:'held'+L+'Grip', l:'Grip', grip:1, none:'Default', o:HC.GRIPS.map(g => [g, g + '°']),
+      show:p => { const it = itemOn(p, side); return it && !it.upright && !it.cane; }},
+    {k:'thumbFlip'+L[0], t:'chk', l:'Thumb on other side'}];
+}
+const LOOK = [
+  ['🧑 Body', [
+    {k:'name', t:'text', l:'Name'},
+    {k:'bodyType', l:'Body type', o:[['male','Male'],['female','Female']]},
+    {k:'skin', l:'Skin', num:1, o:HC.SKIN.map(x => [x.id, x.label])},
+    {k:'eyeColor', l:'Eye colour', num:1, o:HC.EYES.map(x => [x.id, x.label])},
+    {k:'height', l:'Height', num:1, o:HC.HEIGHTS.map((x, i) => [i+1, x])},
+    {k:'weight', l:'Build', num:1, o:HC.WEIGHTS.map((x, i) => [i+1, x])}]],
+  ['💇 Hair', [
+    {k:'hairStyle', l:'Style', o:HC.HAIR_STYLES},
+    {k:'hairColor', l:'Colour', o:HC.HAIR.map(x => [x.id, x.label])},
+    {k:'facialHair', l:'Facial hair', o:HC.FACIAL}]],
+  ['👕 Clothes', [
+    {t:'outfit', l:'Outfit'},
+    {sub:'Top'},
+    {k:'upperGarment', l:'Garment', none:'None', o:objOpts(HC.UPPER)},
+    {k:'upperColor', t:'col', l:'Colour', show:p => p.upperGarment, def:p => HC.UPPER[p.upperGarment].col},
+    {k:'upperPattern', l:'Pattern', o:HC.PATTERNS, show:p => p.upperGarment},
+    {k:'upperColor2', t:'col', l:'2nd colour', show:p => p.upperGarment && p.upperPattern !== 'plain',
+      def:p => HC.colour2Default(p.upperColor || HC.UPPER[p.upperGarment].col)},
+    {sub:'Bottom'},
+    {k:'lowerGarment', l:'Garment', none:'None', o:objOpts(HC.LOWER)},
+    {k:'lowerColor', t:'col', l:'Colour', show:p => p.lowerGarment, def:p => HC.LOWER[p.lowerGarment].col},
+    {k:'lowerPattern', l:'Pattern', o:HC.PATTERNS, show:p => p.lowerGarment},
+    {k:'lowerColor2', t:'col', l:'2nd colour', show:p => p.lowerGarment && p.lowerPattern !== 'plain',
+      def:p => HC.colour2Default(p.lowerColor || HC.LOWER[p.lowerGarment].col)},
+    {sub:'Feet'},
+    {k:'footwear', l:'Footwear', none:'Barefoot', o:objOpts(HC.FOOT)},
+    {k:'footwearColor', t:'col', l:'Colour', show:p => p.footwear, def:p => HC.FOOT[p.footwear].col},
+    {k:'sockColor', t:'col', l:'Socks', show:p => p.footwear && HC.FOOT[p.footwear].kind === 'closed', def:() => HC.SOCK_COL}]],
+  ['🧢 Headwear and eyewear', [
+    {k:'headwear', l:'Headwear', none:'None', o:objOpts(HC.HEADWEAR)},
+    {k:'headwearColor', t:'col', l:'Colour', show:p => p.headwear, def:p => HC.HEADWEAR[p.headwear].col},
+    {k:'eyewear', l:'Eyewear', none:'None', o:objOpts(HC.EYEWEAR)},
+    {k:'eyewearColor', t:'col', l:'Lens colour', show:p => p.eyewear, def:p => HC.EYEWEAR[p.eyewear].lens}]],
+  ['💍 Accessories', [
+    {t:'acc'},
+    {k:'tieColor', t:'col', l:'Tie', show:p => hasAcc(p, 'tie'), def:() => HC.TIE_COL},
+    {k:'scarfColor', t:'col', l:'Scarf', show:p => hasAcc(p, 'scarf'), def:() => HC.SCARF_COL},
+    {k:'gloveColor', t:'col', l:'Gloves', show:p => hasAcc(p, 'glovesL', 'glovesR'), def:() => HC.GLOVE_COL},
+    {k:'packColor', t:'col', l:'Bag', show:p => hasAcc(p, 'backpack', 'fannypack'), def:() => HC.PACK_COL},
+    {k:'mascaraColor', t:'col', l:'Mascara', show:p => hasAcc(p, 'mascara'), def:() => HC.MASCARA_COL},
+    {k:'blushColor', t:'col', l:'Blush', show:p => hasAcc(p, 'blush'), def:() => HC.BLUSH_COL},
+    {k:'lipstickColor', t:'col', l:'Lipstick', show:p => hasAcc(p, 'lipstick'), def:() => HC.LIPSTICK_COL}]],
+  ['✋ Hands', [...hand('left', 'Left'), ...hand('right', 'Right')]],
+  ['🪑 Prop', [
+    {k:'prop', l:'Prop', none:'None', o:objOpts(HC.PROPS)},
+    {k:'propColor', t:'col', l:'Colour', show:p => p.prop, def:p => HC.PROPS[p.prop].col}]]];
+const ROWS = [];
+const esc = t => String(t).replace(/[&<>"]/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
+const getPath = (p, k) => k.startsWith('held.') ? (p.held || {})[k.slice(5)] : p[k];
+function itemOptions(){
+  return `<option value="">Empty hand</option>` + HC.ITEM_CATS.map(([cat, ids]) => `<optgroup label="${esc(cat)}">`
+    + ids.filter(id => HC.ITEMS[id]).map(id => `<option value="${id}">${esc(HC.ITEMS[id].label)}</option>`).join('') + '</optgroup>').join('');
+}
+function buildLook(){
+  let h = '';
+  LOOK.forEach(([title, rows], gi) => {
+    h += `<details><summary>${title}</summary><div class="ke-body">`;
+    rows.forEach((r, ri) => {
+      const id = `L${gi}_${ri}`; ROWS.push({...r, id});
+      if(r.sub){ h += `<div class="sub" id="${id}">${r.sub}</div>`; return; }
+      if(r.t === 'acc'){ h += `<div class="accs" id="${id}">` + Object.keys(HC.ACCESSORIES).map(a =>
+        `<label><input type="checkbox" data-acc="${a}">${esc(HC.ACCESSORIES[a].label)}</label>`).join('') + '</div>'; return; }
+      let ctl;
+      if(r.t === 'text') ctl = `<input type="text" id="c_${id}" maxlength="40">`;
+      else if(r.t === 'chk') ctl = `<input type="checkbox" id="c_${id}">`;
+      else if(r.t === 'col') ctl = `<button class="sw" id="c_${id}" type="button"><i></i><span></span></button>`;
+      else if(r.t === 'item') ctl = `<select id="c_${id}">${itemOptions()}</select>`;
+      else if(r.t === 'outfit') ctl = `<select id="c_${id}"></select>`;
+      else ctl = `<select id="c_${id}">${r.none ? `<option value="">${r.none}</option>` : ''}${r.o.map(([v, l]) => `<option value="${v}">${esc(l)}</option>`).join('')}</select>`;
+      h += `<div class="frow${r.t === 'chk' ? ' chk' : ''}" id="${id}"><label for="c_${id}">${r.l}</label>${ctl}</div>`;
+    });
+    h += '</div></details>';
+  });
+  $('look').innerHTML = h;
+}
+let outfitFor = null;
+function syncLook(p){
+  for(const r of ROWS){
+    const row = $(r.id); if(!row) continue;
+    row.hidden = !!(r.show && !r.show(p));
+    if(r.sub || row.hidden) continue;
+    if(r.t === 'acc'){ for(const c of row.querySelectorAll('input')) c.checked = hasAcc(p, c.dataset.acc); continue; }
+    const c = $('c_' + r.id);
+    if(r.t === 'text'){ if(document.activeElement !== c) c.value = S.character.name || ''; }
+    else if(r.t === 'chk') c.checked = !!p[r.k];
+    else if(r.t === 'col'){
+      const v = p[r.k], shown = v || r.def(p);
+      c.querySelector('i').className = v ? '' : 'auto'; c.querySelector('i').style.background = v ? v : '';
+      if(!v) c.querySelector('i').style.backgroundColor = shown;
+      c.querySelector('span').textContent = v ? HC.colourName(v) : `Default (${HC.colourName(shown)})`;
+    }
+    else if(r.t === 'outfit'){
+      if(outfitFor !== p.bodyType){ outfitFor = p.bodyType;
+        c.innerHTML = `<option value="">Choose…</option>` + HC.OUTFITS[p.bodyType].map(o => `<option value="${o.id}">${esc(o.label)}</option>`).join(''); }
+      c.value = '';
+    }
+    else { const v = getPath(p, r.k); c.value = v === null || v === undefined ? '' : String(v); }
+  }
+}
+$('look').addEventListener('change', e => {
+  const t = e.target, row = t.closest('.frow, .accs'); if(!row) return;
+  pause();
+  if(t.dataset.acc){ setLook('acc:' + t.dataset.acc, t.checked); return; }
+  const r = ROWS.find(x => x.id === row.id); if(!r || r.t === 'text') return;
+  if(r.t === 'chk') return setLook(r.k, t.checked);
+  if(r.t === 'outfit'){
+    const o = HC.OUTFITS[outfitFor].find(x => x.id === t.value); if(!o) return;
+    const ch = {upperGarment:o.upperGarment, lowerGarment:o.lowerGarment, footwear:o.footwear,
+      upperColor:null, lowerColor:null, footwearColor:null, upperPattern:'plain', lowerPattern:'plain', upperColor2:null, lowerColor2:null, 'acc:tie':!!o.tie};
+    if(o.makeup){ ch['acc:mascara'] = true; ch['acc:lipstick'] = true; }
+    return setLooks(ch);
+  }
+  let v = t.value === '' ? null : t.value;
+  if(v !== null && (r.num || r.grip)) v = Number(v);
+  setLook(r.k, v);
+});
+$('look').addEventListener('input', e => { if(e.target.type === 'text'){ setLook('name', e.target.value); } });
+
+/* colour picker: the 64 web-safe colours, plus the garment's own default */
+const pal = $('pal'); let palFor = null;
+pal.querySelector('.grid').innerHTML = HC.PALETTE.map(c => `<button type="button" data-c="${c}" style="background:${c}" title="${HC.colourName(c)} ${c}"></button>`).join('');
+$('look').addEventListener('click', e => {
+  const b = e.target.closest('.sw'); if(!b) return;
+  e.stopPropagation();
+  const r = ROWS.find(x => 'c_' + x.id === b.id); if(!r) return;
+  if(palFor === r && pal.classList.contains('open')){ pal.classList.remove('open'); return; }
+  palFor = r;
+  const cur = poseAt(frame)[r.k];
+  for(const x of pal.querySelectorAll('.grid button')) x.classList.toggle('cur', x.dataset.c === cur);
+  pal.classList.add('open'); palAnchor = b; placePal();
+});
+let palAnchor = null;
+function placePal(){   /* under its button, or above it near the bottom of the window */
+  if(!palAnchor || !pal.classList.contains('open')) return;
+  const rc = palAnchor.getBoundingClientRect(), w = pal.offsetWidth, hgt = pal.offsetHeight;
+  pal.style.left = Math.max(8, Math.min(innerWidth - w - 8, rc.right - w)) + 'px';
+  pal.style.top = (rc.bottom + hgt + 8 > innerHeight ? Math.max(8, rc.top - hgt - 6) : rc.bottom + 6) + 'px';
+}
+pal.addEventListener('click', e => {
+  const b = e.target.closest('button'); if(!b || !palFor) return;
+  pause(); setLook(palFor.k, b.dataset.c || null); pal.classList.remove('open');
+});
+document.addEventListener('click', e => { if(!pal.contains(e.target)) pal.classList.remove('open'); });
+window.addEventListener('scroll', placePal, true);
+window.addEventListener('resize', placePal);
+document.addEventListener('keydown', e => { if(e.key === 'Escape') pal.classList.remove('open'); });
+
+/* ── playback ──────────────────────────────────────────────────────────── */
+let raf = 0, t0 = 0, f0 = 0;
+function goto(f){ frame = Math.max(0, Math.min(S.length, f)); drawStage(); drawTimeline(); drawKeybar(); syncPanel(); }
+function tick(now){
+  const f = f0 + Math.floor((now - t0) / 1000 * S.fps);
+  if(f > S.length){
+    if(S.loop){ const over = (f - S.length - 1) % (S.length + 1); f0 = 0; t0 = now - over * 1000 / S.fps; return tick(now); }
+    pause(); goto(S.length); return;
+  }
+  if(f !== frame){ frame = f; drawStage(); drawTimeline(); drawKeybar(); syncPanel(); }
+  raf = requestAnimationFrame(tick);
+}
+function play(){
+  if(playing) return;
+  if(!S.loop && frame >= S.length) frame = 0;
+  playing = true; t0 = performance.now(); f0 = frame;
+  stage.classList.add('playing'); $('bPlay').textContent = '⏸ Pause'; $('bPlay').setAttribute('aria-pressed', 'true');
+  raf = requestAnimationFrame(tick);
+}
+function pause(){
+  if(!playing) return;
+  playing = false; cancelAnimationFrame(raf);
+  stage.classList.remove('playing'); $('bPlay').textContent = '▶ Play'; $('bPlay').setAttribute('aria-pressed', 'false');
+  drawHandles(); drawKeybar(); syncPanel();
+}
+const toggle = () => playing ? pause() : play();
+function keyStep(dir){
+  const ks = S.keys.map(k => k.frame), t = dir < 0 ? ks.filter(f => f < frame).pop() : ks.find(f => f > frame);
+  if(t !== undefined){ pause(); goto(t); }
+}
+$('bPlay').onclick = toggle;
+$('bStart').onclick = () => { pause(); goto(0); };
+$('bEnd').onclick = () => { pause(); goto(S.length); };
+$('bPrev').onclick = () => { pause(); goto(frame - 1); };
+$('bNext').onclick = () => { pause(); goto(frame + 1); };
+$('bPrevKey').onclick = () => keyStep(-1);
+$('bNextKey').onclick = () => keyStep(1);
+$('bLoop').onclick = () => { S.loop = !S.loop; syncTransport(); autosave(); };
+function syncTransport(){
+  $('bLoop').setAttribute('aria-pressed', String(S.loop));
+  $('fps').value = S.fps; $('len').value = S.length;
+  $('len').min = Math.max(1, S.keys[S.keys.length-1].frame);
+}
+$('fps').addEventListener('change', () => {
+  const v = Math.round(+$('fps').value); if(v >= 1 && v <= 60){ S.fps = v; if(playing){ t0 = performance.now(); f0 = frame; } autosave(); drawTimeline(); }
+  syncTransport();
+});
+$('len').addEventListener('change', () => {
+  const v = Math.round(+$('len').value), min = Math.max(1, S.keys[S.keys.length-1].frame);
+  if(v >= min && v <= 1200){ pushUndo(); S.length = v; frame = Math.min(frame, v); changed(); }
+  else flash(v < min ? `The last keyframe is on frame ${min}.` : 'Up to 1200 frames.');
+  syncTransport();
+});
+
+/* ── files ─────────────────────────────────────────────────────────────── */
+let msgT = 0;
+function flash(t){ $('msg').textContent = t; clearTimeout(msgT); msgT = setTimeout(() => $('msg').textContent = '', 3000); }
+function download(name, text){
+  const a = document.createElement('a');
+  a.href = URL.createObjectURL(new Blob([text], {type:'application/json'}));
+  a.download = name; document.body.appendChild(a); a.click(); a.remove();
+  setTimeout(() => URL.revokeObjectURL(a.href), 2000);
+}
+const fileName = () => (String(S.character.name || 'character').replace(/[^\w-]+/g, '_') || 'character') + '-animation.json';
+$('bSave').onclick = () => {
+  download(fileName(), JSON.stringify({schema:SCHEMA, fps:S.fps, length:S.length, loop:S.loop, character:S.character, keys:S.keys}, null, 1));
+  flash('Saved.');
+};
+function readJSON(input, cb){
+  const f = input.files && input.files[0]; if(!f) return;
+  const r = new FileReader();
+  r.onload = () => { try{ cb(JSON.parse(r.result)); }catch(e){ flash('That file is not a valid JSON file.'); } input.value = ''; };
+  r.readAsText(f);
+}
+$('bLoad').onclick = () => $('fileAnim').click();
+$('bChar').onclick = () => $('fileChar').click();
+$('fileAnim').addEventListener('change', e => readJSON(e.target, j => {
+  const a = sanitize(j); if(!a){ flash('Nothing to open in that file.'); return; }
+  pause(); pushUndo(); S = a; frame = 0; refreshAll(); flash(j.keys ? `Opened ${a.keys.length} keyframes.` : 'Opened a character as one keyframe.');
+}));
+$('fileChar').addEventListener('change', e => readJSON(e.target, j => {
+  pause(); pushUndo();
+  const c = HC.normalize(j.character || j);   /* its look goes on every keyframe; the poses stay */
+  S.character = c;
+  for(const k of S.keys) for(const f of LOOK_FIELDS) k.pose[f] = Array.isArray(c[f]) ? [...c[f]] : (c[f] && typeof c[f] === 'object') ? {...c[f]} : c[f];
+  refreshAll(); flash(`Loaded ${S.character.name || 'the character'}.`);
+}));
+$('bUndo').onclick = doUndo;
+$('bRedo').onclick = doRedo;
+$('bNew').onclick = () => {
+  pause(); pushUndo();
+  const p = poseOf(HC.applyPose(HC.normalize(dataAt(0)), 'standing'));
+  S.keys = [{frame:0, easeIn:'linear', easeOut:'linear', pose:p}]; frame = 0; refreshAll(); flash('Started again. Undo brings the old keyframes back.');
+};
+
+/* ── keyboard ──────────────────────────────────────────────────────────── */
+document.addEventListener('keydown', e => {
+  const t = e.target, tag = t && t.tagName;
+  if((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === 'z'){ if(tag === 'INPUT' && t.type === 'number') return; e.preventDefault(); e.shiftKey ? doRedo() : doUndo(); return; }
+  if((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === 'y'){ e.preventDefault(); doRedo(); return; }
+  if(tag === 'INPUT' || tag === 'SELECT' || tag === 'TEXTAREA' || e.ctrlKey || e.metaKey || e.altKey) return;
+  switch(e.key){
+    case ' ': e.preventDefault(); if(tag === 'BUTTON') t.blur(); toggle(); break;
+    case 'ArrowLeft': e.preventDefault(); e.shiftKey ? keyStep(-1) : (pause(), goto(frame - 1)); break;
+    case 'ArrowRight': e.preventDefault(); e.shiftKey ? keyStep(1) : (pause(), goto(frame + 1)); break;
+    case 'Home': e.preventDefault(); pause(); goto(0); break;
+    case 'End': e.preventDefault(); pause(); goto(S.length); break;
+    case 'k': case 'K': pause(); addKey(); break;
+    case 'Delete': case 'Backspace': pause(); deleteKey(); break;
+  }
+});
+
+/* ── start ─────────────────────────────────────────────────────────────── */
+function refreshAll(){ syncTransport(); changed(); }
+buildPanel();
+try{ S = sanitize(JSON.parse(localStorage.getItem(STORE) || 'null')); }catch(e){ S = null; }
+if(!S) S = fresh();
+refreshAll();
+})();
+</script>
+</body>
+</html>
