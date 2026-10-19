@@ -39,7 +39,23 @@
   background:var(--surface-1); border:1px solid var(--border); border-radius:var(--radius);
   overflow:hidden; color:var(--text-muted); touch-action:none;
 }
-.ke-stage > #figure, .ke-stage > #handles{ position:absolute; inset:0; width:100%; height:100%; }
+.ke-stage > #figure, .ke-stage > #handles, .ke-stage > #onion{ position:absolute; inset:0; width:100%; height:100%; }
+/* onion skin: tinted ghosts of nearby frames, behind the character */
+#onion{ pointer-events:none; }
+#onion svg{ position:absolute; inset:0; width:100%; height:100%; display:block; }
+.ke-stage.playing:not(.onion-play) #onion{ display:none; }
+.ke-onion{ display:flex; flex-wrap:wrap; gap:6px 18px; align-items:center; margin:8px 0 2px; padding:8px 12px;
+  background:var(--surface-1); border:1px solid var(--border); border-radius:var(--radius); font-size:.8rem; color:var(--text-secondary); }
+.ke-onion .ttl{ font-weight:600; color:var(--text-primary); }
+.ke-onion .side{ display:inline-flex; align-items:center; gap:7px; }
+.ke-onion label{ display:inline-flex; align-items:center; gap:5px; cursor:pointer; }
+.ke-onion input[type=checkbox]{ accent-color:var(--text-accent); margin:0; }
+.ke-onion select{ font-family:inherit; font-size:.8rem; padding:2px 4px; border:1px solid var(--color-border-secondary);
+  border-radius:var(--border-radius-md); background:var(--color-background-primary); color:var(--text-primary); }
+.ke-onion input[type=range]{ width:5.5rem; accent-color:var(--text-accent); margin:0; }
+.ke-onion input[type=color]{ width:1.9rem; height:1.5rem; padding:0; border:1px solid var(--color-border-primary); border-radius:5px; background:none; cursor:pointer; }
+.ke-onion .pct{ font-family:var(--font-mono); font-size:.7333rem; min-width:2.6em; color:var(--text-muted); }
+.ke-onion .side.off > :not(label:first-child){ opacity:.45; }
 .ke-stage > #figure svg{ width:100%; height:100%; display:block; }
 #handles{ pointer-events:none; }
 #handles .h{ pointer-events:all; cursor:grab; }
@@ -129,7 +145,8 @@ button[aria-pressed="true"]{ background:var(--color-background-info); color:var(
 #tl .gname{ fill:var(--text-muted); font-size:9.5px; pointer-events:none; }
 #tl .gkey{ fill:var(--surface-2); stroke:var(--c, var(--text-accent)); stroke-width:2; cursor:grab; }
 #tl .gkey.cur{ fill:var(--c, var(--pos-verb)); }
-#tl .gread{ fill:var(--bad); font-family:var(--font-mono); font-size:10px; pointer-events:none; }
+#tl .gread{ fill:var(--bad); font-family:var(--font-mono); font-size:10px; font-weight:600; pointer-events:none;
+  stroke:var(--surface-2); stroke-width:3.5px; stroke-linejoin:round; paint-order:stroke; }   /* a halo, so it reads over curves and labels */
 /* easing picker for one stretch of the curve */
 #ezpop{ position:fixed; z-index:1100; display:none; padding:10px; background:var(--surface-2); border:1px solid var(--border);
   border-radius:var(--border-radius-md); box-shadow:0 6px 20px rgba(0,0,0,.18); max-width:calc(100vw - 16px); }
@@ -242,12 +259,31 @@ button[aria-pressed="true"]{ background:var(--color-background-info); color:var(
   <div class="ke-layout">
     <div class="ke-main" id="keMain">
       <div class="ke-stage" id="stage">
+        <div id="onion" aria-hidden="true"></div>
         <div id="figure"></div>
         <svg id="handles" viewBox="0 0 600 590"></svg>
         <span class="ke-badge" id="badge"></span>
       </div>
       <p class="ke-caption" id="caption"></p>
       <p class="ke-hint">Drag around a dot to turn that joint. Changing anything on a frame without a keyframe adds one.</p>
+      <div class="ke-onion" id="onionBar">
+        <span class="ttl">🧅 Onion skin</span>
+        <span class="side" id="on_pre"><label><input type="checkbox" id="on_pre_on"> Before</label>
+          <select id="on_pre_n" aria-label="Frames before"><option value="1">1 frame</option><option value="2">2 frames</option><option value="3">3 frames</option><option value="4">4 frames</option><option value="5">5 frames</option><option value="6">6 frames</option><option value="7">7 frames</option><option value="8">8 frames</option><option value="9">9 frames</option><option value="10">10 frames</option><option value="11">11 frames</option><option value="12">12 frames</option></select>
+          <input type="range" id="on_pre_op" min="5" max="90" step="5" aria-label="Opacity of the nearest before frame" title="Opacity of the nearest frame; farther frames fade from this"><span class="pct" id="on_pre_pct"></span>
+          <input type="color" id="on_pre_col" aria-label="Colour for frames before" title="Colour"></span>
+        <span class="side" id="on_post"><label><input type="checkbox" id="on_post_on"> After</label>
+          <select id="on_post_n" aria-label="Frames after"><option value="1">1 frame</option><option value="2">2 frames</option><option value="3">3 frames</option><option value="4">4 frames</option><option value="5">5 frames</option><option value="6">6 frames</option><option value="7">7 frames</option><option value="8">8 frames</option><option value="9">9 frames</option><option value="10">10 frames</option><option value="11">11 frames</option><option value="12">12 frames</option></select>
+          <input type="range" id="on_post_op" min="5" max="90" step="5" aria-label="Opacity of the nearest after frame" title="Opacity of the nearest frame; farther frames fade from this"><span class="pct" id="on_post_pct"></span>
+          <input type="color" id="on_post_col" aria-label="Colour for frames after" title="Colour"></span>
+        <span class="side"><label title="Keep drawing the ghosts while the animation plays (slower on long ones)"><input type="checkbox" id="on_play"> While playing</label></span>
+      </div>
+      <svg width="0" height="0" style="position:absolute" aria-hidden="true"><defs>
+        <!-- grey version of the drawing, lightened, multiplied by the colour, kept inside the figure's shape -->
+        <filter id="onionTint_pre" color-interpolation-filters="sRGB"><feColorMatrix type="matrix" values=".3 .59 .11 0 0  .3 .59 .11 0 0  .3 .59 .11 0 0  0 0 0 1 0" result="g"/><feComponentTransfer in="g" result="l"><feFuncR type="linear" slope=".55" intercept=".45"/><feFuncG type="linear" slope=".55" intercept=".45"/><feFuncB type="linear" slope=".55" intercept=".45"/></feComponentTransfer><feFlood id="onionFlood_pre" flood-color="#e11d48" result="c"/><feBlend in="c" in2="l" mode="multiply" result="m"/><feComposite in="m" in2="SourceAlpha" operator="in"/></filter>
+        <filter id="onionTint_post" color-interpolation-filters="sRGB"><feColorMatrix type="matrix" values=".3 .59 .11 0 0  .3 .59 .11 0 0  .3 .59 .11 0 0  0 0 0 1 0" result="g"/><feComponentTransfer in="g" result="l"><feFuncR type="linear" slope=".55" intercept=".45"/><feFuncG type="linear" slope=".55" intercept=".45"/><feFuncB type="linear" slope=".55" intercept=".45"/></feComponentTransfer><feFlood id="onionFlood_post" flood-color="#10b981" result="c"/><feBlend in="c" in2="l" mode="multiply" result="m"/><feComposite in="m" in2="SourceAlpha" operator="in"/></filter>
+      </defs></svg>
+
 
       <div class="ke-transport">
         <span class="grp">
@@ -704,7 +740,50 @@ function drawStage(){
   $('badge').textContent = k ? '◆ Keyframe' : 'In-between';
   $('badge').className = 'ke-badge' + (k ? ' key' : '');
   if(!playing) drawHandles(d);
+  if(!playing || ON.play) drawOnion();
 }
+/* ── onion skin ──────────────────────────────────────────────────────────
+   Ghosts of the frames before and after this one, behind the character. The nearest
+   frame has the slider's opacity; each one farther away fades in equal steps:
+   with 3 frames at 60 %, they are 60 %, 40 % and 20 %. Hidden while playing, unless "While playing" is ticked. */
+const ONION_DEF = {pre:{on:false, n:3, op:40, col:'#e11d48'}, post:{on:false, n:3, op:40, col:'#10b981'}};   /* the grammar palette's complement and subject colours */
+let ON = {...JSON.parse(JSON.stringify(ONION_DEF)), play:false};
+try{ const o = JSON.parse(localStorage.getItem('house-keyframes-onion') || 'null');
+  if(o) ON.play = o.play === true;
+  if(o) for(const w of ['pre','post']) if(o[w]) ON[w] = {on:!!o[w].on, n:Math.max(1, Math.min(12, +o[w].n || 3)), op:Math.max(5, Math.min(90, +o[w].op || 40)), col:/^#[0-9a-f]{6}$/i.test(o[w].col) ? o[w].col : ONION_DEF[w].col}; }catch(e){}
+function drawOnion(){
+  const box = $('onion'); if(!box || !S) return;
+  let h = '';
+  /* farthest first, so nearer ghosts sit on top of farther ones */
+  for(const w of ['pre','post']){
+    const o = ON[w]; if(!o.on) continue;
+    for(let k = o.n; k >= 1; k--){
+      const f = frame + (w === 'pre' ? -k : k); if(f < 0 || f > S.length) continue;
+      const d = dataAt(f), op = o.op / 100 * (o.n - k + 1) / o.n;
+      h += `<div style="position:absolute;inset:0;opacity:${op.toFixed(3)};filter:url(#onionTint_${w})">${lifted(HC.render(d), d.lift)}</div>`;
+    }
+  }
+  box.innerHTML = h;
+}
+function syncOnionUI(){
+  $('on_play').checked = ON.play; stage.classList.toggle('onion-play', ON.play);
+  for(const w of ['pre','post']){
+    const o = ON[w];
+    $(`on_${w}_on`).checked = o.on; $(`on_${w}_n`).value = o.n; $(`on_${w}_op`).value = o.op;
+    $(`on_${w}_pct`).textContent = o.op + '%'; $(`on_${w}_col`).value = o.col;
+    $(`on_${w}`).classList.toggle('off', !o.on);
+    $(`onionFlood_${w}`).setAttribute('flood-color', o.col);
+  }
+}
+$('onionBar').addEventListener('input', e => {
+  if(e.target.id === 'on_play'){ ON.play = e.target.checked; try{ localStorage.setItem('house-keyframes-onion', JSON.stringify(ON)); }catch(_){} syncOnionUI(); drawOnion(); return; }
+  const m = e.target.id.match(/^on_(pre|post)_(on|n|op|col)$/); if(!m) return;
+  const o = ON[m[1]], v = e.target;
+  if(m[2] === 'on') o.on = v.checked; else if(m[2] === 'n') o.n = +v.value; else if(m[2] === 'op') o.op = +v.value; else o.col = v.value;
+  try{ localStorage.setItem('house-keyframes-onion', JSON.stringify(ON)); }catch(_){}
+  syncOnionUI(); drawOnion();
+});
+syncOnionUI();
 /* lift: the engine stands the figure on the floor, so raise its main group and leave a shadow behind */
 function lifted(svg, cm){
   const px = (cm || 0) * PX_PER_CM; if(!px) return svg;
@@ -1049,8 +1128,13 @@ function drawGraph(){
 
   const x = fx(frame);
   s += `<line class="ph" x1="${x}" x2="${x}" y1="14" y2="${H - 2}"/><path class="phk" d="M${x-6},12H${x+6}V20L${x},26L${x-6},20Z"/>`;
-  if(NV.length && isNum(gParam) && seriesOf(gParam) && seriesOf(gParam).on)
-    s += `<text class="gread" x="${x + (x > x1 - 50 ? -6 : 6)}" y="${yTop + 11}" text-anchor="${x > x1 - 50 ? 'end' : 'start'}">${Math.round(gValueAtP(gParam, frame))}</text>`;
+  /* the selected setting's value at the playhead, written beside it: a number for a curve, the label for any other setting */
+  const sel = seriesOf(gParam);
+  if(sel && sel.on){
+    const txt = isNum(gParam) ? String(Math.round(gValueAtP(gParam, frame))) : short(vlabel(gParam, getP(poseAt(frame), gParam)), 26);
+    const left = x > x1 - (isNum(gParam) ? 50 : 150);
+    s += `<text class="gread" x="${x + (left ? -6 : 6)}" y="${yTop + 11}" text-anchor="${left ? 'end' : 'start'}">${esc(txt)}</text>`;
+  }
   tl.innerHTML = s;
   $('readout').textContent = `Frame ${frame} / ${S.length} · ${(frame / S.fps).toFixed(2)} s`;
 }
@@ -1419,7 +1503,7 @@ function pause(){
   if(!playing) return;
   playing = false; cancelAnimationFrame(raf);
   stage.classList.remove('playing'); $('bPlay').textContent = '▶ Play'; $('bPlay').setAttribute('aria-pressed', 'false');
-  drawHandles(); drawKeybar(); syncPanel();
+  drawHandles(); drawOnion(); drawKeybar(); syncPanel();
 }
 const toggle = () => playing ? pause() : play();
 function keyStep(dir){
