@@ -22,6 +22,16 @@
 /* ── page-specific: the keyframe editor ─────────────────────────────────── */
 .ke-page{ max-width:1120px; margin:0 auto; padding:20px 14px 40px; }
 .ke-layout{ display:grid; grid-template-columns:minmax(0,1fr) 300px; gap:16px; align-items:start; }
+/* wide screens: the page fills the window and each column scrolls on its own */
+@media (min-width:861px){
+  html, body{ height:100%; overflow:hidden; }
+  .ke-page{ box-sizing:border-box; height:100vh; height:100dvh; display:flex; flex-direction:column; padding-bottom:12px; }
+  .ke-page > h1, .ke-page > .subtitle, .ke-page > footer{ flex:0 0 auto; }
+  .ke-page > footer{ margin-top:8px; }
+  .ke-layout{ flex:1 1 auto; min-height:0; align-items:stretch; }
+  .ke-main, .ke-side{ min-height:0; overflow-y:auto; overscroll-behavior:contain; scrollbar-gutter:stable; padding-right:6px; }
+  .ke-side{ padding-top:44px; }   /* clear of the fixed 🔎 text-size button above it */
+}
 @media (max-width:860px){ .ke-layout{ grid-template-columns:minmax(0,1fr); } }
 
 .ke-stage{
@@ -91,13 +101,34 @@ button[aria-pressed="true"]{ background:var(--color-background-info); color:var(
 #tl .grid.zero{ stroke:var(--color-border-primary); }
 #tl .glbl{ fill:var(--text-muted); font-family:var(--font-mono); font-size:9.5px; }
 #tl .gflat{ fill:none; stroke:var(--text-muted); stroke-width:1.4; stroke-dasharray:3 3; }
-#tl .gcurve{ fill:none; stroke:var(--text-accent); stroke-width:2.2; pointer-events:none; }
+#tl .gser{ opacity:.55; }
+#tl .gser.act{ opacity:1; }
+#tl .gser .gflat{ stroke:var(--c); }
+#tl .gcurve{ fill:none; stroke:var(--c, var(--text-accent)); stroke-width:1.8; pointer-events:none; }
+#tl .gser.act .gcurve{ stroke-width:2.6; }
+#tl .gline{ stroke:var(--c); stroke-width:2; opacity:.55; }
+#tl .grow.act .gline{ opacity:1; stroke-width:2.6; }
+#tl .growname{ fill:var(--c); font-size:10px; font-weight:600; }
+#tl .gstep{ cursor:ew-resize; }
+#tl .gstep path{ fill:var(--surface-2); stroke:var(--c); stroke-width:2; }
+#tl .gstep.cur path{ fill:var(--c); }
+#tl .gsl{ fill:var(--text-primary); font-size:10px; pointer-events:none; }
+.glegend{ flex-wrap:wrap; gap:6px !important; }
+.gchip{ display:inline-flex; align-items:center; border:1px solid var(--border); border-radius:999px; background:var(--surface-2); overflow:hidden; }
+.gchip button{ border:none; border-radius:0; background:none; padding:3px 7px; font-size:.7667rem; }
+.gchip .gname-b{ display:inline-flex; align-items:center; gap:5px; padding-left:8px; }
+.gchip .gname-b i{ width:.75rem; height:.75rem; border-radius:3px; background:var(--c); flex:0 0 auto; }
+.gchip.act{ border-color:var(--c); box-shadow:inset 0 0 0 1px var(--c); }
+.gchip.act .gname-b{ font-weight:600; }
+.gchip.off .gname-b{ opacity:.45; text-decoration:line-through; }
+.gchip .geye, .gchip .gx{ padding:3px 6px; color:var(--text-muted); }
+#ezpop .ezhd{ flex:1 1 100%; font-size:.7667rem; font-weight:700; color:var(--text-primary); }
 #tl .gseg{ fill:none; stroke:transparent; stroke-width:14; cursor:pointer; }
-#tl .gseg:hover + .gsegc, #tl .gsegc.on{ stroke:var(--pos-verb); }
+#tl .gseg:hover + .gsegc, #tl .gsegc.on{ stroke:var(--c); stroke-opacity:.35; stroke-width:7; }
 #tl .gsegc{ fill:none; stroke:transparent; stroke-width:3.4; pointer-events:none; }
 #tl .gname{ fill:var(--text-muted); font-size:9.5px; pointer-events:none; }
-#tl .gkey{ fill:var(--surface-2); stroke:var(--text-accent); stroke-width:2; cursor:grab; }
-#tl .gkey.cur{ fill:var(--pos-verb); stroke:var(--pos-verb); }
+#tl .gkey{ fill:var(--surface-2); stroke:var(--c, var(--text-accent)); stroke-width:2; cursor:grab; }
+#tl .gkey.cur{ fill:var(--c, var(--pos-verb)); }
 #tl .gread{ fill:var(--bad); font-family:var(--font-mono); font-size:10px; pointer-events:none; }
 /* easing picker for one stretch of the curve */
 #ezpop{ position:fixed; z-index:1100; display:none; padding:10px; background:var(--surface-2); border:1px solid var(--border);
@@ -209,7 +240,7 @@ button[aria-pressed="true"]{ background:var(--color-background-info); color:var(
   <p class="subtitle">Pose the house character, set keyframes on the timeline, and play the animation.</p>
 
   <div class="ke-layout">
-    <div>
+    <div class="ke-main" id="keMain">
       <div class="ke-stage" id="stage">
         <div id="figure"></div>
         <svg id="handles" viewBox="0 0 600 590"></svg>
@@ -236,8 +267,9 @@ button[aria-pressed="true"]{ background:var(--color-background-info); color:var(
 
       <div class="ke-tlbar" id="tlbar">
         <span class="seg" id="viewSeg"><button data-v="dope" aria-pressed="true">◆ Keyframes</button><button data-v="graph" aria-pressed="false">📈 Graph</button></span>
-        <span class="gonly"><label for="gParam">Curve</label><select id="gParam"></select></span>
-        <span class="gonly muted">Drag a point to change its value or frame · click the curve between two points to pick its easing · double-click to add a point</span>
+        <span class="gonly"><select id="gAdd" aria-label="Add a setting to the graph"></select></span>
+        <span class="gonly glegend" id="gLegend"></span>
+        <span class="gonly muted">Drag a point to change its value or frame · click a curve between two points to pick its easing · double-click to add a point to the selected curve</span>
       </div>
       <div class="ke-timeline" id="tlWrap"><svg id="tl"></svg></div>
       <div class="tl-tools">
@@ -710,7 +742,7 @@ stage.addEventListener('pointerdown', e => {
   const g = e.target.closest('.h'); if(!g || playing) return;
   e.preventDefault();
   selJoint = g.dataset.j; drawHandles(); syncPanel();
-  if(view === 'graph' && gParam !== selJoint){ gParam = selJoint; syncGraphBar(); drawTimeline(); }
+  if(view === 'graph' && gParam !== selJoint){ addSeries(selJoint, true); activate(selJoint); syncGraphBar(); drawTimeline(); drawKeybar(); }
   drag = {j:selJoint, last:null};
   try{ stage.setPointerCapture(e.pointerId); }catch(_){}
 });
@@ -737,8 +769,9 @@ window.addEventListener('blur', endDrag);
 /* ── timeline ──────────────────────────────────────────────────────────── */
 const tl = $('tl'), PAD = 16, RULER = 26, KEYY = 54, LANE = 30;
 let TW = 600, TH = 78, GUT = PAD;   /* GUT: room on the left for lane names, when there are tracks */
-const fx = f => GUT + f / S.length * (TW - GUT - PAD);
-const xf = x => Math.max(0, Math.min(S.length, Math.round((x - GUT) / (TW - GUT - PAD) * S.length)));
+let RP = 16;   /* right margin: wider in the graph when slanted labels need room past the last frame */
+const fx = f => GUT + f / S.length * (TW - GUT - RP);
+const xf = x => Math.max(0, Math.min(S.length, Math.round((x - GUT) / (TW - GUT - RP) * S.length)));
 const laneY = i => KEYY + LANE * i;
 const short = (t, n) => t.length > n ? t.slice(0, n - 1) + '…' : t;
 function laneDiamonds(K, y, laneId, numeric, main){
@@ -772,6 +805,7 @@ function drawTimeline(){
   GUT = T.length ? 118 : PAD;
   const H = TH = 78 + LANE * T.length;
   tl.style.height = H + 'px'; tl.setAttribute('viewBox', `0 0 ${TW} ${H}`);
+  RP = PAD;
   const px = (TW - GUT - PAD) / S.length;
   const steps = [1,2,4,5,6,10,12,24,48,60,120,240,480,600,1200];
   const lab = steps.find(s => s * px >= 46) || steps[steps.length-1];
@@ -838,105 +872,199 @@ window.addEventListener('blur', endT);
 if(window.ResizeObserver) new ResizeObserver(() => drawTimeline()).observe($('tlWrap'));
 else window.addEventListener('resize', drawTimeline);
 
-/* ── graph editor: one number's curve over time, with its easings ────── */
-let view = 'dope', gParam = 'shoulderR', gdrag = null, gRange = null;
-const GTOP = 34, GBOT = 18, GH = 250;
-const numParams = () => [...TURNS.map(([k]) => [k, LABEL[k]]), ...JOINT_IDS.map(j => [j, LABEL[j]])];
-/* the keyframes the curve is drawn from: the setting's own timeline, or Main */
-const gTrack = () => trackOf(gParam);
-const gKeys = () => { const t = gTrack(); return t ? t.keys : S.keys; };
-const gRaw = k => gTrack() ? k.value : getP(k.pose, gParam);
+/* ── graph editor: several settings over time, sharing one graph ──────
+   Numbers are curves with their easings on one shared value scale. Other settings (held items,
+   clothes, face…) are flat lines below it, one row each, with a diamond and a slanted label
+   wherever the value changes. Colours follow the grammar (part-of-speech) palette. */
+let view = 'dope', gdrag = null, gRange = null, gParam = 'shoulderR';
+const GTOP = 34, GNUM = 190, GROW = 74, GBOT = 18;
+const POS_COLS = ['wh','aux','verb','part','subject','object','complement','noun','adj','adverb','prep','det','conj','time','neg'];
+const gColor = i => `var(--pos-${POS_COLS[i % POS_COLS.length]})`;
+let gSeries = [{p:'shoulderR', c:0, on:true}];   /* what the graph shows, in legend order */
+try{ const g = JSON.parse(localStorage.getItem('house-keyframes-graph') || 'null'); if(Array.isArray(g) && g.length) gSeries = g.filter(x => x && typeof x.p === 'string'); }catch(e){}
+const saveSeries = () => { try{ localStorage.setItem('house-keyframes-graph', JSON.stringify(gSeries)); }catch(e){} };
+const seriesOf = p => gSeries.find(x => x.p === p);
+function addSeries(p, active){
+  let x = seriesOf(p);
+  if(!x){ const used = gSeries.map(y => y.c); let c = 0; while(used.includes(c)) c++; x = {p, c, on:true}; gSeries.push(x); }
+  x.on = true; if(active) gParam = p; gRange = null; saveSeries();
+}
+/* the keyframes a setting is drawn from: its own timeline, or Main */
+const gKeysP = p => { const t = trackOf(p); return t ? t.keys : S.keys; };
+const gRawP = (p, k) => trackOf(p) ? k.value : getP(k.pose, p);
 /* values made continuous: an angle that goes 170 → −170 is plotted as 170 → 190, the way it actually turns */
-function gValues(){
-  const K = gKeys(), u = [];
-  K.forEach((k, i) => { const r = gRaw(k); u.push(i && isJoint(gParam) ? u[i-1] + wrap(r - gRaw(K[i-1])) : r); });
+function gValuesP(p){
+  const K = gKeysP(p), u = [];
+  K.forEach((k, i) => { const r = gRawP(p, k); u.push(i && isJoint(p) ? u[i-1] + wrap(r - gRawP(p, K[i-1])) : r); });
   return u;
+}
+function gValueAtP(p, f){
+  const K = gKeysP(p), u = gValuesP(p);
+  if(f <= K[0].frame) return u[0]; if(f >= K[K.length-1].frame) return u[u.length-1];
+  let i = 0; while(K[i+1].frame <= f) i++;
+  return u[i] + (u[i+1] - u[i]) * ease((f - K[i].frame) / (K[i+1].frame - K[i].frame), K[i].easeOut, K[i+1].easeIn);
+}
+/* a setting's value in words, for the slanted labels */
+function vlabel(p, v){
+  const sameV = (a, b) => String(a) === String(b);
+  if(p === 'accessories') return v && v.length ? v.map(a => (HC.ACCESSORIES[a] || {label:a}).label).join(', ') : 'None';
+  const list = [...FACING, ...STEPS].find(x => x[0] === p);
+  if(list){ const o = list[2].find(x => sameV(x[0], v)); return o ? o[1] : String(v); }
+  const r = ROWS.find(x => x.k === p);
+  if(r){
+    if(r.t === 'item') return v && HC.ITEMS[v] ? HC.ITEMS[v].label : 'Empty hand';
+    if(r.t === 'col') return v ? HC.colourName(v) : 'Default';
+    if(r.t === 'chk') return v ? 'Yes' : 'No';
+    if(v === null || v === undefined || v === '') return r.none || 'None';
+    if(r.o){ const o = r.o.find(x => sameV(x[0], v)); if(o) return o[1]; }
+  }
+  return v === null || v === undefined ? 'None' : String(v);
+}
+/* the keyframes where a held setting actually changes (on Main every keyframe carries every setting) */
+function gStepsP(p){
+  const K = gKeysP(p), out = [];
+  K.forEach((k, i) => { const v = gRawP(p, k); if(!out.length || JSON.stringify(v) !== JSON.stringify(out[out.length-1].v)) out.push({i, k, v}); });
+  return out;
 }
 function syncGraphBar(){
   $('tlbar').classList.toggle('graph', view === 'graph');
   for(const b of $('viewSeg').children) b.setAttribute('aria-pressed', String(b.dataset.v === view));
-  if(!$('gParam').options.length) $('gParam').innerHTML = numParams().map(([k, l]) => `<option value="${k}">${esc(l)}</option>`).join('');
-  $('gParam').value = gParam;
-  for(const o of $('gParam').options) o.textContent = numParams().find(x => x[0] === o.value)[1] + (trackOf(o.value) ? ' (own timeline)' : '');
+  if(!S) return;
+  const all = paramList();
+  $('gLegend').innerHTML = gSeries.map(x => {
+    const nm = plabel(x.p) + (trackOf(x.p) ? ' (own timeline)' : '');
+    return `<span class="gchip${x.p === gParam ? ' act' : ''}${x.on ? '' : ' off'}" data-p="${esc(x.p)}" style="--c:${gColor(x.c)}">`
+      + `<button type="button" class="gname-b" title="${esc(nm)}${isNum(x.p) ? ' — click to edit this curve' : ''}"><i></i>${esc(short(nm, 34))}</button>`
+      + `<button type="button" class="geye" aria-pressed="${x.on}" title="${x.on ? 'Hide' : 'Show'}">${x.on ? '👁' : '◌'}</button>`
+      + `<button type="button" class="gx" title="Take off the graph">✕</button></span>`;
+  }).join('');
+  $('gAdd').innerHTML = `<option value="">＋ Add to the graph…</option>`
+    + `<optgroup label="Numbers (curves)">` + all.filter(([k]) => isNum(k) && !seriesOf(k)).map(([k, l]) => `<option value="${esc(k)}">${esc(l)}</option>`).join('') + '</optgroup>'
+    + `<optgroup label="Other settings (labels)">` + all.filter(([k]) => !isNum(k) && !seriesOf(k)).map(([k, l]) => `<option value="${esc(k)}">${esc(l)}</option>`).join('') + '</optgroup>';
+}
+function activate(p){
+  gParam = p; lane = trackOf(p) ? p : null;
+  if(isJoint(p)){ selJoint = p; if(!playing) drawHandles(); }
 }
 function setView(v){
   view = v; closeEz();
-  if(v === 'graph'){ if(selJoint) gParam = selJoint; else if(lane && isNum(lane)) gParam = lane; lane = gTrack() ? gParam : null; }
+  if(v === 'graph'){
+    if(selJoint) addSeries(selJoint, true); else if(lane) addSeries(lane, true);
+    if(!seriesOf(gParam)) gParam = (gSeries.find(x => x.on) || gSeries[0] || {}).p || gParam;
+    lane = trackOf(gParam) ? gParam : null;
+  }
   syncGraphBar(); drawTimeline(); drawKeybar();
 }
 $('viewSeg').addEventListener('click', e => { const b = e.target.closest('button'); if(b) setView(b.dataset.v); });
-$('gParam').addEventListener('change', () => {
-  gParam = $('gParam').value; lane = gTrack() ? gParam : null; gRange = null; closeEz();
-  if(isJoint(gParam)){ selJoint = gParam; if(!playing) drawHandles(); }
-  syncPanel(); drawTimeline(); drawKeybar();
+$('gAdd').addEventListener('change', () => {
+  const p = $('gAdd').value; if(!p) return;
+  addSeries(p, true); activate(p); closeEz(); syncPanel(); syncGraphBar(); drawTimeline(); drawKeybar();
+});
+$('gLegend').addEventListener('click', e => {
+  const chip = e.target.closest('.gchip'); if(!chip) return;
+  const x = seriesOf(chip.dataset.p); if(!x) return;
+  closeEz();
+  if(e.target.closest('.geye')) x.on = !x.on;
+  else if(e.target.closest('.gx')){ gSeries = gSeries.filter(y => y !== x); if(gParam === x.p && gSeries[0]) activate(gSeries[0].p); }
+  else { x.on = true; activate(x.p); }
+  gRange = null; saveSeries(); syncPanel(); syncGraphBar(); drawTimeline(); drawKeybar();
 });
 const niceStep = span => { const r = span / 5, p = Math.pow(10, Math.floor(Math.log10(r))), m = r / p; return (m < 1.5 ? 1 : m < 3.5 ? 2 : m < 7.5 ? 5 : 10) * p; };
-let gy = null;   /* value → y, kept for the pointer handlers */
+let gy = null;   /* value → y on the shared scale, kept for the pointer handlers */
+const pathOf = pts => pts.map((q, j) => (j ? 'L' : 'M') + fx(q[0]).toFixed(1) + ',' + gy(q[1]).toFixed(1)).join('');
 function drawGraph(){
-  TW = Math.max(240, tl.clientWidth || 600); GUT = 46;
-  const H = TH = GH; tl.style.height = H + 'px'; tl.setAttribute('viewBox', `0 0 ${TW} ${H}`);
-  const K = gKeys(), u = gValues(), x0 = GUT, x1 = TW - PAD;
-  /* every stretch sampled finely, so Back, Elastic and Bounce show their real shape */
-  const pts = [];
-  for(let i = 0; i < K.length - 1; i++){
-    const A = K[i], B = K[i+1], n = Math.max(12, Math.round((fx(B.frame) - fx(A.frame)) / 2));
-    for(let j = 0; j <= n; j++){ const s = j / n; pts.push([A.frame + (B.frame - A.frame) * s, u[i] + (u[i+1] - u[i]) * ease(s, A.easeOut, B.easeIn), i]); }
-  }
-  if(!gdrag || !gRange){   /* the range stays put while a point is dragged */
-    let lo = Math.min(...u, ...pts.map(p => p[1])), hi = Math.max(...u, ...pts.map(p => p[1]));
-    const minSpan = isJoint(gParam) ? 30 : 10; if(hi - lo < minSpan){ const m = (hi + lo) / 2; lo = m - minSpan/2; hi = m + minSpan/2; }
-    const pad = (hi - lo) * 0.12; gRange = [lo - pad, hi + pad];
-  }
-  const [lo, hi] = gRange, yTop = GTOP, yBot = H - GBOT;
-  gy = v => yBot - (v - lo) / (hi - lo) * (yBot - yTop);
-  gy.inv = y => lo + (yBot - y) / (yBot - yTop) * (hi - lo);
-  let s = `<rect class="gbg" x="${x0}" y="${yTop}" width="${x1 - x0}" height="${yBot - yTop}" rx="5"/>`;
-  const st = niceStep(hi - lo);
-  for(let v = Math.ceil(lo / st) * st; v <= hi; v += st){
-    const y = gy(v).toFixed(1), unit = gParam === 'lift' ? '' : '°';
-    s += `<line class="grid${Math.abs(v) < 1e-9 ? ' zero' : ''}" x1="${x0}" x2="${x1}" y1="${y}" y2="${y}"/><text class="glbl" x="${x0 - 5}" y="${(+y + 3).toFixed(1)}" text-anchor="end">${+v.toFixed(2)}${unit}</text>`;
-  }
+  TW = Math.max(240, tl.clientWidth || 600); GUT = 70;
+  const vis = gSeries.filter(x => x.on), NV = vis.filter(x => isNum(x.p)), SV = vis.filter(x => !isNum(x.p));
+  RP = SV.length ? 96 : PAD;
+  const numH = NV.length ? GNUM : 0, H = TH = GTOP + numH + SV.length * GROW + (NV.length ? GBOT : 0) + (vis.length ? 0 : 60);
+  tl.style.height = H + 'px'; tl.setAttribute('viewBox', `0 0 ${TW} ${H}`);
+  const x0 = GUT, x1 = TW - RP, yTop = GTOP, yBot = GTOP + numH;
+  let s = '';
   /* frame ruler, as in the keyframe view */
   const px = (x1 - x0) / S.length, steps = [1,2,4,5,6,10,12,24,48,60,120,240,480,600,1200];
   const lab = steps.find(t => t * px >= 46) || 1200, minor = steps.find(t => t * px >= 6) || lab;
   for(let f = 0; f <= S.length; f += minor){ const big = f % lab === 0, x = fx(f);
     s += `<line class="tick${big ? ' big' : ''}" x1="${x}" x2="${x}" y1="${big ? 12 : 17}" y2="${RULER}"/>` + (big ? `<text class="lbl" x="${x}" y="9" text-anchor="middle">${f}</text>` : ''); }
-  /* before the first and after the last point the value just holds */
-  s += `<path class="gflat" d="M${x0},${gy(u[0]).toFixed(1)}H${fx(K[0].frame)}M${fx(K[K.length-1].frame)},${gy(u[u.length-1]).toFixed(1)}H${x1}"/>`;
-  if(pts.length) s += `<path class="gcurve" d="${pts.map((p, j) => (j ? 'L' : 'M') + fx(p[0]).toFixed(1) + ',' + gy(p[1]).toFixed(1)).join('')}"/>`;
-  /* each stretch: a wide invisible stroke to click, a highlight, and the names of its easings */
-  for(let i = 0; i < K.length - 1; i++){
-    const seg = pts.filter(p => p[2] === i), d = seg.map((p, j) => (j ? 'L' : 'M') + fx(p[0]).toFixed(1) + ',' + gy(p[1]).toFixed(1)).join('');
-    const on = ezFor === i ? ' on' : '';
-    s += `<path class="gseg" data-seg="${i}" d="${d}"><title>Click to choose the easing</title></path><path class="gsegc${on}" d="${d}"/>`;
-    const w = fx(K[i+1].frame) - fx(K[i].frame);
-    if(w > 90){ const nm = e => EASES.find(x => x[0] === easeId(e))[1];
-      s += `<text class="gname" x="${((fx(K[i].frame) + fx(K[i+1].frame)) / 2).toFixed(1)}" y="${yBot + 12}" text-anchor="middle">${nm(K[i].easeOut)} → ${nm(K[i+1].easeIn)}</text>`; }
+  if(!vis.length) s += `<text class="gname" x="${(x0 + x1) / 2}" y="${GTOP + 30}" text-anchor="middle">Nothing shown. Add a setting with “＋ Add to the graph”, or press 👁 in the legend.</text>`;
+
+  /* ── numbers: curves on one shared scale ── */
+  if(NV.length){
+    const series = NV.map(x => {
+      const K = gKeysP(x.p), u = gValuesP(x.p), pts = [];
+      for(let i = 0; i < K.length - 1; i++){   /* sampled finely, so Back, Elastic and Bounce show their real shape */
+        const A = K[i], B = K[i+1], n = Math.max(12, Math.round((fx(B.frame) - fx(A.frame)) / 2));
+        for(let j = 0; j <= n; j++){ const t = j / n; pts.push([A.frame + (B.frame - A.frame) * t, u[i] + (u[i+1] - u[i]) * ease(t, A.easeOut, B.easeIn), i]); }
+      }
+      return {x, K, u, pts};
+    });
+    if(!gdrag || !gRange){   /* the scale stays put while a point is dragged */
+      const vals = series.flatMap(q => [...q.u, ...q.pts.map(t => t[1])]);
+      let lo = Math.min(...vals), hi = Math.max(...vals);
+      const minSpan = NV.some(x => isJoint(x.p)) ? 30 : 10; if(hi - lo < minSpan){ const m = (hi + lo) / 2; lo = m - minSpan/2; hi = m + minSpan/2; }
+      const pad = (hi - lo) * 0.12; gRange = [lo - pad, hi + pad];
+    }
+    const [lo, hi] = gRange;
+    gy = v => yBot - (v - lo) / (hi - lo) * (yBot - yTop);
+    gy.inv = y => lo + (yBot - y) / (yBot - yTop) * (hi - lo);
+    s += `<rect class="gbg" x="${x0}" y="${yTop}" width="${x1 - x0}" height="${yBot - yTop}" rx="5"/>`;
+    const st = niceStep(hi - lo);
+    for(let v = Math.ceil(lo / st) * st; v <= hi; v += st){ const y = gy(v).toFixed(1);
+      s += `<line class="grid${Math.abs(v) < 1e-9 ? ' zero' : ''}" x1="${x0}" x2="${x1}" y1="${y}" y2="${y}"/><text class="glbl" x="${x0 - 5}" y="${(+y + 3).toFixed(1)}" text-anchor="end">${+v.toFixed(2)}</text>`; }
+    /* the active curve is drawn last, on top */
+    series.sort((a, b) => (a.x.p === gParam) - (b.x.p === gParam));
+    for(const {x, K, u, pts} of series){
+      const act = x.p === gParam, col = gColor(x.c);
+      s += `<g class="gser${act ? ' act' : ''}" style="--c:${col}">`
+        + `<path class="gflat" d="M${x0},${gy(u[0]).toFixed(1)}H${fx(K[0].frame)}M${fx(K[K.length-1].frame)},${gy(u[u.length-1]).toFixed(1)}H${x1}"/>`
+        + (pts.length ? `<path class="gcurve" d="${pathOf(pts)}"/>` : '');
+      for(let i = 0; i < K.length - 1; i++){   /* each stretch: a wide invisible stroke to click, and a highlight */
+        const d = pathOf(pts.filter(q => q[2] === i)), on = ezFor && ezFor.p === x.p && ezFor.i === i ? ' on' : '';
+        s += `<path class="gseg" data-p="${esc(x.p)}" data-seg="${i}" d="${d}"><title>${esc(plabel(x.p))}: click to choose the easing</title></path><path class="gsegc${on}" d="${d}"/>`;
+        const w = fx(K[i+1].frame) - fx(K[i].frame);
+        if(act && w > 90){ const nm = e => EASES.find(y => y[0] === easeId(e))[1];
+          s += `<text class="gname" x="${((fx(K[i].frame) + fx(K[i+1].frame)) / 2).toFixed(1)}" y="${yBot + 12}" text-anchor="middle">${nm(K[i].easeOut)} → ${nm(K[i+1].easeIn)}</text>`; }
+      }
+      K.forEach((k, i) => { s += `<circle class="gkey${act && k.frame === frame ? ' cur' : ''}" data-p="${esc(x.p)}" data-ki="${i}" cx="${fx(k.frame).toFixed(1)}" cy="${gy(u[i]).toFixed(1)}" r="${act ? 5.5 : 4.2}"><title>${esc(plabel(x.p))} · frame ${k.frame}: ${Math.round(gRawP(x.p, k))}</title></circle>`; });
+      s += '</g>';
+    }
   }
-  K.forEach((k, i) => { s += `<circle class="gkey${k.frame === frame ? ' cur' : ''}" data-ki="${i}" cx="${fx(k.frame).toFixed(1)}" cy="${gy(u[i]).toFixed(1)}" r="5.5"><title>Frame ${k.frame}: ${Math.round(gRaw(k))}</title></circle>`; });
-  const x = fx(frame), cur = gValueAt(frame);
-  s += `<line class="ph" x1="${x}" x2="${x}" y1="14" y2="${H - 2}"/><path class="phk" d="M${x-6},12H${x+6}V20L${x},26L${x-6},20Z"/>`
-    + `<text class="gread" x="${x + (x > x1 - 50 ? -6 : 6)}" y="${yTop + 11}" text-anchor="${x > x1 - 50 ? 'end' : 'start'}">${Math.round(cur)}</text>`;
+
+  /* ── other settings: one flat row each, a diamond and a slanted label where the value changes ── */
+  SV.forEach((x, r) => {
+    const base = yBot + (NV.length ? GBOT : 0) + r * GROW + GROW - 14, col = gColor(x.c), act = x.p === gParam;
+    const nm = plabel(x.p).split(' · ').pop();
+    s += `<g class="grow${act ? ' act' : ''}" style="--c:${col}">`
+      + `<text class="growname" x="${x0 - 6}" y="${base + 4}" text-anchor="end"><title>${esc(plabel(x.p))}</title>${esc(short(nm, 11))}</text>`
+      + `<line class="gline" x1="${x0}" x2="${x1}" y1="${base}" y2="${base}"/>`
+      + `<line class="gline" x1="${x1}" x2="${TW - PAD}" y1="${base}" y2="${base}" stroke-dasharray="3 3"/>`;
+    for(const st of gStepsP(x.p)){
+      const X = fx(st.k.frame), cur = act && st.k.frame === frame ? ' cur' : '', t = vlabel(x.p, st.v);
+      s += `<g class="gstep${cur}" data-p="${esc(x.p)}" data-ki="${st.i}"><title>${esc(plabel(x.p))} · frame ${st.k.frame}: ${esc(t)}</title>`
+        + `<rect x="${X - 8}" y="${base - 8}" width="16" height="16" fill="transparent" stroke="none"/>`
+        + `<path d="M${X},${base - 6}L${X + 6},${base}L${X},${base + 6}L${X - 6},${base}Z"/>`
+        + `<text class="gsl" x="${X + 5}" y="${base - 9}" transform="rotate(-45 ${X + 5} ${base - 9})">${esc(short(t, 20))}</text></g>`;
+    }
+    s += '</g>';
+  });
+
+  const x = fx(frame);
+  s += `<line class="ph" x1="${x}" x2="${x}" y1="14" y2="${H - 2}"/><path class="phk" d="M${x-6},12H${x+6}V20L${x},26L${x-6},20Z"/>`;
+  if(NV.length && isNum(gParam) && seriesOf(gParam) && seriesOf(gParam).on)
+    s += `<text class="gread" x="${x + (x > x1 - 50 ? -6 : 6)}" y="${yTop + 11}" text-anchor="${x > x1 - 50 ? 'end' : 'start'}">${Math.round(gValueAtP(gParam, frame))}</text>`;
   tl.innerHTML = s;
   $('readout').textContent = `Frame ${frame} / ${S.length} · ${(frame / S.fps).toFixed(2)} s`;
 }
-function gValueAt(f){   /* the plotted (continuous) value at any frame */
-  const K = gKeys(), u = gValues();
-  if(f <= K[0].frame) return u[0]; if(f >= K[K.length-1].frame) return u[u.length-1];
-  let i = 0; while(K[i+1].frame <= f) i++;
-  return u[i] + (u[i+1] - u[i]) * ease((f - K[i].frame) / (K[i+1].frame - K[i].frame), K[i].easeOut, K[i+1].easeIn);
-}
 function gDown(e){
   e.preventDefault();
-  const key = e.target.closest('.gkey'), seg = e.target.closest('.gseg');
-  lane = gTrack() ? gParam : null;
+  const key = e.target.closest('.gkey, .gstep'), seg = e.target.closest('.gseg');
   if(key){
     closeEz(); pause();
-    const K = gKeys(), k = K[+key.dataset.ki];
-    gdrag = {key:k, K, i:+key.dataset.ki, y0:tlY(e), v0:gValues()[+key.dataset.ki], pushed:false};
+    const p = key.dataset.p, K = gKeysP(p), i = +key.dataset.ki, k = K[i];
+    activate(p); syncGraphBar(); syncPanel();
+    gdrag = {p, key:k, K, y0:tlY(e), v0:isNum(p) ? gValuesP(p)[i] : null, pushed:false, stepped:!isNum(p)};
     goto(k.frame);
   } else if(seg){
-    pause(); openEz(+seg.dataset.seg, e);
+    pause(); activate(seg.dataset.p); syncGraphBar(); openEz(seg.dataset.p, +seg.dataset.seg, e);
     return;
   } else {
     /* two quick presses in the same place add a point (the graph redraws in between, so dblclick never arrives) */
@@ -948,32 +1076,35 @@ function gDown(e){
   try{ tl.setPointerCapture(e.pointerId); }catch(_){}
 }
 let gLastDown = null;
-function addGraphPoint(f){
+function addGraphPoint(f){   /* a point on the active curve at that frame, keeping its value, so nothing jumps */
+  if(!isNum(gParam) || !seriesOf(gParam) || !seriesOf(gParam).on){ goto(f); return; }
   pause(); frame = f;
-  pushUndo(); writeParam(gParam, isJoint(gParam) ? wrap(gValueAt(f)) : gValueAt(f)); lane = gTrack() ? gParam : null; changed();
+  const v = gValueAtP(gParam, f);
+  pushUndo(); writeParam(gParam, isJoint(gParam) ? wrap(v) : v); lane = trackOf(gParam) ? gParam : null; changed();
 }
 function gMove(e){
   if(tdrag && tdrag.scrub){ const f = xf(tlX(e)); if(f !== frame) goto(f); return; }
   if(!gdrag) return;
   const d = gdrag, f = xf(tlX(e));
-  const v = gy.inv(gy(d.v0) + (tlY(e) - d.y0));
+  const frameFree = f !== d.key.frame && !d.K.some(k => k !== d.key && k.frame === f);   /* one keyframe per frame */
+  if(d.stepped && !frameFree) return;
   if(!d.pushed){ pushUndo(); d.pushed = true; }
-  /* value: written back as the stored setting (angles wrapped, others kept in range) */
-  const val = clean(gParam, v);
-  if(gTrack()) d.key.value = val; else setP(d.key.pose, gParam, val);
-  /* frame: the whole keyframe moves, one keyframe per frame */
-  if(f !== d.key.frame && !d.K.some(k => k !== d.key && k.frame === f)){ d.key.frame = f; d.K.sort((a, b) => a.frame - b.frame); frame = f; }
+  if(!d.stepped){   /* value: written back as the stored setting (angles wrapped, others kept in range) */
+    const val = clean(d.p, gy.inv(gy(d.v0) + (tlY(e) - d.y0)));
+    if(trackOf(d.p)) d.key.value = val; else setP(d.key.pose, d.p, val);
+  }
+  if(frameFree){ d.key.frame = f; d.K.sort((a, b) => a.frame - b.frame); frame = f; }
   changed();
 }
-/* easing picker for the stretch between keyframes i and i+1 */
+/* easing picker for one stretch: keyframes i and i+1 of setting p */
 let ezFor = null;
 const ezpop = $('ezpop');
-function openEz(i, e){
-  const K = gKeys(); if(!K[i+1]) return;
-  ezFor = i;
+function openEz(p, i, e){
+  const K = gKeysP(p); if(!K[i+1]) return;
+  ezFor = {p, i};
   const col = (which, k, form, head) => `<div class="col" data-which="${which}"><div class="hd">${head}</div><div class="grid">`
     + EASES.map(([id, l]) => `<button type="button" data-v="${id}" aria-pressed="${easeId(k[which]) === id}" title="${l}">${easeIcon(id, form)}${l}</button>`).join('') + '</div></div>';
-  ezpop.innerHTML = col('easeOut', K[i], 'in', `Leaving ◆ ${K[i].frame}`) + col('easeIn', K[i+1], 'out', `Arriving at ◆ ${K[i+1].frame}`);
+  ezpop.innerHTML = `<div class="ezhd">${esc(plabel(p))}</div>` + col('easeOut', K[i], 'in', `Leaving ◆ ${K[i].frame}`) + col('easeIn', K[i+1], 'out', `Arriving at ◆ ${K[i+1].frame}`);
   ezpop.classList.add('open');
   const w = ezpop.offsetWidth, h = ezpop.offsetHeight;
   ezpop.style.left = Math.max(8, Math.min(innerWidth - w - 8, e.clientX - w / 2)) + 'px';
@@ -982,8 +1113,8 @@ function openEz(i, e){
 }
 function closeEz(){ if(ezFor === null && !ezpop.classList.contains('open')) return; ezFor = null; ezpop.classList.remove('open'); if(view === 'graph') drawTimeline(); }
 ezpop.addEventListener('click', e => {
-  const b = e.target.closest('button'); if(!b || ezFor === null) return;
-  const which = b.closest('.col').dataset.which, K = gKeys(), k = which === 'easeOut' ? K[ezFor] : K[ezFor + 1];
+  const b = e.target.closest('button'); if(!b || !ezFor) return;
+  const which = b.closest('.col').dataset.which, K = gKeysP(ezFor.p), k = which === 'easeOut' ? K[ezFor.i] : K[ezFor.i + 1];
   pushUndo(); k[which] = b.dataset.v;
   for(const x of b.parentNode.children) x.setAttribute('aria-pressed', String(x === b));
   changed();
@@ -1261,6 +1392,7 @@ pal.addEventListener('click', e => {
 });
 document.addEventListener('click', e => { if(!pal.contains(e.target)) pal.classList.remove('open'); });
 window.addEventListener('scroll', placePal, true);
+$('keMain').addEventListener('scroll', () => closeEz());
 window.addEventListener('resize', placePal);
 document.addEventListener('keydown', e => { if(e.key === 'Escape') pal.classList.remove('open'); });
 
