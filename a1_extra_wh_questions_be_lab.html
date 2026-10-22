@@ -1,0 +1,256 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<title>Be-Verb Lab — Wh-questions with am / is / are</title>
+<script>
+(function(){
+  try{
+    var saved = localStorage.getItem('theme-preference');
+    var theme = (saved === 'light' || saved === 'dark')
+      ? saved
+      : ((window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches) ? 'dark' : 'light');
+    document.documentElement.setAttribute('data-theme', theme);
+    var fs = parseFloat(localStorage.getItem('font-size-preference'));
+    if (fs >= 10 && fs <= 28) document.documentElement.style.setProperty('--fs-base', fs + 'px');
+  }catch(e){ /* localStorage/matchMedia unavailable — CSS media query still applies */ }
+})();
+</script>
+<link rel="stylesheet" href="house.css">
+</head>
+<body>
+<div class="page" id="page">
+  <span class="cefr-tag cefr-a1">A1 · Beginner</span>
+  <h1>Be-Verb Lab: Wh-questions with am / is / are</h1>
+  <p class="subtitle">What is this? · Who is she? · Where are you from? · How old are you?</p>
+
+  <div class="sec-div">The pattern</div>
+  <div class="rule-box">
+    <div class="pattern">
+      <span class="pos-hl pos-wh">Wh-word</span><span class="plus">+</span>
+      <span class="pos-hl pos-verb">am / is / are</span><span class="plus">+</span>
+      <span class="pos-hl pos-subject">subject</span><span class="plus">+</span>
+      <span>… ?</span>
+    </div>
+    <div class="subj-grid">
+      <div class="subj-card"><span class="verb-big pos-hl pos-verb">am</span><span class="subj-list">I</span><span class="subj-note">first person singular</span></div>
+      <div class="subj-card"><span class="verb-big pos-hl pos-verb">is</span><span class="subj-list">he, she, it</span><span class="subj-note">third person singular</span></div>
+      <div class="subj-card"><span class="verb-big pos-hl pos-verb">are</span><span class="subj-list">you, we, they</span><span class="subj-note">second person &amp; plural</span></div>
+    </div>
+    <p>With the verb <strong>be</strong>, the verb itself moves before the subject to form questions — no separate auxiliary is needed. The main verb <em>is</em> the auxiliary.</p>
+    <p><strong>am + not:</strong> I’m not (we don’t use “amn’t”).</p>
+  </div>
+
+  <button class="grammar-toggle-btn" id="grammarToggle">🎨 Show Grammar</button>
+  <div class="pos-legend"></div>
+
+  <div class="score-bar"><span>Mastered: <strong id="masteredScore">0</strong> / <span id="masteredTotal">0</span></span></div>
+  <nav class="lab-tabs" id="labTabs" aria-label="Sections"></nav>
+  <div id="labPanels"></div>
+
+  <footer>Be-Verb Lab — Wh-questions with am / is / are (A1 · self-study)</footer>
+</div>
+
+<div id="theme-toggle-wrap">
+  <button id="theme-toggle" aria-label="Toggle light/dark mode" title="Toggle light/dark mode">
+    <span id="theme-icon">☀️</span>
+  </button>
+</div>
+<script src="house.js"></script>
+<script src="lab-kit.js"></script>
+<script>
+const { pick, words } = LabKit;
+
+/* ── random question builder ───────────────────────────────────────────────
+   Statement → Wh-question. The target is the right option, the word-order
+   chips and the gap-fill answer; `wrong` holds the typical mistakes:
+   no inversion, wrong form of be, do-support with be, preposition moved. */
+function beItem(stmt, wh, be, subj, tail) {
+  const W = wh.join(' '), T = tail ? ' ' + tail : '';
+  const tokens = [...wh.map(w => [w, 'wh']), [be, 'verb'], ...words(subj, 'subject'),
+                  ...(tail ? [[tail, 'prep']] : []), ['?', null]];
+  const other = { is: 'are', are: 'is', am: 'is' }[be];
+  const wrong = [
+    `${W} ${subj} ${be}${T}?`,
+    `${W} ${other} ${subj}${T}?`,
+    `${W} ${be === 'is' ? 'does' : 'do'} ${subj} ${be}${T}?`
+  ];
+  if (tail) wrong.push(`${W} ${be} ${tail} ${subj}?`);
+  const alts = (be === 'is' && wh.length === 1) ? [`${W}’s ${subj}${T}?`] : [];
+  return { ctx: stmt, tokens, wrong, alts };
+}
+
+/* People: s = in the statement, q = in the question (I → you, my → your). */
+const PEOPLE = [
+  { s: 'I', q: 'you', b: 'am', qb: 'are' },
+  { s: 'He', q: 'he', b: 'is' }, { s: 'She', q: 'she', b: 'is' },
+  { s: 'They', q: 'they', b: 'are' }, { s: 'We', q: 'you', b: 'are' },
+  { s: 'My sister', q: 'your sister', b: 'is' }, { s: 'My parents', q: 'your parents', b: 'are' },
+  { s: 'Ana', q: 'Ana', b: 'is' }, { s: 'Tom and Lucy', q: 'Tom and Lucy', b: 'are' },
+  { s: 'The teacher', q: 'the teacher', b: 'is' }, { s: 'The students', q: 'the students', b: 'are' }
+];
+const qb = p => p.qb || p.b;
+
+const SECTIONS = [
+  { id: 'objects', emoji: '📦', label: 'Objects', pill: 'What…?',
+    note: 'Use “what” to ask about a thing or object. The verb “be” moves before the subject: What is this? / What are these?',
+    examples: [
+      ['pos', '{This|subject} {is|verb} {a laptop|complement}.', 'this → 3rd singular → is'],
+      ['neg', '{This|subject} {is|verb}{n’t|neg} {a laptop|complement}.', 'is + not (contraction: isn’t)'],
+      ['cel', '{What|wh} {is|verb} {this|subject}?', 'what + is + subject?']
+    ],
+    prompts: { choice: 'Which question is correct?', drag: 'Tap or drag the words to build the question.',
+               gap: 'Transform this into a “What” question:' },
+    gen() {
+      const pl = Math.random() < .5;
+      const d = pl ? pick(['These', 'Those']) : pick(['This', 'That']);
+      const be = pl ? 'are' : 'is';
+      const thing = pick(pl ? ['scissors', 'glasses', 'headphones', 'keys', 'apples', 'coins']
+                            : ['a laptop', 'a pen', 'an umbrella', 'a phone', 'a key', 'a notebook', 'a calculator']);
+      const it = beItem(`${d} ${be} ${thing}.`, ['What'], be, d.toLowerCase());
+      it.key = it.ctx;
+      return it;
+    } },
+
+  { id: 'identification', emoji: '🫆', label: 'Identification', pill: 'Who…?',
+    note: 'Use “who” to ask about a person’s identity. The verb “be” inverts: Who is she? / Who are they?',
+    examples: [
+      ['pos', '{She|subject} {is|verb} {our new principal|complement}.', 'she → 3rd singular → is'],
+      ['neg', '{She|subject} {is|verb}{n’t|neg} {our new principal|complement}.', 'is + not'],
+      ['cel', '{Who|wh} {is|verb} {she|subject}?', 'who + is + subject?']
+    ],
+    prompts: { choice: 'Which question is correct?', drag: 'Tap or drag the words to build the question.',
+               gap: 'Transform this into a “Who” question:' },
+    gen() {
+      const pl = Math.random() < .5;
+      const s = pick(pl ? ['They', 'Those boys', 'Those women'] : ['He', 'She', 'That man', 'That woman']);
+      const role = pick(pl ? ['my classmates', 'our neighbors', 'my cousins', 'the new students']
+                           : ['our new principal', 'my cousin', 'the new doctor', 'my neighbor', 'the manager']);
+      const be = pl ? 'are' : 'is';
+      const it = beItem(`${s} ${be} ${role}.`, ['Who'], be, s === 'He' || s === 'She' || s === 'They' ? s.toLowerCase() : s.charAt(0).toLowerCase() + s.slice(1));
+      it.key = it.ctx;
+      return it;
+    } },
+
+  { id: 'origin', emoji: '🐣', label: 'Origin', pill: 'Where…from?',
+    note: 'Use “where … from?” to ask about someone’s country or place of origin. The “from” stays at the end.',
+    examples: [
+      ['pos', '{He|subject} {is|verb} {from|prep} {Mexico|noun}.', 'he → 3rd singular → is'],
+      ['neg', '{He|subject} {is|verb}{n’t|neg} {from|prep} {Mexico|noun}.', 'is + not'],
+      ['cel', '{Where|wh} {is|verb} {he|subject} {from|prep}?', 'where + is + subject + from?']
+    ],
+    prompts: { choice: 'Which question is correct?', drag: 'Tap or drag the words to build the question.',
+               gap: 'Transform this into a “Where … from?” question:' },
+    gen() {
+      const p = pick(PEOPLE);
+      const c = pick(['Japan', 'Mexico', 'Brazil', 'Canada', 'Venezuela', 'Italy', 'Korea', 'Peru', 'Spain']);
+      return beItem(`${p.s} ${p.b} from ${c}.`, ['Where'], qb(p), p.q, 'from');
+    } },
+
+  { id: 'age', emoji: '🎂', label: 'Age', pill: 'How old…?',
+    note: 'Use “how old” to ask about someone’s or something’s age. The verb “be” inverts after “how old”.',
+    examples: [
+      ['pos', '{The baby|subject} {is|verb} {one year old|complement}.', 'the baby → 3rd singular → is'],
+      ['neg', '{The baby|subject} {is|verb}{n’t|neg} {one year old|complement}.', 'is + not'],
+      ['cel', '{How old|wh} {is|verb} {the baby|subject}?', 'how old + is + subject?']
+    ],
+    prompts: { choice: 'Which question is correct?', drag: 'Tap or drag the words to build the question.',
+               gap: 'Transform this into a “How old” question:' },
+    gen() {
+      const p = pick(PEOPLE.concat([
+        { s: 'The baby', q: 'the baby', b: 'is' }, { s: 'My car', q: 'your car', b: 'is' },
+        { s: 'This house', q: 'this house', b: 'is' }, { s: 'My cat', q: 'your cat', b: 'is' }]));
+      const n = pick(['eight', 'twelve', 'sixteen', 'twenty', 'thirty-five', 'fifty', 'seventy']);
+      return beItem(`${p.s} ${p.b} ${n} years old.`, ['How', 'old'], qb(p), p.q);
+    } },
+
+  { id: 'status', emoji: '😎', label: 'Status', pill: 'How…?',
+    note: 'Use “how” to ask about someone’s condition, health, or emotional state.',
+    examples: [
+      ['pos', '{He|subject} {is|verb} {fine|adj} {today|time}.', 'he → 3rd singular → is'],
+      ['neg', '{He|subject} {is|verb}{n’t|neg} {fine|adj} {today|time}.', 'is + not'],
+      ['cel', '{How|wh} {is|verb} {he|subject} {today|time}?', 'how + is + subject?']
+    ],
+    prompts: { choice: 'Which question is correct?', drag: 'Tap or drag the words to build the question.',
+               gap: 'Transform this into a “How” question:' },
+    gen() {
+      const p = pick(PEOPLE);
+      const a = pick(['fine', 'tired', 'happy', 'nervous', 'sick', 'great', 'bored', 'busy']);
+      return beItem(`${p.s} ${p.b} ${a}.`, ['How'], qb(p), p.q);
+    } },
+
+  { id: 'description', emoji: '🫥', label: 'Description', pill: 'What…like?',
+    note: 'Use “what … like?” to ask about personality or character. The “like” is a preposition, not a verb — it stays at the end.',
+    examples: [
+      ['pos', '{He|subject} {is|verb} {very patient|adj}.', 'he → 3rd singular → is'],
+      ['neg', '{He|subject} {is|verb}{n’t|neg} {very patient|adj}.', 'is + not'],
+      ['cel', '{What|wh} {is|verb} {he|subject} {like|prep}?', 'what + is + subject + like?']
+    ],
+    prompts: { choice: 'Which question is correct?', drag: 'Tap or drag the words to build the question.',
+               gap: 'Transform this into a “What … like?” question:' },
+    gen() {
+      const p = pick(PEOPLE);
+      const a = pick(['very patient', 'really creative', 'funny', 'kind', 'shy', 'very friendly', 'quiet', 'smart']);
+      return beItem(`${p.s} ${p.b} ${a}.`, ['What'], qb(p), p.q, 'like');
+    } },
+
+  { id: 'location', emoji: '📍', label: 'Location', pill: 'Where…?',
+    note: 'Use “where” to ask about a place or location. The verb “be” inverts: Where is the museum? / Where are the keys?',
+    examples: [
+      ['pos', '{The books|subject} {are|verb} {on the shelf|prep}.', 'the books → plural → are'],
+      ['neg', '{The books|subject} {are|verb}{n’t|neg} {on the shelf|prep}.', 'are + not (contraction: aren’t)'],
+      ['cel', '{Where|wh} {are|verb} {the books|subject}?', 'where + are + subject?']
+    ],
+    prompts: { choice: 'Which question is correct?', drag: 'Tap or drag the words to build the question.',
+               gap: 'Transform this into a “Where” question:' },
+    gen() {
+      const p = pick([
+        { s: 'The museum', q: 'the museum', b: 'is', at: ['downtown', 'next to the park', 'on Main Street'] },
+        { s: 'My keys', q: 'your keys', b: 'are', at: ['in my bag', 'on the table', 'in the kitchen'] },
+        { s: 'Your phone', q: 'my phone', b: 'is', at: ['on the sofa', 'in the kitchen', 'next to the TV'] },
+        { s: 'The books', q: 'the books', b: 'are', at: ['on the shelf', 'in the box', 'on my desk'] },
+        { s: 'The bank', q: 'the bank', b: 'is', at: ['on the corner', 'next to the café'] },
+        { s: 'The students', q: 'the students', b: 'are', at: ['in the library', 'at the park'] },
+        { s: 'I', q: 'you', b: 'am', qb: 'are', at: ['at home', 'at school', 'at the airport'] },
+        { s: 'My parents', q: 'your parents', b: 'are', at: ['in Spain', 'at work'] }
+      ]);
+      return beItem(`${p.s} ${p.b} ${pick(p.at)}.`, ['Where'], qb(p), p.q);
+    } }
+];
+
+/* Different sentences from the Common mistakes list. A1: every one has a mistake. */
+const EH_POOL = [
+  { words: ['Where', 'your', 'parents', 'are', '?'], error: { type: 'misplaced', wordIndex: 3, targetGapIndex: 1 } },
+  { words: ['How', 'old', 'your', 'brother', 'is', '?'], error: { type: 'misplaced', wordIndex: 4, targetGapIndex: 2 } },
+  { words: ['What', 'are', 'this', '?'], error: { type: 'wrong', wordIndex: 1, options: ['is', 'am', 'be'], correct: 'is' } },
+  { words: ['Who', 'is', 'those', 'women', '?'], error: { type: 'wrong', wordIndex: 1, options: ['are', 'am', 'be'], correct: 'are' } },
+  { words: ['How', 'you', 'today', '?'], error: { type: 'missing', gapIndex: 1, options: ['are', 'is', 'do'], correct: 'are' } },
+  { words: ['Where', 'is', 'Ana', 'from', 'is', '?'], error: { type: 'extra', wordIndex: 4 } },
+  { words: ['What', 'is', 'like', 'your', 'teacher', '?'], error: { type: 'misplaced', wordIndex: 2, targetGapIndex: 5 } },
+  { words: ['Where', 'are', 'they', 'from', 'Japan', '?'], error: { type: 'extra', wordIndex: 4 } },
+  { words: ['Where', 'am', 'the', 'museum', '?'], error: { type: 'wrong', wordIndex: 1, options: ['is', 'are', 'be'], correct: 'is' } },
+  { words: ['How', 'old', 'are', 'you', 'have', '?'], error: { type: 'extra', wordIndex: 4 } },
+  { words: ['Where', 'is', 'my', 'keys', '?'], error: { type: 'wrong', wordIndex: 1, options: ['are', 'am', 'be'], correct: 'are' } },
+  { words: ['How', 'is', 'your', 'parents', '?'], error: { type: 'wrong', wordIndex: 1, options: ['are', 'am', 'be'], correct: 'are' } }
+];
+
+LabKit.build({
+  sections: SECTIONS,
+  mistakes: [
+    ['Where you are from?', 'Where are you from?'],
+    ['How old you are?', 'How old are you?'],
+    ['How many years do you have?', 'How old are you?'],
+    ['Where do you are from?', 'Where are you from?'],
+    ['Where is they from?', 'Where are they from?'],
+    ['Who are she?', 'Who is she?'],
+    ['Where is from he?', 'Where is he from?'],
+    ['What is like he?', 'What is he like?']
+  ],
+  errorHunt: EH_POOL, ehCount: 6,
+  ehPrompt: 'Every sentence has one mistake. Tap a word — or a space between words — to fix it. Then press OK. 🎲 Again gives you new sentences.'
+});
+</script>
+<script>HouseGrammar.init();</script>
+</body>
+</html>

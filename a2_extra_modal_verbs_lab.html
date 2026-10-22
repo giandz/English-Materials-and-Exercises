@@ -1,0 +1,298 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<title>Modal Verbs Lab — can, could, may, might, should, must</title>
+<script>
+(function(){
+  try{
+    var saved = localStorage.getItem('theme-preference');
+    var theme = (saved === 'light' || saved === 'dark')
+      ? saved
+      : ((window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches) ? 'dark' : 'light');
+    document.documentElement.setAttribute('data-theme', theme);
+    var fs = parseFloat(localStorage.getItem('font-size-preference'));
+    if (fs >= 10 && fs <= 28) document.documentElement.style.setProperty('--fs-base', fs + 'px');
+  }catch(e){ /* localStorage/matchMedia unavailable — CSS media query still applies */ }
+})();
+</script>
+<link rel="stylesheet" href="house.css">
+</head>
+<body>
+<div class="page" id="page">
+  <span class="cefr-tag cefr-a2">A2 · Elementary</span>
+  <h1>Modal Verbs Lab: can, could, may, might, should, must</h1>
+  <p class="subtitle">I can swim. · Could you help me? · May I come in? · It might rain. · You should rest. · You mustn’t run.</p>
+
+  <div class="sec-div">The pattern</div>
+  <div class="rule-box">
+    <div class="pattern">
+      <span class="pos-hl pos-subject">subject</span><span class="plus">+</span>
+      <span class="pos-hl pos-aux">modal</span><span class="plus">+</span>
+      <span class="pos-hl pos-verb">base verb</span><span class="plus">…</span>
+    </div>
+    <div class="pattern">
+      <span class="pos-hl pos-aux">modal</span><span class="plus">+</span>
+      <span class="pos-hl pos-subject">subject</span><span class="plus">+</span>
+      <span class="pos-hl pos-verb">base verb</span><span class="plus">…</span><span>?</span>
+    </div>
+    <div class="subj-grid">
+      <div class="subj-card"><span class="verb-big pos-hl pos-aux">can</span><span class="subj-list">ability · request · permission</span></div>
+      <div class="subj-card"><span class="verb-big pos-hl pos-aux">could</span><span class="subj-list">past ability · polite request · possibility</span></div>
+      <div class="subj-card"><span class="verb-big pos-hl pos-aux">may</span><span class="subj-list">formal permission · possibility</span></div>
+      <div class="subj-card"><span class="verb-big pos-hl pos-aux">might</span><span class="subj-list">possibility</span></div>
+      <div class="subj-card"><span class="verb-big pos-hl pos-aux">should</span><span class="subj-list">advice</span></div>
+      <div class="subj-card"><span class="verb-big pos-hl pos-aux">must</span><span class="subj-list">rules · necessity</span></div>
+    </div>
+    <p><strong>Same form for every subject:</strong> I can, she can — no -s.</p>
+    <p><strong>No “to” after the modal:</strong> I can swim (not can to swim).</p>
+    <p><strong>No do / does:</strong> Can you…? · I can’t… (not Do you can…? · I don’t can…).</p>
+    <p><strong>Negatives:</strong> can’t, couldn’t, shouldn’t, mustn’t, may not, might not.</p>
+  </div>
+
+  <button class="grammar-toggle-btn" id="grammarToggle">🎨 Show Grammar</button>
+  <div class="pos-legend"></div>
+
+  <div class="score-bar"><span>Mastered: <strong id="masteredScore">0</strong> / <span id="masteredTotal">0</span></span></div>
+  <nav class="lab-tabs" id="labTabs" aria-label="Sections"></nav>
+  <div id="labPanels"></div>
+
+  <footer>Modal Verbs Lab — can, could, may, might, should, must (A2 · self-study)</footer>
+</div>
+
+<div id="theme-toggle-wrap">
+  <button id="theme-toggle" aria-label="Toggle light/dark mode" title="Toggle light/dark mode">
+    <span id="theme-icon">☀️</span>
+  </button>
+</div>
+<script src="house.js"></script>
+<script src="lab-kit.js"></script>
+<script>
+const { pick, words, join } = LabKit;
+const R = a => (a.rest ? ' ' + a.rest : '');
+const cue = s => ' <span class="cue">(' + s + ')</span>';
+const low = s => (s === 'I' ? s : s.toLowerCase());
+
+/* statement: subject + modal + verb (+ rest) + .   question: modal + subject + verb (+ rest) + ? */
+const stmtTokens = (s, mod, a) => [...words(s, 'subject'), [mod, 'aux'], ...words(a.v, 'verb'),
+                                   ...words(a.rest, a.rp || 'object'), ['.', null]];
+const qTokens = (mod, s, a) => [[mod, 'aux'], ...words(s, 'subject'), ...words(a.v, 'verb'),
+                                ...words(a.rest, a.rp || 'object'), ['?', null]];
+
+const SECTIONS = [
+  { id: 'ability', emoji: '💪', label: 'Ability', pill: 'can / can’t',
+    note: 'Use can to say what you are able to do. Use can’t for things you are not able to do.',
+    examples: [
+      ['pos', '{She|subject} {can|aux} {swim|verb}.', 'can + base verb (no -s, no to)'],
+      ['neg', '{She|subject} {can|aux}{’t|neg} {drive|verb}.', 'can + not = can’t'],
+      ['q', '{Can|aux} {you|subject} {speak|verb} {French|object}?', 'can goes before the subject — no do/does']
+    ],
+    prompts: { choice: 'Which question is correct?', drag: 'Tap or drag the words to build the question.', gap: 'Make a question.' },
+    gen() {
+      const p = pick([{ s: 'I', q: 'you' }, { s: 'She', q: 'she', t: 1 }, { s: 'He', q: 'he', t: 1 }, { s: 'They', q: 'they' },
+                      { s: 'My brother', q: 'your brother', t: 1 }, { s: 'Ana', q: 'Ana', t: 1 }, { s: 'The kids', q: 'the kids' }]);
+      const a = pick([{ v: 'swim', s3: 'swims' }, { v: 'speak', s3: 'speaks', rest: 'French' },
+                      { v: 'play', s3: 'plays', rest: 'the piano' }, { v: 'cook', s3: 'cooks' }, { v: 'drive', s3: 'drives' },
+                      { v: 'ride', s3: 'rides', rest: 'a bike' }, { v: 'dance', s3: 'dances', rest: 'salsa' }]);
+      const wrong = [`Can ${p.q} to ${a.v}${R(a)}?`, `${p.t ? 'Does' : 'Do'} ${p.q} can ${a.v}${R(a)}?`];
+      if (p.t) wrong.push(`Can ${p.q} ${a.s3}${R(a)}?`);
+      return { ctx: `${p.s} can ${a.v}${R(a)}.`, tokens: qTokens('Can', p.q, a), wrong };
+    } },
+
+  { id: 'past-ability', emoji: '⏪', label: 'Past ability', pill: 'could / couldn’t',
+    note: 'Use could and couldn’t for ability in the past.',
+    examples: [
+      ['pos', '{When I was five,|time} {I|subject} {could|aux} {ride|verb} {a bike|object}.', 'could = can in the past'],
+      ['neg', '{My grandma|subject} {could|aux}{n’t|neg} {read|verb} {when she was young|time}.', 'could + not = couldn’t'],
+      ['q', '{Could|aux} {you|subject} {swim|verb} {when you were a child|time}?', 'could + subject + base verb']
+    ],
+    prompts: { choice: 'Which negative sentence is correct?', drag: 'Tap or drag the words to build the negative sentence.', gap: 'Make it negative.' },
+    gen() {
+      const p = pick([{ s: 'I', pr: 'I', w: 'was' }, { s: 'My brother', pr: 'he', w: 'was', t: 1 }, { s: 'She', pr: 'she', w: 'was', t: 1 },
+                      { s: 'Ana', pr: 'she', w: 'was', t: 1 }, { s: 'We', pr: 'we', w: 'were' }, { s: 'My cousins', pr: 'they', w: 'were' }]);
+      const a = pick([{ v: 'read', s3: 'reads' }, { v: 'swim', s3: 'swims' }, { v: 'ride', s3: 'rides', rest: 'a bike' },
+                      { v: 'speak', s3: 'speaks', rest: 'English' }, { v: 'play', s3: 'plays', rest: 'chess' },
+                      { v: 'count', s3: 'counts', rest: 'to ten' }]);
+      const age = pick(['four', 'five', 'six', 'seven']);
+      const when = ` when ${p.pr} ${p.w} ${age}.`;
+      const tokens = [...words(p.s, 'subject'), ['couldn’t', 'aux'], [a.v, 'verb'], ...words(a.rest, 'object'),
+                      ['when', 'time'], [p.pr, 'time'], [p.w, 'time'], [age, 'time'], ['.', null]];
+      const wrong = [`${p.s} didn’t could ${a.v}${R(a)}${when}`, `${p.s} couldn’t to ${a.v}${R(a)}${when}`,
+                     `${p.s} can’t ${a.v}${R(a)}${when}`];
+      if (p.t) wrong.push(`${p.s} couldn’t ${a.s3}${R(a)}${when}`);
+      return { ctx: `${p.s} could ${a.v}${R(a)}${when}`, tokens, wrong,
+               alts: [`${p.s} could not ${a.v}${R(a)}${when}`] };
+    } },
+
+  { id: 'requests', emoji: '🙏', label: 'Requests', pill: 'Can / Could you…?',
+    note: 'Use Can you…? or Could you…? to ask someone to do something. Could is more polite.',
+    examples: [
+      ['q', '{Can|aux} {you|subject} {help|verb} {me|object}?', 'friendly', 'Request'],
+      ['q', '{Could|aux} {you|subject} {help|verb} {me|object}, please?', 'more polite', 'Polite request'],
+      ['pos', 'Sure! / No problem.', 'say yes', 'Answer'],
+      ['neg', 'Sorry, {I|subject} {can|aux}{’t|neg}.', 'say no', 'Answer']
+    ],
+    prompts: { choice: 'Which request is correct?', drag: 'Tap or drag the words to build the request.', gap: 'Ask your friend politely.' },
+    gen() {
+      const a = pick([
+        { sit: 'It’s hot, and the window is closed.', v: 'open', ing: 'opening', rest: 'the window' },
+        { sit: 'Your friend speaks very fast.', v: 'speak', ing: 'speaking', rest: 'more slowly', rp: 'adverb' },
+        { sit: 'You can’t reach the salt.', v: 'pass', ing: 'passing', rest: 'me the salt' },
+        { sit: 'There is a lot of noise outside.', v: 'close', ing: 'closing', rest: 'the door' },
+        { sit: 'You didn’t hear the teacher.', v: 'repeat', ing: 'repeating', rest: 'that' },
+        { sit: 'Your homework is difficult.', v: 'help', ing: 'helping', rest: 'me with my homework' },
+        { sit: 'You need a ride to the airport.', v: 'take', ing: 'taking', rest: 'me to the airport' }
+      ]);
+      const x = `${a.v}${R(a)}`;
+      return { ctx: a.sit, key: a.sit, tokens: qTokens('Could', 'you', a),
+               wrong: [`Could you to ${x}?`, `Could you ${a.ing}${R(a)}?`, `Do you could ${x}?`],
+               alts: [`Can you ${x}?`, `Could you ${x}, please?`, `Can you ${x}, please?`,
+                      `Could you please ${x}?`, `Can you please ${x}?`] };
+    } },
+
+  { id: 'permission', emoji: '🙋', label: 'Permission', pill: 'Can / Could / May I…?',
+    note: 'Use Can I…?, Could I…? or May I…? to ask if it is OK to do something. May is formal.',
+    examples: [
+      ['q', '{Can|aux} {I|subject} {sit|verb} {here|adverb}?', 'friendly', 'Asking'],
+      ['q', '{May|aux} {I|subject} {come|verb} {in|adverb}?', 'formal — to a teacher or a boss', 'Asking'],
+      ['pos', 'Yes, {you|subject} {can|aux}. / Of course.', 'say yes', 'Answer'],
+      ['neg', 'Sorry, {you|subject} {can|aux}{’t|neg}.', 'say no', 'Answer']
+    ],
+    prompts: { choice: 'Which question is correct?', drag: 'Tap or drag the words to build the question.', gap: 'Ask for permission.' },
+    gen() {
+      const a = pick([
+        { sit: 'You want to use the bathroom.', v: 'use', ing: 'using', rest: 'the bathroom' },
+        { sit: 'You don’t have a pen.', v: 'borrow', ing: 'borrowing', rest: 'your pen' },
+        { sit: 'There is a free chair next to someone.', v: 'sit', ing: 'sitting', rest: 'here', rp: 'adverb' },
+        { sit: 'You have a question in class.', v: 'ask', ing: 'asking', rest: 'a question' },
+        { sit: 'You feel sick at work.', v: 'leave', ing: 'leaving', rest: 'early', rp: 'adverb' },
+        { sit: 'Your phone has no battery.', v: 'use', ing: 'using', rest: 'your phone' },
+        { sit: 'You are at your teacher’s office door.', v: 'come', ing: 'coming', rest: 'in', rp: 'adverb' }
+      ]);
+      const x = `${a.v}${R(a)}`;
+      return { ctx: a.sit, key: a.sit, tokens: qTokens('May', 'I', a),
+               wrong: [`May I to ${x}?`, `May I ${a.ing}${R(a)}?`, `Do I may ${x}?`],
+               alts: [`Can I ${x}?`, `Could I ${x}?`, `May I ${x}, please?`, `Can I ${x}, please?`, `Could I ${x}, please?`] };
+    } },
+
+  { id: 'possibility', emoji: '🌦️', label: 'Possibility', pill: 'may · might · could',
+    note: 'Use may, might or could when something is possible, but you are not sure.',
+    examples: [
+      ['pos', '{It|subject} {might|aux} {rain|verb} {later|time}.', 'might = maybe'],
+      ['pos', '{She|subject} {may|aux} {be|verb} {at home|prep}.', 'may = might'],
+      ['pos', '{It|subject} {could|aux} {be|verb} {Tom|complement}.', 'could = it is possible'],
+      ['neg', '{He|subject} {might|aux} {not|neg} {come|verb}.', 'might not / may not']
+    ],
+    prompts: { choice: 'Which sentence is correct?', drag: 'Tap or drag the words to build the sentence.', gap: 'Say what is possible.' },
+    gen() {
+      const a = pick([
+        { sit: 'The sky is gray.', s: 'It', v: 'rain', s3: 'rains' },
+        { sit: 'Tom isn’t at work today.', s: 'He', v: 'be', s3: 'is', rest: 'sick', rp: 'adj' },
+        { sit: 'The phone is ringing.', s: 'It', v: 'be', s3: 'is', rest: 'Mom', rp: 'complement' },
+        { sit: 'Ana studies every day.', s: 'She', v: 'pass', s3: 'passes', rest: 'the test' },
+        { sit: 'The store is dark.', s: 'It', v: 'be', s3: 'is', rest: 'closed', rp: 'adj' },
+        { sit: 'It’s sunny on Saturday.', s: 'We', v: 'go', s3: 'goes', rest: 'to the beach', rp: 'prep' },
+        { sit: 'Leo is very tired.', s: 'He', v: 'stay', s3: 'stays', rest: 'home tonight', rp: 'adverb' },
+        { sit: 'My keys aren’t in my bag.', s: 'They', v: 'be', s3: 'are', rest: 'in the car', rp: 'prep' }
+      ]);
+      const x = `${a.v}${R(a)}.`;
+      return { ctx: a.sit, key: a.sit, gapCtx: a.sit + cue(low(a.s) + ' / ' + a.v + R(a)),
+               tokens: stmtTokens(a.s, 'might', a),
+               wrong: [`${a.s} might ${a.s3}${R(a)}.`, `${a.s} might to ${x}`, `${a.s} mights ${x}`],
+               alts: [`${a.s} may ${x}`, `${a.s} could ${x}`] };
+    } },
+
+  { id: 'advice', emoji: '💡', label: 'Advice', pill: 'should / shouldn’t',
+    note: 'Use should to say what is a good idea, and shouldn’t for a bad idea.',
+    examples: [
+      ['pos', '{You|subject} {should|aux} {rest|verb}.', 'should = it’s a good idea'],
+      ['neg', '{You|subject} {should|aux}{n’t|neg} {eat|verb} {so much candy|object}.', 'shouldn’t = it’s a bad idea'],
+      ['q', '{Should|aux} {I|subject} {call|verb} {her|object}?', 'ask for advice']
+    ],
+    prompts: { choice: 'Which advice is correct?', drag: 'Tap or drag the words to build the advice.', gap: 'Give advice.' },
+    gen() {
+      const a = pick([
+        { sit: 'I have a headache.', s: 'You', v: 'take', s3: 'takes', ing: 'taking', rest: 'a pill' },
+        { sit: 'I’m always tired.', s: 'You', v: 'go', s3: 'goes', ing: 'going', rest: 'to bed early', rp: 'prep' },
+        { sit: 'My English isn’t very good.', s: 'You', v: 'practice', s3: 'practices', ing: 'practicing', rest: 'every day', rp: 'time' },
+        { sit: 'Ana is cold.', s: 'She', v: 'wear', s3: 'wears', ing: 'wearing', rest: 'a jacket' },
+        { sit: 'Tom has a toothache.', s: 'He', v: 'see', s3: 'sees', ing: 'seeing', rest: 'a dentist' },
+        { sit: 'We are lost.', s: 'We', v: 'ask', s3: 'asks', ing: 'asking', rest: 'for directions', rp: 'prep' },
+        { sit: 'My little brother is bored.', s: 'He', v: 'read', s3: 'reads', ing: 'reading', rest: 'a book' },
+        { sit: 'Leo eats a lot of candy.', s: 'He', v: 'eat', s3: 'eats', ing: 'eating', rest: 'more fruit' }
+      ]);
+      const x = `${a.v}${R(a)}.`;
+      return { ctx: a.sit, key: a.sit, gapCtx: a.sit + cue(low(a.s) + ' / ' + a.v + R(a)),
+               tokens: stmtTokens(a.s, 'should', a),
+               wrong: [`${a.s} should to ${x}`, `${a.s} should ${a.ing}${R(a)}.`,
+                       (a.s === 'You' || a.s === 'We') ? `${a.s} shoulds ${x}` : `${a.s} should ${a.s3}${R(a)}.`] };
+    } },
+
+  { id: 'rules', emoji: '🚦', label: 'Rules', pill: 'must / mustn’t',
+    note: 'Use must for rules and things that are necessary. Use mustn’t for things that are not allowed.',
+    examples: [
+      ['pos', '{You|subject} {must|aux} {wear|verb} {a seatbelt|object}.', 'must = it’s necessary / a rule'],
+      ['neg', '{You|subject} {must|aux}{n’t|neg} {run|verb} {here|adverb}.', 'mustn’t = don’t do it! It’s not allowed.'],
+      ['q', '{Must|aux} {I|subject} {wear|verb} {a uniform|object}?', 'formal — people often say “Do I have to…?”']
+    ],
+    prompts: { choice: 'Which rule is correct?', drag: 'Tap or drag the words to build the rule.', gap: 'Say the rule. ✗ = it is not allowed.' },
+    gen() {
+      const a = pick([
+        { sit: '📚 At the library', v: 'be', rest: 'quiet', rp: 'adj' },
+        { sit: '🏊 At the pool', neg: 1, v: 'run' },
+        { sit: '🚗 In the car', v: 'wear', rest: 'a seatbelt' },
+        { sit: '🖼️ At the museum', neg: 1, v: 'touch', rest: 'the paintings' },
+        { sit: '✈️ At the airport', v: 'show', rest: 'your passport' },
+        { sit: '🏥 At the hospital', neg: 1, v: 'make', rest: 'noise' },
+        { sit: '📝 In the exam', neg: 1, v: 'use', rest: 'your phone' },
+        { sit: '🚦 At a red light', v: 'stop' }
+      ]);
+      const x = `${a.v}${R(a)}.`;
+      const wrong = a.neg
+        ? [`You don’t must ${x}`, `You mustn’t to ${x}`, `You must don’t ${x}`]
+        : [`You must to ${x}`, `You musts ${x}`, `You have must ${x}`];
+      return { ctx: a.sit, key: a.sit, gapCtx: a.sit + ':' + cue('you / ' + (a.neg ? '✗ ' : '') + a.v + R(a)),
+               tokens: stmtTokens('You', a.neg ? 'mustn’t' : 'must', a), wrong,
+               alts: a.neg ? [`You must not ${x}`] : [] };
+    } }
+];
+
+/* Different sentences from the Common mistakes list. A2: some are already correct. */
+const EH_POOL = [
+  { words: ['She', 'can', 'swims', 'very', 'well', '.'], error: { type: 'wrong', wordIndex: 2, options: ['swim', 'swimming', 'to swim'], correct: 'swim' } },
+  { words: ['I', 'can', 'to', 'speak', 'French', '.'], error: { type: 'extra', wordIndex: 2 } },
+  { words: ['You', 'can', 'help', 'me', '?'], error: { type: 'misplaced', wordIndex: 1, targetGapIndex: 0 } },
+  { words: ['It', 'might', 'rains', 'later', '.'], error: { type: 'wrong', wordIndex: 2, options: ['rain', 'raining', 'to rain'], correct: 'rain' } },
+  { words: ['You', 'should', 'to', 'see', 'a', 'doctor', '.'], error: { type: 'extra', wordIndex: 2 } },
+  { words: ['We', 'mustn’t', 'use', 'our', 'phones', 'in', 'the', 'exam', '.'], error: null },
+  { words: ['May', 'I', 'borrow', 'your', 'pen', '?'], error: null },
+  { words: ['When', 'I', 'was', 'five', ',', 'I', 'can', 'swim', '.'], error: { type: 'wrong', wordIndex: 6, options: ['could', 'can’t', 'may'], correct: 'could' } },
+  { words: ['You', 'must', 'not', 'to', 'run', 'here', '.'], error: { type: 'extra', wordIndex: 3 } },
+  { words: ['Could', 'you', 'opening', 'the', 'window', '?'], error: { type: 'wrong', wordIndex: 2, options: ['open', 'to open', 'opened'], correct: 'open' } },
+  { words: ['He', 'might', 'is', 'at', 'home', '.'], error: { type: 'wrong', wordIndex: 2, options: ['be', 'being', 'to be'], correct: 'be' } },
+  { words: ['She', 'shoulds', 'eat', 'more', 'fruit', '.'], error: { type: 'wrong', wordIndex: 1, options: ['should', 'should to', 'must to'], correct: 'should' } },
+  { words: ['Can', 'I', 'sit', 'here', '?'], error: null },
+  { words: ['Could', 'you', 'speak', 'more', 'slowly', ',', 'please', '?'], error: null }
+];
+
+LabKit.build({
+  sections: SECTIONS,
+  mistakes: [
+    ['He cans swim.', 'He can swim.'],
+    ['I can to drive.', 'I can drive.'],
+    ['Do you can help me?', 'Can you help me?'],
+    ['She can’t comes today.', 'She can’t come today.'],
+    ['I didn’t could open the door.', 'I couldn’t open the door.'],
+    ['May you help me?', 'Can you help me? / Could you help me?'],
+    ['It mights rain.', 'It might rain.'],
+    ['You should studying more.', 'You should study more.'],
+    ['You don’t must smoke here.', 'You mustn’t smoke here.']
+  ],
+  errorHunt: EH_POOL, ehCount: 6,
+  ehPrompt: 'Some sentences have a mistake. Some are correct! Tap a word — or a space between words — to fix it. Then press OK. 🎲 Again gives you new sentences.'
+});
+</script>
+<script>HouseGrammar.init();</script>
+</body>
+</html>

@@ -1,0 +1,271 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<title>Wh-Words Lab — Wh-questions with do / does</title>
+<script>
+(function(){
+  try{
+    var saved = localStorage.getItem('theme-preference');
+    var theme = (saved === 'light' || saved === 'dark')
+      ? saved
+      : ((window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches) ? 'dark' : 'light');
+    document.documentElement.setAttribute('data-theme', theme);
+    var fs = parseFloat(localStorage.getItem('font-size-preference'));
+    if (fs >= 10 && fs <= 28) document.documentElement.style.setProperty('--fs-base', fs + 'px');
+  }catch(e){ /* localStorage/matchMedia unavailable — CSS media query still applies */ }
+})();
+</script>
+<link rel="stylesheet" href="house.css">
+</head>
+<body>
+<div class="page" id="page">
+  <span class="cefr-tag cefr-a1">A1 · Beginner</span>
+  <h1>Wh-Words Lab: Wh-questions with do / does</h1>
+  <p class="subtitle">Where does she live? · How often do you practice? · What time does the train leave?</p>
+
+  <div class="sec-div">The pattern</div>
+  <div class="rule-box">
+    <div class="pattern">
+      <span class="pos-hl pos-wh">Wh-word</span><span class="plus">+</span>
+      <span class="pos-hl pos-aux">do / does</span><span class="plus">+</span>
+      <span class="pos-hl pos-subject">subject</span><span class="plus">+</span>
+      <span class="pos-hl pos-verb">base verb</span><span class="plus">+</span>
+      <span>… ?</span>
+    </div>
+    <div class="subj-grid">
+      <div class="subj-card"><span class="verb-big pos-hl pos-aux">do</span><span class="subj-list">I, you, we, they</span><span class="subj-note">first/second person &amp; plural</span></div>
+      <div class="subj-card"><span class="verb-big pos-hl pos-aux">does</span><span class="subj-list">he, she, it</span><span class="subj-note">third person singular</span></div>
+    </div>
+    <p>In negatives and questions, <strong>do/does</strong> carries the tense — the main verb stays in its base form.</p>
+  </div>
+
+  <button class="grammar-toggle-btn" id="grammarToggle">🎨 Show Grammar</button>
+  <div class="pos-legend"></div>
+
+  <div class="score-bar"><span>Mastered: <strong id="masteredScore">0</strong> / <span id="masteredTotal">0</span></span></div>
+  <nav class="lab-tabs" id="labTabs" aria-label="Sections"></nav>
+  <div id="labPanels"></div>
+
+  <footer>Wh-Words Lab — Wh-questions with do / does (A1 · self-study)</footer>
+</div>
+
+<div id="theme-toggle-wrap">
+  <button id="theme-toggle" aria-label="Toggle light/dark mode" title="Toggle light/dark mode">
+    <span id="theme-icon">☀️</span>
+  </button>
+</div>
+<script src="house.js"></script>
+<script src="lab-kit.js"></script>
+<script>
+const { pick, words } = LabKit;
+
+/* ── random question builder ───────────────────────────────────────────────
+   Wh + do/does + subject + base verb (+ rest) (+ end preposition) + ?
+   `wrong` holds the typical mistakes: no auxiliary, do ↔ does,
+   does + verb-s, and inversion without do ("Where lives she?"). */
+function doItem(stmt, wh, p, v, s3, rest, restPos, tail) {
+  const t = !!p.t, q = p.q, W = wh.join(' ');
+  const R = rest ? ' ' + rest : '', T = tail ? ' ' + tail : '';
+  const tokens = [...wh.map(w => [w, 'wh']), [t ? 'does' : 'do', 'aux'], ...words(q, 'subject'),
+                  ...words(v, 'verb'), ...words(rest, restPos || 'object'),
+                  ...(tail ? [[tail, 'prep']] : []), ['?', null]];
+  const wrong = [
+    `${W} ${q} ${t ? s3 : v}${R}${T}?`,
+    `${W} ${t ? 'do' : 'does'} ${q} ${v}${R}${T}?`
+  ];
+  if (t) wrong.push(`${W} does ${q} ${s3}${R}${T}?`);
+  if (!v.includes(' ')) wrong.push(`${W} ${t ? s3 : v} ${q}${R}${T}?`);
+  return { ctx: stmt, tokens, wrong, alts: [] };
+}
+
+/* People: s = in the statement, q = in the question (I → you, my → your); t = he/she/it. */
+const PEOPLE = [
+  { s: 'I', q: 'you' }, { s: 'He', q: 'he', t: 1 }, { s: 'She', q: 'she', t: 1 },
+  { s: 'They', q: 'they' }, { s: 'We', q: 'you' },
+  { s: 'My sister', q: 'your sister', t: 1 }, { s: 'My parents', q: 'your parents' },
+  { s: 'Ana', q: 'Ana', t: 1 }, { s: 'Tom and Lucy', q: 'Tom and Lucy' },
+  { s: 'My brother', q: 'your brother', t: 1 }
+];
+const vf = (p, a) => (p.t ? a.s3 : a.v);   // the verb in the statement
+const R = a => (a.rest ? ' ' + a.rest : '');
+
+const SECTIONS = [
+  { id: 'option', emoji: '🎧', label: 'Option', pill: 'What + category?',
+    note: 'Use “what” followed by a category noun (sports, food, music, etc.) to ask about someone’s choices or preferences.',
+    examples: [
+      ['pos', '{She|subject} {plays|verb} {tennis|object} {on weekends|time}.', 'she → 3rd person singular → does'],
+      ['neg', '{She|subject} {does|aux}{n’t|neg} {play|verb} {tennis|object} {on weekends|time}.', 'does not + base verb (plays → play)'],
+      ['cel', '{What sports|wh} {does|aux} {she|subject} {play|verb}?', 'does + she + base verb']
+    ],
+    prompts: { choice: 'Which question is correct?', drag: 'Tap or drag the words to build the question.',
+               gap: 'Transform this into a “What + category” question:' },
+    gen() {
+      const p = pick(PEOPLE);
+      const c = pick([
+        { cat: 'sports', v: 'play', s3: 'plays', items: ['tennis', 'soccer', 'basketball', 'volleyball'] },
+        { cat: 'food', v: 'cook', s3: 'cooks', items: ['Italian food', 'Mexican food', 'Chinese food', 'Venezuelan food'] },
+        { cat: 'music', v: 'listen', s3: 'listens', tail: 'to', items: ['salsa', 'rock', 'pop music', 'jazz'] },
+        { cat: 'languages', v: 'speak', s3: 'speaks', items: ['English and Spanish', 'French', 'Portuguese'] },
+        { cat: 'movies', v: 'like', s3: 'likes', items: ['comedies', 'action movies', 'horror movies'] }
+      ]);
+      const stmt = `${p.s} ${p.t ? c.s3 : c.v}${c.tail ? ' ' + c.tail : ''} ${pick(c.items)}.`;
+      const it = doItem(stmt, ['What', c.cat], p, c.v, c.s3, '', null, c.tail);
+      const T = c.tail ? ' ' + c.tail : '';
+      it.alts = [`What kind of ${c.cat} ${p.t ? 'does' : 'do'} ${p.q} ${c.v}${T}?`];
+      return it;
+    } },
+
+  { id: 'company', emoji: '🧑‍🤝‍🧑', label: 'Company', pill: 'Who … with?',
+    note: 'Use “who … with?” to ask about the person someone does an activity with. The “with” stays at the end.',
+    examples: [
+      ['pos', '{He|subject} {studies|verb} {with|prep} {Maria|noun}.', 'he → 3rd person singular → does'],
+      ['neg', '{He|subject} {does|aux}{n’t|neg} {study|verb} {with|prep} {Maria|noun}.', 'does not + base verb (studies → study)'],
+      ['cel', '{Who|wh} {does|aux} {he|subject} {study|verb} {with|prep}?', 'does + he + base verb + with?']
+    ],
+    prompts: { choice: 'Which question is correct?', drag: 'Tap or drag the words to build the question.',
+               gap: 'Transform this into a “Who … with?” question:' },
+    gen() {
+      const p = pick(PEOPLE);
+      const a = pick([
+        { v: 'study', s3: 'studies' }, { v: 'live', s3: 'lives' }, { v: 'travel', s3: 'travels' },
+        { v: 'play', s3: 'plays', rest: 'soccer' }, { v: 'go', s3: 'goes', rest: 'to the gym' },
+        { v: 'eat', s3: 'eats', rest: 'lunch' }, { v: 'walk', s3: 'walks', rest: 'to school' }
+      ]);
+      const who = pick(['Maria', 'David', 'Mr. Lopez', 'a friend', 'two classmates']);
+      return doItem(`${p.s} ${vf(p, a)}${R(a)} with ${who}.`, ['Who'], p, a.v, a.s3, a.rest, 'object', 'with');
+    } },
+
+  { id: 'location', emoji: '📍', label: 'Location', pill: 'Where?',
+    note: 'Use “where” to ask about a place or location connected to an action.',
+    examples: [
+      ['pos', '{They|subject} {work|verb} {in downtown Miami|prep}.', 'they → plural → do'],
+      ['neg', '{They|subject} {do|aux}{n’t|neg} {work|verb} {in downtown Miami|prep}.', 'do not + base verb'],
+      ['cel', '{Where|wh} {do|aux} {they|subject} {work|verb}?', 'do + they + base verb?']
+    ],
+    prompts: { choice: 'Which question is correct?', drag: 'Tap or drag the words to build the question.',
+               gap: 'Transform this into a “Where” question:' },
+    gen() {
+      const p = pick(PEOPLE);
+      const a = pick([
+        { v: 'live', s3: 'lives', at: ['in Caracas', 'in a small apartment', 'near the beach', 'in Madrid'] },
+        { v: 'work', s3: 'works', at: ['at a hospital', 'in downtown Miami', 'at a bank', 'at home'] },
+        { v: 'study', s3: 'studies', at: ['at the university', 'at the library', 'at home'] },
+        { v: 'buy', s3: 'buys', rest: 'bread', at: ['at the bakery', 'at the supermarket'] },
+        { v: 'eat', s3: 'eats', rest: 'lunch', at: ['at the office', 'in the park', 'at home'] }
+      ]);
+      return doItem(`${p.s} ${vf(p, a)}${R(a)} ${pick(a.at)}.`, ['Where'], p, a.v, a.s3, a.rest);
+    } },
+
+  { id: 'frequency', emoji: '📅', label: 'Frequency', pill: 'How often?',
+    note: 'Use “how often” to ask about the frequency of an action — always, sometimes, never, etc.',
+    examples: [
+      ['pos', '{He|subject} {visits|verb} {his grandparents|object} {every Sunday|time}.', 'he → 3rd person singular → does'],
+      ['neg', '{He|subject} {does|aux}{n’t|neg} {visit|verb} {his grandparents|object} {every Sunday|time}.', 'does not + base verb (visits → visit)'],
+      ['cel', '{How often|wh} {does|aux} {he|subject} {visit|verb} {his grandparents|object}?', 'does + he + base verb?']
+    ],
+    prompts: { choice: 'Which question is correct?', drag: 'Tap or drag the words to build the question.',
+               gap: 'Transform this into a “How often” question:' },
+    gen() {
+      const p = pick(PEOPLE);
+      const a = pick([
+        { v: 'go', s3: 'goes', rest: 'to the gym' }, { v: 'practice', s3: 'practices', rest: 'the guitar' },
+        { v: 'play', s3: 'plays', rest: 'video games' }, { v: 'clean', s3: 'cleans', rest: 'the kitchen' },
+        { v: 'watch', s3: 'watches', rest: 'movies' }, { v: 'visit', s3: 'visits', rest: 'the museum' },
+        { v: 'eat', s3: 'eats', rest: 'pizza' }, { v: 'go', s3: 'goes', rest: 'swimming' }
+      ]);
+      const f = pick(['every day', 'twice a week', 'on weekends', 'once a month', 'every Sunday', 'three times a week']);
+      return doItem(`${p.s} ${vf(p, a)}${R(a)} ${f}.`, ['How', 'often'], p, a.v, a.s3, a.rest);
+    } },
+
+  { id: 'general-time', emoji: '🌄', label: 'General Time', pill: 'When?',
+    note: 'Use “when” to ask about a general time — a day, season, or occasion, not a specific hour.',
+    examples: [
+      ['pos', '{We|subject} {travel|verb} {in the summer|time}.', 'we → plural → do'],
+      ['neg', '{We|subject} {do|aux}{n’t|neg} {travel|verb} {in the summer|time}.', 'do not + base verb'],
+      ['cel', '{When|wh} {do|aux} {we|subject} {travel|verb}?', 'do + we + base verb?']
+    ],
+    prompts: { choice: 'Which question is correct?', drag: 'Tap or drag the words to build the question.',
+               gap: 'Transform this into a “When” question:' },
+    gen() {
+      const p = pick(PEOPLE);
+      const a = pick([
+        { v: 'travel', s3: 'travels' }, { v: 'play', s3: 'plays', rest: 'soccer' },
+        { v: 'go', s3: 'goes', rest: 'to the beach' }, { v: 'have', s3: 'has', rest: 'English class' },
+        { v: 'clean', s3: 'cleans', rest: 'the house' }, { v: 'visit', s3: 'visits', rest: 'the museum' }
+      ]);
+      const w = pick(['in the summer', 'on Mondays', 'in December', 'on weekends', 'in the morning', 'after work']);
+      return doItem(`${p.s} ${vf(p, a)}${R(a)} ${w}.`, ['When'], p, a.v, a.s3, a.rest);
+    } },
+
+  { id: 'specific-time', emoji: '⌚', label: 'Specific Time', pill: 'What time?',
+    note: 'Use “what time” to ask for a precise hour or clock time — 3:00 PM, 7:30 AM, etc.',
+    examples: [
+      ['pos', '{You|subject} {wake up|verb} {at 6:30 AM|time}.', 'you → 2nd person → do'],
+      ['neg', '{You|subject} {do|aux}{n’t|neg} {wake up|verb} {at 6:30 AM|time}.', 'do not + base verb'],
+      ['cel', '{What time|wh} {do|aux} {you|subject} {wake up|verb}?', 'do + you + base verb?']
+    ],
+    prompts: { choice: 'Which question is correct?', drag: 'Tap or drag the words to build the question.',
+               gap: 'Transform this into a “What time” question:' },
+    gen() {
+      const time = pick(['at 6:30 AM', 'at 7:00', 'at noon', 'at 10:30 PM', 'at 8:15', 'at 5:45 PM']);
+      let p, a;
+      if (Math.random() < .35) {
+        // things with a timetable
+        [p, a] = pick([
+          [{ s: 'The train', q: 'the train', t: 1 }, { v: 'leave', s3: 'leaves' }],
+          [{ s: 'The bus', q: 'the bus', t: 1 }, { v: 'arrive', s3: 'arrives' }],
+          [{ s: 'The store', q: 'the store', t: 1 }, { v: 'open', s3: 'opens' }],
+          [{ s: 'The movie', q: 'the movie', t: 1 }, { v: 'start', s3: 'starts' }],
+          [{ s: 'The class', q: 'the class', t: 1 }, { v: 'finish', s3: 'finishes' }]
+        ]);
+      } else {
+        p = pick(PEOPLE);
+        a = pick([
+          { v: 'wake up', s3: 'wakes up' }, { v: 'get up', s3: 'gets up' },
+          { v: 'have', s3: 'has', rest: 'lunch' }, { v: 'leave', s3: 'leaves', rest: 'home' },
+          { v: 'start', s3: 'starts', rest: 'work' }, { v: 'go', s3: 'goes', rest: 'to bed' }
+        ]);
+      }
+      const it = doItem(`${p.s} ${vf(p, a)}${R(a)} ${time}.`, ['What', 'time'], p, a.v, a.s3, a.rest);
+      it.alts = ['At ' + LabKit.join(it.tokens).replace(/^What/, 'what')];
+      return it;
+    } }
+];
+
+/* Different sentences from the Common mistakes list. A1: every one has a mistake. */
+const EH_POOL = [
+  { words: ['Where', 'do', 'your', 'sister', 'work', '?'], error: { type: 'wrong', wordIndex: 1, options: ['does', 'is', 'are'], correct: 'does' } },
+  { words: ['What', 'time', 'does', 'he', 'gets', 'up', '?'], error: { type: 'wrong', wordIndex: 4, options: ['get', 'getting', 'got'], correct: 'get' } },
+  { words: ['How', 'often', 'they', 'visit', 'the', 'museum', '?'], error: { type: 'missing', gapIndex: 2, options: ['do', 'does', 'are'], correct: 'do' } },
+  { words: ['When', 'does', 'start', 'she', 'the', 'new', 'job', '?'], error: { type: 'misplaced', wordIndex: 2, targetGapIndex: 4 } },
+  { words: ['What', 'music', 'does', 'she', 'listen', '?'], error: { type: 'missing', gapIndex: 5, options: ['to', 'with', 'at'], correct: 'to' } },
+  { words: ['Who', 'do', 'you', 'live', '?'], error: { type: 'missing', gapIndex: 4, options: ['with', 'to', 'for'], correct: 'with' } },
+  { words: ['Where', 'does', 'your', 'brother', 'is', 'study', '?'], error: { type: 'extra', wordIndex: 4 } },
+  { words: ['What', 'sports', 'do', 'you', 'plays', '?'], error: { type: 'wrong', wordIndex: 4, options: ['play', 'playing', 'played'], correct: 'play' } },
+  { words: ['What', 'time', 'the', 'store', 'does', 'open', '?'], error: { type: 'misplaced', wordIndex: 4, targetGapIndex: 2 } },
+  { words: ['How', 'often', 'does', 'he', 'goes', 'swimming', '?'], error: { type: 'wrong', wordIndex: 4, options: ['go', 'going', 'went'], correct: 'go' } },
+  { words: ['Where', 'you', 'do', 'live', '?'], error: { type: 'misplaced', wordIndex: 2, targetGapIndex: 1 } },
+  { words: ['When', 'do', 'your', 'mom', 'travel', '?'], error: { type: 'wrong', wordIndex: 1, options: ['does', 'is', 'are'], correct: 'does' } }
+];
+
+LabKit.build({
+  sections: SECTIONS,
+  mistakes: [
+    ['Where she lives?', 'Where does she live?'],
+    ['Where does she lives?', 'Where does she live?'],
+    ['Where do she work?', 'Where does she work?'],
+    ['What time leaves the train?', 'What time does the train leave?'],
+    ['What sports she plays?', 'What sports does she play?'],
+    ['How often you practice?', 'How often do you practice?'],
+    ['Who does he study?', 'Who does he study with?'],
+    ['Where does he is work?', 'Where does he work?']
+  ],
+  errorHunt: EH_POOL, ehCount: 6,
+  ehPrompt: 'Every sentence has one mistake. Tap a word — or a space between words — to fix it. Then press OK. 🎲 Again gives you new sentences.'
+});
+</script>
+<script>HouseGrammar.init();</script>
+</body>
+</html>
