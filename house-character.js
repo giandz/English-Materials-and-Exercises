@@ -302,7 +302,7 @@ function propSVG(id,c,o){   /* o = {x,y: hip point, g: floor, side: profile view
   return [];
 }
 const ITEM_CATS=[['Hand shapes',['hand_closed','hand_open','hand_point','hand_pointback']],['Tools',['wrench','hammer','screwdriver','pliers','paintbrush','flashlight','multimeter','solderingiron','toolbox']],
-  ['Kitchen',['fork','knife','spoon','pan','cup','mug','bowl','plate','cake','pizzabox']],['Everyday',['book','newspaper','newspaperfolded','magazine','magazineopen','phone','tablet','keys','balloon','teddy']],
+  ['Kitchen',['fork','knife','spoon','pan','cup','mug','bowl','plate','cake','pizzabox']],['Everyday',['book','newspaper','newspaperfolded','magazine','magazineopen','phone','tablet','keys','balloon','teddy','camera','dslr','camcorder']],
   ['Sports',['beachball','soccerball','basketball','volleyball','football','tennisball','baseball','tennisracket','baseballbat','mitt','skateboard','skis','snowboard','skipole']],
   ['Cleaning',['broom','mop','duster']],
   ['Bags and luggage',['box','bag','purse','briefcase','suitcase']],['Umbrellas and canes',['cane','parasol','umbrella','parasolclosed','umbrellaclosed']],
@@ -464,6 +464,25 @@ const ITEMS = (()=>{
     `<g transform="translate(0 -12) scale(1.3)"><path d="M-9,24V12Q-9,8 -5,8H5Q9,8 9,12V24" fill="none" stroke="${edge(c)}" stroke-width="2.8"/><circle cx="-16" cy="93" r="3.4" fill="#222" stroke="none"/><circle cx="16" cy="93" r="3.4" fill="#222" stroke="none"/><rect x="-25" y="23" width="50" height="68" rx="5" ${F(c)}/><path d="M-12,23V91M12,23V91" stroke="${edge(c)}" fill="none"/></g>`},   /* larger; the handle sits in the fist */
   multimeter:{label:'Multimeter',noun:'multimeter',phrase:'a multimeter',verb:'holding',col:'#FFCC00',draw:(s,c)=>
     `<path d="M-5,25Q-22,44 -10,58T-16,78" fill="none" stroke="#CC0000" stroke-width="1.3"/><path d="M5,25Q24,42 12,58T18,80" fill="none" stroke="#111" stroke-width="1.3"/><path d="M-16,76L-20,98" stroke="#CC0000" stroke-width="4" stroke-linecap="round" fill="none"/><path d="M-20.4,100L-22,110" stroke="#8a9299" stroke-width="1.6" stroke-linecap="round" fill="none"/><path d="M18,78L22,100" stroke="#222" stroke-width="4" stroke-linecap="round" fill="none"/><path d="M22.4,102L24,112" stroke="#8a9299" stroke-width="1.6" stroke-linecap="round" fill="none"/><rect x="-11" y="-14" width="22" height="42" rx="4" ${F(c)}/><rect x="-8" y="-10" width="16" height="10" rx="1.5" fill="#cfe0c8" stroke="#555" stroke-width=".8"/><circle cx="0" cy="12" r="6.5" fill="#333" stroke="#111"/><path d="M0,12L3.5,7.5" stroke="#fff" stroke-width="1.4" fill="none"/><circle cx="-5" cy="24" r="1.6" fill="#CC0000" stroke="none"/><circle cx="5" cy="24" r="1.6" fill="#111" stroke="none"/>`},
+  /* cameras stay level whatever the arm does; the hand grips the body's side, the lens faces the viewer (camcorder: side view, lens pointing outward) */
+  camera:{label:'Camera (point-and-shoot)',noun:'camera',phrase:'a camera',verb:'holding',upright:true,col:'#CCCCCC',draw:(s,c)=>
+    `<g transform="translate(${-s*14},-4)"><rect x="-17" y="-11" width="34" height="22" rx="4" ${F(c)}/><rect x="${s>0?-14:8}" y="-15" width="6" height="4" rx="1" ${F(shade(c,-0.25))}/>`
+    +`<circle cx="${-s*3}" cy="1" r="8" fill="#333" stroke="#111"/><circle cx="${-s*3}" cy="1" r="5" fill="#2a3b55" stroke="#5f6870"/><circle cx="${-s*4.6}" cy="-0.6" r="1.4" fill="#fff" fill-opacity=".7" stroke="none"/>`
+    +`<rect x="${s>0?7:-14}" y="-8" width="7" height="4" rx=".8" fill="#fffbe0" stroke="#8a8a8a" stroke-width=".7"/></g>`},
+  dslr:{label:'Camera (professional)',noun:'camera',phrase:'a camera',verb:'holding',upright:true,col:'#333333',draw:(s,c)=>{
+    const dk=edge(c);
+    return `<g transform="translate(${-s*19},-6)"><path d="M-24,-12H-9L-6,-20H6L9,-12H24Q26,-12 26,-10V13Q26,15 24,15H-24Q-26,15 -26,13V-10Q-26,-12 -24,-12Z" ${F(c)}/>`
+      +`<path d="M${s*14},-12H${s*24}Q${s*29},-12 ${s*29},-6V9Q${s*29},15 ${s*23},15H${s*14}Z" fill="${shade(c,-0.25)}" stroke="${dk}"/>`   /* hand grip */
+      +`<rect x="${-s*21-3}" y="-17" width="6" height="5" rx="1" fill="${shade(c,0.2)}" stroke="${dk}"/>`
+      +`<circle cx="${-s*2}" cy="3" r="13" fill="#1b1b1b" stroke="#000"/><circle cx="${-s*2}" cy="3" r="10" fill="none" stroke="#555" stroke-width="2.4" stroke-dasharray="1.6 1.6"/><circle cx="${-s*2}" cy="3" r="6.5" fill="#24324a" stroke="#5f6870"/><circle cx="${-s*4}" cy="1" r="1.8" fill="#fff" fill-opacity=".6" stroke="none"/>`
+      +`<path d="M-4,-17H4" stroke="#CC0000" stroke-width="1.6" fill="none"/></g>`; }},
+  camcorder:{label:'Video camera',noun:'video camera',phrase:'a video camera',verb:'holding',upright:true,col:'#333333',draw:(s,c)=>{   /* a handycam in profile: lens barrel pointing away from the body, strap over the back of the hand, screen flipped open on the near side */
+    const dk=edge(c);
+    return `<g transform="translate(0,-2) scale(${s} 1)"><rect x="-20" y="-10" width="40" height="20" rx="6" ${F(c)}/>`
+      +`<path d="M20,-7H30Q32,-7 32,-5V5Q32,7 30,7H20Z" fill="${shade(c,-0.25)}" stroke="${dk}"/><rect x="31" y="-6" width="3" height="12" rx="1" fill="#24324a" stroke="#5f6870"/>`
+      +`<path d="M-16,11Q0,17 16,11" fill="none" stroke="#1b1b1b" stroke-width="3"/>`   /* hand strap */
+      +`<rect x="-26" y="-12" width="15" height="11" rx="1.5" fill="${shade(c,0.15)}" stroke="${dk}"/><rect x="-24.5" y="-10.5" width="12" height="8" fill="#7fb6e6" stroke="none"/>`
+      +`<circle cx="-14" cy="-13" r="2" fill="#CC0000" stroke="none"/></g>`; }},
   tablet:{label:'Tablet',noun:'tablet',phrase:'a tablet',verb:'holding',col:'#333333',draw:(s,c)=>
     `<rect x="-17" y="-16" width="34" height="48" rx="3.5" ${F(c)}/><rect x="-14" y="-13" width="28" height="40" rx="1.5" fill="#7fb6e6" stroke="none"/>`},
   /* sports */
