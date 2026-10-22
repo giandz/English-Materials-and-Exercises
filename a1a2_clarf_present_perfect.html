@@ -1,0 +1,259 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<title>Present Perfect — Clarification</title>
+<script>
+(function(){
+  try{
+    var saved = localStorage.getItem('theme-preference');
+    var theme = (saved === 'light' || saved === 'dark')
+      ? saved
+      : ((window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches) ? 'dark' : 'light');
+    document.documentElement.setAttribute('data-theme', theme);
+    var fs = parseFloat(localStorage.getItem('font-size-preference'));
+    if (fs >= 10 && fs <= 28) document.documentElement.style.setProperty('--fs-base', fs + 'px');
+  }catch(e){ /* localStorage/matchMedia unavailable — CSS media query still applies */ }
+})();
+</script>
+<link rel="stylesheet" href="house.css">
+<style>
+.tgt{ color:var(--text-accent); font-weight:700; }
+/* Sam's life: brown (past) pictures along an arrow, then the blue picture: now */
+.life{ position:relative; display:flex; align-items:flex-end; gap:8px; overflow-x:auto; padding:6px 2px 12px; margin-bottom:.4rem; }
+.life::after{ content:''; position:absolute; left:6px; right:6px; bottom:4px; height:4px; border-radius:2px;
+  background:linear-gradient(90deg, var(--pp-paper-edge), var(--pp-land-edge) 70%, var(--text-accent)); }
+.life .pp-panel{ flex:0 0 auto; }
+.life .arrow{ flex:0 0 auto; align-self:center; font-size:1.2rem; color:var(--text-muted); }
+.life-note{ font-size:.8rem; color:var(--text-secondary); text-align:center; margin-bottom:1rem; }
+.form-card{ display:grid; grid-template-columns:7.6em 1fr; gap:10px 12px; align-items:center; border:1px solid var(--color-border-tertiary);
+  border-radius:14px; background:var(--surface-2); padding:10px 12px; margin-bottom:10px; }
+.form-card .cat-tag{ grid-column:1 / -1; margin:0; justify-self:start; }
+.form-card .lines{ display:flex; flex-direction:column; gap:8px; font-size:.9667rem; }
+.form-card .short{ font-size:.8667rem; color:var(--text-secondary); }
+.pp-table{ width:100%; border-collapse:collapse; font-size:.9rem; margin-bottom:1rem; }
+.pp-table th, .pp-table td{ padding:5px 8px; border-bottom:.5px solid var(--color-border-tertiary); text-align:left; vertical-align:middle; }
+.pp-table th{ font-size:.7333rem; text-transform:uppercase; letter-spacing:.04em; color:var(--text-muted); font-weight:600; }
+.pp-table td.v3{ color:var(--pos-part); font-weight:700; }
+.more{ display:grid; grid-template-columns:repeat(auto-fit, minmax(14em, 1fr)); gap:10px; margin-bottom:1rem; }
+.xp{ border:1px solid var(--color-border-tertiary); border-radius:14px; background:var(--surface-2); padding:10px 12px; }
+.xp h3{ margin:0 0 6px; font-size:.9rem; }
+.xp-row{ display:flex; align-items:center; gap:8px; font-size:.8667rem; padding:3px 0; border-bottom:.5px solid var(--color-border-tertiary); }
+.xp-row:last-child{ border-bottom:none; }
+.xp-e{ font-size:1.3rem; width:1.5em; text-align:center; flex:0 0 auto; }
+.two{ display:grid; grid-template-columns:1fr 1fr; gap:10px; margin-bottom:1rem; }
+.two > div{ border:1px solid var(--color-border-tertiary); border-radius:14px; background:var(--surface-1); padding:10px; font-size:.9rem; }
+.two h3{ margin:0 0 6px; font-size:.9rem; }
+.two .ss-line{ margin:4px 0 8px; }
+@media (max-width:520px){ .two{ grid-template-columns:1fr; } .form-card{ grid-template-columns:1fr; } .form-card .pp-panel{ max-width:9em; } }
+.rule-box p{ margin:0 0 6px; } .rule-box p:last-child{ margin-bottom:0; }
+</style>
+</head>
+<body>
+<div class="page" id="page">
+  <span class="cefr-tag cefr-a1a2">A1/A2 · Elementary</span>
+  <h1>Present Perfect: I have done it</h1>
+  <p class="subtitle">have / has + past participle — affirmative, negative and yes / no questions</p>
+
+  <div class="sec-div">Look: Sam’s life up to now</div>
+  <p class="subtitle">Brown pictures are in the past. The blue picture is Sam now.</p>
+  <div class="life" id="life"></div>
+  <p class="life-note">Sam has lived in Mexico. He has lived in Spain. He has played the drums. <b>When?</b> We don’t say. It is his life, from the past up to now.</p>
+  <div id="timeline"></div>
+
+  <div class="sec-div">Three forms</div>
+  <p class="subtitle">✔️ = yes, it happened · ❌ = no, it didn’t happen (up to now) · ❓ = a question</p>
+  <div id="forms"></div>
+
+  <div class="sec-div">Countries: been to · lived in · visited</div>
+  <div class="two" id="countries"></div>
+
+  <div class="sec-div">Past participles</div>
+  <p class="subtitle">Regular verbs: + <b>-ed</b>. Irregular verbs: learn them!</p>
+  <table class="pp-table" id="ppTable"></table>
+
+  <div class="sec-div">More experiences: Have you ever…?</div>
+  <p class="subtitle">Ask a partner. Answer: <b>Yes, I have.</b> / <b>No, I haven’t.</b> Then say a sentence: <b>I’ve seen an elephant.</b> / <b>I haven’t eaten snails.</b></p>
+  <div class="more" id="more"></div>
+
+  <div class="sec-div">Check the meaning</div>
+  <p class="subtitle">Read the sentence. Answer the questions.</p>
+  <div id="ccq"></div>
+
+  <div class="sec-div">Look at the form</div>
+  <p class="subtitle">What is each part of the sentence? Drag a label (or tap a label, then tap a box).</p>
+  <div class="score-bar"><span>Correct: <strong id="fcScore">0</strong> / <span id="fcTotal">0</span></span></div>
+  <div id="formClarf"></div>
+
+  <div class="rule-box" id="ruleBox"></div>
+
+  <div class="sec-div">Common mistakes</div>
+  <div id="mistakes"></div>
+
+  <div class="sec-div">Error hunt</div>
+  <p class="subtitle">Some sentences have a mistake. Some are correct! Tap a word — or a space between words — to fix it. Then press OK.</p>
+  <div class="score-bar"><span>Done: <strong id="errorScore">0</strong> / <span id="errorTotal">0</span></span></div>
+  <div id="errorHuntItems"></div>
+
+  <footer>Present Perfect — Clarification (A1/A2)</footer>
+</div>
+
+<div id="theme-toggle-wrap">
+  <button id="theme-toggle" aria-label="Toggle light/dark mode" title="Toggle light/dark mode">
+    <span id="theme-icon">☀️</span>
+  </button>
+</div>
+<script src="house.js"></script>
+<script src="house-character.js"></script>
+<script src="stick-character.js"></script>
+<script src="stick-sentence.js"></script>
+<script src="present-perfect-kit.js"></script>
+<script>
+const T = s => '<span class="tgt">' + s + '</span>';
+
+/* ── Sam's life ────────────────────────────────────────────────────────── */
+document.getElementById('life').innerHTML = [
+  PP.panel({ who: 'sam', act: 'lived', country: 'mexico', size: 's', caption: 'lived in Mexico' }),
+  PP.panel({ who: 'sam', act: 'lived', country: 'spain', size: 's', caption: 'lived in Spain' }),
+  PP.panel({ who: 'sam', act: 'drums', size: 's', caption: 'played the drums' }),
+  PP.panel({ who: 'sam', act: 'car', size: 's', caption: 'driven a car' }),
+  '<span class="arrow">→</span>',
+  PP.panel({ who: 'sam', mark: 'now', size: 's', caption: '<b>NOW</b>' })
+].join('');
+
+HouseTimeline.build({
+  container: 'timeline', startLabel: 'Past', nowLabel: 'NOW', nowNote: 'Sam’s life up to now',
+  bands: [{ from: 0, to: 1, label: 'Sam’s life (we don’t say when)' }],
+  events: [
+    { at: 0.18, emoji: '🇲🇽', label: 'lived in Mexico', kind: 'unspecified' },
+    { at: 0.42, emoji: '🇪🇸', label: 'lived in Spain', kind: 'unspecified' },
+    { at: 0.62, emoji: '🥁', label: 'played the drums', kind: 'unspecified' },
+    { at: 0.82, emoji: '🚗', label: 'driven a car', kind: 'unspecified' }
+  ],
+  caption: 'Present perfect: an action in the past, but we don’t say when.'
+});
+
+/* ── three forms ───────────────────────────────────────────────────────── */
+const FORMS = [
+  ['pos', 'affirmative ✔️', { who: 'sam', act: 'drums', mark: 'yes' }, [
+    '{[I/subject]|sam} [have/aux] [played/part] [the drums/object].',
+    '{[He/subject]|sam} [has/aux] [played/part] [the drums/object].',
+    '{[I’ve/subject]|sam:me} [played/part] [the drums/object]. · {[He’s/subject]|sam} [played/part] [the drums/object].']],
+  ['neg', 'negative ❌', { who: 'sam', act: 'ski', mark: 'no' }, [
+    '{[I/subject]|sam} [haven’t/neg] [skied/part]. (= have not)',
+    '{[He/subject]|sam} [hasn’t/neg] [skied/part]. (= has not)',
+    '{[We/subject]|sam,mia} [haven’t/neg] [been/part] [to/prep] {[Japan/noun].|@japan}']],
+  ['q', 'yes / no question ❓', { who: 'mia', act: 'guitar', mark: 'ask' }, [
+    '[Have/aux] {[you/subject]|mia} [ever/adverb] [played/part] [the guitar/object]?',
+    '[Has/aux] {[she/subject]|mia} [ever/adverb] [played/part] [the guitar/object]?',
+    '<span class="short">✔️ Yes, I have. / Yes, she has. · ❌ No, I haven’t. / No, she hasn’t.</span>']]
+];
+document.getElementById('forms').innerHTML = FORMS.map(([cat, label, pic, lines]) =>
+  '<div class="form-card"><span class="cat-tag ' + cat + '">' + label + '</span>' + PP.panel(Object.assign({ size: 'm' }, pic)) +
+  '<div class="lines">' + lines.map(l => l.startsWith('<') ? l : PP.line(l)).join('') + '</div></div>').join('');
+
+/* ── countries ─────────────────────────────────────────────────────────── */
+document.getElementById('countries').innerHTML =
+  '<div><h3>✈️ been to + country</h3>' + PP.line('{[My/det]|mia} {[brother/subject]|leo} [has/aux] [been/part] [to/prep] {[Japan/noun].|@japan}') +
+  'He went to Japan and came back. <b>been to</b>, not <s>been in</s>.</div>' +
+  '<div><h3>🏠 lived in + country</h3>' + PP.line('{[Sam/subject]|sam} [has/aux] [lived/part] [in/prep] {[Mexico/noun].|@mexico}') +
+  'His home was there for some time.</div>' +
+  '<div><h3>📸 visited + country</h3>' + PP.line('{[Ana/subject]|ana} [has/aux] [visited/part] {[Peru/noun].|@peru}') +
+  'No <b>to</b> after visited.</div>' +
+  '<div><h3>❌ never there</h3>' + PP.line('{[I/subject]|mia} [haven’t/neg] [been/part] [to/prep] {[Egypt/noun].|@egypt}') +
+  'Up to now: no.</div>';
+
+/* ── past participles, with a picture of each action ───────────────────── */
+const ROWS = [
+  ['play', 'played', 'regular'], ['finish', 'finished', 'regular'], ['visit', 'visited', 'regular'], ['live', 'lived', 'regular'],
+  ['ski', 'skied', 'regular'], ['climb', 'climbed', 'regular'], ['be', 'been', 'irregular'], ['see', 'seen', 'irregular'],
+  ['eat', 'eaten', 'irregular'], ['drink', 'drunk', 'irregular'], ['ride', 'ridden', 'irregular'], ['drive', 'driven', 'irregular'],
+  ['fly', 'flown', 'irregular'], ['swim', 'swum', 'irregular'], ['make', 'made', 'irregular'], ['sing', 'sung', 'irregular'],
+  ['read', 'read', 'irregular'], ['lose', 'lost', 'irregular'], ['meet', 'met', 'irregular'], ['win', 'won', 'irregular'],
+  ['sleep', 'slept', 'irregular'], ['run', 'run', 'irregular'], ['do', 'done', 'irregular']
+];
+document.getElementById('ppTable').innerHTML = '<tr><th>verb</th><th>past participle</th><th></th></tr>' +
+  ROWS.map(([v, v3, kind]) => '<tr><td>' + v + '</td><td class="v3">' + v3 + '</td><td class="text-tertiary">' + kind + '</td></tr>').join('');
+
+/* ── more experiences: animals, food, activities ───────────────────────── */
+const GROUPS = [['🦁 Animals and nature', 'animal'], ['🍽️ Food and drink', 'food'], ['🎯 Activities', 'activity']];
+document.getElementById('more').innerHTML = GROUPS.map(([title, kind]) =>
+  '<div class="xp"><h3>' + title + '</h3>' + Object.keys(PP.ACTS).filter(a => PP.ACTS[a].kind === kind).map(a =>
+    '<div class="xp-row"><span class="xp-e">' + PP.ACTS[a].emoji + '</span><span>' + PP.say('you', a, 'q') + '</span></div>').join('') + '</div>').join('');
+
+/* ── concept checking questions ────────────────────────────────────────── */
+HouseCCQ.build({
+  container: 'ccq',
+  items: [
+    { sentence: PP.line('{[Sam/subject]|sam} [has/aux] [played/part] [the drums/object].') + PP.memories([{ who: 'sam', act: 'drums' }]),
+      questions: [
+        { q: 'Did Sam play the drums in the past?', opts: ['Yes', 'No'], correct: 0, why: 'Yes. It happened in the past.' },
+        { q: 'Do we know when?', opts: ['Yes', 'No'], correct: 1, why: 'No. The present perfect does not say when.' },
+        { q: 'Is Sam playing the drums now?', opts: ['Yes', 'No'], correct: 1, why: 'No. It is an experience in his life, not an action now.' }
+      ] },
+    { sentence: PP.line('{[Mia/subject]|mia} [hasn’t/neg] [been/part] [to/prep] {[Japan/noun].|@japan}') + PP.memories([{ who: 'mia', act: 'been', country: 'japan', mark: 'no' }]),
+      questions: [
+        { q: 'Has Mia ever travelled to Japan?', opts: ['Yes', 'No'], correct: 1, why: 'No. Never in her life — up to now.' },
+        { q: 'Can she go to Japan in the future?', opts: ['Yes', 'No'], correct: 0, why: 'Yes! “Hasn’t” is only up to now.' }
+      ] },
+    { sentence: PP.line('{[Sam/subject]|sam} [hasn’t/neg] [finished/part] [the game/object].'),
+      questions: [
+        { q: 'Is the game finished?', opts: ['Yes', 'No'], correct: 1, why: 'No. It is not complete ❌ — Sam is still playing.' }
+      ] }
+  ]
+});
+
+/* ── form ──────────────────────────────────────────────────────────────── */
+HouseFormClarf.build({
+  container: 'formClarf', scoreEl: 'fcScore', totalEl: 'fcTotal',
+  pool: ['subject', 'aux', 'neg', 'part', 'object', 'prep', 'adverb'],
+  items: [
+    { form: 'aff', parts: [['I', 'subject'], ['have', 'aux'], ['played', 'part'], ['the drums', 'object'], ['.', null]] },
+    { form: 'aff', parts: [['She', 'subject'], ['has', 'aux'], ['been', 'part'], ['to', 'prep'], ['Japan', 'object'], ['.', null]] },
+    { form: 'neg', parts: [['He', 'subject'], ['hasn’t', 'neg'], ['eaten', 'part'], ['sushi', 'object'], ['.', null]] },
+    { form: 'q', parts: [['Have', 'aux'], ['you', 'subject'], ['ever', 'adverb'], ['driven', 'part'], ['a car', 'object'], ['?', null]] }
+  ]
+});
+
+/* ── the rule ──────────────────────────────────────────────────────────── */
+document.getElementById('ruleBox').innerHTML =
+  '<p><strong>✔️ Affirmative:</strong> I / you / we / they ' + T('have') + ' + past participle · he / she / it ' + T('has') + ' + past participle. I’ve played. She’s played.</p>' +
+  '<p><strong>❌ Negative:</strong> ' + T('haven’t') + ' / ' + T('hasn’t') + ' + past participle. I haven’t skied. He hasn’t skied.</p>' +
+  '<p><strong>❓ Question:</strong> ' + T('Have') + ' / ' + T('Has') + ' + person (+ ' + T('ever') + ') + past participle? Have you ever skied? — Yes, I have. / No, I haven’t.</p>' +
+  '<p><strong>When?</strong> We don’t say when. For a time (yesterday, in 2019) use the past simple: I <b>went</b> to Japan in 2019.</p>' +
+  '<p><strong>Complete or not?</strong> I’ve finished ✔️ = it is done now. I haven’t finished ❌ = not done (yet).</p>';
+
+/* ── common mistakes ───────────────────────────────────────────────────── */
+const MISTAKES = [
+  ['She have played the guitar.', 'She has played the guitar.'],
+  ['I have play the drums.', 'I have played the drums.'],
+  ['He has ride a bike.', 'He has ridden a bike.'],
+  ['Have you ever went to Spain?', 'Have you ever been to Spain?'],
+  ['I haven’t been in Japan.', 'I haven’t been to Japan.'],
+  ['You have ever skied?', 'Have you ever skied?'],
+  ['Yes, I’ve.', 'Yes, I have.'],
+  ['I have been to Japan in 2019.', 'I went to Japan in 2019. (when → past simple)']
+];
+document.getElementById('mistakes').innerHTML = MISTAKES.map(([no, yes]) =>
+  '<div class="pair-card"><div class="pair-line no"><span class="mark">✗</span>' + no + '</div>' +
+  '<div class="pair-line yes"><span class="mark">✓</span>' + yes + '</div></div>').join('');
+
+/* ── error hunt (A1/A2: some sentences are correct) ────────────────────── */
+const EH_ITEMS = [
+  { words: ['She', 'have', 'eaten', 'sushi', '.'], error: { type: 'wrong', wordIndex: 1, options: ['has', 'is', 'had'], correct: 'has' } },
+  { words: ['I', 'have', 'play', 'tennis', '.'], error: { type: 'wrong', wordIndex: 2, options: ['played', 'playing', 'plays'], correct: 'played' } },
+  { words: ['Have', 'you', 'ever', 'been', 'to', 'Canada', '?'], error: null },
+  { words: ['He', 'has', 'driven', 'a', 'car', '.'], error: null },
+  { words: ['We', 'not', 'have', 'skied', '.'], error: { type: 'extra', wordIndex: 1 } },
+  { words: ['Has', 'Leo', 'ridden', 'a', 'bike', '?'], error: null },
+  { words: ['They', 'have', 'lived', 'Spain', '.'], error: { type: 'missing', gapIndex: 3, options: ['in', 'to', 'at'], correct: 'in' } },
+  { words: ['You', 'have', 'ever', 'sung', 'on', 'a', 'stage', '?'], error: { type: 'misplaced', wordIndex: 1, targetGapIndex: 0 } },
+  { words: ['Mia', 'hasn’t', 'finish', 'her', 'homework', '.'], error: { type: 'wrong', wordIndex: 2, options: ['finished', 'finishing', 'finishes'], correct: 'finished' } },
+  { words: ['I', 'haven’t', 'been', 'in', 'Japan', '.'], error: { type: 'wrong', wordIndex: 3, options: ['to', 'at', 'on'], correct: 'to' } }
+];
+HouseErrorHunt.build({ container: 'errorHuntItems', items: EH_ITEMS, scoreEl: 'errorScore', totalEl: 'errorTotal' });
+</script>
+<script>HouseGrammar.init();</script>
+</body>
+</html>

@@ -1,0 +1,209 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<title>A Life in Pictures — Present Perfect</title>
+<script>
+(function(){
+  try{
+    var saved = localStorage.getItem('theme-preference');
+    var theme = (saved === 'light' || saved === 'dark')
+      ? saved
+      : ((window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches) ? 'dark' : 'light');
+    document.documentElement.setAttribute('data-theme', theme);
+    var fs = parseFloat(localStorage.getItem('font-size-preference'));
+    if (fs >= 10 && fs <= 28) document.documentElement.style.setProperty('--fs-base', fs + 'px');
+  }catch(e){ /* localStorage/matchMedia unavailable — CSS media query still applies */ }
+})();
+</script>
+<link rel="stylesheet" href="house.css">
+<style>
+.show{ border:.5px solid var(--color-border-tertiary); border-radius:var(--border-radius-xl); background:var(--surface-2); padding:12px 14px 14px; margin-bottom:1rem; }
+.show-head{ display:flex; align-items:center; justify-content:space-between; gap:10px; flex-wrap:wrap; margin-bottom:8px; }
+.show-head h2{ margin:0; font-size:1.1rem; }
+.show-head .sub{ font-size:.8rem; color:var(--text-secondary); }
+/* the timeline bar: one dot per slide, brown (past) to blue (now) */
+.track{ position:relative; display:flex; justify-content:space-between; align-items:center; margin:14px 6px 22px; }
+.track::before{ content:''; position:absolute; left:0; right:0; top:50%; height:4px; margin-top:-2px; border-radius:2px;
+  background:linear-gradient(90deg, var(--pp-paper-edge), var(--pp-land-edge) 70%, var(--text-accent) 86%, var(--bad)); }
+.dot{ position:relative; z-index:1; width:1.9em; height:1.9em; padding:0; border-radius:50%; display:flex; align-items:center; justify-content:center;
+  font-size:.85rem; background:var(--pp-paper); border:2px solid var(--pp-land-edge); }
+.dot.now{ background:var(--pp-now); border-color:var(--text-accent); }
+.dot.never{ background:var(--bad-bg); border-color:var(--bad); }
+.dot.on{ transform:scale(1.25); box-shadow:0 0 0 3px var(--color-background-info); }
+.dot .lab{ position:absolute; top:2.3em; font-size:.62rem; color:var(--text-muted); white-space:nowrap; }
+.slide{ min-height:19em; display:flex; flex-direction:column; align-items:center; gap:8px; text-align:center; }
+.slide.roll{ animation:pop .35s ease; }
+.slide .pp-l{ width:min(100%, 22em); }
+.slide .when{ font-size:.7333rem; font-weight:700; letter-spacing:.06em; text-transform:uppercase; color:var(--color-text-info); background:var(--color-background-info); padding:3px 11px; border-radius:20px; }
+.slide .when.past{ color:#7a5a2a; background:var(--pp-paper); }
+.slide .when.never{ color:var(--bad); background:var(--bad-bg); }
+.slide .ask{ font-size:1rem; font-weight:600; }
+.slide .model{ font-size:1.05rem; font-weight:600; color:var(--good); min-height:1.6em; visibility:hidden; }
+.show.reveal .slide .model{ visibility:visible; }
+.slide .teen .pp-pic > svg:not(.pp-land){ height:80%; }
+.never-grid{ display:flex; flex-wrap:wrap; gap:8px; justify-content:center; }
+.never-grid .pp-panel{ width:8em; }
+.never-grid .pp-panel .pp-pic{ --pp-h:8em; }
+.summary{ display:flex; flex-wrap:wrap; gap:6px; justify-content:center; max-width:30em; }
+.summary span{ font-size:.8rem; padding:3px 9px; border-radius:999px; border:1px solid var(--border); background:var(--surface-1); }
+.summary span.y{ background:var(--good-bg); border-color:var(--good); }
+.summary span.n{ background:var(--bad-bg); border-color:var(--bad); }
+.nav{ display:flex; justify-content:center; align-items:center; gap:8px; flex-wrap:wrap; margin-top:12px; }
+.nav button{ font-size:.9333rem; }
+.nav .big{ font-size:1.2rem; padding:4px 16px; }
+.help{ font-size:.8rem; color:var(--text-secondary); }
+</style>
+</head>
+<body>
+<div class="page" id="page">
+  <span class="cefr-tag cefr-a1a2">A1/A2 · Elementary</span>
+  <h1>A Life in Pictures</h1>
+  <p class="subtitle">Look at the pictures of a person’s life. Talk about it: what <b>has</b> this person done? What <b>hasn’t</b> this person done?</p>
+
+  <div class="rule-box">
+    <strong>How to play:</strong> work with a partner. Look at each picture and say a sentence: <b>She has lived in Brazil.</b> / <b>He hasn’t skied.</b>
+    Your partner asks: <b>Has she ever…?</b> Press 👁️ to check. Press 🎲 for a new person.
+  </div>
+
+  <div class="sec-div">1 · A person’s life</div>
+  <div class="show" id="show">
+    <div class="show-head">
+      <div><h2 id="who"></h2><div class="sub" id="whoSub"></div></div>
+      <button id="newBtn" title="A new person">🎲 New person</button>
+    </div>
+    <div class="track" id="track"></div>
+    <div class="slide" id="slide"></div>
+    <div class="nav">
+      <button class="big" id="prevBtn" aria-label="Previous picture">◀</button>
+      <button id="revealBtn" aria-pressed="false">👁️ Show the sentence</button>
+      <button class="big" id="nextBtn" aria-label="Next picture">▶</button>
+    </div>
+  </div>
+  <p class="help">Tip: use the ← → keys to move through the pictures.</p>
+
+  <div class="sec-div">2 · Your life: Have you ever…?</div>
+  <p class="subtitle">Roll the dice. Ask your partner the question. Answer: <b>Yes, I have.</b> / <b>No, I haven’t.</b> Then say one more sentence.</p>
+  <div class="q-card" id="qCard"><span class="q-placeholder">Press the dice to start.</span></div>
+  <button class="dice-btn" id="diceBtn" aria-label="Roll">🎲</button>
+  <div class="roll-count">Questions: <strong id="rollCount">0</strong></div>
+
+  <footer>A Life in Pictures — Present Perfect Freer Practice (A1/A2)</footer>
+</div>
+
+<div id="theme-toggle-wrap">
+  <button id="theme-toggle" aria-label="Toggle light/dark mode" title="Toggle light/dark mode">
+    <span id="theme-icon">☀️</span>
+  </button>
+</div>
+<script src="house.js"></script>
+<script src="house-character.js"></script>
+<script src="stick-character.js"></script>
+<script src="stick-sentence.js"></script>
+<script src="present-perfect-kit.js"></script>
+<script>
+const NOW_YEAR = new Date().getFullYear();
+const shuffle = a => { a = a.slice(); for (let i = a.length - 1; i > 0; i--) { const j = Math.floor(Math.random() * (i + 1)); [a[i], a[j]] = [a[j], a[i]]; } return a; };
+/* things a person can do in their life (not small daily jobs), and the youngest age for each: the story starts at 15 */
+const LIFE = { bike: 15, drums: 15, guitar: 15, ski: 15, car: 18, cake: 15, tennis: 15, sing: 15, keyboard: 15, skate: 15, scooter: 15, paint: 15, basketball: 15, sushi: 15, photo: 15, video: 15 };
+/* the emoji experiences: animals, food and activities */
+const EMO = Object.keys(PP.ACTS).filter(a => PP.ACTS[a].emo);
+EMO.forEach(a => { LIFE[a] = 15; });
+const DRAWN = Object.keys(LIFE).filter(a => !PP.ACTS[a].emo);
+/* under 21 the person is a teenager: shorter and thinner, casual clothes, no beard */
+/* from 45 the hair goes greyer every year */
+const greyAt = age => age < 45 ? 0 : Math.min(1, 0.15 + (age - 45) * 0.045);
+function look(age) {
+  if (age >= 21) return Object.assign({}, P.hc, { grey: greyAt(age) });
+  const t = JSON.parse(JSON.stringify(P.hc));
+  t.height = t.height >= 4 ? 2 : 1; t.weight = t.weight >= 4 ? 2 : 1; t.facialHair = 'none';
+  Object.assign(t, { upperGarment: 'tshirt', lowerGarment: 'jeans', lowerColor: null, footwear: 'sneakers', accessories: [] });
+  return t;
+}
+const PLACES = ['spain', 'france', 'italy', 'japan', 'china', 'brazil', 'mexico', 'canada', 'usa', 'uk', 'australia', 'egypt', 'peru', 'argentina',
+  'india', 'germany', 'portugal', 'colombia', 'venezuela', 'chile', 'greece', 'thailand', 'ireland', 'turkey', 'morocco', 'korea', 'kenya', 'cuba', 'norway', 'newzealand', 'iceland', 'vietnam'];
+
+let P, slides, at = 0;
+
+function newPerson() {
+  P = PP.randomPerson();
+  PP.PEOPLE.x = { name: P.name, he: P.he, him: P.him, his: P.his, hc: P.hc };
+  const age = 24 + Math.floor(Math.random() * 40), born = NOW_YEAR - age;
+  P.age = age;
+  const drawn = shuffle(DRAWN), emo = shuffle(EMO);
+  const done = drawn.slice(0, 3).concat(emo.slice(0, 2)), never = drawn.slice(3, 5).concat(emo.slice(2, 4));
+  const lands = shuffle(PLACES);
+  /* life events from age 15: five things done, two places lived in or visited; then now; then the things never done */
+  const ev = done.map(a => ({ act: a })).concat([
+    { act: 'lived', country: lands[0] }, { act: Math.random() < 0.5 ? 'been' : 'visited', country: lands[1] }]);
+  ev.forEach(e => { const min = e.country ? 15 : LIFE[e.act]; e.age = min + Math.floor(Math.random() * Math.max(1, age - min - 1)); });
+  ev.sort((a, b) => a.age - b.age);
+  slides = ev.map(e => ({ kind: 'past', ...e }))
+    .concat([{ kind: 'now', age, done: ev, never, country: lands[2] }, { kind: 'never', acts: never, country: lands[2] }]);
+  at = 0;
+  document.getElementById('who').textContent = P.name + '’s life';
+  document.getElementById('whoSub').textContent = P.name + ' is ' + age + ' years old. ' + (P.he === 'she' ? 'She' : 'He') + ' was born in ' + born + '.';
+  document.getElementById('show').classList.remove('reveal');
+  setReveal(false);
+  draw();
+}
+
+const cap = s => s.charAt(0).toUpperCase() + s.slice(1);
+function draw() {
+  const s = slides[at], el = document.getElementById('slide');
+  document.getElementById('track').innerHTML = slides.map((x, i) =>
+    '<button class="dot' + (x.kind === 'now' ? ' now' : x.kind === 'never' ? ' never' : '') + (i === at ? ' on' : '') + '" data-i="' + i + '" aria-label="Picture ' + (i + 1) + '">' +
+    (x.kind === 'now' ? '⭐' : x.kind === 'never' ? '❌' : (x.country ? PP.COUNTRIES[x.country].flag : PP.ACTS[x.act].emoji)) +
+    '<span class="lab">' + (x.kind === 'now' ? 'NOW' : x.kind === 'never' ? 'never' : 'age ' + x.age) + '</span></button>').join('');
+  let h = '';
+  if (s.kind === 'past') {
+    h = '<span class="when past">The past · age ' + s.age + '</span>' +
+      PP.panel({ who: look(s.age), act: s.act, country: s.country, mark: 'yes', size: 'l', cls: s.age < 21 ? 'teen' : '' }) +
+      '<div class="ask">What has ' + P.name + ' done?</div>' +
+      '<div class="model">' + PP.say('x', s.act, 'aff', { country: s.country }) + '</div>';
+  } else if (s.kind === 'never') {
+    const items = s.acts.map(a => ({ act: a })).concat([{ act: 'been', country: s.country }]);
+    h = '<span class="when never">Never — up to now</span>' +
+      '<div class="never-grid">' + items.map(i => PP.panel({ who: look(P.age), act: i.act, country: i.country, mark: 'no' })).join('') + '</div>' +
+      '<div class="ask">What hasn’t ' + P.name + ' done?</div>' +
+      '<div class="model">' + items.map(i => PP.say('x', i.act, 'neg', { country: i.country })).join(' ') + '</div>';
+  } else {
+    h = '<span class="when">Now</span>' +
+      PP.panel({ who: look(P.age), mark: 'now', size: 'l' }) +
+      '<div class="summary">' + s.done.map(e => '<span class="y">✔️ ' + (e.country ? PP.COUNTRIES[e.country].flag : PP.ACTS[e.act].emoji) + '</span>').join('') +
+      s.never.map(a => '<span class="n">❌ ' + PP.ACTS[a].emoji + '</span>').join('') + '<span class="n">❌ ' + PP.COUNTRIES[s.country].flag + '</span></div>' +
+      '<div class="ask">Ask and answer: ' + PP.say('x', PP.pick(s.done.filter(e => !e.country).map(e => e.act).concat(s.never)), 'q') + '</div>' +
+      '<div class="model">' + cap(P.he) + ' has done ' + s.done.length + ' things in these pictures. Tell the story of ' + P.his + ' life!</div>';
+  }
+  el.innerHTML = h;
+  el.classList.remove('roll'); void el.offsetWidth; el.classList.add('roll');
+  document.getElementById('prevBtn').disabled = at === 0;
+  document.getElementById('nextBtn').disabled = at === slides.length - 1;
+}
+const go = i => { at = Math.max(0, Math.min(slides.length - 1, i)); setReveal(false); draw(); };
+function setReveal(on) {
+  document.getElementById('show').classList.toggle('reveal', on);
+  const b = document.getElementById('revealBtn');
+  b.setAttribute('aria-pressed', String(on)); b.textContent = on ? '🙈 Hide the sentence' : '👁️ Show the sentence';
+}
+document.getElementById('prevBtn').addEventListener('click', () => go(at - 1));
+document.getElementById('nextBtn').addEventListener('click', () => go(at + 1));
+document.getElementById('newBtn').addEventListener('click', newPerson);
+document.getElementById('revealBtn').addEventListener('click', () => setReveal(!document.getElementById('show').classList.contains('reveal')));
+document.getElementById('track').addEventListener('click', e => { const d = e.target.closest('.dot'); if (d) go(+d.dataset.i); });
+document.addEventListener('keydown', e => { if (e.key === 'ArrowRight') go(at + 1); if (e.key === 'ArrowLeft') go(at - 1); });
+newPerson();
+
+/* ── 2 · Have you ever …? ──────────────────────────────────────────────── */
+const ASK = Object.keys(LIFE).map(a => ({ act: a })).concat(PLACES.map(c => ({ act: 'been', country: c })));
+HouseRandomGen.build({
+  pick: () => PP.pick(ASK),
+  key: x => x.act + (x.country || ''),
+  render: x => '<span class="q-topic">' + (x.country ? PP.COUNTRIES[x.country].flag + ' a country' : PP.ACTS[x.act].emoji + ' ' + ({ animal: 'animals and nature', food: 'food and drink', activity: 'an activity' }[PP.ACTS[x.act].kind] || 'an experience')) + '</span>' +
+    '<span class="q-emoji">' + (x.country ? PP.COUNTRIES[x.country].flag : PP.ACTS[x.act].emoji) + '</span><span class="q-text">' + PP.say('you', x.act, 'q', { country: x.country }) + '</span>' +
+    '<span class="q-placeholder">✔️ Yes, I have. · ❌ No, I haven’t.</span>'
+});
+</script>
+</body>
+</html>

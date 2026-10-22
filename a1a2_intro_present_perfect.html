@@ -1,0 +1,137 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<title>Have You Ever…? — Present Perfect</title>
+<script>
+(function(){
+  try{
+    var saved = localStorage.getItem('theme-preference');
+    var theme = (saved === 'light' || saved === 'dark')
+      ? saved
+      : ((window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches) ? 'dark' : 'light');
+    document.documentElement.setAttribute('data-theme', theme);
+    var fs = parseFloat(localStorage.getItem('font-size-preference'));
+    if (fs >= 10 && fs <= 28) document.documentElement.style.setProperty('--fs-base', fs + 'px');
+  }catch(e){ /* localStorage/matchMedia unavailable — CSS media query still applies */ }
+})();
+</script>
+<link rel="stylesheet" href="house.css">
+<style>
+.cast-row{ display:flex; flex-wrap:wrap; gap:10px; justify-content:center; margin:0 0 .6rem; }
+.cast-row .pp-panel figcaption b{ display:block; color:var(--text-primary); font-size:.8667rem; }
+.key{ display:flex; flex-wrap:wrap; gap:6px 14px; justify-content:center; font-size:.8rem; color:var(--text-secondary); margin:0 0 1rem; }
+.key span{ display:inline-flex; align-items:center; gap:5px; }
+.key .sw{ width:1.6em; height:1.1em; border-radius:4px; background:var(--pp-paper); border:1px solid var(--pp-paper-edge); }
+.key .sw.now{ background:var(--pp-now); border-color:var(--pp-now-edge); }
+.bubble-wrap > .bubble-col{ max-width:88%; }
+.bubble-wrap.has-mem{ align-items:flex-start; }
+.bubble-wrap.has-mem .avatar{ margin-top:1.15rem; }
+@media (max-width:520px){ .bubble-wrap > .bubble-col{ max-width:94%; } }
+</style>
+</head>
+<body>
+<div class="page" id="page">
+  <span class="cefr-tag cefr-a1a2">A1/A2 · Elementary</span>
+  <h1>Have You Ever…?</h1>
+  <p class="subtitle">Mia and Sam are new neighbors. At a neighborhood barbecue, they play a game: they ask about their lives.</p>
+
+  <div class="sec-div">Before you read</div>
+  <div id="preQuestions"></div>
+
+  <div class="sec-div">The people</div>
+  <div class="cast-row" id="castRow"></div>
+  <div class="key">
+    <span><span class="sw"></span> brown picture = in the past</span>
+    <span><span class="sw now"></span> blue picture = now</span>
+    <span>✔️ = yes, it happened</span>
+    <span>❌ = no, it didn’t happen</span>
+  </div>
+
+  <div class="sec-div">The conversation</div>
+  <div class="setting-chip"><span class="section-icon">🌭</span> A neighborhood barbecue — the “Have you ever…?” game</div>
+  <button class="grammar-toggle-btn" id="grammarToggle">🎨 Show Grammar</button>
+  <div class="pos-legend"></div>
+  <div id="conversation"></div>
+
+  <div class="sec-div">Check your answers</div>
+  <div id="quiz"></div>
+
+  <footer>Have You Ever…? — Present Perfect (A1/A2)</footer>
+</div>
+
+<div id="theme-toggle-wrap">
+  <button id="theme-toggle" aria-label="Toggle light/dark mode" title="Toggle light/dark mode">
+    <span id="theme-icon">☀️</span>
+  </button>
+</div>
+<script src="house.js"></script>
+<script src="house-character.js"></script>
+<script src="stick-character.js"></script>
+<script src="stick-sentence.js"></script>
+<script src="present-perfect-kit.js"></script>
+<script>
+/* the people, in colour: this is them now */
+document.getElementById('castRow').innerHTML = [
+  ['mia', 'Mia', 'a new neighbor'], ['sam', 'Sam', 'a new neighbor'], ['leo', 'Leo', 'Mia’s brother'], ['ana', 'Ana', 'the host']
+].map(([who, name, role]) => PP.panel({ who, mark: 'now', size: 's', caption: '<b>' + name + '</b>' + role })).join('');
+
+const SPEAKERS = {
+  Mia: { cast: 'mia', avatar: '👩', av: 'av-b', side: 'left' },
+  Sam: { cast: 'sam', avatar: '👨🏾', av: 'av-c', side: 'right' },
+  Ana: { cast: 'ana', avatar: '👩', av: 'av-d', side: 'left' }
+};
+const avStyle = s => { const c = PP.PEOPLE[s.cast].stick.colour;
+  return c ? 'background:' + c + '40;box-shadow:inset 0 0 0 2px ' + c : ''; };
+
+/* {words|figures} puts stick figures over the words · {words|@country} puts the country there ·
+   [words/pos] marks the grammar colours · the last item is the row of past pictures under the line */
+const LINES = [
+  ['Mia', 'OK, Sam, it’s your turn. [Have/aux] {[you/subject]|sam:left} [ever/adverb] [played/part] [the drums/object]?'],
+  ['Sam', '[Yes/none], {[I/subject]|sam} [have/aux]! {[I’ve/subject]|sam:me} [played/part] [the drums/object] [in a band/prep].',
+    [{ who: 'sam', act: 'drums', mark: 'yes' }]],
+  ['Mia', 'Cool! {[I/subject]|mia} [haven’t/neg] [played/part] [the drums/object], [but/conj] {[I’ve/subject]|mia:me} [played/part] [the guitar/object].',
+    [{ who: 'mia', act: 'drums', mark: 'no' }, { who: 'mia', act: 'guitar', mark: 'yes' }]],
+  ['Sam', 'Nice! [Have/aux] {[you/subject]|mia} [ever/adverb] [been/part] [to/prep] {[Japan/noun]?|@japan}'],
+  ['Mia', '[No/none], {[I/subject]|mia} [haven’t/neg]. [But/conj] {[my/det]|mia} {[brother/subject]|leo} [has/aux] [been/part] [to/prep] {[Japan/noun]|@japan} [two times/adverb]!',
+    [{ who: 'mia', act: 'been', country: 'japan', mark: 'no' }, { who: 'leo', act: 'been', country: 'japan', mark: 'yes' }]],
+  ['Sam', 'Wow! {[I’ve/subject]|sam:me} [lived/part] [in/prep] {[Mexico/noun]|@mexico} [and/conj] {[Spain/noun],|@spain} [but/conj] {[I/subject]|sam} [haven’t/neg] [visited/part] {[Japan/noun].|@japan}',
+    [{ who: 'sam', act: 'lived', country: 'mexico', mark: 'yes' }, { who: 'sam', act: 'lived', country: 'spain', mark: 'yes' }, { who: 'sam', act: 'visited', country: 'japan', mark: 'no' }]],
+  ['Mia', 'Next question. [Have/aux] {[you/subject]|sam:left} [ever/adverb] [skied/part]?'],
+  ['Sam', '[No/none], {[I/subject]|sam} [haven’t/neg]. {[I/subject]|sam} [haven’t/neg] [seen/part] [snow/object]!',
+    [{ who: 'sam', act: 'ski', mark: 'no' }, { who: 'sam', act: 'snow', mark: 'no' }]],
+  ['Mia', 'Really? {[I’ve/subject]|mia:me} [skied/part] [in/prep] {[Canada/noun].|@canada} It’s very cold!',
+    [{ who: 'mia', act: 'ski', mark: 'yes' }, { who: 'mia', act: 'been', country: 'canada', mark: 'yes' }]],
+  ['Sam', 'Wow. OK, my turn. [Have/aux] {[you/subject]|mia} [ever/adverb] [seen/part] [an elephant/object]?'],
+  ['Mia', '[Yes/none]! {[I’ve/subject]|mia:me} [seen/part] [an elephant/object] [and/conj] [a giraffe/object]. [But/conj] {[I/subject]|mia} [haven’t/neg] [eaten/part] [snails/object]. [Yuck/none]!',
+    [{ who: 'mia', act: 'elephant', mark: 'yes' }, { who: 'mia', act: 'giraffe', mark: 'yes' }, { who: 'mia', act: 'snails', mark: 'no' }]],
+  ['Sam', 'Ha! {[I’ve/subject]|sam:me} [eaten/part] [snails/object] [in/prep] {[France/noun].|@france} [And/conj] {[I’ve/subject]|sam:me} [played/part] [golf/object] [there/adverb].',
+    [{ who: 'sam', act: 'snails', mark: 'yes' }, { who: 'sam', act: 'golf', mark: 'yes' }]],
+  ['Ana', 'Food’s ready! [Have/aux] {[you/subject]|mia,sam} [finished/part] [the game/object]?'],
+  ['Mia', '[Yes/none], {[I/subject]|mia} [have/aux]! {[I’ve/subject]|mia:me} [asked/part] [ten questions/object].'],
+  ['Sam', '[No/none], {[I/subject]|sam} [haven’t/neg]. {[I’ve/subject]|sam:me} [only/adverb] [asked/part] [three/object]. {[Mia/subject]|mia} [talks/verb] [a lot/adverb]!']
+];
+const conv = document.getElementById('conversation');
+LINES.forEach(([who, text, mem]) => {
+  const s = SPEAKERS[who], right = s.side === 'right';
+  conv.insertAdjacentHTML('beforeend',
+    '<div class="bubble-wrap' + (right ? ' right' : '') + (mem ? ' has-mem' : '') + '">' +
+      '<div class="avatar ' + s.av + '" style="' + avStyle(s) + '">' + s.avatar + '</div>' +
+      '<div class="bubble-col"><div class="bname' + (right ? ' right' : '') + '">' + who + '</div>' +
+      '<div class="bubble ' + (right ? 'right' : 'left') + '">' + PP.line(text) + '</div>' +
+      (mem ? PP.memories(mem, { side: s.side }) : '') +
+      '</div>' +
+    '</div>');
+});
+
+const CQ_ITEMS = [
+  { q: 'Who has played the drums?', opts: ['Sam', 'Mia', 'Leo'], correct: 0 },
+  { q: 'Who has been to Japan?', opts: ['Mia', 'Sam', 'Mia’s brother, Leo'], correct: 2 },
+  { q: 'Where has Sam lived?', opts: ['in Japan and Canada', 'in Mexico and Spain', 'in Spain and Japan'], correct: 1 }
+];
+HouseComprehension.build({ pre: 'preQuestions', quiz: 'quiz', items: CQ_ITEMS });
+</script>
+<script>HouseGrammar.init();</script>
+</body>
+</html>

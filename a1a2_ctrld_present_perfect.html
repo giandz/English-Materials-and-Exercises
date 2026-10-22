@@ -1,0 +1,150 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<title>Present Perfect — Controlled Practice</title>
+<script>
+(function(){
+  try{
+    var saved = localStorage.getItem('theme-preference');
+    var theme = (saved === 'light' || saved === 'dark')
+      ? saved
+      : ((window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches) ? 'dark' : 'light');
+    document.documentElement.setAttribute('data-theme', theme);
+    var fs = parseFloat(localStorage.getItem('font-size-preference'));
+    if (fs >= 10 && fs <= 28) document.documentElement.style.setProperty('--fs-base', fs + 'px');
+  }catch(e){ /* localStorage/matchMedia unavailable — CSS media query still applies */ }
+})();
+</script>
+<link rel="stylesheet" href="house.css">
+<style>
+.pic-q{ display:flex; align-items:center; gap:12px; font-weight:400; }
+.pic-q .pp-panel{ flex:0 0 auto; }
+.pic-q .hint{ font-size:.9rem; color:var(--text-secondary); }
+.pic-q .hint b{ color:var(--text-primary); }
+.ctx{ display:flex; align-items:center; gap:10px; font-style:normal; }
+.ctx .pp-panel{ flex:0 0 auto; }
+.gf-item .direct{ font-style:normal; }
+</style>
+</head>
+<body>
+<div class="page" id="page">
+  <span class="cefr-tag cefr-a1a2">A1/A2 · Elementary</span>
+  <h1>Present Perfect — Practice</h1>
+  <p class="subtitle">She <b>has</b> played … · He <b>hasn’t</b> skied … · <b>Have</b> you ever been …?</p>
+  <p class="subtitle">✔️ = yes, it happened · ❌ = no, it didn’t happen · ❓ = ask a question · brown picture = the past</p>
+
+  <div class="sec-div">1 · Choose</div>
+  <p class="subtitle">Look at the picture. Choose the correct sentence.</p>
+  <div id="pcItems"></div>
+
+  <div class="sec-div">2 · Put the words in order</div>
+  <p class="subtitle">Look at the picture. Make the sentence.</p>
+  <button class="grammar-toggle-btn" id="grammarToggle">🎨 Hide Grammar</button>
+  <div class="pos-legend"></div>
+  <div class="score-bar"><span>Correct: <strong id="woScore">0</strong> / <span id="woTotal">0</span></span></div>
+  <div id="woItems"></div>
+
+  <div class="sec-div">3 · Write the missing words</div>
+  <p class="subtitle">Look at the picture. Write the missing words.</p>
+  <div id="gfItems"></div>
+
+  <footer>Present Perfect — Controlled Practice (A1/A2)</footer>
+</div>
+
+<div id="theme-toggle-wrap">
+  <button id="theme-toggle" aria-label="Toggle light/dark mode" title="Toggle light/dark mode">
+    <span id="theme-icon">☀️</span>
+  </button>
+</div>
+<script src="house.js"></script>
+<script src="house-character.js"></script>
+<script src="stick-character.js"></script>
+<script src="stick-sentence.js"></script>
+<script src="present-perfect-kit.js"></script>
+<script>
+const pic = (o, hint, size) => '<span class="pic-q">' + PP.panel(Object.assign({ size: size || 's' }, o)) + (hint ? '<span class="hint">' + hint + '</span>' : '') + '</span>';
+const ctx = (o, hint) => '<span class="ctx">' + PP.panel(Object.assign({ size: 's' }, o)) + '<span>' + (hint || '') + '</span></span>';
+
+/* ── 1 · choose ────────────────────────────────────────────────────────── */
+const PC_ITEMS = [
+  { q: pic({ who: 'sam', act: 'drums', mark: 'yes' }, '<b>Sam</b> ✔️'),
+    opts: ['Sam has played the drums.', 'Sam hasn’t played the drums.', 'Sam have played the drums.'], correct: 0 },
+  { q: pic({ who: 'mia', act: 'ski', mark: 'no' }, '<b>Mia</b> ❌'),
+    opts: ['Mia has skied.', 'Mia hasn’t skied.', 'Mia haven’t skied.'], correct: 1 },
+  { q: pic({ who: 'leo', act: 'been', country: 'japan', mark: 'yes' }, '<b>Leo</b> ✔️'),
+    opts: ['Leo has been in Japan.', 'Leo hasn’t been to Japan.', 'Leo has been to Japan.'], correct: 2 },
+  { q: pic({ who: 'ana', act: 'cake', mark: 'yes' }, '<b>Ana</b> ✔️'),
+    opts: ['Ana has made a cake.', 'Ana has make a cake.', 'Ana hasn’t made a cake.'], correct: 0 },
+  { q: pic({ who: 'tom', act: 'car', mark: 'no' }, '<b>Tom</b> ❌'),
+    opts: ['Tom has driven a car.', 'Tom hasn’t drove a car.', 'Tom hasn’t driven a car.'], correct: 2 },
+  { q: pic({ who: 'mia', act: 'tennis', mark: 'ask' }, 'You ask <b>Mia</b> ❓'),
+    opts: ['Has you ever played tennis?', 'Have you ever played tennis?', 'You have ever played tennis?'], correct: 1 },
+  { q: pic({ who: 'rosa', act: 'keys', mark: 'yes' }, '<b>Rosa</b> ✔️'),
+    opts: ['Rosa has lost his keys.', 'Rosa has lose her keys.', 'Rosa has lost her keys.'], correct: 2 },
+  { q: pic({ who: 'sam', act: 'ski', mark: 'ask' }, 'You ask about <b>Sam</b> ❓'),
+    opts: ['Has Sam ever skied?', 'Have Sam ever skied?', 'Has Sam ever ski?'], correct: 0 },
+  { q: pic({ who: 'sam', act: 'lived', country: 'spain', mark: 'yes' }, '“Sam, have you lived in Spain?” — <b>Sam</b> ✔️'),
+    opts: ['Yes, I lived.', 'Yes, I have.', 'No, I haven’t.'], correct: 1 },
+  { q: pic({ who: 'tom', act: 'visited', country: 'egypt', mark: 'no' }, '<b>Tom</b> ❌'),
+    opts: ['Tom hasn’t visited to Egypt.', 'Tom has visited Egypt.', 'Tom hasn’t visited Egypt.'], correct: 2 },
+  { q: pic({ who: 'leo', act: 'elephant', mark: 'yes' }, '<b>Leo</b> ✔️'),
+    opts: ['Leo has saw an elephant.', 'Leo has seen an elephant.', 'Leo hasn’t seen an elephant.'], correct: 1 },
+  { q: pic({ who: 'ana', act: 'golf', mark: 'no' }, '<b>Ana</b> ❌'),
+    opts: ['Ana hasn’t played golf.', 'Ana has played golf.', 'Ana not has played golf.'], correct: 0 },
+  { q: pic({ who: 'sam', act: 'tacos', mark: 'ask' }, 'You ask <b>Sam</b> ❓'),
+    opts: ['Have you ever eat tacos?', 'Have you ever ate tacos?', 'Have you ever eaten tacos?'], correct: 2 },
+  { q: pic({ who: 'mia', act: 'homework', mark: 'no' }, '<b>Mia</b> ❌'),
+    opts: ['Mia hasn’t finished her homework.', 'Mia has finished her homework.', 'Mia hasn’t finish her homework.'], correct: 0 }
+];
+HouseComprehension.build({ quiz: 'pcItems', items: PC_ITEMS });
+
+/* ── 2 · word order ────────────────────────────────────────────────────── */
+const WO_ITEMS = [
+  { context: ctx({ who: 'sam', act: 'bike', mark: 'yes' }, 'Sam ✔️'), text: 'Sam / has / ridden / a bike', pos: ['subject', 'aux', 'part', 'object'] },
+  { context: ctx({ who: 'mia', act: 'sing', mark: 'no' }, 'Mia ❌'), text: 'Mia / hasn’t / sung / on a stage', pos: ['subject', 'neg', 'part', 'prep'] },
+  { context: ctx({ who: 'sam', act: 'lived', country: 'mexico', mark: 'yes' }, 'Sam talks about his life ✔️'), text: 'I / have / lived / in / Mexico', pos: ['subject', 'aux', 'part', 'prep', 'noun'] },
+  { context: ctx({ who: 'leo', act: 'been', country: 'japan', mark: 'ask' }, 'You ask about Leo ❓'), text: 'Has / Leo / ever / been / to / Japan?', pos: ['aux', 'subject', 'adverb', 'part', 'prep', 'noun'] },
+  { context: ctx({ who: 'ana', act: 'cake', mark: 'yes' }, 'Ana ✔️'), text: 'She / has / made / a cake', pos: ['subject', 'aux', 'part', 'object'] },
+  { context: ctx({ who: 'tom', act: 'sushi', mark: 'no' }, 'Tom and his friends ❌'), text: 'We / haven’t / eaten / sushi', pos: ['subject', 'neg', 'part', 'object'] },
+  { context: ctx({ who: 'mia', act: 'keyboard', mark: 'ask' }, 'You ask Mia ❓'), text: 'Have / you / ever / played / the piano?', pos: ['aux', 'subject', 'adverb', 'part', 'object'] },
+  { context: ctx({ who: 'rosa', act: 'snails', mark: 'no' }, 'Rosa ❌'), text: 'Rosa / hasn’t / eaten / snails', pos: ['subject', 'neg', 'part', 'object'] },
+  { context: ctx({ who: 'tom', act: 'whale', mark: 'yes' }, 'Tom talks about his life ✔️'), text: 'I / have / seen / a whale', pos: ['subject', 'aux', 'part', 'object'] },
+  { context: ctx({ who: 'sam', act: 'homework', mark: 'no' }, 'Sam ❌'), text: 'He / hasn’t / finished / his homework', pos: ['subject', 'neg', 'part', 'object'] }
+];
+HouseWordOrder.build({ container: 'woItems', items: WO_ITEMS, scoreEl: 'woScore', totalEl: 'woTotal' });
+
+/* ── 3 · gap fill (easiest first; the missing words change) ────────────── */
+const AP = w => [w, w.replace(/’/g, "'")];
+const GF_ITEMS = [
+  { direct: ctx({ who: 'sam', act: 'drums', mark: 'yes' }, 'Sam ✔️'),
+    template: 'Sam {0} played the drums.', hints: [{ accepted: ['has'] }] },
+  { direct: ctx({ who: 'mia', act: 'ski', mark: 'no' }, 'Mia ❌'),
+    template: 'Mia {0} skied.', hints: [{ accepted: AP('hasn’t').concat(['has not']) }] },
+  { direct: ctx({ who: 'leo', act: 'bike', mark: 'yes' }, 'Leo ✔️ (verb: ride)'),
+    template: 'Leo has {0} a bike.', hints: [{ accepted: ['ridden'] }] },
+  { direct: ctx({ who: 'mia', act: 'been', country: 'canada', mark: 'yes' }, 'Mia talks about her life ✔️'),
+    template: 'I have {0} {1} Canada.', hints: [{ accepted: ['been'] }, { accepted: ['to'] }] },
+  { direct: ctx({ who: 'tom', act: 'car', mark: 'ask' }, 'You ask Tom ❓ (verb: drive)'),
+    template: '{0} you ever {1} a car?', hints: [{ accepted: ['Have', 'have'] }, { accepted: ['driven'] }] },
+  { direct: ctx({ who: 'ana', act: 'cake', mark: 'yes' }, 'A short answer ✔️'),
+    template: 'Has Ana made a cake? — Yes, she {0}.', hints: [{ accepted: ['has'] }] },
+  { direct: ctx({ who: 'sam', act: 'lived', country: 'usa', mark: 'no' }, 'Sam and Mia ❌ (verb: live)'),
+    template: 'They {0} {1} in the USA.', hints: [{ accepted: AP('haven’t').concat(['have not']) }, { accepted: ['lived'] }] },
+  { direct: ctx({ who: 'tom', act: 'sushi', mark: 'no' }, 'Tom ❌ (verb: eat)'),
+    template: 'Tom {0} {1} sushi.', hints: [{ accepted: AP('hasn’t').concat(['has not']) }, { accepted: ['eaten'] }] },
+  { direct: ctx({ who: 'ana', act: 'visited', country: 'peru', mark: 'yes' }, 'Ana ✔️ (verb: visit)'),
+    template: 'Ana {0} {1} Peru.', hints: [{ accepted: ['has'] }, { accepted: ['visited'] }] },
+  { direct: ctx({ who: 'tom', act: 'horse', mark: 'ask' }, 'You ask about Tom ❓ (verb: ride)'),
+    template: '{0} Tom ever {1} a horse?', hints: [{ accepted: ['Has', 'has'] }, { accepted: ['ridden'] }] },
+  { direct: ctx({ who: 'leo', act: 'ocean', mark: 'yes' }, 'Leo ✔️ (verb: swim)'),
+    template: 'Leo {0} {1} in the ocean.', hints: [{ accepted: ['has'] }, { accepted: ['swum'] }] },
+  { direct: ctx({ who: 'mia', act: 'homework', mark: 'no' }, 'A question and a short answer ❌'),
+    template: '{0} Mia finished {1} homework? — No, she {2}.', hints: [{ accepted: ['Has', 'has'] }, { accepted: ['her'] }, { accepted: AP('hasn’t') }] }
+];
+HouseGapFill.build({ container: 'gfItems', items: GF_ITEMS });
+</script>
+<script>HouseGrammar.init();</script>
+</body>
+</html>
