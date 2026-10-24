@@ -1,0 +1,332 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<title>Comparatives &amp; Superlatives Lab — taller, the tallest</title>
+<script>
+(function(){
+  try{
+    var saved = localStorage.getItem('theme-preference');
+    var theme = (saved === 'light' || saved === 'dark')
+      ? saved
+      : ((window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches) ? 'dark' : 'light');
+    document.documentElement.setAttribute('data-theme', theme);
+    var fs = parseFloat(localStorage.getItem('font-size-preference'));
+    if (fs >= 10 && fs <= 28) document.documentElement.style.setProperty('--fs-base', fs + 'px');
+  }catch(e){ /* localStorage/matchMedia unavailable — CSS media query still applies */ }
+})();
+</script>
+<link rel="stylesheet" href="house.css">
+</head>
+<body>
+<div class="page" id="page">
+  <span class="cefr-tag cefr-a1a2">A1/A2 · Elementary</span>
+  <h1>Comparatives &amp; Superlatives Lab</h1>
+  <p class="subtitle">⚖️ Leo is taller than Ana. · 🏆 Leo is the tallest of the three.</p>
+
+  <div class="sec-div">The pattern</div>
+  <div class="rule-box">
+    <p><strong>⚖️ Comparative</strong> — two things:</p>
+    <div class="pattern">
+      <span class="pos-hl pos-subject">A</span><span class="plus">+</span>
+      <span class="pos-hl pos-verb">is</span><span class="plus">+</span>
+      <span class="pos-hl pos-adj">adjective-er</span><span class="plus">/</span>
+      <span><span class="pos-hl pos-adverb">more</span> <span class="pos-hl pos-adj">adjective</span></span><span class="plus">+</span>
+      <span class="pos-hl pos-conj">than</span><span class="plus">+</span>
+      <span class="pos-hl pos-noun">B</span>
+    </div>
+    <p><strong>🏆 Superlative</strong> — three or more things:</p>
+    <div class="pattern">
+      <span class="pos-hl pos-subject">A</span><span class="plus">+</span>
+      <span class="pos-hl pos-verb">is</span><span class="plus">+</span>
+      <span class="pos-hl pos-det">the</span><span class="plus">+</span>
+      <span class="pos-hl pos-adj">adjective-est</span><span class="plus">/</span>
+      <span><span class="pos-hl pos-adverb">most</span> <span class="pos-hl pos-adj">adjective</span></span>
+      <span class="plus">(+</span><span class="pos-hl pos-prep">of / in …</span><span class="plus">)</span>
+    </div>
+    <div class="subj-grid">
+      <div class="subj-card"><span class="verb-big">1 syllable</span><span class="subj-list">tall → taller → the tallest</span><span class="subj-note">big → bigger · nice → nicer</span></div>
+      <div class="subj-card"><span class="verb-big">2 syllables + y</span><span class="subj-list">happy → happier → the happiest</span><span class="subj-note">y → i</span></div>
+      <div class="subj-card"><span class="verb-big">Long</span><span class="subj-list">expensive → more expensive → the most expensive</span><span class="subj-note">3+ syllables, or 2 not ending in y</span></div>
+      <div class="subj-card"><span class="verb-big">Special</span><span class="subj-list">good → better → the best</span><span class="subj-note">bad → worse → the worst · far → farther → the farthest</span></div>
+    </div>
+    <p><strong>Never both:</strong> taller or more tall? → <em>taller</em>. Never “more taller” or “the most tallest”.</p>
+    <p><strong>than</strong>, not “that”: Leo is taller <em>than</em> Ana.</p>
+  </div>
+
+  <button class="grammar-toggle-btn" id="grammarToggle">🎨 Show Grammar</button>
+  <div class="pos-legend"></div>
+
+  <div class="score-bar"><span>Mastered: <strong id="masteredScore">0</strong> / <span id="masteredTotal">0</span></span></div>
+  <nav class="lab-tabs" id="labTabs" aria-label="Sections"></nav>
+  <div id="labPanels"></div>
+
+  <footer>Comparatives &amp; Superlatives Lab (A1/A2 · self-study)</footer>
+</div>
+
+<div id="theme-toggle-wrap">
+  <button id="theme-toggle" aria-label="Toggle light/dark mode" title="Toggle light/dark mode">
+    <span id="theme-icon">☀️</span>
+  </button>
+</div>
+<script src="house.js"></script>
+<script src="lab-kit.js"></script>
+<script>
+const { pick, shuffle, words, cap } = LabKit;
+
+/* ── the facts ──────────────────────────────────────────────────────────────
+   Each adjective comes with a small set of things and a value for each, so a
+   question is about real information: the learner has to work out WHICH one
+   is taller / the most expensive, not only build the form.
+   items: [name, value, emoji, label]   low: true = the smaller value is "more"
+   (cheaper, younger, earlier, worse). er / est: the forms. bad: typical wrong forms. */
+const PEOPLE_H = [['Ana', 160, '👩', '1.60 m'], ['Leo', 185, '👨', '1.85 m'], ['Mia', 172, '👩‍🦰', '1.72 m'], ['Tom', 178, '👨‍🦱', '1.78 m']];
+const PEOPLE_A = [['Ana', 34, '👩', '34 years old'], ['Leo', 27, '👨', '27 years old'], ['Mia', 19, '👩‍🦰', '19 years old'], ['Tom', 45, '👨‍🦱', '45 years old']];
+const FLATS = [['Apartment A', 80, '🏢', '80 m²'], ['Apartment B', 55, '🏢', '55 m²'], ['Apartment C', 120, '🏢', '120 m²']];
+const CITIES_T = [['Maracaibo', 34, '🌡️', '34 °C'], ['Caracas', 27, '🌡️', '27 °C'], ['Mérida', 19, '🌡️', '19 °C'], ['Valencia', 30, '🌡️', '30 °C']];
+
+const SHORT = [
+  { w: 'tall', er: 'taller', est: 'tallest', items: PEOPLE_H },
+  { w: 'short', er: 'shorter', est: 'shortest', items: PEOPLE_H, low: true },
+  { w: 'old', er: 'older', est: 'oldest', items: PEOPLE_A },
+  { w: 'young', er: 'younger', est: 'youngest', items: PEOPLE_A, low: true },
+  { w: 'cheap', er: 'cheaper', est: 'cheapest', low: true,
+    items: [['the red shirt', 15, '🔴', '$15'], ['the blue shirt', 30, '🔵', '$30'], ['the green shirt', 22, '🟢', '$22'], ['the black shirt', 18, '⚫', '$18']] },
+  { w: 'large', er: 'larger', est: 'largest', items: FLATS, bad: ['largeer', 'largeest'] },
+  { w: 'small', er: 'smaller', est: 'smallest', items: FLATS, low: true },
+  { w: 'big', er: 'bigger', est: 'biggest', bad: ['biger', 'bigest'],
+    items: [['Caracas', 3, '🏙️', '3 million people'], ['Maracaibo', 2, '🏙️', '2 million people'], ['Barquisimeto', 1.2, '🏙️', '1.2 million people'], ['Valencia', 1.6, '🏙️', '1.6 million people']] },
+  { w: 'hot', er: 'hotter', est: 'hottest', items: CITIES_T, bad: ['hoter', 'hotest'] },
+  { w: 'cold', er: 'colder', est: 'coldest', items: CITIES_T, low: true },
+  { w: 'long', er: 'longer', est: 'longest',
+    items: [['the Nile', 6650, '🌊', '6,650 km'], ['the Amazon', 6400, '🌊', '6,400 km'], ['the Orinoco', 2140, '🌊', '2,140 km'], ['the Mississippi', 3730, '🌊', '3,730 km']] },
+  { w: 'fast', er: 'faster', est: 'fastest',
+    items: [['the cheetah', 110, '🐆', '110 km/h'], ['the horse', 70, '🐎', '70 km/h'], ['the dog', 45, '🐕', '45 km/h'], ['the rabbit', 56, '🐇', '56 km/h']] }
+];
+
+const Y = [
+  { w: 'heavy', er: 'heavier', est: 'heaviest',
+    items: [['the red suitcase', 23, '🧳', '23 kg'], ['the blue suitcase', 18, '🧳', '18 kg'], ['the black suitcase', 30, '🧳', '30 kg'], ['the green suitcase', 12, '🧳', '12 kg']] },
+  { w: 'easy', er: 'easier', est: 'easiest',
+    items: [['the math test', 60, '📝', '60% of students passed'], ['the English test', 90, '📝', '90% passed'], ['the history test', 75, '📝', '75% passed'], ['the science test', 82, '📝', '82% passed']] },
+  { w: 'busy', er: 'busier', est: 'busiest',
+    items: [['the bakery', 300, '🥖', '300 customers a day'], ['the bookstore', 80, '📚', '80 customers a day'], ['the pharmacy', 150, '💊', '150 customers a day'], ['the café', 200, '☕', '200 customers a day']] },
+  { w: 'early', er: 'earlier', est: 'earliest', low: true,
+    items: [['the math class', 800, '⏰', 'at 8:00'], ['the art class', 1030, '⏰', 'at 10:30'], ['the music class', 915, '⏰', 'at 9:15'], ['the English class', 730, '⏰', 'at 7:30']] },
+  { w: 'noisy', er: 'noisier', est: 'noisiest',
+    items: [['the café', 2, '☕', '🔊🔊'], ['the library', 1, '📚', '🔈'], ['the club', 3, '🎶', '🔊🔊🔊'], ['the street', 4, '🚗', '🔊🔊🔊🔊']] },
+  { w: 'sunny', er: 'sunnier', est: 'sunniest',
+    items: [['Madrid', 280, '☀️', '280 sunny days a year'], ['London', 150, '☀️', '150 sunny days a year'], ['Miami', 250, '☀️', '250 sunny days a year'], ['Caracas', 230, '☀️', '230 sunny days a year']] },
+  { w: 'happy', er: 'happier', est: 'happiest',
+    items: [['Ana', 3, '👩', '😄'], ['Leo', 2, '👨', '🙂'], ['Mia', 1, '👩‍🦰', '😐'], ['Tom', 4, '👨‍🦱', '🤩']] },
+  { w: 'funny', er: 'funnier', est: 'funniest',
+    items: [['the first movie', 3, '🎬', '😂😂😂'], ['the second movie', 1, '🎬', '😂'], ['the third movie', 2, '🎬', '😂😂'], ['the fourth movie', 4, '🎬', '😂😂😂😂']] }
+];
+
+const LONG = [
+  { w: 'expensive',
+    items: [['the gray phone', 900, '📱', '$900'], ['the white phone', 450, '📱', '$450'], ['the black phone', 700, '📱', '$700'], ['the blue phone', 300, '📱', '$300']] },
+  { w: 'comfortable',
+    items: [['the sofa', 5, '🛋️', '⭐⭐⭐⭐⭐'], ['the wooden chair', 2, '🪑', '⭐⭐'], ['the office chair', 4, '💺', '⭐⭐⭐⭐'], ['the bed', 3, '🛏️', '⭐⭐⭐']] },
+  { w: 'dangerous',
+    items: [['the shark', 3, '🦈', '⚠️⚠️⚠️'], ['the dog', 1, '🐕', '⚠️'], ['the snake', 2, '🐍', '⚠️⚠️'], ['the crocodile', 4, '🐊', '⚠️⚠️⚠️⚠️']] },
+  { w: 'popular',
+    items: [['the soccer club', 120, '⚽', '120 members'], ['the chess club', 25, '♟️', '25 members'], ['the dance club', 60, '💃', '60 members'], ['the art club', 40, '🎨', '40 members']] },
+  { w: 'interesting',
+    items: [['the history book', 4, '📕', '⭐⭐⭐⭐'], ['the science book', 5, '📗', '⭐⭐⭐⭐⭐'], ['the grammar book', 2, '📘', '⭐⭐'], ['the travel book', 3, '📙', '⭐⭐⭐']] },
+  { w: 'beautiful',
+    items: [['Playa Azul', 5, '🏖️', '⭐⭐⭐⭐⭐'], ['Playa Grande', 3, '🏖️', '⭐⭐⭐'], ['Playa Sol', 4, '🏖️', '⭐⭐⭐⭐'], ['Playa Linda', 2, '🏖️', '⭐⭐']] },
+  { w: 'modern',
+    items: [['the museum', 1910, '🏛️', 'built in 1910'], ['the hotel', 2021, '🏨', 'built in 2021'], ['the bank', 1985, '🏦', 'built in 1985'], ['the school', 1960, '🏫', 'built in 1960']] },
+  { w: 'famous',
+    items: [['Lia', 20, '🎤', '20 million followers'], ['Max', 3, '🎤', '3 million followers'], ['Sol', 8, '🎤', '8 million followers'], ['Kai', 12, '🎤', '12 million followers']] },
+  { w: 'boring',
+    items: [['the first movie', 1, '🎬', '🥱'], ['the second movie', 3, '🎬', '🥱🥱🥱'], ['the third movie', 2, '🎬', '🥱🥱'], ['the fourth movie', 4, '🎬', '🥱🥱🥱🥱']] }
+];
+LONG.forEach(a => { a.er = 'more ' + a.w; a.est = 'most ' + a.w; });
+
+const GRADES = [['Ana’s grade', 18, '👩', '18/20'], ['Leo’s grade', 12, '👨', '12/20'], ['Mia’s grade', 15, '👩‍🦰', '15/20'], ['Tom’s grade', 9, '👨‍🦱', '9/20']];
+const SPECIAL = [
+  { w: 'good', er: 'better', est: 'best', bad: ['gooder', 'more good', 'goodest', 'most good'],
+    items: [['Café Luna', 5, '🍽️', '⭐⭐⭐⭐⭐'], ['Pizza Roma', 3, '🍕', '⭐⭐⭐'], ['Burger Town', 4, '🍔', '⭐⭐⭐⭐'], ['Taco Loco', 2, '🌮', '⭐⭐']] },
+  { w: 'good', er: 'better', est: 'best', bad: ['gooder', 'more good', 'goodest', 'most good'], items: GRADES },
+  { w: 'bad', er: 'worse', est: 'worst', low: true, bad: ['badder', 'more bad', 'baddest', 'most bad'],
+    items: [['Hotel Sol', 2, '🏨', '⭐⭐'], ['Hotel Mar', 1, '🏨', '⭐'], ['Hotel Río', 4, '🏨', '⭐⭐⭐⭐'], ['Hotel Luz', 3, '🏨', '⭐⭐⭐']] },
+  { w: 'bad', er: 'worse', est: 'worst', low: true, bad: ['badder', 'more bad', 'baddest', 'most bad'], items: GRADES },
+  { w: 'far', er: 'farther', est: 'farthest', alt: ['further', 'furthest'], bad: ['farer', 'more far', 'farest', 'most far'],
+    from: '🏠 From my house:',
+    items: [['the beach', 30, '🏖️', '30 km'], ['the airport', 15, '✈️', '15 km'], ['the park', 2, '🌳', '2 km'], ['the mall', 8, '🛍️', '8 km']] }
+];
+
+/* ── question builders ─────────────────────────────────────────────────── */
+const cue = w => ' <span class="cue">(' + w + ')</span>';
+function facts(a, list) {
+  return (a.from ? a.from + ' ' : '') +
+    shuffle(list).map(it => it[2] + ' ' + cap(it[0]) + ': ' + it[3]).join(' · ') + cue(a.w);
+}
+// sort so the first item is the "most" (tallest, cheapest, worst …)
+function ranked(a, n) {
+  let list;
+  do { list = LabKit.sample(a.items, n); } while (new Set(list.map(i => i[1])).size < n);
+  return list.slice().sort((x, y) => a.low ? x[1] - y[1] : y[1] - x[1]);
+}
+const formTokens = (form, pos) => form.split(' ').map(w => [w, w === 'more' || w === 'most' ? 'adverb' : pos]);
+
+function compItem(a, kind) {
+  const [A, B] = ranked(a, 2);
+  const S = cap(A[0]), O = B[0];
+  const tokens = [...words(S, 'subject'), ['is', 'verb'], ...formTokens(a.er, 'adj'), ['than', 'conj'], ...words(O, 'noun'), ['.', null]];
+  const line = f => `${S} is ${f} than ${O}.`;
+  const wrong = [
+    `${cap(O)} is ${a.er} than ${A[0]}.`,          // the facts say the opposite
+    `${S} is ${a.er} that ${O}.`
+  ];
+  if (kind === 'short') wrong.push(line('more ' + a.w), line('more ' + a.er), line(a.bad ? a.bad[0] : a.est));
+  if (kind === 'y') wrong.push(line(a.w + 'er'), line('more ' + a.w), line('more ' + a.er));
+  if (kind === 'long') wrong.push(line(a.w + 'er'), line('most ' + a.w), line('the more ' + a.w));
+  if (kind === 'special') wrong.push(line(a.bad[0]), line(a.bad[1]), line(a.est));
+  const alts = a.alt ? [line(a.alt[0])] : [];
+  const ctx = facts(a, [A, B]);
+  return { ctx, key: S + a.w + O, tokens, wrong, alts };
+}
+
+function supItem(a, kind) {
+  const three = ranked(a, 3), A = three[0];
+  const S = cap(A[0]);
+  const tokens = [...words(S, 'subject'), ['is', 'verb'], ['the', 'det'], ...formTokens(a.est, 'adj'),
+                  ['of', 'prep'], ['the', 'prep'], ['three', 'prep'], ['.', null]];
+  const line = f => `${S} is ${f} of the three.`;
+  const wrong = [
+    `${cap(pick(three.slice(1))[0])} is the ${a.est} of the three.`    // not the one the facts say
+  ];
+  if (kind === 'short') wrong.push(line('the most ' + a.w), line('the ' + a.er), line('the most ' + a.est), ...(a.bad ? [line('the ' + a.bad[1])] : []));
+  if (kind === 'y') wrong.push(line('the ' + a.w + 'est'), line('the most ' + a.w), line('the ' + a.er));
+  if (kind === 'long') wrong.push(line('the ' + a.w + 'est'), line('the more ' + a.w), line('the most ' + a.w + 'est'));
+  if (kind === 'special') wrong.push(line('the ' + a.bad[2]), line('the ' + a.bad[3]), line('the ' + a.er));
+  const alts = a.alt ? [line('the ' + a.alt[1])] : [];
+  return { ctx: facts(a, three), key: S + a.w, tokens, wrong, alts };
+}
+
+const COMP_PROMPTS = { choice: 'Look at the facts. Which sentence is correct?',
+                       drag: 'Tap or drag the words to compare the two.',
+                       gap: 'Compare the two. Use the word in brackets.' };
+const SUP_PROMPTS = { choice: 'Look at the facts. Which sentence is correct?',
+                      drag: 'Tap or drag the words to build the sentence.',
+                      gap: 'Which one is number 1? Use the word in brackets.' };
+
+const SECTIONS = [
+  { id: 'comp-short', emoji: '⚖️', label: '1 syllable', pill: 'Comparative: + er',
+    note: 'Short adjectives (one syllable): add -er, then than. If the word ends in e, add only -r. If it ends in one vowel + one consonant, double the consonant.',
+    examples: [
+      ['pos', '{Leo|subject} {is|verb} {taller|adj} {than|conj} {Ana|noun}.', 'tall → taller (+er)', 'tall'],
+      ['pos', '{Apartment C|subject} {is|verb} {larger|adj} {than|conj} {Apartment A|noun}.', 'large → larger (ends in e: +r)', 'large'],
+      ['pos', '{Caracas|subject} {is|verb} {bigger|adj} {than|conj} {Maracaibo|noun}.', 'big → bigger (b-i-g: double the g)', 'big'],
+      ['q', '{Is|verb} {Maracaibo|subject} {hotter|adj} {than|conj} {Caracas|noun}?', 'hot → hotter (double the t)', 'Question']
+    ],
+    prompts: COMP_PROMPTS, gen: () => compItem(pick(SHORT), 'short') },
+
+  { id: 'comp-y', emoji: '⚖️', label: '2 syllables + y', pill: 'Comparative: y → ier',
+    note: 'Two-syllable adjectives ending in y: change y to i and add -er.',
+    examples: [
+      ['pos', '{Ana|subject} {is|verb} {happier|adj} {than|conj} {Leo|noun}.', 'happy → happier', 'happy'],
+      ['pos', '{The black suitcase|subject} {is|verb} {heavier|adj} {than|conj} {the red suitcase|noun}.', 'heavy → heavier', 'heavy'],
+      ['pos', '{The English test|subject} {was|verb} {easier|adj} {than|conj} {the math test|noun}.', 'easy → easier', 'easy']
+    ],
+    prompts: COMP_PROMPTS, gen: () => compItem(pick(Y), 'y') },
+
+  { id: 'comp-long', emoji: '⚖️', label: 'Long', pill: 'Comparative: more + adjective',
+    note: 'Long adjectives (three syllables or more) and two-syllable adjectives that don’t end in y: use more + adjective. Don’t change the adjective.',
+    examples: [
+      ['pos', '{The gray phone|subject} {is|verb} {more|adverb} {expensive|adj} {than|conj} {the black phone|noun}.', 'ex-pen-sive: 3 syllables', 'expensive'],
+      ['pos', '{The sofa|subject} {is|verb} {more|adverb} {comfortable|adj} {than|conj} {the chair|noun}.', 'com-for-ta-ble: 4 syllables', 'comfortable'],
+      ['pos', '{The hotel|subject} {is|verb} {more|adverb} {modern|adj} {than|conj} {the museum|noun}.', 'mo-dern: 2 syllables, no y', 'modern']
+    ],
+    prompts: COMP_PROMPTS, gen: () => compItem(pick(LONG), 'long') },
+
+  { id: 'comp-special', emoji: '⚖️', label: 'Special', pill: 'better · worse · farther',
+    note: 'Some adjectives are irregular. Learn them: good → better, bad → worse, far → farther (or further).',
+    examples: [
+      ['pos', '{Café Luna|subject} {is|verb} {better|adj} {than|conj} {Pizza Roma|noun}.', 'good → better (not gooder)', 'good'],
+      ['pos', '{Hotel Mar|subject} {is|verb} {worse|adj} {than|conj} {Hotel Sol|noun}.', 'bad → worse (not badder)', 'bad'],
+      ['pos', '{The beach|subject} {is|verb} {farther|adj} {than|conj} {the airport|noun}.', 'far → farther / further', 'far']
+    ],
+    prompts: COMP_PROMPTS, gen: () => compItem(pick(SPECIAL), 'special') },
+
+  { id: 'sup-short', emoji: '🏆', label: '1 syllable', pill: 'Superlative: the + est',
+    note: 'Short adjectives: the + adjective + -est. Same spelling rules: nice → the nicest, big → the biggest.',
+    examples: [
+      ['pos', '{Leo|subject} {is|verb} {the|det} {tallest|adj} {of the three|prep}.', 'tall → the tallest', 'tall'],
+      ['pos', '{Apartment C|subject} {is|verb} {the|det} {largest|adj} {apartment|noun}.', 'large → the largest (+st)', 'large'],
+      ['pos', '{Caracas|subject} {is|verb} {the|det} {biggest|adj} {city|noun} {in Venezuela|prep}.', 'big → the biggest (double the g)', 'big']
+    ],
+    prompts: SUP_PROMPTS, gen: () => supItem(pick(SHORT), 'short') },
+
+  { id: 'sup-y', emoji: '🏆', label: '2 syllables + y', pill: 'Superlative: y → iest',
+    note: 'Two-syllable adjectives ending in y: the + change y to i + -est.',
+    examples: [
+      ['pos', '{Ana|subject} {is|verb} {the|det} {happiest|adj} {of the three|prep}.', 'happy → the happiest', 'happy'],
+      ['pos', '{The bakery|subject} {is|verb} {the|det} {busiest|adj} {store|noun} {on my street|prep}.', 'busy → the busiest', 'busy'],
+      ['pos', '{It|subject} {was|verb} {the|det} {funniest|adj} {movie|noun} {of the year|prep}.', 'funny → the funniest', 'funny']
+    ],
+    prompts: SUP_PROMPTS, gen: () => supItem(pick(Y), 'y') },
+
+  { id: 'sup-long', emoji: '🏆', label: 'Long', pill: 'Superlative: the most + adjective',
+    note: 'Long adjectives (and two-syllable adjectives that don’t end in y): the most + adjective.',
+    examples: [
+      ['pos', '{The gray phone|subject} {is|verb} {the|det} {most|adverb} {expensive|adj} {of the three|prep}.', 'expensive → the most expensive', 'expensive'],
+      ['pos', '{The shark|subject} {is|verb} {the|det} {most|adverb} {dangerous|adj} {animal|noun} {in the ocean|prep}.', 'dangerous → the most dangerous', 'dangerous'],
+      ['pos', '{Lia|subject} {is|verb} {the|det} {most|adverb} {famous|adj} {singer|noun} {in my country|prep}.', 'fa-mous: 2 syllables, no y', 'famous']
+    ],
+    prompts: SUP_PROMPTS, gen: () => supItem(pick(LONG), 'long') },
+
+  { id: 'sup-special', emoji: '🏆', label: 'Special', pill: 'the best · the worst · the farthest',
+    note: 'The irregular adjectives: good → the best, bad → the worst, far → the farthest (or the furthest).',
+    examples: [
+      ['pos', '{Café Luna|subject} {is|verb} {the|det} {best|adj} {restaurant|noun} {in town|prep}.', 'good → better → the best', 'good'],
+      ['pos', '{Hotel Mar|subject} {is|verb} {the|det} {worst|adj} {of the three|prep}.', 'bad → worse → the worst', 'bad'],
+      ['pos', '{The beach|subject} {is|verb} {the|det} {farthest|adj} {from my house|prep}.', 'far → farther → the farthest / the furthest', 'far']
+    ],
+    prompts: SUP_PROMPTS, gen: () => supItem(pick(SPECIAL), 'special') }
+];
+
+/* Different sentences from the Common mistakes list. A1/A2: some are already correct. */
+const EH_POOL = [
+  { words: ['My', 'brother', 'is', 'more', 'older', 'than', 'me', '.'], error: { type: 'extra', wordIndex: 3 } },
+  { words: ['This', 'test', 'is', 'easyer', 'than', 'the', 'last', 'one', '.'], error: { type: 'wrong', wordIndex: 3, options: ['easier', 'more easy', 'easiest'], correct: 'easier' } },
+  { words: ['The', 'Nile', 'is', 'longer', 'that', 'the', 'Amazon', '.'], error: { type: 'wrong', wordIndex: 4, options: ['than', 'then', 'as'], correct: 'than' } },
+  { words: ['Caracas', 'is', 'hoter', 'than', 'Mérida', '.'], error: { type: 'wrong', wordIndex: 2, options: ['hotter', 'more hot', 'hottest'], correct: 'hotter' } },
+  { words: ['This', 'is', 'the', 'most', 'expensivest', 'phone', '.'], error: { type: 'wrong', wordIndex: 4, options: ['expensive', 'expensiver', 'expensively'], correct: 'expensive' } },
+  { words: ['Leo', 'is', 'the', 'best', 'player', 'on', 'the', 'team', '.'], error: null },
+  { words: ['My', 'car', 'is', 'worst', 'than', 'your', 'car', '.'], error: { type: 'wrong', wordIndex: 2, options: ['worse', 'badder', 'more bad'], correct: 'worse' } },
+  { words: ['Ana', 'is', 'happiest', 'person', 'in', 'my', 'class', '.'], error: { type: 'missing', gapIndex: 2, options: ['the', 'a', 'more'], correct: 'the' } },
+  { words: ['The', 'beach', 'is', 'farer', 'than', 'the', 'park', '.'], error: { type: 'wrong', wordIndex: 3, options: ['farther', 'more far', 'farthest'], correct: 'farther' } },
+  { words: ['This', 'chair', 'is', 'more', 'comfortable', 'than', 'that', 'one', '.'], error: null },
+  { words: ['It', 'is', 'the', 'most', 'popular', 'song', 'of', 'the', 'year', '.'], error: null },
+  { words: ['Mia', 'is', 'the', 'younger', 'of', 'the', 'three', '.'], error: { type: 'wrong', wordIndex: 3, options: ['youngest', 'most young', 'more young'], correct: 'youngest' } },
+  { words: ['Today', 'is', 'sunnyer', 'than', 'yesterday', '.'], error: { type: 'wrong', wordIndex: 2, options: ['sunnier', 'more sunny', 'sunniest'], correct: 'sunnier' } },
+  { words: ['This', 'movie', 'is', 'boringer', 'than', 'the', 'book', '.'], error: { type: 'wrong', wordIndex: 3, options: ['more boring', 'boringest', 'most boring'], correct: 'more boring' } },
+  { words: ['Your', 'bag', 'is', 'heavier', 'than', 'mine', '.'], error: null }
+];
+
+LabKit.build({
+  sections: SECTIONS,
+  mistakes: [
+    ['She is more tall than me.', 'She is taller than me.'],
+    ['My house is more bigger than yours.', 'My house is bigger than yours.'],
+    ['Lima is bigger that Quito.', 'Lima is bigger than Quito.'],
+    ['This bag is heavyer.', 'This bag is heavier.'],
+    ['This pizza is gooder than that one.', 'This pizza is better than that one.'],
+    ['Paris is more far than London.', 'Paris is farther than London.'],
+    ['He is the most tallest in the class.', 'He is the tallest in the class.'],
+    ['Leo is tallest boy in the class.', 'Leo is the tallest boy in the class.'],
+    ['It’s the bigest city in Venezuela.', 'It’s the biggest city in Venezuela.'],
+    ['This is the baddest day of my life!', 'This is the worst day of my life!']
+  ],
+  errorHunt: EH_POOL, ehCount: 6,
+  ehPrompt: 'Some sentences have a mistake. Some are correct! Tap a word — or a space between words — to fix it. Then press OK. 🎲 Again gives you new sentences.'
+});
+</script>
+<script>HouseGrammar.init();</script>
+</body>
+</html>

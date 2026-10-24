@@ -1,0 +1,123 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<title>Office News — Reported Speech</title>
+<script>
+(function(){
+  try{
+    var saved = localStorage.getItem('theme-preference');
+    var theme = (saved === 'light' || saved === 'dark')
+      ? saved
+      : ((window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches) ? 'dark' : 'light');
+    document.documentElement.setAttribute('data-theme', theme);
+    var fs = parseFloat(localStorage.getItem('font-size-preference'));
+    if (fs >= 10 && fs <= 28) document.documentElement.style.setProperty('--fs-base', fs + 'px');
+  }catch(e){ /* localStorage/matchMedia unavailable — CSS media query still applies */ }
+})();
+</script>
+<link rel="stylesheet" href="house.css">
+<style>
+.q-card .ss-line{ justify-content:center; font-size:1.2667rem; font-weight:600; }
+.q-card details.check{ margin-top:4px; width:100%; max-width:440px; text-align:left; }
+.q-card .check-body{ padding:8px 12px; font-size:.9667rem; }
+.q-card .check-body p{ margin:0 0 4px; }
+.kind-pill{ display:inline-block; font-size:.7rem; font-weight:700; letter-spacing:.04em; text-transform:uppercase; padding:2px 9px; border-radius:20px; margin-right:6px; }
+.kind-pill.st{ background:var(--bg-pos); color:var(--text-pos); }
+.kind-pill.rq{ background:var(--bg-cel); color:var(--text-cel); }
+.kind-pill.qu{ background:var(--bg-q); color:var(--text-q); }
+</style>
+</head>
+<body>
+<div class="page" id="page">
+  <span class="cefr-tag cefr-a2">A2 · Pre-intermediate</span>
+  <h1>Office News</h1>
+  <p class="subtitle">You heard something at work. Tell your partner what people said, asked or told someone to do.</p>
+
+  <div class="rule-box">
+    <p><strong>How to play (pairs, or teacher + student):</strong></p>
+    <p>1. Roll 🎲. Read the words on the card aloud, like the person.</p>
+    <p>2. Your partner reports it: “<b>Ms. Park told Dan not to forget the meeting.</b>” · “<b>Luis said he couldn’t work on Sunday.</b>” · “<b>Tom asked Rosa where the keys were.</b>”</p>
+    <p>3. Press 👀 to check. Then change roles.</p>
+  </div>
+
+  <div class="q-card" id="qCard"><span class="q-placeholder">Roll the dice to start.</span></div>
+  <button class="dice-btn" id="diceBtn" aria-label="Roll">🎲</button>
+  <div class="roll-count">Rolls: <strong id="rollCount">0</strong></div>
+
+  <div class="sec-div">Now you</div>
+  <div class="rule-box">
+    <p>Think about your work or school this week. What did your boss, your coworkers or your teacher say?</p>
+    <p>Tell your partner three things: one thing someone <strong>said</strong>, one thing someone <strong>asked you to do</strong>, and one <strong>question</strong> someone asked you.</p>
+    <p>“<b>My boss said she would be on vacation next week. She asked me to answer her emails. A coworker asked me if I could work on Saturday.</b>”</p>
+    <p>Your partner asks one more question about each: “<b>What did you tell her?</b>”</p>
+  </div>
+
+  <footer>Office News — Reported Speech: Statements, Requests and Questions (A2)</footer>
+</div>
+
+<div id="theme-toggle-wrap">
+  <button id="theme-toggle" aria-label="Toggle light/dark mode" title="Toggle light/dark mode">
+    <span id="theme-icon">☀️</span>
+  </button>
+</div>
+<script src="house.js"></script>
+<script src="stick-character.js"></script>
+<script src="stick-sentence.js"></script>
+<script>
+/* the same team on every page of this lesson: FreshBox, a food delivery company (office, kitchen and warehouse) */
+StickSentence.cast({
+  park: { base:'woman', headwear:'bun', colour:'#6600CC', label:'Ms. Park' },
+  ana:  { base:'woman', colour:'#FF66CC', label:'Ana' },
+  dan:  { base:'man',   colour:'#0066CC', label:'Dan' },
+  tom:  { base:'man',   headwear:'cap', colour:'#00CC66', label:'Tom' },
+  rosa: { base:'woman', headwear:'ponytail', colour:'#FF6600', label:'Rosa' },
+  luis: { base:'man',   headwear:'chefhat', colour:'#CC0000', label:'Luis' }
+});
+StickSentence.toggle();   /* stick figures hidden by default */
+
+const NAMES = { park:'Ms. Park', ana:'Ana', dan:'Dan', tom:'Tom', rosa:'Rosa', luis:'Luis' };
+const PROPS = { dan:':laptop', rosa:':box', luis:':pan' };   /* what each person usually has at work */
+/* [kind, speaker, listeners, words, model report]  — kind: st = statement, rq = request, qu = question */
+const CARDS = [
+  ['st', 'park', 'tom,rosa,luis', 'The new trucks will arrive on Friday.', 'Ms. Park told the team (that) the new trucks would arrive on Friday.'],
+  ['st', 'luis', 'park', '{I|luis:sad} can’t work on Sunday.', 'Luis told Ms. Park (that) he couldn’t work on Sunday.'],
+  ['rq', 'rosa', 'tom', 'Please help {me|rosa} with these boxes.', 'Rosa asked Tom to help her with the boxes.'],
+  ['rq', 'park', 'dan', 'Don’t forget the meeting at three.', 'Ms. Park told Dan not to forget the meeting at three.'],
+  ['qu', 'dan', 'ana', 'Do {you|ana} have the password?', 'Dan asked Ana if she had the password.'],
+  ['qu', 'tom', 'rosa', 'Where are the keys for the truck?', 'Tom asked Rosa where the keys for the truck were.'],
+  ['st', 'ana', 'park', '{I’m|ana} working on the new schedule.', 'Ana told Ms. Park (that) she was working on the new schedule.'],
+  ['qu', 'luis', 'tom', 'Can {you|tom} bring more onions?', 'Luis asked Tom if he could bring more onions.'],
+  ['rq', 'park', 'ana', 'Call the customer, please.', 'Ms. Park asked Ana to call the customer.'],
+  ['st', 'rosa', 'tom,luis', '{I|rosa} won’t be at work tomorrow.', 'Rosa said (that) she wouldn’t be at work tomorrow.'],
+  ['qu', 'dan', 'tom', 'What time do {you|tom} start?', 'Dan asked Tom what time he started.'],
+  ['st', 'tom', 'luis', 'The truck is broken.', 'Tom told Luis (that) the truck was broken.'],
+  ['qu', 'park', 'rosa', 'Are the orders ready?', 'Ms. Park asked Rosa if the orders were ready.'],
+  ['st', 'ana', 'dan', '{I|ana:happy} can fix the printer.', 'Ana told Dan (that) she could fix the printer.'],
+  ['rq', 'luis', 'ana', 'Don’t touch the oven. It’s hot!', 'Luis told Ana not to touch the oven. He said it was hot.'],
+  ['st', 'rosa', 'park', '{We|rosa,tom} need more boxes.', 'Rosa told Ms. Park (that) they needed more boxes.'],
+  ['qu', 'tom', 'ana', 'Will {you|ana} be at the party?', 'Tom asked Ana if she would be at the party.'],
+  ['rq', 'park', 'tom,rosa,luis', 'Please wear {your|tom,rosa,luis} safety vests.', 'Ms. Park asked the team to wear their safety vests.'],
+  ['st', 'dan', 'park', 'The computers are working again.', 'Dan told Ms. Park (that) the computers were working again.'],
+  ['qu', 'ana', 'luis', 'Why is the kitchen so busy today?', 'Ana asked Luis why the kitchen was so busy today.']
+];
+const KIND = { st:['st', '💬 statement', 'said / told'], rq:['rq', '🙏 request', 'asked / told … to'], qu:['qu', '❓ question', 'asked … if / wh-'] };
+
+HouseRandomGen.build({
+  items: CARDS.map(([k, sp, ls, words, model]) => ({ k, sp, ls, words, model, text: words })),
+  render: c => {
+    const listeners = c.ls.split(',').map(id => id + ':left').join(',');
+    const who = c.ls.split(',').length > 2 ? 'the team' : c.ls.split(',').map(id => NAMES[id]).join(' and ');
+    const line = '{' + NAMES[c.sp] + ':|' + c.sp + (PROPS[c.sp] || '') + ':say:arrow,' + listeners + '} “' + c.words + '”';
+    const [cls, label, hint] = KIND[c.k];
+    return '<span class="q-topic">' + NAMES[c.sp] + ' → ' + who + '</span>' +
+      StickSentence.html(line) +
+      '<span class="q-prompt">Report it: “' + NAMES[c.sp] + ' …”</span>' +
+      '<details class="check"><summary>👀 Check</summary><div class="check-body">' +
+      '<p><span class="kind-pill ' + cls + '">' + label + '</span>' + hint + '</p><p>“' + c.model + '”</p></div></details>';
+  }
+});
+</script>
+</body>
+</html>

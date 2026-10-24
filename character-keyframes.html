@@ -31,6 +31,20 @@
   .ke-layout{ flex:1 1 auto; min-height:0; align-items:stretch; }
   .ke-main, .ke-side{ min-height:0; overflow-y:auto; overscroll-behavior:contain; scrollbar-gutter:stable; padding-right:6px; }
   .ke-side{ padding-top:44px; }   /* clear of the fixed 🔎 text-size button above it */
+  /* the left column doesn't scroll: its controls keep their size and the stage fills what is left
+     (the figure keeps its proportions inside it). A tall timeline scrolls inside its own box. */
+  .ke-main{ display:flex; flex-direction:column; overflow-y:auto; }
+  .ke-main > *{ flex:0 0 auto; }
+  .ke-main > .ke-stage{ flex:1 1 0; min-height:180px; aspect-ratio:auto; max-width:none; width:100%; }
+  .ke-main .ke-timeline{ max-height:30vh; overflow-y:auto; overscroll-behavior:contain; }
+  .ke-page{ padding-top:8px; padding-bottom:8px; }
+  .ke-page > h1{ font-size:1.05rem; margin:0 0 6px; padding-right:110px; }
+  .ke-page > .subtitle{ display:none; }
+  .ke-page > footer{ display:none; }
+  .ke-main .ke-keybar{ margin-top:5px; padding:4px 10px; gap:6px 12px; }
+  .ke-main .ke-transport{ margin:6px 0 4px; }
+  .ke-main .ke-transport .tb{ padding:3px 6px 2px; }
+  .ke-main .ke-tlbar{ margin-bottom:4px; }
 }
 @media (max-width:860px){ .ke-layout{ grid-template-columns:minmax(0,1fr); } }
 
@@ -42,27 +56,66 @@
 .ke-stage > #figure, .ke-stage > #handles, .ke-stage > #onion{ position:absolute; inset:0; width:100%; height:100%; }
 /* onion skin: tinted ghosts of nearby frames, behind the character */
 #onion{ pointer-events:none; }
+/* zoom: − 100% + in the bottom-left corner of the stage, as in the House Builder */
+.ke-stage .zoom-tools{
+  position:absolute; left:10px; bottom:10px; z-index:3;
+  display:flex; align-items:center; gap:2px; padding:3px;
+  border-radius:100px; background:var(--color-background-primary);
+  border:1px solid var(--color-border-secondary); box-shadow:0 2px 8px rgba(0,0,0,.12);
+}
+.zoom-btn{
+  min-width:30px; height:28px; padding:0 6px; border:0; border-radius:100px;
+  background:transparent; color:var(--text-primary); cursor:pointer;
+  font:600 16px/1 var(--font-sans);
+}
+.zoom-btn.zoom-reset{ font-size:12px; min-width:46px; color:var(--text-secondary); font-variant-numeric:tabular-nums; }
+.zoom-btn:hover{ background:var(--surface-1); }
+.zoom-btn:focus-visible{ outline:2px solid var(--text-accent); outline-offset:1px; }
+.ke-stage{ cursor:grab; }
+.ke-stage.panning, .ke-stage.panning *{ cursor:grabbing !important; }
+.ke-stage .zoom-tools, .ke-stage .ctransport, .ke-stage .onion-pop{ cursor:default; }
+/* compact transport: emoji-only buttons in one line, on the stage */
+.ctransport{
+  position:absolute; right:10px; bottom:10px; z-index:3; max-width:calc(100% - 150px);
+  display:flex; align-items:center; gap:1px; padding:3px; overflow-x:auto;
+  border-radius:100px; background:var(--color-background-primary);
+  border:1px solid var(--color-border-secondary); box-shadow:0 2px 8px rgba(0,0,0,.12);
+}
+.ctransport[hidden]{ display:none; }
+.ct-btn{ min-width:32px; height:28px; padding:0 4px; border:0; border-radius:100px; background:transparent; font-size:16px; line-height:1; cursor:pointer; }
+.ct-btn:hover{ background:var(--surface-1); }
+.ct-btn[aria-pressed="true"]{ background:var(--color-background-info); }
+.ke-transport.compact .grp{ display:none; }
+/* compact: the whole row goes; FPS and frames move up beside the view switch, and 🗜️ on the stage switches back */
+.ke-transport.compact{ display:none; }
+.ke-tlbar .ke-num{ order:8; }
+.ct-sep{ width:1px; align-self:stretch; margin:4px 3px; background:var(--color-border-secondary); }
 #onion svg{ position:absolute; inset:0; width:100%; height:100%; display:block; }
 .ke-stage.playing:not(.onion-play) #onion{ display:none; }
-.ke-onion{ display:flex; flex-wrap:wrap; gap:6px 18px; align-items:center; margin:8px 0 2px; padding:8px 12px;
+/* the onion skin settings open from 🧅, just above the zoom pill */
+.onion-pop{ position:absolute; left:10px; bottom:52px; z-index:4; max-width:calc(100% - 20px); flex-direction:column; align-items:flex-start !important;
+  box-shadow:0 6px 20px rgba(0,0,0,.18); cursor:default; }
+.onion-pop[hidden]{ display:none !important; }
+#bOnion[aria-pressed="true"]{ background:var(--color-background-info); }
+.ke-onion{ display:flex; flex-wrap:wrap; gap:6px 12px; align-items:center; margin:8px 0 2px; padding:8px 12px;
   background:var(--surface-1); border:1px solid var(--border); border-radius:var(--radius); font-size:.8rem; color:var(--text-secondary); }
 .ke-onion .ttl{ font-weight:600; color:var(--text-primary); }
-.ke-onion .side{ display:inline-flex; align-items:center; gap:7px; }
+.ke-onion .side{ display:inline-flex; align-items:center; gap:5px; }
 .ke-onion label{ display:inline-flex; align-items:center; gap:5px; cursor:pointer; }
 .ke-onion input[type=checkbox]{ accent-color:var(--text-accent); margin:0; }
 .ke-onion select{ font-family:inherit; font-size:.8rem; padding:2px 4px; border:1px solid var(--color-border-secondary);
   border-radius:var(--border-radius-md); background:var(--color-background-primary); color:var(--text-primary); }
-.ke-onion input[type=range]{ width:5.5rem; accent-color:var(--text-accent); margin:0; }
+.ke-onion input[type=range]{ width:3.8rem; accent-color:var(--text-accent); margin:0; }
 .ke-onion input[type=color]{ width:1.9rem; height:1.5rem; padding:0; border:1px solid var(--color-border-primary); border-radius:5px; background:none; cursor:pointer; }
 .ke-onion .pct{ font-family:var(--font-mono); font-size:.7333rem; min-width:2.6em; color:var(--text-muted); }
 .ke-onion .side.off > :not(label:first-child){ opacity:.45; }
 .ke-stage > #figure svg{ width:100%; height:100%; display:block; }
 #handles{ pointer-events:none; }
 #handles .h{ pointer-events:all; cursor:grab; }
-#handles .h circle, #handles .h path{ fill:var(--text-accent); fill-opacity:.28; stroke:var(--text-accent); stroke-width:1.6; }
+#handles .h circle, #handles .h path{ fill:var(--text-accent); fill-opacity:.28; stroke:var(--text-accent); stroke-width:1.6; vector-effect:non-scaling-stroke; }
 #handles .h:hover circle, #handles .h:hover path{ fill-opacity:.55; }
 #handles .h.on circle, #handles .h.on path{ fill:var(--pos-verb); fill-opacity:.85; stroke:var(--pos-verb); }
-#handles .ring{ fill:none; stroke:var(--pos-verb); stroke-width:1.4; stroke-dasharray:4 4; pointer-events:none; }
+#handles .ring{ fill:none; stroke:var(--pos-verb); stroke-width:1.4; stroke-dasharray:4 4; pointer-events:none; vector-effect:non-scaling-stroke; }
 .ke-stage.playing #handles{ display:none; }
 .ke-badge{
   position:absolute; left:10px; top:10px; font-size:.7333rem; font-weight:600; padding:2px 9px;
@@ -74,10 +127,15 @@
 /* transport */
 .ke-transport{ display:flex; flex-wrap:wrap; align-items:center; gap:6px; margin:12px 0 8px; }
 .ke-transport .grp{ display:inline-flex; gap:4px; align-items:center; }
-.ke-transport button{ min-width:2.6em; }
-.ke-transport .play{ min-width:5.6em; font-weight:600; }
+/* transport buttons: an emoji with a short word under it, like the chips on the phonics posters */
+.ke-transport .tb{ display:inline-flex; flex-direction:column; align-items:center; justify-content:center; gap:1px;
+  min-width:3.9rem; padding:5px 6px 4px; border-radius:var(--border-radius-md); line-height:1; }
+.ke-transport .tb-ic{ font-size:1.35rem; line-height:1.1; }
+.ke-transport .tb-lb{ font-size:.6667rem; font-weight:600; color:var(--text-secondary); white-space:nowrap; }
+.ke-transport .tb[aria-pressed="true"] .tb-lb{ color:inherit; }
+.ke-transport .tb.play{ min-width:4.4rem; }
 button[aria-pressed="true"]{ background:var(--color-background-info); color:var(--color-text-info); border-color:var(--color-border-info); }
-.ke-readout{ font-family:var(--font-mono); font-size:.8rem; color:var(--text-secondary); margin-left:auto; white-space:nowrap; }
+.ke-readout{ font-family:var(--font-mono); font-size:.8rem; color:var(--text-secondary); white-space:nowrap; order:9; margin-left:auto; }
 .ke-num{ display:inline-flex; align-items:center; gap:4px; font-size:.7667rem; color:var(--text-secondary); }
 .ke-num input{
   width:4.2em; font-family:var(--font-mono); font-size:.8rem; padding:3px 6px;
@@ -110,6 +168,9 @@ button[aria-pressed="true"]{ background:var(--color-background-info); color:var(
   border-radius:var(--border-radius-md); background:var(--color-background-primary); color:var(--text-primary); }
 .ke-tlbar .gonly{ display:none; align-items:center; gap:6px; }
 .ke-tlbar.graph .gonly{ display:inline-flex; }
+.ke-tlbar.graph .donly{ display:none; }
+.ke-tlbar #trackSel{ max-width:13rem; }
+.ke-tlbar #gAdd{ max-width:11rem; }
 .ke-tlbar .muted{ color:var(--text-muted); font-size:.7667rem; }
 /* graph view */
 #tl .gbg{ fill:var(--surface-1); }
@@ -206,7 +267,10 @@ button[aria-pressed="true"]{ background:var(--color-background-info); color:var(
 .btnrow{ display:flex; flex-wrap:wrap; gap:6px; margin-top:6px; }
 .note{ font-size:.7333rem; color:var(--text-muted); margin:6px 0 0; line-height:1.45; }
 .kbd{ font-family:var(--font-mono); font-size:.7rem; padding:0 4px; border:1px solid var(--border); border-radius:4px; background:var(--surface-1); }
-.ke-caption{ font-size:.8667rem; color:var(--text-secondary); text-align:center; margin:4px 0 0; min-height:1.4em; }
+.ke-caption{ position:absolute; right:10px; top:10px; max-width:calc(100% - 130px); margin:0;
+  font-size:.7667rem; color:var(--text-secondary); text-align:right; pointer-events:none;
+  background:var(--surface-2); border:1px solid var(--border); border-radius:20px; padding:1px 10px; }
+.ke-caption:empty{ display:none; }
 .scope{ display:flex; flex-wrap:wrap; align-items:center; gap:6px 8px; padding:9px 12px; margin-bottom:10px;
   background:var(--color-background-info); color:var(--color-text-info); border:1px solid var(--color-border-info); border-radius:var(--border-radius-md); font-size:.8rem; }
 .scope .note{ flex:1 1 100%; margin:0; color:inherit; opacity:.85; }
@@ -218,10 +282,13 @@ button[aria-pressed="true"]{ background:var(--color-background-info); color:var(
 .tk:hover{ border-color:var(--border); background:var(--surface-1); color:var(--text-primary); }
 .tracked .tk{ color:#fff; background:var(--c, var(--text-accent)); border-color:var(--c, var(--text-accent)); }
 .tracked > label{ color:var(--c, var(--text-accent)) !important; font-weight:600; }
+.poff > label, .acc-head.poff span{ text-decoration:line-through; opacity:.55; }
+.poff .tk{ color:var(--bad); }
 .acc-head{ display:flex; justify-content:space-between; align-items:center; font-size:.7667rem; color:var(--text-secondary); margin-bottom:4px; }
 .graphed .tk{ color:#fff; background:var(--c); border-color:var(--c); }
 .graphed > label, .acc-head.graphed span{ color:var(--c) !important; font-weight:600; }
 .acc-head.tracked span{ color:var(--c, var(--text-accent)); font-weight:600; }
+.tl-tools[hidden]{ display:none; }
 .tl-tools{ display:flex; flex-wrap:wrap; align-items:center; gap:6px; margin:8px 0 0; font-size:.8rem; color:var(--text-secondary); }
 .tl-tools select{ font-family:inherit; font-size:.8rem; padding:4px 6px; max-width:16rem;
   border:1px solid var(--color-border-secondary); border-radius:var(--border-radius-md); background:var(--color-background-primary); color:var(--text-primary); }
@@ -270,25 +337,34 @@ button[aria-pressed="true"]{ background:var(--color-background-info); color:var(
 
   <div class="ke-layout">
     <div class="ke-main" id="keMain">
-      <div class="ke-stage" id="stage">
+      <div class="ke-stage" id="stage" title="Drag around a dot to turn that joint. Changing anything on a frame without a keyframe adds one.">
         <div id="onion" aria-hidden="true"></div>
         <div id="figure"></div>
         <svg id="handles" viewBox="0 0 600 590"></svg>
         <span class="ke-badge" id="badge"></span>
-      </div>
-      <p class="ke-caption" id="caption"></p>
-      <p class="ke-hint">Drag around a dot to turn that joint. Changing anything on a frame without a keyframe adds one.</p>
-      <div class="ke-onion" id="onionBar">
-        <span class="ttl">🧅 Onion skin</span>
-        <span class="side" id="on_pre"><label><input type="checkbox" id="on_pre_on"> Before</label>
-          <select id="on_pre_n" aria-label="Frames before"><option value="1">1 frame</option><option value="2">2 frames</option><option value="3">3 frames</option><option value="4">4 frames</option><option value="5">5 frames</option><option value="6">6 frames</option><option value="7">7 frames</option><option value="8">8 frames</option><option value="9">9 frames</option><option value="10">10 frames</option><option value="11">11 frames</option><option value="12">12 frames</option></select>
-          <input type="range" id="on_pre_op" min="5" max="90" step="5" aria-label="Opacity of the nearest before frame" title="Opacity of the nearest frame; farther frames fade from this"><span class="pct" id="on_pre_pct"></span>
-          <input type="color" id="on_pre_col" aria-label="Colour for frames before" title="Colour"></span>
-        <span class="side" id="on_post"><label><input type="checkbox" id="on_post_on"> After</label>
-          <select id="on_post_n" aria-label="Frames after"><option value="1">1 frame</option><option value="2">2 frames</option><option value="3">3 frames</option><option value="4">4 frames</option><option value="5">5 frames</option><option value="6">6 frames</option><option value="7">7 frames</option><option value="8">8 frames</option><option value="9">9 frames</option><option value="10">10 frames</option><option value="11">11 frames</option><option value="12">12 frames</option></select>
-          <input type="range" id="on_post_op" min="5" max="90" step="5" aria-label="Opacity of the nearest after frame" title="Opacity of the nearest frame; farther frames fade from this"><span class="pct" id="on_post_pct"></span>
-          <input type="color" id="on_post_col" aria-label="Colour for frames after" title="Colour"></span>
-        <span class="side"><label title="Keep drawing the ghosts while the animation plays (slower on long ones)"><input type="checkbox" id="on_play"> While playing</label></span>
+        <div class="zoom-tools" role="group" aria-label="Zoom">
+          <button type="button" class="zoom-btn" id="bOnion" aria-pressed="false" aria-expanded="false" title="Onion skin: ghosts of the frames before and after this one" aria-label="Onion skin">🧅</button>
+          <span class="ct-sep" aria-hidden="true"></span>
+          <button type="button" class="zoom-btn" data-zoom="out" title="Zoom out (−)" aria-label="Zoom out">−</button>
+          <button type="button" class="zoom-btn zoom-reset" data-zoom="reset" title="Fit the whole view (0). Mouse wheel zooms; drag the background, right-drag, middle-drag or Space + drag pans; on a trackpad pinch to zoom and scroll to move; on a touch screen pinch and drag with two fingers." aria-label="Reset zoom and pan">100%</button>
+          <button type="button" class="zoom-btn" data-zoom="in" title="Zoom in (+)" aria-label="Zoom in">+</button>
+        </div>
+        <div class="ctransport" id="ctransport" role="group" aria-label="Playback" hidden>
+          <button type="button" class="ct-btn" data-for="bStart" title="Start (Home)" aria-label="Start (Home)">⏳</button><button type="button" class="ct-btn" data-for="bPrevKey" title="Previous keyframe (Shift + ←)" aria-label="Previous keyframe (Shift + ←)">⏮️</button><button type="button" class="ct-btn" data-for="bPrev" title="Back one frame (←)" aria-label="Back one frame (←)">⏪</button><button type="button" class="ct-btn" data-for="bPlay" title="Play / pause (Space)" aria-label="Play / pause (Space)">▶️</button><button type="button" class="ct-btn" data-for="bNext" title="Forward one frame (→)" aria-label="Forward one frame (→)">⏩</button><button type="button" class="ct-btn" data-for="bNextKey" title="Next keyframe (Shift + →)" aria-label="Next keyframe (Shift + →)">⏭️</button><button type="button" class="ct-btn" data-for="bEnd" title="End (End)" aria-label="End (End)">⌛</button><button type="button" class="ct-btn" data-for="bLoop" title="Loop" aria-label="Loop">🔁</button><button type="button" class="ct-btn" data-for="bPing" title="Ping-pong (P): forward, then backward" aria-label="Ping-pong">🏓</button><span class="ct-sep" aria-hidden="true"></span><button type="button" class="ct-btn" data-for="bCompact" title="Back to the full controls" aria-label="Back to the full controls">🗜️</button>
+        </div>
+        <div class="ke-onion onion-pop" id="onionBar" role="dialog" aria-label="Onion skin" hidden>
+          <span class="ttl" title="Ghosts of the frames before and after this one: tick a side, choose how many frames, the opacity of the nearest one and a colour">🧅 Onion skin</span>
+          <span class="side" id="on_pre"><label><input type="checkbox" id="on_pre_on"> Before</label>
+            <select id="on_pre_n" aria-label="Frames before"><option value="1">1 fr</option><option value="2">2 fr</option><option value="3">3 fr</option><option value="4">4 fr</option><option value="5">5 fr</option><option value="6">6 fr</option><option value="7">7 fr</option><option value="8">8 fr</option><option value="9">9 fr</option><option value="10">10 fr</option><option value="11">11 fr</option><option value="12">12 fr</option></select>
+            <input type="range" id="on_pre_op" min="5" max="90" step="5" aria-label="Opacity of the nearest before frame" title="Opacity of the nearest frame; farther frames fade from this"><span class="pct" id="on_pre_pct"></span>
+            <input type="color" id="on_pre_col" aria-label="Colour for frames before" title="Colour"></span>
+          <span class="side" id="on_post"><label><input type="checkbox" id="on_post_on"> After</label>
+            <select id="on_post_n" aria-label="Frames after"><option value="1">1 fr</option><option value="2">2 fr</option><option value="3">3 fr</option><option value="4">4 fr</option><option value="5">5 fr</option><option value="6">6 fr</option><option value="7">7 fr</option><option value="8">8 fr</option><option value="9">9 fr</option><option value="10">10 fr</option><option value="11">11 fr</option><option value="12">12 fr</option></select>
+            <input type="range" id="on_post_op" min="5" max="90" step="5" aria-label="Opacity of the nearest after frame" title="Opacity of the nearest frame; farther frames fade from this"><span class="pct" id="on_post_pct"></span>
+            <input type="color" id="on_post_col" aria-label="Colour for frames after" title="Colour"></span>
+          <span class="side"><label title="Keep drawing the ghosts while the animation plays (slower on long ones)"><input type="checkbox" id="on_play"> While playing</label></span>
+        </div>
+        <p class="ke-caption" id="caption"></p>
       </div>
       <svg width="0" height="0" style="position:absolute" aria-hidden="true"><defs>
         <!-- grey version of the drawing, lightened, multiplied by the colour, kept inside the figure's shape -->
@@ -299,31 +375,29 @@ button[aria-pressed="true"]{ background:var(--color-background-info); color:var(
 
       <div class="ke-transport">
         <span class="grp">
-          <button id="bStart" title="First frame (Home)">⏮</button>
-          <button id="bPrevKey" title="Previous keyframe (Shift + ←)">◀◆</button>
-          <button id="bPrev" title="Previous frame (←)">◀</button>
-          <button id="bPlay" class="play" title="Play / pause (Space)">▶ Play</button>
-          <button id="bNext" title="Next frame (→)">▶</button>
-          <button id="bNextKey" title="Next keyframe (Shift + →)">◆▶</button>
-          <button id="bEnd" title="Last frame (End)">⏭</button>
+          <button id="bStart" class="tb" title="First frame (Home)"><span class="tb-ic" aria-hidden="true">⏳</span><span class="tb-lb">Start</span></button>
+          <button id="bPrevKey" class="tb" title="Previous keyframe (Shift + ←)"><span class="tb-ic" aria-hidden="true">⏮️</span><span class="tb-lb">Prev key</span></button>
+          <button id="bPrev" class="tb" title="Previous frame (←)"><span class="tb-ic" aria-hidden="true">⏪</span><span class="tb-lb">Back</span></button>
+          <button id="bPlay" class="tb play" title="Play / pause (Space)"><span class="tb-ic" aria-hidden="true">▶️</span><span class="tb-lb">Play</span></button>
+          <button id="bNext" class="tb" title="Next frame (→)"><span class="tb-ic" aria-hidden="true">⏩</span><span class="tb-lb">Forward</span></button>
+          <button id="bNextKey" class="tb" title="Next keyframe (Shift + →)"><span class="tb-ic" aria-hidden="true">⏭️</span><span class="tb-lb">Next key</span></button>
+          <button id="bEnd" class="tb" title="Last frame (End)"><span class="tb-ic" aria-hidden="true">⌛</span><span class="tb-lb">End</span></button>
+          <button id="bLoop" class="tb" aria-pressed="true" title="Play the animation again and again"><span class="tb-ic" aria-hidden="true">🔁</span><span class="tb-lb">Loop</span></button>
+          <button id="bPing" class="tb" aria-pressed="false" title="Ping-pong (P): play forward, then backward. With 🔁 Loop it keeps going back and forth"><span class="tb-ic" aria-hidden="true">🏓</span><span class="tb-lb">Ping-pong</span></button>
         </span>
-        <button id="bLoop" aria-pressed="true" title="Play the animation again and again">🔁 Loop</button>
-        <label class="ke-num">FPS <input type="number" id="fps" min="1" max="60" step="1"></label>
-        <label class="ke-num">Frames <input type="number" id="len" min="1" max="1200" step="1"></label>
-        <span class="ke-readout" id="readout"></span>
+        <button type="button" id="bCompact" class="tb" aria-pressed="false" title="Compact controls: small buttons on the stage, in one line, so the stage gets more room"><span class="tb-ic" aria-hidden="true">🗜️</span><span class="tb-lb">Compact</span></button>
+        <label class="ke-num" id="lblFps">FPS <input type="number" id="fps" min="1" max="60" step="1"></label>
+        <label class="ke-num" id="lblLen">Frames <input type="number" id="len" min="1" max="1200" step="1"></label>
       </div>
 
       <div class="ke-tlbar" id="tlbar">
-        <span class="seg" id="viewSeg"><button data-v="dope" aria-pressed="true">◆ Dope Sheet</button><button data-v="graph" aria-pressed="false">📈 Graph</button></span>
+        <span class="seg" id="viewSeg"><button data-v="dope" aria-pressed="true">◆ Dope Sheet</button><button data-v="graph" aria-pressed="false" title="Drag a point to change its value or frame · click a curve between two points to pick its easing · double-click to add a point to the selected curve">📈 Graph</button></span>
+        <span class="donly"><select id="trackSel" aria-label="Give a setting its own timeline" title="Give a setting its own timeline, or bring back one that was switched off. You can also press ⧉ next to any setting. On a timeline, ⤴ puts it back into Main and ✕ switches it off."></select></span>
+        <span class="ke-readout" id="readout"></span>
         <span class="gonly"><select id="gAdd" aria-label="Add a setting to the graph"></select></span>
         <span class="gonly glegend" id="gLegend"></span>
-        <span class="gonly muted">Drag a point to change its value or frame · click a curve between two points to pick its easing · double-click to add a point to the selected curve</span>
       </div>
       <div class="ke-timeline" id="tlWrap"><svg id="tl"></svg></div>
-      <div class="tl-tools">
-        <label for="trackSel">Own timeline for</label><select id="trackSel"></select><button id="bTrack">⧉ Add timeline</button>
-        <span>You can also press ⧉ next to any setting. On a timeline, ⤴ puts it back into Main and ✕ removes it.</span>
-      </div>
 
       <div class="ke-keybar" id="keybar"></div>
     </div>
@@ -372,8 +446,10 @@ button[aria-pressed="true"]{ background:var(--color-background-info); color:var(
           <p class="note">
             <span class="kbd">Space</span> play/pause · <span class="kbd">←</span><span class="kbd">→</span> frame ·
             <span class="kbd">Shift</span>+<span class="kbd">←</span><span class="kbd">→</span> keyframe ·
-            <span class="kbd">K</span> add keyframe · <span class="kbd">Del</span> delete keyframe
+            <span class="kbd">K</span> add keyframe · <span class="kbd">P</span> ping-pong · <span class="kbd">Del</span> delete keyframe ·
+            <span class="kbd">+</span><span class="kbd">−</span><span class="kbd">0</span> zoom · <span class="kbd">Space</span>+drag pan
           </p>
+          <p class="note">On the stage, drag around a dot to turn that joint. Changing anything on a frame without a keyframe adds one.</p>
         </div>
       </details>
     </aside>
@@ -398,6 +474,7 @@ button[aria-pressed="true"]{ background:var(--color-background-info); color:var(
    Animation file (schema 'house-animation/1'):
      { schema, fps, length,            length = last frame number (frames run 0…length)
        loop,                           play again and again
+       pingpong,                       play forward, then backward (with loop: back and forth for ever)
        character,                      a house-character/1 object (appearance; its pose is ignored)
        keys: [{ frame, easeIn, easeOut, pose }] }
    pose = every house-character field except schema and name: joints, turns, face,
@@ -409,6 +486,11 @@ button[aria-pressed="true"]{ background:var(--color-background-info); color:var(
      cubic   flat handle: the motion starts (or arrives) slowly
    Joint angles take the short way round. Every other field holds until the next keyframe.
 
+   Switched-off settings (kept for undo and the autosave, never in a saved file):
+     track.off = 'dope' | 'graph'   a timeline taken off the dope sheet (the setting then follows Main)
+                                    or with its setting taken off the graph
+     S.off = [param, …]             settings taken off the graph: Main's keyframes for them are ignored
+                                    and the character's own value is used
    tracks: [{ param, keys:[{ frame, easeIn, easeOut, value }] }]
      A setting moved onto a timeline of its own. Its keyframes are independent of
      the main ones and override that setting everywhere; numbers ease the same way,
@@ -463,19 +545,19 @@ function fresh(){
   const wave = clonePose(poseOf(c));
   const p1 = clonePose(wave); Object.assign(p1.joints, {shoulderR:125, elbowR:40, wristR:10}); p1.mouth = 'grin'; p1.eyebrows = 'raised';
   const p2 = clonePose(p1); Object.assign(p2.joints, {elbowR:85});
-  return {character:c, fps:24, length:48, loop:true, keys:[
+  return {character:c, fps:24, length:48, loop:true, pingpong:false, keys:[
     {frame:0, easeIn:'linear', easeOut:'cubic', pose:wave},
     {frame:12, easeIn:'cubic', easeOut:'cubic', pose:p1},
     {frame:24, easeIn:'cubic', easeOut:'cubic', pose:p2},
     {frame:36, easeIn:'cubic', easeOut:'cubic', pose:clonePose(p1)},
-    {frame:48, easeIn:'cubic', easeOut:'linear', pose:clonePose(wave)}], tracks:[]};
+    {frame:48, easeIn:'cubic', easeOut:'linear', pose:clonePose(wave)}], tracks:[], off:[]};
 }
 /* validates a loaded or stored animation */
 function sanitize(a){
   if(!a || typeof a !== 'object') return null;
   if(a.schema === HC.SCHEMA || (a.joints && !a.keys)){   /* a plain character file */
     const c = HC.normalize(a);
-    return {character:c, fps:24, length:48, loop:true, keys:[{frame:0, easeIn:'linear', easeOut:'linear', pose:poseOf(c)}], tracks:[]};
+    return {character:c, fps:24, length:48, loop:true, pingpong:false, keys:[{frame:0, easeIn:'linear', easeOut:'linear', pose:poseOf(c)}], tracks:[]};
   }
   const c = HC.normalize(a.character || starterCharacter());
   const int = (v, lo, hi, d) => { v = Math.round(Number(v)); return v >= lo && v <= hi ? v : d; };
@@ -507,10 +589,12 @@ function sanitize(a){
       if(k === 'lift') v = Math.max(0, Math.min(60, Number(x.value) || 0));
       tk.push({frame:f, easeIn:ez(x.easeIn), easeOut:ez(x.easeOut), value:v});
     }
-    if(tk.length){ tk.sort((x, y) => x.frame - y.frame); tracks.push({param:k, keys:tk}); }
+    if(tk.length){ tk.sort((x, y) => x.frame - y.frame); const nt = {param:k, keys:tk}; if(t.off === 'dope' || t.off === 'graph') nt.off = t.off; tracks.push(nt); }
   }
   const lastT = Math.max(last, ...tracks.map(t => t.keys[t.keys.length-1].frame));
-  return {character:c, fps:int(a.fps, 1, 60, 24), length:Math.max(int(a.length, 1, 100000, 48), lastT, 1), loop:a.loop !== false, keys, tracks};
+  const okParam = k => typeof k === 'string' && (isJoint(k) || RANGE[k] || k === 'held.left' || k === 'held.right' || (FIELDS.includes(k) && k !== 'joints' && k !== 'held'));
+  const off = Array.isArray(a.off) ? [...new Set(a.off.filter(okParam))] : [];
+  return {character:c, fps:int(a.fps, 1, 60, 24), length:Math.max(int(a.length, 1, 100000, 48), lastT, 1), loop:a.loop !== false, pingpong:a.pingpong === true, keys, tracks, off};
 }
 
 /* ── interpolation ─────────────────────────────────────────────────────── */
@@ -557,7 +641,12 @@ const isNum = k => isJoint(k) || !!RANGE[k];
 const cloneV = v => Array.isArray(v) ? [...v] : (v && typeof v === 'object') ? {...v} : v;
 function getP(p, k){ if(isJoint(k)) return p.joints[k]; if(k.startsWith('held.')) return (p.held || {})[k.slice(5)] ?? null; return p[k]; }
 function setP(p, k, v){ if(isJoint(k)) p.joints[k] = v; else if(k.startsWith('held.')) p.held = {...(p.held || {}), [k.slice(5)]: v}; else p[k] = cloneV(v); }
-const trackOf = k => (S.tracks || []).find(t => t.param === k);
+const trackOf = k => (S.tracks || []).find(t => t.param === k && !t.off);        /* the setting's timeline, if it is switched on */
+const anyTrackOf = k => (S.tracks || []).find(t => t.param === k);
+const liveTracks = () => (S.tracks || []).filter(t => !t.off);
+const isOff = k => (S.off || []).includes(k);
+let baseCache = null;   /* the character's own values, used for switched-off settings */
+const baseVal = k => { if(!baseCache || baseCache.c !== S.character) baseCache = {c:S.character, p:poseOf(S.character)}; return cloneV(getP(baseCache.p, k)); };
 function trackValue(t, f){
   const K = t.keys;
   if(f <= K[0].frame) return cloneV(K[0].value);
@@ -570,7 +659,8 @@ function trackValue(t, f){
 }
 function poseAt(f){
   const p = mainPoseAt(f);
-  for(const t of S.tracks || []) setP(p, t.param, trackValue(t, f));
+  for(const k of S.off || []) setP(p, k, baseVal(k));
+  for(const t of liveTracks()) setP(p, t.param, trackValue(t, f));
   return p;
 }
 function mainPoseAt(f){
@@ -610,7 +700,9 @@ function autosave(){ clearTimeout(saveTimer); saveTimer = setTimeout(() => { try
 function ensureKey(){   /* the keyframe at the playhead, made from the current in-between pose if needed */
   let i = keyIndexAt(frame);
   if(i < 0){
-    S.keys.push({frame, easeIn:'linear', easeOut:'linear', pose:poseAt(frame)});
+    const pose = poseAt(frame), mp = (S.off || []).length ? mainPoseAt(frame) : null;
+    for(const k of S.off || []) setP(pose, k, getP(mp, k));
+    S.keys.push({frame, easeIn:'linear', easeOut:'linear', pose});
     S.keys.sort((a, b) => a.frame - b.frame); i = keyIndexAt(frame);
     for(const j of JOINT_IDS) S.keys[i].pose.joints[j] = Math.round(S.keys[i].pose.joints[j]);
     for(const [t] of TURNS) S.keys[i].pose[t] = Math.round(S.keys[i].pose[t]);
@@ -633,7 +725,14 @@ function ensureTrackKey(t){
   return k;
 }
 /* the one place a setting is written at the playhead */
+function switchOn(k){
+  if(!isOff(k)) return;
+  S.off = S.off.filter(x => x !== k);
+  for(const t of S.tracks) if(t.param === k && t.off === 'graph') delete t.off;
+  flash(`${plabel(k)} is switched back on.`);
+}
 function writeParam(k, v){
+  switchOn(k);
   const t = trackOf(k);
   if(t){ ensureTrackKey(t).value = clean(k, v); lane = k; }
   else { setP(ensureKey().pose, k, clean(k, v)); lane = null; }
@@ -652,6 +751,7 @@ function applyLook(t, path, v){
 }
 const baseParam = path => path.startsWith('acc:') ? 'accessories' : path;
 function writeLook(path, v){
+  switchOn(baseParam(path));
   const t = trackOf(baseParam(path));
   if(t){   /* this setting has its own timeline: change its keyframes instead */
     const on = key => { const tmp = poseOf(S.character); setP(tmp, t.param, key.value); applyLook(tmp, path, v); key.value = cloneV(getP(tmp, t.param)); };
@@ -703,6 +803,8 @@ function paramList(){   /* [param, label] for everything that can have a timelin
 const plabel = k => (paramList().find(x => x[0] === k) || [k, k])[1];
 function splitTrack(k){
   if(trackOf(k)){ lane = k; changed(); return; }
+  const old = anyTrackOf(k);
+  if(old){ pushUndo(); delete old.off; switchOn(k); lane = k; changed(); flash(`${plabel(k)}'s timeline is back, with its keyframes.`); return; }
   pushUndo();
   const keys = [];
   for(const mk of S.keys){   /* start from the main keyframes, so nothing moves */
@@ -719,14 +821,24 @@ function mergeTrack(k){   /* its values at the main keyframes go back into them 
   S.tracks = S.tracks.filter(x => x !== t); if(lane === k) lane = null; changed();
   flash(`${plabel(k)} is back on the main timeline.`);
 }
-function dropTrack(k){
+function dropTrack(k){   /* switched off, not deleted: its keyframes are kept but not used or saved */
   const t = trackOf(k); if(!t) return; pushUndo();
-  S.tracks = S.tracks.filter(x => x !== t); if(lane === k) lane = null; changed();
-  flash(`Removed the ${plabel(k)} timeline. Undo brings it back.`);
+  t.off = 'dope'; if(lane === k) lane = null; changed();
+  flash(`${plabel(k)}'s timeline is switched off. Pick it again in “⧉ Own timeline…” to bring it back.`);
+}
+/* taking a setting off the graph switches off all its keyframes: its own timeline and its values on Main */
+function switchOff(k){
+  pushUndo();
+  if(!isOff(k)) S.off = [...(S.off || []), k];
+  const t = trackOf(k); if(t) t.off = 'graph';
+  if(lane === k) lane = null;
+  changed();
+  flash(`${plabel(k)} is switched off: its keyframes are kept but not used or saved. Add it to the graph again to switch it back on.`);
 }
 document.addEventListener('click', e => {
   const b = e.target.closest('.tk'); if(!b) return;
   e.preventDefault(); pause();
+  if(isOff(b.dataset.param)){ pushUndo(); switchOn(b.dataset.param); if(view === 'graph') addSeries(b.dataset.param, true); syncGraphBar(); changed(); return; }
   /* ⧉ follows the timeline view: a timeline of its own in the dope sheet, a series in the graph */
   if(view === 'graph'){
     const k = b.dataset.param, had = seriesOf(k) && seriesOf(k).on;
@@ -735,21 +847,26 @@ document.addEventListener('click', e => {
     if(!had) flash(`${plabel(k)} is on the graph now.`);
   } else splitTrack(b.dataset.param);
 });
-$('bTrack').onclick = () => { const k = $('trackSel').value; if(k){ pause(); splitTrack(k); } };
+$('trackSel').addEventListener('change', () => { const k = $('trackSel').value; if(k){ pause(); splitTrack(k); } $('trackSel').value = ''; });
 function syncTracksUI(){
   const sel = $('trackSel'), cur = sel.value;
-  sel.innerHTML = '<option value="">Choose a setting…</option>' + paramList().filter(([k]) => !trackOf(k))
-    .map(([k, l]) => `<option value="${k}">${esc(l)}</option>`).join('');
-  sel.value = paramList().some(([k]) => k === cur) && !trackOf(cur) ? cur : '';
+  const offT = (S.tracks || []).filter(t => t.off);
+  sel.innerHTML = '<option value="">⧉ Own timeline…</option>'
+    + (offT.length ? '<optgroup label="Switched off (keyframes kept)">' + offT.map(t => `<option value="${t.param}">↺ ${esc(plabel(t.param))}</option>`).join('') + '</optgroup>' : '')
+    + '<optgroup label="New timeline">' + paramList().filter(([k]) => !anyTrackOf(k)).map(([k, l]) => `<option value="${k}">${esc(l)}</option>`).join('') + '</optgroup>';
+  sel.value = '';
   const graph = typeof view !== 'undefined' && view === 'graph';
   for(const b of document.querySelectorAll('.tk')){
     const k = b.dataset.param, x = graph && seriesOf(k);
-    const tracked = !graph && !!trackOf(k), graphed = !!(x && x.on);
+    const tracked = !graph && !!trackOf(k), graphed = !!(x && x.on), off = isOff(k);
     b.parentNode.classList.toggle('tracked', tracked);
+    b.parentNode.classList.toggle('poff', off);
     b.parentNode.classList.toggle('graphed', graphed);
     if(graphed || tracked) b.parentNode.style.setProperty('--c', gColor(colorOf(k))); else b.parentNode.style.removeProperty('--c');
-    b.title = graph ? (graphed ? 'On the graph (select it)' : 'Add to the graph')
-                    : (tracked ? 'Has its own timeline (select it)' : 'Move to a timeline of its own');
+    b.title = off ? 'Switched off: its keyframes are kept but not used. Press to switch it back on.'
+      : graph ? (graphed ? 'On the graph (select it)' : 'Add to the graph')
+              : (tracked ? 'Has its own timeline (select it)' : 'Move to a timeline of its own');
+    b.textContent = off ? '↺' : '⧉';
   }
 }
 function changed(){ autosave(); drawStage(); drawTimeline(); drawKeybar(); syncPanel(); syncTracksUI(); }
@@ -759,6 +876,7 @@ const fig = $('figure'), hsv = $('handles'), stage = $('stage');
 function drawStage(){
   const d = dataAt(frame);
   fig.innerHTML = lifted(HC.render(d, {ground:true}), d.lift);
+  applyCam();
   $('caption').textContent = HC.describe(d);
   const k = laneKeys().some(x => x.frame === frame);
   $('badge').textContent = k ? '◆ Keyframe' : 'In-between';
@@ -788,8 +906,10 @@ function drawOnion(){
     }
   }
   box.innerHTML = h;
+  applyCam();
 }
 function syncOnionUI(){
+  $('bOnion').setAttribute('aria-pressed', String(ON.pre.on || ON.post.on));
   $('on_play').checked = ON.play; stage.classList.toggle('onion-play', ON.play);
   for(const w of ['pre','post']){
     const o = ON[w];
@@ -808,6 +928,13 @@ $('onionBar').addEventListener('input', e => {
   syncOnionUI(); drawOnion();
 });
 syncOnionUI();
+$('bOnion').addEventListener('click', e => {
+  e.stopPropagation();
+  const open = $('onionBar').hidden; $('onionBar').hidden = !open; $('bOnion').setAttribute('aria-expanded', String(open));
+});
+document.addEventListener('pointerdown', e => {
+  if(!$('onionBar').hidden && !e.composedPath().some(n => n === $('onionBar') || n === $('bOnion'))){ $('onionBar').hidden = true; $('bOnion').setAttribute('aria-expanded', 'false'); }
+});
 /* lift: the engine stands the figure on the floor, so raise its main group and leave a shadow behind */
 function lifted(svg, cm){
   const px = (cm || 0) * PX_PER_CM; if(!px) return svg;
@@ -827,13 +954,15 @@ function drawHandles(d){
     const on = selJoint === j ? ' on' : '';
     let shape;
     /* pelvis and torso turn about the same point: bottom half and top half of one dot */
-    if(j === 'torso') shape = `<path d="M${p.x-8},${p.y}A8,8 0 0 1 ${p.x+8},${p.y}Z"/>`;
-    else if(j === 'pelvis') shape = `<path d="M${p.x+8},${p.y}A8,8 0 0 1 ${p.x-8},${p.y}Z"/>`;
-    else shape = `<circle cx="${p.x}" cy="${p.y}" r="${j === 'root' ? 9 : 7}"/>`;
+    const R = 8 / cam.z;   /* dots keep their size on screen at any zoom */
+    if(j === 'torso') shape = `<path d="M${p.x-R},${p.y}A${R},${R} 0 0 1 ${p.x+R},${p.y}Z"/>`;
+    else if(j === 'pelvis') shape = `<path d="M${p.x+R},${p.y}A${R},${R} 0 0 1 ${p.x-R},${p.y}Z"/>`;
+    else shape = `<circle cx="${p.x}" cy="${p.y}" r="${((j === 'root' ? 9 : 7) / cam.z).toFixed(2)}"/>`;
     s += `<g class="h${on}" data-j="${j}"><title>${LABEL[j]}</title>${shape}</g>`;
   }
-  if(selJoint && piv[selJoint]) s += `<circle class="ring" cx="${piv[selJoint].x}" cy="${piv[selJoint].y}" r="34"/>`;
+  if(selJoint && piv[selJoint]) s += `<circle class="ring" cx="${piv[selJoint].x}" cy="${piv[selJoint].y}" r="${(34 / cam.z).toFixed(1)}"/>`;
   hsv.innerHTML = s;
+  applyCam();
 }
 function svgPoint(e){
   const m = hsv.getScreenCTM(); if(!m) return {x:0, y:0};
@@ -853,7 +982,7 @@ stage.addEventListener('pointermove', e => {
   if(!drag) return;
   const p = piv[drag.j]; if(!p) return;
   const q = svgPoint(e), dx = q.x - p.x, dy = q.y - p.y;
-  if(Math.hypot(dx, dy) < 14){ drag.last = null; return; }   /* too close to the pivot to read an angle */
+  if(Math.hypot(dx, dy) < 14 / cam.z){ drag.last = null; return; }   /* too close to the pivot to read an angle */
   const a = Math.atan2(dy, dx) * 180 / Math.PI;
   if(drag.last !== null){
     let da = wrap(a - drag.last); if(p.mirror) da = -da;
@@ -869,6 +998,117 @@ stage.addEventListener('pointercancel', endDrag);
 stage.addEventListener('lostpointercapture', endDrag);
 window.addEventListener('blur', endDrag);
 
+/* ── zoom and pan ────────────────────────────────────────────────────────
+   As in the House Builder: a camera { z, ox, oy } over the stage's own 600 × 590 frame. Only the
+   viewBox of the stage's pictures changes, so hit testing (through getScreenCTM) keeps working.
+     mouse wheel / trackpad pinch            zoom at the pointer
+     trackpad two-finger scroll              pan
+     drag the background, right- or middle-drag, Space + drag   pan
+     two fingers on a touch screen           pinch to zoom, move together to pan
+     − 100% + buttons, and the + − 0 keys */
+const BASE_VB = [0, 0, 600, 590], ZMIN = 0.4, ZMAX = 8;
+const cam = {z:1, ox:0, oy:0};
+function camVB(){
+  const w = BASE_VB[2] / cam.z, h = BASE_VB[3] / cam.z, cx = BASE_VB[0] + BASE_VB[2] / 2 + cam.ox, cy = BASE_VB[1] + BASE_VB[3] / 2 + cam.oy;
+  return [cx - w / 2, cy - h / 2, w, h].map(n => n.toFixed(2)).join(' ');
+}
+function applyCam(){
+  const vb = camVB();
+  for(const svg of stage.querySelectorAll('#figure > svg, #onion svg, #handles')) svg.setAttribute('viewBox', vb);
+  stage.querySelector('.zoom-reset').textContent = Math.round(cam.z * 100) + '%';
+}
+function zoomAt(f, p){   /* f > 1 zooms in, keeping p (stage units) where it is on screen */
+  const z1 = Math.max(ZMIN, Math.min(ZMAX, cam.z * f)), k = cam.z / z1;
+  const cx = BASE_VB[0] + BASE_VB[2] / 2 + cam.ox, cy = BASE_VB[1] + BASE_VB[3] / 2 + cam.oy;
+  const [px, py] = p ? [p.x, p.y] : [cx, cy];
+  cam.ox = px - (px - cx) * k - (BASE_VB[0] + BASE_VB[2] / 2);
+  cam.oy = py - (py - cy) * k - (BASE_VB[1] + BASE_VB[3] / 2);
+  cam.z = z1; camChanged();
+}
+function panPx(dx, dy){   /* move the picture by (dx, dy) screen pixels */
+  const m = hsv.getScreenCTM(); if(!m) return;
+  cam.ox -= dx / m.a; cam.oy -= dy / m.d; camChanged();
+}
+function resetCam(){ cam.z = 1; cam.ox = 0; cam.oy = 0; camChanged(); }
+function camChanged(){ if(playing) applyCam(); else drawHandles(); }   /* handles are redrawn so they keep their size on screen */
+stage.querySelector('.zoom-tools').addEventListener('click', e => {
+  const b = e.target.closest('button'); if(!b) return;
+  if(b.dataset.zoom === 'in') zoomAt(1.25); else if(b.dataset.zoom === 'out') zoomAt(0.8); else resetCam();
+});
+let spaceDown = false, spaceUsed = false;
+{
+  const touches = new Map(); let pan = null, pinch = null;
+  const onUI = e => e.target.closest('.zoom-tools, .ctransport, .onion-pop');
+  stage.addEventListener('contextmenu', e => e.preventDefault());
+  stage.addEventListener('wheel', e => {
+    if(onUI(e)) return;
+    e.preventDefault();
+    const lineMode = e.deltaMode === 1, mouseLike = lineMode || (e.deltaX === 0 && Math.abs(e.deltaY) >= 50 && Number.isInteger(e.deltaY));
+    if(e.ctrlKey || e.metaKey || mouseLike){ const dy = lineMode ? e.deltaY * 33 : e.deltaY; zoomAt(Math.exp(-dy * 0.0015), svgPoint(e)); }
+    else panPx(-e.deltaX, -e.deltaY);
+  }, {passive:false});
+  /* capture phase, so a camera gesture is taken before the joint handlers see it */
+  stage.addEventListener('pointerdown', e => {
+    if(onUI(e)) return;
+    if(e.pointerType === 'touch'){
+      touches.set(e.pointerId, {x:e.clientX, y:e.clientY});
+      if(touches.size === 2){
+        drag = null;   /* the first finger had started turning a joint: drop it */
+        const [a, b] = [...touches.values()];
+        pinch = {d:Math.hypot(a.x - b.x, a.y - b.y), mx:(a.x + b.x) / 2, my:(a.y + b.y) / 2};
+        try{ stage.setPointerCapture(e.pointerId); }catch(_){}
+      }
+      if(touches.size >= 2){ e.stopImmediatePropagation(); e.preventDefault(); return; }
+    }
+    const onJoint = e.target.closest('#handles .h') && !playing;
+    const camButton = e.pointerType === 'mouse' && (e.button === 1 || e.button === 2 || (e.button === 0 && spaceDown));
+    if(camButton || (!onJoint && e.button === 0 && touches.size < 2)){
+      if(spaceDown) spaceUsed = true;
+      e.stopImmediatePropagation(); e.preventDefault();
+      pan = {id:e.pointerId, x:e.clientX, y:e.clientY}; stage.classList.add('panning');
+      try{ stage.setPointerCapture(e.pointerId); }catch(_){}
+    }
+  }, true);
+  stage.addEventListener('pointermove', e => {
+    if(pan && e.pointerId === pan.id){ e.stopImmediatePropagation(); panPx(e.clientX - pan.x, e.clientY - pan.y); pan.x = e.clientX; pan.y = e.clientY; return; }
+    if(touches.has(e.pointerId)){
+      touches.set(e.pointerId, {x:e.clientX, y:e.clientY});
+      if(pinch && touches.size >= 2){
+        e.stopImmediatePropagation();
+        const [a, b] = [...touches.values()], d = Math.hypot(a.x - b.x, a.y - b.y), mx = (a.x + b.x) / 2, my = (a.y + b.y) / 2;
+        if(pinch.d > 0) zoomAt(d / pinch.d, svgPoint({clientX:pinch.mx, clientY:pinch.my}));
+        panPx(mx - pinch.mx, my - pinch.my);
+        pinch = {d, mx, my};
+      }
+    }
+  }, true);
+  const end = e => {
+    if(pan && e.pointerId === pan.id){ pan = null; stage.classList.remove('panning'); }
+    if(touches.has(e.pointerId)){ touches.delete(e.pointerId); if(touches.size < 2) pinch = null; }
+  };
+  stage.addEventListener('pointerup', end, true);
+  stage.addEventListener('pointercancel', end, true);
+  stage.addEventListener('lostpointercapture', end, true);
+  window.addEventListener('blur', () => { pan = null; pinch = null; touches.clear(); stage.classList.remove('panning'); spaceDown = false; });
+}
+
+/* ── compact transport: the same buttons, emoji only, in one line on the stage ── */
+let compact = false;
+try{ compact = localStorage.getItem('house-keyframes-compact') === '1'; }catch(e){}
+function setCompact(on){
+  compact = on;
+  /* FPS and frames live in the transport row, or beside the view switch when that row is hidden */
+  const home = on ? $('tlbar') : document.querySelector('.ke-transport');
+  for(const id of ['lblFps', 'lblLen']) home.appendChild($(id));
+  $('ctransport').hidden = !on;
+  document.querySelector('.ke-transport').classList.toggle('compact', on);
+  $('bCompact').setAttribute('aria-pressed', String(on));
+  $('bCompact').querySelector('.tb-lb').textContent = on ? 'Full' : 'Compact';
+  $('bCompact').title = on ? 'Back to the full controls, with words under the buttons' : 'Compact controls: small buttons on the stage, in one line, so the stage gets more room';
+  try{ localStorage.setItem('house-keyframes-compact', on ? '1' : '0'); }catch(e){}
+}
+$('bCompact').onclick = () => setCompact(!compact);
+$('ctransport').addEventListener('click', e => { const b = e.target.closest('.ct-btn'); if(b) $(b.dataset.for).click(); });
 /* ── timeline ──────────────────────────────────────────────────────────── */
 const tl = $('tl'), PAD = 16, RULER = 26, KEYY = 54, LANE = 30;
 let TW = 600, TH = 78, GUT = PAD;   /* GUT: room on the left for lane names, when there are tracks */
@@ -904,7 +1144,7 @@ function diamondPath(x, y, r, side, kind){
 function drawTimeline(){
   if(view === 'graph') return drawGraph();
   TW = Math.max(240, tl.clientWidth || 600);
-  const T = S.tracks || [];
+  const T = liveTracks();
   GUT = T.length ? 118 : PAD;
   const H = TH = 78 + LANE * T.length;
   tl.style.height = H + 'px'; tl.setAttribute('viewBox', `0 0 ${TW} ${H}`);
@@ -922,7 +1162,7 @@ function drawTimeline(){
     if(T.length){
       s += `<text class="tlab${act}${tr}"${cs} x="8" y="${y+4}"><title>${esc(L.name)}</title>${esc(short(L.name, L.id ? 13 : 18))}</text>`;
       if(L.id) s += `<text class="tbtn merge" data-act="merge" data-param="${L.id}" x="${GUT-30}" y="${y+5}"><title>Merge back into Main</title>⤴</text>`
-        + `<text class="tbtn" data-act="drop" data-param="${L.id}" x="${GUT-15}" y="${y+5}"><title>Remove this timeline</title>✕</text>`;
+        + `<text class="tbtn" data-act="drop" data-param="${L.id}" x="${GUT-15}" y="${y+5}"><title>Switch this timeline off (its keyframes are kept, but not used or saved)</title>✕</text>`;
     }
   });
   for(let f = 0; f <= S.length; f += minor){
@@ -951,7 +1191,7 @@ tl.addEventListener('pointerdown', e => {
     const K = laneKeys(), k = K[+g.dataset.i]; tdrag = {key:k, K, from:k.frame, moved:false, undoPushed:false}; goto(k.frame);
   } else {
     const y = tlY(e);
-    if(y > RULER){ const i = Math.max(0, Math.min((S.tracks || []).length, Math.round((y - KEYY) / LANE))); lane = i ? S.tracks[i-1].param : null; }
+    if(y > RULER){ const LT = liveTracks(), i = Math.max(0, Math.min(LT.length, Math.round((y - KEYY) / LANE))); lane = i ? LT[i-1].param : null; }
     tdrag = {scrub:true}; pause(); goto(xf(tlX(e)));
   }
   try{ tl.setPointerCapture(e.pointerId); }catch(_){}
@@ -1053,11 +1293,11 @@ function syncGraphBar(){
     return `<span class="gchip${x.p === gParam ? ' act' : ''}${x.on ? '' : ' off'}" data-p="${esc(x.p)}" style="--c:${gColor(x.c)}">`
       + `<button type="button" class="gname-b" title="${esc(nm)}${isNum(x.p) ? ' — click to edit this curve' : ''}"><i></i>${esc(short(nm, 34))}</button>`
       + `<button type="button" class="geye" aria-pressed="${x.on}" title="${x.on ? 'Hide' : 'Show'}">${x.on ? '👁' : '◌'}</button>`
-      + `<button type="button" class="gx" title="Take off the graph">✕</button></span>`;
+      + `<button type="button" class="gx" title="Take off the graph and switch its keyframes off (they are kept, not deleted; 👁 only hides it)">✕</button></span>`;
   }).join('');
   $('gAdd').innerHTML = `<option value="">＋ Add to the graph…</option>`
-    + `<optgroup label="Numbers (curves)">` + all.filter(([k]) => isNum(k) && !seriesOf(k)).map(([k, l]) => `<option value="${esc(k)}">${esc(l)}</option>`).join('') + '</optgroup>'
-    + `<optgroup label="Other settings (labels)">` + all.filter(([k]) => !isNum(k) && !seriesOf(k)).map(([k, l]) => `<option value="${esc(k)}">${esc(l)}</option>`).join('') + '</optgroup>';
+    + `<optgroup label="Numbers (curves)">` + all.filter(([k]) => isNum(k) && !seriesOf(k)).map(([k, l]) => `<option value="${esc(k)}">${isOff(k) ? '↺ ' : ''}${esc(l)}${isOff(k) ? ' (switched off)' : ''}</option>`).join('') + '</optgroup>'
+    + `<optgroup label="Other settings (labels)">` + all.filter(([k]) => !isNum(k) && !seriesOf(k)).map(([k, l]) => `<option value="${esc(k)}">${isOff(k) ? '↺ ' : ''}${esc(l)}${isOff(k) ? ' (switched off)' : ''}</option>`).join('') + '</optgroup>';
 }
 function activate(p){
   gParam = p; lane = trackOf(p) ? p : null;
@@ -1075,14 +1315,18 @@ function setView(v){
 $('viewSeg').addEventListener('click', e => { const b = e.target.closest('button'); if(b) setView(b.dataset.v); });
 $('gAdd').addEventListener('change', () => {
   const p = $('gAdd').value; if(!p) return;
-  addSeries(p, true); activate(p); closeEz(); syncPanel(); syncGraphBar(); syncTracksUI(); drawTimeline(); drawKeybar();
+  const wasOff = isOff(p);
+  if(wasOff){ pushUndo(); switchOn(p); }
+  addSeries(p, true); activate(p); closeEz();
+  if(wasOff){ syncGraphBar(); changed(); return; }   /* the character moves again, and the autosave keeps it */
+  syncPanel(); syncGraphBar(); syncTracksUI(); drawTimeline(); drawKeybar();
 });
 $('gLegend').addEventListener('click', e => {
   const chip = e.target.closest('.gchip'); if(!chip) return;
   const x = seriesOf(chip.dataset.p); if(!x) return;
   closeEz();
   if(e.target.closest('.geye')) x.on = !x.on;
-  else if(e.target.closest('.gx')){ gSeries = gSeries.filter(y => y !== x); if(gParam === x.p && gSeries[0]) activate(gSeries[0].p); }
+  else if(e.target.closest('.gx')){ gSeries = gSeries.filter(y => y !== x); if(gParam === x.p && gSeries[0]) activate(gSeries[0].p); switchOff(x.p); }
   else { x.on = true; activate(x.p); }
   gRange = null; saveSeries(); syncPanel(); syncGraphBar(); syncTracksUI(); drawTimeline(); drawKeybar();
 });
@@ -1515,35 +1759,49 @@ pal.addEventListener('click', e => {
 document.addEventListener('click', e => { if(!pal.contains(e.target)) pal.classList.remove('open'); });
 window.addEventListener('scroll', placePal, true);
 $('keMain').addEventListener('scroll', () => closeEz());
+$('tlWrap').addEventListener('scroll', () => closeEz());
 window.addEventListener('resize', placePal);
 document.addEventListener('keydown', e => { if(e.key === 'Escape') pal.classList.remove('open'); });
 
 /* ── playback ──────────────────────────────────────────────────────────── */
 let raf = 0, t0 = 0, f0 = 0;
 function goto(f){ frame = Math.max(0, Math.min(S.length, f)); drawStage(); drawTimeline(); drawKeybar(); syncPanel(); }
+let dir = 1;   /* 1 forward, −1 backward (ping-pong) */
 function tick(now){
-  const f = f0 + Math.floor((now - t0) / 1000 * S.fps);
+  const f = f0 + dir * Math.floor((now - t0) / 1000 * S.fps);
   if(f > S.length){
+    /* ping-pong: bounce off the last frame (shown once) and come back */
+    if(S.pingpong && S.length > 0){ const over = Math.min(f - S.length, S.length); dir = -1; f0 = S.length; t0 = now - over * 1000 / S.fps; return tick(now); }
     if(S.loop){ const over = (f - S.length - 1) % (S.length + 1); f0 = 0; t0 = now - over * 1000 / S.fps; return tick(now); }
     pause(); goto(S.length); return;
+  }
+  if(f < 0){   /* only when going backward in ping-pong */
+    if(S.loop && S.length > 0){ const over = Math.min(-f, S.length); dir = 1; f0 = 0; t0 = now - over * 1000 / S.fps; return tick(now); }
+    pause(); goto(0); return;
   }
   if(f !== frame){ frame = f; drawStage(); drawTimeline(); drawKeybar(); syncPanel(); }
   raf = requestAnimationFrame(tick);
 }
 function play(){
   if(playing) return;
-  if(!S.loop && frame >= S.length) frame = 0;
+  dir = 1;
+  if(frame >= S.length){ if(S.pingpong) dir = -1; else if(!S.loop) frame = 0; }   /* at the end, ping-pong starts on the way back */
   playing = true; t0 = performance.now(); f0 = frame;
-  stage.classList.add('playing'); $('bPlay').textContent = '⏸ Pause'; $('bPlay').setAttribute('aria-pressed', 'true');
+  stage.classList.add('playing'); setPlayBtn(true);
   raf = requestAnimationFrame(tick);
 }
 function pause(){
   if(!playing) return;
   playing = false; cancelAnimationFrame(raf);
-  stage.classList.remove('playing'); $('bPlay').textContent = '▶ Play'; $('bPlay').setAttribute('aria-pressed', 'false');
+  stage.classList.remove('playing'); setPlayBtn(false);
   drawHandles(); drawOnion(); drawKeybar(); syncPanel();
 }
 const toggle = () => playing ? pause() : play();
+function setPlayBtn(on){
+  const b = $('bPlay'); b.querySelector('.tb-ic').textContent = on ? '⏸️' : '▶️'; b.querySelector('.tb-lb').textContent = on ? 'Pause' : 'Play';
+  b.setAttribute('aria-pressed', String(on));
+  const c = document.querySelector('.ct-btn[data-for="bPlay"]'); c.textContent = on ? '⏸️' : '▶️'; c.setAttribute('aria-pressed', String(on));
+}
 function keyStep(dir){
   const ks = laneKeys().map(k => k.frame), t = dir < 0 ? ks.filter(f => f < frame).pop() : ks.find(f => f > frame);
   if(t !== undefined){ pause(); goto(t); }
@@ -1556,9 +1814,13 @@ $('bNext').onclick = () => { pause(); goto(frame + 1); };
 $('bPrevKey').onclick = () => keyStep(-1);
 $('bNextKey').onclick = () => keyStep(1);
 $('bLoop').onclick = () => { S.loop = !S.loop; syncTransport(); autosave(); };
-const lastFrame = () => Math.max(1, S.keys[S.keys.length-1].frame, ...(S.tracks || []).map(t => t.keys[t.keys.length-1].frame));
+$('bPing').onclick = () => { S.pingpong = !S.pingpong; if(!S.pingpong && playing && dir < 0){ dir = 1; t0 = performance.now(); f0 = frame; } syncTransport(); autosave(); };
+const lastFrame = () => Math.max(1, S.keys[S.keys.length-1].frame, ...liveTracks().map(t => t.keys[t.keys.length-1].frame));
 function syncTransport(){
   $('bLoop').setAttribute('aria-pressed', String(S.loop));
+  document.querySelector('.ct-btn[data-for="bLoop"]').setAttribute('aria-pressed', String(S.loop));
+  $('bPing').setAttribute('aria-pressed', String(!!S.pingpong));
+  document.querySelector('.ct-btn[data-for="bPing"]').setAttribute('aria-pressed', String(!!S.pingpong));
   $('fps').value = S.fps; $('len').value = S.length;
   $('len').min = lastFrame();
 }
@@ -1584,7 +1846,10 @@ function download(name, text){
 }
 const fileName = () => (String(S.character.name || 'character').replace(/[^\w-]+/g, '_') || 'character') + '-animation.json';
 $('bSave').onclick = () => {
-  download(fileName(), JSON.stringify({schema:SCHEMA, fps:S.fps, length:S.length, loop:S.loop, character:S.character, keys:S.keys, tracks:S.tracks}, null, 1));
+  /* switched-off settings stay out of the file: no switched-off timelines, and no values for settings taken off the graph */
+  const strip = pose => { const q = clonePose(pose); for(const k of S.off || []){ if(isJoint(k)) delete q.joints[k]; else if(k.startsWith('held.')) delete q.held[k.slice(5)]; else delete q[k]; } return q; };
+  download(fileName(), JSON.stringify({schema:SCHEMA, fps:S.fps, length:S.length, loop:S.loop, pingpong:S.pingpong, character:S.character,
+    keys:S.keys.map(k => ({...k, pose:strip(k.pose)})), tracks:liveTracks()}, null, 1));
   flash('Saved.');
 };
 function readJSON(input, cb){
@@ -1612,7 +1877,7 @@ $('bRedo').onclick = doRedo;
 $('bNew').onclick = () => {
   pause(); pushUndo();
   const p = poseOf(HC.applyPose(HC.normalize(dataAt(0)), 'standing'));
-  S.keys = [{frame:0, easeIn:'linear', easeOut:'linear', pose:p}]; S.tracks = []; lane = null; frame = 0; refreshAll(); flash('Started again. Undo brings the old keyframes back.');
+  S.keys = [{frame:0, easeIn:'linear', easeOut:'linear', pose:p}]; S.tracks = []; S.off = []; lane = null; frame = 0; refreshAll(); flash('Started again. Undo brings the old keyframes back.');
 };
 
 /* ── keyboard ──────────────────────────────────────────────────────────── */
@@ -1622,14 +1887,25 @@ document.addEventListener('keydown', e => {
   if((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === 'y'){ e.preventDefault(); doRedo(); return; }
   if(tag === 'INPUT' || tag === 'SELECT' || tag === 'TEXTAREA' || e.ctrlKey || e.metaKey || e.altKey) return;
   switch(e.key){
-    case ' ': e.preventDefault(); if(tag === 'BUTTON') t.blur(); toggle(); break;
+    case ' ': e.preventDefault(); if(tag === 'BUTTON') t.blur(); if(!spaceDown){ spaceDown = true; spaceUsed = false; } break;   /* played on release, unless it was used to pan */
+    case '+': case '=': zoomAt(1.25); break;
+    case '-': case '_': zoomAt(0.8); break;
+    case '0': resetCam(); break;
     case 'ArrowLeft': e.preventDefault(); e.shiftKey ? keyStep(-1) : (pause(), goto(frame - 1)); break;
     case 'ArrowRight': e.preventDefault(); e.shiftKey ? keyStep(1) : (pause(), goto(frame + 1)); break;
     case 'Home': e.preventDefault(); pause(); goto(0); break;
     case 'End': e.preventDefault(); pause(); goto(S.length); break;
     case 'k': case 'K': pause(); addKey(); break;
+    case 'p': case 'P': $('bPing').click(); break;
     case 'Delete': case 'Backspace': pause(); deleteKey(); break;
   }
+});
+
+document.addEventListener('keyup', e => {
+  if(e.key !== ' ' || !spaceDown) return;
+  spaceDown = false;
+  const tag = e.target && e.target.tagName;
+  if(!spaceUsed && tag !== 'INPUT' && tag !== 'SELECT' && tag !== 'TEXTAREA') toggle();
 });
 
 /* ── start ─────────────────────────────────────────────────────────────── */
@@ -1637,6 +1913,7 @@ function refreshAll(){ syncGraphBar(); syncTransport(); changed(); }
 buildPanel();
 try{ S = sanitize(JSON.parse(localStorage.getItem(STORE) || 'null')); }catch(e){ S = null; }
 if(!S) S = fresh();
+setCompact(compact);
 refreshAll();
 })();
 </script>

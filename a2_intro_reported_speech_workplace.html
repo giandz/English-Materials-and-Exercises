@@ -1,0 +1,120 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<title>What Did the Boss Say? — Reported Speech</title>
+<script>
+(function(){
+  try{
+    var saved = localStorage.getItem('theme-preference');
+    var theme = (saved === 'light' || saved === 'dark')
+      ? saved
+      : ((window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches) ? 'dark' : 'light');
+    document.documentElement.setAttribute('data-theme', theme);
+    var fs = parseFloat(localStorage.getItem('font-size-preference'));
+    if (fs >= 10 && fs <= 28) document.documentElement.style.setProperty('--fs-base', fs + 'px');
+  }catch(e){ /* localStorage/matchMedia unavailable — CSS media query still applies */ }
+})();
+</script>
+<link rel="stylesheet" href="house.css">
+<style>
+.cast-row{ display:flex; flex-wrap:wrap; gap:14px 18px; justify-content:center; margin:0 0 1rem; padding:10px; background:var(--surface-1); border:1px solid var(--border); border-radius:var(--border-radius-lg); font-size:.8667rem; }
+.cast-row .role{ display:block; font-size:.75rem; color:var(--text-secondary); text-align:center; }
+.cast-item{ display:flex; flex-direction:column; align-items:center; }
+</style>
+</head>
+<body>
+<div class="page" id="page">
+  <span class="cefr-tag cefr-a2">A2 · Pre-intermediate</span>
+  <h1>What Did the Boss Say?</h1>
+  <p class="subtitle">FreshBox is a food delivery company. Ana works in the office. She missed the Monday meeting, so Tom tells her about it at lunch.</p>
+
+  <div class="sec-div">Before you read</div>
+  <div id="preQuestions"></div>
+
+  <div class="sec-div">The people</div>
+  <div class="cast-row" id="castRow"></div>
+
+  <div class="sec-div">The conversation</div>
+  <div class="setting-chip"><span class="section-icon">📦</span> Lunch break in the warehouse</div>
+  <button class="grammar-toggle-btn" id="grammarToggle">🎨 Show Grammar</button>
+  <div class="pos-legend"></div>
+  <div id="conversation"></div>
+
+  <div class="sec-div">Check your answers</div>
+  <div id="quiz"></div>
+
+  <footer>What Did the Boss Say? — Reported Speech: Statements, Requests and Questions (A2)</footer>
+</div>
+
+<div id="theme-toggle-wrap">
+  <button id="theme-toggle" aria-label="Toggle light/dark mode" title="Toggle light/dark mode">
+    <span id="theme-icon">☀️</span>
+  </button>
+</div>
+<script src="house.js"></script>
+<script src="stick-character.js"></script>
+<script src="stick-sentence.js"></script>
+<script>
+/* the same team on every page of this lesson: FreshBox, a food delivery company (office, kitchen and warehouse) */
+StickSentence.cast({
+  park: { base:'woman', headwear:'bun', colour:'#6600CC', label:'Ms. Park' },
+  ana:  { base:'woman', colour:'#FF66CC', label:'Ana' },
+  dan:  { base:'man',   colour:'#0066CC', label:'Dan' },
+  tom:  { base:'man',   headwear:'cap', colour:'#00CC66', label:'Tom' },
+  rosa: { base:'woman', headwear:'ponytail', colour:'#FF6600', label:'Rosa' },
+  luis: { base:'man',   headwear:'chefhat', colour:'#CC0000', label:'Luis' }
+});
+StickSentence.toggle();   /* stick figures hidden by default */
+
+/* the people: their names and jobs are always shown; the figures show and hide with the button */
+document.getElementById('castRow').innerHTML = [
+  ['{Ms. Park|park:tablet}', 'the manager'], ['{Ana|ana}', 'office assistant (new)'], ['{Dan|dan:laptop}', 'IT'],
+  ['{Tom|tom}', 'delivery driver'], ['{Rosa|rosa:box}', 'warehouse supervisor'], ['{Luis|luis:pan}', 'the chef']
+].map(([who, role]) => '<div class="cast-item">' + StickSentence.html(who) + '<span class="role">' + role + '</span></div>').join('');
+
+const SPEAKERS = {
+  Ana: { cast: 'ana', avatar: '👩', av: 'av-b', side: 'left' },
+  Tom: { cast: 'tom', avatar: '👨', av: 'av-a', side: 'right' }
+};
+/* each speaker's avatar takes the colour of their stick figure (overrides the house.css av-* colours) */
+const avStyle = s => { const c = (StickSentence.cast()[s.cast] || {}).colour;
+  return c ? 'background:' + c + '40;box-shadow:inset 0 0 0 2px ' + c : ''; };
+
+/* {words|figures} puts stick figures over the words; [words/pos] marks the grammar colours */
+const LINES = [
+  ['Ana', '[Hi/none], {[Tom/noun]!|tom} {[I/subject]|ana} [missed/verb] [the meeting/object] [this morning/time]. {[My/det]|ana} [bus/subject] [was/verb] [late/adj]. [What/wh] [did/aux] {[Ms. Park/subject]|park} [say/verb]?'],
+  ['Tom', '{[She/subject]|park:say} [said/verb] [the company/subject] [was/verb] [very/adverb] [busy/adj]. [And/conj] {[she/subject]|park:say} [said/verb] {[she/subject]|park} [would hire/verb] {[two new drivers/object]|man,woman} [next month/time].'],
+  ['Ana', '[Great/none]! [What/wh] [else/adverb]?'],
+  ['Tom', '{[She/subject]|park:say} [asked/verb] {[us/object]|tom,rosa,luis} [to start/verb] [at seven/time] [on Mondays/time]. [And/conj] {[she/subject]|park:say} [told/verb] {[me/object]|tom:me} [not/neg] [to park/verb] [in front of/prep] [the kitchen door/noun].'],
+  ['Ana', '[Ha/none]! [Did/aux] {[Luis/subject]|luis} [say/verb] [anything/object]?'],
+  ['Tom', '[Yes/none]. {[He/subject]|luis:say:pan} [said/verb] {[he/subject]|luis:sad:pan} [couldn’t cook/verb] [fifty lunches/object] [with one oven/prep]. {[He/subject]|luis:say} [asked/verb] {[Ms. Park/object]|park} [if/conj] {[she/subject]|park} [could buy/verb] [a new one/object].'],
+  ['Ana', '[And/conj] [what/wh] [did/aux] {[she/subject]|park} [say/verb]?'],
+  ['Tom', '{[She/subject]|park:say} [said/verb] {[she/subject]|park} [would think/verb] [about it/prep]. [Then/time] {[Rosa/subject]|rosa:say} [asked/verb] [where/wh] [the new boxes/subject] [were/verb]. {[Ms. Park/subject]|park:say} [told/verb] {[her/object]|rosa} [they/subject] [were/verb] [in the truck/prep].'],
+  ['Ana', '[Did/aux] [anyone/subject] [ask/verb] [about/prep] {[me/object]?|ana:me}'],
+  ['Tom', '[Yes/none]! {[Ms. Park/subject]|park:say} [asked/verb] {[me/object]|tom:me} [if/conj] {[you/subject]|ana} [were/verb] [OK/adj]. {[I/subject]|tom} [told/verb] {[her/object]|park} {[your/det]|ana} [bus/subject] [was/verb] [late/adj]. [Oh/none], [and/conj] {[she/subject]|park:say} [asked/verb] {[me/object]|tom:me} [to give/verb] {[you/object]|ana} [this schedule/object].'],
+  ['Ana', '[Thanks/none]! [Can/aux] {[you/subject]|tom} [tell/verb] {[Dan/object]|dan:laptop} {[I’ll/subject]|ana} [be/verb] [in the office/prep] [at two/time]?'],
+  ['Tom', '[Sure/none]. {[I’ll/subject]|tom} [let/verb] {[him/object]|dan:laptop} [know/verb].']
+];
+const conv = document.getElementById('conversation');
+LINES.forEach(([who, text]) => {
+  const s = SPEAKERS[who], right = s.side === 'right';
+  conv.insertAdjacentHTML('beforeend',
+    '<div class="bubble-wrap' + (right ? ' right' : '') + '">' +
+      '<div class="avatar ' + s.av + '" style="' + avStyle(s) + '">' + s.avatar + '</div>' +
+      '<div class="bubble-col"><div class="bname' + (right ? ' right' : '') + '">' + who + '</div>' +
+      '<div class="bubble ' + (right ? 'right' : 'left') + '">' + StickSentence.html(text) + '</div></div>' +
+    '</div>');
+});
+
+const CQ_ITEMS = [
+  { q: 'Why did Ana miss the meeting?', opts: ['She was in the office.', 'Her bus was late.', 'She was at the bank.'], correct: 1 },
+  { q: 'What did Luis ask Ms. Park?', opts: ['If she could buy a new oven', 'Where the new boxes were', 'If she would hire new drivers'], correct: 0 },
+  { q: 'What did Ms. Park tell Tom not to do?', opts: ['Start at seven', 'Give Ana the schedule', 'Park in front of the kitchen door'], correct: 2 }
+];
+HouseComprehension.build({ pre: 'preQuestions', quiz: 'quiz', items: CQ_ITEMS });
+</script>
+<script>HouseGrammar.init();</script>
+</body>
+</html>

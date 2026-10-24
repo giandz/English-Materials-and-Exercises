@@ -1,0 +1,351 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<title>Present Perfect Lab — ever, just, already, yet, for, since</title>
+<script>
+(function(){
+  try{
+    var saved = localStorage.getItem('theme-preference');
+    var theme = (saved === 'light' || saved === 'dark')
+      ? saved
+      : ((window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches) ? 'dark' : 'light');
+    document.documentElement.setAttribute('data-theme', theme);
+    var fs = parseFloat(localStorage.getItem('font-size-preference'));
+    if (fs >= 10 && fs <= 28) document.documentElement.style.setProperty('--fs-base', fs + 'px');
+  }catch(e){ /* localStorage/matchMedia unavailable — CSS media query still applies */ }
+})();
+</script>
+<link rel="stylesheet" href="house.css">
+</head>
+<body>
+<div class="page" id="page">
+  <span class="cefr-tag cefr-a2">A2 · Elementary</span>
+  <h1>Present Perfect Lab</h1>
+  <p class="subtitle">Have you ever…? · I’ve just… · already / yet · for / since · present perfect or past simple?</p>
+
+  <div class="sec-div">The pattern</div>
+  <div class="rule-box">
+    <div class="pattern">
+      <span class="pos-hl pos-subject">subject</span><span class="plus">+</span>
+      <span class="pos-hl pos-aux">have / has</span><span class="plus">+</span>
+      <span class="pos-hl pos-part">past participle</span><span class="plus">…</span>
+    </div>
+    <div class="pattern">
+      <span class="pos-hl pos-aux">Have / Has</span><span class="plus">+</span>
+      <span class="pos-hl pos-subject">subject</span><span class="plus">+</span>
+      <span class="pos-hl pos-part">past participle</span><span class="plus">…</span><span>?</span>
+    </div>
+    <div class="subj-grid">
+      <div class="subj-card"><span class="verb-big pos-hl pos-aux">have</span><span class="subj-list">I, you, we, they</span><span class="subj-note">I’ve · haven’t</span></div>
+      <div class="subj-card"><span class="verb-big pos-hl pos-aux">has</span><span class="subj-list">he, she, it</span><span class="subj-note">she’s · hasn’t</span></div>
+    </div>
+    <p><strong>Regular participles:</strong> + ed — visited, called, worked, tried.</p>
+    <p><strong>Irregular participles:</strong> be → been · go → gone / been · eat → eaten · see → seen · do → done · buy → bought · write → written · meet → met · win → won · ride → ridden · fly → flown · swim → swum · break → broken · know → known · have → had · leave → left · make → made · send → sent</p>
+    <p><strong>Finished time</strong> (yesterday, last year, in 2019, two days ago) → <strong>past simple</strong>, not present perfect.</p>
+  </div>
+
+  <button class="grammar-toggle-btn" id="grammarToggle">🎨 Show Grammar</button>
+  <div class="pos-legend"></div>
+
+  <div class="score-bar"><span>Mastered: <strong id="masteredScore">0</strong> / <span id="masteredTotal">0</span></span></div>
+  <nav class="lab-tabs" id="labTabs" aria-label="Sections"></nav>
+  <div id="labPanels"></div>
+
+  <footer>Present Perfect Lab (A2 · self-study)</footer>
+</div>
+
+<div id="theme-toggle-wrap">
+  <button id="theme-toggle" aria-label="Toggle light/dark mode" title="Toggle light/dark mode">
+    <span id="theme-icon">☀️</span>
+  </button>
+</div>
+<script src="house.js"></script>
+<script src="lab-kit.js"></script>
+<script>
+const { pick, words, cap } = LabKit;
+const R = a => (a.rest ? ' ' + a.rest : '');
+const cue = s => ' <span class="cue">(' + s + ')</span>';
+// lower-case pronouns and "My …" / "The …" for the cue in brackets; names stay capitalized
+const low = s => (/^(She|He|We|They|You|My|The)\b/.test(s) ? s.charAt(0).toLowerCase() + s.slice(1) : s);
+const h = p => (p.t ? 'has' : 'have');
+const oh = p => (p.t ? 'have' : 'has');
+const hn = p => (p.t ? 'hasn’t' : 'haven’t');
+const ohn = p => (p.t ? 'haven’t' : 'hasn’t');
+const PRO = { I: 'I’ve', We: 'We’ve', They: 'They’ve', She: 'She’s', He: 'He’s', You: 'You’ve' };
+const contr = (p, rest) => (PRO[p.s] ? [`${PRO[p.s]} ${rest}`] : []);   // "I’ve eaten…" etc. also accepted
+const part = s => words(s, 'part');
+
+/* statement subjects (t = he / she / it) and question subjects */
+const SUBJ = [{ s: 'I' }, { s: 'She', t: 1 }, { s: 'He', t: 1 }, { s: 'We' }, { s: 'They' },
+              { s: 'My dad', t: 1 }, { s: 'Ana', t: 1 }, { s: 'My parents' }];
+const QSUBJ = [{ q: 'you' }, { q: 'she', t: 1 }, { q: 'your parents' }, { q: 'Ana', t: 1 },
+               { q: 'they' }, { q: 'your brother', t: 1 }];
+
+/* life experiences: base, past simple, past participle, rest, a typical wrong participle */
+const EXP = [
+  { v: 'eat', past: 'ate', pp: 'eaten', rest: 'sushi' },
+  { v: 'ride', past: 'rode', pp: 'ridden', rest: 'a horse' },
+  { v: 'see', past: 'saw', pp: 'seen', rest: 'snow' },
+  { v: 'fly', past: 'flew', pp: 'flown', rest: 'in a helicopter' },
+  { v: 'swim', past: 'swam', pp: 'swum', rest: 'in the ocean' },
+  { v: 'drive', past: 'drove', pp: 'driven', rest: 'a truck' },
+  { v: 'meet', past: 'met', pp: 'met', rest: 'a famous person', bad: 'meeted' },
+  { v: 'win', past: 'won', pp: 'won', rest: 'a prize', bad: 'winned' },
+  { v: 'climb', past: 'climbed', pp: 'climbed', rest: 'a mountain', bad: 'climb' },
+  { v: 'try', past: 'tried', pp: 'tried', rest: 'Indian food', bad: 'tryed' },
+  { v: 'visit', past: 'visited', pp: 'visited', rest: 'Mexico', bad: 'visit' },
+  { v: 'break', past: 'broke', pp: 'broken', rest: 'a bone' },
+  { v: 'go', past: 'went', pp: 'been', rest: 'to Japan' }
+];
+const badPP = a => a.bad || a.past;
+
+const SECTIONS = [
+  /* ── 🌍 experience ──────────────────────────────────────────────────── */
+  { id: 'experience', emoji: '🌍', label: 'Experience', pill: 'ever · never',
+    note: 'Use the present perfect for experiences in your life. We don’t say when. Ask with ever. Say “no” with never.',
+    examples: [
+      ['q', '{Have|aux} {you|subject} {ever|adverb} {eaten|part} {sushi|object}?', 'ever = at any time in your life'],
+      ['pos', 'Yes, {I|subject} {have|aux}. / No, {I|subject} {have|aux}{n’t|neg}.', 'short answers', 'Answer'],
+      ['pos', '{She|subject} {has|aux} {never|adverb} {ridden|part} {a horse|object}.', 'never = not at any time in her life'],
+      ['pos', '{I|subject}{’ve|aux} {visited|part} {Mexico|object} {three times|time}.', 'we don’t say when']
+    ],
+    prompts: { choice: 'Which sentence is correct?', drag: 'Tap or drag the words to build the sentence.',
+               gap: 'Write the sentence. Use the words in brackets.' },
+    gen() {
+      const a = pick(EXP);
+      if (Math.random() < .5) {
+        const p = pick(QSUBJ), H = cap(h(p)), oH = cap(oh(p));
+        return { ctx: '🌍 Ask about experience' + cue(`${p.q} / ever / ${a.v}${R(a)}`),
+                 tokens: [[H, 'aux'], ...words(p.q, 'subject'), ['ever', 'adverb'], ...part(a.pp), ...words(a.rest, 'object'), ['?', null]],
+                 wrong: [`${H} ${p.q} ever ${badPP(a)}${R(a)}?`, `Did ${p.q} ever ${a.pp}${R(a)}?`,
+                         `${oH} ${p.q} ever ${a.pp}${R(a)}?`, `${H} ${p.q} ${a.pp} ever${R(a)}?`] };
+      }
+      const p = pick(SUBJ), rest = `never ${a.pp}${R(a)}.`;
+      return { ctx: '🌍 Say it' + cue(`${low(p.s)} / never / ${a.v}${R(a)}`),
+               tokens: [...words(p.s, 'subject'), [h(p), 'aux'], ['never', 'adverb'], ...part(a.pp), ...words(a.rest, 'object'), ['.', null]],
+               wrong: [`${p.s} ${h(p)} never ${badPP(a)}${R(a)}.`, `${p.s} ${hn(p)} never ${a.pp}${R(a)}.`,
+                       `${p.s} ${oh(p)} ${rest}`, `${p.s} ${h(p)} ${a.pp} never${R(a)}.`],
+               alts: contr(p, rest) };
+    } },
+
+  /* ── 🧳 been or gone ────────────────────────────────────────────────── */
+  { id: 'been-gone', emoji: '🧳', label: 'Been or gone?', pill: 'been 🏠 · gone 📍',
+    note: 'Both come from go. Been = she went and came back. Gone = she went and she is there now.',
+    examples: [
+      ['pos', '{Ana|subject} {has|aux} {been|part} {to Paris|prep}.', 'she went and came back 🏠'],
+      ['pos', '{Ana|subject} {has|aux} {gone|part} {to Paris|prep}.', 'she is in Paris now 📍'],
+      ['q', '{Have|aux} {you|subject} {ever|adverb} {been|part} {to Japan|prep}?', 'experience → been']
+    ],
+    prompts: { choice: 'Read the situation. Which sentence is correct?', drag: 'Tap or drag the words to build the sentence.',
+               gap: 'Been or gone? Write the sentence.' },
+    gen() {
+      const p = pick([{ s: 'Ana', t: 1 }, { s: 'My parents' }, { s: 'Leo', t: 1 }, { s: 'My sister', t: 1 },
+                      { s: 'They' }, { s: 'Tom and Lucy' }]);
+      const pl = pick([{ to: 'to Paris', at: 'in Paris' }, { to: 'to the supermarket', at: 'at the supermarket' },
+                       { to: 'to the beach', at: 'at the beach' }, { to: 'to Japan', at: 'in Japan' },
+                       { to: 'to the bank', at: 'at the bank' }, { to: 'to Mexico', at: 'in Mexico' }]);
+      const gone = Math.random() < .5, x = gone ? 'gone' : 'been', y = gone ? 'been' : 'gone';
+      const sit = gone ? `📍 ${p.s} ${p.t ? 'is' : 'are'} ${pl.at} now.`
+                       : `🏠 ${p.s} went ${pl.to} and came back.`;
+      return { ctx: sit, key: sit,
+               gapCtx: sit + cue(`${low(p.s)} / ${pl.to}`),
+               tokens: [...words(p.s, 'subject'), [h(p), 'aux'], [x, 'part'], ...words(pl.to, 'prep'), ['.', null]],
+               wrong: [`${p.s} ${h(p)} ${y} ${pl.to}.`, `${p.s} ${h(p)} went ${pl.to}.`,
+                       `${p.s} ${h(p)} go ${pl.to}.`, `${p.s} ${oh(p)} ${x} ${pl.to}.`],
+               alts: contr(p, `${x} ${pl.to}.`) };
+    } },
+
+  /* ── ⚡ just ─────────────────────────────────────────────────────────── */
+  { id: 'just', emoji: '⚡', label: 'Just', pill: 'have / has + just + participle',
+    note: 'Use just for something that happened a moment ago. Just goes between have/has and the participle.',
+    examples: [
+      ['pos', '{The train|subject} {has|aux} {just|adverb} {left|part}.', 'just = a moment ago'],
+      ['pos', '{I|subject}{’ve|aux} {just|adverb} {sent|part} {you an email|object}.', 'have + just + participle'],
+      ['pos', '{Mom|subject} {just|adverb} {made|verb} {a cake|object}.', 'American English also uses the past simple with just', 'Also OK']
+    ],
+    prompts: { choice: 'Which sentence is correct?', drag: 'Tap or drag the words to build the sentence.',
+               gap: 'Say what happened a moment ago.' },
+    gen() {
+      const a = pick([
+        { e: '🍽️', s: 'Leo', t: 1, v: 'finish', past: 'finished', pp: 'finished', rest: 'his dinner' },
+        { e: '🏫', s: 'Ana', t: 1, v: 'arrive', past: 'arrived', pp: 'arrived', rest: 'at school' },
+        { e: '🚆', s: 'The train', t: 1, v: 'leave', past: 'left', pp: 'left' },
+        { e: '📱', s: 'I', v: 'buy', past: 'bought', pp: 'bought', rest: 'a new phone' },
+        { e: '🌈', s: 'We', v: 'see', past: 'saw', pp: 'seen', rest: 'a rainbow' },
+        { e: '⏰', s: 'My sister', t: 1, v: 'wake up', past: 'woke up', pp: 'woken up' },
+        { e: '🏆', s: 'They', v: 'win', past: 'won', pp: 'won', rest: 'the game' },
+        { e: '🎬', s: 'The movie', t: 1, v: 'start', past: 'started', pp: 'started' },
+        { e: '📧', s: 'I', v: 'send', past: 'sent', pp: 'sent', rest: 'you an email' },
+        { e: '🎂', s: 'Mom', t: 1, v: 'make', past: 'made', pp: 'made', rest: 'a cake' }
+      ]);
+      const ctx = `${a.e} A minute ago…` + cue(`${low(a.s)} / just / ${a.v}${R(a)}`);
+      return { ctx, key: ctx,
+               tokens: [...words(a.s, 'subject'), [h(a), 'aux'], ['just', 'adverb'], ...part(a.pp), ...words(a.rest, 'object'), ['.', null]],
+               wrong: [`${a.s} ${h(a)} just ${a.v}${R(a)}.`, `${a.s} ${h(a)} ${a.pp} just${R(a)}.`,
+                       `${a.s} ${oh(a)} just ${a.pp}${R(a)}.`,
+                       `${a.s} ${a.t ? 'is' : (a.s === 'I' ? 'am' : 'are')} just ${a.pp}${R(a)}.`],
+               alts: [...contr(a, `just ${a.pp}${R(a)}.`), `${a.s} just ${a.past}${R(a)}.`] };
+    } },
+
+  /* ── ✅ already / yet ────────────────────────────────────────────────── */
+  { id: 'already-yet', emoji: '✅', label: 'Already & yet', pill: 'already ✅ · not … yet ❌ · yet ❓',
+    note: 'Already = it is done (maybe early). Not … yet = it is not done, but it will be. In questions, yet = until now. Yet goes at the end.',
+    examples: [
+      ['pos', '{I|subject}{’ve|aux} {already|adverb} {paid|part} {the bills|object}.', 'already ✅ — between have and the participle'],
+      ['neg', '{We|subject} {haven’t|aux} {booked|part} {the hotel|object} {yet|adverb}.', 'not … yet ❌ — yet at the end'],
+      ['q', '{Have|aux} {you|subject} {called|part} {Mom|object} {yet|adverb}?', 'yet ❓ — at the end of the question']
+    ],
+    prompts: { choice: 'Look at the list. Which sentence is correct?', drag: 'Tap or drag the words to build the sentence.',
+               gap: 'Look at the list. Write the sentence.' },
+    gen() {
+      const a = pick([
+        { v: 'buy', past: 'bought', pp: 'bought', rest: 'milk' }, { v: 'call', past: 'called', pp: 'called', rest: 'Mom' },
+        { v: 'do', past: 'did', pp: 'done', rest: 'the homework' }, { v: 'clean', past: 'cleaned', pp: 'cleaned', rest: 'the kitchen' },
+        { v: 'pay', past: 'paid', pp: 'paid', rest: 'the bills' }, { v: 'write', past: 'wrote', pp: 'written', rest: 'the email' },
+        { v: 'book', past: 'booked', pp: 'booked', rest: 'the hotel' }, { v: 'pack', past: 'packed', pp: 'packed', rest: 'the suitcase' }
+      ]);
+      const task = `${a.v}${R(a)}`, mode = pick(['done', 'not', 'q']);
+      if (mode === 'q') {
+        const p = pick(QSUBJ), H = cap(h(p));
+        const ctx = `📋 ❓ ${task}` + cue(`${p.q} / yet`);
+        return { ctx, key: ctx,
+                 tokens: [[H, 'aux'], ...words(p.q, 'subject'), ...part(a.pp), ...words(a.rest, 'object'), ['yet', 'adverb'], ['?', null]],
+                 wrong: [`${H} ${p.q} ${a.v}${R(a)} yet?`, `${cap(oh(p))} ${p.q} ${a.pp}${R(a)} yet?`, `${H} ${p.q} yet ${a.pp}${R(a)}?`],
+                 alts: [`Did ${p.q} ${task} yet?`] };
+      }
+      const p = pick(SUBJ);
+      if (mode === 'done') {
+        const ctx = `📋 ${p.s}: ✅ ${task}` + cue('already');
+        return { ctx, key: ctx,
+                 tokens: [...words(p.s, 'subject'), [h(p), 'aux'], ['already', 'adverb'], ...part(a.pp), ...words(a.rest, 'object'), ['.', null]],
+                 wrong: [`${p.s} ${h(p)} already ${a.v}${R(a)}.`, `${p.s} ${h(p)} ${a.pp}${R(a)} yet.`, `${p.s} ${oh(p)} already ${a.pp}${R(a)}.`],
+                 alts: [...contr(p, `already ${a.pp}${R(a)}.`), `${p.s} already ${a.past}${R(a)}.`] };
+      }
+      const ctx = `📋 ${p.s}: ❌ ${task}` + cue('yet');
+      return { ctx, key: ctx,
+               tokens: [...words(p.s, 'subject'), [hn(p), 'aux'], ...part(a.pp), ...words(a.rest, 'object'), ['yet', 'adverb'], ['.', null]],
+               wrong: [`${p.s} ${hn(p)} ${a.pp}${R(a)} already.`, `${p.s} ${hn(p)} ${a.v}${R(a)} yet.`, `${p.s} ${ohn(p)} ${a.pp}${R(a)} yet.`],
+               alts: [`${p.s} ${h(p)} not ${a.pp}${R(a)} yet.`, `${p.s} didn’t ${task} yet.`] };
+    } },
+
+  /* ── ⏳ for / since ──────────────────────────────────────────────────── */
+  { id: 'for-since', emoji: '⏳', label: 'For & since', pill: 'for + period · since + start',
+    note: 'Use the present perfect for something that started in the past and continues now. For + a period of time. Since + the start. Ask with How long…?',
+    examples: [
+      ['pos', '{Ana|subject} {has|aux} {lived|part} {in Caracas|prep} {since 2016|time}.', 'since + start: 2016, Monday, March'],
+      ['pos', '{Ana|subject} {has|aux} {lived|part} {in Caracas|prep} {for ten years|time}.', 'for + period: ten years, two days'],
+      ['q', '{How long|wh} {have|aux} {you|subject} {known|part} {Leo|object}?', 'ask with How long…? (not How long do you know…?)']
+    ],
+    prompts: { choice: 'Which sentence is correct?', drag: 'Tap or drag the words to build the sentence.',
+               gap: 'Write the sentence. Choose for or since.' },
+    gen() {
+      const a = pick([
+        { e: '🏠', s: 'Ana', t: 1, q: 'Ana', qt: 1, v: 'live', pp: 'lived', pres: 'lives', rest: 'in Caracas', since: '2016', for: 'ten years' },
+        { e: '🤝', s: 'I', q: 'you', v: 'know', pp: 'known', pres: 'know', rest: 'Leo', since: '2020', for: 'six years' },
+        { e: '🚗', s: 'We', q: 'you', v: 'have', pp: 'had', pres: 'have', rest: 'this car', since: '2022', for: 'four years' },
+        { e: '🏦', s: 'My dad', t: 1, q: 'your dad', qt: 1, v: 'work', pp: 'worked', pres: 'works', rest: 'at the bank', since: '2006', for: 'twenty years' },
+        { e: '💍', s: 'My parents', q: 'your parents', v: 'be', pp: 'been', pres: 'are', qpres: 'are', rest: 'married', since: '2011', for: 'fifteen years' },
+        { e: '🎸', s: 'Tom', t: 1, q: 'Tom', qt: 1, v: 'play', pp: 'played', pres: 'plays', rest: 'the guitar', since: 'he was ten', for: 'many years' },
+        { e: '👩‍🏫', s: 'I', q: 'you', v: 'be', pp: 'been', pres: 'am', qpres: 'are', rest: 'a teacher', since: '2018', for: 'eight years' },
+        { e: '🐶', s: 'They', q: 'they', v: 'have', pp: 'had', pres: 'have', rest: 'a dog', since: 'March', for: 'seven months' }
+      ]);
+      const mode = pick(['since', 'for', 'how']);
+      if (mode === 'how') {
+        const qp = { t: a.qt }, H = h(qp);
+        const ctx = `${a.e} ❓ How long?` + cue(`${a.q} / ${a.v}${R(a)}`);
+        const qbe = a.v === 'be' ? `How long ${a.qpres} ${a.q}${R(a)}?` : `How long ${a.qt ? 'does' : 'do'} ${a.q} ${a.v}${R(a)}?`;
+        return { ctx, key: ctx,
+                 tokens: [['How', 'wh'], ['long', 'wh'], [H, 'aux'], ...words(a.q, 'subject'), ...part(a.pp), ...words(a.rest, 'object'), ['?', null]],
+                 wrong: [qbe, `How long ${a.q} ${H} ${a.pp}${R(a)}?`, `How long ${H} ${a.q} ${a.v}${R(a)}?`] };
+      }
+      const fs = mode, other = mode === 'for' ? 'since' : 'for', phrase = a[mode];
+      const ctx = `${a.e} ${mode === 'since' ? '📅 started: ' + phrase + ' → now' : '⏳ ' + phrase + ' until now'}` + cue(`${low(a.s)} / ${a.v}${R(a)}`);
+      const end = ` ${fs} ${phrase}.`;
+      return { ctx, key: ctx,
+               tokens: [...words(a.s, 'subject'), [h(a), 'aux'], ...part(a.pp), ...words(a.rest, 'object'),
+                        [fs, 'time'], ...words(phrase, 'time'), ['.', null]],
+               wrong: [`${a.s} ${h(a)} ${a.pp}${R(a)} ${other} ${phrase}.`, `${a.s} ${a.pres}${R(a)}${end}`,
+                       `${a.s} ${h(a)} ${a.v}${R(a)}${end}`, `${a.s} ${oh(a)} ${a.pp}${R(a)}${end}`],
+               alts: contr(a, `${a.pp}${R(a)}${end}`) };
+    } },
+
+  /* ── 🔀 present perfect or past simple ──────────────────────────────── */
+  { id: 'vs-past', emoji: '🔀', label: 'Present perfect or past?', pill: 'have done ↔ did',
+    note: 'Present perfect: we don’t say when (ever, never, already, for, since). Past simple: we say when (yesterday, last year, in 2019, two days ago) or ask When…?',
+    examples: [
+      ['pos', '{I|subject} {visited|verb} {Mexico|object} {last year|time}.', 'finished time → past simple', 'Past simple'],
+      ['pos', '{I|subject} {have|aux} {visited|part} {Mexico|object} {twice|time}.', 'no “when” → present perfect', 'Present perfect'],
+      ['q', '{When|wh} {did|aux} {you|subject} {go|verb} {there|adverb}?', 'When…? → past simple (not When have you gone…?)', 'Question']
+    ],
+    prompts: { choice: 'Look at the time words. Which sentence is correct?', drag: 'Tap or drag the words to build the sentence.',
+               gap: 'Present perfect or past simple? Look at the time words.' },
+    gen() {
+      const a = pick(EXP), mode = pick(['past', 'when', 'never']);
+      if (mode === 'when') {
+        const p = pick(QSUBJ);
+        const ctx = '🔀 Ask when' + cue(`when / ${p.q} / ${a.v}${R(a)}`);
+        return { ctx, key: ctx,
+                 tokens: [['When', 'wh'], ['did', 'aux'], ...words(p.q, 'subject'), ...words(a.v, 'verb'), ...words(a.rest, 'object'), ['?', null]],
+                 wrong: [`When ${h(p)} ${p.q} ${a.pp}${R(a)}?`, `When did ${p.q} ${a.past}${R(a)}?`, `When ${p.q} ${a.past}${R(a)}?`] };
+      }
+      const p = pick(SUBJ);
+      if (mode === 'past') {
+        const time = pick(['last year', 'yesterday', 'in 2019', 'two weeks ago', 'last summer']);
+        const ctx = '🔀 Say it' + cue(`${low(p.s)} / ${a.v}${R(a)} / ${time}`);
+        return { ctx, key: ctx,
+                 tokens: [...words(p.s, 'subject'), [a.past, 'verb'], ...words(a.rest, 'object'), ...words(time, 'time'), ['.', null]],
+                 wrong: [`${p.s} ${h(p)} ${a.pp}${R(a)} ${time}.`,      // present perfect + finished time
+                         `${p.s} ${h(p)} ${a.past}${R(a)} ${time}.`,
+                         `${p.s} ${a.v}${R(a)} ${time}.`] };
+      }
+      const ctx = '🔀 Say it' + cue(`${low(p.s)} / never / ${a.v}${R(a)}`);
+      return { ctx, key: ctx,
+               tokens: [...words(p.s, 'subject'), [h(p), 'aux'], ['never', 'adverb'], ...part(a.pp), ...words(a.rest, 'object'), ['.', null]],
+               wrong: [`${p.s} ${h(p)} never ${a.pp}${R(a)} last year.`, `${p.s} ${h(p)} never ${badPP(a)}${R(a)}.`,
+                       `${p.s} ${oh(p)} never ${a.pp}${R(a)}.`],
+               alts: contr(p, `never ${a.pp}${R(a)}.`) };
+    } }
+];
+
+/* Different sentences from the Common mistakes list. A2: some are already correct. */
+const EH_POOL = [
+  { words: ['We', 'have', 'ate', 'here', 'before', '.'], error: { type: 'wrong', wordIndex: 2, options: ['eaten', 'eat', 'eating'], correct: 'eaten' } },
+  { words: ['He', 'has', 'lived', 'in', 'Mexico', 'for', '2018', '.'], error: { type: 'wrong', wordIndex: 5, options: ['since', 'in', 'from'], correct: 'since' } },
+  { words: ['They', 'have', 'been', 'friends', 'since', 'ten', 'years', '.'], error: { type: 'wrong', wordIndex: 4, options: ['for', 'during', 'in'], correct: 'for' } },
+  { words: ['Did', 'you', 'ever', 'been', 'to', 'Brazil', '?'], error: { type: 'wrong', wordIndex: 0, options: ['Have', 'Has', 'Do'], correct: 'Have' } },
+  { words: ['My', 'sister', 'have', 'just', 'called', '.'], error: { type: 'wrong', wordIndex: 2, options: ['has', 'is', 'had'], correct: 'has' } },
+  { words: ['I', 'have', 'finished', 'just', 'my', 'homework', '.'], error: { type: 'misplaced', wordIndex: 3, targetGapIndex: 2 } },
+  { words: ['We', 'haven’t', 'booked', 'the', 'hotel', 'already', '.'], error: { type: 'wrong', wordIndex: 5, options: ['yet', 'still', 'just'], correct: 'yet' } },
+  { words: ['Leo', 'has', 'gone', 'to', 'Japan', 'twice', '.'], error: { type: 'wrong', wordIndex: 2, options: ['been', 'went', 'go'], correct: 'been' } },
+  { words: ['I', 'have', 'met', 'Ana', 'yesterday', '.'], error: { type: 'extra', wordIndex: 1 } },
+  { words: ['How', 'long', 'you', 'have', 'worked', 'here', '?'], error: { type: 'misplaced', wordIndex: 3, targetGapIndex: 2 } },
+  { words: ['Has', 'she', 'ever', 'ride', 'a', 'horse', '?'], error: { type: 'wrong', wordIndex: 3, options: ['ridden', 'rode', 'riding'], correct: 'ridden' } },
+  { words: ['She', 'has', 'never', 'seen', 'snow', '.'], error: null },
+  { words: ['Have', 'you', 'called', 'Mom', 'yet', '?'], error: null },
+  { words: ['I', 'have', 'known', 'Leo', 'since', '2020', '.'], error: null },
+  { words: ['When', 'did', 'you', 'arrive', '?'], error: null }
+];
+
+LabKit.build({
+  sections: SECTIONS,
+  mistakes: [
+    ['I have saw that movie.', 'I have seen that movie.'],
+    ['She have finished.', 'She has finished.'],
+    ['Have you ever went to Cuba?', 'Have you ever been to Cuba?'],
+    ['She has gone to Paris three times.', 'She has been to Paris three times. (She is home now.)'],
+    ['I haven’t finished already.', 'I haven’t finished yet.'],
+    ['I live here since 2015.', 'I have lived here since 2015.'],
+    ['I have lived here since five years.', 'I have lived here for five years.'],
+    ['How long do you know her?', 'How long have you known her?'],
+    ['I have visited Peru last year.', 'I visited Peru last year.'],
+    ['When have you arrived?', 'When did you arrive?']
+  ],
+  errorHunt: EH_POOL, ehCount: 6,
+  ehPrompt: 'Some sentences have a mistake. Some are correct! Tap a word — or a space between words — to fix it. Then press OK. 🎲 Again gives you new sentences.'
+});
+</script>
+<script>HouseGrammar.init();</script>
+</body>
+</html>

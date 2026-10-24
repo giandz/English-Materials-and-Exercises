@@ -1,0 +1,240 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<title>Reported Speech: Statements, Requests and Questions — Clarification</title>
+<script>
+(function(){
+  try{
+    var saved = localStorage.getItem('theme-preference');
+    var theme = (saved === 'light' || saved === 'dark')
+      ? saved
+      : ((window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches) ? 'dark' : 'light');
+    document.documentElement.setAttribute('data-theme', theme);
+    var fs = parseFloat(localStorage.getItem('font-size-preference'));
+    if (fs >= 10 && fs <= 28) document.documentElement.style.setProperty('--fs-base', fs + 'px');
+  }catch(e){ /* localStorage/matchMedia unavailable — CSS media query still applies */ }
+})();
+</script>
+<link rel="stylesheet" href="house.css">
+<style>
+/* the target language is the lesson, so it stays coloured (not a grammar-toggle colour) */
+.tgt{ color:var(--text-accent); font-weight:700; }
+.rs-kind{ font-size:.7rem; font-weight:700; letter-spacing:.04em; text-transform:uppercase; color:var(--text-muted); margin:1rem 0 .4rem; }
+.rs-pair{ border:1px solid var(--color-border-tertiary); border-radius:12px; background:var(--surface-2); padding:10px 12px; margin-bottom:10px; font-size:.9667rem; }
+.rs-row{ display:flex; gap:10px; align-items:flex-end; padding:4px 0; }
+.rs-row + .rs-row{ border-top:.5px dashed var(--color-border-secondary); margin-top:4px; padding-top:8px; }
+.rs-lab{ flex:0 0 4.6em; font-size:.7rem; font-weight:700; letter-spacing:.04em; text-transform:uppercase; color:var(--text-muted); padding-bottom:.25em; }
+.rs-row b{ color:var(--text-accent); }
+.bs{ display:grid; grid-template-columns:minmax(0,1fr) auto minmax(0,1fr); gap:4px 8px; align-items:center; margin:0 0 10px; font-size:.8667rem; }
+.bs > div{ padding:5px 8px; border-radius:7px; background:var(--surface-2); border:1px solid var(--color-border-tertiary); }
+.bs .h{ background:none; border:none; font-size:.7rem; font-weight:700; letter-spacing:.04em; text-transform:uppercase; color:var(--text-muted); }
+.bs .ar{ background:none; border:none; color:var(--text-muted); padding:0; }
+.shift{ display:grid; grid-template-columns:repeat(auto-fill, minmax(150px, 1fr)); gap:6px; margin:0 0 10px; }
+.shift > div{ padding:5px 8px; border-radius:7px; background:var(--surface-2); border:1px solid var(--color-border-tertiary); font-size:.8667rem; text-align:center; }
+.rule-box p{ margin:0 0 6px; }
+.rule-box p:last-child{ margin-bottom:0; }
+.rule-box h4{ margin:.6rem 0 .3rem; font-size:.8667rem; color:var(--text-primary); }
+.rule-box h4:first-child{ margin-top:0; }
+</style>
+</head>
+<body>
+<div class="page" id="page">
+  <span class="cefr-tag cefr-a2">A2 · Pre-intermediate</span>
+  <h1>Reported Speech: Statements, Requests and Questions</h1>
+  <p class="subtitle">“I will hire two drivers.” → She said she would hire two drivers. · “Please start at seven.” → She asked us to start at seven. · “Can you buy an oven?” → He asked her if she could buy an oven.</p>
+
+  <div class="sec-div">Look</div>
+  <p class="subtitle">The Monday meeting at FreshBox. Read what people said. Then read what Tom tells Ana.</p>
+  <div id="pairs"></div>
+
+  <div class="sec-div">Check the meaning</div>
+  <p class="subtitle">Read the sentence. Answer the questions.</p>
+  <div id="ccq"></div>
+
+  <div class="sec-div">Look at the form</div>
+  <p class="subtitle">What is each part of the sentence? Drag a label (or tap a label, then tap a box).</p>
+  <div class="score-bar"><span>Correct: <strong id="fcScore">0</strong> / <span id="fcTotal">0</span></span></div>
+  <div id="formClarf"></div>
+
+  <div class="rule-box" id="ruleBox"></div>
+
+  <div class="sec-div">Common mistakes</div>
+  <div id="mistakes"></div>
+
+  <div class="sec-div">Error hunt</div>
+  <p class="subtitle">Some sentences have a mistake. Some are correct! Tap a word — or a space between words — to fix it. Then press OK.</p>
+  <div class="score-bar"><span>Done: <strong id="errorScore">0</strong> / <span id="errorTotal">0</span></span></div>
+  <div id="errorHuntItems"></div>
+
+  <footer>Reported Speech: Statements, Requests and Questions — Clarification (A2)</footer>
+</div>
+
+<div id="theme-toggle-wrap">
+  <button id="theme-toggle" aria-label="Toggle light/dark mode" title="Toggle light/dark mode">
+    <span id="theme-icon">☀️</span>
+  </button>
+</div>
+<script src="house.js"></script>
+<script src="stick-character.js"></script>
+<script src="stick-sentence.js"></script>
+<script>
+/* the same team on every page of this lesson: FreshBox, a food delivery company (office, kitchen and warehouse) */
+StickSentence.cast({
+  park: { base:'woman', headwear:'bun', colour:'#6600CC', label:'Ms. Park' },
+  ana:  { base:'woman', colour:'#FF66CC', label:'Ana' },
+  dan:  { base:'man',   colour:'#0066CC', label:'Dan' },
+  tom:  { base:'man',   headwear:'cap', colour:'#00CC66', label:'Tom' },
+  rosa: { base:'woman', headwear:'ponytail', colour:'#FF6600', label:'Rosa' },
+  luis: { base:'man',   headwear:'chefhat', colour:'#CC0000', label:'Luis' }
+});
+StickSentence.toggle();   /* stick figures hidden by default */
+
+const S = StickSentence.html;
+const T = s => '<span class="tgt">' + s + '</span>';
+
+/* ── look: what they said (the speaker with the people they talk to), then Tom’s report ── */
+const GROUPS = [
+  ['Statements · said / told + person', [
+    ['{Ms. Park:|park:say:arrow,tom:left,rosa:left} “The company is very busy.”',
+     '{She|park:say} said the company <b>was</b> very busy.'],
+    ['{Ms. Park:|park:say:arrow,tom:left,rosa:left} “{I|park} will hire two new drivers.”',
+     '{She|park:say} said {she|park} <b>would&nbsp;hire</b> two new drivers.'],
+    ['{Luis:|luis:say:pan:arrow,park:left} “{I|luis:sad} can’t cook fifty lunches with one oven.”',
+     '{He|luis:say} told {Ms. Park|park} {he|luis:sad} <b>couldn’t&nbsp;cook</b> fifty lunches.'],
+    ['{Ms. Park:|park:say:arrow,luis:left} “{I’ll|park} think about it.”',
+     '{She|park:say} said {she|park} <b>would&nbsp;think</b> about it.']
+  ]],
+  ['Requests · asked / told + person + (not) to', [
+    ['{Ms. Park:|park:say:arrow,tom:left,rosa:left} “Please start at seven on Mondays.”',
+     '{She|park:say} asked {us|tom,rosa} <b>to&nbsp;start</b> at seven.'],
+    ['{Ms. Park:|park:say:arrow,tom:left} “Don’t park in front of the kitchen door, Tom.”',
+     '{She|park:say} told {me|tom:me} <b>not&nbsp;to&nbsp;park</b> there.']
+  ]],
+  ['Questions · asked (+ person) + wh- word / if', [
+    ['{Luis:|luis:say:arrow,park:left} “Can {you|park} buy a new oven?”',
+     '{He|luis:say} asked {her|park} <b>if</b> {she|park} <b>could&nbsp;buy</b> a new oven.'],
+    ['{Rosa:|rosa:say:box:arrow,park:left} “Where are the new boxes?”',
+     '{Rosa|rosa:say:box} asked <b>where</b> the new boxes <b>were</b>.'],
+    ['{Ms. Park:|park:say:arrow,tom:left} “Is {Ana|ana} OK?”',
+     '{She|park:say} asked {me|tom:me} <b>if</b> {Ana|ana} <b>was</b> OK.']
+  ]]
+];
+const pair = ([q, r]) => '<div class="rs-pair"><div class="rs-row"><span class="rs-lab">They said</span>' + S(q) + '</div>' +
+  '<div class="rs-row"><span class="rs-lab">Tom says</span>' + S(r) + '</div></div>';
+document.getElementById('pairs').innerHTML = GROUPS.map(([kind, items]) =>
+  '<div class="rs-kind">' + kind + '</div>' + items.map(pair).join('')).join('');
+
+/* ── concept checking questions ────────────────────────────────────────── */
+HouseCCQ.build({
+  container: 'ccq',
+  items: [
+    { sentence: S('{She|park:say} said {she|park} would hire two new drivers.'),
+      questions: [
+        { q: 'Has she hired the new drivers?', opts: ['Yes', 'No'], correct: 1,
+          why: 'No. “Would hire” is the future from the time of the meeting. She said: “I will hire …”' },
+        { q: 'What were her words?', opts: ['“I will hire …”', '“I hired …”'], correct: 0,
+          why: 'will → would when we report it.' }
+      ] },
+    { sentence: S('{Luis|luis:say} said {he|luis:sad} couldn’t cook fifty lunches with one oven.'),
+      questions: [
+        { q: 'Is it possible for Luis?', opts: ['Yes', 'No'], correct: 1,
+          why: 'No. He said: “I can’t cook …” can’t → couldn’t.' }
+      ] },
+    { sentence: S('{She|park:say} asked {me|tom:me} to give {you|ana} this schedule.'),
+      questions: [
+        { q: 'Is this a question or a request?', opts: ['A question', 'A request'], correct: 1,
+          why: 'A request: “Please give Ana this schedule.” asked + person + to.' }
+      ] },
+    { sentence: S('{He|luis:say} asked {her|park} if {she|park} could buy a new oven.'),
+      questions: [
+        { q: 'Did Ms. Park buy the oven?', opts: ['Yes', 'We don’t know'], correct: 1,
+          why: 'We don’t know. Luis only asked a question: “Can you buy a new oven?”' },
+        { q: 'Why is there no question mark (?)', opts: ['Tom is not asking a question', 'It’s a mistake'], correct: 0,
+          why: 'Tom is telling Ana about a question. The order is like a normal sentence: she could buy.' }
+      ] }
+  ]
+});
+
+/* ── form ──────────────────────────────────────────────────────────────── */
+HouseFormClarf.build({
+  container: 'formClarf', scoreEl: 'fcScore', totalEl: 'fcTotal',
+  pool: ['subject', 'aux', 'verb', 'object', 'neg', 'conj', 'wh', 'adverb'],
+  items: [
+    { form: 'aff', parts: [['She', 'subject'], ['said', 'verb'], ['she', 'subject'], ['would', 'aux'], ['hire', 'verb'], ['two drivers', 'object'], ['.', null]] },
+    { form: 'neg', parts: [['He', 'subject'], ['said', 'verb'], ['he', 'subject'], ['couldn’t', 'neg'], ['cook', 'verb'], ['fifty lunches', 'object'], ['.', null]] },
+    { form: 'neg', parts: [['She', 'subject'], ['told', 'verb'], ['me', 'object'], ['not', 'neg'], ['to park', 'verb'], ['there', 'adverb'], ['.', null]] },
+    { form: 'q', parts: [['He', 'subject'], ['asked', 'verb'], ['her', 'object'], ['if', 'conj'], ['she', 'subject'], ['could', 'aux'], ['buy', 'verb'], ['a new oven', 'object'], ['.', null]] },
+    { form: 'wh', parts: [['She', 'subject'], ['asked', 'verb'], ['where', 'wh'], ['the boxes', 'subject'], ['were', 'verb'], ['.', null]] }
+  ]
+});
+
+/* ── the rule ──────────────────────────────────────────────────────────── */
+const SHIFT = [['am / is', 'was'], ['are', 'were'], ['have / has', 'had'], ['work', 'worked'], ['don’t / doesn’t', 'didn’t'],
+  ['am / is / are + -ing', 'was / were + -ing'], ['will', 'would'], ['won’t', 'wouldn’t'], ['can', 'could'], ['can’t', 'couldn’t']];
+const BS = [
+  ['The company <b>is</b> busy.', 'She said the company ' + T('was') + ' busy.'],
+  ['I <b>will</b> hire two drivers.', 'She said she ' + T('would hire') + ' two drivers.'],
+  ['I <b>can’t</b> cook fifty lunches.', 'He told her he ' + T('couldn’t cook') + ' fifty lunches.'],
+  ['<b>Please</b> start at seven.', 'She asked us ' + T('to start') + ' at seven.'],
+  ['<b>Don’t</b> park there.', 'She told me ' + T('not to park') + ' there.'],
+  ['<b>Where are</b> the boxes?', 'Rosa asked ' + T('where the boxes were') + '.'],
+  ['<b>Can you</b> buy an oven?', 'He asked her ' + T('if she could buy') + ' an oven.']
+];
+document.getElementById('ruleBox').innerHTML =
+  '<h4>1 · The verb goes back</h4>' +
+  '<div class="shift">' + SHIFT.map(([a, b]) => '<div>' + a + ' → ' + T(b) + '</div>').join('') + '</div>' +
+  '<p>After <strong>would</strong> and <strong>could</strong>, use the base verb: would ' + T('hire') + ', could ' + T('cook') + ' — not “would hired”.</p>' +
+  '<h4>2 · Three kinds of sentence</h4>' +
+  '<div class="bs"><div class="h">They said</div><div class="ar"></div><div class="h">You say</div>' +
+  BS.map(([a, b]) => '<div>“' + a + '”</div><div class="ar">→</div><div>' + b + '</div>').join('') + '</div>' +
+  '<p><strong>Statements:</strong> said (that) … · told + person (that) …</p>' +
+  '<p><strong>Requests:</strong> asked / told + person + ' + T('to') + ' + verb · negative: ' + T('not to') + ' + verb.</p>' +
+  '<p><strong>Questions:</strong> asked (+ person) + wh- word or ' + T('if') + ' + subject + verb. Normal sentence order, no question mark, no do / does.</p>' +
+  '<h4>3 · said, told or asked?</h4>' +
+  '<p><strong>said</strong> + words (no person) · <strong>told</strong> + person · <strong>asked</strong> (+ person) for questions and polite requests.</p>' +
+  '<p><strong>Change the people words</strong> too: I → he / she · we → they · my → his / her · you → I / me.</p>';
+
+/* ── common mistakes ───────────────────────────────────────────────────── */
+const MISTAKES = [
+  ['She said she will hire two new drivers.', 'She said she would hire two new drivers.'],
+  ['He said he can’t cook fifty lunches.', 'He said he couldn’t cook fifty lunches.'],
+  ['She said she would hired two drivers.', 'She said she would hire two drivers.'],
+  ['He said me the truck was ready.', 'He told me the truck was ready.'],
+  ['She told us start at seven.', 'She told us to start at seven.'],
+  ['She told me don’t park there.', 'She told me not to park there.'],
+  ['He asked her could she buy a new oven.', 'He asked her if she could buy a new oven.'],
+  ['Rosa asked where were the boxes.', 'Rosa asked where the boxes were.'],
+  ['She asked me if I can work on Saturday.', 'She asked me if I could work on Saturday.'],
+  ['She said she would to think about it.', 'She said she would think about it.']
+];
+document.getElementById('mistakes').innerHTML = MISTAKES.map(([no, yes]) =>
+  '<div class="pair-card"><div class="pair-line no"><span class="mark">✗</span>' + no + '</div>' +
+  '<div class="pair-line yes"><span class="mark">✓</span>' + yes + '</div></div>').join('');
+
+/* ── error hunt (A2: some sentences are already correct) ───────────────── */
+const EH_ITEMS = [
+  { words: ['She', 'said', 'she', 'will', 'hire', 'two', 'new', 'drivers', '.'],
+    error: { type: 'wrong', wordIndex: 3, options: ['would', 'can', 'did'], correct: 'would' } },
+  { words: ['He', 'said', 'he', 'can’t', 'cook', 'fifty', 'lunches', '.'],
+    error: { type: 'wrong', wordIndex: 3, options: ['couldn’t', 'didn’t', 'wouldn’t'], correct: 'couldn’t' } },
+  { words: ['She', 'asked', 'us', 'to', 'start', 'at', 'seven', '.'], error: null },
+  { words: ['She', 'told', 'me', 'not', 'park', 'there', '.'],
+    error: { type: 'missing', gapIndex: 4, options: ['to', 'for', 'do'], correct: 'to' } },
+  { words: ['He', 'asked', 'her', 'if', 'she', 'could', 'buy', 'a', 'new', 'oven', '.'], error: null },
+  { words: ['Rosa', 'asked', 'where', 'were', 'the', 'boxes', '.'],
+    error: { type: 'misplaced', wordIndex: 3, targetGapIndex: 6 } },
+  { words: ['She', 'said', 'she', 'would', 'hired', 'two', 'drivers', '.'],
+    error: { type: 'wrong', wordIndex: 4, options: ['hire', 'hires', 'hiring'], correct: 'hire' } },
+  { words: ['He', 'told', 'that', 'he', 'couldn’t', 'come', '.'],
+    error: { type: 'missing', gapIndex: 2, options: ['me', 'to', 'said'], correct: 'me' } },
+  { words: ['She', 'asked', 'me', 'if', 'I', 'could', 'work', 'on', 'Saturday', '.'], error: null },
+  { words: ['Tom', 'said', 'me', 'the', 'truck', 'was', 'ready', '.'],
+    error: { type: 'wrong', wordIndex: 1, options: ['told', 'asked', 'say'], correct: 'told' } }
+];
+HouseErrorHunt.build({ container: 'errorHuntItems', items: EH_ITEMS, scoreEl: 'errorScore', totalEl: 'errorTotal' });
+</script>
+<script>HouseGrammar.init();</script>
+</body>
+</html>

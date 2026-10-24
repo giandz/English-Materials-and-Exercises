@@ -1,0 +1,362 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<title>Reported Speech Lab — said, told, asked</title>
+<script>
+(function(){
+  try{
+    var saved = localStorage.getItem('theme-preference');
+    var theme = (saved === 'light' || saved === 'dark')
+      ? saved
+      : ((window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches) ? 'dark' : 'light');
+    document.documentElement.setAttribute('data-theme', theme);
+    var fs = parseFloat(localStorage.getItem('font-size-preference'));
+    if (fs >= 10 && fs <= 28) document.documentElement.style.setProperty('--fs-base', fs + 'px');
+  }catch(e){ /* localStorage/matchMedia unavailable — CSS media query still applies */ }
+})();
+</script>
+<link rel="stylesheet" href="house.css">
+</head>
+<body>
+<div class="page" id="page">
+  <span class="cefr-tag cefr-a1a2">A1/A2 · Elementary</span>
+  <h1>Reported Speech Lab</h1>
+  <p class="subtitle">“I am tired.” → She said she was tired. · “Please sit down.” → He asked me to sit down. · “Where do you live?” → She asked me where I lived.</p>
+
+  <div class="sec-div">The pattern</div>
+  <div class="rule-box">
+    <p><strong>Present → past.</strong> said, told and asked are past, so the verb goes back too:</p>
+    <div class="subj-grid">
+      <div class="subj-card"><span class="verb-big">am / is → was</span><span class="subj-list">are → were</span><span class="subj-note">“I am tired.” → she was tired</span></div>
+      <div class="subj-card"><span class="verb-big">work → worked</span><span class="subj-list">don’t / doesn’t → didn’t</span><span class="subj-note">“I live here.” → he lived there</span></div>
+      <div class="subj-card"><span class="verb-big">is cooking → was cooking</span><span class="subj-list">are cooking → were cooking</span><span class="subj-note">“We are eating.” → they were eating</span></div>
+    </div>
+    <p><strong>💬 Statements:</strong> said + sentence · told + person + sentence — She <em>said</em> she was tired. · She <em>told me</em> she was tired.</p>
+    <p><strong>🙏 Requests:</strong> asked + person + (not) to + verb — He asked me <em>to</em> sit down. · He asked us <em>not to</em> be late.</p>
+    <p><strong>📢 Orders:</strong> told + person + (not) to + verb — The teacher told us <em>to</em> be quiet. · She told me <em>not to</em> run.</p>
+    <p><strong>❓ Wh-questions:</strong> asked (me) + wh-word + subject + verb — She asked me where <em>I was</em>. (not where was I · no do / did · no ?)</p>
+    <p><strong>👍 Yes / no questions:</strong> asked (me) + if + subject + verb — He asked me <em>if I was</em> tired.</p>
+    <p><strong>Change the people words:</strong> I → he / she · we → they · you → I (when they talk to you) · your → my.</p>
+  </div>
+
+  <button class="grammar-toggle-btn" id="grammarToggle">🎨 Show Grammar</button>
+  <div class="pos-legend"></div>
+
+  <div class="score-bar"><span>Mastered: <strong id="masteredScore">0</strong> / <span id="masteredTotal">0</span></span></div>
+  <nav class="lab-tabs" id="labTabs" aria-label="Sections"></nav>
+  <div id="labPanels"></div>
+
+  <footer>Reported Speech Lab (A1/A2 · self-study)</footer>
+</div>
+
+<div id="theme-toggle-wrap">
+  <button id="theme-toggle" aria-label="Toggle light/dark mode" title="Toggle light/dark mode">
+    <span id="theme-icon">☀️</span>
+  </button>
+</div>
+<script src="house.js"></script>
+<script src="lab-kit.js"></script>
+<script>
+const { pick, words, cap } = LabKit;
+const R = a => (a.rest ? ' ' + a.rest : '');
+const cue = s => ' <span class="cue">(' + s + ')</span>';
+const said = (who, q) => `💬 ${who}: “${q}”`;
+// '{where|wh} {the bank|subject} {was|verb}' → tokens, one per word; untagged words → none
+function tagged(str) {
+  const out = [];
+  str.replace(/\{([^|}]+)\|(\w+)\}|(\S+)/g, (m, w, pos, plain) => {
+    if (w) words(w, pos).forEach(t => out.push(t)); else out.push([plain, 'none']);
+  });
+  return out;
+}
+const plain = str => str.replace(/\{([^|}]+)\|\w+\}/g, '$1');
+// -ing form for wrong options: close → closing, sit → sitting, be → being
+const ing = v => { const [w, ...m] = v.split(' ');
+  const f = w === 'be' ? 'being' : w === 'sit' ? 'sitting' : w === 'stop' ? 'stopping' : w === 'shut' ? 'shutting'
+          : /[^e]e$/.test(w) ? w.slice(0, -1) + 'ing' : w + 'ing';
+  return [f, ...m].join(' '); };
+
+/* ════ 💬 STATEMENTS ═══════════════════════════════════════════════════════
+   Who speaks (one person → I → he/she; two or more → we → they), what the
+   sentence is about, and whether it is be, another verb, or -ing. */
+const SPK = [{ n: 'Ana', pr: 'she' }, { n: 'Leo', pr: 'he' }, { n: 'Grandma', pr: 'she' }, { n: 'Dad', pr: 'he' },
+             { n: 'Mom and Dad', pr: 'they', pl: 1 }, { n: 'My friends', pr: 'they', pl: 1 }, { n: 'The kids', pr: 'they', pl: 1 }];
+const BE_C = ['tired', 'hungry', 'at home', 'very busy', 'late', 'happy', 'ready', 'sick'];
+const SIMPLE_C = [
+  { v: 'work', s3: 'works', past: 'worked', rest: 'in a hospital' }, { v: 'like', s3: 'likes', past: 'liked', rest: 'pizza' },
+  { v: 'live', s3: 'lives', past: 'lived', rest: 'near the park' }, { v: 'have', s3: 'has', past: 'had', rest: 'a new car' },
+  { v: 'play', s3: 'plays', past: 'played', rest: 'the guitar' }, { v: 'speak', s3: 'speaks', past: 'spoke', rest: 'French' },
+  { v: 'know', s3: 'knows', past: 'knew', rest: 'the answer' }, { v: 'want', s3: 'wants', past: 'wanted', rest: 'a coffee' },
+  { v: 'need', s3: 'needs', past: 'needed', rest: 'help' }
+];
+const CONT_C = [
+  { ing: 'cooking', rest: 'dinner' }, { ing: 'watching', rest: 'TV' }, { ing: 'studying', rest: 'for an exam' },
+  { ing: 'waiting', rest: 'for the bus' }, { ing: 'working', rest: 'from home' }, { ing: 'learning', rest: 'Chinese' },
+  { ing: 'reading', rest: 'a book' }
+];
+// "you" = the speaker is talking to me → I
+const YOU_C = [
+  { t: 'be', c: 'late' }, { t: 'be', c: 'right' }, { t: 'be', c: 'very kind' },
+  { t: 'simple', v: 'speak', past: 'spoke', rest: 'English very well' }, { t: 'simple', v: 'cook', past: 'cooked', rest: 'very well' },
+  { t: 'simple', v: 'need', past: 'needed', rest: 'a haircut' },
+  { t: 'cont', ing: 'doing', rest: 'a great job' }, { t: 'cont', ing: 'talking', rest: 'too fast' }
+];
+// a third person or thing keeps its own subject
+const THIRD = [
+  { s: 'The bus', t: 'be', c: 'late' }, { s: 'The food', t: 'be', c: 'cold' },
+  { s: 'The store', t: 'simple', v: 'open', s3: 'opens', past: 'opened', rest: 'at 9:00' },
+  { s: 'The movie', t: 'simple', v: 'start', s3: 'starts', past: 'started', rest: 'at 8:00' },
+  { s: 'Leo', t: 'simple', v: 'live', s3: 'lives', past: 'lived', rest: 'in London' },
+  { s: 'The baby', t: 'cont', ing: 'sleeping' }, { s: 'It', t: 'cont', ing: 'raining' }
+];
+
+// quote subject person: '1' = I, 'pl' = we / you, '3' = he / she / it
+function quoteClause(subj, p, x, neg) {
+  const be = p === '1' ? 'am' : p === 'pl' ? 'are' : 'is';
+  const beN = p === '1' ? 'am not' : p === 'pl' ? 'aren’t' : 'isn’t';
+  if (x.t === 'be') return `${subj} ${neg ? beN : be} ${x.c}`;
+  if (x.t === 'cont') return `${subj} ${neg ? beN : be} ${x.ing}${R(x)}`;
+  return neg ? `${subj} ${p === '3' ? 'doesn’t' : 'don’t'} ${x.v}${R(x)}` : `${subj} ${p === '3' ? x.s3 : x.v}${R(x)}`;
+}
+// reported clause as tokens; rp = person of the reported subject ('sg' → was, 'pl' → were)
+function reportTokens(subj, rp, x, neg) {
+  const was = rp === 'pl' ? 'were' : 'was', wasN = rp === 'pl' ? 'weren’t' : 'wasn’t';
+  const S = words(subj, 'subject');
+  if (x.t === 'be') return [...S, [neg ? wasN : was, 'verb'], ...words(x.c, 'complement')];
+  if (x.t === 'cont') return [...S, [neg ? wasN : was, 'aux'], [x.ing, 'verb'], ...words(x.rest, 'object')];
+  return neg ? [...S, ['didn’t', 'aux'], [x.v, 'verb'], ...words(x.rest, 'object')]
+             : [...S, [x.past, 'verb'], ...words(x.rest, 'object')];
+}
+const clauseText = toks => toks.map(t => t[0]).join(' ');
+
+function statementItem() {
+  const sp = pick(SPK), mode = pick(['self', 'self', 'you', 'third']);
+  let x, qSubj, qp, rSubj, rp;
+  if (mode === 'self') {
+    x = pick([...BE_C.map(c => ({ t: 'be', c })), ...SIMPLE_C.map(o => ({ t: 'simple', ...o })), ...CONT_C.map(o => ({ t: 'cont', ...o }))]);
+    qSubj = sp.pl ? 'We' : 'I'; qp = sp.pl ? 'pl' : '1'; rSubj = sp.pr; rp = sp.pl ? 'pl' : 'sg';
+  } else if (mode === 'you') {
+    x = pick(YOU_C); qSubj = 'You'; qp = 'pl'; rSubj = 'I'; rp = 'sg';
+  } else {
+    x = pick(THIRD); qSubj = x.s; qp = '3'; rSubj = x.s === 'Leo' ? 'Leo' : x.s.toLowerCase(); rp = 'sg';
+  }
+  const neg = mode !== 'you' && Math.random() < .3;   // "You aren’t very kind" is a bit rude for practice
+  const told = mode === 'you' || Math.random() < .4;
+  const head = told ? [...words(sp.n, 'subject'), ['told', 'verb'], ['me', 'object']] : [...words(sp.n, 'subject'), ['said', 'verb']];
+  const clause = reportTokens(rSubj, rp, x, neg);
+  const tokens = [...head, ...clause, ['.', null]];
+  const H = told ? `${sp.n} told me` : `${sp.n} said`;
+  const C = clauseText(clause);
+  // present-tense version of the reported clause (no backshift)
+  const pres = quoteClause(rSubj, rSubj === 'I' ? '1' : rp === 'pl' ? 'pl' : '3', x, neg);
+  const wrong = [`${H} ${pres}.`];
+  if (mode === 'self') wrong.push(`${H} ${clauseText(reportTokens(qSubj === 'We' ? 'we' : 'I', rp, x, neg))}.`);
+  if (mode === 'you') wrong.push(`${H} ${clauseText(reportTokens('you', 'pl', x, neg))}.`);
+  wrong.push(told ? `${sp.n} told ${C}.` : `${sp.n} said me ${C}.`);
+  if (told) wrong.push(`${sp.n} told to me ${C}.`);
+  if (x.t === 'simple' && neg) wrong.push(`${H} ${rSubj} didn’t ${x.past}${R(x)}.`);
+  if (x.t !== 'simple') wrong.push(`${H} ${clauseText(reportTokens(rSubj, rp === 'pl' ? 'sg' : 'pl', x, neg))}.`);
+  const alts = [`${H} that ${C}.`];
+  if (mode !== 'you') {
+    const other = told ? `${sp.n} said` : `${sp.n} told me`;
+    alts.push(`${other} ${C}.`, `${other} that ${C}.`);
+  }
+  const quote = cap(quoteClause(qSubj, qp, x, neg)) + '.';
+  const ctx = said(sp.n + (mode === 'you' ? ' → me' : ''), quote);
+  return { ctx, key: quote + sp.n, gapCtx: ctx + cue(`start: ${H}…`), tokens, wrong: wrong.filter(w => w !== LabKit.join(tokens)), alts };
+}
+
+/* ════ 🙏 REQUESTS / 📢 ORDERS ════════════════════════════════════════════ */
+const LISTENERS = [{ o: 'me', show: 'me' }, { o: 'us', show: 'us' }, { o: 'Leo', show: 'Leo' }, { o: 'the kids', show: 'the kids' }];
+function infTokens(t) {
+  const [v, ...rest] = t.split(' ');
+  return [[v, 'verb'], ...words(rest.join(' '), v === 'be' ? 'complement' : 'object')];
+}
+function asktellItem(kind) {
+  const isReq = kind === 'req';
+  const sp = pick(isReq ? ['Mom', 'The teacher', 'My boss', 'Grandpa', 'Ana'] : ['The teacher', 'Dad', 'The coach', 'My boss', 'The police officer']);
+  const L = pick(LISTENERS);
+  const it = pick(isReq ? REQ : ORD);
+  const verb = isReq ? 'asked' : 'told';
+  const quote = isReq ? (it.n ? `Please don’t ${it.t}.` : `Please ${it.t}.`)
+                      : (it.n ? `Don’t ${it.t}!` : `${cap(it.t)}!`);
+  const tokens = [...words(sp, 'subject'), [verb, 'verb'], ...words(L.o, 'object'),
+                  ...(it.n ? [['not', 'neg']] : []), ['to', 'none'], ...infTokens(it.t), ['.', null]];
+  const A = `${sp} ${verb} ${L.o}`;
+  const wrong = it.n
+    ? [`${A} to don’t ${it.t}.`, `${A} don’t ${it.t}.`, `${A} not ${it.t}.`, `${sp} said ${L.o} not to ${it.t}.`]
+    : [`${A} ${it.t}.`, `${A} to ${ing(it.t)}.`, `${sp} ${verb} to ${L.o} to ${it.t}.`, `${sp} said ${L.o} to ${it.t}.`];
+  const ctx = said(`${sp} → ${L.show}`, quote);
+  return { ctx, key: quote + sp + L.o, gapCtx: ctx + cue(`start: ${A}…`), tokens, wrong };
+}
+const REQ = [
+  { t: 'be quiet' }, { t: 'be careful' }, { t: 'be on time' }, { t: 'be patient' }, { t: 'be ready at 8:00' },
+  { t: 'be late', n: 1 }, { t: 'be angry', n: 1 },
+  { t: 'close the door' }, { t: 'help with the dishes' }, { t: 'call the doctor' }, { t: 'wait outside' },
+  { t: 'turn off the TV' }, { t: 'buy some bread' }, { t: 'sit down' },
+  { t: 'touch the cake', n: 1 }, { t: 'open the window', n: 1 }, { t: 'eat in the car', n: 1 }
+];
+const ORD = [
+  { t: 'be quiet' }, { t: 'be careful' }, { t: 'be home by 10:00' }, { t: 'be rude', n: 1 }, { t: 'be late', n: 1 },
+  { t: 'sit down' }, { t: 'turn off the TV' }, { t: 'stop talking' }, { t: 'clean the kitchen' }, { t: 'go to bed' },
+  { t: 'wash the car' }, { t: 'run', n: 1 }, { t: 'shout', n: 1 }, { t: 'use phones in class', n: 1 }
+];
+
+/* ════ ❓ WH- / 👍 YES-NO QUESTIONS ═══════════════════════════════════════
+   c = the reported clause (tagged), pres = no backshift, inv = question order kept. */
+const Q_WH = [
+  { q: 'Where are you?', c: '{where|wh} {I|subject} {was|verb}', pres: 'where I am', inv: 'where was I' },
+  { q: 'How old are you?', c: '{how old|wh} {I|subject} {was|verb}', pres: 'how old I am', inv: 'how old was I' },
+  { q: 'Why are you sad?', c: '{why|wh} {I|subject} {was|verb} {sad|complement}', pres: 'why I am sad', inv: 'why was I sad' },
+  { q: 'Where is the bank?', c: '{where|wh} {the bank|subject} {was|verb}', pres: 'where the bank is', inv: 'where was the bank' },
+  { q: 'Who is that man?', c: '{who|wh} {that man|subject} {was|verb}', pres: 'who that man is', inv: 'who was that man' },
+  { q: 'What time is it?', c: '{what time|wh} {it|subject} {was|verb}', pres: 'what time it is', inv: 'what time was it' },
+  { q: 'Where do you live?', c: '{where|wh} {I|subject} {lived|verb}', pres: 'where I live', inv: 'where did I live' },
+  { q: 'What do you want?', c: '{what|wh} {I|subject} {wanted|verb}', pres: 'what I want', inv: 'what did I want' },
+  { q: 'What time does the train leave?', c: '{what time|wh} {the train|subject} {left|verb}', pres: 'what time the train leaves', inv: 'what time did the train leave' },
+  { q: 'Where does Ana work?', c: '{where|wh} {Ana|subject} {worked|verb}', pres: 'where Ana works', inv: 'where did Ana work' },
+  { q: 'What music do you like?', c: '{what music|wh} {I|subject} {liked|verb}', pres: 'what music I like', inv: 'what music did I like' },
+  { q: 'What are you doing?', c: '{what|wh} {I|subject} {was|aux} {doing|verb}', pres: 'what I am doing', inv: 'what was I doing' },
+  { q: 'Where are you going?', c: '{where|wh} {I|subject} {was|aux} {going|verb}', pres: 'where I am going', inv: 'where was I going' },
+  { q: 'Why is the baby crying?', c: '{why|wh} {the baby|subject} {was|aux} {crying|verb}', pres: 'why the baby is crying', inv: 'why was the baby crying' },
+  { q: 'Who are you waiting for?', c: '{who|wh} {I|subject} {was|aux} {waiting|verb} {for|prep}', pres: 'who I am waiting for', inv: 'who was I waiting for' }
+];
+const Q_YN = [
+  { q: 'Are you tired?', c: '{I|subject} {was|verb} {tired|complement}', pres: 'I am tired', inv: 'was I tired' },
+  { q: 'Are you from Mexico?', c: '{I|subject} {was|verb} {from Mexico|prep}', pres: 'I am from Mexico', inv: 'was I from Mexico' },
+  { q: 'Is the store open?', c: '{the store|subject} {was|verb} {open|complement}', pres: 'the store is open', inv: 'was the store open' },
+  { q: 'Is Leo at home?', c: '{Leo|subject} {was|verb} {at home|prep}', pres: 'Leo is at home', inv: 'was Leo at home' },
+  { q: 'Do you like jazz?', c: '{I|subject} {liked|verb} {jazz|object}', pres: 'I like jazz', inv: 'did I like jazz' },
+  { q: 'Does Ana speak French?', c: '{Ana|subject} {spoke|verb} {French|object}', pres: 'Ana speaks French', inv: 'did Ana speak French' },
+  { q: 'Do you have a pen?', c: '{I|subject} {had|verb} {a pen|object}', pres: 'I have a pen', inv: 'did I have a pen' },
+  { q: 'Do you live alone?', c: '{I|subject} {lived|verb} {alone|adverb}', pres: 'I live alone', inv: 'did I live alone' },
+  { q: 'Are you watching TV?', c: '{I|subject} {was|aux} {watching|verb} {TV|object}', pres: 'I am watching TV', inv: 'was I watching TV' },
+  { q: 'Is it raining?', c: '{it|subject} {was|aux} {raining|verb}', pres: 'it is raining', inv: 'was it raining' },
+  { q: 'Is the baby sleeping?', c: '{the baby|subject} {was|aux} {sleeping|verb}', pres: 'the baby is sleeping', inv: 'was the baby sleeping' },
+  { q: 'Are you waiting for the bus?', c: '{I|subject} {was|aux} {waiting|verb} {for the bus|prep}', pres: 'I am waiting for the bus', inv: 'was I waiting for the bus' }
+];
+const ASKERS = ['Ana', 'A tourist', 'The teacher', 'My grandma', 'A man', 'Leo'];
+
+function whItem() {
+  const a = pick(Q_WH), sp = pick(ASKERS), c = plain(a.c), A = `${sp} asked me`;
+  const ctx = said(sp + ' → me', a.q);
+  return { ctx, key: a.q + sp, gapCtx: ctx + cue(`start: ${A}…`),
+           tokens: [...words(sp, 'subject'), ['asked', 'verb'], ['me', 'object'], ...tagged(a.c), ['.', null]],
+           wrong: [`${A} ${a.inv}.`, `${A} ${a.pres}.`, `${A} ${c}?`, `${sp} said me ${c}.`],
+           alts: [`${sp} asked ${c}.`] };
+}
+function ynItem() {
+  const a = pick(Q_YN), sp = pick(ASKERS), c = plain(a.c), A = `${sp} asked me`;
+  const ctx = said(sp + ' → me', a.q);
+  return { ctx, key: a.q + sp, gapCtx: ctx + cue(`start: ${A}…`),
+           tokens: [...words(sp, 'subject'), ['asked', 'verb'], ['me', 'object'], ['if', 'conj'], ...tagged(a.c), ['.', null]],
+           wrong: [`${A} ${a.inv}.`, `${A} if ${a.inv}.`, `${A} if ${a.pres}.`, `${A} if ${c}?`, `${A} that ${c}.`],
+           alts: [`${A} whether ${c}.`, `${sp} asked if ${c}.`, `${sp} asked whether ${c}.`] };
+}
+
+const SECTIONS = [
+  { id: 'statements', emoji: '💬', label: 'Statements', pill: 'said · told + person',
+    note: 'Use said, or told + a person. The verb goes back: am / is → was, are → were, work → worked, don’t → didn’t, is cooking → was cooking. Change I → he / she, we → they.',
+    examples: [
+      ['cel', 'Ana: “{I|subject} {am|verb} {tired|complement}.”', '', 'Original'],
+      ['pos', '{Ana|subject} {said|verb} {she|subject} {was|verb} {tired|complement}.', 'am → was · I → she', 'Reported'],
+      ['cel', 'Leo: “{I|subject} {work|verb} {in a hospital|prep}.”', '', 'Original'],
+      ['pos', '{Leo|subject} {told|verb} {me|object} {he|subject} {worked|verb} {in a hospital|prep}.', 'work → worked · told + person', 'Reported'],
+      ['cel', 'Mom and Dad: “{We|subject} {are|aux} {cooking|verb} {dinner|object}.”', '', 'Original'],
+      ['pos', '{They|subject} {said|verb} {they|subject} {were|aux} {cooking|verb} {dinner|object}.', 'are cooking → were cooking · we → they', 'Reported']
+    ],
+    prompts: { choice: 'Which report is correct?', drag: 'Tap or drag the words to report it.', gap: 'Report it. Start with the words in brackets.' },
+    gen: statementItem },
+
+  { id: 'requests', emoji: '🙏', label: 'Requests', pill: 'asked + person + (not) to',
+    note: 'A request is polite: “Please …”. Report it with asked + person + to + verb. For “Please don’t …”, use not to.',
+    examples: [
+      ['cel', 'Mom: “Please {be|verb} {quiet|complement}.”', '', 'Original'],
+      ['pos', '{Mom|subject} {asked|verb} {us|object} {to|none} {be|verb} {quiet|complement}.', 'asked + person + to', 'Reported'],
+      ['cel', 'Ana: “Please {don’t|neg} {touch|verb} {the cake|object}.”', '', 'Original'],
+      ['pos', '{Ana|subject} {asked|verb} {me|object} {not|neg} {to|none} {touch|verb} {the cake|object}.', 'don’t → not to', 'Reported']
+    ],
+    prompts: { choice: 'Which report is correct?', drag: 'Tap or drag the words to report the request.', gap: 'Report the request. Start with the words in brackets.' },
+    gen: () => asktellItem('req') },
+
+  { id: 'orders', emoji: '📢', label: 'Orders', pill: 'told + person + (not) to',
+    note: 'An order is strong: “Sit down!”. Report it with told + person + to + verb. For “Don’t …!”, use not to.',
+    examples: [
+      ['cel', 'The coach: “{Be|verb} {careful|complement}!”', '', 'Original'],
+      ['pos', '{The coach|subject} {told|verb} {us|object} {to|none} {be|verb} {careful|complement}.', 'told + person + to', 'Reported'],
+      ['cel', 'The teacher: “{Don’t|neg} {run|verb}!”', '', 'Original'],
+      ['pos', '{The teacher|subject} {told|verb} {the kids|object} {not|neg} {to|none} {run|verb}.', 'don’t → not to (not told them don’t run)', 'Reported']
+    ],
+    prompts: { choice: 'Which report is correct?', drag: 'Tap or drag the words to report the order.', gap: 'Report the order. Start with the words in brackets.' },
+    gen: () => asktellItem('ord') },
+
+  { id: 'wh-questions', emoji: '❓', label: 'Wh-questions', pill: 'asked + wh + subject + verb',
+    note: 'Use asked (me) + the wh-word. After it, use normal sentence order: subject + verb. No do / does / did, and no question mark.',
+    examples: [
+      ['cel', 'Ana: “Where {are|verb} {you|subject}?”', '', 'Original'],
+      ['pos', '{Ana|subject} {asked|verb} {me|object} {where|wh} {I|subject} {was|verb}.', 'are you → I was (not where was I)', 'Reported'],
+      ['cel', 'Leo: “Where {do|aux} {you|subject} {live|verb}?”', '', 'Original'],
+      ['pos', '{Leo|subject} {asked|verb} {me|object} {where|wh} {I|subject} {lived|verb}.', 'no do / did: live → lived', 'Reported'],
+      ['cel', 'Mom: “What {are|aux} {you|subject} {doing|verb}?”', '', 'Original'],
+      ['pos', '{Mom|subject} {asked|verb} {me|object} {what|wh} {I|subject} {was|aux} {doing|verb}.', 'are you doing → I was doing', 'Reported']
+    ],
+    prompts: { choice: 'Which report is correct?', drag: 'Tap or drag the words to report the question.', gap: 'Report the question. Start with the words in brackets.' },
+    gen: whItem },
+
+  { id: 'yes-no', emoji: '👍', label: 'Yes / no questions', pill: 'asked + if + subject + verb',
+    note: 'For a yes / no question, use asked (me) + if + subject + verb. Normal sentence order, no do / did, no question mark.',
+    examples: [
+      ['cel', 'Ana: “{Are|verb} {you|subject} {tired|complement}?”', '', 'Original'],
+      ['pos', '{Ana|subject} {asked|verb} {me|object} {if|conj} {I|subject} {was|verb} {tired|complement}.', 'are you → if I was', 'Reported'],
+      ['cel', 'Leo: “{Do|aux} {you|subject} {like|verb} {jazz|object}?”', '', 'Original'],
+      ['pos', '{Leo|subject} {asked|verb} {me|object} {if|conj} {I|subject} {liked|verb} {jazz|object}.', 'do you like → if I liked', 'Reported'],
+      ['cel', 'Mom: “{Is|aux} {it|subject} {raining|verb}?”', '', 'Original'],
+      ['pos', '{Mom|subject} {asked|verb} {me|object} {if|conj} {it|subject} {was|aux} {raining|verb}.', 'is it raining → if it was raining', 'Reported']
+    ],
+    prompts: { choice: 'Which report is correct?', drag: 'Tap or drag the words to report the question.', gap: 'Report the question. Start with the words in brackets.' },
+    gen: ynItem }
+];
+
+/* Different sentences from the Common mistakes list. A1/A2: some are already correct. */
+const EH_POOL = [
+  { words: ['Leo', 'said', 'he', 'is', 'hungry', '.'], error: { type: 'wrong', wordIndex: 3, options: ['was', 'were', 'be'], correct: 'was' } },
+  { words: ['My', 'friends', 'said', 'they', 'was', 'at', 'the', 'beach', '.'], error: { type: 'wrong', wordIndex: 4, options: ['were', 'are', 'be'], correct: 'were' } },
+  { words: ['Ana', 'said', 'she', 'didn’t', 'liked', 'fish', '.'], error: { type: 'wrong', wordIndex: 4, options: ['like', 'likes', 'liking'], correct: 'like' } },
+  { words: ['Dad', 'told', 'he', 'was', 'cooking', '.'], error: { type: 'missing', gapIndex: 2, options: ['me', 'to', 'said'], correct: 'me' } },
+  { words: ['The', 'coach', 'told', 'us', 'run', 'faster', '.'], error: { type: 'missing', gapIndex: 4, options: ['to', 'for', 'that'], correct: 'to' } },
+  { words: ['Grandma', 'asked', 'me', 'to', 'be', 'not', 'late', '.'], error: { type: 'misplaced', wordIndex: 5, targetGapIndex: 3 } },
+  { words: ['The', 'teacher', 'told', 'us', 'to', 'be', 'quiet', '.'], error: null },
+  { words: ['She', 'asked', 'me', 'where', 'I', 'work', '.'], error: { type: 'wrong', wordIndex: 5, options: ['worked', 'working', 'works'], correct: 'worked' } },
+  { words: ['He', 'asked', 'me', 'what', 'time', 'was', 'it', '.'], error: { type: 'misplaced', wordIndex: 5, targetGapIndex: 7 } },
+  { words: ['Mom', 'asked', 'me', 'if', 'I', 'was', 'hungry', '.'], error: null },
+  { words: ['Ana', 'asked', 'me', 'I', 'liked', 'pizza', '.'], error: { type: 'missing', gapIndex: 3, options: ['if', 'that', 'what'], correct: 'if' } },
+  { words: ['They', 'asked', 'us', 'where', 'we', 'are', 'going', '.'], error: { type: 'wrong', wordIndex: 5, options: ['were', 'was', 'be'], correct: 'were' } },
+  { words: ['The', 'police', 'officer', 'told', 'me', 'not', 'to', 'park', 'there', '.'], error: null },
+  { words: ['Leo', 'told', 'me', 'he', 'was', 'learning', 'Chinese', '.'], error: null },
+  { words: ['My', 'boss', 'said', 'me', 'to', 'call', 'her', '.'], error: { type: 'wrong', wordIndex: 2, options: ['told', 'say', 'tell'], correct: 'told' } }
+];
+
+LabKit.build({
+  sections: SECTIONS,
+  mistakes: [
+    ['She said she is busy.', 'She said she was busy.'],
+    ['He said me he was tired.', 'He told me he was tired.'],
+    ['My parents said we were hungry. (My parents are hungry.)', 'My parents said they were hungry.'],
+    ['Mom asked me close the door.', 'Mom asked me to close the door.'],
+    ['She asked me to don’t be late.', 'She asked me not to be late.'],
+    ['The teacher told us don’t run.', 'The teacher told us not to run.'],
+    ['She asked me where was I.', 'She asked me where I was.'],
+    ['He asked me where did I live.', 'He asked me where I lived.'],
+    ['She asked me what I was doing?', 'She asked me what I was doing.'],
+    ['He asked me was I tired.', 'He asked me if I was tired.'],
+    ['She asked me if did I like jazz.', 'She asked me if I liked jazz.']
+  ],
+  errorHunt: EH_POOL, ehCount: 6,
+  ehPrompt: 'Some sentences have a mistake. Some are correct! Tap a word — or a space between words — to fix it. Then press OK. 🎲 Again gives you new sentences.'
+});
+</script>
+<script>HouseGrammar.init();</script>
+</body>
+</html>

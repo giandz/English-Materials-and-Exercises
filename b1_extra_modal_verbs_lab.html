@@ -1,0 +1,463 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<title>Modal Verbs Lab 2 — have to, need to, had better, be able to, shall, would</title>
+<script>
+(function(){
+  try{
+    var saved = localStorage.getItem('theme-preference');
+    var theme = (saved === 'light' || saved === 'dark')
+      ? saved
+      : ((window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches) ? 'dark' : 'light');
+    document.documentElement.setAttribute('data-theme', theme);
+    var fs = parseFloat(localStorage.getItem('font-size-preference'));
+    if (fs >= 10 && fs <= 28) document.documentElement.style.setProperty('--fs-base', fs + 'px');
+  }catch(e){ /* localStorage/matchMedia unavailable — CSS media query still applies */ }
+})();
+</script>
+<link rel="stylesheet" href="house.css">
+</head>
+<body>
+<div class="page" id="page">
+  <span class="cefr-tag cefr-b1">B1 · Intermediate</span>
+  <h1>Modal Verbs Lab 2: functions</h1>
+  <p class="subtitle">have to · mustn’t vs don’t have to · need to · had better · be able to · Shall I…? · Let’s… · Would you…? · must / might / can’t be</p>
+
+  <div class="sec-div">The pattern</div>
+  <div class="rule-box">
+    <div class="pattern">
+      <span class="pos-hl pos-aux">modal</span><span class="plus">+</span>
+      <span class="pos-hl pos-verb">base verb</span>
+      <span class="plus">— must, shall, would, had better, can’t, might</span>
+    </div>
+    <div class="pattern">
+      <span class="pos-hl pos-aux">have to / need to / ought to / be able to</span><span class="plus">+</span>
+      <span class="pos-hl pos-verb">base verb</span>
+      <span class="plus">— these change: has to, had to, will be able to</span>
+    </div>
+    <div class="subj-grid">
+      <div class="subj-card"><span class="verb-big">🏋️ Obligation</span><span class="subj-list">have to · must · need to</span><span class="subj-note">past: had to</span></div>
+      <div class="subj-card"><span class="verb-big">🚫 / 🆓</span><span class="subj-list">mustn’t = not allowed</span><span class="subj-note">don’t have to = not necessary</span></div>
+      <div class="subj-card"><span class="verb-big">⚠️ Advice</span><span class="subj-list">had better · ought to</span><span class="subj-note">had better = or there’s a problem</span></div>
+      <div class="subj-card"><span class="verb-big">💪 Ability</span><span class="subj-list">be able to</span><span class="subj-note">will be able to · was able to · haven’t been able to</span></div>
+      <div class="subj-card"><span class="verb-big">🤝 Offers &amp; ideas</span><span class="subj-list">Shall I…? · I’ll… · Let’s… · Why don’t we…?</span><span class="subj-note">How about + -ing?</span></div>
+      <div class="subj-card"><span class="verb-big">🔍 Deduction</span><span class="subj-list">must be ✔️ · might be 🤷 · can’t be ✗</span><span class="subj-note">not “mustn’t be”</span></div>
+    </div>
+    <p><strong>No “to” after a modal:</strong> You’d better hurry (not better to hurry) · Let’s go (not Let’s to go).</p>
+    <p><strong>-ing after</strong> How about…? and Would you mind…? — How about ordering pizza? · Would you mind closing the door?</p>
+  </div>
+
+  <button class="grammar-toggle-btn" id="grammarToggle">🎨 Show Grammar</button>
+  <div class="pos-legend"></div>
+
+  <div class="score-bar"><span>Mastered: <strong id="masteredScore">0</strong> / <span id="masteredTotal">0</span></span></div>
+  <nav class="lab-tabs" id="labTabs" aria-label="Sections"></nav>
+  <div id="labPanels"></div>
+
+  <footer>Modal Verbs Lab 2 — functions (B1 · self-study)</footer>
+</div>
+
+<div id="theme-toggle-wrap">
+  <button id="theme-toggle" aria-label="Toggle light/dark mode" title="Toggle light/dark mode">
+    <span id="theme-icon">☀️</span>
+  </button>
+</div>
+<script src="house.js"></script>
+<script src="lab-kit.js"></script>
+<script>
+const { pick, words, cap } = LabKit;
+const R = a => (a.rest ? ' ' + a.rest : '');
+const cue = s => ' <span class="cue">(' + s + ')</span>';
+const low = s => (/^(She|He|We|They|You|My|The)\b/.test(s) ? s.charAt(0).toLowerCase() + s.slice(1) : s);
+// third person -s on the first word of a verb phrase: work → works, study → studies, wash → washes
+function s3(v) {
+  const [w, ...more] = v.split(' ');
+  const f = w === 'have' ? 'has' : /(s|sh|ch|x|o)$/.test(w) ? w + 'es' : /[^aeiou]y$/.test(w) ? w.slice(0, -1) + 'ies' : w + 's';
+  return [f, ...more].join(' ');
+}
+const PRO = { I: 'I’ll', She: 'She’ll', He: 'He’ll', We: 'We’ll', They: 'They’ll' };   // short forms also accepted
+const vt = (v, rest) => [...words(v, 'verb'), ...words(rest, 'object')];
+
+const ST = [{ s: 'I' }, { s: 'She', t: 1 }, { s: 'He', t: 1 }, { s: 'We' }, { s: 'They' },
+            { s: 'My mom', t: 1 }, { s: 'Ana', t: 1 }, { s: 'The students' }];
+const QS = [{ q: 'you' }, { q: 'she', t: 1 }, { q: 'your dad', t: 1 }, { q: 'they' }, { q: 'Ana', t: 1 }];
+
+const SECTIONS = [
+  /* ── 🏋️ have to ─────────────────────────────────────────────────────── */
+  { id: 'have-to', emoji: '🏋️', label: 'Have to', pill: 'have to · has to · had to',
+    note: 'Use have to for things that are necessary (rules, work, school). Has to with he / she / it. The past is had to — must has no past form. Questions: Do / Does … have to …?',
+    examples: [
+      ['pos', '{She|subject} {has to|aux} {wear|verb} {a uniform|object}.', 'he / she / it → has to'],
+      ['pos', '{I|subject} {had to|aux} {get up|verb} {at 6:00|time} {yesterday|time}.', 'past → had to (not musted)'],
+      ['q', '{Do|aux} {you|subject} {have to|aux} {work|verb} {on Saturdays|time}?', 'question with do / does']
+    ],
+    prompts: { choice: 'Which sentence is correct?', drag: 'Tap or drag the words to build the sentence.',
+               gap: 'Write the sentence with have to. Use the words in brackets.' },
+    gen() {
+      const a = pick([
+        { v: 'wear', past: 'wore', rest: 'a uniform' }, { v: 'work', past: 'worked', rest: 'on Saturdays', noPast: 1 },
+        { v: 'get up', past: 'got up', rest: 'at 6:00' }, { v: 'study', past: 'studied', rest: 'for the exam' },
+        { v: 'pay', past: 'paid', rest: 'the rent' }, { v: 'walk', past: 'walked', rest: 'the dog' },
+        { v: 'clean', past: 'cleaned', rest: 'the house' }, { v: 'finish', past: 'finished', rest: 'the report' }
+      ]);
+      const mode = pick(a.noPast ? ['now', 'q'] : ['now', 'past', 'q']);
+      if (mode === 'q') {
+        const p = pick(QS), Do = p.t ? 'Does' : 'Do';
+        const ctx = '🏋️ Ask' + cue(`${p.q} / have to / ${a.v}${R(a)}`);
+        return { ctx, key: ctx,
+                 tokens: [[Do, 'aux'], ...words(p.q, 'subject'), ['have', 'aux'], ['to', 'aux'], ...vt(a.v, a.rest), ['?', null]],
+                 wrong: [`${p.t ? 'Has' : 'Have'} ${p.q} to ${a.v}${R(a)}?`, `${Do} ${p.q} must ${a.v}${R(a)}?`,
+                         `${p.t ? 'Do' : 'Does'} ${p.q} have to ${a.v}${R(a)}?`, ...(p.t ? [`Does ${p.q} has to ${a.v}${R(a)}?`] : [])] };
+      }
+      const p = pick(ST), h = p.t ? 'has' : 'have';
+      if (mode === 'past') {
+        const ctx = '🏋️ Yesterday' + cue(`${low(p.s)} / have to / ${a.v}${R(a)}`);
+        return { ctx, key: ctx,
+                 tokens: [...words(p.s, 'subject'), ['had', 'aux'], ['to', 'aux'], ...vt(a.v, a.rest), ['yesterday', 'time'], ['.', null]],
+                 wrong: [`${p.s} must ${a.v}${R(a)} yesterday.`, `${p.s} had to ${a.past}${R(a)} yesterday.`,
+                         `${p.s} ${h} to ${a.v}${R(a)} yesterday.`] };
+      }
+      const ctx = '🏋️ It’s necessary' + cue(`${low(p.s)} / have to / ${a.v}${R(a)}`);
+      return { ctx, key: ctx,
+               tokens: [...words(p.s, 'subject'), [h, 'aux'], ['to', 'aux'], ...vt(a.v, a.rest), ['.', null]],
+               wrong: [`${p.s} ${p.t ? 'have' : 'has'} to ${a.v}${R(a)}.`, `${p.s} ${h} to ${s3(a.v)}${R(a)}.`,
+                       `${p.s} must to ${a.v}${R(a)}.`, `${p.s} ${h} ${a.v}${R(a)}.`] };
+    } },
+
+  /* ── 🚫 mustn't vs don't have to ───────────────────────────────────── */
+  { id: 'mustnt-dont', emoji: '🚫', label: 'mustn’t / don’t have to', pill: '🚫 not allowed · 🆓 not necessary',
+    note: 'They look similar, but the meaning is very different. Mustn’t = it is not allowed, don’t do it! Don’t have to = it is not necessary, you can choose.',
+    examples: [
+      ['neg', '{You|subject} {mustn’t|aux} {smoke|verb} {here|adverb}.', '🚫 not allowed — it’s a rule', 'Not allowed'],
+      ['neg', '{You|subject} {don’t have to|aux} {pay|verb}. {The museum|subject} {is|verb} {free|adj}.', '🆓 not necessary — but you can', 'Not necessary'],
+      ['neg', '{She|subject} {doesn’t have to|aux} {work|verb} {on Monday|time}.', 'he / she / it → doesn’t have to', 'Not necessary']
+    ],
+    prompts: { choice: 'Read the situation. Which sentence is correct?', drag: 'Tap or drag the words to build the sentence.',
+               gap: 'Read the situation. Mustn’t or don’t have to?' },
+    gen() {
+      const a = pick([
+        { sit: '🚭 At the hospital — smoking is not allowed.', m: 1, s: 'You', v: 'smoke', rest: 'here' },
+        { sit: '🏊 At the pool — running is dangerous.', m: 1, s: 'You', v: 'run' },
+        { sit: '📝 In the exam — phones are not allowed.', m: 1, s: 'You', v: 'use', rest: 'your phone' },
+        { sit: '🖼️ At the museum — the paintings are very old.', m: 1, s: 'You', v: 'touch', rest: 'the paintings' },
+        { sit: '🤫 The baby is sleeping.', m: 1, s: 'You', v: 'make', rest: 'noise' },
+        { sit: '🚦 The light is red.', m: 1, s: 'You', v: 'cross', rest: 'the street' },
+        { sit: '📅 It’s Sunday — there’s no school.', s: 'You', v: 'get up', rest: 'early' },
+        { sit: '🍕 Lunch is free today.', s: 'You', v: 'bring', rest: 'food' },
+        { sit: '👕 The party is casual.', s: 'You', v: 'wear', rest: 'a suit' },
+        { sit: '💳 The museum is free.', s: 'You', v: 'pay' },
+        { sit: '🎉 Monday is a holiday.', s: 'She', t: 1, v: 'work', rest: 'on Monday' },
+        { sit: '🚗 I can take him to school.', s: 'He', t: 1, v: 'take', rest: 'the bus' }
+      ]);
+      const dont = a.t ? 'doesn’t' : 'don’t';
+      const x = `${a.v}${R(a)}.`;
+      const tokens = a.m
+        ? [...words(a.s, 'subject'), ['mustn’t', 'aux'], ...vt(a.v, a.rest), ['.', null]]
+        : [...words(a.s, 'subject'), [dont, 'aux'], ['have', 'aux'], ['to', 'aux'], ...vt(a.v, a.rest), ['.', null]];
+      const wrong = a.m
+        ? [`${a.s} ${dont} have to ${x}`, `${a.s} mustn’t to ${x}`, `${a.s} ${dont} must ${x}`]
+        : [`${a.s} mustn’t ${x}`, `${a.s} ${a.t ? 'hasn’t' : 'haven’t'} to ${x}`, `${a.s} ${dont} have ${x}`,
+           ...(a.t ? [`${a.s} doesn’t has to ${x}`] : [])];
+      return { ctx: a.sit, key: a.sit, gapCtx: a.sit + cue(`${low(a.s)} / ${a.v}${R(a)}`), tokens, wrong,
+               alts: a.m ? [`${a.s} must not ${x}`] : [`${a.s} ${a.t ? 'does' : 'do'} not have to ${x}`] };
+    } },
+
+  /* ── 🧰 need to ─────────────────────────────────────────────────────── */
+  { id: 'need-to', emoji: '🧰', label: 'Need to', pill: 'need to · don’t need to · needn’t',
+    note: 'Need to = it is necessary. Don’t need to (or needn’t) = it is not necessary. Needs to with he / she / it — but needn’t never changes.',
+    examples: [
+      ['pos', '{He|subject} {needs to|aux} {rest|verb}.', 'he / she / it → needs to'],
+      ['neg', '{You|subject} {don’t need to|aux} {take|verb} {a jacket|object}.', 'not necessary'],
+      ['neg', '{You|subject} {needn’t|aux} {take|verb} {a jacket|object}.', 'same meaning — needn’t + base verb (no to)']
+    ],
+    prompts: { choice: 'Which sentence is correct?', drag: 'Tap or drag the words to build the sentence.',
+               gap: 'Write the sentence. ✗ = not necessary.' },
+    gen() {
+      const a = pick([
+        { sit: '🥛 The fridge is empty.', s: 'I', v: 'buy', rest: 'milk' },
+        { sit: '😴 Leo is very tired.', s: 'He', t: 1, v: 'rest' },
+        { sit: '📚 Ana has an exam tomorrow.', s: 'She', t: 1, v: 'study', rest: 'tonight' },
+        { sit: '🚗 The car is very dirty.', s: 'They', v: 'wash', rest: 'it' },
+        { sit: '🦷 My tooth hurts.', s: 'I', v: 'see', rest: 'a dentist' },
+        { sit: '🧥 It’s warm today.', neg: 1, s: 'You', v: 'take', rest: 'a jacket' },
+        { sit: '🎟️ The concert is free.', neg: 1, s: 'We', v: 'buy', rest: 'tickets' },
+        { sit: '⏰ The class starts at 10:00.', neg: 1, s: 'You', v: 'get up', rest: 'early' },
+        { sit: '🍽️ Dad is cooking dinner.', neg: 1, s: 'Mom', t: 1, v: 'cook', rest: 'tonight' }
+      ]);
+      const x = `${a.v}${R(a)}.`;
+      const gapCtx = a.sit + cue(`${low(a.s)} / ${a.neg ? '✗ ' : ''}${a.v}${R(a)}`);
+      if (a.neg) {
+        const dont = a.t ? 'doesn’t' : 'don’t';
+        return { ctx: a.sit, key: a.sit, gapCtx,
+                 tokens: [...words(a.s, 'subject'), [dont, 'aux'], ['need', 'aux'], ['to', 'aux'], ...vt(a.v, a.rest), ['.', null]],
+                 wrong: [`${a.s} ${dont} need ${x}`, `${a.s} needn’t to ${x}`, `${a.s} ${dont} ${a.t ? 'needs' : 'needing'} to ${x}`],
+                 alts: [`${a.s} needn’t ${x}`, `${a.s} ${a.t ? 'does' : 'do'} not need to ${x}`] };
+      }
+      const nd = a.t ? 'needs' : 'need';
+      return { ctx: a.sit, key: a.sit, gapCtx,
+               tokens: [...words(a.s, 'subject'), [nd, 'aux'], ['to', 'aux'], ...vt(a.v, a.rest), ['.', null]],
+               wrong: [`${a.s} ${a.t ? 'need' : 'needs'} to ${x}`, `${a.s} ${nd} to ${s3(a.v)}${R(a)}.`, `${a.s} ${a.s === 'I' ? 'am' : a.t ? 'is' : 'are'} need to ${x}`] };
+    } },
+
+  /* ── ⚠️ had better / ought to ───────────────────────────────────────── */
+  { id: 'better-ought', emoji: '⚠️', label: 'Had better / ought to', pill: '’d better (not) · ought to',
+    note: 'Ought to = should. Had better (’d better) is stronger: do it, or there will be a problem! Both take the base verb. Negative: ’d better not.',
+    examples: [
+      ['pos', '{You’d better|aux} {take|verb} {an umbrella|object}.', 'or you’ll get wet!'],
+      ['neg', '{You’d better not|aux} {be|verb} {late|adj} {again|time}.', '’d better not + base verb (not better not to)'],
+      ['pos', '{You|subject} {ought to|aux} {call|verb} {your grandma|object}.', 'ought to = should']
+    ],
+    prompts: { choice: 'Which advice is correct?', drag: 'Tap or drag the words to build the advice.',
+               gap: 'Give strong advice. Use the words in brackets.' },
+    gen() {
+      const a = pick([
+        { sit: '☔ It’s going to rain.', f: 'b', s: 'You', v: 'take', rest: 'an umbrella' },
+        { sit: '⏰ The train leaves in five minutes.', f: 'b', s: 'We', v: 'hurry' },
+        { sit: '🤒 You have a fever.', f: 'b', s: 'You', v: 'stay', rest: 'in bed' },
+        { sit: '😠 The boss is angry with you.', f: 'bn', s: 'You', v: 'be', rest: 'late again' },
+        { sit: '🍰 You’re on a diet.', f: 'bn', s: 'You', v: 'eat', rest: 'that cake' },
+        { sit: '🌙 It’s very late.', f: 'bn', s: 'We', v: 'make', rest: 'noise' },
+        { sit: '📞 Your grandma lives alone.', f: 'o', s: 'You', v: 'call', rest: 'her more often' },
+        { sit: '🦷 Your tooth hurts.', f: 'o', s: 'You', v: 'see', rest: 'a dentist' },
+        { sit: '📖 The test is tomorrow.', f: 'o', s: 'You', v: 'study', rest: 'tonight' }
+      ]);
+      const x = `${a.v}${R(a)}.`;
+      const d = a.s + '’d';
+      if (a.f === 'o') {
+        return { ctx: a.sit, key: a.sit, gapCtx: a.sit + cue(`${low(a.s)} / ought to / ${a.v}${R(a)}`),
+                 tokens: [...words(a.s, 'subject'), ['ought', 'aux'], ['to', 'aux'], ...vt(a.v, a.rest), ['.', null]],
+                 wrong: [`${a.s} ought ${x}`, `${a.s} ought to ${s3(a.v)}${R(a)}.`, `${a.s} oughts to ${x}`] };
+      }
+      const neg = a.f === 'bn';
+      return { ctx: a.sit, key: a.sit, gapCtx: a.sit + cue(`${low(a.s)} / had better${neg ? ' not' : ''} / ${a.v}${R(a)}`),
+               tokens: [[d, 'subject'], ['better', 'aux'], ...(neg ? [['not', 'neg']] : []), ...vt(a.v, a.rest), ['.', null]],
+               wrong: neg
+                 ? [`${d} better not to ${x}`, `${d} not better ${x}`, `${a.s} hadn’t better ${x}`]
+                 : [`${d} better to ${x}`, `${d} better ${a.v === 'take' ? 'taking' : a.v === 'stay' ? 'staying' : 'hurrying'}${R(a)}.`, `${a.s} better ${x}`],
+               alts: [`${a.s} had better ${neg ? 'not ' : ''}${x}`] };
+    } },
+
+  /* ── 💪 be able to ──────────────────────────────────────────────────── */
+  { id: 'able-to', emoji: '💪', label: 'Be able to', pill: 'will be able to · was able to · haven’t been able to',
+    note: 'Can has only two forms (can / could). For other tenses, use be able to: will be able to (future), was / were able to (one success in the past), have been able to (present perfect).',
+    examples: [
+      ['pos', '{She|subject} {will be able to|aux} {drive|verb} {next year|time}.', 'future (not will can)'],
+      ['pos', '{We|subject} {were able to|aux} {find|verb} {the hotel|object}.', 'one success in the past'],
+      ['neg', '{I|subject} {haven’t been able to|aux} {sleep|verb} {since Monday|time}.', 'present perfect']
+    ],
+    prompts: { choice: 'Which sentence is correct?', drag: 'Tap or drag the words to build the sentence.',
+               gap: 'Write the sentence with be able to.' },
+    gen() {
+      const mode = pick(['future', 'past', 'perfect']);
+      const p = pick(ST), was = p.s === 'I' || p.t ? 'was' : 'were';
+      if (mode === 'future') {
+        const a = pick([{ v: 'drive', rest: 'next year' }, { v: 'speak', rest: 'English well soon' }, { v: 'walk', rest: 'again in a few weeks' },
+                        { v: 'buy', rest: 'a house in five years' }, { v: 'come', rest: 'to the party on Saturday' }]);
+        const ctx = '💪 In the future' + cue(`${low(p.s)} / ${a.v}${R(a)}`);
+        return { ctx, key: ctx,
+                 tokens: [...words(p.s, 'subject'), ['will', 'aux'], ['be', 'aux'], ['able', 'aux'], ['to', 'aux'], ...vt(a.v, a.rest), ['.', null]],
+                 wrong: [`${p.s} will can ${a.v}${R(a)}.`, `${p.s} will be able ${a.v}${R(a)}.`, `${p.s} will able to ${a.v}${R(a)}.`],
+                 alts: PRO[p.s] ? [`${PRO[p.s]} be able to ${a.v}${R(a)}.`] : [] };
+      }
+      if (mode === 'past') {
+        const a = pick([{ v: 'find', rest: 'the hotel' }, { v: 'fix', rest: 'the car' }, { v: 'finish', rest: 'the project on time' },
+                        { v: 'get', rest: 'tickets for the concert' }, { v: 'open', rest: 'the door' }]);
+        const ctx = '💪 Yesterday — success! ✅' + cue(`${low(p.s)} / ${a.v}${R(a)}`);
+        return { ctx, key: ctx,
+                 tokens: [...words(p.s, 'subject'), [was, 'aux'], ['able', 'aux'], ['to', 'aux'], ...vt(a.v, a.rest), ['.', null]],
+                 wrong: [`${p.s} ${was === 'was' ? 'were' : 'was'} able to ${a.v}${R(a)}.`, `${p.s} ${was} able ${a.v}${R(a)}.`,
+                         `${p.s} ${was} can ${a.v}${R(a)}.`] };
+      }
+      const a = pick([{ v: 'sleep', rest: 'since Monday' }, { v: 'call', rest: 'you this week' }, { v: 'find', rest: 'my keys' },
+                      { v: 'finish', rest: 'the book' }, { v: 'visit', rest: 'Grandma for months' }]);
+      const hn = p.t ? 'hasn’t' : 'haven’t';
+      const ctx = '💪 Until now — ✗' + cue(`${low(p.s)} / ✗ ${a.v}${R(a)}`);
+      return { ctx, key: ctx,
+               tokens: [...words(p.s, 'subject'), [hn, 'aux'], ['been', 'aux'], ['able', 'aux'], ['to', 'aux'], ...vt(a.v, a.rest), ['.', null]],
+               wrong: [`${p.s} ${hn} could ${a.v}${R(a)}.`, `${p.s} ${hn} been able ${a.v}${R(a)}.`,
+                       `${p.s} ${p.t ? 'doesn’t' : 'don’t'} have been able to ${a.v}${R(a)}.`],
+               alts: [`${p.s} ${p.t ? 'has' : 'have'} not been able to ${a.v}${R(a)}.`] };
+    } },
+
+  /* ── 🤝 offers ──────────────────────────────────────────────────────── */
+  { id: 'offers', emoji: '🤝', label: 'Offers', pill: 'Shall I…? · I’ll…',
+    note: 'To offer help, ask Shall I…? or say I’ll… (a decision now). Both take the base verb.',
+    examples: [
+      ['q', '{Shall|aux} {I|subject} {carry|verb} {your bag|object}?', 'offer as a question'],
+      ['pos', '{I’ll|subject} {answer|verb} {it|object}!', 'offer — I decide now (I’ll = I will)'],
+      ['q', '{Shall|aux} {we|subject} {call|verb} {a taxi|object}?', 'also with we']
+    ],
+    prompts: { choice: 'Offer to help. Which sentence is correct?', drag: 'Tap or drag the words to build the offer.',
+               gap: 'Offer to help. Use the words in brackets.' },
+    gen() {
+      const a = pick([
+        { sit: '👜 Your friend’s bag is very heavy.', v: 'carry', rest: 'your bag' },
+        { sit: '🥵 It’s hot in here.', v: 'open', rest: 'the window' },
+        { sit: '🍽️ There are a lot of dirty dishes.', v: 'wash', rest: 'the dishes' },
+        { sit: '☎️ The phone is ringing.', v: 'answer', rest: 'it' },
+        { sit: '🌧️ It’s raining, and it’s very late.', v: 'call', rest: 'a taxi' },
+        { sit: '😴 Everybody looks tired.', v: 'make', rest: 'some coffee' },
+        { sit: '🥶 It’s cold, and the door is open.', v: 'close', rest: 'the door' }
+      ]);
+      const x = `${a.v}${R(a)}`;
+      if (Math.random() < .5) {
+        return { ctx: a.sit, key: a.sit + 'q', gapCtx: a.sit + cue(`Shall I…? / ${x}`),
+                 tokens: [['Shall', 'aux'], ['I', 'subject'], ...vt(a.v, a.rest), ['?', null]],
+                 wrong: [`Shall I to ${x}?`, `Shall I ${a.v}ing${R(a)}?`.replace('eing', 'ing'), `Will I ${x}?`] };
+      }
+      return { ctx: a.sit, key: a.sit + 's', gapCtx: a.sit + cue(`I’ll / ${x}`),
+               tokens: [['I’ll', 'subject'], ...vt(a.v, a.rest), ['.', null]],
+               wrong: [`I ${x}.`, `I’ll to ${x}.`, `I’m ${x}.`],
+               alts: [`I will ${x}.`] };
+    } },
+
+  /* ── 💬 suggestions ─────────────────────────────────────────────────── */
+  { id: 'suggestions', emoji: '💬', label: 'Suggestions', pill: 'Let’s… · Why don’t we…? · How about -ing?',
+    note: 'Three ways to suggest an idea. Let’s + base verb. Why don’t we + base verb? How about + verb-ing?',
+    examples: [
+      ['pos', '{Let’s|aux} {order|verb} {pizza|object}.', 'Let’s + base verb (not Let’s to)'],
+      ['q', '{Why|wh} {don’t|aux} {we|subject} {watch|verb} {a movie|object}?', 'Why don’t we + base verb?'],
+      ['q', '{How about|wh} {going|verb} {to the beach|prep}?', 'How about + -ing?']
+    ],
+    prompts: { choice: 'Make a suggestion. Which sentence is correct?', drag: 'Tap or drag the words to build the suggestion.',
+               gap: 'Make a suggestion. Use the words in brackets.' },
+    gen() {
+      const a = pick([
+        { sit: '🍕 We’re hungry.', v: 'order', ing: 'ordering', rest: 'pizza' },
+        { sit: '🎬 We’re bored.', v: 'watch', ing: 'watching', rest: 'a movie' },
+        { sit: '☀️ It’s a beautiful day.', v: 'go', ing: 'going', rest: 'to the beach' },
+        { sit: '🚌 The bus is very late.', v: 'take', ing: 'taking', rest: 'a taxi' },
+        { sit: '📚 The test is on Monday.', v: 'study', ing: 'studying', rest: 'together' },
+        { sit: '🎂 It’s Mom’s birthday tomorrow.', v: 'make', ing: 'making', rest: 'her a cake' },
+        { sit: '🥵 It’s very hot.', v: 'go', ing: 'going', rest: 'for an ice cream' }
+      ]);
+      const x = `${a.v}${R(a)}`, f = pick(['lets', 'why', 'how']);
+      if (f === 'lets') return { ctx: a.sit, key: a.sit + f, gapCtx: a.sit + cue(`Let’s… / ${x}`),
+        tokens: [['Let’s', 'aux'], ...vt(a.v, a.rest), ['.', null]],
+        wrong: [`Let’s to ${x}.`, `Let’s ${a.ing}${R(a)}.`, `Let’s we ${x}.`] };
+      if (f === 'why') return { ctx: a.sit, key: a.sit + f, gapCtx: a.sit + cue(`Why don’t we…? / ${x}`),
+        tokens: [['Why', 'wh'], ['don’t', 'aux'], ['we', 'subject'], ...vt(a.v, a.rest), ['?', null]],
+        wrong: [`Why we don’t ${x}?`, `Why don’t we to ${x}?`, `Why don’t we ${a.ing}${R(a)}?`] };
+      return { ctx: a.sit, key: a.sit + f, gapCtx: a.sit + cue(`How about…? / ${x}`),
+        tokens: [['How', 'wh'], ['about', 'wh'], ...vt(a.ing, a.rest), ['?', null]],
+        wrong: [`How about ${x}?`, `How about to ${x}?`, `How about we ${a.ing}${R(a)}?`] };
+    } },
+
+  /* ── 🍽️ would ──────────────────────────────────────────────────────── */
+  { id: 'would', emoji: '🍽️', label: 'Would', pill: 'I’d like… · Would you like…? · Would you mind -ing?',
+    note: 'Would makes requests and offers polite. I’d like + noun (ordering). Would you like + noun? (offering). Would you mind + verb-ing? (asking someone to do something).',
+    examples: [
+      ['pos', '{I’d like|aux} {a sandwich|object}, please.', 'ordering — more polite than I want'],
+      ['q', '{Would|aux} {you|subject} {like|verb} {some water|object}?', 'offering'],
+      ['q', '{Would|aux} {you|subject} {mind|verb} {closing|verb} {the door|object}?', 'mind + -ing (not mind to close)']
+    ],
+    prompts: { choice: 'Be polite. Which sentence is correct?', drag: 'Tap or drag the words to build the sentence.',
+               gap: 'Be polite. Use the words in brackets.' },
+    gen() {
+      const mode = pick(['order', 'offer', 'mind']);
+      if (mode === 'order') {
+        const o = pick(['a sandwich', 'a coffee', 'the chicken', 'a glass of water', 'the check', 'a table for two']);
+        const ctx = '🍽️ At a restaurant — order politely' + cue(`I’d like / ${o}`);
+        return { ctx, key: ctx,
+                 tokens: [['I’d', 'subject'], ['like', 'verb'], ...words(o, 'object'), [',', null], ['please', 'none'], ['.', null]],
+                 wrong: [`I’d like to ${o}, please.`, `I’d liking ${o}, please.`, `I would to like ${o}, please.`],
+                 alts: [`I would like ${o}, please.`, `I’d like ${o}.`, `I would like ${o}.`] };
+      }
+      if (mode === 'offer') {
+        const o = pick(['some water', 'a cup of tea', 'some cake', 'a ride home', 'some more rice']);
+        const ctx = '🙂 Offer your guest something' + cue(`would you like / ${o}`);
+        return { ctx, key: ctx,
+                 tokens: [['Would', 'aux'], ['you', 'subject'], ['like', 'verb'], ...words(o, 'object'), ['?', null]],
+                 wrong: [`Do you would like ${o}?`, `Would you like to ${o}?`, `Would you likes ${o}?`] };
+      }
+      const a = pick([
+        { v: 'close', ing: 'closing', rest: 'the door' }, { v: 'open', ing: 'opening', rest: 'the window' },
+        { v: 'turn', ing: 'turning', rest: 'down the music' }, { v: 'help', ing: 'helping', rest: 'me' },
+        { v: 'speak', ing: 'speaking', rest: 'more slowly' }, { v: 'wait', ing: 'waiting', rest: 'a minute' }
+      ]);
+      const ctx = '🙏 Ask someone politely' + cue(`would you mind / ${a.v}${R(a)}`);
+      return { ctx, key: ctx,
+               tokens: [['Would', 'aux'], ['you', 'subject'], ['mind', 'verb'], ...vt(a.ing, a.rest), ['?', null]],
+               wrong: [`Would you mind to ${a.v}${R(a)}?`, `Would you mind ${a.v}${R(a)}?`, `Do you would mind ${a.ing}${R(a)}?`] };
+    } },
+
+  /* ── 🔍 deduction ───────────────────────────────────────────────────── */
+  { id: 'deduction', emoji: '🔍', label: 'Deduction', pill: 'must be ✔️ · might be 🤷 · can’t be ✗',
+    note: 'Use modals to guess from evidence. Must = I’m sure it’s true. Might / may / could = maybe. Can’t = I’m sure it’s NOT true. (Not mustn’t — mustn’t is for rules.)',
+    examples: [
+      ['pos', '{He|subject} {must|aux} {be|verb} {at home|prep}. {His car|subject} {is|verb} {outside|adverb}.', '✔️ I’m sure — it’s true', 'Sure'],
+      ['pos', '{She|subject} {might|aux} {be|verb} {at the gym|prep}.', '🤷 maybe (may / could too)', 'Maybe'],
+      ['neg', '{They|subject} {can’t|aux} {be|verb} {at home|prep}. {Nobody|subject} {answers|verb}.', '✗ I’m sure — it’s not true', 'Sure — not']
+    ],
+    prompts: { choice: 'Look at the evidence. Which sentence is correct?', drag: 'Tap or drag the words to build the sentence.',
+               gap: 'Look at the evidence. Must, might or can’t?' },
+    gen() {
+      const a = pick([
+        { sit: '🚗 His car is outside.', d: 'must', s: 'He', rest: 'at home' },
+        { sit: '🥱 Ana yawns all the time.', d: 'must', s: 'She', rest: 'tired' },
+        { sit: '🍽️ They’re eating very fast!', d: 'must', s: 'They', rest: 'hungry' },
+        { sit: '🎓 Leo has three university degrees.', d: 'must', s: 'He', rest: 'very smart' },
+        { sit: '☎️ Nobody answers the phone.', d: 'can’t', s: 'They', rest: 'at home' },
+        { sit: '👦 He looks about fifteen.', d: 'can’t', s: 'He', rest: 'thirty' },
+        { sit: '💸 The ring cost ten dollars.', d: 'can’t', s: 'It', rest: 'real gold' },
+        { sit: '🍕 Tom just ate a big pizza.', d: 'can’t', s: 'He', rest: 'hungry' },
+        { sit: '🤷 I don’t know where Mia is.', d: 'might', s: 'She', rest: 'at the gym' },
+        { sit: '📦 The package is late. I’m not sure why.', d: 'might', s: 'It', rest: 'at the post office' },
+        { sit: '🌥️ There are some clouds.', d: 'might', s: 'It', v: 'rain' }
+      ]);
+      const v = a.v || 'be', x = `${v}${R(a)}.`;
+      const sure = { must: '✔️ sure', 'can’t': '✗ sure it’s not true', might: '🤷 maybe' }[a.d];
+      const is = a.s === 'They' ? 'are' : 'is';
+      const wrong = {
+        must: [`${a.s} must to ${x}`, `${a.s} must ${is}${R(a)}.`, `${a.s} mustn’t ${x}`],
+        'can’t': [`${a.s} mustn’t ${x}`, `${a.s} can’t to ${x}`, `${a.s} don’t can ${x}`],
+        might: [`${a.s} might to ${x}`, `${a.s} might ${v === 'be' ? is : 'rains'}${R(a)}.`, `${a.s} must ${x}`]
+      }[a.d];
+      return { ctx: a.sit, key: a.sit, gapCtx: a.sit + cue(`${low(a.s)} / ${sure} / ${v}${R(a)}`),
+               tokens: [...words(a.s, 'subject'), [a.d, 'aux'], [v, 'verb'], ...words(a.rest, v === 'be' ? 'complement' : 'object'), ['.', null]],
+               wrong,
+               alts: a.d === 'might' ? [`${a.s} may ${x}`, `${a.s} could ${x}`] : a.d === 'can’t' ? [`${a.s} cannot ${x}`] : [] };
+    } }
+];
+/* Different sentences from the Common mistakes list. B1: some are already correct. */
+const EH_POOL = [
+  { words: ['We', 'has', 'to', 'leave', 'now', '.'], error: { type: 'wrong', wordIndex: 1, options: ['have', 'are', 'do'], correct: 'have' } },
+  { words: ['Does', 'she', 'has', 'to', 'work', 'tomorrow', '?'], error: { type: 'wrong', wordIndex: 2, options: ['have', 'had', 'having'], correct: 'have' } },
+  { words: ['You', 'don’t', 'have', 'to', 'shout', ',', 'I', 'can', 'hear', 'you', '.'], error: null },
+  { words: ['Let’s', 'to', 'go', 'to', 'the', 'park', '.'], error: { type: 'extra', wordIndex: 1 } },
+  { words: ['How', 'about', 'eat', 'out', 'tonight', '?'], error: { type: 'wrong', wordIndex: 2, options: ['eating', 'to eat', 'eaten'], correct: 'eating' } },
+  { words: ['Shall', 'I', 'to', 'open', 'the', 'window', '?'], error: { type: 'extra', wordIndex: 2 } },
+  { words: ['You', 'ought', 'call', 'your', 'mother', '.'], error: { type: 'missing', gapIndex: 2, options: ['to', 'for', 'that'], correct: 'to' } },
+  { words: ['They', 'weren’t', 'able', 'find', 'a', 'taxi', '.'], error: { type: 'missing', gapIndex: 3, options: ['to', 'for', 'of'], correct: 'to' } },
+  { words: ['I’d', 'like', 'a', 'glass', 'of', 'water', ',', 'please', '.'], error: null },
+  { words: ['Would', 'you', 'mind', 'wait', 'a', 'minute', '?'], error: { type: 'wrong', wordIndex: 3, options: ['waiting', 'to wait', 'waited'], correct: 'waiting' } },
+  { words: ['She', 'must', 'be', 'tired', '—', 'she', 'worked', 'all', 'night', '.'], error: null },
+  { words: ['It', 'mustn’t', 'be', 'true', '!'], error: { type: 'wrong', wordIndex: 1, options: ['can’t', 'doesn’t', 'isn’t able'], correct: 'can’t' } },
+  { words: ['You', 'needn’t', 'to', 'bring', 'anything', '.'], error: { type: 'extra', wordIndex: 2 } },
+  { words: ['We', 'had', 'better', 'to', 'go', 'home', '.'], error: { type: 'extra', wordIndex: 3 } },
+  { words: ['I', 'had', 'to', 'work', 'late', 'yesterday', '.'], error: null }
+];
+
+LabKit.build({
+  sections: SECTIONS,
+  mistakes: [
+    ['She have to work today.', 'She has to work today.'],
+    ['Do you must wear a uniform?', 'Do you have to wear a uniform?'],
+    ['I must go to the doctor yesterday.', 'I had to go to the doctor yesterday.'],
+    ['You mustn’t pay — the museum is free.', 'You don’t have to pay — the museum is free.'],
+    ['He needs study more.', 'He needs to study more.'],
+    ['You’d better to hurry.', 'You’d better hurry.'],
+    ['I will can drive next year.', 'I will be able to drive next year.'],
+    ['Why we don’t go to the beach?', 'Why don’t we go to the beach?'],
+    ['Would you mind to help me?', 'Would you mind helping me?'],
+    ['He mustn’t be at home — his car isn’t there.', 'He can’t be at home — his car isn’t there.']
+  ],
+  errorHunt: EH_POOL, ehCount: 6,
+  ehPrompt: 'Some sentences have a mistake. Some are correct! Tap a word — or a space between words — to fix it. Then press OK. 🎲 Again gives you new sentences.'
+});
+</script>
+<script>HouseGrammar.init();</script>
+</body>
+</html>

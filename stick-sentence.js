@@ -240,11 +240,36 @@ const CSS = ''
   + '.ss-unit{ display:inline-flex; flex-direction:column; align-items:center; }'
   + '.ss-txt{ white-space:nowrap; }'
   + '.ss-figs{ position:relative; display:block; flex:0 0 auto; margin-bottom:.1em; color:currentColor; }'
-  + '.ss-figs svg{ display:block; width:100%; height:100%; overflow:visible; }';
+  + '.ss-figs svg{ display:block; width:100%; height:100%; overflow:visible; }'
+  + '.ss-sticks-hidden .ss-figs{ display:none; }'
+  + '.ss-stick-btn{ margin-right:6px; }';
 if (!document.getElementById('stick-sentence-css')) {
   const st = document.createElement('style'); st.id = 'stick-sentence-css'; st.textContent = CSS;
   document.head.appendChild(st);
 }
 
-window.StickSentence = { cast, html, text, figure, PRESETS, HEAD_EM };
+/* ── show / hide the stick figures (the same switch as present-perfect-kit.js, for pages without it) ──
+   StickSentence.toggle()                 the figures start hidden; a "🧍 Show stick figures" button is added
+   StickSentence.toggle({ shown:true })   the figures start visible
+   The button goes before the grammar toggle, or under the page's first subtitle. Opt-in: pages that
+   don't call it are unchanged, and a page that already has a #stickToggle button keeps its own.   */
+function toggle(opts){
+  opts = opts || {};
+  const root = document.documentElement, cls = 'ss-sticks-hidden';
+  root.classList.toggle(cls, !opts.shown);
+  const run = () => {
+    if (document.getElementById('stickToggle')) return;
+    const b = document.createElement('button');
+    b.id = 'stickToggle'; b.className = 'grammar-toggle-btn ss-stick-btn'; b.type = 'button';
+    const show = on => { root.classList.toggle(cls, !on); b.textContent = on ? '🧍 Hide stick figures' : '🧍 Show stick figures'; b.setAttribute('aria-pressed', String(on)); };
+    b.addEventListener('click', () => show(root.classList.contains(cls)));
+    show(!!opts.shown);
+    const g = document.getElementById('grammarToggle');
+    if (g) g.parentNode.insertBefore(b, g);
+    else { const sub = document.querySelector('.page h1 ~ .subtitle') || document.querySelector('.page h1'); sub.insertAdjacentElement('afterend', b); }
+  };
+  if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', run); else setTimeout(run, 0);
+}
+
+window.StickSentence = { cast, html, text, figure, toggle, PRESETS, HEAD_EM };
 })();
