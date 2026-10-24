@@ -1,0 +1,595 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<title>Where Are You Today? — The Time and the Weather</title>
+<script>
+(function(){
+  try{
+    var saved = localStorage.getItem('theme-preference');
+    var theme = (saved === 'light' || saved === 'dark')
+      ? saved
+      : ((window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches) ? 'dark' : 'light');
+    document.documentElement.setAttribute('data-theme', theme);
+    var fs = parseFloat(localStorage.getItem('font-size-preference'));
+    if (fs >= 10 && fs <= 28) document.documentElement.style.setProperty('--fs-base', fs + 'px');
+  }catch(e){ /* localStorage/matchMedia unavailable — CSS media query still applies */ }
+})();
+</script>
+<link rel="stylesheet" href="house.css">
+<style>
+/* how to play */
+.steps{ margin:0 0 1rem; padding:12px 16px 12px 8px; background:var(--surface-1); border:1px solid var(--border); border-radius:var(--border-radius-lg); }
+.steps ol{ margin:0; padding-left:1.6rem; }
+.steps li{ font-size:.9333rem; line-height:1.5; margin-bottom:6px; }
+.steps li:last-child{ margin-bottom:0; }
+
+/* useful language: question → answer */
+.lang{ display:grid; grid-template-columns:minmax(0,1fr) minmax(0,1.3fr); gap:0; border:1px solid var(--border); border-radius:var(--border-radius-lg); overflow:hidden; margin:0 0 1rem; }
+.lang > div{ padding:7px 11px; font-size:.9rem; line-height:1.45; border-bottom:1px solid var(--border); }
+.lang > div:nth-last-child(-n+2){ border-bottom:none; }
+.lang .lq{ background:var(--surface-1); font-weight:600; color:var(--text-primary); }
+.lang .la{ background:var(--surface-2); color:var(--text-secondary); }
+.lang .lh{ font-size:.7333rem; font-weight:700; letter-spacing:.05em; text-transform:uppercase; color:var(--text-muted); background:var(--surface-1); }
+@media (max-width:520px){ .lang{ grid-template-columns:1fr; } .lang .la{ border-bottom:1px solid var(--border); } .lang .lh:nth-child(2){ display:none; } }
+
+/* world-time code and sync */
+.sync-card{ display:flex; flex-wrap:wrap; align-items:center; gap:10px 16px; padding:12px 14px; margin:0 0 12px;
+  background:var(--surface-1); border:1px solid var(--border); border-radius:var(--border-radius-lg); }
+.sync-mine{ display:flex; flex-direction:column; gap:1px; }
+.sync-label{ font-size:.7333rem; font-weight:700; letter-spacing:.05em; text-transform:uppercase; color:var(--text-muted); }
+.sync-code{ font-family:var(--font-mono); font-size:1.6rem; font-weight:800; letter-spacing:.06em; color:var(--text-primary); line-height:1.15; }
+.sync-form{ display:flex; flex-wrap:wrap; align-items:center; gap:6px; flex:1 1 260px; justify-content:flex-end; }
+.sync-form input{ width:10.5em; font-family:var(--font-mono); font-size:1.05rem; letter-spacing:.06em; text-align:center; }
+.sync-form input::placeholder{ font-family:var(--font-sans); letter-spacing:0; font-size:.9rem; }
+.sync-form input.bad{ border-color:var(--bad); animation:shake .3s; }
+.sync-msg{ flex:1 1 100%; font-size:.8333rem; min-height:1.2em; color:var(--text-secondary); }
+.sync-msg.ok{ color:var(--good); }
+.sync-msg.bad{ color:var(--bad); }
+
+/* players */
+.players-head{ display:flex; flex-wrap:wrap; align-items:center; justify-content:space-between; gap:8px; margin:0 0 8px; font-size:.8667rem; color:var(--text-secondary); }
+.players-head .btns{ display:flex; gap:6px; }
+.players-head button:disabled{ opacity:.45; cursor:default; }
+.player-list{ display:grid; grid-template-columns:repeat(auto-fill, minmax(290px, 1fr)); gap:8px; margin:0 0 12px; }
+.player-card{ display:grid; grid-template-columns:auto minmax(0,1fr) auto; gap:6px 8px; align-items:center; padding:8px 10px;
+  background:var(--surface-2); border:1px solid var(--border); border-left:5px solid var(--pc); border-radius:var(--border-radius-lg); }
+.pc-dot{ width:1.9em; height:1.9em; border-radius:50%; background:var(--pc); color:#15171c; font-weight:800; font-size:.9rem;
+  display:flex; align-items:center; justify-content:center; }
+.pc-name{ width:100%; min-width:0; font-weight:600; }
+.pc-x{ padding:4px 9px; font-size:.8rem; }
+.pc-where{ grid-column:2 / 4; display:flex; gap:6px; align-items:center; min-width:0; }
+.cp{ position:relative; flex:1 1 auto; min-width:0; }
+.cp-btn{ width:100%; display:flex; align-items:center; gap:6px; text-align:left; border-radius:var(--border-radius-md); padding:5px 9px; font-size:.9rem;
+  background:var(--color-background-primary); border:1px solid var(--color-border-secondary); }
+.cp-btn .cp-label{ flex:1 1 auto; min-width:0; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
+.cp-btn.is-empty .cp-label{ color:var(--text-muted); font-style:italic; }
+.cp-btn::after{ content:'▾'; color:var(--text-muted); font-size:.8rem; }
+.cp-pop{ position:absolute; left:0; right:0; top:calc(100% + 4px); z-index:60; min-width:250px; padding:8px; border-radius:12px;
+  background:var(--surface-2); border:1px solid var(--color-border-primary); box-shadow:0 10px 28px rgba(0,0,0,.22); }
+.cp-pop[hidden]{ display:none; }
+.cp-search{ width:100%; margin-bottom:6px; }
+.cp-list{ max-height:260px; overflow-y:auto; overscroll-behavior:contain; }
+.cp-country{ position:sticky; top:0; z-index:1; font-size:.7333rem; font-weight:700; letter-spacing:.04em; text-transform:uppercase; color:var(--text-muted);
+  background:var(--surface-2); padding:6px 4px 3px; }
+.cp-opt{ display:block; width:100%; text-align:left; border:none; border-radius:8px; background:transparent; padding:5px 8px 5px 1.9em; font-size:.9rem; }
+.cp-opt:hover, .cp-opt.is-hot{ background:var(--color-background-info); color:var(--color-text-info); }
+.cp-opt[aria-selected="true"]{ font-weight:700; }
+.cp-none{ font-size:.85rem; color:var(--text-muted); padding:8px 4px; }
+.pc-dice{ padding:4px 9px; font-size:1rem; line-height:1.2; }
+.pc-why{ grid-column:2 / 4; font-size:.8333rem; color:var(--text-secondary); }
+.pc-why b{ color:var(--text-primary); font-weight:600; }
+.data-note{ font-size:.8333rem; color:var(--color-text-warning); background:var(--color-background-warning); border:1px solid var(--color-border-warning);
+  border-radius:var(--border-radius-md); padding:7px 11px; margin:0 0 10px; }
+.data-note[hidden]{ display:none; }
+.pc-ask{ grid-column:2 / 4; font-size:.8333rem; color:var(--text-muted); font-style:italic; }
+</style>
+</head>
+<body>
+<div class="page" id="page">
+  <span class="cefr-tag cefr-a1">A1 · Beginner</span>
+  <h1>Where Are You Today?</h1>
+  <p class="subtitle">You are in a city somewhere in the world. Call your partner. Ask and answer: Where are you? What time is it? What’s the weather like?</p>
+
+  <div class="sec-div">How to play</div>
+  <div class="steps"><ol>
+    <li>Write your name. You get a city. 🎲 gives you a new city.</li>
+    <li>Everyone needs the same time. One student reads their <strong>world code</strong>. The other students write it and press <strong>🔗 Sync</strong>.</li>
+    <li>Press <strong>➕ Add player</strong> for each partner and write their name.</li>
+    <li>Don’t show your screen! Ask your partner. Choose their city. Move the clock hands. Choose the weather words and the degrees.</li>
+    <li>Press <strong>✓ Check</strong>. Are you right?</li>
+  </ol></div>
+
+  <div class="sec-div">Example</div>
+  <div class="setting-chip"><span class="section-icon">📞</span> Two friends on the phone</div>
+  <div id="example"></div>
+
+  <div class="sec-div">Useful language</div>
+  <div class="lang" id="lang"></div>
+
+  <div class="sec-div">Your world</div>
+  <div class="sync-card">
+    <div class="sync-mine">
+      <span class="sync-label">🌐 Your world code</span>
+      <span class="sync-code" id="myCode" aria-live="off">000 000</span>
+    </div>
+    <div class="sync-form">
+      <input type="text" id="syncIn" inputmode="numeric" maxlength="7" autocomplete="off" placeholder="Partner’s code" aria-label="Your partner’s world code">
+      <button type="button" id="syncBtn">🔗 Sync</button>
+      <button type="button" id="newTimeBtn" title="A new random time">🎲 New time</button>
+    </div>
+    <div class="sync-msg" id="syncMsg" aria-live="polite"></div>
+  </div>
+
+  <div class="data-note" id="dataNote" hidden></div>
+  <div class="players-head">
+    <span>Players: <strong id="pCount">1</strong> / 6</span>
+    <span class="btns">
+      <button type="button" id="addBtn">➕ Add player</button>
+      <button type="button" id="removeBtn">➖ Remove player</button>
+    </span>
+  </div>
+  <div class="player-list" id="players"><p class="subtitle">Loading the cities…</p></div>
+
+  <div id="worldViewer"></div>
+
+  <div class="sec-div">More questions</div>
+  <p class="subtitle">Roll the dice. Ask your partner the question.</p>
+  <div class="q-card" id="qCard"><span class="q-placeholder">🎲 Roll the dice for a question.</span></div>
+  <button class="dice-btn" id="diceBtn" aria-label="Roll the dice">🎲</button>
+  <div class="roll-count">Rolls: <strong id="rollCount">0</strong></div>
+
+  <footer>Where Are You Today? — The Time and the Weather: Freer Practice (A1)</footer>
+</div>
+
+<div id="theme-toggle-wrap">
+  <button id="theme-toggle" aria-label="Toggle light/dark mode" title="Toggle light/dark mode">
+    <span id="theme-icon">☀️</span>
+  </button>
+</div>
+<script src="house.js"></script>
+<script src="time-weather-kit.js"></script>
+<script>
+/* ── the cities ──────────────────────────────────────────────────────────
+   By default the list is loaded from world-cities.json in the same folder as
+   this page: an array of { cit, cou, lat, lon, ktc, tz } — city, country,
+   latitude, longitude, Köppen–Trewartha climate and standard (winter) UTC
+   offset (if tz is missing it comes from the built-in list, or from the
+   longitude). Daylight saving is looked up from the country (and, for split
+   countries such as Australia, the city) by TimeZone.ruleFor in
+   time-weather-kit.js. // line comments in the file are allowed.
+   If the file can't be loaded (e.g. the page is opened straight from the
+   computer's disk), the built-in list of 100 cities below is used instead. */
+const CITY_FILE = 'world-cities.json';
+const FALLBACK_CITIES = [
+  {"cit":"Tokyo","cou":"Japan","lat":35.68,"lon":139.69,"ktc":"Cfhk","tz":9},
+  {"cit":"Delhi","cou":"India","lat":28.61,"lon":77.21,"ktc":"Cwil","tz":5.5},
+  {"cit":"Shanghai","cou":"China","lat":31.23,"lon":121.47,"ktc":"Cfhk","tz":8},
+  {"cit":"Dhaka","cou":"Bangladesh","lat":23.81,"lon":90.41,"ktc":"Awhb","tz":6},
+  {"cit":"São Paulo","cou":"Brazil","lat":-23.55,"lon":-46.63,"ktc":"Cwal","tz":-3},
+  {"cit":"Cairo","cou":"Egypt","lat":30.04,"lon":31.24,"ktc":"BWhl","tz":2},
+  {"cit":"Mexico City","cou":"Mexico","lat":19.43,"lon":-99.13,"ktc":"Cwbl","tz":-6},
+  {"cit":"Beijing","cou":"China","lat":39.9,"lon":116.41,"ktc":"Dcao","tz":8},
+  {"cit":"Mumbai","cou":"India","lat":19.08,"lon":72.88,"ktc":"Awha","tz":5.5},
+  {"cit":"Osaka","cou":"Japan","lat":34.69,"lon":135.5,"ktc":"Cfhk","tz":9},
+  {"cit":"New York City","cou":"United States","lat":40.71,"lon":-74.01,"ktc":"Doak","tz":-5},
+  {"cit":"Karachi","cou":"Pakistan","lat":24.86,"lon":67.01,"ktc":"BWhb","tz":5},
+  {"cit":"Chongqing","cou":"China","lat":29.56,"lon":106.55,"ktc":"Cwhk","tz":8},
+  {"cit":"Istanbul","cou":"Türkiye","lat":41.01,"lon":28.98,"ktc":"Csak","tz":3},
+  {"cit":"Buenos Aires","cou":"Argentina","lat":-34.6,"lon":-58.38,"ktc":"Cfal","tz":-3},
+  {"cit":"Kolkata","cou":"India","lat":22.57,"lon":88.36,"ktc":"Awhb","tz":5.5},
+  {"cit":"Kinshasa","cou":"DR Congo","lat":-4.44,"lon":15.27,"ktc":"Awhb","tz":1},
+  {"cit":"Lagos","cou":"Nigeria","lat":6.52,"lon":3.38,"ktc":"Awha","tz":1},
+  {"cit":"Manila","cou":"Philippines","lat":14.6,"lon":120.98,"ktc":"Amha","tz":8},
+  {"cit":"Rio de Janeiro","cou":"Brazil","lat":-22.91,"lon":-43.17,"ktc":"Awhb","tz":-3},
+  {"cit":"Guangzhou","cou":"China","lat":23.13,"lon":113.26,"ktc":"Cwhl","tz":8},
+  {"cit":"Lahore","cou":"Pakistan","lat":31.55,"lon":74.34,"ktc":"Cwhl","tz":5},
+  {"cit":"Moscow","cou":"Russia","lat":55.76,"lon":37.62,"ktc":"Dcbo","tz":3},
+  {"cit":"Shenzhen","cou":"China","lat":22.54,"lon":114.06,"ktc":"Cwhl","tz":8},
+  {"cit":"Bangalore","cou":"India","lat":12.97,"lon":77.59,"ktc":"Awab","tz":5.5},
+  {"cit":"Paris","cou":"France","lat":48.86,"lon":2.35,"ktc":"Dobk","tz":1},
+  {"cit":"Bogotá","cou":"Colombia","lat":4.71,"lon":-74.07,"ktc":"Cfll","tz":-5},
+  {"cit":"Jakarta","cou":"Indonesia","lat":-6.21,"lon":106.85,"ktc":"Amha","tz":7},
+  {"cit":"Chennai","cou":"India","lat":13.08,"lon":80.27,"ktc":"Asha","tz":5.5},
+  {"cit":"Lima","cou":"Peru","lat":-12.05,"lon":-77.04,"ktc":"BWal","tz":-5},
+  {"cit":"Bangkok","cou":"Thailand","lat":13.76,"lon":100.5,"ktc":"Awha","tz":7},
+  {"cit":"Seoul","cou":"South Korea","lat":37.57,"lon":126.98,"ktc":"Dcao","tz":9},
+  {"cit":"Nagoya","cou":"Japan","lat":35.18,"lon":136.91,"ktc":"Cfhk","tz":9},
+  {"cit":"Hyderabad","cou":"India","lat":17.39,"lon":78.49,"ktc":"BShb","tz":5.5},
+  {"cit":"London","cou":"United Kingdom","lat":51.51,"lon":-0.13,"ktc":"Dobk","tz":0},
+  {"cit":"Tehran","cou":"Iran","lat":35.69,"lon":51.39,"ktc":"BShk","tz":3.5},
+  {"cit":"Chicago","cou":"United States","lat":41.88,"lon":-87.63,"ktc":"Dcao","tz":-6},
+  {"cit":"Chengdu","cou":"China","lat":30.57,"lon":104.07,"ktc":"Cwak","tz":8},
+  {"cit":"Nanjing","cou":"China","lat":32.06,"lon":118.8,"ktc":"Cfhk","tz":8},
+  {"cit":"Wuhan","cou":"China","lat":30.59,"lon":114.31,"ktc":"Cfhk","tz":8},
+  {"cit":"Ho Chi Minh City","cou":"Vietnam","lat":10.82,"lon":106.63,"ktc":"Awha","tz":7},
+  {"cit":"Luanda","cou":"Angola","lat":-8.84,"lon":13.23,"ktc":"BShb","tz":1},
+  {"cit":"Ahmedabad","cou":"India","lat":23.03,"lon":72.58,"ktc":"BShb","tz":5.5},
+  {"cit":"Kuala Lumpur","cou":"Malaysia","lat":3.14,"lon":101.69,"ktc":"Arha","tz":8},
+  {"cit":"Xi'an","cou":"China","lat":34.34,"lon":108.94,"ktc":"Cwak","tz":8},
+  {"cit":"Hong Kong","cou":"China","lat":22.32,"lon":114.17,"ktc":"Cwhl","tz":8},
+  {"cit":"Dongguan","cou":"China","lat":23.02,"lon":113.75,"ktc":"Cwhl","tz":8},
+  {"cit":"Hangzhou","cou":"China","lat":30.27,"lon":120.16,"ktc":"Cfhk","tz":8},
+  {"cit":"Foshan","cou":"China","lat":23.02,"lon":113.12,"ktc":"Cwhl","tz":8},
+  {"cit":"Shenyang","cou":"China","lat":41.8,"lon":123.43,"ktc":"Dcac","tz":8},
+  {"cit":"Riyadh","cou":"Saudi Arabia","lat":24.71,"lon":46.68,"ktc":"BWil","tz":3},
+  {"cit":"Baghdad","cou":"Iraq","lat":33.31,"lon":44.36,"ktc":"BWik","tz":3},
+  {"cit":"Santiago","cou":"Chile","lat":-33.45,"lon":-70.67,"ktc":"Csbk","tz":-4},
+  {"cit":"Surat","cou":"India","lat":21.17,"lon":72.83,"ktc":"Awha","tz":5.5},
+  {"cit":"Madrid","cou":"Spain","lat":40.42,"lon":-3.7,"ktc":"Csak","tz":1},
+  {"cit":"Suzhou","cou":"China","lat":31.3,"lon":120.62,"ktc":"Cfhk","tz":8},
+  {"cit":"Pune","cou":"India","lat":18.52,"lon":73.86,"ktc":"Awhb","tz":5.5},
+  {"cit":"Harbin","cou":"China","lat":45.8,"lon":126.53,"ktc":"Dcac","tz":8},
+  {"cit":"Houston","cou":"United States","lat":29.76,"lon":-95.37,"ktc":"Cfhl","tz":-6},
+  {"cit":"Dallas","cou":"United States","lat":32.78,"lon":-96.8,"ktc":"Cfhk","tz":-6},
+  {"cit":"Toronto","cou":"Canada","lat":43.65,"lon":-79.38,"ktc":"Dcao","tz":-5},
+  {"cit":"Dar es Salaam","cou":"Tanzania","lat":-6.79,"lon":39.21,"ktc":"Awha","tz":3},
+  {"cit":"Miami","cou":"United States","lat":25.76,"lon":-80.19,"ktc":"Amhb","tz":-5},
+  {"cit":"Belo Horizonte","cou":"Brazil","lat":-19.92,"lon":-43.94,"ktc":"Awab","tz":-3},
+  {"cit":"Singapore","cou":"Singapore","lat":1.35,"lon":103.82,"ktc":"Arhh","tz":8},
+  {"cit":"Philadelphia","cou":"United States","lat":39.95,"lon":-75.17,"ktc":"Doak","tz":-5},
+  {"cit":"Atlanta","cou":"United States","lat":33.75,"lon":-84.39,"ktc":"Cfak","tz":-5},
+  {"cit":"Fukuoka","cou":"Japan","lat":33.59,"lon":130.4,"ktc":"Cfhk","tz":9},
+  {"cit":"Khartoum","cou":"Sudan","lat":15.5,"lon":32.56,"ktc":"BWia","tz":2},
+  {"cit":"Barcelona","cou":"Spain","lat":41.39,"lon":2.17,"ktc":"Csak","tz":1},
+  {"cit":"Johannesburg","cou":"South Africa","lat":-26.2,"lon":28.05,"ktc":"Cwbk","tz":2},
+  {"cit":"Saint Petersburg","cou":"Russia","lat":59.93,"lon":30.34,"ktc":"Dcbo","tz":3},
+  {"cit":"Qingdao","cou":"China","lat":36.07,"lon":120.38,"ktc":"Dcao","tz":8},
+  {"cit":"Dalian","cou":"China","lat":38.91,"lon":121.61,"ktc":"Dcao","tz":8},
+  {"cit":"Washington","cou":"United States","lat":38.91,"lon":-77.04,"ktc":"Doak","tz":-5},
+  {"cit":"Yangon","cou":"Myanmar","lat":16.87,"lon":96.2,"ktc":"Awha","tz":6.5},
+  {"cit":"Alexandria","cou":"Egypt","lat":31.2,"lon":29.92,"ktc":"BShl","tz":2},
+  {"cit":"Jinan","cou":"China","lat":36.65,"lon":117.12,"ktc":"Dcao","tz":8},
+  {"cit":"Guadalajara","cou":"Mexico","lat":20.67,"lon":-103.35,"ktc":"Cwal","tz":-6},
+  {"cit":"Ankara","cou":"Türkiye","lat":39.93,"lon":32.86,"ktc":"BSak","tz":3},
+  {"cit":"Chittagong","cou":"Bangladesh","lat":22.36,"lon":91.78,"ktc":"Awha","tz":6},
+  {"cit":"Melbourne","cou":"Australia","lat":-37.81,"lon":144.96,"ktc":"Cfbk","tz":10},
+  {"cit":"Sydney","cou":"Australia","lat":-33.87,"lon":151.21,"ktc":"Cfal","tz":10},
+  {"cit":"Hanoi","cou":"Vietnam","lat":21.03,"lon":105.85,"ktc":"Cwhl","tz":7},
+  {"cit":"Jeddah","cou":"Saudi Arabia","lat":21.49,"lon":39.19,"ktc":"BWha","tz":3},
+  {"cit":"Addis Ababa","cou":"Ethiopia","lat":9.03,"lon":38.74,"ktc":"Cwbl","tz":3},
+  {"cit":"Nairobi","cou":"Kenya","lat":-1.29,"lon":36.82,"ktc":"Cwbk","tz":3},
+  {"cit":"Casablanca","cou":"Morocco","lat":33.57,"lon":-7.59,"ktc":"Csal","tz":1},
+  {"cit":"Berlin","cou":"Germany","lat":52.52,"lon":13.4,"ktc":"Dobk","tz":1},
+  {"cit":"Rome","cou":"Italy","lat":41.9,"lon":12.5,"ktc":"Csak","tz":1},
+  {"cit":"Montreal","cou":"Canada","lat":45.5,"lon":-73.57,"ktc":"Dcbc","tz":-5},
+  {"cit":"Vancouver","cou":"Canada","lat":49.28,"lon":-123.12,"ktc":"Dobk","tz":-8},
+  {"cit":"Seattle","cou":"United States","lat":47.61,"lon":-122.33,"ktc":"Dobk","tz":-8},
+  {"cit":"San Francisco","cou":"United States","lat":37.77,"lon":-122.42,"ktc":"Csll","tz":-8},
+  {"cit":"Los Angeles","cou":"United States","lat":34.05,"lon":-118.24,"ktc":"Csal","tz":-8},
+  {"cit":"Phoenix","cou":"United States","lat":33.45,"lon":-112.07,"ktc":"BWil","tz":-7},
+  {"cit":"Caracas","cou":"Venezuela","lat":10.48,"lon":-66.9,"ktc":"Awab","tz":-4},
+  {"cit":"Maracaibo","cou":"Venezuela","lat":10.65,"lon":-71.65,"ktc":"Awha","tz":-4},
+  {"cit":"Accra","cou":"Ghana","lat":5.6,"lon":-0.19,"ktc":"BSha","tz":0},
+  {"cit":"Abidjan","cou":"Côte d'Ivoire","lat":5.36,"lon":-4.01,"ktc":"Amha","tz":0}
+];
+let CITIES = [];
+const cityKey = c => c.cit + '|' + c.cou;
+
+function validCity(c) {
+  return c && typeof c.cit === 'string' && typeof c.cou === 'string' && isFinite(c.lat) && isFinite(c.lon) &&
+    typeof c.ktc === 'string' && c.ktc.length === 4;
+}
+// A city without tz takes it from the built-in list, or else from its longitude (15° an hour).
+function fillTz(list) {
+  const known = {};
+  FALLBACK_CITIES.forEach(c => { known[cityKey(c)] = c.tz; });
+  list.forEach(c => {
+    if (isFinite(c.tz)) return;
+    c.tz = cityKey(c) in known ? known[cityKey(c)] : Math.round(c.lon / 15);
+    if (!(cityKey(c) in known)) console.warn('world-cities.json: no tz for ' + c.cit + ', using ' + c.tz);
+  });
+  return list;
+}
+async function loadCities() {
+  if (Array.isArray(window.WORLD_CITIES)) return { list: window.WORLD_CITIES, from: 'page' };
+  if (location.protocol === 'file:') return { list: FALLBACK_CITIES, from: 'fallback' };   // browsers block reading files from disk
+  try {
+    const res = await fetch(CITY_FILE, { cache: 'no-cache' });
+    if (!res.ok) throw new Error(res.status);
+    const text = (await res.text()).replace(/\/\/[^\n"]*$/gm, '');   // drop // comments at line ends
+    const list = fillTz(JSON.parse(text).filter(validCity));
+    if (!list.length) throw new Error('empty');
+    return { list, from: 'file' };
+  } catch (e) {
+    return { list: FALLBACK_CITIES, from: 'fallback' };
+  }
+}
+
+/* ── the example conversation ── */
+const EXAMPLE = [
+  ['A', 'Hello! Where are you today?'],
+  ['B', 'Hi! I’m in London.'],
+  ['A', 'London? What are you doing there?'],
+  ['B', 'I’m on vacation. And you? Where are you?'],
+  ['A', 'I’m in Tokyo. I’m on a business trip.'],
+  ['B', 'What time is it in Tokyo?'],
+  ['A', 'It’s five o’clock in the afternoon. What time is it there?'],
+  ['B', 'It’s eight o’clock in the morning here.'],
+  ['A', 'What’s the weather like in London?'],
+  ['B', 'It’s rainy and foggy. It’s nine degrees. What about Tokyo?'],
+  ['A', 'It’s sunny and warm. It’s twenty-one degrees.'],
+  ['B', 'Lucky you!']
+];
+const WHO = { A: { avatar: '👩', av: 'av-a', side: 'left' }, B: { avatar: '👨', av: 'av-b', side: 'right' } };
+document.getElementById('example').innerHTML = EXAMPLE.map(([w, text]) => {
+  const s = WHO[w], right = s.side === 'right';
+  return '<div class="bubble-wrap' + (right ? ' right' : '') + '"><div class="avatar ' + s.av + '">' + s.avatar + '</div>' +
+    '<div class="bubble-col"><div class="bname' + (right ? ' right' : '') + '">' + w + '</div>' +
+    '<div class="bubble ' + (right ? 'right' : 'left') + '">' + text + '</div></div></div>';
+}).join('');
+
+/* ── useful language ── */
+const LANG = [
+  ['Where are you today?', 'I’m in Tokyo. · I’m in Japan.'],
+  ['What are you doing there?', 'I’m on vacation. · I’m visiting my family.'],
+  ['What time is it there?', 'It’s half past ten in the morning. · It’s 10:30 am.'],
+  ['What day is it there?', 'It’s Saturday.'],
+  ['What’s the weather like?', 'It’s sunny. · It’s raining. · It’s cloudy and windy.'],
+  ['Is it hot or cold?', 'It’s hot. It’s 35 degrees. · It’s cold. It’s minus 5.'],
+  ['Is it raining?', 'Yes, it is. · No, it isn’t.'],
+  ['Is it day or night there?', 'It’s night. I can see the moon!'],
+  ['Is it humid?', 'Yes, it is. The humidity is 90 percent.']
+];
+document.getElementById('lang').innerHTML = '<div class="lh">Ask</div><div class="lh">Answer</div>' +
+  LANG.map(([q, a]) => '<div class="lq">' + q + '</div><div class="la">' + a + '</div>').join('');
+
+/* ── the world viewer ── */
+const YEAR0 = Date.UTC(2027, 0, 1);          // any year without 29 February
+const MINUTES = 365 * 24 * 60;               // 525 600 minutes: codes 000000–525599
+const COLOURS = ['#ff6b6b', '#ffd166', '#4cc9f0', '#80ed99', '#c77dff', '#ff9f1c'];
+const REASONS = [
+  ['🏖️', 'I’m on vacation.'], ['💼', 'I’m on a business trip.'], ['👨‍👩‍👧', 'I’m visiting my family.'],
+  ['🎓', 'I’m studying English.'], ['🤝', 'I’m visiting a friend.'], ['🎤', 'I’m at a conference.'],
+  ['⚽', 'I’m watching a football match.'], ['🎒', 'I’m on a school trip.'], ['🍜', 'I’m trying the local food.'],
+  ['🏛️', 'I’m visiting museums.']
+];
+const MAX = 6;
+
+const randInt = n => Math.floor(Math.random() * n);
+const minuteToMs = m => YEAR0 + m * 60000;
+const msToMinute = ms => ((Math.floor((ms - YEAR0) / 60000) % MINUTES) + MINUTES) % MINUTES;
+const fmtCode = m => { const s = String(m).padStart(6, '0'); return s.slice(0, 3) + ' ' + s.slice(3); };
+
+let players = [], viewer = null;
+
+function start(source) {
+const note = document.getElementById('dataNote');
+if (source === 'fallback') {
+  note.hidden = false;
+  note.textContent = 'ℹ️ The city list (world-cities.json) didn’t load, so you have the short list of 100 cities. Put world-cities.json in the same folder as this page.';
+}
+function toViewerCity(p, i) {
+  const base = { player: p.name.trim() || ('Player ' + (i + 1)), accent: p.colour };
+  if (i > 0) base.guess = p.guess;                       // partners: the learner fills the bubble in
+  if (p.city == null) return Object.assign(base, { name: '', country: '', lat: null, lon: null });
+  const c = CITIES[p.city];
+  return Object.assign(base, {
+    name: c.cit, country: c.cou, lat: c.lat, lon: c.lon, ktc: c.ktc, cit: c.cit,
+    utcOffset: ms => TimeZone.offsetOf(c, ms)
+  });
+}
+
+/* players: { name, city (index into CITIES, or null), reason, colour, guess } — player 1 is you */
+function freeCity() {
+  const used = players.map(p => p.city);
+  let i, tries = 0;
+  do { i = randInt(CITIES.length); } while (used.includes(i) && ++tries < 50);
+  return i;
+}
+function freeColour() { return COLOURS.find(c => !players.some(p => p.colour === c)) || COLOURS[0]; }
+function me() { return { name: '', city: freeCity(), reason: randInt(REASONS.length), colour: freeColour() }; }
+function partner() { return { name: '', city: null, colour: freeColour(), guess: {} }; }
+
+// Saved by city name and country (not list position), so a longer or
+// re-ordered city file doesn't move anyone.
+function save() {
+  try {
+    localStorage.setItem('where-are-you-players-3', JSON.stringify(players.map(p =>
+      Object.assign({}, p, { city: p.city == null ? null : cityKey(CITIES[p.city]) }))));
+  } catch (e) { /* private mode */ }
+}
+function load() {
+  try {
+    const index = {};
+    CITIES.forEach((c, i) => { index[cityKey(c)] = i; });
+    const p = JSON.parse(localStorage.getItem('where-are-you-players-3'));
+    if (!Array.isArray(p) || !p.length || p.length > MAX) return null;
+    p.forEach(x => { x.city = x.city == null ? null : (x.city in index ? index[x.city] : null); if (x.guess) x.guess.result = null; });
+    if (p[0].city == null || !p.every((x, i) => COLOURS.includes(x.colour) && (i === 0 || x.guess))) return null;
+    return p;
+  } catch (e) { return null; }
+}
+
+players = load() || [me()];
+
+viewer = WorldViewer.build({
+  container: 'worldViewer',
+  startUTC: minuteToMs(randInt(MINUTES)),
+  cities: players.map(toViewerCity),
+  weatherAt: (c, ms) => WeatherSim.at(c, ms),
+  onGuessChange: save
+});
+
+let pushTimer = 0;
+function pushToViewer(focus) {
+  clearTimeout(pushTimer);
+  pushTimer = setTimeout(() => {
+    viewer.setCities(players.map(toViewerCity));
+    if (focus && focus.city != null) { const c = CITIES[focus.city]; viewer.setView(c.lat, c.lon); }
+  }, focus ? 0 : 250);
+  save();
+}
+
+/* ── the city picker: a search box over the cities, grouped by country ── */
+const fold = t => t.normalize('NFD').replace(/[\u0300-\u036f]/g, '').toLowerCase();
+const GROUPS = (() => {
+  const by = {};
+  CITIES.forEach((c, i) => { (by[c.cou] = by[c.cou] || []).push(i); });
+  return Object.keys(by).sort((a, b) => a.localeCompare(b)).map(cou => ({ cou, flag: WorldViewer.flag(cou), cities: by[cou] }));
+})();
+const cityLabel = i => WorldViewer.flag(CITIES[i].cou) + ' ' + CITIES[i].cit + ', ' + CITIES[i].cou;
+
+function cityPicker(current, emptyText, onPick) {
+  const wrap = document.createElement('div');
+  wrap.className = 'cp';
+  wrap.innerHTML =
+    '<button type="button" class="cp-btn" aria-haspopup="listbox" aria-expanded="false"><span class="cp-label"></span></button>' +
+    '<div class="cp-pop" hidden><input type="search" class="cp-search" placeholder="Search: city or country" autocomplete="off" aria-label="Search for a city or country">' +
+    '<div class="cp-list" role="listbox"></div></div>';
+  const btn = wrap.querySelector('.cp-btn'), pop = wrap.querySelector('.cp-pop'), search = wrap.querySelector('.cp-search'), listEl = wrap.querySelector('.cp-list');
+  function label() {
+    btn.classList.toggle('is-empty', current == null);
+    btn.querySelector('.cp-label').textContent = current == null ? emptyText : cityLabel(current);
+  }
+  function fill() {
+    const q = fold(search.value.trim());
+    let html = '', first = true;
+    GROUPS.forEach(g => {
+      const countryHit = !q || fold(g.cou).includes(q);
+      const hits = g.cities.filter(i => countryHit || fold(CITIES[i].cit).includes(q));
+      if (!hits.length) return;
+      html += '<div class="cp-country">' + g.flag + ' ' + g.cou + '</div>' + hits.map(i => {
+        const hot = q && first; first = false;
+        return '<button type="button" class="cp-opt' + (hot ? ' is-hot' : '') + '" role="option" data-i="' + i + '" aria-selected="' + (i === current) + '">' + CITIES[i].cit + '</button>';
+      }).join('');
+    });
+    listEl.innerHTML = html || '<div class="cp-none">No city. Try another word.</div>';
+  }
+  function open(on) {
+    document.querySelectorAll('.cp-pop').forEach(x => { if (x !== pop) { x.hidden = true; x.previousElementSibling.setAttribute('aria-expanded', 'false'); } });
+    pop.hidden = !on;
+    btn.setAttribute('aria-expanded', String(on));
+    if (on) {
+      search.value = ''; fill(); search.focus();
+      const sel = listEl.querySelector('[aria-selected="true"]');
+      if (sel) sel.scrollIntoView({ block: 'center' });
+    }
+  }
+  function pick(i) { current = i; label(); open(false); onPick(i); btn.focus(); }
+  btn.addEventListener('click', e => { e.stopPropagation(); open(pop.hidden); });
+  pop.addEventListener('click', e => {
+    e.stopPropagation();
+    const o = e.target.closest('.cp-opt');
+    if (o) pick(+o.dataset.i);
+  });
+  search.addEventListener('input', fill);
+  search.addEventListener('keydown', e => {
+    if (e.key === 'Enter') { const o = listEl.querySelector('.cp-opt'); if (o) pick(+o.dataset.i); e.preventDefault(); }
+    if (e.key === 'Escape') { open(false); btn.focus(); }
+  });
+  wrap.set = i => { current = i; label(); };
+  label();
+  return wrap;
+}
+document.addEventListener('click', () => document.querySelectorAll('.cp-pop').forEach(x => { x.hidden = true; }));
+
+/* ── player cards ── */
+const list = document.getElementById('players');
+
+function renderPlayers() {
+  list.innerHTML = '';
+  players.forEach((p, i) => {
+    const mine = i === 0;
+    const card = document.createElement('div');
+    card.className = 'player-card';
+    card.style.setProperty('--pc', p.colour);
+    card.innerHTML =
+      '<span class="pc-dot">' + (i + 1) + '</span>' +
+      '<input type="text" class="pc-name" maxlength="20" autocomplete="off" placeholder="' + (mine ? 'Your name' : 'Your partner’s name') + '" aria-label="Player ' + (i + 1) + ' name">' +
+      (mine ? '<span></span>' : '<button type="button" class="pc-x" title="Remove this player" aria-label="Remove player ' + (i + 1) + '">✕</button>') +
+      '<span class="pc-where"></span>' +
+      (mine ? '<span class="pc-why"></span>' : '<span class="pc-ask">Ask: “Where are you today?” Then choose the city.</span>');
+    const name = card.querySelector('.pc-name'), where = card.querySelector('.pc-where');
+    name.value = p.name;
+    name.addEventListener('input', () => { p.name = name.value; pushToViewer(); });
+    const picker = cityPicker(p.city, mine ? 'Choose your city' : 'Where is your partner?', ci => { p.city = ci; pushToViewer(p); });
+    where.appendChild(picker);
+    if (mine) {
+      const why = card.querySelector('.pc-why');
+      const showWhy = () => { why.innerHTML = 'What are you doing there? <b>' + REASONS[p.reason][0] + ' ' + REASONS[p.reason][1] + '</b>'; };
+      showWhy();
+      const dice = document.createElement('button');
+      dice.type = 'button'; dice.className = 'pc-dice'; dice.title = 'A new random city'; dice.setAttribute('aria-label', 'A new random city');
+      dice.textContent = '🎲';
+      dice.addEventListener('click', () => {
+        p.city = freeCity(); p.reason = randInt(REASONS.length);
+        picker.set(p.city); showWhy(); pushToViewer(p);
+      });
+      where.appendChild(dice);
+    } else {
+      card.querySelector('.pc-x').addEventListener('click', () => { players.splice(i, 1); renderPlayers(); pushToViewer(); });
+    }
+    list.appendChild(card);
+  });
+  document.getElementById('pCount').textContent = players.length;
+  document.getElementById('addBtn').disabled = players.length >= MAX;
+  document.getElementById('removeBtn').disabled = players.length <= 1;
+}
+document.getElementById('addBtn').addEventListener('click', () => {
+  if (players.length >= MAX) return;
+  players.push(partner()); renderPlayers(); pushToViewer();
+  list.lastChild.querySelector('.pc-name').focus();
+});
+document.getElementById('removeBtn').addEventListener('click', () => {
+  if (players.length <= 1) return;
+  players.pop(); renderPlayers(); pushToViewer();
+});
+renderPlayers();
+
+/* ── the world code: the minute of the year this viewer is showing ── */
+const codeEl = document.getElementById('myCode'), syncIn = document.getElementById('syncIn'), msg = document.getElementById('syncMsg');
+function showCode() { codeEl.textContent = fmtCode(msToMinute(viewer.now())); }
+showCode();
+setInterval(showCode, 1000);
+function say(text, kind) { msg.textContent = text; msg.className = 'sync-msg' + (kind ? ' ' + kind : ''); }
+
+function sync() {
+  const digits = syncIn.value.replace(/\D/g, '');
+  const m = +digits;
+  if (digits.length !== 6 || m >= MINUTES) {
+    syncIn.classList.remove('bad'); void syncIn.offsetWidth; syncIn.classList.add('bad');
+    say('Write the 6 numbers from your partner’s screen.', 'bad');
+    return;
+  }
+  syncIn.classList.remove('bad');
+  viewer.setTime(minuteToMs(m));
+  showCode();
+  say('✓ Synced! Your world has the same time as code ' + fmtCode(m) + '.', 'ok');
+}
+document.getElementById('syncBtn').addEventListener('click', sync);
+syncIn.addEventListener('keydown', e => { if (e.key === 'Enter') sync(); });
+syncIn.addEventListener('input', () => { syncIn.classList.remove('bad'); });
+document.getElementById('newTimeBtn').addEventListener('click', () => {
+  viewer.setTime(minuteToMs(randInt(MINUTES)));
+  showCode();
+  say('🎲 New time. Read your new code to your partner.', '');
+});
+
+}
+
+/* ── more questions ── */
+HouseRandomGen.build({ items: [
+  { icon: '🏙️', label: 'Place', text: 'Where are you today?' },
+  { icon: '🎒', label: 'Why', text: 'What are you doing there?' },
+  { icon: '🕐', label: 'Time', text: 'What time is it there?' },
+  { icon: '📅', label: 'Day', text: 'What day is it there?' },
+  { icon: '🌅', label: 'Time', text: 'Is it morning, afternoon or evening there?' },
+  { icon: '🌙', label: 'Day or night', text: 'Is it day or night there?' },
+  { icon: '🌦️', label: 'Weather', text: 'What’s the weather like there?' },
+  { icon: '🌡️', label: 'Temperature', text: 'Is it hot or cold? How many degrees is it?' },
+  { icon: '☔', label: 'Rain', text: 'Is it raining there?' },
+  { icon: '☁️', label: 'Clouds', text: 'Is it sunny or cloudy?' },
+  { icon: '🌬️', label: 'Wind', text: 'Is it windy there?' },
+  { icon: '💧', label: 'Humidity', text: 'Is it humid there?' }
+] });
+
+loadCities().then(({ list, from }) => {
+  CITIES = list.slice().sort((a, b) => a.cit.localeCompare(b.cit) || a.cou.localeCompare(b.cou));
+  start(from);
+});
+</script>
+<script>HouseGrammar.init();</script>
+</body>
+</html>

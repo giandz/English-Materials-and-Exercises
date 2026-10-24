@@ -36,6 +36,14 @@
    and lunar zenith markers (☀️ / 🌙: where the Sun or Moon is right
    overhead, with a dotted line out to it), the polar axis, auto-rotate and reset. The legend
    under the viewer lists only the aids that can be seen at that moment.
+   Live players (used by the freer practice page):
+     weatherAt: function (city, ms) { return WeatherSim.at(city, ms); }
+       — weather is worked out again every simulated minute
+     city.utcOffset may be a function of ms (daylight saving: TimeZone.offsetOf)
+     city.player = 'Ana' gives the bubble a name strip and frame in city.accent
+     viewer.setCities([...])  replace the cities / players (up to 6 fit)
+     viewer.setTime(ms)       jump the simulated clock; it keeps ticking
+     viewer.now()             the simulated moment
    Optional start settings:
      show: { terminator:false, equator:false, zenith:false, sublunar:false, axis:false },
      autoRotate:true, rotateSpeed:1   (degrees a second, ¼ – 30)
@@ -484,8 +492,299 @@
 
 
   /* ════════════════════════════════════════════════════════════════════
+     WEATHER SIM — believable "right now" weather for any city, worked out
+     from its Köppen–Trewartha climate code, the date and the time of day.
+
+       WeatherSim.at({ cit:'London', lat:51.51, lon:-0.13, ktc:'Dobk' }, ms)
+         → { icon, label, tempC, humidity, windKmh, windFrom, precipMm,
+             cloud, sunlight, isDay }
+
+     The code has four letters: climate group (A B C D E F), its type
+     (A: r m w s · B: W S · C: f s w · D: o c · E: o c · F: t i), and the
+     universal thermal scale of the warmest and the coldest month.
+
+     Everything here is deterministic — the same city at the same moment
+     always gets the same weather — so two devices that share a world-time
+     code see the same skies. The "randomness" is hash noise keyed on the
+     city name and the hour, smoothly blended, so weather changes slowly.
+     ════════════════════════════════════════════════════════════════════ */
+  var WeatherSim = (function () {
+    // Universal thermal scale → a typical monthly mean (°C), inside each band:
+    // i ≥35 · h 28–35 · a 23–28 · b 18–23 · l 10–18 · k 0–10 · o −10–0 ·
+    // c −25 to −10 · d −40 to −25 · e ≤ −40
+    var THERMAL = { i: 35.5, h: 28.5, a: 25, b: 20, l: 14, k: 4, o: -4, c: -16, d: -31, e: -44,
+                    f: 7 };   // 'f': a cool tundra summer (as in ETfc, Nuuk)
+
+    // By climate group + type:
+    //   hum    relative humidity range, %
+    //   wet    share of hours with rain in the wet part of the year
+    //   dry    … and in the dry part
+    //   mm     rain rate from light to heavy, mm in the hour
+    //   season when the rain falls: 'even', 'summer' (high-sun) or 'winter'
+    //   cloud  cloud cover range on a dry day, %
+    //   dtr    typical day–night temperature range, °C
+    //   fog    chance of morning fog on a calm dry morning
+    var KT = {
+      Ar: { hum: [70, 95], wet: 0.24, dry: 0.18, mm: [1, 30], season: 'even',   cloud: [30, 85], dtr: 7,  fog: 0.02 },
+      Am: { hum: [65, 95], wet: 0.28, dry: 0.06, mm: [1, 30], season: 'summer', cloud: [25, 85], dtr: 7,  fog: 0.02 },
+      Aw: { hum: [40, 90], wet: 0.24, dry: 0.02, mm: [1, 25], season: 'summer', cloud: [10, 75], dtr: 10, fog: 0.03 },
+      As: { hum: [50, 90], wet: 0.25, dry: 0.05, mm: [1, 18], season: 'winter', cloud: [10, 75], dtr: 8,  fog: 0.02 },
+      BW: { hum: [8, 40],  wet: 0.02, dry: 0.005, mm: [0.3, 6], season: 'even', cloud: [0, 30],  dtr: 15, fog: 0.01 },
+      BS: { hum: [20, 60], wet: 0.08, dry: 0.02, mm: [0.3, 9], season: 'even',  cloud: [5, 50],  dtr: 13, fog: 0.02 },
+      Cf: { hum: [55, 90], wet: 0.20, dry: 0.15, mm: [0.5, 14], season: 'even', cloud: [15, 80], dtr: 9,  fog: 0.08 },
+      Cs: { hum: [45, 85], wet: 0.20, dry: 0.02, mm: [0.5, 9], season: 'winter', cloud: [0, 60], dtr: 11, fog: 0.12 },
+      Cw: { hum: [40, 90], wet: 0.24, dry: 0.03, mm: [0.5, 18], season: 'summer', cloud: [10, 80], dtr: 11, fog: 0.05 },
+      Do: { hum: [65, 95], wet: 0.25, dry: 0.20, mm: [0.3, 6], season: 'even',  cloud: [30, 95], dtr: 7,  fog: 0.15 },
+      Dc: { hum: [50, 85], wet: 0.18, dry: 0.12, mm: [0.3, 9], season: 'summer', cloud: [15, 85], dtr: 10, fog: 0.06 },
+      // Köppen-style 'Df' (continental, wet all year) and 'ET' (tundra), which some city lists use
+      Df: { hum: [55, 88], wet: 0.18, dry: 0.15, mm: [0.3, 8], season: 'even',  cloud: [20, 88], dtr: 9,  fog: 0.07 },
+      ET: { hum: [65, 90], wet: 0.16, dry: 0.12, mm: [0.2, 4], season: 'even',  cloud: [35, 92], dtr: 5,  fog: 0.12 },
+      E:  { hum: [55, 90], wet: 0.20, dry: 0.12, mm: [0.3, 5], season: 'summer', cloud: [25, 90], dtr: 9,  fog: 0.08 },
+      F:  { hum: [60, 90], wet: 0.15, dry: 0.10, mm: [0.2, 3], season: 'even',  cloud: [30, 90], dtr: 6,  fog: 0.10 }
+    };
+    var COMPASS16 = ['N', 'NNE', 'NE', 'ENE', 'E', 'ESE', 'SE', 'SSE', 'S', 'SSW', 'SW', 'WSW', 'W', 'WNW', 'NW', 'NNW'];
+
+    function parse(code) {
+      code = String(code || 'Cfbk');
+      return { group: code.charAt(0), type: code.charAt(1), warm: code.charAt(2), cold: code.charAt(3) };
+    }
+    function table(k) { return KT[k.group + k.type] || KT[k.group] || KT.Cf; }
+
+    // FNV-1a hash → [0, 1)
+    function hash(str) {
+      var h = 2166136261;
+      for (var i = 0; i < str.length; i++) { h ^= str.charCodeAt(i); h = Math.imul(h, 16777619); }
+      h ^= h >>> 13; h = Math.imul(h, 2246822507); h ^= h >>> 16;
+      return (h >>> 0) / 4294967296;
+    }
+    // value noise along time: a new random value every `period` hours, eased between
+    function noise(key, hours, period) {
+      var x = hours / period, k = Math.floor(x), f = x - k;
+      f = f * f * (3 - 2 * f);
+      var a = hash(key + ':' + k), b = hash(key + ':' + (k + 1));
+      return a + (b - a) * f;
+    }
+    function clamp(x, a, b) { return Math.max(a, Math.min(b, x)); }
+    // blended noise bunches up around 0.5; this stretches it back out
+    function spread(n) { return smooth(0.15, 0.85, n); }
+    function lerp(a, b, t) { return a + (b - a) * t; }
+
+    /* Prevailing wind from the three-cell model, which shifts a little with
+       the seasons (the cells follow the Sun):
+         0–30°   Hadley cell  → trade winds, from the NE (north) / SE (south)
+         30–60°  Ferrel cell  → westerlies, from the SW (north) / NW (south)
+         60–90°  polar cell   → polar easterlies, from the NE / SE
+       Near the edges of the cells — the doldrums, the horse latitudes and the
+       polar front — the wind is light and its direction wanders. */
+    function prevailing(lat, declination) {
+      var l = lat - declination * 0.45, a = Math.abs(l), north = l >= 0;
+      var from, base;
+      if (a < 30)      { from = north ? 45 : 135;  base = 19; }
+      else if (a < 60) { from = north ? 225 : 315; base = 23; }
+      else             { from = north ? 45 : 135;  base = 16; }
+      var edge = Math.min(a, Math.abs(a - 30), Math.abs(a - 60));
+      var settled = smooth(0, 12, edge);              // 0 at a cell edge, 1 well inside a cell
+      return { from: from, base: base, settled: settled };
+    }
+
+    function at(city, ms) {
+      var k = parse(city.ktc), T = table(k);
+      var key = city.cit || city.name || (city.lat + ',' + city.lon);
+      var hours = ms / 3600e3;
+      var d = new Date(ms), year = d.getUTCFullYear();
+      var doy = (ms - Date.UTC(year, 0, 1)) / 864e5;
+      var south = city.lat < 0;
+
+      // the season: +1 in the middle of local summer, −1 in mid-winter
+      var summer = Math.cos(2 * Math.PI * (doy - (south ? 18 : 200)) / 365);
+      var wetness = T.season === 'summer' ? 0.5 + 0.5 * summer : T.season === 'winter' ? 0.5 - 0.5 * summer : 0.5;
+
+      // sunlight from latitude, time of year and time of day
+      var sun = sunAt(ms), cv = vec(city.lat, city.lon);
+      var sinElev = dot(cv, vec(sun.lat, sun.lon));
+      var solarHour = ((d.getUTCHours() + d.getUTCMinutes() / 60 + city.lon / 15) % 24 + 24) % 24;
+      var daily = Math.cos(2 * Math.PI * (solarHour - 15) / 24);   // +1 at 3 pm, −1 at 3 am
+
+      // rain: is this hour wet, and how hard?
+      var chance = lerp(T.dry, T.wet, wetness);
+      if (k.group === 'A' || k.type === 'w') chance *= 1 + 0.6 * Math.max(0, daily);   // afternoon showers
+      var nRain = noise(key + 'r', hours, 3);
+      var raining = nRain < chance;
+      var q = raining ? clamp((chance - nRain) / chance, 0, 1) : 0;   // 0–1 intensity
+      var mm = raining ? T.mm[0] + (T.mm[1] - T.mm[0]) * q * q : 0;
+
+      // clouds
+      var nCloud = clamp(spread(noise(key + 'c', hours, 6)) * 0.85 + 0.3 * wetness - 0.12, 0, 1);
+      var cloud = raining ? 70 + 30 * Math.sqrt(q) : lerp(T.cloud[0], T.cloud[1], nCloud);
+
+      // morning fog on calm, dry mornings
+      var foggy = !raining && solarHour >= 3 && solarHour <= 9.5 && noise(key + 'f', hours, 8) < T.fog;
+      if (foggy) cloud = 100;
+
+      var clear = 1 - 0.7 * cloud / 100;
+      var sunlight = Math.max(0, sinElev) * clear * (raining ? 0.5 : 1);
+
+      // temperature: the month's mean from the thermal letters, a day-to-day
+      // swing, and a daily cycle that clouds and rain flatten
+      var W = THERMAL[k.warm] != null ? THERMAL[k.warm] : 20, C = THERMAL[k.cold] != null ? THERMAL[k.cold] : 5;
+      var seasonal = (W + C) / 2 + (W - C) / 2 * summer;
+      var anomaly = (spread(noise(key + 't', hours, 36)) - 0.5) * (k.group === 'A' ? 2.5 : 5);   // the tropics vary less from day to day
+      var temp = seasonal + anomaly + (T.dtr / 2) * daily * (raining ? 0.2 : 0.35 + 0.65 * clear) - (raining ? 2 + 4 * q : 0);
+
+      // humidity: wetter season, rain and night push it up; a sunny afternoon brings it down
+      var nHum = spread(noise(key + 'h', hours, 8));
+      var hum = lerp(T.hum[0], T.hum[1], clamp(0.25 + 0.45 * wetness + 0.3 * nHum, 0, 1)) - 14 * daily * clear;
+      if (raining) hum = Math.max(hum, 86 + 12 * q);
+      if (foggy) hum = Math.max(hum, 96);
+      hum = clamp(hum, 5, 100);
+
+      // wind: the prevailing wind, knocked about by showers and storms
+      var pw = prevailing(city.lat, sun.lat);
+      var nDir = noise(key + 'd', hours, 6) - 0.5, nSpd = noise(key + 's', hours, 4);
+      var dir = pw.from + nDir * 2 * (30 + 120 * (1 - pw.settled) + 110 * q);
+      var kmh = pw.base * (0.35 + 0.65 * pw.settled) * (0.55 + 0.8 * nSpd) * (1 + 0.25 * Math.max(0, daily)) + 32 * q * q + (raining ? 5 : 0);
+      if (foggy) kmh = Math.min(kmh, 6);
+      kmh = Math.max(2, Math.round(kmh));
+      dir = ((dir % 360) + 360) % 360;
+      var windFrom = COMPASS16[Math.round(dir / 22.5) % 16];
+
+      // what to call it
+      var isDay = sinElev > -0.01, t = Math.round(temp), icon, label;
+      if (raining && temp <= 1.5) { icon = '🌨️'; label = 'Snow'; }
+      else if (raining && q > 0.65 && temp >= 18 && (k.group === 'A' || k.group === 'C')) { icon = '⛈️'; label = 'Thunderstorm'; }
+      else if (raining) { icon = mm < 2 && isDay ? '🌦️' : '🌧️'; label = mm < 2 ? 'Light rain' : mm >= 10 ? 'Heavy rain' : 'Rain'; }
+      else if (foggy) { icon = '🌫️'; label = 'Fog'; }
+      else if (kmh >= 35) { icon = '🌬️'; label = 'Windy'; }
+      else if (cloud < 25) { icon = isDay ? '☀️' : '🌙'; label = isDay ? 'Sunny' : 'Clear'; }
+      else if (cloud < 65) { icon = isDay ? '⛅' : '☁️'; label = 'Partly cloudy'; }
+      else { icon = '☁️'; label = 'Cloudy'; }
+
+      return {
+        icon: icon, label: label, tempC: t,
+        humidity: Math.round(hum), windKmh: kmh, windFrom: windFrom,
+        precipMm: mm === 0 ? 0 : mm < 10 ? Math.round(mm * 10) / 10 : Math.round(mm),
+        cloud: Math.round(cloud / 5) * 5,
+        sunlight: Math.round(sunlight * 100), isDay: isDay
+      };
+    }
+
+    return { at: at, prevailing: prevailing, THERMAL: THERMAL, KT: KT };
+  })();
+  global.WeatherSim = WeatherSim;
+
+
+  /* ════════════════════════════════════════════════════════════════════
+     TIME ZONES — a city's clock at any moment of the year: its standard
+     (winter) UTC offset plus one hour while daylight saving is on.
+
+       TimeZone.ruleFor(country, city)        → 'eu' | 'us' | 'au' | 'nz' | 'cl' | 'eg' | 'il' | ''
+       TimeZone.offsetAt(stdOffset, rule, ms) → hours
+       TimeZone.offsetOf(city, ms)            → hours, for { cou, cit, tz }
+
+     Whether a city has daylight saving is looked up from its country. Where
+     a country is split, the city decides: in Australia only Sydney,
+     Melbourne, Adelaide, Canberra and Hobart change their clocks (Brisbane,
+     the Gold Coast, Perth and Darwin don't); Arizona, Hawaii and
+     Saskatchewan, Yukon and Chile's far south (Punta Arenas) stay on
+     standard time all year; and Mexico's border
+     cities follow the US clock although the rest of Mexico has stopped.
+     ════════════════════════════════════════════════════════════════════ */
+  var TimeZone = (function () {
+    var EU = ['United Kingdom', 'Ireland', 'Portugal', 'Spain', 'France', 'Belgium', 'Netherlands', 'Luxembourg', 'Germany',
+      'Switzerland', 'Austria', 'Italy', 'Malta', 'Monaco', 'Andorra', 'San Marino', 'Vatican City', 'Liechtenstein', 'Denmark',
+      'Norway', 'Sweden', 'Finland', 'Estonia', 'Latvia', 'Lithuania', 'Poland', 'Czechia', 'Slovakia', 'Hungary', 'Slovenia',
+      'Croatia', 'Bosnia and Herzegovina', 'Serbia', 'Montenegro', 'Kosovo', 'Albania', 'North Macedonia', 'Greece', 'Bulgaria',
+      'Romania', 'Moldova', 'Ukraine', 'Cyprus'];
+    var BY_COUNTRY = { 'United States': 'us', 'Canada': 'us', 'Cuba': 'us', 'Bahamas': 'us', 'Haiti': 'us', 'Bermuda': 'us',
+      'Chile': 'cl', 'Egypt': 'eg', 'Israel': 'il', 'New Zealand': 'nz', 'Greenland': 'eu', 'Lebanon': 'eu' };
+    EU.forEach(function (c) { BY_COUNTRY[c] = 'eu'; });
+    // cities that differ from the rest of their country
+    var BY_CITY = {
+      'Australia': { 'Sydney': 'au', 'Melbourne': 'au', 'Adelaide': 'au', 'Canberra': 'au', 'Hobart': 'au',
+                     'Geelong': 'au', 'Newcastle': 'au', 'Wollongong': 'au', 'Launceston': 'au', 'Ballarat': 'au', 'Bendigo': 'au',
+                     'Brisbane': '', 'Gold Coast': '', 'Perth': '', 'Darwin': '', 'Cairns': '', 'Townsville': '',
+                     'Alice Springs': '', 'Broome': '', 'Kalgoorlie': '' },
+      'United States': { 'Phoenix': '', 'Tucson': '', 'Mesa': '', 'Honolulu': '' },
+      'Canada': { 'Regina': '', 'Saskatoon': '', 'Whitehorse': '', 'Dawson City': '' },
+      'Chile': { 'Punta Arenas': '' },
+      'Mexico': { 'Tijuana': 'us', 'Mexicali': 'us', 'Ciudad Juárez': 'us' }
+    };
+    function ruleFor(country, city) {
+      var cities = BY_CITY[country];
+      if (cities && Object.prototype.hasOwnProperty.call(cities, city)) return cities[city];
+      return BY_COUNTRY[country] || '';
+    }
+
+    // the n-th (1-based; −1 = last) given weekday of a month, at 00:00 UTC
+    function nthDay(year, month, weekday, n) {
+      if (n > 0) {
+        var first = new Date(Date.UTC(year, month, 1)).getUTCDay();
+        return Date.UTC(year, month, 1 + ((weekday - first + 7) % 7) + (n - 1) * 7);
+      }
+      var lastDate = new Date(Date.UTC(year, month + 1, 0)), last = lastDate.getUTCDay();
+      return Date.UTC(year, month, lastDate.getUTCDate() - ((last - weekday + 7) % 7));
+    }
+    function offsetAt(std, rule, ms) {
+      if (!rule) return std;
+      var y = new Date(ms + std * 3600e3).getUTCFullYear(), H = 3600e3, on;
+      if (rule === 'eu') on = ms >= nthDay(y, 2, 0, -1) + 1 * H && ms < nthDay(y, 9, 0, -1) + 1 * H;
+      else if (rule === 'us') on = ms >= nthDay(y, 2, 0, 2) + (2 - std) * H && ms < nthDay(y, 10, 0, 1) + (1 - std) * H;
+      else if (rule === 'au') on = !(ms >= nthDay(y, 3, 0, 1) + (2 - std) * H && ms < nthDay(y, 9, 0, 1) + (2 - std) * H);
+      else if (rule === 'nz') on = !(ms >= nthDay(y, 3, 0, 1) + (2 - std) * H && ms < nthDay(y, 8, 0, -1) + (2 - std) * H);
+      else if (rule === 'cl') on = !(ms >= nthDay(y, 3, 0, 1) + 3 * H && ms < nthDay(y, 8, 0, 1) + 4 * H);
+      else if (rule === 'eg') on = ms >= nthDay(y, 3, 5, -1) - std * H && ms < nthDay(y, 9, 4, -1) + (24 - std - 1) * H;
+      else if (rule === 'il') on = ms >= nthDay(y, 2, 0, -1) - 2 * 864e5 + (2 - std) * H && ms < nthDay(y, 9, 0, -1) + (1 - std) * H;
+      return std + (on ? 1 : 0);
+    }
+    function offsetOf(city, ms) { return offsetAt(city.tz, ruleFor(city.cou || city.country, city.cit || city.name), ms); }
+    return { ruleFor: ruleFor, offsetAt: offsetAt, offsetOf: offsetOf };
+  })();
+  global.TimeZone = TimeZone;
+
+
+  /* ════════════════════════════════════════════════════════════════════
      WORLD VIEWER
      ════════════════════════════════════════════════════════════════════ */
+  /* Country flags (emoji), by the country name used in the city data. A city
+     may also carry its own `flag`. Unknown countries get a plain 🏳️. */
+  var FLAG_CODES = {
+    'Afghanistan': 'AF', 'Algeria': 'DZ', 'Angola': 'AO', 'Argentina': 'AR', 'Australia': 'AU', 'Austria': 'AT', 'Bangladesh': 'BD',
+    'Belgium': 'BE', 'Bolivia': 'BO', 'Brazil': 'BR', 'Cameroon': 'CM', 'Canada': 'CA', 'Chile': 'CL', 'China': 'CN', 'Colombia': 'CO',
+    'Costa Rica': 'CR', "Côte d'Ivoire": 'CI', 'Cuba': 'CU', 'Czechia': 'CZ', 'Denmark': 'DK', 'Dominican Republic': 'DO', 'DR Congo': 'CD',
+    'Ecuador': 'EC', 'Egypt': 'EG', 'El Salvador': 'SV', 'Ethiopia': 'ET', 'Finland': 'FI', 'France': 'FR', 'Germany': 'DE', 'Ghana': 'GH',
+    'Greece': 'GR', 'Guatemala': 'GT', 'Honduras': 'HN', 'Hungary': 'HU', 'Iceland': 'IS', 'India': 'IN', 'Indonesia': 'ID', 'Iran': 'IR',
+    'Iraq': 'IQ', 'Ireland': 'IE', 'Israel': 'IL', 'Italy': 'IT', 'Jamaica': 'JM', 'Japan': 'JP', 'Jordan': 'JO', 'Kazakhstan': 'KZ',
+    'Kenya': 'KE', 'Malaysia': 'MY', 'Mexico': 'MX', 'Morocco': 'MA', 'Myanmar': 'MM', 'Nepal': 'NP', 'Netherlands': 'NL', 'New Zealand': 'NZ',
+    'Nicaragua': 'NI', 'Nigeria': 'NG', 'North Korea': 'KP', 'Norway': 'NO', 'Pakistan': 'PK', 'Panama': 'PA', 'Paraguay': 'PY', 'Peru': 'PE',
+    'Philippines': 'PH', 'Poland': 'PL', 'Portugal': 'PT', 'Puerto Rico': 'PR', 'Qatar': 'QA', 'Romania': 'RO', 'Russia': 'RU',
+    'Saudi Arabia': 'SA', 'Senegal': 'SN', 'Singapore': 'SG', 'South Africa': 'ZA', 'South Korea': 'KR', 'Spain': 'ES', 'Sri Lanka': 'LK',
+    'Sudan': 'SD', 'Sweden': 'SE', 'Switzerland': 'CH', 'Syria': 'SY', 'Taiwan': 'TW', 'Tanzania': 'TZ', 'Thailand': 'TH', 'Tunisia': 'TN',
+    'Türkiye': 'TR', 'Turkey': 'TR', 'Uganda': 'UG', 'Ukraine': 'UA', 'United Arab Emirates': 'AE', 'United Kingdom': 'GB', 'United States': 'US',
+    'Uruguay': 'UY', 'Uzbekistan': 'UZ', 'Venezuela': 'VE', 'Vietnam': 'VN', 'Yemen': 'YE', 'Zambia': 'ZM', 'Zimbabwe': 'ZW',
+    'Albania': 'AL', 'Andorra': 'AD', 'Antigua and Barbuda': 'AG', 'Armenia': 'AM', 'Aruba': 'AW', 'Azerbaijan': 'AZ', 'Bahamas': 'BS',
+    'Bahrain': 'BH', 'Barbados': 'BB', 'Belarus': 'BY', 'Belize': 'BZ', 'Benin': 'BJ', 'Bermuda': 'BM', 'Bhutan': 'BT',
+    'Bosnia and Herzegovina': 'BA', 'Botswana': 'BW', 'Brunei': 'BN', 'Bulgaria': 'BG', 'Burkina Faso': 'BF', 'Burundi': 'BI',
+    'Cabo Verde': 'CV', 'Cambodia': 'KH', 'Central African Republic': 'CF', 'Chad': 'TD', 'Comoros': 'KM', 'Croatia': 'HR',
+    'Curaçao': 'CW', 'Cyprus': 'CY', 'Djibouti': 'DJ', 'Dominica': 'DM', 'Equatorial Guinea': 'GQ', 'Eritrea': 'ER', 'Estonia': 'EE',
+    'Eswatini': 'SZ', 'Fiji': 'FJ', 'French Polynesia': 'PF', 'Gabon': 'GA', 'Gambia': 'GM', 'Georgia': 'GE', 'Greenland': 'GL',
+    'Grenada': 'GD', 'Guam': 'GU', 'Guinea': 'GN', 'Guinea-Bissau': 'GW', 'Guyana': 'GY', 'Haiti': 'HT', 'Hong Kong': 'HK',
+    'Kiribati': 'KI', 'Kosovo': 'XK', 'Kuwait': 'KW', 'Kyrgyzstan': 'KG', 'Laos': 'LA', 'Latvia': 'LV', 'Lebanon': 'LB',
+    'Lesotho': 'LS', 'Liberia': 'LR', 'Libya': 'LY', 'Liechtenstein': 'LI', 'Lithuania': 'LT', 'Luxembourg': 'LU', 'Macau': 'MO',
+    'Madagascar': 'MG', 'Malawi': 'MW', 'Maldives': 'MV', 'Mali': 'ML', 'Malta': 'MT', 'Marshall Islands': 'MH', 'Mauritania': 'MR',
+    'Mauritius': 'MU', 'Micronesia': 'FM', 'Moldova': 'MD', 'Monaco': 'MC', 'Mongolia': 'MN', 'Montenegro': 'ME', 'Mozambique': 'MZ',
+    'Namibia': 'NA', 'Nauru': 'NR', 'Niger': 'NE', 'North Macedonia': 'MK', 'Oman': 'OM', 'Palau': 'PW', 'Palestine': 'PS',
+    'Papua New Guinea': 'PG', 'Republic of the Congo': 'CG', 'Rwanda': 'RW', 'Saint Lucia': 'LC', 'Samoa': 'WS', 'San Marino': 'SM',
+    'Seychelles': 'SC', 'Serbia': 'RS', 'Sierra Leone': 'SL', 'Slovakia': 'SK', 'Slovenia': 'SI', 'Solomon Islands': 'SB',
+    'Somalia': 'SO', 'South Sudan': 'SS', 'Suriname': 'SR', 'Tajikistan': 'TJ', 'Timor-Leste': 'TL', 'Togo': 'TG', 'Tonga': 'TO',
+    'Trinidad and Tobago': 'TT', 'Turkmenistan': 'TM', 'Tuvalu': 'TV', 'Vanuatu': 'VU', 'Vatican City': 'VA'
+  };
+  function flagOf(country, own) {
+    if (own) return own;
+    var code = FLAG_CODES[country];
+    if (!code) return '🏳️';
+    return String.fromCodePoint(0x1F1E6 + code.charCodeAt(0) - 65, 0x1F1E6 + code.charCodeAt(1) - 65);
+  }
+
   var STYLE_ID = 'world-viewer-styles';
   var CSS = ''
     + '.wv{ margin:0 0 1rem; }'
@@ -563,6 +862,76 @@
     + '.wv-stage.is-narrow .wv-b-temp{ font-size:1.6rem; }'
     + '.wv-stage.is-narrow .wv-b-time{ font-size:1.1rem; }'
     + '.wv-stage.is-narrow .wv-b-clock svg{ width:32px; height:32px; }'
+    /* player bubbles: a name strip and frame in the player's colour */
+    + '.wv-bubble.is-player{ padding-top:0; box-shadow:0 8px 24px rgba(0,0,0,.35), inset 0 0 0 2.5px var(--wv-accent); }'
+    + '.wv-bubble.is-player::before{ display:none; }'
+    + '.wv-b-name{ margin:0 -11px 7px; padding:4px 11px 4px; background:var(--wv-accent); color:#15171c; font-weight:800; font-size:.8rem; border-radius:14px 14px 0 0; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }'
+    + '.wv-b-av.is-initial{ font-size:.95rem; font-weight:800; color:#15171c; background:var(--wv-accent); box-shadow:none; }'
+    + '.wv-b-sun{ grid-column:1 / -1; display:flex; align-items:center; gap:6px; }'
+    + '.wv-b-sun b{ flex:0 0 auto; }'
+    + '.wv-b-bar{ flex:1 1 auto; height:5px; border-radius:3px; background:rgba(255,255,255,.22); overflow:hidden; }'
+    + '.wv-b-bar span{ display:block; height:100%; background:#ffd166; border-radius:3px; }'
+    + '.wv-stage.is-narrow .wv-b-name{ margin:0 -8px 6px -10px; padding:3px 9px; }'
+    /* very narrow bubbles (5–6 players on a phone): one column, no clock face, no captions */
+    + '.wv-stage.is-tight .wv-bubble{ padding:0 6px 7px 7px; font-size:.7rem; }'
+    + '.wv-stage.is-tight .wv-b-name{ margin:0 -6px 5px -7px; padding:3px 7px; font-size:.7rem; }'
+    + '.wv-stage.is-tight .wv-b-av{ display:none; }'
+    + '.wv-stage.is-tight .wv-b-city{ font-size:.8rem; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }'
+    + '.wv-stage.is-tight .wv-b-sub{ font-size:.6rem; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }'
+    + '.wv-stage.is-tight .wv-b-top > div{ min-width:0; }'
+    + '.wv-stage.is-tight .wv-b-face{ display:none; }'
+    + '.wv-stage.is-tight .wv-b-time{ font-size:1rem; }'
+    + '.wv-stage.is-tight .wv-b-date{ font-size:.6rem; }'
+    + '.wv-stage.is-tight .wv-b-now{ gap:4px; margin:4px 0; flex-wrap:wrap; }'
+    + '.wv-stage.is-tight .wv-b-icon{ font-size:1.2rem; }'
+    + '.wv-stage.is-tight .wv-b-temp{ font-size:1.3rem; }'
+    + '.wv-stage.is-tight .wv-b-cond{ font-size:.66rem; }'
+    + '.wv-stage.is-tight .wv-b-grid{ grid-template-columns:1fr; gap:2px; }'
+    + '.wv-stage.is-tight .wv-b-cell{ padding:2px 5px; }'
+    + '.wv-stage.is-tight .wv-b-cell b{ font-size:.68rem; }'
+    + '.wv-stage.is-tight .wv-b-cell i{ display:none; }'
+    /* guess bubbles (partners): neutral sky, so the card itself gives nothing away */
+    + '.wv-bubble.is-guess{ --wv-sky1:#3a4154; --wv-sky2:#5b6479; }'
+    + '.wv-bubble button{ font-family:inherit; color:#fff; background:rgba(255,255,255,.12); border:1px solid rgba(255,255,255,.28); box-shadow:none; }'
+    + '.wv-bubble button:hover{ background:rgba(255,255,255,.22); }'
+    + '.wv-g-q{ font-size:.68rem; font-weight:700; letter-spacing:.02em; opacity:.85; margin:7px 0 3px; }'
+    + '.wv-g-time{ display:flex; align-items:center; gap:9px; }'
+    + '.wv-g-clock{ flex:0 0 auto; display:block; border-radius:50%; cursor:grab; touch-action:none; outline:none; }'
+    + '.wv-g-clock svg{ display:block; }'
+    + '.wv-g-clock:focus-visible{ box-shadow:0 0 0 2px #ffd166; }'
+    + '.wv-g-clock.is-dragging{ cursor:grabbing; }'
+    + '.wv-g-side{ display:flex; flex-direction:column; gap:5px; }'
+    + '.wv-g-digital{ font-size:1.3rem; font-weight:800; font-variant-numeric:tabular-nums; }'
+    + '.wv-g-ampm{ display:flex; gap:4px; }'
+    + '.wv-g-ampm button{ padding:2px 9px; font-size:.72rem; font-weight:700; }'
+    + '.wv-bubble button[aria-pressed="true"]{ background:#fff; color:#15171c; border-color:#fff; }'
+    + '.wv-g-chips{ display:flex; flex-wrap:wrap; gap:4px; }'
+    + '.wv-g-chip{ padding:2px 7px; font-size:.68rem; font-weight:600; line-height:1.4; }'
+    + '.wv-bubble .wv-g-chip.is-right{ background:#2f9e44; color:#fff; border-color:#b2f2bb; }'
+    + '.wv-bubble .wv-g-chip.is-wrong{ background:#e03131; color:#fff; border-color:#ffc9c9; }'
+    + '.wv-bubble .wv-g-chip.is-missed{ border:1.5px dashed #8ce99a; }'
+    + '.wv-g-temp{ display:flex; align-items:center; justify-content:space-between; gap:6px; flex-wrap:wrap; }'
+    + '.wv-g-temp .wv-g-q{ margin:7px 0 0; }'
+    + '.wv-g-step{ display:inline-flex; align-items:center; gap:4px; margin-top:5px; }'
+    + '.wv-g-step button{ width:24px; height:24px; padding:0; font-size:.9rem; font-weight:800; line-height:1; }'
+    + '.wv-g-step output{ min-width:3.6em; text-align:center; font-weight:800; font-size:.9rem; }'
+    + '.wv-bubble .wv-g-check{ width:100%; margin-top:8px; padding:5px 10px; font-size:.78rem; font-weight:800; background:#ffd166; color:#15171c; border-color:#ffd166; }'
+    + '.wv-g-result{ font-size:.7rem; font-weight:700; margin-top:5px; line-height:1.45; }'
+    + '.wv-g-result:empty{ display:none; }'
+    + '.wv-g-result .ok{ color:#8ce99a; } .wv-g-result .bad{ color:#ffa8a8; }'
+    + '.wv-g-real{ font-weight:500; opacity:.9; margin-top:2px; }'
+    + '.wv-stage.is-tight .wv-g-time{ flex-direction:column; align-items:flex-start; gap:4px; }'
+    + '.wv-stage.is-tight .wv-g-digital{ font-size:1rem; }'
+    + '.wv-g-chosen{ display:none; }'
+    + '.wv-stage.is-tight .wv-g-q{ font-size:.6rem; margin-top:5px; }'
+    + '.wv-stage.is-tight .wv-g-chips{ display:grid; grid-template-columns:repeat(4, 1fr); gap:3px; }'
+    + '.wv-stage.is-tight .wv-g-chip{ font-size:.8rem; padding:2px 0; text-align:center; }'
+    + '.wv-stage.is-tight .wv-g-w{ display:none; }'
+    + '.wv-stage.is-tight .wv-g-chosen{ display:block; font-size:.62rem; font-weight:700; margin-top:3px; min-height:1em; }'
+    + '.wv-stage.is-tight .wv-g-temp{ flex-direction:column; align-items:flex-start; gap:0; }'
+    + '.wv-stage.is-tight .wv-g-step button{ width:22px; height:22px; }'
+    + '.wv-opts{ bottom:calc(var(--wv-bottom, 0px) + 10px) !important; }'
+    + '.wv-hint{ bottom:calc(var(--wv-bottom, 0px) + 10px) !important; }'
     + '.wv-pulse{ animation:wv-pulse 1.8s ease-out infinite; transform-box:fill-box; transform-origin:center; }'
     + '@keyframes wv-pulse{ 0%{ transform:scale(.6); opacity:.9; } 100%{ transform:scale(2.6); opacity:0; } }'
     + '@media (prefers-reduced-motion: reduce){ .wv-pulse, .wv-b-colon{ animation:none; } }';
@@ -596,7 +965,7 @@
     injectStyles();
     var host = typeof opts.container === 'string' ? document.getElementById(opts.container) : opts.container;
     if (!host) return null;
-    var cities = opts.cities || [];
+    var cities = [], bubbles = [], cityVec = [], weathers = [];
     var startUTC = opts.startUTC || Date.now();
     var t0 = Date.now();
     var mode = opts.mode === 'map' ? 'map' : 'globe';
@@ -621,6 +990,7 @@
               '<button type="button" class="wv-chip" data-show="zenith">☀️ Solar zenith</button>' +
               '<button type="button" class="wv-chip" data-show="sublunar">🌙 Lunar zenith</button>' +
               '<button type="button" class="wv-chip" data-show="axis" data-globe-only>🧭 Polar axis</button>' +
+              '<button type="button" class="wv-chip" data-show="all" data-guess-only>👁️ All weather data</button>' +
             '</div>' +
             '<div class="wv-panel-h" data-globe-only>Motion</div>' +
             '<div class="wv-chips">' +
@@ -646,37 +1016,288 @@
     var off = document.createElement('canvas');
     var octx = off.getContext('2d');
 
-    cv.setAttribute('aria-label', 'The Earth, with day and night. ' + cities.map(function (c) {
-      return c.speaker + ' is in ' + c.name + ', ' + c.country + '.';
-    }).join(' '));
+    var T = buildTextures();
+    var clouds = T.cloud;
+    var ro = null;
 
-    // bubbles
-    var bubbles = cities.map(function (c) {
+    // A city's clock: a fixed offset, or a function of the moment (daylight saving).
+    function offsetOf(c, ms) { return typeof c.utcOffset === 'function' ? c.utcOffset(ms) : (c.utcOffset || 0); }
+    // Weather: fixed on the city, or worked out live by opts.weatherAt(city, ms).
+    function weatherOf(c, ms) {
+      if (opts.weatherAt) return opts.weatherAt(c, ms);
+      var w = Object.assign({}, c.weather || {});
+      // fixed weather: add live sunlight (Sun height × how clear the sky is), as WeatherSim does
+      if (w.sunlight == null && w.cloud != null && located(c)) {
+        var sun = sunAt(ms), sinElev = dot(vec(c.lat, c.lon), vec(sun.lat, sun.lon));
+        w.sunlight = Math.round(Math.max(0, sinElev) * (1 - 0.7 * w.cloud / 100) * (w.precipMm ? 0.5 : 1) * 100);
+      }
+      return w;
+    }
+
+    function makeBubble(c) {
       var b = document.createElement('div');
-      b.className = 'wv-bubble';
+      b.className = 'wv-bubble' + (c.player ? ' is-player' : '');
       b.style.setProperty('--wv-accent', c.accent || '#ffd166');
-      var w = c.weather || {};
-      var tF = Math.round(w.tempC * 9 / 5 + 32);
+      var av = c.player
+        ? '<span class="wv-b-av is-initial" aria-hidden="true">' + (c.player.trim().charAt(0).toUpperCase() || '?') + '</span>'
+        : '<span class="wv-b-av">' + (c.avatar || '🙋') + '</span>';
+      if (isGuess(c) || !located(c)) {
+        if (!c.guess) c.guess = {};
+        makeGuessBubble(c, b);
+        stage.appendChild(b);
+        return b;
+      }
       b.innerHTML =
-        '<div class="wv-b-top"><span class="wv-b-av">' + (c.avatar || '🙋') + '</span>' +
-          '<div><div class="wv-b-city">' + c.name + '</div><div class="wv-b-sub">' + c.country + (c.speaker ? ' · ' + c.speaker : '') + '</div></div></div>' +
+        (c.player ? '<div class="wv-b-name"></div>' : '') +
+        '<div class="wv-b-top">' + av +
+          '<div><div class="wv-b-city">' + c.name + '</div><div class="wv-b-sub"><span class="wv-b-flag" aria-hidden="true">' + flagOf(c.country, c.flag) + '</span> ' + c.country + (c.speaker ? ' · ' + c.speaker : '') + '</div></div></div>' +
         '<div class="wv-b-clock"><span class="wv-b-face"></span><div><div class="wv-b-time"></div><div class="wv-b-date"></div></div></div>' +
+        '<div class="wv-b-wx"></div>';
+      if (c.player) b.querySelector('.wv-b-name').textContent = c.player;
+      stage.appendChild(b);
+      return b;
+    }
+
+    function fillWeather(b, w) {
+      var tF = Math.round(w.tempC * 9 / 5 + 32);
+      var html =
         '<div class="wv-b-now"><span class="wv-b-icon">' + (w.icon || '') + '</span>' +
           '<span class="wv-b-temp">' + w.tempC + '<sup>°C</sup></span>' +
           '<span class="wv-b-cond">' + (w.label || '') + '<small>' + tF + ' °F</small></span></div>' +
         '<div class="wv-b-grid">' +
-          '<div class="wv-b-cell"><b>💧 ' + w.humidity + '%</b><i>humidity</i></div>' +
-          '<div class="wv-b-cell"><b>' + windArrow(COMPASS[w.windFrom] || 0) + ' ' + w.windKmh + ' km/h</b><i>wind · ' + w.windFrom + '</i></div>' +
-          '<div class="wv-b-cell"><b>☔ ' + w.precipMm + ' mm</b><i>precipitation</i></div>' +
-          '<div class="wv-b-cell"><b>☁️ ' + w.cloud + '%</b><i>cloud cover</i></div>' +
+          '<div class="wv-b-cell" title="humidity"><b>💧 ' + w.humidity + '%</b><i>humidity</i></div>' +
+          '<div class="wv-b-cell" title="wind from the ' + w.windFrom + '"><b>' + windArrow(COMPASS[w.windFrom] || 0) + ' ' + w.windKmh + ' km/h</b><i>wind · ' + w.windFrom + '</i></div>' +
+          '<div class="wv-b-cell" title="precipitation"><b>☔ ' + w.precipMm + ' mm</b><i>precipitation</i></div>' +
+          '<div class="wv-b-cell" title="cloud cover"><b>☁️ ' + w.cloud + '%</b><i>cloud cover</i></div>' +
+          (w.sunlight != null
+            ? '<div class="wv-b-cell wv-b-sun" title="sunlight"><b>☀️ ' + w.sunlight + '%</b><span class="wv-b-bar"><span style="width:' + w.sunlight + '%"></span></span><i>sunlight</i></div>'
+            : '') +
         '</div>';
-      stage.appendChild(b);
-      return b;
-    });
+      var wx = b.querySelector('.wv-b-wx');
+      if (wx._html !== html) { wx._html = html; wx.innerHTML = html; }
+    }
 
-    var T = buildTextures();
-    var clouds = cityClouds(T.cloud, cities);
-    var cityVec = cities.map(function (c) { return vec(c.lat, c.lon); });
+    function refreshWeather() {
+      var ms = now();
+      weathers = cities.map(function (c) { return located(c) ? weatherOf(c, ms) : {}; });
+      bubbles.forEach(function (b, i) { if (!b.classList.contains('is-guess')) fillWeather(b, weathers[i]); });
+      clouds = cityClouds(T.cloud, cities.map(function (c, i) { return { lat: c.lat, lon: c.lon, weather: weathers[i] }; })
+        .filter(function (c) { return c.lat != null && c.weather && c.weather.cloud != null; }));
+    }
+
+    /* ── guess bubbles ──────────────────────────────────────────────────
+       A city with `guess: {}` is a partner's bubble the learner fills in by
+       asking: it shows no live data. The learner drags the clock hands,
+       picks am / pm, taps the weather words and sets the temperature, then
+       presses Check to compare with the simulation. The state lives on the
+       guess object itself, so it survives re-renders; opts.onGuessChange(c)
+       is called after every change. "All weather data" in the ⚙️ menu turns
+       guess bubbles back into ordinary, live ones. */
+    var CHIPS = [
+      ['sunny', '☀️', 'sunny'], ['clear', '🌙', 'clear'], ['partly', '⛅', 'partly cloudy'], ['cloudy', '☁️', 'cloudy'],
+      ['rainy', '🌧️', 'rainy'], ['stormy', '⛈️', 'stormy'], ['snowy', '🌨️', 'snowy'], ['foggy', '🌫️', 'foggy'],
+      ['windy', '🌬️', 'windy'], ['dry', '🌵', 'dry'], ['humid', '💧', 'humid']
+    ];
+    var CHIP_WORD = {};
+    CHIPS.forEach(function (ch) { CHIP_WORD[ch[0]] = ch[1] + ' ' + ch[2]; });
+
+    function isGuess(c) { return !!c.guess && !show.all; }
+    function located(c) { return c.lat != null && c.lon != null; }
+
+    // What a learner could truthfully say about this weather.
+    //   main:   the one condition word that must be chosen
+    //   also:   other true words (windy, dry, humid) — credit, not required
+    //   ok:     words that are not wrong (e.g. "cloudy" when it is raining)
+    function truthOf(w) {
+      var L = w.label || '', main, also = [], ok = [];
+      if (L === 'Sunny') main = 'sunny';
+      else if (L === 'Clear') main = 'clear';
+      else if (L === 'Partly cloudy') main = 'partly';
+      else if (L === 'Cloudy') main = 'cloudy';
+      else if (L === 'Thunderstorm') { main = 'stormy'; ok.push('rainy'); }
+      else if (/rain/i.test(L)) main = 'rainy';
+      else if (L === 'Snow') main = 'snowy';
+      else if (L === 'Fog') main = 'foggy';
+      else if (L === 'Windy') {
+        main = 'windy';
+        ok.push(w.cloud < 25 ? (w.isDay ? 'sunny' : 'clear') : w.cloud < 65 ? 'partly' : 'cloudy');
+      }
+      if (main !== 'windy' && w.windKmh >= 30) also.push('windy');
+      if (!w.precipMm && w.humidity <= 40) also.push('dry');
+      if (w.humidity >= 80) also.push('humid');
+      if (w.cloud >= 65 && main !== 'cloudy') ok.push('cloudy');
+      if (w.cloud >= 25 && w.cloud < 65 && main !== 'partly') ok.push('partly');
+      return { main: main, also: also, ok: ok };
+    }
+
+    function checkGuess(c) {
+      var g = c.guess;
+      if (!located(c)) { g.result = { error: 'First choose the city.' }; return; }
+      var ms = now(), t = localParts(ms, offsetOf(c, ms)), w = weatherOf(c, ms);
+      var d = (((t.h * 60 + t.m) - (g.h24 * 60 + g.m)) % 1440 + 1440) % 1440;
+      d = Math.min(d, 1440 - d);
+      var tr = truthOf(w), chosen = g.chips || [];
+      var right = [], wrong = [];
+      chosen.forEach(function (k) {
+        if (k === tr.main || tr.also.indexOf(k) >= 0) right.push(k);
+        else if (tr.ok.indexOf(k) < 0) wrong.push(k);
+      });
+      var missed = [tr.main].concat(tr.also).filter(function (k) { return k && chosen.indexOf(k) < 0; });
+      g.result = {
+        time: d <= 15, weather: chosen.indexOf(tr.main) >= 0 && !wrong.length, temp: Math.abs(g.temp - w.tempC) <= 3,
+        right: right, wrong: wrong, missed: missed,
+        real: { time: TimeKit.digital(t.h, t.m), main: CHIP_WORD[tr.main] || w.label, also: tr.also.map(function (k) { return CHIP_WORD[k]; }), temp: w.tempC }
+      };
+    }
+
+    function changed(c) {
+      c.guess.result = null;
+      if (opts.onGuessChange) opts.onGuessChange(c);
+    }
+
+    function makeGuessBubble(c, b) {
+      var g = c.guess;
+      if (g.h24 == null) g.h24 = 12;
+      if (g.m == null) g.m = 0;
+      if (!g.chips) g.chips = [];
+      if (g.temp == null) g.temp = 20;
+      b.classList.add('is-guess');
+      var where = located(c)
+        ? '<div class="wv-b-city">' + c.name + '</div><div class="wv-b-sub">' + flagOf(c.country) + ' ' + c.country + '</div>'
+        : '<div class="wv-b-city">Where?</div><div class="wv-b-sub">Ask: “Where are you today?”</div>';
+      b.innerHTML =
+        '<div class="wv-b-name"></div>' +
+        '<div class="wv-b-top"><span class="wv-b-av is-initial" aria-hidden="true">' + (c.player.trim().charAt(0).toUpperCase() || '?') + '</span><div>' + where + '</div></div>' +
+        '<div class="wv-g-q">What time is it there?</div>' +
+        '<div class="wv-g-time">' +
+          '<span class="wv-g-clock" tabindex="0" role="slider" aria-label="Clock: drag the hands. Arrow keys: ← → minutes, ↑ ↓ hours"></span>' +
+          '<div class="wv-g-side"><div class="wv-g-digital"></div>' +
+            '<div class="wv-g-ampm"><button type="button" data-ap="am">am</button><button type="button" data-ap="pm">pm</button></div></div>' +
+        '</div>' +
+        '<div class="wv-g-q">What’s the weather like?</div>' +
+        '<div class="wv-g-chips">' + CHIPS.map(function (ch) {
+          return '<button type="button" class="wv-g-chip" data-chip="' + ch[0] + '" title="' + ch[2] + '" aria-label="' + ch[2] + '"><span aria-hidden="true">' + ch[1] + '</span><span class="wv-g-w"> ' + ch[2] + '</span></button>';
+        }).join('') + '</div>' +
+        '<div class="wv-g-chosen"></div>' +
+        '<div class="wv-g-temp"><span class="wv-g-q">How many degrees?</span>' +
+          '<span class="wv-g-step"><button type="button" data-t="-1" aria-label="colder">−</button><output></output><button type="button" data-t="1" aria-label="warmer">+</button></span></div>' +
+        '<button type="button" class="wv-g-check">✓ Check</button>' +
+        '<div class="wv-g-result" aria-live="polite"></div>';
+      b.querySelector('.wv-b-name').textContent = c.player;
+
+      var clockEl = b.querySelector('.wv-g-clock');
+      function draw() {
+        var size = stage.classList.contains('is-tight') ? 58 : 76;
+        clockEl.innerHTML = clockSVG(g.h24, g.m, { size: size, light: true, alt: TimeKit.digital(g.h24, g.m) });
+        clockEl.setAttribute('aria-valuetext', TimeKit.digital(g.h24, g.m));
+        b.querySelector('.wv-g-digital').textContent = (g.h24 % 12 === 0 ? 12 : g.h24 % 12) + ':' + pad(g.m);
+        b.querySelectorAll('[data-ap]').forEach(function (x) { x.setAttribute('aria-pressed', String((x.dataset.ap === 'pm') === (g.h24 >= 12))); });
+        b.querySelector('.wv-g-step output').textContent = g.temp + ' °C';
+        var res = g.result;
+        b.querySelectorAll('[data-chip]').forEach(function (x) {
+          var k = x.dataset.chip, on = g.chips.indexOf(k) >= 0;
+          x.setAttribute('aria-pressed', String(on));
+          x.classList.toggle('is-right', !!res && !res.error && res.right.indexOf(k) >= 0);
+          x.classList.toggle('is-wrong', !!res && !res.error && res.wrong.indexOf(k) >= 0);
+          x.classList.toggle('is-missed', !!res && !res.error && res.missed.indexOf(k) >= 0);
+        });
+        b.querySelector('.wv-g-chosen').textContent = g.chips.map(function (k) { return CHIP_WORD[k].replace(/^\S+ /, ''); }).join(', ');
+        var out = b.querySelector('.wv-g-result');
+        if (!res) out.innerHTML = '';
+        else if (res.error) out.innerHTML = '<span class="bad">' + res.error + '</span>';
+        else out.innerHTML =
+          '<span class="' + (res.time ? 'ok' : 'bad') + '">' + (res.time ? '✓' : '✗') + ' time</span> ' +
+          '<span class="' + (res.weather ? 'ok' : 'bad') + '">' + (res.weather ? '✓' : '✗') + ' weather</span> ' +
+          '<span class="' + (res.temp ? 'ok' : 'bad') + '">' + (res.temp ? '✓' : '✗') + ' degrees</span>' +
+          '<div class="wv-g-real">It’s ' + res.real.time + ' · ' + res.real.main + (res.real.also.length ? ', ' + res.real.also.join(', ') : '') + ' · ' + res.real.temp + ' °C</div>';
+      }
+      g._draw = draw;
+      draw();
+
+      // dragging the hands: the hand nearest the pointer moves. The minute
+      // hand snaps to 5 minutes and carries the hour round with it.
+      var hand = null;
+      function angleAt(e) {
+        var r = clockEl.getBoundingClientRect(), dx = e.clientX - (r.left + r.width / 2), dy = e.clientY - (r.top + r.height / 2);
+        return { a: ((Math.atan2(dx, -dy) / RAD) + 360) % 360, d: Math.hypot(dx, dy) / (r.width / 2) };
+      }
+      function diff(a, b2) { var x = Math.abs(a - b2) % 360; return Math.min(x, 360 - x); }
+      function moveTo(p) {
+        if (hand === 'm') {
+          var nm = Math.round(p.a / 30) * 5 % 60;
+          if (g.m >= 45 && nm <= 15 && nm !== g.m) g.h24 = (g.h24 + 1) % 24;
+          else if (g.m <= 15 && nm >= 45) g.h24 = (g.h24 + 23) % 24;
+          g.m = nm;
+        } else {
+          var h12 = ((Math.round((p.a - g.m * 0.5) / 30) % 12) + 12) % 12;
+          g.h24 = (g.h24 >= 12 ? 12 : 0) + h12;
+        }
+        changed(c); draw();
+      }
+      clockEl.addEventListener('pointerdown', function (e) {
+        var p = angleAt(e);
+        var hA = ((g.h24 % 12) + g.m / 60) * 30, mA = g.m * 6;
+        hand = (diff(p.a, hA) < diff(p.a, mA) || (p.d < 0.5 && diff(p.a, hA) < 40)) ? 'h' : 'm';
+        try { clockEl.setPointerCapture(e.pointerId); } catch (err) { /* ignore */ }
+        clockEl.classList.add('is-dragging');
+        e.preventDefault(); e.stopPropagation();
+        moveTo(p);
+      });
+      clockEl.addEventListener('pointermove', function (e) { if (hand) moveTo(angleAt(e)); });
+      function stop() { hand = null; clockEl.classList.remove('is-dragging'); }
+      clockEl.addEventListener('pointerup', stop);
+      clockEl.addEventListener('pointercancel', stop);
+      clockEl.addEventListener('lostpointercapture', stop);
+      clockEl.addEventListener('keydown', function (e) {
+        var step = { ArrowRight: 5, ArrowLeft: -5, ArrowUp: 60, ArrowDown: -60 }[e.key];
+        if (!step) return;
+        e.preventDefault();
+        var tot = ((g.h24 * 60 + g.m + step) % 1440 + 1440) % 1440;
+        g.h24 = Math.floor(tot / 60); g.m = tot % 60;
+        changed(c); draw();
+      });
+
+      b.querySelectorAll('[data-ap]').forEach(function (x) {
+        x.addEventListener('click', function () {
+          var pm = x.dataset.ap === 'pm';
+          if (pm !== (g.h24 >= 12)) g.h24 = (g.h24 + 12) % 24;
+          changed(c); draw();
+        });
+      });
+      b.querySelectorAll('[data-chip]').forEach(function (x) {
+        x.addEventListener('click', function () {
+          var k = x.dataset.chip, i = g.chips.indexOf(k);
+          if (i >= 0) g.chips.splice(i, 1); else g.chips.push(k);
+          changed(c); draw();
+        });
+      });
+      b.querySelectorAll('[data-t]').forEach(function (x) {
+        x.addEventListener('click', function () {
+          g.temp = Math.max(-40, Math.min(50, g.temp + +x.dataset.t));
+          changed(c); draw();
+        });
+      });
+      b.querySelector('.wv-g-check').addEventListener('click', function () {
+        checkGuess(c);
+        if (opts.onGuessChange) opts.onGuessChange(c);
+        draw();
+      });
+    }
+
+    function applyCities(list) {
+      bubbles.forEach(function (b) { if (ro) ro.unobserve(b); b.remove(); });
+      cities = (list || []).slice();
+      cityVec = cities.map(function (c) { return located(c) ? vec(c.lat, c.lon) : null; });
+      bubbles = cities.map(makeBubble);
+      bubbles.forEach(function (b) { if (ro) ro.observe(b); });
+      cv.setAttribute('aria-label', 'The Earth, with day and night. ' + cities.map(function (c) {
+        var who = c.player || c.speaker;
+        if (!located(c)) return (who ? who + ': where? ' : '');
+        return (who ? who + ' is in ' : '') + c.name + ', ' + c.country + '.';
+      }).join(' '));
+      refreshWeather();
+      lastMinute = -1;
+    }
 
     // start view: the globe turned to the point halfway between the cities
     function homeView() {
@@ -685,17 +1306,21 @@
       // weight the night-time cities a little more, so the start view shows
       // both day and night rather than mostly the sunny side
       var S = vec(sunAt(startUTC).lat, sunAt(startUTC).lon);
+      var any = false;
       cityVec.forEach(function (v) {
+        if (!v) return;
+        any = true;
         var w = dot(v, S) < 0 ? 1.25 : 1;
         s[0] += v[0] * w; s[1] += v[1] * w; s[2] += v[2] * w;
       });
+      if (!any) return { lat: 15, lon: 0 };
       s = norm(s);
       return { lat: Math.max(-60, Math.min(60, Math.asin(s[2]) / RAD)), lon: Math.atan2(s[1], s[0]) / RAD };
     }
     var view = homeView();
 
     var sky = buildSky();
-    var show = Object.assign({ terminator: false, equator: false, zenith: false, sublunar: false, axis: false }, opts.show || {});
+    var show = Object.assign({ terminator: false, equator: false, zenith: false, sublunar: false, axis: false, all: false }, opts.show || {});
     // auto-rotate is on unless the page turns it off, or the device asks for
     // reduced motion (then it starts still, and the ⚙️ menu can start it)
     var spinning = opts.autoRotate !== false &&
@@ -744,21 +1369,37 @@
         btn.setAttribute('aria-pressed', String(btn.dataset.mode === mode));
       });
 
-      // The bubbles sit in a band above the Earth (over space or above the
-      // map), never on top of it, so the cities and their lines stay visible.
-      var gap = 8, pad = 10;
-      var bw = Math.min(250, Math.floor((W - pad * 2 - gap) / 2));
+      // The bubbles sit in bands above and below the Earth (over space, or
+      // around the map), never on top of it, so the cities and their lines
+      // stay visible. Up to 3 bubbles a band on a wide screen, 2 on a phone
+      // (3 small ones when 5–6 players share a phone). The northern cities
+      // take the top band.
+      var gap = 8, pad = 10, n = cities.length;
+      var perBand = wide ? 3 : (n > 4 ? 3 : 2);
+      var latOf = function (i) { return located(cities[i]) ? cities[i].lat : -999; };   // not placed yet: bottom band
+      var byLat = cities.map(function (c, i) { return i; }).sort(function (a, b) { return latOf(b) - latOf(a); });
+      var nTop = n <= perBand ? n : Math.ceil(n / 2);
+      var bands = [byLat.slice(0, nTop), byLat.slice(nTop)];
+      var colsMax = Math.max(2, Math.min(perBand, Math.max(bands[0].length, bands[1].length)));
+      var bw = Math.min(250, Math.floor((W - pad * 2 - gap * (colsMax - 1)) / colsMax));
+      var wasTight = stage.classList.contains('is-tight');
+      stage.classList.toggle('is-tight', bw < 160);
+      if (wasTight !== bw < 160) cities.forEach(function (c) { if (c.guess && c.guess._draw && isGuess(c)) c.guess._draw(); });
       bubbles.forEach(function (b) { b.style.width = bw + 'px'; });
-      var bh = bubbles.reduce(function (m, b) { return Math.max(m, b.offsetHeight); }, 0);
-      var top = bh + pad * 2;
+      var bandH = bands.map(function (band) {
+        return band.reduce(function (m, i) { return Math.max(m, bubbles[i].offsetHeight); }, 0);
+      });
+      var top = n ? bandH[0] + pad * 2 : 0;
+      var bottom = bands[1].length ? bandH[1] + pad * 2 : 0;
+      stage.style.setProperty('--wv-bottom', bottom + 'px');
 
       if (mode === 'globe') {
         var areaH = Math.round(Math.min(W * (wide ? 0.72 : 0.96), 480));
-        H = top + areaH;
+        H = top + areaH + bottom;
         geo = { cx: W / 2, cy: top + areaH / 2, R: Math.min(W, areaH) * 0.45, top: top };
       } else {
         var mh = Math.round(W / 2);
-        H = top + mh;
+        H = top + mh + bottom;
         geo = { mx: 0, my: top, mw: W, mh: mh };
       }
       stage.style.height = H + 'px';
@@ -767,14 +1408,17 @@
       overlay.setAttribute('width', W); overlay.setAttribute('height', H);
       overlay.setAttribute('viewBox', '0 0 ' + W + ' ' + H);
 
-      // the western city's bubble goes on the left
+      // inside a band, the western city goes on the left
       var F = frame();
-      var pts = cityVec.map(function (v) { return project(v, F); });
-      var order = cities.map(function (c, i) { return i; }).sort(function (a, b) { return pts[a].x - pts[b].x; });
-      order.forEach(function (ci, k) {
-        var b = bubbles[ci];
-        b.style.left = (k === 0 ? pad : W - pad - bw) + 'px';
-        b.style.top = pad + 'px';
+      var pts = cityVec.map(function (v) { return v ? project(v, F) : { x: W / 2, y: 0 }; });
+      bands.forEach(function (band, bi) {
+        var k = band.length;
+        band.slice().sort(function (a, b) { return pts[a].x - pts[b].x; }).forEach(function (ci, j) {
+          var b = bubbles[ci];
+          var left = k === 1 ? (pts[ci].x < W / 2 ? pad : W - pad - bw) : pad + j * (W - pad * 2 - bw) / (k - 1);
+          b.style.left = left + 'px';
+          b.style.top = (bi === 0 ? pad : H - bottom + pad) + 'px';
+        });
       });
     }
 
@@ -1184,6 +1828,7 @@
       // cities and the lines to their bubbles
       var stageRect = stage.getBoundingClientRect();
       cities.forEach(function (c, i) {
+        if (!cityVec[i]) return;
         var q = project(cityVec[i], F);
         var pt = { x: q.x, y: q.y };
         var behind = mode === 'globe' && !q.vis;
@@ -1199,8 +1844,9 @@
         var accent = c.accent || '#ffd166';
         var line = { x1: ax, y1: ay, x2: pt.x, y2: pt.y };
         overlay.appendChild(svgEl('line', Object.assign({ stroke: 'rgba(0,0,0,.55)', 'stroke-width': 4.5, 'stroke-linecap': 'round' }, line)));
-        overlay.appendChild(svgEl('line', Object.assign({ stroke: '#fff', 'stroke-width': 2, 'stroke-linecap': 'round', 'stroke-dasharray': behind ? '4,5' : 'none', opacity: behind ? .7 : 1 }, line)));
-        overlay.appendChild(svgEl('circle', { cx: ax, cy: ay, r: 3.2, fill: '#fff' }));
+        var ink = c.player ? accent : '#fff';
+        overlay.appendChild(svgEl('line', Object.assign({ stroke: ink, 'stroke-width': c.player ? 2.4 : 2, 'stroke-linecap': 'round', 'stroke-dasharray': behind ? '4,5' : 'none', opacity: behind ? .75 : 1 }, line)));
+        overlay.appendChild(svgEl('circle', { cx: ax, cy: ay, r: 3.2, fill: ink }));
         if (behind) {
           overlay.appendChild(svgEl('circle', { cx: pt.x, cy: pt.y, r: 5, fill: 'none', stroke: '#fff', 'stroke-width': 1.6, 'stroke-dasharray': '2,2' }));
         } else {
@@ -1214,11 +1860,13 @@
     var lastMinute = -1;
     function updateBubbles(force) {
       var ms = now();
+      if (force || Math.floor(ms / 60000) !== lastMinute) refreshWeather();
       var S = vec(sunAt(ms).lat, sunAt(ms).lon);
       var minute = Math.floor(ms / 60000);
       cities.forEach(function (c, i) {
-        var t = localParts(ms, c.utcOffset);
         var b = bubbles[i];
+        if (b.classList.contains('is-guess')) return;   // partners: nothing live
+        var t = localParts(ms, offsetOf(c, ms));
         var hh = t.h % 12 === 0 ? 12 : t.h % 12;
         b.querySelector('.wv-b-time').innerHTML = hh + '<span class="wv-b-colon">:</span>' + pad(t.m) + '<small>' + (t.h < 12 ? 'am' : 'pm') + '</small>';
         b.querySelector('.wv-b-time').setAttribute('aria-label', TimeKit.digital(t.h, t.m));
@@ -1226,7 +1874,7 @@
           b.querySelector('.wv-b-date').textContent = DAYS[t.day] + ', ' + t.date + ' ' + MONTHS[t.month];
           b.querySelector('.wv-b-face').innerHTML = clockSVG(t.h, t.m, { size: 40, light: true, numbers: false, alt: TimeKit.timeWords(t.h, t.m) });
           // the card's sky follows the city's real sky: day, dusk or night; clear or grey
-          var elev = dot(cityVec[i], S), grey = (c.weather.cloud || 0) >= 60;
+          var elev = dot(cityVec[i], S), grey = ((weathers[i] || {}).cloud || 0) >= 60;
           var sky = elev > 0.08 ? (grey ? ['#5c6f86', '#93a5b9'] : ['#2b7bd6', '#6fb8f0'])
             : elev > -0.1 ? (grey ? ['#3d3f5c', '#8a6a72'] : ['#3b3a73', '#d9825b'])
             : (grey ? ['#1c2333', '#3a4458'] : ['#0c1838', '#243a72']);
@@ -1288,6 +1936,8 @@
       spinBtn.setAttribute('aria-pressed', String(spinning));
       spinBtn.hidden = mode !== 'globe';
       host.querySelectorAll('[data-globe-only]').forEach(function (b) { b.hidden = mode !== 'globe'; });
+      var guesses = cities.some(function (c) { return !!c.guess; });
+      host.querySelectorAll('[data-guess-only]').forEach(function (b) { b.hidden = !guesses; });
       host.querySelectorAll('.wv-seg button').forEach(function (btn) { btn.setAttribute('aria-pressed', String(btn.dataset.mode === mode)); });
     }
 
@@ -1323,6 +1973,7 @@
     host.querySelectorAll('[data-show]').forEach(function (b) {
       b.addEventListener('click', function () {
         show[b.dataset.show] = !show[b.dataset.show];
+        if (b.dataset.show === 'all') { applyCities(cities); updateBubbles(true); relayout(); return; }
         syncChrome();
         render(false);
       });
@@ -1390,7 +2041,7 @@
     }
     if (global.ResizeObserver) {
       var lastW = 0;
-      var ro = new ResizeObserver(function () {
+      ro = new ResizeObserver(function () {
         var w = stage.clientWidth;
         if (w !== lastW) { lastW = w; onResize(); return; }
         onResize();
@@ -1400,6 +2051,8 @@
     }
     global.addEventListener('resize', onResize);
 
+    applyCities(opts.cities || []);
+    view = homeView();
     updateBubbles(true);
     relayout();
     setInterval(function () { updateBubbles(false); }, 1000);
@@ -1408,6 +2061,11 @@
       setMode: function (m) { mode = m === 'map' ? 'map' : 'globe'; relayout(); },
       setAutoRotate: function (on) { setSpin(!!on); },
       setRotateSpeed: function (degPerSec) { speed = clampSpeed(degPerSec); showSpeed(); },
+      // replace the cities (players) — the view stays where it is
+      setCities: function (list) { applyCities(list); updateBubbles(true); relayout(); },
+      check: function (c) { checkGuess(c); },
+      // jump the simulated clock to a moment (ms, UTC); it keeps ticking from there
+      setTime: function (ms) { startUTC = ms; t0 = Date.now(); lastMinute = -1; updateBubbles(true); render(false); },
       setView: function (lat, lon) { view = { lat: Math.max(-80, Math.min(80, lat)), lon: ((lon + 540) % 360) - 180 }; render(false); },
       show: function (key, on) { show[key] = !!on; syncChrome(); render(false); },
       now: now,
@@ -1415,5 +2073,5 @@
     };
   }
 
-  global.WorldViewer = { build: build, sunAt: sunAt, moonAt: moonAt, localTime: localParts };
+  global.WorldViewer = { build: build, flag: flagOf, sunAt: sunAt, moonAt: moonAt, localTime: localParts };
 })(window);
