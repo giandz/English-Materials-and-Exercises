@@ -1,0 +1,152 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<title>Telling the Time and the Weather — Controlled Practice</title>
+<script>
+(function(){
+  try{
+    var saved = localStorage.getItem('theme-preference');
+    var theme = (saved === 'light' || saved === 'dark')
+      ? saved
+      : ((window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches) ? 'dark' : 'light');
+    document.documentElement.setAttribute('data-theme', theme);
+    var fs = parseFloat(localStorage.getItem('font-size-preference'));
+    if (fs >= 10 && fs <= 28) document.documentElement.style.setProperty('--fs-base', fs + 'px');
+  }catch(e){ /* localStorage/matchMedia unavailable — CSS media query still applies */ }
+})();
+</script>
+<link rel="stylesheet" href="house.css">
+<style>
+/* the picture each item is about: a clock, or a weather report */
+.mini{ display:flex; align-items:center; gap:10px; margin:2px 0 8px; font-style:normal; color:var(--text-primary); }
+.mini .wx{ font-size:2.2rem; line-height:1; }
+.mini .temp{ font-size:1.15rem; font-weight:700; }
+.mini .note{ font-size:.8rem; color:var(--text-secondary); }
+.lc-item .mini{ margin-bottom:10px; }
+</style>
+</head>
+<body>
+<div class="page" id="page">
+  <span class="cefr-tag cefr-a1">A1 · Beginner</span>
+  <h1>What Time Is It? What’s the Weather Like?</h1>
+  <p class="subtitle">Practise: o’clock · half past · quarter past / to · It’s sunny · It’s raining · It’s 7 degrees</p>
+
+  <div class="sec-div">1 · Look and choose</div>
+  <p class="subtitle">Look at the picture. Choose the correct sentence.</p>
+  <div class="score-bar"><span>Correct: <strong id="lcScore">0</strong> / <span id="lcTotal">0</span></span></div>
+  <div id="lcItems"></div>
+
+  <div class="sec-div">2 · Put the words in order</div>
+  <p class="subtitle">Look at the picture. Make the sentence.</p>
+  <button class="grammar-toggle-btn" id="grammarToggle">🎨 Hide Grammar</button>
+  <div class="pos-legend"></div>
+  <div class="score-bar"><span>Correct: <strong id="woScore">0</strong> / <span id="woTotal">0</span></span></div>
+  <div id="woItems"></div>
+
+  <div class="sec-div">3 · Write the missing words</div>
+  <p class="subtitle">Look at the picture. Write the words.</p>
+  <div id="gfItems"></div>
+
+  <footer>Telling the Time and the Weather — Controlled Practice (A1)</footer>
+</div>
+
+<div id="theme-toggle-wrap">
+  <button id="theme-toggle" aria-label="Toggle light/dark mode" title="Toggle light/dark mode">
+    <span id="theme-icon">☀️</span>
+  </button>
+</div>
+<script src="house.js"></script>
+<script src="time-weather-kit.js"></script>
+<script>
+/* small pictures: a clock face, or a weather report (icon + temperature) */
+const clock = (h, m, note) => '<div class="mini">' + TimeKit.clockSVG(h, m, { size: 74, alt: 'A clock' }) +
+  (note ? '<span class="note">' + note + '</span>' : '') + '</div>';
+const wx = (icon, temp, note) => '<div class="mini"><span class="wx">' + icon + '</span>' +
+  (temp != null ? '<span class="temp">' + String(temp).replace('-', '−') + ' °C</span>' : '') + (note ? '<span class="note">' + note + '</span>' : '') + '</div>';
+
+/* ── 1 · look and choose (same markup as the house comprehension questions) ── */
+const LC_ITEMS = [
+  { pic: clock(4, 0),  opts: ['It’s four o’clock.', 'It’s twelve o’clock.', 'It’s half past four.'], correct: 0 },
+  { pic: clock(8, 30), opts: ['It’s half past six.', 'It’s half past eight.', 'It’s eight o’clock.'], correct: 1 },
+  { pic: wx('🌧️', 9),   opts: ['It’s sunny.', 'It’s snowing.', 'It’s raining.'], correct: 2 },
+  { pic: clock(2, 15), opts: ['It’s quarter past two.', 'It’s quarter to two.', 'It’s quarter past three.'], correct: 0 },
+  { pic: wx('☀️', 33),  opts: ['It’s cold and cloudy.', 'It’s hot and sunny.', 'It’s cool and windy.'], correct: 1 },
+  { pic: clock(6, 45), opts: ['It’s quarter past six.', 'It’s quarter to six.', 'It’s quarter to seven.'], correct: 2 },
+  { pic: wx('🌨️', -4),  opts: ['It’s snowing. It’s minus four degrees.', 'It’s raining. It’s four degrees.', 'It’s foggy. It’s fourteen degrees.'], correct: 0 },
+  { pic: clock(9, 20), opts: ['It’s twenty to nine.', 'It’s twenty past nine.', 'It’s nine twenty-five.'], correct: 1 },
+  { pic: clock(5, 50), opts: ['It’s ten past five.', 'It’s ten to five.', 'It’s ten to six.'], correct: 2 }
+];
+(function () {
+  const host = document.getElementById('lcItems');
+  let score = 0;
+  document.getElementById('lcTotal').textContent = LC_ITEMS.length;
+  LC_ITEMS.forEach((it, qi) => {
+    const b = document.createElement('div');
+    b.className = 'quiz-q lc-item';
+    b.innerHTML = it.pic + it.opts.map((o, oi) => '<button class="opt" data-o="' + oi + '">' + o + '</button>').join('') +
+      '<div class="q-feedback"></div>';
+    b.addEventListener('click', e => {
+      const btn = e.target.closest('.opt');
+      if (!btn || btn.disabled) return;
+      const bs = b.querySelectorAll('.opt'), fb = b.querySelector('.q-feedback');
+      bs.forEach(x => { x.disabled = true; });
+      if (+btn.dataset.o === it.correct) {
+        btn.classList.add('correct'); fb.textContent = '✓ Correct!'; fb.className = 'q-feedback correct';
+        document.getElementById('lcScore').textContent = ++score;
+      } else {
+        btn.classList.add('incorrect'); bs[it.correct].classList.add('correct');
+        fb.textContent = '✗ Not quite — the correct answer is highlighted.'; fb.className = 'q-feedback incorrect';
+      }
+    });
+    host.appendChild(b);
+  });
+})();
+
+/* ── 2 · word order ────────────────────────────────────────────────────── */
+const WO_ITEMS = [
+  { context: clock(3, 0, 'Ask about the time.'),
+    text: 'What time / is / it / ?', pos: ['wh', 'verb', 'subject', 'none'] },
+  { context: clock(3, 0),
+    text: 'It’s / three / o’clock', pos: ['subject', 'time', 'time'] },
+  { context: clock(7, 30, '🌆 evening'),
+    text: 'It’s / half past seven / in the evening', pos: ['subject', 'time', 'time'] },
+  { context: clock(9, 15, '🌅 morning'),
+    text: 'It’s / quarter / past / nine / in the morning', pos: ['subject', 'time', 'time', 'time', 'time'] },
+  { context: wx('❓', null, 'Ask about the weather in Sydney.'),
+    text: 'What’s / the weather / like / in Sydney / ?', pos: ['wh', 'subject', 'prep', 'prep', 'none'] },
+  { context: wx('☀️', 21),
+    text: 'It’s / sunny / and / warm', pos: ['subject', 'adj', 'conj', 'adj'] },
+  { context: wx('🌧️', 7),
+    text: 'It / isn’t / snowing / . / It’s / raining', pos: ['subject', 'neg', 'verb', 'none', 'subject', 'verb'] }
+];
+HouseWordOrder.build({ container: 'woItems', items: WO_ITEMS, scoreEl: 'woScore', totalEl: 'woTotal' });
+
+/* ── 3 · gap fill (easiest first) ──────────────────────────────────────── */
+const AP = s => [s, s.replace(/’/g, "'")];   // accept both apostrophes
+const GF_ITEMS = [
+  { direct: clock(6, 0),
+    template: 'It’s six {0}.', hints: [{ accepted: AP('o’clock') }] },
+  { direct: wx('☀️', 25),
+    template: 'It’s {0} today.', hints: [{ accepted: ['sunny', 'warm', 'hot'] }] },
+  { direct: clock(10, 30),
+    template: 'It’s {0} past ten.', hints: [{ accepted: ['half'] }] },
+  { direct: wx('🌧️', 8, 'Take an umbrella!'),
+    template: 'It’s {0}.', hints: [{ accepted: ['raining', 'rainy'] }] },
+  { direct: wx('🥶', -10),
+    template: 'It’s very {0}. It’s minus ten {1}.', hints: [{ accepted: ['cold'] }, { accepted: ['degrees'] }] },
+  { direct: clock(4, 15),
+    template: 'It’s quarter {0} four.', hints: [{ accepted: ['past'] }] },
+  { direct: clock(11, 45),
+    template: 'It’s quarter {0} {1}.', hints: [{ accepted: ['to'] }, { accepted: ['twelve'] }] },
+  { direct: clock(8, 0, '🌅 Ask about the time.'),
+    template: '“{0} time is it?” “It’s eight o’clock {1} the morning.”', hints: [{ accepted: ['What'] }, { accepted: ['in'] }] },
+  { direct: wx('🌬️', 12, 'Ask about the weather.'),
+    template: '“What’s the weather {0}?” “It’s cool and {1}.”', hints: [{ accepted: ['like'] }, { accepted: ['windy'] }] }
+];
+HouseGapFill.build({ container: 'gfItems', items: GF_ITEMS });
+</script>
+<script>HouseGrammar.init();</script>
+</body>
+</html>

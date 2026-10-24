@@ -1,0 +1,131 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<title>Weather and Time Words — Vocabulary</title>
+<script>
+(function(){
+  try{
+    var saved = localStorage.getItem('theme-preference');
+    var theme = (saved === 'light' || saved === 'dark')
+      ? saved
+      : ((window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches) ? 'dark' : 'light');
+    document.documentElement.setAttribute('data-theme', theme);
+    var fs = parseFloat(localStorage.getItem('font-size-preference'));
+    if (fs >= 10 && fs <= 28) document.documentElement.style.setProperty('--fs-base', fs + 'px');
+  }catch(e){ /* localStorage/matchMedia unavailable — CSS media query still applies */ }
+})();
+</script>
+<link rel="stylesheet" href="house.css">
+<style>
+/* the pictures are the meaning here, so they are bigger than a normal card emoji */
+.pic-col .match-card{ min-height:3.4rem; justify-content:center; }
+.pic-col .match-card .emoji{ font-size:1.9rem; }
+.pic-col .match-card .emoji .tk-clock{ display:block; }
+.pic-col .match-card > span:last-child{ font-weight:700; color:var(--text-secondary); }
+.pic-col .match-card.matched > span:last-child{ color:inherit; }
+</style>
+</head>
+<body>
+<div class="page" id="page">
+  <span class="cefr-tag cefr-a1">A1 · Beginner</span>
+  <h1>Weather and Time Words</h1>
+  <p class="subtitle">Words for the weather, for hot and cold, and for the time of day</p>
+
+  <div class="sec-div">1 · The weather</div>
+  <p class="subtitle">Tap a picture. Then tap its word.</p>
+  <div class="score-bar"><span>Matched: <strong id="wScore">0</strong> / <span id="wTotal">0</span></span></div>
+  <div class="win-msg" id="wWin">🎉 Great! You know the weather words.</div>
+  <div class="match-grid">
+    <div><div class="match-col-label">Picture</div><div class="match-col pic-col" id="wLeft"></div></div>
+    <div><div class="match-col-label">Word</div><div class="match-col" id="wRight"></div></div>
+  </div>
+  <div class="feedback" id="wFeedback"></div>
+
+  <div class="sec-div">2 · Hot or cold?</div>
+  <p class="subtitle">Look at the temperature. Tap it. Then tap its word.</p>
+  <div class="score-bar"><span>Matched: <strong id="tScore">0</strong> / <span id="tTotal">0</span></span></div>
+  <div class="win-msg" id="tWin">🎉 Well done!</div>
+  <div class="match-grid">
+    <div><div class="match-col-label">Temperature</div><div class="match-col pic-col" id="tLeft"></div></div>
+    <div><div class="match-col-label">Word</div><div class="match-col" id="tRight"></div></div>
+  </div>
+  <div class="feedback" id="tFeedback"></div>
+
+  <div class="sec-div">3 · What time is it?</div>
+  <p class="subtitle">Look at the clock. Tap it. Then tap the time.</p>
+  <div class="score-bar"><span>Matched: <strong id="cScore">0</strong> / <span id="cTotal">0</span></span></div>
+  <div class="win-msg" id="cWin">🎉 Great! You can read a clock.</div>
+  <div class="match-grid">
+    <div><div class="match-col-label">Clock</div><div class="match-col pic-col" id="cLeft"></div></div>
+    <div><div class="match-col-label">Time</div><div class="match-col" id="cRight"></div></div>
+  </div>
+  <div class="feedback" id="cFeedback"></div>
+
+  <div class="sec-div">4 · Parts of the day</div>
+  <p class="subtitle">Tap a time. Then tap the part of the day.</p>
+  <div class="score-bar"><span>Matched: <strong id="dScore">0</strong> / <span id="dTotal">0</span></span></div>
+  <div class="win-msg" id="dWin">🎉 Well done!</div>
+  <div class="match-grid">
+    <div><div class="match-col-label">Time</div><div class="match-col pic-col" id="dLeft"></div></div>
+    <div><div class="match-col-label">Part of the day</div><div class="match-col" id="dRight"></div></div>
+  </div>
+  <div class="feedback" id="dFeedback"></div>
+
+  <footer>Weather and Time Words — Vocabulary (A1)</footer>
+</div>
+
+<div id="theme-toggle-wrap">
+  <button id="theme-toggle" aria-label="Toggle light/dark mode" title="Toggle light/dark mode">
+    <span id="theme-icon">☀️</span>
+  </button>
+</div>
+<script src="house.js"></script>
+<script src="time-weather-kit.js"></script>
+<script>
+const match = (key, pairs) => HouseMatching.build({
+  left: key + 'Left', right: key + 'Right', pairs,
+  scoreEl: key + 'Score', totalEl: key + 'Total', winEl: key + 'Win', feedbackEl: key + 'Feedback'
+});
+
+/* 1 · weather types: the picture alone on the left */
+match('w', [
+  { id: 'sunny',  leftEmoji: '☀️', left: '', right: 'sunny' },
+  { id: 'cloudy', leftEmoji: '☁️', left: '', right: 'cloudy' },
+  { id: 'partly', leftEmoji: '⛅', left: '', right: 'partly cloudy' },
+  { id: 'rainy',  leftEmoji: '🌧️', left: '', right: 'rainy' },
+  { id: 'snowy',  leftEmoji: '🌨️', left: '', right: 'snowy' },
+  { id: 'windy',  leftEmoji: '🌬️', left: '', right: 'windy' },
+  { id: 'foggy',  leftEmoji: '🌫️', left: '', right: 'foggy' },
+  { id: 'stormy', leftEmoji: '⛈️', left: '', right: 'stormy' }
+]);
+
+/* 2 · temperature words */
+match('t', [
+  { id: 'hot',  leftEmoji: '🥵', left: '35 °C', right: 'hot' },
+  { id: 'warm', leftEmoji: '😎', left: '22 °C', right: 'warm' },
+  { id: 'cool', leftEmoji: '🧥', left: '12 °C', right: 'cool' },
+  { id: 'cold', leftEmoji: '🥶', left: '−5 °C', right: 'cold' }
+]);
+
+/* 3 · clock times: o'clock, half past, quarter past, quarter to */
+const CLOCKS = [[3, 0], [9, 30], [6, 15], [11, 45], [12, 0], [1, 30]];
+match('c', CLOCKS.map(([h, m]) => ({
+  id: h + ':' + m,
+  leftEmoji: TimeKit.clockSVG(h, m, { size: 54, alt: 'A clock' }),
+  left: '',
+  right: 'It’s ' + TimeKit.timeWords(h, m) + '.'
+})));
+
+/* 4 · parts of the day */
+match('d', [
+  { id: 'morning',   leftEmoji: '🌅', left: '8:00 am', right: 'in the morning' },
+  { id: 'afternoon', leftEmoji: '🏙️', left: '3:00 pm', right: 'in the afternoon' },
+  { id: 'evening',   leftEmoji: '🌆', left: '7:00 pm', right: 'in the evening' },
+  { id: 'night',     leftEmoji: '🌙', left: '11:00 pm', right: 'at night' }
+]);
+</script>
+<script>HouseGrammar.init();</script>
+</body>
+</html>

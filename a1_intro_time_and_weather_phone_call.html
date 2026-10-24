@@ -1,0 +1,108 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<title>What Time Is It There? — The Time and the Weather</title>
+<script>
+(function(){
+  try{
+    var saved = localStorage.getItem('theme-preference');
+    var theme = (saved === 'light' || saved === 'dark')
+      ? saved
+      : ((window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches) ? 'dark' : 'light');
+    document.documentElement.setAttribute('data-theme', theme);
+    var fs = parseFloat(localStorage.getItem('font-size-preference'));
+    if (fs >= 10 && fs <= 28) document.documentElement.style.setProperty('--fs-base', fs + 'px');
+  }catch(e){ /* localStorage/matchMedia unavailable — CSS media query still applies */ }
+})();
+</script>
+<link rel="stylesheet" href="house.css">
+</head>
+<body>
+<div class="page" id="page">
+  <span class="cefr-tag cefr-a1">A1 · Beginner</span>
+  <h1>What Time Is It There?</h1>
+  <p class="subtitle">Emma lives in Toronto, Canada. Her friend Leo lives in Sydney, Australia. Leo calls Emma on the phone.</p>
+
+  <div class="sec-div">Before you read</div>
+  <div id="preQuestions"></div>
+
+  <div class="sec-div">Where are they?</div>
+  <p class="subtitle">Look at the Earth. Where is it day? Where is it night? Look at the time and the weather in the two cities.</p>
+  <div id="worldViewer"></div>
+
+  <div class="sec-div">The conversation</div>
+  <div class="setting-chip"><span class="section-icon">📞</span> A phone call: Toronto ↔ Sydney</div>
+  <button class="grammar-toggle-btn" id="grammarToggle">🎨 Show Grammar</button>
+  <div class="pos-legend"></div>
+  <div id="conversation"></div>
+
+  <div class="sec-div">Check your answers</div>
+  <div id="quiz"></div>
+
+  <footer>What Time Is It There? — The Time and the Weather (A1)</footer>
+</div>
+
+<div id="theme-toggle-wrap">
+  <button id="theme-toggle" aria-label="Toggle light/dark mode" title="Toggle light/dark mode">
+    <span id="theme-icon">☀️</span>
+  </button>
+</div>
+<script src="house.js"></script>
+<script src="time-weather-kit.js"></script>
+<script>
+/* ── the world viewer: the same two friends and the same weather on every page of this pack ── */
+const CITIES = [
+  { key: 'toronto', name: 'Toronto', country: 'Canada', speaker: 'Emma', avatar: '👩', accent: '#ff8a5c',
+    lat: 43.65, lon: -79.38, utcOffset: -4,
+    weather: { icon: '🌧️', label: 'Rain', tempC: 7, humidity: 91, windKmh: 32, windFrom: 'NW', precipMm: 4, cloud: 100 } },
+  { key: 'sydney', name: 'Sydney', country: 'Australia', speaker: 'Leo', avatar: '👨', accent: '#ffd166',
+    lat: -33.87, lon: 151.21, utcOffset: 11,
+    weather: { icon: '☀️', label: 'Sunny', tempC: 21, humidity: 54, windKmh: 14, windFrom: 'NE', precipMm: 0, cloud: 5 } }
+];
+/* Friday 7:30 pm in Toronto (UTC−4) = Saturday 10:30 am in Sydney (UTC+11) */
+WorldViewer.build({ container: 'worldViewer', startUTC: Date.UTC(2026, 9, 23, 23, 30), cities: CITIES });
+
+/* ── the conversation: [words/pos] marks the grammar colours ── */
+const SPEAKERS = {
+  Leo:  { avatar: '👨', av: 'av-d', side: 'right' },
+  Emma: { avatar: '👩', av: 'av-b', side: 'left' }
+};
+const LINES = [
+  ['Leo',  '[Hi/none], [Emma/noun]! [It/subject][’s/verb] [Leo/noun]. [How/wh] [are/verb] [you/subject]?'],
+  ['Emma', '[Hi/none], [Leo/noun]! [I/subject][’m/verb] [fine/adj], [thanks/none]. [What time/wh] [is/verb] [it/subject] [in Sydney/prep]?'],
+  ['Leo',  '[It/subject][’s/verb] [half past ten/time] [in the morning/time]. [What time/wh] [is/verb] [it/subject] [in Toronto/prep]?'],
+  ['Emma', '[It/subject][’s/verb] [half past seven/time] [in the evening/time]. [It/subject][’s/verb] [Friday night/time] [here/adverb]!'],
+  ['Leo',  '[Really/none]? [It/subject][’s/verb] [Saturday/time] [here/adverb]!'],
+  ['Emma', '[Ha ha/none]! [You/subject][’re/verb] [in the future/prep]! [What/wh][’s/verb] [the weather/subject] [like/prep] [in Sydney/prep]?'],
+  ['Leo',  '[It/subject][’s/verb] [sunny/adj] [and/conj] [warm/adj]. [It/subject][’s/verb] [twenty-one degrees/noun]. [I/subject][’m/verb] [at the beach/prep]!'],
+  ['Emma', '[Lucky you/none]! [It/subject][’s/verb] [cold/adj] [and/conj] [rainy/adj] [here/adverb]. [It/subject][’s/verb] [seven degrees/noun], [and/conj] [it/subject][’s/verb] [very/adverb] [windy/adj].'],
+  ['Leo',  '[Oh no/none]! [Is/aux] [it/subject] [snowing/verb]?'],
+  ['Emma', '[No/none], [it/subject] [isn’t/neg]. [It/subject][’s/aux] [raining/verb]. [It/subject] [snows/verb] [in December/time].'],
+  ['Leo',  '[It/subject][’s/verb] [spring/noun] [here/adverb]. [It/subject][’s/verb] [never/adverb] [snowy/adj] [in Sydney/prep]!'],
+  ['Emma', '[Well/none], [it/subject][’s/verb] [dinner time/noun] [here/adverb]. [Enjoy/verb] [the beach/object]!'],
+  ['Leo',  '[Thanks/none]! [Talk/verb] [to you/prep] [soon/time]. [Bye/none]!']
+];
+const tag = s => s.replace(/\[([^\/\]]+)\/(\w+)\]/g, '<span class="pos-hl pos-$2">$1</span>');
+const conv = document.getElementById('conversation');
+LINES.forEach(([who, text]) => {
+  const s = SPEAKERS[who], right = s.side === 'right';
+  conv.insertAdjacentHTML('beforeend',
+    '<div class="bubble-wrap' + (right ? ' right' : '') + '">' +
+      '<div class="avatar ' + s.av + '">' + s.avatar + '</div>' +
+      '<div class="bubble-col"><div class="bname' + (right ? ' right' : '') + '">' + who + '</div>' +
+      '<div class="bubble ' + (right ? 'right' : 'left') + '">' + tag(text) + '</div></div>' +
+    '</div>');
+});
+
+const CQ_ITEMS = [
+  { q: 'What time is it in Sydney?', opts: ['Half past seven in the evening', 'Half past ten in the morning', 'Dinner time'], correct: 1 },
+  { q: 'What’s the weather like in Toronto?', opts: ['It’s sunny and warm.', 'It’s snowing.', 'It’s cold, rainy and windy.'], correct: 2 },
+  { q: 'What day is it in Sydney?', opts: ['Friday', 'Saturday', 'December'], correct: 1 }
+];
+HouseComprehension.build({ pre: 'preQuestions', quiz: 'quiz', items: CQ_ITEMS });
+</script>
+<script>HouseGrammar.init();</script>
+</body>
+</html>
