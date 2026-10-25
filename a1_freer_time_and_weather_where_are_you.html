@@ -117,6 +117,7 @@
     <div class="sync-form">
       <input type="text" id="syncIn" inputmode="numeric" maxlength="7" autocomplete="off" placeholder="Partner’s code" aria-label="Your partner’s world code">
       <button type="button" id="syncBtn">🔗 Sync</button>
+      <button type="button" id="nowBtn" title="The real time and date">⏱️ Now</button>
       <button type="button" id="newTimeBtn" title="A new random time">🎲 New time</button>
     </div>
     <div class="sync-msg" id="syncMsg" aria-live="polite"></div>
@@ -336,8 +337,14 @@ document.getElementById('lang').innerHTML = '<div class="lh">Ask</div><div class
   LANG.map(([q, a]) => '<div class="lq">' + q + '</div><div class="la">' + a + '</div>').join('');
 
 /* ── the world viewer ── */
-const YEAR0 = Date.UTC(2027, 0, 1);          // any year without 29 February
-const MINUTES = 365 * 24 * 60;               // 525 600 minutes: codes 000000–525599
+// World codes count the minutes of the current year (UTC), so every device
+// in the class uses the same year:
+//   an ordinary year: 525 600 minutes → codes 000000–525599
+//   a leap year:      527 040 minutes → codes 000000–527039 (29 February included)
+const isLeap = y => (y % 4 === 0 && y % 100 !== 0) || y % 400 === 0;
+const SIM_YEAR = new Date().getUTCFullYear();
+const YEAR0 = Date.UTC(SIM_YEAR, 0, 1);
+const MINUTES = (isLeap(SIM_YEAR) ? 366 : 365) * 24 * 60;
 const COLOURS = ['#ff6b6b', '#ffd166', '#4cc9f0', '#80ed99', '#c77dff', '#ff9f1c'];
 const REASONS = [
   ['🏖️', 'I’m on vacation.'], ['💼', 'I’m on a business trip.'], ['👨‍👩‍👧', 'I’m visiting my family.'],
@@ -565,6 +572,12 @@ document.getElementById('newTimeBtn').addEventListener('click', () => {
   viewer.setTime(minuteToMs(randInt(MINUTES)));
   showCode();
   say('🎲 New time. Read your new code to your partner.', '');
+});
+// ⏱️ Now: the real date and time.
+document.getElementById('nowBtn').addEventListener('click', () => {
+  viewer.setTime(Date.now());
+  showCode();
+  say('⏱️ Real time and date. Read your code to your partner.', 'ok');
 });
 
 }

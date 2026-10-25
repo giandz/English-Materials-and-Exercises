@@ -503,8 +503,8 @@
      (A: r m w s · B: W S · C: f s w · D: o c · E: o c · F: t i), and the
      universal thermal scale of the warmest and the coldest month.
 
-     Everything here is deterministic — the same city at the same moment
-     always gets the same weather — so two devices that share a world-time
+     Everything here is deterministic — the same city at the same date and
+     time always gets the same weather, whatever the year — so two devices that share a world-time
      code see the same skies. The "randomness" is hash noise keyed on the
      city name and the hour, smoothly blended, so weather changes slowly.
      ════════════════════════════════════════════════════════════════════ */
@@ -590,9 +590,16 @@
     function at(city, ms) {
       var k = parse(city.ktc), T = table(k);
       var key = city.cit || city.name || (city.lat + ',' + city.lon);
-      var hours = ms / 3600e3;
       var d = new Date(ms), year = d.getUTCFullYear();
+      // Day of the year, counted as in a 365-day year: the season and the
+      // weather's "random" changes follow the date and hour, not the absolute
+      // moment, so the same date and time gets the same weather in any year.
+      // In a leap year, 1 March onwards lines up with other years, and
+      // 29 February replays the 28th.
       var doy = (ms - Date.UTC(year, 0, 1)) / 864e5;
+      var leap = (year % 4 === 0 && year % 100 !== 0) || year % 400 === 0;
+      if (leap && doy >= 59) doy -= 1;
+      var hours = doy * 24;
       var south = city.lat < 0;
 
       // the season: +1 in the middle of local summer, −1 in mid-winter
@@ -639,7 +646,9 @@
       hum = clamp(hum, 5, 100);
 
       // wind: the prevailing wind, knocked about by showers and storms
-      var pw = prevailing(city.lat, sun.lat);
+      // the cells follow the Sun's height through the year, worked out from the
+      // date (not the exact Sun), so the wind is the same on a date every year
+      var pw = prevailing(city.lat, 23.44 * Math.sin(2 * Math.PI * (doy - 80) / 365));
       var nDir = noise(key + 'd', hours, 6) - 0.5, nSpd = noise(key + 's', hours, 4);
       var dir = pw.from + nDir * 2 * (30 + 120 * (1 - pw.settled) + 110 * q);
       var kmh = pw.base * (0.35 + 0.65 * pw.settled) * (0.55 + 0.8 * nSpd) * (1 + 0.25 * Math.max(0, daily)) + 32 * q * q + (raining ? 5 : 0);
