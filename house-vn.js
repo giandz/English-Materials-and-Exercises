@@ -53,7 +53,10 @@
      insert: 'black'                      the same on a black card ("Twenty years earlier…")
      think: true                          the speaker's thoughts: lips still, text in italics, 💭 by the name,
                                           and everything but the thinker turns grey
-     shout: true                          the text is bold and shakes
+     shout: true                          the whole line is shouted: each letter shakes as it appears, then
+                                          settles, and the speaker gives a jolt
+     whisper: true                        the whole line is whispered, in smaller, softer letters
+     Part of a line: "{shout}Hi, Ana!{/shout} Sorry I'm late." or "Shh! {whisper}He can hear you!{/whisper}".
      past: true                           a memory: the picture turns sepia, with a darker edge
    background: 'park'                     changes the backdrop from this line on (built-in or CSS), and like
                                           the cast it is put back as it was when going back.
@@ -67,8 +70,13 @@
    it takes effect when the text reaches it (a click that finishes the line applies the rest at once).
    What a cue sets stays, like anything else a line sets.
 
-   Whatever a line sets stays until a later line changes it, so the scene at any line is worked out by
-   replaying the lines up to it: going back always shows exactly what was there.
+   Acting and resting. A line's at, shot, pose, emotion and cues are how the speaker acts it: once the
+   line has been said, the speaker slowly goes back to their resting state. That state is where and how
+   they first came on (their first line's at and shot, the cast character's own pose and face), and only
+   stage directions change it: stage: { ana: { at:'left', shot:'closeup', pose:…, emotion:… } } moves
+   Ana for good, including when she is the one speaking. look (clothes, held items…) always stays.
+   The scene at any line is worked out by replaying the lines up to it, so going back always shows
+   exactly what was there.
    Characters sharing a side stand a little apart; the speaker comes to the front and the others dim.
    Pose changes (between lines or from a cue) are animated: joints, turns and framing ease from the old
    posture to the new one, with the keyframe editor's easings (HouseCharacter.EASES / ease); with reduced
@@ -99,7 +107,7 @@ const CSS = `
 .vn-bg svg{ width:100%; height:100%; display:block; }
 /* every shot stands on the top edge of the text box (a little behind it) and reaches near the top of the picture:
    full = the whole figure, medium = from the waist up, closeup = head and shoulders */
-.vn-ch{ position:absolute; bottom:calc(var(--vn-box) - 7%); height:calc(100% - var(--vn-box) + 4%); transform:translateX(-50%); transition:left .45s ease, height .45s ease, bottom .45s ease, opacity .35s ease, filter .3s ease; pointer-events:none; }
+.vn-ch{ position:absolute; bottom:calc(var(--vn-box) - 7%); height:calc(100% - var(--vn-box) + 4%); transform:translateX(-50%); transition:left var(--vn-move, .45s) ease, height var(--vn-move, .45s) ease, bottom var(--vn-move, .45s) ease, opacity .35s ease, filter .3s ease; pointer-events:none; }
 .vn-ch svg{ width:100%; height:100%; display:block; overflow:visible; }
 .vn-ch.full{ bottom:calc(var(--vn-box) - 1%); height:calc(100% - var(--vn-box) - 3%); }
 .vn-ch.dim{ filter:brightness(.72) saturate(.8); }
@@ -110,7 +118,8 @@ const CSS = `
 .vn-name{ position:absolute; left:4%; bottom:calc(100% - 6px); padding:.15em .9em .2em; border-radius:9px 9px 0 0;
   font-weight:700; font-size:clamp(.8rem, 1.9vw, 1.05rem); color:#fff; background:var(--vn-name, var(--text-accent, #185fa5)); }
 .vn-name:empty{ display:none; }
-.vn-text{ font-size:clamp(.9rem, 2.3vw, 1.3rem); line-height:1.45; color:var(--text-primary, #1a1a1a); overflow:hidden; height:100%; }
+.vn-text{ position:relative; font-size:clamp(.9rem, 2.3vw, 1.3rem); line-height:1.45; color:var(--text-primary, #1a1a1a); height:100%;
+  overflow-y:auto; overscroll-behavior:contain; touch-action:pan-y; scrollbar-width:thin; padding-right:2.2em; box-sizing:border-box; }
 .vn-text .hid{ visibility:hidden; }
 .vn-next{ position:absolute; right:1.6%; bottom:6%; border:0; background:none; font-size:clamp(1rem, 2.4vw, 1.4rem); line-height:1;
   cursor:pointer; padding:2px; opacity:.35; transition:opacity .2s; }
@@ -122,14 +131,20 @@ const CSS = `
 .vn-box.narrate .vn-text{ font-style:italic; color:var(--text-secondary, #555); }
 .vn-box.think{ border-style:dashed; }
 .vn-box.think .vn-text{ font-style:italic; }
-.vn-box.shout .vn-text, .vn-insert.shout .vn-insert-text{ font-weight:800; }
-.vn-box.shout{ border-width:3px; }
 .vn-text .w, .vn-insert-text .w{ display:inline-block; }
-.vn-box.shout .w, .vn-insert.shout .w{ animation:vn-jitter .16s steps(2, jump-none) infinite; }
-@keyframes vn-jitter{ 0%{ transform:translate(0,0) rotate(0); } 25%{ transform:translate(1.5px,-1px) rotate(-1.5deg); }
-  50%{ transform:translate(-1px,1.5px) rotate(1deg); } 75%{ transform:translate(1px,1px) rotate(-.5deg); } 100%{ transform:translate(-1.5px,-1px) rotate(1.5deg); } }
-.vn-stage.shouting .vn-ch:not(.dim){ animation:vn-quake .35s ease-out; }
-@keyframes vn-quake{ 0%,100%{ transform:translateX(-50%); } 20%{ transform:translateX(calc(-50% - 5px)); } 40%{ transform:translateX(calc(-50% + 5px)); } 60%{ transform:translateX(calc(-50% - 3px)); } 80%{ transform:translateX(calc(-50% + 2px)); } }
+.c.l.sh{ display:inline-block; }
+.c.l.sh.on{ animation:vn-shake-fade 1.4s linear both; }
+.c.wh{ font-size:.76em; opacity:.78; letter-spacing:.01em; }
+@keyframes vn-shake-fade{ 0%{ transform:translate(0,0) rotate(0); }
+  4%{ transform:translate(2.6px,-2px) rotate(-5deg); } 8%{ transform:translate(-2.6px,2px) rotate(5deg); }
+  12%{ transform:translate(2.2px,1.6px) rotate(-4deg); } 17%{ transform:translate(-2px,-1.6px) rotate(3.5deg); }
+  23%{ transform:translate(1.6px,-1.2px) rotate(-2.6deg); } 30%{ transform:translate(-1.3px,1px) rotate(2deg); }
+  39%{ transform:translate(1px,.8px) rotate(-1.4deg); } 50%{ transform:translate(-.7px,-.6px) rotate(1deg); }
+  63%{ transform:translate(.45px,.35px) rotate(-.6deg); } 79%{ transform:translate(-.2px,-.15px) rotate(.3deg); } 100%{ transform:none; } }
+.vn-ch.quake{ animation:vn-quake 1s linear; }
+@keyframes vn-quake{ 0%,100%{ transform:translateX(-50%); } 6%{ transform:translateX(calc(-50% - 6px)); } 13%{ transform:translateX(calc(-50% + 6px)); }
+  21%{ transform:translateX(calc(-50% - 4.5px)); } 30%{ transform:translateX(calc(-50% + 3.5px)); } 41%{ transform:translateX(calc(-50% - 2.5px)); }
+  54%{ transform:translateX(calc(-50% + 1.5px)); } 70%{ transform:translateX(calc(-50% - .8px)); } 85%{ transform:translateX(calc(-50% + .3px)); } }
 /* thinking: everything but the thinker turns grey */
 .vn-bg, .vn-cast{ transition:filter .4s ease, opacity .4s ease; }
 .vn-stage.think .vn-bg{ filter:grayscale(1) brightness(.92); }
@@ -143,7 +158,7 @@ const CSS = `
 .vn-stage.past .vn-box{ background:color-mix(in srgb, var(--surface-2, #fff) 78%, #d9b77e); border-color:#8b6b3d; }
 .vn-stage.past .vn-name{ filter:sepia(.8); }
 /* inserts: a caption over the backdrop (characters hidden), or on a black card */
-.vn-insert{ position:absolute; inset:0; z-index:130; display:flex; align-items:center; justify-content:center; padding:8%;
+.vn-insert{ position:absolute; inset:0; z-index:130; display:flex; overflow-y:auto; align-items:center; justify-content:center; padding:8%;
   opacity:0; pointer-events:none; transition:opacity .4s ease; background:linear-gradient(rgba(0,0,0,.2), rgba(0,0,0,.55)); }
 .vn-insert-text{ max-width:80%; text-align:center; color:#fff; font-family:var(--font-serif, Georgia, serif); font-style:italic;
   font-size:clamp(1.1rem, 3.6vw, 2.1rem); line-height:1.35; text-shadow:0 2px 10px rgba(0,0,0,.6); white-space:pre-line; }
@@ -171,7 +186,9 @@ const CSS = `
 @keyframes vn-in{ from{ opacity:0; transform:translate(-50%, 8px); } to{ opacity:1; transform:translate(-50%, 0); } }
 @keyframes vn-shake{ 0%,100%{ transform:translateX(-50%); } 25%{ transform:translateX(calc(-50% - 6px)); } 75%{ transform:translateX(calc(-50% + 6px)); } }
 @keyframes vn-bob{ 0%,100%{ transform:translateY(0); } 50%{ transform:translateY(4px); } }
-@media (prefers-reduced-motion: reduce){ .vn-next.ready, .vn-ask, .vn-input.shake, .vn-box.shout .w, .vn-insert.shout .w, .vn-stage.shouting .vn-ch{ animation:none; } .vn-ch, .vn-bg, .vn-cast, .vn-insert, .vn-box{ transition:none; } }
+/* narrow screens: a taller picture and text box, so two or three lines of text fit (longer lines scroll) */
+@media (max-width:560px){ .vn{ --vn-box:31%; } .vn-stage{ aspect-ratio:4/3; } .vn-text{ font-size:.95rem; line-height:1.35; } .vn-box{ padding:2.2% 3% 1.6%; } }
+@media (prefers-reduced-motion: reduce){ .vn-next.ready, .vn-ask, .vn-input.shake, .c.l.sh.on, .vn-ch.quake{ animation:none; } .vn-ch, .vn-bg, .vn-cast, .vn-insert, .vn-box{ transition:none; } }
 .vn-bar{ display:flex; align-items:center; justify-content:center; gap:8px; margin-top:10px; }
 .vn-bar button{ display:inline-flex; flex-direction:column; align-items:center; gap:1px; min-width:4.2rem; padding:5px 8px 4px; line-height:1; }
 .vn-bar .ic{ font-size:1.3rem; }
@@ -205,20 +222,35 @@ const BG = {
 };
 
 /* "Hi! {pose:em_joy} Nice to meet you." → {text:'Hi! Nice to meet you.', cues:[{at:4, pose:'em_joy'}]} */
+/* "Hi! {pose:em_joy} {shout}Nice!{/shout}" →
+     {text:'Hi! Nice!', cues:[{at:3, pose:'em_joy'}], spans:[{kind:'shout', from:4, to:9}]}
+   Cues and {shout} / {whisper} tags are taken out of the text; a tag between two spaces leaves one.
+   A tag left open runs to the end of the line. */
 function parseCues(say){
-  const raw = String(say || ''), cues = [];
+  const raw = String(say || ''), cues = [], marks = [];
   let text = '', last = 0;
   for(const m of raw.matchAll(/\{([^{}]*)\}/g)){
-    const d = {};
+    const tag = m[1].trim().match(/^(\/?)(shout|whisper)$/i), d = {};
     for(const [, k, v] of m[1].matchAll(/(pose|emotion)\s*[:=]\s*([\w-]+)/g)) d[k] = v;
-    if(!d.pose && !d.emotion) continue;   /* not a cue: leave it in the text */
+    if(!tag && !d.pose && !d.emotion) continue;   /* not a cue or a tag: leave it in the text */
+    if(m.index < last) continue;
     text += raw.slice(last, m.index); last = m.index + m[0].length;
-    if(/\s$/.test(text) && /^\s/.test(raw.slice(last))) text = text.replace(/\s+$/, ' ');   /* no double space where the cue was */
-    cues.push({at:text.replace(/\s+$/, '').length, ...d});
+    const ws = raw.slice(last).match(/^\s+/);
+    if(ws && /\s$/.test(text)) last += ws[0].length;   /* no double space where it was */
+    if(tag) marks.push({at:text.length, kind:tag[2].toLowerCase(), open:!tag[1]});
+    else cues.push({at:text.replace(/\s+$/, '').length, ...d});
   }
   text += raw.slice(last);
-  const lead = text.length - text.replace(/^\s+/, '').length;   /* a cue at the very start */
-  return {text:text.trim().replace(/[ \t]{2,}/g, ' '), cues:cues.map(c => ({...c, at:Math.max(0, c.at - lead)}))};
+  const lead = text.length - text.replace(/^\s+/, '').length;   /* a cue or tag at the very start */
+  text = text.trim();
+  const fix = at => Math.max(0, Math.min(text.length, at - lead));
+  const spans = [], open = {};
+  for(const mk of marks){
+    if(mk.open){ if(open[mk.kind] == null) open[mk.kind] = fix(mk.at); }
+    else if(open[mk.kind] != null){ spans.push({kind:mk.kind, from:open[mk.kind], to:fix(mk.at)}); open[mk.kind] = null; }
+  }
+  for(const k in open) if(open[k] != null) spans.push({kind:k, from:open[k], to:text.length});
+  return {text, cues:cues.map(c => ({...c, at:fix(c.at)})), spans};
 }
 
 function face(data, id){
@@ -257,30 +289,43 @@ function create(host, script){
   const parsed = lines.map(L => parseCues(L.say));
   /* the scene at the start of the last line of path (the lines shown so far, in order): the lines before it,
      with all their cues, then its own directions. With branches, only the lines actually shown count. */
+  /* the scene at the line that ends path (the lines shown so far, in order): every character in their resting
+     state, then the speaker acting this line. The map holds what is shown; .rest holds the resting states. */
+  const cloneC = c => ({at:c.at, shot:c.shot, data:JSON.parse(JSON.stringify(c.data))});
+  function act(c, d){   /* a line's or a stage direction's settings, on a copy of c */
+    if(d.at && AT[d.at] !== undefined) c.at = d.at;
+    if(d.shot) c.shot = d.shot === 'mcu' ? 'closeup' : d.shot;
+    if(d.pose) c.data = HC.applyPose(c.data, d.pose);
+    face(c.data, d.emotion);
+    if(d.look) c.data = HC.normalize({...c.data, ...d.look, joints:{...c.data.joints, ...(d.look.joints || {})}});
+    return c;
+  }
+  const looked = (c, look) => { if(look) c.data = HC.normalize({...c.data, ...look, joints:{...c.data.joints, ...(look.joints || {})}}); return c; };
   function sceneAt(path){
-    const on = new Map(), off = new Map();   /* off: characters who left, remembered for when they come back */
+    const rest = new Map(), off = new Map();   /* off: characters who left, remembered for when they come back */
     let bg = script.background || 'classroom';
-    const apply = (id, d) => {
-      if(!cast[id]) return;
-      const c = on.get(id) || off.get(id) || {at:'center', shot:'medium', data:HC.normalize(cast[id].character || {})};
-      off.delete(id);
-      if(d.at && AT[d.at] !== undefined) c.at = d.at;
-      if(d.shot) c.shot = d.shot === 'mcu' ? 'closeup' : d.shot;
-      if(d.pose) c.data = HC.applyPose(c.data, d.pose);
-      face(c.data, d.emotion);
-      if(d.look) c.data = HC.normalize({...c.data, ...d.look, joints:{...c.data.joints, ...(d.look.joints || {})}});
-      on.delete(id); on.set(id, c);   /* the last one changed is drawn in front */
+    const enter = (id, d) => {   /* on stage, or back: where they were, or where this line puts them */
+      let c = rest.get(id) || off.get(id);
+      if(!c) c = {at:'center', shot:'medium', data:HC.normalize(cast[id].character || {})};
+      if(!rest.has(id)){ if(d.at && AT[d.at] !== undefined) c.at = d.at; if(d.shot) c.shot = d.shot === 'mcu' ? 'closeup' : d.shot; }
+      off.delete(id); rest.delete(id); rest.set(id, c);   /* the last one to come on or move is drawn in front */
+      return c;
     };
-    path.forEach((j, n) => {
+    path.forEach(j => {
       const L = lines[j];
       if(L.background) bg = L.background;
-      for(const [id, d] of Object.entries(L.stage || {})){ if(d === null){ if(on.has(id)) off.set(id, on.get(id)); on.delete(id); } else apply(id, d || {}); }
-      if(L.who != null){
-        apply(L.who, L);
-        if(n < path.length - 1) for(const cue of parsed[j].cues) apply(L.who, cue);
+      for(const [id, d] of Object.entries(L.stage || {})){
+        if(!cast[id]) continue;
+        if(d === null){ if(rest.has(id)) off.set(id, rest.get(id)); rest.delete(id); continue; }
+        const was = rest.has(id); act(enter(id, d || {}), was ? (d || {}) : {...(d || {}), at:null, shot:null});   /* stage directions change the resting state */
       }
+      if(L.who != null && cast[L.who]) looked(enter(L.who, L), L.look);
     });
-    on.bg = bg;
+    const on = new Map();
+    for(const [id, c] of rest) on.set(id, cloneC(c));
+    const last = lines[path[path.length - 1]];
+    if(last && last.who != null && on.has(last.who)){ const c = on.get(last.who); act(c, {...last, look:null}); on.delete(last.who); on.set(last.who, c); }
+    on.bg = bg; on.rest = rest;
     return on;
   }
   function applyCue(cue){   /* during a line: the speaker's pose or face changes on screen */
@@ -378,20 +423,38 @@ function create(host, script){
   /* ── saying a line ── */
   let index = -1, scene = null, talk = null, raf = 0;
   /* the line's text is laid out once, every letter hidden, and letters are shown as they are said, so the box
-     never reflows. Words are wrapped so shouting can shake each one on its own. */
-  function build(el, text){
+     never reflows. When shouting, each letter shakes as it appears and the shaking dies down. */
+  function build(el, text, spans){
     const esc = t => t.replace(/[&<>]/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;'}[c]));
+    const kind = at => spans.filter(sp => at >= sp.from && at < sp.to).map(sp => sp.kind === 'shout' ? ' sh' : ' wh').join('');
     const offs = []; let h = '', at = 0;
     for(const part of text.split(/(\s+)/)){
       if(!part) continue;
-      const chars = [...part].map(ch => { offs.push(at); at += ch.length; return `<span class="c hid">${esc(ch)}</span>`; }).join('');
-      h += /^\s+$/.test(part) ? chars : `<span class="w" style="animation-delay:-${(Math.random() * 0.4).toFixed(2)}s">${chars}</span>`;
+      const space = /^\s+$/.test(part);
+      const chars = [...part].map(ch => { const k = kind(at); offs.push(at); at += ch.length; return `<span class="c${space ? '' : ' l'}${space ? k.replace(' sh', '') : k} hid">${esc(ch)}</span>`; }).join('');
+      h += space ? chars : `<span class="w">${chars}</span>`;
     }
-    el.innerHTML = h;
-    talk.chars = el.querySelectorAll('.c'); talk.offs = offs; talk.p = 0;
+    el.innerHTML = h; el.scrollTop = 0;
+    talk.el = el; talk.chars = el.querySelectorAll('.c'); talk.offs = offs; talk.p = 0; talk.jolted = false;
   }
   function render(upto){   /* show every letter that starts before upto (a position in the text) */
-    while(talk.p < talk.chars.length && talk.offs[talk.p] < upto) talk.chars[talk.p++].classList.remove('hid');
+    let last = null;
+    while(talk.p < talk.chars.length && talk.offs[talk.p] < upto){
+      const c = last = talk.chars[talk.p++]; c.classList.remove('hid'); c.classList.add('on');   /* on: a shouted letter starts shaking */
+      if(!talk.jolted && c.classList.contains('sh')){ talk.jolted = true; jolt(); }
+    }
+    if(last) follow(last);
+  }
+  /* the speaker's jolt when the shouting starts */
+  function jolt(){
+    const s = talk.who != null && sprites.get(talk.who); if(!s || talk.insert) return;
+    s.el.classList.remove('quake'); void s.el.offsetWidth; s.el.classList.add('quake');
+  }
+  /* text longer than the box (a narrow screen): keep the newest letters in view; it can also be scrolled by hand */
+  function follow(c){
+    const el = talk.el; if(!el || el.scrollHeight <= el.clientHeight + 1) return;
+    const bottom = c.offsetTop + c.offsetHeight + 4;
+    if(bottom > el.scrollTop + el.clientHeight) el.scrollTo({top:bottom - el.clientHeight, behavior:REDUCED ? 'auto' : 'smooth'});
   }
   function revealAt(t){   /* how much of the text has been said after t seconds */
     const W = talk.sp.words, n = talk.text.length;
@@ -422,10 +485,24 @@ function create(host, script){
     }
     raf = requestAnimationFrame(tick);
   }
+  /* once a line has been said, the speaker slowly goes back to their resting place, size, pose and face */
+  const SETTLE_AFTER = 700, SETTLE_TIME = Math.max(0.9, SCENE_TIME * 2);
+  let settleTimer = 0, faceTimer = 0;
+  function settle(){
+    const who = talk && talk.who; if(who == null || !scene.rest || !scene.rest.has(who)) return;
+    const now = scene.get(who), r = cloneC(scene.rest.get(who));
+    const keepFace = {...r, data:{...r.data, eyebrows:now.data.eyebrows, eyes:now.data.eyes, mouth:now.data.mouth}};
+    motion = {ease:SCENE_EASE, time:REDUCED ? 0 : SETTLE_TIME};
+    root.style.setProperty('--vn-move', (REDUCED ? 0 : SETTLE_TIME) + 's');
+    scene.set(who, keepFace); drawSprite(who, keepFace); layout(scene, who);
+    faceTimer = setTimeout(() => { scene.set(who, r); drawSprite(who, r); }, REDUCED ? 0 : SETTLE_TIME * 400);   /* the face changes halfway */
+  }
   function finish(){   /* the whole line at once, mouth at rest */
     if(!talk || talk.done) return;
     talk.done = true; cancelAnimationFrame(raf);
     render(Infinity); runCues(Infinity); setMouth(talk.rest);
+    if(talk.el) talk.el.scrollTo({top:talk.el.scrollHeight, behavior:REDUCED ? 'auto' : 'smooth'});
+    clearTimeout(settleTimer); settleTimer = setTimeout(settle, SETTLE_AFTER);
     syncButtons();
     if(isQuestion(index)) showAsk();
   }
@@ -445,22 +522,23 @@ function create(host, script){
   function fill(p){
     const subs = [];
     const text = p.text.replace(/\{\$([\w-]+)\}/g, (m, k, off) => { const v = String(vars[k] ?? '').trim(); subs.push([off, v.length - m.length]); return v; });
-    return {text, cues:p.cues.map(c => ({...c, at:c.at + subs.filter(([o]) => o < c.at).reduce((t, [, d]) => t + d, 0)}))};
+    const shift = at => at + subs.filter(([o]) => o < at).reduce((t, [, d]) => t + d, 0);
+    return {text, cues:p.cues.map(c => ({...c, at:shift(c.at)})), spans:p.spans.map(sp => ({...sp, from:shift(sp.from), to:shift(sp.to)}))};
   }
 
   function show(){   /* the last line of the history, with the scene as it stands there */
     if(!history.length) return;
-    cancelAnimationFrame(raf); hideAsk(); ended = false;
+    cancelAnimationFrame(raf); hideAsk(); ended = false; clearTimeout(settleTimer); clearTimeout(faceTimer);
+    root.style.removeProperty('--vn-move');
     const cur = history[history.length - 1], i = cur.i;
     vars = {...cur.vars};
     const L = lines[i], who = L.who != null ? L.who : null, cm = who != null ? cast[who] : (script.narration || {});
-    const insert = !!L.insert, think = !!(L.think || L.mode === 'think') && who != null, shout = !!(L.shout || L.mode === 'shout'), past = !!L.past;
+    const insert = !!L.insert, think = !!(L.think || L.mode === 'think') && who != null, past = !!L.past;
     motion = {ease:L.easing ? easingOf(L.easing) : SCENE_EASE, time:Number(L.moveTime) >= 0 && L.moveTime !== '' && L.moveTime != null ? Number(L.moveTime) : SCENE_TIME};
     index = i; scene = sceneAt(history.map(h => h.i)); setBg(scene.bg);
     stage.classList.toggle('inserting', insert); stage.classList.toggle('insert-black', L.insert === 'black');
-    stage.classList.toggle('think', think); stage.classList.toggle('past', past); stage.classList.toggle('shouting', shout && !insert);
-    boxEl.classList.toggle('narrate', who == null); boxEl.classList.toggle('think', think); boxEl.classList.toggle('shout', shout);
-    insertEl.classList.toggle('shout', shout);
+    stage.classList.toggle('think', think); stage.classList.toggle('past', past);
+    boxEl.classList.toggle('narrate', who == null); boxEl.classList.toggle('think', think);
     for(const [id, s] of sprites) if(!scene.has(id)){ s.el.classList.add('out'); sprites.delete(id); setTimeout(() => s.el.remove(), 400); }
     for(const [id, c] of scene) drawSprite(id, c);
     layout(scene, insert ? null : who);
@@ -468,15 +546,17 @@ function create(host, script){
     const name = who != null ? (cm.name || who) : '';
     nameEl.textContent = insert || who == null ? '' : think ? `${name} 💭` : name;
     root.style.setProperty('--vn-name', (who != null && cm.color) || '');
-    const {text, cues} = fill(parsed[i]), c = who != null ? scene.get(who) : null;
+    const {text, cues, spans} = fill(parsed[i]), c = who != null ? scene.get(who) : null;
+    for(const k of ['shout', 'whisper']) if(L[k] || L.mode === k) spans.push({kind:k, from:0, to:text.length});   /* the whole line */
+    const shout = spans.some(sp => sp.kind === 'shout');
     const rest = c ? (LIP.includes(c.data.mouth) ? 'rest' : c.data.mouth) : 'rest';   /* pauses and the end fall back to their expression */
     /* pauses come back as REST and are drawn with whatever face the speaker has by then (cues can change it) */
-    talk = {who, text, rest, cues, cue:0, shown:-1, done:false, t0:performance.now(), lips:who != null && !think && !insert,
+    talk = {who, text, rest, cues, cue:0, shown:-1, done:false, t0:performance.now(), lips:who != null && !think && !insert, insert,
       sp:HC.speech(text, {fps:FPS, wpm:cm.wpm || (who != null ? 150 : 160), lang:cm.lang || 'en', restMouth:REST})};
     if(!talk.lips) setMouth(rest);   /* thinking: the mouth stays closed */
     srEl.textContent = who == null || insert ? text : `${name}${think ? ' thinks' : shout ? ' shouts' : ''}: ${text}`;
     if(insert) textEl.innerHTML = '';
-    build(insert ? insertText : textEl, text);
+    build(insert ? insertText : textEl, text, spans);
     if(!insert) insertText.innerHTML = '';
     syncButtons();
     if(!talk.sp.keys.length) finish(); else raf = requestAnimationFrame(tick);

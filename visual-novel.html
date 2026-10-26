@@ -34,10 +34,10 @@
   <details class="vn-help">
     <summary>✍️ How a scene is written</summary>
     <div class="ke-body">
-      <p class="note">The scene is the JSON in this page’s <code>#vnScript</code>: a backdrop, a cast of house characters (as saved by the poser) and a list of lines. Each line names who speaks and what they say, and can also set where they stand (<code>left</code>, <code>center</code>, <code>right</code>), the shot (<code>full</code>, <code>medium</code>, <code>closeup</code>), a pose (any pose preset, including the emotion ones such as <code>em_joy</code>), a face (<code>emotion</code>) or other details (<code>look</code>). <code>stage</code> brings other characters in, moves them, or takes them away with <code>null</code>. What a line sets stays until a later line changes it.</p>
-      <p class="note">A character can change pose or face in the middle of a line: put a cue in the text where it should happen, such as <code>"Music? {pose:em_surprise} Wow! {emotion:joy} I love music."</code> A cue is <code>{pose:…}</code>, <code>{emotion:…}</code> or both, <code>{pose:em_joy emotion:sadness}</code>. It is not shown or said; it happens when the text reaches it, and what it sets stays.</p>
+      <p class="note">The scene is the JSON in this page’s <code>#vnScript</code>: a backdrop, a cast of house characters (as saved by the poser) and a list of lines. Each line names who speaks and what they say, and can also set where they stand (<code>left</code>, <code>center</code>, <code>right</code>), the shot (<code>full</code>, <code>medium</code>, <code>closeup</code>), a pose (any pose preset, including the emotion ones such as <code>em_joy</code>), a face (<code>emotion</code>) or other details (<code>look</code>). <code>stage</code> brings other characters in, moves them, or takes them away with <code>null</code>. A line’s place, shot, pose and face are how the speaker acts it: when the line has been said, they slowly go back to their resting state (where they first came on, with their own pose and face). Use <code>stage</code> to change that state for good; <code>look</code> always stays.</p>
+      <p class="note">A character can change pose or face in the middle of a line: put a cue in the text where it should happen, such as <code>"Music? {pose:em_surprise} Wow! {emotion:joy} I love music."</code> A cue is <code>{pose:…}</code>, <code>{emotion:…}</code> or both, <code>{pose:em_joy emotion:sadness}</code>. It is not shown or said; it happens when the text reaches it, and lasts until the line ends.</p>
       <p class="note">Pose changes are eased with the keyframe editor’s easings. <code>"easing"</code> (an easing id such as <code>quad</code>, <code>sine</code>, <code>back</code>, <code>elastic</code> or <code>bounce</code>, or <code>{"out":…, "in":…}</code> for the two ends) and <code>"moveTime"</code> (seconds) set them for the scene, and any line can set its own for the moves it starts.</p>
-      <p class="note">Kinds of line: a line with no <code>"who"</code> is narration, in the box with no name. <code>"insert": true</code> shows the text as a caption over the backdrop (for a new place or time passing), and <code>"insert": "black"</code> on a black card. <code>"think": true</code> shows a character’s thoughts: their lips don’t move and everything else turns grey. <code>"shout": true</code> makes the text bold and shaky. <code>"past": true</code> turns the picture sepia for memories. <code>"background"</code> changes the backdrop from that line on; a character who left with <code>null</code> comes back where they were with <code>{}</code>.</p>
+      <p class="note">Kinds of line: a line with no <code>"who"</code> is narration, in the box with no name. <code>"insert": true</code> shows the text as a caption over the backdrop (for a new place or time passing), and <code>"insert": "black"</code> on a black card. <code>"think": true</code> shows a character’s thoughts: their lips don’t move and everything else turns grey. <code>"shout": true</code> makes each letter shake as it appears, then settle, and <code>"whisper": true</code> makes the text smaller and softer; for part of a line, wrap it in the text: <code>"{shout}Hi, Ana!{/shout} Sorry I'm late."</code> or <code>"Shh! {whisper}He can hear you!{/whisper}"</code>. <code>"past": true</code> turns the picture sepia for memories. <code>"background"</code> changes the backdrop from that line on; a character who left with <code>null</code> comes back where they were with <code>{}</code>.</p>
       <p class="note">Questions branch the conversation. Give a line an <code>"id"</code> so others can <code>"goto"</code> it, and end the scene with <code>"end": true</code>. <code>"choices"</code> shows buttons, each with its <code>"goto"</code>. <code>"input"</code> asks for a typed answer and compares it with each branch’s <code>"rubric"</code> (one answer or a list): with <code>"check": "match"</code> the answer must be one of them (ignoring case, extra spaces and end punctuation); with <code>"check": "closeness"</code> each branch scores how close the answer is (the gap fill’s Damerau-Levenshtein accuracy, 0–100), and the closest branch that reaches its <code>"min"</code> wins, so the same rubric can lead to a “perfect” branch at 95 and a “nearly” branch at 65. <code>"else"</code> is where an answer that fits no branch goes. <code>"save": "name"</code> keeps the answer for later lines as <code>{$name}</code>.</p>
       <p class="note">Keys: <span class="kbd">Space</span> / <span class="kbd">Enter</span> / <span class="kbd">→</span> next (or finish the line), <span class="kbd">←</span> back, <span class="kbd">Home</span> start again, <span class="kbd">1</span>–<span class="kbd">9</span> pick a choice.</p>
     </div>
@@ -359,8 +359,7 @@
    "shot": "medium",
    "pose": "waving",
    "emotion": "joy",
-   "say": "Hi, Ana! {pose:em_apprehension} Sorry I'm late. {pose:em_annoyance} The bus was very slow.",
-   "shout": true
+   "say": "{shout}Hi, Ana!{/shout} {pose:em_apprehension} Sorry I'm late. {pose:em_annoyance} The bus was very slow."
   },
   {
    "who": "ana",
@@ -431,6 +430,16 @@
    "pose": "waving",
    "emotion": "joy",
    "say": "Hello, everyone. It's nice to meet you."
+  },
+  {
+   "who": "mia",
+   "pose": "em_interest",
+   "say": "{whisper}Ana, he looks very serious…{/whisper}"
+  },
+  {
+   "who": "ana",
+   "pose": "em_apprehension",
+   "say": "Shh! {whisper}He can hear you!{/whisper} {pose:em_joy} Ha ha!"
   },
   {
    "who": "ana",
