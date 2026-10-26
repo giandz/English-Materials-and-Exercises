@@ -8,6 +8,7 @@
      vn.back()      the line shown before this one (the way you came, through any branches)
      vn.restart()   the first line         vn.go(label | i)   jump to a line
      vn.index       the line shown now     vn.vars            answers saved so far
+     vn.setAuto(on) auto-advance (also the ⏯️ Auto button or A): after each line, time to read, then the next
 
    script = {
      background: 'classroom' | 'cafe' | 'park'   a built-in backdrop, or any CSS background value
@@ -115,7 +116,8 @@ const CSS = `
 .vn-box{ position:absolute; z-index:100; left:3%; right:3%; bottom:3%; height:calc(var(--vn-box) - 3%); box-sizing:border-box; padding:2.4% 3% 2%;
   background:color-mix(in srgb, var(--surface-2, #fff) 96%, transparent); border:2px solid var(--text-accent, #185fa5);
   border-radius:14px; box-shadow:0 6px 18px rgba(0,0,0,.18); }
-.vn-name{ position:absolute; left:4%; bottom:calc(100% - 6px); padding:.15em .9em .2em; border-radius:9px 9px 0 0;
+/* the name tab sits over the speaker's side: left, centre or right (data-at on the box) */
+.vn-name{ position:absolute; left:4%; transform:translateX(0); transition:left .35s ease, transform .35s ease; bottom:calc(100% - 6px); padding:.15em .9em .2em; border-radius:9px 9px 0 0;
   font-weight:700; font-size:clamp(.8rem, 1.9vw, 1.05rem); color:#fff; background:var(--vn-name, var(--text-accent, #185fa5)); }
 .vn-name:empty{ display:none; }
 .vn-text{ position:relative; font-size:clamp(.9rem, 2.3vw, 1.3rem); line-height:1.45; color:var(--text-primary, #1a1a1a); height:100%;
@@ -157,6 +159,8 @@ const CSS = `
 .vn-stage.past::after{ opacity:1; }
 .vn-stage.past .vn-box{ background:color-mix(in srgb, var(--surface-2, #fff) 78%, #d9b77e); border-color:#8b6b3d; }
 .vn-stage.past .vn-name{ filter:sepia(.8); }
+.vn-box[data-at="center"] .vn-name{ left:50%; transform:translateX(-50%); }
+.vn-box[data-at="right"] .vn-name{ left:96%; transform:translateX(-100%); }
 /* inserts: a caption over the backdrop (characters hidden), or on a black card */
 .vn-insert{ position:absolute; inset:0; z-index:130; display:flex; overflow-y:auto; align-items:center; justify-content:center; padding:8%;
   opacity:0; pointer-events:none; transition:opacity .4s ease; background:linear-gradient(rgba(0,0,0,.2), rgba(0,0,0,.55)); }
@@ -190,6 +194,8 @@ const CSS = `
 @media (max-width:560px){ .vn{ --vn-box:31%; } .vn-stage{ aspect-ratio:4/3; } .vn-text{ font-size:.95rem; line-height:1.35; } .vn-box{ padding:2.2% 3% 1.6%; } }
 @media (prefers-reduced-motion: reduce){ .vn-next.ready, .vn-ask, .vn-input.shake, .c.l.sh.on, .vn-ch.quake{ animation:none; } .vn-ch, .vn-bg, .vn-cast, .vn-insert, .vn-box{ transition:none; } }
 .vn-bar{ display:flex; align-items:center; justify-content:center; gap:8px; margin-top:10px; }
+.vn-bar button[aria-pressed="true"]{ background:var(--color-background-info, #e6f1fb); border-color:var(--color-border-info, #85b7eb); }
+.vn-bar button[aria-pressed="true"] .lb{ color:var(--color-text-info, #0c447c); }
 .vn-bar button{ display:inline-flex; flex-direction:column; align-items:center; gap:1px; min-width:4.2rem; padding:5px 8px 4px; line-height:1; }
 .vn-bar .ic{ font-size:1.3rem; }
 .vn-bar .lb{ font-size:.6667rem; font-weight:600; color:var(--text-secondary, #555); }
@@ -273,6 +279,7 @@ function create(host, script){
       <button type="button" data-act="back" title="The line before (←)"><span class="ic" aria-hidden="true">⏪</span><span class="lb">Back</span></button>
       <span class="vn-count" aria-live="off"></span>
       <button type="button" data-act="next" title="Next (Space, Enter or a click)"><span class="ic" aria-hidden="true">🔽</span><span class="lb">Next</span></button>
+      <button type="button" data-act="auto" aria-pressed="false" title="Auto: go on by itself after each line, leaving time to read (A). It waits at questions."><span class="ic" aria-hidden="true">⏯️</span><span class="lb">Auto</span></button>
     </div>`;
   host.appendChild(root);
   const $ = c => root.querySelector(c);
@@ -485,8 +492,26 @@ function create(host, script){
     }
     raf = requestAnimationFrame(tick);
   }
+  /* auto-advance: after a line has been said, wait long enough to read it, then go on; questions and the end wait */
+  let auto = false, autoTimer = 0;
+  try{ auto = localStorage.getItem('house-vn-auto') === '1'; }catch(e){}
+  const autoWillGo = () => auto && talk && talk.done && !ended && !isQuestion(index) && !isEnd(index);
+  function scheduleAuto(){
+    clearTimeout(autoTimer);
+    if(!autoWillGo()) return;
+    const wait = Math.min(5000, (talk.insert ? 1600 : 1000) + 30 * talk.text.length);
+    autoTimer = setTimeout(() => { if(auto && talk && talk.done && !askEl) next(); }, wait);
+  }
+  function setAuto(on){
+    auto = on;
+    try{ localStorage.setItem('house-vn-auto', on ? '1' : '0'); }catch(e){}
+    const b = root.querySelector('[data-act="auto"]');
+    b.setAttribute('aria-pressed', String(on)); b.querySelector('.lb').textContent = on ? 'Auto on' : 'Auto';
+    if(on){ if(autoWillGo()) clearTimeout(settleTimer); scheduleAuto(); }
+    else { clearTimeout(autoTimer); if(talk && talk.done){ clearTimeout(settleTimer); settleTimer = setTimeout(settle, SETTLE_AFTER); } }   /* off: settle as usual */
+  }
   /* once a line has been said, the speaker slowly goes back to their resting place, size, pose and face */
-  const SETTLE_AFTER = 700, SETTLE_TIME = Math.max(0.9, SCENE_TIME * 2);
+  const SETTLE_AFTER = 700, SETTLE_TIME = Math.max(1.8, SCENE_TIME * 4);
   let settleTimer = 0, faceTimer = 0;
   function settle(){
     const who = talk && talk.who; if(who == null || !scene.rest || !scene.rest.has(who)) return;
@@ -502,7 +527,11 @@ function create(host, script){
     talk.done = true; cancelAnimationFrame(raf);
     render(Infinity); runCues(Infinity); setMouth(talk.rest);
     if(talk.el) talk.el.scrollTo({top:talk.el.scrollHeight, behavior:REDUCED ? 'auto' : 'smooth'});
-    clearTimeout(settleTimer); settleTimer = setTimeout(settle, SETTLE_AFTER);
+    clearTimeout(settleTimer);
+    /* with auto-advance on, the speaker keeps acting until the next line starts and goes back to rest with it,
+       instead of settling first */
+    if(!autoWillGo()) settleTimer = setTimeout(settle, SETTLE_AFTER);
+    scheduleAuto();
     syncButtons();
     if(isQuestion(index)) showAsk();
   }
@@ -528,7 +557,7 @@ function create(host, script){
 
   function show(){   /* the last line of the history, with the scene as it stands there */
     if(!history.length) return;
-    cancelAnimationFrame(raf); hideAsk(); ended = false; clearTimeout(settleTimer); clearTimeout(faceTimer);
+    cancelAnimationFrame(raf); hideAsk(); ended = false; clearTimeout(settleTimer); clearTimeout(faceTimer); clearTimeout(autoTimer);
     root.style.removeProperty('--vn-move');
     const cur = history[history.length - 1], i = cur.i;
     vars = {...cur.vars};
@@ -543,8 +572,9 @@ function create(host, script){
     for(const [id, c] of scene) drawSprite(id, c);
     layout(scene, insert ? null : who);
     for(const [id, sp] of sprites) sp.el.classList.toggle('thinker', think && id === who);
-    const name = who != null ? (cm.name || who) : '';
+    const name = who != null ? (cm.name || who) : '', c0 = who != null ? scene.get(who) : null;
     nameEl.textContent = insert || who == null ? '' : think ? `${name} 💭` : name;
+    if(c0) boxEl.dataset.at = c0.at;   /* where the speaker stands as they say this line */
     root.style.setProperty('--vn-name', (who != null && cm.color) || '');
     const {text, cues, spans} = fill(parsed[i]), c = who != null ? scene.get(who) : null;
     for(const k of ['shout', 'whisper']) if(L[k] || L.mode === k) spans.push({kind:k, from:0, to:text.length});   /* the whole line */
@@ -668,7 +698,7 @@ function create(host, script){
   });
   root.querySelector('.vn-bar').addEventListener('click', e => {
     const b = e.target.closest('button'); if(!b) return;
-    ({next, back, restart})[b.dataset.act]();
+    ({next, back, restart, auto:() => setAuto(!auto)})[b.dataset.act]();
   });
   root.addEventListener('keydown', e => {
     if(e.target.closest('input, textarea, select')) return;
@@ -677,10 +707,12 @@ function create(host, script){
     if(e.key === ' ' || e.key === 'Enter' || e.key === 'ArrowRight' || e.key === 'ArrowDown'){ e.preventDefault(); next(); }
     else if(e.key === 'ArrowLeft' || e.key === 'ArrowUp'){ e.preventDefault(); back(); }
     else if(e.key === 'Home'){ e.preventDefault(); restart(); }
+    else if(e.key === 'a' || e.key === 'A'){ e.preventDefault(); setAuto(!auto); }
   });
 
+  setAuto(auto);
   restart();
-  return {next, back, restart, go, get index(){ return index; }, get length(){ return lines.length; }, get vars(){ return {...vars}; }};
+  return {setAuto, get auto(){ return auto; }, next, back, restart, go, get index(){ return index; }, get length(){ return lines.length; }, get vars(){ return {...vars}; }};
 }
 
 global.HouseVN = {create, BACKGROUNDS:Object.keys(BG)};
