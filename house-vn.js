@@ -248,9 +248,26 @@ function create(host, script){
   const TURNS = ['torsoOrientation', 'pelvisOrientation'];
   const numsOf = d => ({joints:{...d.joints}, turns:TURNS.map(k => d[k])});
   const sameNums = (a, b) => TURNS.every((k, i) => a.turns[i] === b.turns[i]) && Object.keys(b.joints).every(j => Math.round(a.joints[j]) === Math.round(b.joints[j]));
+  /* Which way a joint turns from a to b. Angles are kept between −180° and 180°, with 0 the resting
+     position (arm hanging, limb straight), and the short way round is not always the natural one: taking it
+     for each joint separately can send a shoulder over the head while the elbow folds back through the
+     upper arm, and the whole arm spins round. So:
+       elbows, knees, wrists and ankles never pass ±180° (that would fold the limb back on itself): they
+         always turn through their resting position;
+       shoulders and hips go the short way across ±180° (the arm straight up, the leg straight out) only for a
+         small move, up to 90°; a bigger one goes round through the resting position, as a person would;
+       the body tilt (root) takes the short way, so a fall or a spin stays what it was;
+       the rest (torso, pelvis, neck) never get near ±180°, so either way is the same. */
+  function jointDelta(j, a, b){
+    a = wrap(a); b = wrap(b);   /* a may come from the middle of a move */
+    const raw = b - a, short = wrap(raw);
+    if(j === 'root') return short;
+    if(/^(elbow|knee|wrist|ankle)/.test(j) || Math.abs(raw) <= 180) return raw;
+    return Math.abs(short) <= 90 ? short : raw;   /* shoulders and hips */
+  }
   function lerpNums(a, b, e){
     const joints = {};
-    for(const j of Object.keys(b.joints)) joints[j] = a.joints[j] + wrap(b.joints[j] - a.joints[j]) * e;   /* the short way round */
+    for(const j of Object.keys(b.joints)) joints[j] = wrap(a.joints[j]) + jointDelta(j, a.joints[j], b.joints[j]) * e;
     return {joints, turns:b.turns.map((v, i) => a.turns[i] + (v - a.turns[i]) * e)};
   }
   const lerpVB = (a, b, e) => b.map((v, i) => a[i] + (v - a[i]) * e);
