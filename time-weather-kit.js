@@ -32,10 +32,13 @@
    with the globe), and the Sun and the Moon are drawn in their true
    directions, as far away as the stars; the Moon shows its real phase.
    All the controls live in a ⚙️ options menu in the viewer's lower-left
-   corner: Satellite / Map, the terminator, the equator, the solar zenith
+   corner: the shape (🌍 globe / 🗺️ flat) and the look (🛰️ satellite /
+   🎨 map colours), in any combination, the terminator, the equator, the solar zenith
    and lunar zenith markers (☀️ / 🌙: where the Sun or Moon is right
    overhead, with a dotted line out to it), the polar axis, auto-rotate and reset. The legend
    under the viewer lists only the aids that can be seen at that moment.
+   📍 Place tool (lower right): opts.placeTool = { cities, players(), onPlace(player, city) }
+     — see "📍 Place" in build() below.
    Live players (used by the freer practice page):
      weatherAt: function (city, ms) { return WeatherSim.at(city, ms); }
        — weather is worked out again every simulated minute
@@ -45,6 +48,7 @@
      viewer.setTime(ms)       jump the simulated clock; it keeps ticking
      viewer.now()             the simulated moment
    Optional start settings:
+     mode: 'globe' | 'map' (flat),  look: 'satellite' | 'map'
      show: { terminator:false, equator:false, zenith:false, sublunar:false, axis:false },
      autoRotate:true, rotateSpeed:1   (degrees a second, ¼ – 30)
    ══════════════════════════════════════════════════════════════════════════ */
@@ -538,10 +542,20 @@
       Dc: { hum: [50, 85], wet: 0.18, dry: 0.12, mm: [0.3, 9], season: 'summer', cloud: [15, 85], dtr: 10, fog: 0.06 },
       // Köppen-style 'Df' (continental, wet all year) and 'ET' (tundra), which some city lists use
       Df: { hum: [55, 88], wet: 0.18, dry: 0.15, mm: [0.3, 8], season: 'even',  cloud: [20, 88], dtr: 9,  fog: 0.07 },
+      // Köppen-style 'Dw' (continental, dry winter: Ulaanbaatar, Astana, Pyongyang) — most rain
+      // falls in summer, from afternoon showers; winters are clear, dry and very cold
+      Dw: { hum: [40, 85], wet: 0.22, dry: 0.03, mm: [0.3, 12], season: 'summer', cloud: [5, 80], dtr: 12, fog: 0.04 },
       ET: { hum: [65, 90], wet: 0.16, dry: 0.12, mm: [0.2, 4], season: 'even',  cloud: [35, 92], dtr: 5,  fog: 0.12 },
+      // Trewartha 'E' (boreal: only 1–3 months reach 10 °C). 'Eo' is the mild, oceanic kind
+      // (Reykjavík, Juneau, Punta Arenas): grey, damp and windy all year. 'Ec' is the
+      // continental kind (Whitehorse, Yellowknife): dry, clear winters and summer showers
+      Eo: { hum: [70, 92], wet: 0.22, dry: 0.18, mm: [0.3, 6], season: 'even',  cloud: [40, 95], dtr: 5,  fog: 0.08 },
+      Ec: { hum: [55, 88], wet: 0.18, dry: 0.06, mm: [0.3, 8], season: 'summer', cloud: [15, 85], dtr: 11, fog: 0.05 },
       E:  { hum: [55, 90], wet: 0.20, dry: 0.12, mm: [0.3, 5], season: 'summer', cloud: [25, 90], dtr: 9,  fog: 0.08 },
       F:  { hum: [60, 90], wet: 0.15, dry: 0.10, mm: [0.2, 3], season: 'even',  cloud: [30, 90], dtr: 6,  fog: 0.10 }
     };
+    // a type that isn't in the table falls back to the nearest one in its group
+    KT.A = KT.Aw; KT.B = KT.BS; KT.C = KT.Cf; KT.D = KT.Dc;
     var COMPASS16 = ['N', 'NNE', 'NE', 'ENE', 'E', 'ESE', 'SE', 'SSE', 'S', 'SSW', 'SW', 'WSW', 'W', 'WNW', 'NW', 'NNW'];
 
     function parse(code) {
@@ -785,7 +799,8 @@
     'Papua New Guinea': 'PG', 'Republic of the Congo': 'CG', 'Rwanda': 'RW', 'Saint Lucia': 'LC', 'Samoa': 'WS', 'San Marino': 'SM',
     'Seychelles': 'SC', 'Serbia': 'RS', 'Sierra Leone': 'SL', 'Slovakia': 'SK', 'Slovenia': 'SI', 'Solomon Islands': 'SB',
     'Somalia': 'SO', 'South Sudan': 'SS', 'Suriname': 'SR', 'Tajikistan': 'TJ', 'Timor-Leste': 'TL', 'Togo': 'TG', 'Tonga': 'TO',
-    'Trinidad and Tobago': 'TT', 'Turkmenistan': 'TM', 'Tuvalu': 'TV', 'Vanuatu': 'VU', 'Vatican City': 'VA'
+    'Trinidad and Tobago': 'TT', 'Saint Kitts and Nevis': 'KN', 'Saint Vincent and the Grenadines': 'VC',
+    'São Tomé and Príncipe': 'ST', 'Sao Tome and Principe': 'ST', 'Turkmenistan': 'TM', 'Tuvalu': 'TV', 'Vanuatu': 'VU', 'Vatican City': 'VA'
   };
   function flagOf(country, own) {
     if (own) return own;
@@ -831,6 +846,7 @@
     + '.wv-stage{ position:relative; border-radius:16px; overflow:hidden; background:transparent; user-select:none; -webkit-user-select:none; }'
     + '.wv-stage.is-globe{ background:#02040a; }'
     + '.wv-stage.is-map{ background:var(--surface-1); border:1px solid var(--border); }'
+    + '.wv-stage.is-map.is-sat{ background:#0b1220; border-color:#0b1220; }'
     + '.wv-canvas{ position:absolute; left:0; top:0; display:block; }'
     + '.wv-stage.is-globe .wv-canvas{ cursor:grab; touch-action:none; }'
     + '.wv-stage.is-globe.dragging .wv-canvas{ cursor:grabbing; }'
@@ -838,6 +854,23 @@
     + '.wv-hint{ position:absolute; left:50%; bottom:10px; transform:translateX(-50%); font-size:.7333rem; color:rgba(255,255,255,.75); background:rgba(255,255,255,.08); border:1px solid rgba(255,255,255,.14); padding:3px 10px; border-radius:999px; pointer-events:none; transition:opacity .4s; white-space:nowrap; }'
     + '.wv-stage.is-map .wv-hint, .wv-hint.gone{ opacity:0; }'
     + '.wv-stage.is-narrow .wv-hint{ left:auto; right:10px; transform:none; }'
+    + '.wv-stage.is-narrow.has-place .wv-hint{ right:auto; left:58px; }'
+    /* 📍 Place: lower right, like ⚙️ on the left */
+    + '.wv-place{ position:absolute; right:10px; bottom:calc(var(--wv-bottom, 0px) + 10px); z-index:6; }'
+    + '.wv-place-btn{ height:38px; border-radius:999px; padding:0 14px 0 11px; border:1px solid var(--border); background:var(--surface-2); color:var(--text-primary); font-size:14px; font-weight:700; display:flex; align-items:center; gap:5px; cursor:pointer; box-shadow:0 2px 8px rgba(0,0,0,0.12); }'
+    + '.wv-place-btn[aria-pressed="true"]{ background:var(--color-background-info); color:var(--color-text-info); border-color:var(--text-accent); }'
+    + '.wv-stage.is-placing .wv-canvas{ cursor:crosshair !important; }'
+    + '.wv-place-hint{ position:absolute; left:50%; transform:translateX(-50%); z-index:5; max-width:calc(100% - 20px); padding:5px 12px; border-radius:999px; background:rgba(15,20,32,.82); color:#fff; font-size:.8rem; font-weight:700; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; pointer-events:none; box-shadow:0 2px 10px rgba(0,0,0,.3); }'
+    + '.wv-place-hint[hidden], .wv-pick[hidden]{ display:none; }'
+    + '.wv-pick{ position:absolute; z-index:8; width:230px; max-width:calc(100% - 20px); padding:8px; border-radius:14px; border:1px solid var(--border); background:var(--surface-2); color:var(--text-primary); box-shadow:0 10px 28px rgba(0,0,0,.3); }'
+    + '.wv-pick-h{ display:flex; align-items:center; justify-content:space-between; gap:8px; font-size:.7333rem; font-weight:700; letter-spacing:.05em; text-transform:uppercase; color:var(--text-muted); margin:0 2px 6px; }'
+    + '.wv-pick-h button{ padding:1px 8px; font-size:.8rem; }'
+    + '.wv-pick-list{ max-height:230px; overflow-y:auto; overscroll-behavior:contain; display:flex; flex-direction:column; gap:2px; }'
+    + '.wv-pick-item{ display:flex; align-items:center; gap:8px; width:100%; text-align:left; border:none; border-radius:8px; background:transparent; padding:6px 8px; font-size:.9rem; }'
+    + '.wv-pick-item:hover, .wv-pick-item:focus-visible{ background:var(--color-background-info); color:var(--color-text-info); }'
+    + '.wv-pick-item .wv-pick-name{ flex:1 1 auto; min-width:0; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }'
+    + '.wv-pick-item small{ color:var(--text-muted); font-size:.75rem; white-space:nowrap; }'
+    + '.wv-pick-dot{ width:1.4em; height:1.4em; border-radius:50%; flex:0 0 auto; display:flex; align-items:center; justify-content:center; font-size:.75rem; font-weight:800; color:#15171c; }'
     + '.wv-legend{ display:flex; flex-wrap:wrap; gap:6px 14px; justify-content:center; font-size:.7667rem; color:var(--text-secondary); margin-top:8px; }'
     + '.wv-legend span{ display:inline-flex; align-items:center; gap:5px; }'
     + '.wv-term{ display:inline-block; width:22px; height:0; border-top:2.5px solid #ffb627; border-radius:2px; box-shadow:0 0 4px rgba(255,182,39,.7); }'
@@ -977,7 +1010,9 @@
     var cities = [], bubbles = [], cityVec = [], weathers = [];
     var startUTC = opts.startUTC || Date.now();
     var t0 = Date.now();
+    // shape: 'globe' or 'map' (flat); look: 'satellite' or 'map' colours — any mix
     var mode = opts.mode === 'map' ? 'map' : 'globe';
+    var look = opts.look === 'map' || opts.look === 'satellite' ? opts.look : (mode === 'map' ? 'map' : 'satellite');
 
     host.classList.add('wv');
     host.innerHTML =
@@ -987,10 +1022,15 @@
         '<div class="wv-hint">Drag to turn the Earth</div>' +
         '<div class="wv-opts">' +
           '<div class="wv-panel" role="dialog" aria-label="Viewer options" hidden>' +
-            '<div class="wv-panel-h">View</div>' +
-            '<div class="wv-seg" role="group" aria-label="View">' +
-              '<button type="button" data-mode="globe">🛰️ Satellite</button>' +
-              '<button type="button" data-mode="map">🗺️ Map</button>' +
+            '<div class="wv-panel-h">Shape</div>' +
+            '<div class="wv-seg" role="group" aria-label="Shape">' +
+              '<button type="button" data-mode="globe">🌍 Globe</button>' +
+              '<button type="button" data-mode="map">🗺️ Flat</button>' +
+            '</div>' +
+            '<div class="wv-panel-h">Look</div>' +
+            '<div class="wv-seg" role="group" aria-label="Look">' +
+              '<button type="button" data-look="satellite">🛰️ Satellite</button>' +
+              '<button type="button" data-look="map">🎨 Map</button>' +
             '</div>' +
             '<div class="wv-panel-h">Show</div>' +
             '<div class="wv-chips" role="group" aria-label="Show on the Earth">' +
@@ -1009,11 +1049,16 @@
                 '<input type="range" min="0" max="1000" step="1" aria-label="Auto-rotate speed">' +
                 '<span aria-hidden="true">🐇</span></span>' +
                 '<output></output></label>' +
-              '<button type="button" class="wv-chip wv-reset" title="Back to the start view">↺ Reset view</button>' +
+              '<button type="button" class="wv-chip wv-reset" data-globe-only title="Back to the start view">↺ Reset view</button>' +
             '</div>' +
           '</div>' +
           '<button type="button" class="wv-opts-btn" aria-label="Viewer options" title="Viewer options" aria-expanded="false">⚙️</button>' +
         '</div>' +
+        (opts.placeTool
+          ? '<div class="wv-place"><button type="button" class="wv-place-btn" aria-pressed="false" title="Choose a city by touching the map">📍 Place</button></div>' +
+            '<div class="wv-place-hint" hidden></div>' +
+            '<div class="wv-pick" role="dialog" hidden></div>'
+          : '') +
       '</div>' +
       '<div class="wv-legend" aria-live="polite"></div>';
 
@@ -1373,8 +1418,9 @@
       var wide = W >= 640;
       stage.classList.toggle('is-globe', mode === 'globe');
       stage.classList.toggle('is-map', mode === 'map');
+      stage.classList.toggle('is-sat', look === 'satellite');
       stage.classList.toggle('is-narrow', !wide);
-      host.querySelectorAll('.wv-seg button').forEach(function (btn) {
+      host.querySelectorAll('[data-mode]').forEach(function (btn) {
         btn.setAttribute('aria-pressed', String(btn.dataset.mode === mode));
       });
 
@@ -1432,9 +1478,13 @@
     }
 
     /* ── pixels ─────────────────────────────────────────────────────────── */
+    // One pixel loop for both shapes: the globe works out which point on the
+    // Earth each pixel shows; the flat map reads latitude and longitude
+    // straight from the pixel. Then the chosen look colours that point.
     function shadePixels(sun, low, spin) {
       var scale = spin ? Math.min(1, dpr) * 0.8 : low ? Math.min(1, dpr) * 0.5 : dpr;
-      var box = mode === 'globe'
+      var globe = mode === 'globe', satLook = look === 'satellite';
+      var box = globe
         ? { x: geo.cx - geo.R, y: geo.cy - geo.R, w: geo.R * 2, h: geo.R * 2 }
         : { x: geo.mx, y: geo.my, w: geo.mw, h: geo.mh };
       var ow = Math.max(8, Math.round(box.w * scale)), oh = Math.max(8, Math.round(box.h * scale));
@@ -1442,20 +1492,18 @@
       var img = octx.createImageData(ow, oh), px = img.data;
       var S = vec(sun.lat, sun.lon), F = frame();
       var sat = T.sat, map = T.map, lights = T.lights;
-      // half-vector for the sun glint on the ocean (the viewer looks along -c)
+      // half-vector for the sun glint on the ocean (the viewer looks along -c; globe only)
       var Hh = norm([S[0] + F.c[0], S[1] + F.c[1], S[2] + F.c[2]]);
-      var i, wx, wy, wz, lat, lon, tx, ty, ti, ni, d, day, r, g, b;
+      var i, wx, wy, wz, lat, lon, tx, ty, ti, ni, d, day, r, g, b, z, edge;
 
-      if (mode === 'globe') {
-        for (var y = 0; y < oh; y++) {
-          var ny = 1 - 2 * (y + 0.5) / oh;
-          for (var x = 0; x < ow; x++) {
-            var nx = 2 * (x + 0.5) / ow - 1;
-            var r2 = nx * nx + ny * ny;
-            i = (y * ow + x) * 4;
+      for (var y = 0; y < oh; y++) {
+        for (var x = 0; x < ow; x++) {
+          i = (y * ow + x) * 4;
+          if (globe) {
+            var nx = 2 * (x + 0.5) / ow - 1, ny = 1 - 2 * (y + 0.5) / oh, r2 = nx * nx + ny * ny;
             if (r2 > 1) continue;
-            var rr = Math.sqrt(r2), z = Math.sqrt(1 - r2);
-            var edge = Math.min(1, (1 - rr) * ow * 0.5 + 0.5);
+            z = Math.sqrt(1 - r2);
+            edge = Math.min(1, (1 - Math.sqrt(r2)) * ow * 0.5 + 0.5);
             wx = nx * F.e[0] + ny * F.n[0] + z * F.c[0];
             wy = nx * F.e[1] + ny * F.n[1] + z * F.c[1];
             wz = nx * F.e[2] + ny * F.n[2] + z * F.c[2];
@@ -1463,17 +1511,26 @@
             lon = Math.atan2(wy, wx);
             tx = ((lon + Math.PI) / (2 * Math.PI) * TW) | 0; if (tx >= TW) tx = TW - 1;
             ty = ((Math.PI / 2 - lat) / Math.PI * TH) | 0; if (ty >= TH) ty = TH - 1;
-            ti = (ty * TW + tx) * 4;
-            ni = (ty >> 1) * NW + (tx >> 1);
-            d = wx * S[0] + wy * S[1] + wz * S[2];
+          } else {
+            lat = (90 - (y + 0.5) / oh * 180) * RAD;
+            lon = ((x + 0.5) / ow * 360 - 180) * RAD;
+            var cl0 = Math.cos(lat);
+            wx = cl0 * Math.cos(lon); wy = cl0 * Math.sin(lon); wz = Math.sin(lat);
+            tx = ((x + 0.5) / ow * TW) | 0; ty = ((y + 0.5) / oh * TH) | 0;
+            z = 1; edge = 1;
+          }
+          ti = (ty * TW + tx) * 4;
+          ni = (ty >> 1) * NW + (tx >> 1);
+          d = wx * S[0] + wy * S[1] + wz * S[2];
+
+          if (satLook) {
             day = smooth(-0.09, 0.07, d);
             var lam = d > 0 ? Math.sqrt(d) : 0;
             var cl = clouds[ni];
             var lit = 0.22 + 0.9 * lam;
             r = sat[ti] * lit; g = sat[ti + 1] * lit; b = sat[ti + 2] * lit;
             // sun glint on open water
-            var water = sat[ti + 2] > sat[ti] + 25 ? 1 : 0;
-            if (water && d > 0) {
+            if (globe && d > 0 && sat[ti + 2] > sat[ti] + 25) {
               var sp = wx * Hh[0] + wy * Hh[1] + wz * Hh[2];
               if (sp > 0.9) { var gl = Math.pow(sp, 60) * 120 * (1 - cl); r += gl; g += gl; b += gl * 0.9; }
             }
@@ -1487,31 +1544,21 @@
             var nr = sat[ti] * 0.05 + 6 + 255 * lt, ng = sat[ti + 1] * 0.05 + 10 + 196 * lt, nb = sat[ti + 2] * 0.06 + 26 + 110 * lt;
             nr += 30 * cl; ng += 34 * cl; nb += 48 * cl;
             r = nr + (r - nr) * day; g = ng + (g - ng) * day; b = nb + (b - nb) * day;
-            // limb: a little darker, and hazy blue on the day side
-            var limb = 0.62 + 0.38 * Math.sqrt(z);
-            var haze = Math.pow(1 - z, 3) * 0.75 * (0.25 + 0.75 * day);
-            r = r * limb + (110 - r * limb) * haze; g = g * limb + (170 - g * limb) * haze; b = b * limb + (255 - b * limb) * haze;
-            px[i] = r; px[i + 1] = g; px[i + 2] = b; px[i + 3] = 255 * edge;
+            if (globe) {
+              // limb: a little darker, and hazy blue on the day side
+              var limb = 0.62 + 0.38 * Math.sqrt(z);
+              var haze = Math.pow(1 - z, 3) * 0.75 * (0.25 + 0.75 * day);
+              r = r * limb + (110 - r * limb) * haze; g = g * limb + (170 - g * limb) * haze; b = b * limb + (255 - b * limb) * haze;
+            }
+          } else {
+            // map colours, darkened blue on the night side
+            var k = (1 - smooth(-0.1, 0.03, d)) * 0.58;
+            r = map[ti] + (14 - map[ti]) * k;
+            g = map[ti + 1] + (28 - map[ti + 1]) * k;
+            b = map[ti + 2] + (72 - map[ti + 2]) * k;
+            if (globe) { var shade = 0.7 + 0.3 * Math.sqrt(z); r *= shade; g *= shade; b *= shade; }   // a little roundness
           }
-        }
-      } else {
-        for (var my = 0; my < oh; my++) {
-          lat = (90 - (my + 0.5) / oh * 180) * RAD;
-          var cy = Math.cos(lat), sy = Math.sin(lat);
-          ty = ((my + 0.5) / oh * TH) | 0;
-          for (var mx = 0; mx < ow; mx++) {
-            lon = ((mx + 0.5) / ow * 360 - 180) * RAD;
-            tx = ((mx + 0.5) / ow * TW) | 0;
-            ti = (ty * TW + tx) * 4;
-            i = (my * ow + mx) * 4;
-            d = cy * Math.cos(lon) * S[0] + cy * Math.sin(lon) * S[1] + sy * S[2];
-            var night = 1 - smooth(-0.1, 0.03, d);
-            var k = night * 0.58;
-            px[i] = map[ti] + (14 - map[ti]) * k;
-            px[i + 1] = map[ti + 1] + (28 - map[ti + 1]) * k;
-            px[i + 2] = map[ti + 2] + (72 - map[ti + 2]) * k;
-            px[i + 3] = 255;
-          }
+          px[i] = r; px[i + 1] = g; px[i + 2] = b; px[i + 3] = 255 * edge;
         }
       }
       octx.putImageData(img, 0, 0);
@@ -1834,6 +1881,15 @@
         });
       }
 
+      // the spot just touched with 📍 Place, while its menu is open
+      if (pendingPin) {
+        var pq = project(pendingPin, F);
+        if (pq.vis) {
+          overlay.appendChild(svgEl('circle', { cx: pq.x, cy: pq.y, r: 9, fill: 'rgba(255,255,255,.25)', stroke: '#fff', 'stroke-width': 2 }));
+          overlay.appendChild(svgEl('circle', { cx: pq.x, cy: pq.y, r: 3, fill: '#fff' }));
+        }
+      }
+
       // cities and the lines to their bubbles
       var stageRect = stage.getBoundingClientRect();
       cities.forEach(function (c, i) {
@@ -1931,11 +1987,134 @@
     cv.addEventListener('lostpointercapture', endDrag);
     global.addEventListener('blur', endDrag);
 
-    host.querySelectorAll('.wv-seg button').forEach(function (btn) {
+    /* ── 📍 Place ───────────────────────────────────────────────────────
+       opts.placeTool = {
+         cities:  [{ cit, cou, lat, lon }, …],       // what can be chosen
+         players: function () { return [{ name, colour }, …]; },
+         onPlace: function (playerIndex, cityIndex) { … }
+       }
+       Press 📍 Place (with several players, first choose who), then touch
+       the map or the globe. One city near the touch is chosen straight away;
+       several open a menu, nearest first; with none nearby the menu offers
+       the closest cities. Dragging still turns the globe while placing, and
+       auto-rotate pauses until a city is chosen or 📍 is pressed again. */
+    var placing = null, pendingPin = null;
+    var placeCfg = opts.placeTool || null;
+    if (placeCfg) {
+      stage.classList.add('has-place');
+      var placeBtn = host.querySelector('.wv-place-btn'), placeHint = host.querySelector('.wv-place-hint'), pick = host.querySelector('.wv-pick');
+      var placeVecs = null;
+      var escapeHtml = function (t) { return String(t).replace(/[&<>"]/g, function (ch) { return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[ch]; }); };
+
+      var closePick = function () { pick.hidden = true; pick.innerHTML = ''; if (pendingPin) { pendingPin = null; render(false); } };
+      var stopPlacing = function () {
+        placing = null; closePick();
+        placeBtn.setAttribute('aria-pressed', 'false');
+        stage.classList.remove('is-placing');
+        placeHint.hidden = true;
+      };
+      var showPick = function (title, html, x, y, below) {
+        pick.innerHTML = '<div class="wv-pick-h"><span>' + title + '</span><button type="button" aria-label="Close">✕</button></div><div class="wv-pick-list">' + html + '</div>';
+        pick.hidden = false;
+        var w = pick.offsetWidth, h = pick.offsetHeight;
+        var left = Math.max(10, Math.min(W - w - 10, x - w / 2));
+        var top = below ? y + 14 : y - h - 14;
+        if (top < 10) top = Math.min(H - h - 10, y + 14);
+        if (top + h > H - 10) top = Math.max(10, y - h - 14);
+        pick.style.left = left + 'px'; pick.style.top = top + 'px';
+        pick.querySelector('.wv-pick-h button').addEventListener('click', function () { closePick(); if (!placing) stopPlacing(); });
+        var first = pick.querySelector('.wv-pick-item'); if (first) first.focus({ preventScroll: true });
+      };
+      var startPlacing = function (who) {
+        var list = placeCfg.players();
+        placing = { player: who };
+        closePick();
+        placeBtn.setAttribute('aria-pressed', 'true');
+        stage.classList.add('is-placing');
+        var p = list[who] || {};
+        placeHint.textContent = '📍 Touch the map: where ' + (who === 0 && list.length > 0 && p.me ? 'are you' : 'is ' + p.name) + '?';
+        placeHint.style.top = (geo ? (geo.top != null ? geo.top : geo.my) : 0) + 10 + 'px';
+        placeHint.hidden = false;
+      };
+      placeBtn.addEventListener('click', function (e) {
+        e.stopPropagation();
+        if (placing || !pick.hidden) { stopPlacing(); return; }
+        var list = placeCfg.players();
+        if (list.length <= 1) { startPlacing(0); return; }
+        var r = placeBtn.getBoundingClientRect(), sr = stage.getBoundingClientRect();
+        showPick('Who?', list.map(function (p, i) {
+          return '<button type="button" class="wv-pick-item" data-who="' + i + '"><span class="wv-pick-dot" style="background:' + p.colour + '">' +
+            escapeHtml((p.name || '?').trim().charAt(0).toUpperCase()) + '</span><span class="wv-pick-name">' + escapeHtml(p.name) + '</span></button>';
+        }).join(''), r.left + r.width / 2 - sr.left, r.top - sr.top, false);
+        placeBtn.setAttribute('aria-pressed', 'true');
+      });
+      pick.addEventListener('click', function (e) {
+        e.stopPropagation();
+        var whoBtn = e.target.closest('[data-who]');
+        if (whoBtn) { startPlacing(+whoBtn.dataset.who); return; }
+        var cityBtn = e.target.closest('[data-city]');
+        if (cityBtn && placing) { var who = placing.player; stopPlacing(); placeCfg.onPlace(who, +cityBtn.dataset.city); }
+      });
+      pick.addEventListener('pointerdown', function (e) { e.stopPropagation(); });
+      document.addEventListener('keydown', function (e) { if (e.key === 'Escape' && (placing || !pick.hidden)) stopPlacing(); });
+
+      // screen point → the point on the Earth under it (null if it misses)
+      var unproject = function (x, y) {
+        if (mode === 'globe') {
+          var nx = (x - geo.cx) / geo.R, ny = (geo.cy - y) / geo.R, r2 = nx * nx + ny * ny;
+          if (r2 > 1) return null;
+          var z = Math.sqrt(1 - r2), F = frame();
+          return [nx * F.e[0] + ny * F.n[0] + z * F.c[0], nx * F.e[1] + ny * F.n[1] + z * F.c[1], nx * F.e[2] + ny * F.n[2] + z * F.c[2]];
+        }
+        if (x < geo.mx || x > geo.mx + geo.mw || y < geo.my || y > geo.my + geo.mh) return null;
+        return vec(90 - (y - geo.my) / geo.mh * 180, (x - geo.mx) / geo.mw * 360 - 180);
+      };
+      var placeTap = function (clientX, clientY) {
+        var sr = stage.getBoundingClientRect(), x = clientX - sr.left, y = clientY - sr.top;
+        var v = unproject(x, y);
+        if (!v) return;
+        var cities = placeCfg.cities;
+        if (!placeVecs || placeVecs.length !== cities.length) placeVecs = cities.map(function (c) { return vec(c.lat, c.lon); });
+        var F = frame(), near = [], all = [];
+        placeVecs.forEach(function (cv2, i) {
+          var ang = Math.acos(Math.max(-1, Math.min(1, dot(v, cv2))));
+          var q = project(cv2, F), item = { i: i, ang: ang };
+          all.push(item);
+          if (q.vis && Math.hypot(q.x - x, q.y - y) <= 22) near.push(item);
+        });
+        var byDist = function (a, b) { return a.ang - b.ang; };
+        if (near.length === 1) { var who = placing.player; stopPlacing(); placeCfg.onPlace(who, near[0].i); return; }
+        var list = (near.length ? near.sort(byDist).slice(0, 12) : all.sort(byDist).slice(0, 6));
+        pendingPin = v; render(false);
+        showPick(near.length ? 'Which city?' : 'Nearest cities', list.map(function (it) {
+          var c = cities[it.i], km = Math.round(it.ang * 6371 / 10) * 10;
+          return '<button type="button" class="wv-pick-item" data-city="' + it.i + '"><span aria-hidden="true">' + flagOf(c.cou || c.country) + '</span>' +
+            '<span class="wv-pick-name">' + escapeHtml(c.cit || c.name) + '</span><small>' + (km < 10 ? 'here' : km.toLocaleString('en') + ' km') + '</small></button>';
+        }).join(''), x, y, y < H / 2);
+      };
+      // a touch that doesn't move is a tap; a moving one still turns the globe
+      var tapAt = null;
+      cv.addEventListener('pointerdown', function (e) { tapAt = { x: e.clientX, y: e.clientY }; }, true);
+      cv.addEventListener('pointerup', function (e) {
+        if (placing && tapAt && Math.hypot(e.clientX - tapAt.x, e.clientY - tapAt.y) < 7) placeTap(e.clientX, e.clientY);
+        tapAt = null;
+      });
+    }
+
+    host.querySelectorAll('[data-mode]').forEach(function (btn) {
       btn.addEventListener('click', function () {
         if (mode === btn.dataset.mode) return;
         mode = btn.dataset.mode;
         relayout();
+      });
+    });
+    host.querySelectorAll('[data-look]').forEach(function (btn) {
+      btn.addEventListener('click', function () {
+        if (look === btn.dataset.look) return;
+        look = btn.dataset.look;
+        stage.classList.toggle('is-sat', look === 'satellite');
+        syncChrome();
+        render(false);
       });
     });
     /* ── the indicator toggles, the legend and auto-rotate ─────────────── */
@@ -1947,7 +2126,8 @@
       host.querySelectorAll('[data-globe-only]').forEach(function (b) { b.hidden = mode !== 'globe'; });
       var guesses = cities.some(function (c) { return !!c.guess; });
       host.querySelectorAll('[data-guess-only]').forEach(function (b) { b.hidden = !guesses; });
-      host.querySelectorAll('.wv-seg button').forEach(function (btn) { btn.setAttribute('aria-pressed', String(btn.dataset.mode === mode)); });
+      host.querySelectorAll('[data-mode]').forEach(function (btn) { btn.setAttribute('aria-pressed', String(btn.dataset.mode === mode)); });
+      host.querySelectorAll('[data-look]').forEach(function (btn) { btn.setAttribute('aria-pressed', String(btn.dataset.look === look)); });
     }
 
     // The legend lists only what can be seen right now: a turned-off aid, or
@@ -1997,7 +2177,7 @@
     function spinFrame(t) {
       spinRaf = 0;
       if (!spinning || mode !== 'globe') return;
-      if (!drag) {
+      if (!drag && !placing) {
         var dt = lastT ? Math.min(100, t - lastT) : 16;
         var dps = reduceMotion ? Math.min(speed, 1) : speed;
         view.lon = ((view.lon - dt * dps / 1000 + 540) % 360) - 180;
@@ -2068,6 +2248,7 @@
 
     return {
       setMode: function (m) { mode = m === 'map' ? 'map' : 'globe'; relayout(); },
+      setLook: function (l) { look = l === 'map' ? 'map' : 'satellite'; stage.classList.toggle('is-sat', look === 'satellite'); syncChrome(); render(false); },
       setAutoRotate: function (on) { setSpin(!!on); },
       setRotateSpeed: function (degPerSec) { speed = clampSpeed(degPerSec); showSpeed(); },
       // replace the cities (players) — the view stays where it is
