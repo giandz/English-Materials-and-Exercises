@@ -1,0 +1,518 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Visual Novel</title>
+<script>
+(function(){
+  try{
+    var saved = localStorage.getItem('theme-preference');
+    var theme = (saved === 'light' || saved === 'dark')
+      ? saved
+      : ((window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches) ? 'dark' : 'light');
+    document.documentElement.setAttribute('data-theme', theme);
+    var fs = parseFloat(localStorage.getItem('font-size-preference'));
+    if (fs >= 10 && fs <= 28) document.documentElement.style.setProperty('--fs-base', fs + 'px');
+  }catch(e){ /* localStorage/matchMedia unavailable — CSS media query still applies */ }
+})();
+</script>
+<link rel="stylesheet" href="house.css">
+<style>
+.vn-page{ max-width:1000px; margin:0 auto; padding:20px 14px 40px; }
+.vn-help{ margin-top:16px; }
+.vn-help code{ font-family:var(--font-mono); font-size:.8rem; }
+</style>
+</head>
+<body>
+<div class="vn-page">
+  <h1>Visual Novel</h1>
+  <p class="subtitle">At the café: Sam and Ana meet for the first time, and then their friends arrive. Click the picture, press Space or 🔽 to go on.</p>
+
+  <div id="vn"></div>
+
+  <details class="vn-help">
+    <summary>✍️ How a scene is written</summary>
+    <div class="ke-body">
+      <p class="note">The scene is the JSON in this page’s <code>#vnScript</code>: a backdrop, a cast of house characters (as saved by the poser) and a list of lines. Each line names who speaks and what they say, and can also set where they stand (<code>left</code>, <code>center</code>, <code>right</code>), the shot (<code>full</code>, <code>medium</code>, <code>closeup</code>), a pose (any pose preset, including the emotion ones such as <code>em_joy</code>), a face (<code>emotion</code>) or other details (<code>look</code>). <code>stage</code> brings other characters in, moves them, or takes them away with <code>null</code>. What a line sets stays until a later line changes it.</p>
+      <p class="note">A character can change pose or face in the middle of a line: put a cue in the text where it should happen, such as <code>"Music? {pose:em_surprise} Wow! {emotion:joy} I love music."</code> A cue is <code>{pose:…}</code>, <code>{emotion:…}</code> or both, <code>{pose:em_joy emotion:sadness}</code>. It is not shown or said; it happens when the text reaches it, and what it sets stays.</p>
+      <p class="note">Pose changes are eased with the keyframe editor’s easings. <code>"easing"</code> (an easing id such as <code>quad</code>, <code>sine</code>, <code>back</code>, <code>elastic</code> or <code>bounce</code>, or <code>{"out":…, "in":…}</code> for the two ends) and <code>"moveTime"</code> (seconds) set them for the scene, and any line can set its own for the moves it starts.</p>
+      <p class="note">Keys: <span class="kbd">Space</span> / <span class="kbd">Enter</span> / <span class="kbd">→</span> next (or finish the line), <span class="kbd">←</span> back, <span class="kbd">Home</span> start again.</p>
+    </div>
+  </details>
+
+  <footer>Visual Novel — house characters with lip-sync</footer>
+</div>
+
+<div id="theme-toggle-wrap">
+  <button id="theme-toggle" aria-label="Toggle light/dark mode" title="Toggle light/dark mode">
+    <span id="theme-icon">☀️</span>
+  </button>
+</div>
+
+<script type="application/json" id="vnScript">
+{
+ "background": "cafe",
+ "easing": "quad",
+ "moveTime": 0.45,
+ "cast": {
+  "sam": {
+   "name": "Sam",
+   "color": "#0066CC",
+   "lang": "en",
+   "wpm": 150,
+   "character": {
+    "bodyType": "male",
+    "skin": 3,
+    "eyeColor": 3,
+    "hairStyle": "short",
+    "hairColor": "6-0",
+    "upperGarment": "hoodie",
+    "upperColor": "#0066CC",
+    "lowerGarment": "jeans",
+    "footwear": "sneakers",
+    "mouth": "smile"
+   }
+  },
+  "ana": {
+   "name": "Ana",
+   "color": "#CC0066",
+   "lang": "en",
+   "wpm": 150,
+   "character": {
+    "bodyType": "female",
+    "skin": 4,
+    "eyeColor": 13,
+    "hairStyle": "ponytail",
+    "hairColor": "1-0",
+    "upperGarment": "blouse",
+    "upperColor": "#FF99CC",
+    "lowerGarment": "jeans",
+    "footwear": "sneakers",
+    "accessories": [
+     "studs",
+     "mascara"
+    ],
+    "mouth": "smile"
+   }
+  },
+  "leo": {
+   "name": "Leo",
+   "color": "#006666",
+   "lang": "en",
+   "wpm": 165,
+   "character": {
+    "bodyType": "male",
+    "skin": 5,
+    "eyeColor": 15,
+    "hairStyle": "buzz",
+    "hairColor": "1-0",
+    "facialHair": "goatee",
+    "upperGarment": "vest",
+    "upperColor": "#333333",
+    "lowerGarment": "trousers",
+    "footwear": "shoes",
+    "accessories": [
+     "tie"
+    ],
+    "tieColor": "#006666",
+    "mouth": "smile"
+   }
+  },
+  "mia": {
+   "name": "Mia",
+   "color": "#996600",
+   "lang": "en",
+   "wpm": 170,
+   "character": {
+    "bodyType": "female",
+    "skin": 2,
+    "eyeColor": 7,
+    "hairStyle": "curly",
+    "hairColor": "7-77",
+    "upperGarment": "coat",
+    "upperColor": "#669933",
+    "lowerGarment": "skirt",
+    "lowerColor": "#333366",
+    "footwear": "boots",
+    "accessories": [
+     "scarf",
+     "drops"
+    ],
+    "scarfColor": "#FFCC00",
+    "mouth": "smile"
+   }
+  },
+  "ken": {
+   "name": "Ken",
+   "color": "#663399",
+   "lang": "en",
+   "wpm": 140,
+   "character": {
+    "bodyType": "male",
+    "skin": 2,
+    "eyeColor": 14,
+    "hairStyle": "sidepart",
+    "hairColor": "1-0",
+    "upperGarment": "shirt",
+    "upperColor": "#CCE5FF",
+    "lowerGarment": "trousers",
+    "lowerColor": "#333333",
+    "footwear": "shoes",
+    "eyewear": "glasses",
+    "accessories": [
+     "tie",
+     "watchL"
+    ],
+    "tieColor": "#663399",
+    "mouth": "smile"
+   }
+  },
+  "rosa": {
+   "name": "Rosa",
+   "color": "#CC3300",
+   "lang": "en",
+   "wpm": 145,
+   "character": {
+    "bodyType": "female",
+    "skin": 3,
+    "eyeColor": 10,
+    "hairStyle": "bun",
+    "hairColor": "grey",
+    "upperGarment": "dress",
+    "upperColor": "#993333",
+    "footwear": "shoes",
+    "eyewear": "round",
+    "accessories": [
+     "necklace",
+     "lipstick"
+    ],
+    "weight": 4,
+    "mouth": "smile"
+   }
+  }
+ },
+ "lines": [
+  {
+   "who": "ana",
+   "at": "right",
+   "shot": "medium",
+   "pose": "waving",
+   "emotion": "joy",
+   "say": "Hi! Are you Sam?"
+  },
+  {
+   "who": "sam",
+   "at": "left",
+   "shot": "medium",
+   "pose": "em_surprise",
+   "say": "Yes, I am. {pose:em_joy} Hello! You must be Ana."
+  },
+  {
+   "who": "ana",
+   "pose": "em_joy",
+   "say": "That's right. Nice to meet you, Sam."
+  },
+  {
+   "who": "sam",
+   "shot": "closeup",
+   "pose": "standing",
+   "emotion": "joy",
+   "say": "Nice to meet you too. Where are you from?"
+  },
+  {
+   "who": "ana",
+   "pose": "em_acceptance",
+   "say": "I'm from Valencia, in Venezuela. And you?"
+  },
+  {
+   "who": "sam",
+   "pose": "em_trust",
+   "say": "I'm from Dallas. I'm a teacher here in the city."
+  },
+  {
+   "who": "leo",
+   "at": "right",
+   "shot": "full",
+   "pose": "standing",
+   "emotion": "trust",
+   "look": {
+    "held": {
+     "left": "plate",
+     "right": null
+    }
+   },
+   "say": "Good morning! What would you like to drink?"
+  },
+  {
+   "who": "ana",
+   "pose": "em_anticipation",
+   "say": "A coffee with milk, please."
+  },
+  {
+   "who": "sam",
+   "pose": "pointing",
+   "emotion": "acceptance",
+   "say": "And an orange juice for me, thanks."
+  },
+  {
+   "who": "leo",
+   "pose": "em_joy",
+   "say": "Coming right up!"
+  },
+  {
+   "who": "sam",
+   "shot": "medium",
+   "pose": "standing",
+   "emotion": "interest",
+   "stage": {
+    "leo": null
+   },
+   "say": "So, Ana… what do you do?"
+  },
+  {
+   "who": "ana",
+   "shot": "closeup",
+   "pose": "em_ecstasy",
+   "say": "I'm a student. I study English every day!"
+  },
+  {
+   "who": "sam",
+   "pose": "em_joy",
+   "say": "Your English is very good!"
+  },
+  {
+   "who": "ana",
+   "shot": "medium",
+   "pose": "em_acceptance",
+   "say": "Thank you! My friend Mia helps me. Oh, look! She's here!"
+  },
+  {
+   "who": "mia",
+   "at": "right",
+   "shot": "medium",
+   "pose": "waving",
+   "emotion": "joy",
+   "say": "Hi, Ana! {pose:em_apprehension} Sorry I'm late. {pose:em_annoyance} The bus was very slow."
+  },
+  {
+   "who": "ana",
+   "pose": "pointing",
+   "emotion": "joy",
+   "say": "No problem! Mia, this is Sam. Sam, this is Mia."
+  },
+  {
+   "who": "sam",
+   "pose": "waving",
+   "emotion": "joy",
+   "say": "Hi, Mia. Nice to meet you."
+  },
+  {
+   "who": "mia",
+   "pose": "em_trust",
+   "say": "Nice to meet you too! Are you a student too?"
+  },
+  {
+   "who": "sam",
+   "pose": "standing",
+   "emotion": "acceptance",
+   "say": "No, I'm not. I'm a teacher. I teach music."
+  },
+  {
+   "who": "mia",
+   "pose": "em_surprise",
+   "say": "Music? {pose:em_surprise} Wow! {pose:em_ecstasy} I love music. {pose:em_joy} I play the guitar.",
+   "easing": "elastic",
+   "moveTime": 0.7
+  },
+  {
+   "who": "sam",
+   "pose": "em_joy",
+   "say": "Really? That's great. I play the piano."
+  },
+  {
+   "who": "ken",
+   "at": "left",
+   "shot": "medium",
+   "pose": "em_surprise",
+   "look": {
+    "held": {
+     "right": "briefcase"
+    }
+   },
+   "say": "Sam! Hello! What are you doing here?"
+  },
+  {
+   "who": "sam",
+   "pose": "em_surprise",
+   "say": "Ken! {pose:standing emotion:joy} I'm having a drink with my new friends."
+  },
+  {
+   "who": "sam",
+   "pose": "pointing",
+   "emotion": "joy",
+   "say": "Everyone, this is Ken. We work at the same school."
+  },
+  {
+   "who": "ken",
+   "pose": "waving",
+   "emotion": "joy",
+   "say": "Hello, everyone. It's nice to meet you."
+  },
+  {
+   "who": "ana",
+   "pose": "em_joy",
+   "say": "Hi, Ken! Do you teach music too?"
+  },
+  {
+   "who": "ken",
+   "pose": "em_acceptance",
+   "say": "No, I don't. {pose:em_acceptance} I teach math. {pose:em_ecstasy} Numbers are my friends!"
+  },
+  {
+   "who": "mia",
+   "pose": "em_ecstasy",
+   "say": "Ha ha! That's funny.",
+   "easing": "bounce",
+   "moveTime": 0.6
+  },
+  {
+   "who": "leo",
+   "at": "center",
+   "shot": "full",
+   "pose": "standing",
+   "emotion": "joy",
+   "look": {
+    "held": {
+     "left": "plate",
+     "right": null
+    }
+   },
+   "say": "Here you are: a coffee with milk and an orange juice."
+  },
+  {
+   "who": "ana",
+   "pose": "em_acceptance",
+   "say": "Thank you very much!"
+  },
+  {
+   "who": "leo",
+   "pose": "em_trust",
+   "say": "Would you like something too?"
+  },
+  {
+   "who": "mia",
+   "pose": "em_anticipation",
+   "say": "Yes, please. A cup of tea with lemon."
+  },
+  {
+   "who": "ken",
+   "pose": "pointing",
+   "emotion": "acceptance",
+   "say": "A glass of water for me, please."
+  },
+  {
+   "who": "rosa",
+   "at": "center",
+   "shot": "full",
+   "pose": "hips",
+   "emotion": "annoyance",
+   "say": "Leo! {pose:em_anger} The kitchen needs you!"
+  },
+  {
+   "who": "leo",
+   "pose": "em_apprehension",
+   "say": "Sorry, Rosa! {pose:em_fear} I'm going!",
+   "easing": {
+    "out": "back",
+    "in": "quad"
+   },
+   "moveTime": 0.35
+  },
+  {
+   "who": "rosa",
+   "pose": "waving",
+   "emotion": "joy",
+   "stage": {
+    "leo": null
+   },
+   "say": "Hello, everyone. {emotion:joy} I'm Rosa. {pose:em_trust} Welcome to my café!"
+  },
+  {
+   "who": "rosa",
+   "shot": "medium",
+   "pose": "em_trust",
+   "say": "Is this your first time here?"
+  },
+  {
+   "who": "ana",
+   "pose": "em_joy",
+   "say": "Yes, it is. It's a lovely café!"
+  },
+  {
+   "who": "rosa",
+   "pose": "em_ecstasy",
+   "say": "Thank you! The chocolate cake is very good today."
+  },
+  {
+   "who": "ken",
+   "pose": "em_surprise",
+   "say": "Chocolate cake? {pose:em_ecstasy} Yes, please!"
+  },
+  {
+   "who": "sam",
+   "pose": "em_joy",
+   "say": "Me too!"
+  },
+  {
+   "who": "mia",
+   "pose": "em_interest",
+   "say": "Ken, you love numbers and chocolate cake!"
+  },
+  {
+   "who": "ken",
+   "pose": "em_ecstasy",
+   "say": "It's true. Two pieces for me, please!"
+  },
+  {
+   "who": "rosa",
+   "pose": "em_joy",
+   "say": "Two pieces for Ken! No problem."
+  },
+  {
+   "who": "ana",
+   "shot": "closeup",
+   "pose": "em_serenity",
+   "stage": {
+    "rosa": null
+   },
+   "say": "What a nice day. {pose:em_joy} New friends, coffee {emotion:ecstasy} and chocolate cake!"
+  },
+  {
+   "who": "sam",
+   "shot": "closeup",
+   "pose": "em_serenity",
+   "say": "Yes. Let's all meet here again next week."
+  },
+  {
+   "who": "mia",
+   "pose": "em_joy",
+   "say": "Great idea! Same time, same place?"
+  },
+  {
+   "who": "ken",
+   "pose": "waving",
+   "emotion": "joy",
+   "say": "See you next Saturday, everyone!"
+  }
+ ]
+}
+</script>
+<script src="house.js"></script>
+<script src="house-character.js"></script>
+<script src="house-vn.js"></script>
+<script>
+HouseVN.create(document.getElementById('vn'), JSON.parse(document.getElementById('vnScript').textContent));
+</script>
+</body>
+</html>

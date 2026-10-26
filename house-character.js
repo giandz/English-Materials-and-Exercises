@@ -11,6 +11,8 @@
      HouseCharacter.pivots(data)          → joint pivots in stage coordinates
      HouseCharacter.describe(data)        → "Sam is holding a wrench."
      HouseCharacter.speech(text, opts)    → lip-sync mouth keys for a line of text (see the speech section)
+     HouseCharacter.EASES                 → [id, label, curve] for each easing (linear, sine, quad … bounce)
+     HouseCharacter.ease(s, out, in)      → s (0–1) eased: out shapes the departure, in the arrival
 
    Angles are degrees, clockwise on screen, relative to the parent segment.
    0 = limb straight / torso and head upright. L and R are the character's own.
@@ -816,6 +818,38 @@ const EMOTIONS=[
   ['Anticipation',[['interest','Interest','skeptical','open','smile'],['anticipation','Anticipation','raised','open','cdg'],['vigilance','Vigilance','angry','wide','mbp']]]
 ];
 const NEUTRAL_FACE=['neutral','Neutral','neutral','open','rest'];
+/* Body language for each Plutchik emotion, front view, with the face of the matching EMOTIONS entry.
+   Same shape as POSES (applyPose takes either id), plus group (the petal), face and extra (other fields it sets,
+   such as thumbFlipL / thumbFlipR). Ids are 'em_' + emotion. */
+const CROUCH=(h,k,a)=>({hipL:-h,kneeL:k,ankleL:-a,hipR:h,kneeR:-k,ankleR:a});
+const EMO_BODY={
+  serenity:{joints:{...STAND,neck:5}},
+  joy:{joints:{...STAND,shoulderL:-32,elbowL:-18,shoulderR:32,elbowR:18}},
+  ecstasy:{joints:{...STAND,shoulderL:-150,elbowL:-12,shoulderR:150,elbowR:12},held:{left:'hand_open',right:'hand_open'}},
+  acceptance:{joints:{...STAND,neck:5,shoulderR:38,elbowR:-139}},
+  trust:{joints:{...STAND,shoulderL:-55,elbowL:-15,shoulderR:55,elbowR:15},held:{left:'hand_open',right:'hand_open'}},
+  admiration:{joints:{...STAND,neck:-4,shoulderL:-25,elbowL:131,shoulderR:25,elbowR:-131}},
+  apprehension:{joints:{...STAND,torso:-3,shoulderR:-75,elbowR:-132}},
+  fear:{joints:{...STAND,...CROUCH(8,14,42),shoulderL:-43,elbowL:164,shoulderR:43,elbowR:-164},held:{left:'hand_open',right:'hand_open'}},
+  terror:{joints:{...STAND,...CROUCH(16,28,48),shoulderL:-135,elbowL:-127,shoulderR:135,elbowR:127},held:{left:'hand_open',right:'hand_open'},extra:{thumbFlipL:true,thumbFlipR:true}},
+  distraction:{head:'left',joints:{...STAND,neck:8,shoulderR:134,elbowR:88}},
+  surprise:{joints:{...STAND,shoulderL:-43,elbowL:-136,shoulderR:43,elbowR:136},held:{left:'hand_open',right:'hand_open'}},
+  amazement:{joints:{...STAND,neck:-3,shoulderL:-135,elbowL:-127,shoulderR:135,elbowR:127},held:{left:'hand_open',right:'hand_open'},extra:{thumbFlipL:true,thumbFlipR:true}},
+  pensiveness:{head:'left',joints:{...STAND,neck:6,shoulderR:-59,elbowR:-140,shoulderL:-38,elbowL:139}},
+  sadness:{joints:{...STAND,neck:12,shoulderL:-2,elbowL:-2,shoulderR:2,elbowR:2}},
+  grief:{joints:{...STAND,...CROUCH(10,18,44),shoulderL:92,elbowL:115,shoulderR:-92,elbowR:-115}},
+  boredom:{joints:{...STAND,neck:10,shoulderL:22,elbowL:112,shoulderR:-22,elbowR:-112}},
+  disgust:{head:'left',joints:{...STAND,torso:-8,neck:-8,shoulderL:-43,elbowL:-136},held:{left:'hand_open'}},
+  loathing:{head:'left',joints:{...STAND,torso:-12,neck:-10,shoulderL:-82,elbowL:20},held:{left:'hand_open'}},
+  annoyance:{joints:{...STAND,shoulderL:-50,elbowL:95,shoulderR:50,elbowR:-95}},
+  anger:{joints:{...STAND,...CROUCH(10,0,45),shoulderL:-20,elbowL:28,shoulderR:20,elbowR:-28},held:{left:'hand_closed',right:'hand_closed'}},
+  rage:{joints:{...STAND,...CROUCH(12,6,48),shoulderL:-105,elbowL:-55,shoulderR:105,elbowR:55},held:{left:'hand_closed',right:'hand_closed'}},
+  interest:{head:'left',joints:{...STAND,neck:8,shoulderR:-59,elbowR:-140,shoulderL:-50,elbowL:95}},
+  anticipation:{joints:{...STAND,shoulderL:-26,elbowL:97,shoulderR:26,elbowR:-97}},
+  vigilance:{joints:{...STAND,...CROUCH(12,22,46),shoulderL:-32,elbowL:72,shoulderR:32,elbowR:-72}}
+};
+const EMOTION_POSES=EMOTIONS.flatMap(([group,list])=>list.map(([id,label,brows,eyes,mouth])=>
+  ({id:'em_'+id,label,group,head:EMO_BODY[id].head||'front',joints:EMO_BODY[id].joints,held:EMO_BODY[id].held,extra:EMO_BODY[id].extra,face:{eyebrows:brows,eyes,mouth}})));
 function headwearSVG(id,side,col,rear){
   let h=HEADWEAR[id]; if(!h) return ''; h={...h,col:col||h.col};
   const dk=edge(h.col), A=`fill="${h.col}" stroke="${dk}"`, B=`fill="${shade(h.col,-0.18)}" stroke="${dk}"`;
@@ -1523,6 +1557,44 @@ function pivots(data){
   return out;
 }
 
+/* ── easings ──────────────────────────────────────────────────────────────
+/* The easings of easings.net (github.com/ai/easings.net), each written once in its "in" form
+   (slow at the start). The "out" form is the same curve turned round: 1 − f(1 − s). */
+const C1 = 1.70158, C3 = C1 + 1, C4 = 2 * Math.PI / 3;
+function bounceOut(x){
+  const n = 7.5625, d = 2.75;
+  if(x < 1/d) return n*x*x;
+  if(x < 2/d) return n*(x -= 1.5/d)*x + 0.75;
+  if(x < 2.5/d) return n*(x -= 2.25/d)*x + 0.9375;
+  return n*(x -= 2.625/d)*x + 0.984375;
+}
+const EASES = [
+  ['linear',      'Linear',      x => x],
+  ['sine',        'Sinusoidal',  x => 1 - Math.cos(x * Math.PI / 2)],
+  ['quad',        'Quadratic',   x => x*x],
+  ['cubic',       'Cubic',       x => x*x*x],
+  ['quart',       'Quartic',     x => x*x*x*x],
+  ['quint',       'Quintic',     x => x*x*x*x*x],
+  ['expo',        'Exponential', x => x === 0 ? 0 : Math.pow(2, 10*x - 10)],
+  ['circ',        'Circular',    x => 1 - Math.sqrt(1 - x*x)],
+  ['back',        'Back',        x => C3*x*x*x - C1*x*x],
+  ['elastic',     'Elastic',     x => x === 0 ? 0 : x === 1 ? 1 : -Math.pow(2, 10*x - 10) * Math.sin((x*10 - 10.75) * C4)],
+  ['bounce',      'Bounce',      x => 1 - bounceOut(1 - x)]];
+const EASE_IN = Object.fromEntries(EASES.map(e => [e[0], e[2]]));
+const easeId = v => EASE_IN[v] ? v : 'linear';
+/* one stretch A → B: A's "ease out" shapes the departure, B's "ease in" the arrival.
+     only the departure eased → the easing's In curve (slow start)
+     only the arrival eased   → its Out curve (slow end)
+     both                     → In for the first half, Out for the second (easings.net's InOut when they match) */
+function ease(s, out, inn){   /* s from 0 to 1 → eased 0 to 1 */
+  const a = EASE_IN[easeId(out)], b = EASE_IN[easeId(inn)];
+  const A = out && out !== 'linear', B = inn && inn !== 'linear';
+  if(!A && !B) return s;
+  if(A && !B) return a(s);
+  if(!A) return 1 - b(1 - s);
+  return s < 0.5 ? a(2*s) / 2 : 1 - b(2 - 2*s) / 2;
+}
+
 /* ── data ──────────────────────────────────────────────────────────────── */
 const COLOUR_KEYS=['mascaraColor','blushColor','lipstickColor','propColor','packColor','heldLeftColor','heldRightColor','eyewearColor','gloveColor','upperColor2','lowerColor2','upperColor','lowerColor','footwearColor','headwearColor','sockColor','tieColor','scarfColor'];
 function wrapDeg(v){v=Math.round(Number(v)||0);v=((v+180)%360+360)%360-180;return v===-180?180:v;}
@@ -1574,9 +1646,11 @@ function normalize(src){
   return d;
 }
 function applyPose(data,id){
-  const p=POSES.find(x=>x.id===id); if(!p) return data;
+  const p=POSES.find(x=>x.id===id)||EMOTION_POSES.find(x=>x.id===id); if(!p) return data;
   JOINTS.forEach(([k])=>data.joints[k]=p.joints[k]||0);
-  data.head=p.head; data.torsoOrientation=data.pelvisOrientation=p.turn||0; if(p.held) data.held={...p.held};
+  data.head=p.head; data.torsoOrientation=data.pelvisOrientation=p.turn||0; if(p.held) data.held={...data.held,...p.held};
+  if(p.face) Object.assign(data,p.face);
+  if(p.extra) Object.assign(data,p.extra);   /* e.g. thumbs on the other side of the hand */
   return data;
 }
 function mirror(data){
@@ -1629,9 +1703,15 @@ function describe(data){
        opts.fps        frames per second (24)
        opts.wpm        speaking speed, estimated words per minute (150)
        opts.restMouth  mouth used in pauses and at the end ('rest'; pass e.g. 'smile' to rest on an expression)
+       opts.lang       'en' (default) or 'es'; HouseCharacter.speech.LANGS lists them as [id, name]
      Frames count from 0: the caller adds its own start frame. The first key is on frame 0 and the
-     last one, on `frames`, closes the mouth again. words gives each word's frames, for captions.
-     HouseCharacter.speech.visemes(word) → the mouth ids for one word, for checking the rules.
+     last one, on `frames`, closes the mouth again. words gives each word's frames (start, end) and where it is in
+     the text (from, to: character indices), for captions and for revealing the text as it is said.
+     HouseCharacter.speech.visemes(word, lang) → the mouth ids for one word, for checking the rules.
+
+   Spanish is spelt almost as it sounds, so it needs only letter rules: silent h, u after q and in
+   gue / gui, ch, ll, rr and ñ; b and v are both lip closures (M · B · P); u before a vowel is W · Q
+   (bueno, agua); i is drawn with the spread E mouth; y alone or after a vowel is a vowel too.
 
    No pronunciation dictionary: each word is read from its spelling with letter rules and a short list
    of common irregular words. The ten talking mouths hide most mistakes (cat, cake and car all open to
@@ -1745,27 +1825,74 @@ const speech=(()=>{
     return out.filter((c,i)=>c&&c!==out[i-1]);
   }
 
+  /* ── Spanish ── */
+  const ES_U=['cero','uno','dos','tres','cuatro','cinco','seis','siete','ocho','nueve','diez','once','doce','trece','catorce','quince',
+    'dieciséis','diecisiete','dieciocho','diecinueve','veinte','veintiuno','veintidós','veintitrés','veinticuatro','veinticinco',
+    'veintiséis','veintisiete','veintiocho','veintinueve'];
+  const ES_T=['','','','treinta','cuarenta','cincuenta','sesenta','setenta','ochenta','noventa'];
+  const ES_H=['','ciento','doscientos','trescientos','cuatrocientos','quinientos','seiscientos','setecientos','ochocientos','novecientos'];
+  function numES(n){
+    if(n<30) return ES_U[n];
+    if(n<100) return ES_T[Math.floor(n/10)]+(n%10?' y '+ES_U[n%10]:'');
+    if(n===100) return 'cien';
+    if(n<1000) return ES_H[Math.floor(n/100)]+(n%100?' '+numES(n%100):'');
+    if(n<1e6){ const k=Math.floor(n/1000); return (k===1?'':numES(k)+' ')+'mil'+(n%1000?' '+numES(n%1000):''); }
+    return String(n).split('').map(d=>ES_U[+d]).join(' ');
+  }
+  const ES_CONS={b:'M',v:'M',m:'M',p:'M',f:'F',l:'L',w:'W'};
+  function visemesES(raw){
+    const w=String(raw||'').toLowerCase().replace(/[’'`]/g,'')
+      .replace(/[áàâä]/g,'a').replace(/[éèêë]/g,'e').replace(/[íìîï]/g,'i').replace(/[óòôö]/g,'o').replace(/[úùû]/g,'u')
+      .replace(/[^a-zñü]/g,'');
+    const out=[], vow=ch=>!!ch&&'aeiouü'.includes(ch);
+    for(let i=0;i<w.length;){
+      const ch=w[i], nx=w[i+1], nn=w[i+2];
+      if((ch==='c'&&nx==='h')||(ch==='l'&&nx==='l')||(ch==='r'&&nx==='r')||(ch==='q'&&nx==='u')||(ch==='g'&&nx==='u'&&(nn==='e'||nn==='i'))){ out.push('C'); i+=2; continue; }
+      if(ch==='g'&&nx==='ü'){ out.push('C','W'); i+=2; continue; }
+      if(ch==='h'){ i++; continue; }                                         /* hola, ahora: silent */
+      if(ch==='a') out.push('A');
+      else if(ch==='e'||ch==='i') out.push('E');                             /* sí, mi: spread lips */
+      else if(ch==='o') out.push('O');
+      else if(ch==='u') out.push(vow(nx)?'W':'U');                           /* bueno, agua → W · Q */
+      else if(ch==='ü') out.push('W');
+      else if(ch==='y') out.push(w.length===1||!vow(nx)?'E':'C');           /* y, hoy, muy → vowel; yo, ayer → consonant */
+      else out.push(ES_CONS[ch]||'C');
+      i++;
+    }
+    return out.filter((c,i)=>c!==out[i-1]);
+  }
+  const LANG={
+    en:{visemes, num:numWords, and:' and ', percent:' percent ', ref:REF},
+    es:{visemes:visemesES, num:numES, and:' y ', percent:' por ciento ', ref:5.0}   /* Spanish words are longer: about 5 units each */
+  };
   function speechTrack(text,opts){
     opts=opts||{};
     const fps=Math.max(1,Math.min(60,Math.round(Number(opts.fps)||24)));
     const wpm=Math.max(40,Math.min(400,Number(opts.wpm)||150));
-    const restMouth=opts.restMouth||'rest', spw=60/wpm;
+    const restMouth=opts.restMouth||'rest', spw=60/wpm, L=LANG[opts.lang]||LANG.en;
     const HOLD=Math.max(2,Math.round(0.06*fps)), LEAD=Math.max(1,Math.round(0.04*fps)), REST_AFTER=0.25;
     /* words and pauses, in seconds */
-    const src=String(text||'').replace(/\d+/g,m=>' '+numWords(Number(m))+' ').replace(/&/g,' and ').replace(/%/g,' percent ');
-    const tokens=src.match(/[A-Za-z’'`]+|[.!?]+|[,;:]|—|–|\.\.\.|…|\n+/g)||[];
+    /* tokens keep where they came from in the text (from, to), so a caller can reveal the text in step with the
+       mouth; a number, & or % becomes several spoken words that all point back at it */
+    const src=String(text||''), tokens=[];
+    for(const m of src.matchAll(/\d+|&|%|[\p{L}’'`]+|[.!?]+|[,;:]|—|–|…|\n+/gu)){   /* ¿ and ¡ make no pause */
+      const tk=m[0], from=m.index, to=m.index+tk.length;
+      const said=/^\d+$/.test(tk)?L.num(Number(tk)):tk==='&'?L.and:tk==='%'?L.percent:null;
+      if(said!==null) for(const w of said.trim().split(/\s+/)) tokens.push({tk:w,from,to});
+      else tokens.push({tk,from,to});
+    }
     const segs=[], words=[];
     let t=0;
     const pauseOf=tk=>/^[.!?]|…|\.\.\.|\n/.test(tk)?0.5:/[—–]/.test(tk)?0.35:0.2;
-    tokens.forEach((tk,ti)=>{
-      if(/[A-Za-z]/.test(tk)){
-        const v=visemes(tk); if(!v.length) return;
-        const units=v.reduce((a,c)=>a+WEIGHT[c],0), k=spw/REF;
-        const next=tokens[ti+1], phraseEnd=next&&!/[A-Za-z]/.test(next);
+    tokens.forEach(({tk,from,to},ti)=>{
+      if(/\p{L}/u.test(tk)){
+        const v=L.visemes(tk); if(!v.length) return;
+        const k=spw/L.ref;
+        const next=tokens[ti+1], phraseEnd=next&&!/\p{L}/u.test(next.tk);
         let lastV=-1; v.forEach((c,i)=>{ if(VOW.includes(c)) lastV=i; });
         const t0=t;
         v.forEach((c,i)=>{ const d=WEIGHT[c]*k*(phraseEnd&&i===lastV?1.4:1); segs.push({c,s:t,e:t+d}); t+=d; });
-        words.push({word:tk,s:t0,e:t});
+        words.push({word:tk,s:t0,e:t,from,to});
         return;
       }
       if(!segs.length) return;   /* nothing said yet: no pause to show */
@@ -1813,13 +1940,14 @@ const speech=(()=>{
     const close=Math.max(keys[keys.length-1].frame+HOLD,total-LEAD);
     if(keys[keys.length-1].mouth!==restMouth) keys.push({frame:close,mouth:restMouth});
     const frames=keys[keys.length-1].frame;
-    return {keys,frames,seconds:frames/fps,words:words.map(x=>({word:x.word,start:Math.round(x.s*fps),end:Math.round(x.e*fps)}))};
+    return {keys,frames,seconds:frames/fps,words:words.map(x=>({word:x.word,start:Math.round(x.s*fps),end:Math.round(x.e*fps),from:x.from,to:x.to}))};
   }
-  speechTrack.visemes=w=>visemes(w).map(c=>MOUTH[c]);
+  speechTrack.visemes=(w,lang)=>(LANG[lang]||LANG.en).visemes(w).map(c=>MOUTH[c]);
+  speechTrack.LANGS=[['en','English'],['es','Español']];
   return speechTrack;
 })();
 
-return {scarfColours,SCHEMA,SKIN,EYES,HAIR,HAIR_STYLES,FACIAL,HEIGHTS,WEIGHTS,HEADS,JOINTS,POSES,ITEMS,UPPER,LOWER,FOOT,OUTFITS,HEADWEAR,EYEWEAR,ACCESSORIES,BROWS,EYE_SHAPES,MOUTHS,EMOTIONS,NEUTRAL_FACE,GLOVE_COL,PACK_COL,SCARF_COL,MASCARA_COL,BLUSH_COL,LIPSTICK_COL,PROPS,GRIPS,ITEM_CATS,PALETTE,PATTERNS,colour2Default,SOCK_COL,TIE_COL,colourName,STAGE,
-        defaults,normalize,render,pivots,applyPose,mirror,describe,speech};
+return {scarfColours,SCHEMA,SKIN,EYES,HAIR,HAIR_STYLES,FACIAL,HEIGHTS,WEIGHTS,HEADS,JOINTS,POSES,ITEMS,UPPER,LOWER,FOOT,OUTFITS,HEADWEAR,EYEWEAR,ACCESSORIES,BROWS,EYE_SHAPES,MOUTHS,EMOTIONS,NEUTRAL_FACE,EMOTION_POSES,GLOVE_COL,PACK_COL,SCARF_COL,MASCARA_COL,BLUSH_COL,LIPSTICK_COL,PROPS,GRIPS,ITEM_CATS,PALETTE,PATTERNS,colour2Default,SOCK_COL,TIE_COL,colourName,STAGE,
+        defaults,normalize,render,pivots,applyPose,mirror,describe,speech,EASES,ease,easeId};
 })();
 window.HouseCharacter = HouseCharacter;

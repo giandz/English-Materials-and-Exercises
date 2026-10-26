@@ -143,6 +143,9 @@ button[aria-pressed="true"]{ background:var(--color-background-info); color:var(
   background:var(--color-background-primary); color:var(--text-primary);
 }
 
+#len{ width:6.6em; }
+/* area selection */
+#tl .band{ fill:var(--text-accent); fill-opacity:.1; stroke:var(--text-accent); stroke-width:1.2; stroke-dasharray:4 3; pointer-events:none; }
 /* timeline */
 .ke-timeline{
   background:var(--surface-2); border:1px solid var(--border); border-radius:var(--radius);
@@ -159,6 +162,10 @@ button[aria-pressed="true"]{ background:var(--color-background-info); color:var(
 #tl .dia path{ fill:var(--surface-2); stroke:var(--text-secondary); stroke-width:1.4; }
 #tl .dia .na{ fill:none; stroke:var(--text-muted); stroke-dasharray:2 2; stroke-opacity:.6; }
 #tl .dia.cur path{ fill:var(--pos-verb); stroke:var(--pos-verb); }
+/* selected keyframes: filled in their timeline's colour, with a dashed ring */
+#tl .dia.sel path:not(.na), #tl .dia.sel rect.sq, #tl .gstep.sel path, #tl .gkey.sel{ fill:var(--c, var(--text-accent)); fill-opacity:.6; }
+#tl .selring{ fill:none; stroke:var(--text-accent); stroke-width:1.6; stroke-dasharray:3 2; pointer-events:none; }
+.tlsel button[aria-pressed="true"]{ background:var(--color-background-info); color:var(--color-text-info); border-color:var(--color-border-info); }
 #tl .dia.cur .na{ fill:none; stroke:var(--pos-verb); }
 #tl .ph{ stroke:var(--bad); stroke-width:1.6; pointer-events:none; }
 #tl .phk{ fill:var(--bad); cursor:ew-resize; }
@@ -168,8 +175,8 @@ button[aria-pressed="true"]{ background:var(--color-background-info); color:var(
 #tl .lmk{ cursor:ew-resize; }
 #tl .lmk path{ fill:none; stroke:var(--good); stroke-width:2.6; stroke-linecap:round; stroke-linejoin:round; }
 #tl .lmk:hover path{ stroke-width:3.4; }
-.tlz, .tlloop{ display:inline-flex; align-items:center; gap:2px; }
-.tlz button, .tlloop button{ padding:2px 8px; font-size:.7667rem; min-width:2em; }
+.tlz, .tlloop, .tlsel{ display:inline-flex; align-items:center; gap:2px; }
+.tlz button, .tlloop button, .tlsel button{ padding:2px 8px; font-size:.7667rem; min-width:2em; }
 .tlloop button[aria-pressed="true"]{ background:var(--color-background-success, var(--color-background-info)); }
 /* timeline toolbar: dope sheet / graph */
 .ke-tlbar{ display:flex; flex-wrap:wrap; align-items:center; gap:8px 12px; margin-bottom:6px; font-size:.8rem; color:var(--text-secondary); }
@@ -342,6 +349,9 @@ button[aria-pressed="true"]{ background:var(--color-background-info); color:var(
 .sp-text{ width:100%; box-sizing:border-box; min-height:4.6em; resize:vertical; font-family:inherit; font-size:.8rem; line-height:1.4; padding:6px 8px;
   border:1px solid var(--color-border-secondary); border-radius:var(--border-radius-md); background:var(--color-background-primary); color:var(--text-primary); }
 .sp-row{ display:grid; grid-template-columns:4.2em minmax(0,1fr) 3.9em 2.4em; align-items:center; gap:6px; margin-top:8px; }
+.sp-row.sp-lang{ grid-template-columns:4.2em minmax(0,1fr); }
+.sp-row select{ font-family:inherit; font-size:.8rem; padding:3px 6px; border:1px solid var(--color-border-secondary);
+  border-radius:var(--border-radius-md); background:var(--color-background-primary); color:var(--text-primary); }
 .sp-row label, .sp-row .unit{ font-size:.7667rem; color:var(--text-secondary); }
 .sp-row input[type=range]{ width:100%; accent-color:var(--text-accent); margin:0; }
 .sp-row input[type=number]{ width:100%; font-family:var(--font-mono); font-size:.7667rem; padding:2px 4px; text-align:right;
@@ -407,7 +417,7 @@ button[aria-pressed="true"]{ background:var(--color-background-info); color:var(
         </span>
         <button type="button" id="bCompact" class="tb" aria-pressed="false" title="Compact controls: small buttons on the stage, in one line, so the stage gets more room"><span class="tb-ic" aria-hidden="true">🗜️</span><span class="tb-lb">Compact</span></button>
         <label class="ke-num" id="lblFps">FPS <input type="number" id="fps" min="1" max="60" step="1"></label>
-        <label class="ke-num" id="lblLen">Frames <input type="number" id="len" min="1" max="1200" step="1"></label>
+        <label class="ke-num" id="lblLen">Frames <input type="number" id="len" min="1" max="100000" step="1" inputmode="numeric" title="Length of the animation in frames: type a number (it applies as you type, or press Enter)"></label>
       </div>
 
       <div class="ke-tlbar" id="tlbar">
@@ -422,6 +432,10 @@ button[aria-pressed="true"]{ background:var(--color-background-info); color:var(
           <button type="button" id="bIn" aria-pressed="false" title="Loop in marker at the playhead (I). Press on its frame again to remove it.">⟦ In</button>
           <button type="button" id="bOut" aria-pressed="false" title="Loop out marker at the playhead (O). Press on its frame again to remove it.">Out ⟧</button>
           <button type="button" id="bLoopClr" title="Remove both loop markers" aria-label="Remove both loop markers">✕</button>
+        </span>
+        <span class="tlsel" role="group" aria-label="Selection">
+          <button type="button" id="bSel" aria-pressed="false" title="Select mode: a click adds a keyframe to the selection or takes it out, and a drag across empty timeline selects everything in the box. Shift + click and Shift + drag do the same at any time. Ctrl + A selects them all.">☑ Select</button>
+          <button type="button" id="bSelClr" disabled title="Clear the selection (Esc)" aria-label="Clear the selection">✕</button>
         </span>
         <span class="ke-readout" id="readout"></span>
         <span class="gonly"><select id="gAdd" aria-label="Add a setting to the graph"></select></span>
@@ -445,6 +459,10 @@ button[aria-pressed="true"]{ background:var(--color-background-info); color:var(
         <summary>🗣️ Speech</summary>
         <div class="ke-body">
           <textarea id="spText" class="sp-text" rows="3" placeholder="Type what the character says…" aria-label="What the character says"></textarea>
+          <div class="sp-row sp-lang">
+            <label for="spLang">Language</label>
+            <select id="spLang" aria-label="Language of the text"></select>
+          </div>
           <div class="sp-row">
             <label for="spWpm">Speed</label>
             <input type="range" id="spWpm" min="60" max="300" step="5" aria-label="Speaking speed">
@@ -452,7 +470,7 @@ button[aria-pressed="true"]{ background:var(--color-background-info); color:var(
             <span class="unit">wpm</span>
           </div>
           <div class="btnrow"><button id="bSpeech" title="Fill the Mouth timeline from the playhead with lip-sync shapes for this text">🗣️ Create speech</button><span class="sp-est" id="spEst"></span></div>
-          <p class="note">Mouth shapes start at the playhead, on the Mouth timeline, and replace what was there for that stretch. About 120 wpm is slow and clear, 150 natural, 180 or more fast. Pauses rest on the mouth the character has at the playhead (a smile stays a smile).</p>
+          <p class="note">Mouth shapes start at the playhead, on the Mouth timeline, and replace what was there for that stretch. Choose the language of the text first. About 120 wpm is slow and clear, 150 natural, 180 or more fast. Pauses rest on the mouth the character has at the playhead (a smile stays a smile).</p>
         </div>
       </details>
       <div class="scope">Look changes go on
@@ -491,6 +509,7 @@ button[aria-pressed="true"]{ background:var(--color-background-info); color:var(
             <span class="kbd">Space</span> play/pause · <span class="kbd">←</span><span class="kbd">→</span> frame ·
             <span class="kbd">Shift</span>+<span class="kbd">←</span><span class="kbd">→</span> keyframe ·
             <span class="kbd">K</span> add keyframe · <span class="kbd">P</span> ping-pong · <span class="kbd">I</span><span class="kbd">O</span> loop in / out · <span class="kbd">Del</span> delete keyframe ·
+            <span class="kbd">Shift</span>+click / drag select several · <span class="kbd">Ctrl</span>+<span class="kbd">A</span> select all · <span class="kbd">Esc</span> clear ·
             <span class="kbd">+</span><span class="kbd">−</span><span class="kbd">0</span> zoom · <span class="kbd">Space</span>+drag pan
           </p>
           <p class="note">On the stage, drag around a dot to turn that joint. Changing anything on a frame without a keyframe adds one.</p>
@@ -571,6 +590,7 @@ const $ = id => document.getElementById(id);
 let S = null;                 /* {character, fps, length, loop, keys} — everything that is saved */
 let frame = 0, playing = false, selJoint = null;
 let undo = [], redo = [], lastPush = 0, lastTag = null;
+let sel = new Set(), selMode = false, grp = null;   /* selected keyframes (see “selecting several keyframes”) */
 
 function starterCharacter(){
   const c = HC.defaults();
@@ -670,42 +690,11 @@ function liftMain(a){
 }
 
 /* ── interpolation ─────────────────────────────────────────────────────── */
-/* The easings of easings.net (github.com/ai/easings.net), each written once in its "in" form
-   (slow at the start). The "out" form is the same curve turned round: 1 − f(1 − s). */
-const C1 = 1.70158, C3 = C1 + 1, C4 = 2 * Math.PI / 3;
-function bounceOut(x){
-  const n = 7.5625, d = 2.75;
-  if(x < 1/d) return n*x*x;
-  if(x < 2/d) return n*(x -= 1.5/d)*x + 0.75;
-  if(x < 2.5/d) return n*(x -= 2.25/d)*x + 0.9375;
-  return n*(x -= 2.625/d)*x + 0.984375;
-}
-const EASES = [
-  ['linear',      'Linear',      x => x],
-  ['sine',        'Sinusoidal',  x => 1 - Math.cos(x * Math.PI / 2)],
-  ['quad',        'Quadratic',   x => x*x],
-  ['cubic',       'Cubic',       x => x*x*x],
-  ['quart',       'Quartic',     x => x*x*x*x],
-  ['quint',       'Quintic',     x => x*x*x*x*x],
-  ['expo',        'Exponential', x => x === 0 ? 0 : Math.pow(2, 10*x - 10)],
-  ['circ',        'Circular',    x => 1 - Math.sqrt(1 - x*x)],
-  ['back',        'Back',        x => C3*x*x*x - C1*x*x],
-  ['elastic',     'Elastic',     x => x === 0 ? 0 : x === 1 ? 1 : -Math.pow(2, 10*x - 10) * Math.sin((x*10 - 10.75) * C4)],
-  ['bounce',      'Bounce',      x => 1 - bounceOut(1 - x)]];
+/* The easings (easings.net's set) and how one stretch between two keyframes is eased live in the engine
+   (HouseCharacter.EASES / HouseCharacter.ease), so every page that animates house characters moves the same way. */
+const EASES = HC.EASES;
 const EASE_IN = Object.fromEntries(EASES.map(e => [e[0], e[2]]));
-const easeId = v => EASE_IN[v] ? v : 'linear';
-/* one stretch A → B: A's "ease out" shapes the departure, B's "ease in" the arrival.
-     only the departure eased → the easing's In curve (slow start)
-     only the arrival eased   → its Out curve (slow end)
-     both                     → In for the first half, Out for the second (easings.net's InOut when they match) */
-function ease(s, out, inn){
-  const a = EASE_IN[easeId(out)], b = EASE_IN[easeId(inn)];
-  const A = out && out !== 'linear', B = inn && inn !== 'linear';
-  if(!A && !B) return s;
-  if(A && !B) return a(s);
-  if(!A) return 1 - b(1 - s);
-  return s < 0.5 ? a(2*s) / 2 : 1 - b(2 - 2*s) / 2;
-}
+const easeId = HC.easeId, ease = HC.ease;
 const wrap = v => ((v + 180) % 360 + 360) % 360 - 180;
 /* parameter access: joints live in pose.joints, held items in pose.held */
 const isJoint = k => JOINT_IDS.includes(k);
@@ -805,11 +794,11 @@ function ownTrack(k){
   }
   t = {param:k, keys}; S.tracks.push(t); return t;
 }
-function writeParam(k, v){
+function writeParam(k, v, force){
   switchOn(k);
   const c = clean(k, v);
-  /* writing the value it already has makes no timeline (a pose preset only adds timelines for what it changes) */
-  if(!anyTrackOf(k)){ const cur = getP(poseAt(frame), k); if(sameV(c, isNum(k) ? Math.round(cur) : cur)) return; }
+  /* writing the value it already has makes no timeline, unless asked to (pose presets key everything they involve) */
+  if(!force && !anyTrackOf(k)){ const cur = getP(poseAt(frame), k); if(sameV(c, isNum(k) ? Math.round(cur) : cur)) return; }
   ensureTrackKey(ownTrack(k)).value = c; lane = k;
 }
 function setParam(k, v){ pushUndo('set:' + k); writeParam(k, v); changed(); }
@@ -866,8 +855,14 @@ function setEase(which, v){
 /* every setting a whole pose can carry, as parameters */
 const allParams = p => [...JOINT_IDS.filter(j => p.joints && j in p.joints), ...Object.keys(p).filter(k => k !== 'joints' && k !== 'held'),
   ...(p.held ? Object.keys(p.held).map(h => 'held.' + h) : [])];
-function applyWholePose(p){
-  pushUndo(); for(const k of allParams(p)) writeParam(k, getP(p, k)); changed();
+/* force: key every setting the pose involves, even where it already has that value, so each one gets a
+   timeline (and, in the graph view, a place on the graph) */
+function applyWholePose(p, force){
+  pushUndo();
+  const ks = allParams(p);
+  for(const k of ks) writeParam(k, getP(p, k), force);
+  if(force && view === 'graph'){ for(const k of ks) addSeries(k, false); syncGraphBar(); }
+  changed();
 }
 function mirrorPose(){   /* the engine's mirror: joints, turns, head, and whatever is held or worn on one side */
   const d = dataAt(frame), m = poseOf(HC.mirror(HC.normalize(d))); m.lift = d.lift;
@@ -960,7 +955,7 @@ function syncTracksUI(){
 }
 /* the dope sheet always has a timeline selected while there are any */
 function fixLane(){ if(view === 'dope' && !(lane && trackOf(lane))){ const T = liveTracks(); lane = T.length ? T[0].param : null; } }
-function changed(){ fixLane(); autosave(); drawStage(); drawTimeline(); drawKeybar(); syncPanel(); syncTracksUI(); }
+function changed(){ fixLane(); syncSelUI(); autosave(); drawStage(); drawTimeline(); drawKeybar(); syncPanel(); syncTracksUI(); }
 
 /* ── stage ─────────────────────────────────────────────────────────────── */
 const fig = $('figure'), hsv = $('handles'), stage = $('stage');
@@ -1267,11 +1262,12 @@ const short = (t, n) => t.length > n ? t.slice(0, n - 1) + '…' : t;
 function laneDiamonds(K, y, laneId, numeric, main){
   let s = '';
   K.forEach((k, i) => {
-    const x = fx(k.frame), cur = k.frame === frame && lane === laneId ? ' cur' : '';
+    const x = fx(k.frame), cur = k.frame === frame && lane === laneId ? ' cur' : '', on = sel.has(k);
     const inK = i === 0 ? null : k.easeIn, outK = i === K.length - 1 ? null : k.easeOut;
     const tip = main ? `Keyframe ${k.frame}` : `${k.frame}: ${typeof k.value === 'object' ? JSON.stringify(k.value) : k.value}`;
-    s += `<g class="dia${cur}${laneId ? ' tr' : ''}"${laneId ? ` style="--c:${gColor(colorOf(laneId))}"` : ''} data-lane="${laneId || ''}" data-i="${i}"><title>${esc(tip)}</title>`
+    s += `<g class="dia${cur}${on ? ' sel' : ''}${laneId ? ' tr' : ''}"${laneId ? ` style="--c:${gColor(colorOf(laneId))}"` : ''} data-lane="${laneId || ''}" data-i="${i}"><title>${esc(tip)}</title>`
       + `<rect x="${x-9}" y="${y-11}" width="18" height="22" fill="transparent" stroke="none"/>`
+      + (on ? `<circle class="selring" cx="${x}" cy="${y}" r="11.5"/>` : '')
       + (numeric
         ? `<path${inK ? '' : ' class="na"'} d="${diamondPath(x, y, 8, 'in', inK || 'linear')}"/>`
           + `<path${outK ? '' : ' class="na"'} d="${diamondPath(x, y, 8, 'out', outK || 'linear')}"/>`
@@ -1311,6 +1307,7 @@ function drawTimeline(){
   lanes.forEach((L, i) => { cl += laneDiamonds(L.K, laneY(i), L.id, isNum(L.id), false); });
   s += `<g clip-path="url(#tlclip)">${cl}</g>` + loopSVG(H);
   const x = fx(frame);
+  s += bandSVG();
   if(inView(frame)) s += `<line class="ph" x1="${x}" x2="${x}" y1="14" y2="${H-2}"/><path class="phk" d="M${x-6},12H${x+6}V20L${x},26L${x-6},20Z"/>`;
   tl.innerHTML = s;
   $('readout').textContent = `Frame ${frame} / ${S.length} · ${(frame / S.fps).toFixed(2)} s`;
@@ -1329,16 +1326,23 @@ tl.addEventListener('pointerdown', e => {
   if(btn){ pause(); btn.dataset.act === 'clear' ? clearParam(btn.dataset.param) : dropTrack(btn.dataset.param); return; }
   const g = e.target.closest('.dia');
   if(g){
-    lane = g.dataset.lane || null;
-    const K = laneKeys(), k = K[+g.dataset.i]; tdrag = {key:k, K, from:k.frame, moved:false, undoPushed:false}; goto(k.frame);
+    const t = trackOf(g.dataset.lane), k = t && t.keys[+g.dataset.i]; if(!k) return;
+    if(e.shiftKey || selMode){ toggleSel(k, selMode ? null : curKey()); return; }
+    lane = g.dataset.lane;
+    if(sel.has(k) && sel.size > 1){ startGroupDrag(k); goto(k.frame); }
+    else { if(sel.size){ sel = new Set(); syncSelUI(); } const K = laneKeys(); tdrag = {key:k, K, from:k.frame, moved:false, undoPushed:false}; goto(k.frame); }
   } else {
     const y = tlY(e);
+    if(y > RULER && (selMode || e.shiftKey)){ startBand(e); try{ tl.setPointerCapture(e.pointerId); }catch(_){} return; }
+    if(y > RULER && !selMode && !e.shiftKey && sel.size){ sel = new Set(); syncSelUI(); drawKeybar(); }   /* a click in the lanes clears it; the ruler keeps it */
     if(y > RULER){ const LT = liveTracks(); if(LT.length) lane = LT[Math.max(0, Math.min(LT.length - 1, Math.round((y - KEYY) / LANE)))].param; }
     tdrag = {scrub:true}; pause(); goto(xf(tlX(e)));
   }
   try{ tl.setPointerCapture(e.pointerId); }catch(_){}
 });
 tl.addEventListener('pointermove', e => {
+  if(band){ moveBand(e); return; }
+  if(grp){ groupMove(xf(tlX(e))); return; }
   if(mdrag){ dragMarker(xf(tlX(e))); return; }
   if(tpan){ const r = tl.getBoundingClientRect(), [a, b] = vw(); panTime(-(e.clientX - tpan.x) / r.width * TW / (TW - GUT - RP) * (b - a)); tpan.x = e.clientX; return; }
   if(view === 'graph') return gMove(e);
@@ -1351,7 +1355,7 @@ tl.addEventListener('pointermove', e => {
   tdrag.K.sort((a, b) => a.frame - b.frame);
   frame = f; changed();
 });
-const endT = () => { tdrag = null; gdrag = null; mdrag = null; tpan = null; };
+const endT = () => { if(band) endBand(); tdrag = null; gdrag = null; mdrag = null; tpan = null; grp = null; };
 let mdrag = null, tpan = null;
 /* moving a marker keeps the in before the out */
 function dragMarker(f){
@@ -1404,6 +1408,35 @@ tl.addEventListener('wheel', e => {
   const dx = e.shiftKey ? (e.deltaX || e.deltaY) : (Math.abs(e.deltaX) > Math.abs(e.deltaY) ? e.deltaX : 0);
   if(dx && tz){ e.preventDefault(); panTime((e.deltaMode === 1 ? dx * 33 : dx) / w * (b - a)); }
 }, {passive:false});
+/* ── area selection: with ☑ Select on, or holding Shift, drag across empty timeline to select every
+   keyframe inside the box, across timelines (dope sheet) or curves and label rows (graph).
+   Shift adds to the selection; without it the box replaces it. A click without dragging moves the playhead. */
+let band = null;
+function startBand(e){ pause(); closeEz(); const x = tlX(e), y = tlY(e); band = {x0:x, y0:y, x1:x, y1:y, add:e.shiftKey, moved:false}; }
+function moveBand(e){
+  band.x1 = tlX(e); band.y1 = tlY(e);
+  if(Math.hypot(band.x1 - band.x0, band.y1 - band.y0) > 4) band.moved = true;
+  drawTimeline();
+}
+function bandSVG(){
+  if(!band || !band.moved) return '';
+  return `<rect class="band" x="${Math.min(band.x0, band.x1)}" y="${Math.min(band.y0, band.y1)}" width="${Math.abs(band.x1 - band.x0)}" height="${Math.abs(band.y1 - band.y0)}"/>`;
+}
+function endBand(){
+  const b = band; band = null;
+  if(!b.moved){ goto(xf(b.x0)); return; }
+  const x0 = Math.min(b.x0, b.x1), x1 = Math.max(b.x0, b.x1), y0 = Math.min(b.y0, b.y1), y1 = Math.max(b.y0, b.y1);
+  const inside = (x, y) => x >= x0 && x <= x1 && y >= y0 && y <= y1, hit = [];
+  const keyOf = (param, i) => { const t = trackOf(param); return t ? t.keys[i] : null; };
+  for(const g of tl.querySelectorAll('.dia')){ const r = g.querySelector('rect'); if(inside(+r.getAttribute('x') + 9, +r.getAttribute('y') + 11)) hit.push(keyOf(g.dataset.lane, +g.dataset.i)); }
+  for(const c of tl.querySelectorAll('.gkey')) if(inside(+c.getAttribute('cx'), +c.getAttribute('cy'))) hit.push(keyOf(c.dataset.p, +c.dataset.ki));
+  for(const g of tl.querySelectorAll('.gstep')){ const r = g.querySelector('rect'); if(inside(+r.getAttribute('x') + 8, +r.getAttribute('y') + 8)) hit.push(keyOf(g.dataset.p, +g.dataset.ki)); }
+  if(!b.add) sel = new Set();
+  const n = sel.size; for(const k of hit) if(k) sel.add(k);
+  selChanged();
+  const added = sel.size - n;
+  flash(added ? `${added} keyframe${added === 1 ? '' : 's'} selected${b.add ? ', added to the selection' : ''}.` : 'No keyframes with a timeline in that area.');
+}
 tl.addEventListener('pointerup', endT);
 tl.addEventListener('pointercancel', endT);
 tl.addEventListener('lostpointercapture', endT);
@@ -1580,7 +1613,8 @@ function drawGraph(){
         if(act && w > 90){ const nm = e => EASES.find(y => y[0] === easeId(e))[1];
           s += `<text class="gname" x="${((fx(K[i].frame) + fx(K[i+1].frame)) / 2).toFixed(1)}" y="${yBot + 12}" text-anchor="middle">${nm(K[i].easeOut)} → ${nm(K[i+1].easeIn)}</text>`; }
       }
-      K.forEach((k, i) => { s += `<circle class="gkey${act && k.frame === frame ? ' cur' : ''}" data-p="${esc(x.p)}" data-ki="${i}" cx="${fx(k.frame).toFixed(1)}" cy="${gy(u[i]).toFixed(1)}" r="${act ? 5.5 : 4.2}"><title>${esc(plabel(x.p))} · frame ${k.frame}: ${Math.round(gRawP(x.p, k))}</title></circle>`; });
+      K.forEach((k, i) => { if(sel.has(k)) s += `<circle class="selring" cx="${fx(k.frame).toFixed(1)}" cy="${gy(u[i]).toFixed(1)}" r="9"/>`;
+        s += `<circle class="gkey${act && k.frame === frame ? ' cur' : ''}${sel.has(k) ? ' sel' : ''}" data-p="${esc(x.p)}" data-ki="${i}" cx="${fx(k.frame).toFixed(1)}" cy="${gy(u[i]).toFixed(1)}" r="${act ? 5.5 : 4.2}"><title>${esc(plabel(x.p))} · frame ${k.frame}: ${Math.round(gRawP(x.p, k))}</title></circle>`; });
       cl += s + '</g>';
     }
   }
@@ -1595,9 +1629,10 @@ function drawGraph(){
       + `<line class="gline" x1="${x1}" x2="${TW - PAD}" y1="${base}" y2="${base}" stroke-dasharray="3 3"/>`;
     for(const st of gStepsP(x.p)){
       const X = fx(st.k.frame), cur = act && st.k.frame === frame ? ' cur' : '', t = vlabel(x.p, st.v);
-      rows += `<g class="gstep${cur}" data-p="${esc(x.p)}" data-ki="${st.i}"><title>${esc(plabel(x.p))} · frame ${st.k.frame}: ${esc(t)}</title>`
+      rows += `<g class="gstep${cur}${sel.has(st.k) ? ' sel' : ''}" data-p="${esc(x.p)}" data-ki="${st.i}"><title>${esc(plabel(x.p))} · frame ${st.k.frame}: ${esc(t)}</title>`
         + `<rect x="${X - 8}" y="${base - 8}" width="16" height="16" fill="transparent" stroke="none"/>`
         + `<path d="M${X},${base - 6}L${X + 6},${base}L${X},${base + 6}L${X - 6},${base}Z"/>`
+        + (sel.has(st.k) ? `<circle class="selring" cx="${X}" cy="${base}" r="9.5"/>` : '')
         + `<text class="gsl" x="${X + 5}" y="${base - 9}" transform="rotate(-45 ${X + 5} ${base - 9})">${esc(short(t, 20))}</text></g>`;
     }
     rows += '</g>';
@@ -1605,10 +1640,11 @@ function drawGraph(){
   s += `<g clip-path="url(#tlclip)">${cl}</g><g clip-path="url(#tlclipw)">${rows}</g>` + loopSVG(H);
 
   const x = fx(frame);
+  s += bandSVG();
   if(inView(frame)) s += `<line class="ph" x1="${x}" x2="${x}" y1="14" y2="${H - 2}"/><path class="phk" d="M${x-6},12H${x+6}V20L${x},26L${x-6},20Z"/>`;
   /* the selected setting's value at the playhead, written beside it: a number for a curve, the label for any other setting */
-  const sel = seriesOf(gParam);
-  if(sel && sel.on && inView(frame)){
+  const selS = seriesOf(gParam);
+  if(selS && selS.on && inView(frame)){
     const txt = isNum(gParam) ? String(Math.round(gValueAtP(gParam, frame))) : short(vlabel(gParam, getP(poseAt(frame), gParam)), 26);
     const left = x > x1 - (isNum(gParam) ? 50 : 150);
     s += `<text class="gread" x="${x + (left ? -6 : 6)}" y="${yTop + 11}" text-anchor="${left ? 'end' : 'start'}">${esc(txt)}</text>`;
@@ -1621,13 +1657,21 @@ function gDown(e){
   const key = e.target.closest('.gkey, .gstep'), seg = e.target.closest('.gseg');
   if(key){
     closeEz(); pause();
-    const p = key.dataset.p, K = gKeysP(p), i = +key.dataset.ki, k = K[i];
+    const p = key.dataset.p, K = gKeysP(p), i = +key.dataset.ki, k = K[i], own = !!trackOf(p);
+    if(e.shiftKey || selMode){
+      if(own) toggleSel(k, selMode ? null : curKey()); else flash(`${plabel(p)} has no timeline yet: change it on a frame to give it keyframes you can select.`);
+      return;
+    }
     activate(p); syncGraphBar(); syncPanel();
+    if(own && sel.has(k) && sel.size > 1){ startGroupDrag(k); goto(k.frame); try{ tl.setPointerCapture(e.pointerId); }catch(_){} return; }
+    if(sel.size){ sel = new Set(); syncSelUI(); }
     gdrag = {p, key:k, K, y0:tlY(e), v0:isNum(p) ? gValuesP(p)[i] : null, pushed:false, stepped:!isNum(p)};
     goto(k.frame);
   } else if(seg){
     pause(); activate(seg.dataset.p); syncGraphBar(); openEz(seg.dataset.p, +seg.dataset.seg, e);
     return;
+  } else if((selMode || e.shiftKey) && tlY(e) > RULER){
+    startBand(e);
   } else {
     /* two quick presses in the same place add a point (the graph redraws in between, so dblclick never arrives) */
     const now = performance.now(), last = gLastDown;
@@ -1696,7 +1740,83 @@ function easeSelect(which, val, state){   /* state: '' (editable), 'none' (no ea
     : EASES.map(([id, label]) => `<option value="${id}"${id === val ? ' selected' : ''}>${label}</option>`).join('');
   return `<select class="ezsel" data-ease="${which}"${state ? ' disabled' : ''} aria-label="${which === 'easeIn' ? 'Ease in' : 'Ease out'}">${opts}</select>`;
 }
+/* ── selecting several keyframes ─────────────────────────────────────────────
+   Shift + click (or any click while ☑ Select is on) adds a keyframe to the selection or takes it out.
+   Dragging a selected keyframe moves the whole selection in time; the bar under the timeline sets the
+   easing of all of them at once, or deletes them. Esc clears the selection, Ctrl + A selects every keyframe.
+   Only keyframes on timelines can be selected; the selection is not saved. */
+function selItems(){   /* [{t, k}]: the selected keyframes that are still on a timeline that is on */
+  const out = [];
+  for(const t of liveTracks()) for(const k of t.keys) if(sel.has(k)) out.push({t, k});
+  return out;
+}
+function curKey(){   /* the keyframe at the playhead on the timeline being worked on */
+  const t = trackOf(view === 'graph' ? gParam : lane);
+  return t ? t.keys.find(k => k.frame === frame) || null : null;
+}
+function syncSelUI(){
+  sel = new Set(selItems().map(x => x.k));   /* forget keyframes deleted, undone or switched off */
+  $('bSel').setAttribute('aria-pressed', String(selMode));
+  $('bSelClr').disabled = !sel.size; $('bSelClr').textContent = sel.size ? `✕ ${sel.size}` : '✕';
+}
+function selChanged(){ syncSelUI(); drawTimeline(); drawKeybar(); }
+function toggleSel(k, cur){
+  if(!sel.size && cur && cur !== k) sel.add(cur);   /* the first Shift + click keeps the keyframe you were on */
+  if(sel.has(k)) sel.delete(k); else sel.add(k);
+  selChanged();
+}
+function clearSel(){ if(!sel.size) return; sel = new Set(); selChanged(); }
+function selectAll(){
+  sel = new Set(liveTracks().flatMap(t => t.keys)); selChanged();
+  flash(sel.size ? `${sel.size} keyframes selected.` : 'There are no keyframes to select.');
+}
+function startGroupDrag(k){
+  pause(); closeEz();
+  grp = {anchor:k, f0:k.frame, df:0, pushed:false, items:selItems().map(x => ({...x, from:x.k.frame}))};
+}
+function groupMove(f){   /* the whole selection moves by the same number of frames, if every keyframe has room */
+  const df = f - grp.f0; if(df === grp.df) return;
+  const ok = grp.items.every(({t, from}) => { const nf = from + df; return nf >= 0 && nf <= S.length && !t.keys.some(o => !sel.has(o) && o.frame === nf); });
+  if(!ok) return;
+  if(!grp.pushed){ pushUndo(); grp.pushed = true; }
+  for(const it of grp.items) it.k.frame = it.from + df;
+  for(const t of new Set(grp.items.map(x => x.t))) t.keys.sort((a, b) => a.frame - b.frame);
+  grp.df = df; frame = grp.anchor.frame; follow(frame); changed();
+}
+function deleteSel(){
+  const items = selItems(); if(!items.length) return;
+  pause(); pushUndo();
+  let gone = 0;
+  for(const t of new Set(items.map(x => x.t))){
+    t.keys = t.keys.filter(k => !sel.has(k));
+    if(!t.keys.length){ S.tracks = S.tracks.filter(x => x !== t); gone++; }   /* nothing left: the setting keeps its resting value */
+  }
+  sel = new Set(); changed();
+  flash(`${items.length} keyframe${items.length === 1 ? '' : 's'} deleted.` + (gone ? ` ${gone} timeline${gone === 1 ? ' was' : 's were'} left empty and removed.` : ''));
+}
+function setEaseSel(which, v){
+  const items = selItems().filter(x => isNum(x.t.param)); if(!items.length || !v) return;
+  pushUndo(); for(const x of items) x.k[which] = v; changed();
+}
+$('bSel').onclick = () => { selMode = !selMode; syncSelUI(); flash(selMode ? 'Select mode: click keyframes to add them to the selection or take them out.' : 'Select mode off.'); };
+$('bSelClr').onclick = clearSel;
+document.addEventListener('keydown', e => { if(e.key === 'Escape' && sel.size){ const t = e.target && e.target.tagName; if(t !== 'INPUT' && t !== 'TEXTAREA') clearSel(); } });
 function drawKeybar(){
+  const items = selItems();
+  if(items.length){   /* several keyframes: their easing at once, or delete them all */
+    const nums = items.filter(x => isNum(x.t.param)), nT = new Set(items.map(x => x.t)).size;
+    const multi = which => {
+      if(!nums.length) return `<select class="ezsel" disabled aria-label="${which === 'easeIn' ? 'Ease in' : 'Ease out'}"><option>Hold</option></select>`;
+      const v = nums.map(x => easeId(x.k[which])), same = v.every(y => y === v[0]) ? v[0] : '';
+      return `<select class="ezsel" data-ease="${which}" data-multi="1" aria-label="${which === 'easeIn' ? 'Ease in' : 'Ease out'} for the selection">`
+        + (same ? '' : '<option value="" selected>Mixed</option>')
+        + EASES.map(([id, label]) => `<option value="${id}"${id === same ? ' selected' : ''}>${label}</option>`).join('') + '</select>';
+    };
+    $('keybar').innerHTML = `<span class="title" title="Drag one of them to move them all. Shift + click adds or takes out keyframes; Esc clears the selection.">☑ ${items.length} keyframe${items.length === 1 ? '' : 's'} · ${nT} timeline${nT === 1 ? '' : 's'}</span>`
+      + `<span class="ease">Ease in ${multi('easeIn')}</span><span class="ease">Ease out ${multi('easeOut')}</span>`
+      + `<button id="kDelSel">🗑️ Delete ${items.length}</button>`;
+    return;
+  }
   const K = laneKeys(), i = K.findIndex(k => k.frame === frame), bar = $('keybar');
   const name = lane && trackOf(lane) ? plabel(lane) : null, num = !name || isNum(lane);
   const where = name ? `<b>${esc(name)}</b> ` : '';
@@ -1712,13 +1832,14 @@ function drawKeybar(){
     + (k ? `<button id="kDel">${num ? '◆' : '■'} Delete</button>` : `<button id="kAdd"${name ? '' : ' disabled'}>${num ? '◆' : '■'} Add</button>`);
 }
 $('keybar').addEventListener('change', e => {
-  const sel = e.target.closest('.ezsel'); if(!sel || sel.disabled) return;
-  setEase(sel.dataset.ease, sel.value);
+  const es = e.target.closest('.ezsel'); if(!es || es.disabled) return;
+  if(es.dataset.multi) setEaseSel(es.dataset.ease, es.value); else setEase(es.dataset.ease, es.value);
 });
 $('keybar').addEventListener('click', e => {
   const b = e.target.closest('button'); if(!b || b.disabled) return;
   if(b.id === 'kAdd') addKey();
   else if(b.id === 'kDel') deleteKey();
+  else if(b.id === 'kDelSel') deleteSel();
 });
 
 /* ── side panel ────────────────────────────────────────────────────────── */
@@ -1748,7 +1869,10 @@ function buildPanel(){
     + `</select></div>`
     + `<p class="note">These change at keyframes, with no easing — the last ten mouths are lip-sync shapes. 🗣️ Speech makes them from text.</p>`;
   buildLook();
-  $('preset').innerHTML = HC.POSES.map(p => `<option value="${p.id}">${p.label}</option>`).join('');
+  /* body poses, then one group per Plutchik petal: each emotion's body language with its face */
+  $('preset').innerHTML = `<optgroup label="Poses">` + HC.POSES.map(p => `<option value="${p.id}">${p.label}</option>`).join('') + '</optgroup>'
+    + HC.EMOTIONS.map(([g]) => `<optgroup label="Emotion · ${g}">`
+      + (HC.EMOTION_POSES || []).filter(p => p.group === g).map(p => `<option value="${p.id}">${p.label}</option>`).join('') + '</optgroup>').join('');
 }
 function syncPanel(){
   const p = poseAt(frame);
@@ -1787,9 +1911,13 @@ $('face').addEventListener('change', e => {
 });
 $('bPreset').onclick = () => {
   const id = $('preset').value, c = HC.applyPose(HC.normalize(dataAt(frame)), id);
+  const pr = [...HC.POSES, ...(HC.EMOTION_POSES || [])].find(x => x.id === id) || {};
   const p = {joints:c.joints, torsoOrientation:c.torsoOrientation, pelvisOrientation:c.pelvisOrientation, head:c.head};
-  if((HC.POSES.find(x => x.id === id) || {}).held) p.held = {...c.held};
-  pause(); applyWholePose(p);
+  if(pr.held) p.held = Object.fromEntries(Object.keys(pr.held).map(h => [h, c.held[h]]));   /* only the hands the preset sets */
+  if(pr.face) Object.assign(p, pr.face);
+  if(pr.extra) Object.assign(p, pr.extra);
+  pause(); applyWholePose(p, true);
+  flash(`${pr.label || 'Pose'}: ${allParams(p).length} settings keyed on frame ${frame}.`);
 };
 $('bMirror').onclick = () => { pause(); mirrorPose(); };
 
@@ -1969,7 +2097,9 @@ let inRange = true;
 const activeRange = () => inRange ? playRange() : [0, S.length];
 function tick(now){
   const [lo, hi] = activeRange(), n = hi - lo;
-  const f = f0 + dir * Math.floor((now - t0) / 1000 * S.fps);
+  /* requestAnimationFrame's time is when the frame began, which can be a little before play() read the clock:
+     never let that count as time running backwards (from frame 0 it made playback stop at once) */
+  const f = f0 + dir * Math.floor(Math.max(0, now - t0) / 1000 * S.fps);
   if(f > hi){
     /* ping-pong: bounce off the last frame (shown once) and come back */
     if(S.pingpong && n > 0){ const over = Math.min(f - hi, n); dir = -1; f0 = hi; t0 = now - over * 1000 / S.fps; return tick(now); }
@@ -2039,10 +2169,25 @@ $('fps').addEventListener('change', () => {
   const v = Math.round(+$('fps').value); if(v >= 1 && v <= 60){ S.fps = v; if(playing){ t0 = performance.now(); f0 = frame; } autosave(); drawTimeline(); speechEstimate(); }
   syncTransport();
 });
+/* the length applies as you type (once the number is valid), and is checked when you press Enter or leave the box */
+const LEN_MAX = 100000;
+function setLength(v, tag){
+  if(v === S.length) return;
+  pushUndo(tag); S.length = v; frame = Math.min(frame, v); if(tz) tz = vw(); changed(); syncTimeUI();
+}
+let lenTimer = 0;
+$('len').addEventListener('input', () => {
+  clearTimeout(lenTimer);
+  lenTimer = setTimeout(() => {
+    const raw = $('len').value.trim(), v = Math.round(+raw);
+    if(raw !== '' && Number.isFinite(v) && v >= lastFrame() && v <= LEN_MAX) setLength(v, 'length');
+  }, 450);
+});
 $('len').addEventListener('change', () => {
-  const v = Math.round(+$('len').value), min = lastFrame();
-  if(v >= min && v <= 1200){ pushUndo(); S.length = v; frame = Math.min(frame, v); changed(); }
-  else flash(v < min ? `The last keyframe is on frame ${min}.` : 'Up to 1200 frames.');
+  clearTimeout(lenTimer);
+  const raw = $('len').value.trim(), v = Math.round(+raw), min = lastFrame();
+  if(raw !== '' && Number.isFinite(v) && v >= min && v <= LEN_MAX) setLength(v, 'length');
+  else flash(raw === '' || !Number.isFinite(v) ? 'Type a number of frames.' : v < min ? `The last keyframe is on frame ${min}.` : `Up to ${LEN_MAX} frames.`);
   syncTransport();
 });
 
@@ -2096,6 +2241,7 @@ $('bNew').onclick = () => {
 document.addEventListener('keydown', e => {
   const t = e.target, tag = t && t.tagName;
   if((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === 'z'){ if(tag === 'TEXTAREA' || (tag === 'INPUT' && (t.type === 'number' || t.type === 'text'))) return; e.preventDefault(); e.shiftKey ? doRedo() : doUndo(); return; }
+  if((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === 'a' && tag !== 'INPUT' && tag !== 'TEXTAREA' && tag !== 'SELECT'){ e.preventDefault(); selectAll(); return; }
   if((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === 'y'){ if(tag === 'TEXTAREA' || (tag === 'INPUT' && t.type === 'text')) return; e.preventDefault(); doRedo(); return; }
   if(tag === 'INPUT' || tag === 'SELECT' || tag === 'TEXTAREA' || e.ctrlKey || e.metaKey || e.altKey) return;
   switch(e.key){
@@ -2111,7 +2257,7 @@ document.addEventListener('keydown', e => {
     case 'p': case 'P': $('bPing').click(); break;
     case 'i': case 'I': pause(); setMarker('in'); break;
     case 'o': case 'O': pause(); setMarker('out'); break;
-    case 'Delete': case 'Backspace': pause(); deleteKey(); break;
+    case 'Delete': case 'Backspace': pause(); sel.size ? deleteSel() : deleteKey(); break;
   }
 });
 
@@ -2128,17 +2274,26 @@ document.addEventListener('keyup', e => {
    already in that stretch are replaced, those before and after stay. The animation grows if the speech runs past its end. */
 const LIP_MOUTHS = ['rest','mbp','ai','e','o','u','cdg','fv','l','wq'];
 const SPEECH_STORE = 'house-keyframes-speech';
-let spWpm = 150;
+let spWpm = 150, spLang = 'en';
+const SP_LANGS = HC.speech.LANGS || [['en','English']];
+$('spLang').innerHTML = SP_LANGS.map(([id, name]) => `<option value="${id}">${name}</option>`).join('');
 try{ const sp = JSON.parse(localStorage.getItem(SPEECH_STORE) || 'null');
-  if(sp){ if(typeof sp.text === 'string') $('spText').value = sp.text; if(sp.wpm >= 60 && sp.wpm <= 300) spWpm = sp.wpm; } }catch(e){}
-function saveSpeech(){ try{ localStorage.setItem(SPEECH_STORE, JSON.stringify({text:$('spText').value, wpm:spWpm})); }catch(e){} }
+  if(sp){ if(typeof sp.text === 'string') $('spText').value = sp.text; if(sp.wpm >= 60 && sp.wpm <= 300) spWpm = sp.wpm;
+    if(SP_LANGS.some(l => l[0] === sp.lang)) spLang = sp.lang; } }catch(e){}
+function saveSpeech(){ try{ localStorage.setItem(SPEECH_STORE, JSON.stringify({text:$('spText').value, wpm:spWpm, lang:spLang})); }catch(e){} }
+const SP_HINT = {en:'Type what the character says…', es:'Escribe lo que dice el personaje…'};
+$('spLang').addEventListener('change', () => { spLang = $('spLang').value; saveSpeech(); syncSpeechUI(); });
 function speechEstimate(){
   const text = $('spText').value.trim();
   if(!text || !S){ $('spEst').textContent = ''; return; }
-  const sp = HC.speech(text, {fps:S.fps, wpm:spWpm});
+  const sp = HC.speech(text, {fps:S.fps, wpm:spWpm, lang:spLang});
   $('spEst').textContent = sp.keys.length ? `≈ ${sp.seconds.toFixed(1)} s · ${sp.frames} fr` : '';
 }
-function syncSpeechUI(){ $('spWpm').value = spWpm; $('spWpmN').value = spWpm; speechEstimate(); }
+function syncSpeechUI(){
+  $('spWpm').value = spWpm; $('spWpmN').value = spWpm; $('spLang').value = spLang;
+  $('spText').lang = spLang; $('spText').placeholder = SP_HINT[spLang] || SP_HINT.en;   /* the browser's spell checker follows the language */
+  speechEstimate();
+}
 $('spText').addEventListener('input', () => { saveSpeech(); speechEstimate(); });
 $('spWpm').addEventListener('input', () => { spWpm = +$('spWpm').value; $('spWpmN').value = spWpm; saveSpeech(); speechEstimate(); });
 $('spWpmN').addEventListener('change', () => {
@@ -2152,7 +2307,7 @@ function createSpeech(){
   pause();
   /* pauses rest on the character's own expression at the playhead, or on Rest if it is already a lip-sync shape */
   const before = poseAt(frame).mouth, restMouth = LIP_MOUTHS.includes(before) ? 'rest' : before;
-  const sp = HC.speech(text, {fps:S.fps, wpm:spWpm, restMouth});
+  const sp = HC.speech(text, {fps:S.fps, wpm:spWpm, restMouth, lang:spLang});
   if(!sp.keys.length){ flash('There are no words to say in that text.'); return; }
   pushUndo();
   switchOn('mouth');
