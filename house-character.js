@@ -13,6 +13,7 @@
      HouseCharacter.speech(text, opts)    → lip-sync mouth keys for a line of text (see the speech section)
      HouseCharacter.EASES                 → [id, label, curve] for each easing (linear, sine, quad … bounce)
      HouseCharacter.ease(s, out, in)      → s (0–1) eased: out shapes the departure, in the arrival
+     HouseCharacter.jointDelta(j, a, b)   → degrees joint j turns from a to b, the natural way (see below)
 
    Angles are degrees, clockwise on screen, relative to the parent segment.
    0 = limb straight / torso and head upright. L and R are the character's own.
@@ -1595,6 +1596,26 @@ function ease(s, out, inn){   /* s from 0 to 1 → eased 0 to 1 */
   return s < 0.5 ? a(2*s) / 2 : 1 - b(2 - 2*s) / 2;
 }
 
+/* ── joint interpolation ── */
+const wrap180=v=>((v+180)%360+360)%360-180;
+/* Which way a joint turns from a to b. Angles are kept between −180° and 180°, with 0 the resting
+   position (arm hanging, limb straight), and the short way round is not always the natural one: taking it
+   for each joint separately can send a shoulder over the head while the elbow folds back through the
+   upper arm, and the whole arm spins round. So:
+     elbows, knees, wrists and ankles never pass ±180° (that would fold the limb back on itself): they
+       always turn through their resting position;
+     shoulders and hips go the short way across ±180° (the arm straight up, the leg straight out) only for a
+       small move, up to 90°; a bigger one goes round through the resting position, as a person would;
+     the body tilt (root) takes the short way, so a fall or a spin stays what it was;
+     the rest (torso, pelvis, neck) never get near ±180°, so either way is the same. */
+function jointDelta(j, a, b){   /* → how many degrees joint j turns going from angle a to angle b */
+  a = wrap180(a); b = wrap180(b);   /* a may come from the middle of a move */
+  const raw = b - a, short = wrap180(raw);
+  if(j === 'root') return short;
+  if(/^(elbow|knee|wrist|ankle)/.test(j) || Math.abs(raw) <= 180) return raw;
+  return Math.abs(short) <= 90 ? short : raw;   /* shoulders and hips */
+}
+
 /* ── data ──────────────────────────────────────────────────────────────── */
 const COLOUR_KEYS=['mascaraColor','blushColor','lipstickColor','propColor','packColor','heldLeftColor','heldRightColor','eyewearColor','gloveColor','upperColor2','lowerColor2','upperColor','lowerColor','footwearColor','headwearColor','sockColor','tieColor','scarfColor'];
 function wrapDeg(v){v=Math.round(Number(v)||0);v=((v+180)%360+360)%360-180;return v===-180?180:v;}
@@ -1948,6 +1969,6 @@ const speech=(()=>{
 })();
 
 return {scarfColours,SCHEMA,SKIN,EYES,HAIR,HAIR_STYLES,FACIAL,HEIGHTS,WEIGHTS,HEADS,JOINTS,POSES,ITEMS,UPPER,LOWER,FOOT,OUTFITS,HEADWEAR,EYEWEAR,ACCESSORIES,BROWS,EYE_SHAPES,MOUTHS,EMOTIONS,NEUTRAL_FACE,EMOTION_POSES,GLOVE_COL,PACK_COL,SCARF_COL,MASCARA_COL,BLUSH_COL,LIPSTICK_COL,PROPS,GRIPS,ITEM_CATS,PALETTE,PATTERNS,colour2Default,SOCK_COL,TIE_COL,colourName,STAGE,
-        defaults,normalize,render,pivots,applyPose,mirror,describe,speech,EASES,ease,easeId};
+        defaults,normalize,render,pivots,applyPose,mirror,describe,speech,EASES,ease,easeId,jointDelta};
 })();
 window.HouseCharacter = HouseCharacter;

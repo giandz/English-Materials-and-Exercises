@@ -548,7 +548,10 @@ button[aria-pressed="true"]{ background:var(--color-background-info); color:var(
    start follows A.easeOut and whose end follows B.easeIn:
      linear  handle at 1/3 or 2/3 of the way (straight line when both are linear)
      cubic   flat handle: the motion starts (or arrives) slowly
-   Joint angles take the short way round. Every other field holds until the next keyframe.
+   Joint angles turn the natural way (HouseCharacter.jointDelta): elbows, knees, wrists and ankles never
+   bend back through ±180°; shoulders and hips cross ±180° only for moves up to 90°, otherwise they go
+   round through their resting position; the body tilt takes the short way. Every other field holds
+   until the next keyframe.
 
    Switched-off settings (kept for undo and the autosave, never in a saved file):
      track.off = 'dope' | 'graph'   a timeline taken off the dope sheet (the setting then follows Main)
@@ -716,7 +719,7 @@ function trackValue(t, f){
   const A = K[i], B = K[i+1];
   if(f === A.frame || !isNum(t.param)) return cloneV(A.value);
   const e = ease((f - A.frame) / (B.frame - A.frame), A.easeOut, B.easeIn);
-  return A.value + (isJoint(t.param) ? wrap(B.value - A.value) : B.value - A.value) * e;
+  return isJoint(t.param) ? wrap(A.value) + HC.jointDelta(t.param, A.value, B.value) * e : A.value + (B.value - A.value) * e;
 }
 function poseAt(f){
   const p = mainPoseAt(f);
@@ -733,7 +736,7 @@ function mainPoseAt(f){
   if(f === A.frame) return clonePose(A.pose);
   const e = ease((f - A.frame) / (B.frame - A.frame), A.easeOut, B.easeIn);
   const p = clonePose(A.pose);   /* face and head hold */
-  for(const j of JOINT_IDS) p.joints[j] = A.pose.joints[j] + wrap(B.pose.joints[j] - A.pose.joints[j]) * e;
+  for(const j of JOINT_IDS) p.joints[j] = wrap(A.pose.joints[j]) + HC.jointDelta(j, A.pose.joints[j], B.pose.joints[j]) * e;
   for(const [t] of TURNS) p[t] = A.pose[t] + (B.pose[t] - A.pose[t]) * e;
   return p;
 }
@@ -1478,10 +1481,11 @@ function addSeries(p, active){
 /* the keyframes a setting is drawn from: its own timeline, or Main */
 const gKeysP = p => { const t = trackOf(p); return t ? t.keys : S.keys; };
 const gRawP = (p, k) => trackOf(p) ? k.value : getP(k.pose, p);
-/* values made continuous: an angle that goes 170 → −170 is plotted as 170 → 190, the way it actually turns */
+/* values made continuous, the way the joint actually turns (HouseCharacter.jointDelta): a shoulder going
+   170 → −170 is plotted as 170 → 190 (over the top), an elbow going 150 → −150 as 150 → −150 (through straight) */
 function gValuesP(p){
   const K = gKeysP(p), u = [];
-  K.forEach((k, i) => { const r = gRawP(p, k); u.push(i && isJoint(p) ? u[i-1] + wrap(r - gRawP(p, K[i-1])) : r); });
+  K.forEach((k, i) => { const r = gRawP(p, k); u.push(i && isJoint(p) ? u[i-1] + HC.jointDelta(p, gRawP(p, K[i-1]), r) : r); });
   return u;
 }
 function gValueAtP(p, f){
