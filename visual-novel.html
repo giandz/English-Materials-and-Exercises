@@ -27,7 +27,7 @@
 <body>
 <div class="vn-page">
   <h1>Visual Novel</h1>
-  <p class="subtitle">At the café: Sam and Ana meet for the first time, and then their friends arrive. Click the picture, press Space or 🔽 to go on.</p>
+  <p class="subtitle">At the café: Sam and Ana meet for the first time, their friends arrive, and then it's your turn to order from Rosa. Click the picture, press Space or 🔽 to go on.</p>
 
   <div id="vn"></div>
 
@@ -37,7 +37,8 @@
       <p class="note">The scene is the JSON in this page’s <code>#vnScript</code>: a backdrop, a cast of house characters (as saved by the poser) and a list of lines. Each line names who speaks and what they say, and can also set where they stand (<code>left</code>, <code>center</code>, <code>right</code>), the shot (<code>full</code>, <code>medium</code>, <code>closeup</code>), a pose (any pose preset, including the emotion ones such as <code>em_joy</code>), a face (<code>emotion</code>) or other details (<code>look</code>). <code>stage</code> brings other characters in, moves them, or takes them away with <code>null</code>. What a line sets stays until a later line changes it.</p>
       <p class="note">A character can change pose or face in the middle of a line: put a cue in the text where it should happen, such as <code>"Music? {pose:em_surprise} Wow! {emotion:joy} I love music."</code> A cue is <code>{pose:…}</code>, <code>{emotion:…}</code> or both, <code>{pose:em_joy emotion:sadness}</code>. It is not shown or said; it happens when the text reaches it, and what it sets stays.</p>
       <p class="note">Pose changes are eased with the keyframe editor’s easings. <code>"easing"</code> (an easing id such as <code>quad</code>, <code>sine</code>, <code>back</code>, <code>elastic</code> or <code>bounce</code>, or <code>{"out":…, "in":…}</code> for the two ends) and <code>"moveTime"</code> (seconds) set them for the scene, and any line can set its own for the moves it starts.</p>
-      <p class="note">Keys: <span class="kbd">Space</span> / <span class="kbd">Enter</span> / <span class="kbd">→</span> next (or finish the line), <span class="kbd">←</span> back, <span class="kbd">Home</span> start again.</p>
+      <p class="note">Questions branch the conversation. Give a line an <code>"id"</code> so others can <code>"goto"</code> it, and end the scene with <code>"end": true</code>. <code>"choices"</code> shows buttons, each with its <code>"goto"</code>. <code>"input"</code> asks for a typed answer and compares it with each branch’s <code>"rubric"</code> (one answer or a list): with <code>"check": "match"</code> the answer must be one of them (ignoring case, extra spaces and end punctuation); with <code>"check": "closeness"</code> each branch scores how close the answer is (the gap fill’s Damerau-Levenshtein accuracy, 0–100), and the closest branch that reaches its <code>"min"</code> wins, so the same rubric can lead to a “perfect” branch at 95 and a “nearly” branch at 65. <code>"else"</code> is where an answer that fits no branch goes. <code>"save": "name"</code> keeps the answer for later lines as <code>{$name}</code>.</p>
+      <p class="note">Keys: <span class="kbd">Space</span> / <span class="kbd">Enter</span> / <span class="kbd">→</span> next (or finish the line), <span class="kbd">←</span> back, <span class="kbd">Home</span> start again, <span class="kbd">1</span>–<span class="kbd">9</span> pick a choice.</p>
     </div>
   </details>
 
@@ -504,6 +505,248 @@
    "pose": "waving",
    "emotion": "joy",
    "say": "See you next Saturday, everyone!"
+  },
+  {
+   "who": "rosa",
+   "at": "center",
+   "shot": "medium",
+   "pose": "waving",
+   "emotion": "surprise",
+   "stage": {
+    "sam": null,
+    "ana": null,
+    "mia": null,
+    "ken": null
+   },
+   "say": "Oh! Hello there! {pose:em_joy} I didn't see you. Welcome to my café!"
+  },
+  {
+   "id": "askName",
+   "who": "rosa",
+   "pose": "em_trust",
+   "say": "I'm Rosa. What's your name?",
+   "input": {
+    "placeholder": "Type your name",
+    "label": "Your name"
+   },
+   "save": "name"
+  },
+  {
+   "who": "rosa",
+   "shot": "closeup",
+   "pose": "em_joy",
+   "say": "Nice to meet you, {$name}!"
+  },
+  {
+   "id": "askFirst",
+   "who": "rosa",
+   "pose": "em_interest",
+   "say": "Is this your first time here? Please answer yes or no.",
+   "input": {
+    "check": "match",
+    "placeholder": "Yes, it is. / No, it isn't.",
+    "branches": [
+     {
+      "rubric": [
+       "yes",
+       "yes, it is",
+       "yes it is",
+       "yes, it's my first time"
+      ],
+      "goto": "firstYes"
+     },
+     {
+      "rubric": [
+       "no",
+       "no, it isn't",
+       "no it isn't",
+       "no, it is not",
+       "no it is not"
+      ],
+      "goto": "firstNo"
+     }
+    ],
+    "else": "firstAgain"
+   }
+  },
+  {
+   "id": "firstAgain",
+   "who": "rosa",
+   "pose": "em_distraction",
+   "say": "Sorry? {emotion:interest} Just yes or no, please.",
+   "goto": "askFirst"
+  },
+  {
+   "id": "firstYes",
+   "who": "rosa",
+   "pose": "em_ecstasy",
+   "say": "Your first time! {pose:em_trust} I hope you like it here.",
+   "goto": "order"
+  },
+  {
+   "id": "firstNo",
+   "who": "rosa",
+   "pose": "em_joy",
+   "say": "Welcome back! It's nice to see you again.",
+   "goto": "order"
+  },
+  {
+   "id": "order",
+   "who": "rosa",
+   "shot": "medium",
+   "pose": "em_anticipation",
+   "say": "What would you like to drink? We have coffee, tea and orange juice.",
+   "input": {
+    "check": "closeness",
+    "placeholder": "A coffee, please.",
+    "min": 65,
+    "branches": [
+     {
+      "rubric": [
+       "coffee",
+       "a coffee",
+       "coffee, please",
+       "a coffee, please",
+       "I'd like a coffee",
+       "I'd like a coffee, please",
+       "a coffee with milk, please",
+       "can I have a coffee, please?"
+      ],
+      "min": 95,
+      "goto": "coffeePerfect"
+     },
+     {
+      "rubric": [
+       "coffee",
+       "a coffee",
+       "coffee, please",
+       "a coffee, please",
+       "I'd like a coffee",
+       "I'd like a coffee, please",
+       "a coffee with milk, please",
+       "can I have a coffee, please?"
+      ],
+      "goto": "coffee"
+     },
+     {
+      "rubric": [
+       "tea",
+       "a tea",
+       "tea, please",
+       "a cup of tea",
+       "a cup of tea, please",
+       "I'd like a cup of tea, please",
+       "a tea with lemon, please"
+      ],
+      "goto": "tea"
+     },
+     {
+      "rubric": [
+       "orange juice",
+       "an orange juice",
+       "orange juice, please",
+       "an orange juice, please",
+       "I'd like an orange juice, please"
+      ],
+      "goto": "juice"
+     }
+    ],
+    "else": "orderAgain"
+   }
+  },
+  {
+   "id": "orderAgain",
+   "who": "rosa",
+   "pose": "em_pensiveness",
+   "say": "Hmm, sorry. {pose:em_trust} I don't understand. Coffee, tea or orange juice?",
+   "goto": "order"
+  },
+  {
+   "id": "coffeePerfect",
+   "who": "rosa",
+   "pose": "em_admiration",
+   "say": "A coffee. {pose:em_joy} Your English is perfect, {$name}!",
+   "goto": "cake"
+  },
+  {
+   "id": "coffee",
+   "who": "rosa",
+   "pose": "em_acceptance",
+   "say": "A coffee? {pose:em_joy} Coming right up!",
+   "goto": "cake"
+  },
+  {
+   "id": "tea",
+   "who": "rosa",
+   "pose": "em_joy",
+   "say": "A cup of tea. Good choice!",
+   "goto": "cake"
+  },
+  {
+   "id": "juice",
+   "who": "rosa",
+   "pose": "em_trust",
+   "say": "An orange juice. Very healthy!",
+   "goto": "cake"
+  },
+  {
+   "id": "cake",
+   "who": "rosa",
+   "pose": "em_interest",
+   "say": "Would you like a piece of our chocolate cake too?",
+   "choices": [
+    {
+     "text": "Yes, please!",
+     "goto": "cakeYes"
+    },
+    {
+     "text": "No, thank you.",
+     "goto": "cakeNo"
+    },
+    {
+     "text": "How much is it?",
+     "goto": "cakePrice"
+    }
+   ]
+  },
+  {
+   "id": "cakePrice",
+   "who": "rosa",
+   "pose": "em_acceptance",
+   "say": "It's three dollars. {pose:em_anticipation} So, would you like a piece?",
+   "choices": [
+    {
+     "text": "Yes, please!",
+     "goto": "cakeYes"
+    },
+    {
+     "text": "No, thank you.",
+     "goto": "cakeNo"
+    }
+   ]
+  },
+  {
+   "id": "cakeYes",
+   "who": "rosa",
+   "pose": "em_ecstasy",
+   "say": "Great! It's the best cake in the city.",
+   "goto": "bye"
+  },
+  {
+   "id": "cakeNo",
+   "who": "rosa",
+   "pose": "em_serenity",
+   "say": "OK. Maybe next time!",
+   "goto": "bye"
+  },
+  {
+   "id": "bye",
+   "who": "rosa",
+   "shot": "closeup",
+   "pose": "waving",
+   "emotion": "joy",
+   "say": "Enjoy your drink, {$name}. See you soon!",
+   "end": true
   }
  ]
 }

@@ -1,11 +1,13 @@
 /* ══════════════════════════════════════════════════════════════════════════
-   HouseVN — visual-novel scenes acted by house characters. One scene, a list of
-   lines; no choices or scene jumps yet. Needs house-character.js loaded first.
+   HouseVN — visual-novel scenes acted by house characters: one scene, a list of lines, with
+   questions that branch the conversation. Needs house-character.js loaded first, and house.js
+   (HouseGapFill) for answers checked by closeness.
 
      const vn = HouseVN.create(hostElement, script);
      vn.next()      advance (or, while a line is being said, finish it at once)
-     vn.back()      the line before        vn.restart()   the first line
-     vn.go(i)       line i                 vn.index       the line shown now
+     vn.back()      the line shown before this one (the way you came, through any branches)
+     vn.restart()   the first line         vn.go(label | i)   jump to a line
+     vn.index       the line shown now     vn.vars            answers saved so far
 
    script = {
      background: 'classroom' | 'cafe' | 'park'   a built-in backdrop, or any CSS background value
@@ -19,6 +21,30 @@
                 look: { head:'right', … },       any other character fields
                 stage: { otherId: { at, shot, pose, emotion, look } | null } } ] }
                                                   other characters entering, moving or (null) leaving
+
+   Branching. Lines run in order unless one says otherwise:
+     id: 'order'                          a label other lines can jump to
+     goto: 'order'                        after this line, go there (a label or a line number)
+     end: true                            the scene ends here (so does the last line)
+   A question is asked by the line that carries it, once the line has been said:
+     choices: [ { text:'Yes, please!', goto:'cakeYes' }, … ]
+                                          buttons (keys 1–9); a choice without goto goes to the next line
+     input: { placeholder:'Type your answer…',
+              check: 'match' | 'closeness',
+              branches: [ { rubric:'tea' | ['tea','a cup of tea', …], goto:'tea', min:75 }, … ],
+              else: 'sorry',              where to go when no branch fits (without it: try again;
+                                          with no branches at all, any answer goes to the next line)
+              strict: false, min: 75 }    see below
+     save: 'name'                         keep the answer (the typed text, or the choice's text) as {$name},
+                                          to be used in any later line: say:"Nice to meet you, {$name}!"
+   check 'match': a branch is taken when the answer is one of its rubrics. Case, extra spaces and the
+     punctuation at the ends (. ! ? ¡ ¿ …) are ignored; strict:true compares exactly as typed.
+   check 'closeness': each branch's score is how close the answer is to its nearest rubric, from 0 to 100,
+     using HouseGapFill's Damerau-Levenshtein distance (100 − 100 × distance ÷ longer length, as in the
+     gap fill). The branches whose score reaches their min (the input's min, 75 by default) qualify, and
+     the closest wins; on a tie, the one with the higher min. So the same rubric can lead to different
+     branches by closeness:  { rubric:'a coffee, please', min:95, goto:'perfect' },
+                             { rubric:'a coffee, please', min:70, goto:'nearly' }
 
    Cues inside a line change the speaker's pose or face at that point of the line, as it is said:
      say: "Music? {pose:em_surprise} Wow! {emotion:joy} I love music."
@@ -74,8 +100,27 @@ const CSS = `
   cursor:pointer; padding:2px; opacity:.35; transition:opacity .2s; }
 .vn-next.ready{ opacity:1; animation:vn-bob 1s ease-in-out infinite; }
 .vn-next.end{ opacity:.25; animation:none; cursor:default; }
+.vn-next.asking{ opacity:0; pointer-events:none; }
+/* questions: choice buttons or an answer box, above the text box */
+.vn-ask{ position:absolute; z-index:120; left:50%; transform:translateX(-50%); bottom:calc(var(--vn-box) + 2.5%); width:min(72%, 600px);
+  display:flex; flex-direction:column; gap:.5em; cursor:default; animation:vn-in .25s ease; font-size:clamp(.85rem, 2.1vw, 1.1rem); }
+.vn-choice{ display:flex; align-items:baseline; gap:.6em; text-align:left; font:inherit; padding:.55em .9em; border-radius:12px; cursor:pointer;
+  border:2px solid var(--text-accent, #185fa5); color:var(--text-primary, #1a1a1a);
+  background:color-mix(in srgb, var(--surface-2, #fff) 96%, transparent); box-shadow:0 4px 12px rgba(0,0,0,.18); }
+.vn-choice:hover, .vn-choice:focus-visible{ background:var(--color-background-info, #e6f1fb); outline:none; }
+.vn-key{ font-family:var(--font-mono, monospace); font-weight:700; font-size:.85em; color:var(--text-accent, #185fa5); }
+.vn-input{ flex-direction:row; flex-wrap:wrap; align-items:center; padding:.6em; border-radius:14px; border:2px solid var(--text-accent, #185fa5);
+  background:color-mix(in srgb, var(--surface-2, #fff) 96%, transparent); box-shadow:0 4px 12px rgba(0,0,0,.18); }
+.vn-input input{ flex:1 1 10em; min-width:0; font:inherit; padding:.4em .65em; border:1px solid var(--color-border-primary, #ccc); border-radius:8px;
+  background:var(--color-background-primary, #fff); color:var(--text-primary, #1a1a1a); user-select:text; -webkit-user-select:text; }
+.vn-input button{ font:inherit; font-weight:600; padding:.4em .9em; border-radius:8px; cursor:pointer; }
+.vn-msg{ flex:1 1 100%; font-size:.8em; color:var(--bad, #b0392f); min-height:1.2em; padding-left:.2em; }
+.vn-msg:empty{ min-height:0; }
+.vn-input.shake{ animation:vn-shake .3s; }
+@keyframes vn-in{ from{ opacity:0; transform:translate(-50%, 8px); } to{ opacity:1; transform:translate(-50%, 0); } }
+@keyframes vn-shake{ 0%,100%{ transform:translateX(-50%); } 25%{ transform:translateX(calc(-50% - 6px)); } 75%{ transform:translateX(calc(-50% + 6px)); } }
 @keyframes vn-bob{ 0%,100%{ transform:translateY(0); } 50%{ transform:translateY(4px); } }
-@media (prefers-reduced-motion: reduce){ .vn-next.ready{ animation:none; } .vn-ch{ transition:none; } }
+@media (prefers-reduced-motion: reduce){ .vn-next.ready, .vn-ask, .vn-input.shake{ animation:none; } .vn-ch{ transition:none; } }
 .vn-bar{ display:flex; align-items:center; justify-content:center; gap:8px; margin-top:10px; }
 .vn-bar button{ display:inline-flex; flex-direction:column; align-items:center; gap:1px; min-width:4.2rem; padding:5px 8px 4px; line-height:1; }
 .vn-bar .ic{ font-size:1.3rem; }
@@ -152,10 +197,10 @@ function create(host, script){
   const bg = script.background || 'classroom';
   if(BG[bg]) $('.vn-bg').innerHTML = BG[bg]; else $('.vn-bg').style.background = bg;
 
-  /* ── the scene at line i: replay the stage directions from the start ── */
   const parsed = lines.map(L => parseCues(L.say));
-  /* the scene at the start of line i: the lines before it, with all their cues, then line i's own directions */
-  function sceneAt(i){
+  /* the scene at the start of the last line of path (the lines shown so far, in order): the lines before it,
+     with all their cues, then its own directions. With branches, only the lines actually shown count. */
+  function sceneAt(path){
     const on = new Map();
     const apply = (id, d) => {
       if(!cast[id]) return;
@@ -167,12 +212,12 @@ function create(host, script){
       if(d.look) c.data = HC.normalize({...c.data, ...d.look, joints:{...c.data.joints, ...(d.look.joints || {})}});
       on.delete(id); on.set(id, c);   /* the last one changed is drawn in front */
     };
-    for(let j = 0; j <= i && j < lines.length; j++){
+    path.forEach((j, n) => {
       const L = lines[j];
       for(const [id, d] of Object.entries(L.stage || {})){ if(d === null) on.delete(id); else apply(id, d); }
       apply(L.who, L);
-      if(j < i) for(const cue of parsed[j].cues) apply(L.who, cue);
-    }
+      if(n < path.length - 1) for(const cue of parsed[j].cues) apply(L.who, cue);
+    });
     return on;
   }
   function applyCue(cue){   /* during a line: the speaker's pose or face changes on screen */
@@ -303,20 +348,41 @@ function create(host, script){
     talk.done = true; cancelAnimationFrame(raf);
     render(talk.text, talk.text.length); runCues(Infinity); setMouth(talk.rest);
     syncButtons();
+    if(isQuestion(index)) showAsk();
   }
-  function go(i){
-    if(!lines.length) return;
-    i = Math.max(0, Math.min(lines.length - 1, i));
-    cancelAnimationFrame(raf);
+
+  /* ── labels, jumps and the way back ── */
+  const labels = {};
+  lines.forEach((L, i) => { if(L.id != null && !(String(L.id) in labels)) labels[String(L.id)] = i; });
+  const branching = lines.some(L => L.goto != null || L.choices || L.input || L.end);
+  /* a goto value → a line index; -1 when it leads nowhere (an unknown label ends the scene) */
+  const target = g => typeof g === 'number' ? (g >= 0 && g < lines.length ? g : -1) : String(g) in labels ? labels[String(g)] : -1;
+  const nextOf = i => lines[i].goto != null ? target(lines[i].goto) : i + 1 < lines.length ? i + 1 : -1;
+  const isQuestion = i => { const L = lines[i]; return !!((Array.isArray(L.choices) && L.choices.length) || (L.input && typeof L.input === 'object')); };
+  const isEnd = i => !isQuestion(i) && (!!lines[i].end || nextOf(i) < 0);
+  let history = [], vars = {}, ended = false;   /* ended: an answer led nowhere, so the scene is over */   /* history: [{i, vars}] — every line shown, and the answers saved before it */
+
+  /* {$name} in a line → the saved answer; cues after it move along with the text */
+  function fill(p){
+    const subs = [];
+    const text = p.text.replace(/\{\$([\w-]+)\}/g, (m, k, off) => { const v = String(vars[k] ?? '').trim(); subs.push([off, v.length - m.length]); return v; });
+    return {text, cues:p.cues.map(c => ({...c, at:c.at + subs.filter(([o]) => o < c.at).reduce((t, [, d]) => t + d, 0)}))};
+  }
+
+  function show(){   /* the last line of the history, with the scene as it stands there */
+    if(!history.length) return;
+    cancelAnimationFrame(raf); hideAsk(); ended = false;
+    const cur = history[history.length - 1], i = cur.i;
+    vars = {...cur.vars};
     const L = lines[i], who = L.who, cm = cast[who];
     motion = {ease:L.easing ? easingOf(L.easing) : SCENE_EASE, time:Number(L.moveTime) >= 0 && L.moveTime !== '' && L.moveTime != null ? Number(L.moveTime) : SCENE_TIME};
-    index = i; scene = sceneAt(i);
+    index = i; scene = sceneAt(history.map(h => h.i));
     for(const [id, s] of sprites) if(!scene.has(id)){ s.el.classList.add('out'); sprites.delete(id); setTimeout(() => s.el.remove(), 400); }
     for(const [id, c] of scene) drawSprite(id, c);
     layout(scene, who);
     nameEl.textContent = cm.name || who;
     root.style.setProperty('--vn-name', cm.color || '');
-    const {text, cues} = parsed[i], c = scene.get(who);
+    const {text, cues} = fill(parsed[i]), c = scene.get(who);
     const rest = LIP.includes(c.data.mouth) ? 'rest' : c.data.mouth;   /* pauses and the end fall back to their expression */
     /* pauses come back as REST and are drawn with whatever face the speaker has by then (cues can change it) */
     talk = {who, text, rest, cues, cue:0, shown:-1, done:false, t0:performance.now(),
@@ -326,35 +392,126 @@ function create(host, script){
     syncButtons();
     if(!talk.sp.keys.length) finish(); else raf = requestAnimationFrame(tick);
   }
-  function syncButtons(){
-    const last = index >= lines.length - 1, ready = talk && talk.done;
-    nextEl.classList.toggle('ready', !!ready && !last);
-    nextEl.classList.toggle('end', !!ready && last);
-    nextEl.textContent = ready && last ? '⏹️' : '🔽';
-    nextEl.title = ready && last ? 'The end of the scene' : 'Next (Space, Enter or a click)';
-    countEl.textContent = `${index + 1} / ${lines.length}`;
-    root.querySelector('[data-act="back"]').disabled = index <= 0;
-    root.querySelector('[data-act="restart"]').disabled = index <= 0;
-    root.querySelector('[data-act="next"]').disabled = !!ready && last;
+  function jump(i, newVars){
+    if(i < 0 || i >= lines.length) return;
+    history.push({i, vars:newVars || {...vars}});
+    show();
   }
-  const next = () => { if(talk && !talk.done) finish(); else if(index < lines.length - 1) go(index + 1); };
-  const back = () => go(index - 1);
-  const restart = () => go(0);
 
-  stage.addEventListener('click', e => { if(e.target.closest('button') && !e.target.closest('.vn-next')) return; next(); });
+  /* ── questions ── */
+  let askEl = null;
+  const norm = t => String(t ?? '').normalize('NFC').trim().replace(/\s+/g, ' ');
+  const loose = t => norm(t).toLowerCase().replace(/^[¡¿\s]+/u, '').replace(/[\s.!?¡¿…]+$/u, '');
+  /* how close an answer is to the nearest rubric, 0–100: the gap fill's own measure */
+  function closeness(answer, rubrics){
+    const GF = global.HouseGapFill;
+    if(GF && GF.bestAccuracy) return GF.bestAccuracy(answer, rubrics);
+    if(GF && GF.damerauLevenshtein) return Math.max(0, ...rubrics.map(r => { const m = Math.max(answer.length, r.length); return m ? (1 - GF.damerauLevenshtein(answer, r) / m) * 100 : 100; }));
+    console.warn('HouseVN: house.js (HouseGapFill) is not loaded, so answers are checked by exact match.');
+    return rubrics.includes(answer) ? 100 : 0;
+  }
+  /* the branch an answer leads to: {goto, score} or null */
+  function pickBranch(q, answer){
+    const B = (Array.isArray(q.branches) ? q.branches : []).map(b => ({...b, rubrics:[].concat(b.rubric ?? b.rubrics ?? []).map(String)}));
+    if(/^(closeness|close|damerau|dl|fuzzy|similar)/i.test(String(q.check || ''))){
+      const a = loose(answer);
+      let best = null;
+      for(const b of B){
+        const score = closeness(a, b.rubrics.map(loose)), min = Number(b.min ?? q.min ?? 75);
+        if(score >= min && (!best || score > best.score || (score === best.score && min > best.min))) best = {goto:b.goto, score, min};
+      }
+      return best;
+    }
+    const same = r => q.strict ? norm(answer) === norm(r) : loose(answer) === loose(r);
+    const b = B.find(b => b.rubrics.some(same));
+    return b ? {goto:b.goto, score:100} : null;
+  }
+  function answered(goto, value){
+    const L = lines[index], nv = {...vars};
+    if(L.save) nv[L.save] = norm(value);
+    const t = goto == null ? nextOf(index) : target(goto);
+    hideAsk(); stage.focus({preventScroll:true});
+    if(t < 0){ vars = nv; ended = true; syncButtons(); return; }   /* leads nowhere: the scene ends */
+    jump(t, nv);
+  }
+  function hideAsk(){ if(askEl){ askEl.remove(); askEl = null; } }
+  function showAsk(){
+    hideAsk();
+    const L = lines[index], esc = t => String(t).replace(/[&<>"]/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
+    if(Array.isArray(L.choices) && L.choices.length){
+      askEl = document.createElement('div'); askEl.className = 'vn-ask'; askEl.setAttribute('role', 'group'); askEl.setAttribute('aria-label', 'Choose an answer');
+      askEl.innerHTML = L.choices.map((c, k) => `<button type="button" class="vn-choice" data-k="${k}">${k < 9 ? `<span class="vn-key" aria-hidden="true">${k + 1}</span>` : ''}${esc(c.text ?? '')}</button>`).join('');
+      askEl.addEventListener('click', e => { const b = e.target.closest('.vn-choice'); if(!b) return; const c = L.choices[+b.dataset.k]; answered(c.goto, c.value ?? c.text); });
+      stage.appendChild(askEl);
+      askEl.querySelector('.vn-choice').focus({preventScroll:true});
+    } else {
+      const q = L.input;
+      askEl = document.createElement('form'); askEl.className = 'vn-ask vn-input'; askEl.setAttribute('autocomplete', 'off');
+      askEl.innerHTML = `<input type="text" spellcheck="false" autocapitalize="off" enterkeyhint="send" maxlength="200" aria-label="${esc(q.label || 'Your answer')}" placeholder="${esc(q.placeholder || 'Type your answer…')}">`
+        + `<button type="submit">${esc(q.button || 'Answer')} ⏎</button><div class="vn-msg" aria-live="polite"></div>`;
+      const inp = askEl.querySelector('input'), msg = askEl.querySelector('.vn-msg');
+      askEl.addEventListener('submit', e => {
+        e.preventDefault();
+        const value = inp.value;
+        if(!norm(value)){ msg.textContent = q.empty || 'Type an answer first.'; inp.focus(); return; }
+        const hit = pickBranch(q, value);
+        if(hit) return answered(hit.goto, value);
+        if(q.else != null) return answered(q.else, value);
+        if(!(Array.isArray(q.branches) && q.branches.length)) return answered(null, value);   /* no branches: any answer goes on */
+        msg.textContent = q.retry || 'Try again.';
+        askEl.classList.remove('shake'); void askEl.offsetWidth; askEl.classList.add('shake');
+        inp.select();
+      });
+      stage.appendChild(askEl);
+      inp.focus({preventScroll:true});
+    }
+    syncButtons();
+  }
+
+  function syncButtons(){
+    const ready = talk && talk.done, asking = !!ready && isQuestion(index) && !!askEl, end = ended || (!!ready && isEnd(index) && !asking);
+    nextEl.classList.toggle('ready', !!ready && !end && !asking);
+    nextEl.classList.toggle('end', end);
+    nextEl.classList.toggle('asking', asking);
+    nextEl.textContent = end ? '⏹️' : '🔽';
+    nextEl.title = end ? 'The end of the scene' : asking ? 'Answer the question to go on' : 'Next (Space, Enter or a click)';
+    countEl.textContent = branching ? `Line ${history.length}` : `${index + 1} / ${lines.length}`;
+    countEl.title = branching ? 'Lines shown so far, the way you came' : '';
+    root.querySelector('[data-act="back"]').disabled = history.length <= 1;
+    root.querySelector('[data-act="restart"]').disabled = history.length <= 1;
+    root.querySelector('[data-act="next"]').disabled = end || asking;
+  }
+  const next = () => {
+    if(talk && !talk.done) return finish();
+    if(ended) return;
+    if(askEl){ const f = askEl.querySelector('input, .vn-choice'); if(f) f.focus(); return; }   /* a question waits for its answer */
+    if(isQuestion(index)) return showAsk();
+    if(!isEnd(index)) jump(nextOf(index));
+  };
+  const back = () => { if(history.length > 1){ history.pop(); show(); } };
+  const restart = () => { if(!lines.length) return; history = [{i:0, vars:{}}]; show(); };
+  const go = g => jump(target(g));
+
+  stage.addEventListener('click', e => {
+    if(e.target.closest('.vn-ask')) return;
+    if(e.target.closest('button') && !e.target.closest('.vn-next')) return;
+    next();
+  });
   root.querySelector('.vn-bar').addEventListener('click', e => {
     const b = e.target.closest('button'); if(!b) return;
     ({next, back, restart})[b.dataset.act]();
   });
   root.addEventListener('keydown', e => {
     if(e.target.closest('input, textarea, select')) return;
+    if(askEl && /^[1-9]$/.test(e.key)){ const b = askEl.querySelectorAll('.vn-choice')[+e.key - 1]; if(b){ e.preventDefault(); b.click(); } return; }
+    if(e.target.closest('button') && (e.key === ' ' || e.key === 'Enter')) return;   /* a focused button does its own job */
     if(e.key === ' ' || e.key === 'Enter' || e.key === 'ArrowRight' || e.key === 'ArrowDown'){ e.preventDefault(); next(); }
     else if(e.key === 'ArrowLeft' || e.key === 'ArrowUp'){ e.preventDefault(); back(); }
     else if(e.key === 'Home'){ e.preventDefault(); restart(); }
   });
 
-  go(0);
-  return {next, back, restart, go, get index(){ return index; }, get length(){ return lines.length; }};
+  restart();
+  return {next, back, restart, go, get index(){ return index; }, get length(){ return lines.length; }, get vars(){ return {...vars}; }};
 }
 
 global.HouseVN = {create, BACKGROUNDS:Object.keys(BG)};
