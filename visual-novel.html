@@ -27,7 +27,7 @@
 <body>
 <div class="vn-page">
   <h1>Visual Novel</h1>
-  <p class="subtitle">At the café: Sam and Ana meet for the first time, their friends arrive, and then it's your turn to order from Rosa. Click the picture, press Space or 🔽 to go on.</p>
+  <p class="subtitle">At the café: Sam and Ana meet for the first time, their friends arrive, Ken remembers a math lesson, and then it's your turn to order from Rosa. Click the picture, press Space or 🔽 to go on.</p>
 
   <div id="vn"></div>
 
@@ -37,6 +37,7 @@
       <p class="note">The scene is the JSON in this page’s <code>#vnScript</code>: a backdrop, a cast of house characters (as saved by the poser) and a list of lines. Each line names who speaks and what they say, and can also set where they stand (<code>left</code>, <code>center</code>, <code>right</code>), the shot (<code>full</code>, <code>medium</code>, <code>closeup</code>), a pose (any pose preset, including the emotion ones such as <code>em_joy</code>), a face (<code>emotion</code>) or other details (<code>look</code>). <code>stage</code> brings other characters in, moves them, or takes them away with <code>null</code>. What a line sets stays until a later line changes it.</p>
       <p class="note">A character can change pose or face in the middle of a line: put a cue in the text where it should happen, such as <code>"Music? {pose:em_surprise} Wow! {emotion:joy} I love music."</code> A cue is <code>{pose:…}</code>, <code>{emotion:…}</code> or both, <code>{pose:em_joy emotion:sadness}</code>. It is not shown or said; it happens when the text reaches it, and what it sets stays.</p>
       <p class="note">Pose changes are eased with the keyframe editor’s easings. <code>"easing"</code> (an easing id such as <code>quad</code>, <code>sine</code>, <code>back</code>, <code>elastic</code> or <code>bounce</code>, or <code>{"out":…, "in":…}</code> for the two ends) and <code>"moveTime"</code> (seconds) set them for the scene, and any line can set its own for the moves it starts.</p>
+      <p class="note">Kinds of line: a line with no <code>"who"</code> is narration, in the box with no name. <code>"insert": true</code> shows the text as a caption over the backdrop (for a new place or time passing), and <code>"insert": "black"</code> on a black card. <code>"think": true</code> shows a character’s thoughts: their lips don’t move and everything else turns grey. <code>"shout": true</code> makes the text bold and shaky. <code>"past": true</code> turns the picture sepia for memories. <code>"background"</code> changes the backdrop from that line on; a character who left with <code>null</code> comes back where they were with <code>{}</code>.</p>
       <p class="note">Questions branch the conversation. Give a line an <code>"id"</code> so others can <code>"goto"</code> it, and end the scene with <code>"end": true</code>. <code>"choices"</code> shows buttons, each with its <code>"goto"</code>. <code>"input"</code> asks for a typed answer and compares it with each branch’s <code>"rubric"</code> (one answer or a list): with <code>"check": "match"</code> the answer must be one of them (ignoring case, extra spaces and end punctuation); with <code>"check": "closeness"</code> each branch scores how close the answer is (the gap fill’s Damerau-Levenshtein accuracy, 0–100), and the closest branch that reaches its <code>"min"</code> wins, so the same rubric can lead to a “perfect” branch at 95 and a “nearly” branch at 65. <code>"else"</code> is where an answer that fits no branch goes. <code>"save": "name"</code> keeps the answer for later lines as <code>{$name}</code>.</p>
       <p class="note">Keys: <span class="kbd">Space</span> / <span class="kbd">Enter</span> / <span class="kbd">→</span> next (or finish the line), <span class="kbd">←</span> back, <span class="kbd">Home</span> start again, <span class="kbd">1</span>–<span class="kbd">9</span> pick a choice.</p>
     </div>
@@ -54,6 +55,10 @@
 <script type="application/json" id="vnScript">
 {
  "background": "cafe",
+ "narration": {
+  "wpm": 160,
+  "lang": "en"
+ },
  "easing": "quad",
  "moveTime": 0.45,
  "cast": {
@@ -191,9 +196,57 @@
     "weight": 4,
     "mouth": "smile"
    }
+  },
+  "youngKen": {
+   "name": "Ken",
+   "color": "#663399",
+   "lang": "en",
+   "wpm": 150,
+   "character": {
+    "bodyType": "male",
+    "skin": 2,
+    "eyeColor": 14,
+    "hairStyle": "short",
+    "hairColor": "1-0",
+    "height": 2,
+    "weight": 2,
+    "upperGarment": "polo",
+    "upperColor": "#CC0000",
+    "lowerGarment": "shorts",
+    "lowerColor": "#333366",
+    "footwear": "sneakers",
+    "mouth": "smile"
+   }
+  },
+  "park": {
+   "name": "Ms. Park",
+   "color": "#336633",
+   "lang": "en",
+   "wpm": 140,
+   "character": {
+    "bodyType": "female",
+    "skin": 2,
+    "eyeColor": 15,
+    "hairStyle": "bob",
+    "hairColor": "1-0",
+    "upperGarment": "jacket",
+    "upperColor": "#336633",
+    "lowerGarment": "skirt",
+    "lowerColor": "#333333",
+    "footwear": "heels",
+    "eyewear": "glasses",
+    "accessories": [
+     "necklace"
+    ],
+    "mouth": "smile"
+   }
   }
  },
  "lines": [
+  {
+   "insert": true,
+   "say": "Saturday morning.\nRosa's Café, downtown."
+  },
   {
    "who": "ana",
    "at": "right",
@@ -208,6 +261,12 @@
    "shot": "medium",
    "pose": "em_surprise",
    "say": "Yes, I am. {pose:em_joy} Hello! You must be Ana."
+  },
+  {
+   "who": "ana",
+   "think": true,
+   "pose": "em_apprehension",
+   "say": "He looks friendly. {pose:em_serenity} OK, Ana… speak slowly and smile!"
   },
   {
    "who": "ana",
@@ -262,6 +321,12 @@
    "say": "Coming right up!"
   },
   {
+   "say": "Leo goes back to the kitchen. Sam and Ana talk about their lives in the city.",
+   "stage": {
+    "leo": null
+   }
+  },
+  {
    "who": "sam",
    "shot": "medium",
    "pose": "standing",
@@ -294,7 +359,8 @@
    "shot": "medium",
    "pose": "waving",
    "emotion": "joy",
-   "say": "Hi, Ana! {pose:em_apprehension} Sorry I'm late. {pose:em_annoyance} The bus was very slow."
+   "say": "Hi, Ana! {pose:em_apprehension} Sorry I'm late. {pose:em_annoyance} The bus was very slow.",
+   "shout": true
   },
   {
    "who": "ana",
@@ -330,6 +396,12 @@
    "who": "sam",
    "pose": "em_joy",
    "say": "Really? That's great. I play the piano."
+  },
+  {
+   "who": "sam",
+   "think": true,
+   "pose": "em_interest",
+   "say": "She plays the guitar and I play the piano… {pose:em_joy} We could play music together!"
   },
   {
    "who": "ken",
@@ -378,6 +450,77 @@
    "moveTime": 0.6
   },
   {
+   "who": "ken",
+   "pose": "em_acceptance",
+   "say": "It's true now. {pose:em_sadness} But when I was a boy, I hated math!"
+  },
+  {
+   "insert": "black",
+   "past": true,
+   "say": "Twenty years earlier…",
+   "background": "classroom",
+   "stage": {
+    "sam": null,
+    "ana": null,
+    "mia": null,
+    "ken": null
+   }
+  },
+  {
+   "who": "park",
+   "at": "right",
+   "shot": "medium",
+   "past": true,
+   "pose": "em_trust",
+   "say": "OK, Ken. What's two plus two?"
+  },
+  {
+   "who": "youngKen",
+   "at": "left",
+   "shot": "medium",
+   "past": true,
+   "pose": "em_apprehension",
+   "say": "Two plus two is… five?"
+  },
+  {
+   "who": "youngKen",
+   "past": true,
+   "think": true,
+   "pose": "em_fear",
+   "say": "Oh no. I don't understand numbers. I'm not good at math!"
+  },
+  {
+   "who": "park",
+   "past": true,
+   "pose": "standing",
+   "emotion": "joy",
+   "look": {
+    "held": {
+     "left": "book",
+     "right": "book"
+    }
+   },
+   "say": "Don't worry, Ken. Look: two books… and two more books. How many books?"
+  },
+  {
+   "who": "youngKen",
+   "past": true,
+   "pose": "em_surprise",
+   "say": "One, two, three, four… {pose:em_ecstasy} Four! I understand now!"
+  },
+  {
+   "say": "Back at the café, everyone laughs.",
+   "background": "cafe",
+   "stage": {
+    "youngKen": null,
+    "park": null,
+    "sam": {},
+    "ana": {},
+    "mia": {},
+    "ken": {}
+   }
+  },
+  {
    "who": "leo",
    "at": "center",
    "shot": "full",
@@ -418,7 +561,8 @@
    "shot": "full",
    "pose": "hips",
    "emotion": "annoyance",
-   "say": "Leo! {pose:em_anger} The kitchen needs you!"
+   "say": "Leo! {pose:em_anger} The kitchen needs you!",
+   "shout": true
   },
   {
    "who": "leo",
@@ -505,6 +649,16 @@
    "pose": "waving",
    "emotion": "joy",
    "say": "See you next Saturday, everyone!"
+  },
+  {
+   "insert": true,
+   "say": "Later that morning…\nThe friends say goodbye. Then Rosa sees a new customer: you!",
+   "stage": {
+    "sam": null,
+    "ana": null,
+    "mia": null,
+    "ken": null
+   }
   },
   {
    "who": "rosa",

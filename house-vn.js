@@ -46,6 +46,21 @@
      branches by closeness:  { rubric:'a coffee, please', min:95, goto:'perfect' },
                              { rubric:'a coffee, please', min:70, goto:'nearly' }
 
+   Kinds of line (any line can also carry stage directions, questions and jumps):
+     a line without who                   narration, in the text box with no name: "They sit down by the window."
+     insert: true                         a caption over the backdrop, characters hidden for the moment:
+                                          time passing or a new place ("Saturday morning. Rosa's café.")
+     insert: 'black'                      the same on a black card ("Twenty years earlier…")
+     think: true                          the speaker's thoughts: lips still, text in italics, 💭 by the name,
+                                          and everything but the thinker turns grey
+     shout: true                          the text is bold and shakes
+     past: true                           a memory: the picture turns sepia, with a darker edge
+   background: 'park'                     changes the backdrop from this line on (built-in or CSS), and like
+                                          the cast it is put back as it was when going back.
+   A character who leaves (stage: { id: null }) is remembered: bringing them back with stage: { id: {} }
+   puts them where they were, in the same shot, pose and face.
+   narration: { wpm:160, lang:'en' }      at script level: how fast narration and inserts appear
+
    Cues inside a line change the speaker's pose or face at that point of the line, as it is said:
      say: "Music? {pose:em_surprise} Wow! {emotion:joy} I love music."
    A cue is {pose:id}, {emotion:id} or both, {pose:em_joy emotion:sadness}. It is not shown or said, and
@@ -80,6 +95,7 @@ const CSS = `
 .vn-stage{ position:relative; width:100%; aspect-ratio:16/9; overflow:hidden; border-radius:var(--radius, 12px);
   border:1px solid var(--border, #ddd); background:#cfd8dc; cursor:pointer; touch-action:manipulation; }
 .vn-bg{ position:absolute; inset:0; }
+.vn-cast{ position:absolute; inset:0; }   /* the characters' frame (a filter on it, for the past or thoughts, makes it their containing block) */
 .vn-bg svg{ width:100%; height:100%; display:block; }
 /* every shot stands on the top edge of the text box (a little behind it) and reaches near the top of the picture:
    full = the whole figure, medium = from the waist up, closeup = head and shoulders */
@@ -100,9 +116,44 @@ const CSS = `
   cursor:pointer; padding:2px; opacity:.35; transition:opacity .2s; }
 .vn-next.ready{ opacity:1; animation:vn-bob 1s ease-in-out infinite; }
 .vn-next.end{ opacity:.25; animation:none; cursor:default; }
+/* kinds of line */
+.vn-text{ white-space:pre-line; }
+.vn-text .c.hid, .vn-insert-text .c.hid{ visibility:hidden; }
+.vn-box.narrate .vn-text{ font-style:italic; color:var(--text-secondary, #555); }
+.vn-box.think{ border-style:dashed; }
+.vn-box.think .vn-text{ font-style:italic; }
+.vn-box.shout .vn-text, .vn-insert.shout .vn-insert-text{ font-weight:800; }
+.vn-box.shout{ border-width:3px; }
+.vn-text .w, .vn-insert-text .w{ display:inline-block; }
+.vn-box.shout .w, .vn-insert.shout .w{ animation:vn-jitter .16s steps(2, jump-none) infinite; }
+@keyframes vn-jitter{ 0%{ transform:translate(0,0) rotate(0); } 25%{ transform:translate(1.5px,-1px) rotate(-1.5deg); }
+  50%{ transform:translate(-1px,1.5px) rotate(1deg); } 75%{ transform:translate(1px,1px) rotate(-.5deg); } 100%{ transform:translate(-1.5px,-1px) rotate(1.5deg); } }
+.vn-stage.shouting .vn-ch:not(.dim){ animation:vn-quake .35s ease-out; }
+@keyframes vn-quake{ 0%,100%{ transform:translateX(-50%); } 20%{ transform:translateX(calc(-50% - 5px)); } 40%{ transform:translateX(calc(-50% + 5px)); } 60%{ transform:translateX(calc(-50% - 3px)); } 80%{ transform:translateX(calc(-50% + 2px)); } }
+/* thinking: everything but the thinker turns grey */
+.vn-bg, .vn-cast{ transition:filter .4s ease, opacity .4s ease; }
+.vn-stage.think .vn-bg{ filter:grayscale(1) brightness(.92); }
+.vn-stage.think .vn-ch:not(.thinker){ filter:grayscale(1) brightness(.85); }
+/* the past: sepia, with a darker edge */
+.vn-stage.past .vn-bg, .vn-stage.past .vn-cast{ filter:sepia(.85) contrast(.95) brightness(1.03); }
+.vn-stage.past.think .vn-bg{ filter:grayscale(1) sepia(.85) brightness(.95); }
+.vn-stage::after{ content:''; position:absolute; inset:0; z-index:60; pointer-events:none; opacity:0; transition:opacity .4s ease;
+  background:radial-gradient(ellipse at center, transparent 50%, rgba(70,42,12,.5) 100%); }
+.vn-stage.past::after{ opacity:1; }
+.vn-stage.past .vn-box{ background:color-mix(in srgb, var(--surface-2, #fff) 78%, #d9b77e); border-color:#8b6b3d; }
+.vn-stage.past .vn-name{ filter:sepia(.8); }
+/* inserts: a caption over the backdrop (characters hidden), or on a black card */
+.vn-insert{ position:absolute; inset:0; z-index:130; display:flex; align-items:center; justify-content:center; padding:8%;
+  opacity:0; pointer-events:none; transition:opacity .4s ease; background:linear-gradient(rgba(0,0,0,.2), rgba(0,0,0,.55)); }
+.vn-insert-text{ max-width:80%; text-align:center; color:#fff; font-family:var(--font-serif, Georgia, serif); font-style:italic;
+  font-size:clamp(1.1rem, 3.6vw, 2.1rem); line-height:1.35; text-shadow:0 2px 10px rgba(0,0,0,.6); white-space:pre-line; }
+.vn-stage.inserting .vn-insert{ opacity:1; }
+.vn-stage.insert-black .vn-insert{ background:#111; }
+.vn-stage.inserting .vn-cast, .vn-stage.inserting .vn-box{ opacity:0; pointer-events:none; }
+.vn-box{ transition:opacity .35s ease; }
 .vn-next.asking{ opacity:0; pointer-events:none; }
 /* questions: choice buttons or an answer box, above the text box */
-.vn-ask{ position:absolute; z-index:120; left:50%; transform:translateX(-50%); bottom:calc(var(--vn-box) + 2.5%); width:min(72%, 600px);
+.vn-ask{ position:absolute; z-index:140; left:50%; transform:translateX(-50%); bottom:calc(var(--vn-box) + 2.5%); width:min(72%, 600px);
   display:flex; flex-direction:column; gap:.5em; cursor:default; animation:vn-in .25s ease; font-size:clamp(.85rem, 2.1vw, 1.1rem); }
 .vn-choice{ display:flex; align-items:baseline; gap:.6em; text-align:left; font:inherit; padding:.55em .9em; border-radius:12px; cursor:pointer;
   border:2px solid var(--text-accent, #185fa5); color:var(--text-primary, #1a1a1a);
@@ -120,7 +171,7 @@ const CSS = `
 @keyframes vn-in{ from{ opacity:0; transform:translate(-50%, 8px); } to{ opacity:1; transform:translate(-50%, 0); } }
 @keyframes vn-shake{ 0%,100%{ transform:translateX(-50%); } 25%{ transform:translateX(calc(-50% - 6px)); } 75%{ transform:translateX(calc(-50% + 6px)); } }
 @keyframes vn-bob{ 0%,100%{ transform:translateY(0); } 50%{ transform:translateY(4px); } }
-@media (prefers-reduced-motion: reduce){ .vn-next.ready, .vn-ask, .vn-input.shake{ animation:none; } .vn-ch{ transition:none; } }
+@media (prefers-reduced-motion: reduce){ .vn-next.ready, .vn-ask, .vn-input.shake, .vn-box.shout .w, .vn-insert.shout .w, .vn-stage.shouting .vn-ch{ animation:none; } .vn-ch, .vn-bg, .vn-cast, .vn-insert, .vn-box{ transition:none; } }
 .vn-bar{ display:flex; align-items:center; justify-content:center; gap:8px; margin-top:10px; }
 .vn-bar button{ display:inline-flex; flex-direction:column; align-items:center; gap:1px; min-width:4.2rem; padding:5px 8px 4px; line-height:1; }
 .vn-bar .ic{ font-size:1.3rem; }
@@ -178,11 +229,11 @@ function face(data, id){
 
 function create(host, script){
   injectCSS();
-  const cast = script.cast || {}, lines = (script.lines || []).filter(l => l && cast[l.who]);
+  const cast = script.cast || {}, lines = (script.lines || []).filter(l => l && (l.who == null || cast[l.who]));   /* no who: narration */
   host.innerHTML = '';
   const root = document.createElement('div'); root.className = 'vn';
   root.innerHTML = `<div class="vn-stage" tabindex="0" role="group" aria-label="Scene. Click, Space or Enter to go on.">
-      <div class="vn-bg"></div><div class="vn-cast"></div>
+      <div class="vn-bg"></div><div class="vn-cast"></div><div class="vn-insert" aria-hidden="true"><div class="vn-insert-text"></div></div>
       <div class="vn-box"><div class="vn-name"></div><div class="vn-text" aria-hidden="true"></div><div class="vn-sr" aria-live="polite"></div>
         <button type="button" class="vn-next" title="Next (Space, Enter or a click)" aria-label="Next">🔽</button></div></div>
     <div class="vn-bar">
@@ -194,17 +245,25 @@ function create(host, script){
   host.appendChild(root);
   const $ = c => root.querySelector(c);
   const stage = $('.vn-stage'), castEl = $('.vn-cast'), nameEl = $('.vn-name'), textEl = $('.vn-text'), srEl = $('.vn-sr'), nextEl = $('.vn-next'), countEl = $('.vn-count');
-  const bg = script.background || 'classroom';
-  if(BG[bg]) $('.vn-bg').innerHTML = BG[bg]; else $('.vn-bg').style.background = bg;
+  let bgNow = null;
+  function setBg(bg){
+    if(bg === bgNow) return; bgNow = bg;
+    const el = $('.vn-bg');
+    if(BG[bg]){ el.innerHTML = BG[bg]; el.style.background = ''; } else { el.innerHTML = ''; el.style.background = bg; }
+  }
+  setBg(script.background || 'classroom');
+  const insertEl = $('.vn-insert'), insertText = $('.vn-insert-text'), boxEl = $('.vn-box');
 
   const parsed = lines.map(L => parseCues(L.say));
   /* the scene at the start of the last line of path (the lines shown so far, in order): the lines before it,
      with all their cues, then its own directions. With branches, only the lines actually shown count. */
   function sceneAt(path){
-    const on = new Map();
+    const on = new Map(), off = new Map();   /* off: characters who left, remembered for when they come back */
+    let bg = script.background || 'classroom';
     const apply = (id, d) => {
       if(!cast[id]) return;
-      const c = on.get(id) || {at:'center', shot:'medium', data:HC.normalize(cast[id].character || {})};
+      const c = on.get(id) || off.get(id) || {at:'center', shot:'medium', data:HC.normalize(cast[id].character || {})};
+      off.delete(id);
       if(d.at && AT[d.at] !== undefined) c.at = d.at;
       if(d.shot) c.shot = d.shot === 'mcu' ? 'closeup' : d.shot;
       if(d.pose) c.data = HC.applyPose(c.data, d.pose);
@@ -214,14 +273,18 @@ function create(host, script){
     };
     path.forEach((j, n) => {
       const L = lines[j];
-      for(const [id, d] of Object.entries(L.stage || {})){ if(d === null) on.delete(id); else apply(id, d); }
-      apply(L.who, L);
-      if(n < path.length - 1) for(const cue of parsed[j].cues) apply(L.who, cue);
+      if(L.background) bg = L.background;
+      for(const [id, d] of Object.entries(L.stage || {})){ if(d === null){ if(on.has(id)) off.set(id, on.get(id)); on.delete(id); } else apply(id, d || {}); }
+      if(L.who != null){
+        apply(L.who, L);
+        if(n < path.length - 1) for(const cue of parsed[j].cues) apply(L.who, cue);
+      }
     });
+    on.bg = bg;
     return on;
   }
   function applyCue(cue){   /* during a line: the speaker's pose or face changes on screen */
-    const c = scene.get(talk.who); if(!c) return;
+    const c = talk.who != null && scene.get(talk.who); if(!c) return;
     if(cue.pose) c.data = HC.applyPose(c.data, cue.pose);
     face(c.data, cue.emotion);
     talk.rest = LIP.includes(c.data.mouth) ? 'rest' : c.data.mouth;   /* pauses now fall back to the new face */
@@ -248,23 +311,8 @@ function create(host, script){
   const TURNS = ['torsoOrientation', 'pelvisOrientation'];
   const numsOf = d => ({joints:{...d.joints}, turns:TURNS.map(k => d[k])});
   const sameNums = (a, b) => TURNS.every((k, i) => a.turns[i] === b.turns[i]) && Object.keys(b.joints).every(j => Math.round(a.joints[j]) === Math.round(b.joints[j]));
-  /* Which way a joint turns from a to b. Angles are kept between −180° and 180°, with 0 the resting
-     position (arm hanging, limb straight), and the short way round is not always the natural one: taking it
-     for each joint separately can send a shoulder over the head while the elbow folds back through the
-     upper arm, and the whole arm spins round. So:
-       elbows, knees, wrists and ankles never pass ±180° (that would fold the limb back on itself): they
-         always turn through their resting position;
-       shoulders and hips go the short way across ±180° (the arm straight up, the leg straight out) only for a
-         small move, up to 90°; a bigger one goes round through the resting position, as a person would;
-       the body tilt (root) takes the short way, so a fall or a spin stays what it was;
-       the rest (torso, pelvis, neck) never get near ±180°, so either way is the same. */
-  function jointDelta(j, a, b){
-    a = wrap(a); b = wrap(b);   /* a may come from the middle of a move */
-    const raw = b - a, short = wrap(raw);
-    if(j === 'root') return short;
-    if(/^(elbow|knee|wrist|ankle)/.test(j) || Math.abs(raw) <= 180) return raw;
-    return Math.abs(short) <= 90 ? short : raw;   /* shoulders and hips */
-  }
+  /* which way each joint turns: HouseCharacter.jointDelta (shared with the keyframe editor) */
+  const jointDelta = HC.jointDelta;
   function lerpNums(a, b, e){
     const joints = {};
     for(const j of Object.keys(b.joints)) joints[j] = wrap(a.joints[j]) + jointDelta(j, a.joints[j], b.joints[j]) * e;
@@ -329,9 +377,21 @@ function create(host, script){
 
   /* ── saying a line ── */
   let index = -1, scene = null, talk = null, raf = 0;
-  function render(text, upto){
+  /* the line's text is laid out once, every letter hidden, and letters are shown as they are said, so the box
+     never reflows. Words are wrapped so shouting can shake each one on its own. */
+  function build(el, text){
     const esc = t => t.replace(/[&<>]/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;'}[c]));
-    textEl.innerHTML = esc(text.slice(0, upto)) + `<span class="hid">${esc(text.slice(upto))}</span>`;
+    const offs = []; let h = '', at = 0;
+    for(const part of text.split(/(\s+)/)){
+      if(!part) continue;
+      const chars = [...part].map(ch => { offs.push(at); at += ch.length; return `<span class="c hid">${esc(ch)}</span>`; }).join('');
+      h += /^\s+$/.test(part) ? chars : `<span class="w" style="animation-delay:-${(Math.random() * 0.4).toFixed(2)}s">${chars}</span>`;
+    }
+    el.innerHTML = h;
+    talk.chars = el.querySelectorAll('.c'); talk.offs = offs; talk.p = 0;
+  }
+  function render(upto){   /* show every letter that starts before upto (a position in the text) */
+    while(talk.p < talk.chars.length && talk.offs[talk.p] < upto) talk.chars[talk.p++].classList.remove('hid');
   }
   function revealAt(t){   /* how much of the text has been said after t seconds */
     const W = talk.sp.words, n = talk.text.length;
@@ -345,7 +405,7 @@ function create(host, script){
     return idx;
   }
   function setMouth(m){
-    const c = scene.get(talk.who); if(!c || c.data.mouth === m) return;
+    const c = talk.who != null && scene.get(talk.who); if(!c || c.data.mouth === m) return;
     c.data.mouth = m; drawSprite(talk.who, c);
   }
   function tick(now){
@@ -353,17 +413,19 @@ function create(host, script){
     const t = Math.max(0, now - talk.t0) / 1000;
     if(t >= talk.sp.seconds){ finish(); return; }
     const f = t * FPS, K = talk.sp.keys;
-    const up = revealAt(t); if(up !== talk.shown){ talk.shown = up; render(talk.text, up); }
+    const up = revealAt(t); if(up !== talk.shown){ talk.shown = up; render(up); }
     runCues(up);
-    let m = K[0] ? K[0].mouth : REST;
-    for(const k of K){ if(k.frame <= f) m = k.mouth; else break; }
-    setMouth(m === REST ? talk.rest : m);
+    if(talk.lips){   /* narration and thoughts move no lips */
+      let m = K[0] ? K[0].mouth : REST;
+      for(const k of K){ if(k.frame <= f) m = k.mouth; else break; }
+      setMouth(m === REST ? talk.rest : m);
+    }
     raf = requestAnimationFrame(tick);
   }
   function finish(){   /* the whole line at once, mouth at rest */
     if(!talk || talk.done) return;
     talk.done = true; cancelAnimationFrame(raf);
-    render(talk.text, talk.text.length); runCues(Infinity); setMouth(talk.rest);
+    render(Infinity); runCues(Infinity); setMouth(talk.rest);
     syncButtons();
     if(isQuestion(index)) showAsk();
   }
@@ -391,21 +453,31 @@ function create(host, script){
     cancelAnimationFrame(raf); hideAsk(); ended = false;
     const cur = history[history.length - 1], i = cur.i;
     vars = {...cur.vars};
-    const L = lines[i], who = L.who, cm = cast[who];
+    const L = lines[i], who = L.who != null ? L.who : null, cm = who != null ? cast[who] : (script.narration || {});
+    const insert = !!L.insert, think = !!(L.think || L.mode === 'think') && who != null, shout = !!(L.shout || L.mode === 'shout'), past = !!L.past;
     motion = {ease:L.easing ? easingOf(L.easing) : SCENE_EASE, time:Number(L.moveTime) >= 0 && L.moveTime !== '' && L.moveTime != null ? Number(L.moveTime) : SCENE_TIME};
-    index = i; scene = sceneAt(history.map(h => h.i));
+    index = i; scene = sceneAt(history.map(h => h.i)); setBg(scene.bg);
+    stage.classList.toggle('inserting', insert); stage.classList.toggle('insert-black', L.insert === 'black');
+    stage.classList.toggle('think', think); stage.classList.toggle('past', past); stage.classList.toggle('shouting', shout && !insert);
+    boxEl.classList.toggle('narrate', who == null); boxEl.classList.toggle('think', think); boxEl.classList.toggle('shout', shout);
+    insertEl.classList.toggle('shout', shout);
     for(const [id, s] of sprites) if(!scene.has(id)){ s.el.classList.add('out'); sprites.delete(id); setTimeout(() => s.el.remove(), 400); }
     for(const [id, c] of scene) drawSprite(id, c);
-    layout(scene, who);
-    nameEl.textContent = cm.name || who;
-    root.style.setProperty('--vn-name', cm.color || '');
-    const {text, cues} = fill(parsed[i]), c = scene.get(who);
-    const rest = LIP.includes(c.data.mouth) ? 'rest' : c.data.mouth;   /* pauses and the end fall back to their expression */
+    layout(scene, insert ? null : who);
+    for(const [id, sp] of sprites) sp.el.classList.toggle('thinker', think && id === who);
+    const name = who != null ? (cm.name || who) : '';
+    nameEl.textContent = insert || who == null ? '' : think ? `${name} 💭` : name;
+    root.style.setProperty('--vn-name', (who != null && cm.color) || '');
+    const {text, cues} = fill(parsed[i]), c = who != null ? scene.get(who) : null;
+    const rest = c ? (LIP.includes(c.data.mouth) ? 'rest' : c.data.mouth) : 'rest';   /* pauses and the end fall back to their expression */
     /* pauses come back as REST and are drawn with whatever face the speaker has by then (cues can change it) */
-    talk = {who, text, rest, cues, cue:0, shown:-1, done:false, t0:performance.now(),
-      sp:HC.speech(text, {fps:FPS, wpm:cm.wpm || 150, lang:cm.lang || 'en', restMouth:REST})};
-    srEl.textContent = `${cm.name || who}: ${text}`;
-    render(text, 0);
+    talk = {who, text, rest, cues, cue:0, shown:-1, done:false, t0:performance.now(), lips:who != null && !think && !insert,
+      sp:HC.speech(text, {fps:FPS, wpm:cm.wpm || (who != null ? 150 : 160), lang:cm.lang || 'en', restMouth:REST})};
+    if(!talk.lips) setMouth(rest);   /* thinking: the mouth stays closed */
+    srEl.textContent = who == null || insert ? text : `${name}${think ? ' thinks' : shout ? ' shouts' : ''}: ${text}`;
+    if(insert) textEl.innerHTML = '';
+    build(insert ? insertText : textEl, text);
+    if(!insert) insertText.innerHTML = '';
     syncButtons();
     if(!talk.sp.keys.length) finish(); else raf = requestAnimationFrame(tick);
   }
