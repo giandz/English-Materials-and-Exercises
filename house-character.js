@@ -10,6 +10,7 @@
          opts.ground draw a floor line (stage mode only)
      HouseCharacter.pivots(data)          → joint pivots in stage coordinates
      HouseCharacter.describe(data)        → "Sam is holding a wrench."
+     HouseCharacter.speech(text, opts)    → lip-sync mouth keys for a line of text (see the speech section)
 
    Angles are degrees, clockwise on screen, relative to the parent segment.
    0 = limb straight / torso and head upright. L and R are the character's own.
@@ -781,6 +782,7 @@ function mouthSVG(id,lip){
   const line=(d,w)=>`<path d="${d}" fill="none" stroke="${lip}" stroke-width="${w||2.2}" stroke-linecap="round"/>`;
   const shape=(d,fill)=>`<path d="${d}" fill="${fill}" stroke="${lip}" stroke-width="1.6"/>`;
   const flat=(d,fill)=>`<path d="${d}" fill="${fill}" stroke="none"/>`;
+  const rim=d=>`<path d="${d}" fill="none" stroke="${lip}" stroke-width="1.6"/>`;   /* the lip outline, drawn last so it covers the teeth's edges */
   const open='M-7,18.5Q0,16.5 7,18.5Q6,28 0,28.5Q-6,28 -7,18.5Z', teeth='M-5.8,18.7Q0,17.5 5.8,18.7L5.3,20.8Q0,20.1 -5.3,20.8Z';
   switch(id){
     case 'grin': return shape('M-9.5,17.5Q0,21 9.5,17.5Q8,28 0,28.5Q-8,28 -9.5,17.5Z',In)+flat('M-8.3,18.3Q0,21.3 8.3,18.3L7.6,20.9Q0,23.4 -7.6,20.9Z',T)+`<ellipse cx="0" cy="26.3" rx="3.8" ry="1.7" fill="${Tg}" stroke="none"/>`;
@@ -791,10 +793,11 @@ function mouthSVG(id,lip){
     case 'rest': return line('M-6,21.5Q0,23 6,21.5');
     case 'mbp': return line('M-6.5,21.6Q0,20.7 6.5,21.6',2.6);
     case 'ai': return shape(open,In)+flat(teeth,T)+`<ellipse cx="0" cy="26" rx="3.6" ry="1.8" fill="${Tg}" stroke="none"/>`;
-    case 'e': return shape('M-9,18.5Q0,20 9,18.5Q7,25.5 0,26Q-7,25.5 -9,18.5Z',T)+`<path d="M-8,21.8Q0,23.4 8,21.8" fill="none" stroke="${G}" stroke-width=".8"/>`;
+    case 'e': { const m='M-9,18.5Q0,20 9,18.5Q7,25.5 0,26Q-7,25.5 -9,18.5Z'; return flat(m,In)   /* wide, the jaw slightly dropped: upper and lower teeth with a dark gap between */
+      +flat('M-8.3,18.9Q0,20.3 8.3,18.9L7.7,21.1Q0,22.4 -7.7,21.1Z',T)+flat('M-6.9,23.5Q0,24.6 6.9,23.5Q5.5,25.4 0,25.7Q-5.5,25.4 -6.9,23.5Z',T)+rim(m); }
     case 'o': return `<ellipse cx="0" cy="22" rx="4.2" ry="5.5" fill="${In}" stroke="${lip}" stroke-width="2"/>`;
     case 'u': return `<ellipse cx="0" cy="22" rx="2.5" ry="3.1" fill="${In}" stroke="${lip}" stroke-width="2.4"/>`;
-    case 'cdg': return shape('M-7.5,19.5Q0,18.5 7.5,19.5Q6,24.5 0,24.8Q-6,24.5 -7.5,19.5Z',T)+`<path d="M-6.8,21.9H6.8" fill="none" stroke="${G}" stroke-width=".8"/>`;
+    case 'cdg': { const m='M-7.5,19.5Q0,18.5 7.5,19.5Q6,24.5 0,24.8Q-6,24.5 -7.5,19.5Z'; return flat(m,T)+`<path d="M-7,21.9H7" fill="none" stroke="${G}" stroke-width=".8"/>`+rim(m); }
     case 'fv': return line('M-6.5,19.2Q0,18.2 6.5,19.2',1.6)+`<path d="M-4.6,19H4.6V22Q0,22.9 -4.6,22Z" fill="${T}" stroke="${lip}" stroke-width=".9"/>`+line('M-6.5,23Q0,25 6.5,23');
     case 'l': return shape(open,In)+flat(teeth,T)+`<ellipse cx="0" cy="22" rx="3.4" ry="2.7" fill="${Tg}" stroke="none"/>`;
     case 'wq': return `<ellipse cx="0" cy="22" rx="3.3" ry="3.9" fill="${In}" stroke="${lip}" stroke-width="2.8"/>`;
@@ -1621,7 +1624,202 @@ function describe(data){
   return `${n} is ${g.length>1?g.slice(0,-1).join(', ')+(groups[0][1].length>1?', and ':' and ')+g[g.length-1]:g[0]}.`;
 }
 
+/* ── speech: text → a lip-sync mouth track ───────────────────────────────────
+     HouseCharacter.speech(text, opts) → {keys:[{frame, mouth}], frames, seconds, words:[{word, start, end}]}
+       opts.fps        frames per second (24)
+       opts.wpm        speaking speed, estimated words per minute (150)
+       opts.restMouth  mouth used in pauses and at the end ('rest'; pass e.g. 'smile' to rest on an expression)
+     Frames count from 0: the caller adds its own start frame. The first key is on frame 0 and the
+     last one, on `frames`, closes the mouth again. words gives each word's frames, for captions.
+     HouseCharacter.speech.visemes(word) → the mouth ids for one word, for checking the rules.
+
+   No pronunciation dictionary: each word is read from its spelling with letter rules and a short list
+   of common irregular words. The ten talking mouths hide most mistakes (cat, cake and car all open to
+   A · I; most consonants are the C · D · G… catch-all), so the rules mainly have to get lip closures,
+   lip-bites and silent letters right.
+
+   Believability, applied after timing:
+     · M · B · P and F · V are never dropped; when they are too short they borrow frames from a neighbour.
+     · Shapes too short to read are dropped, the catch-all first, then L, then vowels.
+     · Every shape holds at least ~60 ms (2 frames at 24 fps), so the mouth never flickers.
+     · Each change comes ~40 ms (one frame) before its sound, which reads as tighter sync.
+     · Pauses under 250 ms hold the last shape; longer ones go back to the rest mouth.
+     · The last vowel before a comma or full stop is drawn out a little, as people do.            ── */
+const speech=(()=>{
+  /* internal codes → the engine's mouth ids */
+  const MOUTH={R:'rest',M:'mbp',A:'ai',E:'e',O:'o',U:'u',C:'cdg',F:'fv',L:'l',W:'wq'};
+  /* relative length of each shape; a typical word comes to about REF units */
+  const WEIGHT={A:1.6,E:1.5,O:1.7,U:1.5,C:0.9,M:1.1,F:1.1,L:1.0,W:1.0}, REF=4.4;
+  const VOW='AEOU';
+  /* common words whose spelling misleads the rules */
+  const EXC={the:'CA',a:'A',an:'AC',and:'AC',of:'AF',to:'CU',too:'CU',two:'CU',do:'CU',does:'CAC',done:'CAC',
+    who:'U',whom:'UM',whose:'UC',you:'CU',your:'COC',yours:'COC',"you're":'COC',are:'AC',were:'WC',was:'WAC',
+    what:'WAC',want:'WOC',one:'WAC',once:'WAC',said:'CEC',says:'CEC',have:'AF',has:'AC',had:'AC',give:'CEF',
+    live:'LEF',love:'LAF',come:'CAM',some:'CAM',gone:'COC',none:'CAC',been:'MEC',eye:'A',eyes:'AC',i:'A',
+    "i'm":'AM',"i'll":'AL',"i'd":'AC',"i've":'AF',could:'CUC',would:'WUC',should:'CUC',through:'CU',
+    though:'CO',thought:'COC',enough:'ECAF',laugh:'LAF',tough:'CAF',rough:'CAF',cough:'COF',because:'MECAC',
+    people:'MEML',friend:'FCEC',friends:'FCEC',again:'ACEC',any:'ECE',many:'MECE',eight:'AEC',there:'CEC',
+    their:'CEC',"they're":'CEC',they:'CAE',where:'WEC',here:'EC',very:'FECE',every:'EFCE',only:'OCLE',
+    other:'ACC',mother:'MACC',brother:'MCACC',another:'ACACC',son:'CAC',money:'MACE',honest:'OCEC',hour:'AWC',
+    our:'AWC',four:'FOC',pour:'MOC',course:'COC',island:'ALAC',know:'CO',knew:'CU',women:'WEMEC',woman:'WUMAC',
+    busy:'MECE',build:'MELC',buy:'MA',guy:'CA',comb:'COM',listen:'LECEC',often:'OFEC',castle:'CACL',
+    answer:'ACC',sure:'CUC',sugar:'CUCAC',ocean:'OCAC',wednesday:'WECCAE',colour:'CALAC',color:'CALAC',
+    mr:'MECCAC',mrs:'MECEC',ms:'MEC',dr:'COCCAC',ok:'OCAE',okay:'OCAE',hello:'ELO',yes:'CEC',no:'CO',
+    go:'CO',so:'CO',oh:'O',please:'MLEC',water:'WOCC',world:'WCLC',work:'WCC',word:'WCC',walk:'WOC',
+    talk:'COC',half:'AF',calf:'CAF',break:'MCAEC',great:'CCAEC',head:'EC',bread:'MCEC',dead:'CEC',
+    door:'COC',floor:'FLOC',blood:'MLAC',flood:'FLAC',key:'CE',iron:'AC',business:'MECEC',minute:'MECEC',
+    machine:'MCEC',police:'MLEC',pizza:'MECA',idea:'ACEA',over:'OFC',nothing:'CACEC',something:'CAMCEC',
+    month:'MAC',front:'FCAC',won:'WAC',above:'AMAF',move:'MUF',prove:'MCUF',lose:'LUC',shoe:'CU',
+    pie:'MA',die:'CA',lie:'LA',tie:'CA',my:'MA',by:'MA',why:'WA',fly:'FLA',cry:'CCA',try:'CCA',dry:'CCA',
+    sky:'CCA',shy:'CA',eyebrow:'AMCOW',bye:'MA',goodbye:'CUCMA',orange:'OCEC',vegetable:'FECCAML',
+    science:'CAEC',quiet:'CWAEC',juice:'CUC',fruit:'FCUC',school:'CCUL',chef:'CEF',chocolate:'COCLEC',
+    favourite:'FAEFCEC',favorite:'FAEFCEC',interesting:'ECCECEC',family:'FAMELE',different:'CEFCEC',
+    beautiful:'MUCEFUL',breakfast:'MCEFCEC',restaurant:'CECCOC',clothes:'CLOC',"where's":'WEC',"there's":'CEC',
+   "what's":'WAC',"it's":'EC',"that's":'CAC',"let's":'LEC',"don't":'COC',"won't":'WOC',"can't":'CAC',
+    "isn't":'ECEC',"doesn't":'CACEC',"didn't":'CECEC',"wasn't":'WACEC',"aren't":'ACC'};
+  const ONES=['zero','one','two','three','four','five','six','seven','eight','nine','ten','eleven','twelve',
+    'thirteen','fourteen','fifteen','sixteen','seventeen','eighteen','nineteen'];
+  const TENS=['','','twenty','thirty','forty','fifty','sixty','seventy','eighty','ninety'];
+  function numWords(n){
+    if(n<20) return ONES[n];
+    if(n<100) return TENS[Math.floor(n/10)]+(n%10?' '+ONES[n%10]:'');
+    if(n<1000) return ONES[Math.floor(n/100)]+' hundred'+(n%100?' and '+numWords(n%100):'');
+    if(n<1e6) return numWords(Math.floor(n/1000))+' thousand'+(n%1000?' '+numWords(n%1000):'');
+    return String(n).split('').map(d=>ONES[+d]).join(' ');
+  }
+  const isV=ch=>'aeiou'.includes(ch);
+  const CONS={b:'M',m:'M',p:'M',f:'F',v:'F',l:'L',w:'W',h:'',r:'C',x:'C',c:'C',d:'C',g:'C',j:'C',k:'C',n:'C',q:'C',s:'C',t:'C',z:'C'};
+  /* longest spelling first; a function gets (word, index) and returns the codes */
+  const RULES=[
+    ['ough','O'],['augh','O'],['eigh','AE'],['tion','CEC'],['sion','CEC'],['ture','CC'],
+    ['igh','A'],['tch','C'],['dge','C'],['squ','CCW'],['ear','EC'],['eer','EC'],['air','AC'],['oor','OC'],['our','AWC'],
+    ['th','C'],['sh','C'],['ch','C'],['ng','C'],['ck','C'],['ph','F'],['wh','W'],['qu','CW'],
+    ['gh',(w,i)=>i===0?'C':''],
+    ['oo','U'],['ee','E'],['ea','E'],['ie','E'],['ei','E'],['ey','E'],['ai','AE'],['ay','AE'],['oa','O'],['oe','O'],
+    ['oi','OE'],['oy','OE'],['ou','AW'],['ow','OW'],['au','O'],['aw','O'],['ue','U'],['ew','U'],['ui','U'],
+    ['ar','AC'],['or','OC'],
+    ['er',(w,i)=>i+2>=w.length||!isV(w[i+2])?'C':null],['ir',(w,i)=>i+2>=w.length||!isV(w[i+2])?'C':null],
+    ['ur',(w,i)=>i+2>=w.length||!isV(w[i+2])?'C':null]];
+  function visemes(raw){
+    const exc=k=>EXC[k]?EXC[k].split('').filter((c,i,a)=>c!==a[i-1]):null;
+    let w=String(raw||'').toLowerCase().replace(/[’‘`]/g,"'");
+    if(exc(w)) return exc(w);
+    w=w.replace(/'/g,''); if(exc(w)) return exc(w);
+    w=w.replace(/[^a-z]/g,''); if(!w) return [];
+    if(exc(w)) return exc(w);
+    /* silent letters at the edges of the word */
+    w=w.replace(/^(kn|gn|pn)/,'n').replace(/^wr/,'r').replace(/^ps/,'s').replace(/(mb|mn)$/,'m').replace(/([aeiou])gn$/,'$1n');
+    /* endings: -ed and -es only make a syllable after certain sounds */
+    if(/ed$/.test(w)&&w.length>3&&!/[td]ed$/.test(w)) w=w.slice(0,-2)+'d';
+    else if(/es$/.test(w)&&w.length>3&&!/(s|x|z|ch|sh|c|g)es$/.test(w)) w=w.slice(0,-1);
+    /* magic e: a final silent e after one consonant makes the vowel before it long */
+    let magic=-1;
+    if(/[^aeiou]le$/.test(w)&&w.length>3) w=w.slice(0,-1);   /* apple, little: the e is silent, the l is the syllable */
+    else {
+    const me=w.match(/^(.*[aeiouy])([^aeiouy]{1,2})e(s?)$/);
+    if(me&&w.length>3){ magic=me[1].length-1; w=me[1]+me[2]+me[3]; } }
+    const out=[], vowelCount=(w.match(/[aeiouy]/g)||[]).length;
+    for(let i=0;i<w.length;){
+      let hit=null;
+      for(const [pat,res] of RULES){
+        if(!w.startsWith(pat,i)) continue;
+        const r=typeof res==='function'?res(w,i):res;
+        if(r===null) continue;
+        hit=[pat.length,r]; break;
+      }
+      if(hit){ out.push(...hit[1].split('')); i+=hit[0]; continue; }
+      const ch=w[i], nx=w.slice(i+1);
+      if(ch==='a') out.push('A');
+      else if(ch==='e') out.push('E');
+      else if(ch==='o') out.push('O');
+      else if(ch==='i') out.push(i===magic||/^(nd|ld)/.test(nx)||i===w.length-1?'A':'E');   /* bite, find, child, hi → A · I; sit → E */
+      else if(ch==='u') out.push(i===magic||i===w.length-1||(/[pbf]/.test(w[i-1]||'')&&/^(ll|sh|t$)/.test(nx))?'U':'A');   /* use, put, full → U; cup → A */
+      else if(ch==='y'){
+        if(i===0||(i>0&&isV(w[i-1])&&i<w.length-1)) out.push('C');                        /* yes, beyond */
+        else if(i===w.length-1) out.push(vowelCount===1?'A':'E');                            /* my → A; happy → E */
+        else out.push(i===magic?'A':'E');                                                    /* type → A; gym → E */
+      }
+      else if(CONS[ch]) out.push(CONS[ch]);
+      i++;
+    }
+    return out.filter((c,i)=>c&&c!==out[i-1]);
+  }
+
+  function speechTrack(text,opts){
+    opts=opts||{};
+    const fps=Math.max(1,Math.min(60,Math.round(Number(opts.fps)||24)));
+    const wpm=Math.max(40,Math.min(400,Number(opts.wpm)||150));
+    const restMouth=opts.restMouth||'rest', spw=60/wpm;
+    const HOLD=Math.max(2,Math.round(0.06*fps)), LEAD=Math.max(1,Math.round(0.04*fps)), REST_AFTER=0.25;
+    /* words and pauses, in seconds */
+    const src=String(text||'').replace(/\d+/g,m=>' '+numWords(Number(m))+' ').replace(/&/g,' and ').replace(/%/g,' percent ');
+    const tokens=src.match(/[A-Za-z’'`]+|[.!?]+|[,;:]|—|–|\.\.\.|…|\n+/g)||[];
+    const segs=[], words=[];
+    let t=0;
+    const pauseOf=tk=>/^[.!?]|…|\.\.\.|\n/.test(tk)?0.5:/[—–]/.test(tk)?0.35:0.2;
+    tokens.forEach((tk,ti)=>{
+      if(/[A-Za-z]/.test(tk)){
+        const v=visemes(tk); if(!v.length) return;
+        const units=v.reduce((a,c)=>a+WEIGHT[c],0), k=spw/REF;
+        const next=tokens[ti+1], phraseEnd=next&&!/[A-Za-z]/.test(next);
+        let lastV=-1; v.forEach((c,i)=>{ if(VOW.includes(c)) lastV=i; });
+        const t0=t;
+        v.forEach((c,i)=>{ const d=WEIGHT[c]*k*(phraseEnd&&i===lastV?1.4:1); segs.push({c,s:t,e:t+d}); t+=d; });
+        words.push({word:tk,s:t0,e:t});
+        return;
+      }
+      if(!segs.length) return;   /* nothing said yet: no pause to show */
+      const d=pauseOf(tk), last=segs[segs.length-1];
+      if(last.c==='R'){ last.e+=d; t+=d; return; }
+      if(d<REST_AFTER){ last.e+=d; t+=d; }                      /* a short pause holds the last shape */
+      else { segs.push({c:'R',s:t,e:t+d}); t+=d; }
+    });
+    while(segs.length&&segs[segs.length-1].c==='R') t=segs.pop().s;   /* trailing pause: the closing key does it */
+    if(!segs.length) return {keys:[],frames:0,seconds:0,words:[]};
+    /* to whole frames */
+    let S=segs.map(g=>({c:g.c,len:0,b:Math.round(g.s*fps)}));
+    const end=Math.max(1,Math.round(t*fps));
+    S.forEach((g,i)=>{ g.len=(i+1<S.length?S[i+1].b:end)-g.b; });
+    const merge=()=>{ S=S.filter(g=>g.len>0); for(let i=1;i<S.length;i++) if(S[i].c===S[i-1].c){ S[i-1].len+=S[i].len; S.splice(i--,1); } };
+    merge();
+    /* too short to read: drop, least important first, and give the frames to a neighbour */
+    const RANK={C:0,L:1,E:2,A:3,U:3,O:3,W:4,R:5};
+    for(;;){
+      let best=-1;
+      S.forEach((g,i)=>{ if(g.len>=HOLD||g.c==='M'||g.c==='F'||S.length<2) return;
+        if(best<0||RANK[g.c]<RANK[S[best].c]||(RANK[g.c]===RANK[S[best].c]&&g.len<S[best].len)) best=i; });
+      if(best<0) break;
+      const g=S[best], nb=best>0?S[best-1]:S[best+1];
+      nb.len+=g.len; g.len=0; merge();
+    }
+    /* closures and lip-bites stay: lengthen them from the roomier neighbour */
+    S.forEach((g,i)=>{
+      if((g.c!=='M'&&g.c!=='F')||g.len>=HOLD) return;
+      for(const j of [i-1,i+1].filter(j=>S[j]).sort((a,b)=>S[b].len-S[a].len)){
+        const take=Math.min(HOLD-g.len,S[j].len-HOLD); if(take<=0) continue;
+        S[j].len-=take; g.len+=take;
+      }
+    });
+    merge();
+    /* frames again, then each change one frame early (never squeezing a shape below the hold) */
+    let f=0; S.forEach(g=>{ g.b=f; f+=g.len; });
+    const total=f, keys=[];
+    S.forEach((g,i)=>{
+      const fr=i===0?0:Math.max(keys[keys.length-1].frame+HOLD,g.b-LEAD);
+      const mouth=g.c==='R'?restMouth:MOUTH[g.c];
+      if(keys.length&&keys[keys.length-1].mouth===mouth) return;
+      keys.push({frame:fr,mouth});
+    });
+    const close=Math.max(keys[keys.length-1].frame+HOLD,total-LEAD);
+    if(keys[keys.length-1].mouth!==restMouth) keys.push({frame:close,mouth:restMouth});
+    const frames=keys[keys.length-1].frame;
+    return {keys,frames,seconds:frames/fps,words:words.map(x=>({word:x.word,start:Math.round(x.s*fps),end:Math.round(x.e*fps)}))};
+  }
+  speechTrack.visemes=w=>visemes(w).map(c=>MOUTH[c]);
+  return speechTrack;
+})();
+
 return {scarfColours,SCHEMA,SKIN,EYES,HAIR,HAIR_STYLES,FACIAL,HEIGHTS,WEIGHTS,HEADS,JOINTS,POSES,ITEMS,UPPER,LOWER,FOOT,OUTFITS,HEADWEAR,EYEWEAR,ACCESSORIES,BROWS,EYE_SHAPES,MOUTHS,EMOTIONS,NEUTRAL_FACE,GLOVE_COL,PACK_COL,SCARF_COL,MASCARA_COL,BLUSH_COL,LIPSTICK_COL,PROPS,GRIPS,ITEM_CATS,PALETTE,PATTERNS,colour2Default,SOCK_COL,TIE_COL,colourName,STAGE,
-        defaults,normalize,render,pivots,applyPose,mirror,describe};
+        defaults,normalize,render,pivots,applyPose,mirror,describe,speech};
 })();
 window.HouseCharacter = HouseCharacter;
