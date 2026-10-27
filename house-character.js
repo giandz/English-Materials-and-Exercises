@@ -691,9 +691,46 @@ function hair(style,view,col,hat,nod){
   return {back,front,hang};
 }
 
-function facial(style,view,col){
+/* the face outline as points (M, C and Q commands), for beards that follow the jaw */
+function facePoints(d){
+  const t=d.match(/[MCQZ]|-?\d*\.?\d+/g), pts=[]; let i=0, cur=[0,0], cmd='';
+  const num=()=>+t[i++];
+  while(i<t.length){
+    if(/[MCQZ]/.test(t[i])) cmd=t[i++];
+    if(cmd==='Z') break;
+    if(cmd==='M'){ cur=[num(),num()]; pts.push(cur); cmd='C'; continue; }
+    if(cmd==='C'){ const a=cur,b=[num(),num()],c=[num(),num()],e=[num(),num()];
+      for(let k=1;k<=12;k++){ const u=k/12,v=1-u; pts.push([v*v*v*a[0]+3*v*v*u*b[0]+3*v*u*u*c[0]+u*u*u*e[0],v*v*v*a[1]+3*v*v*u*b[1]+3*v*u*u*c[1]+u*u*u*e[1]]); } cur=e; }
+    else if(cmd==='Q'){ const a=cur,b=[num(),num()],e=[num(),num()];
+      for(let k=1;k<=12;k++){ const u=k/12,v=1-u; pts.push([v*v*a[0]+2*v*u*b[0]+u*u*e[0],v*v*a[1]+2*v*u*b[1]+u*u*e[1]]); } cur=e; }
+  }
+  return pts;
+}
+/* the jaw line below y0, right side down round the chin and up the left, pushed out by off(y) (in when negative) */
+function jawLine(pts,y0,off){
+  let top=0; pts.forEach((p,i)=>{ if(p[1]<pts[top][1]) top=i; });
+  const ring=pts.slice(top).concat(pts.slice(0,top)), out=[];
+  for(let i=0;i<ring.length;i++){ const p=ring[i]; if(p[1]<y0) continue;
+    const a=ring[Math.max(0,i-1)], b=ring[Math.min(ring.length-1,i+1)]; let nx=b[1]-a[1], ny=-(b[0]-a[0]); const L=Math.hypot(nx,ny)||1; nx/=L; ny/=L;
+    if(nx*p[0]+ny*(p[1]+4)<0){ nx=-nx; ny=-ny; }
+    const o=off(p[1]); out.push([n2(p[0]+nx*o),n2(p[1]+ny*o)]); }
+  /* exactly at y0 on both sides */
+  return out;
+}
+const halfW=(pts,y)=>{ let best=0; for(const p of pts) if(p[0]>0&&Math.abs(p[1]-y)<Math.abs(best?best[1]-y:1e9)) best=p; return best?best[0]:29; };
+function facial(style,view,col,faceD){
   const st=shade(col,-0.3), A=`fill="${col}" stroke="${st}"`;
   const p=(d,a)=>`<path d="${d}" ${a||A}/>`, soft=`fill="${col}" stroke="none" opacity=".3"`;
+  if(view==='front'&&faceD&&['stubble','beard','fullbeard','chinstrap'].includes(style)){
+    /* jaw beards are built from the face's own outline, offset outward, so they fit every face shape */
+    const P=facePoints(faceD), L=a=>a.map(q=>q.join(',')).join('L');
+    const y0=style==='beard'||style==='stubble'?-2:-4, wi=n2(halfW(P,y0)-3.5), k=wi/25.5;
+    const outer=jawLine(P,y0,style==='fullbeard'?y=>0.5+Math.max(0,y-8)*0.45:()=>0.5);
+    if(style==='chinstrap'){ const inner=jawLine(P,y0,()=>-5).reverse(); return p(`M${L(outer)}L${L(inner)}Z`); }
+    const inner=style==='fullbeard'?`L${-wi},-4C${n2(-wi+1.5)},8 ${n2(-18*k)},12 -11,13.5Q0,9.5 11,13.5C${n2(18*k)},12 ${n2(wi-1.5)},8 ${wi},-4Z`
+      :`L${-wi},-2C${n2(-wi+1.5)},8 ${n2(-18*k)},13 -11,14.5Q0,10 11,14.5C${n2(18*k)},13 ${n2(wi-1.5)},8 ${wi},-2Z`;
+    return p(`M${L(outer)}${inner}`,style==='stubble'?soft:A);
+  }
   if(view==='front'){
     const mou='M-11,16Q-6,11 0,13.5Q6,11 11,16Q5,15.5 0,16.5Q-5,15.5 -11,16Z';
     const beard='M-29.5,-2C-29.5,18 -16,36.5 0,36.5C16,36.5 29.5,18 29.5,-2L25.5,-2C24,8 18,13 11,14.5Q0,10 -11,14.5C-18,13 -24,8 -25.5,-2Z';
@@ -927,9 +964,46 @@ function headwearRaw(id,side,col,rear,nod){
   return '';
 }
 
+/* ── face shapes, eyes, noses and ears: inherited features, separate from the expression ──────────────
+   Front-view head outlines (head-centre coordinates; the oval is the original head). chin = lowest point. */
+const FACE_SHAPES=[['oval','Oval'],['round','Round'],['square','Square'],['rectangle','Rectangle'],['oblong','Oblong'],['heart','Heart'],['diamond','Diamond'],['triangle','Triangle (pear)']];
+const FACE_GEO={
+  oval:{d:'M-29,-4C-29,-30 -17,-36 0,-36C17,-36 29,-30 29,-4C29,16 16,35 0,35C-16,35 -29,16 -29,-4Z',chin:35},
+  round:{d:'M-30,-4C-30,-31 -17,-36 0,-36C17,-36 30,-31 30,-4C30,19 18,33 0,33C-18,33 -30,19 -30,-4Z',chin:33},
+  square:{d:'M-29.5,-4C-29.5,-30 -17,-36 0,-36C17,-36 29.5,-30 29.5,-4C29.5,12 28.5,24 22,30Q12,35 0,35Q-12,35 -22,30C-28.5,24 -29.5,12 -29.5,-4Z',chin:35},
+  rectangle:{d:'M-28,-4C-28,-30 -16.5,-36 0,-36C16.5,-36 28,-30 28,-4C28,14 27.5,27 21,33Q11,38 0,38Q-11,38 -21,33C-27.5,27 -28,14 -28,-4Z',chin:38},
+  oblong:{d:'M-27.5,-4C-27.5,-30 -16.5,-36 0,-36C16.5,-36 27.5,-30 27.5,-4C27.5,18 15,38 0,38C-15,38 -27.5,18 -27.5,-4Z',chin:38},
+  heart:{d:'M-30,-6C-30,-31 -17,-36 0,-36C17,-36 30,-31 30,-6C30,12 15,30 0,35C-15,30 -30,12 -30,-6Z',chin:35},
+  diamond:{d:'M-25,-12C-24,-31 -14,-36 0,-36C14,-36 24,-31 25,-12Q30,-4 29,3C27,19 13,34 0,35C-13,34 -27,19 -29,3Q-30,-4 -25,-12Z',chin:35},
+  triangle:{d:'M-26,-4C-26,-30 -15,-36 0,-36C15,-36 26,-30 26,-4C27.5,14 28,25 21,31Q11,35 0,35Q-11,35 -21,31C-28,25 -27.5,14 -26,-4Z',chin:35}};
+/* eye shapes: sx, sy scale the white of the eye; tilt lifts (+) or drops (−) the outer corner; dx moves both eyes
+   apart (+) or together (−); hood, mono, deep and bulge add a lid fold, a flat lid, a brow-bone shadow or a lower lid */
+const EYE_TYPES=[['almond','Almond'],['round','Round'],['hooded','Hooded'],['deepset','Deep-set'],['upturned','Upturned'],['downturned','Downturned'],['monolid','Monolid'],['protruding','Protruding'],['closeset','Close-set'],['wideset','Wide-set']];
+const EYE_GEO={almond:{},round:{sx:0.92,sy:1.15},hooded:{hood:1},deepset:{sy:0.9,deep:1},upturned:{tilt:9},downturned:{tilt:-9},
+  monolid:{sy:0.85,mono:1},protruding:{sx:1.05,sy:1.2,bulge:1},closeset:{dx:-1.8},wideset:{dx:2}};
+/* noses: front = the line(s) drawn on the face; side = the profile from the brow (−28,−6) to under the nose (−28.5,12) */
+const NOSE_TYPES=[['greek','Greek (straight)'],['roman','Roman (aquiline)'],['hawk','Hawk (hooked)'],['nubian','Nubian'],['lowbridge','Low bridge (flat, wide)'],['button','Button'],['turnedup','Turned-up (celestial)'],['bulbous','Bulbous'],['crooked','Crooked']];
+const NOSE_GEO={
+  greek:{front:'M-1,2L-3.5,9.5Q0,11.5 3,9.5',side:'L-35.5,8Q-36,11 -31,11.5L-28.5,12'},
+  roman:{front:'M-0.5,0Q-2.5,5 -3.5,10Q0,12.2 3,10',side:'Q-32.5,-3 -35.5,8Q-36,11 -31,11.5L-28.5,12'},
+  hawk:{front:'M-0.5,-1Q-2.5,5 -2.5,10.8Q0,12.8 2.5,10.8',side:'C-30,-4 -33,-2 -35,3C-36.5,7 -36.3,10 -33.5,11.8L-28.5,12'},
+  nubian:{front:'M-1,2L-2.5,8M-5.5,9.2Q-4,12 0,11Q4,12 5.5,9.2',side:'L-34,8Q-35.5,11.5 -30.5,12L-28.5,12'},
+  lowbridge:{front:'M-5.2,8.8Q-3,11.6 0,10.6Q3,11.6 5.2,8.8',side:'Q-29.5,0 -32.5,7Q-34,11 -30,11.5L-28.5,12'},
+  button:{front:'M-2.8,8.4Q0,11.4 2.8,8.4',side:'L-30,2Q-33.5,6 -33,9Q-32,11.5 -29.5,11.5L-28.5,12'},
+  turnedup:{front:'M-1,3L-3,8.4Q0,10.4 3,8.4',nostrils:1,side:'Q-31,2 -34.5,6.5Q-35,9.5 -31,11L-28.5,12'},
+  bulbous:{front:'M-1,2L-2.6,6.5M-4.4,8.4Q-5,12.4 0,12.4Q5,12.4 4.4,8.4',side:'L-34,6Q-36.8,7 -36,10.4Q-34.6,12.4 -31,11.6L-28.5,12'},
+  crooked:{front:'M0.5,1Q-2.5,5 -1,8.4L-3,9.8Q0,11.8 3,9.6',side:'L-35.5,8Q-36,11 -31,11.5L-28.5,12'}};
+/* ears: drawn centred on (x, y) */
+const EAR_TYPES=[['oval','Oval'],['round','Round'],['rectangular','Rectangular'],['triangular','Triangular']];
+function earSVG(type,x,y,a){
+  if(type==='round') return `<ellipse cx="${x}" cy="${y}" rx="5.5" ry="6.3" ${a}/>`;
+  if(type==='rectangular') return `<rect x="${x-4.6}" y="${y-7.5}" width="9.2" height="15" rx="3.4" ${a}/>`;
+  if(type==='triangular') return `<path d="M${x-5},${y-6.5}Q${x},${y-10} ${x+5},${y-6.5}Q${x+4.2},${y+1.5} ${x},${y+7}Q${x-4.2},${y+1.5} ${x-5},${y-6.5}Z" ${a}/>`;
+  return `<ellipse cx="${x}" cy="${y}" rx="5" ry="7.5" ${a}/>`;
+}
 function headSVG(d,C){
   const side=d.head!=='front', eye=EYES[d.eyeColor-1], rear=!!d.back&&!side;   /* rear: the back of the head */
-  const h=hair(d.hairStyle,side?'side':rear?'back':'front',C.hair,(d.headwear&&!['headband','bow','headphones','headset'].includes(d.headwear))||d.upperGarment==='hoodieup',d.headNod), fh=rear?'':facial(d.facialHair,side?'side':'front',C.hair);
+  const h=hair(d.hairStyle,side?'side':rear?'back':'front',C.hair,(d.headwear&&!['headband','bow','headphones','headset'].includes(d.headwear))||d.upperGarment==='hoodieup',d.headNod), fh=rear?'':facial(d.facialHair,side?'side':'front',C.hair,(FACE_GEO[d.faceShape]||FACE_GEO.oval).d);
   const S=`fill="${C.skin}" stroke="${C.skinS}"`, lash=shade(C.skin,-0.62);
   const iris=(x,y,r)=>`<circle cx="${x}" cy="${y}" r="${r}" fill="${eye.hex}" stroke="${shade(eye.hex,-0.35)}" stroke-width=".7"/>`
     +(eye.fleck?`<circle cx="${x}" cy="${y}" r="${n2(r*0.62)}" fill="#b58a3c" stroke="none"/>`:'')
@@ -942,9 +1016,9 @@ function headSVG(d,C){
   const eyeAt=(x,o,kind,ix)=>{
     if(kind==='happy') return ln(`M${x-5},-0.5Q${x},-6.5 ${x+5},-0.5`);
     if(kind==='closed') return ln(`M${x-5},-2.5Q${x},1.5 ${x+5},-2.5`);
-    const wide=kind==='wide', r=wide?5.6:5;
-    let e=`<ellipse cx="${x}" cy="-2" rx="${r}" ry="${wide?5.6:4.2}" fill="#fff" stroke="${C.skinS}" stroke-width=".8"/>`+iris(ix,-2,wide?2.7:3.2);
-    if(MASC&&(kind==='open'||wide)){ const ry=wide?5.6:4.2;   /* lash line along the upper lid, with a flick at the outer corner */
+    const wide=kind==='wide', r=n2((wide?5.6:5)*(EG.sx||1)), ery=n2((wide?5.6:4.2)*(EG.sy||1));
+    let e=`<ellipse cx="${x}" cy="-2" rx="${r}" ry="${ery}" fill="#fff" stroke="${C.skinS}" stroke-width=".8"/>`+iris(ix,-2,wide?2.7:Math.min(3.2,ery-0.6));
+    if(MASC&&(kind==='open'||wide)){ const ry=ery;   /* lash line along the upper lid, with a flick at the outer corner */
       e+=`<path d="M${n2(x-r)},-2.6A${r},${ry} 0 0 1 ${n2(x+r)},-2.6M${n2(x+o*r)},-2.8l${n2(o*2.8)},-2.4" fill="none" stroke="${MASC}" stroke-width="1.9" stroke-linecap="round"/>`; }
     /* an eyelid: skin down to (or up to) a line from the outer corner (yo) to the inner corner (yi) */
     const lid=(yo,yi,top)=>{const xo=n2(x+o*6.2), xi=n2(x-o*6.2), ye=top?-8.2:4.2;
@@ -952,34 +1026,49 @@ function headSVG(d,C){
     if(kind==='narrow') e+=lid(-3.6,-3.6,true)+lid(0.4,0.4,false);
     if(kind==='sad') e+=lid(-1.2,-5.4,true);
     if(kind==='angry') e+=lid(-5.6,-2.2,true);
-    return e;
+    if(kind==='open'||wide){   /* the eye shape's own lids */
+      const a=n2(x-r-0.6), b=n2(x+r+0.6), top=n2(-2-ery);
+      if(EG.hood) e+=`<path d="M${a},-2.2Q${x},${n2(top+2.6)} ${b},-2.2V${n2(top-1.5)}H${a}Z" fill="${C.skin}" stroke="none"/>`+ln(`M${n2(x-r)},-2.6Q${x},${n2(top+2.3)} ${n2(x+r)},-2.6`)
+        +`<path d="M${n2(x-r+0.5)},${n2(top+0.2)}Q${x},${n2(top-1.6)} ${n2(x+r+0.3)},${n2(top+0.8)}" fill="none" stroke="${C.skinS}" stroke-width=".8"/>`;
+      if(EG.mono) e+=`<path d="M${a},${n2(-2-ery*0.45)}Q${x},${n2(-2-ery*0.75)} ${b},${n2(-2-ery*0.35)}V${n2(top-1.5)}H${a}Z" fill="${C.skin}" stroke="none"/>`+ln(`M${n2(x-r)},${n2(-2-ery*0.4)}Q${x},${n2(-2-ery*0.72)} ${n2(x+r)},${n2(-2-ery*0.3)}`);
+      if(EG.deep) e+=`<path d="M${n2(x-r-1)},${n2(top-0.6)}Q${x},${n2(top-4)} ${n2(x+r+1)},${n2(top-0.6)}" fill="none" stroke="${C.skinS}" stroke-width="1.2" stroke-opacity=".75"/>`;
+      if(EG.bulge) e+=`<path d="M${n2(x-r+0.4)},${n2(-2+ery*0.55)}Q${x},${n2(-2+ery+2.4)} ${n2(x+r-0.4)},${n2(-2+ery*0.55)}" fill="none" stroke="${C.skinS}" stroke-width=".8" stroke-opacity=".8"/>`;
+    }
+    return EG.tilt?`<g transform="rotate(${-o*EG.tilt} ${x} -2)">${e}</g>`:e;
   };
   const browAt=(x,o,kind,hw)=>{const B={neutral:[-10.5,-10.5,-13.5],raised:[-13.5,-13,-17],sad:[-9.5,-14,-13],angry:[-13.5,-8.5,-12.5],flat:[-9.8,-9.8,-10]}[kind];
     return `<path d="M${n2(x+o*hw)},${B[0]}Q${x},${B[2]} ${n2(x-o*hw)},${B[1]}" fill="none" stroke="${C.brow}" stroke-width="2.3" stroke-linecap="round"/>`;};
   const nod=d.headNod||0;
+  const FG=FACE_GEO[d.faceShape]||FACE_GEO.oval, EG=EYE_GEO[d.eyeType]||{}, NG=NOSE_GEO[d.noseType]||NOSE_GEO.greek, ET=d.earType;
+  const ex=n2(11.5+(EG.dx||0));
+  /* facial hair follows the jaw: stretched to a longer or shorter chin, and kept inside a narrower one */
+  const fy=FG.chin/35, fcid=FG===FACE_GEO.oval?null:'hcface'+(++UID);
+  const fhF=fh&&!side&&fcid&&d.facialHair==='chops'?`<clipPath id="${fcid}"><path d="${FG.d}" transform="scale(1.07 1.04)"/></clipPath><g clip-path="url(#${fcid})">${fh}</g>`:fh;   /* jaw beards are fitted; sideburns are trimmed to the cheek */
   const bk=d.eyebrows, ek=d.eyes, mouth=mouthSVG(d.mouth,mk('lipstick')?(d.lipstickColor||LIPSTICK_COL):C.lip);
   let s='';
  if(rear){   /* the back of the head: ears and skull, no face */
-    s+=`<ellipse cx="-29.5" cy="1" rx="5" ry="7.5" ${S}/><ellipse cx="29.5" cy="1" rx="5" ry="7.5" ${S}/>`
-     + `<path d="M-29,-4C-29,-30 -17,-36 0,-36C17,-36 29,-30 29,-4C29,16 16,35 0,35C-16,35 -29,16 -29,-4Z" ${S}/>`;
+    s+=earSVG(ET,-29.5,1,S)+earSVG(ET,29.5,1,S)
+     + `<path d="${FG.d}" ${S}/>`;
   } else if(!side){
     /* a nod from the front: the face slides down (chin down) or up within the head, the eyes and brows most,
        the mouth least, and squeezes a little; the ears go the other way */
     const g=(k,body)=>nod?`<g transform="translate(0 ${n2(nod*k)})">${body}</g>`:body;
-    s+=g(-0.12,`<ellipse cx="-29.5" cy="1" rx="5" ry="7.5" ${S}/><ellipse cx="29.5" cy="1" rx="5" ry="7.5" ${S}/>`)
-     + `<path d="M-29,-4C-29,-30 -17,-36 0,-36C17,-36 29,-30 29,-4C29,16 16,35 0,35C-16,35 -29,16 -29,-4Z" ${S}/>`
-     + g(0.24,blushAt(-17)+blushAt(17)) + g(0.18,fh)
-     + g(0.3,eyeAt(-11.5,-1,ek==='wink'?'open':ek,-11.5)+eyeAt(11.5,1,ek==='wink'?'happy':ek,11.5)
-       + browAt(-11.5,-1,bk==='skeptical'?'raised':bk,5.5)+browAt(11.5,1,bk==='skeptical'?'flat':bk,5.5))
-     + g(0.25,`<path d="M-1,2L-3.5,9.5Q0,11.5 3,9.5" fill="none" stroke="${C.skinS}" stroke-width="1.5" stroke-linecap="round"/>`)
+    s+=g(-0.12,earSVG(ET,-29.5,1,S)+earSVG(ET,29.5,1,S))
+     + `<path d="${FG.d}" ${S}/>`
+     + g(0.24,blushAt(-17)+blushAt(17)) + g(0.18,fhF)
+     + g(0.3,eyeAt(-ex,-1,ek==='wink'?'open':ek,-ex)+eyeAt(ex,1,ek==='wink'?'happy':ek,ex)
+       + browAt(-ex,-1,bk==='skeptical'?'raised':bk,5.5)+browAt(ex,1,bk==='skeptical'?'flat':bk,5.5))
+     + g(0.25,`<path d="${NG.front}" fill="none" stroke="${C.skinS}" stroke-width="1.5" stroke-linecap="round"/>`
+       +(NG.nostrils?`<ellipse cx="-1.7" cy="8.9" rx="1.1" ry=".7" fill="${C.skinS}" stroke="none"/><ellipse cx="1.7" cy="8.9" rx="1.1" ry=".7" fill="${C.skinS}" stroke="none"/>`:''))
      + g(0.18,mouth);
   } else {
-    s+=`<path d="M-28,-6L-35.5,8Q-36,11 -31,11.5L-28.5,12C-29,24 -22,35 -8,35C10,35 22,28 27,10C31,-2 30,-36 0,-36C-17,-36 -29,-30 -28,-6Z" ${S}/>`
-     + blushAt(-14) + fh
+    const cy=FG.chin;   /* in profile only the chin's height changes with the face shape */
+    s+=`<path d="M-28,-6${NG.side}C-29,${n2(24*cy/35)} -22,${cy} -8,${cy}C10,${cy} 22,${n2(28*cy/35)} 27,10C31,-2 30,-36 0,-36C-17,-36 -29,-30 -28,-6Z" ${S}/>`
+     + blushAt(-14) + (fh&&cy!==35?`<g transform="scale(1 ${n2(cy/35)})">${fh}</g>`:fh)
      + eyeAt(-15,1,ek==='wink'?'open':ek,-16.2)
      + browAt(-15.5,1,bk==='skeptical'?'raised':bk,6.5)
      + `<g transform="translate(-22.3 0) scale(.55 1)">${mouth}</g>`
-     + `<ellipse cx="7" cy="1" rx="5" ry="7.5" ${S}/><path d="M8,-2Q5,1 8,4" fill="none" stroke="${C.skinS}"/>`;
+     + earSVG(ET,7,1,S)+`<path d="M8,-2Q5,1 8,4" fill="none" stroke="${C.skinS}"/>`;
   }
   const star=(x,y,a)=>`<path transform="translate(${x} ${y})" d="M0,${-a}Q${n2(a*0.13)},${n2(-a*0.13)} ${a},0Q${n2(a*0.13)},${n2(a*0.13)} 0,${a}Q${n2(-a*0.13)},${n2(a*0.13)} ${-a},0Q${n2(-a*0.13)},${n2(-a*0.13)} 0,${-a}Z" fill="#fffbe0" stroke="#e2b23a" stroke-width=".8"/>`;
   const earY=!side&&!rear?n2(-nod*0.12):0;
@@ -1672,6 +1761,7 @@ function defaults(){
     height:3,weight:3,upperGarment:null,lowerGarment:null,footwear:null,headwear:null,eyewear:null,accessories:[],prop:null,propColor:null,
     upperColor:null,lowerColor:null,footwearColor:null,headwearColor:null,eyewearColor:null,sockColor:null,tieColor:null,scarfColor:null,gloveColor:null,packColor:null,mascaraColor:null,blushColor:null,lipstickColor:null,heldLeftGrip:null,heldRightGrip:null,thumbFlipL:false,thumbFlipR:false,flipped:false,back:false,heldLeftColor:null,heldRightColor:null,
     upperPattern:'plain',upperColor2:null,lowerPattern:'plain',lowerColor2:null,
+    faceShape:'oval',eyeType:'almond',noseType:'greek',earType:'oval',
     head:'front',torsoOrientation:0,pelvisOrientation:0,headNod:0,held:{left:null,right:null},joints};
 }
 function normalize(src){
@@ -1685,6 +1775,8 @@ function normalize(src){
   d.hairStyle=pick(src.hairStyle,HAIR_STYLES.map(h=>h[0]),d.hairStyle);
   d.facialHair=pick(src.facialHair,FACIAL.map(h=>h[0]),d.facialHair);
   d.eyebrows=pick(src.eyebrows,BROWS.map(h=>h[0]),'neutral'); d.eyes=pick(src.eyes,EYE_SHAPES.map(h=>h[0]),'open'); d.mouth=pick(src.mouth,MOUTHS.map(h=>h[0]),'smile');
+  d.faceShape=pick(src.faceShape,FACE_SHAPES.map(h=>h[0]),'oval'); d.eyeType=pick(src.eyeType,EYE_TYPES.map(h=>h[0]),'almond');
+  d.noseType=pick(src.noseType,NOSE_TYPES.map(h=>h[0]),'greek'); d.earType=pick(src.earType,EAR_TYPES.map(h=>h[0]),'oval');
   d.height=int(src.height,0,5,3); d.weight=int(src.weight,1,5,3);
   if(d.height===0) d.facialHair='none';   /* a child: no adult body features (no beard; the bust and adult shaping are left out when drawn) */
   d.upperGarment=UPPER[src.upperGarment]?src.upperGarment:null;
@@ -1972,7 +2064,7 @@ const speech=(()=>{
     p:'ME',q:'CU',r:'AC',s:'EC',t:'CE',u:'EU',v:'FE',w:'CAMLEU',x:'ECC',y:'WAE',z:'CE'};
   const LETTER_ES={a:'A',b:'ME',c:'CE',d:'CE',e:'E',f:'EFE',g:'CE',h:'ACE',i:'E',j:'COCA',k:'CA',l:'ELE',m:'EME',n:'ECE',ñ:'ECE',o:'O',
     p:'ME',q:'CU',r:'ECE',s:'ECE',t:'CE',u:'U',v:'ME',w:'COMLEME',x:'ECEC',y:'CE',z:'CECA'};
-  const letterCodes=map=>ch=>{ const k=String(ch).toLowerCase().normalize('NFD').replace(/[\u0301\u0308]/g,'').normalize('NFC'); const c=map[k]||map[k[0]]; return c?c.split(''):null; };
+  const letterCodes=map=>ch=>{ const k=String(ch).toLowerCase().normalize('NFD').replace(/[́̈]/g,'').normalize('NFC'); const c=map[k]||map[k[0]]; return c?c.split(''):null; };
   const LANG={
     en:{visemes, letter:letterCodes(LETTER_EN), letterCue:/\b(with an?|the letter|letter|a capital|capital|a small|double|spelled|spelt|spell)\s+$/i, num:numWords, year:yearWords, decade:decadeWords, isYear, and:' and ', percent:' percent ', ref:REF},
     es:{visemes:visemesES, letter:letterCodes(LETTER_ES), letterCue:/\b(con (una? )?|la letra|letra|doble|se escribe|se deletrea)\s*$/i, num:numES, and:' y ', percent:' por ciento ', ref:5.0}   /* Spanish words are longer: about 5 units each */
@@ -2239,7 +2331,7 @@ const prosody=(()=>{
   return make;
 })();
 
-return {scarfColours,SCHEMA,SKIN,EYES,HAIR,HAIR_STYLES,FACIAL,HEIGHTS,HEIGHT_OPTIONS,WEIGHTS,HEADS,JOINTS,POSES,ITEMS,UPPER,LOWER,FOOT,OUTFITS,HEADWEAR,EYEWEAR,ACCESSORIES,BROWS,EYE_SHAPES,MOUTHS,EMOTIONS,NEUTRAL_FACE,EMOTION_POSES,GLOVE_COL,PACK_COL,SCARF_COL,MASCARA_COL,BLUSH_COL,LIPSTICK_COL,PROPS,GRIPS,ITEM_CATS,PALETTE,PATTERNS,colour2Default,SOCK_COL,TIE_COL,colourName,STAGE,
+return {scarfColours,SCHEMA,SKIN,EYES,HAIR,HAIR_STYLES,FACIAL,HEIGHTS,HEIGHT_OPTIONS,WEIGHTS,HEADS,JOINTS,POSES,ITEMS,UPPER,LOWER,FOOT,OUTFITS,HEADWEAR,EYEWEAR,ACCESSORIES,BROWS,EYE_SHAPES,MOUTHS,EMOTIONS,NEUTRAL_FACE,EMOTION_POSES,FACE_SHAPES,EYE_TYPES,NOSE_TYPES,EAR_TYPES,GLOVE_COL,PACK_COL,SCARF_COL,MASCARA_COL,BLUSH_COL,LIPSTICK_COL,PROPS,GRIPS,ITEM_CATS,PALETTE,PATTERNS,colour2Default,SOCK_COL,TIE_COL,colourName,STAGE,
         defaults,normalize,render,pivots,applyPose,mirror,describe,speech,prosody,prosodyAt:prosody.at,EASES,ease,easeId,jointDelta};
 })();
 window.HouseCharacter = HouseCharacter;

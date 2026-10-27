@@ -50,6 +50,7 @@
   .cp-panel h2{ font-size:0.7857rem; font-weight:600; letter-spacing:.06em; text-transform:uppercase; color:var(--text-muted); margin:0 0 10px; }
   .cp-row{ display:grid; grid-template-columns:7.2rem minmax(0,1fr); gap:8px; align-items:center; margin:7px 0; }
   .cp-row > label, .cp-row > .cp-lab{ font-size:0.8571rem; color:var(--text-secondary); }
+  .cp-note{ font-size:0.75rem; color:var(--text-muted); margin:-4px 0 8px; line-height:1.4; }
   .cp-row small{ display:block; font-size:0.72rem; color:var(--text-muted); }
   .cp-in, .cp-sel{ box-sizing:border-box; width:100%; font:inherit; font-size:0.9rem; padding:6px 8px; border:1px solid var(--color-border-primary); border-radius:8px; background:var(--color-background-primary); color:var(--text-primary); }
   .cp-sel:disabled{ opacity:.55; }
@@ -111,6 +112,10 @@
         <div class="cp-row"><span class="cp-lab">Hair colour<small id="cpHairLab"></small></span><div class="cp-swatches" id="cpHairCol"></div></div>
         <div class="cp-row"><label for="cpHairStyle">Hair style</label><select class="cp-sel" id="cpHairStyle"></select></div>
         <div class="cp-row"><label for="cpFacial">Facial hair</label><select class="cp-sel" id="cpFacial"></select></div>
+        <div class="cp-row"><label for="cpFaceShape">Face shape</label><select class="cp-sel" id="cpFaceShape"></select></div>
+        <div class="cp-row"><label for="cpEyeType">Eye shape</label><select class="cp-sel" id="cpEyeType"></select></div>
+        <div class="cp-row"><label for="cpNoseType">Nose</label><select class="cp-sel" id="cpNoseType"></select></div>
+        <div class="cp-row"><label for="cpEarType">Ears</label><select class="cp-sel" id="cpEarType"></select></div>
         <div class="cp-row"><label for="cpEmotion">Expression</label><select class="cp-sel" id="cpEmotion"></select></div>
         <div class="cp-row"><label for="cpBrows">Eyebrows</label><select class="cp-sel" id="cpBrows"></select></div>
         <div class="cp-row"><label for="cpEyes">Eyes</label><select class="cp-sel" id="cpEyes"></select></div>
@@ -147,6 +152,8 @@
         <div class="cp-pal" data-key="sockColor" hidden></div>
         <div class="cp-row"><span class="cp-lab">Tie colour</span><div class="cp-pick"><button type="button" class="cp-sw cp-col" data-key="tieColor" aria-label="Choose tie colour"></button><small id="cpTieLab"></small></div></div>
         <div class="cp-pal" data-key="tieColor" hidden></div>
+        <div class="cp-row"><span class="cp-lab">Scarf colour</span><div class="cp-pick"><button type="button" class="cp-sw cp-col" data-key="scarfColor" aria-label="Choose scarf colour"></button><small id="cpScarfLab"></small></div></div>
+        <div class="cp-pal" data-key="scarfColor" hidden></div>
         <div class="cp-row"><span class="cp-lab">Glove colour</span><div class="cp-pick"><button type="button" class="cp-sw cp-col" data-key="gloveColor" aria-label="Choose glove colour"></button><small id="cpGloveLab"></small></div></div>
         <div class="cp-pal" data-key="gloveColor" hidden></div>
         <div class="cp-row"><span class="cp-lab">Pack colour</span><div class="cp-pick"><button type="button" class="cp-sw cp-col" data-key="packColor" aria-label="Choose pack colour"></button><small id="cpPackLab"></small></div></div>
@@ -164,10 +171,21 @@
         <div class="cp-row"><label for="cpProp">Prop</label><div class="cp-pick"><select class="cp-sel" id="cpProp"></select><button type="button" class="cp-sw cp-col" data-key="propColor" aria-label="Choose prop colour"></button></div></div>
         <div class="cp-pal" data-key="propColor" hidden></div>
         <div class="cp-row"><label for="cpPreset">Preset</label><select class="cp-sel" id="cpPreset"></select></div>
+        <div class="cp-row"><span class="cp-lab">View</span><div class="cp-checks"><label><input type="checkbox" id="cpBack"> Back view (seen from behind)</label></div></div>
         <div class="cp-row"><label for="cpTurn">Torso orientation<small id="cpTurnLab"></small></label><input id="cpTurn" type="range" min="-90" max="90" step="5"></div>
         <div class="cp-row"><label for="cpPTurn">Pelvis orientation<small id="cpPTurnLab"></small></label><input id="cpPTurn" type="range" min="-90" max="90" step="5"></div>
         <div class="cp-btns"><button id="cpMirror" type="button">⇄ Mirror pose</button><button id="cpResetPose" type="button">Reset pose</button></div>
         <details class="cp-det"><summary>Joint angles</summary><div id="cpJoints"></div></details>
+      </div>
+
+      <div class="cp-panel">
+        <h2>Scene casting</h2>
+        <p class="cp-note">Used by the people-scene pages that load characters from a folder. Saved in the JSON as the <code>cast</code> block.</p>
+        <div class="cp-row"><label for="cpCastPose">Scene pose<small id="cpCastAuto"></small></label><select class="cp-sel" id="cpCastPose"></select></div>
+        <div class="cp-row"><span class="cp-lab">Scenes<small>None ticked: any scene</small></span><div class="cp-checks" id="cpCastScenes"></div></div>
+        <div class="cp-row"><label for="cpCastMus">Stage place</label><select class="cp-sel" id="cpCastMus"></select></div>
+        <div class="cp-row"><label for="cpCastRole">Role</label><input class="cp-sel" id="cpCastRole" type="text" placeholder="e.g. playing the violin"></div>
+        <div class="cp-row"><span class="cp-lab">Mirroring</span><div class="cp-checks"><label><input type="checkbox" id="cpCastNoMirror"> Never mirror in scenes</label></div></div>
       </div>
 
       <div class="cp-panel">
@@ -260,7 +278,7 @@
     footwearColor:()=>(HC.FOOT[ch.footwear]||{}).col, headwearColor:()=>(HC.HEADWEAR[ch.headwear]||{}).col,
     sockColor:()=>(HC.FOOT[ch.footwear]||{}).kind==='closed'?HC.SOCK_COL:undefined,
     eyewearColor:()=>(HC.EYEWEAR[ch.eyewear]||{}).lens, gloveColor:()=>ch.accessories.some(a=>a.startsWith('gloves'))?HC.GLOVE_COL:undefined,
-    tieColor:()=>ch.accessories.includes('tie')?HC.TIE_COL:undefined};
+    tieColor:()=>ch.accessories.includes('tie')?HC.TIE_COL:undefined, scarfColor:()=>ch.accessories.includes('scarf')?HC.SCARF_COL:undefined};
   document.querySelectorAll('.cp-pal').forEach(p=>{
     p.innerHTML=HC.PALETTE.map(c=>`<button type="button" data-c="${c}" title="${c} · ${HC.colourName(c)}" aria-label="${HC.colourName(c)} ${c}" style="background:${c}"></button>`).join('');
     p.addEventListener('click',e=>{const b=e.target.closest('button'); if(!b) return; ch[p.dataset.key]=b.dataset.c; p.hidden=true; update();});
@@ -277,6 +295,7 @@
     $('cpGloveLab').textContent=ch.accessories.some(a=>a.startsWith('gloves'))?'':'Tick a glove first';
     $('cpSockLab').textContent=(HC.FOOT[ch.footwear]||{}).kind==='closed'?'':'For socks under sneakers, shoes or boots';
     $('cpTieLab').textContent=ch.accessories.includes('tie')?'':'Tick “Tie” first';
+    $('cpScarfLab').textContent=ch.accessories.includes('scarf')?'The other two stripes are a third of the colour wheel away':'Tick “Scarf” first';
   }
   let outfitBody=null;
   function syncOutfit(){
@@ -303,6 +322,8 @@
   $('cpName').addEventListener('input',e=>{ch.name=e.target.value;update(true);});
   bind('cpBody',v=>ch.bodyType=v); bind('cpHeight',v=>ch.height=+v); bind('cpWeight',v=>ch.weight=+v);
   bind('cpHairStyle',v=>ch.hairStyle=v); bind('cpFacial',v=>ch.facialHair=v);
+  [['cpFaceShape','FACE_SHAPES','faceShape'],['cpEyeType','EYE_TYPES','eyeType'],['cpNoseType','NOSE_TYPES','noseType'],['cpEarType','EAR_TYPES','earType']]
+    .forEach(([id,list,k])=>{ $(id).innerHTML=HC[list].map(([v,l])=>`<option value="${v}">${l}</option>`).join(''); bind(id,v=>ch[k]=v); });
   /* face */
   const faces=[HC.NEUTRAL_FACE].concat(...HC.EMOTIONS.map(g=>g[1]));
   $('cpEmotion').innerHTML='<option value="">Custom</option><option value="neutral">Neutral</option>'
@@ -315,23 +336,79 @@
   bind('cpHat',v=>ch.headwear=v||null); bind('cpEyewear',v=>ch.eyewear=v||null);
   bind('cpUpper',v=>ch.upperGarment=v||null); bind('cpLower',v=>ch.lowerGarment=v||null); bind('cpFoot',v=>ch.footwear=v||null);
   bind('cpHeldL',v=>ch.held.left=v||null); bind('cpHeldR',v=>ch.held.right=v||null);
-  $('cpHead').addEventListener('click',e=>{const b=e.target.closest('button'); if(b){ch.head=b.dataset.v;update();}});
+  /* back view: the drawing is a mirror image, so the left/right head buttons and the orientation sliders swap to stay true on screen */
+  const viewSide=v=>ch.back&&v!=='front'?(v==='left'?'right':'left'):v;
+  $('cpHead').addEventListener('click',e=>{const b=e.target.closest('button'); if(b){ch.head=viewSide(b.dataset.v);update();}});
+  $('cpBack').addEventListener('change',e=>{ch.back=e.target.checked;update();});
   $('cpPreset').addEventListener('change',e=>{ if(e.target.value){HC.applyPose(ch,e.target.value);update();} });
-  $('cpPTurn').addEventListener('input',e=>{const v=+e.target.value; ch.pelvisOrientation=v;
+  $('cpPTurn').addEventListener('input',e=>{const v=(ch.back?-1:1)*e.target.value||0; ch.pelvisOrientation=v;
     ch.torsoOrientation=Math.max(v-90,Math.min(v+90,ch.torsoOrientation)); $('cpPreset').value=''; update();});
-  $('cpTurn').addEventListener('input',e=>{ch.torsoOrientation=+e.target.value;$('cpPreset').value='';update();});
+  $('cpTurn').addEventListener('input',e=>{ch.torsoOrientation=(ch.back?-1:1)*e.target.value||0;$('cpPreset').value='';update();});
   $('cpMirror').addEventListener('click',()=>{HC.mirror(ch);$('cpPreset').value='';update();});
   $('cpResetPose').addEventListener('click',()=>{HC.applyPose(ch,'standing');$('cpPreset').value='standing';update();});
   $('cpJoints').addEventListener('input',e=>{const k=e.target.dataset.j; if(!k) return;
     ch.joints[k]=+e.target.value||0; $('cpPreset').value=''; update();});
 
+
+  /* ── scene casting: the optional "cast" block read by the folder-based people-scene pages.
+        The engine doesn't keep it, so it lives beside the character and is added back on save. ── */
+  let cast={};
+  const CAST_POSES=[['standing','Standing'],['walking','Walking'],['waving','Waving'],['hips','Hands on hips'],['reaching','Raising a hand'],['pointing','Pointing at something in the scene'],
+    ['pointing-item','Pointing at what they hold'],['mopping','Mopping the floor'],['sweeping','Sweeping the floor'],['seated','Sitting'],['riding','Riding a bicycle'],
+    ['skating','Riding a skateboard'],['skiing','Skiing'],['snowboarding','Snowboarding'],['driving','Driving a car'],['playing','Playing music on a stage']];
+  const CAST_SCENES=[['street','Street'],['party','Party'],['classroom','Classroom'],['beach','Beach'],['restaurant','Restaurant'],['ski','Ski resort']];
+  const CAST_MUS=[['rock_guitarist','Party: rock guitarist','playing the electric guitar'],['rock_bassist','Party: rock bassist','playing the bass guitar'],['drummer','Party: drummer','playing the drums'],
+    ['keyboard_player','Party: keyboard player','playing the keyboard'],['rock_vocalist','Party: rock vocalist','singing'],['hip_hop_vocalist','Party: hip hop vocalist','singing'],
+    ['violinist','Restaurant: violinist','playing the violin'],['cellist','Restaurant: cellist','playing the cello'],['bassist','Restaurant: double bassist','playing the double bass'],
+    ['mandolinist','Restaurant: mandolinist','playing the mandolin'],['singer','Restaurant: singer','singing'],['pianist','Restaurant: pianist','playing the piano'],['piano_singer','Restaurant: singer at the piano','singing']];
+  const poseName=v=>(CAST_POSES.find(p=>p[0]===v)||[v,v])[1];
+  function autoKind(){   /* the same guess the scene pages make when there is no pose in the file */
+    if(cast.musician||cast.role) return 'playing';
+    if(ch.prop==='car') return 'driving'; if(['bmx','roadbike','mtb'].includes(ch.prop)) return 'riding'; if(ch.prop==='skateboard') return 'skating'; if(ch.prop==='skis') return 'skiing'; if(ch.prop==='snowboard') return 'snowboarding';
+    if(['chair','beachchair'].includes(ch.prop)) return 'seated';
+    const h=[ch.held.left,ch.held.right]; return h.includes('mop')?'mopping':h.includes('broom')?'sweeping':'standing';
+  }
+  const withCast=()=>{ const o=JSON.parse(JSON.stringify(ch)); if(Object.keys(cast).length) o.cast=cast; return o; };
+  const castJSON=()=>JSON.stringify(withCast(),null,2);
+  function readCast(o){ cast={}; const c=o&&o.cast; if(!c||typeof c!=='object'||Array.isArray(c)) return;
+    if(typeof c.pose==='string'&&c.pose) cast.pose=c.pose;
+    if(Array.isArray(c.scenes)) { const s=c.scenes.filter(x=>typeof x==='string'); if(s.length) cast.scenes=s; }
+    if(typeof c.musician==='string'&&c.musician) cast.musician=c.musician;
+    if(typeof c.role==='string'&&c.role.trim()) cast.role=c.role.trim();
+    if(c.noMirror) cast.noMirror=true;
+    for(const k in c) if(!(k in cast)&&!['pose','scenes','musician','role','noMirror'].includes(k)) cast[k]=c[k];   /* keep anything else untouched */
+  }
+  { const ps=$('cpCastPose'); ps.innerHTML='<option value="">Automatic</option>'+CAST_POSES.map(([v,l])=>`<option value="${v}">${l}</option>`).join('');
+    $('cpCastScenes').innerHTML=CAST_SCENES.map(([v,l])=>`<label><input type="checkbox" value="${v}"> ${l}</label>`).join('');
+    $('cpCastMus').innerHTML='<option value="">None</option>'+CAST_MUS.map(([v,l])=>`<option value="${v}">${l}</option>`).join('');
+    const set=(k,v)=>{ if(v===undefined||v===''||v===false||(Array.isArray(v)&&!v.length)) delete cast[k]; else cast[k]=v; update(); };
+    ps.addEventListener('change',e=>set('pose',e.target.value));
+    $('cpCastScenes').addEventListener('change',()=>{ const s=[...$('cpCastScenes').querySelectorAll('input:checked')].map(i=>i.value);
+      set('scenes',s.concat((cast.scenes||[]).filter(x=>!CAST_SCENES.some(c=>c[0]===x)))); });
+    $('cpCastMus').addEventListener('change',e=>{ const v=e.target.value, m=CAST_MUS.find(x=>x[0]===v), old=CAST_MUS.find(x=>x[0]===cast.musician);
+      if(m&&(!cast.role||(old&&cast.role===old[2]))) cast.role=m[2];   /* fill in the role, unless the teacher wrote their own */
+      if(!v&&old&&cast.role===old[2]) delete cast.role;
+      if(['pianist','piano_singer'].includes(v)) cast.noMirror=true;
+      set('musician',v); });
+    $('cpCastRole').addEventListener('input',e=>{ const v=e.target.value.trim(); if(v) cast.role=v; else delete cast.role;
+      if(document.activeElement!==$('cpJson')) $('cpJson').value=castJSON(); });
+    $('cpCastRole').addEventListener('change',()=>update());
+    $('cpCastNoMirror').addEventListener('change',e=>set('noMirror',e.target.checked)); }
+  function syncCast(){
+    $('cpCastPose').value=CAST_POSES.some(p=>p[0]===cast.pose)?cast.pose:'';
+    $('cpCastAuto').textContent=cast.pose?(CAST_POSES.some(p=>p[0]===cast.pose)?'':'Unknown: '+cast.pose):'Now: '+poseName(autoKind());
+    $('cpCastScenes').querySelectorAll('input').forEach(i=>i.checked=(cast.scenes||[]).includes(i.value));
+    $('cpCastMus').value=cast.musician&&CAST_MUS.some(m=>m[0]===cast.musician)?cast.musician:'';
+    if(document.activeElement!==$('cpCastRole')) $('cpCastRole').value=cast.role||'';
+    $('cpCastNoMirror').checked=!!cast.noMirror;
+  }
   function update(skipName){
     ch=HC.normalize(ch);
     stage.innerHTML=HC.render(ch,{ground:true});
     $('cpCaption').textContent=HC.describe(ch);
     if(!skipName) $('cpName').value=ch.name;
     $('cpBody').value=ch.bodyType; $('cpHeight').value=ch.height; $('cpWeight').value=ch.weight;
-    $('cpHairStyle').value=ch.hairStyle; $('cpFacial').value=ch.facialHair;
+    $('cpHairStyle').value=ch.hairStyle; $('cpFacial').value=ch.facialHair; $('cpFaceShape').value=ch.faceShape||'oval'; $('cpEyeType').value=ch.eyeType||'almond'; $('cpNoseType').value=ch.noseType||'greek'; $('cpEarType').value=ch.earType||'oval';
     syncColours(); syncGrips();
     $('cpUpperPat').value=ch.upperPattern; $('cpUpperPat').disabled=!ch.upperGarment; $('cpLowerPat').value=ch.lowerPattern; $('cpLowerPat').disabled=!ch.lowerGarment;
     $('cpBrows').value=ch.eyebrows; $('cpEyes').value=ch.eyes; $('cpMouth').value=ch.mouth;
@@ -341,14 +418,17 @@
     $('cpAcc').querySelectorAll('input').forEach(i=>i.checked=ch.accessories.includes(i.value));
     $('cpUpper').value=ch.upperGarment||''; $('cpLower').value=ch.lowerGarment||''; $('cpFoot').value=ch.footwear||''; syncOutfit();
     $('cpHeldL').value=ch.held.left||''; $('cpHeldR').value=ch.held.right||'';
-    $('cpTurn').value=ch.torsoOrientation; const t=ch.torsoOrientation;
-    const turnLab=t=>t===0?'Front':Math.abs(t)===90?(t<0?'Profile, facing left':'Profile, facing right'):`${Math.abs(t)}° ${t<0?'left':'right'}`;
-    $('cpTurnLab').textContent=turnLab(t); $('cpPTurn').value=ch.pelvisOrientation; $('cpPTurnLab').textContent=turnLab(ch.pelvisOrientation);
+    const sg=ch.back?-1:1; $('cpBack').checked=!!ch.back;
+    $('cpTurn').value=sg*ch.torsoOrientation; const t=sg*ch.torsoOrientation;
+    const turnLab=t=>t===0?(ch.back?'Back':'Front'):Math.abs(t)===90?(t<0?'Profile, facing left':'Profile, facing right'):`${Math.abs(t)}° ${t<0?'left':'right'}`;
+    $('cpTurnLab').textContent=turnLab(t); $('cpPTurn').value=sg*ch.pelvisOrientation; $('cpPTurnLab').textContent=turnLab(sg*ch.pelvisOrientation||0);
     ['cpSkin','cpEye','cpHairCol'].forEach(i=>$(i)._sync());
-    $('cpHead').querySelectorAll('button').forEach(b=>{b.setAttribute('aria-pressed',String(b.dataset.v===ch.head));
-      b.disabled=(b.dataset.v==='left'&&ch.torsoOrientation>0)||(b.dataset.v==='right'&&ch.torsoOrientation<0);});
+    $('cpHead').querySelectorAll('button').forEach(b=>{const v=viewSide(b.dataset.v); b.setAttribute('aria-pressed',String(v===ch.head));
+      if(b.dataset.v==='front') b.textContent=ch.back?'Back':'Front';
+      b.disabled=(v==='left'&&ch.torsoOrientation>0)||(v==='right'&&ch.torsoOrientation<0);});
     $('cpJoints').querySelectorAll('[data-j]').forEach(i=>{ if(i!==document.activeElement||i.type==='range') i.value=ch.joints[i.dataset.j]; });
-    if(document.activeElement!==$('cpJson')) $('cpJson').value=JSON.stringify(ch,null,2);
+    syncCast();
+    if(document.activeElement!==$('cpJson')) $('cpJson').value=castJSON();
   }
 
   /* drag a body part to rotate its joint */
@@ -358,7 +438,7 @@
     return {x:e.clientX*m.a+e.clientY*m.c+m.e, y:e.clientX*m.b+e.clientY*m.d+m.f};
   }
   function angleAt(joint,e){
-    const pv=HC.pivots(ch)[joint], p=pointer(e), dx=p.x-pv.x, dy=p.y-pv.y;
+    const pv=HC.pivots(ch)[joint], p=pointer(e), dx=(pv.mirror?-1:1)*(p.x-pv.x), dy=p.y-pv.y;   /* back view is drawn mirrored */
     return (pv.up?Math.atan2(dx,-dy):Math.atan2(-dx,dy))*180/Math.PI;
   }
   stage.addEventListener('pointerdown',e=>{
@@ -391,21 +471,21 @@
   function load(text){
     let o; try{o=JSON.parse(text);}catch(e){msg('That isn’t valid JSON — nothing was changed.','err');return;}
     if(!o||typeof o!=='object'||Array.isArray(o)){msg('That JSON isn’t a character object — nothing was changed.','err');return;}
-    ch=HC.normalize(o); $('cpPreset').value=''; $('cpJson').blur(); update();
+    ch=HC.normalize(o); readCast(o); $('cpPreset').value=''; $('cpJson').blur(); update();
     msg(`Loaded ${ch.name||'character'}.`+(o.schema&&o.schema!==HC.SCHEMA?' (Different schema version — unknown fields were reset.)':''),'ok');
   }
-  $('cpSave').addEventListener('click',()=>{download(slug()+'.json',JSON.stringify(ch,null,2),'application/json');msg('Saved '+slug()+'.json','ok');});
+  $('cpSave').addEventListener('click',()=>{download(slug()+'.json',castJSON(),'application/json');msg('Saved '+slug()+'.json','ok');});
   $('cpSvg').addEventListener('click',()=>{download(slug()+'.svg',HC.render(ch,{fit:true}),'image/svg+xml');msg('Exported '+slug()+'.svg','ok');});
   $('cpLoad').addEventListener('click',()=>$('cpFile').click());
   $('cpFile').addEventListener('change',e=>{const f=e.target.files[0]; if(!f) return;
     const r=new FileReader(); r.onload=()=>load(r.result); r.onerror=()=>msg('Couldn’t read that file.','err'); r.readAsText(f); e.target.value='';});
   $('cpApply').addEventListener('click',()=>load($('cpJson').value));
   $('cpCopy').addEventListener('click',()=>{
-    const t=JSON.stringify(ch,null,2);
+    const t=castJSON();
     (navigator.clipboard?navigator.clipboard.writeText(t):Promise.reject()).then(()=>msg('JSON copied.','ok'),
       ()=>msg('Copy isn’t available here — open “View / paste JSON” and copy from there.','err'));
   });
-  $('cpNew').addEventListener('click',()=>{ch=HC.defaults();$('cpPreset').value='standing';update();msg('Started a new character.');});
+  $('cpNew').addEventListener('click',()=>{ch=HC.defaults(); cast={};$('cpPreset').value='standing';update();msg('Started a new character.');});
 
   $('cpPreset').value='standing';
   update();
