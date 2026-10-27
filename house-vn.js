@@ -9,6 +9,9 @@
      vn.restart()   the first line         vn.go(label | i)   jump to a line
      vn.index       the line shown now     vn.vars            answers saved so far
      vn.setAuto(on) auto-advance (also the ⏯️ Auto button or A): after each line, time to read, then the next
+     vn.destroy()   stop it and empty the host
+     HouseVN.addBackground(id, '<svg …>')   a backdrop for any scene on the page (or script.backgrounds: { id: svg })
+     script.onLine = (i, line) => …          called as each line starts
 
    script = {
      background: 'classroom' | 'cafe' | 'park'   a built-in backdrop, or any CSS background value
@@ -280,6 +283,7 @@ function face(data, id){
 
 function create(host, script){
   injectCSS();
+  if(script.backgrounds) Object.assign(BG, script.backgrounds);   /* backdrops of its own, by name */
   const cast = script.cast || {}, lines = (script.lines || []).filter(l => l && (l.who == null || cast[l.who]));   /* no who: narration */
   host.innerHTML = '';
   const root = document.createElement('div'); root.className = 'vn';
@@ -358,10 +362,20 @@ function create(host, script){
   function runCues(upto){ while(talk.cue < talk.cues.length && talk.cues[talk.cue].at <= upto) applyCue(talk.cues[talk.cue++]); }
 
   /* ── one character's picture, cropped for its shot ── */
+  /* the frame is sized for a person of average height in the same pose, so a child or a short person looks
+     shorter than a tall one in the same shot (their head sits lower in the frame) */
+  const cropCache = new Map();
   function crop(data, shot){
-    const p = HC.pivots(data), nk = p.neck, top = nk.y - 122;
-    const bottom = shot === 'closeup' ? nk.y + 46 : shot === 'medium' ? p.pelvis.y + 18 : HC.STAGE.ground + 14;
-    const h = bottom - top, w = h * (shot === 'full' ? 0.62 : shot === 'medium' ? 0.86 : 1);
+    const p = HC.pivots(data), nk = p.neck;
+    const bottomOf = q => shot === 'closeup' ? q.neck.y + 46 : shot === 'medium' ? q.pelvis.y + 18 : HC.STAGE.ground + 14;
+    let ref = p;
+    if((data.height || 3) !== 3){
+      const k = JSON.stringify(data.joints) + data.torsoOrientation + data.pelvisOrientation + data.bodyType + (data.lift || 0);
+      if(!cropCache.has(k)){ if(cropCache.size > 200) cropCache.clear(); cropCache.set(k, HC.pivots({...data, height:3})); }
+      ref = cropCache.get(k);
+    }
+    const h = bottomOf(ref) - (ref.neck.y - 122), bottom = bottomOf(p), top = bottom - h;
+    const w = h * (shot === 'full' ? 0.62 : shot === 'medium' ? 0.86 : 1);
     return [nk.x - w / 2, top, w, h];
   }
   /* ── posture changes are animated: joint angles, turns and the framing move from the old pose to the new one
@@ -661,6 +675,7 @@ function create(host, script){
     if(!insert) insertText.innerHTML = '';
     syncButtons();
     if(who != null && !insert) startProsody(L, cm, c, text, spans, talk.sp, think);
+    if(typeof script.onLine === 'function'){ try{ script.onLine(i, L); }catch(e){ console.error(e); } }
     if(!talk.sp.keys.length) finish(); else raf = requestAnimationFrame(tick);
   }
   function jump(i, newVars){
@@ -782,10 +797,20 @@ function create(host, script){
     else if(e.key === 'a' || e.key === 'A'){ e.preventDefault(); setAuto(!auto); }
   });
 
+  let dead = false;
+  function destroy(){   /* stop everything (animations, timers) and empty the host */
+    if(dead) return; dead = true;
+    cancelAnimationFrame(raf); cancelAnimationFrame(animRaf); stopProsody(); hideAsk();
+    clearTimeout(settleTimer); clearTimeout(faceTimer); clearTimeout(autoTimer);
+    for(const s of sprites.values()){ clearTimeout(s.faceTimer); clearTimeout(s.moveTimer); s.anim = null; }
+    talk = null; sprites.clear(); host.innerHTML = '';
+  }
+
   setAuto(auto);
   restart();
-  return {setAuto, get auto(){ return auto; }, next, back, restart, go, get index(){ return index; }, get length(){ return lines.length; }, get vars(){ return {...vars}; }};
+  return {destroy, setAuto, get auto(){ return auto; }, next, back, restart, go, get index(){ return index; }, get length(){ return lines.length; }, get vars(){ return {...vars}; }};
 }
 
-global.HouseVN = {create, BACKGROUNDS:Object.keys(BG)};
+global.HouseVN = {create, get BACKGROUNDS(){ return Object.keys(BG); },
+  addBackground(id, svg){ BG[id] = svg; }, background(id){ return BG[id]; }};
 })(window);

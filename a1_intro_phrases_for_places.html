@@ -3,11 +3,8 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-<title>A1 Conversations: At the Places</title>
+<title>At the Places — Phrases for Places</title>
 <script>
-// Applies the saved/system theme to <html> as early as possible, before the
-// stylesheet below paints anything, so there's no flash of the wrong theme.
-// Self-contained: no dependency on any external script.
 (function(){
   try{
     var saved = localStorage.getItem('theme-preference');
@@ -15,685 +12,53 @@
       ? saved
       : ((window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches) ? 'dark' : 'light');
     document.documentElement.setAttribute('data-theme', theme);
-    // Same idea for the text size: apply it before house.css paints, so a
-    // person who chose 28px doesn't watch the page reflow from 14px on load.
     var fs = parseFloat(localStorage.getItem('font-size-preference'));
-    if (fs >= 10 && fs <= 28){
-      document.documentElement.style.setProperty('--fs-base', fs + 'px');
-    }
+    if (fs >= 10 && fs <= 28) document.documentElement.style.setProperty('--fs-base', fs + 'px');
   }catch(e){ /* localStorage/matchMedia unavailable — CSS media query still applies */ }
 })();
 </script>
 <link rel="stylesheet" href="house.css">
 <style>
-/* Recovered page-specific rules. */
-.legend-pill.place {
-      background: var(--bg-place);
-      color: var(--text-place);
-    }
-.legend-pill.phrase {
-      background: var(--bg-phrase);
-      color: var(--text-phrase);
-    }
-.bubble-column {
-      max-width: 80%;
-    }
-
-/* Page-specific design tokens. These are this lesson's own palette,
-   not house tokens — house.css owns everything prefixed --color-* etc. */
-:root{
-  --bg-place: #eaf3de;
-  --text-place: #27500a;
-  --bg-phrase: #fdf1da;
-  --text-phrase: #8a5a10;
-}
-html[data-theme="dark"]{
-  --bg-place: #1f3014;
-  --text-place: #9ed17a;
-  --bg-phrase: #3a2c10;
-  --text-phrase: #e0b95c;
-}
-
-    .place-word {
-      padding: 1px 5px;
-      border-radius: 4px;
-      background: var(--bg-place);
-      color: var(--text-place);
-      font-weight: 700;
-    }
-
-    .key-phrase {
-      padding: 1px 5px;
-      border-radius: 4px;
-      background: var(--bg-phrase);
-      color: var(--text-phrase);
-      font-weight: 700;
-    }
+/* This lesson's own highlights: always on (not part of the grammar toggle). */
+:root{ --bg-place:#eaf3de; --text-place:#27500a; --bg-phrase:#fdf1da; --text-phrase:#8a5a10; }
+@media (prefers-color-scheme: dark){ :root:not([data-theme="light"]){ --bg-place:#1f3014; --text-place:#9ed17a; --bg-phrase:#3a2c10; --text-phrase:#e0b95c; } }
+:root[data-theme="dark"]{ --bg-place:#1f3014; --text-place:#9ed17a; --bg-phrase:#3a2c10; --text-phrase:#e0b95c; }
+.place-legend{ display:flex; flex-wrap:wrap; gap:8px; margin:0 0 1rem; }
+.place-legend span{ font-size:.8rem; font-weight:700; padding:3px 10px; border-radius:999px; }
+.place-word, .place-legend .lg-place{ background:var(--bg-place); color:var(--text-place); }
+.key-phrase, .place-legend .lg-phrase{ background:var(--bg-phrase); color:var(--text-phrase); }
+.place-word, .key-phrase{ padding:1px 5px; border-radius:4px; font-weight:700; }
+.key-phrase .place-word{ padding:0 3px; }
 </style>
 </head>
 <body>
 <div class="page" id="page">
-    <span class="cefr-tag cefr-a1">A1 · Beginners</span>
+  <span class="cefr-tag cefr-a1">A1 · Beginner</span>
+  <h1>At the Places</h1>
+  <p class="subtitle">Nine short conversations in different places in town.</p>
 
-    <h1>At the Places</h1>
+  <div class="sec-div">Before you read</div>
+  <p class="subtitle">Read the three questions. Look for the answers in the conversations.</p>
+  <div id="preQuestions"></div>
 
-    <p class="subtitle">
-      Nine short conversations using common phrases for different places in town.
-    </p>
-
-    <div class="legend">
-      <span class="legend-pill place">Place vocabulary</span>
-      <span class="legend-pill phrase">Useful phrase</span>
-    </div>
-
-      <div class="sec-div">Before you read</div>
-  <p class="subtitle">Read these three questions first. There are nine short scenes — look for the answers as you read.</p>
-  <div id="preQuestions" class="prequiz"></div>
-
-  <button id="grammarToggle" class="grammar-toggle-btn">🎨 Show Grammar</button>
+  <div class="sec-div">The conversations</div>
+  <div class="place-legend" aria-label="Colours in the conversations"><span class="lg-place">Place</span><span class="lg-phrase">Useful phrase</span></div>
+  <button class="grammar-toggle-btn" id="grammarToggle">🎨 Show Grammar</button>
   <div class="pos-legend"></div>
-<div class="sec-div">At the airport ✈️</div>
 
-    <div class="setting-chip">A passenger is going through airport security.</div>
+  <div id="scenes"></div>
 
-    <div class="bubble-wrap left">
-      <div class="avatar av-a">👩‍🦳</div>
-      <div class="bubble-column">
-        <div class="bname">Passenger</div>
-        <div class="bubble left">
-          Excuse me. <span class="key-phrase">Where is gate 12?</span>
-        </div>
-      </div>
-    </div>
-
-    <div class="bubble-wrap right">
-      <div class="avatar av-b">👮</div>
-      <div class="bubble-column">
-        <div class="bname right">Airport worker</div>
-        <div class="bubble right">
-          <span class="pos-hl pos-subject">It</span> <span class="pos-hl pos-verb">is</span> <span class="pos-hl pos-prep">at</span> <span class="pos-hl pos-object">the end of this hall</span>.
-        </div>
-      </div>
-    </div>
-
-    <div class="bubble-wrap left">
-      <div class="avatar av-a">👩‍🦳</div>
-      <div class="bubble-column">
-        <div class="bname">Passenger</div>
-        <div class="bubble left">
-          Thank you.
-        </div>
-      </div>
-    </div>
-
-    <div class="bubble-wrap right">
-      <div class="avatar av-b">👮</div>
-      <div class="bubble-column">
-        <div class="bname right">Security officer</div>
-        <div class="bubble right">
-          <span class="key-phrase">Can I see your boarding pass?</span>
-        </div>
-      </div>
-    </div>
-
-    <div class="bubble-wrap left">
-      <div class="avatar av-a">👩‍🦳</div>
-      <div class="bubble-column">
-        <div class="bname">Passenger</div>
-        <div class="bubble left">
-          Yes, here <span class="pos-hl pos-subject">it</span> <span class="pos-hl pos-verb">is</span>.
-        </div>
-      </div>
-    </div>
-
-    <div class="bubble-wrap right">
-      <div class="avatar av-b">👮</div>
-      <div class="bubble-column">
-        <div class="bname right">Security officer</div>
-        <div class="bubble right">
-          Thank you. <span class="key-phrase">Please put your liquids in this tray.</span>
-        </div>
-      </div>
-    </div>
-
-    <div class="sec-div">At the museum 🏛️</div>
-
-    <div class="setting-chip">A visitor is talking to a museum guide.</div>
-
-    <div class="bubble-wrap left">
-      <div class="avatar av-a">👩</div>
-      <div class="bubble-column">
-        <div class="bname">Visitor</div>
-        <div class="bubble left">
-          <span class="pos-hl pos-subject">This painting</span> <span class="pos-hl pos-verb">is</span> <span class="pos-hl pos-complement">beautiful</span>.
-        </div>
-      </div>
-    </div>
-
-    <div class="bubble-wrap right">
-      <div class="avatar av-b">🧑‍🏫</div>
-      <div class="bubble-column">
-        <div class="bname right">Museum guide</div>
-        <div class="bubble right">
-          Thank you. <span class="key-phrase">This painting is from 1890.</span>
-        </div>
-      </div>
-    </div>
-
-    <div class="bubble-wrap left">
-      <div class="avatar av-a">👩</div>
-      <div class="bubble-column">
-        <div class="bname">Visitor</div>
-        <div class="bubble left">
-          <span class="pos-hl pos-aux">Can</span> <span class="pos-hl pos-subject">I</span> <span class="pos-hl pos-verb">take</span> <span class="pos-hl pos-object">a photo</span>?
-        </div>
-      </div>
-    </div>
-
-    <div class="bubble-wrap right">
-      <div class="avatar av-b">🧑‍🏫</div>
-      <div class="bubble-column">
-        <div class="bname right">Museum guide</div>
-        <div class="bubble right">
-          Yes, but <span class="key-phrase">you can’t use flash photography here.</span>
-        </div>
-      </div>
-    </div>
-
-    <div class="bubble-wrap left">
-      <div class="avatar av-a">👩</div>
-      <div class="bubble-column">
-        <div class="bname">Visitor</div>
-        <div class="bubble left">
-          Okay. <span class="pos-hl pos-wh">Where</span> <span class="pos-hl pos-verb">is</span> <span class="pos-hl pos-subject">the dinosaur exhibition</span>?
-        </div>
-      </div>
-    </div>
-
-    <div class="bubble-wrap right">
-      <div class="avatar av-b">🧑‍🏫</div>
-      <div class="bubble-column">
-        <div class="bname right">Museum guide</div>
-        <div class="bubble right">
-          <span class="key-phrase">The dinosaur exhibition is upstairs.</span>
-        </div>
-      </div>
-    </div>
-
-    <div class="sec-div">At the library 📚</div>
-
-    <div class="setting-chip">A student wants to borrow some books.</div>
-
-    <div class="bubble-wrap left">
-      <div class="avatar av-a">🧑</div>
-      <div class="bubble-column">
-        <div class="bname">Student</div>
-        <div class="bubble left">
-          Excuse me. <span class="key-phrase">Where is the children’s section?</span>
-        </div>
-      </div>
-    </div>
-
-    <div class="bubble-wrap right">
-      <div class="avatar av-b">👩‍💼</div>
-      <div class="bubble-column">
-        <div class="bname right">Librarian</div>
-        <div class="bubble right">
-          <span class="pos-hl pos-subject">It</span> <span class="pos-hl pos-verb">is</span> <span class="pos-hl pos-prep">on</span> <span class="pos-hl pos-object">the first floor</span>.
-        </div>
-      </div>
-    </div>
-
-    <div class="bubble-wrap left">
-      <div class="avatar av-a">🧑</div>
-      <div class="bubble-column">
-        <div class="bname">Student</div>
-        <div class="bubble left">
-          <span class="pos-hl pos-aux">Can</span> <span class="pos-hl pos-subject">I</span> <span class="pos-hl pos-verb">borrow</span> <span class="pos-hl pos-object">these books</span>?
-        </div>
-      </div>
-    </div>
-
-    <div class="bubble-wrap right">
-      <div class="avatar av-b">👩‍💼</div>
-      <div class="bubble-column">
-        <div class="bname right">Librarian</div>
-        <div class="bubble right">
-          Yes, but <span class="key-phrase">you need a library card to borrow books.</span>
-        </div>
-      </div>
-    </div>
-
-    <div class="bubble-wrap left">
-      <div class="avatar av-a">🧑</div>
-      <div class="bubble-column">
-        <div class="bname">Student</div>
-        <div class="bubble left">
-          <span class="pos-hl pos-subject">I</span> <span class="pos-hl pos-verb">have</span> <span class="pos-hl pos-object">my card</span>.
-        </div>
-      </div>
-    </div>
-
-    <div class="bubble-wrap right">
-      <div class="avatar av-b">👩‍💼</div>
-      <div class="bubble-column">
-        <div class="bname right">Librarian</div>
-        <div class="bubble right">
-          Great. <span class="key-phrase">Please return this book by Friday.</span>
-        </div>
-      </div>
-    </div>
-
-    <div class="sec-div">At the restaurant 🍽️</div>
-
-    <div class="setting-chip">A customer is having dinner.</div>
-
-    <div class="bubble-wrap left">
-      <div class="avatar av-a">🧑‍🍳</div>
-      <div class="bubble-column">
-        <div class="bname">Waiter</div>
-        <div class="bubble left">
-          Good evening. <span class="key-phrase">Would you like to see the menu?</span>
-        </div>
-      </div>
-    </div>
-
-    <div class="bubble-wrap right">
-      <div class="avatar av-b">👩</div>
-      <div class="bubble-column">
-        <div class="bname right">Customer</div>
-        <div class="bubble right">
-          Yes, please.
-        </div>
-      </div>
-    </div>
-
-    <div class="bubble-wrap left">
-      <div class="avatar av-a">🧑‍🍳</div>
-      <div class="bubble-column">
-        <div class="bname">Waiter</div>
-        <div class="bubble left">
-          Here you are. <span class="key-phrase">What would you like to order?</span>
-        </div>
-      </div>
-    </div>
-
-    <div class="bubble-wrap right">
-      <div class="avatar av-b">👩</div>
-      <div class="bubble-column">
-        <div class="bname right">Customer</div>
-        <div class="bubble right">
-          <span class="pos-hl pos-subject">I</span><span class="pos-hl pos-aux">’d</span> <span class="pos-hl pos-verb">like</span> <span class="pos-hl pos-object">the chicken and rice</span>, please.
-        </div>
-      </div>
-    </div>
-
-    <div class="bubble-wrap left">
-      <div class="avatar av-a">🧑‍🍳</div>
-      <div class="bubble-column">
-        <div class="bname">Waiter</div>
-        <div class="bubble left">
-          Of course.
-        </div>
-      </div>
-    </div>
-
-    <div class="bubble-wrap right">
-      <div class="avatar av-b">👩</div>
-      <div class="bubble-column">
-        <div class="bname right">Customer</div>
-        <div class="bubble right">
-          Excuse me. <span class="pos-hl pos-aux">Can</span> <span class="pos-hl pos-subject">I</span> <span class="pos-hl pos-verb">pay</span>, please?
-        </div>
-      </div>
-    </div>
-
-    <div class="bubble-wrap left">
-      <div class="avatar av-a">🧑‍🍳</div>
-      <div class="bubble-column">
-        <div class="bname">Waiter</div>
-        <div class="bubble left">
-          Certainly. <span class="key-phrase">Here is your bill.</span>
-        </div>
-      </div>
-    </div>
-
-    <div class="sec-div">At the hospital 🏥</div>
-
-    <div class="setting-chip">A patient has an appointment with a doctor.</div>
-
-    <div class="bubble-wrap left">
-      <div class="avatar av-a">👩‍💼</div>
-      <div class="bubble-column">
-        <div class="bname">Receptionist</div>
-        <div class="bubble left">
-          Hello. <span class="key-phrase">What is your date of birth?</span>
-        </div>
-      </div>
-    </div>
-
-    <div class="bubble-wrap right">
-      <div class="avatar av-b">🧑‍⚕️</div>
-      <div class="bubble-column">
-        <div class="bname right">Patient</div>
-        <div class="bubble right">
-          <span class="pos-hl pos-subject">It</span> <span class="pos-hl pos-verb">is</span> <span class="pos-hl pos-complement">12 May 2001</span>.
-        </div>
-      </div>
-    </div>
-
-    <div class="bubble-wrap left">
-      <div class="avatar av-a">👩‍💼</div>
-      <div class="bubble-column">
-        <div class="bname">Receptionist</div>
-        <div class="bubble left">
-          Thank you. <span class="key-phrase">Please wait in the waiting room.</span>
-        </div>
-      </div>
-    </div>
-
-    <div class="bubble-wrap right">
-      <div class="avatar av-b">🧑‍⚕️</div>
-      <div class="bubble-column">
-        <div class="bname right">Patient</div>
-        <div class="bubble right">
-          Okay.
-        </div>
-      </div>
-    </div>
-
-    <div class="bubble-wrap left">
-      <div class="avatar av-a">👨‍⚕️</div>
-      <div class="bubble-column">
-        <div class="bname">Doctor</div>
-        <div class="bubble left">
-          Hello, Maria. <span class="key-phrase">The doctor will see you now.</span>
-        </div>
-      </div>
-    </div>
-
-    <div class="bubble-wrap right">
-      <div class="avatar av-b">🧑‍⚕️</div>
-      <div class="bubble-column">
-        <div class="bname right">Patient</div>
-        <div class="bubble right">
-          Thank you.
-        </div>
-      </div>
-    </div>
-
-    <div class="sec-div">At the supermarket 🛒</div>
-
-    <div class="setting-chip">A customer is shopping for food.</div>
-
-    <div class="bubble-wrap left">
-      <div class="avatar av-a">👩</div>
-      <div class="bubble-column">
-        <div class="bname">Customer</div>
-        <div class="bubble left">
-          Excuse me. <span class="pos-hl pos-wh">Where</span> <span class="pos-hl pos-aux">can</span> <span class="pos-hl pos-subject">I</span> <span class="pos-hl pos-verb">find</span> <span class="pos-hl pos-object">bread</span>?
-        </div>
-      </div>
-    </div>
-
-    <div class="bubble-wrap right">
-      <div class="avatar av-b">🧑‍💼</div>
-      <div class="bubble-column">
-        <div class="bname right">Worker</div>
-        <div class="bubble right">
-          <span class="key-phrase">The bread is in aisle five.</span>
-        </div>
-      </div>
-    </div>
-
-    <div class="bubble-wrap left">
-      <div class="avatar av-a">👩</div>
-      <div class="bubble-column">
-        <div class="bname">Customer</div>
-        <div class="bubble left">
-          Thank you. And <span class="key-phrase">where is the checkout?</span>
-        </div>
-      </div>
-    </div>
-
-    <div class="bubble-wrap right">
-      <div class="avatar av-b">🧑‍💼</div>
-      <div class="bubble-column">
-        <div class="bname right">Worker</div>
-        <div class="bubble right">
-          <span class="pos-hl pos-subject">It</span> <span class="pos-hl pos-verb">is</span> <span class="pos-hl pos-prep">near</span> <span class="pos-hl pos-object">the entrance</span>.
-        </div>
-      </div>
-    </div>
-
-    <div class="bubble-wrap left">
-      <div class="avatar av-a">👩‍💼</div>
-      <div class="bubble-column">
-        <div class="bname">Cashier</div>
-        <div class="bubble left">
-          Hello. <span class="key-phrase">Do you need a shopping bag?</span>
-        </div>
-      </div>
-    </div>
-
-    <div class="bubble-wrap right">
-      <div class="avatar av-b">👩</div>
-      <div class="bubble-column">
-        <div class="bname right">Customer</div>
-        <div class="bubble right">
-          Yes, please.
-        </div>
-      </div>
-    </div>
-
-    <div class="sec-div">At the cinema 🎬</div>
-
-    <div class="setting-chip">A customer is going to watch a film.</div>
-
-    <div class="bubble-wrap left">
-      <div class="avatar av-a">👨</div>
-      <div class="bubble-column">
-        <div class="bname">Customer</div>
-        <div class="bubble left">
-          Hello. <span class="pos-hl pos-wh">What time</span> <span class="pos-hl pos-aux">does</span> <span class="pos-hl pos-subject">the film</span> <span class="pos-hl pos-verb">start</span>?
-        </div>
-      </div>
-    </div>
-
-    <div class="bubble-wrap right">
-      <div class="avatar av-b">👨‍🦱</div>
-      <div class="bubble-column">
-        <div class="bname right">Cinema worker</div>
-        <div class="bubble right">
-          <span class="key-phrase">The film starts at 7:30.</span>
-        </div>
-      </div>
-    </div>
-
-    <div class="bubble-wrap left">
-      <div class="avatar av-a">👨</div>
-      <div class="bubble-column">
-        <div class="bname">Customer</div>
-        <div class="bubble left">
-          Great. <span class="pos-hl pos-wh">Where</span> <span class="pos-hl pos-verb">is</span> <span class="pos-hl pos-subject">Screen 4</span>?
-        </div>
-      </div>
-    </div>
-
-    <div class="bubble-wrap right">
-      <div class="avatar av-b">👨‍🦱</div>
-      <div class="bubble-column">
-        <div class="bname right">Cinema worker</div>
-        <div class="bubble right">
-          <span class="key-phrase">Screen 4 is on the left.</span>
-        </div>
-      </div>
-    </div>
-
-    <div class="bubble-wrap left">
-      <div class="avatar av-a">👨</div>
-      <div class="bubble-column">
-        <div class="bname">Customer</div>
-        <div class="bubble left">
-          Thank you. <span class="key-phrase">A large popcorn, please.</span>
-        </div>
-      </div>
-    </div>
-
-    <div class="bubble-wrap right">
-      <div class="avatar av-b">👨‍🦱</div>
-      <div class="bubble-column">
-        <div class="bname right">Cinema worker</div>
-        <div class="bubble right">
-          Sure. <span class="pos-hl pos-subject">That</span> <span class="pos-hl pos-verb">is</span> <span class="pos-hl pos-complement">five dollars</span>.
-        </div>
-      </div>
-    </div>
-
-    <div class="sec-div">At the hotel 🏨</div>
-
-    <div class="setting-chip">A guest is checking in at a hotel.</div>
-
-    <div class="bubble-wrap left">
-      <div class="avatar av-a">👩‍💼</div>
-      <div class="bubble-column">
-        <div class="bname">Receptionist</div>
-        <div class="bubble left">
-          Welcome to the hotel. <span class="key-phrase">Here is your room key.</span>
-        </div>
-      </div>
-    </div>
-
-    <div class="bubble-wrap right">
-      <div class="avatar av-b">👩‍🦳</div>
-      <div class="bubble-column">
-        <div class="bname right">Guest</div>
-        <div class="bubble right">
-          Thank you. <span class="pos-hl pos-wh">What time</span> <span class="pos-hl pos-verb">is</span> <span class="pos-hl pos-subject">breakfast</span>?
-        </div>
-      </div>
-    </div>
-
-    <div class="bubble-wrap left">
-      <div class="avatar av-a">👩‍💼</div>
-      <div class="bubble-column">
-        <div class="bname">Receptionist</div>
-        <div class="bubble left">
-          <span class="key-phrase">Breakfast is served from 7:00 to 10:00.</span>
-        </div>
-      </div>
-    </div>
-
-    <div class="bubble-wrap right">
-      <div class="avatar av-b">👩‍🦳</div>
-      <div class="bubble-column">
-        <div class="bname right">Guest</div>
-        <div class="bubble right">
-          Great.
-        </div>
-      </div>
-    </div>
-
-    <div class="bubble-wrap left">
-      <div class="avatar av-a">👩‍💼</div>
-      <div class="bubble-column">
-        <div class="bname">Receptionist</div>
-        <div class="bubble left">
-          <span class="key-phrase">What time would you like to check out?</span>
-        </div>
-      </div>
-    </div>
-
-    <div class="bubble-wrap right">
-      <div class="avatar av-b">👩‍🦳</div>
-      <div class="bubble-column">
-        <div class="bname right">Guest</div>
-        <div class="bubble right">
-          <span class="pos-hl pos-time">At 10:00</span>, please.
-        </div>
-      </div>
-    </div>
-
-    <div class="sec-div">At the pharmacy 💊</div>
-
-    <div class="setting-chip">A customer needs medicine for a headache.</div>
-
-    <div class="bubble-wrap left">
-      <div class="avatar av-a">👩</div>
-      <div class="bubble-column">
-        <div class="bname">Customer</div>
-        <div class="bubble left">
-          Hello. <span class="key-phrase">Do you have anything for a headache?</span>
-        </div>
-      </div>
-    </div>
-
-    <div class="bubble-wrap right">
-      <div class="avatar av-b">🧑‍⚕️</div>
-      <div class="bubble-column">
-        <div class="bname right">Pharmacist</div>
-        <div class="bubble right">
-          Yes. <span class="pos-hl pos-subject">These tablets</span> <span class="pos-hl pos-aux">can</span> <span class="pos-hl pos-verb">help</span>.
-        </div>
-      </div>
-    </div>
-
-    <div class="bubble-wrap left">
-      <div class="avatar av-a">👩</div>
-      <div class="bubble-column">
-        <div class="bname">Customer</div>
-        <div class="bubble left">
-          <span class="pos-hl pos-wh">How</span> <span class="pos-hl pos-aux">do</span> <span class="pos-hl pos-subject">I</span> <span class="pos-hl pos-verb">take</span> <span class="pos-hl pos-object">them</span>?
-        </div>
-      </div>
-    </div>
-
-    <div class="bubble-wrap right">
-      <div class="avatar av-b">🧑‍⚕️</div>
-      <div class="bubble-column">
-        <div class="bname right">Pharmacist</div>
-        <div class="bubble right">
-          <span class="key-phrase">Take these tablets after food.</span>
-        </div>
-      </div>
-    </div>
-
-    <div class="bubble-wrap left">
-      <div class="avatar av-a">👩</div>
-      <div class="bubble-column">
-        <div class="bname">Customer</div>
-        <div class="bubble left">
-          <span class="pos-hl pos-aux">Can</span> <span class="pos-hl pos-subject">I</span> <span class="pos-hl pos-verb">buy</span> <span class="pos-hl pos-object">this stronger medicine</span> too?
-        </div>
-      </div>
-    </div>
-
-    <div class="bubble-wrap right">
-      <div class="avatar av-b">🧑‍⚕️</div>
-      <div class="bubble-column">
-        <div class="bname right">Pharmacist</div>
-        <div class="bubble right">
-          <span class="key-phrase">You need a prescription for this medicine.</span>
-        </div>
-      </div>
-    </div>
   <div class="sec-div">Check your answers</div>
-  <p class="subtitle">The same three questions — now choose the correct answer.</p>
+  <p class="subtitle">The same three questions. Choose the correct answer.</p>
   <div id="quiz"></div>
 
-
-    <div class="sec-div">Quick reference</div>
-
-    <div class="rule-box">
-      <strong>Study tip:</strong> Read each conversation aloud with a partner.
-      Then change one detail: the gate number, the food order, the film time,
-      the medicine, or the room number.
-    </div>
-
-    <footer>
-      Conversation Practice · At the Places · A1
-    </footer>
+  <div class="sec-div">Your turn</div>
+  <div class="rule-box">
+    <strong>Practise:</strong> Read each conversation with a partner. Then change one thing: the gate number, the food, the film time, the medicine or the room.
   </div>
+
+  <footer>At the Places — Phrases for Places (A1)</footer>
+</div>
 
 <div id="theme-toggle-wrap">
   <button id="theme-toggle" aria-label="Toggle light/dark mode" title="Toggle light/dark mode">
@@ -702,62 +67,132 @@ html[data-theme="dark"]{
 </div>
 <script src="house.js"></script>
 <script>
-const themeToggle = document.getElementById("theme-toggle");
-
-    function applySavedTheme() {
-      const savedTheme = localStorage.getItem("places-conversations-theme");
-
-      if (savedTheme) {
-        document.documentElement.dataset.theme = savedTheme;
-      }
-    }
-
-    themeToggle.addEventListener("click", () => {
-      const currentTheme = document.documentElement.dataset.theme;
-      const nextTheme = currentTheme === "dark" ? "light" : "dark";
-
-      document.documentElement.dataset.theme = nextTheme;
-      localStorage.setItem("places-conversations-theme", nextTheme);
-    });
-
-    applySavedTheme();
-</script>
-<script>
-/* The same three questions run before and after the conversation:
-   as a plain list first (setting a purpose for reading), then with
-   three options each once the text has been read. */
-const CQ_ITEMS = [
-  {
-    "q": "At the museum, what is the visitor NOT allowed to do?",
-    "opts": [
-      "Use flash photography",
-      "Go upstairs",
-      "Take any photos at all"
-    ],
-    "correct": 0
-  },
-  {
-    "q": "What does the student need in order to borrow books?",
-    "opts": [
-      "To return the books by Friday",
-      "A library card",
-      "Permission from the librarian"
-    ],
-    "correct": 1
-  },
-  {
-    "q": "Why can't the customer buy the stronger medicine?",
-    "opts": [
-      "It must be taken after food",
-      "The pharmacy has sold out",
-      "They need a prescription for it"
-    ],
-    "correct": 2
-  }
+/* Nine conversations, each with its own section title, setting chip and conversation box (so each one can
+   also be watched as its own 🎬 visual novel).
+   Markup in the lines:  [words/pos] grammar colour · {words} useful phrase · ((words)) place            */
+const SCENES = [
+  { title: 'At the airport', icon: '✈️', chip: 'A passenger is going through airport security.',
+    speakers: { Passenger: { avatar: '👩‍🦳', side: 'left' }, 'Airport worker': { avatar: '🧑‍💼', side: 'right' }, 'Security officer': { avatar: '👮', side: 'right' } },
+    lines: [
+      ['Passenger', 'Excuse me. {Where is ((gate 12))?}'],
+      ['Airport worker', '[It/subject] [is/verb] [at/prep] [((the end of this hall))/object].'],
+      ['Passenger', 'Thank you.'],
+      ['Security officer', '{Can I see your boarding pass?}'],
+      ['Passenger', 'Yes, here [it/subject] [is/verb].'],
+      ['Security officer', 'Thank you. {Please put your liquids in this tray.}']
+    ] },
+  { title: 'At the museum', icon: '🏛️', chip: 'A visitor is talking to a museum guide.',
+    speakers: { Visitor: { avatar: '👩', side: 'left' }, 'Museum guide': { avatar: '🧑‍🏫', side: 'right' } },
+    lines: [
+      ['Visitor', '[This painting/subject] [is/verb] [beautiful/complement].'],
+      ['Museum guide', 'Thank you. {This painting is from 1890.}'],
+      ['Visitor', '[Can/aux] [I/subject] [take/verb] [a photo/object]?'],
+      ['Museum guide', 'Yes, but {you can’t use flash photography here.}'],
+      ['Visitor', 'Okay. [Where/wh] [is/verb] [the dinosaur exhibition/subject]?'],
+      ['Museum guide', '{The dinosaur exhibition is ((upstairs)).}']
+    ] },
+  { title: 'At the library', icon: '📚', chip: 'A student wants to borrow some books.',
+    speakers: { Student: { avatar: '🧑', side: 'left' }, Librarian: { avatar: '👩‍💼', side: 'right' } },
+    lines: [
+      ['Student', 'Excuse me. {Where is the ((children’s section))?}'],
+      ['Librarian', '[It/subject] [is/verb] [on/prep] [((the first floor))/object].'],
+      ['Student', '[Can/aux] [I/subject] [borrow/verb] [these books/object]?'],
+      ['Librarian', 'Yes, but {you need a library card to borrow books.}'],
+      ['Student', '[I/subject] [have/verb] [my card/object].'],
+      ['Librarian', 'Great. {Please return this book by Friday.}']
+    ] },
+  { title: 'At the restaurant', icon: '🍽️', chip: 'A customer is having dinner.',
+    speakers: { Waiter: { avatar: '🤵', side: 'left' }, Customer: { avatar: '👩', side: 'right' } },
+    lines: [
+      ['Waiter', 'Good evening. {Would you like to see the menu?}'],
+      ['Customer', 'Yes, please.'],
+      ['Waiter', 'Here you are. {What would you like to order?}'],
+      ['Customer', '[I/subject][’d/aux] [like/verb] [the chicken and rice/object], please.'],
+      ['Waiter', 'Of course.'],
+      ['Customer', 'Excuse me. [Can/aux] [I/subject] [pay/verb], please?'],
+      ['Waiter', 'Certainly. {Here is your bill.}']
+    ] },
+  { title: 'At the hospital', icon: '🏥', chip: 'A patient has an appointment with a doctor.',
+    speakers: { Receptionist: { avatar: '👩‍💼', side: 'left' }, Patient: { avatar: '🧑', side: 'right' }, Nurse: { avatar: '👩‍⚕️', side: 'left' } },
+    lines: [
+      ['Receptionist', 'Hello. {What is your date of birth?}'],
+      ['Patient', '[It/subject] [is/verb] [12 May 2001/complement].'],
+      ['Receptionist', 'Thank you. {Please wait in the ((waiting room)).}'],
+      ['Patient', 'Okay.'],
+      ['Nurse', 'Hello, Maria. {The doctor will see you now.}'],
+      ['Patient', 'Thank you.']
+    ] },
+  { title: 'At the supermarket', icon: '🛒', chip: 'A customer is shopping for food.',
+    speakers: { Customer: { avatar: '👩', side: 'left' }, Worker: { avatar: '🧑‍💼', side: 'right' }, Cashier: { avatar: '👩‍💼', side: 'right' } },
+    lines: [
+      ['Customer', 'Excuse me. [Where/wh] [can/aux] [I/subject] [find/verb] [bread/object]?'],
+      ['Worker', '{The bread is in ((aisle five)).}'],
+      ['Customer', 'Thank you. And {where is the ((checkout))?}'],
+      ['Worker', '[It/subject] [is/verb] [near/prep] [((the entrance))/object].'],
+      ['Cashier', 'Hello. {Do you need a shopping bag?}'],
+      ['Customer', 'Yes, please.']
+    ] },
+  { title: 'At the cinema', icon: '🎬', chip: 'A customer is going to watch a film.',
+    speakers: { Customer: { avatar: '👨', side: 'left' }, 'Cinema worker': { avatar: '👨‍🦱', side: 'right' } },
+    lines: [
+      ['Customer', 'Hello. [What time/wh] [does/aux] [the film/subject] [start/verb]?'],
+      ['Cinema worker', '{The film starts at 7:30.}'],
+      ['Customer', 'Great. [Where/wh] [is/verb] [((Screen 4))/subject]?'],
+      ['Cinema worker', '{((Screen 4)) is on the left.}'],
+      ['Customer', 'Thank you. {A large popcorn, please.}'],
+      ['Cinema worker', 'Sure. [That/subject] [is/verb] [five dollars/complement].']
+    ] },
+  { title: 'At the hotel', icon: '🏨', chip: 'A guest is checking in at a hotel.',
+    speakers: { Receptionist: { avatar: '👩‍💼', side: 'left' }, Guest: { avatar: '👩‍🦳', side: 'right' } },
+    lines: [
+      ['Receptionist', 'Welcome to the hotel. {Here is your ((room)) key.}'],
+      ['Guest', 'Thank you. [What time/wh] [is/verb] [breakfast/subject]?'],
+      ['Receptionist', '{Breakfast is from 7:00 to 10:00.}'],
+      ['Guest', 'Great.'],
+      ['Receptionist', '{What time would you like to check out?}'],
+      ['Guest', '[At 10:00/time], please.']
+    ] },
+  { title: 'At the pharmacy', icon: '💊', chip: 'A customer needs medicine for a headache.',
+    speakers: { Customer: { avatar: '👩', side: 'left' }, Pharmacist: { avatar: '🧑‍⚕️', side: 'right' } },
+    lines: [
+      ['Customer', 'Hello. {Do you have anything for a headache?}'],
+      ['Pharmacist', 'Yes. [These tablets/subject] [can/aux] [help/verb].'],
+      ['Customer', '[How/wh] [do/aux] [I/subject] [take/verb] [them/object]?'],
+      ['Pharmacist', '{Take these tablets after food.}'],
+      ['Customer', '[Can/aux] [I/subject] [buy/verb] [this stronger medicine/object] too?'],
+      ['Pharmacist', '{You need a prescription for this medicine.}']
+    ] }
 ];
 
+const mark = s => s
+  .replace(/\[([^\/\]]+)\/(\w+)\]/g, '<span class="pos-hl pos-$2">$1</span>')
+  .replace(/\(\(([^)]+)\)\)/g, '<span class="place-word">$1</span>')
+  .replace(/\{([^}]+)\}/g, '<span class="key-phrase">$1</span>');
+const host = document.getElementById('scenes');
+SCENES.forEach((sc, n) => {
+  host.insertAdjacentHTML('beforeend',
+    '<div class="sec-div">' + sc.title + ' ' + sc.icon + '</div>' +
+    '<div class="setting-chip"><span class="section-icon">' + sc.icon + '</span> ' + sc.chip + '</div>' +
+    '<div class="conversation" id="conversation' + (n + 1) + '"></div>');
+  const conv = document.getElementById('conversation' + (n + 1));
+  sc.lines.forEach(([who, text]) => {
+    const s = sc.speakers[who], right = s.side === 'right';
+    conv.insertAdjacentHTML('beforeend',
+      '<div class="bubble-wrap' + (right ? ' right' : '') + '">' +
+        '<div class="avatar ' + (right ? 'av-b' : 'av-a') + '">' + s.avatar + '</div>' +
+        '<div class="bubble-col"><div class="bname' + (right ? ' right' : '') + '">' + who + '</div>' +
+        '<div class="bubble ' + (right ? 'right' : 'left') + '">' + mark(text) + '</div></div>' +
+      '</div>');
+  });
+});
+
+const CQ_ITEMS = [
+  { q: 'At the museum, what can’t the visitor do?', opts: ['Use flash photography', 'Go upstairs', 'Take photos'], correct: 0 },
+  { q: 'What does the student need to borrow books?', opts: ['To come back on Friday', 'A library card', 'The first floor'], correct: 1 },
+  { q: 'Why can’t the customer buy the stronger medicine?', opts: ['She must take it after food', 'The pharmacy doesn’t have it', 'She needs a prescription'], correct: 2 }
+];
 HouseComprehension.build({ pre: 'preQuestions', quiz: 'quiz', items: CQ_ITEMS });
-HouseGrammar.init();
 </script>
+<script>HouseGrammar.init();</script>
 </body>
 </html>

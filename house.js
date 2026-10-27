@@ -2657,3 +2657,33 @@
   // time this runs — no DOMContentLoaded guard needed.
   inject();
 })();
+
+
+/* ══════════════════════════════════════════════════════════════════════════
+   HOUSE CONVERSATION AS A VISUAL NOVEL
+   On an intro page (a file name with _intro_, or any page with data-vn on an
+   element), a conversation drawn as chat bubbles gets a 💬 Chat · 🎬 Visual
+   novel switch. Everything lives in vn-adapter.js, next to house.js; it is
+   loaded here, after the page's own script has drawn the bubbles, so no page
+   needs a script tag of its own. It loads house-character.js and house-vn.js
+   only when a visual novel is actually shown.
+   ══════════════════════════════════════════════════════════════════════════ */
+(function () {
+  'use strict';
+  function start() {
+    if (window.VNAdapter || document.getElementById('vn-adapter-js')) return;
+    if (!document.querySelector('.bubble-wrap')) return;
+    if (!/_intro_/.test(location.pathname) && !document.querySelector('[data-vn]')) return;
+    var base = '';
+    var scripts = document.querySelectorAll('script[src]');
+    for (var i = 0; i < scripts.length; i++) {
+      if (/house\.js$/.test(scripts[i].src)) { base = scripts[i].src.replace(/house\.js$/, ''); break; }
+    }
+    var s = document.createElement('script');
+    s.id = 'vn-adapter-js';
+    s.src = base + 'vn-adapter.js';
+    document.body.appendChild(s);
+  }
+  if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', start);
+  else setTimeout(start, 0);
+})();
