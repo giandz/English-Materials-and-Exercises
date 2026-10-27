@@ -59,6 +59,14 @@
      whisper: true                        the whole line is whispered, in smaller, softer letters
      Part of a line: "{shout}Hi, Ana!{/shout} Sorry I'm late." or "Shh! {whisper}He can hear you!{/whisper}".
      past: true                           a memory: the picture turns sepia, with a darker edge
+   prosody: true | 'calm' | 'lively' | false
+                                          the speaker's head and brows follow the line (on by default; at
+                                          script or line level): a nod on stressed words, brows up and a head
+                                          cock on yes/no questions, a slight frown on wh-questions, a blink as
+                                          each sentence ends (HouseCharacter.prosody). Thoughts get only brows
+                                          and blinks; narration and inserts none. Cast expressiveness:1.3 (or
+                                          0.7) scales one character; shouting moves more, whispering less.
+     "{stress}music{/stress}"            the main stress of its phrase goes there (contrast); not shown
    background: 'park'                     changes the backdrop from this line on (built-in or CSS), and like
                                           the cast it is put back as it was when going back.
    A character who leaves (stage: { id: null }) is remembered: bringing them back with stage: { id: {} }
@@ -118,6 +126,7 @@ const CSS = `
   border-radius:14px; box-shadow:0 6px 18px rgba(0,0,0,.18); }
 /* the name tab sits over the speaker's side: left, centre or right (data-at on the box) */
 .vn-name{ position:absolute; left:4%; transform:translateX(0); transition:left .35s ease, transform .35s ease; bottom:calc(100% - 6px); padding:.15em .9em .2em; border-radius:9px 9px 0 0;
+  white-space:nowrap; max-width:33.333%; box-sizing:border-box; overflow:hidden; text-overflow:ellipsis;   /* one line, as long as the name needs, up to a third of the box */
   font-weight:700; font-size:clamp(.8rem, 1.9vw, 1.05rem); color:#fff; background:var(--vn-name, var(--text-accent, #185fa5)); }
 .vn-name:empty{ display:none; }
 .vn-text{ position:relative; font-size:clamp(.9rem, 2.3vw, 1.3rem); line-height:1.45; color:var(--text-primary, #1a1a1a); height:100%;
@@ -214,12 +223,16 @@ const BG = {
     <rect x="1290" y="140" width="220" height="300" fill="#bfe2f2" stroke="#fff" stroke-width="14"/><path d="M1400,140V440M1290,290H1510" stroke="#fff" stroke-width="10"/>
     <rect x="90" y="140" width="220" height="300" fill="#bfe2f2" stroke="#fff" stroke-width="14"/><path d="M200,140V440M90,290H310" stroke="#fff" stroke-width="10"/>
     <circle cx="800" cy="90" r="38" fill="#fff" stroke="#555" stroke-width="6"/><path d="M800,90V66M800,90h18" stroke="#333" stroke-width="5"/></svg>`,
-  cafe: `<svg viewBox="0 0 1600 900" preserveAspectRatio="xMidYMid slice"><rect width="1600" height="900" fill="#f1dcc0"/><rect width="1600" height="90" fill="#7a4a2a"/><rect y="610" width="1600" height="290" fill="#8a5a36"/>
-    <path d="M0,610H1600" stroke="#5e3a20" stroke-width="10"/><rect x="0" y="470" width="1600" height="140" fill="#a8744a"/><path d="M0,470H1600" stroke="#6e4426" stroke-width="10"/>
-    <rect x="120" y="150" width="430" height="260" rx="10" fill="#bfe2f2" stroke="#fff" stroke-width="16"/><path d="M335,150V410" stroke="#fff" stroke-width="10"/>
-    <rect x="1080" y="140" width="380" height="250" rx="12" fill="#3a3a3a" stroke="#6e4426" stroke-width="14"/><path d="M1130,200h200M1130,250h260M1130,300h170M1130,350h230" stroke="#f3e7c8" stroke-width="10" stroke-linecap="round"/>
-    <g fill="#c96a3a"><circle cx="700" cy="120" r="34"/><circle cx="900" cy="120" r="34"/></g><path d="M700,90V40M900,90V40" stroke="#333" stroke-width="4"/>
-    <g fill="#fff" stroke="#8a5a36" stroke-width="4"><rect x="640" y="430" width="40" height="44" rx="6"/><rect x="760" y="436" width="34" height="38" rx="6"/><rect x="880" y="430" width="40" height="44" rx="6"/></g></svg>`,
+  cafe: `<svg viewBox="0 0 1600 900" preserveAspectRatio="xMidYMid slice"><rect width="1600" height="900" fill="#f1dcc0"/><rect width="1600" height="62" fill="#7a4a2a"/>
+    <rect y="500" width="1600" height="400" fill="#b98557"/><g stroke="#9a6a40" stroke-width="3"><path d="M0,560H1600M0,635H1600M0,725H1600M0,835H1600"/><path d="M800,500V900M560,500L380,900M1040,500L1220,900M320,500L-40,900M1280,500L1640,900"/></g>
+    <rect y="488" width="1600" height="16" fill="#7a4a2a"/>
+    <rect x="110" y="130" width="300" height="190" rx="8" fill="#bfe2f2" stroke="#fff" stroke-width="12"/><path d="M260,130V320" stroke="#fff" stroke-width="8"/>
+    <rect x="600" y="140" width="260" height="170" rx="10" fill="#3a3a3a" stroke="#6e4426" stroke-width="10"/><path d="M635,180h140M635,215h180M635,250h120M635,285h160" stroke="#f3e7c8" stroke-width="7" stroke-linecap="round"/>
+    <g fill="#c96a3a"><circle cx="520" cy="100" r="24"/><circle cx="1240" cy="100" r="24"/></g><path d="M520,78V40M1240,78V40" stroke="#333" stroke-width="3"/>
+    <rect x="1010" y="400" width="590" height="22" fill="#6e4426"/><rect x="1020" y="420" width="580" height="80" fill="#a8744a"/><path d="M1020,460H1600" stroke="#8a5a36" stroke-width="4"/>
+    <g fill="#fff" stroke="#8a5a36" stroke-width="3"><rect x="1120" y="370" width="28" height="31" rx="5"/><rect x="1210" y="374" width="24" height="27" rx="5"/><rect x="1300" y="370" width="28" height="31" rx="5"/></g>
+    <rect x="1060" y="250" width="440" height="14" fill="#7a4a2a"/><g fill="#d9a066" stroke="#7a4a2a" stroke-width="3"><rect x="1090" y="210" width="34" height="40" rx="4"/><rect x="1150" y="200" width="34" height="50" rx="4"/><rect x="1420" y="214" width="40" height="36" rx="4"/></g><circle cx="1300" cy="224" r="22" fill="#6aa86a" stroke="#3d6e3d" stroke-width="3"/>
+    <g fill="#8a5a36"><rect x="150" y="470" width="190" height="14" rx="4"/><rect x="238" y="482" width="14" height="60"/><rect x="200" y="538" width="90" height="10" rx="4"/></g></svg>`,
   park: `<svg viewBox="0 0 1600 900" preserveAspectRatio="xMidYMid slice"><defs><linearGradient id="vnsky" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#8ec9f0"/><stop offset="1" stop-color="#d9f0fb"/></linearGradient></defs>
     <rect width="1600" height="900" fill="url(#vnsky)"/><circle cx="1360" cy="150" r="70" fill="#fff3b0"/><ellipse cx="380" cy="160" rx="120" ry="38" fill="#fff"/><ellipse cx="460" cy="140" rx="90" ry="34" fill="#fff"/>
     <path d="M0,560Q400,470 800,540T1600,520V900H0Z" fill="#8fcf72"/><path d="M0,650Q500,600 1000,660T1600,640V900H0Z" fill="#6fb658"/>
@@ -236,7 +249,7 @@ function parseCues(say){
   const raw = String(say || ''), cues = [], marks = [];
   let text = '', last = 0;
   for(const m of raw.matchAll(/\{([^{}]*)\}/g)){
-    const tag = m[1].trim().match(/^(\/?)(shout|whisper)$/i), d = {};
+    const tag = m[1].trim().match(/^(\/?)(shout|whisper|stress)$/i), d = {};
     for(const [, k, v] of m[1].matchAll(/(pose|emotion)\s*[:=]\s*([\w-]+)/g)) d[k] = v;
     if(!tag && !d.pose && !d.emotion) continue;   /* not a cue or a tag: leave it in the text */
     if(m.index < last) continue;
@@ -360,7 +373,7 @@ function create(host, script){
   const SCENE_EASE = easingOf(script.easing || 'quad'), SCENE_TIME = Number(script.moveTime) >= 0 ? Number(script.moveTime) : 0.45;
   let motion = {ease:SCENE_EASE, time:SCENE_TIME};   /* for the moves of the line being shown */
   const wrap = v => ((v + 180) % 360 + 360) % 360 - 180;
-  const TURNS = ['torsoOrientation', 'pelvisOrientation'];
+  const TURNS = ['torsoOrientation', 'pelvisOrientation', 'headNod'];
   const numsOf = d => ({joints:{...d.joints}, turns:TURNS.map(k => d[k])});
   const sameNums = (a, b) => TURNS.every((k, i) => a.turns[i] === b.turns[i]) && Object.keys(b.joints).every(j => Math.round(a.joints[j]) === Math.round(b.joints[j]));
   /* which way each joint turns: HouseCharacter.jointDelta (shared with the keyframe editor) */
@@ -375,6 +388,13 @@ function create(host, script){
   const sprites = new Map();   /* id → {el, key, data (target), shot, nums (on screen), vb (on screen), anim} */
   function paint(s, nums, vb){   /* draw the target character with these joint angles and this framing */
     const d = {...s.data, joints:nums.joints}; TURNS.forEach((k, i) => d[k] = nums.turns[i]);
+    const P = s.pros;   /* the live prosody layer, on top of the pose (see "prosody") */
+    if(P){
+      if(P.nod) d.headNod = Math.max(-30, Math.min(30, (d.headNod || 0) + P.nod));
+      if(P.tilt) d.joints = {...d.joints, neck:(d.joints.neck || 0) + P.tilt};
+      if(P.brows && d.eyebrows === 'neutral') d.eyebrows = P.brows;
+      if(P.blink && (d.eyes === 'open' || d.eyes === 'wide')) d.eyes = 'closed';
+    }
     const key = JSON.stringify(d) + vb.map(v => v.toFixed(1)).join();
     if(key === s.key) return;
     s.el.style.aspectRatio = `${vb[2].toFixed(1)} / ${vb[3].toFixed(1)}`;
@@ -427,13 +447,47 @@ function create(host, script){
     }
   }
 
+  /* ── prosody: the speaker's head and brows follow the line's stress and tune ──
+     HouseCharacter.prosody reads the text (sentence types, stressed words, {stress} marks) and gives nods,
+     head cocks, brow raises and blinks timed to the words; they are added on top of the pose while the line is
+     said, and fade out with it. A click that finishes the line stops them at once. */
+  const PROSODY = {calm:0.6, lively:1.4};
+  let prosRaf = 0, pros = null;   /* {id, events, t0, end} */
+  function stopProsody(){
+    cancelAnimationFrame(prosRaf); prosRaf = 0;
+    if(!pros) return;
+    const s = sprites.get(pros.id); pros = null;
+    if(s && s.pros){ s.pros = null; if(!s.anim) paint(s, s.nums, s.vb); }
+  }
+  function prosTick(now){
+    prosRaf = 0; if(!pros) return;
+    const s = sprites.get(pros.id), f = Math.max(0, now - pros.t0) / 1000 * FPS;
+    if(!s || f > pros.end){ stopProsody(); return; }
+    s.pros = HC.prosodyAt(pros.events, Math.round(f));
+    if(!s.anim) paint(s, s.nums, s.vb);
+    prosRaf = requestAnimationFrame(prosTick);
+  }
+  function startProsody(L, cm, c, text, spans, sp, think){
+    stopProsody();
+    const setting = L.prosody !== undefined ? L.prosody : script.prosody !== undefined ? script.prosody : true;
+    if(REDUCED || !setting || !c || !HC.prosody) return;
+    let energy = (PROSODY[setting] || 1) * (Number(cm.expressiveness) >= 0 && cm.expressiveness !== '' && cm.expressiveness != null ? Number(cm.expressiveness) : 1);
+    const part = k => spans.filter(x => x.kind === k).reduce((n, x) => n + x.to - x.from, 0) / Math.max(1, text.length);
+    if(part('shout') > 0.4) energy *= 1.5; else if(part('whisper') > 0.4) energy *= 0.5;
+    const stress = spans.filter(x => x.kind === 'stress').map(x => [x.from, x.to]);
+    const r = HC.prosody(text, sp, {fps:FPS, lang:cm.lang || 'en', energy, think, view:c.data.head === 'front' ? 'front' : 'side', stress});
+    if(!r.events.length) return;
+    pros = {id:L.who, events:r.events, t0:performance.now(), end:Math.max(...r.events.map(e => e.frame + e.dur)) + 1};
+    prosRaf = requestAnimationFrame(prosTick);
+  }
+
   /* ── saying a line ── */
   let index = -1, scene = null, talk = null, raf = 0;
   /* the line's text is laid out once, every letter hidden, and letters are shown as they are said, so the box
      never reflows. When shouting, each letter shakes as it appears and the shaking dies down. */
   function build(el, text, spans){
     const esc = t => t.replace(/[&<>]/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;'}[c]));
-    const kind = at => spans.filter(sp => at >= sp.from && at < sp.to).map(sp => sp.kind === 'shout' ? ' sh' : ' wh').join('');
+    const kind = at => spans.filter(sp => at >= sp.from && at < sp.to && sp.kind !== 'stress').map(sp => sp.kind === 'shout' ? ' sh' : ' wh').join('');   /* stress is not shown */
     const offs = []; let h = '', at = 0;
     for(const part of text.split(/(\s+)/)){
       if(!part) continue;
@@ -536,6 +590,7 @@ function create(host, script){
 
   function finish(){   /* the whole line at once, mouth at rest */
     if(!talk || talk.done) return;
+    if((performance.now() - talk.t0) / 1000 < talk.sp.seconds) stopProsody();   /* skipped: the head and brows stop with the words */
     talk.done = true; cancelAnimationFrame(raf);
     render(Infinity); runCues(Infinity); setMouth(talk.rest);
     if(talk.el) talk.el.scrollTo({top:talk.el.scrollHeight, behavior:REDUCED ? 'auto' : 'smooth'});
@@ -571,7 +626,7 @@ function create(host, script){
     if(!history.length) return;
     /* the speaker of the line before, if they have not settled yet, settles while this line plays */
     const prev = talk && talk.who != null && !talk.settled && sprites.has(talk.who) ? {id:talk.who, from:scene.get(talk.who)} : null;
-    cancelAnimationFrame(raf); hideAsk(); ended = false; clearTimeout(settleTimer); clearTimeout(faceTimer); clearTimeout(autoTimer);
+    cancelAnimationFrame(raf); stopProsody(); hideAsk(); ended = false; clearTimeout(settleTimer); clearTimeout(faceTimer); clearTimeout(autoTimer);
     const cur = history[history.length - 1], i = cur.i;
     vars = {...cur.vars};
     const L = lines[i], who = L.who != null ? L.who : null, cm = who != null ? cast[who] : (script.narration || {});
@@ -605,6 +660,7 @@ function create(host, script){
     build(insert ? insertText : textEl, text, spans);
     if(!insert) insertText.innerHTML = '';
     syncButtons();
+    if(who != null && !insert) startProsody(L, cm, c, text, spans, talk.sp, think);
     if(!talk.sp.keys.length) finish(); else raf = requestAnimationFrame(tick);
   }
   function jump(i, newVars){

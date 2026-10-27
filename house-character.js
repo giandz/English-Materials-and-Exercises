@@ -11,6 +11,8 @@
      HouseCharacter.pivots(data)          → joint pivots in stage coordinates
      HouseCharacter.describe(data)        → "Sam is holding a wrench."
      HouseCharacter.speech(text, opts)    → lip-sync mouth keys for a line of text (see the speech section)
+     HouseCharacter.prosody(text, sp, o)  → brow, nod, tilt and blink events for that line (see the prosody section)
+     HouseCharacter.prosodyAt(events, f)  → what those events add at frame f
      HouseCharacter.EASES                 → [id, label, curve] for each easing (linear, sine, quad … bounce)
      HouseCharacter.ease(s, out, in)      → s (0–1) eased: out shapes the departure, in the arrival
      HouseCharacter.jointDelta(j, a, b)   → degrees joint j turns from a to b, the natural way (see below)
@@ -18,6 +20,9 @@
    Angles are degrees, clockwise on screen, relative to the parent segment.
    0 = limb straight / torso and head upright. L and R are the character's own.
    pelvisOrientation does the same for the pelvis, hips and leg layering.
+   headNod tips the head forward (chin down, positive) or back (chin up, negative), −30…30. From the front
+   the face slides down or up within the head (eyes and brows most, the mouth least) and the ears the
+   other way; in profile the head turns about the neck.
    torsoOrientation is a pseudo-rotation of the trunk: −90 = profile facing
    left, 0 = front, 90 = profile facing right. It narrows torso and pelvis,
    pulls the shoulder and hip attachments together, and puts the far arm
@@ -576,7 +581,17 @@ const ITEMS = (()=>{
 
 /* ── hair. Head-centre coordinates, skull spans x ±29, y −36…35.
       view 'front' or 'side' (side = facing left; the caller mirrors it). ── */
-function hair(style,view,col,hat){
+const HAIRLINE_K=0.22, HAIR_R=32;
+/* how far a point on top of the head moves down on screen when the head nods (front view): a0 = where it sits,
+   in degrees from the crown toward the face, r = its distance from the middle of the head. Scaled like the face. */
+const crownDy=(nod,a0,r)=>{ if(!nod) return 0; const R=Math.PI/180; return 0.48*r*(Math.cos(a0*R)-Math.cos((a0+nod)*R)); };
+function hair(style,view,col,hat,nod){
+  /* a front nod: the inner hairline (not the head's outline) follows the face, most in the middle and fading
+     to nothing at the temples along a sine curve; things on the crown (a bun, a quiff) turn with the skull */
+  nod=view==='front'?Number(nod)||0:0;
+  const bend=str=>nod?str.replace(/(-?\d*\.?\d+),(-?\d*\.?\d+)/g,(m,x,y)=>`${x},${n2(+y+nod*HAIRLINE_K*Math.sin(Math.PI*(Math.max(-HAIR_R,Math.min(HAIR_R,+x))+HAIR_R)/(2*HAIR_R)))}`):str;
+  const mid=svg=>nod?`<g transform="translate(0 ${n2(nod*HAIRLINE_K)})">${svg}</g>`:svg;   /* curls along the middle of the hairline */
+  const crown=(svg,a0,r)=>{ const dy=crownDy(nod,a0,r); return dy?`<g transform="translate(0 ${n2(dy)})">${svg}</g>`:svg; };
   const st=shade(col,-0.3), A=`fill="${col}" stroke="${st}"`, B=`fill="${col}" stroke="none"`;
   const p=(d,a)=>`<path d="${d}" ${a||A}/>`;
   let back='',front=''; const hang=[];   /* hang = pieces that always fall straight down, each pinned at its own point on the head */
@@ -612,7 +627,7 @@ function hair(style,view,col,hat){
   if(hat&&(style==='afro'||style==='curly'||style==='bun'||style==='pompadour')){
     /* under a hat: nothing above the brim, the volume moves to the sides and nape */
     const F=view==='front', cx=F?0:5;
-    const capF='M-30,2C-30,-28 -18,-37 0,-37C18,-37 30,-28 30,2L27.5,2C27,-12 14,-24 0,-24C-14,-24 -27,-12 -27.5,2Z';
+    const capF='M-30,2C-30,-28 -18,-37 0,-37C18,-37 30,-28 30,2'+bend('L27.5,2C27,-12 14,-24 0,-24C-14,-24 -27,-12 -27.5,2')+'Z';
     const capS='M-26,-20C-26,-36 -12,-39 2,-39C22,-39 33,-24 32,-2C32,10 28,18 24,24L14,14C16,6 15,-4 12,-8L2,-9L1,3L-4,3C-5,-10 -12,-20 -26,-20Z';
     front=p(F?capF:capS,style==='bun'||style==='pompadour'?A:B);
     if(style==='afro') back=`<g ${A}><path d="M${cx-42.5},-16A43,43 0 0 0 ${cx+42.5},-16Z"/>${ring(cx,-10,43,43,-6,186,9,9.5)}</g>`;
@@ -621,12 +636,12 @@ function hair(style,view,col,hat){
     return {back,front,hang};
   }
   if(view==='front'){
-    const capF=(rx,ry,y0,line)=>`M${-rx},${y0}C${-rx},${-ry*0.75} ${-rx*0.6},${-ry} 0,${-ry}C${rx*0.6},${-ry} ${rx},${-ry*0.75} ${rx},${y0}${line}Z`;
+    const capF=(rx,ry,y0,line)=>`M${-rx},${y0}C${-rx},${-ry*0.75} ${-rx*0.6},${-ry} 0,${-ry}C${rx*0.6},${-ry} ${rx},${-ry*0.75} ${rx},${y0}${bend(line)}Z`;
     const round='L27.5,4C27,-12 14,-24 0,-24C-14,-24 -27,-12 -27.5,4';
-    const curls=()=>`<g ${A}>${ring(0,-4,27,31,185,355,9,9.5)}${ring(0,-24,17,3,180,360,5,7.5)}</g>`;
+    const curls=()=>`<g ${A}>${ring(0,-4,27,31,185,355,9,9.5)}${mid(ring(0,-24,17,3,180,360,5,7.5))}</g>`;
     switch(style){
       case 'crew': front=p(capF(30,37.5,-2,'L27.5,-2C27,-14 14,-25 0,-25C-14,-25 -27,-14 -27.5,-2')); break;
-      case 'pompadour': front=p(capF(31,39,4,round))+p('M-23,-21C-28,-44 -13,-55 2,-53C17,-52 27,-42 23,-23C12,-30 -8,-30 -23,-21Z'); break;
+      case 'pompadour': front=p(capF(31,39,4,round))+crown(p('M-23,-21C-28,-44 -13,-55 2,-53C17,-52 27,-42 23,-23C12,-30 -8,-30 -23,-21Z'),15,48); break;
       case 'pigtails': front=p(capF(31.5,39,6,'L27,6C27,-10 16,-22 0,-29C-16,-22 -27,-10 -27,6'));
         /* behind the head, pinned high behind each ear, as long as the long style */
         [1,-1].forEach(k=>H(false,k*29,-8,`<circle cx="${k*29}" cy="-8" r="6" ${A}/>`+p(`M${k*26},-11C${k*42},-11 ${k*45},40 ${k*40},74Q${k*35},79 ${k*32},72C${k*35},44 ${k*33},8 ${k*25},-2Z`))); break;
@@ -636,7 +651,7 @@ function hair(style,view,col,hat){
       case 'curly': front=p(capF(30,37,2,round),B)+curls(); break;
       case 'afro':
         back=`<g ${A}><circle cx="0" cy="-10" r="43"/>${ring(0,-10,43,43,0,334,14,9.5)}</g>`;
-        front=p(capF(30,37,2,round),B)+`<g ${A}>${ring(0,-25,18,3,180,360,5,7.5)}</g>`; break;
+        front=p(capF(30,37,2,round),B)+`<g ${A}>${mid(ring(0,-25,18,3,180,360,5,7.5))}</g>`; break;
       case 'bob':
         H(false,0,-2,`<circle cx="0" cy="-2" r="34" ${A}/>`+p('M-35,-12Q-36,-22 -29,-22L29,-22Q36,-22 35,-12L36,26Q36,32 28,32L-28,32Q-36,32 -36,26Z'));
         front=p(capF(32,39.5,10,'L27,10L27,-11Q27,-15 22,-15L-22,-15Q-27,-15 -27,-11L-27,10')); break;
@@ -648,7 +663,7 @@ function hair(style,view,col,hat){
         H(false,25,0,`<circle cx="25" cy="0" r="6.5" ${A}/>`+p('M22,-6C40,-8 44,22 39,52Q33,58 29,48C33,26 30,10 20,6Z'));
         front=p(capF(30.5,38,2,'L27.5,2C27,-12 14,-23 0,-23C-14,-23 -27,-12 -27.5,2')); break;
       case 'bun':
-        front=`<circle cx="0" cy="-43" r="11.5" ${A}/>`+p(capF(30.5,38,2,'L27.5,2C27,-12 14,-23 0,-23C-14,-23 -27,-12 -27.5,2')); break;
+        front=crown(`<circle cx="0" cy="-43" r="11.5" ${A}/>`,-10,43)+p(capF(30.5,38,2,'L27.5,2C27,-12 14,-23 0,-23C-14,-23 -27,-12 -27.5,2')); break;
     }
   } else {
     const capS=(fx,fy)=>`M${fx},${fy}C${fx},-36 -12,-39 2,-39C22,-39 33,-24 32,-2C32,10 28,18 24,24L14,14C16,6 15,-4 12,-8L2,-9L1,3L-4,3C-5,${fy+10} -12,${fy} ${fx},${fy}Z`;
@@ -849,9 +864,29 @@ const EMO_BODY={
   anticipation:{joints:{...STAND,shoulderL:-26,elbowL:97,shoulderR:26,elbowR:-97}},
   vigilance:{joints:{...STAND,...CROUCH(12,22,46),shoulderL:-32,elbowL:72,shoulderR:32,elbowR:-72}}
 };
+/* how far each emotion tips the head: chin down for sad, shy or angry looks, chin up for joy, surprise or scorn */
+const EMO_NOD={serenity:4,ecstasy:-10,admiration:-5,apprehension:6,fear:5,distraction:-4,surprise:-6,amazement:-8,
+  pensiveness:9,sadness:14,grief:16,boredom:7,disgust:-5,loathing:-8,annoyance:4,anger:7,rage:5,interest:3,vigilance:5};
 const EMOTION_POSES=EMOTIONS.flatMap(([group,list])=>list.map(([id,label,brows,eyes,mouth])=>
-  ({id:'em_'+id,label,group,head:EMO_BODY[id].head||'front',joints:EMO_BODY[id].joints,held:EMO_BODY[id].held,extra:EMO_BODY[id].extra,face:{eyebrows:brows,eyes,mouth}})));
-function headwearSVG(id,side,col,rear){
+  ({id:'em_'+id,label,group,head:EMO_BODY[id].head||'front',joints:EMO_BODY[id].joints,held:EMO_BODY[id].held,extra:EMO_BODY[id].extra,nod:EMO_NOD[id]||0,face:{eyebrows:brows,eyes,mouth}})));
+function headwearSVG(id,side,col,rear,nod){
+  const out=headwearRaw(id,side,col,rear,nod=side||rear?0:Number(nod)||0);
+  if(!nod||!out) return out;
+  /* a front nod: hats and headbands ride on the front of the crown and dip or lift with it; bands from ear to
+     ear (bow, headphones, headset) go with the ears; the ski mask is the head itself (only its eye hole moves) */
+  const dy=['bow','headphones','headset'].includes(id)?-nod*0.12:id==='skimask'?0:crownDy(nod,45,40);
+  if(!dy) return out;
+  if(id==='headband'||dy===-nod*0.12) return `<g transform="translate(0 ${n2(dy)})">${out}</g>`;
+  /* a hat keeps its crown where it is and its brim dips (more of the top shows) or lifts (less of it) */
+  const top=-45, brim={sunhat:-21,fedora:-19}[id]||-17, sy=1+dy/(brim-top);
+  let body=out, strap='';
+  if(id==='bikehelmet'){   /* the chin strap stays round the chin (the head's outline does not move) */
+    const m=out.match(/<path d="M-29\.6[^>]*\/><rect[^>]*\/>/);
+    if(m){ body=out.replace(m[0],''); strap=m[0]; }
+  }
+  return strap+`<g transform="translate(0 ${top}) scale(1 ${sy.toFixed(3)}) translate(0 ${-top})">${body}</g>`;
+}
+function headwearRaw(id,side,col,rear,nod){
   let h=HEADWEAR[id]; if(!h) return ''; h={...h,col:col||h.col};
   const dk=edge(h.col), A=`fill="${h.col}" stroke="${dk}"`, B=`fill="${shade(h.col,-0.18)}" stroke="${dk}"`;
   const t=side?'<g transform="translate(2 0)">':'<g>';
@@ -882,7 +917,7 @@ function headwearSVG(id,side,col,rear){
       const knit=`<path d="${side?'M-24,-30Q4,-40 26,-28M-26,22Q2,30 24,20':'M-26,-30Q0,-40 26,-30M-28,24Q0,32 28,24'}" fill="none" stroke="${dk}" stroke-opacity=".45" stroke-width="1.4"/>`;
       const m=side
         ?`<path fill-rule="evenodd" d="M-31,-6C-32,-34 -16,-41 2,-41C22,-41 36,-26 34,4C33,20 30,30 24,38L24,46H-10L-9,38C-22,36 -32,26 -33,10L-38,6L-31,-6ZM-33,-10H-4Q-2,-2 -4,6H-34Q-36,-2 -33,-10Z" ${A}/>`
-        :`<path fill-rule="evenodd" d="M-36,2C-36,-30 -20,-41 0,-41C20,-41 36,-30 36,2C36,20 31,31 22,37L21,46H-21L-22,37C-31,31 -36,20 -36,2Z${rear?'':'M-23,-10H23Q27,-2 23,7H-23Q-27,-2 -23,-10Z'}" ${A}/>`;   /* from behind: no eye opening */
+        :`<path fill-rule="evenodd" d="M-36,2C-36,-30 -20,-41 0,-41C20,-41 36,-30 36,2C36,20 31,31 22,37L21,46H-21L-22,37C-31,31 -36,20 -36,2Z${rear?'':nod?`M-23,${n2(-10+nod*0.3)}H23Q27,${n2(-2+nod*0.3)} 23,${n2(7+nod*0.3)}H-23Q-27,${n2(-2+nod*0.3)} -23,${n2(-10+nod*0.3)}Z`:'M-23,-10H23Q27,-2 23,7H-23Q-27,-2 -23,-10Z'}" ${A}/>`;   /* from behind: no eye opening */
       return t+m+knit+'</g>'; }
     case 'headband': return t+`<path d="M-30.5,-19Q0,-30 30.5,-19L30.5,-13Q0,-24 -30.5,-13Z" ${A}/></g>`;
   }
@@ -891,7 +926,7 @@ function headwearSVG(id,side,col,rear){
 
 function headSVG(d,C){
   const side=d.head!=='front', eye=EYES[d.eyeColor-1], rear=!!d.back&&!side;   /* rear: the back of the head */
-  const h=hair(d.hairStyle,side?'side':rear?'back':'front',C.hair,(d.headwear&&!['headband','bow','headphones','headset'].includes(d.headwear))||d.upperGarment==='hoodieup'), fh=rear?'':facial(d.facialHair,side?'side':'front',C.hair);
+  const h=hair(d.hairStyle,side?'side':rear?'back':'front',C.hair,(d.headwear&&!['headband','bow','headphones','headset'].includes(d.headwear))||d.upperGarment==='hoodieup',d.headNod), fh=rear?'':facial(d.facialHair,side?'side':'front',C.hair);
   const S=`fill="${C.skin}" stroke="${C.skinS}"`, lash=shade(C.skin,-0.62);
   const iris=(x,y,r)=>`<circle cx="${x}" cy="${y}" r="${r}" fill="${eye.hex}" stroke="${shade(eye.hex,-0.35)}" stroke-width=".7"/>`
     +(eye.fleck?`<circle cx="${x}" cy="${y}" r="${n2(r*0.62)}" fill="#b58a3c" stroke="none"/>`:'')
@@ -918,19 +953,23 @@ function headSVG(d,C){
   };
   const browAt=(x,o,kind,hw)=>{const B={neutral:[-10.5,-10.5,-13.5],raised:[-13.5,-13,-17],sad:[-9.5,-14,-13],angry:[-13.5,-8.5,-12.5],flat:[-9.8,-9.8,-10]}[kind];
     return `<path d="M${n2(x+o*hw)},${B[0]}Q${x},${B[2]} ${n2(x-o*hw)},${B[1]}" fill="none" stroke="${C.brow}" stroke-width="2.3" stroke-linecap="round"/>`;};
+  const nod=d.headNod||0;
   const bk=d.eyebrows, ek=d.eyes, mouth=mouthSVG(d.mouth,mk('lipstick')?(d.lipstickColor||LIPSTICK_COL):C.lip);
   let s='';
  if(rear){   /* the back of the head: ears and skull, no face */
     s+=`<ellipse cx="-29.5" cy="1" rx="5" ry="7.5" ${S}/><ellipse cx="29.5" cy="1" rx="5" ry="7.5" ${S}/>`
      + `<path d="M-29,-4C-29,-30 -17,-36 0,-36C17,-36 29,-30 29,-4C29,16 16,35 0,35C-16,35 -29,16 -29,-4Z" ${S}/>`;
   } else if(!side){
-    s+=`<ellipse cx="-29.5" cy="1" rx="5" ry="7.5" ${S}/><ellipse cx="29.5" cy="1" rx="5" ry="7.5" ${S}/>`
+    /* a nod from the front: the face slides down (chin down) or up within the head, the eyes and brows most,
+       the mouth least, and squeezes a little; the ears go the other way */
+    const g=(k,body)=>nod?`<g transform="translate(0 ${n2(nod*k)})">${body}</g>`:body;
+    s+=g(-0.12,`<ellipse cx="-29.5" cy="1" rx="5" ry="7.5" ${S}/><ellipse cx="29.5" cy="1" rx="5" ry="7.5" ${S}/>`)
      + `<path d="M-29,-4C-29,-30 -17,-36 0,-36C17,-36 29,-30 29,-4C29,16 16,35 0,35C-16,35 -29,16 -29,-4Z" ${S}/>`
-     + blushAt(-17)+blushAt(17) + fh
-     + eyeAt(-11.5,-1,ek==='wink'?'open':ek,-11.5)+eyeAt(11.5,1,ek==='wink'?'happy':ek,11.5)
-     + browAt(-11.5,-1,bk==='skeptical'?'raised':bk,5.5)+browAt(11.5,1,bk==='skeptical'?'flat':bk,5.5)
-     + `<path d="M-1,2L-3.5,9.5Q0,11.5 3,9.5" fill="none" stroke="${C.skinS}" stroke-width="1.5" stroke-linecap="round"/>`
-     + mouth;
+     + g(0.24,blushAt(-17)+blushAt(17)) + g(0.18,fh)
+     + g(0.3,eyeAt(-11.5,-1,ek==='wink'?'open':ek,-11.5)+eyeAt(11.5,1,ek==='wink'?'happy':ek,11.5)
+       + browAt(-11.5,-1,bk==='skeptical'?'raised':bk,5.5)+browAt(11.5,1,bk==='skeptical'?'flat':bk,5.5))
+     + g(0.25,`<path d="M-1,2L-3.5,9.5Q0,11.5 3,9.5" fill="none" stroke="${C.skinS}" stroke-width="1.5" stroke-linecap="round"/>`)
+     + g(0.18,mouth);
   } else {
     s+=`<path d="M-28,-6L-35.5,8Q-36,11 -31,11.5L-28.5,12C-29,24 -22,35 -8,35C10,35 22,28 27,10C31,-2 30,-36 0,-36C-17,-36 -29,-30 -28,-6Z" ${S}/>`
      + blushAt(-14) + fh
@@ -940,7 +979,8 @@ function headSVG(d,C){
      + `<ellipse cx="7" cy="1" rx="5" ry="7.5" ${S}/><path d="M8,-2Q5,1 8,4" fill="none" stroke="${C.skinS}"/>`;
   }
   const star=(x,y,a)=>`<path transform="translate(${x} ${y})" d="M0,${-a}Q${n2(a*0.13)},${n2(-a*0.13)} ${a},0Q${n2(a*0.13)},${n2(a*0.13)} 0,${a}Q${n2(-a*0.13)},${n2(a*0.13)} ${-a},0Q${n2(-a*0.13)},${n2(-a*0.13)} 0,${-a}Z" fill="#fffbe0" stroke="#e2b23a" stroke-width=".8"/>`;
-  const ear=d.accessories.includes('studs')?(side?[7]:[-30.5,30.5]).map(x=>`<path d="M${x},8V11" stroke="#9c7716" stroke-width="1.2" fill="none"/><circle cx="${x}" cy="13.5" r="3.6" fill="#e2b23a" stroke="#9c7716" stroke-width="1"/>`+star(x+(x<0?-5:5),8.5,5.5)).join(''):'';
+  const earY=!side&&!rear?n2(-nod*0.12):0;
+  const ear=d.accessories.includes('studs')?(side?[7]:[-30.5,30.5]).map(x=>`<g transform="translate(0 ${earY})"><path d="M${x},8V11" stroke="#9c7716" stroke-width="1.2" fill="none"/><circle cx="${x}" cy="13.5" r="3.6" fill="#e2b23a" stroke="#9c7716" stroke-width="1"/>`+star(x+(x<0?-5:5),8.5,5.5)+'</g>').join(''):'';
   /* hood up: a shell behind the head and a rim round the face, in the hoodie's colour */
   let hood=null;
   if(d.upperGarment==='hoodieup'){ const hc=d.upperColor||UPPER.hoodieup.col, a=`fill="${hc}" stroke="${edge(hc)}"`;
@@ -949,13 +989,13 @@ function headSVG(d,C){
              :{back:`<path d="M-38,22C-43,-32 -24,-49 0,-49C24,-49 43,-32 38,22Q34,44 22,56H-22Q-34,44 -38,22Z" ${a}/>`,
                front:`<path fill-rule="evenodd" d="M-37,22C-42,-31 -23,-48 0,-48C23,-48 42,-31 37,22Q21,43 0,45Q-21,43 -37,22ZM-26,-2C-26,-25 -14,-33 0,-33C14,-33 26,-25 26,-2C26,15 14,31 0,31C-14,31 -26,15 -26,-2Z" ${a}/>`}; }
   /* drop earrings: pinned at the earlobe, drawn unrotated so they always hang */
-  const drops=d.accessories.includes('drops')?(side?[7]:[-30.5,30.5]).map(x=>({x,y:8,svg:`<path d="M0,0V9" stroke="#9c7716" stroke-width="1.3" fill="none"/><path d="M0,8Q-5,16 0,20.5Q5,16 0,8Z" fill="#e2b23a" stroke="#9c7716" stroke-width="1"/>`+star(x<0?-6.5:6.5,11,5.5)})):[];
+  const drops=d.accessories.includes('drops')?(side?[7]:[-30.5,30.5]).map(x=>({x,y:8+earY,svg:`<path d="M0,0V9" stroke="#9c7716" stroke-width="1.3" fill="none"/><path d="M0,8Q-5,16 0,20.5Q5,16 0,8Z" fill="#e2b23a" stroke="#9c7716" stroke-width="1"/>`+star(x<0?-6.5:6.5,11,5.5)})):[];
   const masked=(HEADWEAR[d.headwear]||{}).mask;
   if(rear&&hood) hood={back:'',front:hood.back};   /* hood up, from behind: the hood's shell covers the whole head */
   const glasses=rear?(EYEWEAR[d.eyewear]?(()=>{const fc=d.eyewearColor||EYEWEAR[d.eyewear].frame; return `<path d="M-34.5,-4.5L-28.5,-3.5M34.5,-4.5L28.5,-3.5" fill="none" stroke="${fc}" stroke-width="2.4" stroke-linecap="round"/>`;})():''):eyewearSVG(d.eyewear,side,d.eyewearColor);   /* from behind only the temple arms show, over the ears */
   return {back:h.back, hang:h.hang, drops:masked?[]:drops,
-          hoodBack:hood&&hood.back, top:headwearSVG(d.headwear,side,d.headwearColor,rear)+(hood?hood.front:'')+(masked?glasses:ear),   /* headwear sits above all hair, earrings above that */
-          front:s+h.front+(masked?'':glasses)};   /* over a ski mask, glasses are drawn on top of it */
+          hoodBack:hood&&hood.back, top:headwearSVG(d.headwear,side,d.headwearColor,rear,d.headNod)+(hood?hood.front:'')+(masked?glasses:ear),   /* headwear sits above all hair, earrings above that */
+          front:s+h.front+(masked?'':(!side&&!rear&&nod?`<g transform="translate(0 ${n2(nod*0.3)})">${glasses}</g>`:glasses))};   /* over a ski mask, glasses are drawn on top of it */
 }
 /* ── clothes. off = how far the fitted parts sit outside the body (px).
       arm / fore / thigh / shin = fraction of that segment covered (1 = all).
@@ -1305,7 +1345,8 @@ function build(d){
   mark(mChest,-sw,-CH+8,10); mark(mChest,sw,-CH+8,10); mark(mChest,0,-CH*0.4,ww);
 
   /* neck + head */
-  const mNeck=Mx.tr(mChest,0,-CH-2,j.neck*0.5), mSkull=Mx.tr(mNeck,0,-16,j.neck*0.5);   /* half the tilt at the base of the neck, half under the skull */
+  const nodTurn=d.head==='left'?-d.headNod:d.head==='right'?d.headNod:0;   /* in profile a nod turns the head (chin down = toward the chest) */
+  const mNeck=Mx.tr(mChest,0,-CH-2,j.neck*0.5), mSkull=Mx.tr(mNeck,0,-16,j.neck*0.5+nodTurn);   /* half the tilt at the base of the neck, half under the skull */
   piv.neck={p:Mx.pt(mChest,0,-CH-2),parent:j.root+j.torso,up:true};
   add(35,mNeck,`<circle cx="0" cy="4" r="${n2(nw+2)}" fill="${C.skin}" stroke="none"/><path d="M${-nw-1},-22Q${n2(-nw+2)},-9 ${n2(-nw-4)},5L${n2(nw+4)},5Q${n2(nw-2)},-9 ${nw+1},-22Z" fill="${C.skin}" stroke="none"/><path d="M${-nw-1},-22Q${n2(-nw+2)},-9 ${n2(-nw-4)},5M${n2(nw+4)},5Q${n2(nw-2)},-9 ${nw+1},-22" fill="none" stroke="${C.skinS}"/><circle cx="0" cy="-16" r="${n2(nw+1)}" fill="${C.skin}" stroke="none"/>`,'neck');   /* flared neck with round patches at the collar and under the skull */
   if(acc.choker) add(35.5,mNeck,`<path d="M${n2(-nw-0.4)},-9Q0,-6.5 ${n2(nw+0.4)},-9V-5Q0,-2.5 ${n2(-nw-0.4)},-5Z" fill="#1b1b1b" stroke="#000" stroke-width=".8"/>`+(BK?'':`<circle cx="0" cy="-3.6" r="2.2" fill="${GOLD}" stroke="${GOLDS}" stroke-width=".8"/>`),'neck');   /* a band round the neck with a small pendant */
@@ -1625,7 +1666,7 @@ function defaults(){
     height:3,weight:3,upperGarment:null,lowerGarment:null,footwear:null,headwear:null,eyewear:null,accessories:[],prop:null,propColor:null,
     upperColor:null,lowerColor:null,footwearColor:null,headwearColor:null,eyewearColor:null,sockColor:null,tieColor:null,scarfColor:null,gloveColor:null,packColor:null,mascaraColor:null,blushColor:null,lipstickColor:null,heldLeftGrip:null,heldRightGrip:null,thumbFlipL:false,thumbFlipR:false,flipped:false,back:false,heldLeftColor:null,heldRightColor:null,
     upperPattern:'plain',upperColor2:null,lowerPattern:'plain',lowerColor2:null,
-    head:'front',torsoOrientation:0,pelvisOrientation:0,held:{left:null,right:null},joints};
+    head:'front',torsoOrientation:0,pelvisOrientation:0,headNod:0,held:{left:null,right:null},joints};
 }
 function normalize(src){
   const d=defaults(); if(!src||typeof src!=='object') return d;
@@ -1656,6 +1697,7 @@ function normalize(src){
   for(const k of ['upperPattern','lowerPattern']) d[k]=pick(src[k],PATTERNS.map(p=>p[0]),'plain');
   d.head=pick(src.head,HEADS,'front');
   d.torsoOrientation=Math.max(-90,Math.min(90,Math.round(Number(src.torsoOrientation)||0)));
+  d.headNod=Math.max(-30,Math.min(30,Math.round((Number(src.headNod)||0)*10)/10));
   d.pelvisOrientation=src.pelvisOrientation===undefined?d.torsoOrientation:Math.max(-90,Math.min(90,Math.round(Number(src.pelvisOrientation)||0)));
   /* constraints: pelvis within 90° of the torso; the head never faces against the torso */
   d.pelvisOrientation=Math.max(d.torsoOrientation-90,Math.min(d.torsoOrientation+90,d.pelvisOrientation));
@@ -1669,7 +1711,7 @@ function normalize(src){
 function applyPose(data,id){
   const p=POSES.find(x=>x.id===id)||EMOTION_POSES.find(x=>x.id===id); if(!p) return data;
   JOINTS.forEach(([k])=>data.joints[k]=p.joints[k]||0);
-  data.head=p.head; data.torsoOrientation=data.pelvisOrientation=p.turn||0; if(p.held) data.held={...data.held,...p.held};
+  data.head=p.head; data.torsoOrientation=data.pelvisOrientation=p.turn||0; data.headNod=p.nod||0; if(p.held) data.held={...data.held,...p.held};
   if(p.face) Object.assign(data,p.face);
   if(p.extra) Object.assign(data,p.extra);   /* e.g. thumbs on the other side of the hand */
   return data;
@@ -1968,7 +2010,173 @@ const speech=(()=>{
   return speechTrack;
 })();
 
+/* ── prosody: eyebrows, head nods and tilts, and blinks that follow a line's stress and tune ───────────
+     HouseCharacter.prosody(text, speechResult, opts) → {events, sentences}
+       speechResult  what HouseCharacter.speech returned for the same text (its words' timing)
+       opts.fps (24) · opts.lang 'en'|'es' · opts.energy (1: ×1.5 shouting, ×0.5 whispering)
+       opts.think    thoughts: no head movement, only brows and blinks
+       opts.view     'front' (a tilt is a head cock) or 'side' (tilts are left out: a nod does it)
+       opts.stress   [[from, to], …] text positions marked {stress}: the main stress of their phrase
+     events: [{frame, dur, kind:'nod'|'tilt'|'brows'|'blink', shape:'beat'|'hold', value}]
+     HouseCharacter.prosodyAt(events, frame) → {nod, tilt, brows, blink}: what to add at that frame
+       nod   degrees to add to headNod (chin down +)   tilt  degrees to add to the neck (a head cock)
+       brows an eyebrow shape to show instead of neutral ones, or null   blink  true while the eyes close
+
+   The text is read, not heard. It is split into phrases at punctuation, and each sentence gets a tune:
+     statement (.)          falls: a nod on the main stress
+     wh-question (Where…?)  falls: a slight frown on the wh-word, a nod on the main stress
+     yes/no question (Are…?) rises: brows up and a head cock from the main stress to the end, chin a little up
+     choice (coffee or tea?) rises on each option (brows up, a small cock), falls on the last
+     tag (…, isn't it?)     a statement, then a nod on the tag
+     exclamation (!)        brows up and the head back on the main stress
+     a comma inside a sentence: a small cock held over the pause (the voice stays up)
+   Stress: function words (articles, pronouns, auxiliaries, prepositions, conjunctions) are unstressed,
+   other words get a small nod. The main stress of a phrase is its last stressed word; a preposition left at
+   the end of a question takes it ("Where are you FROM?"); negatives are always stressed.
+   Movements start ~0.1 s before the word (faces lead the voice), at most about two nods a second, never the
+   same tilt twice running, and a seeded wobble of ±20% so a line always moves the same way.            ── */
+const prosody=(()=>{
+  const set=t=>new Set(t.trim().split(/\s+/));
+  const FN={
+    en:set(`a an the some any this that these those my your his her its our their me you him us them i he she it we they
+      mine yours hers ours theirs myself yourself am is are was were be been being do does did have has had will would shall
+      should can could may might must i'm you're he's she's it's we're they're i've you've we've they've i'll you'll he'll
+      she'll we'll they'll i'd you'd he'd she'd we'd they'd that's there's what's let's to of in on at by for from with about as
+      into onto over under up down out off than then and or but so if because when while though although nor yet there here`),
+    es:set(`el la los las un una unos unas lo le les me te se nos os mi mis tu tus su sus nuestro nuestra nuestros nuestras
+      yo tú él ella usted nosotros nosotras ellos ellas ustedes de del a al en con por para sin sobre entre hasta desde hacia
+      y e o u ni pero que si como es son soy eres somos está están estoy estás estamos fue era ha he has han hemos hay
+      muy este esta estos estas ese esa esos esas`)};
+  const WH={en:set('what which who whom whose where when why how'),
+    es:set('qué quién quiénes cuál cuáles cómo dónde adónde cuándo cuánto cuánta cuántos cuántas')};
+  const AUX={en:set(`am is are was were do does did have has had will would shall should can could may might must
+      isn't aren't wasn't weren't don't doesn't didn't haven't hasn't hadn't won't wouldn't shouldn't can't couldn't mustn't`),
+    es:set('')};
+  const NEG={en:set('not no never nothing nobody none'), es:set('no nunca nada nadie ninguno ninguna tampoco')};
+  const PREP={en:set('to of in on at by for from with about into over under up out off'), es:set('')};
+  const LEAD_IN={en:set('oh so and but well um okay ok now hey'), es:set('y pero bueno entonces oye pues ah oh')};
+  const OR={en:'or', es:'o'};
+
+  function make(text, sp, opts){
+    opts=opts||{};
+    const fps=Math.max(1,Number(opts.fps)||24), L=opts.lang==='es'?'es':'en', E=Math.max(0,Number(opts.energy)||1);
+    const think=!!opts.think, side=opts.view==='side', stressed=opts.stress||[];
+    const W=(sp&&sp.words||[]).filter(w=>w.end>w.start||w.end>=w.start);
+    if(!W.length||E===0) return {events:[],sentences:[]};
+    const low=w=>w.word.toLowerCase().replace(/[’`]/g,"'");
+    /* a seeded wobble: the same line always moves the same way */
+    let seed=7; for(const ch of String(text)) seed=(seed*31+ch.charCodeAt(0))>>>0;
+    const rnd=()=>{ seed=(seed*1664525+1013904223)>>>0; return seed/4294967296; };
+    const wob=v=>v*(0.8+0.4*rnd());
+    const sec=t=>Math.round(t*fps);
+
+    /* phrases and sentences, from the punctuation between words */
+    const sentences=[]; let ph={words:[],end:''}, se={phrases:[],end:''};
+    W.forEach((w,i)=>{
+      if(i&&W[i-1].from===w.from&&W[i-1].to===w.to){ ph.words.push(i); return; }   /* one number read as several words */
+      ph.words.push(i);
+      const gap=String(text).slice(w.to, i+1<W.length?W[i+1].from:undefined);
+      const stop=gap.match(/[.?!…]/), pause=gap.match(/[,;:—–]/);
+      if(stop||pause||i===W.length-1){
+        const q=gap.match(/[?!]/);
+        ph.end=stop?(q?q[0]:'.'):pause?',':''; se.phrases.push(ph); ph={words:[],end:''};
+        if(stop||i===W.length-1){ se.end=stop?(q?q[0]:'.'):''; sentences.push(se); se={phrases:[],end:''}; }
+      }
+    });
+    const content=i=>{ const t=low(W[i]); return !FN[L].has(t)||NEG[L].has(t)||/n't$/.test(t); };
+    const inStress=i=>stressed.some(([a,b])=>W[i].from<b&&W[i].to>a);
+    for(const S of sentences){
+      const all=S.phrases.flatMap(p=>p.words);
+      let k=0; while(k<all.length-1&&LEAD_IN[L].has(low(W[all[k]]))) k++;
+      const first=low(W[all[k]]), hasOr=all.some(i=>low(W[i])===OR[L]);
+      const lastP=S.phrases[S.phrases.length-1];
+      if(S.end==='?'){
+        const second=all[k+1]!==undefined?low(W[all[k+1]]):'';
+        if(WH[L].has(first)||((L==='es'?/^(de|a|por|para|con|en|desde|hasta)$/:/^(to|from|with|for|of|at|in|by|about)$/).test(first)&&WH[L].has(second))){
+          S.type='wh'; if(!WH[L].has(first)) k++; }
+        else if(hasOr) S.type='choice';
+        else if(S.phrases.length>1&&lastP.words.length<=3&&AUX[L].has(low(W[lastP.words[0]]))) S.type='tag';
+        else S.type='yn';
+      } else S.type=S.end==='!'?'excl':'statement';
+      S.wh=S.type==='wh'?all[k]:null;
+      for(const P of S.phrases){
+        const c=P.words.filter(content);
+        let nuc=c.length?c[c.length-1]:P.words[P.words.length-1];
+        const lastW=P.words[P.words.length-1];
+        if((S.type==='wh'||S.type==='yn')&&PREP[L].has(low(W[lastW]))) nuc=lastW;   /* "Where are you from?" */
+        const st=P.words.filter(inStress); if(st.length) nuc=st[st.length-1];      /* contrastive {stress} */
+        P.nuc=nuc; P.accents=c.filter(i=>i!==nuc);
+      }
+    }
+
+    /* events */
+    const ev=[], lead=sec(0.1), at=i=>Math.max(0,W[i].start-lead), endOf=i=>W[i].end;
+    const beat=(i,v,d,prio)=>{ if(!think) ev.push({frame:at(i),dur:Math.max(3,sec(d)),kind:'nod',shape:'beat',value:wob(v)*E,prio}); };
+    const hold=(kind,from,to,v)=>{ if(think&&kind!=='brows') return; if(side&&kind==='tilt') return;
+      if(to>from) ev.push({frame:from,dur:to-from,kind,shape:'hold',value:kind==='brows'?v:wob(v)*E}); };
+    const flash=(i,shape,d)=>ev.push({frame:at(i),dur:Math.max(3,sec(d)),kind:'brows',shape:'hold',value:shape});
+    let tiltDir=rnd()<0.5?1:-1;
+    const cock=v=>{ tiltDir=-tiltDir; return v*tiltDir; };
+    sentences.forEach(S=>{
+      const lastP=S.phrases[S.phrases.length-1], endF=W[lastP.words[lastP.words.length-1]].end;
+      for(const P of S.phrases){
+        P.accents.forEach((i,n)=>beat(i,3.5,0.32,n===0?2:1));
+        const isLast=P===lastP, nuc=P.nuc;
+        if(!isLast){   /* a comma: the voice stays up over the pause */
+          const nextP=S.phrases[S.phrases.indexOf(P)+1];
+          if(S.type==='choice'&&P.words.some(i=>low(W[i])===OR[L])) continue;
+          beat(nuc,4.5,0.34,3);
+          hold('tilt',at(nuc),W[nextP.words[0]].start,cock(3));
+          continue;
+        }
+        if(S.type==='statement') beat(nuc,6,0.4,3);
+        else if(S.type==='wh'){ if(S.wh!==null&&S.wh!==nuc) flash(S.wh,'flat',0.35); beat(nuc,6,0.4,3); }
+        else if(S.type==='yn'){ const a=at(nuc), b=endF+sec(0.35);
+          hold('brows',a,b,'raised'); hold('tilt',a,b,cock(6)); hold('nod',a,b,-3); }
+        else if(S.type==='excl'){ flash(nuc,'raised',0.6); beat(nuc,-6,0.45,3); }
+        else if(S.type==='tag'){ beat(P.words[0],5,0.4,3); }
+        if(S.type==='choice'){   /* options split by "or": up on each, down on the last */
+          const all=S.phrases.flatMap(p=>p.words), opts2=[[]];
+          for(const i of all){ if(low(W[i])===OR[L]) opts2.push([]); else opts2[opts2.length-1].push(i); }
+          opts2.forEach((o,n)=>{ if(!o.length) return; const c=o.filter(content), m=c.length?c[c.length-1]:o[o.length-1];
+            if(n<opts2.length-1){ const a=at(m), b=W[o[o.length-1]].end+sec(0.25); hold('brows',a,b,'raised'); hold('tilt',a,b,cock(4)); }
+            else beat(m,6,0.4,3); });
+        }
+      }
+      if(S.type==='tag'){ const main=S.phrases[S.phrases.length-2]; if(main) beat(main.nuc,5,0.36,3); }
+      ev.push({frame:endF+sec(0.05),dur:3,kind:'blink',shape:'hold',value:true});   /* a blink as each sentence ends */
+    });
+    /* no more than about two nods a second: keep the strongest */
+    const nods=ev.filter(e=>e.kind==='nod'&&e.shape==='beat').sort((a,b)=>b.prio-a.prio||Math.abs(b.value)-Math.abs(a.value));
+    const kept=[], gap=sec(0.45);
+    for(const e of nods) if(kept.every(k=>Math.abs(k.frame-e.frame)>=gap)) kept.push(e);
+    let out=ev.filter(e=>!(e.kind==='nod'&&e.shape==='beat')||kept.includes(e));
+    /* a blink every few seconds in long stretches */
+    const blinks=out.filter(e=>e.kind==='blink').map(e=>e.frame).sort((a,b)=>a-b);
+    let lastB=0; for(const w of W){ if(w.start-lastB>sec(3.5)){ const nb=blinks.find(b=>b>lastB&&b<=w.start); if(nb===undefined){ out.push({frame:w.start,dur:3,kind:'blink',shape:'hold',value:true}); lastB=w.start; } else lastB=nb; } }
+    out=out.map(({prio,...e})=>e).sort((a,b)=>a.frame-b.frame);
+    return {events:out, sentences:sentences.map(S=>({type:S.type, end:S.end, phrases:S.phrases.map(P=>({words:P.words.map(i=>W[i].word), main:W[P.nuc].word, end:P.end}))}))};
+  }
+  const smooth=x=>x<=0?0:x>=1?1:x*x*(3-2*x);
+  function at(events, f){
+    const o={nod:0, tilt:0, brows:null, blink:false}; let bStart=-1;
+    for(const e of events||[]){
+      if(f<e.frame||f>e.frame+e.dur) continue;
+      if(e.kind==='blink'){ o.blink=true; continue; }
+      if(e.kind==='brows'){ if(e.frame>=bStart){ o.brows=e.value; bStart=e.frame; } continue; }
+      let amp;
+      if(e.shape==='beat') amp=Math.sin(Math.PI*(f-e.frame)/e.dur);
+      else { const r=Math.min(6,e.dur/2); amp=smooth(Math.min((f-e.frame)/r,(e.frame+e.dur-f)/r)); }
+      o[e.kind]+=e.value*amp;
+    }
+    o.nod=Math.round(o.nod*2)/2; o.tilt=Math.round(o.tilt*2)/2;
+    return o;
+  }
+  make.at=at;
+  return make;
+})();
+
 return {scarfColours,SCHEMA,SKIN,EYES,HAIR,HAIR_STYLES,FACIAL,HEIGHTS,WEIGHTS,HEADS,JOINTS,POSES,ITEMS,UPPER,LOWER,FOOT,OUTFITS,HEADWEAR,EYEWEAR,ACCESSORIES,BROWS,EYE_SHAPES,MOUTHS,EMOTIONS,NEUTRAL_FACE,EMOTION_POSES,GLOVE_COL,PACK_COL,SCARF_COL,MASCARA_COL,BLUSH_COL,LIPSTICK_COL,PROPS,GRIPS,ITEM_CATS,PALETTE,PATTERNS,colour2Default,SOCK_COL,TIE_COL,colourName,STAGE,
-        defaults,normalize,render,pivots,applyPose,mirror,describe,speech,EASES,ease,easeId,jointDelta};
+        defaults,normalize,render,pivots,applyPose,mirror,describe,speech,prosody,prosodyAt:prosody.at,EASES,ease,easeId,jointDelta};
 })();
 window.HouseCharacter = HouseCharacter;

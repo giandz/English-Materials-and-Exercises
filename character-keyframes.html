@@ -346,6 +346,7 @@ button[aria-pressed="true"]{ background:var(--color-background-info); color:var(
 #pal .def{ width:100%; margin-top:6px; font-size:.7667rem; padding:3px 8px; }
 #tl .lk{ fill:var(--text-accent); }
 /* speech: text in, mouth keyframes out */
+.sp-check{ display:flex; align-items:center; gap:6px; margin:6px 0 2px; font-size:.8rem; cursor:pointer; }
 .sp-text{ width:100%; box-sizing:border-box; min-height:4.6em; resize:vertical; font-family:inherit; font-size:.8rem; line-height:1.4; padding:6px 8px;
   border:1px solid var(--color-border-secondary); border-radius:var(--border-radius-md); background:var(--color-background-primary); color:var(--text-primary); }
 .sp-row{ display:grid; grid-template-columns:4.2em minmax(0,1fr) 3.9em 2.4em; align-items:center; gap:6px; margin-top:8px; }
@@ -469,8 +470,9 @@ button[aria-pressed="true"]{ background:var(--color-background-info); color:var(
             <input type="number" id="spWpmN" min="60" max="300" step="5" aria-label="Words per minute">
             <span class="unit">wpm</span>
           </div>
+          <label class="sp-check"><input type="checkbox" id="spPros"> Head &amp; brows (prosody)</label>
           <div class="btnrow"><button id="bSpeech" title="Fill the Mouth timeline from the playhead with lip-sync shapes for this text">🗣️ Create speech</button><span class="sp-est" id="spEst"></span></div>
-          <p class="note">Mouth shapes start at the playhead, on the Mouth timeline, and replace what was there for that stretch. Choose the language of the text first. About 120 wpm is slow and clear, 150 natural, 180 or more fast. Pauses rest on the mouth the character has at the playhead (a smile stays a smile).</p>
+          <p class="note">Mouth shapes start at the playhead, on the Mouth timeline, and replace what was there for that stretch. Choose the language of the text first. About 120 wpm is slow and clear, 150 natural, 180 or more fast. Pauses rest on the mouth the character has at the playhead (a smile stays a smile). With <b>Head &amp; brows</b> on, the same stretch also gets head nods on stressed words, a raised brow and a head cock on yes/no questions, a slight frown on wh-questions, and a blink as each sentence ends — keyed on the Head nod, Neck, Eyebrows and Eyes timelines, on top of what they already do. Brows only move where they are neutral, and blinks only where the eyes are open.</p>
         </div>
       </details>
       <div class="scope">Look changes go on
@@ -572,8 +574,8 @@ const HC = HouseCharacter;
 const SCHEMA = 'house-animation/1';
 const JOINT_IDS = HC.JOINTS.map(j => j[0]);
 /* numbers that ease between keyframes besides the joint angles */
-const TURNS = [['torsoOrientation','Torso rotation'],['pelvisOrientation','Pelvis rotation'],['lift','Lift (cm)']];
-const RANGE = {torsoOrientation:[-90,90], pelvisOrientation:[-90,90], lift:[0,60]};   /* more would push the head off the top of the stage */
+const TURNS = [['torsoOrientation','Torso rotation'],['pelvisOrientation','Pelvis rotation'],['lift','Lift (cm)'],['headNod','Head nod']];
+const RANGE = {torsoOrientation:[-90,90], pelvisOrientation:[-90,90], lift:[0,60], headNod:[-30,30]};   /* more would push the head off the top of the stage */
 const PX_PER_CM = 2.27;   /* the engine draws about 227 px to the metre */
 const cap = h => h[0].toUpperCase() + h.slice(1);
 /* stepped (held) settings shown with the turns */
@@ -582,7 +584,7 @@ const FACING = [['head','Head facing',HC.HEADS.map(h => [h, cap(h)])],
                 ['flipped','Mirror image',[['false','No'],['true','Yes']]]];
 const STEPS = [['eyebrows','Eyebrows',HC.BROWS],['eyes','Eyes',HC.EYE_SHAPES],['mouth','Mouth',HC.MOUTHS]];
 const GROUPS = [['Rotation and lift',['torsoOrientation','pelvisOrientation','lift']],
-  ['Lean and tilt',['root','torso','pelvis','neck']],
+  ['Lean and tilt',['root','torso','pelvis','neck','headNod']],
   ['Left arm',['shoulderL','elbowL','wristL']],['Right arm',['shoulderR','elbowR','wristR']],
   ['Left leg',['hipL','kneeL','ankleL']],['Right leg',['hipR','kneeR','ankleR']]];
 const LABEL = {...Object.fromEntries([...HC.JOINTS, ...TURNS]), root:'Whole body tilt', torso:'Torso lean', pelvis:'Pelvis lean'};
@@ -602,7 +604,7 @@ function starterCharacter(){
 }
 /* a keyframe holds every field of the character except its name */
 const FIELDS = Object.keys(HC.defaults()).filter(k => k !== 'schema' && k !== 'name');
-const POSE_FIELDS = ['joints','torsoOrientation','pelvisOrientation','lift','head','back','flipped','eyebrows','eyes','mouth'];
+const POSE_FIELDS = ['joints','torsoOrientation','pelvisOrientation','lift','headNod','head','back','flipped','eyebrows','eyes','mouth'];
 const LOOK_FIELDS = FIELDS.filter(k => !POSE_FIELDS.includes(k));
 function poseOf(c){
   const n = HC.normalize(c), p = {};
@@ -1916,7 +1918,7 @@ $('face').addEventListener('change', e => {
 $('bPreset').onclick = () => {
   const id = $('preset').value, c = HC.applyPose(HC.normalize(dataAt(frame)), id);
   const pr = [...HC.POSES, ...(HC.EMOTION_POSES || [])].find(x => x.id === id) || {};
-  const p = {joints:c.joints, torsoOrientation:c.torsoOrientation, pelvisOrientation:c.pelvisOrientation, head:c.head};
+  const p = {joints:c.joints, torsoOrientation:c.torsoOrientation, pelvisOrientation:c.pelvisOrientation, headNod:c.headNod, head:c.head};
   if(pr.held) p.held = Object.fromEntries(Object.keys(pr.held).map(h => [h, c.held[h]]));   /* only the hands the preset sets */
   if(pr.face) Object.assign(p, pr.face);
   if(pr.extra) Object.assign(p, pr.extra);
@@ -2278,13 +2280,13 @@ document.addEventListener('keyup', e => {
    already in that stretch are replaced, those before and after stay. The animation grows if the speech runs past its end. */
 const LIP_MOUTHS = ['rest','mbp','ai','e','o','u','cdg','fv','l','wq'];
 const SPEECH_STORE = 'house-keyframes-speech';
-let spWpm = 150, spLang = 'en';
+let spWpm = 150, spLang = 'en', spPros = true;
 const SP_LANGS = HC.speech.LANGS || [['en','English']];
 $('spLang').innerHTML = SP_LANGS.map(([id, name]) => `<option value="${id}">${name}</option>`).join('');
 try{ const sp = JSON.parse(localStorage.getItem(SPEECH_STORE) || 'null');
   if(sp){ if(typeof sp.text === 'string') $('spText').value = sp.text; if(sp.wpm >= 60 && sp.wpm <= 300) spWpm = sp.wpm;
-    if(SP_LANGS.some(l => l[0] === sp.lang)) spLang = sp.lang; } }catch(e){}
-function saveSpeech(){ try{ localStorage.setItem(SPEECH_STORE, JSON.stringify({text:$('spText').value, wpm:spWpm, lang:spLang})); }catch(e){} }
+    if(SP_LANGS.some(l => l[0] === sp.lang)) spLang = sp.lang; if(typeof sp.pros === 'boolean') spPros = sp.pros; } }catch(e){}
+function saveSpeech(){ try{ localStorage.setItem(SPEECH_STORE, JSON.stringify({text:$('spText').value, wpm:spWpm, lang:spLang, pros:spPros})); }catch(e){} }
 const SP_HINT = {en:'Type what the character says…', es:'Escribe lo que dice el personaje…'};
 $('spLang').addEventListener('change', () => { spLang = $('spLang').value; saveSpeech(); syncSpeechUI(); });
 function speechEstimate(){
@@ -2294,11 +2296,12 @@ function speechEstimate(){
   $('spEst').textContent = sp.keys.length ? `≈ ${sp.seconds.toFixed(1)} s · ${sp.frames} fr` : '';
 }
 function syncSpeechUI(){
-  $('spWpm').value = spWpm; $('spWpmN').value = spWpm; $('spLang').value = spLang;
+  $('spWpm').value = spWpm; $('spWpmN').value = spWpm; $('spLang').value = spLang; $('spPros').checked = spPros;
   $('spText').lang = spLang; $('spText').placeholder = SP_HINT[spLang] || SP_HINT.en;   /* the browser's spell checker follows the language */
   speechEstimate();
 }
 $('spText').addEventListener('input', () => { saveSpeech(); speechEstimate(); });
+$('spPros').addEventListener('change', () => { spPros = $('spPros').checked; saveSpeech(); });
 $('spWpm').addEventListener('input', () => { spWpm = +$('spWpm').value; $('spWpmN').value = spWpm; saveSpeech(); speechEstimate(); });
 $('spWpmN').addEventListener('change', () => {
   const v = Math.round(+$('spWpmN').value);
@@ -2331,16 +2334,66 @@ function createSpeech(){
   for(const k of sp.keys) t.keys.push({frame:a + k.frame, easeIn:'linear', easeOut:'linear', value:k.mouth});
   t.keys.sort((x, y) => x.frame - y.frame);
   const grew = b > S.length; if(grew) S.length = b;
+  const baked = spPros ? bakeProsody(text, sp, a, b) : [];
   lane = 'mouth';
-  addSeries('mouth', view === 'graph'); if(view === 'graph') activate('mouth');
+  addSeries('mouth', view === 'graph'); for(const k of baked) addSeries(k, false); if(view === 'graph') activate('mouth');
   syncGraphBar(); syncTransport(); changed(); speechEstimate(); syncTimeUI();
   /* the text box (or, in some browsers, the button) would otherwise keep the keyboard, and Space would type instead of playing */
   if(document.activeElement && document.activeElement !== document.body) document.activeElement.blur();
   const [lo, hi] = playRange(), cut = (S.loopIn !== null || S.loopOut !== null) && a >= lo && a <= hi && b > hi;
   flash(`Speech: ${sp.words.length} word${sp.words.length === 1 ? '' : 's'}, ${sp.seconds.toFixed(1)} s, frames ${a}–${b}${grew ? ' (the animation now ends there)' : ''}.`
+    + (baked.length ? ` Prosody keyed on ${baked.map(plabel).join(', ')}.` : '')
     + (cut ? ` Playing from here loops at the out marker (${hi}), before the speech ends.` : ''));
 }
 $('bSpeech').onclick = createSpeech;
+
+/* ── prosody: head nods, head cocks, brows and blinks baked from the same text ──
+   HC.prosody reads the sentence types and stresses; HC.prosodyAt says what to add at each frame. The curves
+   are sampled frame by frame over [a, b] on top of what each timeline already does there, then thinned out
+   (Ramer–Douglas–Peucker, ½° tolerance) so only the keys that shape the movement are left. Brows and eyes are
+   stepped: a key wherever the shown shape changes. Brows move only where they are neutral, eyes only where open. */
+function rdp(pts, tol){
+  if(pts.length < 3) return pts;
+  const [A, B] = [pts[0], pts[pts.length-1]]; let dmax = 0, idx = 0;
+  for(let i = 1; i < pts.length - 1; i++){
+    const t = (pts[i][0] - A[0]) / (B[0] - A[0]), d = Math.abs(pts[i][1] - (A[1] + (B[1] - A[1]) * t));
+    if(d > dmax){ dmax = d; idx = i; }
+  }
+  if(dmax <= tol) return [A, B];
+  return [...rdp(pts.slice(0, idx + 1), tol).slice(0, -1), ...rdp(pts.slice(idx), tol)];
+}
+function bakeProsody(text, sp, a, b){
+  const head = poseAt(a).head, view = head === 'front' ? 'front' : 'side';
+  const ev = HC.prosody(text, sp, {fps:S.fps, lang:spLang, view}).events;
+  if(!ev.length) return [];
+  const end = Math.min(S.length, b + Math.round(S.fps * 0.5));   /* holds can run a little past the last word */
+  const base = []; for(let f = a; f <= end; f++) base.push(poseAt(f));
+  const fx = []; for(let f = a; f <= end; f++) fx.push(HC.prosodyAt(ev, f - a));
+  const out = [];
+  const numeric = (k, add) => {
+    if(!fx.some(o => o[add])) return;
+    const pts = base.map((p, i) => [a + i, getP(p, k) + fx[i][add]]);
+    const keep = rdp(pts, 0.5);
+    const t = ownTrack(k);
+    t.keys = t.keys.filter(x => x.frame < a || x.frame > end);
+    for(const [f, v] of keep) t.keys.push({frame:f, easeIn:'linear', easeOut:'linear', value:clean(k, v)});
+    t.keys.sort((x, y) => x.frame - y.frame); switchOn(k); out.push(k);
+  };
+  numeric('headNod', 'nod');
+  numeric('neck', 'tilt');
+  const stepped = (k, pick) => {
+    const vals = base.map((p, i) => pick(getP(p, k), fx[i]));
+    if(vals.every((v, i) => v === getP(base[i], k))) return;
+    const t = ownTrack(k);
+    t.keys = t.keys.filter(x => x.frame < a || x.frame > end);
+    vals.forEach((v, i) => { if(i === 0 || v !== vals[i-1]) t.keys.push({frame:a + i, easeIn:'linear', easeOut:'linear', value:v}); });
+    if(end < S.length){ const after = getP(poseAt(end + 1), k); if(after !== vals[vals.length-1] && !t.keys.some(x => x.frame === end + 1)) t.keys.push({frame:end + 1, easeIn:'linear', easeOut:'linear', value:after}); }
+    t.keys.sort((x, y) => x.frame - y.frame); switchOn(k); out.push(k);
+  };
+  stepped('eyebrows', (v, o) => o.brows && v === 'neutral' ? o.brows : v);
+  stepped('eyes', (v, o) => o.blink && (v === 'open' || v === 'wide') ? 'closed' : v);
+  return out;
+}
 
 /* ── start ─────────────────────────────────────────────────────────────── */
 function refreshAll(){ syncGraphBar(); syncTransport(); changed(); syncTimeUI(); }
