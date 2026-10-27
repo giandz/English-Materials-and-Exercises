@@ -151,8 +151,11 @@ const CSS = `
 .c.l.sh{ display:inline-block; }
 .c.l.sh.on{ animation:vn-shake-fade 1.4s linear both; }
 .c.wh{ font-size:.76em; opacity:.78; letter-spacing:.01em; }
-/* a grammar colour is drawn letter by letter (letters appear one at a time): square inside, rounded at the ends */
-.vn .c.pos-hl{ border-radius:0; } .vn .c.pos-hl.hl-a{ border-radius:.22em 0 0 .22em; } .vn .c.pos-hl.hl-z{ border-radius:0 .22em .22em 0; } .vn .c.pos-hl.hl-a.hl-z{ border-radius:.22em; }
+/* a grammar colour: one tint per word (and per space inside a phrase), square where a phrase goes on, rounded at its
+   ends; untinted until its first letter shows; spaces get no halo, so they never paint over the word before them */
+.vn .pw.pos-hl{ border-radius:0; } .vn .pw.pos-hl.hl-a{ border-radius:.22em 0 0 .22em; } .vn .pw.pos-hl.hl-z{ border-radius:0 .22em .22em 0; } .vn .pw.pos-hl.hl-a.hl-z{ border-radius:.22em; }
+.vn .pw.pos-hl.pw-sp{ box-shadow:0 var(--hl-spread, .08em) 0 var(--hl-bg), 0 calc(-1 * var(--hl-spread, .08em)) 0 var(--hl-bg); margin:0 -.5px; padding:0 .5px; }   /* the halo only above and below; a hair of overlap closes the seams */
+.vn .pw.hid{ background:transparent !important; box-shadow:none !important; }
 @keyframes vn-shake-fade{ 0%{ transform:translate(0,0) rotate(0); }
   4%{ transform:translate(2.6px,-2px) rotate(-5deg); } 8%{ transform:translate(-2.6px,2px) rotate(5deg); }
   12%{ transform:translate(2.2px,1.6px) rotate(-4deg); } 17%{ transform:translate(-2px,-1.6px) rotate(3.5deg); }
@@ -512,17 +515,32 @@ function create(host, script){
      never reflows. When shouting, each letter shakes as it appears and the shaking dies down. */
   function build(el, text, spans){
     const esc = t => t.replace(/[&<>]/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;'}[c]));
-    /* each letter takes its span's classes: shouting, whispering, and the grammar colour (pos-hl pos-…: house.css
-       styles it so letters side by side read as one highlight, and the page's grammar toggle hides it) */
-    const kind = at => spans.filter(sp => at >= sp.from && at < sp.to && sp.kind !== 'stress')
-      .map(sp => sp.kind === 'shout' ? ' sh' : sp.kind === 'whisper' ? ' wh' : sp.kind === 'pos' && /^\w+$/.test(sp.pos)
-        ? ' pos-hl pos-' + sp.pos + (at === sp.from ? ' hl-a' : '') + (at === sp.to - 1 ? ' hl-z' : '') : '').join('');   /* stress is not shown */
+    /* each letter takes the classes of shouting and whispering; a grammar colour is drawn on a wrapper round each
+       word's coloured letters (and the spaces inside a coloured phrase), never letter by letter: a background painted
+       per letter covers the edge of the letter before it. The wrapper is tinted once its first letter shows. */
+    const kind = at => spans.filter(sp => at >= sp.from && at < sp.to && (sp.kind === 'shout' || sp.kind === 'whisper'))
+      .map(sp => sp.kind === 'shout' ? ' sh' : ' wh').join('');
+    const posAt = at => spans.find(sp => sp.kind === 'pos' && /^\w+$/.test(sp.pos) && at >= sp.from && at < sp.to) || null;
     const offs = []; let h = '', at = 0;
     for(const part of text.split(/(\s+)/)){
       if(!part) continue;
       const space = /^\s+$/.test(part);
-      const chars = [...part].map(ch => { const k = kind(at); offs.push(at); at += ch.length; return `<span class="c${space ? '' : ' l'}${space ? k.replace(' sh', '') : k} hid">${esc(ch)}</span>`; }).join('');   /* a space keeps its highlight, so a phrase reads as one */
-      h += space ? chars : `<span class="w">${chars}</span>`;
+      let inner = '', run = null, buf = '', runFrom = at;
+      const flush = end => {
+        if(!buf) return;
+        if(run) inner += `<span class="pw pos-hl pos-${run.pos}${runFrom === run.from ? ' hl-a' : ''}${end === run.to ? ' hl-z' : ''}${space ? ' pw-sp' : ''} hid">${buf}</span>`;
+        else inner += buf;
+        buf = '';
+      };
+      for(const ch of part){
+        const sp = posAt(at);
+        if(sp !== run){ flush(at); run = sp; runFrom = at; }
+        const k = kind(at); offs.push(at);
+        buf += `<span class="c${space ? '' : ' l'}${space ? k.replace(' sh', '') : k} hid">${esc(ch)}</span>`;
+        at += ch.length;
+      }
+      flush(at);
+      h += space ? inner : `<span class="w">${inner}</span>`;
     }
     el.innerHTML = h; el.scrollTop = 0;
     talk.el = el; talk.chars = el.querySelectorAll('.c'); talk.offs = offs; talk.p = 0; talk.jolted = false;
@@ -531,6 +549,7 @@ function create(host, script){
     let last = null;
     while(talk.p < talk.chars.length && talk.offs[talk.p] < upto){
       const c = last = talk.chars[talk.p++]; c.classList.remove('hid'); c.classList.add('on');   /* on: a shouted letter starts shaking */
+      const pw = c.parentElement; if(pw && pw.classList.contains('pw')) pw.classList.remove('hid');   /* its grammar tint shows with it */
       if(!talk.jolted && c.classList.contains('sh')){ talk.jolted = true; jolt(); }
     }
     if(last) follow(last);
