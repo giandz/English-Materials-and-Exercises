@@ -1966,9 +1966,16 @@ const speech=(()=>{
     }
     return out.filter((c,i)=>c!==out[i-1]);
   }
+  /* letter names for spelling (C-A-T-E), straight as mouth shapes. English: zee for Z, double-you for W.
+     Spanish: ve for V, doble ve for W, ye for Y; every letter on its own (C-H is ce, hache: no ch or ll). */
+  const LETTER_EN={a:'AE',b:'ME',c:'CE',d:'CE',e:'E',f:'EF',g:'CE',h:'AEC',i:'AE',j:'CAE',k:'CAE',l:'EL',m:'EM',n:'EC',o:'OU',
+    p:'ME',q:'CU',r:'AC',s:'EC',t:'CE',u:'EU',v:'FE',w:'CAMLEU',x:'ECC',y:'WAE',z:'CE'};
+  const LETTER_ES={a:'A',b:'ME',c:'CE',d:'CE',e:'E',f:'EFE',g:'CE',h:'ACE',i:'E',j:'COCA',k:'CA',l:'ELE',m:'EME',n:'ECE',ñ:'ECE',o:'O',
+    p:'ME',q:'CU',r:'ECE',s:'ECE',t:'CE',u:'U',v:'ME',w:'COMLEME',x:'ECEC',y:'CE',z:'CECA'};
+  const letterCodes=map=>ch=>{ const k=String(ch).toLowerCase().normalize('NFD').replace(/[\u0301\u0308]/g,'').normalize('NFC'); const c=map[k]||map[k[0]]; return c?c.split(''):null; };
   const LANG={
-    en:{visemes, num:numWords, year:yearWords, decade:decadeWords, isYear, and:' and ', percent:' percent ', ref:REF},
-    es:{visemes:visemesES, num:numES, and:' y ', percent:' por ciento ', ref:5.0}   /* Spanish words are longer: about 5 units each */
+    en:{visemes, letter:letterCodes(LETTER_EN), letterCue:/\b(with an?|the letter|letter|a capital|capital|a small|double|spelled|spelt|spell)\s+$/i, num:numWords, year:yearWords, decade:decadeWords, isYear, and:' and ', percent:' percent ', ref:REF},
+    es:{visemes:visemesES, letter:letterCodes(LETTER_ES), letterCue:/\b(con (una? )?|la letra|letra|doble|se escribe|se deletrea)\s*$/i, num:numES, and:' y ', percent:' por ciento ', ref:5.0}   /* Spanish words are longer: about 5 units each */
   };
   function speechTrack(text,opts){
     opts=opts||{};
@@ -1980,8 +1987,17 @@ const speech=(()=>{
     /* tokens keep where they came from in the text (from, to), so a caller can reveal the text in step with the
        mouth; a number, & or % becomes several spoken words that all point back at it */
     const src=String(text||''), tokens=[];
-    for(const m of src.matchAll(/\d+(?:['’]?s\b)?|&|%|[\p{L}’'`]+|[.!?]+|[,;:]|—|–|…|\n+/gu)){   /* ¿ and ¡ make no pause */
+    for(const m of src.matchAll(/(?<![\p{L}\-])\p{L}(?:-\p{L})+(?![\p{L}\-])|\d+(?:['’]?s\b)?|&|%|[\p{L}’'`]+|[.!?]+|[,;:]|—|–|…|\n+/gu)){   /* ¿ and ¡ make no pause */
       const tk=m[0], from=m.index, to=m.index+tk.length;
+      /* spelling: single letters joined by hyphens (C-A-T-E), each said by its name with a short gap between;
+         a lone letter is spelled too after “with a”, “the letter”, “double” … (“It's Cate with a C”) */
+      const spelt=L.letter&&(/^\p{L}(-\p{L})+$/u.test(tk)||(/^\p{L}$/u.test(tk)&&L.letterCue&&L.letterCue.test(src.slice(Math.max(0,from-20),from))));
+      if(spelt){
+        tk.split('-').forEach((ch,i)=>{ const at=from+i*2, codes=L.letter(ch);
+          if(i) tokens.push({tk:'-',from:at-1,to:at,gap:0.12});
+          tokens.push({tk:ch.toUpperCase(),from:at,to:at+1,codes:codes||undefined,spelled:true}); });
+        continue;
+      }
       /* numbers: a decade (the 1990s), a year (in 1972), or a plain number */
       const dec=tk.match(/^(\d+)['’]?s$/), num=dec?Number(dec[1]):/^\d+$/.test(tk)?Number(tk):null;
       const said=num!==null?(dec&&L.decade&&num%10===0?L.decade(num):dec?L.num(num)+' s':L.isYear&&L.isYear(src,from,to,num)?L.year(num):L.num(num))
@@ -1992,19 +2008,20 @@ const speech=(()=>{
     const segs=[], words=[];
     let t=0;
     const pauseOf=tk=>/^[.!?]|…|\.\.\.|\n/.test(tk)?0.5:/[—–]/.test(tk)?0.35:0.2;
-    tokens.forEach(({tk,from,to},ti)=>{
+    tokens.forEach(({tk,from,to,codes,spelled,gap},ti)=>{
       if(/\p{L}/u.test(tk)){
-        const v=L.visemes(tk); if(!v.length) return;
+        const v=codes||L.visemes(tk); if(!v.length) return;
         const k=spw/L.ref;
         const next=tokens[ti+1], phraseEnd=next&&!/\p{L}/u.test(next.tk);
         let lastV=-1; v.forEach((c,i)=>{ if(VOW.includes(c)) lastV=i; });
         const t0=t;
-        v.forEach((c,i)=>{ const d=WEIGHT[c]*k*(phraseEnd&&i===lastV?1.4:1); segs.push({c,s:t,e:t+d}); t+=d; });
-        words.push({word:tk,s:t0,e:t,from,to});
+        /* a spelled letter is said slowly and clearly, as a word of its own */
+        v.forEach((c,i)=>{ const d=WEIGHT[c]*k*(spelled?1.7:1)*(phraseEnd&&i===lastV?1.4:1); segs.push({c,s:t,e:t+d}); t+=d; });
+        words.push(spelled?{word:tk,s:t0,e:t,from,to,spelled:true}:{word:tk,s:t0,e:t,from,to});
         return;
       }
       if(!segs.length) return;   /* nothing said yet: no pause to show */
-      const d=pauseOf(tk), last=segs[segs.length-1];
+      const d=gap||pauseOf(tk), last=segs[segs.length-1];
       if(last.c==='R'){ last.e+=d; t+=d; return; }
       if(d<REST_AFTER){ last.e+=d; t+=d; }                      /* a short pause holds the last shape */
       else { segs.push({c:'R',s:t,e:t+d}); t+=d; }
@@ -2048,7 +2065,7 @@ const speech=(()=>{
     const close=Math.max(keys[keys.length-1].frame+HOLD,total-LEAD);
     if(keys[keys.length-1].mouth!==restMouth) keys.push({frame:close,mouth:restMouth});
     const frames=keys[keys.length-1].frame;
-    return {keys,frames,seconds:frames/fps,words:words.map(x=>({word:x.word,start:Math.round(x.s*fps),end:Math.round(x.e*fps),from:x.from,to:x.to}))};
+    return {keys,frames,seconds:frames/fps,words:words.map(x=>Object.assign({word:x.word,start:Math.round(x.s*fps),end:Math.round(x.e*fps),from:x.from,to:x.to},x.spelled?{spelled:true}:{}))};
   }
   speechTrack.visemes=(w,lang)=>(LANG[lang]||LANG.en).visemes(w).map(c=>MOUTH[c]);
   speechTrack.LANGS=[['en','English'],['es','Español']];
@@ -2128,7 +2145,8 @@ const prosody=(()=>{
         if(stop||i===W.length-1){ se.end=stop?(q?q[0]:'.'):''; sentences.push(se); se={phrases:[],end:''}; }
       }
     });
-    const content=i=>{ const t=low(W[i]); return !FN[L].has(t)||NEG[L].has(t)||/n't$/.test(t); };
+    const content=i=>{ if(W[i].spelled) return false;   /* spelled letters (C-A-T-E) get no nods of their own */
+      const t=low(W[i]); return !FN[L].has(t)||NEG[L].has(t)||/n't$/.test(t); };
     const inStress=i=>stressed.some(([a,b])=>W[i].from<b&&W[i].to>a);
     for(const S of sentences){
       const all=S.phrases.flatMap(p=>p.words);
