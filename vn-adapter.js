@@ -431,6 +431,28 @@
     const t = parts.length ? [...parts].map(p => p.textContent).join(' ') : el.textContent;
     return t.replace(/\s+/g, ' ').replace(/\s+([,.!?;:…])/g, '$1').trim();
   }
+  /* the same, keeping the grammar colours as [words/pos] markup for house-vn.js (it shows them, and the page's
+     🎨 grammar toggle shows and hides them there too) */
+  function markupOf(el) {
+    const out = [];
+    const walk = n => {
+      if (n.nodeType === 3) { out.push(n.nodeValue); return; }
+      if (n.nodeType !== 1) return;
+      const m = n.classList.contains('pos-hl') && [...n.classList].map(c => (c.match(/^pos-(\w+)$/) || [])[1]).find(c => c && c !== 'hl');
+      if (m) {
+        const raw = n.textContent, t = raw.replace(/\s+/g, ' ').trim();
+        if (!t || /[\[\]\/{}]/.test(t)) { out.push(raw); return; }
+        if (/^\s/.test(raw)) out.push(' ');
+        out.push('[' + t + '/' + m + ']');
+        if (/\s$/.test(raw)) out.push(' ');
+        return;
+      }
+      n.childNodes.forEach(walk);
+      if (n.classList.contains('ss-unit')) out.push(' ');   /* stick-figure words: a space between units */
+    };
+    el.childNodes.forEach(walk);
+    return out.join('').replace(/[{}]/g, '').replace(/\s+/g, ' ').replace(/\s+([,.!?;:…])/g, '$1').replace(/\s+(\[[,.!?;:…]+\/\w+\])/g, '$1').trim();
+  }
   function linesOf(container) {
     return [...container.querySelectorAll('.bubble-wrap')].map(w => {
       const nameEl = w.querySelector('.bname, .bubble-name'), bubble = w.querySelector('.bubble');
@@ -439,7 +461,7 @@
       const col = bubble && bubble.parentElement;
       const extras = col ? [...col.children].filter(n => n !== bubble && n !== nameEl && !n.matches('.bname, .bubble-name')) : [];
       return { name: (nameEl ? nameEl.textContent : '').trim() || 'Someone', avatar: ((w.querySelector('.avatar') || {}).textContent || '').trim(),
-        side: w.classList.contains('right') ? 'right' : 'left', text: plainText(clone), wrap: w, extras,
+        side: w.classList.contains('right') ? 'right' : 'left', text: plainText(clone), say: markupOf(clone), wrap: w, extras,
         colour: ((w.querySelector('.avatar') || {}).getAttribute && (w.querySelector('.avatar').getAttribute('style') || '').match(/#[0-9a-f]{6}/i) || [])[0] };
     }).filter(l => l.text);
   }
@@ -539,7 +561,7 @@
     const onSide = { left: [], right: [] }, firstOf = {};
     for (const id of seq) if (!onSide[sideOf[id]].length && !(id in firstOf)) { onSide[sideOf[id]].push(id); firstOf[id] = 0; }
     const out = lines.map((l, i) => {
-      const id = ids[l.name], L = { who: id, say: l.text.replace(/[{}]/g, ''), at: sideOf[id], shot: 'medium' };
+      const id = ids[l.name], L = { who: id, say: l.say || l.text.replace(/[{}]/g, ''), at: sideOf[id], shot: 'medium' };
       const e = emotionOf(l.text); if (e) L.emotion = e;
       if (i === 0) { L.stage = {}; for (const s of ['left', 'right']) for (const o of onSide[s]) if (o !== id) L.stage[o] = { at: s, shot: 'medium' }; }
       const here = onSide[sideOf[id]];

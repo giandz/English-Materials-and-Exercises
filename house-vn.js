@@ -70,6 +70,8 @@
                                           and blinks; narration and inserts none. Cast expressiveness:1.3 (or
                                           0.7) scales one character; shouting moves more, whispering less.
      "{stress}music{/stress}"            the main stress of its phrase goes there (contrast); not shown
+   [words/pos] in a line: the house grammar colours, as on the lesson pages ("[She/subject] [is/verb] happy.").
+     Inside a page with the 🎨 grammar toggle they show and hide with it (house.css .grammar-hidden).
    background: 'park'                     changes the backdrop from this line on (built-in or CSS), and like
                                           the cast it is put back as it was when going back.
    A character who leaves (stage: { id: null }) is remembered: bringing them back with stage: { id: {} }
@@ -149,6 +151,8 @@ const CSS = `
 .c.l.sh{ display:inline-block; }
 .c.l.sh.on{ animation:vn-shake-fade 1.4s linear both; }
 .c.wh{ font-size:.76em; opacity:.78; letter-spacing:.01em; }
+/* a grammar colour is drawn letter by letter (letters appear one at a time): square inside, rounded at the ends */
+.vn .c.pos-hl{ border-radius:0; } .vn .c.pos-hl.hl-a{ border-radius:.22em 0 0 .22em; } .vn .c.pos-hl.hl-z{ border-radius:0 .22em .22em 0; } .vn .c.pos-hl.hl-a.hl-z{ border-radius:.22em; }
 @keyframes vn-shake-fade{ 0%{ transform:translate(0,0) rotate(0); }
   4%{ transform:translate(2.6px,-2px) rotate(-5deg); } 8%{ transform:translate(-2.6px,2px) rotate(5deg); }
   12%{ transform:translate(2.2px,1.6px) rotate(-4deg); } 17%{ transform:translate(-2px,-1.6px) rotate(3.5deg); }
@@ -251,7 +255,13 @@ const BG = {
 function parseCues(say){
   const raw = String(say || ''), cues = [], marks = [];
   let text = '', last = 0;
-  for(const m of raw.matchAll(/\{([^{}]*)\}/g)){
+  for(const m of raw.matchAll(/\{([^{}]*)\}|\[([^\[\]\/]+)\/(\w+)\]/g)){
+    if(m[2] !== undefined){   /* [words/pos]: the house grammar colours (shown or hidden by the page's 🎨 grammar toggle) */
+      if(m.index < last) continue;
+      text += raw.slice(last, m.index); last = m.index + m[0].length;
+      marks.push({at:text.length, kind:'pos', open:true, pos:m[3]}); text += m[2]; marks.push({at:text.length, kind:'pos', open:false});
+      continue;
+    }
     const tag = m[1].trim().match(/^(\/?)(shout|whisper|stress)$/i), d = {};
     for(const [, k, v] of m[1].matchAll(/(pose|emotion)\s*[:=]\s*([\w-]+)/g)) d[k] = v;
     if(!tag && !d.pose && !d.emotion) continue;   /* not a cue or a tag: leave it in the text */
@@ -268,10 +278,11 @@ function parseCues(say){
   const fix = at => Math.max(0, Math.min(text.length, at - lead));
   const spans = [], open = {};
   for(const mk of marks){
+    if(mk.kind === 'pos'){ if(mk.open) open.pos = {from:fix(mk.at), pos:mk.pos}; else if(open.pos){ spans.push({kind:'pos', pos:open.pos.pos, from:open.pos.from, to:fix(mk.at)}); open.pos = null; } continue; }
     if(mk.open){ if(open[mk.kind] == null) open[mk.kind] = fix(mk.at); }
     else if(open[mk.kind] != null){ spans.push({kind:mk.kind, from:open[mk.kind], to:fix(mk.at)}); open[mk.kind] = null; }
   }
-  for(const k in open) if(open[k] != null) spans.push({kind:k, from:open[k], to:text.length});
+  for(const k in open) if(open[k] != null && k !== 'pos') spans.push({kind:k, from:open[k], to:text.length});
   return {text, cues:cues.map(c => ({...c, at:fix(c.at)})), spans};
 }
 
@@ -501,12 +512,16 @@ function create(host, script){
      never reflows. When shouting, each letter shakes as it appears and the shaking dies down. */
   function build(el, text, spans){
     const esc = t => t.replace(/[&<>]/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;'}[c]));
-    const kind = at => spans.filter(sp => at >= sp.from && at < sp.to && sp.kind !== 'stress').map(sp => sp.kind === 'shout' ? ' sh' : ' wh').join('');   /* stress is not shown */
+    /* each letter takes its span's classes: shouting, whispering, and the grammar colour (pos-hl pos-…: house.css
+       styles it so letters side by side read as one highlight, and the page's grammar toggle hides it) */
+    const kind = at => spans.filter(sp => at >= sp.from && at < sp.to && sp.kind !== 'stress')
+      .map(sp => sp.kind === 'shout' ? ' sh' : sp.kind === 'whisper' ? ' wh' : sp.kind === 'pos' && /^\w+$/.test(sp.pos)
+        ? ' pos-hl pos-' + sp.pos + (at === sp.from ? ' hl-a' : '') + (at === sp.to - 1 ? ' hl-z' : '') : '').join('');   /* stress is not shown */
     const offs = []; let h = '', at = 0;
     for(const part of text.split(/(\s+)/)){
       if(!part) continue;
       const space = /^\s+$/.test(part);
-      const chars = [...part].map(ch => { const k = kind(at); offs.push(at); at += ch.length; return `<span class="c${space ? '' : ' l'}${space ? k.replace(' sh', '') : k} hid">${esc(ch)}</span>`; }).join('');
+      const chars = [...part].map(ch => { const k = kind(at); offs.push(at); at += ch.length; return `<span class="c${space ? '' : ' l'}${space ? k.replace(' sh', '') : k} hid">${esc(ch)}</span>`; }).join('');   /* a space keeps its highlight, so a phrase reads as one */
       h += space ? chars : `<span class="w">${chars}</span>`;
     }
     el.innerHTML = h; el.scrollTop = 0;
