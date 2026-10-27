@@ -1834,8 +1834,43 @@ const speech=(()=>{
     if(n<20) return ONES[n];
     if(n<100) return TENS[Math.floor(n/10)]+(n%10?' '+ONES[n%10]:'');
     if(n<1000) return ONES[Math.floor(n/100)]+' hundred'+(n%100?' and '+numWords(n%100):'');
-    if(n<1e6) return numWords(Math.floor(n/1000))+' thousand'+(n%1000?' '+numWords(n%1000):'');
+    if(n<1e6) return numWords(Math.floor(n/1000))+' thousand'+(n%1000?(n%1000<100?' and ':' ')+numWords(n%1000):'');   /* 2010 → two thousand and ten */
     return String(n).split('').map(d=>ONES[+d]).join(' ');
+  }
+  /* years are read in pairs: 1972 → nineteen seventy-two, 1905 → nineteen oh five, 1900 → nineteen hundred,
+     2000 → two thousand, 2007 → two thousand and seven, 2024 → twenty twenty-four; 476 → four hundred and seventy-six */
+  function yearWords(n){
+    if(n<1000||n>9999) return numWords(n);
+    const hi=Math.floor(n/100), lo=n%100;
+    if(n%1000<10&&(hi%10===0)) return n%1000===0?numWords(n):numWords(n-n%1000)+' and '+ONES[n%1000];   /* 1000, 2000, 2007 */
+    return numWords(hi)+' '+(lo===0?'hundred':lo<10?'oh '+ONES[lo]:numWords(lo));
+  }
+  /* a decade: 1990s → nineteen nineties, 80s → eighties, 1900s → nineteen hundreds */
+  function decadeWords(n){
+    const w=(n>=1000?yearWords(n):numWords(n)).split(' '), last=w.pop();
+    return [...w, last.endsWith('y')?last.slice(0,-1)+'ies':last+'s'].join(' ');
+  }
+  const MONTH='january|february|march|april|may|june|july|august|september|october|november|december|jan|feb|mar|apr|jun|jul|aug|sep|sept|oct|nov|dec';
+  /* Is the number at src[from..to) a year? The words around it decide:
+       before: in, since, until, by, from, before, after, during, born (in), the year, back in, early/mid/late,
+               a month (“May 2001”, “12 May 2001”, “May 12, 2001”), a season or month followed by of (“summer of 1969”)
+       after:  AD, BC, CE, BCE, or a range to another year (“1990–1995”, “from 1914 to 1918”)
+       not:    money ($1999), or a count of something (“in 2000 years”, “1500 people”)
+     Only four-digit numbers from 1000 to 2199 count, unless an era (AD, BC…) is named. */
+  const UNIT=/^\s*(people|persons|dollars|euros|pounds|pesos|yen|cents|meters|metres|km|kilometers|kilometres|miles|feet|students|children|times|words|calories|years|days|hours|minutes|seconds|kilos|kg|grams|liters|litres|items|copies|points|steps|%|percent)\b/i;
+  function isYear(src,from,to,n){
+    const before=src.slice(Math.max(0,from-40),from).toLowerCase(), after=src.slice(to,to+40);
+    if(/[$€£¥]\s*$/.test(before)) return false;
+    if(/^\s*(ad|bc|bce|ce|a\.d\.|b\.c\.)\b/i.test(after)) return true;
+    if(n<1000||n>2199) return false;
+    if(UNIT.test(after)) return false;
+    if(new RegExp('\\b('+MONTH+')\\.?\\s+(\\d{1,2}(st|nd|rd|th)?,?\\s+)?$').test(before)) return true;      /* May 2001 · May 12, 2001 */
+    if(new RegExp('\\b\\d{1,2}(st|nd|rd|th)?\\s+(of\\s+)?('+MONTH+')\\.?,?\\s+$').test(before)) return true;  /* 12 May 2001 · 12th of May, 2001 */
+    if(new RegExp('\\b('+MONTH+'|spring|summer|autumn|fall|winter|the year|the end|the start|the beginning|the middle)\\s+of\\s+$').test(before)) return true;
+    if(/\b(in|since|until|till|til|by|from|before|after|during|born|circa|c\.|ca\.|around|back in|year|early|mid|late|the year|class of|vintage|built in|founded in|opened in|between)\s+$/.test(before)) return true;
+    if(/\b(in|since|from|between)\s+\d{4}\s*(-|–|—|to|and|until)\s*$/.test(before)) return true;                    /* the second year of a range */
+    if(/^\s*(-|–|—|to|and|until)\s*\d{4}\b/.test(after)&&/\b(in|since|from|between|during)\s+$/.test(before)) return true;
+    return false;
   }
   const isV=ch=>'aeiou'.includes(ch);
   const CONS={b:'M',m:'M',p:'M',f:'F',v:'F',l:'L',w:'W',h:'',r:'C',x:'C',c:'C',d:'C',g:'C',j:'C',k:'C',n:'C',q:'C',s:'C',t:'C',z:'C'};
@@ -1932,7 +1967,7 @@ const speech=(()=>{
     return out.filter((c,i)=>c!==out[i-1]);
   }
   const LANG={
-    en:{visemes, num:numWords, and:' and ', percent:' percent ', ref:REF},
+    en:{visemes, num:numWords, year:yearWords, decade:decadeWords, isYear, and:' and ', percent:' percent ', ref:REF},
     es:{visemes:visemesES, num:numES, and:' y ', percent:' por ciento ', ref:5.0}   /* Spanish words are longer: about 5 units each */
   };
   function speechTrack(text,opts){
@@ -1945,9 +1980,12 @@ const speech=(()=>{
     /* tokens keep where they came from in the text (from, to), so a caller can reveal the text in step with the
        mouth; a number, & or % becomes several spoken words that all point back at it */
     const src=String(text||''), tokens=[];
-    for(const m of src.matchAll(/\d+|&|%|[\p{L}’'`]+|[.!?]+|[,;:]|—|–|…|\n+/gu)){   /* ¿ and ¡ make no pause */
+    for(const m of src.matchAll(/\d+(?:['’]?s\b)?|&|%|[\p{L}’'`]+|[.!?]+|[,;:]|—|–|…|\n+/gu)){   /* ¿ and ¡ make no pause */
       const tk=m[0], from=m.index, to=m.index+tk.length;
-      const said=/^\d+$/.test(tk)?L.num(Number(tk)):tk==='&'?L.and:tk==='%'?L.percent:null;
+      /* numbers: a decade (the 1990s), a year (in 1972), or a plain number */
+      const dec=tk.match(/^(\d+)['’]?s$/), num=dec?Number(dec[1]):/^\d+$/.test(tk)?Number(tk):null;
+      const said=num!==null?(dec&&L.decade&&num%10===0?L.decade(num):dec?L.num(num)+' s':L.isYear&&L.isYear(src,from,to,num)?L.year(num):L.num(num))
+        :tk==='&'?L.and:tk==='%'?L.percent:null;
       if(said!==null) for(const w of said.trim().split(/\s+/)) tokens.push({tk:w,from,to});
       else tokens.push({tk,from,to});
     }
