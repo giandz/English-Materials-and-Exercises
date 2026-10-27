@@ -69,6 +69,9 @@ const FACIAL = [['none','None'],['stubble','Stubble'],['moustache','Moustache'],
   ['soulpatch','Soul patch'],['goatee','Goatee'],['chinstrap','Chin strap'],['chops','Mutton chops'],
   ['beard','Short beard'],['fullbeard','Full beard']];
 const HEIGHTS = ['Very short','Short','Average','Tall','Very tall'];
+/* the height selector's choices, child first: height 0 is a child of about ten (about four fifths of an average
+   adult's height, with a bigger head for the body, a slimmer build and no adult body features) */
+const HEIGHT_OPTIONS = [[0,'Child (about 10)'],...HEIGHTS.map((l,i)=>[i+1,l])];
 const WEIGHTS = ['Very slim','Slim','Average','Heavy','Very heavy'];
 const HEADS = ['left','front','right'];
 
@@ -1140,23 +1143,26 @@ const OUTFITS = {
 
 /* ── the rig ───────────────────────────────────────────────────────────── */
 function build(d){
-  const hk=d.height-1, wk=d.weight-1, j=d.joints;
-  const H=[0.86,0.93,1,1.07,1.14][hk], HS=[0.96,0.98,1,1.02,1.04][hk], W=[0.82,0.91,1,1.14,1.3][wk]*(d.bodyType==='female'?0.93:1);
+  const kid=d.height===0, hk=kid?0:d.height-1, wk=d.weight-1, j=d.joints;
+  /* a child: limbs and trunk 0.72 of an adult's, the head only a little smaller (0.9), everything narrower (0.8);
+     no grown-up shaping (bust, waist, hips) for either body type */
+  const K=kid?0.8:1;
+  const H=kid?0.72:[0.86,0.93,1,1.07,1.14][hk], HS=kid?0.9:[0.96,0.98,1,1.02,1.04][hk], W=[0.82,0.91,1,1.14,1.3][wk]*(d.bodyType==='female'&&!kid?0.93:1)*K;
   /* pseudo-rotation: trunk narrows toward its depth, attachments slide to the centre line */
   const ct=Math.cos(d.torsoOrientation*Math.PI/180), cp=Math.cos(d.pelvisOrientation*Math.PI/180);
   const sX=[0.55,0.58,0.62,0.72,0.82][wk]; const kx=sX+(1-sX)*Math.abs(ct), kp=sX+(1-sX)*Math.abs(cp);   /* width factors: chest, pelvis */
-  const fem=d.bodyType==='female';   /* narrower shoulders and waist, wider hips */
-  const sw0=[33,36,38,41,45][wk]*(fem?0.87:1), hw0=[25,28,31,37,45][wk]*(fem?1.1:1);
-  const cw=n2([27,30,32,37,43][wk]*kx*(fem?0.92:1)),
+  const fem=d.bodyType==='female'&&!kid;   /* narrower shoulders and waist, wider hips, a bust */
+  const sw0=[33,36,38,41,45][wk]*(fem?0.87:1)*K, hw0=[25,28,31,37,45][wk]*(fem?1.1:1)*K*(kid?0.95:1);
+  const cw=n2([27,30,32,37,43][wk]*kx*(fem?0.92:1)*K),
         sw=n2(sw0*kx*Math.abs(ct)+cw*0.8*(1-Math.abs(ct))),   /* in profile the shoulder corners tuck inside the chest */
-        ww=n2([21,25,28,36,46][wk]*(kx+kp)/2*(fem?0.82:1)), hw=n2(hw0*kp);
-  const nw=[8,8.5,9,10,11][wk], hx0=hw0*0.5, hx=hx0*cp, shx=(sw0-1)*ct;
+        ww=n2([21,25,28,36,46][wk]*(kx+kp)/2*(fem?0.82:1)*K*(kid?1.05:1)), hw=n2(hw0*kp);
+  const nw=[8,8.5,9,10,11][wk]*(kid?0.85:1), hx0=hw0*0.5, hx=hx0*cp, shx=(sw0-1)*ct;
   const nearLeg=d.pelvisOrientation<-30?1:d.pelvisOrientation>30?-1:0;
   const near=d.torsoOrientation<-30?1:d.torsoOrientation>30?-1:0;   /* which side faces the viewer */
   /* back view: the figure is built as from the front and mirrored at the end (an orthographic view from behind is the
      mirror image of the front one); only the depth order flips, and front-only details give way to back ones */
   const BK=!!d.back, zNear=BK?-near:near, zNearLeg=BK?-nearLeg:nearLeg;
-  const WA=30*H, CH=84*H, UA=60*H, FA=54*H, TH=86*H, SH=82*H, FT=27.5;   /* feet: 22 × 1.25 */
+  const WA=30*H, CH=84*H, UA=60*H, FA=54*H, TH=86*H, SH=82*H, FT=27.5*(kid?0.8:1);   /* feet: 22 × 1.25 */
   const skin=SKIN[d.skin-1].hex, hairHex=(HAIR.find(x=>x.id===d.hairColor)||HAIR[0]).hex;
   const C={skin, skinS:shade(skin,-0.28), lip:shade(skin,-0.42), hair:hairHex, brow:shade(hairHex,-0.25),
            suit:'#5d6b7a', suitS:'#414b56', trim:'#8a97a5'};
@@ -1679,7 +1685,8 @@ function normalize(src){
   d.hairStyle=pick(src.hairStyle,HAIR_STYLES.map(h=>h[0]),d.hairStyle);
   d.facialHair=pick(src.facialHair,FACIAL.map(h=>h[0]),d.facialHair);
   d.eyebrows=pick(src.eyebrows,BROWS.map(h=>h[0]),'neutral'); d.eyes=pick(src.eyes,EYE_SHAPES.map(h=>h[0]),'open'); d.mouth=pick(src.mouth,MOUTHS.map(h=>h[0]),'smile');
-  d.height=int(src.height,1,5,3); d.weight=int(src.weight,1,5,3);
+  d.height=int(src.height,0,5,3); d.weight=int(src.weight,1,5,3);
+  if(d.height===0) d.facialHair='none';   /* a child: no adult body features (no beard; the bust and adult shaping are left out when drawn) */
   d.upperGarment=UPPER[src.upperGarment]?src.upperGarment:null;
   d.lowerGarment=LOWER[src.lowerGarment]?src.lowerGarment:null;
   d.footwear=FOOT[src.footwear]?src.footwear:null;
@@ -2176,7 +2183,7 @@ const prosody=(()=>{
   return make;
 })();
 
-return {scarfColours,SCHEMA,SKIN,EYES,HAIR,HAIR_STYLES,FACIAL,HEIGHTS,WEIGHTS,HEADS,JOINTS,POSES,ITEMS,UPPER,LOWER,FOOT,OUTFITS,HEADWEAR,EYEWEAR,ACCESSORIES,BROWS,EYE_SHAPES,MOUTHS,EMOTIONS,NEUTRAL_FACE,EMOTION_POSES,GLOVE_COL,PACK_COL,SCARF_COL,MASCARA_COL,BLUSH_COL,LIPSTICK_COL,PROPS,GRIPS,ITEM_CATS,PALETTE,PATTERNS,colour2Default,SOCK_COL,TIE_COL,colourName,STAGE,
+return {scarfColours,SCHEMA,SKIN,EYES,HAIR,HAIR_STYLES,FACIAL,HEIGHTS,HEIGHT_OPTIONS,WEIGHTS,HEADS,JOINTS,POSES,ITEMS,UPPER,LOWER,FOOT,OUTFITS,HEADWEAR,EYEWEAR,ACCESSORIES,BROWS,EYE_SHAPES,MOUTHS,EMOTIONS,NEUTRAL_FACE,EMOTION_POSES,GLOVE_COL,PACK_COL,SCARF_COL,MASCARA_COL,BLUSH_COL,LIPSTICK_COL,PROPS,GRIPS,ITEM_CATS,PALETTE,PATTERNS,colour2Default,SOCK_COL,TIE_COL,colourName,STAGE,
         defaults,normalize,render,pivots,applyPose,mirror,describe,speech,prosody,prosodyAt:prosody.at,EASES,ease,easeId,jointDelta};
 })();
 window.HouseCharacter = HouseCharacter;

@@ -256,6 +256,37 @@
       ${sign(560, 290, 480, 'PHARMACY', '#22a55b', '#fff', 36)}<g>${counter(540, 520, '#fff', '#22a55b')}<rect x="900" y="330" width="80" height="44" rx="4" fill="#333"/><rect x="908" y="338" width="64" height="28" fill="#8fd3f4"/><g fill="#fff" stroke="#9fbfac" stroke-width="3"><rect x="620" y="340" width="50" height="30" rx="4"/><rect x="680" y="346" width="40" height="24" rx="4"/></g></g>`);
   }
 
+  /* outdoors in town: a street with shops and a signpost; a gas station with a delivery van */
+  function street() {
+    const shop = (x, w, wall, awn, name) => `<g><rect x="${x}" y="140" width="${w}" height="380" fill="${wall}"/><rect x="${x}" y="130" width="${w}" height="14" fill="rgba(0,0,0,.18)"/>
+      ${[0, 1].map(r => [0, 1, 2].map(c => `<rect x="${x + 30 + c * (w - 60) / 3}" y="${170 + r * 80}" width="${(w - 60) / 3 - 20}" height="56" rx="4" fill="#cfe6f2" stroke="#fff" stroke-width="5"/>`).join('')).join('')}
+      <path d="M${x},360H${x + w}L${x + w - 10},400H${x + 10}Z" fill="${awn}"/><g fill="#fff" opacity=".5">${Array.from({ length: Math.floor(w / 40) }, (_, i) => `<path d="M${x + 10 + i * 40},360h20l-3,40h-14Z"/>`).join('')}</g>
+      <rect x="${x + 20}" y="410" width="${w - 40}" height="110" fill="#9fd0ef" stroke="#555" stroke-width="5"/><rect x="${x + w / 2 - 30}" y="420" width="60" height="100" fill="#6b4a2a"/>
+      <text x="${x + w / 2}" y="352" text-anchor="middle" font-family="sans-serif" font-size="26" font-weight="700" fill="#fff">${name}</text></g>`;
+    return svg(`<defs><linearGradient id="vnadSky4" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#9fd0f2"/><stop offset="1" stop-color="#e6f4fb"/></linearGradient></defs>
+      <rect width="1600" height="900" fill="url(#vnadSky4)"/><g fill="#fff"><ellipse cx="300" cy="70" rx="100" ry="26"/><ellipse cx="1250" cy="90" rx="120" ry="30"/></g>
+      ${shop(0, 380, '#e8c39e', '#c0504d', 'BAKERY')}${shop(380, 360, '#b8d4c0', '#2f8f4a', 'BOOKS')}${shop(1180, 420, '#d8c6e6', '#6a4fa0', 'CAFÉ')}
+      <g><rect x="760" y="200" width="400" height="320" fill="#d9d2c4"/><g fill="#6aa86a"><circle cx="850" cy="300" r="80"/><circle cx="960" cy="260" r="90"/><circle cx="1070" cy="310" r="80"/></g><rect x="950" y="330" width="20" height="190" fill="#8a5a36"/><rect x="760" y="440" width="400" height="80" fill="#7cbf6a"/><path d="M760,440H1160" stroke="#4f7a3f" stroke-width="6"/></g>
+      <rect y="520" width="1600" height="90" fill="#cfc8bc"/><g stroke="#b8b0a2" stroke-width="3">${Array.from({ length: 20 }, (_, i) => `<path d="M${i * 80},520V610"/>`).join('')}</g><rect y="606" width="1600" height="12" fill="#9a9184"/>
+      <rect y="618" width="1600" height="282" fill="#5c6166"/><g fill="#fff">${Array.from({ length: 8 }, (_, i) => `<rect x="${560 + i * 60}" y="640" width="36" height="200"/>`).join('')}</g>
+      <g><path d="M720,520V160" stroke="#555" stroke-width="10"/><path d="M720,200H860L885,222L860,244H720Z" fill="#2f6db0"/><text x="790" y="231" text-anchor="middle" font-family="sans-serif" font-size="22" font-weight="700" fill="#fff">MUSEUM</text>
+        <path d="M720,260H600L575,282L600,304H720Z" fill="#2f8f4a"/><text x="652" y="291" text-anchor="middle" font-family="sans-serif" font-size="22" font-weight="700" fill="#fff">PARK</text>
+        <path d="M720,320H850L875,342L850,364H720Z" fill="#c0504d"/><text x="790" y="351" text-anchor="middle" font-family="sans-serif" font-size="22" font-weight="700" fill="#fff">HOTEL</text></g>
+      <g><path d="M1600,520V200" stroke="#333" stroke-width="8"/><path d="M1600,210Q1560,200 1540,230" fill="none" stroke="#333" stroke-width="6"/><ellipse cx="1535" cy="240" rx="18" ry="10" fill="#fff6c4"/></g>`);
+  }
+  function gasstation() {
+    return svg(`<defs><linearGradient id="vnadSky5" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#8ec9f0"/><stop offset="1" stop-color="#e3f4fb"/></linearGradient></defs>
+      <rect width="1600" height="900" fill="url(#vnadSky5)"/><g fill="#a7c4a0"><ellipse cx="200" cy="520" rx="320" ry="140"/><ellipse cx="1500" cy="520" rx="300" ry="120"/></g>
+      <g><rect x="980" y="300" width="520" height="220" fill="#f3efe6" stroke="#c9c2b2" stroke-width="5"/><rect x="1020" y="350" width="200" height="120" fill="#9fd0ef" stroke="#fff" stroke-width="6"/><rect x="1300" y="360" width="90" height="160" fill="#6b8fa8"/><rect x="980" y="280" width="520" height="40" fill="#e5484d"/><text x="1240" y="310" text-anchor="middle" font-family="sans-serif" font-size="30" font-weight="800" fill="#fff">SHOP · 24h</text></g>
+      <g><rect x="160" y="150" width="760" height="50" fill="#e5484d"/><rect x="160" y="196" width="760" height="14" fill="#b33a3e"/><text x="540" y="186" text-anchor="middle" font-family="sans-serif" font-size="34" font-weight="800" fill="#fff">⛽ GAS STATION</text>
+        <rect x="220" y="210" width="24" height="310" fill="#ddd"/><rect x="836" y="210" width="24" height="310" fill="#ddd"/>
+        ${[420].map(x => `<g><rect x="${x}" y="360" width="80" height="160" rx="8" fill="#2f6db0"/><rect x="${x + 12}" y="378" width="56" height="38" rx="4" fill="#cfe6f2"/><path d="M${x + 80},420Q${x + 110},430 ${x + 100},470" fill="none" stroke="#333" stroke-width="6"/><rect x="${x - 20}" y="510" width="120" height="14" rx="4" fill="#aaa"/></g>`).join('')}</g>
+      <rect y="520" width="1600" height="380" fill="#8a8f94"/><g stroke="#f5c518" stroke-width="8" stroke-dasharray="50 30"><path d="M0,760H1600"/></g><rect y="518" width="1600" height="8" fill="#6f7479"/>
+      <g transform="translate(600 400)"><rect x="0" y="20" width="300" height="140" rx="12" fill="#f6f1e6" stroke="#8a5a1a" stroke-width="4"/><path d="M300,60H360Q390,60 400,100V160H300Z" fill="#f6f1e6" stroke="#8a5a1a" stroke-width="4"/><path d="M312,72H355Q378,72 386,104H312Z" fill="#9fd0ef"/>
+        <rect x="20" y="70" width="250" height="40" fill="#8a5a1a"/><text x="145" y="99" text-anchor="middle" font-family="sans-serif" font-size="26" font-weight="800" fill="#fff">📦 DELIVERY</text>
+        <circle cx="70" cy="165" r="30" fill="#333"/><circle cx="70" cy="165" r="12" fill="#999"/><circle cx="330" cy="165" r="30" fill="#333"/><circle cx="330" cy="165" r="12" fill="#999"/></g>`);
+  }
+
   const inner = s => s.replace(/^<svg[^>]*>/, '').replace(/<\/svg>$/, '');
   /* two scenes side by side: the middle of each, with a white seam */
   function split(a, b) {
@@ -266,7 +297,7 @@
     livingroom: () => livingroom(), home: () => livingroom(),
     grandmahome: () => livingroom({ wall: '#f1e4d8', paper: '#d9b8a8', sofa: '#8c5a7a', curtain: '#6a8f5a', rug: '#b07a6a' }),
     kitchen, bedroom, backyard, clothesshop, warehouse, frontdoor, hallway, rainynight, beach, bus,
-    airport, museum, library, restaurant, hospital, supermarket, cinema, hotel, pharmacy
+    airport, museum, library, restaurant, hospital, supermarket, cinema, hotel, pharmacy, street, gasstation
   };
   /* keywords → a scene, tried in this order (the setting chip and its section title first, then the page's title and subtitle) */
   const PLACES = [
@@ -283,6 +314,8 @@
     ['frontdoor', /front door|doorstep|porch/],
     ['hallway', /🧳|back from|suitcase|hallway|come home after/],
     ['warehouse', /warehouse|📦|factory|delivery company/],
+    ['gasstation', /gas station|petrol station|⛽|delivery driver|\bdriver\b|\bvan\b/],
+    ['street', /street|🗺️|directions|tourist|crossroads|corner|sidewalk|pavement/],
     ['clothesshop', /clothes|shop|store|boutique|👕|👗|🛍️/],
     ['beach', /beach|sydney|🏖️/],
     ['rainynight', /toronto|rainy night/],
@@ -299,7 +332,7 @@
 
   /* ── people ── */
   const P = (o) => Object.assign({ eyeColor: 12, height: 3, weight: 3, mouth: 'smile' }, o);
-  const KID = { height: 1, weight: 2 };
+  const KID = { height: 0 };   /* HouseCharacter's child: about ten years old, child proportions, no adult features */
   const CAST = {
     ana: P({ bodyType: 'female', skin: 3, hairStyle: 'ponytail', hairColor: '3-0', upperGarment: 'blouse', upperColor: '#FF6600', lowerGarment: 'trousers', lowerColor: '#333333', footwear: 'shoes' }),
     mia: P({ bodyType: 'female', skin: 2, eyeColor: 7, hairStyle: 'long', hairColor: '5-0', upperGarment: 'tshirt', upperColor: '#6600CC', lowerGarment: 'jeans', lowerColor: '#000066', footwear: 'sneakers' }),
@@ -326,14 +359,25 @@
   const TONE = { '🏻': 1, '🏼': 2, '🏽': 3, '🏾': 5, '🏿': 6 };
   const hash = s => { let h = 2166136261; for (const c of s) { h ^= c.codePointAt(0); h = Math.imul(h, 16777619); } return h >>> 0; };
   const COLS = ['#CC0000', '#0066CC', '#00CC66', '#6600CC', '#FF6600', '#00CCCC', '#FF66CC', '#663300', '#006666', '#660066', '#CC6600', '#336699'];
+  /* a neutral avatar (🧑‍✈️): the page may say “the driver … he” */
+  function genderHint(name) {
+    const t = (document.querySelector('.page') || document.body).textContent.toLowerCase(), n = name.toLowerCase();
+    let he = 0, she = 0, i = -1;
+    while ((i = t.indexOf(n, i + 1)) >= 0) {
+      const near = t.slice(i, i + n.length + 80);
+      he += (near.match(/\b(he|him|his|himself)\b/g) || []).length; she += (near.match(/\b(she|her|hers|herself)\b/g) || []).length;
+    }
+    return he > she ? false : she > he ? true : null;
+  }
   function madeUp(name, avatar) {
     let h = hash(name.toLowerCase() + avatar);
     const r = n => { h = Math.imul(h ^ (h >>> 15), 2246822519) >>> 0; return h % n; };
-    const f = FEMALE.test(avatar) ? true : MALE.test(avatar) ? false : r(2) === 0;
+    const hint = FEMALE.test(avatar) ? true : MALE.test(avatar) ? false : genderHint(name);
+    const f = hint !== null ? hint : r(2) === 0;
     const tone = [...avatar].map(c => TONE[c]).find(Boolean);
     const hairs = f ? ['long', 'bob', 'ponytail', 'bun', 'curly', 'afro'] : ['short', 'sidepart', 'crew', 'curly', 'afro', 'buzz'];
     const c = P({ bodyType: f ? 'female' : 'male', skin: tone || 1 + r(6), eyeColor: 1 + r(16), hairStyle: /🦱/u.test(avatar) ? 'curly' : /🦲/u.test(avatar) ? 'bald' : hairs[r(hairs.length)],
-      hairColor: OLD.test(avatar) ? 'grey' : /🦰/u.test(avatar) ? '9-1' : /👱/u.test(avatar) ? '9-0' : ['1-0', '3-0', '4-0', '5-0', '6-0', '8-0'][r(6)],
+      hairColor: OLD.test(avatar) ? 'grey' : /🦰/u.test(avatar) ? '6-88' : /👱/u.test(avatar) ? '8-0' : ['1-0', '3-0', '4-0', '5-0', '6-0', '8-0'][r(6)],
       upperGarment: f ? ['blouse', 'tshirt', 'hoodie'][r(3)] : ['shirt', 'polo', 'tshirt', 'hoodie'][r(4)], upperColor: COLS[r(COLS.length)],
       lowerGarment: ['jeans', 'chinos', 'trousers'][r(3)], footwear: ['sneakers', 'shoes'][r(2)] });
     if (!f && r(3) === 0) c.facialHair = ['stubble', 'beard', 'moustache'][r(3)];
@@ -350,7 +394,9 @@
     [/librarian|teacher|professor/, { upperGarment: 'vest', upperColor: '#6a8f5a', lowerGarment: 'chinos', footwear: 'shoes', eyewear: 'glasses' }],
     [/cashier|shop assistant|cinema worker|worker|staff/, { upperGarment: 'polo', lowerGarment: 'chinos', footwear: 'sneakers' }],
     [/chef|cook/, { upperGarment: 'shirt', upperColor: '#FFFFFF', lowerGarment: 'trousers', lowerColor: '#333333', footwear: 'shoes' }],
-    [/passenger|guest|tourist|traveller|traveler/, { held: { left: null, right: 'suitcase' } }],
+    [/tourist|visitor/, { held: { left: null, right: 'camera' }, accessories: ['backpack'], headwear: 'sunhat' }],
+    [/driver|courier|delivery/, { upperGarment: 'polo', upperColor: '#8a5a1a', lowerGarment: 'cargopants', lowerColor: '#5e3a20', footwear: 'boots', headwear: 'cap', headwearColor: '#8a5a1a', held: { left: 'box', right: null } }],
+    [/passenger|guest|traveller|traveler/, { held: { left: null, right: 'suitcase' } }],
     [/student|pupil/, { upperGarment: 'hoodie', accessories: ['backpack'] }]
   ];
   function dress(c, role) {
@@ -378,6 +424,13 @@
   }
 
   /* ── reading a conversation from the page ── */
+  /* a bubble's words as text. Stick-figure sentences (stick-sentence.js, present-perfect-kit.js) lay their words out as
+     flex items with a gap between them and no spaces in the text, so their pieces are joined with spaces here */
+  function plainText(el) {
+    const parts = el.querySelectorAll('.ss-txt');
+    const t = parts.length ? [...parts].map(p => p.textContent).join(' ') : el.textContent;
+    return t.replace(/\s+/g, ' ').replace(/\s+([,.!?;:…])/g, '$1').trim();
+  }
   function linesOf(container) {
     return [...container.querySelectorAll('.bubble-wrap')].map(w => {
       const nameEl = w.querySelector('.bname, .bubble-name'), bubble = w.querySelector('.bubble');
@@ -386,14 +439,15 @@
       const col = bubble && bubble.parentElement;
       const extras = col ? [...col.children].filter(n => n !== bubble && n !== nameEl && !n.matches('.bname, .bubble-name')) : [];
       return { name: (nameEl ? nameEl.textContent : '').trim() || 'Someone', avatar: ((w.querySelector('.avatar') || {}).textContent || '').trim(),
-        side: w.classList.contains('right') ? 'right' : 'left', text: clone.textContent.replace(/\s+/g, ' ').trim(), wrap: w, extras,
+        side: w.classList.contains('right') ? 'right' : 'left', text: plainText(clone), wrap: w, extras,
         colour: ((w.querySelector('.avatar') || {}).getAttribute && (w.querySelector('.avatar').getAttribute('style') || '').match(/#[0-9a-f]{6}/i) || [])[0] };
     }).filter(l => l.text);
   }
   function chipFor(container) {
     for (let n = container.previousElementSibling; n; n = n.previousElementSibling) {
       if (n.matches('.setting-chip')) return n;
-      if (n.matches('.sec-div') || n.matches('.bubble-wrap, .vnad-bar') || n.querySelector('.bubble-wrap')) return null;
+      if (n.matches('.vnad-bar')) continue;   /* the switch this adapter put there */
+      if (n.matches('.sec-div') || n.matches('.bubble-wrap') || n.querySelector('.bubble-wrap')) return null;
     }
     return null;
   }
@@ -419,7 +473,7 @@
   }
 
   /* ── building the scene ── */
-  const OUT = /\b(bus|beach|office|park|caf[eé]|shop|store|warehouse|car|train|airport)\b/;
+  const OUT = /\b(bus|beach|office|park|caf[eé]|shop|store|warehouse|car|train|airport|gas station|petrol station|driver|delivery|van|taxi|street)\b/;
   function setting(container, lines) {
     const chip = chipFor(container), chipText = ((chip ? chip.textContent : '') + ' ' + titleFor(container)).trim();
     const forced = chip && chip.getAttribute('data-vn-bg');
@@ -433,7 +487,9 @@
         const parts = (chipText.includes('↔') ? chipText.split('↔') : []).map(sceneOf);
         halves = [parts[0] || null, parts[1] || null];
         if (!halves[0] && !halves[1]) {   /* no “A ↔ B”: the first speaker is where the page says (on the bus…), or in another home */
-          const first = (lines[0] || {}).side === 'right' ? 1 : 0, m = pageText().toLowerCase().match(OUT);
+          /* where the caller is: the chip (“driver, lost, calls…”), their own name and lines, then the page */
+          const first = (lines[0] || {}).side === 'right' ? 1 : 0, own = lines.filter(l => l.name === (lines[0] || {}).name).map(l => l.name + ' ' + l.text).join(' ');
+          const m = [chipText, own, pageText()].map(t => t.toLowerCase().match(OUT)).find(Boolean);
           halves[first] = (m && sceneOf(m[0])) || 'grandmahome'; halves[1 - first] = 'livingroom';
         }
         halves = halves.map((h, i) => h || (i ? 'livingroom' : 'grandmahome'));

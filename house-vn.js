@@ -369,7 +369,7 @@ function create(host, script){
     const p = HC.pivots(data), nk = p.neck;
     const bottomOf = q => shot === 'closeup' ? q.neck.y + 46 : shot === 'medium' ? q.pelvis.y + 18 : HC.STAGE.ground + 14;
     let ref = p;
-    if((data.height || 3) !== 3){
+    if((data.height === undefined ? 3 : data.height) !== 3){
       const k = JSON.stringify(data.joints) + data.torsoOrientation + data.pelvisOrientation + data.bodyType + (data.lift || 0);
       if(!cropCache.has(k)){ if(cropCache.size > 200) cropCache.clear(); cropCache.set(k, HC.pivots({...data, height:3})); }
       ref = cropCache.get(k);
