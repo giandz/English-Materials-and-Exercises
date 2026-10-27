@@ -414,6 +414,48 @@ function create(host, script){
   const lerpVB = (a, b, e) => b.map((v, i) => a[i] + (v - a[i]) * e);
 
   const sprites = new Map();   /* id → {el, key, data (target), shot, nums (on screen), vb (on screen), anim} */
+  /* ── blinking: everyone on stage blinks now and then, speaking or not ──
+     The time the eyes stay open and the time they stay shut are each drawn from a normal distribution (clipped to
+     sensible limits). Talking makes people blink more often than listening; a face changes it too: wide, raised-brow
+     surprise stares (fewer blinks), fear and worry blink more, sadness blinks slowly (longer closures), anger stares.
+     A cast member's expressiveness (1 = normal) speeds or slows their blinking. Now and then (8%) a blink is
+     doubled: a second one follows a moment later. Eyes that are already shut, happy or winking don't blink. */
+  const BLINKABLE = ['open', 'wide', 'narrow'];
+  const gauss = (mean, sd, lo, hi) => {   /* Box–Muller, clipped */
+    let u = 0, v = 0; while(!u) u = Math.random(); while(!v) v = Math.random();
+    return Math.max(lo, Math.min(hi, mean + sd * Math.sqrt(-2 * Math.log(u)) * Math.cos(2 * Math.PI * v)));
+  };
+  function blinkMood(d){   /* [how much longer the eyes stay open, how much longer they stay shut] for this face */
+    const b = d.eyebrows, e = d.eyes;
+    if(e === 'wide' && b === 'raised') return [1.5, 0.9];   /* surprise, amazement: a stare */
+    if(e === 'wide') return [0.65, 0.9];                    /* fear: quick, nervous blinks */
+    if(b === 'sad' || e === 'sad') return [0.9, 1.35];      /* sadness: slow, heavy blinks */
+    if(b === 'angry') return [1.35, 0.85];                  /* anger: a hard stare */
+    if(b === 'raised') return [0.85, 1];                    /* interest, worry */
+    if(e === 'narrow') return [1.15, 1.1];                  /* suspicion, boredom */
+    return [1, 1];
+  }
+  function blinkLater(id, s, delay){
+    clearTimeout(s.blinkTimer);
+    s.blinkTimer = setTimeout(() => blinkNow(id, s, !!s.blinkSecond), delay);
+  }
+  function blinkNow(id, s, second){
+    if(sprites.get(id) !== s) return;
+    const [kOpen, kShut] = blinkMood(s.data), ex = Number(cast[id] && cast[id].expressiveness) > 0 ? Number(cast[id].expressiveness) : 1;
+    const shut = gauss(0.15, 0.035, 0.08, 0.3) * kShut * 1000;
+    s.blinking = true; if(!s.anim) paint(s, s.nums, s.vb);
+    s.blinkTimer = setTimeout(() => {
+      if(sprites.get(id) !== s) return;
+      s.blinking = false; if(!s.anim) paint(s, s.nums, s.vb);
+      if(!second && Math.random() < 0.08){ blinkLater(id, s, gauss(0.2, 0.05, 0.1, 0.35) * 1000); s.blinkSecond = true; return; }   /* a double blink */
+      if(s.blinkSecond){ s.blinkSecond = false; }
+      const speaking = !!(talk && talk.who === id && !talk.done);
+      const mean = (speaking ? 2.8 : 4.2) * kOpen / Math.sqrt(ex), sd = mean * 0.35;
+      blinkLater(id, s, gauss(mean, sd, 0.8, 10) * 1000);
+    }, shut);
+  }
+  /* blinkNow is also how a double blink's second one runs: it knows from s.blinkSecond */
+  const blinkStart = (id, s) => blinkLater(id, s, gauss(2.2, 1.2, 0.3, 6) * 1000);   /* everyone starts at a different moment */
   function paint(s, nums, vb){   /* draw the target character with these joint angles and this framing */
     const d = {...s.data, joints:nums.joints}; TURNS.forEach((k, i) => d[k] = nums.turns[i]);
     const P = s.pros;   /* the live prosody layer, on top of the pose (see "prosody") */
@@ -423,6 +465,7 @@ function create(host, script){
       if(P.brows && d.eyebrows === 'neutral') d.eyebrows = P.brows;
       if(P.blink && (d.eyes === 'open' || d.eyes === 'wide')) d.eyes = 'closed';
     }
+    if(s.blinking && BLINKABLE.includes(d.eyes)) d.eyes = 'closed';   /* the everyday blink (see "blinking") */
     const key = JSON.stringify(d) + vb.map(v => v.toFixed(1)).join();
     if(key === s.key) return;
     s.el.style.aspectRatio = `${vb[2].toFixed(1)} / ${vb[3].toFixed(1)}`;
@@ -445,7 +488,7 @@ function create(host, script){
     const toN = numsOf(c.data), toV = crop(c.data, c.shot);
     if(!s){
       const el = document.createElement('div'); el.className = 'vn-ch out'; el.dataset.id = id; castEl.appendChild(el);
-      s = {el, key:'', data:c.data}; sprites.set(id, s);
+      s = {el, key:'', data:c.data}; sprites.set(id, s); blinkStart(id, s);
       requestAnimationFrame(() => requestAnimationFrame(() => el.classList.remove('out')));
       paint(s, toN, toV);   /* a character who comes in appears in their pose */
     } else {
@@ -684,7 +727,7 @@ function create(host, script){
     stage.classList.toggle('inserting', insert); stage.classList.toggle('insert-black', L.insert === 'black');
     stage.classList.toggle('think', think); stage.classList.toggle('past', past);
     boxEl.classList.toggle('narrate', who == null); boxEl.classList.toggle('think', think);
-    for(const [id, s] of sprites) if(!scene.has(id)){ s.el.classList.add('out'); sprites.delete(id); setTimeout(() => s.el.remove(), 400); }
+    for(const [id, s] of sprites) if(!scene.has(id)){ clearTimeout(s.blinkTimer); s.el.classList.add('out'); sprites.delete(id); setTimeout(() => s.el.remove(), 400); }
     for(const [id, c] of scene){
       if(prev && id === prev.id && id !== who && prev.from) settleSprite(id, c, prev.from);
       else drawSprite(id, c);
@@ -836,7 +879,7 @@ function create(host, script){
     if(dead) return; dead = true;
     cancelAnimationFrame(raf); cancelAnimationFrame(animRaf); stopProsody(); hideAsk();
     clearTimeout(settleTimer); clearTimeout(faceTimer); clearTimeout(autoTimer);
-    for(const s of sprites.values()){ clearTimeout(s.faceTimer); clearTimeout(s.moveTimer); s.anim = null; }
+    for(const s of sprites.values()){ clearTimeout(s.faceTimer); clearTimeout(s.moveTimer); clearTimeout(s.blinkTimer); s.anim = null; }
     talk = null; sprites.clear(); host.innerHTML = '';
   }
 
