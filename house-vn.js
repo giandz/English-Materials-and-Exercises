@@ -513,15 +513,27 @@ function create(host, script){
   /* once a line has been said, the speaker slowly goes back to their resting place, size, pose and face */
   const SETTLE_AFTER = 700, SETTLE_TIME = Math.max(1.8, SCENE_TIME * 4);
   let settleTimer = 0, faceTimer = 0;
-  function settle(){
-    const who = talk && talk.who; if(who == null || !scene.rest || !scene.rest.has(who)) return;
-    const now = scene.get(who), r = cloneC(scene.rest.get(who));
-    const keepFace = {...r, data:{...r.data, eyebrows:now.data.eyebrows, eyes:now.data.eyes, mouth:now.data.mouth}};
-    motion = {ease:SCENE_EASE, time:REDUCED ? 0 : SETTLE_TIME};
-    root.style.setProperty('--vn-move', (REDUCED ? 0 : SETTLE_TIME) + 's');
-    scene.set(who, keepFace); drawSprite(who, keepFace); layout(scene, who);
-    faceTimer = setTimeout(() => { scene.set(who, r); drawSprite(who, r); }, REDUCED ? 0 : SETTLE_TIME * 400);   /* the face changes halfway */
+  /* settling: the speaker of the line just said eases back to their resting place, size and pose over
+     SETTLE_TIME, and their face changes halfway. It runs on its own after a line, or (with auto-advance, or when
+     the next line comes before it started) at the same time as the next line. */
+  function settleSprite(id, r, from){
+    const sp = sprites.get(id); if(!sp) return;
+    const keepFace = {...r, data:{...r.data, eyebrows:from.data.eyebrows, eyes:from.data.eyes, mouth:from.data.mouth}};
+    const keep = motion; motion = {ease:SCENE_EASE, time:REDUCED ? 0 : SETTLE_TIME};
+    sp.el.style.setProperty('--vn-move', (REDUCED ? 0 : SETTLE_TIME) + 's');   /* place and size move as slowly */
+    drawSprite(id, keepFace); motion = keep;
+    clearTimeout(sp.faceTimer);
+    sp.faceTimer = setTimeout(() => { if(sprites.get(id) === sp && scene.get(id) === r){ drawSprite(id, r); } }, REDUCED ? 0 : SETTLE_TIME * 400);
+    clearTimeout(sp.moveTimer);
+    sp.moveTimer = setTimeout(() => sp.el.style.removeProperty('--vn-move'), (REDUCED ? 0 : SETTLE_TIME) * 1000 + 50);
   }
+  function settle(){
+    const who = talk && talk.who; if(who == null || !scene.rest || !scene.rest.has(who) || talk.settled) return;
+    talk.settled = true;
+    const r = cloneC(scene.rest.get(who)), from = scene.get(who);
+    scene.set(who, r); settleSprite(who, r, from); layout(scene, who);
+  }
+
   function finish(){   /* the whole line at once, mouth at rest */
     if(!talk || talk.done) return;
     talk.done = true; cancelAnimationFrame(raf);
@@ -557,8 +569,9 @@ function create(host, script){
 
   function show(){   /* the last line of the history, with the scene as it stands there */
     if(!history.length) return;
+    /* the speaker of the line before, if they have not settled yet, settles while this line plays */
+    const prev = talk && talk.who != null && !talk.settled && sprites.has(talk.who) ? {id:talk.who, from:scene.get(talk.who)} : null;
     cancelAnimationFrame(raf); hideAsk(); ended = false; clearTimeout(settleTimer); clearTimeout(faceTimer); clearTimeout(autoTimer);
-    root.style.removeProperty('--vn-move');
     const cur = history[history.length - 1], i = cur.i;
     vars = {...cur.vars};
     const L = lines[i], who = L.who != null ? L.who : null, cm = who != null ? cast[who] : (script.narration || {});
@@ -569,7 +582,10 @@ function create(host, script){
     stage.classList.toggle('think', think); stage.classList.toggle('past', past);
     boxEl.classList.toggle('narrate', who == null); boxEl.classList.toggle('think', think);
     for(const [id, s] of sprites) if(!scene.has(id)){ s.el.classList.add('out'); sprites.delete(id); setTimeout(() => s.el.remove(), 400); }
-    for(const [id, c] of scene) drawSprite(id, c);
+    for(const [id, c] of scene){
+      if(prev && id === prev.id && id !== who && prev.from) settleSprite(id, c, prev.from);
+      else drawSprite(id, c);
+    }
     layout(scene, insert ? null : who);
     for(const [id, sp] of sprites) sp.el.classList.toggle('thinker', think && id === who);
     const name = who != null ? (cm.name || who) : '', c0 = who != null ? scene.get(who) : null;
