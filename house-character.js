@@ -970,17 +970,17 @@ const FACE_SHAPES=[['oval','Oval'],['round','Round'],['square','Square'],['recta
 const FACE_GEO={
   oval:{d:'M-29,-4C-29,-30 -17,-36 0,-36C17,-36 29,-30 29,-4C29,16 16,35 0,35C-16,35 -29,16 -29,-4Z',chin:35},
   round:{d:'M-30,-4C-30,-31 -17,-36 0,-36C17,-36 30,-31 30,-4C30,19 18,33 0,33C-18,33 -30,19 -30,-4Z',chin:33},
-  square:{d:'M-29.5,-4C-29.5,-30 -17,-36 0,-36C17,-36 29.5,-30 29.5,-4C29.5,12 28.5,24 22,30Q12,35 0,35Q-12,35 -22,30C-28.5,24 -29.5,12 -29.5,-4Z',chin:35},
-  rectangle:{d:'M-28,-4C-28,-30 -16.5,-36 0,-36C16.5,-36 28,-30 28,-4C28,14 27.5,27 21,33Q11,38 0,38Q-11,38 -21,33C-27.5,27 -28,14 -28,-4Z',chin:38},
+  square:{d:'M-29.5,-4C-29.5,-30 -17,-36 0,-36C17,-36 29.5,-30 29.5,-4C29.5,15 27,27 19,31.5Q10,35 0,35Q-10,35 -19,31.5C-27,27 -29.5,15 -29.5,-4Z',chin:35},
+  rectangle:{d:'M-28,-4C-28,-30 -16.5,-36 0,-36C16.5,-36 28,-30 28,-4C28,17 26,29 18.5,34Q10,38 0,38Q-10,38 -18.5,34C-26,29 -28,17 -28,-4Z',chin:38},
   oblong:{d:'M-27.5,-4C-27.5,-30 -16.5,-36 0,-36C16.5,-36 27.5,-30 27.5,-4C27.5,18 15,38 0,38C-15,38 -27.5,18 -27.5,-4Z',chin:38},
-  heart:{d:'M-30,-6C-30,-31 -17,-36 0,-36C17,-36 30,-31 30,-6C30,12 15,30 0,35C-15,30 -30,12 -30,-6Z',chin:35},
+  heart:{d:'M-30,-6C-30,-31 -17,-36 0,-36C17,-36 30,-31 30,-6C30,12 17,28.5 6,33.3Q0,35.6 -6,33.3C-17,28.5 -30,12 -30,-6Z',chin:35},
   diamond:{d:'M-25,-12C-24,-31 -14,-36 0,-36C14,-36 24,-31 25,-12Q30,-4 29,3C27,19 13,34 0,35C-13,34 -27,19 -29,3Q-30,-4 -25,-12Z',chin:35},
-  triangle:{d:'M-26,-4C-26,-30 -15,-36 0,-36C15,-36 26,-30 26,-4C27.5,14 28,25 21,31Q11,35 0,35Q-11,35 -21,31C-28,25 -27.5,14 -26,-4Z',chin:35}};
+  triangle:{d:'M-26,-4C-26,-30 -15,-36 0,-36C15,-36 26,-30 26,-4C27.5,15 26.5,27 18.5,32Q10,35 0,35Q-10,35 -18.5,32C-26.5,27 -27.5,15 -26,-4Z',chin:35}};
 /* eye shapes: sx, sy scale the white of the eye; tilt lifts (+) or drops (−) the outer corner; dx moves both eyes
    apart (+) or together (−); hood, mono, deep and bulge add a lid fold, a flat lid, a brow-bone shadow or a lower lid */
 const EYE_TYPES=[['almond','Almond'],['round','Round'],['hooded','Hooded'],['deepset','Deep-set'],['upturned','Upturned'],['downturned','Downturned'],['monolid','Monolid'],['protruding','Protruding'],['closeset','Close-set'],['wideset','Wide-set']];
 const EYE_GEO={almond:{},round:{sx:0.92,sy:1.15},hooded:{hood:1},deepset:{sy:0.9,deep:1},upturned:{tilt:9},downturned:{tilt:-9},
-  monolid:{sy:0.85,mono:1},protruding:{sx:1.05,sy:1.2,bulge:1},closeset:{dx:-1.8},wideset:{dx:2}};
+  monolid:{sy:0.85,mono:1},protruding:{sx:1.05,sy:1.2,bulge:1},closeset:{dx:-1.8},wideset:{dx:1.33}};
 /* noses: front = the line(s) drawn on the face; side = the profile from the brow (−28,−6) to under the nose (−28.5,12) */
 const NOSE_TYPES=[['greek','Greek (straight)'],['roman','Roman (aquiline)'],['hawk','Hawk (hooked)'],['nubian','Nubian'],['lowbridge','Low bridge (flat, wide)'],['button','Button'],['turnedup','Turned-up (celestial)'],['bulbous','Bulbous'],['crooked','Crooked']];
 const NOSE_GEO={
@@ -1245,7 +1245,7 @@ function build(d){
   const cw=n2([27,30,32,37,43][wk]*kx*(fem?0.92:1)*K),
         sw=n2(sw0*kx*Math.abs(ct)+cw*0.8*(1-Math.abs(ct))),   /* in profile the shoulder corners tuck inside the chest */
         ww=n2([21,25,28,36,46][wk]*(kx+kp)/2*(fem?0.82:1)*K*(kid?1.05:1)), hw=n2(hw0*kp);
-  const nw=[8,8.5,9,10,11][wk]*(kid?0.85:1), hx0=hw0*0.5, hx=hx0*cp, shx=(sw0-1)*ct;
+  const nw=n2([8,8.5,9,10,11][wk]*(kid?0.85:1)*HS*({round:1.05,square:1.08,rectangle:1.04,oblong:0.95,heart:0.9,diamond:0.93,triangle:1.1}[d.faceShape]||1)),   /* the neck follows the jaw: wider under a square or pear face, slimmer under a heart or diamond */ hx0=hw0*0.5, hx=hx0*cp, shx=(sw0-1)*ct;
   const nearLeg=d.pelvisOrientation<-30?1:d.pelvisOrientation>30?-1:0;
   const near=d.torsoOrientation<-30?1:d.torsoOrientation>30?-1:0;   /* which side faces the viewer */
   /* back view: the figure is built as from the front and mirrored at the end (an orthographic view from behind is the
