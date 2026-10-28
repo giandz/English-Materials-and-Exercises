@@ -1087,6 +1087,10 @@ function headSVG(d,C){
   const browAt=(x,o,kind,hw)=>{const B={neutral:[-10.5,-10.5,-13.5],raised:[-13.5,-13,-17],sad:[-9.5,-14,-13],angry:[-13.5,-8.5,-12.5],flat:[-9.8,-9.8,-10]}[kind];
     return `<path d="M${n2(x+o*hw)},${B[0]}Q${x},${B[2]} ${n2(x-o*hw)},${B[1]}" fill="none" stroke="${C.brow}" stroke-width="2.3" stroke-linecap="round"/>`;};
   const nod=d.headNod||0;
+  /* the mouth sits a little lower on a long face and higher on a round one, wider under a broad jaw and narrower over a
+     pointed chin: [width, drop] per face shape */
+  const MG={round:[1.03,-1],square:[1.07,0],rectangle:[1.04,1.8],oblong:[0.97,1.8],heart:[0.9,0],diamond:[0.92,0.5],triangle:[1.08,0]}[d.faceShape]||[1,0];
+  const mouthAt=()=>MG[0]===1&&!MG[1]?mouth:`<g transform="translate(0 ${n2(21+MG[1])}) scale(${MG[0]} 1) translate(0 -21)">${mouth}</g>`;
   const FG=FACE_GEO[d.faceShape]||FACE_GEO.oval, EG=EYE_GEO[d.eyeType]||{}, NG=NOSE_GEO[d.noseType]||NOSE_GEO.greek, ET=d.earType;
   const ex=n2(11.5+(EG.dx||0));
   /* facial hair follows the jaw: stretched to a longer or shorter chin, and kept inside a narrower one */
@@ -1108,14 +1112,14 @@ function headSVG(d,C){
        + browAt(-ex,-1,bk==='skeptical'?'raised':bk,5.5)+browAt(ex,1,bk==='skeptical'?'flat':bk,5.5))
      + g(0.25,`<path d="${NG.front}" fill="none" stroke="${C.skinS}" stroke-width="1.5" stroke-linecap="round"/>`
        +(NG.nostrils?`<ellipse cx="-1.7" cy="8.9" rx="1.1" ry=".7" fill="${C.skinS}" stroke="none"/><ellipse cx="1.7" cy="8.9" rx="1.1" ry=".7" fill="${C.skinS}" stroke="none"/>`:''))
-     + g(0.18,mouth);
+     + g(0.18,mouthAt(0));
   } else {
     const cy=FG.chin;   /* in profile only the chin's height changes with the face shape */
     s+=`<path d="M-28,-6${NG.side}C-29,${n2(24*cy/35)} -22,${cy} -8,${cy}C10,${cy} 22,${n2(28*cy/35)} 27,10C31,-2 30,-36 0,-36C-17,-36 -29,-30 -28,-6Z" ${S}/>`
      + blushAt(-14) + (fh&&cy!==35?`<g transform="scale(1 ${n2(cy/35)})">${fh}</g>`:fh)
      + eyeAt(-15,1,ek==='wink'?'open':ek,-16.2)
      + browAt(-15.5,1,bk==='skeptical'?'raised':bk,6.5)
-     + `<g transform="translate(-22.3 0) scale(.55 1)">${mouth}</g>`
+     + `<g transform="translate(-22.3 ${MG[1]}) scale(.55 1)">${mouth}</g>`
      + earSVG(ET,7,1,S)+`<path d="M8,-2Q5,1 8,4" fill="none" stroke="${C.skinS}"/>`;
   }
   const star=(x,y,a)=>`<path transform="translate(${x} ${y})" d="M0,${-a}Q${n2(a*0.13)},${n2(-a*0.13)} ${a},0Q${n2(a*0.13)},${n2(a*0.13)} 0,${a}Q${n2(-a*0.13)},${n2(a*0.13)} ${-a},0Q${n2(-a*0.13)},${n2(-a*0.13)} 0,${-a}Z" fill="#fffbe0" stroke="#e2b23a" stroke-width=".8"/>`;
