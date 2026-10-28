@@ -83,6 +83,16 @@
    A cue is {pose:id}, {emotion:id} or both, {pose:em_joy emotion:sadness}. It is not shown or said, and
    it takes effect when the text reaches it (a click that finishes the line applies the rest at once).
    What a cue sets stays, like anything else a line sets.
+   Stage cues bring other characters on or off at that point of the line, as it is said:
+     say: "That's {spot:tom}my brother Tom, and {spot:lucy}my sister Lucy."
+     {spot:id}                            id comes to the middle in a full shot (the spotlight); whoever had the
+                                          spotlight before leaves. Add at:left|center|right or shot:… to place it
+                                          elsewhere: {spot:tom at:left shot:medium}. Someone in the spotlight is
+                                          never dimmed, so the one being talked about stays bright.
+     {enter:id}                           id comes on (center, medium, unless at: and shot: say otherwise), or
+                                          back where they were
+     {leave:id}                           id goes off
+   Like stage directions, they change who is on stage from then on (going back undoes them).
 
    Acting and resting. A line's at, shot, pose, emotion and cues are how the speaker acts it: once the
    line has been said, the speaker slowly goes back to their resting state. That state is where and how
@@ -266,8 +276,8 @@ function parseCues(say){
       continue;
     }
     const tag = m[1].trim().match(/^(\/?)(shout|whisper|stress)$/i), d = {};
-    for(const [, k, v] of m[1].matchAll(/(pose|emotion)\s*[:=]\s*([\w-]+)/g)) d[k] = v;
-    if(!tag && !d.pose && !d.emotion) continue;   /* not a cue or a tag: leave it in the text */
+    for(const [, k, v] of m[1].matchAll(/(pose|emotion|spot|enter|leave|at|shot)\s*[:=]\s*([\w-]+)/g)) d[k === 'at' ? 'place' : k] = v;
+    if(!tag && !d.pose && !d.emotion && !d.spot && !d.enter && !d.leave) continue;   /* not a cue or a tag: leave it in the text */
     if(m.index < last) continue;
     text += raw.slice(last, m.index); last = m.index + m[0].length;
     const ws = raw.slice(last).match(/^\s+/);
@@ -329,7 +339,7 @@ function create(host, script){
      with all their cues, then its own directions. With branches, only the lines actually shown count. */
   /* the scene at the line that ends path (the lines shown so far, in order): every character in their resting
      state, then the speaker acting this line. The map holds what is shown; .rest holds the resting states. */
-  const cloneC = c => ({at:c.at, shot:c.shot, data:JSON.parse(JSON.stringify(c.data))});
+  const cloneC = c => ({at:c.at, shot:c.shot, spot:c.spot, data:JSON.parse(JSON.stringify(c.data))});
   function act(c, d){   /* a line's or a stage direction's settings, on a copy of c */
     if(d.at && AT[d.at] !== undefined) c.at = d.at;
     if(d.shot) c.shot = d.shot === 'mcu' ? 'closeup' : d.shot;
@@ -339,6 +349,19 @@ function create(host, script){
     return c;
   }
   const looked = (c, look) => { if(look) c.data = HC.normalize({...c.data, ...look, joints:{...c.data.joints, ...(look.joints || {})}}); return c; };
+  /* a stage cue ({spot:id}, {enter:id}, {leave:id}) on the resting cast: rest (on stage) and off (left, remembered) */
+  function stageCue(rest, off, q, speaker){
+    const id = q.spot || q.enter || q.leave; if(!cast[id]) return;
+    if(q.leave){ if(id !== speaker && rest.has(id)){ off.set(id, rest.get(id)); rest.delete(id); } return; }
+    if(q.spot) for(const [o, c] of [...rest]) if(c.spot && o !== id && o !== speaker){ off.set(o, c); rest.delete(o); }
+    let c = rest.get(id) || off.get(id);
+    if(!c) c = {at:'center', shot:q.spot ? 'full' : 'medium', data:HC.normalize(cast[id].character || {})};
+    if(q.spot){ c.at = 'center'; c.shot = 'full'; c.spot = true; }
+    if(q.place && AT[q.place] !== undefined) c.at = q.place;
+    if(q.shot) c.shot = q.shot === 'mcu' ? 'closeup' : q.shot;
+    off.delete(id); rest.delete(id); rest.set(id, c);
+  }
+  const isStageCue = q => !!(q.spot || q.enter || q.leave);
   function sceneAt(path){
     const rest = new Map(), off = new Map();   /* off: characters who left, remembered for when they come back */
     let bg = script.background || 'classroom';
@@ -358,15 +381,27 @@ function create(host, script){
         const was = rest.has(id); act(enter(id, d || {}), was ? (d || {}) : {...(d || {}), at:null, shot:null});   /* stage directions change the resting state */
       }
       if(L.who != null && cast[L.who]) looked(enter(L.who, L), L.look);
+      if(j !== path[path.length - 1]) for(const q of parsed[j].cues) if(isStageCue(q)) stageCue(rest, off, q, L.who);   /* the line being shown plays its own as it is said */
     });
     const on = new Map();
     for(const [id, c] of rest) on.set(id, cloneC(c));
     const last = lines[path[path.length - 1]];
     if(last && last.who != null && on.has(last.who)){ const c = on.get(last.who); act(c, {...last, look:null}); on.delete(last.who); on.set(last.who, c); }
-    on.bg = bg; on.rest = rest;
+    on.bg = bg; on.rest = rest; on.off = off;
     return on;
   }
   function applyCue(cue){   /* during a line: the speaker's pose or face changes on screen */
+    if(isStageCue(cue)){   /* someone comes on or goes off: the resting cast changes, and the stage follows it */
+      stageCue(scene.rest, scene.off, cue, talk.who);
+      for(const id of [...scene.keys()]) if(!scene.rest.has(id) && id !== talk.who) scene.delete(id);
+      for(const [id, c] of scene.rest) if(!scene.has(id)) scene.set(id, cloneC(c));
+      const id = cue.spot || cue.enter;
+      if(id && scene.has(id) && id !== talk.who){ const r = scene.rest.get(id), c = scene.get(id); c.at = r.at; c.shot = r.shot; c.spot = r.spot; }
+      syncSprites();
+      for(const [id, c] of scene) if(!sprites.has(id) || id === (cue.spot || cue.enter)) drawSprite(id, c);
+      layout(scene, talk.insert ? null : talk.who);
+      if(!cue.pose && !cue.emotion) return;
+    }
     const c = talk.who != null && scene.get(talk.who); if(!c) return;
     if(cue.pose) c.data = HC.applyPose(c.data, cue.pose);
     face(c.data, cue.emotion);
@@ -503,6 +538,9 @@ function create(host, script){
     }
     s.el.classList.remove('full', 'medium', 'closeup'); s.el.classList.add(c.shot);
   }
+  function syncSprites(){   /* whoever is no longer on stage fades out */
+    for(const [id, s] of sprites) if(!scene.has(id)){ clearTimeout(s.blinkTimer); s.el.classList.add('out'); sprites.delete(id); setTimeout(() => s.el.remove(), 400); }
+  }
   function layout(scene, speaker){
     const groups = {left:[], center:[], right:[]};
     for(const [id, c] of scene) groups[c.at].push(id);
@@ -514,7 +552,7 @@ function create(host, script){
     for(const id of scene.keys()){ const s = sprites.get(id); if(s && id !== speaker) s.el.style.zIndex = z++; }
     for(const [id, s] of sprites){
       if(id === speaker) s.el.style.zIndex = 50;
-      s.el.classList.toggle('dim', !!speaker && id !== speaker && scene.has(id));
+      s.el.classList.toggle('dim', !!speaker && id !== speaker && scene.has(id) && !(scene.get(id) || {}).spot);   /* the spotlight stays bright */
     }
   }
 
@@ -727,7 +765,7 @@ function create(host, script){
     stage.classList.toggle('inserting', insert); stage.classList.toggle('insert-black', L.insert === 'black');
     stage.classList.toggle('think', think); stage.classList.toggle('past', past);
     boxEl.classList.toggle('narrate', who == null); boxEl.classList.toggle('think', think);
-    for(const [id, s] of sprites) if(!scene.has(id)){ clearTimeout(s.blinkTimer); s.el.classList.add('out'); sprites.delete(id); setTimeout(() => s.el.remove(), 400); }
+    syncSprites();
     for(const [id, c] of scene){
       if(prev && id === prev.id && id !== who && prev.from) settleSprite(id, c, prev.from);
       else drawSprite(id, c);

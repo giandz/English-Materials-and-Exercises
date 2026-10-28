@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-<title>At the Station — Intro</title>
+<title>At the Station — Wearing, Carrying, Holding</title>
 <script>
 (function(){
   try{
@@ -14,59 +14,53 @@
     document.documentElement.setAttribute('data-theme', theme);
     var fs = parseFloat(localStorage.getItem('font-size-preference'));
     if (fs >= 10 && fs <= 28) document.documentElement.style.setProperty('--fs-base', fs + 'px');
-  }catch(e){}
+  }catch(e){ /* localStorage/matchMedia unavailable — CSS media query still applies */ }
 })();
 </script>
 <link rel="stylesheet" href="house.css">
 <style>
-  /* Zero-specificity fallbacks: only apply if house.css is missing. */
-  :where(:root){
-    --color-background-primary:#fff; --color-background-tertiary:#eeeef0;
-    --color-background-info:#e6f1fb; --color-border-primary:#d4d4d8;
-    --text-primary:#1a1a1a; --text-secondary:#5b5b60; --text-muted:#8b8b90; --text-accent:#185fa5;
-    --surface-1:#f7f7f8; --surface-2:#fff; --border:#e3e3e6; --radius:12px;
-    --bad:#b0392f; --good:#2f7d3a;
-    --font-sans:-apple-system,BlinkMacSystemFont,"Segoe UI",Helvetica,Arial,sans-serif;
-    --font-mono:"SF Mono","JetBrains Mono",Menlo,Consolas,monospace;
-  }
-  :where(body){ font-family:var(--font-sans); color:var(--text-primary); background:var(--color-background-primary); margin:0; line-height:1.5; }
-  :where(.page){ max-width:1000px; margin:0 auto; padding:28px 20px 80px; }
-
-  /* Page-specific: everything is ic- prefixed. */
-  .ic-cast{ display:grid; grid-template-columns:repeat(3,minmax(0,1fr)); gap:10px; margin:10px 0 4px; }
-  .ic-cast figure{ margin:0; background:var(--surface-1); border:1px solid var(--border); border-radius:var(--radius); padding:14px 6px 8px; text-align:center; }
-  .ic-cast svg{ height:min(38vh,260px); width:auto; max-width:100%; overflow:visible; }
-  .ic-cast figcaption{ font-weight:600; margin-top:6px; }
-  .ic-setting{ color:var(--text-secondary); font-style:italic; margin:6px 0 14px; }
-  .ic-name{ font-size:0.72rem; font-weight:600; letter-spacing:.05em; text-transform:uppercase; color:var(--text-muted); margin:0 4px 2px; }
-  /* the lesson's own target language: always on, whatever the grammar toggle says */
-  .ic-target{ font-weight:700; text-decoration:underline; text-decoration-thickness:2px; text-underline-offset:3px; }
-  .ic-tools{ display:flex; flex-wrap:wrap; align-items:center; gap:10px; margin:6px 0 12px; }
-  /* contractions ('s, n't) and punctuation are already joined to the word before with no space, so they need no negative margin */
-  .ic-cast.ic-four{ grid-template-columns:repeat(4,minmax(0,1fr)); }
-  .ic-cast.ic-four svg{ height:min(34vh,220px); }
-  @media (max-width:560px){ .ic-cast.ic-four{ grid-template-columns:repeat(2,minmax(0,1fr)); } }
+/* This lesson's own target language (wearing · carrying · holding): always on, not part of the grammar toggle.
+   An underline takes up no room, so the line never reflows when the toggle is pressed. */
+.target-verb{ text-decoration:underline; text-decoration-thickness:2px; text-underline-offset:3px; }
+/* Ben's family: one card per person, drawn by the character engine */
+.family{ display:grid; grid-template-columns:repeat(3, minmax(0, 1fr)); gap:10px; margin:0 0 1rem; }
+.family figure{ margin:0; background:var(--surface-1); border:1px solid var(--border); border-radius:var(--radius); padding:12px 6px 8px; text-align:center; }
+.family svg{ height:min(34vh, 15rem); width:auto; max-width:100%; overflow:visible; display:block; margin:0 auto; }
+.family figcaption{ font-size:0.8667rem; font-weight:600; margin-top:6px; }
+.family figcaption small{ display:block; font-weight:400; color:var(--text-secondary); }
+@media (max-width:520px){ .family svg{ height:min(26vh, 11rem); } }
 </style>
 </head>
 <body>
 <div class="page" id="page">
   <span class="cefr-tag cefr-a1">A1 · Beginner</span>
-  <h1>At the station</h1>
-  <p class="subtitle">Ana and Ben are waiting for Ben's family. Ana doesn't know them. Listen for <span class="ic-target">wearing</span>, <span class="ic-target">carrying</span> and <span class="ic-target">holding</span>.</p>
+  <h1>At the Station</h1>
+  <p class="subtitle">Ana and Ben are waiting for Ben’s family. Ana doesn’t know them. Look for <span class="target-verb">wearing</span>, <span class="target-verb">carrying</span> and <span class="target-verb">holding</span>.</p>
 
-  <div class="section-label">Before you read</div>
+  <div class="sec-div">Before you read</div>
+  <p class="subtitle">Read the three questions. Look for the answers in the conversation.</p>
   <div id="preQuestions"></div>
 
-  <div class="section-label">Ben's family</div>
-  <div class="ic-cast" id="icCast"></div>
+  <div class="sec-div">Ben’s family</div>
+  <div class="family" id="family"></div>
 
-  <div class="section-label">The conversation</div>
-  <div class="ic-tools"><button id="grammarToggle" class="grammar-toggle-btn" type="button">🎨 Show Grammar</button><div class="pos-legend"></div></div>
-  <p class="ic-setting">Ana and Ben are at the train station. The train is here.</p>
-  <div id="icTalk"></div>
+  <div class="sec-div">The conversation</div>
+  <button class="grammar-toggle-btn" id="grammarToggle">🎨 Show Grammar</button>
+  <div class="pos-legend"></div>
 
-  <div class="section-label">Check your answers</div>
+  <div class="setting-chip" data-vn-bg="trainstation"><span class="section-icon">🚉</span> Ana and Ben are at the train station. The train is here.</div>
+  <div class="conversation" id="conversation"></div>
+
+  <div class="sec-div">Check your answers</div>
+  <p class="subtitle">The same three questions. Choose the correct answer.</p>
   <div id="quiz"></div>
+
+  <div class="sec-div">Your turn</div>
+  <div class="rule-box">
+    <strong>Practise:</strong> Look at a person in the room (or in a photo). Your partner asks: <em>What is she wearing? Is she carrying anything? What is she holding?</em> Answer, then change roles.
+  </div>
+
+  <footer>At the Station — Present continuous: wearing, carrying, holding (A1)</footer>
 </div>
 
 <div id="theme-toggle-wrap">
@@ -75,69 +69,89 @@
   </button>
 </div>
 <script src="house.js"></script>
-
-<!-- HouseCharacter engine (shared file) -->
 <script src="house-character.js"></script>
-
 <script>
-(function(){
-/* ── Intro conversation: wearing · carrying · holding ───────────────────── */
-const HC=HouseCharacter;
-/* the three people Ben describes — fixed, so the picture always matches the text */
-const mk=(o,j)=>{const d=Object.assign(HC.defaults(),o); /* a guitar is always shown in playing position: +45° grip, left hand on the neck, right hand over the strings */ if(d.held&&d.held.left==='guitar'){ d.heldLeftGrip=45; Object.assign(d.joints,{shoulderL:-13,elbowL:-120,wristL:-111,shoulderR:53,elbowR:-120,wristR:-47}); } Object.assign(d.joints,j||{}); return HC.normalize(d);};
-const CAST=[
-  ['Tom',mk({name:'Tom',bodyType:'male',skin:3,hairColor:'3-0',hairStyle:'short',upperGarment:'coat',upperColor:'#0066CC',lowerGarment:'trousers',lowerColor:'#666666',footwear:'shoes',
-     held:{left:'suitcase',right:'phone'}},{shoulderR:12,elbowR:-82})],
-  ['Lucy',mk({name:'Lucy',bodyType:'female',skin:3,hairColor:'5-7',hairStyle:'ponytail',upperGarment:'dress',upperColor:'#CC0000',footwear:'sandals',accessories:['backpack'],packColor:'#00CC66',mouth:'grin',eyebrows:'raised',
-     held:{left:'guitar',right:null}})],
-  ['Grandpa',mk({name:'Grandpa',bodyType:'male',skin:3,hairColor:'grey',hairStyle:'sidepart',facialHair:'moustache',eyewear:'glasses',headwear:'fedora',headwearColor:'#663300',height:2,weight:4,
-     upperGarment:'vest',upperColor:'#666666',lowerGarment:'chinos',footwear:'shoes',held:{left:null,right:'cake'}},{root:0,pelvis:0,torso:0,neck:0,shoulderL:-39,elbowL:98,wristL:51,shoulderR:43,elbowR:-108,wristR:-39,hipL:0,kneeL:0,ankleL:-35,hipR:0,kneeR:0,ankleR:35})]
-];
-document.getElementById('icCast').innerHTML=CAST.map(([n,d])=>`<figure>${HC.render(d,{fit:true})}<figcaption>${n}</figcaption></figure>`).join('');
+const HC = HouseCharacter;
 
-/* Each line: words tagged word|pos. A trailing * marks the target verbs. _ is a space inside one tag.
-   Tokens starting with ' or n't join the word before; plain punctuation joins too. */
-const A=['a','👩‍🦰','Ana'], B=['b','👨‍🦱','Ben'];
-const TALK=[
-  [A,"Who|wh are|aux we|subject waiting|verb for|prep ?"],
-  [B,"My|det brother|noun Tom|noun and|conj my|det sister|noun Lucy|noun . And|conj my|det grandfather|noun ."],
-  [A,"I|subject do|aux n't|neg know|verb them|object . What|wh is|aux Tom|subject wearing|verb* ?"],
-  [B,"He|subject 's|aux wearing|verb* a|det blue|adj coat|noun and|conj grey|adj trousers|noun ."],
-  [A,"Is|aux he|subject carrying|verb* anything|object ?"],
-  [B,"Yes|none , he|subject 's|aux carrying|verb* a|det suitcase|noun . And|conj he|subject 's|aux holding|verb* a|det phone|noun ."],
-  [A,"I|subject can|aux see|verb him|object ! And|conj Lucy|noun ? What|wh 's|aux she|subject wearing|verb* ?"],
-  [B,"She|subject 's|aux wearing|verb* a|det red|adj dress|noun . She|subject 's|aux carrying|verb* a|det backpack|noun ."],
-  [A,"Is|aux she|subject holding|verb* an|det umbrella|noun ?"],
-  [B,"No|neg , she|subject is|aux n't|neg . She|subject 's|aux holding|verb* a|det guitar|noun !"],
-  [A,"A|det guitar|noun ? Oh|none yes|none ! And|conj who|wh 's|aux that|det man|noun ? He|subject 's|aux wearing|verb* a|det brown|adj hat|noun ."],
-  [B,"That|subject 's|aux my|det grandfather|noun . Look|verb — he|subject 's|aux carrying|verb* a|det cake|noun for|prep us|object !"],
-  [A,"Great|adj ! I|subject 'm|aux not|neg carrying|verb* anything|object . I|subject can|aux help|verb him|object ."]
-];
-function line([who,text]){
-  let html='';
-  text.split(' ').forEach((tok,i)=>{
-    const [w,p]=tok.split('|'), word=w.replace(/_/g,' '), glue=i===0||/^('|n't|[.,!?])/.test(word);
-    const target=p&&p.endsWith('*'), pos=p&&p.replace('*','');
-    const joined=/^('|n't)/.test(word);   /* contractions sit tight against the word before */
-    html+=(glue?'':' ')+(pos?`<span class="pos-hl pos-${pos}${target?' ic-target':''}${joined?' ic-glue':''}">${word}</span>`:`<span class="ic-punct">${word}</span>`);
-  });
-  return `<div class="bubble-wrap${who[0]==='b'?' right':''}"><div class="avatar av-${who[0]}">${who[1]}</div><div class="bubble-col"><span class="ic-name">${who[2]}</span><div class="bubble ${who[0]==='b'?'right':'left'}">${html}</div></div></div>`;
-}
-document.getElementById('icTalk').innerHTML=TALK.map(line).join('');
+/* ── the people: fixed, so the pictures always match the text ──
+   window.VNPeople gives them to the 🎬 visual novel too (vn-adapter.js): Ana and Ben by name when they speak, and
+   Tom, Lucy and Grandpa when a line mentions them (data-vn-spot, below). */
+const person = (o, joints) => {
+  const d = Object.assign(HC.defaults(), o);
+  /* a guitar is always shown in playing position: left hand on the neck, right hand over the strings */
+  if (d.held && d.held.left === 'guitar') { d.heldLeftGrip = 45; Object.assign(d.joints, { shoulderL: -13, elbowL: -120, wristL: -111, shoulderR: 53, elbowR: -120, wristR: -47 }); }
+  Object.assign(d.joints, joints || {});
+  return HC.normalize(d);
+};
+const PEOPLE = {
+  ana: { name: 'Ana', color: '#2f6db0', character: person({ name: 'Ana', bodyType: 'female', skin: 2, eyeColor: 7, hairColor: '7-77', hairStyle: 'long',
+    faceShape: 'heart', eyeType: 'upturned', noseType: 'button', earType: 'oval',
+    upperGarment: 'jacketopen', upperColor: '#2f6db0', lowerGarment: 'jeans', lowerColor: '#000066', footwear: 'boots' }) },
+  ben: { name: 'Ben', color: '#7a3db8', character: person({ name: 'Ben', bodyType: 'male', skin: 3, eyeColor: 12, hairColor: '3-0', hairStyle: 'curly', facialHair: 'stubble',
+    faceShape: 'oval', eyeType: 'almond', noseType: 'roman', earType: 'oval',
+    upperGarment: 'hoodie', upperColor: '#7a3db8', lowerGarment: 'chinos', footwear: 'sneakers' }) },
+  tom: { name: 'Tom', role: 'Ben’s brother', color: '#0066CC', character: person({ name: 'Tom', bodyType: 'male', skin: 3, hairColor: '3-0', hairStyle: 'short',
+    faceShape: 'square', eyeType: 'almond', noseType: 'roman', earType: 'rectangular',
+    upperGarment: 'coat', upperColor: '#0066CC', lowerGarment: 'trousers', lowerColor: '#666666', footwear: 'shoes',
+    held: { left: 'suitcase', right: 'phone' } }, { shoulderR: 12, elbowR: -82 }) },
+  lucy: { name: 'Lucy', role: 'Ben’s sister', color: '#CC0000', character: person({ name: 'Lucy', bodyType: 'female', skin: 3, hairColor: '5-7', hairStyle: 'ponytail',
+    faceShape: 'round', eyeType: 'round', noseType: 'turnedup', earType: 'round',
+    upperGarment: 'dress', upperColor: '#CC0000', footwear: 'sandals', accessories: ['backpack'], packColor: '#00CC66', mouth: 'grin', eyebrows: 'raised',
+    held: { left: 'guitar', right: null } }) },
+  grandpa: { name: 'Grandpa', role: 'Ben’s grandfather', color: '#663300', character: person({ name: 'Grandpa', bodyType: 'male', skin: 3, hairColor: 'grey', hairStyle: 'sidepart', facialHair: 'moustache',
+    faceShape: 'oblong', eyeType: 'hooded', noseType: 'bulbous', earType: 'oval',
+    eyewear: 'glasses', headwear: 'fedora', headwearColor: '#663300', height: 2, weight: 4,
+    upperGarment: 'vest', upperColor: '#666666', lowerGarment: 'chinos', footwear: 'shoes', held: { left: null, right: 'cake' } },
+    { shoulderL: -39, elbowL: 98, wristL: 51, shoulderR: 43, elbowR: -108, wristR: -39 }) }
+};
+window.VNPeople = PEOPLE;
 
-const CQ_ITEMS=[
-  {q:'What is Tom wearing?',opts:['A red coat and blue trousers','A blue coat and grey trousers','A grey coat and a brown hat'],correct:1},
-  {q:'What is Lucy holding?',opts:['An umbrella','A backpack','A guitar'],correct:2},
-  {q:'Who is carrying a cake?',opts:['Tom','Ben\'s grandfather','Lucy'],correct:1}
-];
-if(window.HouseComprehension) HouseComprehension.build({pre:'preQuestions',quiz:'quiz',items:CQ_ITEMS});
-else {   /* house.js not loaded (file opened on its own): show the questions plainly */
-  document.getElementById('preQuestions').innerHTML='<ol>'+CQ_ITEMS.map(c=>`<li>${c.q}</li>`).join('')+'</ol>';
-  document.getElementById('quiz').innerHTML='<ol>'+CQ_ITEMS.map(c=>`<li>${c.q}<ul>${c.opts.map(o=>`<li>${o}</li>`).join('')}</ul></li>`).join('')+'</ol>';
-}
+document.getElementById('family').innerHTML = ['tom', 'lucy', 'grandpa'].map(id => {
+  const p = PEOPLE[id];
+  return '<figure>' + HC.render(p.character, { fit: true }) + '<figcaption>' + p.name + '<small>' + p.role + '</small></figcaption></figure>';
+}).join('');
 
-})();
+/* ── the conversation ──
+   Markup in the lines:  [words/pos] grammar colour · [words/verb*] a target verb (always underlined) ·
+   @id{words} a mention of one of Ben's family: in the visual novel that person comes to the middle of the
+   stage, in a full shot, as the words are said (data-vn-spot) */
+const SPEAKERS = { Ana: { avatar: '👩‍🦰', side: 'left' }, Ben: { avatar: '👨‍🦱', side: 'right' } };
+const LINES = [
+  ['Ana', '[Who/wh] [are/aux] [we/subject] [waiting/verb] [for/prep]?'],
+  ['Ben', '[My/det] [brother/noun] [Tom/noun] [and/conj] [my/det] [sister/noun] [Lucy/noun]. [And/conj] [my/det] [grandfather/noun].'],
+  ['Ana', '[I/subject] [don’t/aux] [know/verb] [them/object]. [What/wh] [is/aux] [Tom/subject] [wearing/verb*]?'],
+  ['Ben', '[He/subject][’s/aux] [wearing/verb*] [a/det] [blue/adj] [coat/noun] [and/conj] [grey/adj] [trousers/noun].'],
+  ['Ana', '[Is/aux] [he/subject] [carrying/verb*] [anything/object]?'],
+  ['Ben', '[Yes/none], [he/subject][’s/aux] [carrying/verb*] [a/det] [suitcase/noun]. [And/conj] [he/subject][’s/aux] [holding/verb*] [a/det] [phone/noun].'],
+  ['Ana', '@tom{[I/subject] [can/aux] [see/verb] [him/object]}! [And/conj] [Lucy/noun]? [What/wh][’s/aux] [she/subject] [wearing/verb*]?'],
+  ['Ben', '[She/subject][’s/aux] [wearing/verb*] [a/det] [red/adj] [dress/noun]. [She/subject][’s/aux] [carrying/verb*] [a/det] [backpack/noun].'],
+  ['Ana', '[Is/aux] [she/subject] [holding/verb*] [an/det] [umbrella/noun]?'],
+  ['Ben', '[No/neg], [she/subject] [isn’t/aux]. [She/subject][’s/aux] [holding/verb*] @lucy{[a/det] [guitar/noun]}!'],
+  ['Ana', '@lucy{[A/det] [guitar/noun]? [Oh/none], [yes/none]}! [And/conj] [who/wh][’s/aux] @grandpa{[that/det] [man/noun]? [He/subject][’s/aux] [wearing/verb*] [a/det] [brown/adj] [hat/noun]}.'],
+  ['Ben', '[That/subject][’s/aux] [my/det] [grandfather/noun]. [Look/verb] — [he/subject][’s/aux] [carrying/verb*] [a/det] [cake/noun] [for/prep] [us/object]!'],
+  ['Ana', '[Great/adj]! [I/subject][’m/aux] [not/neg] [carrying/verb*] [anything/object]. [I/subject] [can/aux] [help/verb] [him/object].']
+];
+const mark = s => s
+  .replace(/@(\w+)\{((?:[^{}]|\{[^}]*\})*)\}/g, '<span class="mention" data-vn-spot="$1">$2</span>')
+  .replace(/\[([^\/\]]+)\/(\w+)(\*?)\]/g, (m, w, pos, t) => '<span class="pos-hl pos-' + pos + (t ? ' target-verb' : '') + '">' + w + '</span>');
+const conv = document.getElementById('conversation');
+LINES.forEach(([who, text]) => {
+  const s = SPEAKERS[who], right = s.side === 'right';
+  conv.insertAdjacentHTML('beforeend',
+    '<div class="bubble-wrap' + (right ? ' right' : '') + '">' +
+      '<div class="avatar ' + (right ? 'av-b' : 'av-a') + '">' + s.avatar + '</div>' +
+      '<div class="bubble-col"><div class="bname' + (right ? ' right' : '') + '">' + who + '</div>' +
+      '<div class="bubble ' + (right ? 'right' : 'left') + '">' + mark(text) + '</div></div>' +
+    '</div>');
+});
+
+const CQ_ITEMS = [
+  { q: 'What is Tom wearing?', opts: ['A red coat and blue trousers', 'A blue coat and grey trousers', 'A grey coat and a brown hat'], correct: 1 },
+  { q: 'What is Lucy holding?', opts: ['An umbrella', 'A backpack', 'A guitar'], correct: 2 },
+  { q: 'Who is carrying a cake?', opts: ['Tom', 'Ben’s grandfather', 'Lucy'], correct: 1 }
+];
+HouseComprehension.build({ pre: 'preQuestions', quiz: 'quiz', items: CQ_ITEMS });
 </script>
-<script>if(window.HouseGrammar) HouseGrammar.init();</script>
+<script>HouseGrammar.init();</script>
 </body>
 </html>

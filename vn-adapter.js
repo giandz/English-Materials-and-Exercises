@@ -23,6 +23,13 @@
                       Grandma, Grandpa, Daniel, Sofia…), then one made up from the avatar
                       (👩 👨 👧 👦 👵 👴, skin tone) — always the same for the same name.
                       A child's avatar (👦 👧) makes the person child-sized.
+                      A page can give its own people: window.VNPeople = { ben: { name:'Ben', color:'#…',
+                      character:{ … } }, tom: { … } } (by lower-case name). They come first, for speakers and
+                      for anyone a line brings on stage (below).
+     who is talked about  a word or phrase in a bubble marked data-vn-spot="tom" brings Tom (from
+                      window.VNPeople) to the middle of the stage in a full shot as it is said, in place
+                      of whoever was there before; data-vn-enter="id" and data-vn-leave="id" bring
+                      someone on (beside the others) or take them off. They are house-vn.js stage cues.
      the extras       pictures under a line (thought bubbles, memories) are shown under the
                       stage while that line is said.
    The choice (chat or visual novel) is remembered for every page.
@@ -170,6 +177,20 @@
       ${[420, 860, 1300].map(x => `<path d="M${x},90V520" stroke="#f5c518" stroke-width="12"/>`).join('')}<path d="M0,110H1600" stroke="#9aa5ab" stroke-width="8"/>${[150, 350, 1150, 1350].map(x => `<path d="M${x},110V160" stroke="#9aa5ab" stroke-width="4"/><circle cx="${x}" cy="170" r="12" fill="none" stroke="#f5c518" stroke-width="5"/>`).join('')}`);
   }
 
+  /* a railway platform: the train waiting behind the platform edge, a canopy, a clock and the platform sign */
+  function trainstation() {
+    const car = x => `<g><rect x="${x}" y="230" width="700" height="270" rx="26" fill="#d94b3d"/><rect x="${x}" y="230" width="700" height="56" rx="26" fill="#b93a2e"/><rect x="${x}" y="430" width="700" height="22" fill="#f2f2f2"/>`
+      + [40, 190, 470, 560].map(d => `<rect x="${x + d}" y="300" width="${d > 400 ? 70 : 120}" height="90" rx="10" fill="#bfe2f2" stroke="#7d2a22" stroke-width="6"/>`).join('')
+      + `<rect x="${x + 330}" y="300" width="110" height="200" rx="8" fill="#b93a2e" stroke="#7d2a22" stroke-width="6"/><path d="M${x + 385},304V496" stroke="#7d2a22" stroke-width="6"/><rect x="${x + 340}" y="320" width="36" height="70" rx="4" fill="#bfe2f2"/><rect x="${x + 394}" y="320" width="36" height="70" rx="4" fill="#bfe2f2"/></g>`;
+    return svg(`<rect width="1600" height="900" fill="#dfe6ea"/><rect width="1600" height="200" fill="#c4ced5"/>
+      ${[0, 1, 2, 3, 4, 5, 6, 7].map(i => `<path d="M${i * 220 + 40},0L${i * 220 + 150},160" stroke="#9aa5ab" stroke-width="10"/>`).join('')}<rect y="150" width="1600" height="30" fill="#7d8a94"/>
+      ${car(-60)}${car(660)}<rect x="640" y="250" width="20" height="230" fill="#444"/>${car(1380)}
+      <rect y="496" width="1600" height="26" fill="#5f6870"/>${tiles('#b9c1c6', '#a5aeb4')}<rect y="540" width="1600" height="16" fill="#f5c518"/>
+      <g><path d="M560,180V250M1040,180V250" stroke="#5f6870" stroke-width="6"/>${sign(520, 222, 560, 'PLATFORM 2', '#1e4d8c', '#fff', 40)}</g>
+      <g><path d="M1300,180V205" stroke="#5f6870" stroke-width="6"/><circle cx="1300" cy="250" r="46" fill="#fff" stroke="#333" stroke-width="8"/><path d="M1300,250V218M1300,250L1322,262" stroke="#222" stroke-width="6" stroke-linecap="round"/></g>
+      <g><rect x="120" y="380" width="160" height="22" rx="6" fill="#6e4426"/><rect x="120" y="402" width="160" height="16" rx="6" fill="#6e4426"/><path d="M135,418V520M265,418V520" stroke="#444" stroke-width="8"/></g>`);
+  }
+
   /* places in town */
   const counter = (x, w, col, top) => `<rect x="${x}" y="370" width="${w}" height="22" fill="${top || '#6e4426'}"/><rect x="${x + 10}" y="392" width="${w - 20}" height="128" fill="${col}"/>`;
   const sign = (x, y, w, txt, bg, fg, fs) => `<rect x="${x}" y="${y}" width="${w}" height="${(fs || 34) * 1.6}" rx="10" fill="${bg}"/><text x="${x + w / 2}" y="${y + (fs || 34) * 1.15}" text-anchor="middle" font-family="sans-serif" font-size="${fs || 34}" font-weight="700" fill="${fg}">${txt}</text>`;
@@ -297,11 +318,12 @@
     livingroom: () => livingroom(), home: () => livingroom(),
     grandmahome: () => livingroom({ wall: '#f1e4d8', paper: '#d9b8a8', sofa: '#8c5a7a', curtain: '#6a8f5a', rug: '#b07a6a' }),
     kitchen, bedroom, backyard, clothesshop, warehouse, frontdoor, hallway, rainynight, beach, bus,
-    airport, museum, library, restaurant, hospital, supermarket, cinema, hotel, pharmacy, street, gasstation
+    airport, museum, library, restaurant, hospital, supermarket, cinema, hotel, pharmacy, street, gasstation, trainstation, station: () => trainstation()
   };
   /* keywords → a scene, tried in this order (the setting chip and its section title first, then the page's title and subtitle) */
   const PLACES = [
     ['airport', /airport|✈️|boarding pass|gate \d|passenger|flight/],
+    ['trainstation', /train station|railway station|🚉|🚆|🚂|\bplatform\b|\btrains?\b/],
     ['museum', /museum|🏛️|exhibition|gallery|painting/],
     ['library', /library|📚|librarian|borrow/],
     ['restaurant', /restaurant|🍽️|waiter|menu|having dinner|eat out/],
@@ -430,10 +452,12 @@
       const hit = Object.values(DH.CAST).find(p => [p.name, p.role].some(v => v && [low, (inner || '').toLowerCase()].includes(String(v).toLowerCase())));
       if (hit) c = JSON.parse(JSON.stringify(hit.c));
     }
+    const own = window.VNPeople && (window.VNPeople[id] || window.VNPeople[low]);
+    if (own && own.character) c = JSON.parse(JSON.stringify(own.character));
     if (!c && PP && PP.PEOPLE && PP.PEOPLE[id]) c = JSON.parse(JSON.stringify(PP.PEOPLE[id].hc));
     if (!c && CAST[id]) c = JSON.parse(JSON.stringify(CAST[id]));
     if (!c) { c = madeUp(key, avatar || ''); dress(c, low); }
-    if (CHILD.test(avatar || '')) Object.assign(c, KID);
+    if (CHILD.test(avatar || '') && !own) Object.assign(c, KID);
     if (OLD.test(avatar || '') && !/grey|white/.test(c.hairColor || '')) c.hairColor = 'grey';
     c.name = key;
     return features(c, low);
@@ -454,6 +478,7 @@
     const walk = n => {
       if (n.nodeType === 3) { out.push(n.nodeValue); return; }
       if (n.nodeType !== 1) return;
+      for (const k of ['spot', 'enter', 'leave']) { const v = n.getAttribute('data-vn-' + k); if (v) out.push('\u0001' + k + ':' + v.toLowerCase().replace(/[^a-z0-9_-]/g, '') + '\u0002'); }
       const m = n.classList.contains('pos-hl') && [...n.classList].map(c => (c.match(/^pos-(\w+)$/) || [])[1]).find(c => c && c !== 'hl');
       if (m) {
         const raw = n.textContent, t = raw.replace(/\s+/g, ' ').trim();
@@ -467,7 +492,7 @@
       if (n.classList.contains('ss-unit')) out.push(' ');   /* stick-figure words: a space between units */
     };
     el.childNodes.forEach(walk);
-    return out.join('').replace(/[{}]/g, '').replace(/\s+/g, ' ').replace(/\s+([,.!?;:…])/g, '$1').replace(/\s+(\[[,.!?;:…]+\/\w+\])/g, '$1').trim();
+    return out.join('').replace(/[{}]/g, '').replace(/\s+/g, ' ').replace(/\s+([,.!?;:…])/g, '$1').replace(/\s+(\[[,.!?;:…]+\/\w+\])/g, '$1').trim().replace(/\u0001/g, '{').replace(/\u0002/g, '}');
   }
   function linesOf(container) {
     return [...container.querySelectorAll('.bubble-wrap')].map(w => {
@@ -568,6 +593,13 @@
         }
         cast[id] = { name: l.name, color: tabColour(l.colour || c.upperColor), lang: 'en', wpm: wpm(), character: c };
       }
+    }
+    /* people the lines bring on stage ({spot:id} …) who never speak: from the page's window.VNPeople */
+    const VP = window.VNPeople || {};
+    for (const l of lines) for (const [, id] of (l.say || '').matchAll(/\{(?:spot|enter|leave):([\w-]+)/g)) {
+      if (cast[id] || !VP[id]) continue;
+      const c = JSON.parse(JSON.stringify(VP[id].character || {})); c.name = VP[id].name || id;
+      cast[id] = { name: VP[id].name || id, color: tabColour(VP[id].color || c.upperColor), lang: 'en', wpm: wpm(), character: features(c, id) };
     }
     /* who is on stage: the first speaker on each side from the start; someone new on a side comes in when they
        first speak, and whoever stood there leaves if they have nothing more to say (the airport worker makes
