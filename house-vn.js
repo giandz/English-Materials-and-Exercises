@@ -140,10 +140,16 @@ const CSS = `
   background:color-mix(in srgb, var(--surface-2, #fff) 96%, transparent); border:2px solid var(--text-accent, #185fa5);
   border-radius:14px; box-shadow:0 6px 18px rgba(0,0,0,.18); }
 /* the name tab sits over the speaker's side: left, centre or right (data-at on the box) */
-.vn-name{ position:absolute; left:4%; transform:translateX(0); transition:left .35s ease, transform .35s ease; bottom:calc(100% - 6px); padding:.15em .9em .2em; border-radius:9px 9px 0 0;
+.vn-name{ position:absolute; left:4%; transform:translateX(0); bottom:calc(100% - 6px); padding:.15em .9em .2em; border-radius:9px 9px 0 0;
   white-space:nowrap; max-width:33.333%; box-sizing:border-box; overflow:hidden; text-overflow:ellipsis;   /* one line, as long as the name needs, up to a third of the box */
-  font-weight:700; font-size:clamp(.8rem, 1.9vw, 1.05rem); color:#fff; background:var(--vn-name, var(--text-accent, #185fa5)); }
-.vn-name:empty{ display:none; }
+  font-weight:700; font-size:clamp(.8rem, 1.9vw, 1.05rem); color:#fff; background:var(--vn-name, var(--text-accent, #185fa5));
+  display:grid; grid-template-columns:minmax(0, 1fr); width:max-content;   /* as wide as the name (up to the cap), wherever the tab stands */
+  /* from one speaker to the next the tab slides over, its colour goes linearly from one speaker's to the other's,
+     its width follows the name, and the two names crossfade on the way, all over the same time */
+  transition:left var(--vn-tab, .45s) ease, transform var(--vn-tab, .45s) ease, background-color var(--vn-tab, .45s) linear, width var(--vn-tab, .45s) ease; }
+.vn-name.none{ display:none; }
+.vn-nm{ grid-area:1 / 1; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; opacity:1; transition:opacity var(--vn-tab, .45s) linear; }
+.vn-nm.fade{ opacity:0; }
 .vn-text{ position:relative; font-size:clamp(.9rem, 2.3vw, 1.3rem); line-height:1.45; color:var(--text-primary, #1a1a1a); height:100%;
   overflow-y:auto; overscroll-behavior:contain; touch-action:pan-y; scrollbar-width:thin; padding-right:2.2em; box-sizing:border-box; }
 .vn-text .hid{ visibility:hidden; }
@@ -313,7 +319,7 @@ function create(host, script){
   const root = document.createElement('div'); root.className = 'vn';
   root.innerHTML = `<div class="vn-stage" tabindex="0" role="group" aria-label="Scene. Click, Space or Enter to go on.">
       <div class="vn-bg"></div><div class="vn-cast"></div><div class="vn-insert" aria-hidden="true"><div class="vn-insert-text"></div></div>
-      <div class="vn-box"><div class="vn-name"></div><div class="vn-text" aria-hidden="true"></div><div class="vn-sr" aria-live="polite"></div>
+      <div class="vn-box"><div class="vn-name none"></div><div class="vn-text" aria-hidden="true"></div><div class="vn-sr" aria-live="polite"></div>
         <button type="button" class="vn-next" title="Next (Space, Enter or a click)" aria-label="Next">🔽</button></div></div>
     <div class="vn-bar">
       <button type="button" data-act="restart" title="Start again (Home)"><span class="ic" aria-hidden="true">⏮️</span><span class="lb">Start</span></button>
@@ -537,6 +543,29 @@ function create(host, script){
       if(!s.anim) paint(s, s.nums, s.vb);   /* only the face or clothes changed (a mouth while talking): draw it now */
     }
     s.el.classList.remove('full', 'medium', 'closeup'); s.el.classList.add(c.shot);
+  }
+  /* ── the name tab: a new name crossfades with the old one while the tab slides and changes colour ── */
+  const TAB = 0.45;
+  root.style.setProperty('--vn-tab', (REDUCED ? 0 : TAB) + 's');
+  let nameNow = '', nameTimer = 0;
+  function setName(t){
+    if(t === nameNow) return;
+    const had = nameNow; nameNow = t;
+    clearTimeout(nameTimer);
+    const tidy = () => { nameEl.querySelectorAll('.vn-nm.fade').forEach(n => n.remove()); nameEl.style.width = ''; };
+    if(!t){ nameEl.classList.add('none'); nameEl.innerHTML = ''; nameEl.style.width = ''; return; }
+    const el = document.createElement('span'); el.className = 'vn-nm'; el.textContent = t;
+    if(!had || REDUCED){ nameEl.innerHTML = ''; nameEl.appendChild(el); nameEl.classList.remove('none'); nameEl.style.width = ''; return; }   /* no one to change from: it simply appears */
+    const w0 = nameEl.getBoundingClientRect().width, olds = [...nameEl.querySelectorAll('.vn-nm')];
+    /* the width the new name needs (up to the cap): measured with the old names out of the grid for a moment
+       (not display:none, which would cut their fade short) */
+    el.classList.add('fade'); olds.forEach(n => n.style.position = 'absolute'); nameEl.style.width = ''; nameEl.appendChild(el);
+    const w1 = nameEl.getBoundingClientRect().width;
+    olds.forEach(n => { n.style.position = ''; n.classList.add('fade'); });
+    nameEl.style.width = w0 + 'px';
+    void nameEl.offsetWidth;   /* start from here */
+    el.classList.remove('fade'); nameEl.style.width = w1 + 'px';
+    nameTimer = setTimeout(tidy, TAB * 1000 + 60);
   }
   function syncSprites(){   /* whoever is no longer on stage fades out */
     for(const [id, s] of sprites) if(!scene.has(id)){ clearTimeout(s.blinkTimer); s.el.classList.add('out'); sprites.delete(id); setTimeout(() => s.el.remove(), 400); }
@@ -773,7 +802,7 @@ function create(host, script){
     layout(scene, insert ? null : who);
     for(const [id, sp] of sprites) sp.el.classList.toggle('thinker', think && id === who);
     const name = who != null ? (cm.name || who) : '', c0 = who != null ? scene.get(who) : null;
-    nameEl.textContent = insert || who == null ? '' : think ? `${name} 💭` : name;
+    setName(insert || who == null ? '' : think ? `${name} 💭` : name);
     if(c0) boxEl.dataset.at = c0.at;   /* where the speaker stands as they say this line */
     root.style.setProperty('--vn-name', (who != null && cm.color) || '');
     const {text, cues, spans} = fill(parsed[i]), c = who != null ? scene.get(who) : null;
