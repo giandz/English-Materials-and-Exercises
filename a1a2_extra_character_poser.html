@@ -108,6 +108,7 @@
       <div class="cp-panel">
         <h2>Head</h2>
         <div class="cp-row"><span class="cp-lab">Facing</span><div class="cp-seg" id="cpHead"></div></div>
+        <div class="cp-row"><label for="cpNod">Head nod<small id="cpNodLab"></small></label><input id="cpNod" type="range" min="-30" max="30" step="1"></div>
         <div class="cp-row"><span class="cp-lab">Eyes<small id="cpEyeLab"></small></span><div class="cp-swatches" id="cpEye"></div></div>
         <div class="cp-row"><span class="cp-lab">Hair colour<small id="cpHairLab"></small></span><div class="cp-swatches" id="cpHairCol"></div></div>
         <div class="cp-row"><label for="cpHairStyle">Hair style</label><select class="cp-sel" id="cpHairStyle"></select></div>
@@ -239,7 +240,7 @@
   swatches($('cpSkin'),HC.SKIN,'skin',$('cpSkinLab'));
   swatches($('cpEye'),HC.EYES,'eyeColor',$('cpEyeLab'));
   swatches($('cpHairCol'),HC.HAIR,'hairColor',$('cpHairLab'));
-  opts($('cpHeight'),HC.HEIGHTS.map((l,i)=>[i+1,`${i+1} · ${l}`]));
+  opts($('cpHeight'),(HC.HEIGHT_OPTIONS||HC.HEIGHTS.map((l,i)=>[i+1,l])).map(([v,l])=>[v,`${v} · ${l}`]));
   opts($('cpWeight'),HC.WEIGHTS.map((l,i)=>[i+1,`${i+1} · ${l}`]));
   opts($('cpHairStyle'),HC.HAIR_STYLES); opts($('cpFacial'),HC.FACIAL);
   const items=Object.entries(HC.ITEMS).map(([k,v])=>[k,v.label]);
@@ -343,6 +344,7 @@
   $('cpPreset').addEventListener('change',e=>{ if(e.target.value){HC.applyPose(ch,e.target.value);update();} });
   $('cpPTurn').addEventListener('input',e=>{const v=(ch.back?-1:1)*e.target.value||0; ch.pelvisOrientation=v;
     ch.torsoOrientation=Math.max(v-90,Math.min(v+90,ch.torsoOrientation)); $('cpPreset').value=''; update();});
+  $('cpNod').addEventListener('input',e=>{ch.headNod=+e.target.value||0;update();});
   $('cpTurn').addEventListener('input',e=>{ch.torsoOrientation=(ch.back?-1:1)*e.target.value||0;$('cpPreset').value='';update();});
   $('cpMirror').addEventListener('click',()=>{HC.mirror(ch);$('cpPreset').value='';update();});
   $('cpResetPose').addEventListener('click',()=>{HC.applyPose(ch,'standing');$('cpPreset').value='standing';update();});
@@ -419,6 +421,7 @@
     $('cpUpper').value=ch.upperGarment||''; $('cpLower').value=ch.lowerGarment||''; $('cpFoot').value=ch.footwear||''; syncOutfit();
     $('cpHeldL').value=ch.held.left||''; $('cpHeldR').value=ch.held.right||'';
     const sg=ch.back?-1:1; $('cpBack').checked=!!ch.back;
+    { const n=ch.headNod||0; $('cpNod').value=n; $('cpNod').disabled=ch.head!=='front'; $('cpNodLab').textContent=n===0?'Level':`${Math.abs(n)}° ${n>0?'chin down':'chin up'}`; }
     $('cpTurn').value=sg*ch.torsoOrientation; const t=sg*ch.torsoOrientation;
     const turnLab=t=>t===0?(ch.back?'Back':'Front'):Math.abs(t)===90?(t<0?'Profile, facing left':'Profile, facing right'):`${Math.abs(t)}° ${t<0?'left':'right'}`;
     $('cpTurnLab').textContent=turnLab(t); $('cpPTurn').value=sg*ch.pelvisOrientation; $('cpPTurnLab').textContent=turnLab(sg*ch.pelvisOrientation||0);
