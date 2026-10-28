@@ -1,0 +1,280 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<title>Present Perfect: already, yet, this week — Clarification</title>
+<script>
+(function(){
+  try{
+    var saved = localStorage.getItem('theme-preference');
+    var theme = (saved === 'light' || saved === 'dark')
+      ? saved
+      : ((window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches) ? 'dark' : 'light');
+    document.documentElement.setAttribute('data-theme', theme);
+    var fs = parseFloat(localStorage.getItem('font-size-preference'));
+    if (fs >= 10 && fs <= 28) document.documentElement.style.setProperty('--fs-base', fs + 'px');
+  }catch(e){ /* localStorage/matchMedia unavailable — CSS media query still applies */ }
+})();
+</script>
+<link rel="stylesheet" href="house.css">
+<style>
+/* to-do lists: ✔️ already done · ❌ not yet */
+.todo{ border:1px solid var(--color-border-tertiary); border-radius:12px; background:var(--surface-2); padding:8px 10px; min-width:0; }
+.todo-h{ font-size:.8rem; font-weight:700; color:var(--text-secondary); margin-bottom:4px; }
+.todo ul{ list-style:none; margin:0; padding:0; }
+.todo li{ display:flex; align-items:center; gap:7px; padding:3px 4px; border-radius:7px; font-size:.9rem; }
+.todo li + li{ border-top:.5px dashed var(--color-border-secondary); }
+.todo-e{ font-size:1.15rem; line-height:1; width:1.4em; text-align:center; flex:0 0 auto; }
+.todo-t{ flex:1 1 auto; }
+.todo-m{ flex:0 0 auto; font-size:.95rem; }
+.todo li.done .todo-t{ text-decoration:line-through; text-decoration-color:var(--good); color:var(--text-secondary); }
+.todo li.done{ background:var(--good-bg); }
+.todo-f{ font-size:.75rem; color:var(--text-muted); margin-top:4px; }
+.todo-grid{ display:grid; grid-template-columns:repeat(auto-fit, minmax(230px, 1fr)); gap:10px; margin-bottom:1rem; }
+
+/* the target language is the lesson, so it stays coloured (not a grammar-toggle colour) */
+.tgt{ color:var(--text-accent); font-weight:700; }
+.todo-say{ font-size:.9rem; margin:6px 2px 0; line-height:1.6; }
+.todo-say b{ color:var(--text-accent); }
+.when{ display:grid; grid-template-columns:repeat(2, minmax(0,1fr)); gap:10px; margin-bottom:1rem; }
+@media (max-width:560px){ .when{ grid-template-columns:1fr; } }
+.when > div{ border:1px solid var(--color-border-tertiary); border-radius:12px; background:var(--surface-2); padding:9px 11px; font-size:.9rem; }
+.when h3{ margin:0 0 4px; font-size:.9rem; }
+.when .words{ font-size:.8rem; color:var(--text-secondary); margin-bottom:6px; }
+.when p{ margin:0 0 4px; }
+.yy{ display:grid; grid-template-columns:repeat(2, minmax(0,1fr)); gap:10px; margin-bottom:1rem; }
+@media (max-width:560px){ .yy{ grid-template-columns:1fr; } }
+.yy > div{ border:1px solid var(--color-border-tertiary); border-radius:12px; background:var(--surface-2); padding:9px 11px; font-size:.9rem; }
+.yy h3{ margin:0 0 4px; font-size:.95rem; }
+.yy p{ margin:0 0 4px; line-height:1.6; }
+.v3t{ display:grid; grid-template-columns:repeat(auto-fill, minmax(150px, 1fr)); gap:5px; margin:0 0 10px; }
+.v3t > div{ padding:4px 8px; border-radius:7px; background:var(--surface-2); border:1px solid var(--color-border-tertiary); font-size:.85rem; }
+.rule-box p{ margin:0 0 6px; }
+.rule-box p:last-child{ margin-bottom:0; }
+.rule-box h4{ margin:.6rem 0 .3rem; font-size:.8667rem; color:var(--text-primary); }
+.rule-box h4:first-child{ margin-top:0; }
+</style>
+</head>
+<body>
+<div class="page" id="page">
+  <span class="cefr-tag cefr-a1a2">A1/A2 · Elementary</span>
+  <h1>Present Perfect: already, yet, this week</h1>
+  <p class="subtitle">I’ve already fed the dog. · I haven’t paid the bill yet. · I’ve sent ten emails this week.</p>
+
+  <div class="sec-div">Look</div>
+  <p class="subtitle">It’s Friday evening. Look at Leo’s and Mia’s lists for today. ✔️ = done · ❌ = not done</p>
+  <div class="todo-grid" id="lists"></div>
+
+  <div class="sec-div">The time isn’t finished</div>
+  <p class="subtitle">Today, this week, this month and this year are not finished. We are still in them.</p>
+  <div id="timeline"></div>
+  <div class="when" id="when"></div>
+
+  <div class="sec-div">already and yet</div>
+  <div class="yy" id="yy"></div>
+
+  <div class="sec-div">Check the meaning</div>
+  <p class="subtitle">Read the sentence. Answer the questions.</p>
+  <div id="ccq"></div>
+
+  <div class="sec-div">Look at the form</div>
+  <p class="subtitle">What is each part of the sentence? Drag a label (or tap a label, then tap a box).</p>
+  <div class="score-bar"><span>Correct: <strong id="fcScore">0</strong> / <span id="fcTotal">0</span></span></div>
+  <div id="formClarf"></div>
+
+  <div class="rule-box" id="ruleBox"></div>
+
+  <div class="sec-div">Common mistakes</div>
+  <div id="mistakes"></div>
+
+  <div class="sec-div">Error hunt</div>
+  <p class="subtitle">Some sentences have a mistake. Some are correct! Tap a word — or a space between words — to fix it. Then press OK.</p>
+  <div class="score-bar"><span>Done: <strong id="errorScore">0</strong> / <span id="errorTotal">0</span></span></div>
+  <div id="errorHuntItems"></div>
+
+  <footer>Present Perfect: already, yet, this week — Clarification (A1/A2)</footer>
+</div>
+
+<div id="theme-toggle-wrap">
+  <button id="theme-toggle" aria-label="Toggle light/dark mode" title="Toggle light/dark mode">
+    <span id="theme-icon">☀️</span>
+  </button>
+</div>
+<script src="house.js"></script>
+<script src="stick-character.js"></script>
+<script src="stick-sentence.js"></script>
+<script>
+/* Mia and Leo share an apartment (and a dog, Max) — the same people on every page of this lesson */
+StickSentence.cast({
+  mia: { base:'woman', colour:'#6600CC', label:'Mia' },
+  leo: { base:'man',   colour:'#0066CC', label:'Leo' },
+  mum: { base:'woman', colour:'#CC0000', label:'Mia’s mom' }
+});
+StickSentence.toggle();   /* stick figures hidden by default */
+
+/* everyday jobs: v1 → v3, with the rest of the phrase and an emoji. Used for the to-do lists. */
+const TASKS = {
+  feed:    { v:'feed',  v3:'fed',      obj:'the dog',               e:'🐶' },
+  walk:    { v:'walk',  v3:'walked',   obj:'the dog',               e:'🦮' },
+  emails:  { v:'send',  v3:'sent',     obj:'the emails',            e:'📧' },
+  gas:     { v:'call',  v3:'called',   obj:'the gas company',       e:'📞' },
+  bill:    { v:'pay',   v3:'paid',     obj:'the electricity bill',  e:'💳' },
+  laundry: { v:'do',    v3:'done',     obj:'the laundry',           e:'🧺' },
+  dishes:  { v:'wash',  v3:'washed',   obj:'the dishes',            e:'🍽️' },
+  shop:    { v:'buy',   v3:'bought',   obj:'the groceries',         e:'🛒' },
+  dinner:  { v:'make',  v3:'made',     obj:'dinner',                e:'🍝' },
+  bed:     { v:'make',  v3:'made',     obj:'the bed',               e:'🛏️' },
+  trash:   { v:'take',  v3:'taken',    obj:'out the trash',         e:'🗑️' },
+  reply:   { v:'reply', v3:'replied',  obj:'to Mom’s texts',        e:'💬' },
+  plants:  { v:'water', v3:'watered',  obj:'the plants',            e:'🪴' },
+  report:  { v:'write', v3:'written',  obj:'the report',            e:'✍️' },
+  lunch:   { v:'eat',   v3:'eaten',    obj:'lunch',                 e:'🥪' },
+  news:    { v:'read',  v3:'read',     obj:'the news',              e:'📰' }
+};
+/* a to-do list card: items = [[taskId, done(true/false)], …]; done = ✔️ (already), not done = ❌ (not yet) */
+function todo(title, items, opts) {
+  opts = opts || {};
+  return '<div class="todo"><div class="todo-h">📝 ' + title + '</div><ul>' + items.map(([id, done]) => {
+    const t = TASKS[id];
+    return '<li class="' + (done ? 'done' : 'notyet') + '"><span class="todo-e">' + t.e + '</span><span class="todo-t">' + t.v + ' ' + t.obj + '</span>' +
+      '<span class="todo-m" aria-label="' + (done ? 'done' : 'not done yet') + '">' + (done ? '✔️' : '❌') + '</span></li>';
+  }).join('') + '</ul>' + (opts.foot ? '<div class="todo-f">' + opts.foot + '</div>' : '') + '</div>';
+}
+
+const S = StickSentence.html;
+const T = s => '<span class="tgt">' + s + '</span>';
+
+/* ── look: two to-do lists, then the sentences ─────────────────────────── */
+document.getElementById('lists').innerHTML =
+  '<div>' + todo('Leo — today', [['feed', true], ['laundry', true], ['dinner', true], ['bill', false], ['gas', false]]) +
+  '<div class="todo-say">' + S('{I’ve|leo} <b>already</b> fed Max.') + S('{I’ve|leo} <b>already</b> done the laundry.') +
+  S('{I|leo:sad} <b>haven’t</b> paid the bill <b>yet</b>.') + '</div></div>' +
+  '<div>' + todo('Mia — today', [['report', true], ['emails', true], ['lunch', false], ['reply', false]]) +
+  '<div class="todo-say">' + S('{I’ve|mia} <b>already</b> written the report.') + S('{I|mia:sad} <b>haven’t</b> eaten lunch <b>yet</b>.') +
+  S('<b>Have</b> {you|leo} called the gas company <b>yet</b>?') + '</div></div>';
+
+/* ── unfinished time: the band runs up to now ──────────────────────────── */
+HouseTimeline.build({
+  container: 'timeline', startLabel: 'last week', nowLabel: 'NOW', nowNote: 'Friday evening',
+  bands: [{ from: 0.42, to: 1, label: 'this week (not finished)' }],
+  events: [
+    { at: 0.22, emoji: '📧', label: 'sent 3 emails (last Friday)', kind: 'point', colour: 'var(--text-muted)' },
+    { at: 0.55, emoji: '📧', label: 'Monday', kind: 'unspecified' },
+    { at: 0.7, emoji: '📧', label: 'Wednesday', kind: 'unspecified' },
+    { at: 0.88, emoji: '📧', label: 'today', kind: 'unspecified' }
+  ],
+  caption: 'I’ve sent ten emails this week. (The week isn’t finished — maybe I’ll send more!)'
+});
+document.getElementById('when').innerHTML =
+  '<div><h3>⏳ Not finished → present perfect</h3><div class="words">today · this week · this month · this year</div>' +
+  '<p>I’ve ' + T('sent') + ' ten emails ' + T('this week') + '.</p><p>Leo has ' + T('called') + ' them three times ' + T('today') + '.</p></div>' +
+  '<div><h3>✅ Finished → past simple</h3><div class="words">yesterday · last week · last month · in 2024</div>' +
+  '<p>I ' + T('sent') + ' three emails ' + T('last Friday') + '.</p><p>He ' + T('called') + ' them ' + T('yesterday') + '.</p></div>';
+
+/* ── already and yet ───────────────────────────────────────────────────── */
+document.getElementById('yy').innerHTML =
+  '<div><h3>✔️ already</h3><p>It’s done — maybe earlier than you think.</p><p>' + S('{I’ve|leo} ' + '<b>already</b> fed the dog.') + '</p>' +
+  '<p class="text-secondary">have / has + <b>already</b> + V3</p></div>' +
+  '<div><h3>❌ yet</h3><p>Not done, but we expect it. At the end of negatives and questions.</p>' +
+  '<p>' + S('{I|mia:sad} haven’t eaten lunch <b>yet</b>.') + '</p><p>' + S('Have {you|leo} paid the bill <b>yet</b>?') + '</p>' +
+  '<p class="text-secondary">Short answer: <b>Not yet.</b> · <b>No, not yet.</b></p></div>';
+
+/* ── concept checking questions ────────────────────────────────────────── */
+HouseCCQ.build({
+  container: 'ccq',
+  items: [
+    { sentence: S('{I’ve|leo} sent ten emails to the gas company this week.'),
+      questions: [
+        { q: 'Is this week finished?', opts: ['Yes', 'No'], correct: 1,
+          why: 'No. It’s Friday — we are still in this week. So we use the present perfect.' },
+        { q: 'Can Leo send more emails this week?', opts: ['Yes', 'No'], correct: 0,
+          why: 'Yes. The week isn’t finished, so the number can change.' }
+      ] },
+    { sentence: S('{I’ve|leo} already fed the dog.'),
+      questions: [
+        { q: 'Does Max need food now?', opts: ['Yes', 'No'], correct: 1,
+          why: 'No. Already = it’s done.' }
+      ] },
+    { sentence: S('{I|mia:sad} haven’t eaten lunch yet.'),
+      questions: [
+        { q: 'Has Mia eaten?', opts: ['Yes', 'No'], correct: 1, why: 'No. Haven’t = not done.' },
+        { q: 'Does she want to eat?', opts: ['Yes, probably', 'No'], correct: 0,
+          why: 'Probably. Yet = not done, but we expect it.' }
+      ] },
+    { sentence: S('{Leo|leo} called the gas company yesterday.'),
+      questions: [
+        { q: 'Is yesterday finished?', opts: ['Yes', 'No'], correct: 0,
+          why: 'Yes. Yesterday is finished time, so we use the past simple: called (not “has called”).' }
+      ] }
+  ]
+});
+
+/* ── form ──────────────────────────────────────────────────────────────── */
+HouseFormClarf.build({
+  container: 'formClarf', scoreEl: 'fcScore', totalEl: 'fcTotal',
+  pool: ['subject', 'aux', 'neg', 'part', 'object', 'adverb', 'time'],
+  items: [
+    { form: 'aff', parts: [['I', 'subject'], ['have', 'aux'], ['already', 'adverb'], ['fed', 'part'], ['the dog', 'object'], ['.', null]] },
+    { form: 'aff', parts: [['Leo', 'subject'], ['has', 'aux'], ['sent', 'part'], ['ten emails', 'object'], ['this week', 'time'], ['.', null]] },
+    { form: 'neg', parts: [['Mia', 'subject'], ['hasn’t', 'neg'], ['eaten', 'part'], ['lunch', 'object'], ['yet', 'adverb'], ['.', null]] },
+    { form: 'q', parts: [['Have', 'aux'], ['you', 'subject'], ['paid', 'part'], ['the bill', 'object'], ['yet', 'adverb'], ['?', null]] }
+  ]
+});
+
+/* ── the rule ──────────────────────────────────────────────────────────── */
+const V3 = [['feed', 'fed'], ['send', 'sent'], ['pay', 'paid'], ['do', 'done'], ['buy', 'bought'], ['make', 'made'], ['write', 'written'],
+  ['eat', 'eaten'], ['take', 'taken'], ['have', 'had'], ['read', 'read'], ['call', 'called'], ['wash', 'washed'], ['reply', 'replied']];
+document.getElementById('ruleBox').innerHTML =
+  '<h4>have / has + V3</h4>' +
+  '<p>I / you / we / they ' + T('have') + ' (’ve) · he / she / it ' + T('has') + ' (’s) · negative: ' + T('haven’t') + ' / ' + T('hasn’t') + ' · question: ' + T('Have') + ' you …? ' + T('Has') + ' she …?</p>' +
+  '<div class="v3t">' + V3.map(([a, b]) => '<div>' + a + ' → ' + T(b) + '</div>').join('') + '</div>' +
+  '<p>Regular verbs: + <strong>-ed</strong> (called, washed, replied). Irregular verbs: learn them!</p>' +
+  '<h4>Unfinished time</h4>' +
+  '<p><strong>today, this week, this month, this year</strong> + present perfect: I’ve sent ten emails ' + T('this week') + '.</p>' +
+  '<p>Finished time (<strong>yesterday, last week, in 2024</strong>) → past simple: I ' + T('sent') + ' three emails yesterday.</p>' +
+  '<h4>already and yet</h4>' +
+  '<p><strong>already</strong> = it’s done. It goes between have / has and the V3: I’ve ' + T('already') + ' fed the dog.</p>' +
+  '<p><strong>yet</strong> = not done (but we expect it). It goes at the end of negatives and questions: I haven’t replied ' + T('yet') + '. · Have you paid the bill ' + T('yet') + '?</p>' +
+  '<p>Short answers: Yes, I ' + T('have') + '. · No, I ' + T('haven’t') + '. · ' + T('Not yet') + '.</p>';
+
+/* ── common mistakes ───────────────────────────────────────────────────── */
+const MISTAKES = [
+  ['I have fed already the dog.', 'I have already fed the dog.'],
+  ['I haven’t yet paid the bill.', 'I haven’t paid the bill yet.'],
+  ['Have you paid already the bill?', 'Have you paid the bill yet?'],
+  ['She have sent ten emails.', 'She has sent ten emails.'],
+  ['I have send ten emails this week.', 'I have sent ten emails this week.'],
+  ['I’ve called them yesterday.', 'I called them yesterday.'],
+  ['I sent ten emails this week. (the week isn’t finished)', 'I’ve sent ten emails this week.'],
+  ['I haven’t eat lunch yet.', 'I haven’t eaten lunch yet.'],
+  ['Did you feed the dog yet?', 'Have you fed the dog yet?']
+];
+document.getElementById('mistakes').innerHTML = MISTAKES.map(([no, yes]) =>
+  '<div class="pair-card"><div class="pair-line no"><span class="mark">✗</span>' + no + '</div>' +
+  '<div class="pair-line yes"><span class="mark">✓</span>' + yes + '</div></div>').join('');
+
+/* ── error hunt (A1/A2: some sentences are already correct) ────────────── */
+const EH_ITEMS = [
+  { words: ['I', 'have', 'fed', 'already', 'the', 'dog', '.'],
+    error: { type: 'misplaced', wordIndex: 3, targetGapIndex: 2 } },
+  { words: ['She', 'have', 'sent', 'ten', 'emails', 'this', 'week', '.'],
+    error: { type: 'wrong', wordIndex: 1, options: ['has', 'is', 'had'], correct: 'has' } },
+  { words: ['I', 'haven’t', 'paid', 'the', 'bill', 'yet', '.'], error: null },
+  { words: ['I', 'have', 'send', 'three', 'emails', 'today', '.'],
+    error: { type: 'wrong', wordIndex: 2, options: ['sent', 'sending', 'sends'], correct: 'sent' } },
+  { words: ['Have', 'you', 'done', 'the', 'laundry', 'yet', '?'], error: null },
+  { words: ['Mia', 'hasn’t', 'eaten', 'lunch', '.'],
+    error: { type: 'missing', gapIndex: 4, options: ['yet', 'already', 'ever'], correct: 'yet' } },
+  { words: ['I’ve', 'called', 'them', 'yesterday', '.'],
+    error: { type: 'wrong', wordIndex: 0, options: ['I', 'I’m', 'I’d'], correct: 'I' } },
+  { words: ['He', 'has', 'already', 'made', 'dinner', '.'], error: null },
+  { words: ['We', 'haven’t', 'yet', 'washed', 'the', 'dishes', '.'],
+    error: { type: 'misplaced', wordIndex: 2, targetGapIndex: 6 } },
+  { words: ['Has', 'the', 'gas', 'company', 'called', 'back', 'yet', '?'], error: null }
+];
+HouseErrorHunt.build({ container: 'errorHuntItems', items: EH_ITEMS, scoreEl: 'errorScore', totalEl: 'errorTotal' });
+</script>
+<script>HouseGrammar.init();</script>
+</body>
+</html>

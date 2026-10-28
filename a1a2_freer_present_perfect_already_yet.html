@@ -1,0 +1,160 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<title>My Week So Far — Present Perfect</title>
+<script>
+(function(){
+  try{
+    var saved = localStorage.getItem('theme-preference');
+    var theme = (saved === 'light' || saved === 'dark')
+      ? saved
+      : ((window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches) ? 'dark' : 'light');
+    document.documentElement.setAttribute('data-theme', theme);
+    var fs = parseFloat(localStorage.getItem('font-size-preference'));
+    if (fs >= 10 && fs <= 28) document.documentElement.style.setProperty('--fs-base', fs + 'px');
+  }catch(e){ /* localStorage/matchMedia unavailable — CSS media query still applies */ }
+})();
+</script>
+<link rel="stylesheet" href="house.css">
+<style>
+/* to-do lists: ✔️ already done · ❌ not yet */
+.todo{ border:1px solid var(--color-border-tertiary); border-radius:12px; background:var(--surface-2); padding:8px 10px; min-width:0; }
+.todo-h{ font-size:.8rem; font-weight:700; color:var(--text-secondary); margin-bottom:4px; }
+.todo ul{ list-style:none; margin:0; padding:0; }
+.todo li{ display:flex; align-items:center; gap:7px; padding:3px 4px; border-radius:7px; font-size:.9rem; }
+.todo li + li{ border-top:.5px dashed var(--color-border-secondary); }
+.todo-e{ font-size:1.15rem; line-height:1; width:1.4em; text-align:center; flex:0 0 auto; }
+.todo-t{ flex:1 1 auto; }
+.todo-m{ flex:0 0 auto; font-size:.95rem; }
+.todo li.done .todo-t{ text-decoration:line-through; text-decoration-color:var(--good); color:var(--text-secondary); }
+.todo li.done{ background:var(--good-bg); }
+.todo-f{ font-size:.75rem; color:var(--text-muted); margin-top:4px; }
+.todo-grid{ display:grid; grid-template-columns:repeat(auto-fit, minmax(230px, 1fr)); gap:10px; margin-bottom:1rem; }
+
+.q-card{ align-items:stretch; text-align:left; }
+.q-card .q-topic{ align-self:center; }
+.q-card .todo{ max-width:360px; width:100%; align-self:center; }
+.q-card .q-prompt{ text-align:center; }
+.counts{ display:flex; flex-wrap:wrap; gap:6px; justify-content:center; }
+.counts span{ border:1px solid var(--color-border-tertiary); border-radius:999px; padding:3px 10px; background:var(--surface-2); font-size:.9rem; }
+.q-card details.check{ margin-top:4px; width:100%; max-width:440px; align-self:center; }
+.q-card .check-body{ padding:8px 12px; font-size:.9rem; }
+.q-card .check-body p{ margin:0 0 4px; }
+</style>
+</head>
+<body>
+<div class="page" id="page">
+  <span class="cefr-tag cefr-a1a2">A1/A2 · Elementary</span>
+  <h1>My Week So Far</h1>
+  <p class="subtitle">Ask and answer about jobs: done or not yet?</p>
+
+  <div class="rule-box">
+    <p><strong>How to play (pairs, or teacher + student):</strong></p>
+    <p>1. Roll 🎲. Student A looks at the card. It’s A’s list for today — and some numbers for this week.</p>
+    <p>2. Student B asks: “<b>Have you fed the dog yet?</b>” A answers: “<b>Yes, I’ve already fed the dog.</b>” or “<b>No, not yet. I haven’t fed the dog yet.</b>”</p>
+    <p>3. B asks about the numbers: “<b>How many emails have you sent this week?</b>” A: “<b>I’ve sent seven emails.</b>”</p>
+    <p>4. Press 👀 to check. Then change roles and roll again.</p>
+  </div>
+
+  <div class="q-card" id="qCard"><span class="q-placeholder">Roll the dice to start.</span></div>
+  <button class="dice-btn" id="diceBtn" aria-label="Roll">🎲</button>
+  <div class="roll-count">Rolls: <strong id="rollCount">0</strong></div>
+
+  <div class="sec-div">Now you</div>
+  <div class="rule-box">
+    <p>Write your real list for today: four jobs. Put ✔️ or ❌ next to each one.</p>
+    <p>Your partner asks: “<b>Have you … yet?</b>” Answer with <b>already</b> or <b>not yet</b>.</p>
+    <p>Then talk about this week: “<b>How many … have you … this week?</b>” · “<b>I’ve had three meetings this week.</b>” · “<b>I haven’t called my grandma yet.</b>”</p>
+  </div>
+
+  <footer>My Week So Far — Present Perfect: already, yet, this week (A1/A2)</footer>
+</div>
+
+<div id="theme-toggle-wrap">
+  <button id="theme-toggle" aria-label="Toggle light/dark mode" title="Toggle light/dark mode">
+    <span id="theme-icon">☀️</span>
+  </button>
+</div>
+<script src="house.js"></script>
+<script src="stick-character.js"></script>
+<script src="stick-sentence.js"></script>
+<script>
+/* Mia and Leo share an apartment (and a dog, Max) — the same people on every page of this lesson */
+StickSentence.cast({
+  mia: { base:'woman', colour:'#6600CC', label:'Mia' },
+  leo: { base:'man',   colour:'#0066CC', label:'Leo' },
+  mum: { base:'woman', colour:'#CC0000', label:'Mia’s mom' }
+});
+
+/* everyday jobs: v1 → v3, with the rest of the phrase and an emoji. Used for the to-do lists. */
+const TASKS = {
+  feed:    { v:'feed',  v3:'fed',      obj:'the dog',               e:'🐶' },
+  walk:    { v:'walk',  v3:'walked',   obj:'the dog',               e:'🦮' },
+  emails:  { v:'send',  v3:'sent',     obj:'the emails',            e:'📧' },
+  gas:     { v:'call',  v3:'called',   obj:'the gas company',       e:'📞' },
+  bill:    { v:'pay',   v3:'paid',     obj:'the electricity bill',  e:'💳' },
+  laundry: { v:'do',    v3:'done',     obj:'the laundry',           e:'🧺' },
+  dishes:  { v:'wash',  v3:'washed',   obj:'the dishes',            e:'🍽️' },
+  shop:    { v:'buy',   v3:'bought',   obj:'the groceries',         e:'🛒' },
+  dinner:  { v:'make',  v3:'made',     obj:'dinner',                e:'🍝' },
+  bed:     { v:'make',  v3:'made',     obj:'the bed',               e:'🛏️' },
+  trash:   { v:'take',  v3:'taken',    obj:'out the trash',         e:'🗑️' },
+  reply:   { v:'reply', v3:'replied',  obj:'to Mom’s texts',        e:'💬' },
+  plants:  { v:'water', v3:'watered',  obj:'the plants',            e:'🪴' },
+  report:  { v:'write', v3:'written',  obj:'the report',            e:'✍️' },
+  lunch:   { v:'eat',   v3:'eaten',    obj:'lunch',                 e:'🥪' },
+  news:    { v:'read',  v3:'read',     obj:'the news',              e:'📰' }
+};
+/* a to-do list card: items = [[taskId, done(true/false)], …]; done = ✔️ (already), not done = ❌ (not yet) */
+function todo(title, items, opts) {
+  opts = opts || {};
+  return '<div class="todo"><div class="todo-h">📝 ' + title + '</div><ul>' + items.map(([id, done]) => {
+    const t = TASKS[id];
+    return '<li class="' + (done ? 'done' : 'notyet') + '"><span class="todo-e">' + t.e + '</span><span class="todo-t">' + t.v + ' ' + t.obj + '</span>' +
+      '<span class="todo-m" aria-label="' + (done ? 'done' : 'not done yet') + '">' + (done ? '✔️' : '❌') + '</span></li>';
+  }).join('') + '</ul>' + (opts.foot ? '<div class="todo-f">' + opts.foot + '</div>' : '') + '</div>';
+}
+
+/* "to Mom's texts" reads oddly on a card for anyone: use a neutral phrase here */
+TASKS.reply.obj = 'to the messages';
+/* things to count this week: [v, v3, plural noun, emoji, min, max] */
+const COUNTS = [
+  ['send', 'sent', 'emails', '📧', 3, 25], ['drink', 'drunk', 'cups of coffee', '☕', 2, 15], ['make', 'made', 'phone calls', '📞', 2, 12],
+  ['watch', 'watched', 'movies', '🎬', 0, 4], ['have', 'had', 'meetings', '📅', 1, 8], ['eat', 'eaten', 'pizzas', '🍕', 0, 3],
+  ['walk', 'walked', 'kilometers', '🚶', 2, 20], ['read', 'read', 'books', '📖', 0, 2], ['buy', 'bought', 'coffees at a café', '🧾', 0, 6]
+];
+const pick = a => a[Math.floor(Math.random() * a.length)];
+const shuffle = a => a.map(x => [Math.random(), x]).sort((p, q) => p[0] - q[0]).map(x => x[1]);
+const NUM = ['zero', 'one', 'two', 'three', 'four', 'five', 'six', 'seven', 'eight', 'nine', 'ten', 'eleven', 'twelve'];
+const word = n => n < NUM.length ? NUM[n] : String(n);
+
+HouseRandomGen.build({
+  pick: () => {
+    const ids = shuffle(Object.keys(TASKS)).slice(0, 4);
+    const items = ids.map(id => [id, Math.random() < 0.5]);
+    if (items.every(x => x[1]) || items.every(x => !x[1])) items[0][1] = !items[0][1];   /* always some of each */
+    const counts = shuffle(COUNTS).slice(0, 2).map(c => [c, c[4] + Math.floor(Math.random() * (c[5] - c[4] + 1))]);
+    return { items, counts };
+  },
+  key: x => x.items.map(i => i.join()).join('|'),
+  render: ({ items, counts }) => {
+    const qa = items.map(([id, done]) => {
+      const t = TASKS[id];
+      return '<p>“Have you ' + t.v3 + ' ' + t.obj + ' yet?” — ' + (done
+        ? '“Yes, I’ve already ' + t.v3 + ' ' + t.obj + '.”'
+        : '“No, not yet. I haven’t ' + t.v3 + ' ' + t.obj + ' yet.”') + '</p>';
+    }).join('');
+    const qc = counts.map(([c, n]) => '<p>“How many ' + c[2] + ' have you ' + c[1] + ' this week?” — “' +
+      (n === 0 ? 'I haven’t ' + c[1] + ' any ' + c[2] + ' this week.' : 'I’ve ' + c[1] + ' ' + word(n) + ' ' + (n === 1 ? c[2].replace(/s( |$)/, '$1').replace(/^cups/, 'cup') : c[2]) + ' this week.') + '”</p>').join('');
+    return '<span class="q-topic">📝 Your list — Friday evening</span>' +
+      todo('Today', items) +
+      '<div class="counts">' + counts.map(([c, n]) => '<span>' + c[3] + ' ' + c[2] + ' this week: <b>' + n + '</b></span>').join('') + '</div>' +
+      '<span class="q-prompt">Your partner asks: “Have you … yet?” · “How many … have you … this week?”</span>' +
+      '<details class="check"><summary>👀 Check</summary><div class="check-body">' + qa + qc + '</div></details>';
+  }
+});
+</script>
+</body>
+</html>

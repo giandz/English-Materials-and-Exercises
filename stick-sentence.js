@@ -241,7 +241,8 @@ const CSS = ''
   + '.ss-txt{ white-space:nowrap; }'
   + '.ss-figs{ position:relative; display:block; flex:0 0 auto; margin-bottom:.1em; color:currentColor; }'
   + '.ss-figs svg{ display:block; width:100%; height:100%; overflow:visible; }'
-  + '.ss-sticks-hidden .ss-figs{ display:none; }'
+  + '.ss-pic{ display:block; font-size:2.2em; line-height:1; margin-bottom:.1em; }'
+  + '.ss-sticks-hidden .ss-figs, .ss-sticks-hidden .ss-pic{ display:none; }'
   + '.ss-stick-btn{ margin-right:6px; }';
 if (!document.getElementById('stick-sentence-css')) {
   const st = document.createElement('style'); st.id = 'stick-sentence-css'; st.textContent = CSS;
@@ -251,6 +252,8 @@ if (!document.getElementById('stick-sentence-css')) {
 /* ── show / hide the stick figures (the same switch as present-perfect-kit.js, for pages without it) ──
    StickSentence.toggle()                 the figures start hidden; a "🧍 Show stick figures" button is added
    StickSentence.toggle({ shown:true })   the figures start visible
+   Other pictures that stand for people or animals (an emoji in the cast row, say) hide with the figures:
+   give them class="ss-pic" — e.g. <span class="ss-unit"><span class="ss-pic">🐶</span><span class="ss-txt">Max</span></span>.
    The button goes before the grammar toggle, or under the page's first subtitle. Opt-in: pages that
    don't call it are unchanged, and a page that already has a #stickToggle button keeps its own.   */
 function toggle(opts){

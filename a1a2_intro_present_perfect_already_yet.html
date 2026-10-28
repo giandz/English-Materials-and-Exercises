@@ -1,0 +1,183 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<title>Have You Fed the Dog Yet? — Present Perfect</title>
+<script>
+(function(){
+  try{
+    var saved = localStorage.getItem('theme-preference');
+    var theme = (saved === 'light' || saved === 'dark')
+      ? saved
+      : ((window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches) ? 'dark' : 'light');
+    document.documentElement.setAttribute('data-theme', theme);
+    var fs = parseFloat(localStorage.getItem('font-size-preference'));
+    if (fs >= 10 && fs <= 28) document.documentElement.style.setProperty('--fs-base', fs + 'px');
+  }catch(e){ /* localStorage/matchMedia unavailable — CSS media query still applies */ }
+})();
+</script>
+<link rel="stylesheet" href="house.css">
+<style>
+/* to-do lists: ✔️ already done · ❌ not yet */
+.todo{ border:1px solid var(--color-border-tertiary); border-radius:12px; background:var(--surface-2); padding:8px 10px; min-width:0; }
+.todo-h{ font-size:.8rem; font-weight:700; color:var(--text-secondary); margin-bottom:4px; }
+.todo ul{ list-style:none; margin:0; padding:0; }
+.todo li{ display:flex; align-items:center; gap:7px; padding:3px 4px; border-radius:7px; font-size:.9rem; }
+.todo li + li{ border-top:.5px dashed var(--color-border-secondary); }
+.todo-e{ font-size:1.15rem; line-height:1; width:1.4em; text-align:center; flex:0 0 auto; }
+.todo-t{ flex:1 1 auto; }
+.todo-m{ flex:0 0 auto; font-size:.95rem; }
+.todo li.done .todo-t{ text-decoration:line-through; text-decoration-color:var(--good); color:var(--text-secondary); }
+.todo li.done{ background:var(--good-bg); }
+.todo-f{ font-size:.75rem; color:var(--text-muted); margin-top:4px; }
+.todo-grid{ display:grid; grid-template-columns:repeat(auto-fit, minmax(230px, 1fr)); gap:10px; margin-bottom:1rem; }
+
+.cast-row{ display:flex; flex-wrap:wrap; gap:14px 18px; justify-content:center; margin:0 0 1rem; padding:10px; background:var(--surface-1); border:1px solid var(--border); border-radius:var(--border-radius-lg); font-size:.8667rem; }
+.match-wrap .match-col-label{ text-align:center; }
+</style>
+</head>
+<body>
+<div class="page" id="page">
+  <span class="cefr-tag cefr-a1a2">A1/A2 · Elementary</span>
+  <h1>Have You Fed the Dog Yet?</h1>
+  <p class="subtitle">Mia and Leo share an apartment with their dog, Max. It’s Friday evening. Mia comes home from work.</p>
+
+  <div class="sec-div">Verbs for this lesson</div>
+  <p class="subtitle">Match the verb and its past participle (V3). Tap a verb, then tap its past participle.</p>
+  <div class="score-bar"><span>Matched: <strong id="mScore">0</strong> / <span id="mTotal">0</span></span><button id="mReset">↺ Reset</button></div>
+  <div class="match-grid match-wrap">
+    <div><div class="match-col-label">Verb (V1)</div><div class="match-col" id="v1Col"></div></div>
+    <div><div class="match-col-label">Past participle (V3)</div><div class="match-col" id="v3Col"></div></div>
+  </div>
+  <div class="win-msg" id="mWin">🎉 Great! You know the verbs for the conversation.</div>
+  <div class="feedback" id="mFeedback"></div>
+
+  <div class="sec-div">Before you read</div>
+  <div id="preQuestions"></div>
+
+  <div class="sec-div">The people</div>
+  <div class="cast-row" id="castRow"></div>
+
+  <div class="sec-div">The conversation</div>
+  <div class="setting-chip"><span class="section-icon">🏠</span> Friday, 7 p.m. — at home</div>
+  <button class="grammar-toggle-btn" id="grammarToggle">🎨 Show Grammar</button>
+  <div class="pos-legend"></div>
+  <div id="conversation"></div>
+
+  <div class="sec-div">Check your answers</div>
+  <div id="quiz"></div>
+
+  <footer>Have You Fed the Dog Yet? — Present Perfect: already, yet, this week (A1/A2)</footer>
+</div>
+
+<div id="theme-toggle-wrap">
+  <button id="theme-toggle" aria-label="Toggle light/dark mode" title="Toggle light/dark mode">
+    <span id="theme-icon">☀️</span>
+  </button>
+</div>
+<script src="house.js"></script>
+<script src="stick-character.js"></script>
+<script src="stick-sentence.js"></script>
+<script>
+/* Mia and Leo share an apartment (and a dog, Max) — the same people on every page of this lesson */
+StickSentence.cast({
+  mia: { base:'woman', colour:'#6600CC', label:'Mia' },
+  leo: { base:'man',   colour:'#0066CC', label:'Leo' },
+  mum: { base:'woman', colour:'#CC0000', label:'Mia’s mom' }
+});
+StickSentence.toggle();   /* stick figures hidden by default */
+
+/* everyday jobs: v1 → v3, with the rest of the phrase and an emoji. Used for the to-do lists. */
+const TASKS = {
+  feed:    { v:'feed',  v3:'fed',      obj:'the dog',               e:'🐶' },
+  walk:    { v:'walk',  v3:'walked',   obj:'the dog',               e:'🦮' },
+  emails:  { v:'send',  v3:'sent',     obj:'the emails',            e:'📧' },
+  gas:     { v:'call',  v3:'called',   obj:'the gas company',       e:'📞' },
+  bill:    { v:'pay',   v3:'paid',     obj:'the electricity bill',  e:'💳' },
+  laundry: { v:'do',    v3:'done',     obj:'the laundry',           e:'🧺' },
+  dishes:  { v:'wash',  v3:'washed',   obj:'the dishes',            e:'🍽️' },
+  shop:    { v:'buy',   v3:'bought',   obj:'the groceries',         e:'🛒' },
+  dinner:  { v:'make',  v3:'made',     obj:'dinner',                e:'🍝' },
+  bed:     { v:'make',  v3:'made',     obj:'the bed',               e:'🛏️' },
+  trash:   { v:'take',  v3:'taken',    obj:'out the trash',         e:'🗑️' },
+  reply:   { v:'reply', v3:'replied',  obj:'to Mom’s texts',        e:'💬' },
+  plants:  { v:'water', v3:'watered',  obj:'the plants',            e:'🪴' },
+  report:  { v:'write', v3:'written',  obj:'the report',            e:'✍️' },
+  lunch:   { v:'eat',   v3:'eaten',    obj:'lunch',                 e:'🥪' },
+  news:    { v:'read',  v3:'read',     obj:'the news',              e:'📰' }
+};
+/* a to-do list card: items = [[taskId, done(true/false)], …]; done = ✔️ (already), not done = ❌ (not yet) */
+function todo(title, items, opts) {
+  opts = opts || {};
+  return '<div class="todo"><div class="todo-h">📝 ' + title + '</div><ul>' + items.map(([id, done]) => {
+    const t = TASKS[id];
+    return '<li class="' + (done ? 'done' : 'notyet') + '"><span class="todo-e">' + t.e + '</span><span class="todo-t">' + t.v + ' ' + t.obj + '</span>' +
+      '<span class="todo-m" aria-label="' + (done ? 'done' : 'not done yet') + '">' + (done ? '✔️' : '❌') + '</span></li>';
+  }).join('') + '</ul>' + (opts.foot ? '<div class="todo-f">' + opts.foot + '</div>' : '') + '</div>';
+}
+
+/* ── V1 → V3 matching, with an emoji for each verb ─────────────────────── */
+/* V1 shows the action as an emoji sequence (🥩➡️🐕 = feed); V3 shows the result with different emojis,
+   so the pairs can't be matched by sight */
+const V13 = [
+  ['feed', '🥩➡️🐕', 'fed', '🐕😋'], ['send', '📧➡️👤', 'sent', '📤✅'], ['call', '📱➡️👵', 'called', '☎️✅'],
+  ['pay', '💵➡️🏪', 'paid', '🧾✅'], ['do', '🧺➡️🫧', 'done', '👕✨'], ['buy', '💳➡️🛍️', 'bought', '🛒🏠'],
+  ['make', '🍅🧅➡️🍳', 'made', '🍝✅'], ['write', '✍️➡️📄', 'written', '📃✅'], ['eat', '🥪➡️😋', 'eaten', '🍽️✅'],
+  ['have', '👥💬', 'had', '📅✅']
+];
+HouseMatching.build({
+  left: 'v1Col', right: 'v3Col', scoreEl: 'mScore', totalEl: 'mTotal', winEl: 'mWin', resetBtn: 'mReset', feedbackEl: 'mFeedback',
+  pairs: V13.map(([v1, e1, v3, e3]) => ({ id: v1, left: v1, right: v3, leftEmoji: e1, rightEmoji: e3 }))
+});
+
+/* ── the people ───────────────────────────────────────────────────────── */
+document.getElementById('castRow').innerHTML = ['{Mia|mia}', '{Leo|leo}', '{Mia’s mom|mum:phone}']
+  .map(StickSentence.html).join('') +
+  /* Max is an emoji, not a stick figure: class ss-pic hides it with the figures */
+  '<span class="ss-unit"><span class="ss-pic" role="img" aria-label="Max, the dog">🐶</span><span class="ss-txt">Max (the dog)</span></span>';
+
+const SPEAKERS = {
+  Mia: { cast: 'mia', avatar: '👩', av: 'av-b', side: 'left' },
+  Leo: { cast: 'leo', avatar: '👨', av: 'av-a', side: 'right' }
+};
+/* each speaker's avatar takes the colour of their stick figure (overrides the house.css av-* colours) */
+const avStyle = s => { const c = (StickSentence.cast()[s.cast] || {}).colour;
+  return c ? 'background:' + c + '40;box-shadow:inset 0 0 0 2px ' + c : ''; };
+
+/* {words|figures} puts stick figures over the words; [words/pos] marks the grammar colours */
+const LINES = [
+  ['Mia', '[Hi/none], {[Leo/noun]!|leo} {[I’m/subject]|mia:tired} [home/adverb]. [What a day/none]! [Have/aux] {[you/subject]|leo} [fed/part] [Max/object] 🐶 [yet/adverb]?'],
+  ['Leo', '[Yes/none]! {[I’ve/subject]|leo:me} [already/adverb] [fed/part] [him/object]. [And/conj] {[I’ve/subject]|leo:me} [walked/part] [him/object] [two times/adverb] [today/time].'],
+  ['Mia', '[Thanks/none]! [Has/aux] [the gas company/subject] [called/part] [back/adverb] [yet/adverb]? [The water/subject] [is/verb] [still/adverb] [cold/adj]!'],
+  ['Leo', '[No/none], [they/subject] [haven’t/neg] [called/part] [yet/adverb]. {[I’ve/subject]|leo:me:phone} [sent/part] [ten emails/object] [to them/prep] [this week/time]! [And/conj] {[I’ve/subject]|leo:me:phone} [called/part] [them/object] [three times/adverb] [today/time].'],
+  ['Mia', '[Ten emails/object]? [Wow/none]. [Have/aux] [they/subject] [answered/part] [any of them/object]?'],
+  ['Leo', '[No/none], [not yet/adverb]. [It’s/subject] [a terrible company/complement]! [How/wh] [was/verb] {[your/det]|mia} [day/noun]?'],
+  ['Mia', '[Busy/adj]! {[I’ve/subject]|mia:me} [had/part] [six meetings/object] [today/time], [and/conj] {[I’ve/subject]|mia:me} [written/part] [twenty emails/object]. [But/conj] {[I/subject]|mia:sad} [haven’t/neg] [eaten/part] [anything/object] [yet/adverb]!'],
+  ['Leo', '[Don’t worry/none]. {[I’ve/subject]|leo:me:pan} [already/adverb] [made/part] [dinner/object]. [It’s/subject] [pasta/complement] 🍝.'],
+  ['Mia', '{[You’re/subject]|leo:happy} [the best/complement]! [Have/aux] {[you/subject]|leo} [paid/part] [the electricity bill/object] [this month/time]?'],
+  ['Leo', '[Not yet/adverb]. {[I’ll/subject]|leo} [do/verb] [it/object] [tomorrow/time]. [But/conj] {[I’ve/subject]|leo:me} [already/adverb] [done/part] [the laundry/object] 🧺.'],
+  ['Mia', '[Thank you/none]! [Oh/none], {[my/det]|mia} {[mom/subject]|mum:phone} [has/aux] [texted/part] {[me/object]|mia:me} [five times/adverb] [this week/time], [and/conj] {[I/subject]|mia} [haven’t/neg] [replied/part] [yet/adverb]!'],
+  ['Leo', '[Call/verb] {[her/object]|mum:phone} [after dinner/time]. [Come on/none], [the pasta/subject] [is getting/verb] [cold/adj] — [like/prep] [the water/noun]!']
+];
+const conv = document.getElementById('conversation');
+LINES.forEach(([who, text]) => {
+  const s = SPEAKERS[who], right = s.side === 'right';
+  conv.insertAdjacentHTML('beforeend',
+    '<div class="bubble-wrap' + (right ? ' right' : '') + '">' +
+      '<div class="avatar ' + s.av + '" style="' + avStyle(s) + '">' + s.avatar + '</div>' +
+      '<div class="bubble-col"><div class="bname' + (right ? ' right' : '') + '">' + who + '</div>' +
+      '<div class="bubble ' + (right ? 'right' : 'left') + '">' + StickSentence.html(text) + '</div></div>' +
+    '</div>');
+});
+
+const CQ_ITEMS = [
+  { q: 'Has Leo fed Max?', opts: ['No, not yet.', 'Yes, he has already fed him.', 'He fed him yesterday.'], correct: 1 },
+  { q: 'How many emails has Leo sent to the gas company this week?', opts: ['Three', 'Twenty', 'Ten'], correct: 2 },
+  { q: 'What hasn’t Mia done yet?', opts: ['She hasn’t replied to her mom.', 'She hasn’t written emails.', 'She hasn’t had meetings.'], correct: 0 }
+];
+HouseComprehension.build({ pre: 'preQuestions', quiz: 'quiz', items: CQ_ITEMS });
+</script>
+<script>HouseGrammar.init();</script>
+</body>
+</html>

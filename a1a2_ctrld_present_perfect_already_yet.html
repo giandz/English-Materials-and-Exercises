@@ -1,0 +1,182 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<title>Done or Not Yet? — Present Perfect Practice</title>
+<script>
+(function(){
+  try{
+    var saved = localStorage.getItem('theme-preference');
+    var theme = (saved === 'light' || saved === 'dark')
+      ? saved
+      : ((window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches) ? 'dark' : 'light');
+    document.documentElement.setAttribute('data-theme', theme);
+    var fs = parseFloat(localStorage.getItem('font-size-preference'));
+    if (fs >= 10 && fs <= 28) document.documentElement.style.setProperty('--fs-base', fs + 'px');
+  }catch(e){ /* localStorage/matchMedia unavailable — CSS media query still applies */ }
+})();
+</script>
+<link rel="stylesheet" href="house.css">
+<style>
+/* to-do lists: ✔️ already done · ❌ not yet */
+.todo{ border:1px solid var(--color-border-tertiary); border-radius:12px; background:var(--surface-2); padding:8px 10px; min-width:0; }
+.todo-h{ font-size:.8rem; font-weight:700; color:var(--text-secondary); margin-bottom:4px; }
+.todo ul{ list-style:none; margin:0; padding:0; }
+.todo li{ display:flex; align-items:center; gap:7px; padding:3px 4px; border-radius:7px; font-size:.9rem; }
+.todo li + li{ border-top:.5px dashed var(--color-border-secondary); }
+.todo-e{ font-size:1.15rem; line-height:1; width:1.4em; text-align:center; flex:0 0 auto; }
+.todo-t{ flex:1 1 auto; }
+.todo-m{ flex:0 0 auto; font-size:.95rem; }
+.todo li.done .todo-t{ text-decoration:line-through; text-decoration-color:var(--good); color:var(--text-secondary); }
+.todo li.done{ background:var(--good-bg); }
+.todo-f{ font-size:.75rem; color:var(--text-muted); margin-top:4px; }
+.todo-grid{ display:grid; grid-template-columns:repeat(auto-fit, minmax(230px, 1fr)); gap:10px; margin-bottom:1rem; }
+
+.blank{ display:inline-block; min-width:3em; border-bottom:2px solid var(--color-border-primary); }
+.quiz-q .q-text .todo{ font-weight:400; margin:4px 0 8px; max-width:340px; }
+.item-context .todo, .direct .todo{ font-style:normal; max-width:340px; margin:2px 0 4px; }
+.item-context .ss-line, .direct .ss-line{ font-style:normal; color:var(--text-primary); font-size:.9667rem; }
+.one{ display:inline-flex; align-items:center; gap:6px; font-style:normal; padding:3px 9px; border-radius:8px; border:1px solid var(--color-border-tertiary); background:var(--surface-2); color:var(--text-primary); }
+.one.done{ background:var(--good-bg); }
+</style>
+</head>
+<body>
+<div class="page" id="page">
+  <span class="cefr-tag cefr-a1a2">A1/A2 · Elementary</span>
+  <h1>Done or Not Yet? — Practice</h1>
+  <p class="subtitle">Practise: I’ve already … · I haven’t … yet · Have you … yet? · this week / today</p>
+
+  <div class="sec-div">1 · Choose</div>
+  <p class="subtitle">Look at the list. Choose the right words.</p>
+  <div id="pcItems"></div>
+
+  <div class="sec-div">2 · Put the words in order</div>
+  <p class="subtitle">Look at the job. Make the sentence.</p>
+  <button class="grammar-toggle-btn" id="grammarToggle">🎨 Hide Grammar</button>
+  <div class="pos-legend"></div>
+  <div class="score-bar"><span>Correct: <strong id="woScore">0</strong> / <span id="woTotal">0</span></span></div>
+  <div id="woItems"></div>
+
+  <div class="sec-div">3 · Write the missing words</div>
+  <p class="subtitle">Look at the job. Write the missing words.</p>
+  <div id="gfItems"></div>
+
+  <footer>Present Perfect: already, yet, this week — Controlled Practice (A1/A2)</footer>
+</div>
+
+<div id="theme-toggle-wrap">
+  <button id="theme-toggle" aria-label="Toggle light/dark mode" title="Toggle light/dark mode">
+    <span id="theme-icon">☀️</span>
+  </button>
+</div>
+<script src="house.js"></script>
+<script src="stick-character.js"></script>
+<script src="stick-sentence.js"></script>
+<script>
+/* Mia and Leo share an apartment (and a dog, Max) — the same people on every page of this lesson */
+StickSentence.cast({
+  mia: { base:'woman', colour:'#6600CC', label:'Mia' },
+  leo: { base:'man',   colour:'#0066CC', label:'Leo' },
+  mum: { base:'woman', colour:'#CC0000', label:'Mia’s mom' }
+});
+StickSentence.toggle();   /* stick figures hidden by default */
+
+/* everyday jobs: v1 → v3, with the rest of the phrase and an emoji. Used for the to-do lists. */
+const TASKS = {
+  feed:    { v:'feed',  v3:'fed',      obj:'the dog',               e:'🐶' },
+  walk:    { v:'walk',  v3:'walked',   obj:'the dog',               e:'🦮' },
+  emails:  { v:'send',  v3:'sent',     obj:'the emails',            e:'📧' },
+  gas:     { v:'call',  v3:'called',   obj:'the gas company',       e:'📞' },
+  bill:    { v:'pay',   v3:'paid',     obj:'the electricity bill',  e:'💳' },
+  laundry: { v:'do',    v3:'done',     obj:'the laundry',           e:'🧺' },
+  dishes:  { v:'wash',  v3:'washed',   obj:'the dishes',            e:'🍽️' },
+  shop:    { v:'buy',   v3:'bought',   obj:'the groceries',         e:'🛒' },
+  dinner:  { v:'make',  v3:'made',     obj:'dinner',                e:'🍝' },
+  bed:     { v:'make',  v3:'made',     obj:'the bed',               e:'🛏️' },
+  trash:   { v:'take',  v3:'taken',    obj:'out the trash',         e:'🗑️' },
+  reply:   { v:'reply', v3:'replied',  obj:'to Mom’s texts',        e:'💬' },
+  plants:  { v:'water', v3:'watered',  obj:'the plants',            e:'🪴' },
+  report:  { v:'write', v3:'written',  obj:'the report',            e:'✍️' },
+  lunch:   { v:'eat',   v3:'eaten',    obj:'lunch',                 e:'🥪' },
+  news:    { v:'read',  v3:'read',     obj:'the news',              e:'📰' }
+};
+/* a to-do list card: items = [[taskId, done(true/false)], …]; done = ✔️ (already), not done = ❌ (not yet) */
+function todo(title, items, opts) {
+  opts = opts || {};
+  return '<div class="todo"><div class="todo-h">📝 ' + title + '</div><ul>' + items.map(([id, done]) => {
+    const t = TASKS[id];
+    return '<li class="' + (done ? 'done' : 'notyet') + '"><span class="todo-e">' + t.e + '</span><span class="todo-t">' + t.v + ' ' + t.obj + '</span>' +
+      '<span class="todo-m" aria-label="' + (done ? 'done' : 'not done yet') + '">' + (done ? '✔️' : '❌') + '</span></li>';
+  }).join('') + '</ul>' + (opts.foot ? '<div class="todo-f">' + opts.foot + '</div>' : '') + '</div>';
+}
+
+const S = StickSentence.html;
+const BLANK = '<span class="blank">&nbsp;</span>';
+const rep = m => S(m).replace('____', BLANK);
+/* one job from the list, ✔️ done or ❌ not done */
+const one = (id, done, who) => '<span class="one' + (done ? ' done' : '') + '">' + (who ? who + ': ' : '') + TASKS[id].e + ' ' + TASKS[id].v + ' ' + TASKS[id].obj + ' ' + (done ? '✔️' : '❌') + '</span>';
+
+/* ── 1 · choose ────────────────────────────────────────────────────────── */
+const PC_ITEMS = [
+  { q: todo('Leo — today', [['feed', true]]) + rep('{Leo|leo} has ____ fed the dog.'),
+    opts: ['yet', 'already', 'ever'], correct: 1 },
+  { q: todo('Mia — today', [['lunch', false]]) + rep('{Mia|mia:sad} hasn’t eaten lunch ____.'),
+    opts: ['yet', 'already', 'today yet'], correct: 0 },
+  { q: todo('Leo — this week', [['emails', true]], { foot: '📧 × 10' }) + rep('{Leo|leo} ____ sent ten emails this week.'),
+    opts: ['have', 'has', 'is'], correct: 1 },
+  { q: todo('Mia and Leo — today', [['dishes', false]]) + rep('{We|mia,leo} ____ washed the dishes yet.'),
+    opts: ['haven’t', 'hasn’t', 'didn’t'], correct: 0 },
+  { q: todo('Leo — today', [['bill', false]]) + rep('{Mia:|mia} “Have {you|leo} ____ the bill yet?”'),
+    opts: ['pay', 'paid', 'payed'], correct: 1 },
+  { q: todo('Mia — today', [['report', true]]) + rep('{Mia|mia} has ____ the report.'),
+    opts: ['wrote', 'writed', 'written'], correct: 2 },
+  { q: todo('Leo — yesterday (finished)', [['gas', true]]) + rep('{Leo|leo} ____ the gas company yesterday.'),
+    opts: ['called', 'has called', 'have called'], correct: 0 },
+  { q: todo('Leo — today', [['laundry', true]]) + rep('{Mia:|mia} “Have {you|leo} done the laundry yet?” {Leo:|leo} “Yes, I ____.”'),
+    opts: ['have', 'did', 'done'], correct: 0 }
+];
+HouseComprehension.build({ quiz: 'pcItems', items: PC_ITEMS });
+
+/* ── 2 · word order ────────────────────────────────────────────────────── */
+const WO_ITEMS = [
+  { context: one('dinner', true, 'Leo'),
+    text: 'Leo / has / already / made / dinner', pos: ['subject', 'aux', 'adverb', 'part', 'object'] },
+  { context: one('reply', false, 'Mia'),
+    text: 'Mia / hasn’t / replied / to her mom / yet', pos: ['subject', 'neg', 'part', 'prep', 'adverb'] },
+  { context: one('emails', true, 'Leo') + ' 📧 × 10 this week',
+    text: 'He / has / sent / ten emails / this week', pos: ['subject', 'aux', 'part', 'object', 'time'] },
+  { context: one('bill', false, 'Leo') + ' — Mia asks',
+    text: 'Have / you / paid / the bill / yet / ?', pos: ['aux', 'subject', 'part', 'object', 'adverb', 'none'] },
+  { context: one('shop', true, 'Mia and Leo'),
+    text: 'We / have / already / bought / the groceries', pos: ['subject', 'aux', 'adverb', 'part', 'object'] },
+  { context: one('trash', false, 'Leo'),
+    text: 'I / haven’t / taken / out the trash / yet', pos: ['subject', 'neg', 'part', 'object', 'adverb'] }
+];
+HouseWordOrder.build({ container: 'woItems', items: WO_ITEMS, scoreEl: 'woScore', totalEl: 'woTotal' });
+
+/* ── 3 · gap fill (easiest first; the gaps move around the sentence) ───── */
+const gaps = m => S(m).replace(/____(\d)/g, '{$1}');
+const GF_ITEMS = [
+  { direct: one('feed', true, 'Leo') + ' (verb: feed)',
+    template: gaps('{Leo|leo} has ____0 the dog.'), hints: [{ accepted: ['fed'] }] },
+  { direct: one('plants', true, 'Mia') + ' — it’s done before Leo asks',
+    template: gaps('{I’ve|mia} ____0 watered the plants.'), hints: [{ accepted: ['already'] }] },
+  { direct: one('lunch', false, 'Mia'),
+    template: gaps('{I|mia:sad} ____0 eaten lunch ____1.'), hints: [{ accepted: ['haven’t', "haven't", 'have not'] }, { accepted: ['yet'] }] },
+  { direct: one('emails', true, 'Leo') + ' 📧 × 10 (verb: send)',
+    template: gaps('{Leo|leo} ____0 ____1 ten emails this week.'), hints: [{ accepted: ['has'] }, { accepted: ['sent'] }] },
+  { direct: one('laundry', false, 'Leo') + ' — Mia wants to know',
+    template: gaps('{Mia:|mia} “____0 {you|leo} done the laundry ____1?”'), hints: [{ accepted: ['Have'] }, { accepted: ['yet'] }] },
+  { direct: one('bed', true, 'Mia') + ' (verb: make)',
+    template: gaps('{Mia|mia} has already ____0 the bed.'), hints: [{ accepted: ['made'] }] },
+  { direct: 'Leo: 📞 the gas company × 3 on Friday. It’s Friday evening now. (verb: call)',
+    template: gaps('{Leo|leo} ____0 ____1 the gas company three times ____2.'), hints: [{ accepted: ['has'] }, { accepted: ['called'] }, { accepted: ['today'] }] },
+  { direct: 'Mia: 📧 × 4 last Monday · 📧 × 20 this week. It’s Friday now. (verb: send)',
+    template: gaps('{Mia|mia} ____0 four emails last Monday, but this week {she|mia} ____1 ____2 twenty.'), hints: [{ accepted: ['sent'] }, { accepted: ['has', '’s', "'s"] }, { accepted: ['sent'] }] }
+];
+HouseGapFill.build({ container: 'gfItems', items: GF_ITEMS });
+</script>
+<script>HouseGrammar.init();</script>
+</body>
+</html>
