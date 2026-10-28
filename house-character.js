@@ -64,7 +64,7 @@ const HAIR = [
   {id:'grey',label:'Grey (off-chart)',hex:'#9a9a98'},{id:'white',label:'White (off-chart)',hex:'#e6e4de'}];
 
 const HAIR_STYLES = [['bald','Bald'],['buzz','Buzz cut'],['short','Short'],['sidepart','Side part'],
-  ['curly','Curly'],['afro','Afro'],['bob','Bob'],['long','Long'],['ponytail','Ponytail'],['bun','Bun'],['pigtails','Pigtails'],['crew','Crew cut'],['pompadour','Pompadour']];
+  ['curly','Curly'],['afro','Afro'],['bob','Bob'],['long','Long'],['ponytail','Ponytail'],['bun','Bun'],['pigtails','Pigtails'],['crew','Crew cut'],['pompadour','Pompadour'],['ringlets','Ringlets'],['braids','Braids'],['dreadlocks','Dreadlocks']];
 const FACIAL = [['none','None'],['stubble','Stubble'],['moustache','Moustache'],['handlebar','Handlebar moustache'],
   ['soulpatch','Soul patch'],['goatee','Goatee'],['chinstrap','Chin strap'],['chops','Mutton chops'],
   ['beard','Short beard'],['fullbeard','Full beard']];
@@ -131,6 +131,18 @@ function sleeve(r1,r2,len,frac){
   const L=len*frac, rm=r1+(r2-r1)*frac+0.5, a=r1+0.5;
   return `M${n2(-a)},0A${n2(a)},${n2(a)} 0 0 1 ${n2(a)},0L${n2(rm)},${n2(L)}L${n2(-rm)},${n2(L)}Z`;
 }
+/* curly hair as one outline: bumps of radius r along an ellipse (centre cx,cy; rx, ry), from angle a0 to a1 in n bumps.
+   The points between bumps sit on the ellipse; each bump is an arc bulging away from the centre.
+   Returns path commands starting with M (or L when join is set, to continue another path). */
+function scallop(cx,cy,rx,ry,a0,a1,n,r,join){
+  const P=a=>{const t=a*Math.PI/180; return [n2(cx+rx*Math.cos(t)),n2(cy+ry*Math.sin(t))];};
+  let p0=P(a0), s=`${join?'L':'M'}${p0[0]},${p0[1]}`;
+  for(let i=1;i<=n;i++){ const p=P(a0+(a1-a0)*i/n), c=Math.hypot(p[0]-p0[0],p[1]-p0[1]), rr=n2(Math.max(r,c/2+0.01));
+    s+=`A${rr},${rr} 0 0 ${a1>a0?1:0} ${p[0]},${p[1]}`; p0=p; }
+  return s;
+}
+/* a few small open arcs, for the texture of curls inside a curly outline */
+const curlMarks=(cx,cy,rx,ry,n,r,st)=>`<path d="${Array.from({length:n},(_,i)=>{const t=(i*137.5+20)*Math.PI/180, f=Math.sqrt((i+0.5)/n), x=n2(cx+rx*f*Math.cos(t)), y=n2(cy+ry*f*Math.sin(t)); return `M${n2(x-r)},${y}a${r},${r} 0 0 1 ${2*r},0`;}).join('')}" fill="none" stroke="${st}" stroke-width=".9" stroke-opacity=".7"/>`;
 function ring(cx,cy,rx,ry,a0,a1,n,r){
   let s='';
   for(let i=0;i<n;i++){const a=(a0+(a1-a0)*i/(n-1))*Math.PI/180;
@@ -601,12 +613,25 @@ function hair(style,view,col,hat,nod){
   const H=(inFront,x,y,svg)=>hang.push({front:inFront,x,y,svg:`<g transform="translate(${-x} ${-y})">${svg}</g>`});
   const hangP=(fillD,strokeD)=>`<path d="${fillD}" fill="${col}" stroke="none"/><path d="${strokeD}" fill="none" stroke="${st}"/>`;
   if(style==='bald') return {back,front,hang};
+  /* long textured lengths, each one outline: a ringlet (bumps down both sides), a plait (bumps and V crossings), a dreadlock (a rope) */
+  const bumps=(x0,y0,x1,y1,n,r)=>{ let d=''; for(let i=1;i<=n;i++) d+=`A${r},${r} 0 0 1 ${n2(x0+(x1-x0)*i/n)},${n2(y0+(y1-y0)*i/n)}`; return d; };
+  const ringlet=(x,y0,len,w)=>{ const n=Math.max(3,Math.round(len/7)), a=n2(x-w/2), b=n2(x+w/2), y1=n2(y0+len), r=n2(len/n*0.62);
+    return p(`M${a},${y0}L${b},${y0}${bumps(b,y0,b,y1,n,r)}A${n2(w/2)},${n2(w/2)} 0 0 1 ${a},${y1}${bumps(a,y1,a,y0,n,r)}Z`); };
+  const braid=(x,y0,len,w,open)=>{ const n=Math.max(3,Math.round(len/8)), a=n2(x-w/2), b=n2(x+w/2), y1=n2(y0+len), r=n2(len/n*0.75);
+    let v=''; for(let i=1;i<n;i++){ const y=n2(y0+len*i/n); v+=`M${a},${n2(y-3)}L${x},${y}L${b},${n2(y-3)}`; }
+    return p(`M${a},${y0}L${b},${y0}${bumps(b,y0,b,y1,n,r)}L${a},${y1}${bumps(a,y1,a,y0,n,r)}Z`)
+      +`<path d="${v}" fill="none" stroke="${st}" stroke-width=".9"/>`
+      +(open?'':`<rect x="${n2(x-w/2+0.5)}" y="${y1}" width="${n2(w-1)}" height="3" rx="1" fill="${st}"/>`+p(`M${n2(x-w/2+1)},${n2(y1+3)}L${x},${n2(y1+10)}L${n2(x+w/2-1)},${n2(y1+3)}Z`)); };
+  const rope=(x0,y0,x1,y1,w)=>{ const d=`M${x0},${y0}Q${n2((x0+x1)/2+(x1>x0?-2:2))},${n2((y0+y1)/2)} ${x1},${y1}`;
+    return `<path d="${d}" fill="none" stroke="${st}" stroke-width="${w}" stroke-linecap="round"/><path d="${d}" fill="none" stroke="${col}" stroke-width="${n2(w-2.4)}" stroke-linecap="round"/><path d="${d}" fill="none" stroke="${st}" stroke-width="${n2(w-2.4)}" stroke-dasharray="1 5" stroke-opacity=".35"/>`; };
+  /* a mass of hair behind the head ending in curls (ringlets) */
+  const curlMass=(x0,x1,y)=>`<circle cx="0" cy="-2" r="34" ${A}/>`+p(`M-34,-12Q-35,-22 -28,-22L28,-22Q35,-22 34,-12L${x1},${y}${bumps(x1,y,x0,y,8,6.5)}Z`);
   if(view==='back'){   /* seen from behind: hair covers the back of the skull; long lengths and tails fall in front of the body */
     const cov=(yb,a)=>p(`M-31.5,${yb}C-32.5,-30 -18,-40 0,-40C18,-40 32.5,-30 31.5,${yb}Q0,${yb+7} -31.5,${yb}Z`,a);
     if(hat&&(style==='afro'||style==='curly'||style==='bun'||style==='pompadour')){
       front=cov(12);
-      if(style==='afro') front+=`<g ${A}><path d="M-42.5,-16A43,43 0 0 0 42.5,-16Z"/>${ring(0,-10,43,43,-6,186,9,9.5)}</g>`;
-      if(style==='curly') front+=`<g ${A}>${ring(0,-4,29,30,-10,190,8,8.5)}</g>`;
+      if(style==='afro') front+=p(scallop(0,-10,44,44,-6,186,9,10)+'Z');
+      if(style==='curly') front+=p(scallop(0,-4,30,31,-10,190,8,8.5)+'Q0,20 '+n2(30*Math.cos(-10*Math.PI/180))+','+n2(-4+31*Math.sin(-10*Math.PI/180))+'Z');
       if(style==='bun') front+=`<circle cx="0" cy="27" r="13" ${A}/>`;
       return {back,front,hang};
     }
@@ -616,12 +641,16 @@ function hair(style,view,col,hat,nod){
       case 'short': front=p('M-31.5,8C-32.5,-30 -18,-40 0,-40C18,-40 32.5,-30 31.5,8L24,12L17,9L10,13L3,10L-4,13L-11,9L-18,12L-25,9Z'); break;
       case 'sidepart': front=cov(10); break;
       case 'pompadour': front=p('M-23,-21C-28,-44 -13,-55 2,-53C17,-52 27,-42 23,-23Z')+cov(8); break;
-      case 'curly': front=cov(6,B)+`<g ${A}>${ring(0,-6,27,32,0,360,14,9.5)}${ring(0,-10,11,13,0,360,6,8)}</g>`; break;
-      case 'afro': front=`<g ${A}><circle cx="0" cy="-10" r="43"/>${ring(0,-10,43,43,0,354,15,9.5)}${ring(0,-10,22,22,0,330,7,8)}</g>`; break;
+      case 'curly': front=p(scallop(0,-6,31,35,0,360,15,10)+'Z')+curlMarks(0,-10,18,20,9,3.5,st); break;
+      case 'afro': front=p(scallop(0,-10,44,44,0,360,15,10)+'Z')+curlMarks(0,-10,32,32,16,4,st); break;
       case 'bob': H(true,0,-2,`<circle cx="0" cy="-2" r="34" ${A}/>`+p('M-35,-12Q-36,-22 -29,-22L29,-22Q36,-22 35,-12L36,26Q36,32 28,32L-28,32Q-36,32 -36,26Z')); front=cov(10); break;
       case 'long': H(true,0,-2,`<circle cx="0" cy="-2" r="34" ${A}/>`+p('M-34,-12Q-35,-22 -28,-22L28,-22Q35,-22 34,-12L36,74Q0,88 -36,74Z')); front=cov(10); break;
       case 'ponytail': front=cov(8); H(true,0,-12,p('M-6,-10C-12,14 -9,40 -3,56Q0,62 3,56C9,40 12,14 6,-10Z')+`<circle cx="0" cy="-12" r="6.5" ${A}/>`); break;
       case 'bun': front=cov(6)+`<circle cx="0" cy="-30" r="12" ${A}/>`; break;
+      case 'ringlets': front=p(`${scallop(0,-6,32,34,180,360,10,14)}L32,10Q0,17 -32,10Z`);
+        [-28,-20,-12,-4,4,12,20,28].forEach((x,i)=>H(true,x,-6,`<g transform="rotate(${n2(-x/28*9)} ${x} -6)">${ringlet(x,-6,58+(i%2)*6,8.5)}</g>`)); break;   /* fanning out like the front ones */
+      case 'braids': front=cov(8); [1,-1].forEach(k=>H(true,k*12,8,braid(k*13,8,72,9))); break;
+      case 'dreadlocks': front=cov(6); H(true,0,-6,[-3,-2,-1,0,1,2,3].map(i=>rope(i*9,-6,i*11,56-Math.abs(i)*3,7)).join('')); break;
       case 'pigtails': front=cov(6);
         [1,-1].forEach(k=>H(true,k*29,-8,p(`M${k*26},-11C${k*42},-11 ${k*45},40 ${k*40},74Q${k*35},79 ${k*32},72C${k*35},44 ${k*33},8 ${k*25},-2Z`)+`<circle cx="${k*29}" cy="-8" r="6" ${A}/>`)); break;
     }
@@ -633,7 +662,7 @@ function hair(style,view,col,hat,nod){
     const capF='M-30,2C-30,-28 -18,-37 0,-37C18,-37 30,-28 30,2'+bend('L27.5,2C27,-12 14,-24 0,-24C-14,-24 -27,-12 -27.5,2')+'Z';
     const capS='M-26,-20C-26,-36 -12,-39 2,-39C22,-39 33,-24 32,-2C32,10 28,18 24,24L14,14C16,6 15,-4 12,-8L2,-9L1,3L-4,3C-5,-10 -12,-20 -26,-20Z';
     front=p(F?capF:capS,style==='bun'||style==='pompadour'?A:B);
-    if(style==='afro') back=`<g ${A}><path d="M${cx-42.5},-16A43,43 0 0 0 ${cx+42.5},-16Z"/>${ring(cx,-10,43,43,-6,186,9,9.5)}</g>`;
+    if(style==='afro') back=p(scallop(cx,-10,44,44,-6,186,9,10)+'Z');
     if(style==='curly') front+=`<g ${A}>`+(F?[[-29,-7],[-29,5],[29,-7],[29,5]]:[[31,-8],[30,5],[25,17]]).map(([x,y])=>`<circle cx="${x}" cy="${y}" r="8"/>`).join('')+'</g>';
     if(style==='bun') back=F?`<circle cx="0" cy="27" r="13" ${A}/>`:`<circle cx="31" cy="17" r="11.5" ${A}/>`;
     return {back,front,hang};
@@ -641,7 +670,10 @@ function hair(style,view,col,hat,nod){
   if(view==='front'){
     const capF=(rx,ry,y0,line)=>`M${-rx},${y0}C${-rx},${-ry*0.75} ${-rx*0.6},${-ry} 0,${-ry}C${rx*0.6},${-ry} ${rx},${-ry*0.75} ${rx},${y0}${bend(line)}Z`;
     const round='L27.5,4C27,-12 14,-24 0,-24C-14,-24 -27,-12 -27.5,4';
-    const curls=()=>`<g ${A}>${ring(0,-4,27,31,185,355,9,9.5)}${mid(ring(0,-24,17,3,180,360,5,7.5))}</g>`;
+    /* curly cap as one outline: bumps over the crown, a straight run down each side, and curls along the hairline
+       (the hairline bends with a nod) */
+    const hairline=()=>{ const dy=nod?n2(nod*HAIRLINE_K):0; return scallop(0,-23.5+dy,18,0.01,0,180,5,4.6,true); };
+    const curlCap=(outer)=>`<path d="${outer}L29,4L27.5,4C27,-12 23,-20 18,${n2(-23.5+(nod?nod*HAIRLINE_K:0))}${hairline()}C-23,-20 -27,-12 -27.5,4L-29,4Z" ${A}/>`;
     switch(style){
       case 'crew': front=p(capF(30,37.5,-2,'L27.5,-2C27,-14 14,-25 0,-25C-14,-25 -27,-14 -27.5,-2')); break;
       case 'pompadour': front=p(capF(31,39,4,round))+crown(p('M-23,-21C-28,-44 -13,-55 2,-53C17,-52 27,-42 23,-23C12,-30 -8,-30 -23,-21Z'),15,48); break;
@@ -651,17 +683,29 @@ function hair(style,view,col,hat,nod){
       case 'buzz': front=`<path d="${capF(29.4,36.4,0,'L27.5,0C27,-14 14,-26 0,-26C-14,-26 -27,-14 -27.5,0')}" fill="${col}" opacity=".55"/>`; break;
       case 'short': front=p(capF(31,39,4,'L27.5,4C27,-10 20,-20 10,-22L4,-18.5L-3,-23L-10,-19.5C-20,-20 -27,-10 -27.5,4')); break;
       case 'sidepart': front=p(capF(31.5,39.5,6,'L27.5,6C28,-8 24,-19 13,-26C4,-15 -14,-11 -28,-5L-31.5,6')); break;
-      case 'curly': front=p(capF(30,37,2,round),B)+curls(); break;
+      case 'curly': front=curlCap(`M-29,4L${n2(30.5*Math.cos(185*Math.PI/180))},${n2(-6+35*Math.sin(185*Math.PI/180))}`+scallop(0,-6,30.5,35,185,355,9,10,true)); break;
       case 'afro':
-        back=`<g ${A}><circle cx="0" cy="-10" r="43"/>${ring(0,-10,43,43,0,334,14,9.5)}</g>`;
-        front=p(capF(30,37,2,round),B)+`<g ${A}>${mid(ring(0,-25,18,3,180,360,5,7.5))}</g>`; break;
+        back=p(scallop(0,-10,44,44,0,360,15,10)+'Z');
+        front=curlCap(`M-30,2C-30,-28 -18,-37 0,-37C18,-37 30,-28 30,2`); break;
       case 'bob':
         H(false,0,-2,`<circle cx="0" cy="-2" r="34" ${A}/>`+p('M-35,-12Q-36,-22 -29,-22L29,-22Q36,-22 35,-12L36,26Q36,32 28,32L-28,32Q-36,32 -36,26Z'));
         front=p(capF(32,39.5,10,'L27,10L27,-11Q27,-15 22,-15L-22,-15Q-27,-15 -27,-11L-27,10')); break;
       case 'long':
         H(false,0,-2,`<circle cx="0" cy="-2" r="34" ${A}/>`+p('M-34,-12Q-35,-22 -28,-22L28,-22Q35,-22 34,-12L36,74Q0,88 -36,74Z'));
-        [1,-1].forEach(k=>{const L=`M${k*26},-2C${k*34},10 ${k*36},50 ${k*31},72Q${k*26},76 ${k*23},69C${k*26},44 ${k*24},20 ${k*22},6`; H(true,k*25,1,`<circle cx="${k*25}" cy="1" r="5.5" fill="${col}" stroke="none"/>`+hangP(L+'Z',L));});
+        [1,-1].forEach(k=>{const L=`M${k*26},-2C${k*34},10 ${k*36},50 ${k*31},72Q${k*26},76 ${k*23},69C${k*26},44 ${k*24},20 ${k*22},6`; H(true,k*25,1,hangP(L+'Z',L));});
         front=p(capF(32,39.5,8,'L27,8C27,-10 16,-22 0,-29C-16,-22 -27,-10 -27,8')); break;
+      case 'ringlets':
+        [[8,4,58,2],[16,3,58,4],[24,2,56,6],[28,4,52,12]].forEach(([x,y,len,an])=>[1,-1].forEach(k=>H(false,k*x,y,`<g transform="rotate(${-k*an} ${k*x} ${y})">${ringlet(k*x,y,len,8.5)}</g>`)));   /* curls behind, peeking out between the front ones */
+        /* fanning out a little from the head, like the dreadlocks (rotated about their own attachment point) */
+        [[25,-3,58,5],[28,-1,52,9]].forEach(([x,y,len,a])=>[1,-1].forEach(k=>H(true,k*x,y,`<g transform="rotate(${-k*a} ${k*x} ${y})">${ringlet(k*x,y,len,7)}</g>`)));
+        front=p(`M-32,8L-32,-4${scallop(0,-4,32,36,180,360,10,14,true)}L32,8${bend('L27,8C27,-10 16,-22 0,-29C-16,-22 -27,-10 -27,8')}Z`); break;   /* a wavy crown, so the curls don't start abruptly */
+      case 'braids':
+        [1,-1].forEach(k=>H('mid',k*22.8,11,braid(k*22.8,11,72,9)));   /* one length per side, under the head, over the neck and chest */
+        front=p(capF(32,39.5,6,'L27,6C27,-10 14,-24 1,-25L0,-31L-1,-25C-14,-24 -27,-10 -27,6')); break;
+      case 'dreadlocks':
+        H(false,0,-4,[-3,-2,-1,0,1,2,3].map(i=>rope(i*10,-8,i*13,52-Math.abs(i)*2,7)).join(''));
+        [1,-1].forEach(k=>H(true,k*28,0,rope(k*31,0,k*34,54,7)+rope(k*25,2,k*27,48,7)));
+        front=p(capF(32,39.5,6,'L27,6C27,-12 14,-24 0,-26C-14,-24 -27,-12 -27,6')); break;
       case 'ponytail':
         H(false,25,0,`<circle cx="25" cy="0" r="6.5" ${A}/>`+p('M22,-6C40,-8 44,22 39,52Q33,58 29,48C33,26 30,10 20,6Z'));
         front=p(capF(30.5,38,2,'L27.5,2C27,-12 14,-23 0,-23C-14,-23 -27,-12 -27.5,2')); break;
@@ -678,12 +722,16 @@ function hair(style,view,col,hat,nod){
       case 'buzz': front=`<path d="${std}" fill="${col}" opacity=".55"/>`; break;
       case 'short': front=p(std)+p('M-27,-19L-31,-13L-22,-17Z'); break;
       case 'sidepart': front=p(capS(-29,-10)); break;
-      case 'curly': front=p(std,B)+`<g ${A}>${ring(2,-6,29,33,200,400,10,9)}</g>`; break;
+      case 'curly': { const E=(rx,ry,a)=>n2(2+rx*Math.cos(a*Math.PI/180))+','+n2(-6+ry*Math.sin(a*Math.PI/180));   /* a band of curls round the head: bumps outside, a smooth edge inside */
+        front=p(std,B)+p(scallop(2,-6,31,35,200,400,10,9.5)+`L${E(21,25,400)}A21,25 0 1 0 ${E(21,25,200)}Z`); break; }
       case 'afro':
-        back=`<g ${A}><circle cx="5" cy="-10" r="42"/>${ring(5,-10,42,42,0,334,14,9.5)}</g>`;
-        front=p(std,B)+`<g ${A}>${ring(-12,-24,13,5,170,330,4,7)}</g>`; break;
+        back=p(scallop(5,-10,43,43,0,360,15,10)+'Z');
+        front=p(std,B)+p(scallop(-12,-24,13,5,170,330,4,7)+'Z'); break;
       case 'bob': front=p(capS(-29,-13)); H(true,17,-7,`<circle cx="17" cy="-7" r="17.5" fill="${col}" stroke="none"/>`+hangP('M0,-12L33,-6C37,10 37,24 34,30Q20,36 4,31C0,20 0,0 0,-12Z','M33,-6C37,10 37,24 34,30Q20,36 4,31C0,20 0,0 0,-12')); break;
       case 'long': front=p(std); H(true,17,-7,`<circle cx="17" cy="-7" r="17.5" fill="${col}" stroke="none"/>`+hangP('M0,-12L33,-6C38,20 38,60 34,78Q20,85 8,79C4,50 2,20 0,-12Z','M33,-6C38,20 38,60 34,78Q20,85 8,79C4,50 2,20 0,-12')); break;
+      case 'ringlets': front=p(`${scallop(2,-7,32.5,35,190,350,8,14)}L33,0C32,10 28,18 24,24L14,14C16,6 15,-4 12,-8L2,-9L1,3L-4,3C-5,-10 -12,-20 -26,-20Z`); [6,13,20,27].forEach((x,i)=>{ const y=-10+i*1.5; H(true,x,y,`<g transform="rotate(${-2-i*2.5} ${x} ${y})">${ringlet(x,y,58+(i%2)*5,8)}</g>`); }); break;
+      case 'braids': front=p(std); H(true,24,0,braid(26,0,78,9)); break;
+      case 'dreadlocks': front=p(std); [8,15,22,29,35].forEach((x,i)=>{ const y=-10+i*2; H(true,x,y,rope(x,y,x+4+i*1.5,50-i*3,7)); }); break;
       case 'ponytail': H(false,26,0,`<circle cx="26" cy="0" r="6.5" ${A}/>`+p('M24,-8C44,-10 46,30 39,56Q33,59 31,50C36,30 33,10 22,6Z')); front=p(std); break;
       case 'bun': front=`<circle cx="21" cy="-35" r="11.5" ${A}/>`+p(std); break;
     }
@@ -1440,7 +1488,7 @@ function build(d){
   mark(mChest,-sw,-CH+8,10); mark(mChest,sw,-CH+8,10); mark(mChest,0,-CH*0.4,ww);
 
   /* neck + head */
-  const nodTurn=d.head==='left'?-d.headNod:d.head==='right'?d.headNod:0;   /* in profile a nod turns the head (chin down = toward the chest) */
+  const nodTurn=0;   /* a nod only applies facing front; in profile the head tilt does the same job */   /* in profile a nod turns the head (chin down = toward the chest) */
   const mNeck=Mx.tr(mChest,0,-CH-2,j.neck*0.5), mSkull=Mx.tr(mNeck,0,-16,j.neck*0.5+nodTurn);   /* half the tilt at the base of the neck, half under the skull */
   piv.neck={p:Mx.pt(mChest,0,-CH-2),parent:j.root+j.torso,up:true};
   add(35,mNeck,`<circle cx="0" cy="4" r="${n2(nw+2)}" fill="${C.skin}" stroke="none"/><path d="M${-nw-1},-22Q${n2(-nw+2)},-9 ${n2(-nw-4)},5L${n2(nw+4)},5Q${n2(nw-2)},-9 ${nw+1},-22Z" fill="${C.skin}" stroke="none"/><path d="M${-nw-1},-22Q${n2(-nw+2)},-9 ${n2(-nw-4)},5M${n2(nw+4)},5Q${n2(nw-2)},-9 ${nw+1},-22" fill="none" stroke="${C.skinS}"/><circle cx="0" cy="-16" r="${n2(nw+1)}" fill="${C.skin}" stroke="none"/>`,'neck');   /* flared neck with round patches at the collar and under the skull */
@@ -1457,7 +1505,7 @@ function build(d){
   add(50,mHead,hd.front,'neck');
   /* bob, long hair and ponytail: each piece is pinned at its own point on the head but drawn unrotated, so it stays attached and falls straight down */
   const hz=BK&&d.head==='front'?25:0;   /* back view: hanging hair (and what sits on it) goes over the arms */
-  for(const g of hd.hang){ const p=Mx.pt(mHead,g.x,g.y); add(g.front?50.5+hz:0.5,[HS*flip,0,0,HS,p[0],p[1]],g.svg,'neck'); }
+  for(const g of hd.hang){ const p=Mx.pt(mHead,g.x,g.y); add(g.front==='mid'?45:g.front?50.5+hz:0.5,[HS*flip,0,0,HS,p[0],p[1]],g.svg,'neck'); }
 
 
   if(hd.top) add(50.7+hz,mHead,hd.top,'neck');

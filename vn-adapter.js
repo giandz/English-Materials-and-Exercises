@@ -334,25 +334,25 @@
   const P = (o) => Object.assign({ eyeColor: 12, height: 3, weight: 3, mouth: 'smile' }, o);
   const KID = { height: 0 };   /* HouseCharacter's child: about ten years old, child proportions, no adult features */
   const CAST = {
-    ana: P({ bodyType: 'female', skin: 3, hairStyle: 'ponytail', hairColor: '3-0', upperGarment: 'blouse', upperColor: '#FF6600', lowerGarment: 'trousers', lowerColor: '#333333', footwear: 'shoes' }),
-    mia: P({ bodyType: 'female', skin: 2, eyeColor: 7, hairStyle: 'long', hairColor: '5-0', upperGarment: 'tshirt', upperColor: '#6600CC', lowerGarment: 'jeans', lowerColor: '#000066', footwear: 'sneakers' }),
-    sam: P({ bodyType: 'male', skin: 5, eyeColor: 14, hairStyle: 'short', hairColor: '1-0', upperGarment: 'polo', upperColor: '#00CC66', lowerGarment: 'chinos', footwear: 'sneakers' }),
-    leo: P({ bodyType: 'male', skin: 2, eyeColor: 9, hairStyle: 'curly', hairColor: '5-0', facialHair: 'beard', upperGarment: 'shirt', upperColor: '#0066CC', lowerGarment: 'jeans', footwear: 'boots' }),
-    tom: P({ bodyType: 'male', skin: 1, eyeColor: 2, hairStyle: 'buzz', hairColor: '8-0', upperGarment: 'hoodie', upperColor: '#CC0000', lowerGarment: 'jeans', footwear: 'sneakers' }),
-    rosa: P({ bodyType: 'female', skin: 4, eyeColor: 13, hairStyle: 'bun', hairColor: 'grey', eyewear: 'round', upperGarment: 'blouse', upperColor: '#CC6600', lowerGarment: 'skirt', lowerColor: '#663300', footwear: 'shoes' }),
-    emma: P({ bodyType: 'female', skin: 1, eyeColor: 3, hairStyle: 'bob', hairColor: '8-0', upperGarment: 'hoodie', upperColor: '#ff6b6b', lowerGarment: 'jeans', footwear: 'sneakers' }),
-    ben: P(Object.assign({ bodyType: 'male', skin: 3, hairStyle: 'short', hairColor: '4-0', upperGarment: 'tshirt', upperColor: '#FF6600', lowerGarment: 'jeans', footwear: 'sneakers' }, KID)),
-    lily: P(Object.assign({ bodyType: 'female', skin: 3, hairStyle: 'pigtails', hairColor: '4-0', upperGarment: 'dress', upperColor: '#FF66CC', footwear: 'sneakers' }, KID)),
-    mom: P({ bodyType: 'female', skin: 3, hairStyle: 'bob', hairColor: '3-0', upperGarment: 'blouse', upperColor: '#CC0000', lowerGarment: 'trousers', lowerColor: '#333333', footwear: 'shoes', accessories: ['drops'] }),
-    dad: P({ bodyType: 'male', skin: 3, hairStyle: 'sidepart', hairColor: '3-0', facialHair: 'stubble', upperGarment: 'polo', upperColor: '#663300', lowerGarment: 'chinos', footwear: 'shoes', height: 4 }),
-    grandma: P({ bodyType: 'female', skin: 2, hairStyle: 'bun', hairColor: 'white', eyewear: 'glasses', upperGarment: 'blouse', upperColor: '#6666CC', lowerGarment: 'skirt', lowerColor: '#333333', footwear: 'shoes', height: 2 }),
-    grandpa: P({ bodyType: 'male', skin: 2, hairStyle: 'sidepart', hairColor: 'grey', facialHair: 'moustache', eyewear: 'round', upperGarment: 'vest', upperColor: '#666666', lowerGarment: 'trousers', footwear: 'shoes' }),
-    daniel: P({ bodyType: 'male', skin: 4, hairStyle: 'curly', hairColor: '1-0', upperGarment: 'shirt', upperColor: '#0066CC', lowerGarment: 'chinos', footwear: 'shoes' }),
-    sofia: P({ bodyType: 'female', skin: 3, hairStyle: 'long', hairColor: '4-0', upperGarment: 'blouse', upperColor: '#CC0066', lowerGarment: 'jeans', footwear: 'shoes' }),
-    park: P({ bodyType: 'female', skin: 2, hairStyle: 'bun', hairColor: '1-0', upperGarment: 'jacket', upperColor: '#6600CC', lowerGarment: 'trousers', footwear: 'heels' }),
-    dan: P({ bodyType: 'male', skin: 4, hairStyle: 'short', hairColor: '1-0', eyewear: 'glasses', upperGarment: 'shirt', upperColor: '#0066CC', lowerGarment: 'chinos', footwear: 'shoes' }),
-    luis: P({ bodyType: 'male', skin: 4, hairStyle: 'short', hairColor: '1-0', facialHair: 'moustache', upperGarment: 'shirt', upperColor: '#FFFFFF', lowerGarment: 'trousers', footwear: 'shoes' }),
-    teacher: P({ bodyType: 'female', skin: 4, hairStyle: 'bob', hairColor: '1-0', eyewear: 'glasses', upperGarment: 'blouse', upperColor: '#666666', lowerGarment: 'skirt', footwear: 'shoes' })
+    ana: P({ faceShape: 'heart', eyeType: 'almond', noseType: 'button', earType: 'oval', bodyType: 'female', skin: 3, hairStyle: 'ponytail', hairColor: '3-0', upperGarment: 'blouse', upperColor: '#FF6600', lowerGarment: 'trousers', lowerColor: '#333333', footwear: 'shoes' }),
+    mia: P({ faceShape: 'oval', eyeType: 'upturned', noseType: 'turnedup', earType: 'round', bodyType: 'female', skin: 2, eyeColor: 7, hairStyle: 'long', hairColor: '5-0', upperGarment: 'tshirt', upperColor: '#6600CC', lowerGarment: 'jeans', lowerColor: '#000066', footwear: 'sneakers' }),
+    sam: P({ faceShape: 'square', eyeType: 'deepset', noseType: 'nubian', earType: 'rectangular', bodyType: 'male', skin: 5, eyeColor: 14, hairStyle: 'short', hairColor: '1-0', upperGarment: 'polo', upperColor: '#00CC66', lowerGarment: 'chinos', footwear: 'sneakers' }),
+    leo: P({ faceShape: 'oblong', eyeType: 'hooded', noseType: 'roman', earType: 'oval', bodyType: 'male', skin: 2, eyeColor: 9, hairStyle: 'curly', hairColor: '5-0', facialHair: 'beard', upperGarment: 'shirt', upperColor: '#0066CC', lowerGarment: 'jeans', footwear: 'boots' }),
+    tom: P({ faceShape: 'round', eyeType: 'round', noseType: 'button', earType: 'round', bodyType: 'male', skin: 1, eyeColor: 2, hairStyle: 'buzz', hairColor: '8-0', upperGarment: 'hoodie', upperColor: '#CC0000', lowerGarment: 'jeans', footwear: 'sneakers' }),
+    rosa: P({ faceShape: 'diamond', eyeType: 'downturned', noseType: 'roman', earType: 'oval', bodyType: 'female', skin: 4, eyeColor: 13, hairStyle: 'bun', hairColor: 'grey', eyewear: 'round', upperGarment: 'blouse', upperColor: '#CC6600', lowerGarment: 'skirt', lowerColor: '#663300', footwear: 'shoes' }),
+    emma: P({ faceShape: 'heart', eyeType: 'round', noseType: 'turnedup', earType: 'triangular', bodyType: 'female', skin: 1, eyeColor: 3, hairStyle: 'bob', hairColor: '8-0', upperGarment: 'hoodie', upperColor: '#ff6b6b', lowerGarment: 'jeans', footwear: 'sneakers' }),
+    ben: P(Object.assign({ faceShape: 'round', eyeType: 'round', noseType: 'button', earType: 'round', bodyType: 'male', skin: 3, hairStyle: 'short', hairColor: '4-0', upperGarment: 'tshirt', upperColor: '#FF6600', lowerGarment: 'jeans', footwear: 'sneakers' }, KID)),
+    lily: P(Object.assign({ faceShape: 'round', eyeType: 'wideset', noseType: 'button', earType: 'round', bodyType: 'female', skin: 3, hairStyle: 'pigtails', hairColor: '4-0', upperGarment: 'dress', upperColor: '#FF66CC', footwear: 'sneakers' }, KID)),
+    mom: P({ faceShape: 'oval', eyeType: 'almond', noseType: 'greek', earType: 'oval', bodyType: 'female', skin: 3, hairStyle: 'bob', hairColor: '3-0', upperGarment: 'blouse', upperColor: '#CC0000', lowerGarment: 'trousers', lowerColor: '#333333', footwear: 'shoes', accessories: ['drops'] }),
+    dad: P({ faceShape: 'rectangle', eyeType: 'deepset', noseType: 'greek', earType: 'rectangular', bodyType: 'male', skin: 3, hairStyle: 'sidepart', hairColor: '3-0', facialHair: 'stubble', upperGarment: 'polo', upperColor: '#663300', lowerGarment: 'chinos', footwear: 'shoes', height: 4 }),
+    grandma: P({ faceShape: 'round', eyeType: 'hooded', noseType: 'bulbous', earType: 'oval', bodyType: 'female', skin: 2, hairStyle: 'bun', hairColor: 'white', eyewear: 'glasses', upperGarment: 'blouse', upperColor: '#6666CC', lowerGarment: 'skirt', lowerColor: '#333333', footwear: 'shoes', height: 2 }),
+    grandpa: P({ faceShape: 'oblong', eyeType: 'downturned', noseType: 'hawk', earType: 'rectangular', bodyType: 'male', skin: 2, hairStyle: 'sidepart', hairColor: 'grey', facialHair: 'moustache', eyewear: 'round', upperGarment: 'vest', upperColor: '#666666', lowerGarment: 'trousers', footwear: 'shoes' }),
+    daniel: P({ faceShape: 'square', eyeType: 'almond', noseType: 'lowbridge', earType: 'round', bodyType: 'male', skin: 4, hairStyle: 'curly', hairColor: '1-0', upperGarment: 'shirt', upperColor: '#0066CC', lowerGarment: 'chinos', footwear: 'shoes' }),
+    sofia: P({ faceShape: 'oval', eyeType: 'upturned', noseType: 'greek', earType: 'oval', bodyType: 'female', skin: 3, hairStyle: 'long', hairColor: '4-0', upperGarment: 'blouse', upperColor: '#CC0066', lowerGarment: 'jeans', footwear: 'shoes' }),
+    park: P({ faceShape: 'oval', eyeType: 'monolid', noseType: 'lowbridge', earType: 'oval', bodyType: 'female', skin: 2, hairStyle: 'bun', hairColor: '1-0', upperGarment: 'jacket', upperColor: '#6600CC', lowerGarment: 'trousers', footwear: 'heels' }),
+    dan: P({ faceShape: 'triangle', eyeType: 'closeset', noseType: 'crooked', earType: 'oval', bodyType: 'male', skin: 4, hairStyle: 'short', hairColor: '1-0', eyewear: 'glasses', upperGarment: 'shirt', upperColor: '#0066CC', lowerGarment: 'chinos', footwear: 'shoes' }),
+    luis: P({ faceShape: 'square', eyeType: 'hooded', noseType: 'roman', earType: 'oval', bodyType: 'male', skin: 4, hairStyle: 'short', hairColor: '1-0', facialHair: 'moustache', upperGarment: 'shirt', upperColor: '#FFFFFF', lowerGarment: 'trousers', footwear: 'shoes' }),
+    teacher: P({ faceShape: 'diamond', eyeType: 'almond', noseType: 'nubian', earType: 'triangular', bodyType: 'female', skin: 4, hairStyle: 'bob', hairColor: '1-0', eyewear: 'glasses', upperGarment: 'blouse', upperColor: '#666666', lowerGarment: 'skirt', footwear: 'shoes' })
   };
   const ALIAS = { mum: 'mom', mother: 'mom', 'ms. park': 'park', father: 'dad', grandmother: 'grandma', granny: 'grandma', grandfather: 'grandpa' };
   const FEMALE = /👩|👧|👵|🙋‍♀️|💁‍♀️|🙎‍♀️|🧕|👸/u, MALE = /👨|👦|👴|🙋‍♂️|💁‍♂️|🧔|🤴/u, CHILD = /👦|👧|🧒/u, OLD = /👵|👴|🧓|👩‍🦳|👨‍🦳/u;
@@ -381,6 +381,22 @@
       upperGarment: f ? ['blouse', 'tshirt', 'hoodie'][r(3)] : ['shirt', 'polo', 'tshirt', 'hoodie'][r(4)], upperColor: COLS[r(COLS.length)],
       lowerGarment: ['jeans', 'chinos', 'trousers'][r(3)], footwear: ['sneakers', 'shoes'][r(2)] });
     if (!f && r(3) === 0) c.facialHair = ['stubble', 'beard', 'moustache'][r(3)];
+    return c;
+  }
+  /* face, eye, nose and ear shapes for anyone who has none (made-up people, and the deduction and present perfect
+     casts), picked from the name so the same person always looks the same; children get round, soft features */
+  const FEATURES = {
+    faceShape: ['oval', 'oval', 'round', 'square', 'rectangle', 'oblong', 'heart', 'diamond', 'triangle'],
+    eyeType: ['almond', 'almond', 'round', 'hooded', 'deepset', 'upturned', 'downturned', 'monolid', 'closeset', 'wideset'],
+    noseType: ['greek', 'greek', 'roman', 'hawk', 'nubian', 'lowbridge', 'button', 'turnedup', 'bulbous', 'crooked'],
+    earType: ['oval', 'oval', 'round', 'rectangular', 'triangular'] };
+  const KID_FEATURES = { faceShape: ['round', 'round', 'oval', 'heart'], eyeType: ['round', 'round', 'almond', 'wideset', 'upturned'],
+    noseType: ['button', 'button', 'turnedup', 'lowbridge'], earType: ['round', 'oval'] };
+  function features(c, key) {
+    let h = hash('face:' + key);
+    const r = n => { h = Math.imul(h ^ (h >>> 15), 2246822519) >>> 0; return h % n; };
+    const T = c.height === 0 ? KID_FEATURES : FEATURES;
+    for (const k of Object.keys(T)) { const v = T[k][r(T[k].length)]; if (!c[k]) c[k] = v; }
     return c;
   }
   /* people named by their job (Waiter, Doctor, Security officer…) wear its clothes */
@@ -420,7 +436,7 @@
     if (CHILD.test(avatar || '')) Object.assign(c, KID);
     if (OLD.test(avatar || '') && !/grey|white/.test(c.hairColor || '')) c.hairColor = 'grey';
     c.name = key;
-    return c;
+    return features(c, low);
   }
 
   /* ── reading a conversation from the page ── */
