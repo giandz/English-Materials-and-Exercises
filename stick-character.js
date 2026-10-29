@@ -50,13 +50,14 @@ const POSES={
   bowing:{label:'Bowing',j:{torso:60,neck:-20,shoulderF:60,elbowF:0,shoulderB:64,elbowB:0}},
   cycling:{label:'Riding a bicycle',j:{torso:28,neck:-14,shoulderF:96,elbowF:8,shoulderB:88,elbowB:10,hipF:72,kneeF:-88,hipB:28,kneeB:-62},bike:true},
   driving:{label:'Driving a car',j:{shoulderF:60,elbowF:56,shoulderB:46,elbowB:74,hipF:90,kneeF:-90,hipB:86,kneeB:-86},car:true},
+  riding:{label:'Riding a horse',riding:true,j:{shoulderF:40,elbowF:50,shoulderB:34,elbowB:56,hipF:62,kneeF:-72,hipB:58,kneeB:-70}},
   lying:{label:'Lying down',j:{root:-90,neck:0,shoulderF:12,shoulderB:-12,hipF:6,hipB:-6,kneeF:0,kneeB:0}}
 };
 const HEADWEAR={cap:{label:'Cap',noun:'a cap'},tophat:{label:'Top hat',noun:'a top hat'},strawhat:{label:'Straw hat',noun:'a straw hat'},chefhat:{label:'Chef’s hat',noun:'a chef’s hat'},bow:{label:'Bow',noun:'a bow'},
   longhair:{label:'Long hair',hair:true},longhairbow:{label:'Long hair and bow',hair:true,noun:'a bow'},pigtails:{label:'Pigtails',hair:true},afro:{label:'Afro',hair:true},mohawk:{label:'Mohawk (punk)',hair:true},bun:{label:'Bun',hair:true},ponytail:{label:'High ponytail',hair:true},feathered:{label:'Feathered cut',hair:true}};
 /* feelings are shown as a smiley in a speech bubble; the figure itself has no face */
-const EMOTIONS={happy:'happy',sad:'sad',angry:'angry',surprised:'surprised',scared:'scared',tired:'tired',bored:'bored',confused:'confused',excited:'excited',inlove:'in love',dots:'',heart:'',bang:'',bangbang:'',interrobang:'',thumbsup:'',thumbsdown:'',skull:'',brokenheart:''};
-const BUBBLE_LABELS={dots:'… (dots)',heart:'Heart',bang:'!',bangbang:'!!',interrobang:'!?',thumbsup:'Thumbs up',thumbsdown:'Thumbs down',skull:'Skull and crossbones',brokenheart:'Broken heart'};   /* bubble contents that are not a feeling: no adjective in the caption */
+const EMOTIONS={happy:'happy',sad:'sad',angry:'angry',surprised:'surprised',scared:'scared',tired:'tired',bored:'bored',confused:'confused',excited:'excited',inlove:'in love',dots:'',bang:'',bangbang:'',interrobang:'',emoji:''};
+const BUBBLE_LABELS={emoji:'Emoji…',dots:'… (dots)',bang:'!',bangbang:'!!',interrobang:'!?'};   /* bubble contents that are not a feeling: no adjective in the caption */
 /* things in the hands. upright: always stands straight up (or hangs straight down), whatever the arm does;
    the others turn with the forearm, and the grip angle turns them further round the hand */
 const ITEMS={
@@ -76,7 +77,8 @@ const ITEMS={
   tablet:{label:'Tablet',phrase:'a tablet',col:'#333333'},
   pickaxe:{label:'Pickaxe',phrase:'a pickaxe',col:'#666666'},
   pan:{label:'Frying pan',phrase:'a frying pan',col:'#666666'},
-  spatula:{label:'Kitchen spatula',phrase:'a spatula',col:'#666666'}
+  spatula:{label:'Kitchen spatula',phrase:'a spatula',col:'#666666'},
+  reins:{label:'Horse reins',phrase:'the reins',col:'#663300',reins:true}   /* a rein from this hand to the horse's mouth: drawn only when riding a horse */
 };
 const PALETTE=['#222222','#666666','#CC0000','#FF6600','#FFCC00','#00CC66','#0066CC','#6600CC','#FF66CC','#663300','#00CCCC','#FFFFFF'];
 const NAMES={'#222222':'black','#666666':'grey','#CC0000':'red','#FF6600':'orange','#FFCC00':'yellow','#00CC66':'green','#0066CC':'blue','#6600CC':'purple','#FF66CC':'pink','#663300':'brown','#00CCCC':'turquoise','#FFFFFF':'white','#000000':'black'};
@@ -85,7 +87,7 @@ const isCol=c=>typeof c==='string'&&/^#[0-9a-fA-F]{6}$/.test(c);
 
 function defaults(){
   return {schema:SCHEMA,name:'Sam',age:'adult',facing:'right',colour:'#222222',headwear:null,longHair:false,skirt:false,hunchback:false,backpack:false,dress:false,emotion:null,sweat:false,reaction:false,sleep:false,inBed:false,
-    held:{front:null,back:null},itemColour:{front:null,back:null},grip:{front:0,back:0},hatAngle:0,bubbleX:0,bubbleY:0,chair:false,bike:false,skate:false,arrow:null,arrowUp:0,car:false,carType:'car',carColour:null,lift:0,bikeColour:null,joints:Object.assign({},STAND)};
+    held:{front:null,back:null},itemColour:{front:null,back:null},grip:{front:0,back:0},hatAngle:0,bubbleX:0,bubbleY:0,emoji:'🙂',chair:false,bike:false,skate:false,arrow:null,arrowUp:0,car:false,carType:'car',carColour:null,lift:0,bikeColour:null,pet:null,hideFigure:false,riding:false,joints:Object.assign({},STAND)};
 }
 function normalize(src){
   const d=defaults(); if(!src||typeof src!=='object') return d;
@@ -93,16 +95,21 @@ function normalize(src){
   d.age=src.age==='child'?'child':'adult'; d.facing=src.facing==='left'?'left':'right';
   d.colour=isCol(src.colour)?src.colour.toUpperCase():d.colour;
   d.headwear=HEADWEAR[src.headwear]?src.headwear:null; d.emotion=src.emotion in EMOTIONS?src.emotion:src.face in EMOTIONS?src.face:null;
+  const OLD={heart:'❤️',brokenheart:'💔',skull:'💀',thumbsup:'👍',thumbsdown:'👎'}[src.emotion];   /* older files: these symbols are now emoji */
+  if(OLD&&!d.emotion){ d.emotion='emoji'; src={...src,emoji:src.emoji||OLD}; }
   d.longHair=false; if(src.longHair===true&&!d.headwear) d.headwear='longhair'; d.skirt=src.skirt===true; d.hunchback=src.hunchback===true; d.backpack=src.backpack===true; { const l=Number(src.lift); d.lift=Number.isFinite(l)?Math.max(0,Math.min(3,Math.round(l*20)/20)):0; }   /* height above the floor, in heads */ d.dress=src.dress===true; if(d.dress) d.skirt=false;   /* a dress or a skirt, not both */ d.bike=src.bike===true; d.skate=src.skate===true; d.arrow=src.arrow===true?'arrow':['arrow','selector'].includes(src.arrow)?src.arrow:null; { const a=Number(src.arrowUp); d.arrowUp=Number.isFinite(a)?Math.round(Math.max(0,Math.min(STAGE.h,a))):0; } d.car=src.car===true||!!CARS[src.car]; d.carType=CARS[src.carType]?src.carType:CARS[src.car]?src.car:'car'; d.carColour=isCol(src.carColour)?src.carColour.toUpperCase():null; if(d.car){ d.bike=false; } d.bikeColour=isCol(src.bikeColour)?src.bikeColour.toUpperCase():null;
   if(src.held&&(src.held.front==='bicycle'||src.held.back==='bicycle')) d.bike=true;   /* older files: the bicycle was a hand item */ d.chair=src.chair===true; d.sweat=src.sweat===true; d.reaction=src.reaction===true; d.sleep=src.sleep===true; d.inBed=src.inBed===true; if(d.inBed){ d.car=false; d.bike=false; d.skate=false; d.chair=false; }
   for(const h of ['front','back']){ d.held[h]=src.held&&ITEMS[src.held[h]]?src.held[h]:null; d.itemColour[h]=src.itemColour&&isCol(src.itemColour[h])?src.itemColour[h].toUpperCase():null; }
   for(const h of ['front','back']){ const g=Number(src.grip&&src.grip[h]); d.grip[h]=Number.isFinite(g)?wrap(g):0; }
   { const a=Number(src.hatAngle); d.hatAngle=Number.isFinite(a)?wrap(a):0; }
+  { const e=typeof src.emoji==='string'?emojiList(src.emoji.trim()).slice(0,12).join(''):''; d.emoji=e||'🙂'; }   /* the emoji in an emoji bubble (up to 12) */
   for(const k of ['bubbleX','bubbleY']){ const v=Number(src[k]); d[k]=Number.isFinite(v)?Math.round(Math.max(-STAGE.w,Math.min(STAGE.w,v))):0; }
   for(const [k] of JOINTS){ const v=Number(src.joints&&src.joints[k]); d.joints[k]=Number.isFinite(v)?wrap(v):STAND[k]; }
+  d.pet=petNormalize(src.pet); d.hideFigure=!!d.pet&&src.hideFigure===true;
+  d.riding=!!d.pet&&d.pet.type==='horse'&&!d.hideFigure&&src.riding===true; if(d.riding){ d.facing=d.pet.facing; d.chair=d.bike=d.car=d.skate=d.inBed=false; d.lift=0; }   /* on horseback: facing the horse's way, nothing else to sit on */   /* an animal on its own, or beside the figure */
   return d;
 }
-function applyPose(d,id){ const p=POSES[id]; if(!p) return d; d.joints=Object.assign({},STAND,p.j); d.chair=!!p.chair; d.bike=!!p.bike; d.car=!!p.car; return d; }
+function applyPose(d,id){ const p=POSES[id]; if(!p) return d; d.joints=Object.assign({},STAND,p.j); d.chair=!!p.chair; d.bike=!!p.bike; d.car=!!p.car; d.riding=!!p.riding; return d; }
 function mirror(d){ d.facing=d.facing==='left'?'right':'left'; return d; }
 
 /* ── geometry. Everything is worked out facing right (+x = forward), then flipped for a figure facing left ── */
@@ -225,19 +232,11 @@ function heldSVG(id,c,col){   /* things that turn with the hand */
 function smiley(e,col){
   const st=`fill="none" stroke="${col}" stroke-width="${S}" stroke-linecap="round" stroke-linejoin="round"`, P=d=>d?`<path d="${d}" ${st}/>`:'';
   const E='M-14,-13V-5M14,-13V-5', heart=(x,y,k)=>`M${x},${y+8*k}L${x-8*k},${y}Q${x-11*k},${y-7*k} ${x-5*k},${y-8*k}Q${x-2*k},${y-8*k} ${x},${y-4*k}Q${x+2*k},${y-8*k} ${x+5*k},${y-8*k}Q${x+11*k},${y-7*k} ${x+8*k},${y}Z`;
-  const dot=(x,y)=>`<path d="M${x},${y}h0" fill="none" stroke="${col}" stroke-width="${S*1.15}" stroke-linecap="round"/>`, ex=x=>P(`M${x},-20V3`)+dot(x,17);
-  const thumb='M-16,20V-2M-16,0H-6L-1,-15Q1,-22 7,-19Q10,-17 9,-11L7,-3H17Q22,-2 21,4L18,17Q17,20 13,20H-16';
-  /* a few symbols drawn larger, still a quarter head clear of the bubble's inside edge; the line keeps its width */
-  const big=(svg,cy,k)=>`<g transform="translate(0 ${cy}) scale(${k}) translate(0 ${-cy})">${svg.replace(/stroke-width=/g,'vector-effect="non-scaling-stroke" stroke-width=')}</g>`;
+  const dot=(x,y)=>`<path d="M${x},${y}h0" fill="none" stroke="${col}" stroke-width="${S}" stroke-linecap="round"/>`, ex=x=>P(`M${x},-20V3`)+dot(x,17);
   if(e==='bang') return ex(0);
   if(e==='bangbang') return ex(-11)+ex(11);
   if(e==='interrobang') return ex(-12)+P('M2,-12Q2,-21 11,-21Q20,-21 20,-12Q20,-5 11,-2V4')+dot(11,17);
-  if(e==='thumbsup') return big(P(thumb),0,1.18);
-  if(e==='thumbsdown') return big(`<g transform="scale(1 -1)">${P(thumb)}</g>`,0,1.18);
-  if(e==='skull') return big(P('M-11,4Q-15,-2 -14,-9Q-12,-22 0,-22Q12,-22 14,-9Q15,-2 11,4V9H-11Z')+dot(-6,-8)+dot(6,-8)+P('M-20,12L20,24M20,12L-20,24'),1,1.08);
-  if(e==='brokenheart') return big(P(heart(0,2,2.6))+P('M0,-10L-6,-1L4,6L-3,16'),2,1.18);
-  if(e==='dots') return `<path d="M-22,0h0M0,0h0M22,0h0" fill="none" stroke="${col}" stroke-width="${S*1.3}" stroke-linecap="round"/>`;
-  if(e==='heart') return big(P(heart(0,2,2.6)),2,1.18);
+  if(e==='dots') return `<path d="M-22,0h0M0,0h0M22,0h0" fill="none" stroke="${col}" stroke-width="${S}" stroke-linecap="round"/>`;
   const F={
     happy:[E,'M-17,4Q0,19 17,4'], sad:[E,'M-15,15Q0,3 15,15'], angry:['M-18,-15L-10,-6M18,-15L10,-6','M-14,13Q0,6 14,13'],
     surprised:['M-14,-16V-6M14,-16V-6',''], scared:[E,'M-18,10l6,-5l6,5l6,-5l6,5l6,-5l6,5'], tired:['M-19,-8H-9M9,-8H19','M-8,10H8'],
@@ -248,18 +247,54 @@ function smiley(e,col){
 }
 /* a speech bubble 3 heads wide and 2.5 heads tall (outside the line), up and in front of the head, its tail toward the head.
    One outline: the ellipse leaves a gap where the tail goes. (ox, oy) moves it from where it would sit. */
-function bubbleSVG(e,hc,f,col,ox,oy){
-  const rx=1.5*H-S/2, ry=1.25*H-S/2; let cx=hc[0]+f*1.6*H+ox, cy=hc[1]-2.15*H+oy;
-  cx=Math.max(1.5*H+2,Math.min(STAGE.w-1.5*H-2,cx)); cy=Math.max(1.25*H+2,Math.min(STAGE.ground-1.25*H,cy));
-  const toHead=Math.atan2(hc[1]-cy,hc[0]-cx)*180/Math.PI;   /* the tail leaves the side of the bubble that faces the head */
-  const on=deg=>[cx+rx*Math.cos(rad(deg)),cy+ry*Math.sin(rad(deg))], a1=toHead-13, a2=toHead+13, p1=on(a1), p2=on(a2);
-  const d0=Math.hypot(hc[0]-cx,hc[1]-cy), reach=Math.max(0.35*H, d0-Math.hypot(rx*Math.cos(rad(toHead)),ry*Math.sin(rad(toHead)))-0.85*H);
-  const mid=on(toHead), tip=[mid[0]+Math.cos(rad(toHead))*reach,mid[1]+Math.sin(rad(toHead))*reach], P=p=>`${n2(p[0])},${n2(p[1])}`;
-  const st=`fill="none" stroke="${col}" stroke-width="${S}" stroke-linecap="round" stroke-linejoin="round"`;
-  return {box:[cx-rx-S/2,cy-ry-S/2,cx+rx+S/2,cy+ry+S/2],c:[cx,cy],svg:`<g class="stick-bubble" data-bubble="1"><ellipse cx="${n2(cx)}" cy="${n2(cy)}" rx="${n2(rx)}" ry="${n2(ry)}" fill="transparent" stroke="none"/>`
-    +`<path d="M${P(p2)}A${n2(rx)},${n2(ry)} 0 1 1 ${P(p1)}L${P(tip)}Z" ${st}/>`
-    +`<g transform="translate(${n2(cx)} ${n2(cy)})">${smiley(e,col)}</g></g>`};
+/* an arrow (or the selector triangle) pointing down, its tip at tip */
+function arrowAt(kind,tip,col){
+  const i=S/2, w=0.75*H-i, hh=0.95*H;
+    const P2=p=>`${n2(p[0])},${n2(p[1])}`, y0=tip[1]-2*H+i, y1=tip[1]-hh, ty=tip[1]-i;
+    /* selector: just the triangle; arrow: a central shaft with two legs */
+  return kind==='selector'
+      ?`<path data-arrow="1" d="M${n2(tip[0]-w)},${n2(y1)}H${n2(tip[0]+w)}L${P2([tip[0],ty])}Z" fill="transparent" stroke="${col}" stroke-width="${S}" stroke-linejoin="round"/>`
+      :`<path data-arrow="1" d="M${n2(tip[0])},${n2(y0)}V${n2(ty)}M${n2(tip[0]-w)},${n2(y1)}L${P2([tip[0],ty])}L${n2(tip[0]+w)},${n2(y1)}" fill="none" stroke="${col}" stroke-width="${S}" stroke-linecap="round" stroke-linejoin="round"/><path data-arrow="1" d="M${n2(tip[0]-w)},${n2(y0)}H${n2(tip[0]+w)}V${n2(ty)}H${n2(tip[0]-w)}Z" fill="transparent" stroke="none"/>`;
 }
+/* one entry per emoji (a flag, a skin tone or a family is one) */
+function emojiList(t){ if(!t) return []; if(typeof Intl!=='undefined'&&Intl.Segmenter) return [...new Intl.Segmenter(undefined,{granularity:'grapheme'}).segment(t)].map(x=>x.segment).filter(x=>x.trim()); return Array.from(t).filter(x=>x.trim()); }
+const esc=t=>String(t).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+function bubbleSVG(e,hc,f,col,ox,oy,free,emoji){   /* free: may rise above the top of the stage (the view grows to fit) */
+  const rx=1.5*H-S/2, ry=1.25*H-S/2;
+  /* emoji, a head high and side by side: past one, the bubble grows sideways into a pill (straight top and bottom, the same rounded ends) */
+  const em=e==='emoji'?emojiList(emoji||'🙂'):[], hl=Math.max(0,em.length*0.6*H-0.8*H);
+  let cx=hc[0]+f*(1.6*H+hl)+ox, cy=hc[1]-2.15*H+oy;
+  cx=Math.max(1.5*H+hl+2,Math.min(STAGE.w-1.5*H-hl-2,cx)); cy=Math.min(STAGE.ground-1.25*H,free?cy:Math.max(1.25*H+2,cy));
+  const toHead=Math.atan2(hc[1]-cy,hc[0]-cx)*180/Math.PI;   /* the tail leaves the side of the bubble that faces the head */
+  const P=p=>`${n2(p[0])},${n2(p[1])}`, st=`fill="none" stroke="${col}" stroke-width="${S}" stroke-linecap="round" stroke-linejoin="round"`;
+  let outline, hit, mid;
+  if(!hl){
+    const on=deg=>[cx+rx*Math.cos(rad(deg)),cy+ry*Math.sin(rad(deg))], a1=toHead-13, a2=toHead+13, p1=on(a1), p2=on(a2);
+    mid=on(toHead); outline=p=>`M${P(p2)}A${n2(rx)},${n2(ry)} 0 1 1 ${P(p1)}L${P(p)}Z`;
+    hit=`<ellipse cx="${n2(cx)}" cy="${n2(cy)}" rx="${n2(rx)}" ry="${n2(ry)}" fill="transparent" stroke="none"/>`; }
+  else {
+    /* the pill's outline as close-set points, clockwise from the top of the right end; the tail's gap is cut out of it */
+    const pts=[];
+    for(let a=-90;a<90;a+=2) pts.push([cx+hl+rx*Math.cos(rad(a)),cy+ry*Math.sin(rad(a))]);
+    for(let x=hl;x>-hl;x-=3) pts.push([cx+x,cy+ry]);
+    for(let a=90;a<270;a+=2) pts.push([cx-hl+rx*Math.cos(rad(a)),cy+ry*Math.sin(rad(a))]);
+    for(let x=-hl;x<hl;x+=3) pts.push([cx+x,cy-ry]);
+    const ang=q=>Math.abs(wrapD(Math.atan2(q[1]-cy,q[0]-cx)*180/Math.PI-toHead));
+    let mi=0; pts.forEach((q,i)=>{ if(ang(q)<ang(pts[mi])) mi=i; }); mid=pts[mi];
+    const gap=0.45*ry, n=pts.length; let i1=mi, i2=mi, L=0;   /* the gap: as long as the round bubble's */
+    while(L<gap){ const j=(i1-1+n)%n; L+=Math.hypot(pts[j][0]-pts[i1][0],pts[j][1]-pts[i1][1]); i1=j; }
+    L=0; while(L<gap){ const j=(i2+1)%n; L+=Math.hypot(pts[j][0]-pts[i2][0],pts[j][1]-pts[i2][1]); i2=j; }
+    const run=[]; for(let i=i2;i!==i1;i=(i+1)%n) run.push(pts[i]); run.push(pts[i1]);
+    outline=p=>`M${run.map(P).join('L')}L${P(p)}Z`;
+    hit=`<path d="M${n2(cx+hl)},${n2(cy-ry)}A${n2(rx)},${n2(ry)} 0 0 1 ${n2(cx+hl)},${n2(cy+ry)}H${n2(cx-hl)}A${n2(rx)},${n2(ry)} 0 0 1 ${n2(cx-hl)},${n2(cy-ry)}Z" fill="transparent" stroke="none"/>`; }
+  const d0=Math.hypot(hc[0]-cx,hc[1]-cy), reach=Math.max(0.35*H, d0-Math.hypot(mid[0]-cx,mid[1]-cy)-0.85*H);
+  const tip=[mid[0]+Math.cos(rad(toHead))*reach,mid[1]+Math.sin(rad(toHead))*reach];
+  const emSvg=em.map((x,i)=>`<text x="${n2((i-(em.length-1)/2)*1.2*H)}" y="0" font-size="${H}" text-anchor="middle" dominant-baseline="central" font-family="'Apple Color Emoji','Segoe UI Emoji','Noto Color Emoji',sans-serif">${esc(x)}</text>`).join('');
+  return {box:[cx-rx-hl-S/2,cy-ry-S/2,cx+rx+hl+S/2,cy+ry+S/2],c:[cx,cy],svg:`<g class="stick-bubble" data-bubble="1">${hit}`
+    +`<path d="${outline(tip)}" ${st}/>`
+    +`<g transform="translate(${n2(cx)} ${n2(cy)})">${em.length?emSvg:smiley(e,col)}</g></g>`};
+}
+const wrapD=v=>((v+180)%360+360)%360-180;
 function headwearSVG(id,col){
   const st=`fill="none" stroke="${col}" stroke-width="${S}" stroke-linecap="round" stroke-linejoin="round"`;
   if(id==='cap'){   /* one straight line, rising at 30°: across the head (the crown's edge) and out at the front as the peak */
@@ -287,10 +322,119 @@ function headwearSVG(id,col){
   return '';
 }
 
+/* ── animals: a dog, a cat or a horse, side on, in the same marker. Standalone (hideFigure) or beside the figure.
+   Built facing right with the middle of the body at (0,0), then placed on the floor.
+   Pet joint angles, in degrees, positive = forward / clockwise when facing right:
+     root  body tilt (+ = nose down) · neck, tail: from their natural set (0 = rest) · head: 0 = level
+     legs (FF/FB front near/far, HF/HB hind near/far): 0 = straight down, + = forward · knees: against the leg above ── */
+const PETS={
+  cat:{label:'Cat',noun:'a cat',sc:0.833,len:1.3,ry:0.26,up:0.34,lo:0.32,neck:0.15,neckA:50,headR:0.3,tail:1.05,tailA:-25,dist:2.4},
+  dog:{label:'Dog',noun:'a dog',sc:0.78,len:1.75,ry:0.33,up:0.46,lo:0.44,neck:0.32,neckA:40,headR:0.3,tail:0.6,tailA:-40,dist:2.8},
+  horse:{label:'Horse',noun:'a horse',sc:1.0,len:2.9,ry:0.55,up:1.0,lo:1.0,neck:1.65,neckA:38,tail:1.25,tailA:-150,dist:5.2}};
+const PET_JOINTS=[['root','Body tilt'],['neck','Neck'],['head','Head'],['tail','Tail'],['ears','Ears'],['legFF','Front leg (near)'],['kneeFF','Front knee (near)'],['legFB','Front leg (far)'],['kneeFB','Front knee (far)'],
+  ['legHF','Back leg (near)'],['kneeHF','Back knee (near)'],['legHB','Back leg (far)'],['kneeHB','Back knee (far)'],['ankleFF','Front fetlock (near, horse)'],['ankleFB','Front fetlock (far, horse)'],['ankleHF','Back fetlock (near, horse)'],['ankleHB','Back fetlock (far, horse)']].map(([k,l])=>[k,l,-180,180]);
+const PET_STAND={root:0,neck:0,head:0,tail:0,ears:0,legFF:4,kneeFF:0,legFB:-4,kneeFB:0,legHF:4,kneeHF:-4,legHB:-4,kneeHB:-4,ankleFF:0,ankleFB:0,ankleHF:0,ankleHB:0};
+const PET_POSES={
+  standing:{label:'Standing',j:{}},
+  walking:{label:'Walking',j:{legFF:22,kneeFF:-25,legFB:-14,legHF:-16,kneeHF:0,legHB:20,kneeHB:20}},
+  running:{label:'Running',j:{root:-4,neck:-10,tail:20,legFF:55,kneeFF:-10,legFB:20,kneeFB:-70,legHF:-50,kneeHF:20,legHB:15,kneeHB:45}},
+  sitting:{label:'Sitting',j:{root:-40,neck:-5,head:40,tail:-55,legFF:-40,kneeFF:0,legFB:-36,kneeFB:0,legHF:50,kneeHF:-170,legHB:46,kneeHB:-170}},
+  lying:{label:'Lying down',j:{root:0,neck:-15,head:0,tail:-70,legFF:86,kneeFF:0,legFB:80,kneeFB:0,legHF:84,kneeHF:-165,legHB:78,kneeHB:-165}},
+  begging:{label:'On its back legs',j:{root:-58,neck:-10,head:55,tail:-30,legFF:16,kneeFF:-75,legFB:6,kneeFB:-80,legHF:-58,kneeHF:0,legHB:-50,kneeHB:-6}},
+  eating:{label:'Eating / grazing',j:{neck:75,head:60}}};
+function petNormalize(src){
+  if(!src||typeof src!=='object'||!PETS[src.type]) return null;
+  const p={type:src.type,colour:isCol(src.colour)?src.colour.toUpperCase():'#222222',facing:src.facing==='right'?'right':'left',joints:{}};
+  const dd=Number(src.dist); p.dist=Number.isFinite(dd)?Math.max(-8,Math.min(8,Math.round(dd*4)/4)):PETS[src.type].dist;
+  for(const [k] of PET_JOINTS){ const v=Number(src.joints&&src.joints[k]); p.joints[k]=Number.isFinite(v)?wrap(v):PET_STAND[k]; }
+  return p;
+}
+function applyPetPose(p,id){ const q=PET_POSES[id]; if(!p||!q) return p; p.joints=Object.assign({},PET_STAND,q.j); return p; }
+/* the animal's own frame: facing right, body centre at the origin */
+function petBuild(p){
+  const T=PETS[p.type], H=40*T.sc, j=p.joints, L=T.len*H, ry=T.ry*H, rx=L/2, r0=j.root, fw=[Math.cos(rad(r0)),Math.sin(rad(r0))], nm=[-Math.sin(rad(r0)),Math.cos(rad(r0))];
+  const at=(a,b)=>[fw[0]*a+nm[0]*b,fw[1]*a+nm[1]*b];
+  const horse=p.type==='horse';
+  const legP=(base,a,kn,an)=>{ const a1=a-r0, k1=add(base,down(a1),T.up*H), a2=a1+kn;
+    if(!horse) return {a1,a2,base,knee:k1,foot:add(k1,down(a2),T.lo*H)};
+    const m=add(k1,down(a2),T.lo*H*2/3), a3=a2+an;   /* a horse's lower leg has another joint (the fetlock), a third of the way up from the hoof */
+    return {a1,a2,a3,base,knee:k1,ankle:m,foot:add(m,down(a3),T.lo*H/3)}; };
+  const sh=at(rx*0.72,ry*0.45), hp=at(-rx*0.72,ry*0.45);
+  const legs={FF:legP(sh,j.legFF,j.kneeFF,j.ankleFF),FB:legP(add(sh,fw,-0.06*H),j.legFB,j.kneeFB,j.ankleFB),HF:legP(hp,j.legHF,j.kneeHF,j.ankleHF),HB:legP(add(hp,fw,0.06*H),j.legHB,j.kneeHB,j.ankleHB)};
+  const nb=p.type==='horse'?at(rx*0.78,-ry*0.55):at(rx*0.85,-ry*0.35), na=r0+T.neckA+j.neck, nt=add(nb,up(na),T.neck*H);
+  const ha=r0+j.head, head=p.type==='horse'?nt:add(nt,up(na),T.headR*H*0.85);
+  const tb=p.type==='horse'?at(-rx*0.96,-ry*0.45):at(-rx*0.95,-ry*0.25), ta=r0+T.tailA+j.tail;
+  /* the saddle (horse): the seat sits on top of the back, a little behind the middle */
+  const saddle={seat:at(-0.05*H,-ry-S),back:at(-0.62*H,-ry-0.28*H),front:at(0.52*H,-ry-0.25*H),dip:at(-0.05*H,-ry+0.28*H)};   /* a sagging arc on the back, raised at both ends */
+  return {T,H,L,rx,ry,r0,fw,nm,legs,nb,na,nt,head,ha,tb,ta,saddle};
+}
+function petSVG(p,col,riding){
+  const b=petBuild(p), T=b.T, H=40*T.sc, P=q=>`${n2(q[0])},${n2(q[1])}`, st=`fill="none" stroke="${col}" stroke-width="${S}" stroke-linecap="round" stroke-linejoin="round"`;
+  const dot=q=>`<path d="M${P(q)}h0" fill="none" stroke="${col}" stroke-width="${S*0.9}" stroke-linecap="round"/>`;
+  const seg=(a,c,jn)=>`<path d="M${P(a)}L${P(c)}" ${st} data-pet-joint="${jn}"/>`, pts=[];
+  const leg=(id)=>{ const l=b.legs[id]; pts.push(l.foot,l.knee);
+    const hoof=T===PETS.horse?`<path d="M${P(l.foot)}l${n2(0.16*H)},0" ${st}/>`:'';
+    let top=seg(l.base,l.knee,'leg'+id);
+    if(T===PETS.horse&&id[0]==='H'){   /* a horse's thigh: ¾ of a stick figure's head across at the hip, narrowing to a single line (¼ head) at the hock */
+      const len=Math.hypot(l.knee[0]-l.base[0],l.knee[1]-l.base[1]), dd=[(l.knee[0]-l.base[0])/len,(l.knee[1]-l.base[1])/len], nn=[-dd[1],dd[0]], w0=(0.75*40-S)/2, ex=0.3*H, w1=w0*(1+ex/len), b0=add(l.base,dd,-ex);
+      top=`<path d="M${P(add(b0,nn,w1))}L${P(l.knee)}L${P(add(b0,nn,-w1))}" fill="transparent" ${st.replace('fill="none" ','')} data-pet-joint="leg${id}"/>`; }
+    return top+(l.ankle?seg(l.knee,l.ankle,'knee'+id)+seg(l.ankle,l.foot,'ankle'+id):seg(l.knee,l.foot,'knee'+id))+hoof; };
+  /* inside the body nothing shows: legs, neck and tail start under its outline */
+  const mid='stkp'+(++MASK), E=`<ellipse cx="0" cy="0" rx="${n2(b.rx)}" ry="${n2(b.ry)}" transform="rotate(${n2(b.r0)})"`;
+  let s=`<mask id="${mid}" maskUnits="userSpaceOnUse" x="-2000" y="-2000" width="4000" height="4000"><rect x="-2000" y="-2000" width="4000" height="4000" fill="#fff"/>${E} fill="#000" stroke="none"/></mask>`;
+  let g='';
+  g+=`<g opacity="1">${leg('FB')}${leg('HB')}</g>`;
+  /* tail */
+  { const u=up(b.ta), pp=[-u[1],u[0]], Lt=T.tail*H, e=add(b.tb,u,Lt);
+    let d;
+    if(p.type==='cat'){ const c1=add(add(b.tb,u,Lt*0.4),pp,0.22*H), c2=add(add(b.tb,u,Lt*0.75),pp,-0.22*H), hook=add(add(e,pp,0.18*H),u,-0.05*H);
+      d=`M${P(b.tb)}C${P(c1)} ${P(c2)} ${P(e)}Q${P(add(add(e,u,0.15*H),pp,0.12*H))} ${P(hook)}`; pts.push(e,hook); }
+    else if(p.type==='dog'){ const c1=add(add(b.tb,u,Lt*0.55),pp,0.15*H); d=`M${P(b.tb)}Q${P(c1)} ${P(e)}`; pts.push(e); }
+    else { const tj=p.joints.tail, bf=tj<-25?1:tj<=20?-1:tj<45?-(45-tj)/25:0, sg=bf<0?-1:1;   /* the hair falls the other way from -25° to 20°, and straightens between 20° and 45° */
+      const c1=add(add(b.tb,u,Lt*0.25),pp,-0.35*H*bf), e2=add(add(b.tb,u,Lt*0.92),pp,0.22*H*sg), e3=add(add(b.tb,u,Lt*0.85),pp,-0.2*H*sg);
+      d=`M${P(b.tb)}Q${P(c1)} ${P(e)}M${P(add(b.tb,u,0.3*H))}Q${P(add(c1,pp,0.1*H*sg))} ${P(e2)}M${P(add(b.tb,u,0.3*H))}Q${P(add(c1,pp,-0.15*H*sg))} ${P(e3)}`; pts.push(e,e2,e3); }
+    g+=`<path d="${d}" ${st} data-pet-joint="tail"/>`; }
+  /* neck */
+  const u=up(b.na), pp=[-u[1],u[0]];   /* pp points to the front of the neck */
+  if(p.type==='horse'){ const a0=add(b.nb,pp,0.32*H), c0=add(b.nb,pp,-0.34*H), k=1.5*H, cr=Math.cos(rad(b.ha)), sr=Math.sin(rad(b.ha));
+    const HW=(x,y)=>P([b.head[0]+x*k*cr-y*k*sr,b.head[1]+x*k*sr+y*k*cr]), c1=[b.head[0]+(-.16*k)*cr-(-.1*k)*sr,b.head[1]+(-.16*k)*sr+(-.1*k)*cr];
+    /* the neck and head as one closed outline: up the throat, round the muzzle, back over the poll and down the mane side */
+    const outline=`M${P(a0)}L${HW(-.08,.3)}L${HW(.5,.64)}Q${HW(.644,.72)} ${HW(.708,.62)}Q${HW(.79,.47)} ${HW(.68,.38)}Q${HW(.62,.27)} ${HW(.53,.31)}L${HW(-.16,-.1)}L${P(c0)}Z`;   /* a small bump on top of the snout */
+    let mane=''; for(let i=1;i<=4;i++){ const q=add(add(c0,[c1[0]-c0[0],c1[1]-c0[1]],i/5.2),pp,-0.02*H); mane+=`M${P(q)}l${n2(-pp[0]*0.2*H-u[0]*0.08*H)},${n2(-pp[1]*0.2*H-u[1]*0.08*H)}`; }
+    g+=`<path d="${outline}" fill="transparent" ${st} data-pet-joint="neck"/><path d="${mane}" ${st}/>`; pts.push(c1); }
+  else g+=seg(b.nb,b.nt,'neck');
+  s+=`<g mask="url(#${mid})">${g}</g>`;
+  let sdl=null;
+  if(p.type==='horse'&&riding){ const sd=b.saddle, M=add([0,0],b.fw,-0.05*H), c2=[2*M[0]-(sd.back[0]+sd.front[0])/2,2*M[1]-(sd.back[1]+sd.front[1])/2];
+    /* a crescent: the sagging seat arc, and a second arc between the same two ends whose middle lies on the body's long axis */
+    sdl={d:`M${P(sd.back)}Q${P(sd.dip)} ${P(sd.front)}Q${P(c2)} ${P(sd.back)}Z`,M}; }
+  if(sdl){ const sm='stkq'+(++MASK);   /* the body's outline does not show through the saddle */
+    s+=`<mask id="${sm}" maskUnits="userSpaceOnUse" x="-2000" y="-2000" width="4000" height="4000"><rect x="-2000" y="-2000" width="4000" height="4000" fill="#fff"/><path d="${sdl.d}" fill="#000" stroke="#000" stroke-width="${S}"/></mask><g mask="url(#${sm})">${E} fill="transparent" ${st} data-pet-joint="root"/></g>`; }
+  else s+=`${E} fill="transparent" ${st} data-pet-joint="root"/>`;
+  s+=`<g mask="url(#${mid})">${leg('FF')}${leg('HF')}</g>`;
+  if(sdl){ const sd=b.saddle, top=sdl.M, foot=add(top,b.nm,b.ry+0.275*H), w=0.17*H;   /* the saddle, and a stirrup hanging on a strap below it */
+    s+=`<path d="${sdl.d}" ${st}/><path d="M${P(top)}L${P(foot)}M${P(add(add(foot,b.fw,-w),b.nm,-0.02*H))}L${P(add(add(foot,b.fw,-w*0.75),b.nm,0.2*H))}L${P(add(add(foot,b.fw,w*0.75),b.nm,0.2*H))}L${P(add(add(foot,b.fw,w),b.nm,-0.02*H))}Z" ${st}/>`; pts.push(sd.back,sd.front,add(foot,b.nm,0.2*H)); }
+  /* head, turned with the head angle */
+  const hw=v=>n2(v*H*(p.type==='horse'?1.5:1));   /* a horse's head is long: half again the drawing scale */
+  let hd='';
+  if(p.type==='cat'){ const E_=p.joints.ears, ear=k=>`<path transform="rotate(${k*E_} ${hw(k*.14)} ${hw(-.25)})" d="M${hw(k*.24)},${hw(-.17)}L${hw(k*.24)},${hw(-.56)}L${hw(k*.04)},${hw(-.3)}" ${st} data-pet-joint="ears"/>`, wh=k=>`M${hw(k*.38)},${hw(.0)}l${hw(k*.3)},${hw(-.07)}M${hw(k*.38)},${hw(.14)}l${hw(k*.3)},${hw(.07)}`;   /* a symmetrical face: an ear and two whiskers on each side */
+    hd=`<circle cx="0" cy="0" r="${hw(T.headR)}" fill="transparent" ${st} data-pet-joint="head"/>${ear(-1)}${ear(1)}<path d="${wh(-1)}${wh(1)}" ${st}/>`; }
+  else if(p.type==='dog') hd=`<circle cx="0" cy="0" r="${hw(T.headR)}" fill="transparent" ${st} data-pet-joint="head"/><path d="M${hw(.28)},${hw(-.1)}H${hw(.52)}Q${hw(.62)},${hw(-.1)} ${hw(.62)},${hw(.01)}Q${hw(.62)},${hw(.14)} ${hw(.52)},${hw(.14)}H${hw(.265)}" ${st}/><path transform="rotate(${p.joints.ears} ${hw(-.08)} ${hw(-.28)})" d="M${hw(-.08)},${hw(-.28)}Q${hw(-.42)},${hw(-.22)} ${hw(-.3)},${hw(.2)}" ${st} data-pet-joint="ears"/>`+dot([hw(.6),hw(-.05)]);
+  else hd=`<path d="M${hw(-.16)},${hw(-.1)}L${hw(.596)},${hw(.36)}Q${hw(.78)},${hw(.46)} ${hw(.708)},${hw(.62)}Q${hw(.644)},${hw(.72)} ${hw(.5)},${hw(.64)}L${hw(-.08)},${hw(.3)}Z" fill="transparent" stroke="none" data-pet-joint="head"/><path transform="rotate(${p.joints.ears} ${hw(.02)} ${hw(-.08)})" d="M${hw(-.08)},${hw(-.1)}L${hw(-.02)},${hw(-.42)}L${hw(.12)},${hw(-.04)}" ${st} data-pet-joint="ears"/>`+dot([hw(.18),hw(.06)]);
+  s+=`<g transform="translate(${P(b.head)}) rotate(${n2(b.ha)})">${hd}</g>`;
+  const R0=T===PETS.horse?1.45*H:T.headR*H+0.3*H; pts.push([b.head[0]+R0,b.head[1]+R0],[b.head[0]-R0,b.head[1]-R0-0.3*H]);
+  for(let i=0;i<16;i++){ const t=i*Math.PI/8; pts.push(add([0,0],b.fw,b.rx*Math.cos(t)).map((v,k)=>v+b.nm[k]*b.ry*Math.sin(t))); }
+  return {svg:s,pts,b};
+}
+
 /* build the drawing, facing right, then turned round for a figure facing left. Returns {inner, piv, box, d} in stage units */
 function build(data){
   const d=normalize(data), k=skeleton(d), f=d.facing==='left'?-1:1, col=d.colour;
-  const gy=STAGE.ground-lowest(k,d)-d.lift*H, P=p=>`${n2(p[0])},${n2(p[1])}`, W=p=>[n2(STAGE.cx+f*p[0]),n2(p[1]+gy)];
+  /* riding a horse: the hips sit on the saddle, the figure faces the way the horse does */
+  const riding=!!(d.riding&&d.pet&&d.pet.type==='horse'&&!d.hideFigure);
+  let gy=STAGE.ground-lowest(k,d)-d.lift*H;
+  if(riding){ const pe0=petBuild(d.pet), pg0=STAGE.ground-Math.max(...petSVG(d.pet,'#000',true).pts.map(q=>q[1]))-S/2; gy=pe0.saddle.seat[1]+pg0-k.hip[1]; }
+  const P=p=>`${n2(p[0])},${n2(p[1])}`, W=p=>[n2(STAGE.cx+f*p[0]),n2(p[1]+gy)];
   const st=`fill="none" stroke="${col}" stroke-width="${S}" stroke-linecap="round" stroke-linejoin="round"`;
   const seg=(a,b,joint)=>`<path d="M${P(a)}L${P(b)}" ${st} data-joint="${joint}"/>`;
   const pts=[k.hip,k.sh,k.head,k.armF.hand,k.armB.hand,k.armF.el,k.armB.el,k.legF.foot,k.legB.foot,k.legF.knee,k.legB.knee];
@@ -307,7 +451,7 @@ function build(data){
   const sk=d.skirt?skirtPts(k,d):null, dr=d.dress?dressPath(k,d,P):null, mid='stkm'+(++MASK);
   const legMask=(sk||dr)?` mask="url(#${mid})"`:'', shape=dr?dr.d:sk?`M${P(sk[0])}L${P(sk[1])}L${P(sk[2])}Z`:'';
   if(shape) s+=`<mask id="${mid}" maskUnits="userSpaceOnUse" x="-2000" y="-2000" width="4000" height="4000"><rect x="-2000" y="-2000" width="4000" height="4000" fill="#fff"/><path d="${shape}" fill="#000" stroke="#000" stroke-width="${S}" stroke-linejoin="round"/></mask>`;
-  s+=`<g class="stick-back"><g${legMask}><g${d.dress?' stroke-opacity="0"':''}>`+seg(k.hip,k.legB.knee,'hipB')+'</g>'+seg(k.legB.knee,k.legB.foot,'kneeB')+'</g>'+seg(k.sh,k.armB.el,'shoulderB')+seg(k.armB.el,k.armB.hand,'elbowB')+'</g>';
+  s+=`<g class="stick-back"><g${legMask}${riding?' stroke-opacity="0"':''}><g${d.dress?' stroke-opacity="0"':''}>`+seg(k.hip,k.legB.knee,'hipB')+'</g>'+seg(k.legB.knee,k.legB.foot,'kneeB')+'</g>'+seg(k.sh,k.armB.el,'shoulderB')+seg(k.armB.el,k.armB.hand,'elbowB')+'</g>';
   const headT=`translate(${P(k.head)}) rotate(${n2(k.na)})`;
   if(false) s+=`<path transform="${headT}" d="M${n2(-R*Math.sin(rad(35)))},${n2(-R*Math.cos(rad(35)))}Q${n2(-R-7)},2 ${n2(-R+3)},${n2(R+0.7*H)}" fill="none" stroke="${col}" stroke-width="${S}" stroke-linecap="round"/>`;
   if(d.backpack){   /* on the back, following the spine (straight or hunched): a rounded outline behind it and a strap to the shoulder */
@@ -337,7 +481,7 @@ function build(data){
     headMask=` mask="url(#${hm})"`; }
   s+=`<g${headMask}><g transform="${headT}"><circle cx="0" cy="0" r="${n2(R)}" ${st} data-joint="neck"/></g></g><g transform="${headT}"><circle cx="0" cy="0" r="${n2(R)}" fill="transparent" stroke="none" data-joint="neck"/>${d.headwear?`<g transform="rotate(${d.hatAngle})">${headwearSVG(d.headwear,col)}</g>`:''}</g>`;
   /* things that turn with the hand: drawn here, in the figure's own frame, along the forearm plus the grip angle */
-  const turning=(h,arm)=>{ const id=d.held[h]; if(!id||ITEMS[id].upright) return '';
+  const turning=(h,arm)=>{ const id=d.held[h]; if(!id||ITEMS[id].upright||ITEMS[id].reins) return '';
     const th=-(arm.a2+d.grip[h]);
     let cable='';
     if(id==='microphone'){   /* the cable leaves the narrow end of the handle, winds down to the floor and trails two heads along it, in front */
@@ -353,7 +497,7 @@ function build(data){
   let bub=null;
   if(d.emotion){   /* the bubble goes in front of the head, unless a raised hand (and what it holds) is there: then behind */
     const hc=W(k.head), raised=s=>[k.armF.hand,k.armB.hand].map(W).filter(p=>p[1]<hc[1]+0.2*H&&(p[0]-hc[0])*s>-0.3*H).length;
-    const side=raised(f)>raised(-f)?-f:f; bub=bubbleSVG(d.emotion,hc,side,col,f*d.bubbleX,d.bubbleY); }
+    const side=raised(f)>raised(-f)?-f:f; bub=bubbleSVG(d.emotion,hc,side,col,f*d.bubbleX,d.bubbleY,false,d.emoji); }
   let carOut='';
   if(d.skate){ const fy=Math.max(k.legF.foot[1],k.legB.foot[1])+S/2+0.12*H, x0=Math.min(k.legF.foot[0],k.legB.foot[0])-0.45*H, x1=Math.max(k.legF.foot[0],k.legB.foot[0])+0.45*H, wy=fy+0.22*H, sb=d.carColour||'#00CC66';
     s+=`<path d="M${n2(x0-0.25*H)},${n2(fy-0.18*H)}Q${n2(x0-0.1*H)},${n2(fy)} ${n2(x0+0.1*H)},${n2(fy)}H${n2(x1-0.1*H)}Q${n2(x1+0.1*H)},${n2(fy)} ${n2(x1+0.25*H)},${n2(fy-0.18*H)}" fill="none" stroke="${sb}" stroke-width="${S}" stroke-linecap="round"/>`
@@ -385,13 +529,7 @@ function build(data){
   let arrowSvg='', arrowTip=null;
   if(d.arrow){ const hatH={tophat:0.95,chefhat:1.6,strawhat:0.5,afro:0.75,mohawk:0.7,bun:0.55,ponytail:0.9,bow:0.5,longhairbow:0.5,pigtails:0.5}[d.headwear]||0.15;
     const hc=W(k.head), tops=[hc[1]-R-S/2-hatH*H].concat([k.armF.hand,k.armB.hand,k.armF.el,k.armB.el].map(W).filter(p=>Math.abs(p[0]-hc[0])<0.9*H).map(p=>p[1]-S/2));
-    const tip=[hc[0],Math.min(...tops)-0.25*H-d.arrowUp], i=S/2, w=0.75*H-i, sh=0.28*H, hh=0.95*H;
-    const P2=p=>`${n2(p[0])},${n2(p[1])}`, y0=tip[1]-2*H+i, y1=tip[1]-hh, ty=tip[1]-i;
-    /* selector: just the triangle; arrow: a central shaft with two legs */
-    arrowSvg=d.arrow==='selector'
-      ?`<path data-arrow="1" d="M${n2(tip[0]-w)},${n2(y1)}H${n2(tip[0]+w)}L${P2([tip[0],ty])}Z" fill="transparent" stroke="${col}" stroke-width="${S}" stroke-linejoin="round"/>`
-      :`<path data-arrow="1" d="M${n2(tip[0])},${n2(y0)}V${n2(ty)}M${n2(tip[0]-w)},${n2(y1)}L${P2([tip[0],ty])}L${n2(tip[0]+w)},${n2(y1)}" fill="none" stroke="${col}" stroke-width="${S}" stroke-linecap="round" stroke-linejoin="round"/><path data-arrow="1" d="M${n2(tip[0]-w)},${n2(y0)}H${n2(tip[0]+w)}V${n2(ty)}H${n2(tip[0]-w)}Z" fill="transparent" stroke="none"/>`;
-    arrowTip=tip; }
+    arrowTip=[hc[0],Math.min(...tops)-0.25*H-d.arrowUp]; arrowSvg=arrowAt(d.arrow,arrowTip,col); }
   if(d.inBed){ const b=bedGeo(k), D=b.dir, N=n2, bid='stkb'+(++MASK), wood=`fill="none" stroke="#8a5a3a" stroke-width="${S}" stroke-linecap="round" stroke-linejoin="round"`;
     const px=b.x-D*0.05*H, sheetTop=b.top-0.5*H;
     /* only the head and neck show: everything else of the figure (and anything held) is under the sheet */
@@ -407,39 +545,76 @@ function build(data){
     [[0.55,0,0.32],[1.05,-0.75,0.42],[0.6,-1.65,0.54]].forEach(([dx,dy,z])=>{ const x=hc[0]+f*dx*H, y=base+dy*H, h=z*H/2;
       zz+=`<path d="M${n2(x-h)},${n2(y-h)}H${n2(x+h)}L${n2(x-h)},${n2(y+h)}H${n2(x+h)}" fill="none" stroke="${col}" stroke-width="${S}" stroke-linecap="round" stroke-linejoin="round"/>`;
       pts.push([(x-STAGE.cx)*f,y-gy-h-H*1.6]); }); }
-  const inner=`<g transform="translate(${STAGE.cx} ${n2(gy)}) scale(${f} 1)">${s}${carOut}</g>`+held+zz+(bub?bub.svg:'')+arrowSvg;
-  const wp=pts.map(W), xs=wp.map(p=>p[0]), ys=wp.map(p=>p[1]);
-  if(bub){ xs.push(bub.box[0]+H*0.9,bub.box[2]-H*0.9); ys.push(bub.box[1]+H*1.9); }
-  if(arrowTip){ ys.push(arrowTip[1]-(d.arrow==='selector'?0.95*H:2*H)+H*1.9-S); }
+  let inner=`<g transform="translate(${STAGE.cx} ${n2(gy)}) scale(${f} 1)">${s}${carOut}</g>`+held+zz+(bub?bub.svg:'')+arrowSvg;
+  let wp=pts.map(W);
+  /* the animal: beside the figure (dist heads in front of it), or in the middle of the stage on its own */
+  let petPiv=null;
+  if(d.pet){ const pe=petSVG(d.pet,d.pet.colour,riding), pf=d.pet.facing==='right'?1:-1, b=pe.b;
+    const px=d.hideFigure?STAGE.cx:riding?STAGE.cx-pf*b.saddle.seat[0]:W(k.hip)[0]+f*d.pet.dist*H, pgy=STAGE.ground-Math.max(...pe.pts.map(q=>q[1]))-S/2, PW=q=>[n2(px+pf*q[0]),n2(q[1]+pgy)];
+    const pet=`<g class="stick-pet" transform="translate(${n2(px)} ${n2(pgy)}) scale(${pf} 1)">${pe.svg}</g>`;
+    let reins='';
+    if(riding){ const kk=1.5*H, cr=Math.cos(rad(b.ha)), sr=Math.sin(rad(b.ha)), bit=PW([b.head[0]+.48*kk*cr-.5*kk*sr,b.head[1]+.48*kk*sr+.5*kk*cr]);   /* the reins run from the corner of the mouth to each hand, sagging a little */
+      for(const [hd,a] of [['back',k.armB],['front',k.armF]]){ if(d.held[hd]!=='reins') continue;   /* only the hands holding a rein */
+        const h=W(a.hand), c=[(bit[0]+h[0])/2,(bit[1]+h[1])/2+0.3*H]; reins+=`<path d="M${bit[0]},${bit[1]}Q${n2(c[0])},${n2(c[1])} ${h[0]},${h[1]}" fill="none" stroke="${d.itemColour[hd]||ITEMS.reins.col}" stroke-width="${S}" stroke-linecap="round"/>`; } }
+    if(d.hideFigure){ inner=pet; wp=[];
+      /* an animal on its own takes the figure's bubble, arrow or selector, reaction lines and Zs, round its own head */
+      const ty=d.pet.type, hk=b.H*(ty==='horse'?1.5:1), cr=Math.cos(rad(b.ha)), sr=Math.sin(rad(b.ha));
+      const HP=(x,y)=>PW([b.head[0]+(x*cr-y*sr)*hk,b.head[1]+(x*sr+y*cr)*hk]);
+      const hc=ty==='horse'?HP(.28,.25):HP(0,0);
+      const topY=Math.min(...({cat:[[-.24,-.56],[.24,-.56],[0,-.3]],dog:[[0,-.3],[-.08,-.28]],horse:[[-.02,-.42],[-.16,-.1],[.12,-.04],[.53,.31],[.7,.6]]}[ty]).map(q=>HP(q[0],q[1])[1]))-S/2;
+      const lift=hc[1]-topY, cst=`fill="none" stroke="${col}" stroke-width="${S}" stroke-linecap="round" stroke-linejoin="round"`;
+      let deco='';
+      if(d.reaction) for(const a of [-40,0,40]){ const r0=lift+0.25*H, p0=[hc[0]+pf*r0*Math.sin(rad(a)),hc[1]-r0*Math.cos(rad(a))], p1=[hc[0]+pf*(r0+0.42*H)*Math.sin(rad(a)),hc[1]-(r0+0.42*H)*Math.cos(rad(a))];
+        deco+=`<path d="M${n2(p0[0])},${n2(p0[1])}L${n2(p1[0])},${n2(p1[1])}" ${cst}/>`; wp.push(p1); }
+      if(d.sleep){ const base=topY-0.35*H; [[0.55,0,0.32],[1.05,-0.75,0.42],[0.6,-1.65,0.54]].forEach(([dx,dy,z])=>{ const x=hc[0]+pf*dx*H, y=base+dy*H, h=z*H/2;
+        deco+=`<path d="M${n2(x-h)},${n2(y-h)}H${n2(x+h)}L${n2(x-h)},${n2(y+h)}H${n2(x+h)}" ${cst}/>`; wp.push([x,y-h-H*1.6]); }); }
+      bub=d.emotion?bubbleSVG(d.emotion,hc,pf,col,pf*d.bubbleX,d.bubbleY-Math.max(0,lift-R-S/2)-(ty==='horse'?0.6*H:0),true,d.emoji):null;   /* raised clear of ears and of a horse's long head */
+      if(bub) wp.push([bub.box[0]+H*0.9,bub.box[1]+H*1.9],[bub.box[2]-H*0.9,bub.box[1]+H*1.9]);
+      if(d.arrow){ const tip=[hc[0],topY-0.25*H-d.arrowUp]; deco+=arrowAt(d.arrow,tip,col); wp.push([tip[0],tip[1]-(d.arrow==='selector'?0.95*H:2*H)+H*1.9-S]); }
+      inner=pet+deco+(bub?bub.svg:''); }
+    else inner=pet+reins+inner;
+    wp=wp.concat(pe.pts.map(PW));
+    const T=b.T; petPiv={facing:pf,root:{p:PW([0,0]),parent:0,kind:'fw'},neck:{p:PW(b.nb),parent:b.r0+T.neckA,kind:'up'},tail:{p:PW(b.tb),parent:b.r0+T.tailA,kind:'up'},
+      head:{p:PW(b.head),parent:b.r0+(d.pet.type==='horse'?35:0),kind:'fw'},ears:{p:PW(b.head),parent:b.ha,kind:'up'}};
+    for(const id of ['FF','FB','HF','HB']){ const l=b.legs[id]; petPiv['leg'+id]={p:PW(l.base),parent:-b.r0,kind:'down'}; petPiv['knee'+id]={p:PW(l.knee),parent:l.a1,kind:'down'}; if(l.ankle) petPiv['ankle'+id]={p:PW(l.ankle),parent:l.a2,kind:'down'}; } }
+  const xs=wp.map(p=>p[0]), ys=wp.map(p=>p[1]);
+  if(bub&&!d.hideFigure){ xs.push(bub.box[0]+H*0.9,bub.box[2]-H*0.9); ys.push(bub.box[1]+H*1.9); }
+  if(arrowTip&&!d.hideFigure){ ys.push(arrowTip[1]-(d.arrow==='selector'?0.95*H:2*H)+H*1.9-S); }
   const box=[Math.min(...xs)-H*0.9, Math.min(...ys)-H*1.9, Math.max(...xs)+H*0.9, STAGE.ground+S];
   const piv={torso:{p:W(k.hip),parent:d.joints.root,kind:'up'},neck:{p:W(k.sh),parent:k.na-d.joints.neck,kind:'up'},
     shoulderF:{p:W(k.sh),parent:-(d.joints.root+d.joints.torso),kind:'down'},elbowF:{p:W(k.armF.el),parent:k.armF.a1,kind:'down'},
     shoulderB:{p:W(k.sh),parent:-(d.joints.root+d.joints.torso),kind:'down'},elbowB:{p:W(k.armB.el),parent:k.armB.a1,kind:'down'},
     hipF:{p:W(k.hip),parent:-d.joints.root,kind:'down'},kneeF:{p:W(k.legF.knee),parent:k.legF.a1,kind:'down'},
-    hipB:{p:W(k.hip),parent:-d.joints.root,kind:'down'},kneeB:{p:W(k.legB.knee),parent:k.legB.a1,kind:'down'},facing:f,bubble:bub&&bub.c};
+    hipB:{p:W(k.hip),parent:-d.joints.root,kind:'down'},kneeB:{p:W(k.legB.knee),parent:k.legB.a1,kind:'down'},facing:f,bubble:bub&&bub.c,pet:petPiv};
   return {inner,piv,box,d};
 }
 function pivots(data){ return build(data).piv; }
 /* the joint value that points the limb from its pivot toward (x,y) in stage units */
 function angleTo(piv,joint,x,y){ const p=piv[joint], vx=(x-p.p[0])*piv.facing, vy=y-p.p[1];
-  const a=p.kind==='up'?Math.atan2(vx,-vy):Math.atan2(vx,vy); return wrap(a*180/Math.PI-p.parent); }
+  const a=p.kind==='up'?Math.atan2(vx,-vy):p.kind==='fw'?Math.atan2(vy,vx):Math.atan2(vx,vy); return wrap(a*180/Math.PI-p.parent); }
+/* the same for an animal's joint (piv.pet from pivots) */
+function petAngleTo(piv,joint,x,y){ const pp=piv.pet; if(!pp||!pp[joint]) return 0; return angleTo(Object.assign({facing:pp.facing},pp),joint,x,y); }
 function render(data,opts){
   opts=opts||{}; const b=build(data), d=b.d;
-  const vb=opts.fit?b.box.map((v,i)=>i<2?n2(v):n2(v-b.box[i-2])).join(' '):`0 0 ${STAGE.w} ${STAGE.h}`;
-  const ground=opts.ground?`<path d="M0,${STAGE.ground}H${STAGE.w}" stroke="currentColor" stroke-opacity=".25" stroke-width="1.5"/>`:'';
+  /* on the stage, a wide animal (a horse) widens the view instead of being cut off */
+  const x0=Math.min(0,b.box[0]-4), x1=Math.max(STAGE.w,b.box[2]+4);
+  const y0=Math.min(0,b.box[1]-4), vb=opts.fit?b.box.map((v,i)=>i<2?n2(v):n2(v-b.box[i-2])).join(' '):`${n2(x0)} ${n2(y0)} ${n2(x1-x0)} ${n2(STAGE.h-y0)}`;   /* and a rider on a horse raises it */
+  const ground=opts.ground?`<path d="M${n2(x0)},${STAGE.ground}H${n2(x1)}" stroke="currentColor" stroke-opacity=".25" stroke-width="1.5"/>`:'';
   return `<svg xmlns="http://www.w3.org/2000/svg" viewBox="${vb}" role="img" aria-label="${(describe(d)||'A stick figure').replace(/"/g,'&quot;')}">${ground}${b.inner}</svg>`;
 }
 function describe(data){
   const d=normalize(data), w=[], h=[];
   if(d.headwear&&HEADWEAR[d.headwear].noun) w.push(HEADWEAR[d.headwear].noun); if(d.skirt) w.push('a skirt'); if(d.dress) w.push('a dress'); if(d.backpack) w.push('a backpack');
-  for(const k of ['front','back']) if(d.held[k]) h.push(ITEMS[d.held[k]].phrase);
+  for(const k of ['front','back']) if(d.held[k]&&!(d.held[k]==='reins'&&h.includes(ITEMS.reins.phrase))) h.push(ITEMS[d.held[k]].phrase);
   const list=a=>a.length>1?a.slice(0,-1).join(', ')+' and '+a[a.length-1]:a[0];
   const parts=[]; if(w.length) parts.push('wearing '+list(w)); if(h.length) parts.push('holding '+list(h));
   if(d.chair) parts.push('sitting on a chair'); if(d.inBed) parts.push('lying in bed'); if(d.bike) parts.push('riding a bicycle'); if(d.skate) parts.push('riding a skateboard'); if(d.car) parts.push('driving '+CARS[d.carType].noun);
   if(d.sleep) parts.unshift('sleeping');
-  const n=d.name||'This person', all=parts.length>1?parts.slice(0,-1).join(', ')+', and '+parts[parts.length-1]:parts[0];
+  const n=d.name||'This person';
+  if(d.pet){ const a=PETS[d.pet.type].noun; if(d.hideFigure) return `${a.charAt(0).toUpperCase()+a.slice(1)}.`; parts.push(d.riding?'riding '+a:'with '+a); }
+  const all=parts.length>1?parts.slice(0,-1).join(', ')+', and '+parts[parts.length-1]:parts[0];
   if(d.emotion&&EMOTIONS[d.emotion]) return `${n} is ${EMOTIONS[d.emotion]}`+(parts.length?` and is ${all}.`:'.');
   return parts.length?`${n} is ${all}.`:'';
 }
-window.StickCharacter={SCHEMA,H,STAGE,BUILD,JOINTS,POSES,CARS,HEADWEAR,EMOTIONS,BUBBLE_LABELS,ITEMS,PALETTE,colourName,defaults,normalize,applyPose,mirror,render,pivots,angleTo,describe,skeleton};
+window.StickCharacter={PETS,PET_JOINTS,PET_POSES,PET_STAND,petNormalize,applyPetPose,petAngleTo,SCHEMA,H,STAGE,BUILD,JOINTS,POSES,CARS,HEADWEAR,EMOTIONS,BUBBLE_LABELS,ITEMS,PALETTE,colourName,defaults,normalize,applyPose,mirror,render,pivots,angleTo,describe,skeleton};
 })();

@@ -46,6 +46,7 @@
   .cp-stage [data-joint], .cp-stage [data-bubble]{ cursor:grab; }
   .cp-stage [data-arrow]{ cursor:ns-resize; }
   .cp-stage.dragging [data-joint]{ cursor:grabbing; }
+  .cp-stage [data-pet-joint]{ cursor:grab; } .cp-stage.dragging [data-pet-joint]{ cursor:grabbing; }
   .cp-caption{ font-size:1.05rem; font-weight:600; text-align:center; margin:10px 0 2px; min-height:1.5em; }
   .cp-hint{ font-size:0.8rem; color:var(--text-muted); text-align:center; margin:0; }
 
@@ -89,7 +90,7 @@
 <div class="page" id="page">
   <span class="cefr-tag cefr-a1a2">A1–A2 · Elementary</span>
   <h1>Stick figure poser</h1>
-  <p class="subtitle">Draw quick stick people for any lesson: pose them, give them a cap, a skirt, a frying pan or a feeling, and save them as JSON or SVG.</p>
+  <p class="subtitle">Draw quick stick people for any lesson: pose them, give them a cap, a skirt, a frying pan or a feeling, add a dog, a cat or a horse, and save them as JSON or SVG.</p>
 
   <div class="cp-layout">
     <div class="cp-stage-col">
@@ -110,6 +111,7 @@
         <div class="cp-row"><label for="spHat">Head<small>Hats and hair</small></label><select class="cp-sel" id="spHat"></select></div>
         <div class="cp-row"><label for="spHatA">Hat angle<small id="spHatLab"></small></label><input id="spHatA" type="range" min="-180" max="180" step="5"></div>
         <div class="cp-row"><label for="spFace">Bubble<small>In a speech bubble: drag it to move it</small></label><div class="cp-pick"><select class="cp-sel" id="spFace"></select><button type="button" id="spBubReset" style="font-size:.8rem;padding:5px 8px;white-space:nowrap">Reset bubble</button></div></div>
+        <div class="cp-row" id="spEmojiRow" hidden><label for="spEmoji">Emoji<small>Type or paste one or more: the bubble grows to fit</small></label><input class="cp-sel" id="spEmoji" type="text" autocomplete="off" spellcheck="false" style="font-size:1.2rem"></div>
         <div class="cp-row"><label for="spArrow">Above the head<small>Drag it up or down</small></label><select class="cp-sel" id="spArrow"><option value="">Nothing</option><option value="arrow">Arrow</option><option value="selector">Selector (triangle)</option></select></div>
         <div class="cp-row"><label for="spCar">Vehicle</label><select class="cp-sel" id="spCar"></select></div>
         <div class="cp-row"><span class="cp-lab">Options</span><div class="cp-checks">
@@ -138,6 +140,16 @@
         <div class="cp-row"><label for="spLift">Above the floor<small id="spLiftLab"></small></label><input id="spLift" type="range" min="0" max="3" step="0.05"></div>
         <div class="cp-btns"><button id="spMirror" type="button">⇄ Turn round</button><button id="spReset" type="button">Reset pose</button></div>
         <details class="cp-det"><summary>Joint angles</summary><p class="cp-note" style="margin-top:6px">Positive = forward. Limbs: 0° hangs straight down. Body and head: 0° is upright. Every joint turns all the way round.</p><div id="spJoints"></div></details>
+      </div>
+      <div class="cp-panel">
+        <h2>Animal</h2>
+        <div class="cp-row"><label for="spPet">Animal<small>Drag its legs, neck, head, tail or body to pose it</small></label><select class="cp-sel" id="spPet"></select></div>
+        <div class="cp-row"><span class="cp-lab">Options</span><div class="cp-checks"><label><input type="checkbox" id="spHideFig"> Animal only (no stick figure)</label><label><input type="checkbox" id="spRide"> Riding the horse</label></div></div>
+        <div class="cp-row"><span class="cp-lab">Facing</span><div class="cp-seg" id="spPetFacing"><button type="button" data-v="left">◀ Left</button><button type="button" data-v="right">Right ▶</button></div></div>
+        <div class="cp-row"><span class="cp-lab">Colour</span><div class="cp-swatches" id="spPetColour"></div></div>
+        <div class="cp-row"><label for="spPetPose">Pose</label><select class="cp-sel" id="spPetPose"></select></div>
+        <div class="cp-row"><label for="spPetDist">Distance<small id="spPetDistLab"></small></label><input id="spPetDist" type="range" min="-8" max="8" step="0.25"></div>
+        <details class="cp-det"><summary>Animal joint angles</summary><div id="spPetJoints"></div></details>
       </div>
       <div class="cp-panel">
         <h2>Figure data</h2>
@@ -185,6 +197,31 @@ $('spColour').innerHTML=SC.PALETTE.filter(c=>c!=='#FFFFFF').map(c=>`<button type
 $('spPalF').style.gridTemplateColumns=$('spPalB').style.gridTemplateColumns='repeat(12,1fr)';
 $('spJoints').innerHTML=SC.JOINTS.map(([k,l,lo,hi])=>`<div class="cp-joint"><span>${l}</span><input type="range" min="${lo}" max="${hi}" data-j="${k}" aria-label="${l}"><input type="number" min="${lo}" max="${hi}" data-j="${k}" aria-label="${l} in degrees"></div>`).join('');
 
+/* the animal */
+$('spPet').innerHTML=opt('','None')+Object.entries(SC.PETS).map(([k,v])=>opt(k,v.label)).join('');
+$('spPetPose').innerHTML=opt('','(custom)')+Object.entries(SC.PET_POSES).map(([k,v])=>opt(k,v.label)).join('');
+$('spPetColour').innerHTML=SC.PALETTE.filter(c=>c!=='#FFFFFF').map(c=>`<button type="button" class="cp-sw" data-c="${c}" style="background:${c}" title="${SC.colourName(c)}" aria-label="${SC.colourName(c)}"></button>`).join('');
+$('spPetJoints').innerHTML=SC.PET_JOINTS.map(([k,l,lo,hi])=>`<div class="cp-joint"><span>${l}</span><input type="range" min="${lo}" max="${hi}" data-pj="${k}" aria-label="${l}"><input type="number" min="${lo}" max="${hi}" data-pj="${k}" aria-label="${l} angle"></div>`).join('');
+function syncPet(){ const p=ch.pet, on=!!p;
+  $('spPet').value=on?p.type:''; $('spHideFig').checked=!!ch.hideFigure; $('spHideFig').disabled=!on;
+  $('spRide').checked=!!ch.riding; $('spRide').disabled=!on||p.type!=='horse'||ch.hideFigure; $('spPetDist').disabled=!on||!!ch.riding;
+  $('spPetPose').disabled=!on;
+  $('spPetFacing').querySelectorAll('button').forEach(b=>{ b.disabled=!on; b.setAttribute('aria-pressed',String(on&&b.dataset.v===p.facing)); });
+  $('spPetColour').querySelectorAll('button').forEach(b=>{ b.disabled=!on; b.setAttribute('aria-pressed',String(on&&b.dataset.c===p.colour)); });
+  $('spPetDist').value=on?p.dist:0; $('spPetDistLab').textContent=!on?'':ch.hideFigure?'Not used without a figure':`${p.dist} heads ${p.dist>=0?'in front of':'behind'} the figure`;
+  $('spPetJoints').querySelectorAll('[data-pj]').forEach(i=>{ i.disabled=!on; if(on&&(i!==document.activeElement||i.type==='range')) i.value=p.joints[i.dataset.pj]; }); }
+$('spPet').addEventListener('change',e=>{ const t=e.target.value;
+  if(!t){ ch.pet=null; ch.hideFigure=false; }
+  else { const old=ch.pet; ch.pet=SC.petNormalize({type:t,colour:old&&old.colour,facing:old?old.facing:(ch.facing==='right'?'left':'right'),joints:old&&old.joints}); $('spPetPose').value=old?$('spPetPose').value:'standing'; }
+  update(); });
+$('spRide').addEventListener('change',e=>{ SC.applyPose(ch,e.target.checked?'riding':'standing'); ch.riding=e.target.checked; $('spPreset').value=e.target.checked?'riding':'standing'; update(); });
+$('spHideFig').addEventListener('change',e=>{ch.hideFigure=e.target.checked;update();});
+$('spPetFacing').addEventListener('click',e=>{const b=e.target.closest('button'); if(b&&ch.pet){ch.pet.facing=b.dataset.v;update();}});
+$('spPetColour').addEventListener('click',e=>{const b=e.target.closest('button'); if(b&&ch.pet){ch.pet.colour=b.dataset.c;update();}});
+$('spPetPose').addEventListener('change',e=>{ if(e.target.value&&ch.pet){ SC.applyPetPose(ch.pet,e.target.value); update(); } });
+$('spPetDist').addEventListener('input',e=>{ if(ch.pet){ ch.pet.dist=+e.target.value; update(); } });
+$('spPetJoints').addEventListener('input',e=>{const k=e.target.dataset.pj; if(!k||!ch.pet) return; ch.pet.joints[k]=+e.target.value||0; $('spPetPose').value=''; update();});
+
 function update(skipName){
   ch=SC.normalize(ch);
   stage.innerHTML=SC.render(ch,{ground:true});
@@ -193,7 +230,7 @@ function update(skipName){
   $('spAge').querySelectorAll('button').forEach(b=>b.setAttribute('aria-pressed',String(b.dataset.v===ch.age)));
   $('spFacing').querySelectorAll('button').forEach(b=>b.setAttribute('aria-pressed',String(b.dataset.v===ch.facing)));
   $('spColour').querySelectorAll('button').forEach(b=>b.setAttribute('aria-pressed',String(b.dataset.c===ch.colour)));
-  $('spHat').value=ch.headwear||''; $('spFace').value=ch.emotion||'';
+  $('spHat').value=ch.headwear||''; $('spFace').value=ch.emotion||''; $('spEmojiRow').hidden=ch.emotion!=='emoji'; if(document.activeElement!==$('spEmoji')) $('spEmoji').value=ch.emoji||'';
   $('spSkirt').checked=ch.skirt; $('spDress').checked=ch.dress; $('spPack').checked=ch.backpack; $('spHunch').checked=ch.hunchback; $('spChair').checked=ch.chair; $('spBed').checked=ch.inBed; $('spCar').value=ch.car?ch.carType:ch.bike?'bicycle':ch.skate?'skateboard':''; $('spSweat').checked=ch.sweat; $('spReact').checked=ch.reaction; $('spSleep').checked=ch.sleep; $('spArrow').value=ch.arrow||'';
   [['F','front'],['B','back']].forEach(([k,h])=>{ const it=SC.ITEMS[ch.held[h]], c=ch.itemColour[h]||(it&&it.col);
     $('spHeld'+k).value=ch.held[h]||''; const b=$('spCol'+k); b.disabled=!it; b.style.background=it?c:'transparent'; if(!it) $('spPal'+k).hidden=true;
@@ -201,9 +238,10 @@ function update(skipName){
   $('spLift').value=ch.lift; $('spLiftLab').textContent=ch.lift?ch.lift.toFixed(2).replace(/0$/,'')+' heads':'On the floor';
   $('spHatA').value=ch.hatAngle; $('spHatA').disabled=!ch.headwear; $('spHatLab').textContent=ch.headwear?ch.hatAngle+'°':'Choose a hat or hair first';
   $('spBubReset').disabled=!ch.emotion||(!ch.bubbleX&&!ch.bubbleY);
-  [['F','front'],['B','back']].forEach(([k,h])=>{ const it=SC.ITEMS[ch.held[h]], free=it&&!it.upright;
-    $('spGrip'+k).disabled=!free; $('spGrip'+k).value=ch.grip[h]; $('spGrip'+k+'Lab').textContent=!it?'':free?ch.grip[h]+'°':'Always upright'; });
+  [['F','front'],['B','back']].forEach(([k,h])=>{ const it=SC.ITEMS[ch.held[h]], free=it&&!it.upright&&!it.reins;
+    $('spGrip'+k).disabled=!free; $('spGrip'+k).value=ch.grip[h]; $('spGrip'+k+'Lab').textContent=!it?'':free?ch.grip[h]+'°':it.reins?'Runs to the horse\'s mouth':'Always upright'; });
   $('spJoints').querySelectorAll('[data-j]').forEach(i=>{ if(i!==document.activeElement||i.type==='range') i.value=ch.joints[i.dataset.j]; });
+  syncPet();
   if(document.activeElement!==$('spJson')) $('spJson').value=JSON.stringify(ch,null,2);
 }
 const custom=()=>{$('spPreset').value='';};
@@ -213,7 +251,8 @@ $('spFacing').addEventListener('click',e=>{const b=e.target.closest('button'); i
 $('spColour').addEventListener('click',e=>{const b=e.target.closest('button'); if(b){ch.colour=b.dataset.c;update();}});
 $('spHat').addEventListener('change',e=>{ch.headwear=e.target.value||null;update();});
 $('spFace').addEventListener('change',e=>{ch.emotion=e.target.value||null;update();});
-[['spDress','dress'],['spSkirt','skirt'],['spPack','backpack'],['spHunch','hunchback'],['spChair','chair'],['spBed','inBed'],['spSweat','sweat'],['spReact','reaction'],['spSleep','sleep']].forEach(([id,k])=>$(id).addEventListener('change',e=>{ch[k]=e.target.checked; if(e.target.checked&&k==='dress') ch.skirt=false; if(e.target.checked&&k==='skirt') ch.dress=false; if(e.target.checked&&k==='car'){ ch.bike=false; ch.chair=false; } if(e.target.checked&&k==='chair'){ ch.car=false; ch.bike=false; ch.skate=false; ch.inBed=false; } if(e.target.checked&&k==='inBed'){ SC.applyPose(ch,'lying'); ch.inBed=true; ch.car=false; ch.bike=false; ch.skate=false; ch.chair=false; $('spPreset').value='lying'; } update();}));
+$('spEmoji').addEventListener('input',e=>{ch.emoji=e.target.value;update();});
+[['spDress','dress'],['spSkirt','skirt'],['spPack','backpack'],['spHunch','hunchback'],['spChair','chair'],['spBed','inBed'],['spSweat','sweat'],['spReact','reaction'],['spSleep','sleep']].forEach(([id,k])=>$(id).addEventListener('change',e=>{ch[k]=e.target.checked; if(e.target.checked&&k==='dress') ch.skirt=false; if(e.target.checked&&k==='skirt') ch.dress=false; if(e.target.checked&&k==='car'){ ch.bike=false; ch.chair=false; } if(e.target.checked&&k==='chair'){ ch.car=false; ch.bike=false; ch.skate=false; ch.inBed=false; } if(e.target.checked&&k==='sleep'&&ch.joints.root===-90&&ch.joints.neck===0) ch.joints.neck=12; if(e.target.checked&&k==='inBed'){ SC.applyPose(ch,'lying'); ch.joints.neck=12; ch.inBed=true; ch.car=false; ch.bike=false; ch.skate=false; ch.chair=false; $('spPreset').value='lying'; } update();}));
 [['F','front'],['B','back']].forEach(([k,h])=>{
   $('spHeld'+k).addEventListener('change',e=>{ch.held[h]=e.target.value||null; ch.itemColour[h]=null; ch.grip[h]=0; update();});
   $('spCol'+k).addEventListener('click',()=>{ $('spPal'+k).hidden=!$('spPal'+k).hidden; });
@@ -232,12 +271,15 @@ $('spJoints').addEventListener('input',e=>{const k=e.target.dataset.j; if(!k) re
 let drag=null;
 const pointer=e=>{ const svg=stage.querySelector('svg'), m=svg.getScreenCTM().inverse(); return [e.clientX*m.a+e.clientY*m.c+m.e, e.clientX*m.b+e.clientY*m.d+m.f]; };
 stage.addEventListener('pointerdown',e=>{ const arr=e.target.closest('[data-arrow]'); if(arr){ drag={arrow:true,id:e.pointerId,p0:pointer(e),u0:ch.arrowUp}; try{stage.setPointerCapture(e.pointerId);}catch(_){} e.preventDefault(); return; }
+  const pj=e.target.closest('[data-pet-joint]');
+  if(pj){ drag={pet:pj.dataset.petJoint,id:e.pointerId}; try{stage.setPointerCapture(e.pointerId);}catch(_){} stage.classList.add('dragging'); e.preventDefault(); return; }
   const bub=e.target.closest('[data-bubble]'), g=e.target.closest('[data-joint]'); if(!g&&!bub) return;
   drag=bub?{bubble:true,id:e.pointerId,p0:pointer(e),x0:ch.bubbleX,y0:ch.bubbleY,f:ch.facing==='left'?-1:1}:{joint:g.dataset.joint,id:e.pointerId}; try{stage.setPointerCapture(e.pointerId);}catch(_){} stage.classList.add('dragging'); e.preventDefault(); });
 stage.addEventListener('pointermove',e=>{ if(!drag||e.pointerId!==drag.id) return;
   const [x,y]=pointer(e);
   if(drag.arrow){ ch.arrowUp=Math.max(0,Math.round(drag.u0-(y-drag.p0[1]))); update(); return; }
   if(drag.bubble){ ch.bubbleX=Math.round(drag.x0+(x-drag.p0[0])*drag.f); ch.bubbleY=Math.round(drag.y0+(y-drag.p0[1])); update(); return; }
+  if(drag.pet){ if(ch.pet){ ch.pet.joints[drag.pet]=SC.petAngleTo(SC.pivots(ch),drag.pet,x,y); $('spPetPose').value=''; update(); } return; }
   const piv=SC.pivots(ch); ch.joints[drag.joint]=SC.angleTo(piv,drag.joint,x,y); custom(); update(); });
 const endDrag=()=>{ if(!drag) return; try{stage.releasePointerCapture(drag.id);}catch(_){} drag=null; stage.classList.remove('dragging'); };
 ['pointerup','pointercancel','lostpointercapture'].forEach(t=>stage.addEventListener(t,endDrag)); window.addEventListener('blur',endDrag);
@@ -259,7 +301,7 @@ $('spFile').addEventListener('change',e=>{const f=e.target.files[0]; if(!f) retu
 $('spApply').addEventListener('click',()=>load($('spJson').value));
 $('spCopy').addEventListener('click',()=>{ const t=JSON.stringify(ch,null,2);
   (navigator.clipboard?navigator.clipboard.writeText(t):Promise.reject()).then(()=>msg('JSON copied.','ok'),()=>msg('Copy isn’t available here — open “View / paste JSON” and copy from there.','err')); });
-$('spNew').addEventListener('click',()=>{ch=SC.defaults();SC.applyPose(ch,'standing');$('spPreset').value='standing';update();msg('Started a new figure.');});
+$('spNew').addEventListener('click',()=>{ch=SC.defaults(); $('spPetPose').value='';SC.applyPose(ch,'standing');$('spPreset').value='standing';update();msg('Started a new figure.');});
 
 $('spPreset').value='standing';
 update();

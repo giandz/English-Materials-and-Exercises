@@ -95,6 +95,10 @@
   'use strict';
 
   const PX_PER_M = 405.33 / 1.72;   // HouseCharacter stage px per metre: an 'Average' person (405 px) is 1.72 m
+  /* Measured in the house (standing, short hair, no shoes; walls 2.5 m and doors 2.1 m on the same
+     scale, ZS ≈ 39.2 px a metre up): child (height 0) ≈ 130 cm, Very short ≈ 150, Short ≈ 160,
+     Average ≈ 170, Tall ≈ 178, Very tall ≈ 187 cm, the same for both body types. The split skew
+     (opts.split) takes 2–3 cm off what opts.flat draws. */
   const FOOT = 0.4;                  // the stand-in's footprint (m)
   const STAGE_X = 300, STAGE_GROUND = 550;   // HouseCharacter.STAGE
   const WATER_Z = -0.15;             // a pool's water surface, below the ground (house-engine.js)
@@ -173,7 +177,23 @@
      opts.split   0–1 (1)  the split skew (see warpBody)
      opts.back    false: never use the back view (people facing away keep a front body)
      Returns { d, warp: { split } }. */
+  /* Drawing a person is the slow part of a picture, and a live page (the House Builder) draws
+     the same people again on every change: the view of each one, its size and its finished
+     drawing are kept, keyed by everything they depend on. */
+  const memo = new Map();
+  function cached(key, make) {
+    if (memo.has(key)) return memo.get(key);
+    const v = make();
+    if (memo.size > 300) memo.delete(memo.keys().next().value);
+    memo.set(key, v);
+    return v;
+  }
   function viewPlan(character, facing, rot, opts) {
+    opts = opts || {};
+    const key = 'vp|' + JSON.stringify(character) + '|' + facing + '|' + rot + '|' + [opts.turn, opts.flat, opts.joints, opts.split, opts.back].join(',');
+    return cached(key, () => viewPlanOf(character, facing, rot, opts));
+  }
+  function viewPlanOf(character, facing, rot, opts) {
     opts = opts || {};
     const HC = global.HouseCharacter;
     const d = HC.normalize(character), yaw = yawFor(facing, rot), side = yaw >= 0 ? 1 : -1;
@@ -231,7 +251,9 @@
   const viewData = (character, facing, rot, opts) => viewPlan(character, facing, rot, opts).d;
 
   /* how far the drawing reaches round its feet point, in stage px (root x, ground y) */
-  function extent(d) {
+  const pivotsOf = d => cached('pv|' + JSON.stringify(d), () => global.HouseCharacter.pivots(d));
+  function extent(d) { return cached('ex|' + JSON.stringify(d), () => extentOf(d)); }
+  function extentOf(d) {
     const vb = global.HouseCharacter.render(d, { fit: true }).match(/viewBox="([^"]+)"/)[1].split(' ').map(Number);
     return { left: vb[0] + 8, right: vb[0] + vb[2] - 8, top: vb[1] + 8, bottom: vb[1] + vb[3] - 8 };
   }
@@ -726,6 +748,108 @@
     const stBy = {}, rmBy = {};
     eng.LEVELS.forEach(L => { stBy[L] = eng.displayState(L); rmBy[L] = eng.computeAreas(stBy[L].edges); });
 
+    const layer = peopleLayer(eng, stBy, people, opts);
+    let markup = eng.renderIso(stBy, rmBy);
+    const ns = 'hc3d' + (++seq) + '-';
+    markup = markup.replace(/id="([^"]+)"/g, (m, id) => `id="${ns}${id}"`).replace(/url\(#([^)]+)\)/g, (m, id) => `url(#${ns}${id})`);
+    markup = layer.finish(markup, ns);
+    const { who, tags, overs } = layer, clashes = layer.clashes;
+    // words on the floor (as HousePicture), then name tags, drawn last
+    const zl = eng.baseZ(st.level) + 0.02;
+    (opts.labels || []).forEach(l => {
+      const [sx, sy] = eng.scr(l.x, l.y, zl + (l.z || 0));
+      markup += `<text class="pic-label${l.num ? ' pic-num' : ''}" x="${sx.toFixed(1)}" y="${sy.toFixed(1)}">${esc(l.text)}</text>`;
+    });
+    markup += overs.join('') + marks() + tags.join('');
+    /* marks: things in the house pointed out with the same highlight line — a door, a window,
+       a piece of furniture or any box: [{ edge: { o, r, c }, kind: 'door' | 'window' } |
+       { furniture: i } | { box: [x0, y0, x1, y1, z0, z1] }] on the floor shown. The line is the
+       outline of the thing's box as the camera sees it, drawn over the picture. */
+    function marks() {
+      const zf = eng.baseZ(st.level), FL = st.floors[st.level];
+      return (opts.marks || []).map(m => {
+        let b = m.box;
+        if (m.edge) {
+          const { o, r, c } = m.edge, t = 0.09, [z0, z1] = m.kind === 'window' ? [0.9, 2.1] : [0, 2.1];
+          b = o === 'v' ? [c - t, r + 0.04, c + t, r + 0.96, z0, z1] : [c + 0.04, r - t, c + 0.96, r + t, z0, z1];
+        } else if (m.furniture != null && FL && FL.furniture[m.furniture]) {
+          const f = FL.furniture[m.furniture], R = eng.furnRect(f);
+          b = [R.x0, R.y0, R.x1, R.y1, 0, eng.FURN[f.type].wall ? eng.FURN[f.type].hangZ + eng.FURN[f.type].h / 2 : eng.FURN[f.type].h];
+        }
+        if (!b) return '';
+        const pts = [];
+        [b[0], b[2]].forEach(x => [b[1], b[3]].forEach(y => [b[4], b[5]].forEach(z => pts.push(eng.scr(x, y, zf + z)))));
+        const h = hull(pts).map(p => p[0].toFixed(1) + ',' + p[1].toFixed(1)).join(' ');
+        return `<polygon class="hc3d-mark" points="${h}" fill="var(--hc3d-highlight, #f59e0b)" fill-opacity=".12" stroke="var(--hc3d-highlight, #f59e0b)" stroke-width="__HLW__" stroke-linejoin="round"/>`;
+      }).join('');
+    }
+
+    // frame: the floor shown, up to the walls or the tallest thing — people included
+    const FL = st.level >= 0 ? st.floors[st.level] : null, zf = st.level >= 0 ? eng.baseZ(st.level) : 0;
+    const screenBox = rects => {
+      let x0 = Infinity, x1 = -Infinity, y0 = Infinity, y1 = -Infinity;
+      rects.forEach(([r, lo, hi]) => [[r.x0, r.y0], [r.x1, r.y0], [r.x1, r.y1], [r.x0, r.y1]].forEach(([cx, cy]) => [lo, hi].forEach(zz => {
+        const [sx, sy] = eng.scr(cx, cy, zf + zz);
+        x0 = Math.min(x0, sx); x1 = Math.max(x1, sx); y0 = Math.min(y0, sy); y1 = Math.max(y1, sy);
+      })));
+      return [x0, y0, x1, y1];
+    };
+    const addPeople = b => { who.forEach(w => { if (w.L !== st.level || !w.screen) return;
+      b[0] = Math.min(b[0], w.screen.x0); b[1] = Math.min(b[1], w.screen.y0 - (tags.length ? 18 : 0)); b[2] = Math.max(b[2], w.screen.x1); b[3] = Math.max(b[3], w.screen.y1); }); return b; };
+    if (FL && !opts.roofs) {
+      const pieces = [];
+      FL.furniture.forEach(f => {
+        let top = eng.FURN[f.type].h;
+        if (eng.FURN[f.type].wall) top = eng.FURN[f.type].hangZ + eng.FURN[f.type].h / 2;
+        (f.items || []).forEach(it => { top = Math.max(top, eng.FURN[f.type].levels[it.lvl].z + eng.APPL[it.type].h); });
+        pieces.push([eng.furnRect(f), 0, top]);
+      });
+      FL.appliances.forEach(a => pieces.push([eng.applRect(a), 0, eng.APPL[a.type].h]));
+      let b;
+      const near = who.filter(w => w.L === st.level).concat((opts.aroundAt || []).map(([x, y, z]) => ({ x, y, z: z || 0 })));   // aroundAt: other spots [x, y, z] to frame
+      if (opts.around != null && near.length) {
+        // close-up on the people: their spots plus that many metres of room round them
+        const m = Number(opts.around) || 0;
+        // at the height each one is at (a watch on a counter is framed on the counter, not the floor under it)
+        const rs = near.map(w => [{ x0: Math.max(0, w.x - m), x1: Math.min(st.COLS, w.x + m), y0: Math.max(0, w.y - m), y1: Math.min(st.ROWS, w.y + m) }, w.z || 0, w.z || 0]);
+        b = screenBox(rs);
+      } else if (opts.focus) {
+        const m = opts.focus === true ? 0.6 : Number(opts.focus);
+        const rs = pieces.concat(who.filter(w => w.L === st.level).map(w => [{ x0: w.x - FOOT / 2, x1: w.x + FOOT / 2, y0: w.y - FOOT / 2, y1: w.y + FOOT / 2 }, 0, 0]));
+        const u = rs.reduce((a, [r]) => ({ x0: Math.min(a.x0, r.x0), y0: Math.min(a.y0, r.y0), x1: Math.max(a.x1, r.x1), y1: Math.max(a.y1, r.y1) }), { x0: Infinity, y0: Infinity, x1: -Infinity, y1: -Infinity });
+        b = screenBox(rs.concat([[{ x0: Math.max(0, u.x0 - m), y0: Math.max(0, u.y0 - m), x1: Math.min(st.COLS, u.x1 + m), y1: Math.min(st.ROWS, u.y1 + m) }, 0, 0]]));
+      } else {
+        let zTop = walls === 'down' ? 0.6 : eng.WALL_H;
+        pieces.forEach(([, , top]) => { zTop = Math.max(zTop, top); });
+        b = screenBox([[{ x0: 0, y0: 0, x1: st.COLS, y1: st.ROWS }, -zf - 0.3, zTop + 0.05]]);   // down to the ground: an upper floor shows the house under it
+      }
+      b = addPeople(b);
+      const pad = opts.focus || opts.around != null ? 8 : 12;
+      box = [b[0] - pad, b[1] - pad, b[2] - b[0] + 2 * pad, b[3] - b[1] + 2 * pad];
+    }
+    if (opts.box) box = opts.box.slice();
+    if (box && opts.aspect) {
+      const [bx, by, bw, bh] = box;
+      box = bw / bh < opts.aspect ? [bx + bw / 2 - bh * opts.aspect / 2, by, bh * opts.aspect, bh] : [bx, by + bh / 2 - bw / opts.aspect / 2, bw, bw / opts.aspect];
+    }
+    const [x, y, w, hh] = box || [0, 0, 100, 100];
+    markup = markup.replace(/__HLR__/g, (opts.highlightLine || w / 110).toFixed(2));
+    markup = markup.replace(/stroke-width="__HLW__"/g, `stroke-width="${((opts.highlightLine || w / 110) * 1.1).toFixed(2)}"`);
+    const alt = esc(opts.alt || 'A picture of people in a room');
+    return `<svg class="house-pic" xmlns="http://www.w3.org/2000/svg" viewBox="${x.toFixed(1)} ${y.toFixed(1)} ${w.toFixed(1)} ${hh.toFixed(1)}" role="img" aria-label="${alt}"${clashes ? ` data-clashes="${clashes}"` : ''}>${markup}</svg>`;
+  }
+
+  /* The people of a picture, for any house engine. Call it after the engine's display state is
+     made (stBy, as displayState gives it, one per floor) and before renderIso: it adds an
+     invisible stand-in for each person to stBy, so the engine's depth sort places them among
+     the walls and furniture. Then pass renderIso's markup to finish(markup, idPrefix), which
+     swaps the stand-ins for the people and returns the new markup. After that, the layer's
+     who (each person's spot and screen box), tags and overs (name tags and arms to draw on top,
+     as markup) are filled in. HouseCharacter3D.layer is this function: the House Builder uses
+     it to put people in its own live picture. */
+  function peopleLayer(eng, stBy, people, opts) {
+    opts = opts || {}; people = people || [];
+    const HC = global.HouseCharacter, st = eng.state;
     // everyone: their drawing, its size, and a stand-in in the scene for the depth sort
     const scale = eng.ZS / PX_PER_M, line = opts.line != null ? opts.line : 0.6;
     let clashes = 0;
@@ -736,7 +860,7 @@
       if (bed) return sleeper(p, i, L, bed);
       if (p.garment) return garmentItem(p, i, L);
       const seat = p.seat != null && st.floors[L] ? st.floors[L].furniture[p.seat] : null;
-      const thigh = seat ? (() => { const pv = global.HouseCharacter.pivots(p.character); return Math.hypot(pv.kneeL.x - pv.hipL.x, pv.kneeL.y - pv.hipL.y) / PX_PER_M; })() : 0;
+      const thigh = seat ? (() => { const pv = pivotsOf(p.character); return Math.hypot(pv.kneeL.x - pv.hipL.x, pv.kneeL.y - pv.hipL.y) / PX_PER_M; })() : 0;
       const sp = seat ? seatSpot(eng, seat, p.place, thigh) : null;
       const facing = p.facing != null ? p.facing : sp ? sp.facing : 'S';
       const vp = viewPlan(p.character, facing, st.rot, Object.assign({}, opts, { turn: p.turn != null ? p.turn : opts.turn })), d = vp.d, ex = extent(d);
@@ -744,12 +868,12 @@
       const out = { p, i, L, d, ex, H, warp: vp.warp, away: vp.away, x: p.x != null ? p.x : sp ? sp.x : 0, y: p.y != null ? p.y : sp ? sp.y : 0, z: p.z || 0 };
       if (sp) {
         // hips on the cushion: the bottom of the pelvis (just under the hip joints) at the seat's height
-        const root = global.HouseCharacter.pivots(d).root, hipH = (STAGE_GROUND - (root.y + 16)) / PX_PER_M;
+        const root = pivotsOf(d).root, hipH = (STAGE_GROUND - (root.y + 16)) / PX_PER_M;
         out.z += sp.z - hipH;
       }
       if (p.swim) {
         // in a swimming pool: standing on the bottom, the water just under the shoulders
-        const neckH = (STAGE_GROUND - global.HouseCharacter.pivots(d).neck.y) / PX_PER_M;
+        const neckH = (STAGE_GROUND - pivotsOf(d).neck.y) / PX_PER_M;
         out.z = WATER_Z - (neckH - 0.13);
       }
       if (!stBy[L]) return out;
@@ -762,7 +886,7 @@
       if (p.seat != null && stBy[L].furniture[p.seat]) stBy[L].furniture[p.seat].cls += ' hc3d-seat-' + i;
       else if (!p.swim) {
         const prev = st.level; st.level = L;
-        if (!eng.furnValid(proxy, L)) { clashes++; console.warn('HouseCharacter3D: ' + (out.d.name || 'a person') + ' is standing in something (a wall, furniture or stairs).'); }
+        if (!eng.furnValid(proxy, L)) { clashes++; if (!opts.quiet) console.warn('HouseCharacter3D: ' + (out.d.name || 'a person') + ' is standing in something (a wall, furniture or stairs).'); }
         st.level = prev;
       }
       return out;
@@ -877,10 +1001,10 @@
       if (at) markup = markup.slice(0, at[0]) + html + markup.slice(at[1]); else markup += html;
     }
 
-    let markup = eng.renderIso(stBy, rmBy);
-    const ns = 'hc3d' + (++seq) + '-';
-    markup = markup.replace(/id="([^"]+)"/g, (m, id) => `id="${ns}${id}"`).replace(/url\(#([^)]+)\)/g, (m, id) => `url(#${ns}${id})`);
-
+    let markup = '', ns = 'hc3d-';
+    const tags = [], overs = [];
+    function finish(m, prefix) {
+    markup = m; ns = prefix || ns;
     /* Seated people are drawn right after their seat, so the seat and its legs are under
        them. When they face away, the backrest (and a sofa's near armrest) is between them
        and the viewer: those parts' outlines are cut out of the person (see occluders). */
@@ -895,16 +1019,18 @@
     });
 
     // swap each stand-in for its person
-    const tags = [], overs = [];
     who.forEach(w => {
       if (w.sleep) return drawSleeper(w);
       if (w.garment) return drawGarment(w);
       const [sx, sy] = eng.scr(w.x, w.y, eng.baseZ(w.L) + w.z);
       // the drawing's insides, moved into a plain transformed group: a nested <svg> would be
       // resized by any page CSS aimed at svg elements (svg{width:100%} and the like)
-      let art = HC.render(w.d).replace(/^<svg[^>]*>/, '').replace(/<\/svg>$/, '').replace(/<title>[\s\S]*?<\/title>/, '')
-        .replace('stroke-width="1.3" stroke-linejoin', `stroke-width="${(line / scale).toFixed(2)}" stroke-linejoin`);
-      if (w.warp.split) art = warpBody(art, w.warp, HC.pivots(w.d).neck.x);
+      let art = cached('art|' + JSON.stringify(w.d) + '|' + (line / scale).toFixed(2) + '|' + w.warp.split, () => {
+        let a = HC.render(w.d).replace(/^<svg[^>]*>/, '').replace(/<\/svg>$/, '').replace(/<title>[\s\S]*?<\/title>/, '')
+          .replace('stroke-width="1.3" stroke-linejoin', `stroke-width="${(line / scale).toFixed(2)}" stroke-linejoin`);
+        if (w.warp.split) a = warpBody(a, w.warp, HC.pivots(w.d).neck.x);
+        return a;
+      });
       /* armOver: one arm (and what its hand holds) is lifted out of the figure and drawn on top
          of the whole picture, e.g. a cook's arm reaching over the counter to the stove. Only
          when the person faces the camera: from behind, that arm is on the far side of them. */
@@ -954,9 +1080,17 @@
            body, so the water line curves round the chest instead of cutting straight across. */
         const erx = (0.26 * eng.HW).toFixed(2), ery = (0.26 * eng.HH).toFixed(2), ell = `<ellipse cx="${wx.toFixed(2)}" cy="${wy.toFixed(2)}" rx="${erx}" ry="${ery}"/>`;
         const ellD = `M${(wx - +erx).toFixed(2)} ${wy.toFixed(2)}a${erx} ${ery} 0 1 0 ${(2 * erx).toFixed(2)} 0a${erx} ${ery} 0 1 0 ${(-2 * erx).toFixed(2)} 0Z`;
+        /* Under the water the body is seen through the surface: it is kept inside the pool's
+           outline on the water, so legs never show past the pool's near edge. */
+        const pool = ((st.floors[0] || {}).pools || []).find(q => w.x >= q.c0 && w.x <= q.c1 && w.y >= q.r0 && w.y <= q.r1);
+        let under = art;
+        if (pool) {
+          const pz = eng.baseZ(0) + WATER_Z, pc = [[pool.c0, pool.r0], [pool.c1, pool.r0], [pool.c1, pool.r1], [pool.c0, pool.r1]].map(([x, y]) => eng.scr(x, y, pz));
+          under = `<clipPath id="${ns}pool${w.i}"><path d="M${pc.map(q => q[0].toFixed(2) + ' ' + q[1].toFixed(2)).join('L')}Z"/></clipPath><g clip-path="url(#${ns}pool${w.i})">${art}</g>`;
+        }
         art = `<clipPath id="${up}"><rect x="-9999" y="-9999" width="19998" height="${(wy + 9999).toFixed(2)}"/>${ell}</clipPath>`
           + `<clipPath id="${dn}"><path clip-rule="evenodd" d="M-9999 ${wy.toFixed(2)}H9999V9999H-9999Z${ellD}"/></clipPath>`
-          + `<g clip-path="url(#${dn})" opacity=".2">${art}</g>${ripple}<g clip-path="url(#${up})">${art}</g>`;
+          + `<g clip-path="url(#${dn})" opacity=".2">${under}</g>${ripple}<g clip-path="url(#${up})">${art}</g>`;
       }
       art = `<g class="hc3d-person" data-name="${esc(w.d.name)}"${op < 1 ? ` data-opacity="${op.toFixed(2)}"` : ''}>${shadow && op < 1 ? `<g opacity="${op.toFixed(3)}">${shadow}</g>` : shadow}${art}</g>`;
       const g = findGroup(markup, 'hc3d-ref hc3d-ref-' + w.i + '"');
@@ -970,11 +1104,13 @@
       const tag = w.L !== st.level ? '' : w.p.tag != null ? w.p.tag : (opts.tags ? w.d.name : '');
       if (tag) tags.push(`<text class="pic-label hc3d-tag" x="${sx.toFixed(1)}" y="${(w.headTop - 8).toFixed(1)}">${esc(tag)}</text>`);
     });
+    return markup;
+    }
     function drawSleeper(w) {
       /* The head is drawn the normal way (round things look the same from any side), full size,
          turned in the picture so the body runs toward the headboard; only the head and neck
          are kept, the duvet covers the rest. */
-      const { f, u, zo } = w.sleep, pv = HC.pivots(w.d), P = (uu, vv) => eng.furnPt(f, uu, vv);
+      const { f, u, zo } = w.sleep, pv = pivotsOf(w.d), P = (uu, vv) => eng.furnPt(f, uu, vv);
       const bw2 = eng.FURN[f.type].w / 2, bd2 = eng.FURN[f.type].d / 2, hv = -bd2 + 0.42;   // the bed's half sizes; the neck's spot
       const zb = eng.baseZ(w.L) + zo, S0 = eng.scr(...P(u, hv), zb + 0.6), S1 = eng.scr(...P(u, hv - 1), zb + 0.6);
       /* The bed's length and width are not at right angles on screen (they cross at about 127°).
@@ -1061,89 +1197,7 @@
       return out + `<polygon class="m-duvet ft" points="${pts(top)}"/><path d="M${fold[0][0].toFixed(2)} ${fold[0][1].toFixed(2)}L${fold[1][0].toFixed(2)} ${fold[1][1].toFixed(2)}" stroke="rgba(0,0,0,.15)" stroke-width="1.2" fill="none"/>`;
     }
 
-    // words on the floor (as HousePicture), then name tags, drawn last
-    const zl = eng.baseZ(st.level) + 0.02;
-    (opts.labels || []).forEach(l => {
-      const [sx, sy] = eng.scr(l.x, l.y, zl + (l.z || 0));
-      markup += `<text class="pic-label${l.num ? ' pic-num' : ''}" x="${sx.toFixed(1)}" y="${sy.toFixed(1)}">${esc(l.text)}</text>`;
-    });
-    markup += overs.join('') + marks() + tags.join('');
-    /* marks: things in the house pointed out with the same highlight line — a door, a window,
-       a piece of furniture or any box: [{ edge: { o, r, c }, kind: 'door' | 'window' } |
-       { furniture: i } | { box: [x0, y0, x1, y1, z0, z1] }] on the floor shown. The line is the
-       outline of the thing's box as the camera sees it, drawn over the picture. */
-    function marks() {
-      const zf = eng.baseZ(st.level), FL = st.floors[st.level];
-      return (opts.marks || []).map(m => {
-        let b = m.box;
-        if (m.edge) {
-          const { o, r, c } = m.edge, t = 0.09, [z0, z1] = m.kind === 'window' ? [0.9, 2.1] : [0, 2.1];
-          b = o === 'v' ? [c - t, r + 0.04, c + t, r + 0.96, z0, z1] : [c + 0.04, r - t, c + 0.96, r + t, z0, z1];
-        } else if (m.furniture != null && FL && FL.furniture[m.furniture]) {
-          const f = FL.furniture[m.furniture], R = eng.furnRect(f);
-          b = [R.x0, R.y0, R.x1, R.y1, 0, eng.FURN[f.type].wall ? eng.FURN[f.type].hangZ + eng.FURN[f.type].h / 2 : eng.FURN[f.type].h];
-        }
-        if (!b) return '';
-        const pts = [];
-        [b[0], b[2]].forEach(x => [b[1], b[3]].forEach(y => [b[4], b[5]].forEach(z => pts.push(eng.scr(x, y, zf + z)))));
-        const h = hull(pts).map(p => p[0].toFixed(1) + ',' + p[1].toFixed(1)).join(' ');
-        return `<polygon class="hc3d-mark" points="${h}" fill="var(--hc3d-highlight, #f59e0b)" fill-opacity=".12" stroke="var(--hc3d-highlight, #f59e0b)" stroke-width="__HLW__" stroke-linejoin="round"/>`;
-      }).join('');
-    }
-
-    // frame: the floor shown, up to the walls or the tallest thing — people included
-    const FL = st.level >= 0 ? st.floors[st.level] : null, zf = st.level >= 0 ? eng.baseZ(st.level) : 0;
-    const screenBox = rects => {
-      let x0 = Infinity, x1 = -Infinity, y0 = Infinity, y1 = -Infinity;
-      rects.forEach(([r, lo, hi]) => [[r.x0, r.y0], [r.x1, r.y0], [r.x1, r.y1], [r.x0, r.y1]].forEach(([cx, cy]) => [lo, hi].forEach(zz => {
-        const [sx, sy] = eng.scr(cx, cy, zf + zz);
-        x0 = Math.min(x0, sx); x1 = Math.max(x1, sx); y0 = Math.min(y0, sy); y1 = Math.max(y1, sy);
-      })));
-      return [x0, y0, x1, y1];
-    };
-    const addPeople = b => { who.forEach(w => { if (w.L !== st.level || !w.screen) return;
-      b[0] = Math.min(b[0], w.screen.x0); b[1] = Math.min(b[1], w.screen.y0 - (tags.length ? 18 : 0)); b[2] = Math.max(b[2], w.screen.x1); b[3] = Math.max(b[3], w.screen.y1); }); return b; };
-    if (FL && !opts.roofs) {
-      const pieces = [];
-      FL.furniture.forEach(f => {
-        let top = eng.FURN[f.type].h;
-        if (eng.FURN[f.type].wall) top = eng.FURN[f.type].hangZ + eng.FURN[f.type].h / 2;
-        (f.items || []).forEach(it => { top = Math.max(top, eng.FURN[f.type].levels[it.lvl].z + eng.APPL[it.type].h); });
-        pieces.push([eng.furnRect(f), 0, top]);
-      });
-      FL.appliances.forEach(a => pieces.push([eng.applRect(a), 0, eng.APPL[a.type].h]));
-      let b;
-      const near = who.filter(w => w.L === st.level).concat((opts.aroundAt || []).map(([x, y, z]) => ({ x, y, z: z || 0 })));   // aroundAt: other spots [x, y, z] to frame
-      if (opts.around != null && near.length) {
-        // close-up on the people: their spots plus that many metres of room round them
-        const m = Number(opts.around) || 0;
-        // at the height each one is at (a watch on a counter is framed on the counter, not the floor under it)
-        const rs = near.map(w => [{ x0: Math.max(0, w.x - m), x1: Math.min(st.COLS, w.x + m), y0: Math.max(0, w.y - m), y1: Math.min(st.ROWS, w.y + m) }, w.z || 0, w.z || 0]);
-        b = screenBox(rs);
-      } else if (opts.focus) {
-        const m = opts.focus === true ? 0.6 : Number(opts.focus);
-        const rs = pieces.concat(who.filter(w => w.L === st.level).map(w => [{ x0: w.x - FOOT / 2, x1: w.x + FOOT / 2, y0: w.y - FOOT / 2, y1: w.y + FOOT / 2 }, 0, 0]));
-        const u = rs.reduce((a, [r]) => ({ x0: Math.min(a.x0, r.x0), y0: Math.min(a.y0, r.y0), x1: Math.max(a.x1, r.x1), y1: Math.max(a.y1, r.y1) }), { x0: Infinity, y0: Infinity, x1: -Infinity, y1: -Infinity });
-        b = screenBox(rs.concat([[{ x0: Math.max(0, u.x0 - m), y0: Math.max(0, u.y0 - m), x1: Math.min(st.COLS, u.x1 + m), y1: Math.min(st.ROWS, u.y1 + m) }, 0, 0]]));
-      } else {
-        let zTop = walls === 'down' ? 0.6 : eng.WALL_H;
-        pieces.forEach(([, , top]) => { zTop = Math.max(zTop, top); });
-        b = screenBox([[{ x0: 0, y0: 0, x1: st.COLS, y1: st.ROWS }, -zf - 0.3, zTop + 0.05]]);   // down to the ground: an upper floor shows the house under it
-      }
-      b = addPeople(b);
-      const pad = opts.focus || opts.around != null ? 8 : 12;
-      box = [b[0] - pad, b[1] - pad, b[2] - b[0] + 2 * pad, b[3] - b[1] + 2 * pad];
-    }
-    if (opts.box) box = opts.box.slice();
-    if (box && opts.aspect) {
-      const [bx, by, bw, bh] = box;
-      box = bw / bh < opts.aspect ? [bx + bw / 2 - bh * opts.aspect / 2, by, bh * opts.aspect, bh] : [bx, by + bh / 2 - bw / opts.aspect / 2, bw, bw / opts.aspect];
-    }
-    const [x, y, w, hh] = box || [0, 0, 100, 100];
-    markup = markup.replace(/__HLR__/g, (opts.highlightLine || w / 110).toFixed(2));
-    markup = markup.replace(/stroke-width="__HLW__"/g, `stroke-width="${((opts.highlightLine || w / 110) * 1.1).toFixed(2)}"`);
-    const alt = esc(opts.alt || 'A picture of people in a room');
-    return `<svg class="house-pic" xmlns="http://www.w3.org/2000/svg" viewBox="${x.toFixed(1)} ${y.toFixed(1)} ${w.toFixed(1)} ${hh.toFixed(1)}" role="img" aria-label="${alt}"${clashes ? ` data-clashes="${clashes}"` : ''}>${markup}</svg>`;
+    return { who, tags, overs, finish, get clashes() { return clashes; } };
   }
 
   /* A person drawn less than fully solid (opacity < 1: a guess, a memory) is faded. Below
@@ -1191,5 +1245,5 @@
     return el.firstElementChild;
   }
 
-  global.HouseCharacter3D = { svg: pictureSvg, draw: pictureDraw, viewData, viewPlan, yawFor, garmentArt, looseGarment, artPoints, shinFoot, PX_PER_M };
+  global.HouseCharacter3D = { svg: pictureSvg, draw: pictureDraw, layer: peopleLayer, viewData, viewPlan, yawFor, garmentArt, looseGarment, artPoints, shinFoot, PX_PER_M };
 })(typeof window !== 'undefined' ? window : globalThis);

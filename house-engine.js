@@ -57,6 +57,14 @@
   --stone-l:#8c8f94;    --stone-r:#75787d;    --stone-t:#a5a8ad;
   --water:#5fb4e2;      --pooltile-l:#d5edf3; --pooltile-r:#b5d9e3;  --coping:#ece5d6;
   --ctile-l:#eef3f5;    --ctile-r:#d3dce1;    --ctile-line:#aebcc4;
+  /* wallpapers: a paper colour (left / right face) and the print on it, see-through so the face shading shows */
+  --wps-l:#f1ead9;      --wps-r:#d9d1bf;      --wps-ink:rgba(118,150,116,.42);
+  --wpf-l:#f5ebe6;      --wpf-r:#ddd1cb;      --wpf-petal:rgba(201,104,118,.62); --wpf-heart:rgba(222,170,58,.9); --wpf-leaf:rgba(104,148,96,.55);
+  --wpd-l:#e6eff5;      --wpd-r:#cbd7df;      --wpd-ink:rgba(66,108,150,.38);
+  --wpt-l:#ede8f3;      --wpt-r:#d4cddf;      --wpt-ink:rgba(112,88,152,.5);
+  --wpc-l:#f6efe2;      --wpc-r:#ddd4c4;      --wpc-ink:rgba(196,86,76,.2);
+  /* painted wood panelling under a chair rail, for the half-panelled wallpapers */
+  --pnl-l:#f4f1ea;      --pnl-r:#d9d4c9;      --pnl-line:rgba(120,108,88,.45); --pnl-rail:#e6e0d3; --pnl-base:#cfc8ba;
   --ftile:#e6eaec;      --ftile-line:#b9c1c6;  --carpet:#8fa2bd;    --wood-line:#c3a170;
   --clay-l:#cc6d4d;     --clay-r:#a9553c;     --clay-t:#bd6245;    --clay-line:#8a3f2b;
   --rconc-l:#a9adb0;    --rconc-r:#8a8e92;    --rconc-t:#9b9fa2;   --rconc-line:#75797c;
@@ -104,6 +112,12 @@ html[data-theme="dark"]{
   --stone-l:#5e6166;    --stone-r:#4b4e52;    --stone-t:#6f7277;
   --water:#2f7aa8;      --pooltile-l:#7fa9b4; --pooltile-r:#668f9a;  --coping:#8c8679;
   --ctile-l:#b9c2c7;    --ctile-r:#9aa4aa;    --ctile-line:#7d878d;
+  --wps-l:#b5ae9e;      --wps-r:#99927f;      --wps-ink:rgba(70,98,68,.45);
+  --wpf-l:#b9aca6;      --wpf-r:#9c908a;      --wpf-petal:rgba(150,62,76,.6);   --wpf-heart:rgba(180,132,40,.85); --wpf-leaf:rgba(64,98,58,.55);
+  --wpd-l:#a8b3ba;      --wpd-r:#8e989f;      --wpd-ink:rgba(40,70,104,.42);
+  --wpt-l:#aea7b8;      --wpt-r:#938ca0;      --wpt-ink:rgba(72,52,108,.5);
+  --wpc-l:#b8b0a2;      --wpc-r:#9b9486;      --wpc-ink:rgba(140,52,44,.24);
+  --pnl-l:#bdb9b0;      --pnl-r:#a19d94;      --pnl-line:rgba(50,44,34,.5);   --pnl-rail:#aca79c; --pnl-base:#8f8a80;
   --ftile:#6b7174;      --ftile-line:#575c5f;  --carpet:#4f6079;    --wood-line:#6f5536;
   --clay-l:#a5563c;     --clay-r:#84432f;     --clay-t:#964d36;    --clay-line:#6a3221;
   --rconc-l:#7d8184;    --rconc-r:#65686b;    --rconc-t:#717477;   --rconc-line:#56595c;
@@ -168,6 +182,15 @@ html[data-theme="dark"]{
 .pat-rmetal{ stroke:var(--rmetal-line); stroke-width:.7; fill:none; }
 .m-ctile.fl{ fill:var(--ctile-l); stroke:var(--ctile-l); }  .m-ctile.fr{ fill:var(--ctile-r); stroke:var(--ctile-r); }
 .pat-ctile{ stroke:var(--ctile-line); stroke-width:.7; fill:none; }
+.m-pwpstripe.fl, .m-wpstripe.fl{ fill:var(--wps-l); stroke:var(--wps-l); }  .m-pwpstripe.fr, .m-wpstripe.fr{ fill:var(--wps-r); stroke:var(--wps-r); }
+.m-pwpfloral.fl, .m-wpfloral.fl{ fill:var(--wpf-l); stroke:var(--wpf-l); }  .m-pwpfloral.fr, .m-wpfloral.fr{ fill:var(--wpf-r); stroke:var(--wpf-r); }
+.m-pwpdots.fl, .m-wpdots.fl{ fill:var(--wpd-l); stroke:var(--wpd-l); }    .m-pwpdots.fr, .m-wpdots.fr{ fill:var(--wpd-r); stroke:var(--wpd-r); }
+.m-pwptrellis.fl, .m-wptrellis.fl{ fill:var(--wpt-l); stroke:var(--wpt-l); } .m-pwptrellis.fr, .m-wptrellis.fr{ fill:var(--wpt-r); stroke:var(--wpt-r); }
+.m-pwpcheck.fl, .m-wpcheck.fl{ fill:var(--wpc-l); stroke:var(--wpc-l); }   .m-pwpcheck.fr, .m-wpcheck.fr{ fill:var(--wpc-r); stroke:var(--wpc-r); }
+.wp-stripe{ fill:var(--wps-ink); }  .wp-dot{ fill:var(--wpd-ink); }  .wp-check{ fill:var(--wpc-ink); }
+.wp-petal{ fill:var(--wpf-petal); } .wp-heart{ fill:var(--wpf-heart); } .wp-leaf{ fill:var(--wpf-leaf); }
+.wp-trellis{ stroke:var(--wpt-ink); fill:none; }
+.pnl-fl{ fill:var(--pnl-l); }  .pnl-fr{ fill:var(--pnl-r); }  .pnl-rail{ fill:var(--pnl-rail); }  .pnl-base{ fill:var(--pnl-base); }  .pnl-line{ stroke:var(--pnl-line); fill:none; }
 .m-fwood.ft{ fill:var(--floor); stroke:var(--floor); }
 .m-ftile.ft{ fill:var(--ftile); stroke:var(--ftile-line); stroke-width:.8; }
 .m-fcarpet.ft{ fill:var(--carpet); stroke:var(--carpet); }
@@ -294,6 +317,7 @@ html[data-theme="dark"] .stair-rail{ stroke:#c9a77e; }
 .bp-balcony{ fill:rgba(255,255,255,.13); }
 .bp-lap{ stroke:var(--bp-ink); stroke-width:1.2; fill:none; }
 .bp-vert{ stroke:var(--bp-ink); stroke-width:1.2; fill:none; stroke-dasharray:3 2; }
+.bp-wp{ stroke:var(--bp-ink); stroke-width:1.6; fill:none; stroke-dasharray:.1 3; stroke-linecap:round; }
 .bp-brick{ fill:url(#bpHatch); stroke:var(--bp-ink); stroke-width:.6; }
 .bp-dash{ stroke-dasharray:4 3; }
 .bp-fboard{ fill:var(--bp-ink); stroke:none; }
@@ -542,7 +566,9 @@ html[data-theme="dark"] .stair-rail{ stroke:#c9a77e; }
        wall around a door or window) have a finish on each side:
        sides.m = north / west side, sides.p = south / east side. */
     const STYLE_SETS = {
-      wall:   { label: 'Wall finish',  def: 'drywall',  plural: 'walls',   list: [['drywall', 'Drywall'], ['masonry', 'Masonry'], ['lap', 'Lap siding'], ['vertical', 'Vertical siding'], ['tile', 'Ceramic tile']] },
+      wall:   { label: 'Wall finish',  def: 'drywall',  plural: 'walls',   list: [['drywall', 'Drywall'], ['masonry', 'Masonry'], ['lap', 'Lap siding'], ['vertical', 'Vertical siding'], ['tile', 'Ceramic tile'],
+                ['wpstripe', 'Striped wallpaper'], ['wpfloral', 'Floral wallpaper'], ['wpdots', 'Polka dot wallpaper'], ['wptrellis', 'Trellis wallpaper'], ['wpcheck', 'Gingham wallpaper'],
+                ['pwpstripe', 'Striped, panelled'], ['pwpfloral', 'Floral, panelled'], ['pwpdots', 'Polka dot, panelled'], ['pwptrellis', 'Trellis, panelled'], ['pwpcheck', 'Gingham, panelled']] },
       floor:  { label: 'Floor',        def: 'hardwood', plural: 'floors',  list: [['hardwood', 'Hardwood'], ['tile', 'Ceramic tile'], ['carpet', 'Carpet']] },
       door:   { label: 'Door style',   def: 'flush',    plural: 'doors',   list: [['flush', 'Flush'], ['halfglass', 'Half-glass'], ['fullglass', 'Full-glass'], ['louvered', 'Louvered']] },
       window: { label: 'Window style', def: 'casement', plural: 'windows', list: [['casement', 'Casement'], ['round', 'Full round'], ['clerestory', 'Clerestory'], ['fullheight', 'Full height']] },
@@ -563,7 +589,11 @@ html[data-theme="dark"] .stair-rail{ stroke:#c9a77e; }
     const isShed = t => t === 'shed' || t === 'openshed';
     const isOpenRoof = t => t === 'opengable' || t === 'openshed';
     const styleOK = (set, v) => STYLE_SETS[set].list.some(([id]) => id === v);
-    const WALL_MAT = { drywall: 'wall', masonry: 'brick', lap: 'lap', vertical: 'vert', tile: 'ctile' };
+    const WALL_MAT = { drywall: 'wall', masonry: 'brick', lap: 'lap', vertical: 'vert', tile: 'ctile', wpstripe: 'wpstripe', wpfloral: 'wpfloral', wpdots: 'wpdots', wptrellis: 'wptrellis', wpcheck: 'wpcheck' };
+    const WALLPAPERS = ['wpstripe', 'wpfloral', 'wpdots', 'wptrellis', 'wpcheck'];
+    // half-panelled: the same papers above a painted wood panel and chair rail (finish and material 'p' + paper)
+    const PANELLED = WALLPAPERS.map(w => 'p' + w);
+    PANELLED.forEach(id => { WALL_MAT[id] = id; });
     const FLOOR_MAT = { hardwood: 'fwood', tile: 'ftile', carpet: 'fcarpet' };
     const floorStyleAt = (L, r, c) => (state.floors[L] && state.floors[L].floorStyles.get(r + ',' + c)) || 'hardwood';
     const FENCE_MAT = { picket: 'rail', board: 'board', lattice: 'latt', chain: 'metal' };
@@ -583,13 +613,20 @@ html[data-theme="dark"] .stair-rail{ stroke:#c9a77e; }
     const SW = inner => `<svg viewBox="0 0 34 26" width="34" height="26" aria-hidden="true">${inner}</svg>`;
     const WALLBG = '<rect x="1" y="1" width="32" height="24" rx="3" fill="#efe9dd" stroke="#c9c0b0"/>';
     const DOORBG = inner => SW(`<rect x="9" y="1.5" width="16" height="23" rx="1.5" fill="#bb8455" stroke="#7b5231"/>${inner}<circle cx="22" cy="14" r="1.3" fill="#f3d27a"/>`);
+    const PANEL_SW = '<rect x="1" y="14" width="32" height="11" fill="#f4f1ea"/><rect x="1" y="13" width="32" height="2" fill="#d9d2c3"/><rect x="1" y="23" width="32" height="2" rx="1" fill="#cfc8ba"/><path d="M4 16.5H14V21.5H4ZM20 16.5H30V21.5H20Z" fill="none" stroke="#b3a78f" stroke-width=".8"/><rect x="1" y="1" width="32" height="24" rx="3" fill="none" stroke="#c9c0b0"/>';
     const SWATCH = {
       wall: {
         drywall: SW(WALLBG),
         masonry: SW('<rect x="1" y="1" width="32" height="24" rx="3" fill="#c27658"/><path d="M1 7H33M1 13H33M1 19H33M9 1V7M21 1V7M15 7V13M27 7V13M3 7V13M9 13V19M21 13V19M15 19V25M27 19V25M3 19V25" stroke="#ecdcca" stroke-width="1.2"/>'),
         lap: SW('<rect x="1" y="1" width="32" height="24" rx="3" fill="#aac0d1"/><path d="M1 5.5H33M1 10H33M1 14.5H33M1 19H33M1 23.5H33" stroke="#7890a3" stroke-width="1.3"/>'),
         vertical: SW('<rect x="1" y="1" width="32" height="24" rx="3" fill="#abbd9f"/><path d="M6 1V25M11 1V25M16 1V25M21 1V25M26 1V25M31 1V25" stroke="#7a8d6f" stroke-width="1.3"/>'),
-        tile: SW('<rect x="1" y="1" width="32" height="24" rx="3" fill="#eef3f5" stroke="#c9d3d8"/><path d="M1 7H33M1 13H33M1 19H33M7 1V25M13 1V25M19 1V25M25 1V25M31 1V25" stroke="#aebcc4" stroke-width="1"/><path d="M3 3L5 3" stroke="#fff" stroke-width="1.4" stroke-linecap="round"/>')
+        tile: SW('<rect x="1" y="1" width="32" height="24" rx="3" fill="#eef3f5" stroke="#c9d3d8"/><path d="M1 7H33M1 13H33M1 19H33M7 1V25M13 1V25M19 1V25M25 1V25M31 1V25" stroke="#aebcc4" stroke-width="1"/><path d="M3 3L5 3" stroke="#fff" stroke-width="1.4" stroke-linecap="round"/>'),
+        wpstripe: SW('<rect x="1" y="1" width="32" height="24" rx="3" fill="#f1ead9" stroke="#d9d1bf"/><path d="M5 1V25M13 1V25M21 1V25M29 1V25" stroke="#9db59b" stroke-width="3.2"/>'),
+        wpfloral: SW('<rect x="1" y="1" width="32" height="24" rx="3" fill="#f5ebe6" stroke="#ddd1cb"/>' + [[9, 8], [25, 8], [17, 18], [3, 18], [31, 18]].map(([x, y]) =>
+          `<g transform="translate(${x} ${y})"><ellipse cx="-2.2" cy="2.8" rx="1.6" ry=".8" fill="#8fb486"/><circle cx="0" cy="-1.6" r="1.4" fill="#d27b88"/><circle cx="1.6" cy="0" r="1.4" fill="#d27b88"/><circle cx="0" cy="1.6" r="1.4" fill="#d27b88"/><circle cx="-1.6" cy="0" r="1.4" fill="#d27b88"/><circle r=".9" fill="#e3b23f"/></g>`).join('')),
+        wpdots: SW('<rect x="1" y="1" width="32" height="24" rx="3" fill="#e6eff5" stroke="#cbd7df"/>' + [[6, 6], [16, 6], [26, 6], [11, 13], [21, 13], [31, 13], [6, 20], [16, 20], [26, 20], [1, 13]].map(([x, y]) => `<circle cx="${x}" cy="${y}" r="2" fill="#86a6c3"/>`).join('')),
+        wptrellis: SW('<rect x="1" y="1" width="32" height="24" rx="3" fill="#ede8f3" stroke="#d4cddf"/><path d="M1 13L9 1L17 13L25 1L33 13M1 13L9 25L17 13L25 25L33 13" fill="none" stroke="#a593c3" stroke-width="1.2"/>'),
+        wpcheck: SW('<rect x="1" y="1" width="32" height="24" rx="3" fill="#f6efe2" stroke="#ddd4c4"/><path d="M1 5H33M1 13H33M1 21H33" stroke="rgba(196,86,76,.28)" stroke-width="4"/><path d="M5 1V25M13 1V25M21 1V25M29 1V25" stroke="rgba(196,86,76,.28)" stroke-width="4"/>')
       },
       floor: {
         hardwood: SW('<rect x="1" y="1" width="32" height="24" rx="3" fill="#e3c89c"/><path d="M1 6H33M1 11H33M1 16H33M1 21H33M12 1V6M27 6V11M7 11V16M20 16V21M30 16V21M15 21V25" stroke="#c3a170" stroke-width="1"/>'),
@@ -622,6 +659,8 @@ html[data-theme="dark"] .stair-rail{ stroke:#c9a77e; }
         chain: SW('<rect x="2" y="5" width="30" height="18" fill="#d9dde0"/><path d="M2 9L6 5M2 13L10 5M2 17L14 5M2 21L18 5M4 23L22 5M8 23L26 5M12 23L30 5M16 23L32 7M20 23L32 11M24 23L32 15M28 23L32 19M2 9L16 23M2 13L12 23M2 17L8 23M2 5L20 23M6 5L24 23M10 5L28 23M14 5L32 23M18 5L32 19M22 5L32 15M26 5L32 11" stroke="#8d959c" stroke-width=".6"/><path d="M2 5H32" stroke="#979ea4" stroke-width="2"/>')
       }
     };
+    // a panelled paper's swatch: its paper, with a panel and chair rail over the lower half
+    WALLPAPERS.forEach(w => { SWATCH.wall['p' + w] = SWATCH.wall[w].replace('</svg>', PANEL_SW + '</svg>'); });
     SWATCH.roof = {
       flat: SW('<rect x="3" y="11" width="28" height="5" fill="#b85f43"/><rect x="6" y="16" width="22" height="8" fill="#efe9dd" stroke="#c9c0b0"/>'),
       gable: SW('<path d="M2 14L17 3L32 14Z" fill="#efe9dd" stroke="#c9c0b0"/><path d="M2 14L17 3L32 14" fill="none" stroke="#a9553c" stroke-width="2.4" stroke-linejoin="round"/><rect x="7" y="14" width="20" height="10" fill="#efe9dd" stroke="#c9c0b0"/>'),
@@ -1482,6 +1521,15 @@ html[data-theme="dark"] .stair-rail{ stroke:#c9a77e; }
       d += tile('ctile', 0.2, 0.2, `<path class="pat-ctile" d="M.2 0V.2H0" ${sw(0.7)}/>`);
       // running bond: a 2-course-tall tile, the lower course's joint offset by half a brick
       d += tile('brick', 0.3, 0.3, `<path class="pat-brick" d="M0 0H.3M0 .15H.3M0 0V.15M.15 .15V.3" ${sw(0.8)}/>`);
+      // wallpapers: filled prints, so a face's own light/dark shading shows through the see-through ink
+      d += tile('wpstripe', 0.24, 1, '<rect class="wp-stripe" x="0" y="0" width=".09" height="1"/><rect class="wp-stripe" x=".12" y="0" width=".018" height="1"/>');
+      const flower = (x, y, r) => `<ellipse class="wp-leaf" cx="${x - r * 1.2}" cy="${y - r * 1.5}" rx="${r * 0.9}" ry="${r * 0.42}"/>` +
+        [[0, 1], [1, 0], [0, -1], [-1, 0]].map(([a, b]) => `<circle class="wp-petal" cx="${x + a * r}" cy="${y + b * r}" r="${r * 0.82}"/>`).join('') +
+        `<circle class="wp-heart" cx="${x}" cy="${y}" r="${r * 0.55}"/>`;
+      d += tile('wpfloral', 0.36, 0.36, flower(0.09, 0.09, 0.028) + flower(0.27, 0.27, 0.028));
+      d += tile('wpdots', 0.16, 0.16, '<circle class="wp-dot" cx=".04" cy=".04" r=".022"/><circle class="wp-dot" cx=".12" cy=".12" r=".022"/>');
+      d += tile('wptrellis', 0.24, 0.32, `<path class="wp-trellis" d="M0 .16L.12 0L.24 .16L.12 .32Z" ${sw(1)}/>`);
+      d += tile('wpcheck', 0.2, 0.2, '<rect class="wp-check" x="0" y="0" width=".1" height=".2"/><rect class="wp-check" x="0" y="0" width=".2" height=".1"/>');
       return d;
     }
     function faceWorld(bx, side) {
@@ -1498,10 +1546,42 @@ html[data-theme="dark"] .stair-rail{ stroke:#c9a77e; }
        lines. The pattern is anchored to world coordinates, so courses and
        boards still line up from one piece of wall to the next. */
     function textureSVG(mat, bx, side) {
-      if (!['lap', 'ctile', 'vert', 'board', 'brick'].includes(mat)) return '';
+      const panelled = PANELLED.includes(mat);
+      if (panelled) mat = mat.slice(1);
+      if (!['lap', 'ctile', 'vert', 'board', 'brick', ...WALLPAPERS].includes(mat)) return '';
       const f = faceWorld(bx, side);
       const q = [f.pt(f.t0, bx.z0), f.pt(f.t1, bx.z0), f.pt(f.t1, bx.z1), f.pt(f.t0, bx.z1)];
-      return `<polygon fill="url(#pat-${mat}-${side})" points="${q.join(' ')}"/>`;
+      return `<polygon fill="url(#pat-${mat}-${side})" points="${q.join(' ')}"/>` + (panelled ? panelSVG(bx, side, f) : '');
+    }
+    /* Half panelling under a wallpaper: drawn as real shapes on the face rather
+       than a tiled pattern, because a pattern is only anchored up to a shift
+       that depends on where the wall stands — fine for a repeating print, but
+       the panel has to start exactly on the floor of the storey the wall is on.
+       Panels repeat every 0.5 m along the wall, measured in world metres, so
+       they line up from one piece of wall to the next. */
+    const PANEL_H = 0.9, PANEL_W = 0.5;
+    function panelSVG(bx, side, f) {
+      const base = LEVEL_H * Math.floor((bx.z0 + 0.5) / LEVEL_H);       // this storey's floor
+      const zTop = Math.min(bx.z1, base + PANEL_H);
+      if (zTop <= bx.z0 + 0.005) return '';
+      const tone = side === worldSide('a') ? 'pnl-fr' : 'pnl-fl';
+      const quad = (t0, t1, z0, z1) => [f.pt(t0, z0), f.pt(t1, z0), f.pt(t1, z1), f.pt(t0, z1)].join(' ');
+      const band = (z0, z1, cls) => { z0 = Math.max(z0, bx.z0); z1 = Math.min(z1, bx.z1); return z1 > z0 + 0.003 ? `<polygon class="${cls}" points="${quad(f.t0, f.t1, z0, z1)}"/>` : ''; };
+      let out = band(bx.z0, zTop, tone) + band(base, base + 0.1, 'pnl-base') + band(base + PANEL_H - 0.04, base + PANEL_H + 0.04, 'pnl-rail');
+      // a raised frame on each panel, clipped to this piece of wall and to how much of it is shown
+      let d = '';
+      const fz0 = base + 0.2, fz1 = Math.min(base + 0.76, bx.z1 - 0.01);
+      if (fz1 > fz0 + 0.02)
+        for (let k = Math.floor(f.t0 / PANEL_W); k * PANEL_W < f.t1; k++) {
+          const a = Math.max(f.t0, k * PANEL_W + 0.06), b = Math.min(f.t1, k * PANEL_W + PANEL_W - 0.06);
+          if (b <= a + 0.01) continue;
+          const inA = a > k * PANEL_W + 0.059, inB = b < k * PANEL_W + PANEL_W - 0.059;
+          d += `M${f.pt(a, fz0)}L${f.pt(b, fz0)}M${f.pt(a, fz1)}L${f.pt(b, fz1)}`;
+          if (inA) d += `M${f.pt(a, fz0)}L${f.pt(a, fz1)}`;
+          if (inB) d += `M${f.pt(b, fz0)}L${f.pt(b, fz1)}`;
+        }
+      if (d) out += `<path class="pnl-line" style="stroke-width:.8" d="${d}"/>`;
+      return out;
     }
     /* Decorations drawn on the long visible face of a box (door panels,
        window frames, fence infill). They are symmetric, so u (0…1 across the
@@ -2690,6 +2770,7 @@ html[data-theme="dark"] .stair-rail{ stroke:#c9a77e; }
             } else if (fin === 'lap') g += along(edgeOff, 'bp-lap');
             else if (fin === 'tile') g += along(edgeOff, 'bp-ctile');
             else if (fin === 'vertical') g += along(edgeOff, 'bp-vert');
+            else if (WALLPAPERS.includes(fin) || PANELLED.includes(fin)) g += along(edgeOff, 'bp-wp');
           });
           return g;
         }

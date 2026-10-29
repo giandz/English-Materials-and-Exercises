@@ -236,6 +236,16 @@
     font-size:12px; font-weight:700; line-height:1;
   }
   .brush.has-content .brush-word::after{ content:" •"; }
+  /* People: the cast cards, and the chosen person on the toolbar */
+  .cast-row{ gap:8px; }
+  .brush.cast-card{ width:76px; padding:6px 2px 5px; }
+  .cast-card svg{ display:block; height:72px; width:auto; max-width:66px; margin:0 auto 2px; overflow:visible; }
+  .cast-card .brush-word{ max-width:72px; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
+  .slot-badge.people-badge{ overflow:hidden; padding:1px; }
+  .slot-badge.people-badge[hidden]{ display:none; }
+  .people-badge svg{ width:100%; height:100%; display:block; }
+  /* undo and redo, stacked like the floor buttons */
+  .history-stepper .step-btn{ font-size:17px; }
   .slot-badge.level-badge{ font-size:12px; font-weight:700; color:var(--slot-accent); }
   .drawer-hint{ font-size:0.8571rem; color:var(--text-muted); margin:8px 0 0; line-height:1.45; }
 
@@ -246,6 +256,7 @@
     background:var(--surface-2); color:var(--text-secondary);
   }
   button.action-btn.primary{ background:var(--slot-accent); border-color:var(--slot-accent); color:#fff; }
+  button.action-btn[aria-pressed="true"]{ background:var(--slot-accent-soft); color:var(--slot-accent); box-shadow:inset 0 0 0 2px var(--slot-accent); border-color:transparent; }
   button.action-btn.danger{ color:#c62828; }
   html[data-theme="dark"] button.action-btn.danger{ color:#ef7a7a; }
   .size-label{ font-size:0.8929rem; color:var(--text-secondary); align-self:center; }
@@ -411,21 +422,42 @@
     <div id="styleBody"></div>
   </section>
 
+  <section class="drawer" id="drawer-people" hidden aria-labelledby="drawerTitlePeople">
+    <div class="drawer-head">
+      <h2 class="drawer-title" id="drawerTitlePeople">🧑 People</h2>
+      <button type="button" class="drawer-close" aria-label="Hide drawer">×</button>
+    </div>
+    <div class="brush-row cast-row" id="castRow" role="radiogroup" aria-label="Characters"></div>
+    <p class="drawer-hint" id="castStatus" role="status" aria-live="polite"></p>
+    <div class="apply-row">
+      <button type="button" class="action-btn" id="castFolderBtn">🗂️ Open a folder</button>
+      <button type="button" class="action-btn" id="castFilesBtn">📂 Open character files</button>
+      <button type="button" class="action-btn" id="relocateBtn" aria-pressed="false" title="On: placing someone moves them here — any copy of that person already in the house is taken away. Off: each tap adds another copy.">📍 Relocate: off</button>
+      <button type="button" class="action-btn" id="castForgetBtn" title="Take away the people you opened from files (the characters folder stays)">Forget opened files</button>
+      <input type="file" id="castFiles" accept=".json,application/json" multiple hidden>
+      <input type="file" id="castFolder" webkitdirectory directory multiple hidden>
+    </div>
+    <p class="drawer-hint">Pick someone, then tap the house. On the floor they <strong>stand</strong>; on a chair, an armchair, a loveseat or a couch they <strong>sit</strong>; in a bed they <strong>sleep</strong> (two can share a double bed, one in each bunk); in the swimming pool they <strong>swim</strong>. With <strong>📍 Relocate</strong> on, each person is in the house only once: putting them somewhere new takes them away from where they were (L toggles it). Tap a person to turn them, or to move them to the next seat or bunk. Drag a person to move them. 🧹 Erase takes them away. Press <strong>R</strong> to turn someone before you put them down.</p>
+  </section>
+
   <nav class="hotbar" id="hotbar" role="toolbar" aria-label="House tools">
     <button type="button" class="slot" data-tool="build" aria-pressed="false" aria-controls="drawer-build"><span class="slot-key" aria-hidden="true">1</span><span class="slot-emoji" aria-hidden="true">🏗️</span><span class="slot-word">Build</span><span class="slot-badge" id="buildBadge" aria-hidden="true">🧱</span></button>
     <button type="button" class="slot" data-tool="style" aria-pressed="false" aria-controls="drawer-style"><span class="slot-key" aria-hidden="true">2</span><span class="slot-emoji" aria-hidden="true">🎨</span><span class="slot-word">Style</span></button>
     <button type="button" class="slot" data-tool="erase" aria-pressed="false"><span class="slot-key" aria-hidden="true">3</span><span class="slot-emoji" aria-hidden="true">🧹</span><span class="slot-word">Erase</span></button>
     <button type="button" class="slot" id="viewSlot" aria-controls="drawer-view" aria-expanded="false"><span class="slot-key" aria-hidden="true">4</span><span class="slot-emoji" aria-hidden="true">👁️</span><span class="slot-word">View</span></button>
+    <button type="button" class="slot" data-tool="people" aria-pressed="false" aria-controls="drawer-people"><span class="slot-key" aria-hidden="true">5</span><span class="slot-emoji" aria-hidden="true">🧑</span><span class="slot-word">People</span><span class="slot-badge people-badge" id="peopleBadge" aria-hidden="true" hidden></span></button>
     <div class="floor-stepper" role="group" aria-label="Change floor">
       <button type="button" class="step-btn" id="floorUpBtn" title="Up a floor (PgUp)" aria-label="Up a floor">🔼</button>
       <span class="step-tag" id="floorTag" aria-live="polite">GF</span>
       <button type="button" class="step-btn" id="floorDownBtn" title="Down a floor (PgDn)" aria-label="Down a floor">🔽</button>
     </div>
     <span class="hotbar-divider" aria-hidden="true"></span>
-    <button type="button" class="slot" id="undoSlot" title="Undo (Ctrl+Z)" disabled><span class="slot-key" aria-hidden="true">5</span><span class="slot-emoji" aria-hidden="true">↩️</span><span class="slot-word">Undo</span></button>
-    <button type="button" class="slot" id="redoSlot" title="Redo (Ctrl+Y)" disabled><span class="slot-key" aria-hidden="true">6</span><span class="slot-emoji" aria-hidden="true">↪️</span><span class="slot-word">Redo</span></button>
+    <div class="floor-stepper history-stepper" role="group" aria-label="Undo and redo">
+      <button type="button" class="step-btn" id="undoSlot" title="Undo (Ctrl+Z)" aria-label="Undo" disabled>↩️</button>
+      <button type="button" class="step-btn" id="redoSlot" title="Redo (Ctrl+Y)" aria-label="Redo" disabled>↪️</button>
+    </div>
     <span class="hotbar-divider" aria-hidden="true"></span>
-    <button type="button" class="slot" id="optionsSlot" aria-haspopup="dialog" aria-controls="optionsDialog"><span class="slot-key" aria-hidden="true">7</span><span class="slot-emoji" aria-hidden="true">⚙️</span><span class="slot-word">Options</span></button>
+    <button type="button" class="slot" id="optionsSlot" aria-haspopup="dialog" aria-controls="optionsDialog"><span class="slot-key" aria-hidden="true">6</span><span class="slot-emoji" aria-hidden="true">⚙️</span><span class="slot-word">Options</span></button>
   </nav>
 </div>
 
@@ -440,7 +472,7 @@
 <dialog class="size-dialog help-dialog" id="helpDialog" aria-labelledby="helpDialogTitle">
   <h2 id="helpDialogTitle">❓ How to use</h2>
   <ul class="help-list">
-    <li>Pick a tool in the toolbar at the bottom, or press <strong>1–6</strong> (and <strong>7</strong> for Options).</li>
+    <li>Pick a tool in the toolbar at the bottom, or press <strong>1–5</strong> (and <strong>6</strong> for Options). <strong>↩️ ↪️</strong> undo and redo (<strong>Ctrl+Z</strong>, <strong>Ctrl+Y</strong>).</li>
     <li><strong>🧱 Wall</strong>: drag along the grid lines to draw a wall. Tap a line to add one piece.</li>
     <li><strong>🚪 Door</strong>: tap a line to add a door. Tap the door again to change which way it opens. After the fourth way, the next tap closes it, and the one after opens it again.</li>
     <li><strong>🪟 Window</strong>: tap a line to add a window, or drag to add a row of windows.</li>
@@ -456,8 +488,9 @@
     <li><strong>🪴 Objects</strong> (a rug, a planter, a book, four standing books): a rug lies on the floor, under furniture; the others go anywhere an appliance can — on the floor, on furniture, on a seat or under a table or chair — to show things like “the book is under the table”. In the 3D view, point at the floor under the table; on the plan, hold <strong>Shift</strong> while you tap the table to put it underneath. tap the floor, or a level of a table, bookshelf, shelf or countertop. Each level takes one appliance in the middle or two side by side, if they fit. A television only goes on the floor or on top of a piece. Tap an appliance to turn it, drag it to move it.</li>
     <li><strong>🏊 Swimming pool</strong>: on the ground floor, drag across the squares where the pool should go. Pools are dug into the ground, so nothing can be built under them in the basement, and nothing can stand in the water.</li>
     <li><strong>Moving things</strong>: with 🏗️ Build, drag a column or a piece of furniture to move it, or drag a door or window along its wall. With 🏠 Roof picked, drag a roof's corner handles to resize it.</li>
-    <li><strong>🎨 Style</strong>: tap a wall, door, window, fence, column, roof or floor (a floor picks the whole room). Drag a box to pick many walls, fences or floor squares at once: start the drag on a wall to pick walls, on a fence to pick fences, or anywhere else to pick floor. It lights up, and the drawer shows the styles for it. Walls can be styled on one side or both. Roofs can be flat, box gable, open gable, box shed or open shed, in clay tile, concrete or corrugated metal. Open roofs carry the outside walls up to meet the roof. Floors can be hardwood, ceramic tile or carpet, and walls can be tiled for a bathroom or kitchen. <strong>Apply to all</strong> gives the same style to every one in the house.</li>
-    <li><strong>🧹 Erase</strong>: tap a wall, door, window, fence, column or stairs to remove it, or drag along a line to remove many.</li>
+    <li><strong>🎨 Style</strong>: tap a wall, door, window, fence, column, roof or floor (a floor picks the whole room). Drag a box to pick many walls, fences or floor squares at once: start the drag on a wall to pick walls, on a fence to pick fences, or anywhere else to pick floor. It lights up, and the drawer shows the styles for it. Walls can be styled on one side or both. Roofs can be flat, box gable, open gable, box shed or open shed, in clay tile, concrete or corrugated metal. Open roofs carry the outside walls up to meet the roof. Floors can be hardwood, ceramic tile or carpet, walls can be tiled for a bathroom or kitchen, or papered inside with striped, floral, polka dot, trellis or gingham wallpaper — each also half-panelled, with painted wood panelling and a chair rail under the paper. <strong>Apply to all</strong> gives the same style to every one in the house.</li>
+    <li><strong>🧑 People</strong>: put people in the house. They come from the <strong>characters</strong> folder next to this page (characters saved from the Character Poser); you can also open a folder or some character files with the buttons in the drawer. Pick someone and tap: on the floor they stand, on a chair, armchair, loveseat or couch they sit, in a bed they sleep (two can share a double bed, one in each bunk of a bunk bed), and in the swimming pool they swim, with the water up to their shoulders. With <strong>📍 Relocate</strong> on (or press <strong>L</strong>), each character is in the house only once: putting them down somewhere takes away any copy of them already there, on any floor. Tap a person to turn them (or move them to the next seat or bunk), drag to move them, and press <strong>R</strong> to turn someone before you put them down. People move with the seat or bed they are on, stand up if it is taken away, and are saved with the house.</li>
+    <li><strong>🧹 Erase</strong>: tap a wall, door, window, fence, column, stairs or a person to remove it, or drag along a line to remove many.</li>
     <li><strong>🔼 🔽</strong>: go up or down a floor, from the basement (B1F) to the second floor (2F). You can also press <strong>PgUp</strong> and <strong>PgDn</strong>. Floors above the one you are on are hidden.</li>
     <li><strong>👁️ View</strong>: show the 3D view, the floor plan, or both. <strong>⟲ ⟳</strong> turn the house (<strong>Q</strong>, <strong>E</strong>). <strong>🧱</strong> lowers all the walls so you can see inside (<strong>W</strong>), and <strong>✂️ Cutout</strong> keeps the walls at the back full height and cuts the rest down (<strong>X</strong>). In both of these modes a slider sets how much of the walls to keep, from almost nothing to the full height (or press <strong>[</strong> for less and <strong>]</strong> for more); the two modes share it. <strong>Floors</strong> (<strong>F</strong>) and <strong>Ceiling</strong> (<strong>C</strong>) show or hide the floors between storeys, and <strong>Roofs</strong> (<strong>T</strong>) shows or hides the roofs.</li>
     <li><strong>Zoom and pan</strong>: each view has <strong>− 100% +</strong> buttons in its corner (100% puts it back). With a mouse, the wheel zooms where you point, and a right-drag, middle-drag or <strong>Space</strong> + drag moves the picture; on a trackpad, pinch to zoom and scroll to move. On a touch screen, pinch and drag with two fingers. <strong>+</strong>, <strong>−</strong> and <strong>0</strong> work on the keyboard too.</li>
@@ -488,7 +521,7 @@
 
   <section class="opt-section" aria-labelledby="optFileTitle">
     <h3 class="opt-title" id="optFileTitle">Save &amp; open</h3>
-    <p class="opt-note">Save the whole house — size, every floor, walls, doors, windows, fences, columns, stairs, roofs and pools — to a file, or open a file you saved before.</p>
+    <p class="opt-note">Save the whole house — size, every floor, walls, doors, windows, fences, columns, stairs, roofs, pools, furniture and the people in it — to a file, or open a file you saved before.</p>
     <div class="opt-row">
       <button type="button" class="action-btn" id="saveBtn">💾 Save to file</button>
       <button type="button" class="action-btn" id="loadBtn">📂 Open file</button>
@@ -508,6 +541,8 @@
 
 <script src="house.js"></script>
 <script src="house-engine.js"></script>
+<script src="house-character.js"></script>
+<script src="house-character-3d.js"></script>
 <script>
 (function(){
   'use strict';
@@ -602,8 +637,9 @@
     const stBy = {}, rmBy = {};
     LEVELS.forEach(L => { stBy[L] = displayState(L); rmBy[L] = computeAreas(stBy[L].edges); });
     validateSelection();
-    if (state.viewMode !== 'plan') isoSvg.innerHTML = renderIso(stBy, rmBy);
-    if (state.viewMode !== 'iso') planSvg.innerHTML = renderPlan(stBy, rmBy);
+    // the plan first: the 3D view adds stand-ins for the people to stBy
+    if (state.viewMode !== 'iso') planSvg.innerHTML = renderPlan(stBy, rmBy) + planPeople();
+    if (state.viewMode !== 'plan') isoSvg.innerHTML = isoWithPeople(stBy, rmBy);
   }
 
   /* ═══════════════ HIT TESTING ═══════════════ */
@@ -727,7 +763,8 @@
   }
   // erase: a wall right under the pointer wins over the stairs it stands next to
   function eraseTap(w) {
-    // a column under the pointer goes first
+    // a person under the pointer goes first, then a column
+    const who = personAt(w); if (who) return { personDel: who.id };
     const ck = nearestColSpot(w.x, w.y);
     if (ck && state.floors[state.level].columns.has(ck)) {
       const [X, Y] = colXY(ck);
@@ -813,6 +850,7 @@
     return null;
   }
   function grabAt(w) {
+    if (state.currentTool === 'people') { const who = personAt(w); return who ? { kind: 'person', id: who.id } : null; }
     if (state.currentTool !== 'build') return null;
     if (w.handle) return { kind: 'roof', ...w.handle };
     const ck = columnAt(w); if (ck) return { kind: 'col', k: ck };
@@ -824,6 +862,7 @@
   }
   // the preview for dragging a grabbed piece to world point w
   function grabChange(g, w) {
+    if (g.kind === 'person') return personDrag(g.id, w);
     const F = state.floors[state.level];
     if (g.kind === 'appl') {
       const r = g.ref, it = r.kind === 'floor' ? F.appliances[r.idx] : (F.furniture[r.fidx].items || [])[r.iidx];
@@ -1027,6 +1066,7 @@
     return applChange(type, applTarget(w, type, 0, null));
   }
   function tapChange(w, action) {
+    if (action === 'people') return personTap(w);
     if (APPL[action]) return applTap(w, action);
     if (FURN[action]) return furnTap(w, action);
     if (action === 'pool') return null;
@@ -1045,10 +1085,18 @@
     const pool = (p.poolAdd && !p.poolAdd.bad) || p.poolDel != null;
     const furn = (p.furnAdd && !p.furnAdd.bad) || (p.furnSet && !p.furnSet.bad) || p.furnDel != null || (p.furnAdds && p.furnAdds.some(fa => !fa.bad));
     const appl = (p.applAdd && !p.applAdd.bad) || (p.applSet && !p.applSet.bad) || p.applDel != null || (p.furnSets && p.furnSets.length);
-    if (!hasEdges && !stair && !col && !roof && !pool && !furn && !appl) return;
+    const ppl = (p.personAdd && !p.personAdd.bad) || (p.personSet && !p.personSet.bad) || p.personDel != null;
+    if (!hasEdges && !stair && !col && !roof && !pool && !furn && !appl && !ppl) return;
+    if (p.personSet && p.personSet.bad && !furn && !appl) return;
     if (p.applSet && p.applSet.bad) return;          // a move to a spot that doesn't work changes nothing
     pushHistory();
-    const F = state.floors[state.level];
+    const F = state.floors[state.level], furnBefore = F.furniture.slice();
+    if (p.personAdd && !p.personAdd.bad) {
+      if (p.personAdd.replace) people = people.filter(q => !p.personAdd.replace.includes(q.id));
+      people.push({ ...p.personAdd.p, id: nextPid++ });
+    }
+    if (p.personSet && !p.personSet.bad) people = people.map(q => q.id === p.personSet.id ? { ...p.personSet.p, id: q.id } : q);
+    if (p.personDel != null) people = people.filter(q => q.id !== p.personDel);
     if (hasEdges) p.edges.forEach((v, k) => { if (v === null) F.edges.delete(k); else F.edges.set(k, v); });
     if (p.stairAdd && !p.stairAdd.bad) { F.stairs.push(p.stairAdd.s); stairDir = p.stairAdd.s.dir; stairHand = p.stairAdd.s.hand | 0; }
     if (p.stairSet) { F.stairs[p.stairSet.idx] = p.stairSet.s; stairDir = p.stairSet.s.dir; stairHand = p.stairSet.s.hand | 0; }
@@ -1075,6 +1123,8 @@
     if (p.applDel != null) F.appliances.splice(p.applDel, 1);
     // a shelf goes with its wall
     F.furniture = F.furniture.filter(f => !hung(f) || (F.edges.get(f.ek) || {}).type === 'wall');
+    followFurniture(state.level, furnBefore);
+    leavePools();
   }
 
   /* ═══════════════ STYLE TOOL ═══════════════
@@ -1386,12 +1436,13 @@
   const undoStack = [], redoStack = [];
   const undoSlot = document.getElementById('undoSlot'), redoSlot = document.getElementById('redoSlot');
   function snapshot() {
-    return JSON.stringify({ cols: state.COLS, rows: state.ROWS, level: state.level, floors: LEVELS.map(L => [L, [...state.floors[L].edges], state.floors[L].stairs, [...state.floors[L].columns], [...state.floors[L].colStyles], state.floors[L].roofs, [...state.floors[L].floorStyles], state.floors[L].pools, state.floors[L].furniture, state.floors[L].appliances]) });
+    return JSON.stringify({ cols: state.COLS, rows: state.ROWS, level: state.level, floors: LEVELS.map(L => [L, [...state.floors[L].edges], state.floors[L].stairs, [...state.floors[L].columns], [...state.floors[L].colStyles], state.floors[L].roofs, [...state.floors[L].floorStyles], state.floors[L].pools, state.floors[L].furniture, state.floors[L].appliances]), people });
   }
   function restore(s) {
     const d = JSON.parse(s);
     state.COLS = d.cols; state.ROWS = d.rows;
     d.floors.forEach(([L, edges, stairs, columns, colStyles, roofs, floorStyles, pools, furniture, appliances]) => { state.floors[L] = { edges: new Map(edges), stairs, columns: new Set(columns || []), colStyles: new Map(colStyles || []), roofs: roofs || [], floorStyles: new Map(floorStyles || []), pools: pools || [], furniture: furniture || [], appliances: appliances || [] }; });
+    people = d.people || [];
     afterSizeChange();
     setLevel(d.level, true);
   }
@@ -1420,7 +1471,8 @@
       else if (state.currentTool === 'build' && piece === 'column') hp = columnTap(w);
       else if (state.currentTool === 'build' && FURN[piece]) hp = furnTap(w, piece);
       else if (state.currentTool === 'build' && APPL[piece]) hp = applTap(w, piece);
-      else if (state.currentTool === 'erase') { const p = eraseTapR(w); if (p && (p.stairDel != null || p.colDel || p.roofDel != null || p.poolDel != null || p.furnDel != null || p.applDel != null || p.furnSets)) hp = p; else h = nearestEdge(w.x, w.y); }
+      else if (state.currentTool === 'people') hp = personTap(w);
+      else if (state.currentTool === 'erase') { const p = eraseTapR(w); if (p && (p.personDel != null || p.stairDel != null || p.colDel || p.roofDel != null || p.poolDel != null || p.furnDel != null || p.applDel != null || p.furnSets)) hp = p; else h = nearestEdge(w.x, w.y); }
       else h = nearestEdge(w.x, w.y);
     }
     if (h) h = { o: h.o, r: h.r, c: h.c };
@@ -1555,7 +1607,7 @@
       const w = toWorld(e); if (!w) return;
       e.preventDefault();
       try { svg.setPointerCapture(e.pointerId); } catch (err) { /* ignore */ }
-      state.drag = { svg, id: e.pointerId, start: w, moved: false, action: state.currentTool === 'erase' ? 'erase' : state.currentTool === 'style' ? 'style' : piece, grab: grabAt(w) };
+      state.drag = { svg, id: e.pointerId, start: w, moved: false, action: state.currentTool === 'erase' ? 'erase' : state.currentTool === 'style' ? 'style' : state.currentTool === 'people' ? 'people' : piece, grab: grabAt(w) };
       if (state.drag.action === 'pool' && !state.drag.grab) { state.pending = poolDrag(w, w); state.drag.moved = true; render(); }
       if (state.drag.grab) svg.style.cursor = 'grabbing';
       state.hover = null; state.hoverPending = null; computeHover.sig = null;
@@ -1646,7 +1698,7 @@
   /* ═══════════════ HOTBAR + DRAWERS ═══════════════ */
   const toolSlots = Array.from(document.querySelectorAll('.slot[data-tool]'));
   const viewSlot = document.getElementById('viewSlot');
-  const drawers = { build: document.getElementById('drawer-build'), style: document.getElementById('drawer-style'), view: document.getElementById('drawer-view') };
+  const drawers = { build: document.getElementById('drawer-build'), style: document.getElementById('drawer-style'), view: document.getElementById('drawer-view'), people: document.getElementById('drawer-people') };
   const buildBadge = document.getElementById('buildBadge');
   const pieceRow = document.getElementById('pieceRow');
   const pieceHint = document.getElementById('pieceHint');
@@ -1656,10 +1708,11 @@
     document.querySelector('.slot[data-tool="build"]').setAttribute('aria-expanded', String(openDrawer === 'build'));
     viewSlot.setAttribute('aria-expanded', String(openDrawer === 'view'));
     document.querySelector('.slot[data-tool="style"]').setAttribute('aria-expanded', String(openDrawer === 'style'));
+    document.querySelector('.slot[data-tool="people"]').setAttribute('aria-expanded', String(openDrawer === 'people'));
   }
   const toggleDrawer = name => { openDrawer = openDrawer === name ? null : name; renderDrawers(); };
   function setTool(tool) {
-    const own = tool === 'build' || tool === 'style' ? tool : null;   // tools with their own drawer
+    const own = tool === 'build' || tool === 'style' || tool === 'people' ? tool : null;   // tools with their own drawer
     if (tool === state.currentTool) {
       if (own) toggleDrawer(own);
       return;
@@ -1671,7 +1724,7 @@
       btn.classList.toggle('is-active', on);
       btn.setAttribute('aria-pressed', String(on));
     });
-    openDrawer = own || ((openDrawer === 'build' || openDrawer === 'style') ? null : openDrawer);
+    openDrawer = own || ((openDrawer === 'build' || openDrawer === 'style' || openDrawer === 'people') ? null : openDrawer);
     state.hoverTarget = null;
     renderDrawers();
     if (tool === 'style') renderStylePanel();
@@ -1809,7 +1862,9 @@
     newRows = Math.max(MIN_SIZE, Math.min(MAX_SIZE, newRows));
     if (newCols === state.COLS && newRows === state.ROWS) return;
     pushHistory();
-    shiftContent(Math.trunc((newCols - state.COLS) / 2), Math.trunc((newRows - state.ROWS) / 2), newCols, newRows);
+    const dc = Math.trunc((newCols - state.COLS) / 2), dr = Math.trunc((newRows - state.ROWS) / 2);
+    shiftContent(dc, dr, newCols, newRows);
+    shiftPeople(dc, dr, newCols, newRows);
     state.COLS = newCols; state.ROWS = newRows;
     afterSizeChange();
     render();
@@ -1819,12 +1874,12 @@
     optionsDialog.close();
   });
   document.getElementById('clearLevelBtn').addEventListener('click', () => {
-    if (levelUsed(state.level)) { pushHistory(); state.floors[state.level] = emptyLevel(); }
+    if (levelUsed(state.level) || people.some(p => p.L === state.level)) { pushHistory(); state.floors[state.level] = emptyLevel(); people = people.filter(p => p.L !== state.level); }
     render();
     optionsDialog.close();
   });
   document.getElementById('clearAllBtn').addEventListener('click', () => {
-    if (LEVELS.some(levelUsed)) { pushHistory(); LEVELS.forEach(L => { state.floors[L] = emptyLevel(); }); }
+    if (LEVELS.some(levelUsed) || people.length) { pushHistory(); LEVELS.forEach(L => { state.floors[L] = emptyLevel(); }); people = []; }
     render();
     optionsDialog.close();
   });
@@ -1850,7 +1905,9 @@
     return `${d.getFullYear()}-${p(d.getMonth() + 1)}-${p(d.getDate())}_${p(d.getHours())}-${p(d.getMinutes())}-${p(d.getSeconds())}`;
   }
   async function saveHouse() {
-    const json = JSON.stringify(serializeHouse(), null, 2);
+    const data = serializeHouse();
+    if (people.length) data.people = savePeople();   // the people in the house, each with their whole character
+    const json = JSON.stringify(data, null, 2);
     const filename = `house-builder-${timestampForFilename(new Date())}.json`;
     const blob = new Blob([json], { type: 'application/json' });
     if (window.showSaveFilePicker) {
@@ -1882,8 +1939,8 @@
     if (!file) return;
     const reader = new FileReader();
     reader.onload = () => {
-      let house;
-      try { house = validateHouse(JSON.parse(reader.result)); }
+      let house, raw;
+      try { raw = JSON.parse(reader.result); house = validateHouse(raw); }
       catch (err) {
         setFileStatus(err instanceof SyntaxError ? "This file couldn't be read — it isn't valid JSON." : err.message, true);
         return;
@@ -1891,6 +1948,7 @@
       pushHistory();
       state.COLS = house.cols; state.ROWS = house.rows;
       state.floors = house.floors;
+      people = readPeople(raw.people);
       afterSizeChange();
       setLevel(0);
       optionsDialog.close();
@@ -1939,6 +1997,8 @@
     if (k === 'f') { setSlabs(!state.showSlabs); return; }
     if (k === 't') { setRoofs(!state.showRoofs); return; }
     if (k === 'c') { setCeiling(!state.showCeiling); return; }
+    if (k === 'l' && state.currentTool === 'people') { setRelocate(!relocate); return; }
+    if (k === 'r' && state.currentTool === 'people') { personTurn = (personTurn + 45) % 360; refreshHover(); return; }
     if (k === 'r') {
       if (FURN[piece]) state.furnDir = (state.furnDir + 1) % 4;
       else if (APPL[piece]) state.applDir = (state.applDir + 1) % 4;
@@ -1947,17 +2007,388 @@
       refreshHover(); return;
     }
     const n = Number(e.key);
-    if (n >= 1 && n <= 7) {
+    if (n >= 1 && n <= 6) {
       e.preventDefault();
       if (n === 1) setTool('build');
       else if (n === 2) setTool('style');
       else if (n === 3) setTool('erase');
       else if (n === 4) toggleDrawer('view');
-      else if (n === 5) undo();
-      else if (n === 6) redo();
+      else if (n === 5) setTool('people');
       else openOptionsDialog();
     }
   });
+
+  /* ═══════════════ PEOPLE ═══════════════
+     Characters saved from the Character Poser (house-character.js JSON files), placed in the
+     house and drawn by house-character-3d.js. Where they go decides how they are posed:
+       on the floor                         standing, turned the way they face
+       on a chair, office chair, armchair,
+       loveseat or couch                    sitting, facing the way the seat faces
+       in a single, double or bunk bed      asleep under the duvet
+     A person: { id, character, L, x, y, facing, on, place }
+       on      null, or the piece they are on, as { type, X, Y } (found again by its spot, so it
+               survives furniture being added or taken away round it)
+       place   which seat of a sofa (0 = the left cushion seen from the front), which bunk
+               (0 bottom, 1 top) or which half of a double bed (0 left, 1 right; one sleeper
+               alone lies in the middle)
+     The cast (who can be placed) comes from the "characters" folder next to this page — its
+     index.json (a list of file names), or on GitHub Pages the folder's own listing — and from
+     any files the user opens. */
+  const HC = window.HouseCharacter, HC3D = window.HouseCharacter3D;
+  const CHAR_DIR = 'characters/';
+  FURN.__person = { w: 0.4, d: 0.4, h: 1.7 };   // a person's footprint, for checking where they can stand
+  let people = [], nextPid = 1;
+  let cast = [], castPick = -1;                  // { key, name, character, from }
+  let personTurn = 0;                            // R: how far a new standing person is turned from facing the camera
+  const isSeatT = t => t === 'chair' || t === 'officechair' || isSofa(t);
+  const isBedT = t => t === 'singlebed' || t === 'bed' || t === 'bunkbed';
+  const capOf = t => isBedT(t) ? (t === 'bunkbed' || FURN[t].w >= 1.2 ? 2 : 1) : isSofa(t) ? FURN[t].seats : 1;
+  const sameF = (f, on) => !!(f && on && f.type === on.type && f.X === on.X && f.Y === on.Y);
+  const furnOf = (L, on) => on && state.floors[L] ? state.floors[L].furniture.findIndex(f => sameF(f, on)) : -1;
+  // skip: the id (or a list of ids) of people to leave out — someone being moved, or replaced
+  const skipped = (skip, id) => Array.isArray(skip) ? skip.includes(id) : id === skip;
+  const sharing = (L, on, skip) => people.filter(p => p.L === L && !skipped(skip, p.id) && sameF(p.on, on));
+  // facing the camera, whichever way the house is turned (degrees clockwise from north)
+  /* Relocate mode (📍 in the drawer): placing someone moves them — any copy of the same character
+     already in the house, on any floor, is taken away first. Same character = same saved data. */
+  let relocate = (() => { try { return localStorage.getItem('house-builder-relocate') === '1'; } catch (e) { return false; } })();
+  const charKeys = new WeakMap();
+  const charKey = c => { let k = charKeys.get(c); if (!k) charKeys.set(c, k = JSON.stringify(HC.normalize(c))); return k; };
+  const sameChar = (a, b) => a === b || charKey(a) === charKey(b);
+  const camFacing = () => ((135 - 90 * state.rot + personTurn) % 360 + 360) % 360;
+
+  /* where someone on piece f in place k is: x, y on the floor and z above it (n = how many share a bed) */
+  function placePoint(f, k, n) {
+    const F = FURN[f.type];
+    if (isBedT(f.type)) {
+      const half = f.type !== 'bunkbed' && F.w >= 1.2 && n > 1 ? F.w / 4 : 0;
+      const [x, y] = furnPt(f, k ? half : -half, -F.d / 2 + 0.55);
+      return { x, y, z: (f.type === 'bunkbed' && k ? 1.38 : 0.48) + 0.1 };
+    }
+    let u = 0;
+    if (isSofa(f.type) && F.seats > 1) u = -F.w / 2 + 0.16 + (k + 0.5) * (F.w - 0.32) / F.seats;
+    const [x, y] = furnPt(f, u, 0);
+    return { x, y, z: (F.levels && F.levels[0] ? F.levels[0].z : 0.45) };
+  }
+  function personPoint(p) {
+    if (p.swim) return { x: p.x, y: p.y, z: -0.15, on: false, swim: true };   // the water's surface
+    const fi = furnOf(p.L, p.on);
+    if (fi < 0) return { x: p.x, y: p.y, z: 0, on: false };
+    const f = state.floors[p.L].furniture[fi];
+    return Object.assign(placePoint(f, p.place | 0, sharing(p.L, p.on).length), { on: true });
+  }
+  // the person under the pointer, on the floor shown (3D: near their middle on screen; plan: near their spot)
+  function personAt(w) {
+    let best = null, bd = Infinity;
+    people.forEach(p => {
+      if (p.L !== state.level) return;
+      const q = personPoint(p);
+      if (w.sp) {
+        const [sx, sy] = scr(q.x, q.y, baseZ(state.level) + q.z + (q.on || q.swim ? 0.3 : 0.85)), d = Math.hypot(sx - w.sp.x, sy - w.sp.y);
+        if (d < 24 && d < bd) { bd = d; best = p; }
+      } else {
+        const d = Math.hypot(q.x - w.x, q.y - w.y);
+        if (d < 0.38 && d < bd) { bd = d; best = p; }
+      }
+    });
+    return best;
+  }
+  function freePlace(L, on, skip, pref) {
+    const taken = new Set(sharing(L, on, skip).map(p => p.place | 0)), cap = capOf(on.type);
+    if (pref != null && pref < cap && !taken.has(pref)) return pref;
+    for (let k = 0; k < cap; k++) if (!taken.has(k)) return k;
+    return -1;
+  }
+  /* Where someone dropped at w would go: a free place on the seat or bed under the pointer, or
+     else standing on the nearest spot (a grid corner or the middle of a square). skip = the
+     person being moved, whose own place counts as free. → { p: { L, on, place, x, y }, bad } */
+  function personTarget(w, skip) {
+    const L = state.level, F = state.floors[L];
+    let fi = -1, pref = null;
+    if (w.sp) {
+      let bd = 26;
+      F.furniture.forEach((f, i) => {
+        if (!isSeatT(f.type) && !isBedT(f.type)) return;
+        for (let k = 0; k < capOf(f.type); k++) {
+          const q = placePoint(f, k, 2), [sx, sy] = scr(q.x, q.y, baseZ(L) + q.z + 0.1), d = Math.hypot(sx - w.sp.x, sy - w.sp.y);
+          if (d < bd) { bd = d; fi = i; pref = k; }
+        }
+      });
+    }
+    if (fi < 0) {
+      const i = furnIndexAt(w);
+      if (i >= 0 && (isSeatT(F.furniture[i].type) || isBedT(F.furniture[i].type))) {
+        fi = i; let bd = Infinity;
+        for (let k = 0; k < capOf(F.furniture[i].type); k++) { const q = placePoint(F.furniture[i], k, 2), d = Math.hypot(q.x - w.x, q.y - w.y); if (d < bd) { bd = d; pref = k; } }
+      }
+    }
+    if (fi >= 0) {
+      const f = F.furniture[fi], on = { type: f.type, X: f.X, Y: f.Y }, k = freePlace(L, on, skip, pref);
+      return { p: { L, on, place: k < 0 ? pref : k, x: f.X / 2, y: f.Y / 2, swim: false }, bad: k < 0 };
+    }
+    /* in a swimming pool (on the ground floor): swimming, standing on the bottom with the water
+       up to the shoulders (house-character-3d.js, swim) — at a spot at least half a metre
+       from the pool's sides: a square's middle, or a corner inside a bigger pool */
+    const pi = L === 0 ? poolAt(w.x, w.y) : -1;
+    if (pi >= 0) {
+      const q = F.pools[pi], cs = nearestColSpot(w.x, w.y);
+      let [x, y] = cs ? colXY(cs).map(v => v / 2) : [Math.floor(w.x) + 0.5, Math.floor(w.y) + 0.5];
+      if (x < q.c0 + 0.5 || x > q.c1 - 0.5 || y < q.r0 + 0.5 || y > q.r1 - 0.5) [x, y] = [Math.floor(w.x) + 0.5, Math.floor(w.y) + 0.5];
+      x = Math.max(q.c0 + 0.5, Math.min(q.c1 - 0.5, x)); y = Math.max(q.r0 + 0.5, Math.min(q.r1 - 0.5, y));
+      const bad = people.some(p => !skipped(skip, p.id) && p.L === L && p.swim && Math.hypot(p.x - x, p.y - y) < 0.45);
+      return { p: { L, on: null, place: 0, x, y, swim: true }, bad };
+    }
+    const spot = nearestColSpot(w.x, w.y); if (!spot) return null;
+    const [X, Y] = colXY(spot), x = X / 2, y = Y / 2;
+    const bad = !furnValid({ type: '__person', X, Y, dir: 0, items: [] }, L)
+      || people.some(p => !skipped(skip, p.id) && p.L === L && !p.on && !p.swim && Math.hypot(p.x - x, p.y - y) < 0.45);
+    return { p: { L, on: null, place: 0, x, y, swim: false }, bad };
+  }
+  // the people tool: put the chosen character there, or turn (or move along) the person already there
+  function personTap(w) {
+    const hit = personAt(w);
+    if (hit) {
+      if (!hit.on || furnOf(hit.L, hit.on) < 0) return { personSet: { id: hit.id, p: { ...hit, on: null, facing: ((hit.facing | 0) + 45) % 360 } } };
+      const cap = capOf(hit.on.type);
+      for (let k = 1; k < cap; k++) { const pl = ((hit.place | 0) + k) % cap; if (freePlace(hit.L, hit.on, hit.id, pl) === pl) return { personSet: { id: hit.id, p: { ...hit, place: pl } } }; }
+      return null;
+    }
+    const c = cast[castPick]; if (!c) return null;
+    // relocate mode: this character can only be in the house once, so whoever they are already goes
+    const replace = relocate ? people.filter(p => sameChar(p.character, c.character)).map(p => p.id) : [];
+    const t = personTarget(w, replace); if (!t) return null;
+    return { personAdd: { p: { ...t.p, id: 0, character: c.character, facing: camFacing() }, bad: t.bad, replace } };
+  }
+  function personDrag(id, w) {
+    const p = people.find(q => q.id === id); if (!p) return null;
+    const t = personTarget(w, id); if (!t) return null;
+    return { personSet: { id, p: { ...p, ...t.p }, bad: t.bad } };
+  }
+  // someone on a piece that has gone stands up next to where it was (or leaves, if there is no room)
+  function standUp(p, x0, y0) {
+    const spots = [];
+    for (let dy = -1.5; dy <= 1.5; dy += 0.5) for (let dx = -1.5; dx <= 1.5; dx += 0.5) spots.push([x0 + dx, y0 + dy]);
+    spots.sort((a, b) => Math.hypot(a[0] - x0, a[1] - y0) - Math.hypot(b[0] - x0, b[1] - y0));
+    for (const [x, y] of spots) {
+      const X = Math.round(x * 2), Y = Math.round(y * 2);
+      if ((X & 1) !== (Y & 1)) continue;
+      if (!furnValid({ type: '__person', X, Y, dir: 0, items: [] }, p.L)) continue;
+      if (people.some(q => q !== p && q.L === p.L && !q.on && Math.hypot(q.x - X / 2, q.y - Y / 2) < 0.45)) continue;
+      if (p.L === 0 && poolAt(X / 2, Y / 2) >= 0) continue;
+      return { ...p, on: null, place: 0, swim: false, x: X / 2, y: Y / 2, facing: p.facing == null ? camFacing() : p.facing };
+    }
+    return null;
+  }
+  // keep people with their furniture through a commit: moved with it, or standing up if it went
+  function followFurniture(L, before) {
+    const after = state.floors[L].furniture;
+    people = people.map(p => {
+      if (p.L !== L || !p.on || after.some(f => sameF(f, p.on))) return p;
+      const i = before.findIndex(f => sameF(f, p.on));
+      const nf = i >= 0 && after.length === before.length ? after[i] : null;
+      if (nf && nf.type === p.on.type && !onLine(nf)) return { ...p, on: { type: nf.type, X: nf.X, Y: nf.Y }, x: nf.X / 2, y: nf.Y / 2 };
+      return standUp(p, p.on.X / 2, p.on.Y / 2);
+    }).filter(Boolean);
+  }
+  // the ground floor's pool at a point (whatever floor is shown)
+  const poolAt = (x, y) => state.floors[0].pools.findIndex(q => Math.floor(y) >= q.r0 && Math.floor(y) < q.r1 && Math.floor(x) >= q.c0 && Math.floor(x) < q.c1);
+  // a swimmer whose pool has gone stands where they were (or leaves, if there is no room)
+  function leavePools() {
+    people = people.map(p => !p.swim || (p.L === 0 && poolAt(p.x, p.y) >= 0) ? p : standUp({ ...p, swim: false }, p.x, p.y)).filter(Boolean);
+  }
+  function shiftPeople(dc, dr, cols, rows) {
+    people = people.map(p => ({ ...p, x: p.x + dc, y: p.y + dr, on: p.on ? { ...p.on, X: p.on.X + 2 * dc, Y: p.on.Y + 2 * dr } : null }))
+      .filter(p => p.on ? furnOf(p.L, p.on) >= 0 : (p.x > 0 && p.y > 0 && p.x < cols && p.y < rows));
+  }
+  // the pose for where they are: standing on the floor, sitting on a seat (a bed poses them itself)
+  const poseCache = new WeakMap();
+  function posed(p) {
+    const how = p.on && isSeatT(p.on.type) ? 'chair' : p.on ? 'bed' : 'standing';   // swimmers stand on the pool's bottom
+    let m = poseCache.get(p.character); if (!m) poseCache.set(p.character, m = {});
+    if (!m[how]) {
+      const d = HC.normalize(p.character);
+      d.prop = null; d.back = false;
+      if (how !== 'bed') HC.applyPose(d, how);
+      m[how] = d;
+    }
+    return m[how];
+  }
+  // the people to draw: everyone, with whatever is being placed, moved or erased right now
+  function shownPeople() {
+    const pd = state.pending || state.hoverPending;
+    let list = people;
+    if (pd && pd.personSet) list = list.map(p => p.id === pd.personSet.id ? { ...pd.personSet.p, ghost: true, bad: pd.personSet.bad } : p);
+    if (pd && pd.personDel != null) list = list.map(p => p.id === pd.personDel ? { ...p, fade: true } : p);
+    if (pd && pd.personAdd && pd.personAdd.replace && pd.personAdd.replace.length) list = list.map(p => pd.personAdd.replace.includes(p.id) ? { ...p, fade: true } : p);
+    if (pd && pd.personAdd) list = list.concat([{ ...pd.personAdd.p, ghost: true, bad: pd.personAdd.bad }]);
+    return list;
+  }
+  function toPicture(p, list) {
+    const o = { character: posed(p), level: p.L };
+    const fi = furnOf(p.L, p.on);
+    if (fi >= 0 && isBedT(p.on.type)) {
+      o.bed = fi;
+      if (p.on.type === 'bunkbed') o.bunk = p.place ? 'top' : 'bottom';
+      else if (list.filter(q => q.L === p.L && sameF(q.on, p.on) && !(q.ghost && q.bad)).length > 1) o.side = p.place ? 1 : 0;
+    } else if (fi >= 0) { o.seat = fi; o.place = p.place | 0; }
+    else { o.x = p.x; o.y = p.y; o.facing = p.facing == null ? 135 : p.facing; if (p.swim) o.swim = true; }
+    if (p.ghost) o.opacity = p.bad ? 0.3 : 0.6;
+    else if (p.fade) o.opacity = 0.35;
+    return o;
+  }
+  function isoWithPeople(stBy, rmBy) {
+    const list = HC && HC3D ? shownPeople() : [];
+    if (!list.length) return renderIso(stBy, rmBy);
+    const layer = HC3D.layer(engine, stBy, list.map(p => toPicture(p, list)), { quiet: true });
+    return layer.finish(renderIso(stBy, rmBy), 'hbp-') + layer.overs.join('');
+  }
+  // on the plan: a round badge with the first letter of their name (and an arrow the way a standing person faces)
+  const PERSON_COLS = ['#2f6db0', '#c0392b', '#2e8b57', '#8e44ad', '#d35400', '#16a085', '#b8860b', '#7f8c8d'];
+  function planPeople() {
+    if (!HC) return '';
+    return shownPeople().filter(p => p.L === state.level).map(p => {
+      const q = personPoint(p), cx = q.x * PX, cy = q.y * PX, r = 0.2 * PX;
+      const col = p.character.upperColor || PERSON_COLS[(p.id | 0) % PERSON_COLS.length];
+      const name = String(p.character.name || '?'), op = p.ghost ? (p.bad ? 0.35 : 0.6) : p.fade ? 0.35 : 1;
+      let arrow = '';
+      if (!q.on) {
+        const t = (p.facing == null ? 135 : p.facing) * Math.PI / 180, fx = Math.sin(t), fy = -Math.cos(t);
+        const tip = [cx + fx * r * 1.75, cy + fy * r * 1.75], b1 = [cx + fx * r * 1.05 - fy * r * 0.45, cy + fy * r * 1.05 + fx * r * 0.45], b2 = [cx + fx * r * 1.05 + fy * r * 0.45, cy + fy * r * 1.05 - fx * r * 0.45];
+        arrow = `<path d="M${tip.map(v => v.toFixed(1)).join(' ')}L${b1.map(v => v.toFixed(1)).join(' ')}L${b2.map(v => v.toFixed(1)).join(' ')}Z" fill="${col}" stroke="#fff" stroke-width="1"/>`;
+      }
+      return `<g class="hb-person" opacity="${op}">${arrow}<circle cx="${cx.toFixed(1)}" cy="${cy.toFixed(1)}" r="${r.toFixed(1)}" fill="${col}" stroke="#fff" stroke-width="1.6"${p.bad ? ' stroke-dasharray="3 2"' : ''}/>`
+        + `<text x="${cx.toFixed(1)}" y="${(cy + 0.5).toFixed(1)}" text-anchor="middle" dominant-baseline="central" font-family="var(--font-sans, sans-serif)" font-size="${(r * 1.1).toFixed(1)}" font-weight="700" fill="#fff">${escHtml(name.charAt(0).toUpperCase())}</text>`
+        + `<title>${escHtml(name)}</title></g>`;
+    }).join('');
+  }
+  const escHtml = s => String(s).replace(/[&<>"]/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]));
+  // people as saved in a file (and back): everything but the id
+  const savePeople = () => people.map(({ id, ...p }) => p);
+  function readPeople(list) {
+    if (!Array.isArray(list) || !HC) return [];
+    const num = v => typeof v === 'number' && isFinite(v);
+    return list.filter(p => p && typeof p === 'object' && p.character && typeof p.character === 'object' && LEVELS.includes(p.L) && num(p.x) && num(p.y))
+      .map(p => ({ id: nextPid++, character: HC.normalize(p.character), L: p.L, x: p.x, y: p.y, facing: num(p.facing) ? ((p.facing % 360) + 360) % 360 : 135,
+        on: p.on && FURN[p.on.type] && Number.isInteger(p.on.X) && Number.isInteger(p.on.Y) ? { type: p.on.type, X: p.on.X, Y: p.on.Y } : null,
+        place: Math.max(0, Math.min(3, p.place | 0)), swim: p.swim === true && p.L === 0 && !p.on }));
+  }
+
+  /* ── the cast: the characters that can be placed ── */
+  const castRow = document.getElementById('castRow'), castStatus = document.getElementById('castStatus');
+  const peopleBadge = document.getElementById('peopleBadge');
+  const CAST_STORE = 'house-builder-cast';
+  // a character file from the poser (or an animation file from the keyframe editor, which holds one)
+  function characterOf(o, file) {
+    const c = o && typeof o === 'object' && !Array.isArray(o) ? (o.character && o.keys ? o.character : o) : null;
+    if (!c || !('joints' in c || 'bodyType' in c || c.schema === HC.SCHEMA)) return null;
+    const d = HC.normalize(c);
+    if (!c.name && file) d.name = file.replace(/\.json$/i, '').replace(/[-_]+/g, ' ').replace(/\b\w/g, m => m.toUpperCase()).slice(0, 40);
+    return d;
+  }
+  function addCast(items, from) {
+    let n = 0;
+    items.forEach(it => {
+      const d = it && characterOf(it.character, it.file); if (!d) return;
+      const key = JSON.stringify(d);
+      if (cast.some(c => c.key === key)) return;
+      cast.push({ key, name: d.name || 'Someone', character: d, from }); n++;
+    });
+    if (n) renderCast();
+    return n;
+  }
+  function renderCast() {
+    castRow.innerHTML = cast.map((c, i) => {
+      const d = HC.applyPose(HC.normalize(c.character), 'standing'); d.prop = null; d.back = false;
+      return `<button type="button" class="brush cast-card" role="radio" aria-checked="${i === castPick}" data-cast="${i}" title="${escHtml(c.name)}">${HC.render(d, { fit: true })}<span class="brush-word">${escHtml(c.name)}</span></button>`;
+    }).join('');
+  }
+  castRow.addEventListener('click', e => { const b = e.target.closest('[data-cast]'); if (b) selectCast(Number(b.dataset.cast)); });
+  function selectCast(i) {
+    castPick = i;
+    castRow.querySelectorAll('[data-cast]').forEach(el => el.setAttribute('aria-checked', String(Number(el.dataset.cast) === i)));
+    const c = cast[i];
+    if (c) { const d = HC.applyPose(HC.normalize(c.character), 'standing'); d.prop = null; peopleBadge.innerHTML = HC.render(d, { fit: true }); peopleBadge.hidden = false; }
+    if (state.currentTool !== 'people') setTool('people'); else refreshHover();
+    if (openDrawer === 'people') { openDrawer = null; renderDrawers(); }
+  }
+  const setCastStatus = t => { castStatus.textContent = t; };
+  async function fetchJSON(url) { const r = await fetch(url, { cache: 'no-cache' }); if (!r.ok) throw new Error(r.status); return r.json(); }
+  /* the names of the files in the characters folder: its index.json, or on GitHub Pages the
+     repository's own listing of the folder (through the GitHub API) */
+  async function folderFiles() {
+    try {
+      const idx = await fetchJSON(CHAR_DIR + 'index.json');
+      const list = (Array.isArray(idx) ? idx : idx.files || idx.characters || []).map(f => typeof f === 'string' ? f : f && f.file).filter(Boolean);
+      if (list.length) return list;
+    } catch (e) { /* no index.json */ }
+    if (!/\.github\.io$/i.test(location.hostname)) return null;
+    const owner = location.hostname.split('.')[0], parts = location.pathname.split('/').filter(Boolean);
+    if (parts.length && /\.[a-z0-9]+$/i.test(parts[parts.length - 1])) parts.pop();   // the page itself
+    const tries = [[owner + '.github.io', parts]];
+    if (parts.length) tries.push([parts[0], parts.slice(1)]);                            // a project site: the first folder is the repository
+    for (const [repo, dir] of tries) {
+      try {
+        const list = await fetchJSON(`https://api.github.com/repos/${owner}/${repo}/contents/${dir.concat('characters').map(encodeURIComponent).join('/')}`);
+        if (Array.isArray(list)) return list.filter(x => x.type === 'file').map(x => x.name);
+      } catch (e) { /* try the next */ }
+    }
+    return null;
+  }
+  async function loadCastFolder() {
+    let n = 0;
+    if (Array.isArray(window.HOUSE_CHARACTERS)) n += addCast(window.HOUSE_CHARACTERS.map(c => ({ character: c })), 'page');
+    let files = null;
+    if (location.protocol !== 'file:') { setCastStatus('Looking in the characters folder…'); files = await folderFiles(); }
+    if (files) {
+      const got = await Promise.all(files.filter(f => /\.json$/i.test(f) && !/^index\.json$/i.test(f))
+        .map(f => fetchJSON(CHAR_DIR + f.split('/').map(encodeURIComponent).join('/')).then(o => ({ file: f, character: o })).catch(() => null)));
+      n += addCast(got.filter(Boolean), 'folder');
+    }
+    try { n += addCast(JSON.parse(localStorage.getItem(CAST_STORE) || '[]'), 'opened'); } catch (e) { /* none kept */ }
+    setCastStatus(cast.length
+      ? `${cast.length} ${cast.length === 1 ? 'person' : 'people'} to choose from${files ? ' (from the characters folder)' : ''}. Pick one, then tap the house.`
+      : location.protocol === 'file:'
+        ? 'This page is open from your computer, so it can’t look in the characters folder by itself. Open the folder (or some character files) with the buttons below.'
+        : 'No characters folder was found next to this page. Open character files saved from the Character Poser, or a folder of them.');
+    if (castPick < 0 && cast.length) { castPick = 0; renderCast(); const d = HC.applyPose(HC.normalize(cast[0].character), 'standing'); d.prop = null; peopleBadge.innerHTML = HC.render(d, { fit: true }); peopleBadge.hidden = false; }
+  }
+  function openCastFiles(fileList) {
+    const files = [...fileList].filter(f => /\.json$/i.test(f.name) && !/^index\.json$/i.test(f.name));
+    if (!files.length) { setCastStatus('There were no .json files there.'); return; }
+    Promise.all(files.map(f => f.text().then(t => ({ file: f.name, character: JSON.parse(t) })).catch(() => null))).then(got => {
+      got = got.filter(Boolean);
+      const before = cast.length, n = addCast(got, 'opened');
+      try {   // remembered on this computer, so they are here next time
+        const kept = JSON.parse(localStorage.getItem(CAST_STORE) || '[]').concat(got.filter(g => characterOf(g.character, g.file)).map(g => ({ file: g.file, character: characterOf(g.character, g.file) })));
+        localStorage.setItem(CAST_STORE, JSON.stringify(kept.slice(-60)));
+      } catch (e) { /* storage full or off */ }
+      setCastStatus(n ? `Added ${n} ${n === 1 ? 'person' : 'people'}.` : got.length ? 'Those people are already here.' : 'Those files aren’t characters from the Character Poser.');
+      if (n && castPick < 0) selectCast(before);
+    });
+  }
+  const castFiles = document.getElementById('castFiles'), castFolder = document.getElementById('castFolder');
+  document.getElementById('castFilesBtn').addEventListener('click', () => { castFiles.value = ''; castFiles.click(); });
+  document.getElementById('castFolderBtn').addEventListener('click', () => { castFolder.value = ''; castFolder.click(); });
+  castFiles.addEventListener('change', () => openCastFiles(castFiles.files));
+  castFolder.addEventListener('change', () => openCastFiles(castFolder.files));
+  document.getElementById('castForgetBtn').addEventListener('click', () => {
+    try { localStorage.removeItem(CAST_STORE); } catch (e) { /* ignore */ }
+    cast = cast.filter(c => c.from !== 'opened'); castPick = cast.length ? 0 : -1;
+    if (!cast.length) peopleBadge.hidden = true;
+    renderCast(); setCastStatus('Forgot the people you opened. The characters folder’s people are still here.');
+  });
+  const relocateBtn = document.getElementById('relocateBtn');
+  function setRelocate(on, quiet) {
+    relocate = on;
+    relocateBtn.setAttribute('aria-pressed', String(on));
+    relocateBtn.textContent = on ? '📍 Relocate: on' : '📍 Relocate: off';
+    try { localStorage.setItem('house-builder-relocate', on ? '1' : '0'); } catch (e) { /* ignore */ }
+    if (!quiet) refreshHover();
+  }
+  relocateBtn.addEventListener('click', () => setRelocate(!relocate));
+  setRelocate(relocate, true);
+  if (!HC || !HC3D) setCastStatus('The character files (house-character.js and house-character-3d.js) didn’t load, so people can’t be placed.');
+  else loadCastFolder();
 
   /* ═══════════════ STARTER HOUSE ═══════════════
      Ground floor: living room, two small rooms, stairs up.
@@ -2078,6 +2509,22 @@
     // the open basement area: a radiator on the south wall
     state.floors[-1].furniture.push({ type: 'radiator', ek: key('h', 8, 4), side: 'm', items: [] });
     dress(-1, 6, 8, 'tile', false);   // tiled floor in the utility room
+    // half-panelled wallpaper on the inside of three rooms: striped in the living room, floral and
+    // gingham in the two bedrooms upstairs (a room's own faces only, round its doors and windows too)
+    const paper = (L, r, c, fin) => {
+      const F = state.floors[L], rm = computeRooms(F.edges, isIndoorEdge), id = rm.id[r * state.COLS + c];
+      const inIt = (rr, cc) => rr >= 0 && rr < state.ROWS && cc >= 0 && cc < state.COLS && rm.id[rr * state.COLS + cc] === id;
+      F.edges.forEach((v, k) => {
+        if (v.type === 'fence') return;
+        const e = parseKey(k), sd = sidesOf(v);
+        if (e.o === 'h' ? inIt(e.r - 1, e.c) : inIt(e.r, e.c - 1)) sd.m = fin;
+        if (inIt(e.r, e.c)) sd.p = fin;
+        F.edges.set(k, { ...v, sides: sd });
+      });
+    };
+    paper(0, 4, 3, 'pwpstripe');
+    paper(1, 4, 3, 'pwpcheck');
+    paper(1, 4, 7, 'pwpfloral');
     // with the garden and the pool, the whole layout sat a square too far south-east: centre it
     shiftContent(-1, -1, state.COLS, state.ROWS);
   })();
