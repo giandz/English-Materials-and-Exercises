@@ -239,6 +239,11 @@
   /* People: the cast cards, and the chosen person on the toolbar */
   .cast-row{ gap:8px; }
   .brush.cast-card{ width:76px; padding:6px 2px 5px; }
+  /* walking: the way someone is going, where to, and who is chosen to walk */
+  .hb-walk .hb-walk-route{ fill:none; stroke:var(--slot-accent, #2f6db0); stroke-width:2.2; stroke-dasharray:6 5; stroke-linecap:round; stroke-linejoin:round; opacity:.75; }
+  .hb-walk .hb-walk-goal{ fill:none; stroke:var(--slot-accent, #2f6db0); stroke-width:2; opacity:.85; }
+  .hb-walk .hb-walk-ghost{ opacity:.45; }
+  .hb-walk .hb-walk-pick{ fill:var(--slot-accent, #2f6db0); fill-opacity:.18; stroke:var(--slot-accent, #2f6db0); stroke-width:2; }
   .cast-card svg{ display:block; height:72px; width:auto; max-width:66px; margin:0 auto 2px; overflow:visible; }
   .cast-card .brush-word{ max-width:72px; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
   .slot-badge.people-badge{ overflow:hidden; padding:1px; }
@@ -433,11 +438,14 @@
       <button type="button" class="action-btn" id="castFolderBtn">🗂️ Open a folder</button>
       <button type="button" class="action-btn" id="castFilesBtn">📂 Open character files</button>
       <button type="button" class="action-btn" id="relocateBtn" aria-pressed="false" title="On: placing someone moves them here — any copy of that person already in the house is taken away. Off: each tap adds another copy.">📍 Relocate: off</button>
+      <button type="button" class="action-btn" id="walkBtn" aria-pressed="false" title="On: tap someone, then tap where they should go — they walk there round the walls and furniture, through the doors (G)">🚶 Walk: off</button>
+      <button type="button" class="action-btn" id="gaitBtn" title="How people go when they walk somewhere: walking or running">🚶 Pace: walk</button>
       <button type="button" class="action-btn" id="castForgetBtn" title="Take away the people you opened from files (the characters folder stays)">Forget opened files</button>
       <input type="file" id="castFiles" accept=".json,application/json" multiple hidden>
       <input type="file" id="castFolder" webkitdirectory directory multiple hidden>
     </div>
     <p class="drawer-hint">Pick someone, then tap the house. On the floor they <strong>stand</strong>; on a chair, an armchair, a loveseat or a couch they <strong>sit</strong>; in a bed they <strong>sleep</strong> (two can share a double bed, one in each bunk); in the swimming pool they <strong>swim</strong>. With <strong>📍 Relocate</strong> on, each person is in the house only once: putting them somewhere new takes them away from where they were (L toggles it). Tap a person to turn them, or to move them to the next seat or bunk. Drag a person to move them. 🧹 Erase takes them away. Press <strong>R</strong> to turn someone before you put them down.</p>
+    <p class="drawer-hint">With <strong>🚶 Walk</strong> on (G), tap someone, then tap where they should go — or drag them there. They find their way round walls and furniture and through doors, get up from a seat or out of bed, and sit down, go to bed or get into the pool when they arrive. <strong>🏃 Pace: run</strong> makes them run.</p>
   </section>
 
   <nav class="hotbar" id="hotbar" role="toolbar" aria-label="House tools">
@@ -489,7 +497,7 @@
     <li><strong>🏊 Swimming pool</strong>: on the ground floor, drag across the squares where the pool should go. Pools are dug into the ground, so nothing can be built under them in the basement, and nothing can stand in the water.</li>
     <li><strong>Moving things</strong>: with 🏗️ Build, drag a column or a piece of furniture to move it, or drag a door or window along its wall. With 🏠 Roof picked, drag a roof's corner handles to resize it.</li>
     <li><strong>🎨 Style</strong>: tap a wall, door, window, fence, column, roof or floor (a floor picks the whole room). Drag a box to pick many walls, fences or floor squares at once: start the drag on a wall to pick walls, on a fence to pick fences, or anywhere else to pick floor. It lights up, and the drawer shows the styles for it. Walls can be styled on one side or both. Roofs can be flat, box gable, open gable, box shed or open shed, in clay tile, concrete or corrugated metal. Open roofs carry the outside walls up to meet the roof. Floors can be hardwood, ceramic tile or carpet, walls can be tiled for a bathroom or kitchen, or papered inside with striped, floral, polka dot, trellis or gingham wallpaper — each also half-panelled, with painted wood panelling and a chair rail under the paper. <strong>Apply to all</strong> gives the same style to every one in the house.</li>
-    <li><strong>🧑 People</strong>: put people in the house. They come from the <strong>characters</strong> folder next to this page (characters saved from the Character Poser); you can also open a folder or some character files with the buttons in the drawer. Pick someone and tap: on the floor they stand, on a chair, armchair, loveseat or couch they sit, in a bed they sleep (two can share a double bed, one in each bunk of a bunk bed), and in the swimming pool they swim, with the water up to their shoulders. With <strong>📍 Relocate</strong> on (or press <strong>L</strong>), each character is in the house only once: putting them down somewhere takes away any copy of them already there, on any floor. Tap a person to turn them (or move them to the next seat or bunk), drag to move them, and press <strong>R</strong> to turn someone before you put them down. People move with the seat or bed they are on, stand up if it is taken away, and are saved with the house.</li>
+    <li><strong>🧑 People</strong>: put people in the house. They come from the <strong>characters</strong> folder next to this page (characters saved from the Character Poser); you can also open a folder or some character files with the buttons in the drawer. Pick someone and tap: on the floor they stand, on a chair, armchair, loveseat or couch they sit, in a bed they sleep (two can share a double bed, one in each bunk of a bunk bed), and in the swimming pool they swim, with the water up to their shoulders. With <strong>📍 Relocate</strong> on (or press <strong>L</strong>), each character is in the house only once: putting them down somewhere takes away any copy of them already there, on any floor. Tap a person to turn them (or move them to the next seat or bunk), drag to move them, and press <strong>R</strong> to turn someone before you put them down. People move with the seat or bed they are on, stand up if it is taken away, and are saved with the house. With <strong>🚶 Walk</strong> on (or press <strong>G</strong>), tap someone and then tap where they should go (or drag them there): they walk there, round the walls and furniture and through the doors, standing up first if they were sitting, and sitting down, going to bed or getting into the pool when they arrive. <strong>🏃 Pace: run</strong> in the drawer makes them run. The walk is played with the animations in the <strong>animations</strong> folder (made with the Character Keyframes editor).</li>
     <li><strong>🧹 Erase</strong>: tap a wall, door, window, fence, column, stairs or a person to remove it, or drag along a line to remove many.</li>
     <li><strong>🔼 🔽</strong>: go up or down a floor, from the basement (B1F) to the second floor (2F). You can also press <strong>PgUp</strong> and <strong>PgDn</strong>. Floors above the one you are on are hidden.</li>
     <li><strong>👁️ View</strong>: show the 3D view, the floor plan, or both. <strong>⟲ ⟳</strong> turn the house (<strong>Q</strong>, <strong>E</strong>). <strong>🧱</strong> lowers all the walls so you can see inside (<strong>W</strong>), and <strong>✂️ Cutout</strong> keeps the walls at the back full height and cuts the rest down (<strong>X</strong>). In both of these modes a slider sets how much of the walls to keep, from almost nothing to the full height (or press <strong>[</strong> for less and <strong>]</strong> for more); the two modes share it. <strong>Floors</strong> (<strong>F</strong>) and <strong>Ceiling</strong> (<strong>C</strong>) show or hide the floors between storeys, and <strong>Roofs</strong> (<strong>T</strong>) shows or hides the roofs.</li>
@@ -543,6 +551,7 @@
 <script src="house-engine.js"></script>
 <script src="house-character.js"></script>
 <script src="house-character-3d.js"></script>
+<script src="house-walk.js"></script>
 <script>
 (function(){
   'use strict';
@@ -1078,6 +1087,7 @@
   }
   function commit(p) {
     if (!p) return;
+    if (p.walkPick !== undefined || p.walkTo) { walkCommit(p); return; }
     const hasEdges = p.edges && p.edges.size;
     const stair = (p.stairAdd && !p.stairAdd.bad) || p.stairSet || p.stairDel != null;
     const col = (p.colAdd && !p.colAdd.bad) || p.colDel || (p.colMove && !p.colMove.bad && p.colMove.from !== p.colMove.to);
@@ -1998,6 +2008,7 @@
     if (k === 't') { setRoofs(!state.showRoofs); return; }
     if (k === 'c') { setCeiling(!state.showCeiling); return; }
     if (k === 'l' && state.currentTool === 'people') { setRelocate(!relocate); return; }
+    if (k === 'g' && state.currentTool === 'people') { setWalkMode(!walkMode); return; }
     if (k === 'r' && state.currentTool === 'people') { personTurn = (personTurn + 45) % 360; refreshHover(); return; }
     if (k === 'r') {
       if (FURN[piece]) state.furnDir = (state.furnDir + 1) % 4;
@@ -2038,6 +2049,7 @@
   const CHAR_DIR = 'characters/';
   FURN.__person = { w: 0.4, d: 0.4, h: 1.7 };   // a person's footprint, for checking where they can stand
   let people = [], nextPid = 1;
+  const walkers = new Map();                    // people walking (see WALKING): id → { rec, key, trip, pre, post, t0, final, route, now }
   let cast = [], castPick = -1;                  // { key, name, character, from }
   let personTurn = 0;                            // R: how far a new standing person is turned from facing the camera
   const isSeatT = t => t === 'chair' || t === 'officechair' || isSofa(t);
@@ -2071,6 +2083,8 @@
     return { x, y, z: (F.levels && F.levels[0] ? F.levels[0].z : 0.45) };
   }
   function personPoint(p) {
+    const lv = p.walking || (walkers.has(p.id) && !p.ghost && !p.settling && p.alpha == null ? walkers.get(p.id).now : null);
+    if (lv) return { x: lv.x, y: lv.y, z: lv.swim ? -0.15 : 0, on: false, swim: !!lv.swim };
     if (p.swim) return { x: p.x, y: p.y, z: -0.15, on: false, swim: true };   // the water's surface
     const fi = furnOf(p.L, p.on);
     if (fi < 0) return { x: p.x, y: p.y, z: 0, on: false };
@@ -2146,6 +2160,7 @@
   }
   // the people tool: put the chosen character there, or turn (or move along) the person already there
   function personTap(w) {
+    if (walkMode) return walkTap(w);
     const hit = personAt(w);
     if (hit) {
       if (!hit.on || furnOf(hit.L, hit.on) < 0) return { personSet: { id: hit.id, p: { ...hit, on: null, facing: ((hit.facing | 0) + 45) % 360 } } };
@@ -2160,6 +2175,7 @@
     return { personAdd: { p: { ...t.p, id: 0, character: c.character, facing: camFacing() }, bad: t.bad, replace } };
   }
   function personDrag(id, w) {
+    if (walkMode) return walkDrag(id, w);
     const p = people.find(q => q.id === id); if (!p) return null;
     const t = personTarget(w, id); if (!t) return null;
     return { personSet: { id, p: { ...p, ...t.p }, bad: t.bad } };
@@ -2221,9 +2237,17 @@
     if (pd && pd.personDel != null) list = list.map(p => p.id === pd.personDel ? { ...p, fade: true } : p);
     if (pd && pd.personAdd && pd.personAdd.replace && pd.personAdd.replace.length) list = list.map(p => pd.personAdd.replace.includes(p.id) ? { ...p, fade: true } : p);
     if (pd && pd.personAdd) list = list.concat([{ ...pd.personAdd.p, ghost: true, bad: pd.personAdd.bad }]);
+    if (walkers.size) list = list.flatMap(p => walkers.has(p.id) ? walkerShown(p, walkers.get(p.id)) : [p]);
+    if (pd && pd.walkTo) { const r = people.find(q => q.id === pd.walkTo.id); if (r) list = list.concat([{ ...r, ...pd.walkTo.p, id: -1, ghost: true, bad: pd.walkTo.bad }]); }
     return list;
   }
   function toPicture(p, list) {
+    if (p.walking) {
+      const s = p.walking, o = { character: s.d, level: p.L, x: s.x, y: s.y, z: s.z || 0, facing: Math.round(s.facing / 5) * 5 % 360 };
+      if (s.swim) o.swim = true;
+      if (p.alpha != null) o.opacity = p.alpha;
+      return o;
+    }
     const o = { character: posed(p), level: p.L };
     const fi = furnOf(p.L, p.on);
     if (fi >= 0 && isBedT(p.on.type)) {
@@ -2234,13 +2258,14 @@
     else { o.x = p.x; o.y = p.y; o.facing = p.facing == null ? 135 : p.facing; if (p.swim) o.swim = true; }
     if (p.ghost) o.opacity = p.bad ? 0.3 : 0.6;
     else if (p.fade) o.opacity = 0.35;
+    else if (p.alpha != null) o.opacity = p.alpha;
     return o;
   }
   function isoWithPeople(stBy, rmBy) {
     const list = HC && HC3D ? shownPeople() : [];
     if (!list.length) return renderIso(stBy, rmBy);
     const layer = HC3D.layer(engine, stBy, list.map(p => toPicture(p, list)), { quiet: true });
-    return layer.finish(renderIso(stBy, rmBy), 'hbp-') + layer.overs.join('');
+    return layer.finish(renderIso(stBy, rmBy), 'hbp-') + layer.overs.join('') + walkMarks(true);
   }
   // on the plan: a round badge with the first letter of their name (and an arrow the way a standing person faces)
   const PERSON_COLS = ['#2f6db0', '#c0392b', '#2e8b57', '#8e44ad', '#d35400', '#16a085', '#b8860b', '#7f8c8d'];
@@ -2249,17 +2274,17 @@
     return shownPeople().filter(p => p.L === state.level).map(p => {
       const q = personPoint(p), cx = q.x * PX, cy = q.y * PX, r = 0.2 * PX;
       const col = p.character.upperColor || PERSON_COLS[(p.id | 0) % PERSON_COLS.length];
-      const name = String(p.character.name || '?'), op = p.ghost ? (p.bad ? 0.35 : 0.6) : p.fade ? 0.35 : 1;
+      const name = String(p.character.name || '?'), op = p.ghost ? (p.bad ? 0.35 : 0.6) : p.fade ? 0.35 : p.alpha != null ? p.alpha : 1;
       let arrow = '';
       if (!q.on) {
-        const t = (p.facing == null ? 135 : p.facing) * Math.PI / 180, fx = Math.sin(t), fy = -Math.cos(t);
+        const fac = p.walking ? p.walking.facing : p.facing, t = (fac == null ? 135 : fac) * Math.PI / 180, fx = Math.sin(t), fy = -Math.cos(t);
         const tip = [cx + fx * r * 1.75, cy + fy * r * 1.75], b1 = [cx + fx * r * 1.05 - fy * r * 0.45, cy + fy * r * 1.05 + fx * r * 0.45], b2 = [cx + fx * r * 1.05 + fy * r * 0.45, cy + fy * r * 1.05 - fx * r * 0.45];
         arrow = `<path d="M${tip.map(v => v.toFixed(1)).join(' ')}L${b1.map(v => v.toFixed(1)).join(' ')}L${b2.map(v => v.toFixed(1)).join(' ')}Z" fill="${col}" stroke="#fff" stroke-width="1"/>`;
       }
       return `<g class="hb-person" opacity="${op}">${arrow}<circle cx="${cx.toFixed(1)}" cy="${cy.toFixed(1)}" r="${r.toFixed(1)}" fill="${col}" stroke="#fff" stroke-width="1.6"${p.bad ? ' stroke-dasharray="3 2"' : ''}/>`
         + `<text x="${cx.toFixed(1)}" y="${(cy + 0.5).toFixed(1)}" text-anchor="middle" dominant-baseline="central" font-family="var(--font-sans, sans-serif)" font-size="${(r * 1.1).toFixed(1)}" font-weight="700" fill="#fff">${escHtml(name.charAt(0).toUpperCase())}</text>`
         + `<title>${escHtml(name)}</title></g>`;
-    }).join('');
+    }).join('') + walkMarks(false);
   }
   const escHtml = s => String(s).replace(/[&<>"]/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]));
   // people as saved in a file (and back): everything but the id
@@ -2387,6 +2412,220 @@
   }
   relocateBtn.addEventListener('click', () => setRelocate(!relocate));
   setRelocate(relocate, true);
+
+  /* ═══════════════ WALKING ═══════════════
+     🚶 Walk mode (G): tap someone, then tap where they should go (or drag them there). They go
+     on foot, round walls, windows, furniture, stairs and pools and through doors and gates
+     (HouseWalk.route), played with the keyframe editor's animations (house-walk.js; the
+     animations folder next to this page, when there is one, has the newest versions):
+       leaving a seat     standing-up, from the seat to a step in front of it
+       leaving a bed      they fade out of the bed and in beside it
+       on the way         walking (or running), the cycle keeping pace with the floor
+       arriving at a seat walking to a step in front of it, turning, sitting-down
+       arriving at a bed  walking to its side, then fading into it
+       a pool             walking (or running) straight in: in the water they are swimming
+     While someone walks, their saved place stays where they started; when they arrive, the
+     move is one step in the undo history, like dragging them there. A walker whose person is
+     moved, taken away or undone stops. */
+  const HW_ = window.HouseWalk;
+  let walkMode = false, walkPick = null, gait = (() => { try { return localStorage.getItem('house-builder-gait') === 'running' ? 'running' : 'walking'; } catch (e) { return 'walking'; } })();
+  let walkRaf = 0;
+  const FADE = 0.5;                             // seconds to fade into or out of a bed
+  const recKey = p => JSON.stringify([p.L, p.x, p.y, p.on, p.place | 0, !!p.swim, p.facing]);
+  const DIRDEG = d => ((d | 0) % 4) * 90;
+  const fwdOf = deg => [Math.sin(deg * Math.PI / 180), -Math.cos(deg * Math.PI / 180)];
+  if (HW_ && location.protocol !== 'file:') HW_.load().catch(() => {});   // the animations folder's own files, if any
+
+  // the 3D view's own seat spot for someone sitting on piece f, place k
+  function seatSpotFor(rec, f, k) {
+    const d = posed({ ...rec, on: { type: f.type, X: f.X, Y: f.Y } });
+    return HC3D && HC3D.seatSpot ? HC3D.seatSpot(engine, f, k | 0, d) : (() => { const q = placePoint(f, k | 0, 1); return { x: q.x, y: q.y, z: q.z, facing: 'S' }; })();
+  }
+  // the spots beside a bed someone can stand at to get in or out: its two long sides and its foot
+  function bedSides(f) {
+    const F = FURN[f.type];
+    return [[-F.w / 2 - 0.32, 0.15], [F.w / 2 + 0.32, 0.15], [0, F.d / 2 + 0.32]].map(([u, v]) => furnPt(f, u, v));
+  }
+  const others = (L, skip) => people.filter(q => q.L === L && q.id !== skip && !q.on && !q.swim && !walkers.has(q.id)).map(q => [q.x, q.y]);
+  const routeLen = r => r ? r.reduce((s, p, i) => i ? s + Math.hypot(p[0] - r[i - 1][0], p[1] - r[i - 1][1]) : 0, 0) : Infinity;
+  function findRoute(L, a, b, skip) { return HW_.route(engine, L, a, b, { others: others(L, skip) }); }
+
+  /* Everything about one walk, from the person's record now (rec, or where they are on the way if
+     they are already walking) to target t (personTarget's p). → { trip, pre, post, final, route } or null */
+  function planWalk(rec, t, from) {
+    if (!HW_ || !HC3D) return null;
+    const L = rec.L, F = state.floors[L], legs = [];
+    let start, pre = null, startFacing = rec.facing == null ? 135 : rec.facing;
+    const fi0 = from ? -1 : furnOf(L, rec.on);
+    if (from) { start = [from.x, from.y]; startFacing = from.facing; }
+    else if (fi0 >= 0 && isSeatT(rec.on.type)) {
+      const f = F.furniture[fi0], sp = seatSpotFor(rec, f, rec.place), fac = DIRDEG(f.dir), [fx, fy] = fwdOf(fac);
+      const n = HW_.pose('standing-up', HW_.frames('standing-up'), rec.character), step = -n.shift;
+      legs.push({ play: 'standing-up', x: sp.x, y: sp.y, facing: fac });
+      start = [sp.x + fx * step, sp.y + fy * step]; startFacing = fac;
+    } else if (fi0 >= 0 && isBedT(rec.on.type)) {
+      const f = F.furniture[fi0], goal = [t.x, t.y];
+      let best = null;   // the side of the bed nearest the way they are going
+      bedSides(f).forEach(sd => { const r = findRoute(L, sd, goal, rec.id), d = routeLen(r); if (r && (!best || d < best.d)) best = { sd, d }; });
+      if (!best) return null;
+      start = best.sd; const c = furnPt(f, 0, 0); startFacing = HW_.headingOf(c, start);
+      pre = { bed: true, at: start, facing: startFacing };
+    } else start = [rec.x, rec.y];
+    // where they are going
+    let fiT = furnOf(L, t.on), route, post = null, finalFacing = null;
+    if (fiT >= 0 && isSeatT(t.on.type)) {
+      const f = F.furniture[fiT], sp = seatSpotFor(rec, f, t.place), fac = DIRDEG(f.dir), [fx, fy] = fwdOf(fac);
+      const n = HW_.pose('sitting-down', 0, rec.character), step = -n.shift;   // they start a step in front of the seat
+      const ap = [sp.x + fx * step, sp.y + fy * step];
+      route = findRoute(L, start, ap, rec.id); if (!route) return null;
+      legs.push({ walk: route, gait }, { turn: fac }, { play: 'sitting-down', x: sp.x, y: sp.y, facing: fac });
+    } else if (fiT >= 0 && isBedT(t.on.type)) {
+      const f = F.furniture[fiT];
+      let best = null;
+      bedSides(f).forEach(sd => { const r = findRoute(L, start, sd, rec.id), d = routeLen(r); if (r && (!best || d < best.d)) best = { sd, r, d }; });
+      if (!best) return null;
+      route = best.r;
+      const c = furnPt(f, 0, 0), fac = HW_.headingOf(best.sd, c);
+      legs.push({ walk: route, gait }, { turn: fac });
+      post = { bed: true, at: best.sd, facing: fac };
+    } else {
+      route = findRoute(L, start, [t.x, t.y], rec.id); if (!route) return null;
+      legs.push({ walk: route, gait, swimIn: L === 0 ? (x, y) => poolAt(x, y) >= 0 : null });
+    }
+    if (pre) legs.unshift({ stand: 0.05, x: start[0], y: start[1], facing: startFacing });
+    // they begin facing the way they do now
+    const trip = HW_.trip(rec.character, [{ stand: 0, x: start[0], y: start[1], facing: startFacing }, ...legs]);
+    const end = trip.end();
+    if (!(fiT >= 0)) finalFacing = Math.round(end.facing / 45) * 45 % 360;
+    const final = { ...rec, ...t, facing: finalFacing != null ? finalFacing : rec.facing };
+    return { trip, pre, post, final, route };
+  }
+  // the picture of a walker now: their frame, or (fading into or out of a bed) two pictures
+  function walkerShown(p, W) {
+    const s = W.now; if (!s) return [p];
+    if (s.phase === 'pre') return [{ ...p, alpha: 1 - s.u }, { ...p, walking: s.frame, alpha: s.u }];
+    if (s.phase === 'post') return [{ ...p, walking: s.frame, alpha: 1 - s.u }, { ...W.final, id: p.id, alpha: s.u, settling: true }];
+    return [{ ...p, walking: s.frame }];
+  }
+  // where everyone walking is at time now
+  function walkStep(now) {
+    walkers.forEach((W, id) => {
+      const rec = people.find(q => q.id === id);
+      if (!rec || recKey(rec) !== W.key) { walkers.delete(id); return; }   // moved, taken away or undone
+      const t = (now - W.t0) / 1000, pre = W.pre ? FADE : 0, post = W.post ? FADE : 0;
+      if (t < pre) { const fr = W.trip.at(0); W.now = { ...fr, frame: fr, phase: 'pre', u: t / pre }; return; }
+      const tt = t - pre;
+      if (tt < W.trip.seconds) { const fr = W.trip.at(tt); W.now = { ...fr, frame: fr, phase: 'go' }; return; }
+      if (tt < W.trip.seconds + post) { const fr = W.trip.at(W.trip.seconds); W.now = { ...fr, frame: fr, phase: 'post', u: (tt - W.trip.seconds) / post }; return; }
+      W.arrived = true;
+    });
+  }
+  function walkTick(now) {
+    walkRaf = 0;
+    walkStep(now);
+    const arrived = [...walkers].filter(([, W]) => W.arrived);
+    if (arrived.length) {
+      // one undo step for each arrival, like dragging them there
+      arrived.forEach(([id, W]) => {
+        walkers.delete(id);
+        const ok = W.final.on ? furnOf(W.final.L, W.final.on) >= 0 : true;
+        if (ok) { pushHistory(); people = people.map(q => q.id === id ? { ...W.final, id } : q); leavePools(); }
+      });
+      updateWalkStatus();
+    }
+    render();
+    if (walkers.size) walkRaf = requestAnimationFrame(walkTick);
+  }
+  function startWalk(id, t) {
+    const rec = people.find(q => q.id === id); if (!rec) return false;
+    const W0 = walkers.get(id), from = W0 && W0.now && W0.now.phase === 'go' && W0.now.kind === 'walk' ? W0.now : null;
+    const plan = planWalk(rec, t, from);
+    if (!plan) { setCastStatus(`${rec.character.name || 'They'} can’t get there from here.`); return false; }
+    walkers.set(id, { ...plan, rec, key: recKey(rec), t0: performance.now() - (from ? 0 : 0), now: null });
+    if (!walkRaf) walkRaf = requestAnimationFrame(walkTick);
+    updateWalkStatus();
+    return true;
+  }
+  /* walk mode's taps: someone (pick them), or somewhere (the picked person walks there) */
+  function walkTap(w) {
+    const hit = personAt(w);
+    if (hit && hit.id !== walkPick) return { walkPick: hit.id };
+    if (hit && hit.id === walkPick && !walkers.has(hit.id)) return { walkPick: null };
+    if (walkPick == null || !people.some(q => q.id === walkPick)) return null;
+    return walkPreview(walkPick, w);
+  }
+  function walkDrag(id, w) { return walkPreview(id, w, true); }
+  function walkPreview(id, w, dragging) {
+    const rec = people.find(q => q.id === id); if (!rec || rec.L !== state.level) return null;
+    const t = personTarget(w, id); if (!t) return null;
+    let route = null;
+    if (!t.bad) {
+      const W0 = walkers.get(id), from = W0 && W0.now && W0.now.kind === 'walk' ? W0.now : null;
+      const a = from ? [from.x, from.y] : furnOf(rec.L, rec.on) >= 0 ? null : [rec.x, rec.y];
+      route = a ? findRoute(rec.L, a, [t.p.x, t.p.y], id) : [[t.p.x, t.p.y]];
+    }
+    return { walkTo: { id, p: t.p, bad: t.bad || !route, route, drag: !!dragging } };
+  }
+  function walkCommit(p) {
+    if (p.walkPick !== undefined) { walkPick = p.walkPick; updateWalkStatus(); return; }
+    const W = p.walkTo; if (!W || W.bad) return;
+    walkPick = W.id;
+    startWalk(W.id, W.p);
+  }
+  /* marks for walking: the chosen person's ring, where they are going and the way there (screen
+     marks in the 3D view, plan marks on the plan) */
+  function walkMarks(iso) {
+    const L = state.level, z = baseZ(L) + 0.03, out = [];
+    if (iso && state.showRoofs && LEVELS.some(l => l >= L && state.floors[l] && state.floors[l].roofs.length)) return '';   // under a roof: the plan shows the way
+    const pt = (x, y) => iso ? scr(x, y, z) : [x * PX, y * PX];
+    const line = (r, cls) => r && r.length > 1 ? `<polyline class="${cls}" points="${r.map(([x, y]) => pt(x, y).map(v => v.toFixed(1)).join(',')).join(' ')}"/>` : '';
+    const ring = (x, y, cls) => { const [cx, cy] = pt(x, y); return iso ? `<ellipse class="${cls}" cx="${cx.toFixed(1)}" cy="${cy.toFixed(1)}" rx="14" ry="7"/>` : `<circle class="${cls}" cx="${cx.toFixed(1)}" cy="${cy.toFixed(1)}" r="${(0.3 * PX).toFixed(1)}"/>`; };
+    walkers.forEach(W => {
+      if (W.rec.L !== L || !W.route) return;
+      // what is left of the way
+      const s = W.now; let rest = W.route;
+      if (s && s.phase === 'go' && s.kind === 'walk') {
+        const i = W.route.findIndex((p, k) => k && Math.hypot(p[0] - s.x, p[1] - s.y) + Math.hypot(W.route[k - 1][0] - s.x, W.route[k - 1][1] - s.y) <= Math.hypot(p[0] - W.route[k - 1][0], p[1] - W.route[k - 1][1]) + 0.02);
+        if (i > 0) rest = [[s.x, s.y], ...W.route.slice(i)];
+      } else if (s && s.phase === 'post') rest = null;
+      out.push(line(rest, 'hb-walk-route'));
+      const e = W.route[W.route.length - 1]; out.push(ring(e[0], e[1], 'hb-walk-goal'));
+    });
+    const pd = state.pending || state.hoverPending;
+    if (pd && pd.walkTo && pd.walkTo.route && !pd.walkTo.bad) { out.push(line(pd.walkTo.route, 'hb-walk-route hb-walk-ghost')); const e = pd.walkTo.route[pd.walkTo.route.length - 1]; out.push(ring(e[0], e[1], 'hb-walk-goal hb-walk-ghost')); }
+    if (walkMode && walkPick != null) {
+      const r = people.find(q => q.id === walkPick);
+      if (r && r.L === L) { const q = personPoint(r); out.push(ring(q.x, q.y, 'hb-walk-pick')); }
+    }
+    return out.length ? `<g class="hb-walk" pointer-events="none">${out.join('')}</g>` : '';
+  }
+  const walkBtn = document.getElementById('walkBtn'), gaitBtn = document.getElementById('gaitBtn');
+  function updateWalkStatus() {
+    if (!walkMode) return;
+    const r = people.find(q => q.id === walkPick), n = r ? (r.character.name || 'Them') : null;
+    setCastStatus(!people.length ? 'Walk mode: put someone in the house first.'
+      : !r ? 'Walk mode: tap the person who should walk.'
+      : walkers.has(r.id) ? `${n} is on the way. Tap somewhere else to send ${n} there instead.`
+      : `Walk mode: tap where ${n} should go — the floor, a seat, a bed or the pool. Tap someone else to choose them.`);
+  }
+  function setWalkMode(on) {
+    walkMode = on;
+    walkBtn.setAttribute('aria-pressed', String(on));
+    walkBtn.textContent = on ? '🚶 Walk: on' : '🚶 Walk: off';
+    if (!on) { walkPick = null; setCastStatus(cast.length ? 'Pick someone, then tap the house.' : castStatus.textContent); }
+    else updateWalkStatus();
+    if (state.currentTool !== 'people') setTool('people'); else refreshHover();
+  }
+  function setGait(g) {
+    gait = g;
+    gaitBtn.textContent = g === 'running' ? '🏃 Pace: run' : '🚶 Pace: walk';
+    gaitBtn.setAttribute('aria-label', 'Gait: ' + (g === 'running' ? 'running' : 'walking') + '. Press to change.');
+    try { localStorage.setItem('house-builder-gait', g); } catch (e) { /* ignore */ }
+  }
+  walkBtn.addEventListener('click', () => setWalkMode(!walkMode));
+  gaitBtn.addEventListener('click', () => setGait(gait === 'running' ? 'walking' : 'running'));
+  setGait(gait);
+  if (!HW_) { walkBtn.disabled = true; gaitBtn.disabled = true; walkBtn.title = 'house-walk.js didn’t load, so people can’t walk.'; }
   if (!HC || !HC3D) setCastStatus('The character files (house-character.js and house-character-3d.js) didn’t load, so people can’t be placed.');
   else loadCastFolder();
 

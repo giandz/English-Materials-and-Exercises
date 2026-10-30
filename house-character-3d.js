@@ -1245,5 +1245,13 @@
     return el.firstElementChild;
   }
 
-  global.HouseCharacter3D = { svg: pictureSvg, draw: pictureDraw, layer: peopleLayer, viewData, viewPlan, yawFor, garmentArt, looseGarment, artPoints, shinFoot, PX_PER_M };
+  /* Where someone sits on seat f (place = which cushion of a sofa), worked out exactly as the
+     drawing does it — for a page that animates people sitting down or standing up there.
+     character: the sitter as drawn (in their sitting pose) → { x, y, z, facing } */
+  function seatSpotOf(eng, f, place, character) {
+    const pv = pivotsOf(global.HouseCharacter.normalize(character));
+    const thigh = Math.hypot(pv.kneeL.x - pv.hipL.x, pv.kneeL.y - pv.hipL.y) / PX_PER_M;
+    return seatSpot(eng, f, place, thigh);
+  }
+  global.HouseCharacter3D = { svg: pictureSvg, draw: pictureDraw, layer: peopleLayer, seatSpot: seatSpotOf, viewData, viewPlan, yawFor, garmentArt, looseGarment, artPoints, shinFoot, PX_PER_M };
 })(typeof window !== 'undefined' ? window : globalThis);

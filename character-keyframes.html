@@ -504,6 +504,7 @@ button[aria-pressed="true"]{ background:var(--color-background-info); color:var(
             <button id="bRedo" title="Redo (Ctrl + Shift + Z)">↷ Redo</button>
             <button id="bNew" title="Remove every keyframe">🗑️ New</button>
           </div>
+          <div class="btnrow"><select id="exSel" aria-label="Open an example animation" title="Ready-made animations: open one, then change it as you like"></select></div>
           <input type="file" id="fileAnim" accept=".json,application/json" hidden>
           <input type="file" id="fileChar" accept=".json,application/json" hidden>
           <div class="ke-msg" id="msg"></div>
@@ -545,6 +546,7 @@ button[aria-pressed="true"]{ background:var(--color-background-info); color:var(
        keys: [{ frame, easeIn, easeOut, pose }] }
    pose = every house-character field except schema and name: joints, turns, face,
           body, hair, clothes, colours, accessories, held items, grips, prop, view
+          plus the editor's own fields: lift (cm above the floor) and shift (cm sideways, + to the right)
 
    Between two keyframes A → B every number moves along a cubic curve whose
    start follows A.easeOut and whose end follows B.easeIn:
@@ -574,8 +576,8 @@ const HC = HouseCharacter;
 const SCHEMA = 'house-animation/1';
 const JOINT_IDS = HC.JOINTS.map(j => j[0]);
 /* numbers that ease between keyframes besides the joint angles */
-const TURNS = [['torsoOrientation','Torso rotation'],['pelvisOrientation','Pelvis rotation'],['lift','Lift (cm)'],['headNod','Head nod']];
-const RANGE = {torsoOrientation:[-90,90], pelvisOrientation:[-90,90], lift:[0,60], headNod:[-30,30]};   /* more would push the head off the top of the stage */
+const TURNS = [['torsoOrientation','Torso rotation'],['pelvisOrientation','Pelvis rotation'],['lift','Lift (cm)'],['shift','Sideways (cm)'],['headNod','Head nod']];
+const RANGE = {torsoOrientation:[-90,90], pelvisOrientation:[-90,90], lift:[0,60], shift:[-120,120], headNod:[-30,30]};   /* more would push the head off the top of the stage */
 const PX_PER_CM = 2.27;   /* the engine draws about 227 px to the metre */
 const cap = h => h[0].toUpperCase() + h.slice(1);
 /* stepped (held) settings shown with the turns */
@@ -583,7 +585,7 @@ const FACING = [['head','Head facing',HC.HEADS.map(h => [h, cap(h)])],
                 ['back','Body facing',[['false','Toward the viewer'],['true','Away (back view)']]],
                 ['flipped','Mirror image',[['false','No'],['true','Yes']]]];
 const STEPS = [['eyebrows','Eyebrows',HC.BROWS],['eyes','Eyes',HC.EYE_SHAPES],['mouth','Mouth',HC.MOUTHS]];
-const GROUPS = [['Rotation and lift',['torsoOrientation','pelvisOrientation','lift']],
+const GROUPS = [['Rotation and lift',['torsoOrientation','pelvisOrientation','lift','shift']],
   ['Lean and tilt',['root','torso','pelvis','neck','headNod']],
   ['Left arm',['shoulderL','elbowL','wristL']],['Right arm',['shoulderR','elbowR','wristR']],
   ['Left leg',['hipL','kneeL','ankleL']],['Right leg',['hipR','kneeR','ankleR']]];
@@ -604,12 +606,13 @@ function starterCharacter(){
 }
 /* a keyframe holds every field of the character except its name */
 const FIELDS = Object.keys(HC.defaults()).filter(k => k !== 'schema' && k !== 'name');
-const POSE_FIELDS = ['joints','torsoOrientation','pelvisOrientation','lift','headNod','head','back','flipped','eyebrows','eyes','mouth'];
+const POSE_FIELDS = ['joints','torsoOrientation','pelvisOrientation','lift','shift','headNod','head','back','flipped','eyebrows','eyes','mouth'];
 const LOOK_FIELDS = FIELDS.filter(k => !POSE_FIELDS.includes(k));
 function poseOf(c){
   const n = HC.normalize(c), p = {};
   for(const k of FIELDS) p[k] = n[k];
   p.lift = Math.max(0, Math.min(60, Number(c && c.lift) || 0));   /* the editor's own field: height above the floor */
+  p.shift = Math.max(-120, Math.min(120, Math.round(Number(c && c.shift) || 0)));   /* and how far it stands left (−) or right (+) of the middle */
   return clonePose(p);
 }
 function clonePose(p){ return {...p, joints:{...p.joints}, held:{...(p.held || {})}, accessories:[...(p.accessories || [])]}; }
@@ -870,7 +873,7 @@ function applyWholePose(p, force){
   changed();
 }
 function mirrorPose(){   /* the engine's mirror: joints, turns, head, and whatever is held or worn on one side */
-  const d = dataAt(frame), m = poseOf(HC.mirror(HC.normalize(d))); m.lift = d.lift;
+  const d = dataAt(frame), m = poseOf(HC.mirror(HC.normalize(d))); m.lift = d.lift; m.shift = d.shift;
   pushUndo(); for(const k of allParams(m)) writeParam(k, getP(m, k)); changed();
 }
 
@@ -966,7 +969,7 @@ function changed(){ fixLane(); syncSelUI(); autosave(); drawStage(); drawTimelin
 const fig = $('figure'), hsv = $('handles'), stage = $('stage');
 function drawStage(){
   const d = dataAt(frame);
-  fig.innerHTML = lifted(HC.render(d, {ground:true}), d.lift);
+  fig.innerHTML = lifted(HC.render(d, {ground:true}), d);
   applyCam();
   $('caption').textContent = HC.describe(d);
   const k = (lane ? laneKeys() : allTrackKeys()).some(x => x.frame === frame);
@@ -993,7 +996,7 @@ function drawOnion(){
     for(let k = o.n; k >= 1; k--){
       const f = frame + (w === 'pre' ? -k : k); if(f < 0 || f > S.length) continue;
       const d = dataAt(f), op = o.op / 100 * (o.n - k + 1) / o.n;
-      h += `<div style="position:absolute;inset:0;opacity:${op.toFixed(3)};filter:url(#onionTint_${w})">${lifted(HC.render(d), d.lift)}</div>`;
+      h += `<div style="position:absolute;inset:0;opacity:${op.toFixed(3)};filter:url(#onionTint_${w})">${lifted(HC.render(d), d)}</div>`;
     }
   }
   box.innerHTML = h;
@@ -1027,18 +1030,19 @@ document.addEventListener('pointerdown', e => {
   if(!$('onionBar').hidden && !e.composedPath().some(n => n === $('onionBar') || n === $('bOnion'))){ $('onionBar').hidden = true; $('bOnion').setAttribute('aria-expanded', 'false'); }
 });
 /* lift: the engine stands the figure on the floor, so raise its main group and leave a shadow behind */
-function lifted(svg, cm){
-  const px = (cm || 0) * PX_PER_CM; if(!px) return svg;
+function lifted(svg, d){
+  const px = (d.lift || 0) * PX_PER_CM, sx = (d.shift || 0) * PX_PER_CM; if(!px && !sx) return svg;
   const k = 1 / (1 + px / 160);
-  const shadow = `<ellipse cx="300" cy="550" rx="${(70 * k).toFixed(1)}" ry="${(9 * k).toFixed(1)}" fill="currentColor" fill-opacity="${(0.35 * k).toFixed(2)}"/>`;
-  return svg.replace(/<g transform="translate\(([-\d.]+) ([-\d.]+)\)"/, (m, x, y) => shadow + `<g transform="translate(${x} ${(+y - px).toFixed(2)})"`);
+  /* no shadow on the floor when the character is up on a chair or a bed */
+  const shadow = px && d.prop !== 'chair' && d.prop !== 'bed' ? `<ellipse cx="${(300 + sx).toFixed(1)}" cy="550" rx="${(70 * k).toFixed(1)}" ry="${(9 * k).toFixed(1)}" fill="currentColor" fill-opacity="${(0.35 * k).toFixed(2)}"/>` : '';
+  return svg.replace(/<g transform="translate\(([-\d.]+) ([-\d.]+)\)"/, (m, x, y) => shadow + `<g transform="translate(${(+x + sx).toFixed(2)} ${(+y - px).toFixed(2)})"`);
 }
 let piv = {};
 function drawHandles(d){
   d = d || dataAt(frame);
   piv = HC.pivots(d);
-  const up = (d.lift || 0) * PX_PER_CM;
-  if(up) for(const k in piv) piv[k] = {...piv[k], y:piv[k].y - up};
+  const up = (d.lift || 0) * PX_PER_CM, sx = (d.shift || 0) * PX_PER_CM;
+  if(up || sx) for(const k in piv) piv[k] = {...piv[k], x:piv[k].x + sx, y:piv[k].y - up};
   let s = '';
   for(const j of JOINT_IDS){
     const p = piv[j]; if(!p) continue;
@@ -2223,10 +2227,26 @@ function readJSON(input, cb){
 }
 $('bLoad').onclick = () => $('fileAnim').click();
 $('bChar').onclick = () => $('fileChar').click();
-$('fileAnim').addEventListener('change', e => readJSON(e.target, j => {
+function openAnim(j, what){
   const a = sanitize(j); if(!a){ flash('Nothing to open in that file.'); return; }
-  pause(); pushUndo(); S = a; lane = null; frame = 0; refreshAll(); flash(j.keys ? `Opened ${a.tracks.length} timeline${a.tracks.length === 1 ? '' : 's'}.` : 'Opened a character, with nothing moving yet.');
-}));
+  pause(); pushUndo(); S = a; lane = null; frame = 0; tz = null; refreshAll();
+  flash(j.keys ? `Opened ${what ? what + ': ' : ''}${a.tracks.length} timeline${a.tracks.length === 1 ? '' : 's'}.` : 'Opened a character, with nothing moving yet.');
+}
+$('fileAnim').addEventListener('change', e => readJSON(e.target, j => openAnim(j)));
+/* ready-made animations: built into the page (the preview version carries them in #ke-examples), or else read from
+   the animations folder next to it */
+const EXAMPLES = [['walking','🚶 Walking (loop)'],['running','🏃 Running (loop)'],['sitting-down','🪑 Sitting down'],['standing-up','🧍 Standing up from a chair'],
+  ['entering-bed','🛏️ Getting into bed'],['exiting-bed','🌅 Getting out of bed']];
+$('exSel').innerHTML = '<option value="">📂 Examples…</option>' + EXAMPLES.map(([id, l]) => `<option value="${id}">${l}</option>`).join('');
+$('exSel').addEventListener('change', async () => {
+  const id = $('exSel').value; $('exSel').value = ''; if(!id) return;
+  const label = EXAMPLES.find(x => x[0] === id)[1].replace(/^\S+\s/, '');
+  let j = null;
+  try{ const emb = document.getElementById('ke-examples'); if(emb) j = JSON.parse(emb.textContent)[id] || null; }catch(e){}
+  if(!j){ try{ const r = await fetch(`animations/${id}.json`); if(r.ok) j = await r.json(); }catch(e){} }
+  if(!j){ flash(`Couldn’t find animations/${id}.json next to this page.`); return; }
+  openAnim(j, label);
+});
 $('fileChar').addEventListener('change', e => readJSON(e.target, j => {
   pause(); pushUndo();
   const c = HC.normalize(j.character || j);   /* its look goes on every keyframe; the poses stay */

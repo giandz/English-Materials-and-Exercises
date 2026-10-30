@@ -154,8 +154,11 @@ function ring(cx,cy,rx,ry,a0,a1,n,r){
       upright:false → drawn in the hand's frame (+y continues the forearm)
       upright:true  → stays vertical whatever the arm does
       side = +1 for the character's left hand, −1 for the right            ── */
-/* props stand on the floor. Chair, stool and bicycle are pinned to the pelvis; the rest stand next to the character. */
-const PROPS={chair:{label:'Chair',col:'#CC9966'},stool:{label:'Stool',col:'#CC9966'},desk:{label:'School desk',col:'#CC9966'},
+/* props stand on the floor. Chair, stool and bicycle are pinned to the pelvis; the rest stand next to the character.
+   Chair and bed keep a fixed height: the seat (and the mattress) is as high as the character's own seat in the
+   “Sitting (chair height)” pose, wherever the pelvis is. Sitting or lying lower than that, the character rests on it
+   (see restOn in build). */
+const PROPS={chair:{label:'Chair',col:'#CC9966'},bed:{label:'Bed',col:'#996633'},stool:{label:'Stool',col:'#CC9966'},desk:{label:'School desk',col:'#CC9966'},
   beachchair:{label:'Beach chair',col:'#FF6600'},stroller:{label:'Stroller',col:'#0066CC'},bmx:{label:'BMX bicycle',col:'#CC0000'},roadbike:{label:'Road bicycle',col:'#0066CC'},
   mtb:{label:'Mountain bicycle',col:'#00CC66'},piano:{label:'Grand piano and stool',col:'#000000'},skis:{label:'Skis (standing on them)',col:'#CC0000'},snowboard:{label:'Snowboard (standing on it)',col:'#0066CC'},drums:{label:'Drum set',col:'#CC0000'},keyboard:{label:'Electronic keyboard',col:'#333333'},micstand:{label:'Microphone stand (empty)',col:'#333333'},scooter:{label:'Scooter',col:'#CC0000'},skateboard:{label:'Skateboard',col:'#00CC66'},car:{label:'Car',col:'#CC0000'}};
 /* Side-view bicycle geometry in stage pixels (about 227 px per metre), saddle at the origin, facing +x.
@@ -205,9 +208,18 @@ function propSVG(id,c,o){   /* o = {x,y: hip point, g: floor, side: profile view
                       :`<path d="M${-bw-2},${by}H${-bw+12}M${bw-12},${by}H${bw+2}" stroke="#111" stroke-width="7" stroke-linecap="round" fill="none"/>`),k,false)}];
   }
   switch(id){
-    case 'chair': return side
-      ?[{z:-1,svg:R(x-dir*20-3.5,y-64,7,g-y+64,F)+R(x+dir*20-3.5,sy+6,7,g-sy-6,F)+R(x-27,sy,54,8,F,2)+R(x-dir*20-5,y-64,10,34,D,3)}]
-      :[{z:-1,svg:R(x-24,y-68,7,g-y+68,F)+R(x+17,y-68,7,g-y+68,F)+R(x-24,y-66,48,30,D,4)+R(x-28,sy,56,8,F,2)+R(x-26,sy+6,6,g-sy-6,F)+R(x+20,sy+6,6,g-sy-6,F)}];
+    case 'chair': { const S=o.seat, y=S-13;   /* fixed height: the seat top is o.seat, not the hip */
+      return side
+      ?[{z:-1,svg:R(x-dir*20-3.5,y-64,7,g-y+64,F)+R(x+dir*20-3.5,S+6,7,g-S-6,F)+R(x-27,S,54,8,F,2)+R(x-dir*20-5,y-64,10,34,D,3)}]
+      :[{z:-1,svg:R(x-24,y-68,7,g-y+68,F)+R(x+17,y-68,7,g-y+68,F)+R(x-24,y-66,48,30,D,4)+R(x-28,S,56,8,F,2)+R(x-26,S+6,6,g-S-6,F)+R(x+20,S+6,6,g-S-6,F)}]; }
+    case 'bed': {   /* seen from the side, along its length: mattress top at o.seat, the head end on side o.headSide of the hip */
+      const M=o.seat-g, sh=o.headSide||1, x0=-277, x1=218, wd=`fill="${c}" stroke="${e}"`, Fl=col=>`fill="${col}" stroke="${shade(col,-0.38)}"`, L2=x1-x0;
+      const body=R(x0+6,M+40,9,-M-40,wd,2)+R(x1-26,M+40,9,-M-40,wd,2)                              /* legs */
+        +R(x1-14,M-92,14,-M+92,wd,4)+R(x0,M-34,12,-M+34,wd,4)                                          /* headboard, footboard */
+        +R(x0+10,M+26,L2-22,16,wd,3)+R(x0+12,M,L2-26,28,Fl('#F4F1E8'),9)                                 /* frame, mattress */
+        +R(x0+12,M-2,L2*0.58,30,Fl('#6699CC'),9)+`<path d="M${x0+20},${n2(M+6)}H${n2(x0+2+L2*0.58)}" stroke="#ffffff" stroke-opacity=".5" stroke-width="2" fill="none"/>`
+        +`<ellipse cx="${x1-52}" cy="${n2(M-9)}" rx="36" ry="12" ${Fl('#FFFFFF')}/>`;                   /* blanket over the foot end, pillow */
+      return [{z:-1,span:280,svg:`<g transform="translate(${n2(x)} ${n2(g)}) scale(${sh} 1)">${body}</g>`}]; }
     case 'beachchair': {   /* low folding deck chair: reclined striped sling on a crossed wooden frame, seat pinned to the pelvis */
       const W='#b98a55', frame=dd=>`<path d="${dd}" fill="none" stroke="#6e4a26" stroke-width="7.4" stroke-linecap="round"/><path d="${dd}" fill="none" stroke="${W}" stroke-width="5" stroke-linecap="round"/>`;
       if(!side) return [{z:-1,span:44,svg:frame(`M${n2(x-34)},${n2(y-78)}V${n2(g)}M${n2(x+34)},${n2(y-78)}V${n2(g)}M${n2(x-34)},${n2(g-4)}H${n2(x+34)}`)+R(x-30,y-76,60,g-y+52-(g-sy)+8,F,3)
@@ -1678,12 +1690,22 @@ function build(d){
 
   if(PROPS[d.prop]){
     let g0=-1e9; for(const [,py,r] of pts) g0=Math.max(g0,py+r);
-    const hip=Mx.pt(mP,0,0), po=d.pelvisOrientation;
-    const list=propSVG(d.prop,d.propColor||PROPS[d.prop].col,{x:hip[0],y:hip[1],g:g0,side:Math.abs(po)>=45,dir:po>0?1:po<0?-1:(d.head==='right'?1:-1),hw,flip:d.flipped});
+    const hip=Mx.pt(mP,0,0), po=d.pelvisOrientation, side=Math.abs(po)>=45, dir=po>0?1:po<0?-1:(d.head==='right'?1:-1);
+    let g=g0, seat;
+    if(d.prop==='chair'||d.prop==='bed'){
+      /* restOn: a fixed-height seat or mattress (H above the floor). The body rests on it where it would go lower:
+         upright, the bottom of the pelvis (13 px under the hip, as on the old chair); lying, the side of the pelvis,
+         blending between the two with the whole-body tilt. The floor never comes up past the feet. */
+      const H=seatHeight(d), tilt=Math.abs(Math.sin(wrapDeg(j.root)*Math.PI/180)), rest=hip[1]+13+tilt*Math.max(0,hw+2-13);
+      g=Math.max(g0,Math.min(rest+H,g0+H)); seat=g-H;
+      if(g>g0) pts.push([hip[0],g-1,1]);
+    }
+    const rt=wrapDeg(j.root), headSide=Math.abs(rt)>45?Math.sign(rt):side?-dir:1;   /* a bed's head end: where the head is when lying */
+    const list=propSVG(d.prop,d.propColor||PROPS[d.prop].col,{x:hip[0],y:hip[1],g,seat,headSide,side,dir,hw,flip:d.flipped});
     const over=BK&&Math.abs(po)<45&&['chair','beachchair','stool'].includes(d.prop);   /* back view: the seat and its backrest are between the viewer and the sitter */
     for(const p of list){ parts.push({z:over?95:p.z,m:[1,0,0,1,0,0],svg:p.svg});
       if(p.bottom!==undefined) pts.push([hip[0],p.bottom-1,1]);                       /* bicycle and car wheels become the floor */
-      if(p.span){ pts.push([hip[0]-p.span,g0-10,1]); pts.push([hip[0]+p.span,g0-10,1]); } }   /* keep wide props inside a cropped drawing */
+      if(p.span){ pts.push([hip[0]-p.span,g-10,1]); pts.push([hip[0]+p.span,g-10,1]); } }   /* keep wide props inside a cropped drawing */
   }
   if(canes.length){
     /* a cane reaches from the hand to the floor, up to half the character's height.
@@ -1704,6 +1726,18 @@ function build(d){
 }
 
 const STAGE={w:600,h:590,cx:300,ground:550};
+
+/* how high this character's seat is (px above the floor) in the “Sitting (chair height)” pose: the height of a
+   fixed chair or bed. It depends only on the body and the shoes, so it is worked out once for each. */
+const SEAT_H={};
+function seatHeight(d){
+  const k=[d.height,d.weight,d.bodyType,d.footwear].join();
+  if(SEAT_H[k]===undefined){
+    const c=applyPose(normalize({...d,prop:null,held:{left:null,right:null},accessories:[],upperGarment:null,lowerGarment:null}),'chair'), b=build(c);
+    SEAT_H[k]=b.box[3]-13;   /* in the chair pose the hip is at the origin; the seat top is 13 px under it */
+  }
+  return SEAT_H[k];
+}
 
 function esc(s){return String(s).replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));}
 
