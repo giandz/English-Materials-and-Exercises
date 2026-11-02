@@ -88,14 +88,14 @@ const GEN = '🌍 in general', SPEC = '👉 this one — we know which';
 
 /* ── 1 · choose ────────────────────────────────────────────────────────── */
 const PC_ITEMS = [
-  { q: ctx('🍕❤️', GEN) + rep('{Kenji|kenji:happy} loves ____.'), opts: ['the pizza', 'pizza', 'a pizza'], correct: 1 },
-  { q: ctx('🐕🐕🐕', '🌍 all of them') + rep('____ are friendly.'), opts: ['Dogs', 'The dogs', 'Dog'], correct: 0 },
-  { q: ctx('🔔🍕', SPEC + ' (our dinner)') + rep('____ is here!'), opts: ['Pizza', 'A pizza', 'The pizza'], correct: 2 },
-  { q: ctx('🍄🍄', GEN) + rep('{Sofia|sofia} really likes ____.'), opts: ['mushroom', 'mushrooms', 'the mushrooms'], correct: 1 },
-  { q: ctx('🎸🤘', GEN) + rep('{I|sofia:happy} love rock ____.'), opts: ['music', 'musics', 'a music'], correct: 0 },
-  { q: ctx('😖👻🎬', GEN) + rep('{Kenji|kenji} can’t stand horror ____.'), opts: ['movie', 'the movie', 'movies'], correct: 2 },
-  { q: ctx('🐈💤🛋️', SPEC + ' (Miso)') + rep('____ is sleeping on the sofa.'), opts: ['The cat', 'Cat', 'Cats'], correct: 0 },
-  { q: ctx('🙁☕', GEN) + rep('{I|sofia} don’t drink ____.'), opts: ['coffees', 'coffee', 'the coffees'], correct: 1 }
+  { q: ctx('🍕❤️', GEN) + rep('{Kenji|kenji:❤️} loves {____|@🍕}.'), opts: ['the pizza', 'pizza', 'a pizza'], correct: 1 },
+  { q: ctx('🐕🐕🐕', '🌍 all of them') + rep('{____|dog:😃,dog,dog} are friendly.'), opts: ['Dogs', 'The dogs', 'Dog'], correct: 0 },
+  { q: ctx('🔔🍕', SPEC + ' (our dinner)') + rep('{____|@🔔🍕} is here!'), opts: ['Pizza', 'A pizza', 'The pizza'], correct: 2 },
+  { q: ctx('🍄🍄', GEN) + rep('{Sofia|sofia:😍} really likes {____|@🍄}.'), opts: ['mushroom', 'mushrooms', 'the mushrooms'], correct: 1 },
+  { q: ctx('🎸🤘', GEN) + rep('{I|sofia:❤️} love rock {____|@🎸}.'), opts: ['music', 'musics', 'a music'], correct: 0 },
+  { q: ctx('😖👻🎬', GEN) + rep('{Kenji|kenji:😖} can’t stand horror {____|@👻🎬}.'), opts: ['movie', 'the movie', 'movies'], correct: 2 },
+  { q: ctx('🐈💤🛋️', SPEC + ' (Miso)') + rep('{____|cat:lying:sleep} is sleeping on the sofa.'), opts: ['The cat', 'Cat', 'Cats'], correct: 0 },
+  { q: ctx('🙁☕', GEN) + rep('{I|sofia:🙁} don’t drink {____|@☕}.'), opts: ['coffees', 'coffee', 'the coffees'], correct: 1 }
 ];
 HouseComprehension.build({ quiz: 'pcItems', items: PC_ITEMS });
 
@@ -113,14 +113,14 @@ HouseWordOrder.build({ container: 'woItems', items: WO_ITEMS, scoreEl: 'woScore'
 /* ── 3 · gap fill (easiest first; the gaps move around the sentence) ───── */
 const gaps = m => S(m).replace(/____(\d)/g, '{$1}');
 const GF_ITEMS = [
-  { direct: ctx('🍕❤️', GEN), template: gaps('{I|kenji:happy} love ____0.'), hints: [{ accepted: ['pizza'] }] },
-  { direct: ctx('🐕🐕🐕', '🌍 all of them'), template: gaps('____0 are friendly.'), hints: [{ accepted: ['Dogs', 'dogs'] }] },
-  { direct: ctx('😐🍄🍄', GEN), template: gaps('{I|sofia} don’t mind ____0.'), hints: [{ accepted: ['mushrooms'] }] },
-  { direct: ctx('😖🍍', GEN), template: gaps('{Kenji|kenji} can’t stand ____0.'), hints: [{ accepted: ['pineapple'] }] },
-  { direct: ctx('🎷🎶😌', GEN), template: gaps('____0 is relaxing.'), hints: [{ accepted: ['Jazz', 'jazz'] }] },
-  { direct: ctx('🔔🍕', SPEC + ' (our dinner)'), template: gaps('____0 ____1 is here!'), hints: [{ accepted: ['The', 'the'] }, { accepted: ['pizza'] }] },
-  { direct: ctx('🐈🐈💤', '🌍 all of them'), template: gaps('____0 ____1 a lot.'), hints: [{ accepted: ['Cats', 'cats'] }, { accepted: ['sleep'] }] },
-  { direct: ctx('❤️🎸🤘', GEN), template: gaps('{Sofia|sofia:happy} ____0 rock ____1.'), hints: [{ accepted: ['loves'] }, { accepted: ['music'] }] }
+  { direct: ctx('🍕❤️', GEN), template: gaps('{I|kenji:❤️} love {____0|@🍕}.'), hints: [{ accepted: ['pizza'] }] },
+  { direct: ctx('🐕🐕🐕', '🌍 all of them'), template: gaps('{____0|dog:😃,dog,dog} are friendly.'), hints: [{ accepted: ['Dogs', 'dogs'] }] },
+  { direct: ctx('😐🍄🍄', GEN), template: gaps('{I|sofia:😐} don’t mind {____0|@🍄}.'), hints: [{ accepted: ['mushrooms'] }] },
+  { direct: ctx('😖🍍', GEN), template: gaps('{Kenji|kenji:😖} can’t stand {____0|@🍍}.'), hints: [{ accepted: ['pineapple'] }] },
+  { direct: ctx('🎷🎶😌', GEN), template: gaps('{____0|@🎷} is relaxing.'), hints: [{ accepted: ['Jazz', 'jazz'] }] },
+  { direct: ctx('🔔🍕', SPEC + ' (our dinner)'), template: gaps('____0 {____1|@🔔🍕} is here!'), hints: [{ accepted: ['The', 'the'] }, { accepted: ['pizza'] }] },
+  { direct: ctx('🐈🐈💤', '🌍 all of them'), template: gaps('{____0|cat:lying:sleep,cat:lying:sleep} ____1 a lot.'), hints: [{ accepted: ['Cats', 'cats'] }, { accepted: ['sleep'] }] },
+  { direct: ctx('❤️🎸🤘', GEN), template: gaps('{Sofia|sofia:❤️} ____0 rock {____1|@🎸}.'), hints: [{ accepted: ['loves'] }, { accepted: ['music'] }] }
 ];
 HouseGapFill.build({ container: 'gfItems', items: GF_ITEMS });
 </script>

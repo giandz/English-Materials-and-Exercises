@@ -37,7 +37,8 @@
 .gs ul{ list-style:none; margin:0; padding:0; }
 .gs li{ display:flex; gap:8px; align-items:center; padding:4px 0; line-height:1.5; }
 .gs li + li{ border-top:.5px dashed var(--color-border-secondary); }
-.gs li .emo{ flex:0 0 3.2em; font-size:1.1rem; text-align:center; }
+.gs li .emo{ flex:0 0 3.2em; font-size:1.1rem; text-align:center; display:none; }
+.ss-sticks-hidden .gs li .emo{ display:block; }   /* the emoji show only while the stick figures are hidden */
 .kinds{ display:grid; grid-template-columns:repeat(2, minmax(0,1fr)); gap:10px; margin-bottom:1rem; }
 @media (max-width:560px){ .kinds{ grid-template-columns:1fr; } }
 .kinds > div{ border:1px solid var(--color-border-tertiary); border-radius:12px; background:var(--surface-2); padding:9px 11px; font-size:.9rem; }
@@ -116,16 +117,16 @@ const Z = '<span class="zero">∅</span>';   /* ∅ = no article */
 const li = (e, m) => '<li><span class="emo">' + e + '</span>' + S(m) + '</li>';
 document.getElementById('gs').innerHTML =
   '<div><h3>🌍 In general — no article</h3><p class="sub">All pizza, all dogs, all jazz: every time, everywhere.</p><ul>' +
-    li('🍕❤️', '{I|kenji:happy} love <b>pizza</b>.') +
-    li('😖🍍', '{I|kenji} can’t stand <b>pineapple</b>.') +
-    li('🐕❤️👥', '<b>Dogs</b> love <b>people</b>.') +
-    li('🐈💤', '<b>Cats</b> sleep a lot.') +
-    li('🎷😌', '<b>Jazz</b> is relaxing.') +
+    li('🍕❤️', '{I|kenji:❤️} love {<b>pizza</b>|@🍕}.') +
+    li('😖🍍', '{I|kenji:😖} can’t stand {<b>pineapple</b>|@🍍}.') +
+    li('🐕❤️👥', '{<b>Dogs</b>|dog:❤️,dog} love {<b>people</b>|man,woman}.') +
+    li('🐈💤', '{<b>Cats</b>|cat:lying:sleep} sleep a lot.') +
+    li('🎷😌', '{<b>Jazz</b>|@🎷} is relaxing.') +
   '</ul></div>' +
   '<div><h3>👉 One specific thing — the</h3><p class="sub">This pizza, these mushrooms: we both know which one.</p><ul>' +
-    li('🔔🍕', '<b>The pizza</b> is here!') +
-    li('🍕🍄👀', '<b>The mushrooms</b> look great.') +
-    li('🐈🏠', '<b>The cat</b> is sleeping on the sofa. (Miso)') +
+    li('🔔🍕', '{<b>The pizza</b>|@🔔🍕} is here!') +
+    li('🍕🍄👀', '{<b>The mushrooms</b>|@🍄} look great.') +
+    li('🐈🏠', '{<b>The cat</b>|cat:lying:sleep} is sleeping on the sofa. (Miso)') +
     li('📻🎷', '<b>The music</b> is very loud! (this music, now)') +
   '</ul></div>';
 document.getElementById('scale').innerHTML = scaleHtml();
@@ -139,24 +140,24 @@ document.getElementById('kinds').innerHTML =
 HouseCCQ.build({
   container: 'ccq',
   items: [
-    { sentence: S('{I|kenji:happy} love pizza.'),
+    { sentence: S('{I|kenji:❤️} love {pizza|@🍕}.'),
       questions: [
         { q: 'Is Kenji talking about one pizza?', opts: ['Yes', 'No'], correct: 1,
           why: 'No. He loves all pizza, in general. So: no “a”, no “the”.' }
       ] },
-    { sentence: 'Dogs chase cats.',
+    { sentence: S('{Dogs|dog:running} chase {cats|cat:running}.'),
       questions: [
         { q: 'Is this about Sofia’s dog?', opts: ['Yes', 'No'], correct: 1,
           why: 'No. It’s about all dogs and all cats — a general statement.' },
         { q: 'Why “dogs”, not “dog”?', opts: ['We can count dogs', 'It’s a mistake'], correct: 0,
           why: 'We can count dogs (one dog, two dogs), so in general we use the plural: dogs.' }
       ] },
-    { sentence: '🔔 The pizza is here!',
+    { sentence: S('🔔 The {pizza|@🍕} is here!'),
       questions: [
         { q: 'Which pizza?', opts: ['All pizza', 'Their pizza, from the restaurant'], correct: 1,
           why: 'Their pizza — one specific pizza. Sofia and Kenji both know which one, so we use “the”.' }
       ] },
-    { sentence: S('{I|sofia:happy} love rock music.'),
+    { sentence: S('{I|sofia:❤️} love {rock music|@🎸}.'),
       questions: [
         { q: 'Can we say “a rock music”?', opts: ['Yes', 'No'], correct: 1,
           why: 'No. We can’t count music, so no “a” and no -s.' }

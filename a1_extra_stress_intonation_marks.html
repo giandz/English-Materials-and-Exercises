@@ -1,0 +1,115 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<title>Pronunciation Marks</title>
+<script>
+(function(){
+  try{
+    var saved = localStorage.getItem('theme-preference');
+    var theme = (saved === 'light' || saved === 'dark')
+      ? saved
+      : ((window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches) ? 'dark' : 'light');
+    document.documentElement.setAttribute('data-theme', theme);
+    var fs = parseFloat(localStorage.getItem('font-size-preference'));
+    if (fs >= 10 && fs <= 28) document.documentElement.style.setProperty('--fs-base', fs + 'px');
+  }catch(e){}
+})();
+</script>
+<link rel="stylesheet" href="house.css">
+<style>
+.key{ display:grid; grid-template-columns:auto 1fr; gap:6px 14px; align-items:center; font-size:.8667rem; color:var(--text-secondary); }
+.key svg{ display:block; color:var(--text-primary); }
+.key .sym{ display:flex; justify-content:center; min-width:2.4rem; }
+.big-line{ font-size:1.25rem; margin:0 0 .3rem; }
+.match-card{ line-height:1.3; }
+.key svg.k-s{ color:var(--pm-stress, var(--color-text-primary)); }
+.key svg.k-t{ color:var(--pm-tune, var(--color-text-primary)); }
+.key svg.k-c{ color:var(--pm-connected, #0891b2); overflow:visible; }
+.cs-grid{ display:grid; grid-template-columns:minmax(0,auto) minmax(0,1fr); gap:2px 16px; align-items:center; }
+.cs-ex{ font-size:1.1rem; white-space:nowrap; }
+.cs-note{ font-size:.8333rem; color:var(--text-secondary); }
+</style>
+</head>
+<body>
+<div class="page" id="page">
+  <span class="cefr-tag cefr-a1">A1 · Beginner</span>
+  <h1>Pronunciation Marks</h1>
+  <p class="subtitle">Circles show strong and weak sounds. Arrows above show if your voice goes up or down. Marks under the words show how words join.</p>
+
+  <div class="sec-div">Key</div>
+  <div class="rule-box"><div class="key" id="key"></div></div>
+
+  <div class="sec-div">Your voice goes up or down</div>
+  <p class="big-line" data-mark>Are you a student?</p>
+  <p class="subtitle">Yes/no question: your voice goes up. ⤴</p>
+  <p class="big-line" data-mark>Where are you from?</p>
+  <p class="subtitle">Wh- question: your voice goes down. ⤵</p>
+
+  <div class="sec-div">Words join together</div>
+  <div class="cs-grid" id="csGrid"></div>
+
+  <div class="sec-div">Conversation</div>
+  <span class="setting-chip">☕ At a café</span>
+  <div id="talk"></div>
+
+  <div class="sec-div">Match</div>
+  <p class="subtitle">Tap a question. Then tap its answer.</p>
+  <div class="score-bar"><span>Matched: <strong id="score">0</strong> / <span id="total">0</span></span><button id="resetBtn" type="button">↺ Reset</button></div>
+  <div class="win-msg" id="win">🎉 Well done!</div>
+  <div class="match-grid">
+    <div><div class="match-col-label">Question</div><div class="match-col" id="left"></div></div>
+    <div><div class="match-col-label">Answer</div><div class="match-col" id="right"></div></div>
+  </div>
+  <div class="feedback" id="feedback"></div>
+  <footer>PronMark — stress and intonation marks</footer>
+</div>
+<div id="theme-toggle-wrap"><button id="theme-toggle" aria-label="Toggle light/dark mode" title="Toggle light/dark mode"><span id="theme-icon">☀️</span></button></div>
+<script src="house.js"></script>
+<script src="house-character.js"></script>
+<script src="pron-mark.js"></script>
+<script>
+(function(){
+  const LINES = [
+    ['a','🙋‍♀️','Ana','[Hi!/none] [Is/aux] [this/det] [seat/noun] [free/adj]?'],
+    ['b','👨‍🦱','Tom','[Yes/none], [it/subject] [is/verb]. [Please/none], [sit/verb] [down/part].'],
+    ['a','🙋‍♀️','Ana','[Thanks/none]. [I/subject]\'[m/verb] [Ana/noun]. [What/wh]\'[s/verb] [your/det] [name/noun]?'],
+    ['b','👨‍🦱','Tom','[I/subject]\'[m/verb] [Tom/noun]. [Nice/adj] [to/part] [meet/verb] [you/object]. [Where/wh] [are/verb] [you/subject] [from/prep]?'],
+    ['a','🙋‍♀️','Ana','[I/subject]\'[m/verb] [from/prep] [Colombia/noun]. [Are/verb] [you/subject] [a/det] [student/noun]?'],
+    ['b','👨‍🦱','Tom','[No/none], [I/subject]\'[m/verb] [not/neg]. [I/subject]\'[m/verb] [an/det] [engineer/noun]. [What/wh] [do/aux] [you/subject] [do/verb]?'],
+    ['a','🙋‍♀️','Ana','[I/subject]\'[m/verb] [a/det] [teacher/noun]. [Do/aux] [you/subject] [speak/verb] [Spanish/noun]?'],
+    ['b','👨‍🦱','Tom','[Yes/none], [a/det] [little/adj]!']];
+  const pos = s => s.replace(/\[([^\/\]]+)\/(\w+)\]/g, '<span class="pos-hl pos-$2">$1</span>');
+  document.getElementById('talk').innerHTML = LINES.map(([who,em,name,t]) => `<div class="bubble-wrap${who==='b'?' right':''}"><div class="avatar av-${who}">${em}</div><div><div class="bname${who==='b'?' right':''}">${name}</div><div class="bubble ${who==='b'?'right':'left'}" data-mark>${pos(t)}</div></div></div>`).join('');
+
+  /* the key: real circles and arrows, from the same engine */
+  const H = PronMark.H, S = PronMark.S, EM = PronMark.EM;
+  const ring = l => { const d = PronMark.DIAM[l]; return `<svg viewBox="${-d/2} ${-d/2} ${d} ${d}" class="k-s" style="width:${d*EM}em;height:${d*EM}em">${l ? `<circle r="${(d-S)/2}" fill="none" stroke="currentColor" stroke-width="${S}"/>` : `<circle r="${d/2}" fill="currentColor"/>`}</svg>`; };
+  const arrow = up => `<svg class="k-t" viewBox="0 0 104 76" style="width:${104*EM}em;height:${76*EM}em"><path d="${up ? 'M6,68C40,68 72,66 72,42L72,8M47,41L72,8L97,41' : 'M6,8C40,8 72,10 72,34L72,68M47,35L72,68L97,35'}" fill="none" stroke="currentColor" stroke-width="${S}" stroke-linecap="round" stroke-linejoin="round"/></svg>`;
+  const under = p => `<svg class="k-c" viewBox="0 -32 60 66" style="width:${60*EM}em;height:${66*EM}em"><path d="${p}" fill="none" stroke="currentColor" stroke-width="${S}" stroke-linecap="round" stroke-linejoin="round"/></svg>`;
+  document.getElementById('key').innerHTML = [[ring(3),'The main stress: the strongest syllable'],[ring(2),'A stressed syllable'],[ring(1),'A little stress'],[ring(0),'A weak syllable'],[arrow(true),'Your voice goes up: yes/no questions'],[arrow(false),'Your voice goes down: wh- questions'],
+    [under('M4,4Q30,30 56,4M36,5L56,4L53,24'),'A consonant moves to the next word'],[under('M4,4Q30,30 56,4'),'Two words join. A small letter shows a new sound'],[under('M4,4Q30,30 56,4M2,-12L12,-30'),'This letter is not said']]
+    .map(([s,t]) => `<span class="sym">${s}</span><span>${t}</span>`).join('');
+
+  const CS = [['My name is Ana.','Catenation: the consonant moves'],['What is it?','Catenation: t between vowels sounds like d'],['I am. You are.','Vowel + vowel: a small /y/ or /w/ joins them'],['Nice to meet you.','t + y = ch'],['Did you go?','d + y = j'],['What time is it?','The same sound twice: say it once'],['Ten people.','n sounds like m'],['Last night.','The t is not said']];
+  document.getElementById('csGrid').innerHTML = CS.map(([a,b]) => `<div class="cs-ex" data-mark>${a}</div><div class="cs-note">${b}</div>`).join('');
+
+  const PAIRS = [
+    {left:"What's your name?", right:'My name is Ana.'},
+    {left:'Where are you from?', right:"I'm from Colombia."},
+    {left:'Are you a student?', right:"No, I'm a teacher."},
+    {left:'Do you speak English?', right:'Yes, a little.'},
+    {left:'How do you spell it?', right:'A-N-A.'}];
+  const build = () => {
+    HouseMatching.build({left:'left', right:'right', pairs:PAIRS, scoreEl:'score', totalEl:'total', winEl:'win', feedbackEl:'feedback', resetBtn:'resetBtn'});
+    PronMark.mark('.match-card');
+  };
+  build();
+  document.getElementById('resetBtn').addEventListener('click', () => setTimeout(() => PronMark.mark('.match-card'), 0));
+  PronMark.mark('[data-mark]');
+  PronMark.toggle({shown:true});
+})();
+</script>
+</body>
+</html>

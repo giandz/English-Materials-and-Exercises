@@ -8,10 +8,16 @@
    Markup
      {words|fig,fig,...}   the words, with one figure per item centred over them as a group
      [word/pos]            part-of-speech span (house grammar colours), anywhere
-   A figure is a cast name or a preset (man, woman, boy, girl, grandpa, grandma),
+     {words|@🍕}           an emoji over the words instead of a figure (a thing: pizza, jazz …);
+                           it hides and shows with the figures
+   A figure is a cast name or a preset (man, woman, boy, girl, grandpa, grandma, cat, dog),
    then optional modifiers after colons:
      say                   a speech bubble with dots (the person is talking)
      happy, sad, tired …   a feeling in the bubble (any StickCharacter emotion)
+     👍, ❤️, 😖 …          that emoji in the bubble (two or more make a wider bubble: ❤️🍕)
+     sleep                 Zs above the head
+   Cats and dogs take: left / right, an emoji or feeling bubble, sleep, arrow, a colour, and an
+   animal pose (sitting, lying, walking, running, begging, eating).
      me                    the front hand points at the figure's own head (added on its own over "I")
      arrow / selector      an arrow (or triangle) pointing down at the figure
      left / right          which way the figure faces (figures right after "told" or "asked" face left
@@ -38,8 +44,11 @@ const PRESETS = {
   boy:     { age:'child', headwear:'cap' },
   girl:    { age:'child', headwear:'pigtails', skirt:true },
   grandpa: { hunchback:true, headwear:'strawhat', hatAngle:-55, held:{ front:'cane' } },
-  grandma: { hunchback:true, headwear:'bun', hatAngle:-15, skirt:true, held:{ front:'cane' } }
+  grandma: { hunchback:true, headwear:'bun', hatAngle:-15, skirt:true, held:{ front:'cane' } },
+  cat:     { pet:{ type:'cat', facing:'right' }, hideFigure:true },   /* an animal on its own */
+  dog:     { pet:{ type:'dog', facing:'right' }, hideFigure:true }
 };
+const EMOJI = /\p{Extended_Pictographic}/u;
 const COLOURS = {}; SC.PALETTE.forEach(c => { COLOURS[SC.colourName(c)] = c; });
 let CAST = {};
 
@@ -53,9 +62,25 @@ function figData(spec){
   const src = JSON.parse(JSON.stringify(Object.assign({}, base, c)));
   src.name = c.label || name;
   const d = SC.normalize(src);
+  if (d.pet && d.hideFigure) {   /* an animal: its colour is the cast colour; it takes animal poses and faces left or right */
+    if (src.colour) d.colour = d.pet.colour = d.colour;
+    parts.forEach(m => {
+      if (m === 'say') { d.emotion = 'dots'; return; }
+      if (EMOJI.test(m)) { d.emotion = 'emoji'; d.emoji = m; return; }
+      if (m === 'arrow' || m === 'selector') { d.arrow = m; return; }
+      if (m === 'left' || m === 'right') { d.pet.facing = m; return; }
+      if (m === 'sleep') { d.sleep = true; return; }
+      if (m in SC.EMOTIONS) { d.emotion = m; return; }
+      if (SC.PET_POSES[m]) { SC.applyPetPose(d.pet, m); return; }
+      if (COLOURS[m]) { d.colour = d.pet.colour = COLOURS[m]; return; }
+    });
+    return d;
+  }
   let me = false;
   parts.forEach(m => {
     if (m === 'say') { d.emotion = 'dots'; return; }
+    if (EMOJI.test(m)) { d.emotion = 'emoji'; d.emoji = m; return; }
+    if (m === 'sleep') { d.sleep = true; return; }
     if (m === 'arrow' || m === 'selector') { d.arrow = m; return; }
     if (m === 'left' || m === 'right') { d.facing = m; return; }
     if (m in SC.EMOTIONS) { d.emotion = m; return; }
@@ -100,7 +125,9 @@ const num = v => Math.round(v * 100) / 100;
 const hit = (a, b) => a[0] < b[2] + GAP && b[0] < a[2] + GAP && a[1] < b[3] + GAP && b[1] < a[3] + GAP;
 const vhit = (a, b) => a[1] < b[3] + GAP && b[1] < a[3] + GAP;
 
-function headX(d){ const k = SC.skeleton(d); return ST.cx + (d.facing === 'left' ? -1 : 1) * k.head[0]; }
+function headX(d){
+  if (d.pet && d.hideFigure) { const pv = SC.pivots(d).pet; return pv && pv.head ? pv.head.p[0] : ST.cx; }   /* an animal: its own head */
+  const k = SC.skeleton(d); return ST.cx + (d.facing === 'left' ? -1 : 1) * k.head[0]; }
 
 /* the body's box: drawn without bubble or arrow, the fitted viewBox minus its padding */
 function bodyBox(d){
@@ -110,6 +137,10 @@ function bodyBox(d){
   return [vb[0] + 0.9 * HS - S2 - turning, vb[1] + 1.9 * HS - S2, vb[0] + vb[2] - 0.9 * HS + S2 + turning, ST.ground + HS / 4];
 }
 function bubbleOf(svg){
+  /* two or more emoji: a pill (its hit area is the first path in the bubble) */
+  const pm = svg.match(/class="stick-bubble"[^>]*><path d="M([-\d.]+),([-\d.]+)A([-\d.]+),[-\d.]+ 0 0 1 [-\d.]+,([-\d.]+)H([-\d.]+)/);
+  if (pm) { const [x1, top, rx, bot, x2] = pm.slice(1).map(Number), e = HS / 8;
+    return { cx:(x1 + x2) / 2, cy:(top + bot) / 2, box:[x2 - rx - e, top - e, x1 + rx + e, bot + e] }; }
   const m = svg.match(/class="stick-bubble"[^>]*><ellipse cx="([-\d.]+)" cy="([-\d.]+)" rx="([-\d.]+)" ry="([-\d.]+)"/);
   if (!m) return null; const [cx, cy, rx, ry] = m.slice(1).map(Number), e = HS / 8;
   return { cx, cy, box:[cx - rx - e, cy - ry - e, cx + rx + e, cy + ry + e] };
@@ -219,6 +250,11 @@ function html(markup){
   let m, prev = '';
   while ((m = re.exec(markup))) {
     if (m[4]) { out.push('<span class="ss-unit"><span class="ss-txt">' + pos(m[4]) + '</span></span>'); prev = text(m[4]).toLowerCase(); continue; }
+    /* {words|@🍕}: an emoji over the words, for a thing; it hides with the figures */
+    if (m[2].charAt(0) === '@') {
+      out.push('<span class="ss-unit ss-has"><span class="ss-pic ss-obj" aria-hidden="true">' + m[2].slice(1) + '</span><span class="ss-txt">' + pos(m[1]) + m[3] + '</span></span>');
+      prev = text(m[1]).toLowerCase().replace(/[^a-z]/g, ''); continue;
+    }
     /* after "told" or "asked", the listeners turn to face the speaker */
     if (prev === 'told' || prev === 'asked') m[2] = m[2].split(',').map(sp => /:(left|right)\b/.test(sp) ? sp : sp + ':left').join(',');
     /* a figure standing on "I" points at its own head */
@@ -242,6 +278,7 @@ const CSS = ''
   + '.ss-figs{ position:relative; display:block; flex:0 0 auto; margin-bottom:.1em; color:currentColor; }'
   + '.ss-figs svg{ display:block; width:100%; height:100%; overflow:visible; }'
   + '.ss-pic{ display:block; font-size:2.2em; line-height:1; margin-bottom:.1em; }'
+  + '.ss-obj{ font-size:1.7em; white-space:nowrap; }'
   + '.ss-sticks-hidden .ss-figs, .ss-sticks-hidden .ss-pic{ display:none; }'
   + '.ss-stick-btn{ margin-right:6px; }';
 if (!document.getElementById('stick-sentence-css')) {

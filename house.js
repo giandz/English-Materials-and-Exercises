@@ -1053,7 +1053,9 @@
   var WORD = new RegExp('[' + L + ']+(?:[\'\u2019][' + L + ']+)*', 'g');
   var APOS = /['\u2019]/;
 
-  var SKIP = '.bionic-w, input, textarea, select, script, style, [contenteditable]';
+  // .pm-line: a line with pronunciation marks (pron-mark.js) has its letters split
+  // round the circles, so bionic reading leaves it as it is.
+  var SKIP = '.bionic-w, .pm-line, input, textarea, select, script, style, [contenteditable]';
 
   var on = false;
   var btn = null;
@@ -2682,6 +2684,33 @@
     var s = document.createElement('script');
     s.id = 'vn-adapter-js';
     s.src = base + 'vn-adapter.js';
+    document.body.appendChild(s);
+  }
+  if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', start);
+  else setTimeout(start, 0);
+})();
+
+
+/* ══════════════════════════════════════════════════════════════════════════
+   HOUSE PRONUNCIATION MARKS
+   Word stress, connected speech and intonation marks on the lesson pages.
+   Everything lives in pron-adapter.js, next to house.js; it is loaded here, after
+   the page's own script has drawn its content, so no page needs a script tag of
+   its own. Its lookup tables decide which pages get the 🎵 button and what is
+   marked; it loads house-character.js and pron-mark.js only when the button is pressed.
+   ══════════════════════════════════════════════════════════════════════════ */
+(function () {
+  'use strict';
+  function start() {
+    if (window.PronAdapter || document.getElementById('pron-adapter-js')) return;
+    var base = '';
+    var scripts = document.querySelectorAll('script[src]');
+    for (var i = 0; i < scripts.length; i++) {
+      if (/house\.js$/.test(scripts[i].src)) { base = scripts[i].src.replace(/house\.js$/, ''); break; }
+    }
+    var s = document.createElement('script');
+    s.id = 'pron-adapter-js';
+    s.src = base + 'pron-adapter.js';
     document.body.appendChild(s);
   }
   if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', start);
