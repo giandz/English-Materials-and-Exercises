@@ -1,0 +1,153 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<title>Pineapple on Pizza? No, Thanks! — Zero Article</title>
+<script>
+(function(){
+  try{
+    var saved = localStorage.getItem('theme-preference');
+    var theme = (saved === 'light' || saved === 'dark')
+      ? saved
+      : ((window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches) ? 'dark' : 'light');
+    document.documentElement.setAttribute('data-theme', theme);
+    var fs = parseFloat(localStorage.getItem('font-size-preference'));
+    if (fs >= 10 && fs <= 28) document.documentElement.style.setProperty('--fs-base', fs + 'px');
+  }catch(e){ /* localStorage/matchMedia unavailable — CSS media query still applies */ }
+})();
+</script>
+<link rel="stylesheet" href="house.css">
+<style>
+/* the likes scale: ❤️ love … 😖 can't stand */
+.scale{ display:flex; flex-wrap:wrap; gap:6px; justify-content:center; margin:0 0 1rem; }
+.scale span{ display:inline-flex; flex-direction:column; align-items:center; gap:2px; min-width:5.4em; padding:6px 8px; border-radius:10px;
+  border:1px solid var(--color-border-tertiary); background:var(--surface-2); font-size:.8rem; color:var(--text-secondary); text-align:center; }
+.scale span b{ font-size:1.4rem; line-height:1; }
+.emo{ white-space:nowrap; }
+
+.cast-row{ display:flex; flex-wrap:wrap; gap:14px 18px; justify-content:center; align-items:flex-end; margin:0 0 1rem; padding:10px; background:var(--surface-1); border:1px solid var(--border); border-radius:var(--border-radius-lg); font-size:.8667rem; }
+.match-wrap .match-col-label{ text-align:center; }
+#picCol .match-card{ font-size:1.35rem; justify-content:center; }
+</style>
+</head>
+<body>
+<div class="page" id="page">
+  <span class="cefr-tag cefr-a1a2">A1/A2 · Elementary</span>
+  <h1>Pineapple on Pizza? No, Thanks!</h1>
+  <p class="subtitle">Sofia and Kenji are new roommates. It’s their first Friday night together, and they want to order dinner.</p>
+
+  <div class="sec-div">Words for this lesson</div>
+  <p class="subtitle">Match the picture and the word. Tap a picture, then tap its word.</p>
+  <div class="score-bar"><span>Matched: <strong id="mScore">0</strong> / <span id="mTotal">0</span></span><button id="mReset">↺ Reset</button></div>
+  <div class="match-grid match-wrap">
+    <div><div class="match-col-label">Picture</div><div class="match-col" id="picCol"></div></div>
+    <div><div class="match-col-label">Word</div><div class="match-col" id="wordCol"></div></div>
+  </div>
+  <div class="win-msg" id="mWin">🎉 Great! You know the words for the conversation.</div>
+  <div class="feedback" id="mFeedback"></div>
+
+  <p class="subtitle">How much do you like it?</p>
+  <div id="scale"></div>
+
+  <div class="sec-div">Before you read</div>
+  <div id="preQuestions"></div>
+
+  <div class="sec-div">The people</div>
+  <div class="cast-row" id="castRow"></div>
+
+  <div class="sec-div">The conversation</div>
+  <div class="setting-chip"><span class="section-icon">🛋️</span> Friday night — in the living room</div>
+  <button class="grammar-toggle-btn" id="grammarToggle">🎨 Show Grammar</button>
+  <div class="pos-legend"></div>
+  <div id="conversation"></div>
+
+  <div class="sec-div">Check your answers</div>
+  <div id="quiz"></div>
+
+  <footer>Pineapple on Pizza? No, Thanks! — Zero Article: likes and general statements (A1/A2)</footer>
+</div>
+
+<div id="theme-toggle-wrap">
+  <button id="theme-toggle" aria-label="Toggle light/dark mode" title="Toggle light/dark mode">
+    <span id="theme-icon">☀️</span>
+  </button>
+</div>
+<script src="house.js"></script>
+<script src="stick-character.js"></script>
+<script src="stick-sentence.js"></script>
+<script>
+/* Sofia and Kenji are new roommates (Kenji has a cat, Miso) — the same people on every page of this lesson */
+StickSentence.cast({
+  sofia: { base:'woman', colour:'#00CCCC', label:'Sofia' },
+  kenji: { base:'man',   colour:'#FF6600', label:'Kenji' }
+});
+StickSentence.toggle();   /* stick figures hidden by default */
+
+/* how much we like something: strongest to weakest */
+const SCALE = [
+  ['❤️', 'love'], ['😍', 'really like'], ['🙂', 'like'], ['😐', 'don’t mind'], ['🙁', 'don’t like'], ['😖', 'hate · can’t stand']
+];
+const scaleHtml = () => '<div class="scale">' + SCALE.map(([e, w]) => '<span><b>' + e + '</b>' + w + '</span>').join('') + '</div>';
+
+/* ── picture → word ───────────────────────────────────────────────────── */
+const WORDS = [
+  ['🍕', 'pizza'], ['🍍', 'pineapple'], ['🍄', 'mushrooms'], ['🫒', 'olives'], ['🌶️🍲', 'spicy food'],
+  ['🎷🎶', 'jazz'], ['🎸🤘', 'rock music'], ['👻🎬', 'horror movies'], ['🐈', 'cats'], ['🐕', 'dogs']
+];
+HouseMatching.build({
+  left: 'picCol', right: 'wordCol', scoreEl: 'mScore', totalEl: 'mTotal', winEl: 'mWin', resetBtn: 'mReset', feedbackEl: 'mFeedback',
+  pairs: WORDS.map(([e, w]) => ({ id: w, left: e, right: w }))
+});
+document.getElementById('scale').innerHTML = scaleHtml();
+
+/* ── the people (Miso the cat is an emoji: class ss-pic hides it with the figures) ── */
+document.getElementById('castRow').innerHTML = ['{Sofia|sofia}', '{Kenji|kenji}'].map(StickSentence.html).join('') +
+  '<span class="ss-unit"><span class="ss-pic" role="img" aria-label="Miso, the cat">🐈</span><span class="ss-txt">Miso (Kenji’s cat)</span></span>';
+
+const SPEAKERS = {
+  Sofia: { cast: 'sofia', avatar: '👩', av: 'av-b', side: 'left' },
+  Kenji: { cast: 'kenji', avatar: '🧑', av: 'av-a', side: 'right' }
+};
+/* each speaker's avatar takes the colour of their stick figure (overrides the house.css av-* colours) */
+const avStyle = s => { const c = (StickSentence.cast()[s.cast] || {}).colour;
+  return c ? 'background:' + c + '40;box-shadow:inset 0 0 0 2px ' + c : ''; };
+
+/* {words|figures} puts stick figures over the words; [words/pos] marks the grammar colours.
+   Nouns in general (no article) are [noun]; "the" for one specific thing is [det]. */
+const LINES = [
+  ['Sofia', '[So/none], {[Kenji/noun],|kenji} [let’s order/verb] [dinner/noun]. [Do/aux] {[you/subject]|kenji} [like/verb] [pizza/noun]? 🍕'],
+  ['Kenji', '{[I/subject]|kenji:happy} [love/verb] [pizza/noun]! [But/conj] {[I/subject]|kenji} [can’t stand/verb] [pineapple/noun] [on pizza/prep]. 😖🍍'],
+  ['Sofia', '[Really/none]? {[I/subject]|sofia:happy} [love/verb] [pineapple/noun]! [But/conj] {[I/subject]|sofia} [don’t eat/verb] [meat/noun]. {[I’m/subject]|sofia} [a vegetarian/complement].'],
+  ['Kenji', '[No problem/none]. [Let’s get/verb] [a vegetarian pizza/object] [with/prep] [mushrooms/noun] [and/conj] [olives/noun]. [Do/aux] {[you/subject]|sofia} [like/verb] [mushrooms/noun]?'],
+  ['Sofia', '[Yes/none], {[I/subject]|sofia} [really like/verb] [mushrooms/noun]. [And/conj] {[I/subject]|sofia} [don’t mind/verb] [olives/noun]. [Oh/none], [is/verb] [that/subject] {[your/det]|kenji} [cat/noun]? 🐈'],
+  ['Kenji', '[Yes/none], [that’s/subject] [Miso/noun]. [Do/aux] {[you/subject]|sofia} [like/verb] [cats/noun]?'],
+  ['Sofia', '[Hmm/none]. {[I/subject]|sofia} [like/verb] [cats/noun], [but/conj] {[I’m/subject]|sofia} [a dog person/complement]! [Dogs/noun] [are/verb] [friendly/adj], [and/conj] [they/subject] [love/verb] [people/noun]. 🐕❤️'],
+  ['Kenji', '[Cats/noun] [are/verb] [friendly/adj] [too/adverb]! [They/subject] [just/adverb] [sleep/verb] [a lot/adverb]. 🐈💤 [And/conj] [dogs/noun] [chase/verb] [cats/noun]!'],
+  ['Sofia', '[Ha/none]! [OK/none]. [What/wh] [kind of/det] [music/noun] [do/aux] {[you/subject]|kenji} [like/verb]? 🎶'],
+  ['Kenji', '{[I/subject]|kenji:happy} [love/verb] [jazz/noun]. [Jazz/noun] [is/verb] [relaxing/adj]. 🎷😌 [And/conj] {[you/subject]|sofia}?'],
+  ['Sofia', '{[I/subject]|sofia} [don’t like/verb] [jazz/noun] [very much/adverb]. {[I/subject]|sofia:happy} [love/verb] [rock music/noun]. [Rock music/noun] [gives/verb] {[me/object]|sofia:me} [energy/noun]! 🎸⚡'],
+  ['Kenji', '[Well/none], {[we/subject]|sofia,kenji} [both/adverb] [love/verb] [pizza/noun]. [And/conj] — 🔔 — [the/det] [pizza/noun] [is/verb] [here/adverb]!'],
+  ['Sofia', '[Perfect/none]! {[I’m/subject]|sofia} [so hungry/adj]. [Mmm/none], [the/det] [mushrooms/noun] [look/verb] [great/adj]!']
+];
+const conv = document.getElementById('conversation');
+LINES.forEach(([who, text]) => {
+  const s = SPEAKERS[who], right = s.side === 'right';
+  conv.insertAdjacentHTML('beforeend',
+    '<div class="bubble-wrap' + (right ? ' right' : '') + '">' +
+      '<div class="avatar ' + s.av + '" style="' + avStyle(s) + '">' + s.avatar + '</div>' +
+      '<div class="bubble-col"><div class="bname' + (right ? ' right' : '') + '">' + who + '</div>' +
+      '<div class="bubble ' + (right ? 'right' : 'left') + '">' + StickSentence.html(text) + '</div></div>' +
+    '</div>');
+});
+
+const CQ_ITEMS = [
+  { q: 'What can’t Kenji stand?', opts: ['Mushrooms', 'Pineapple on pizza', 'Olives'], correct: 1 },
+  { q: 'Is Sofia a cat person or a dog person?', opts: ['A dog person', 'A cat person', 'She doesn’t like animals.'], correct: 0 },
+  { q: 'What music does Kenji love?', opts: ['Rock music', 'Reggaeton', 'Jazz'], correct: 2 }
+];
+HouseComprehension.build({ pre: 'preQuestions', quiz: 'quiz', items: CQ_ITEMS });
+</script>
+<script>HouseGrammar.init();</script>
+</body>
+</html>

@@ -1,0 +1,129 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<title>In General or Specific? — Zero Article Practice</title>
+<script>
+(function(){
+  try{
+    var saved = localStorage.getItem('theme-preference');
+    var theme = (saved === 'light' || saved === 'dark')
+      ? saved
+      : ((window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches) ? 'dark' : 'light');
+    document.documentElement.setAttribute('data-theme', theme);
+    var fs = parseFloat(localStorage.getItem('font-size-preference'));
+    if (fs >= 10 && fs <= 28) document.documentElement.style.setProperty('--fs-base', fs + 'px');
+  }catch(e){ /* localStorage/matchMedia unavailable — CSS media query still applies */ }
+})();
+</script>
+<link rel="stylesheet" href="house.css">
+<style>
+/* the likes scale: ❤️ love … 😖 can't stand */
+.scale{ display:flex; flex-wrap:wrap; gap:6px; justify-content:center; margin:0 0 1rem; }
+.scale span{ display:inline-flex; flex-direction:column; align-items:center; gap:2px; min-width:5.4em; padding:6px 8px; border-radius:10px;
+  border:1px solid var(--color-border-tertiary); background:var(--surface-2); font-size:.8rem; color:var(--text-secondary); text-align:center; }
+.scale span b{ font-size:1.4rem; line-height:1; }
+.emo{ white-space:nowrap; }
+
+.blank{ display:inline-block; min-width:3em; border-bottom:2px solid var(--color-border-primary); }
+.ctx{ display:inline-flex; align-items:center; gap:8px; font-weight:400; font-style:normal; margin:0 0 6px; padding:3px 10px; border-radius:8px;
+  border:1px solid var(--color-border-tertiary); background:var(--surface-2); color:var(--text-secondary); font-size:.85rem; }
+.ctx .emo{ font-size:1.3rem; }
+.quiz-q .q-text .ctx{ display:flex; width:max-content; max-width:100%; }
+</style>
+</head>
+<body>
+<div class="page" id="page">
+  <span class="cefr-tag cefr-a1a2">A1/A2 · Elementary</span>
+  <h1>In General or Specific? — Practice</h1>
+  <p class="subtitle">Practise: I love pizza · Dogs love people · The pizza is here!</p>
+
+  <div class="sec-div">1 · Choose</div>
+  <p class="subtitle">Look at the picture. Choose the right words.</p>
+  <div id="pcItems"></div>
+
+  <div class="sec-div">2 · Put the words in order</div>
+  <p class="subtitle">Look at the picture. Make the sentence.</p>
+  <button class="grammar-toggle-btn" id="grammarToggle">🎨 Hide Grammar</button>
+  <div class="pos-legend"></div>
+  <div class="score-bar"><span>Correct: <strong id="woScore">0</strong> / <span id="woTotal">0</span></span></div>
+  <div id="woItems"></div>
+
+  <div class="sec-div">3 · Write the missing words</div>
+  <p class="subtitle">Look at the picture. Write the missing words.</p>
+  <div id="gfItems"></div>
+
+  <footer>Zero Article: likes and general statements — Controlled Practice (A1/A2)</footer>
+</div>
+
+<div id="theme-toggle-wrap">
+  <button id="theme-toggle" aria-label="Toggle light/dark mode" title="Toggle light/dark mode">
+    <span id="theme-icon">☀️</span>
+  </button>
+</div>
+<script src="house.js"></script>
+<script src="stick-character.js"></script>
+<script src="stick-sentence.js"></script>
+<script>
+/* Sofia and Kenji are new roommates (Kenji has a cat, Miso) — the same people on every page of this lesson */
+StickSentence.cast({
+  sofia: { base:'woman', colour:'#00CCCC', label:'Sofia' },
+  kenji: { base:'man',   colour:'#FF6600', label:'Kenji' }
+});
+StickSentence.toggle();   /* stick figures hidden by default */
+
+/* how much we like something: strongest to weakest */
+const SCALE = [
+  ['❤️', 'love'], ['😍', 'really like'], ['🙂', 'like'], ['😐', 'don’t mind'], ['🙁', 'don’t like'], ['😖', 'hate · can’t stand']
+];
+const scaleHtml = () => '<div class="scale">' + SCALE.map(([e, w]) => '<span><b>' + e + '</b>' + w + '</span>').join('') + '</div>';
+
+const S = StickSentence.html;
+const BLANK = '<span class="blank">&nbsp;</span>';
+const rep = m => S(m).replace('____', BLANK);
+/* the picture and the meaning: 🌍 in general, or 👉 one specific thing */
+const ctx = (emo, note) => '<span class="ctx"><span class="emo">' + emo + '</span>' + note + '</span>';
+const GEN = '🌍 in general', SPEC = '👉 this one — we know which';
+
+/* ── 1 · choose ────────────────────────────────────────────────────────── */
+const PC_ITEMS = [
+  { q: ctx('🍕❤️', GEN) + rep('{Kenji|kenji:happy} loves ____.'), opts: ['the pizza', 'pizza', 'a pizza'], correct: 1 },
+  { q: ctx('🐕🐕🐕', '🌍 all of them') + rep('____ are friendly.'), opts: ['Dogs', 'The dogs', 'Dog'], correct: 0 },
+  { q: ctx('🔔🍕', SPEC + ' (our dinner)') + rep('____ is here!'), opts: ['Pizza', 'A pizza', 'The pizza'], correct: 2 },
+  { q: ctx('🍄🍄', GEN) + rep('{Sofia|sofia} really likes ____.'), opts: ['mushroom', 'mushrooms', 'the mushrooms'], correct: 1 },
+  { q: ctx('🎸🤘', GEN) + rep('{I|sofia:happy} love rock ____.'), opts: ['music', 'musics', 'a music'], correct: 0 },
+  { q: ctx('😖👻🎬', GEN) + rep('{Kenji|kenji} can’t stand horror ____.'), opts: ['movie', 'the movie', 'movies'], correct: 2 },
+  { q: ctx('🐈💤🛋️', SPEC + ' (Miso)') + rep('____ is sleeping on the sofa.'), opts: ['The cat', 'Cat', 'Cats'], correct: 0 },
+  { q: ctx('🙁☕', GEN) + rep('{I|sofia} don’t drink ____.'), opts: ['coffees', 'coffee', 'the coffees'], correct: 1 }
+];
+HouseComprehension.build({ quiz: 'pcItems', items: PC_ITEMS });
+
+/* ── 2 · word order ────────────────────────────────────────────────────── */
+const WO_ITEMS = [
+  { context: ctx('😍🌶️🍲', GEN), text: 'I / really like / spicy food', pos: ['subject', 'verb', 'noun'] },
+  { context: ctx('🐈💤', '🌍 all of them'), text: 'Cats / sleep / a lot', pos: ['noun', 'verb', 'adverb'] },
+  { context: ctx('😖🍍', GEN), text: 'Kenji / can’t stand / pineapple', pos: ['subject', 'verb', 'noun'] },
+  { context: ctx('🐕❤️👥', '🌍 all of them'), text: 'Dogs / love / people', pos: ['noun', 'verb', 'noun'] },
+  { context: ctx('❓👻🎬', GEN), text: 'Do / you / like / horror movies / ?', pos: ['aux', 'subject', 'verb', 'noun', 'none'] },
+  { context: ctx('🔔🍕', SPEC + ' (our dinner)'), text: 'The / pizza / is / here', pos: ['det', 'noun', 'verb', 'adverb'] }
+];
+HouseWordOrder.build({ container: 'woItems', items: WO_ITEMS, scoreEl: 'woScore', totalEl: 'woTotal' });
+
+/* ── 3 · gap fill (easiest first; the gaps move around the sentence) ───── */
+const gaps = m => S(m).replace(/____(\d)/g, '{$1}');
+const GF_ITEMS = [
+  { direct: ctx('🍕❤️', GEN), template: gaps('{I|kenji:happy} love ____0.'), hints: [{ accepted: ['pizza'] }] },
+  { direct: ctx('🐕🐕🐕', '🌍 all of them'), template: gaps('____0 are friendly.'), hints: [{ accepted: ['Dogs', 'dogs'] }] },
+  { direct: ctx('😐🍄🍄', GEN), template: gaps('{I|sofia} don’t mind ____0.'), hints: [{ accepted: ['mushrooms'] }] },
+  { direct: ctx('😖🍍', GEN), template: gaps('{Kenji|kenji} can’t stand ____0.'), hints: [{ accepted: ['pineapple'] }] },
+  { direct: ctx('🎷🎶😌', GEN), template: gaps('____0 is relaxing.'), hints: [{ accepted: ['Jazz', 'jazz'] }] },
+  { direct: ctx('🔔🍕', SPEC + ' (our dinner)'), template: gaps('____0 ____1 is here!'), hints: [{ accepted: ['The', 'the'] }, { accepted: ['pizza'] }] },
+  { direct: ctx('🐈🐈💤', '🌍 all of them'), template: gaps('____0 ____1 a lot.'), hints: [{ accepted: ['Cats', 'cats'] }, { accepted: ['sleep'] }] },
+  { direct: ctx('❤️🎸🤘', GEN), template: gaps('{Sofia|sofia:happy} ____0 rock ____1.'), hints: [{ accepted: ['loves'] }, { accepted: ['music'] }] }
+];
+HouseGapFill.build({ container: 'gfItems', items: GF_ITEMS });
+</script>
+<script>HouseGrammar.init();</script>
+</body>
+</html>

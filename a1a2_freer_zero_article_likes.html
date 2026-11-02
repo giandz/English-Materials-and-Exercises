@@ -1,0 +1,125 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<title>This or That? — Zero Article</title>
+<script>
+(function(){
+  try{
+    var saved = localStorage.getItem('theme-preference');
+    var theme = (saved === 'light' || saved === 'dark')
+      ? saved
+      : ((window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches) ? 'dark' : 'light');
+    document.documentElement.setAttribute('data-theme', theme);
+    var fs = parseFloat(localStorage.getItem('font-size-preference'));
+    if (fs >= 10 && fs <= 28) document.documentElement.style.setProperty('--fs-base', fs + 'px');
+  }catch(e){ /* localStorage/matchMedia unavailable — CSS media query still applies */ }
+})();
+</script>
+<link rel="stylesheet" href="house.css">
+<style>
+/* the likes scale: ❤️ love … 😖 can't stand */
+.scale{ display:flex; flex-wrap:wrap; gap:6px; justify-content:center; margin:0 0 1rem; }
+.scale span{ display:inline-flex; flex-direction:column; align-items:center; gap:2px; min-width:5.4em; padding:6px 8px; border-radius:10px;
+  border:1px solid var(--color-border-tertiary); background:var(--surface-2); font-size:.8rem; color:var(--text-secondary); text-align:center; }
+.scale span b{ font-size:1.4rem; line-height:1; }
+.emo{ white-space:nowrap; }
+
+.tot{ display:flex; gap:10px; justify-content:center; align-items:stretch; flex-wrap:wrap; }
+.tot > span{ display:flex; flex-direction:column; align-items:center; gap:4px; min-width:7.5em; padding:10px 14px; border-radius:14px;
+  border:1px solid var(--color-border-tertiary); background:var(--surface-2); font-size:1rem; font-weight:600; }
+.tot .big{ font-size:2.4rem; line-height:1; }
+.tot .or{ border:none; background:none; min-width:0; padding:0 2px; justify-content:center; color:var(--text-muted); font-weight:700; }
+.q-card details.check{ margin-top:4px; width:100%; max-width:440px; text-align:left; }
+.q-card .check-body{ padding:8px 12px; font-size:.9rem; }
+.q-card .check-body p{ margin:0 0 4px; }
+</style>
+</head>
+<body>
+<div class="page" id="page">
+  <span class="cefr-tag cefr-a1a2">A1/A2 · Elementary</span>
+  <h1>This or That?</h1>
+  <p class="subtitle">Talk about what you like, and why.</p>
+
+  <div class="rule-box">
+    <p><strong>How to play (pairs, or teacher + student):</strong></p>
+    <p>1. Roll 🎲. Look at the two things on the card.</p>
+    <p>2. Say which one you prefer, and why — in general: “<b>I prefer cats. Cats are quiet. I don’t mind dogs.</b>”</p>
+    <p>3. Your partner answers: “<b>Really? I can’t stand cats! I love dogs. Dogs are friendly.</b>”</p>
+    <p>4. Press 👀 to check. Then roll again.</p>
+  </div>
+  <div id="scale"></div>
+
+  <div class="q-card" id="qCard"><span class="q-placeholder">Roll the dice to start.</span></div>
+  <button class="dice-btn" id="diceBtn" aria-label="Roll">🎲</button>
+  <div class="roll-count">Rolls: <strong id="rollCount">0</strong></div>
+
+  <div class="sec-div">Now you</div>
+  <div class="rule-box">
+    <p><strong>Find three things:</strong> ask your partner about food, music, animals, movies and sports. Find two things you both love and one thing you both can’t stand.</p>
+    <p>“<b>Do you like spicy food?</b>” · “<b>Yes, I love spicy food!</b>” · “<b>We both love spicy food, and we both can’t stand horror movies.</b>”</p>
+    <p><strong>Your facts:</strong> say two things that are true for all of them: “<b>Babies sleep a lot.</b>” “<b>Teenagers love phones.</b>”</p>
+  </div>
+
+  <footer>This or That? — Zero Article: likes and general statements (A1/A2)</footer>
+</div>
+
+<div id="theme-toggle-wrap">
+  <button id="theme-toggle" aria-label="Toggle light/dark mode" title="Toggle light/dark mode">
+    <span id="theme-icon">☀️</span>
+  </button>
+</div>
+<script src="house.js"></script>
+<script src="stick-character.js"></script>
+<script src="stick-sentence.js"></script>
+<script>
+/* Sofia and Kenji are new roommates (Kenji has a cat, Miso) — the same people on every page of this lesson */
+StickSentence.cast({
+  sofia: { base:'woman', colour:'#00CCCC', label:'Sofia' },
+  kenji: { base:'man',   colour:'#FF6600', label:'Kenji' }
+});
+
+/* how much we like something: strongest to weakest */
+const SCALE = [
+  ['❤️', 'love'], ['😍', 'really like'], ['🙂', 'like'], ['😐', 'don’t mind'], ['🙁', 'don’t like'], ['😖', 'hate · can’t stand']
+];
+const scaleHtml = () => '<div class="scale">' + SCALE.map(([e, w]) => '<span><b>' + e + '</b>' + w + '</span>').join('') + '</div>';
+
+document.getElementById('scale').innerHTML = scaleHtml();
+/* [emoji, noun (in general), plural?, why] for each of the two choices */
+const PAIRS = [
+  [['🍕', 'pizza', 0, 'delicious'], ['🍔', 'burgers', 1, 'easy to eat']],
+  [['🐈', 'cats', 1, 'quiet'], ['🐕', 'dogs', 1, 'friendly']],
+  [['🎸🤘', 'rock music', 0, 'exciting'], ['🎷🎶', 'jazz', 0, 'relaxing']],
+  [['☕', 'coffee', 0, 'strong'], ['🍵', 'tea', 0, 'healthy']],
+  [['🏖️', 'beaches', 1, 'fun'], ['🏔️', 'mountains', 1, 'beautiful']],
+  [['👻🎬', 'horror movies', 1, 'exciting'], ['😂🎬', 'comedies', 1, 'funny']],
+  [['📚', 'books', 1, 'interesting'], ['🎮', 'video games', 1, 'fun']],
+  [['🌶️🍲', 'spicy food', 0, 'tasty'], ['🍰', 'desserts', 1, 'sweet']],
+  [['🚆', 'trains', 1, 'comfortable'], ['✈️', 'planes', 1, 'fast']],
+  [['🏙️', 'big cities', 1, 'exciting'], ['🏡', 'small towns', 1, 'quiet']],
+  [['🍫', 'chocolate', 0, 'delicious'], ['🍦', 'ice cream', 0, 'refreshing']],
+  [['☀️', 'summer', 0, 'hot and sunny'], ['❄️', 'winter', 0, 'cozy']],
+  [['🐟', 'fish', 0, 'healthy'], ['🥩', 'meat', 0, 'tasty']],
+  [['🍎', 'apples', 1, 'crunchy'], ['🍌', 'bananas', 1, 'sweet']],
+  [['⚽', 'soccer', 0, 'exciting'], ['🏀', 'basketball', 0, 'fast']],
+  [['🌅', 'early mornings', 1, 'quiet'], ['🌙', 'late nights', 1, 'fun']]
+];
+const cap = s => s.charAt(0).toUpperCase() + s.slice(1);
+const model = (a, b) => 'I prefer ' + a[1] + '. ' + cap(a[1]) + ' ' + (a[2] ? 'are' : 'is') + ' ' + a[3] + '. I don’t mind ' + b[1] + '.';
+
+HouseRandomGen.build({
+  items: PAIRS.map(([a, b]) => ({ a, b, text: a[1] + '|' + b[1] })),
+  render: ({ a, b }) =>
+    '<span class="q-topic">🤔 This or that?</span>' +
+    '<div class="tot"><span><span class="big">' + a[0] + '</span>' + a[1] + '</span><span class="or">or</span>' +
+    '<span><span class="big">' + b[0] + '</span>' + b[1] + '</span></div>' +
+    '<span class="q-prompt">Which do you prefer? Why? Use: love · really like · like · don’t mind · don’t like · can’t stand</span>' +
+    '<details class="check"><summary>👀 Check</summary><div class="check-body">' +
+    '<p>' + a[0] + ' “' + model(a, b) + '”</p><p>' + b[0] + ' “' + model(b, a) + '”</p>' +
+    '<p class="text-secondary">In general: no “a”, no “the” — ' + a[1] + ', ' + b[1] + '.</p></div></details>'
+});
+</script>
+</body>
+</html>
