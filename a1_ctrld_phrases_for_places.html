@@ -3,11 +3,8 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-<title>Places and Phrases Review</title>
+<title>Phrases for Places — Controlled Practice</title>
 <script>
-// Applies the saved/system theme to <html> as early as possible, before the
-// stylesheet below paints anything, so there's no flash of the wrong theme.
-// Self-contained: no dependency on any external script.
 (function(){
   try{
     var saved = localStorage.getItem('theme-preference');
@@ -15,170 +12,49 @@
       ? saved
       : ((window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches) ? 'dark' : 'light');
     document.documentElement.setAttribute('data-theme', theme);
-    // Same idea for the text size: apply it before house.css paints, so a
-    // person who chose 28px doesn't watch the page reflow from 14px on load.
     var fs = parseFloat(localStorage.getItem('font-size-preference'));
-    if (fs >= 10 && fs <= 28){
-      document.documentElement.style.setProperty('--fs-base', fs + 'px');
-    }
+    if (fs >= 10 && fs <= 28) document.documentElement.style.setProperty('--fs-base', fs + 'px');
   }catch(e){ /* localStorage/matchMedia unavailable — CSS media query still applies */ }
 })();
 </script>
 <link rel="stylesheet" href="house.css">
 <style>
-/* Page-specific design tokens — this lesson's own palette, not
-   house tokens. house.css owns everything else. */
-:root{
-  --bg-place: #eaf3de;
-  --text-place: #27500a;
-}
-html[data-theme="dark"]{
-  --bg-place: #1f3014;
-  --text-place: #9ed17a;
-}
-
-
-/* Recovered page-specific rules. */
-.legend-pill.place {
-      background: var(--bg-place);
-      color: var(--text-place);
-    }
-
-h1 {
-      margin: 0 0 2px;
-      font-size: 1.28rem;
-      font-weight: 600;
-      letter-spacing: -0.01em;
-    }
-
-    html[data-theme="dark"] .cefr-tag {
-      background: #1c2e40;
-      color: #7fb2e0;
-    }
-
-    .rule-box,
-    .reference-box {
-      margin-bottom: 0.9rem;
-      padding: 10px 12px;
-      border: 1px solid var(--border);
-      border-radius: 16px;
-      background: var(--surface-1);
-      color: var(--text-secondary);
-      font-size:0.8667rem;
-      line-height: 1.55;
-    }
-
-    .rule-box strong,
-    .reference-title {
-      color: var(--text-primary);
-      font-weight: 600;
-    }
-
-    .reference-title {
-      margin-bottom: 8px;
-      font-size:0.8667rem;
-    }
-
-    .setting-chip {
-      display: inline-flex;
-      align-items: center;
-      gap: 5px;
-      margin-bottom: 0.6rem;
-      padding: 3px 10px;
-      border: 0.5px solid var(--border);
-      border-radius: 20px;
-      background: var(--surface-1);
-      color: var(--text-secondary);
-      font-size:0.8rem;
-    }
-
-    html[data-theme="dark"] .pool-zone {
-      background: rgba(255, 255, 255, 0.04);
-    }
-
-    html[data-theme="dark"] .word-chip.chip-wrong {
-      background: #3a201e;
-    }
-
-    .check-btn {
-      margin-top: 4px;
-      padding: 5px 12px;
-      border: none;
-      border-radius: 999px;
-      cursor: pointer;
-      background: var(--text-accent);
-      color: #ffffff;
-      font-family: inherit;
-      font-size:0.8333rem;
-      font-weight: 600;
-    }
-
-    footer {
-      margin-top: 1.4rem;
-      color: var(--text-muted);
-      font-size:0.8rem;
-      text-align: center;
-    }
+/* page-specific: the place colour from the intro conversations */
+:root{ --bg-place:#eaf3de; --text-place:#27500a; }
+@media (prefers-color-scheme: dark){ :root:not([data-theme="light"]){ --bg-place:#1f3014; --text-place:#9ed17a; } }
+:root[data-theme="dark"]{ --bg-place:#1f3014; --text-place:#9ed17a; }
+.place-legend{ display:flex; flex-wrap:wrap; gap:8px; margin:0 0 1rem; }
+.place-legend span{ font-size:.8rem; font-weight:700; padding:3px 10px; border-radius:999px; background:var(--bg-place); color:var(--text-place); }
 </style>
 </head>
 <body>
 <div class="page" id="page">
-    <span class="cefr-tag cefr-a1">A1 · Beginner</span>
+  <span class="cefr-tag cefr-a1">A1 · Beginner</span>
+  <h1>Phrases for Places — Practice</h1>
+  <p class="subtitle">Choose, build and write useful phrases for places in town.</p>
 
-    <h1>Places and Phrases Review</h1>
-
-    <p class="subtitle">
-      Word order and gap-fill practice with useful phrases for places in town.
-    </p>
-
-    <div class="sec-div">Useful places</div>
-
-    <div class="reference-box">
-      <div class="reference-title">At the...</div>
-
-      <div class="legend">
-        <span class="legend-pill place">✈️ airport</span>
-        <span class="legend-pill place">🏛️ museum</span>
-        <span class="legend-pill place">📚 library</span>
-        <span class="legend-pill place">🍽️ restaurant</span>
-        <span class="legend-pill place">🏥 hospital</span>
-        <span class="legend-pill place">🛒 supermarket</span>
-        <span class="legend-pill place">🎬 cinema</span>
-        <span class="legend-pill place">🏨 hotel</span>
-        <span class="legend-pill place">💊 pharmacy</span>
-      </div>
-    </div>
-
-    <div class="sec-div">Practice · Drag the words</div>
-
-    <div class="rule-box">
-      <strong>How to play:</strong> tap a word in the pool to add it to the line.
-      Tap a word in the line to send it back. You can also drag words and drop
-      them between two words. Put the phrase in the correct order.
-    </div>
-
-    <div class="setting-chip">Build useful phrases for different places.</div>
-
-    <div class="score-bar">
-      <span>
-        Correct: <strong id="woScore">0</strong> / <span id="woTotal">0</span>
-      </span>
-    </div>
-
-    <div id="woItems"></div>
-
-    <div class="sec-div">Practice · Gap fill</div>
-
-    <div class="rule-box">
-      <strong>Tip:</strong> read the place clue first. The bar turns from red to green 🔴→🟠→🟡→🟢 as your answer gets closer to being correct. When a gap turns fully green, it's exactly right.
-    </div>
-
-    <div id="gfItems"></div>
-
-    <footer>
-      Places and Phrases Review · A1
-    </footer>
+  <div class="place-legend" aria-label="Places">
+    <span>✈️ airport</span><span>🏛️ museum</span><span>📚 library</span><span>🍽️ restaurant</span><span>🏥 hospital</span>
+    <span>🛒 supermarket</span><span>🎬 cinema</span><span>🏨 hotel</span><span>💊 pharmacy</span>
   </div>
+
+  <div class="sec-div">1 · Choose</div>
+  <p class="subtitle">Read the situation. Choose the best sentence.</p>
+  <div id="pcItems"></div>
+
+  <div class="sec-div">2 · Put the words in order</div>
+  <p class="subtitle">Tap a word to add it to the line. Tap it again to send it back. You can also drag the words.</p>
+  <button class="grammar-toggle-btn" id="grammarToggle">🎨 Hide Grammar</button>
+  <div class="pos-legend"></div>
+  <div class="score-bar"><span>Correct: <strong id="woScore">0</strong> / <span id="woTotal">0</span></span></div>
+  <div id="woItems"></div>
+
+  <div class="sec-div">3 · Write the missing words</div>
+  <p class="subtitle">Read the clue. Write the words. The bar goes from red to green 🔴→🟢. Green = correct!</p>
+  <div id="gfItems"></div>
+
+  <footer>Phrases for Places — Controlled Practice (A1)</footer>
+</div>
 
 <div id="theme-toggle-wrap">
   <button id="theme-toggle" aria-label="Toggle light/dark mode" title="Toggle light/dark mode">
@@ -187,322 +63,55 @@ h1 {
 </div>
 <script src="house.js"></script>
 <script>
-/* ── Gap fill ── */
-const GF_ITEMS = [
-  {
-    "template": "Where is {0} 12?",
-    "hints": [
-      {
-        "accepted": [
-          "gate"
-        ]
-      }
-    ],
-    "direct": "✈️ At the airport, a passenger needs to find the correct gate before boarding the plane."
-  },
-  {
-    "template": "You can’t use {0} here.",
-    "hints": [
-      {
-        "accepted": [
-          "flash photography"
-        ]
-      }
-    ],
-    "direct": "🏛️ At the museum, a museum guide explains a rule about taking photographs."
-  },
-  {
-    "template": "You need a {0} to borrow books.",
-    "hints": [
-      {
-        "accepted": [
-          "library card"
-        ]
-      }
-    ],
-    "direct": "📚 At the library, a librarian explains what students need before borrowing books. <strong>(Library)</strong>"
-  },
-  {
-    "template": "What would you {0}?",
-    "hints": [
-      {
-        "accepted": [
-          "like to order"
-        ]
-      }
-    ],
-    "direct": "🍽️ At the restaurant, a waiter asks a customer to choose food."
-  },
-  {
-    "template": "Please wait in the {0}.",
-    "hints": [
-      {
-        "accepted": [
-          "waiting room"
-        ]
-      }
-    ],
-    "direct": "🏥 At the hospital, a doctor’s assistant tells a patient where to wait."
-  },
-  {
-    "template": "Where is the {0}?",
-    "hints": [
-      {
-        "accepted": [
-          "checkout"
-        ]
-      }
-    ],
-    "direct": "🛒 At the supermarket, a worker tells a customer where they can pay."
-  },
-  {
-    "template": "The film {0} 7:30.",
-    "hints": [
-      {
-        "accepted": [
-          "starts at"
-        ]
-      }
-    ],
-    "direct": "🎬 At the cinema, a worker tells a customer when the film begins."
-  },
-  {
-    "template": "Here is your {0}.",
-    "hints": [
-      {
-        "accepted": [
-          "room key"
-        ]
-      }
-    ],
-    "direct": "🏨 At the hotel, a receptionist gives something to a guest."
-  },
-  {
-    "template": "Take {0} after food.",
-    "hints": [
-      {
-        "accepted": [
-          "these tablets"
-        ]
-      }
-    ],
-    "direct": "💊 At the pharmacy, a pharmacist explains when to take medicine."
-  },
-  {
-    "category": "pos",
-    "direct": "🙋 Start when you want someone's attention",
-    "template": "{0}, where is the bank?",
-    "hints": [
-      {
-        "accepted": [
-          "excuse me"
-        ]
-      }
-    ]
-  },
-  {
-    "category": "q",
-    "direct": "📚 Ask permission to take the books",
-    "template": "{0} borrow these books?",
-    "hints": [
-      {
-        "accepted": [
-          "can i",
-          "may i"
-        ]
-      }
-    ]
-  },
-  {
-    "category": "q",
-    "direct": "💊 Ask if the shop has something",
-    "template": "{0} anything for a headache?",
-    "hints": [
-      {
-        "accepted": [
-          "do you have"
-        ]
-      }
-    ]
-  },
-  {
-    "category": "q",
-    "direct": "🎬 Ask about the start time",
-    "template": "{0} the film start?",
-    "hints": [
-      {
-        "accepted": [
-          "what time does"
-        ]
-      }
-    ]
-  },
-  {
-    "category": "pos",
-    "direct": "🍽️ The paper you pay in a restaurant",
-    "template": "Here is your {0}.",
-    "hints": [
-      {
-        "accepted": [
-          "bill",
-          "check"
-        ]
-      }
-    ]
-  },
-  {
-    "category": "pos",
-    "direct": "💊 The paper from the doctor",
-    "template": "You need a {0} for this medicine.",
-    "hints": [
-      {
-        "accepted": [
-          "prescription"
-        ]
-      }
-    ]
-  }
+/* ── 1 · choose (easiest first) ────────────────────────────────────────── */
+const PC_ITEMS = [
+  { q: '🙋 You want to ask a stranger a question. You start with …', opts: ['Hey, you!', 'Excuse me.', 'Sorry me.'], correct: 1 },
+  { q: '✈️ You are at the airport. You want to find gate 12.', opts: ['Where is the gate 12?', 'Where gate 12 is?', 'Where is gate 12?'], correct: 2 },
+  { q: '🏨 The receptionist says: “Here is your room key.” What do you get?', opts: ['A key for your room', 'A map of the hotel', 'Your breakfast'], correct: 0 },
+  { q: '📚 You want to take the books home.', opts: ['Can I to borrow these books?', 'Can I borrow these books?', 'I can borrow these books?'], correct: 1 },
+  { q: '🛒 You need bread. You ask a worker.', opts: ['Where I can find bread?', 'Where can I to find bread?', 'Where can I find bread?'], correct: 2 },
+  { q: '💊 Your head hurts. You are at the pharmacy.', opts: ['Do you have anything for a headache?', 'You have anything for a headache?', 'Do you have a medicine for my head?'], correct: 0 },
+  { q: '🍽️ You are at the restaurant. You want a coffee.', opts: ['I want a coffee.', 'Give me a coffee.', 'I’d like a coffee, please.'], correct: 2 },
+  { q: '🛍️ You want to know the price.', opts: ['How much is it?', 'How much cost it?', 'How much it is?'], correct: 0 },
+  { q: '🎬 You want to know when the film begins.', opts: ['What time the film starts?', 'What time does the film start?', 'What time does the film starts?'], correct: 1 },
+  { q: '🍽️ You finished your dinner. You want to pay.', opts: ['Give me the bill.', 'I could have the bill?', 'Could I have the bill, please?'], correct: 2 }
 ];
+HouseComprehension.build({ quiz: 'pcItems', items: PC_ITEMS });
 
-HouseGapFill.build({ container: 'gfItems', items: GF_ITEMS });
+/* ── 2 · word order (short first) ──────────────────────────────────────── */
+const WO_ITEMS = [
+  { speaker: 'Receptionist · 🏨 hotel', avatar: '👩‍💼', text: 'Here / is / your room key / .', pos: ['adverb', 'verb', 'subject', 'none'] },
+  { speaker: 'Customer · 🎬 cinema', avatar: '👨', text: 'What time / does / the film / start / ?', pos: ['wh', 'aux', 'subject', 'verb', 'none'] },
+  { speaker: 'Student · 📚 library', avatar: '🧑', text: 'Can / I / borrow / these books / ?', pos: ['aux', 'subject', 'verb', 'object', 'none'] },
+  { speaker: 'Cinema worker · 🎬 cinema', avatar: '👨‍🦱', text: 'Screen 4 / is / on / the left / .', pos: ['subject', 'verb', 'prep', 'noun', 'none'] },
+  { speaker: 'Customer · 💊 pharmacy', avatar: '👩', text: 'Do / you / have / anything / for a headache / ?', pos: ['aux', 'subject', 'verb', 'object', 'prep', 'none'] },
+  { speaker: 'Waiter · 🍽️ restaurant', avatar: '🤵', text: 'What / would / you / like / to order / ?', pos: ['wh', 'aux', 'subject', 'verb', 'verb', 'none'] },
+  { speaker: 'Museum guide · 🏛️ museum', avatar: '🧑‍🏫', text: 'You / can’t / use / flash photography / here / .', pos: ['subject', 'aux', 'verb', 'object', 'adverb', 'none'] },
+  { speaker: 'Librarian · 📚 library', avatar: '👩‍💼', text: 'You / need / a library card / to borrow / books / .', pos: ['subject', 'verb', 'object', 'verb', 'object', 'none'] },
+  { speaker: 'Security officer · ✈️ airport', avatar: '👮', text: 'Please / put / your liquids / in / this tray / .', pos: ['none', 'verb', 'object', 'prep', 'object', 'none'] }
+];
+HouseWordOrder.build({ container: 'woItems', items: WO_ITEMS, scoreEl: 'woScore', totalEl: 'woTotal' });
 
-/* ── Page-specific extras, kept as they were ── */
-const WOITEMS = [
-      {
-        speaker: "Security officer",
-        avatar: "🛂",
-        context: "At the airport",
-        text: "Please put your liquids in this tray.",
-        pos: ["verb", "verb", "subject", "object", "object", "object", "none"]
-      },
-      {
-        speaker: "Museum guide",
-        avatar: "🏛️",
-        context: "At the museum",
-        text: "You can’t use flash photography here.",
-        pos: ["subject", "aux", "verb", "object", "object", "adverb"]
-      },
-      {
-        speaker: "Librarian",
-        avatar: "📚",
-        context: "At the library",
-        text: "You need a library card to borrow books.",
-        pos: ["subject", "verb", "object", "object", "object", "aux", "verb", "none"]
-      },
-      {
-        speaker: "Waiter",
-        avatar: "🍽️",
-        context: "At the restaurant",
-        text: "What would you like to order?",
-        pos: ["wh", "aux", "subject", "verb", "aux", "verb"]
-      },
-      {
-        speaker: "Cinema worker",
-        avatar: "🎬",
-        context: "At the cinema",
-        text: "Screen 4 is on the left.",
-        pos: ["subject", "none", "verb", "object", "object", "none"]
-      },
-      {
-        speaker: "Receptionist",
-        avatar: "🏨",
-        context: "At the hotel",
-        text: "Here is your room key.",
-        pos: ["adverb", "verb", "object", "object", "none"]
-      }
-    ];
-
-    const POSCLASSES = {
-      wh: "pos-wh",
-      verb: "pos-verb",
-      subject: "pos-subject",
-      object: "pos-object",
-      aux: "pos-aux",
-      neg: "pos-neg",
-      adverb: "pos-adverb",
-      none: "pos-none"
-    };
-
-    function buildGapFill() {
-      const container = document.getElementById("gfItems");
-      container.innerHTML = "";
-
-      GFITEMS.forEach(item => {
-        const itemEl = document.createElement("div");
-        itemEl.className = "gf-item";
-
-        const parts = item.template.split("{0}");
-
-        itemEl.innerHTML = `
-          <div class="direct">${item.direct}</div>
-          <div class="sentence">
-            ${parts[0]}
-            <span class="gf-gap-wrap">
-              <input
-                class="gf-gap-input"
-                type="text"
-                autocomplete="off"
-                spellcheck="false"
-                aria-label="Complete the phrase"
-              />
-              <span class="bar-track">
-                <span class="bar-fill"></span>
-              </span>
-              <span class="bar-pct">0%</span>
-            </span>
-            ${parts[1]}
-          </div>
-        `;
-
-        container.appendChild(itemEl);
-
-        const input = itemEl.querySelector(".gf-gap-input");
-        const fill = itemEl.querySelector(".bar-fill");
-        const pct = itemEl.querySelector(".bar-pct");
-
-        input.addEventListener("input", () => {
-          const accuracy = bestAccuracy(input.value.trim(), item.accepted);
-          const isCorrect = accuracy === 100;
-
-          fill.style.width = `${accuracy}%`;
-          fill.style.background = pctToColor(accuracy);
-          pct.textContent = `${Math.round(accuracy)}%`;
-
-          input.classList.remove("gap-correct");
-
-          if (isCorrect) {
-            input.classList.add("gap-correct");
-          }
-        });
-      });
-    }
-
-    function applyThemeIcon() {
-      const icon = document.getElementById("theme-toggle");
-      const theme = document.documentElement.dataset.theme;
-
-      icon.textContent = theme === "dark" ? "🌙" : "☀️";
-    }
-
-    document.getElementById("theme-toggle").addEventListener("click", () => {
-      const currentTheme = document.documentElement.dataset.theme;
-      const newTheme = currentTheme === "dark" ? "light" : "dark";
-
-      document.documentElement.dataset.theme = newTheme;
-      localStorage.setItem("places-phrases-theme", newTheme);
-
-      applyThemeIcon();
-    });
-
-    const savedTheme = localStorage.getItem("places-phrases-theme");
-
-    if (savedTheme) {
-      document.documentElement.dataset.theme = savedTheme;
-    }
-
-    buildGapFill();
-    applyThemeIcon();
-
+/* ── 3 · gap fill (easiest first: one word → two words → questions) ─────── */
+const GF_ITEMS = [
+  { direct: '✈️ Airport. A passenger asks for the place to get on the plane.', template: 'Where is {0} 12?', hints: [{ accepted: ['gate'] }] },
+  { direct: '🛒 Supermarket. The place where you pay.', template: 'Where is the {0}?', hints: [{ accepted: ['checkout'] }] },
+  { direct: '🍽️ Restaurant. The paper with the price of your dinner.', template: 'Here is your {0}.', hints: [{ accepted: ['bill', 'check'] }] },
+  { direct: '💊 Pharmacy. A paper from the doctor.', template: 'You need a {0} for this medicine.', hints: [{ accepted: ['prescription'] }] },
+  { direct: '🏨 Hotel. You open your room with it.', template: 'Here is your {0}.', hints: [{ accepted: ['room key', 'key'] }] },
+  { direct: '📚 Library. You need it to take books home.', template: 'You need a {0} to borrow books.', hints: [{ accepted: ['library card', 'card'] }] },
+  { direct: '🏥 Hospital. Sit there before you see the doctor.', template: 'Please wait in the {0}.', hints: [{ accepted: ['waiting room'] }] },
+  { direct: '🎬 Cinema. The film begins: 🕢 7:30.', template: 'The film {0} 7:30.', hints: [{ accepted: ['starts at', 'begins at'] }] },
+  { direct: '💊 Pharmacy. The pharmacist gives you some medicine.', template: 'Take {0} after food.', hints: [{ accepted: ['these tablets', 'the tablets', 'these pills'] }] },
+  { direct: '🏛️ Museum. No bright light from your camera!', template: 'You can’t use {0} here.', hints: [{ accepted: ['flash photography', 'flash'] }] },
+  { direct: '🍽️ Restaurant. The waiter asks about your food.', template: 'What would you {0}?', hints: [{ accepted: ['like to order', 'like'] }] },
+  { category: 'q', direct: '🙋 Start your question politely.', template: '{0}, where is the bank?', hints: [{ accepted: ['excuse me'] }] },
+  { category: 'q', direct: '📚 Ask for permission to take the books.', template: '{0} borrow these books?', hints: [{ accepted: ['can i', 'may i', 'could i'] }] },
+  { category: 'q', direct: '💊 Ask: is there medicine in the shop?', template: '{0} anything for a headache?', hints: [{ accepted: ['do you have'] }] },
+  { category: 'q', direct: '🎬 Ask about the start time.', template: '{0} the film start?', hints: [{ accepted: ['what time does', 'when does'] }] }
+];
+HouseGapFill.build({ container: 'gfItems', items: GF_ITEMS, labels: { q: 'question' } });
 </script>
+<script>HouseGrammar.init();</script>
 </body>
 </html>

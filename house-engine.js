@@ -1097,6 +1097,30 @@ html[data-theme="dark"] .stair-rail{ stroke:#c9a77e; }
       L_.landings.forEach(ld => out.push({ rect: laneRect(st, ld.u0, ld.u1, ld.v0, ld.v1), riser: ld.h, landing: ld }));
       return out;
     }
+    /* the way up a staircase on foot, from the floor below: each flight as a climb from just in
+       front of its first tread to the middle of its last (the top tread is level with the floor
+       above), or for a flight that ends at a landing, one step more onto the landing; between the
+       flights, a few steps across the landing. The first flight also has tread1 (the middle of its
+       first tread) and sides (a spot on either side of it, to step on from if there is no room in
+       front). → [{ climb: [[x, y], [x, y]], z0, z1, steps, tread1?, sides? } |
+       { walk: [[x, y], …], z }] with z in metres above the floor below */
+    function stairFlights(st) {
+      const L_ = stairLayout(st), R = LEVEL_H / RISERS, out = [], n = L_.flights.length;
+      L_.flights.forEach((fl, fi) => {
+        const d = (fl.to - fl.from) / fl.n, mid = (fl.a0 + fl.a1) / 2, last = fi === n - 1;
+        const P = t => fl.axis === 'u' ? lanePt(st, t, mid) : lanePt(st, mid, t);
+        const steps = last ? fl.n : fl.n + 1;
+        if (fi) out.push({ walk: [out[out.length - 1].climb[1], ...L_.path.slice(1, -1).map(([u, v]) => lanePt(st, u, v)), P(fl.from - d / 2)], z: (fl.first - 1) * R });
+        const q = { climb: [P(fl.from - d / 2), P(fl.from + d * (steps - 0.5))], z0: (fl.first - 1) * R, z1: (fl.first - 1 + steps) * R, steps };
+        if (!fi) {
+          // the foot of the stairs may be against a wall: then step on from beside the first tread
+          const t = fl.from + d / 2, ts = t + Math.sign(d) * 0.12, S = w => fl.axis === 'u' ? lanePt(st, ts, w) : lanePt(st, w, ts);
+          q.tread1 = P(t); q.sides = [S(fl.a0 - 0.35), S(fl.a1 + 0.35)];
+        }
+        out.push(q);
+      });
+      return out;
+    }
     const isCantilever = st => st.style === 'cantilever';
     const TREAD_T = 0.06;
     // can something h metres tall stand at rect R_ under this staircase?
@@ -3239,7 +3263,7 @@ html[data-theme="dark"] .stair-rail{ stroke:#c9a77e; }
 
     return {
       state, hooks,
-      APPL, APPL_ORDER, COL_W, FURN, FURN_ORDER, HH, HW, LEVELS, LEVEL_INFO, MAX_LEVEL, MAX_SIZE, MIN_LEVEL, MIN_SIZE, PIECES, PIECE_ORDER, PX, STAIR_PIECE, STAIR_TYPES, STYLABLE_APPL, STYLE_SETS, SWATCH, T, WALL_H, ZS, applFrame, applRect, applValid, baseZ, blockedEdges, colKey, colValid, colXY, computeAreas, computeRooms, cur, cutH, defaultSwing, displayState, edgeEnds, emptyLevel, frameRect, furnIndexAt, furnPt, furnRect, furnValid, hung, isGable, isIndoorEdge, isShed, isSofa, itemFrame, key, levelUsed, nearestColSpot, onLine, parseKey, pickRoofScreen, poolIndexAt, poolValid, renderIso, renderPlan, roofAtWorld, roofCorners, sType, scr, serializeHouse, shiftContent, sidesOf, slotFits, slotFree, slotU, stairIndexAt, stairTreads, stairValid, styleOf, unrot, validEdge, validateHouse
+      APPL, APPL_ORDER, COL_W, FURN, FURN_ORDER, HH, HW, LEVELS, LEVEL_INFO, MAX_LEVEL, MAX_SIZE, MIN_LEVEL, MIN_SIZE, PIECES, PIECE_ORDER, PX, STAIR_PIECE, STAIR_TYPES, STYLABLE_APPL, STYLE_SETS, SWATCH, T, WALL_H, ZS, applFrame, applRect, applValid, baseZ, blockedEdges, colKey, colValid, colXY, computeAreas, computeRooms, cur, cutH, defaultSwing, displayState, edgeEnds, emptyLevel, frameRect, furnIndexAt, furnPt, furnRect, furnValid, hung, isGable, isIndoorEdge, isShed, isSofa, itemFrame, key, levelUsed, nearestColSpot, onLine, parseKey, pickRoofScreen, poolIndexAt, poolValid, renderIso, renderPlan, roofAtWorld, roofCorners, sType, scr, serializeHouse, shiftContent, sidesOf, slotFits, slotFree, slotU, stairFlights, stairIndexAt, stairTreads, stairValid, styleOf, unrot, validEdge, validateHouse
     };
   }
 

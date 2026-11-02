@@ -18,6 +18,9 @@
               level: 0,         the floor they stand on
               facing: 'S',      N / E / S / W / NE … or degrees clockwise from north
               z: 0,             stand this much higher (a step, a stage)
+              ground: 0,        the shadow this much higher than the floor (a stair tread)
+              clipZ: 2.5,       draw only what is lower than this, in metres above the floor
+                                (someone climbing the stairs past cut-down walls or the ceiling)
               seat: i,          sitting on furniture number i of that floor. x, y and facing
                                 may then be left out: the person is put on the seat, facing
                                 the way it faces, hips at its seat height
@@ -878,7 +881,9 @@
       }
       if (!stBy[L]) return out;
       const type = 'hc3d_person_' + i;
-      eng.FURN[type] = { w: FOOT, d: FOOT, h: H, levels: [{ z: Math.max(0, H + Math.max(0, out.z) - 1.8) }] };
+      const top = p.clipZ != null ? Math.min(H + Math.max(0, out.z), p.clipZ) : H + Math.max(0, out.z);   // clipped (clipZ): no taller than what is drawn
+      // standing on a stair tread (ground): the stand-in stands on the tread too, so the sort puts them on the stairs, not in them
+      eng.FURN[type] = { w: FOOT, d: FOOT, h: H, levels: [{ z: p.ground ? +p.ground + 0.03 : Math.max(0, top - 1.8) }] };
       // a 1.8 m single box on the stand-in, raised so its top is the top of the head: the
       // sort then knows how tall the person is (a stand-in that is too tall is harmless)
       const proxy = { type, X: out.x * 2, Y: out.y * 2, dir: 0, items: [{ type: 'fridge', lvl: 0, slot: 'C', rdir: 0 }] };
@@ -1054,7 +1059,7 @@
       }
       const inner = art;
       art = `<g transform="translate(${sx.toFixed(2)} ${sy.toFixed(2)}) scale(${scale.toFixed(5)}) translate(${-STAGE_X} ${-STAGE_GROUND})">${art}</g>`;
-      const [hx, hy] = eng.scr(w.x, w.y, eng.baseZ(w.L));   // the shadow stays on the floor, also under a seated person
+      const [hx, hy] = eng.scr(w.x, w.y, eng.baseZ(w.L) + (+w.p.ground || 0));   // the shadow stays on the floor (or the stair tread, ground), also under a seated person
       const shadow = opts.shadow === false || w.p.seat != null || w.p.swim ? '' : `<ellipse cx="${hx.toFixed(2)}" cy="${hy.toFixed(2)}" rx="${(0.32 * eng.HW).toFixed(2)}" ry="${(0.32 * eng.HH).toFixed(2)}" fill="#000" fill-opacity=".14"/>`;
       if (w.cut && (w.cut.body.length || w.cut.legs.length)) {
         // facing away on a seat: the shins and feet hang behind the whole seat, the back is behind the backrest
@@ -1064,6 +1069,11 @@
       }
       const op = opacityOf(w.p);
       if (op < 1) art = ghost(ns + 'ghost' + w.i, op, art, opts);
+      if (w.p.clipZ != null) {
+        // clipZ: only what is lower than this (metres above their floor) is drawn — someone on the stairs going up past the cut-down walls (or the ceiling)
+        const cy = eng.scr(w.x, w.y, eng.baseZ(w.L) + w.p.clipZ)[1];
+        art = `<clipPath id="${ns}clipz${w.i}"><rect x="-99999" y="${cy.toFixed(2)}" width="199998" height="199998"/></clipPath><g clip-path="url(#${ns}clipz${w.i})">${art}</g>`;
+      }
       if (armArt) {
         const a = `<g transform="translate(${sx.toFixed(2)} ${sy.toFixed(2)}) scale(${scale.toFixed(5)}) translate(${-STAGE_X} ${-STAGE_GROUND})">${armArt}</g>`;
         overs.push(`<g class="hc3d-arm-over" data-name="${esc(w.d.name)}">${op < 1 ? ghost(ns + 'ghostarm' + w.i, op, a, opts) : a}</g>`);
