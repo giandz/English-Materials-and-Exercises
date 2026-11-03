@@ -110,6 +110,14 @@
      easing: { out:'cubic', in:'bounce' } the departure and the arrival separately, as in the editor
      moveTime: 0.45                       seconds a move takes
    A line's easing and moveTime apply to the moves it starts (its own and its cues'); the scene's are the default.
+   Reading aids (buttons under the stage, and the page's own switches, kept in step both ways):
+     🦾 Bionic   the opening letters of each word in bold, as house.js's bionic reading does in the bubbles
+                 (1–3 letters → 1, 4–6 → 2, 7+ → 3). Follows HouseBionic and its 🦾 button; script.bionic true/false fixes it.
+     🎵 Marks    pronunciation marks (pron-mark.js, loaded from this file's folder the first time): a circle over each
+                 syllable (bigger for stress, biggest for the main stress), rising or falling arrows on questions, and
+                 connected speech under the gaps, in the page's stress / connected speech / intonation colours. They
+                 appear with the letters as the line is said; {stress} moves the main stress. Follows the page's
+                 "🎵 Show pronunciation marks" switch (pron-adapter.js); script.pron true/false fixes it.
    The text appears letter by letter in step with the mouth (the words' timing from HouseCharacter.speech).
    A click, Space, Enter or 🔽 finishes the line if it is still being said, otherwise goes to the next one.
    ══════════════════════════════════════════════════════════════════════════ */
@@ -121,6 +129,11 @@ const LIP = ['rest','mbp','ai','e','o','u','cdg','fv','l','wq'];
 const REST = '@rest';   /* placeholder for "the speaker's resting mouth" in a speech track */
 const AT = {left:22, center:50, right:78};
 const SPREAD = 13;   /* % of the stage width between characters sharing a side */
+const BASE = ((document.currentScript && document.currentScript.src) || '').replace(/[^/]*$/, '');   /* pron-mark.js is loaded from here */
+/* bionic reading: the same word rule as house.js (Latin letters, inner apostrophes kept: I've, don't) */
+const BI_L = 'A-Za-z\u00C0-\u00D6\u00D8-\u00F6\u00F8-\u024F', BI_WORD = new RegExp('[' + BI_L + ']+(?:[\'\u2019][' + BI_L + ']+)*', 'g');
+/* pronunciation marks: the numbers of pron-mark.js (its circles sit ROW em above the letters; struts make room above and below) */
+const PMK = {ROW:0.42, UNDER:0.85, UNDER_LABEL:1.5, LABELS:{y:'/y/', w:'/w/', flap:'d', ch:'ch', j:'j', sh:'sh', zh:'zh', m:'m', ng:'ng'}};
 
 const CSS = `
 .vn{ --vn-box:28%; max-width:960px; margin:0 auto; user-select:none; -webkit-user-select:none; }
@@ -235,6 +248,24 @@ const CSS = `
 .vn-bar .ic{ font-size:1.3rem; }
 .vn-bar .lb{ font-size:.6667rem; font-weight:600; color:var(--text-secondary, #555); }
 .vn-count{ font-family:var(--font-mono, monospace); font-size:.8rem; color:var(--text-secondary, #555); min-width:4.5em; text-align:center; }
+.vn.bionic .c.bi{ font-weight:700; }
+/* pronunciation marks: one overlay over the text; each word gets a strut for the circles above it (and the arrow, the
+   connected speech under it), as on the lesson pages */
+.vn-pm{ position:absolute; left:0; top:0; width:100%; height:1px; overflow:visible; pointer-events:none; }
+.vn-pm .pm-st{ color:var(--pm-stress, var(--text-primary, currentColor)); }
+.vn-pm .pm-tune{ color:var(--pm-tune, var(--text-primary, currentColor)); }
+.vn-pm .pm-cs{ color:var(--pm-connected, #0891b2); }
+.vn-pm text{ font-family:var(--font-sans, sans-serif); font-weight:700; fill:currentColor; }
+.vn.pron .vn-text .w::before{ content:''; display:inline-block; width:0; vertical-align:baseline; height:1.61em; }
+.vn.pron .vn-text .w.pm-tail::before{ height:3.28em; }
+.vn.pron .vn-text .w.pm-under::before{ vertical-align:-.85em; height:2.46em; }
+.vn.pron .vn-text .w.pm-tail.pm-under::before{ height:4.13em; }
+.vn.pron .vn-text .w.pm-under.pm-label::before{ vertical-align:-1.5em; height:3.11em; }
+.vn.pron .vn-text .w.pm-tail.pm-under.pm-label::before{ height:4.78em; }
+.vn.pron .vn-text .c.pm-end{ padding-right:.95em; }
+/* marks need room above and below each line: a slightly taller box and slightly smaller letters */
+.vn.pron{ --vn-box:32%; }
+.vn.pron .vn-text{ line-height:1.25; font-size:clamp(.82rem, 2vw, 1.12rem); }
 .vn-sr{ position:absolute; width:1px; height:1px; overflow:hidden; clip:rect(0 0 0 0); white-space:nowrap; }
 `;
 function injectCSS(){
@@ -327,6 +358,8 @@ function create(host, script){
       <span class="vn-count" aria-live="off"></span>
       <button type="button" data-act="next" title="Next (Space, Enter or a click)"><span class="ic" aria-hidden="true">🔽</span><span class="lb">Next</span></button>
       <button type="button" data-act="auto" aria-pressed="false" title="Auto: go on by itself after each line, leaving time to read (A). It waits at questions."><span class="ic" aria-hidden="true">⏯️</span><span class="lb">Auto</span></button>
+      <button type="button" data-act="bionic" aria-pressed="false" title="Bionic reading: the start of each word in bold"><span class="ic" aria-hidden="true">🦾</span><span class="lb">Bionic</span></button>
+      <button type="button" data-act="pron" aria-pressed="false" title="Pronunciation marks: stress, intonation and connected speech"><span class="ic" aria-hidden="true">🎵</span><span class="lb">Marks</span></button>
     </div>`;
   host.appendChild(root);
   const $ = c => root.querySelector(c);
@@ -635,6 +668,13 @@ function create(host, script){
     for(const part of text.split(/(\s+)/)){
       if(!part) continue;
       const space = /^\s+$/.test(part);
+      /* bionic reading: which letters of this word are bold (only shown while the mode is on) */
+      const bold = new Set();
+      if(!space) for(const m of part.matchAll(BI_WORD)){
+        const letters = m[0].replace(/['\u2019]/g, '').length, want = letters <= 3 ? 1 : letters <= 6 ? 2 : 3;
+        let seen = 0; for(let i = 0; i < m[0].length && seen < want; i++){ if(!/['\u2019]/.test(m[0][i])) seen++; bold.add(m.index + i); }
+      }
+      let pi = 0;
       let inner = '', run = null, buf = '', runFrom = at;
       const flush = end => {
         if(!buf) return;
@@ -646,8 +686,8 @@ function create(host, script){
         const sp = posAt(at);
         if(sp !== run){ flush(at); run = sp; runFrom = at; }
         const k = kind(at); offs.push(at);
-        buf += `<span class="c${space ? '' : ' l'}${space ? k.replace(' sh', '') : k} hid">${esc(ch)}</span>`;
-        at += ch.length;
+        buf += `<span class="c${space ? '' : ' l'}${space ? k.replace(' sh', '') : k}${bold.has(pi) ? ' bi' : ''} hid">${esc(ch)}</span>`;
+        at += ch.length; pi += ch.length;
       }
       flush(at);
       h += space ? inner : `<span class="w">${inner}</span>`;
@@ -662,6 +702,7 @@ function create(host, script){
       const pw = c.parentElement; if(pw && pw.classList.contains('pw')) pw.classList.remove('hid');   /* its grammar tint shows with it */
       if(!talk.jolted && c.classList.contains('sh')){ talk.jolted = true; jolt(); }
     }
+    revealPron(upto);
     if(last) follow(last);
   }
   /* the speaker's jolt when the shouting starts */
@@ -816,6 +857,7 @@ function create(host, script){
     srEl.textContent = who == null || insert ? text : `${name}${think ? ' thinks' : shout ? ' shouts' : ''}: ${text}`;
     if(insert) textEl.innerHTML = '';
     build(insert ? insertText : textEl, text, spans);
+    pronLine(insert ? null : {text, spans});
     if(!insert) insertText.innerHTML = '';
     syncButtons();
     if(who != null && !insert) startProsody(L, cm, c, text, spans, talk.sp, think);
@@ -929,7 +971,7 @@ function create(host, script){
   });
   root.querySelector('.vn-bar').addEventListener('click', e => {
     const b = e.target.closest('button'); if(!b) return;
-    ({next, back, restart, auto:() => setAuto(!auto)})[b.dataset.act]();
+    ({next, back, restart, auto:() => setAuto(!auto), bionic:() => setBionic(!bionicOn()), pron:() => setPron(!pronOn())})[b.dataset.act]();
   });
   root.addEventListener('keydown', e => {
     if(e.target.closest('input, textarea, select')) return;
@@ -939,7 +981,151 @@ function create(host, script){
     else if(e.key === 'ArrowLeft' || e.key === 'ArrowUp'){ e.preventDefault(); back(); }
     else if(e.key === 'Home'){ e.preventDefault(); restart(); }
     else if(e.key === 'a' || e.key === 'A'){ e.preventDefault(); setAuto(!auto); }
+    else if(e.key === 'b' || e.key === 'B'){ e.preventDefault(); setBionic(!bionicOn()); }
+    else if(e.key === 'm' || e.key === 'M'){ e.preventDefault(); setPron(!pronOn()); }
   });
+
+  /* ── reading aids: bionic reading and pronunciation marks ──
+     Both follow the page's own switches (house.js 🦾, pron-adapter.js 🎵) and drive them, so the bubbles and the
+     visual novel always agree. A script can fix either: script.bionic / script.pron = true or false. */
+  const DOC = document.documentElement;
+  const bionicOn = () => script.bionic !== undefined ? !!script.bionic : global.HouseBionic ? global.HouseBionic.get()
+    : (() => { try{ return localStorage.getItem('bionic-preference') === 'on'; }catch(e){ return false; } })();
+  function setBionic(on){
+    if(script.bionic !== undefined) script.bionic = on;
+    else if(global.HouseBionic) global.HouseBionic.set(on);
+    else try{ localStorage.setItem('bionic-preference', on ? 'on' : 'off'); }catch(e){}
+    syncModes();
+  }
+  const pronWanted = () => script.pron !== undefined ? !!script.pron : !DOC.classList.contains('pm-hidden');
+  const pronOn = () => !!global.PronMark && pronWanted();
+  let pronLoading = null;
+  function loadPron(){
+    if(global.PronMark) return Promise.resolve();
+    const load = src => new Promise((ok, bad) => { const sc = document.createElement('script'); sc.src = BASE + src; sc.onload = ok; sc.onerror = () => bad(new Error('Could not load ' + src)); document.head.appendChild(sc); });
+    return pronLoading || (pronLoading = load('pron-mark.js'));
+  }
+  /* the page's own switch loads PronMark in its own time: look for it for a while, then draw */
+  let pronWait = 0;
+  function whenPron(){
+    clearInterval(pronWait); let n = 0;
+    pronWait = setInterval(() => { if(global.PronMark || ++n > 100 || dead){ clearInterval(pronWait); if(!dead) syncModes(); } }, 100);
+  }
+  function setPron(on){
+    const remember = () => { try{ localStorage.setItem('pron-marks-shown', on ? '1' : '0'); }catch(e){} };
+    if(script.pron !== undefined){ script.pron = on; remember(); if(on) loadPron().then(syncModes, () => {}); syncModes(); return; }
+    const tog = document.getElementById('pmToggle'), start = document.getElementById('pmStart');
+    if(tog){ if((tog.getAttribute('aria-pressed') === 'true') !== on) tog.click(); }   /* the page's own switch: bubbles and stage together */
+    else if(start && on){ if(!start.disabled) start.click(); whenPron(); }
+    else { DOC.classList.toggle('pm-hidden', !on); remember(); if(on) loadPron().then(syncModes, () => {}); }
+    syncModes();
+  }
+  let pron = null, pronRO = null;   /* the marks of the line shown: {el, A, span, groups, endSpan} */
+  /* the line's text, read by PronMark.analyse; struts and end padding on its words, then the drawing */
+  function pronLine(src){
+    if(src !== undefined) pronSrc = src;
+    if(pron && pron.svg) pron.svg.remove();
+    pron = null;
+    if(!talk || !talk.el || !pronSrc || !pronOn()) return;
+    const el = talk.el, span = [];
+    talk.chars.forEach((c, i) => { span[talk.offs[i]] = c; });
+    const stress = (pronSrc.spans || []).filter(x => x.kind === 'stress').map(x => [x.from, x.to]);
+    let A;
+    try{ A = global.PronMark.analyse(pronSrc.text, {stress}); }catch(e){ console.error(e); return; }
+    const wordEl = k => { const c = span[A.words[k].from]; return c ? c.closest('.w') : null; };
+    el.querySelectorAll('.w.pm-tail, .w.pm-under, .w.pm-label, .c.pm-end').forEach(n => n.classList.remove('pm-tail', 'pm-under', 'pm-label', 'pm-end'));
+    const endSpan = new Map();
+    for(const t of A.tunes){
+      const w = A.words[t.to], we = wordEl(t.to); if(we) we.classList.add('pm-tail');
+      let e = w.to; while(e < pronSrc.text.length && /[.?!…,;:"”’')\]]/.test(pronSrc.text[e])) e++;
+      const last = span[e - 1]; if(last){ last.classList.add('pm-end'); endSpan.set(t, last); }
+    }
+    for(const l of A.links) for(const k of [l.word, l.word + 1]){ const we = wordEl(k); if(we){ we.classList.add('pm-under'); if(l.label) we.classList.add('pm-label'); } }
+    const svg = document.createElementNS('http://www.w3.org/2000/svg', 'svg');
+    svg.setAttribute('class', 'vn-pm'); svg.setAttribute('aria-hidden', 'true');
+    el.appendChild(svg);
+    pron = {el, A, span, svg, endSpan, groups:[]};
+    drawPron();
+    if(global.ResizeObserver){ if(pronRO) pronRO.disconnect(); pronRO = new ResizeObserver(() => drawPron()); pronRO.observe(el); }
+  }
+  let pronSrc = null;
+  const f2 = v => Math.round(v * 100) / 100;
+  /* the same drawing as pron-mark.js (circles, tune arrows, connected speech), placed by the letters' own boxes */
+  function drawPron(){
+    const P = pron; if(!P || !talk || talk.el !== P.el || !P.el.isConnected) return;
+    const PM = global.PronMark, el = P.el, box = el.getBoundingClientRect(); if(!box.width) return;
+    const H = PM.H, S = PM.S, EM = PM.EM, DIAM = PM.DIAM, ARROW = {w:0.75 * H - S / 2, len:0.95 * H - S / 2, band:1.9 * H};
+    const fs = parseFloat(getComputedStyle(el).fontSize) || 16, u = fs * EM, sw = S * u;
+    const ox = box.left - el.scrollLeft, oy = box.top - el.scrollTop;
+    const rect = (a, b) => { const s0 = P.span[a]; let s1 = null; for(let i = b - 1; i >= a && !s1; i--) s1 = P.span[i]; if(!s0 || !s1) return null;
+      const r0 = s0.getBoundingClientRect(), r1 = s1.getBoundingClientRect(); return {left:r0.left, right:r1.right, top:r0.top, bottom:r0.bottom, top1:r1.top}; };
+    const groups = [], info = P.A.words.map(() => []);
+    const line = `fill="none" stroke="currentColor" stroke-width="${f2(sw)}" stroke-linecap="round" stroke-linejoin="round"`;
+    /* circles over every syllable, all on one bottom line */
+    P.A.words.forEach((w, k) => w.syl.forEach(sy => {
+      const r = rect(w.from + sy.from, w.from + sy.to); if(!r) return;
+      const d = DIAM[sy.level] * u, cx = (r.left + r.right) / 2 - ox, bottom = r.top - (PMK.ROW - 0.36) * fs - oy, cy = bottom - d / 2;
+      info[k].push({x:cx, top:r.top, level:sy.level});
+      groups.push({at:w.from + sy.from, svg:sy.level === 0 ? `<circle class="pm-st" cx="${f2(cx)}" cy="${f2(cy)}" r="${f2(d / 2)}" fill="currentColor"/>`
+        : `<circle class="pm-st" cx="${f2(cx)}" cy="${f2(cy)}" r="${f2((d - S * u) / 2)}" fill="none" stroke="currentColor" stroke-width="${f2(sw)}"/>`});
+    }));
+    /* intonation: from the main stress (or the first word on the last line) to just past the end of the sentence */
+    for(const t of P.A.tunes){
+      const end = P.endSpan.get(t), lastV = info[t.to][info[t.to].length - 1]; if(!end || !lastV) continue;
+      let sv = info[t.from].find(v => v.level === 3) || info[t.from][0]; if(!sv) continue;
+      if(Math.abs(sv.top - lastV.top) > fs * 0.5) for(let k = t.to; k >= t.from; k--){ const c = info[k][0]; if(!c) continue; if(Math.abs(c.top - lastV.top) > fs * 0.5) break; sv = c; }
+      const re = end.getBoundingClientRect(), padR = parseFloat(getComputedStyle(end).paddingRight) || 0;
+      const x0 = sv.x, rowY = sv.top - PMK.ROW * fs - oy, yLow = rowY - 0.36 * fs - S / 2 * u, yHigh = yLow - ARROW.band * u;
+      const x1 = Math.max(re.right - padR - ox + ARROW.w * u, x0 + 1.3 * H * u), aw = ARROW.w * u, len = ARROW.len * u;
+      const P2 = (x, y) => f2(x) + ',' + f2(y), rise = t.dir === 'rise';
+      const yA = rise ? yLow : yHigh, yTip = rise ? yHigh : yLow + 0.3 * fs, sg = rise ? 1 : -1, yNeck = yTip + sg * len;
+      const dd = 'M' + P2(x0, yA) + 'C' + P2(x0 + (x1 - x0) * 0.6, yA) + ' ' + P2(x1, yA - sg * Math.abs(yNeck - yA) * 0.15) + ' ' + P2(x1, yNeck) + 'L' + P2(x1, yTip)
+        + 'M' + P2(x1 - aw, yNeck) + 'L' + P2(x1, yTip) + 'L' + P2(x1 + aw, yNeck);
+      groups.push({at:P.A.words[t.to].to - 1, svg:`<path class="pm-tune" data-tune="${t.dir}" d="${dd}" ${line}/>`});
+    }
+    /* connected speech under the gaps */
+    const wl = ARROW.w * u * 0.6, ll = ARROW.len * u * 0.62;
+    for(const l of P.A.links){
+      const ra = rect(l.a[0], l.a[1]), rb = rect(l.b[0], l.b[1]);
+      if(!ra || !rb || Math.abs(ra.top - rb.top) > fs * 0.5) continue;
+      const x0 = (ra.left + ra.right) / 2 - ox, x1 = (rb.left + rb.right) / 2 - ox, y = ra.bottom + 0.1 * fs - oy, dip = 0.55 * fs;
+      const cx = (x0 + x1) / 2, cy = y + dip * 2 * 0.62;
+      let dd = 'M' + f2(x0) + ',' + f2(y) + 'Q' + f2(cx) + ',' + f2(cy) + ' ' + f2(x1) + ',' + f2(y);
+      if(l.type === 'link'){ const dx = x1 - cx, dy = y - cy, n = Math.hypot(dx, dy) || 1, ux = dx / n, uy = dy / n;
+        const leg = sg => f2(x1 - ux * ll - uy * wl * sg) + ',' + f2(y - uy * ll + ux * wl * sg); dd += 'M' + leg(1) + 'L' + f2(x1) + ',' + f2(y) + 'L' + leg(-1); }
+      if(l.type === 'elision') dd += 'M' + f2(ra.left - 0.02 * fs - ox) + ',' + f2(ra.bottom - 0.2 * fs - oy) + 'L' + f2(ra.right + 0.02 * fs - ox) + ',' + f2(ra.top + 0.26 * fs - oy);
+      let g = `<path class="pm-cs" data-cs="${l.type}" d="${dd}" ${line}/>`;
+      if(l.label) g += `<text class="pm-cs" x="${f2(cx)}" y="${f2(y + dip * 0.62 + 0.66 * fs)}" font-size="${f2(0.6 * fs)}" text-anchor="middle">${PMK.LABELS[l.label] || l.label}</text>`;
+      groups.push({at:l.b[0], svg:g});
+    }
+    P.svg.innerHTML = groups.map((g, i) => `<g data-i="${i}">${g.svg}</g>`).join('');
+    P.groups = groups.map((g, i) => ({at:g.at, el:P.svg.children[i]}));
+    revealPron(talk.done ? Infinity : talk.shown);
+  }
+  /* the marks appear with their letters */
+  function revealPron(upto){ if(pron && talk && talk.el === pron.el) for(const g of pron.groups) g.el.style.display = g.at < upto ? '' : 'none'; }
+  function syncModes(){
+    if(dead) return;
+    const b = bionicOn(), p = pronOn();
+    root.classList.toggle('bionic', b);
+    const bb = root.querySelector('[data-act="bionic"]'), pb = root.querySelector('[data-act="pron"]');
+    const press = (el, v) => { if(el.getAttribute('aria-pressed') !== String(v)) el.setAttribute('aria-pressed', String(v)); };   /* only on a change: the observer below hears these too */
+    press(bb, b); press(pb, p);
+    const had = root.classList.contains('pron');
+    root.classList.toggle('pron', p);
+    if(p !== had || (p && !pron)) pronLine();
+    else if(pron) requestAnimationFrame(drawPron);   /* bold letters are wider: the marks move with them */
+  }
+  /* the page's switches: 🦾 sets aria-pressed on its button, 🎵 toggles pm-hidden on <html> (and loads PronMark) */
+  const modeObs = new MutationObserver(() => syncModes());
+  modeObs.observe(document.body, {attributes:true, subtree:true, attributeFilter:['aria-pressed']});
+  modeObs.observe(DOC, {attributes:true, attributeFilter:['class']});
+  if(global.PronMark && document.fonts && document.fonts.ready) document.fonts.ready.then(() => { if(pron) drawPron(); });
+  /* marks asked for on a page with no switch of its own (or fixed by the script): load the engine now */
+  if((script.pron === true || (script.pron === undefined && !document.getElementById('pmStart') && !document.getElementById('pmToggle')
+      && (() => { try{ return localStorage.getItem('pron-marks-shown') === '1'; }catch(e){ return false; } })())) && !global.PronMark)
+    loadPron().then(syncModes, () => {});
+  else if(!global.PronMark && document.getElementById('pmStart') && (() => { try{ return localStorage.getItem('pron-marks-shown') === '1'; }catch(e){ return false; } })()) whenPron();   /* the page is turning them on by itself */
 
   let dead = false;
   function destroy(){   /* stop everything (animations, timers) and empty the host */
@@ -948,10 +1134,12 @@ function create(host, script){
     clearTimeout(settleTimer); clearTimeout(faceTimer); clearTimeout(autoTimer);
     for(const s of sprites.values()){ clearTimeout(s.faceTimer); clearTimeout(s.moveTimer); clearTimeout(s.blinkTimer); s.anim = null; }
     talk = null; sprites.clear(); host.innerHTML = '';
+    modeObs.disconnect(); if(pronRO) pronRO.disconnect(); clearInterval(pronWait);
   }
 
   setAuto(auto);
   restart();
+  syncModes();
   return {destroy, setAuto, get auto(){ return auto; }, next, back, restart, go, get index(){ return index; }, get length(){ return lines.length; }, get vars(){ return {...vars}; }};
 }
 

@@ -102,7 +102,7 @@
   };
   /* ── whole lines the rules cannot know ── */
   const FIXES = {
-    'How are you?': { main:'are' }
+    'How are you?': { main:'are' },
   };
 
   function entry() {

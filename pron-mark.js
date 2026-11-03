@@ -13,6 +13,7 @@
      PronMark.dict({word:'ho-TEL'}) add or correct words: split as spelled, the stressed syllable in capitals,
                                    + before a secondary stress: '+in-tro-DUCE'; {word:null} takes a correction back
      PronMark.colourControls()     the stress, connected speech and intonation colour selectors as an element, to place anywhere
+     PronMark.useDict(data)        the pronouncing dictionary; pron-dict.js calls this. Without it the rules and the word list below do the work
      PronMark.analyse(text, opts)  → {words, tunes}: what would be drawn, without touching the page
      PronMark.syllables(word)      → [{from, to, stress}] for checking the rules
 
@@ -41,8 +42,8 @@
      HouseCharacter.speech          the words and where they are in the text; numbers and spelled letters (C-A-T-E)
      HouseCharacter.speech.visemes  how many vowels the word really says (every → 2, business → 2, people's silent e)
      HouseCharacter.prosody         the type of each sentence and the main stress of each phrase
-   Spelling only goes so far, so the stress of a long word comes from the short word list below when the word is on
-   it, and from suffix rules (-tion, -teen, -ese, -ity …) when it is not. English only.
+   Spelling only goes so far, so the stress of a word comes from the CMU dictionary (pron-dict.js) if that is loaded, then from the short word
+   list below when the word is on it, and from suffix rules (-tion, -teen, -ese, -ity …) when it is not. English only.
    ═══════════════════════════════════════════════════════════════════════════ */
 (function(){
 'use strict';
@@ -52,17 +53,22 @@ const HC = window.HouseCharacter;
 const H = 40, S = H / 4, EM = 0.72 / H;              /* one head = 40 units = 0.72em; line = a quarter of a head */
 const DIAM = { 3:H, 2:0.78*H, 1:0.6*H, 0:0.375*H };  /* outside width at each stress level. The weak one is narrower than two line widths, so it is a solid dot, like the stick figures' dots */
 const ROW = 0.42;                                    /* the middle of the biggest circle, in em above the top of the letters' box; all circles sit on the same bottom line */
-const UNDER = 0.85, UNDER_LABEL = 1.5;                                  /* the room under the line for connected speech marks, in em */
+const LINK_BELOW = 0.4;   /* how far a catenation arrow's curve dips below the legs of its head, in em */
+const UNDER = 0.85, UNDER_LINK = 1.15, UNDER_LABEL = 1.8;                                  /* the room under the line for connected speech marks, in em */
 const ARROW = { w:0.75*H - S/2, len:0.95*H - S/2, band:1.9*H };   /* legs as in arrowAt(); band = how far the curve climbs */
 
 /* ── words the rules would get wrong ── */
-const WORDS = {};
+const WORDS = Object.create(null);   /* no inherited names: "constructor" is a word too */
+const USER = new Set();   /* words corrected by hand: they come before everything else */
+/* the pronouncing dictionary (pron-dict.js, optional): word → stress of each syllable, '010' = weak, MAIN, weak; 2 = secondary */
+const DICT = new Map();
+function useDict(data){ if (!data) { DICT.clear(); return; } for (const p in data) for (const w of data[p].split(' ')) if (w) DICT.set(w, p); }
 let BASE = null;   /* the built-in list, so a correction can be taken back */
 function dict(map){
   for (const k in map) {
     const key = k.toLowerCase();
-    if (map[k] == null) { if (BASE && key in BASE) WORDS[key] = BASE[key]; else delete WORDS[key]; }
-    else WORDS[key] = map[k];
+    if (map[k] == null) { USER.delete(key); if (BASE && key in BASE) WORDS[key] = BASE[key]; else delete WORDS[key]; }
+    else { WORDS[key] = map[k]; USER.add(key); }
   }
   return WORDS;
 }
@@ -81,9 +87,23 @@ function dict(map){
   do-MIN-i-can PAN-a-ma hon-DU-ras gua-te-MA-la bo-LIV-i-a ni-ca-RA-gua
   a-MER-i-can ca-NA-di-an MEX-i-can bra-ZIL-ian jap-a-NESE chi-NESE vi-et-na-MESE i-TAL-ian GER-man ko-RE-an RUS-sian
   SPAN-ish ENG-lish BRIT-ish co-LOM-bi-an ven-e-ZUE-lan ar-gen-TIN-i-an pe-RU-vi-an
-  ma-RI-a AN-a CAR-los GA-bri-el lu-IS mi-GUEL JES-si-ca mi-CHELLE LU-cia ju-AN PE-dro DA-vid MI-chael so-PHI-a EM-i-ly o-LIV-i-a DAN-iel ROB-ert JEN-ni-fer an-TO-ni-o`)
-  .split(/\s+/).forEach(s => { const k = s.replace(/-/g,'').toLowerCase(); WORDS[k] = s; });
-BASE = Object.assign({}, WORDS);
+  a-BAN-don dis-COV-er ex-PEN-sive im-POR-tant com-PU-ter ba-NA-na to-MA-to po-TA-to de-VEL-op con-SID-er re-MEM-ber de-LIV-er re-COV-er
+  con-TIN-ue de-TER-mine ex-AM-ine ex-AM-ple i-MAG-ine en-JOY pre-FER a-GREE a-NOTH-er to-GETH-er al-READ-y a-WAKE a-LIVE a-FRAID a-SLEEP a-MAZE a-PART a-PART-ment
+  ap-POINT ap-POINT-ment ap-PEAR ap-PLY ap-PROACH ac-CEPT ac-CENT ac-CESS ac-CORD-ing ac-COUNT ac-TIV-i-ty ad-VEN-ture ad-VICE ad-VISE af-FORD a-GAINST at-TACK at-TEMPT at-TEND at-TRACT
+  as-SIST-ant as-SUME at-TEN-tion a-WARD a-WARE be-HAVE be-LIEVE be-LONG-ing com-PLETE com-PLAIN com-PARE com-PET-i-tor con-FIRM con-FUSE con-NECT con-TAIN con-TROL con-VINCE
+  de-PEND de-SCRIBE de-SIGN de-SIRE de-STROY de-TAIL de-LI-cious dis-CUSS dis-TURB dis-AP-pear +dis-a-GREE e-NOUGH es-CAPE ex-ACT ex-ACT-ly ex-CEPT ex-CHANGE ex-CITE ex-CIT-ing ex-IST ex-PECT ex-PLAIN ex-PRESS
+  for-GET for-GIVE in-CLUDE in-DEED in-STEAD in-VITE in-VOLVE in-SIDE out-SIDE o-BEY of-FEND of-FICIAL per-FORM per-HAPS per-MIT pre-PARE pre-TEND pro-DUCE pro-TECT pro-VIDE pur-SUE re-CEIVE
+  re-DUCE re-FUSE re-LAX re-MAIN re-MIND re-MOVE re-PLACE re-QUIRE re-SERVE re-SPECT re-SPOND re-SULT sug-GEST sup-PORT sup-POSE sur-PRISE sur-VIVE un-TIL with-OUT with-IN be-TWEEN mis-TAKE
+  ho-RI-zon um-BREL-la ba-NAN-a pa-ja-mas va-CA-tion mu-SE-um gym-NAS-tics di-REC-tion di-RECT-or de-LI-cious fan-TAS-tic ter-RIF-ic dis-AS-ter e-LEC-tric e-QUIP-ment e-VENT e-LEV-en e-MER-gen-cy en-VI-ron-ment ex-PE-ri-ence ex-PER-i-ment
+  im-POS-si-ble im-PROVE im-MEDI-ate-ly in-CRED-i-ble in-TEL-li-gent o-RIG-i-nal pre-PARE po-TEN-tial pro-FES-sor re-MARK-a-ble re-SPON-si-ble suc-CESS suc-CESS-ful to-GETH-er tra-DI-tion-al
+  be-GIN-ner cre-ATE cre-A-tive a-TTRAC-tive de-CI-sion u-NIQUE ma-CHINE ca-REER ga-RAGE ga-ZELLE ho-TEL gi-RAFFE gui-TAR bal-LOON bam-BOO be-NEATH be-YOND ad-MIRE ad-MIT de-LAY de-BATE de-CREASE
+  AC-ci-dent AC-tive AD-jec-tive AL-co-hol AL-pha-bet AM-bu-lance AN-i-mal AN-y-thing AN-y-one AN-y AR-ti-cle AT-mos-phere AV-e-nue AV-er-age CAL-en-dar CAP-i-tal CAR-pen-ter CHAR-ac-ter COM-fort-a-ble COM-pa-ny COM-pli-ment CON-cen-trate CON-fi-dent CON-ti-nent COUN-try CUS-tom-er DAN-ger-ous DEC-o-rate DEL-i-cate DEM-on-strate DIF-fi-cult DOC-u-ment ED-u-cate EL-e-phant EL-e-ment EN-er-gy EN-e-my EN-gine EN-ter EN-ve-lope EM-pe-ror EX-cel-lent EX-er-cise GOV-ern-ment GOV-ern HAM-bur-ger HOL-i-day IM-age IN-come IN-dus-try IN-sect IN-stru-ment IN-ter-net IM-mi-grant IN-no-cent MAR-ket MES-sen-ger MOD-ern NAT-u-ral NEG-a-tive OF-fice OF-fi-cer OP-po-site PAS-sen-ger PER-son PER-fect PER-son-al POL-i-tics POS-i-tive PRES-i-dent PROB-lem PROD-uct PRO-gram PROM-ise REC-i-pe REG-u-lar REL-a-tive RES-i-dent SAND-wich SAT-ur-day SEV-er-al SUN-day TEL-e-phone TEL-e-vi-sion TOUR-na-ment WON-der-ful YES-ter-day
+  dis-COV-er-y de-LIV-er-y re-COV-er-y for-GOT-ten e-RAS-er how-EV-er what-EV-er when-EV-er where-EV-er col-LECT cor-RECT suc-CEED BEAU-ti-ful IN-ter-est CIN-e-ma CAM-er-a ge-OG-ra-phy
+  RE-a-lize im-ME-di-ate-ly
+  +af-ter-NOON +un-der-STAND +in-tro-DUCE +re-com-MEND +en-ter-TAIN +vol-un-TEER +en-gi-NEER +un-der-NEATH
+    ma-RI-a AN-a CAR-los GA-bri-el lu-IS mi-GUEL JES-si-ca mi-CHELLE LU-cia ju-AN PE-dro DA-vid MI-chael so-PHI-a EM-i-ly o-LIV-i-a DAN-iel ROB-ert JEN-ni-fer an-TO-ni-o`)
+  .split(/\s+/).forEach(s => { const k = s.replace(/[-+]/g,'').toLowerCase(); WORDS[k] = s; });
+BASE = Object.assign(Object.create(null), WORDS);
 
 /* weak words, as HouseCharacter.prosody has them */
 const WEAK = new Set(`a an the some any this that these those my your his her its our their me you him us them i he she it we they
@@ -148,7 +168,8 @@ function dropSilent(w, runs){
 }
 /* how many vowels the tokenizer says: ai + e and o + e are one diphthong. It reads er, ir, ur and -ture as consonants, so the caller adds those */
 function spokenVowels(word){
-  const m = (HC.speech.visemes(word) || []).filter(x => 'ai e o u'.split(' ').includes(x) || x === 'cdg' || x === 'mbp' || x === 'fv' || x === 'l' || x === 'wq');
+  let vis = []; try { vis = HC.speech.visemes(word) || []; } catch (e) { /* "constructor" trips the tokenizer's word table */ }
+  const m = vis.filter(x => 'ai e o u'.split(' ').includes(x) || x === 'cdg' || x === 'mbp' || x === 'fv' || x === 'l' || x === 'wq');
   let n = 0, prev = '';
   for (const x of m) {
     const v = ['ai','e','o','u'].includes(x);
@@ -157,30 +178,107 @@ function spokenVowels(word){
   }
   return n;
 }
+/* how many syllables the rules find in a stem */
+function countSyl(w){ const r = dropSilent(w, splitHiatus(w, vowelRuns(w))); return r.length; }
+const firstCap = e => { const k = e.split('-').findIndex(x => /[A-Z]/.test(x.replace(/^\+/, ''))); return k < 0 ? 0 : k; };
+/* endings that leave the stress where the shorter word has it: abandon-ed, discover-ing, apart-ment, comfort-able */
+const NEUTRAL = ['ings','ing','ers','ed','es','ly','ment','ments','ness','ful','less','ship','able','er','s'];
+/* prefixes the stress usually falls after */
+const PREFIX = /^(be|de|dis|ex|en|em|re|con|com|pre|pro|un|mis|im|in|ad|ob|sub|per|sur|ac|af|ag|ap|ar|as|at|es|oc|of|op|su)/;
+const AFTER_A = /^a[bcdfgklmnpqrstvwz][aeiouy]/;      /* a-bandon, a-mazing, a-part: one consonant after the a */
+/* these endings keep the stress early even after a prefix: DEC-orate, REC-ognize, CON-fident, DAN-gerous */
+const EARLY = /(ate|ize|ise|yse|fy|ous|ency|ence|ent|ary|ory|ery|ony|ogy|graph|ogue|ure|ude|ute|cy|ty|ry|ly|my|ny|gy|al|le|ic|ics)$/;
+const LONG_END = /(?:[aeiouy][bcdfgklmnpqrstvz]e|ai[a-z]+|ea[a-z]+|ee[a-z]*|ie[a-z]+|oa[a-z]+|oo[a-z]+|ou[a-z]+|ei[a-z]+|au[a-z]+|igh[a-z]*)$/;
+const SHORT_E = /(age|ive|ice|ile|ate|ure|ine|ace)$/;  /* image, active, office, mobile: these stay on the first syllable */
 function stressIndex(w, n, runs, raw){
   if (n < 2) return 0;
   /* a written accent says it: José, María */
-  for (let i = 0; i < n; i++) if (runs && /[́]/.test(raw.slice(runs[i][0], runs[i][1]).normalize('NFD'))) return i;
-  if (/(teen|ese|eer|oon|ette|ique)$/.test(w)) return n - 1;
-  if (/(ity|ical|ology|ography|ometer)$/.test(w)) return Math.max(0, n - 3);
-  if (/(tion|sion|cian|ic|ian|ia|ial|ual|ious)$/.test(w)) return Math.max(0, n - 2);
+  if (runs) for (let i = 0; i < n; i++) if (/[́]/.test(raw.slice(runs[i][0], runs[i][1]).normalize('NFD'))) return i;
+  if (/(teen|ese|eer|oon|ette|ique|esque)$/.test(w)) return n - 1;
+  if (/(ity|ical|ology|ography|ometer|ify|iety|ically)$/.test(w)) return Math.max(0, n - 3);
+  if (/(tion|sion|cian|ic|ics|ian|ia|ial|ual|ious|ient|iant|ience|iance)$/.test(w)) return Math.max(0, n - 2);
   /* an ending adds nothing to where the stress is */
-  for (const suf of ['ing','ers','er','ed','es','s','ly']) {
-    if (w.length > suf.length + 2 && w.endsWith(suf)) {
-      const stem = w.slice(0, -suf.length);
-      for (const st of [stem, stem + 'e']) if (WORDS[st]) return WORDS[st].split('-').findIndex(x => /[A-Z]/.test(x.replace(/^\+/, '')));
+  for (const suf of NEUTRAL) {
+    if (w.length <= suf.length + 2 || !w.endsWith(suf)) continue;
+    let stem = w.slice(0, -suf.length);
+    if (/([bdfglmnprt])\1$/.test(stem) && /^(ing|ed|er|ers|ings)$/.test(suf)) stem = stem.slice(0, -1);   /* begin-n-ing */
+    const cands = /[aeiou]$/.test(stem) && suf !== 'es' ? [stem] : [stem, stem + 'e'];
+    for (const st of cands) {
+      if (!USER.has(st) && DICT.has(st)) return Math.min(n - 1, Math.max(0, DICT.get(st).indexOf('1')));
+      if (WORDS[st]) return Math.min(n - 1, firstCap(WORDS[st]));
+    }
+    if (/^(ly|ing|ings|ed|ment|ments|ness|ful|less|ship|able)$/.test(suf) || (/^(s|es)$/.test(suf) && n >= 3)) {
+      /* amaz-ing is amaze, but enter-ed is not entere */
+      const restore = /^(ing|ings|ed|er|ers|able)$/.test(suf) && /[aeiouy][bcdfgklmnpstvz]$/.test(stem) && !/(er|en|on|or|el|al|ow|ar|om|it)$/.test(stem) && !/[aeiou]{2}[a-z]$/.test(stem);
+      const st = restore ? stem + 'e' : stem, m = countSyl(st);
+      if (m >= 1 && m <= n) return Math.min(n - 1, stressIndex(st, m, null, st));
     }
   }
-  if (n === 2) return 0;
-  if (/[ao]$/.test(w)) return n - 2;     /* names from Spanish: Roberto, Daniela */
-  return n - 3;
+  if (n === 2) {
+    /* ex-PLAIN, re-CEIVE, in-CLUDE, a-RRIVE: a prefix before a long last syllable. EX-pert, CON-tact and IM-age stay on the first */
+    const p = PREFIX.exec(w);
+    if (p && LONG_END.test(w.slice(p[1].length)) && !SHORT_E.test(w)) return 1;
+    if (/^a[bcdfgklmnpqrstvwz]/.test(w) && LONG_END.test(w) && !SHORT_E.test(w)) return 1;
+    return 0;
+  }
+  /* the stress goes on a syllable with two consonants after it: im-PORT-ant, ex-PENS-ive, as-SIST-ant, con-SIST-ent. DIF-fer-ent has a double one and stays */
+  if (/(ive|ant|ance|ent|ence|al|ous)$/.test(w) && runs) {
+    const pen = runs[n - 2], last = runs[n - 1], between = w.slice(pen[1], last[0]);
+    if (/ive$/.test(w) && between.length >= 1) return n - 2;
+    if (between.length >= 2 && between[0] !== between[1] && !/^(ph|th|ch|sh|gh|[bcdfgkpt][lr])$/.test(between)) return n - 2;
+    if (/ive$/.test(w)) return n - 2;
+  }
+  /* dis-COV-er, de-VEL-op, re-MEM-ber, im-POS-si-ble: after a prefix, unless the ending keeps it early */
+  const p = PREFIX.exec(w);
+  if (p && n >= 3 && !EARLY.test(w) && countSyl(w.slice(p[1].length)) >= n - 1 && /^[a-z]*[aeiouy]/.test(w.slice(p[1].length))) return 1;
+  if (n >= 3 && AFTER_A.test(w) && !/(ate|al|ous|age|ue|ent|ence|cy|le|y|ism|ist)$/.test(w)) return 1;
+  if (/[ao]$/.test(w)) return n - 2;     /* names from Spanish: Roberto, Daniela; banana, tomato */
+  return n >= 4 ? n - 3 : 0;
 }
 /* the syllables of one word: [{from, to, stress:0|1|2}] in the word's own letters (2 = main, 1 = secondary) */
-function syllables(raw){
+/* the dictionary counts sounds and the page has letters: fit the one to the other, so each circle still sits on its vowel */
+const SPLIT = /^(ia|io|iu|ie|ea|eo|ua|uo|ue|ui|oe|oi|oa|ya|yo|ao|ae|ee|ai|au|ei|eu|ou|oo)/;
+function fitRuns(w, n){
+  const whole = splitHiatus(w, vowelRuns(w));
+  let runs = dropSilent(w, whole);
+  /* blessed and naked say the e; tired and fired do not, though the dictionary counts two sounds there */
+  if (runs.length !== n && whole.length === n && !/[aeiou]re[ds]?$/.test(w)) runs = whole;
+  runs = runs.slice();
+  while (runs.length > n && n > 0) {
+    /* evEry, chocOlate, vegEtable: a single vowel in the middle that is not said */
+    let k = -1;
+    for (let i = 1; i < runs.length - 1; i++) if (!runs[i].syllabic && runs[i][1] - runs[i][0] === 1 && 'eioa'.includes(w[runs[i][0]])) { k = i; break; }
+    runs.splice(k < 0 ? runs.length - 1 : k, 1);
+  }
+  while (runs.length < n) {
+    let k = -1;
+    for (let i = 0; i < runs.length; i++) if (runs[i][1] - runs[i][0] >= 2 && SPLIT.test(w.slice(runs[i][0], runs[i][1]))) { k = i; break; }
+    if (k >= 0) { const r = runs[k]; runs.splice(k, 1, [r[0], r[0] + 1], [r[0] + 1, r[1]]); continue; }
+    /* rhythm, prism, little: a consonant that is a syllable */
+    const m = /[^aeiouy](m|n|l)(s?)$/.exec(w);
+    if (m && !runs.some(r => r[1] > w.length - 1 - m[2].length)) { const at = w.length - 1 - m[2].length; runs.push([at, at + 1]); continue; }
+    break;
+  }
+  return runs;
+}
+function fromDict(key, pat, base){
+  const runs = fitRuns(key, pat.length);
+  if (!runs.length) return null;
+  /* fewer places than sounds (tired, fire): the main stress must not get lost */
+  let p = pat;
+  if (runs.length < p.length) { const m = Math.min(runs.length - 1, p.indexOf('1')); p = p.slice(0, runs.length).replace(/1/g, '0'); p = p.slice(0, m) + '1' + p.slice(m + 1); }
+  return runs.map((r, i) => ({ from:base + r[0], to:base + r[1], stress:p[i] === '1' ? 2 : p[i] === '2' ? 1 : 0 }));
+}
+function syllables(raw, opts){
   const chars = Array.from(String(raw));
   const w = chars.map(plain).join('');
   if (w.length !== raw.length) return [{ from:0, to:raw.length, stress:2 }];
   const clean = w.replace(/[’'`]/g, "'"), key = clean.replace(/^'+|'+$/g, '');
+  /* the pronouncing dictionary knows the word: nothing is more reliable, except a correction made by hand */
+  if (!(opts && opts.rules) && !USER.has(key) && DICT.has(key) && !/\u0301/.test(raw.normalize('NFD'))) {
+    const d = fromDict(key, DICT.get(key), clean.indexOf(key[0]));
+    if (d) return d;
+  }
   const entry = WORDS[key] || WORDS[key.replace(/'/g, '')];
   if (entry && entry.replace(/[-+]/g, '').toLowerCase() === key.replace(/'/g, '')) {
     const out = []; let at = clean.indexOf(key[0]);
@@ -203,7 +301,7 @@ function syllables(raw){
   let runs = splitHiatus(stem, vowelRuns(stem));
   if (!accentEnd) runs = dropSilent(stem, runs);
   /* the tokenizer knows the words that say fewer vowels than they write: every, business */
-  const spoken = spokenVowels(raw) + (stem.match(/(er|ir|ur)(?![aeiouy])|ture$/g) || []).length, syll = runs.filter(r => r.syllabic).length;
+  const spoken = spokenVowels(raw) + (stem.match(/(er|ir|ur)(?![aeiouy])|ture$|ered$/g) || []).length, syll = runs.filter(r => r.syllabic).length;
   while (spoken > 0 && runs.length - syll > spoken && runs.length > 2) {
     const k = runs.findIndex((r, i) => i > 0 && i < runs.length - 1 && r[1] - r[0] === 1 && !r.syllabic && 'ei'.includes(stem[r[0]]));
     if (k < 0) break;
@@ -417,6 +515,8 @@ const CSS = ''
   /* a word with a mark under it: the same strut reaches below the line as well */
   + '.pm-w.pm-under::before{ vertical-align:-' + UNDER + 'em; height:' + (0.93 + ROW + 0.36 - 0.1 + UNDER) + 'em; }'
   + '.pm-w.pm-tail.pm-under::before{ height:' + (0.93 + ROW + 0.36 + 0.2 + ARROW.band * EM + UNDER) + 'em; }'
+  + '.pm-w.pm-under.pm-link::before{ vertical-align:-' + UNDER_LINK + 'em; height:' + (0.93 + ROW + 0.36 - 0.1 + UNDER_LINK) + 'em; }'
+  + '.pm-w.pm-tail.pm-under.pm-link::before{ height:' + (0.93 + ROW + 0.36 + 0.2 + ARROW.band * EM + UNDER_LINK) + 'em; }'
   + '.pm-w.pm-under.pm-label::before{ vertical-align:-' + UNDER_LABEL + 'em; height:' + (0.93 + ROW + 0.36 - 0.1 + UNDER_LABEL) + 'em; }'
   + '.pm-w.pm-tail.pm-under.pm-label::before{ height:' + (0.93 + ROW + 0.36 + 0.2 + ARROW.band * EM + UNDER_LABEL) + 'em; }'
   /* stick-figure sentences: the marks go between the words and the figures. Every word in a marked line gets the same strut, so the
@@ -549,7 +649,7 @@ function markOne(el, opts){
     if (!last && info[to].w) { info[to].w.classList.add('pm-end'); last = info[to].w; }
     ends.push({ t, last });
   }
-  for (const l of A.links) for (const k of [l.word, l.word + 1]) if (info[k].w) { info[k].w.classList.add('pm-under'); if (l.label) info[k].w.classList.add('pm-label'); }
+  for (const l of A.links) for (const k of [l.word, l.word + 1]) if (info[k].w) { info[k].w.classList.add('pm-under'); if (l.label) info[k].w.classList.add('pm-label'); if (l.type === 'link') info[k].w.classList.add('pm-link'); }
   el.classList.add('pm-line');
   el.classList.toggle('pm-tuned', A.tunes.length > 0);
   const col = opts.colours || {};
@@ -632,21 +732,27 @@ function drawLinks(el, st, fs, u, ox, oy){
   let h = '';
   const sw = S * u, wl = ARROW.w * u * 0.6, ll = ARROW.len * u * 0.62;   /* the same line width as everything else; the head is smaller, to fit under a space */
   const line = 'fill="none" stroke="currentColor" stroke-width="' + f2(sw) + '" stroke-linecap="round" stroke-linejoin="round"';
+  let prevTip = null;
   for (const l of st.A.links) {
     const ra = lettersBox(el, l.a[0], l.a[1]), rb = lettersBox(el, l.b[0], l.b[1]);
     if (!ra || !rb || Math.abs(ra.top - rb.top) > fs * 0.5) continue;   /* the two words are on different lines */
     const x0 = ra.left + ra.width / 2 - ox, x1 = rb.left + rb.width / 2 - ox, y = ra.bottom + 0.1 * fs - oy, dip = 0.55 * fs;
     const cx = (x0 + x1) / 2, cy = y + dip * 2 * 0.62;   /* a quadratic curve reaches half way to its control point */
-    let d = 'M' + f2(x0) + ',' + f2(y) + 'Q' + f2(cx) + ',' + f2(cy) + ' ' + f2(x1) + ',' + f2(y);
+    let d;
     if (l.type === 'link') {
-      /* the head points along the end of the curve */
-      const dx = x1 - cx, dy = y - cy, n = Math.hypot(dx, dy) || 1, ux = dx / n, uy = dy / n;
-      const leg = (sg) => f2(x1 - ux * ll - uy * wl * sg) + ',' + f2(y - uy * ll + ux * wl * sg);
-      d += 'M' + leg(1) + 'L' + f2(x1) + ',' + f2(y) + 'L' + leg(-1);
-    }
+      /* catenation: as in the stick figures' arrow, a straight piece runs up through the head, and the curve stays below the legs,
+         so it never hides the head. A cubic reaches 3/4 of the way to its control points. */
+      /* where two arrows meet in a short word (it off), or the arrow is very narrow, the curve starts below the legs, clear of both heads */
+      const neck = y + ll, ctrl = neck + LINK_BELOW * fs / 0.75;
+      const crowded = (prevTip !== null && Math.abs(x0 - prevTip) < wl + sw * 1.2) || x1 - x0 < wl + sw * 1.2;
+      const y0 = crowded ? neck + sw * 1.1 : y;
+      d = 'M' + f2(x0) + ',' + f2(y0) + 'C' + f2(x0) + ',' + f2(ctrl) + ' ' + f2(x1) + ',' + f2(ctrl) + ' ' + f2(x1) + ',' + f2(neck) + 'L' + f2(x1) + ',' + f2(y)
+        + 'M' + f2(x1 - wl) + ',' + f2(neck) + 'L' + f2(x1) + ',' + f2(y) + 'L' + f2(x1 + wl) + ',' + f2(neck);
+      prevTip = x1;
+    } else { d = 'M' + f2(x0) + ',' + f2(y) + 'Q' + f2(cx) + ',' + f2(cy) + ' ' + f2(x1) + ',' + f2(y); prevTip = null; }
     if (l.type === 'elision') d += 'M' + f2(ra.left - 0.02 * fs - ox) + ',' + f2(ra.bottom - 0.2 * fs - oy) + 'L' + f2(ra.right + 0.02 * fs - ox) + ',' + f2(ra.top + 0.26 * fs - oy);
     h += '<path class="pm-cs" data-cs="' + l.type + '" d="' + d + '" ' + line + '/>';
-    if (l.label) h += '<text class="pm-cs" data-cs-label="' + l.type + '" x="' + f2(cx) + '" y="' + f2(y + dip * 0.62 + 0.66 * fs) + '" font-size="' + f2(0.6 * fs) + '" text-anchor="middle">' + (st.labels[l.label] || l.label) + '</text>';
+    if (l.label) h += '<text class="pm-cs" data-cs-label="' + l.type + '" x="' + f2(cx) + '" y="' + f2(l.type === 'link' ? y + ll + LINK_BELOW * fs + 0.58 * fs : y + dip * 0.62 + 0.66 * fs) + '" font-size="' + f2(0.6 * fs) + '" text-anchor="middle">' + (st.labels[l.label] || l.label) + '</text>';
   }
   return h;
 }
@@ -707,5 +813,5 @@ function toggle(opts){
   if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', run); else setTimeout(run, 0);
 }
 
-window.PronMark = { mark, unmark, toggle, colours, colourControls, dict, analyse, syllables, DIAM, H, S, EM };
+window.PronMark = { mark, unmark, toggle, colours, colourControls, dict, useDict, analyse, syllables, DIAM, H, S, EM };
 })();
