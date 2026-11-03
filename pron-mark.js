@@ -11,7 +11,8 @@
                                    selector for stress, connected speech and intonation (colours:false leaves the selectors out)
      PronMark.colours({stress, connected, intonation})   the same colours from code, for the whole page
      PronMark.dict({word:'ho-TEL'}) add or correct words: split as spelled, the stressed syllable in capitals,
-                                   + before a secondary stress: '+in-tro-DUCE'
+                                   + before a secondary stress: '+in-tro-DUCE'; {word:null} takes a correction back
+     PronMark.colourControls()     the stress, connected speech and intonation colour selectors as an element, to place anywhere
      PronMark.analyse(text, opts)  → {words, tunes}: what would be drawn, without touching the page
      PronMark.syllables(word)      → [{from, to, stress}] for checking the rules
 
@@ -56,7 +57,15 @@ const ARROW = { w:0.75*H - S/2, len:0.95*H - S/2, band:1.9*H };   /* legs as in 
 
 /* ── words the rules would get wrong ── */
 const WORDS = {};
-function dict(map){ for (const k in map) WORDS[k.toLowerCase()] = map[k]; return WORDS; }
+let BASE = null;   /* the built-in list, so a correction can be taken back */
+function dict(map){
+  for (const k in map) {
+    const key = k.toLowerCase();
+    if (map[k] == null) { if (BASE && key in BASE) WORDS[key] = BASE[key]; else delete WORDS[key]; }
+    else WORDS[key] = map[k];
+  }
+  return WORDS;
+}
 (`hel-LO good-BYE ex-CUSE to-DAY to-MOR-row to-NIGHT a-GAIN a-BOUT be-CAUSE be-TWEEN a-LONE be-LONG be-FORE a-ROUND a-WAY
   a-GREE a-CROSS a-LIKE a-RRIVE be-COME be-GIN be-HIND be-LOW be-SIDE un-TIL re-PEAT re-TURN re-PLY re-MEM-ber de-CIDE
   in-tro-DUCE EVE-ning JAN-u-ar-y FEB-ru-ar-y AU-gust sep-TEM-ber oc-TO-ber no-VEM-ber de-CEM-ber
@@ -74,6 +83,7 @@ function dict(map){ for (const k in map) WORDS[k.toLowerCase()] = map[k]; return
   SPAN-ish ENG-lish BRIT-ish co-LOM-bi-an ven-e-ZUE-lan ar-gen-TIN-i-an pe-RU-vi-an
   ma-RI-a AN-a CAR-los GA-bri-el lu-IS mi-GUEL JES-si-ca mi-CHELLE LU-cia ju-AN PE-dro DA-vid MI-chael so-PHI-a EM-i-ly o-LIV-i-a DAN-iel ROB-ert JEN-ni-fer an-TO-ni-o`)
   .split(/\s+/).forEach(s => { const k = s.replace(/-/g,'').toLowerCase(); WORDS[k] = s; });
+BASE = Object.assign({}, WORDS);
 
 /* weak words, as HouseCharacter.prosody has them */
 const WEAK = new Set(`a an the some any this that these those my your his her its our their me you him us them i he she it we they
@@ -471,6 +481,18 @@ function wrap(el, from, to, make){
   }
   return null;
 }
+/* the same, for marking from the end of the text backward: the list of text nodes is read once, which keeps a long paragraph quick.
+   Wrapping leaves the text before it in the same node, so that entry only gets shorter. */
+function wrapBack(nodes, from, to, make){
+  while (nodes.length && nodes[nodes.length-1].from > from) nodes.pop();
+  const t = nodes[nodes.length-1];
+  if (!t || from >= t.to || to > t.to) return null;
+  const r = document.createRange();
+  r.setStart(t.node, from - t.from); r.setEnd(t.node, to - t.from);
+  const span = make(); r.surroundContents(span);
+  t.to = from;
+  return span;
+}
 function mark(target, opts){
   injectCSS();
   opts = opts || {};
@@ -504,9 +526,10 @@ function markOne(el, opts){
   const info = A.words.map(() => ({ w:null, v:null, vs:[] }));
   const tuneEnds = new Map(A.tunes.map(t => [t.to, t]));
   const tails = new Set(A.tunes.map(t => t.to));
+  const back = textNodes(el);
   for (let k = A.words.length - 1; k >= 0; k--) {
     const w = A.words[k];
-    const box = wrap(el, w.from, w.to, () => { const s = document.createElement('span'); s.className = 'pm-w' + (tails.has(k) ? ' pm-tail' : ''); return s; });
+    const box = wrapBack(back, w.from, w.to, () => { const s = document.createElement('span'); s.className = 'pm-w' + (tails.has(k) ? ' pm-tail' : ''); return s; });
     info[k].w = box;
     /* the vowels: inside the word's own box */
     for (let n = w.syl.length - 1; n >= 0; n--) {
@@ -684,5 +707,5 @@ function toggle(opts){
   if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', run); else setTimeout(run, 0);
 }
 
-window.PronMark = { mark, unmark, toggle, colours, dict, analyse, syllables, DIAM, H, S, EM };
+window.PronMark = { mark, unmark, toggle, colours, colourControls, dict, analyse, syllables, DIAM, H, S, EM };
 })();

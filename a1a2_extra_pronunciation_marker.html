@@ -1,0 +1,326 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<title>Pronunciation Marker</title>
+<script>
+(function(){
+  try{
+    var saved = localStorage.getItem('theme-preference');
+    var theme = (saved === 'light' || saved === 'dark')
+      ? saved
+      : ((window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches) ? 'dark' : 'light');
+    document.documentElement.setAttribute('data-theme', theme);
+    var fs = parseFloat(localStorage.getItem('font-size-preference'));
+    if (fs >= 10 && fs <= 28) document.documentElement.style.setProperty('--fs-base', fs + 'px');
+  }catch(e){}
+})();
+</script>
+<link rel="stylesheet" href="house.css">
+<style>
+.mk-input, .mk-fixes{
+  display:block; width:100%; box-sizing:border-box; resize:vertical; font:inherit; font-size:max(16px,1rem); line-height:1.5;
+  padding:10px 12px; border:1px solid var(--border); border-radius:12px; background:var(--surface-2); color:var(--text-primary);
+}
+.mk-input{ min-height:6.5em; }
+.mk-fixes{ min-height:4.5em; margin-top:8px; }
+.mk-input:focus, .mk-fixes:focus{ outline:2px solid var(--text-accent); outline-offset:1px; }
+.mk-row{ display:flex; flex-wrap:wrap; align-items:center; gap:6px 14px; margin:10px 0; font-size:.8667rem; color:var(--text-secondary); }
+.mk-row label{ display:inline-flex; align-items:center; gap:5px; cursor:pointer; }
+.mk-btn{
+  font:inherit; font-size:.8667rem; font-weight:500; padding:5px 12px; border-radius:999px; cursor:pointer;
+  border:1px solid var(--border); background:var(--surface-2); color:var(--text-primary);
+}
+.mk-btn:hover{ background:var(--surface-1); }
+.mk-gap{ flex:1 1 auto; }
+.mk-note{ font-size:.8rem; color:var(--text-secondary); margin:.4rem 0; }
+.mk-status{ min-height:1.2em; }
+.mk-det{ margin:10px 0; font-size:.8667rem; color:var(--text-secondary); }
+.mk-det summary{ cursor:pointer; font-weight:500; color:var(--text-primary); }
+.mk-key{ display:grid; grid-template-columns:auto 1fr; gap:6px 14px; align-items:center; margin-top:8px; }
+.mk-key svg{ display:block; overflow:visible; }
+.mk-key .sym{ display:flex; justify-content:center; min-width:2.4rem; }
+.mk-key svg.k-s{ color:var(--pm-stress, var(--color-text-primary)); }
+.mk-key svg.k-t{ color:var(--pm-tune, var(--color-text-primary)); }
+.mk-key svg.k-c{ color:var(--pm-connected, #0891b2); }
+
+.mk-out{
+  font-size:1.25rem; padding:12px 14px; min-height:6rem; overflow-wrap:anywhere;
+  border:1px solid var(--border); border-radius:12px; background:var(--surface-1); color:var(--text-primary);
+}
+.mk-out:empty::before{ content:'Your marked text appears here.'; color:var(--text-muted); font-size:1rem; }
+.mk-line{ display:inline-block; max-width:100%; box-sizing:border-box; margin:0 .3em .35rem 0; }
+.mk-break{ display:block; height:0; }
+.mk-break + .mk-break{ height:.8rem; }
+.mk-out .pm-w{ cursor:pointer; border-radius:3px; }
+.mk-out .pm-w:hover{ background:var(--surface-2); }
+.mk-no-stress .pm-v > svg{ visibility:hidden; }
+.mk-no-tune .pm-tune{ display:none; }
+
+@media print{
+  /* dark theme or not, paper is white */
+  :root, :root[data-theme]{ --text-primary:#000; --color-text-primary:#000; --surface-1:#fff; --surface-2:#fff; }
+  html, body, .page{ background:#fff !important; color:#000 !important; }
+  h1{ color:#000 !important; }
+  .mk-controls, footer, .cefr-tag, .subtitle, #theme-toggle-wrap, #font-size-wrap, #font-size-panel, #bionic-wrap{ display:none !important; }
+  .mk-out{ border:none; padding:0; background:none; }
+  .mk-out, .mk-out *{ -webkit-print-color-adjust:exact; print-color-adjust:exact; }
+  .mk-line{ break-inside:avoid; }
+}
+</style>
+</head>
+<body>
+<div class="page" id="page">
+  <span class="cefr-tag cefr-a1a2">A1–A2 · Extra</span>
+  <h1>Pronunciation Marker</h1>
+  <p class="subtitle">Type or paste English. The stress, connected speech and intonation marks appear as you type.</p>
+
+  <div class="mk-controls">
+    <label class="sec-div" for="mkInput">Your text</label>
+    <textarea class="mk-input" id="mkInput" spellcheck="false" placeholder="Type or paste English here…"></textarea>
+    <div class="mk-row" id="mkSamples">
+      <span>Try:</span>
+      <button class="mk-btn" type="button" data-sample="Hi! What's your name?&#10;My name is Ana. Nice to meet you.&#10;Are you a student?">Introductions</button>
+      <button class="mk-btn" type="button" data-sample="Did you go out last night?&#10;I wanted to, but I had a lot of work.&#10;Would you like tea or coffee?">Questions</button>
+      <button class="mk-btn" type="button" data-sample="I like coffee. What about *you*?&#10;*I* don't, but my *sister* does.">Contrast</button>
+      <span class="mk-gap"></span>
+      <button class="mk-btn" type="button" id="mkClear">Clear</button>
+    </div>
+    <div class="mk-row" id="mkLayers">
+      <label><input type="checkbox" id="mkStress" checked> Stress</label>
+      <label><input type="checkbox" id="mkConnected" checked> Connected speech</label>
+      <label><input type="checkbox" id="mkTune" checked> Intonation</label>
+      <label><input type="checkbox" id="mkStatements" checked> Arrows on statements</label>
+      <label><input type="checkbox" id="mkIpa"> IPA labels</label>
+    </div>
+    <div id="mkColours"></div>
+  </div>
+
+  <div class="sec-div mk-controls">Marked text</div>
+  <div class="mk-out" id="mkOut"></div>
+
+  <div class="mk-controls">
+    <p class="mk-note">Tap a word to give it the main stress. This adds *stars* round it in your text. Tap again to take it away.</p>
+    <p class="mk-note">The marks come from spelling rules and a short word list, so check them. Some words will be wrong.</p>
+    <div class="mk-row">
+      <button class="mk-btn" type="button" id="mkPrint">🖨️ Print</button>
+      <button class="mk-btn" type="button" id="mkLink">🔗 Copy link to this text</button>
+      <span class="mk-status" id="mkStatus" role="status"></span>
+    </div>
+    <details class="mk-det" id="mkFixDet">
+      <summary>Correct a word's stress</summary>
+      <p class="mk-note">One word per line. Split it into syllables with hyphens and write the stressed syllable in capitals: <b>PHO-to-graph</b>, <b>pho-TOG-ra-phy</b>. Put + before a secondary stress: <b>+in-tro-DUCE</b>. This device remembers your corrections.</p>
+      <textarea class="mk-fixes" id="mkFixes" spellcheck="false" aria-label="Word corrections" placeholder="PHO-to-graph"></textarea>
+      <p class="mk-note mk-status" id="mkFixStatus" role="status"></p>
+    </details>
+    <details class="mk-det">
+      <summary>What the marks mean</summary>
+      <div class="mk-key" id="mkKey"></div>
+    </details>
+  </div>
+  <footer>Pronunciation Marker</footer>
+</div>
+<div id="theme-toggle-wrap"><button id="theme-toggle" aria-label="Toggle light/dark mode" title="Toggle light/dark mode"><span id="theme-icon">☀️</span></button></div>
+<script src="house.js"></script>
+<script src="house-character.js"></script>
+<script src="pron-mark.js"></script>
+<script>
+(function(){
+  'use strict';
+  const $ = id => document.getElementById(id);
+  const input = $('mkInput'), out = $('mkOut'), fixes = $('mkFixes');
+  const KEY = { text:'pron-marker-text', fixes:'pron-marker-fixes', opts:'pron-marker-options' };
+  const load = k => { try { return localStorage.getItem(k); } catch (e) { return null; } };
+  const save = (k, v) => { try { localStorage.setItem(k, v); } catch (e) { /* private mode */ } };
+
+  /* ── the box → sentences and line breaks. Each sentence is drawn on its own: measuring words inside one long paragraph
+     gets slower with every word, and typing only draws the sentence that changed ── */
+  const ABBR = /(?:^|[\s(*])(?:Mr|Mrs|Ms|Dr|Prof|St|vs|etc|e\.g|i\.e|a\.m|p\.m)[.]*$/i;
+  function pieces(value){
+    const out = [];
+    value.split('\n').forEach((line, n) => {
+      if (n) out.push('\n');
+      const re = /[.?!…]+["”’')\]]*\s+/g;
+      let at = 0, m;
+      while ((m = re.exec(line))) {
+        const end = m.index + m[0].length;
+        if (end >= line.length) break;
+        if (/^[a-z]/.test(line.slice(end))) continue;
+        if (ABBR.test(line.slice(at, m.index + 1))) continue;
+        if ((line.slice(at, end).match(/\*/g) || []).length % 2) continue;   /* inside a pair of *stars* */
+        out.push(line.slice(at, end)); at = end;
+      }
+      if (at < line.length) out.push(line.slice(at));
+    });
+    return out;
+  }
+
+  /* ── a sentence of the box → the text with its *stars* taken out ── */
+  function parse(src){
+    const plain = [], map = [], stars = [], parts = [];
+    const re = /\*([^*\n]+)\*/g;
+    let last = 0, m;
+    const add = (t, from) => { for (let i = 0; i < t.length; i++) map.push(from + i); plain.push(t); };
+    while ((m = re.exec(src))) {
+      if (m.index > last) { parts.push({ t:src.slice(last, m.index) }); add(src.slice(last, m.index), last); }
+      const a = map.length;
+      parts.push({ t:m[1], main:true }); add(m[1], m.index + 1);
+      stars.push({ from:a, to:map.length, open:m.index, close:m.index + m[0].length - 1 });
+      last = m.index + m[0].length;
+    }
+    if (last < src.length) { parts.push({ t:src.slice(last) }); add(src.slice(last), last); }
+    return { parts, map, stars };
+  }
+
+  function options(){
+    return { statements:$('mkStatements').checked, connected:$('mkConnected').checked, labels:$('mkIpa').checked ? 'ipa' : undefined };
+  }
+  function buildPiece(src, key){
+    if (src === '\n') { const b = document.createElement('div'); b.className = 'mk-break'; b._src = src; b._key = key; return b; }
+    const p = document.createElement('span'); p.className = 'mk-line';
+    const P = parse(src);
+    for (const part of P.parts) {
+      if (part.main) { const s = document.createElement('span'); s.setAttribute('data-pm-main', ''); s.textContent = part.t; p.appendChild(s); }
+      else p.appendChild(document.createTextNode(part.t));
+    }
+    p._src = src; p._key = key; p._parsed = P;
+    return p;
+  }
+  /* marked once it is on the page, so the arrows can be measured. One odd sentence never stops the others. */
+  function markPiece(el, opts){
+    if (!el._parsed || !/\S/.test(el._src)) return;
+    try { PronMark.mark(el, opts); }
+    catch (e) { el.textContent = el._parsed.parts.map(x => x.t).join(''); }
+  }
+  function drop(el){ try { PronMark.unmark(el); } catch (e) {} el.remove(); }
+
+  /* ── only what changed is drawn again ── */
+  function render(){
+    if (!input.value.trim()) { Array.from(out.children).forEach(drop); return; }
+    const list = pieces(input.value), opts = options(), key = JSON.stringify(opts);
+    const old = Array.from(out.children);
+    let a = 0, z = 0;
+    const same = (el, src) => el._src === src && el._key === key;
+    while (a < old.length && a < list.length && same(old[a], list[a])) a++;
+    while (z < old.length - a && z < list.length - a && same(old[old.length - 1 - z], list[list.length - 1 - z])) z++;
+    const after = z ? old[old.length - z] : null;
+    old.slice(a, old.length - z).forEach(drop);
+    for (let i = a; i < list.length - z; i++) {
+      const el = buildPiece(list[i], key);
+      out.insertBefore(el, after);
+      markPiece(el, opts);
+    }
+  }
+  let timer = 0, cost = 0;
+  function run(){ timer = 0; const t = performance.now(); render(); cost = performance.now() - t; save(KEY.text, input.value); }
+  /* straight away while it is quick; a long line is drawn a few times a second, and fast typing never holds it back */
+  function schedule(){
+    if (!timer) timer = setTimeout(run, cost < 12 ? 0 : Math.min(300, cost * 1.5));
+  }
+  function redrawAll(){ Array.from(out.children).forEach(drop); run(); }
+
+  input.addEventListener('input', schedule);
+
+  /* ── tap a word: main stress on or off ── */
+  out.addEventListener('click', e => {
+    const w = e.target.closest && e.target.closest('.pm-w'); if (!w) return;
+    const sel = window.getSelection && window.getSelection();
+    if (sel && !sel.isCollapsed) return;   /* selecting text to copy it */
+    const line = w.closest('.mk-line'); if (!line || !line._pm) return;
+    const kids = Array.from(out.children), n = kids.indexOf(line);
+    const k = line._pm.info.findIndex(i => i.w === w); if (k < 0) return;
+    const word = line._pm.A.words[k], P = line._parsed;
+    const hit = P.stars.filter(s => s.from < word.to && word.from < s.to);
+    let src = line._src;
+    if (hit.length) {
+      for (const s of hit.slice().reverse()) src = src.slice(0, s.open) + src.slice(s.open + 1, s.close) + src.slice(s.close + 1);
+    } else {
+      const from = P.map[word.from], to = P.map[word.to - 1] + 1;
+      src = src.slice(0, from) + '*' + src.slice(from, to) + '*' + src.slice(to);
+    }
+    input.value = kids.map((el, i) => i === n ? src : el._src).join('');
+    run();
+  });
+
+  /* ── the switches ── */
+  const SWITCH = ['mkStress', 'mkConnected', 'mkTune', 'mkStatements', 'mkIpa'];
+  function layers(){
+    out.classList.toggle('mk-no-stress', !$('mkStress').checked);
+    out.classList.toggle('mk-no-tune', !$('mkTune').checked);
+    $('mkStatements').disabled = !$('mkTune').checked;
+    save(KEY.opts, JSON.stringify(SWITCH.reduce((o, id) => (o[id] = $(id).checked, o), {})));
+  }
+  try { const o = JSON.parse(load(KEY.opts) || '{}'); SWITCH.forEach(id => { if (typeof o[id] === 'boolean') $(id).checked = o[id]; }); } catch (e) {}
+  $('mkLayers').addEventListener('change', () => { layers(); run(); });
+
+  /* ── examples, clear, print, link ── */
+  $('mkSamples').addEventListener('click', e => {
+    const b = e.target.closest('[data-sample]');
+    if (b) { input.value = b.dataset.sample; run(); }
+  });
+  $('mkClear').addEventListener('click', () => { input.value = ''; run(); input.focus(); });
+  $('mkPrint').addEventListener('click', () => window.print());
+  $('mkLink').addEventListener('click', () => {
+    const url = location.href.split('#')[0] + '#t=' + encodeURIComponent(input.value);
+    const done = ok => { $('mkStatus').textContent = ok ? 'Link copied.' : 'Could not copy. Copy it from the address bar.'; if (!ok) { try { history.replaceState(null, '', url); } catch (e) {} } };
+    if (navigator.clipboard && navigator.clipboard.writeText) navigator.clipboard.writeText(url).then(() => done(true), () => done(false));
+    else done(false);
+  });
+
+  /* ── corrections: PHO-to-graph ── */
+  let applied = [];
+  function readFixes(){
+    const good = {}, bad = [];
+    for (const raw of fixes.value.split('\n')) {
+      const t = raw.trim(); if (!t) continue;
+      if (/^\+?[\p{L}'’]+(-\+?[\p{L}'’]+)*$/u.test(t) && /\p{Lu}/u.test(t)) good[t.replace(/[-+'’]/g, '').toLowerCase()] = t.replace(/['’]/g, '');
+      else bad.push(t);
+    }
+    return { good, bad };
+  }
+  function applyFixes(){
+    const { good, bad } = readFixes();
+    const change = {};
+    applied.forEach(k => { if (!(k in good)) change[k] = null; });
+    Object.assign(change, good);
+    PronMark.dict(change);
+    applied = Object.keys(good);
+    save(KEY.fixes, fixes.value);
+    $('mkFixStatus').textContent = bad.length ? 'Not understood: ' + bad.join(', ') + '. Use hyphens and one syllable in capitals.' : '';
+  }
+  let fixTimer = 0;
+  fixes.addEventListener('input', () => { clearTimeout(fixTimer); fixTimer = setTimeout(() => { applyFixes(); redrawAll(); }, 150); });
+
+  /* ── the key: real marks, from the same engine ── */
+  const H = PronMark.H, S = PronMark.S, EM = PronMark.EM;
+  const line = `fill="none" stroke="currentColor" stroke-width="${S}" stroke-linecap="round" stroke-linejoin="round"`;
+  const ring = l => { const d = PronMark.DIAM[l]; return `<svg viewBox="${-d/2} ${-d/2} ${d} ${d}" class="k-s" style="width:${d*EM}em;height:${d*EM}em">${l ? `<circle r="${(d-S)/2}" fill="none" stroke="currentColor" stroke-width="${S}"/>` : `<circle r="${d/2}" fill="currentColor"/>`}</svg>`; };
+  const arrow = up => `<svg class="k-t" viewBox="0 0 104 76" style="width:${104*EM}em;height:${76*EM}em"><path d="${up ? 'M6,68C40,68 72,66 72,42L72,8M47,41L72,8L97,41' : 'M6,8C40,8 72,10 72,34L72,68M47,35L72,68L97,35'}" ${line}/></svg>`;
+  const under = p => `<svg class="k-c" viewBox="0 -32 60 66" style="width:${60*EM}em;height:${66*EM}em"><path d="${p}" ${line}/></svg>`;
+  $('mkKey').innerHTML = [
+    [ring(3), 'The main stress: the strongest syllable'], [ring(2), 'A stressed syllable'], [ring(1), 'A little stress'], [ring(0), 'A weak syllable'],
+    [arrow(true), 'Your voice goes up'], [arrow(false), 'Your voice goes down'],
+    [under('M4,4Q30,30 56,4M36,5L56,4L53,24'), 'A consonant moves to the next word'],
+    [under('M4,4Q30,30 56,4'), 'Two words join. A small letter shows a new sound'],
+    [under('M4,4Q30,30 56,4M2,-12L12,-30'), 'This letter is not said']
+  ].map(([s, t]) => `<span class="sym">${s}</span><span>${t}</span>`).join('');
+
+  $('mkColours').appendChild(PronMark.colourControls());
+
+  /* ── start: a shared link, then the last text, then an example ── */
+  fixes.value = load(KEY.fixes) || '';
+  if (fixes.value.trim()) $('mkFixDet').open = true;
+  applyFixes();
+  let start = null;
+  const h = location.hash.match(/^#t=(.*)$/s);
+  if (h) { try { start = decodeURIComponent(h[1]); } catch (e) {} }
+  if (start === null) start = load(KEY.text);
+  if (start === null) start = $('mkSamples').querySelector('[data-sample]').dataset.sample;
+  input.value = start;
+  layers();
+  run();
+})();
+</script>
+</body>
+</html>

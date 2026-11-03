@@ -97,8 +97,8 @@
     /* self-study labs */
     'a1a2_extra_reported_speech_lab.html':'extra', 'b1_extra_modal_verbs_lab.html':'extra', 'a2_extra_present_perfect_lab.html':'extra', 'a1a2_extra_comparatives_superlatives_lab.html':'extra',
     'a2_extra_modal_verbs_lab.html':'extra', 'a1_extra_wh_questions_do_does_lab.html':'extra', 'a1_extra_wh_questions_be_lab.html':'extra',
-    /* the demo marks itself */
-    'a1_extra_stress_intonation_marks.html':'none'
+    /* these mark themselves */
+    'a1_extra_stress_intonation_marks.html':'none', 'a1a2_extra_pronunciation_marker.html':'none'
   };
   /* ── whole lines the rules cannot know ── */
   const FIXES = {
