@@ -716,8 +716,12 @@ function visible(t,ppl,things){
 }
 /* the description: a name, then short present continuous sentences; the fewest facts (two, if possible)
    that fit this person and nobody else of the same sex ("Find Sofía. She’s wearing a red blouse and a yellow skirt.") */
-const ORDER={top:0,bottom:1,hat:2,eyes:3,scarf:4,pack:5,item:6,action:7};
-const factsOf=p=>facts(p,'find').filter(f=>f[0] in ORDER);
+/* only what can be seen from far away: clothes, hats, big things in the hands, and actions (no glasses, scarves,
+   backpacks or small objects like keys or phones) */
+const ORDER={top:0,bottom:1,hat:2,item:6,action:7};
+const BIG=['umbrella','parasol','suitcase','box','guitar','electricguitar','bass','cello','doublebass','balloon','broom','mop','skateboard','skis','snowboard','beachball'];
+const BIG_TEXT=new Set(BIG.flatMap(id=>{ const it=HC.ITEMS[id]; return it?[`${it.verb} ${it.phrase}`,'pointing at '+it.phrase]:[]; }));
+const factsOf=p=>facts(p,'find').filter(f=>f[0] in ORDER&&(f[0]!=='item'&&!(f[0]==='action'&&f[1].startsWith('pointing at '))||BIG_TEXT.has(f[1])||(f[0]==='action'&&p.pose==='pointing'&&f[1]==='pointing at '+p.pointAt)));
 function combos(a,k){ if(k===1) return a.map(x=>[x]); const out=[]; a.forEach((x,i)=>combos(a.slice(i+1),k-1).forEach(c=>out.push([x].concat(c)))); return out; }
 const list=a=>a.length<3?a.join(' and '):a.slice(0,-1).join(', ')+' and '+a[a.length-1];
 /* "She’s wearing a red blouse and a yellow skirt. She’s holding a mug." */

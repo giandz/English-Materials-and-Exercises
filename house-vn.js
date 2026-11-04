@@ -133,7 +133,7 @@ const BASE = ((document.currentScript && document.currentScript.src) || '').repl
 /* bionic reading: the same word rule as house.js (Latin letters, inner apostrophes kept: I've, don't) */
 const BI_L = 'A-Za-z\u00C0-\u00D6\u00D8-\u00F6\u00F8-\u024F', BI_WORD = new RegExp('[' + BI_L + ']+(?:[\'\u2019][' + BI_L + ']+)*', 'g');
 /* pronunciation marks: the numbers of pron-mark.js (its circles sit ROW em above the letters; struts make room above and below) */
-const PMK = {ROW:0.42, UNDER:0.85, UNDER_LABEL:1.5, LABELS:{y:'/y/', w:'/w/', flap:'d', ch:'ch', j:'j', sh:'sh', zh:'zh', m:'m', ng:'ng'}};
+const PMK = {ROW:0.42, UNDER:0.85, UNDER_LINK:1.15, UNDER_LABEL:1.8, LINK_BELOW:0.4, LABELS:{y:'/y/', w:'/w/', flap:'d', ch:'ch', j:'j', sh:'sh', zh:'zh', m:'m', ng:'ng'}};
 
 const CSS = `
 .vn{ --vn-box:28%; max-width:960px; margin:0 auto; user-select:none; -webkit-user-select:none; }
@@ -250,22 +250,24 @@ const CSS = `
 .vn-count{ font-family:var(--font-mono, monospace); font-size:.8rem; color:var(--text-secondary, #555); min-width:4.5em; text-align:center; }
 .vn.bionic .c.bi{ font-weight:700; }
 /* pronunciation marks: one overlay over the text; each word gets a strut for the circles above it (and the arrow, the
-   connected speech under it), as on the lesson pages */
+   connected speech under it), as on the lesson pages. The text box scrolls, so it clips: the struts reach past every mark */
 .vn-pm{ position:absolute; left:0; top:0; width:100%; height:1px; overflow:visible; pointer-events:none; }
 .vn-pm .pm-st{ color:var(--pm-stress, var(--text-primary, currentColor)); }
 .vn-pm .pm-tune{ color:var(--pm-tune, var(--text-primary, currentColor)); }
 .vn-pm .pm-cs{ color:var(--pm-connected, #0891b2); }
 .vn-pm text{ font-family:var(--font-sans, sans-serif); font-weight:700; fill:currentColor; }
-.vn.pron .vn-text .w::before{ content:''; display:inline-block; width:0; vertical-align:baseline; height:1.61em; }
-.vn.pron .vn-text .w.pm-tail::before{ height:3.28em; }
-.vn.pron .vn-text .w.pm-under::before{ vertical-align:-.85em; height:2.46em; }
-.vn.pron .vn-text .w.pm-tail.pm-under::before{ height:4.13em; }
-.vn.pron .vn-text .w.pm-under.pm-label::before{ vertical-align:-1.5em; height:3.11em; }
-.vn.pron .vn-text .w.pm-tail.pm-under.pm-label::before{ height:4.78em; }
+.vn.pron .vn-text .w::before{ content:''; display:inline-block; width:0; vertical-align:baseline; height:1.8em; }
+.vn.pron .vn-text .w.pm-tail::before{ height:3.4em; }
+.vn.pron .vn-text .w.pm-under::before{ vertical-align:-.85em; height:2.65em; }
+.vn.pron .vn-text .w.pm-tail.pm-under::before{ height:4.25em; }
+.vn.pron .vn-text .w.pm-under.pm-link::before{ vertical-align:-1.15em; height:2.95em; }
+.vn.pron .vn-text .w.pm-tail.pm-under.pm-link::before{ height:4.55em; }
+.vn.pron .vn-text .w.pm-under.pm-label::before{ vertical-align:-1.8em; height:3.6em; }
+.vn.pron .vn-text .w.pm-tail.pm-under.pm-label::before{ height:5.2em; }
 .vn.pron .vn-text .c.pm-end{ padding-right:.95em; }
 /* marks need room above and below each line: a slightly taller box and slightly smaller letters */
-.vn.pron{ --vn-box:32%; }
-.vn.pron .vn-text{ line-height:1.25; font-size:clamp(.82rem, 2vw, 1.12rem); }
+.vn.pron{ --vn-box:35%; }
+.vn.pron .vn-text{ line-height:1.25; font-size:clamp(.82rem, 2vw, 1.12rem); padding-bottom:.15em; }
 .vn-sr{ position:absolute; width:1px; height:1px; overflow:hidden; clip:rect(0 0 0 0); white-space:nowrap; }
 `;
 function injectCSS(){
@@ -1033,14 +1035,14 @@ function create(host, script){
     let A;
     try{ A = global.PronMark.analyse(pronSrc.text, {stress}); }catch(e){ console.error(e); return; }
     const wordEl = k => { const c = span[A.words[k].from]; return c ? c.closest('.w') : null; };
-    el.querySelectorAll('.w.pm-tail, .w.pm-under, .w.pm-label, .c.pm-end').forEach(n => n.classList.remove('pm-tail', 'pm-under', 'pm-label', 'pm-end'));
+    el.querySelectorAll('.w.pm-tail, .w.pm-under, .w.pm-link, .w.pm-label, .c.pm-end').forEach(n => n.classList.remove('pm-tail', 'pm-under', 'pm-link', 'pm-label', 'pm-end'));
     const endSpan = new Map();
     for(const t of A.tunes){
       const w = A.words[t.to], we = wordEl(t.to); if(we) we.classList.add('pm-tail');
       let e = w.to; while(e < pronSrc.text.length && /[.?!…,;:"”’')\]]/.test(pronSrc.text[e])) e++;
       const last = span[e - 1]; if(last){ last.classList.add('pm-end'); endSpan.set(t, last); }
     }
-    for(const l of A.links) for(const k of [l.word, l.word + 1]){ const we = wordEl(k); if(we){ we.classList.add('pm-under'); if(l.label) we.classList.add('pm-label'); } }
+    for(const l of A.links) for(const k of [l.word, l.word + 1]){ const we = wordEl(k); if(we){ we.classList.add('pm-under'); if(l.label) we.classList.add('pm-label'); if(l.type === 'link') we.classList.add('pm-link'); } }
     const svg = document.createElementNS('http://www.w3.org/2000/svg', 'svg');
     svg.setAttribute('class', 'vn-pm'); svg.setAttribute('aria-hidden', 'true');
     el.appendChild(svg);
@@ -1085,17 +1087,26 @@ function create(host, script){
     }
     /* connected speech under the gaps */
     const wl = ARROW.w * u * 0.6, ll = ARROW.len * u * 0.62;
+    let prevTip = null;
     for(const l of P.A.links){
       const ra = rect(l.a[0], l.a[1]), rb = rect(l.b[0], l.b[1]);
       if(!ra || !rb || Math.abs(ra.top - rb.top) > fs * 0.5) continue;
       const x0 = (ra.left + ra.right) / 2 - ox, x1 = (rb.left + rb.right) / 2 - ox, y = ra.bottom + 0.1 * fs - oy, dip = 0.55 * fs;
       const cx = (x0 + x1) / 2, cy = y + dip * 2 * 0.62;
-      let dd = 'M' + f2(x0) + ',' + f2(y) + 'Q' + f2(cx) + ',' + f2(cy) + ' ' + f2(x1) + ',' + f2(y);
-      if(l.type === 'link'){ const dx = x1 - cx, dy = y - cy, n = Math.hypot(dx, dy) || 1, ux = dx / n, uy = dy / n;
-        const leg = sg => f2(x1 - ux * ll - uy * wl * sg) + ',' + f2(y - uy * ll + ux * wl * sg); dd += 'M' + leg(1) + 'L' + f2(x1) + ',' + f2(y) + 'L' + leg(-1); }
+      let dd;
+      if(l.type === 'link'){
+        /* catenation, as on the lesson pages: a straight piece runs up through the head and the curve stays below its legs;
+           where two arrows meet in a short word, or the arrow is very narrow, the curve starts below the legs too */
+        const neck = y + ll, ctrl = neck + PMK.LINK_BELOW * fs / 0.75;
+        const crowded = (prevTip !== null && Math.abs(x0 - prevTip) < wl + sw * 1.2) || x1 - x0 < wl + sw * 1.2;
+        const y0 = crowded ? neck + sw * 1.1 : y;
+        dd = 'M' + f2(x0) + ',' + f2(y0) + 'C' + f2(x0) + ',' + f2(ctrl) + ' ' + f2(x1) + ',' + f2(ctrl) + ' ' + f2(x1) + ',' + f2(neck) + 'L' + f2(x1) + ',' + f2(y)
+          + 'M' + f2(x1 - wl) + ',' + f2(neck) + 'L' + f2(x1) + ',' + f2(y) + 'L' + f2(x1 + wl) + ',' + f2(neck);
+        prevTip = x1;
+      } else { dd = 'M' + f2(x0) + ',' + f2(y) + 'Q' + f2(cx) + ',' + f2(cy) + ' ' + f2(x1) + ',' + f2(y); prevTip = null; }
       if(l.type === 'elision') dd += 'M' + f2(ra.left - 0.02 * fs - ox) + ',' + f2(ra.bottom - 0.2 * fs - oy) + 'L' + f2(ra.right + 0.02 * fs - ox) + ',' + f2(ra.top + 0.26 * fs - oy);
       let g = `<path class="pm-cs" data-cs="${l.type}" d="${dd}" ${line}/>`;
-      if(l.label) g += `<text class="pm-cs" x="${f2(cx)}" y="${f2(y + dip * 0.62 + 0.66 * fs)}" font-size="${f2(0.6 * fs)}" text-anchor="middle">${PMK.LABELS[l.label] || l.label}</text>`;
+      if(l.label) g += `<text class="pm-cs" x="${f2(cx)}" y="${f2(l.type === 'link' ? y + ll + PMK.LINK_BELOW * fs + 0.58 * fs : y + dip * 0.62 + 0.66 * fs)}" font-size="${f2(0.6 * fs)}" text-anchor="middle">${PMK.LABELS[l.label] || l.label}</text>`;
       groups.push({at:l.b[0], svg:g});
     }
     P.svg.innerHTML = groups.map((g, i) => `<g data-i="${i}">${g.svg}</g>`).join('');
