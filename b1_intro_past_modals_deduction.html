@@ -24,8 +24,6 @@
 .cast-card b{ display:block; color:var(--text-primary); font-size:.8667rem; }
 .cast-card svg{ display:block; width:100%; height:auto; }
 .bubble-wrap > .bubble-col{ max-width:92%; }
-.bubble-wrap.has-think{ align-items:flex-start; }
-.bubble-wrap.has-think .avatar{ margin-top:1.15rem; }
 .key-line{ font-size:.8333rem; color:var(--text-secondary); margin:0 0 .8rem; }
 @media (max-width:520px){ .cast-row{ grid-template-columns:repeat(2, minmax(0,1fr)); } }
 </style>
@@ -101,15 +99,16 @@ const LINES = [
   ['Mom', 'Ha! So he [definitely/adverb] [didn’t/neg] [go/verb] to work. And Grandma went swimming? I [must/aux] [have/aux] [been/part] wrong about the TV!'],
   ['Ana', 'Well, we were right about the wet shorts. Not bad, detective!']
 ];
+/* a line with a thought: the house thought bubble (house.js HouseThink) round the before → now pictures */
 const conv = document.getElementById('conversation');
 LINES.forEach(([who, text, think]) => {
   const s = SPEAKERS[who], right = s.side === 'right';
   conv.insertAdjacentHTML('beforeend',
-    '<div class="bubble-wrap' + (right ? ' right' : '') + (think ? ' has-think' : '') + '">' +
+    '<div class="bubble-wrap' + (right ? ' right' : '') + '">' +
       '<div class="avatar ' + s.av + '">' + s.avatar + '</div>' +
       '<div class="bubble-col"><div class="bname' + (right ? ' right' : '') + '">' + (who === 'Mom' ? 'Mom (Julia)' : who) + '</div>' +
       '<div class="bubble ' + (right ? 'right' : 'left') + '">' + tag(text) + '</div>' +
-      (think ? D.pastBubble(think, { side: s.side, label: who + ' thinks' }) : '') +
+      (think ? HouseThink.html(D.pastBubble(think), { label: who + ' thinks' }) : '') +
       '</div>' +
     '</div>');
 });

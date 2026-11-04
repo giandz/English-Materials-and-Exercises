@@ -30,8 +30,11 @@
                       window.VNPeople) to the middle of the stage in a full shot as it is said, in place
                       of whoever was there before; data-vn-enter="id" and data-vn-leave="id" bring
                       someone on (beside the others) or take them off. They are house-vn.js stage cues.
-     the extras       pictures under a line (thought bubbles, memories) are shown under the
-                      stage while that line is said.
+     the extras       pictures under a line (thought bubbles, memories) become a thought bubble on the
+                      stage while that line is said: between the characters at the thinker's head level, with a
+                      trail of dots from the cloud to their head, made smaller if it would not fit. A page's own
+                      cloud (the house .think-bubble's .think-cloud, see HouseThink in house.js) is used as it is;
+                      anything else gets a cloud round it.
    The choice (chat or visual novel) is remembered for every page.
    ══════════════════════════════════════════════════════════════════════════ */
 (function () {
@@ -498,7 +501,7 @@
     return [...container.querySelectorAll('.bubble-wrap')].map(w => {
       const nameEl = w.querySelector('.bname, .bubble-name'), bubble = w.querySelector('.bubble');
       const clone = bubble ? bubble.cloneNode(true) : document.createElement('div');
-      clone.querySelectorAll('.ss-figs, .pp-country, svg, .dh-think, .pp-memories, script, style').forEach(n => n.remove());
+      clone.querySelectorAll('.ss-figs, .pp-country, svg, .think-bubble, .dh-think, .pp-memories, script, style').forEach(n => n.remove());
       const col = bubble && bubble.parentElement;
       const extras = col ? [...col.children].filter(n => n !== bubble && n !== nameEl && !n.matches('.bname, .bubble-name')) : [];
       return { name: (nameEl ? nameEl.textContent : '').trim() || 'Someone', avatar: ((w.querySelector('.avatar') || {}).textContent || '').trim(),
@@ -641,9 +644,25 @@
 .vnad-bar button:focus-visible{ outline:2px solid var(--text-accent, #185fa5); outline-offset:2px; }
 .vnad-host{ margin:0 0 1rem; }
 .vnad-wait{ max-width:960px; margin:0 auto; aspect-ratio:16/9; border-radius:var(--radius, 12px); background:var(--surface-1, #eee); border:1px solid var(--border, #ddd); display:flex; align-items:center; justify-content:center; }
-.vnad-extra{ margin:.6rem auto 0; max-width:960px; }
-.vnad-extra:empty{ display:none; }
-.vnad-extra .dh-think, .vnad-extra .pp-memories{ margin-left:auto; margin-right:auto; }
+.vnad-think{ position:absolute; z-index:80; left:50%; top:30%; transform:translate(-50%, -50%) scale(var(--s, 1)); transform-origin:50% 50%;
+  opacity:0; transition:opacity .3s ease, transform .3s ease; pointer-events:none; }
+.vnad-think.on{ opacity:1; }
+.vnad-think.snap, .vnad-tail.snap{ transition:none; }
+.vnad-think.ghost, .vnad-tail.ghost{ transition:opacity .25s ease, transform .25s ease; }
+.vnad-think.pop{ transform:translate(-50%, -50%) scale(calc(var(--s, 1) * .82)); }
+.vn-stage.inserting .vnad-think, .vn-stage.inserting .vnad-tail{ opacity:0; }
+.vnad-think-in{ position:relative; width:max-content; max-width:960px; }
+.vnad-cloud{ padding:9px; border-radius:26px; background:var(--surface-2, #fff); border:1.5px solid var(--color-border-primary, #ccc); }
+.vnad-think .vnad-cloud, .vnad-think .dh-cloud{ box-shadow:0 4px 18px rgba(0,0,0,.22); }
+.vnad-think .dh-think, .vnad-think .think-bubble.think-bubble{ margin:0; padding-top:0; max-width:none; }
+.vnad-think .think-cloud{ box-shadow:0 4px 18px rgba(0,0,0,.22); }
+.vnad-think .dh-think::before, .vnad-think .dh-think::after{ display:none; }
+.vnad-think .pp-memories{ margin:0; justify-content:center; }
+/* the trail of dots from the cloud to the thinker's head, drawn over the whole stage */
+.vnad-tail{ position:absolute; inset:0; width:100%; height:100%; z-index:79; pointer-events:none; overflow:visible; opacity:0; transition:opacity .3s ease; }
+.vnad-tail.on{ opacity:1; }
+.vnad-tail circle{ fill:var(--surface-2, #fff); stroke:var(--color-border-primary, #ccc); stroke-width:1.5; filter:drop-shadow(0 2px 3px rgba(0,0,0,.18)); }
+@media (prefers-reduced-motion: reduce){ .vnad-think, .vnad-tail, .vnad-think.ghost, .vnad-tail.ghost{ transition:none; } }
 .vnad-msg{ font-size:.8667rem; color:var(--text-secondary, #555); padding:1rem; text-align:center; }`;
   function injectCSS() { if (document.getElementById('vnad-css')) return; const s = document.createElement('style'); s.id = 'vnad-css'; s.textContent = CSS; document.head.appendChild(s); }
 
@@ -660,11 +679,108 @@
     (anchor ? anchor : container).insertAdjacentElement(anchor ? 'afterend' : 'beforebegin', bar);
     const host = document.createElement('div'); host.className = 'vnad-host'; host.hidden = true;
     const stageEl = document.createElement('div'); stageEl.className = 'vnad-wait';   /* a frame the size of the stage until it starts */
-    const extra = document.createElement('div'); extra.className = 'vnad-extra'; extra.setAttribute('aria-live', 'polite');
-    host.append(stageEl, extra);
+    host.append(stageEl);
     container.insertAdjacentElement('afterend', host);
-    const C = { container, bar, host, stageEl, extra, vn: null, moved: [], visible: false };
+    const C = { container, bar, host, stageEl, vn: null, moved: [], visible: false, think: null, ro: null };
     const giveBack = () => { for (const [n, parent, next] of C.moved) parent.insertBefore(n, next); C.moved = []; };
+    /* the thought bubble on the stage: made once, filled with a line's pictures, scaled to fit */
+    /* the thinker's head on the stage: the parts of their picture that move with the head */
+    const headOf = stage => {
+      const sp = C.thinker && stage.querySelector('.vn-ch[data-id="' + C.thinker + '"]'); if (!sp || sp.classList.contains('out')) return null;
+      let r = null;
+      for (const g of sp.querySelectorAll('[data-joint="neck"]')) { const b = g.getBoundingClientRect(); if (!b.width) continue;
+        r = r ? { left: Math.min(r.left, b.left), top: Math.min(r.top, b.top), right: Math.max(r.right, b.right), bottom: Math.max(r.bottom, b.bottom) } : { left: b.left, top: b.top, right: b.right, bottom: b.bottom }; }
+      return r;
+    };
+    /* the bubble at head level between the characters, scaled to fit; the tail from its edge to the thinker's head */
+    const fitThink = () => {
+      const T = C.think, stage = T && T.parentElement; if (!T || !stage || !T.classList.contains('on') && !T.classList.contains('pop')) return;
+      const w = T.offsetWidth, h = T.offsetHeight, sw = stage.clientWidth, sh = stage.clientHeight;
+      if (!w || !h) return;
+      const box = stage.getBoundingClientRect(), vb = stage.querySelector('.vn-box'), boxTop = vb ? vb.getBoundingClientRect().top - box.top : sh * 0.72;
+      const hd = headOf(stage), head = hd && { x: (hd.left + hd.right) / 2 - box.left, y: hd.top + (hd.bottom - hd.top) * 0.42 - box.top, r: (hd.right - hd.left) / 2 };
+      const s = Math.min(1, sw * 0.52 / w, (boxTop - 16) / h);
+      const hs = h * s, ws = w * s;
+      let cy = head ? head.y : sh * 0.3;
+      cy = Math.max(hs / 2 + 6, Math.min(boxTop - hs / 2 - 10, cy));
+      /* between the characters; a wide bubble moves away from the thinker so the tail has room (it may cover the listener) */
+      let cx = sw / 2;
+      if (head) {
+        const gap = Math.max(46, sw * 0.06);
+        if (head.x < sw / 2) cx = Math.max(cx, head.x + head.r + gap + ws / 2); else if (head.x > sw / 2) cx = Math.min(cx, head.x - head.r - gap - ws / 2);
+        cx = Math.max(ws / 2 + 6, Math.min(sw - ws / 2 - 6, cx));
+      }
+      T.style.setProperty('--s', s.toFixed(3)); T.style.top = cy + 'px'; T.style.left = cx + 'px';
+      let svg = C.tail;
+      if (!svg) { svg = C.tail = document.createElementNS('http://www.w3.org/2000/svg', 'svg'); svg.setAttribute('class', 'vnad-tail'); svg.setAttribute('aria-hidden', 'true'); }
+      if (svg.parentElement !== stage) stage.appendChild(svg);
+      if (!head) { svg.innerHTML = ''; return; }
+      /* from the cloud's edge, on the line to the head, to just short of the head */
+      const dx = head.x - cx, dy = head.y - cy, len = Math.hypot(dx, dy) || 1, ux = dx / len, uy = dy / len;
+      const tx = ux ? (ws / 2) / Math.abs(ux) : Infinity, ty = uy ? (hs / 2) / Math.abs(uy) : Infinity;
+      const from = Math.min(tx, ty) + 4, to = len - head.r * 0.9 - 4;
+      if (to - from < 18) { svg.innerHTML = ''; return; }
+      const k = Math.max(0.7, Math.min(1.2, sw / 900));
+      svg.innerHTML = [[0.12, 10], [0.52, 7], [0.88, 4.5]].map(([t, r]) => { const d = from + (to - from) * t;
+        return '<circle cx="' + (cx + ux * d).toFixed(1) + '" cy="' + (cy + uy * d).toFixed(1) + '" r="' + (r * k).toFixed(1) + '"/>'; }).join('');
+    };
+    /* the head moves (characters settle, nod, come in): the tail follows it while the bubble is shown */
+    const followThink = () => {
+      cancelAnimationFrame(C.follow);
+      const step = () => { if (!C.think || !C.think.classList.contains('on')) return; fitThink(); C.follow = requestAnimationFrame(step); };
+      C.follow = requestAnimationFrame(step);
+    };
+    /* the bubble that is showing fades out as a copy, so its pictures can go straight back to the chat
+       and the real bubble is free for the next line; returns true if there was one to fade */
+    const retireThink = () => {
+      const T = C.think, stage = T && T.parentElement;
+      if (!T || !stage || !T.classList.contains('on')) return false;
+      const reduce = window.matchMedia && matchMedia('(prefers-reduced-motion: reduce)').matches;
+      const ghosts = [T, C.tail].filter(el => el && el.parentElement === stage && el.classList.contains('on')).map(el => {
+        const g = el.cloneNode(true);
+        g.classList.add('ghost'); g.removeAttribute('aria-live'); g.setAttribute('aria-hidden', 'true');
+        stage.insertBefore(g, el);
+        el.classList.add('snap'); el.classList.remove('on');   /* the real one goes at once, under its copy */
+        return g;
+      });
+      cancelAnimationFrame(C.follow);
+      if (reduce) { ghosts.forEach(g => g.remove()); return true; }
+      requestAnimationFrame(() => ghosts.forEach(g => { g.classList.remove('on'); if (g.classList.contains('vnad-think')) g.classList.add('pop'); }));
+      ghosts.forEach(g => {
+        const done = () => g.remove();
+        g.addEventListener('transitionend', e => { if (e.target === g && e.propertyName === 'opacity') done(); });
+        setTimeout(done, 450);
+      });
+      return true;
+    };
+    const showThink = (nodes, who, after) => {
+      const stage = stageEl.querySelector('.vn-stage'); if (!stage) return;
+      if (!C.think) {
+        C.think = document.createElement('div'); C.think.className = 'vnad-think'; C.think.setAttribute('aria-live', 'polite');
+        if (window.ResizeObserver) { C.ro = new ResizeObserver(fitThink); C.ro.observe(stage); }
+      }
+      const T = C.think; if (T.parentElement !== stage) stage.appendChild(T);
+      T.innerHTML = '';
+      C.thinker = who;
+      if (!nodes.length) { C.thinkToken = (C.thinkToken || 0) + 1; T.classList.remove('on'); if (C.tail) C.tail.classList.remove('on'); cancelAnimationFrame(C.follow); return; }
+      if (C.tail) { C.tail.classList.add('snap'); C.tail.classList.remove('on'); }
+      const inner = document.createElement('div'); inner.className = 'vnad-think-in';
+      const own = nodes.some(n => n.querySelector && n.querySelector('.think-cloud, .dh-cloud'));   /* the page's own cloud: no second one round it */
+      const box = own ? inner : inner.appendChild(Object.assign(document.createElement('div'), { className: 'vnad-cloud' }));
+      for (const n of nodes) { C.moved.push([n, n.parentNode, n.nextSibling]); box.appendChild(n); }
+      T.appendChild(inner);
+      T.className = 'vnad-think pop snap';
+      fitThink();
+      /* fade in — after the last bubble has mostly faded out, when there was one */
+      const token = C.thinkToken = (C.thinkToken || 0) + 1;
+      const fadeIn = () => requestAnimationFrame(() => requestAnimationFrame(() => {
+        if (token !== C.thinkToken || C.think !== T) return;
+        T.classList.remove('snap', 'pop'); T.classList.add('on');
+        if (C.tail) { C.tail.classList.remove('snap'); C.tail.classList.add('on'); }
+        followThink();
+      }));
+      if (after) setTimeout(fadeIn, 180); else fadeIn();
+    };
     C.start = () => {
       if (C.vn || C.starting) return; C.starting = true;
       stageEl.innerHTML = '<div class="vnad-msg">🎬 Loading…</div>';
@@ -672,14 +788,16 @@
         C.starting = false; if (mode !== 'vn') { stageEl.innerHTML = ''; return; }
         const lines = linesOf(container); if (!lines.length) { stageEl.innerHTML = ''; return; }
         const st = setting(container, lines), sc = script(container, lines, st);
-        sc.onLine = i => {   /* the pictures that go with this line, under the stage */
+        sc.onLine = i => {   /* the pictures that go with this line: a thought bubble on the stage */
+          const was = retireThink();   /* the last bubble fades out as a copy */
           giveBack();
-          for (const n of (lines[i] || {}).extras || []) { C.moved.push([n, n.parentNode, n.nextSibling]); extra.appendChild(n); }
+          const L = lines[i] || {};
+          showThink(L.extras || [], (sc.lines[i] || {}).who, was);
         };
         stageEl.className = ''; C.vn = window.HouseVN.create(stageEl, sc);
       }).catch(err => { C.starting = false; stageEl.innerHTML = '<div class="vnad-msg">The visual novel could not be loaded. ' + err.message + '</div>'; });
     };
-    C.stop = () => { if (C.vn) { C.vn.destroy(); C.vn = null; } giveBack(); stageEl.innerHTML = ''; stageEl.className = 'vnad-wait'; };
+    C.stop = () => { if (C.ro) { C.ro.disconnect(); C.ro = null; } cancelAnimationFrame(C.follow); C.think = null; C.tail = null; if (C.vn) { C.vn.destroy(); C.vn = null; } giveBack(); stageEl.innerHTML = ''; stageEl.className = 'vnad-wait'; };
     C.apply = (fromClick) => {
       const vn = mode === 'vn';
       bar.querySelectorAll('button').forEach(b => b.setAttribute('aria-pressed', String(b.dataset.m === mode)));

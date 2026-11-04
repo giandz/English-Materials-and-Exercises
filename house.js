@@ -16,6 +16,7 @@
      · HouseCCQ       — concept checking questions
      · favicon        — auto-sets a level badge in the browser tab
      · HouseComprehension — the before/after reading questions
+     · HouseThink     — thought bubbles under a line of a conversation
 
    Load it once at the end of <body>, before the page's own script.
    ══════════════════════════════════════════════════════════════════════════ */
@@ -1053,8 +1054,6 @@
   var WORD = new RegExp('[' + L + ']+(?:[\'\u2019][' + L + ']+)*', 'g');
   var APOS = /['\u2019]/;
 
-  // .pm-line: a line with pronunciation marks (pron-mark.js) has its letters split
-  // round the circles, so bionic reading leaves it as it is.
   var SKIP = '.bionic-w, .pm-line, input, textarea, select, script, style, [contenteditable]';
 
   var on = false;
@@ -2022,10 +2021,6 @@
      { words: [...], error: { type:'extra',     wordIndex } }
      { words: [...], error: { type:'misplaced', wordIndex, targetGapIndex } }
      { words: [...], error: { type:'wrong',     wordIndex, options, correct } }
-     { words: [...], errors: [ <error>, <error>, ... ] }   // several mistakes:
-       each can be fixed in any order; the sentence counts once all are fixed.
-   Optional on any item: keepCase:true when the first word is a proper noun, so
-   it keeps its capital if a fix moves it away from the start of the sentence.
    ══════════════════════════════════════════════════════════════════════════ */
 (function (global) {
   'use strict';
@@ -2137,12 +2132,8 @@
       wrap.appendChild(verdictEl);
       listEl.appendChild(wrap);
 
-      // `error` (one mistake or null) and `errors` (a list) both end up here.
-      var errors = item.errors || (item.error ? [item.error] : []);
-      var fixed = [];             // fixed[n] is true once errors[n] is corrected
-      var resolved = !errors.length; // error-free sentences start already "solved"
-      var activeTarget = null;    // { kind: 'word'|'gap', index, error }
-      var moveError = null;       // the misplaced-word error being moved
+      var resolved = !item.error; // error-free sentences start already "solved"
+      var activeTarget = null;    // { kind: 'word'|'gap', index }
       var pickingDestination = false;
       var anchorEl = null;
       var gapEls = [];
@@ -2170,38 +2161,18 @@
             }
           })(i);
         }
-        if (wordEls[0]) wordEls[0].dataset.wasFirst = '1';
       }
 
-      function openErrorAt(kind, i) {
-        for (var n = 0; n < errors.length; n++) {
-          var e = errors[n];
-          if (fixed[n]) continue;
-          if (kind === 'word' && e.type !== 'missing' && e.wordIndex === i) return e;
-          if (kind === 'gap' && e.type === 'missing' && e.gapIndex === i) return e;
-        }
-        return null;
+      function isErrorWord(i) {
+        var e = item.error;
+        if (!e) return false;
+        return (e.type === 'extra' && e.wordIndex === i) ||
+               (e.type === 'misplaced' && e.wordIndex === i) ||
+               (e.type === 'wrong' && e.wordIndex === i);
       }
-
-      function markFixed(e) {
-        fixed[errors.indexOf(e)] = true;
-        resolved = errors.every(function (_, n) { return fixed[n]; });
-        fixCapitals();
-      }
-
-      // Whatever sits first in the sentence gets a capital. A word that used to
-      // be first and no longer is loses it — except "I" and proper nouns.
-      function fixCapitals() {
-        var chips = sentEl.querySelectorAll('.eh2-word');
-        for (var n = 0; n < chips.length; n++) {
-          var c = chips[n];
-          if (n === 0) {
-            c.textContent = capitalizeFirst(c.textContent);
-            c.dataset.wasFirst = '1';
-          } else if (c.dataset.wasFirst && !item.keepCase && !/^I(?:['\u2019]|$)/.test(c.textContent)) {
-            c.textContent = decapitalizeFirst(c.textContent);
-          }
-        }
+      function isErrorGap(i) {
+        var e = item.error;
+        return !!e && e.type === 'missing' && e.gapIndex === i;
       }
 
       function closeMenu() {
@@ -2211,7 +2182,6 @@
         activeTarget = null;
         anchorEl = null;
         pickingDestination = false;
-        moveError = null;
         gapEls.forEach(function (g) { g.classList.remove('target-pick'); });
       }
 
@@ -2241,13 +2211,13 @@
 
       function onWordClick(i) {
         if (resolved || pickingDestination) { closeMenu(); return; }
-        if (!openErrorAt('word', i)) return; // correct word: nothing happens
+        if (!isErrorWord(i)) return; // correct word: nothing happens
         openActionMenu('word', i);
       }
 
       function onGapClick(i) {
         if (pickingDestination) {
-          var e = moveError;
+          var e = item.error;
           // The two gaps immediately touching the word itself aren't real
           // destinations — moving it there is a no-op. They were never
           // offered as options (see startDestinationPick), so a click here
@@ -2255,7 +2225,7 @@
           if (i === e.wordIndex || i === e.wordIndex + 1) return;
           if (e.type === 'misplaced' && i === e.targetGapIndex) {
             performMove(e.wordIndex, i);
-            markFixed(e);
+            resolved = true;
             closeMenu();
           } else {
             flashWrong([wordEls[e.wordIndex], gapEls[i]]);
@@ -2264,7 +2234,7 @@
           return;
         }
         if (resolved) return;
-        if (!openErrorAt('gap', i)) return; // correct/empty gap: nothing happens
+        if (!isErrorGap(i)) return; // correct/empty gap: nothing happens
         openActionMenu('gap', i);
       }
 
@@ -2285,7 +2255,7 @@
 
       function openActionMenu(kind, index) {
         closeMenu();
-        activeTarget = { kind: kind, index: index, error: openErrorAt(kind, index) };
+        activeTarget = { kind: kind, index: index };
         anchorEl = kind === 'word' ? wordEls[index] : gapEls[index];
         anchorEl.classList.add('active-target');
         menuEl.classList.add('open');
@@ -2303,9 +2273,9 @@
       }
 
       function handleAction(action) {
+        var e = item.error;
         var t = activeTarget;
         if (!t) return;
-        var e = t.error;
         var targetEl = t.kind === 'word' ? wordEls[t.index] : gapEls[t.index];
 
         if (action === 'insert') {
@@ -2322,7 +2292,7 @@
         if (action === 'delete') {
           if (e.type === 'extra' && t.kind === 'word' && t.index === e.wordIndex) {
             removeWordAndGaps(t.index);
-            markFixed(e);
+            resolved = true;
             closeMenu();
           } else {
             flashWrong([targetEl]);
@@ -2332,7 +2302,7 @@
         }
         if (action === 'move') {
           if (e.type === 'misplaced' && t.kind === 'word' && t.index === e.wordIndex) {
-            startDestinationPick(e);
+            startDestinationPick();
           } else {
             flashWrong([targetEl]);
             closeMenu();
@@ -2355,7 +2325,7 @@
             if (opt === e.correct) {
               if (mode === 'gap') insertWordAt(e.gapIndex, opt);
               else replaceWordAt(e.wordIndex, opt);
-              markFixed(e);
+              resolved = true;
               closeMenu();
             } else {
               var el = mode === 'gap' ? gapEls[e.gapIndex] : wordEls[e.wordIndex];
@@ -2368,7 +2338,7 @@
         positionMenu();
       }
 
-      function startDestinationPick(e) {
+      function startDestinationPick() {
         menuEl.innerHTML = '';
         var hint = document.createElement('div');
         hint.className = 'eh2-menu-hint';
@@ -2376,7 +2346,7 @@
         menuEl.appendChild(hint);
         menuEl.classList.add('open');
         pickingDestination = true;
-        moveError = e;
+        var e = item.error;
         gapEls.forEach(function (g, i) {
           // A gap right after sentence-ending punctuation isn't a real
           // position in the sentence — never offer it as a move destination.
@@ -2432,25 +2402,46 @@
       }
 
       function performMove(wordIndex, targetGapIndex) {
-        var word = wordEls[wordIndex].textContent;
-        var wasFirst = wordEls[wordIndex].dataset.wasFirst;
+        var originalWord = item.words[wordIndex];
+        var wasFirst = wordIndex === 0;
+        var willBeFirst = targetGapIndex === 0;
+        // Capture whichever word currently sits at the start of the
+        // sentence, in case the move displaces it from that spot.
+        var currentFirstWordEl = wasFirst ? null : wordEls[0];
+
         removeWordAndGaps(wordIndex);
+
+        // A word moving into (or out of) the very first slot needs its
+        // capitalization updated to match: sentence-initial words are
+        // capitalized, everything else isn't.
+        var displayWord = willBeFirst
+          ? capitalizeFirst(originalWord)
+          : (wasFirst ? decapitalizeFirst(originalWord) : originalWord);
 
         var chip = document.createElement('span');
         chip.className = 'eh2-word moved-in';
-        chip.textContent = word;
-        if (wasFirst) chip.dataset.wasFirst = '1';
+        chip.textContent = displayWord;
         gapEls[targetGapIndex].insertAdjacentElement('afterend', chip);
 
         var dot = document.createElement('span');
         dot.className = 'eh2-gap';
         chip.insertAdjacentElement('afterend', dot);
-        // markFixed() runs fixCapitals() straight after this.
+
+        if (willBeFirst && currentFirstWordEl && currentFirstWordEl.parentNode) {
+          // Another word used to be first — it no longer is, so it loses
+          // its capital letter.
+          currentFirstWordEl.textContent = decapitalizeFirst(currentFirstWordEl.textContent);
+        } else if (wasFirst && !willBeFirst) {
+          // The moved word WAS first and has left; whichever word is now
+          // at the front of the sentence needs to gain a capital letter.
+          var newFirstEl = sentEl.querySelector('.eh2-word');
+          if (newFirstEl) newFirstEl.textContent = capitalizeFirst(newFirstEl.textContent);
+        }
       }
 
       okBtn.addEventListener('click', function () {
         if (resolved) {
-          verdictEl.textContent = errors.length ? '✓ Fixed!' : '✓ Correct — nothing was wrong!';
+          verdictEl.textContent = item.error ? '✓ Fixed!' : '✓ Correct — nothing was wrong!';
           verdictEl.className = 'eh2-verdict correct';
           wrap.classList.add('correct');
           if (!counted.has(idx)) {
@@ -2467,8 +2458,7 @@
 
       resetBtn.addEventListener('click', function () {
         closeMenu();
-        fixed = [];
-        resolved = !errors.length;
+        resolved = !item.error;
         verdictEl.textContent = '';
         verdictEl.className = 'eh2-verdict';
         wrap.classList.remove('correct');
@@ -2478,18 +2468,6 @@
           if (scoreEl) scoreEl.textContent = fixedCount;
         }
         buildSentenceDOM();
-      });
-
-      // A tap anywhere outside the open popover closes it. pointerdown, because
-      // iOS Safari doesn't send `click` to the document from plain page content.
-      // While choosing a move destination, taps inside the sentence are left to
-      // the gap handlers.
-      document.addEventListener('pointerdown', function (ev) {
-        if (!menuEl.classList.contains('open')) return;
-        var t = ev.target;
-        if (menuEl.contains(t) || (anchorEl && anchorEl.contains(t))) return;
-        if (pickingDestination && sentEl.contains(t)) return;
-        closeMenu();
       });
 
       buildSentenceDOM();
@@ -2681,6 +2659,152 @@
   inject();
 })();
 
+
+
+/* ══════════════════════════════════════════════════════════════════════════
+   HOUSE THOUGHT BUBBLES
+   What a speaker thinks, remembers or imagines, under their line of a chat
+   conversation: a cloud of pictures, with a trail of dots running from the
+   cloud back to the speaker's avatar. The same thought becomes a cloud on the
+   stage, at the thinker's head, when the conversation is watched as a visual
+   novel (vn-adapter.js), so one piece of markup serves both.
+
+     <div class="bubble-wrap">
+       <div class="avatar av-a">👩</div>
+       <div class="bubble-col">
+         <div class="bname">Ana</div>
+         <div class="bubble left">She must be in the kitchen.</div>
+         <div class="think-bubble" role="group" aria-label="Ana thinks">
+           <div class="think-cloud"> …pictures… </div>
+         </div>
+       </div>
+     </div>
+
+     HouseThink.html(content, { label:'Ana thinks' })   → that thought bubble as a string.
+         content is the pictures (any HTML). A kit's own thought bubble (DeductionHouse.bubble /
+         pastBubble) can be passed as it is: its cloud becomes the house cloud, its layout classes stay.
+     HouseThink.refresh()    redraws the trails (they are redrawn by themselves on resize and when
+                             bubbles are added)
+
+   The line's avatar stays beside the words, not halfway down the cloud. The trail
+   goes down from the avatar and in to the cloud's near edge, never across the
+   speech bubble. A thought bubble outside a conversation gets two dots above its
+   top corner instead. Styles are self-injected, like the bionic button's.
+   ══════════════════════════════════════════════════════════════════════════ */
+(function (global) {
+  'use strict';
+
+  var STYLE_ID = 'house-think-styles';
+  var CSS = ''
+    + '.bubble-wrap.has-think{ align-items:flex-start; position:relative; }'
+    + '.bubble-wrap.has-think > .avatar{ margin-top:1.15rem; }'
+    /* doubled class: wins over a kit's own older bubble rules */
+    + '.think-bubble.think-bubble{ position:relative; margin:14px 0 4px 1.5rem; padding:0; width:fit-content; max-width:calc(100% - 1.5rem); }'
+    + '.bubble-wrap.right .think-bubble.think-bubble{ margin-left:0; margin-right:1.5rem; }'
+    + '.think-bubble.think-free{ margin-left:0; margin-top:22px; }'
+    + '.think-bubble.think-bubble::before, .think-bubble.think-bubble::after{ display:none; }'
+    + '.think-cloud{ display:flex; flex-wrap:wrap; gap:8px; justify-content:center; padding:9px; border-radius:26px;'
+    +   ' background:var(--surface-2); border:1.5px solid var(--color-border-primary); box-shadow:0 2px 10px rgba(0,0,0,.07); }'
+    + '.think-cloud > *{ margin-top:0; margin-bottom:0; }'
+    + '.think-trail{ position:absolute; left:0; top:0; width:100%; height:100%; overflow:visible; pointer-events:none; }'
+    + '.think-trail circle{ fill:var(--surface-2); stroke:var(--color-border-primary); stroke-width:1.5; }';
+
+  function injectStyles() {
+    if (document.getElementById(STYLE_ID)) return;
+    var style = document.createElement('style');
+    style.id = STYLE_ID;
+    style.textContent = CSS;
+    document.head.appendChild(style);
+  }
+
+  function esc(t) { return String(t).replace(/[&<>"]/g, function (c) { return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]; }); }
+
+  function html(content, opts) {
+    opts = opts || {};
+    var t = document.createElement('template');
+    t.innerHTML = String(content || '').trim();
+    var first = t.content.firstElementChild, cls = '', inner;
+    var own = t.content.children.length === 1 && first && (first.classList.contains('dh-think') || first.classList.contains('think-bubble'));
+    var cloud = own ? first.querySelector(':scope > .dh-cloud, :scope > .think-cloud') : null;
+    if (own && cloud) {
+      /* a kit's own bubble: keep its layout classes, make its cloud the house cloud */
+      cls = Array.prototype.filter.call(first.classList, function (c) { return c !== 'right' && c !== 'think-bubble'; }).join(' ');
+      if (!opts.label) opts.label = first.getAttribute('aria-label');
+      cloud.classList.add('think-cloud');
+      inner = cloud.outerHTML;
+    } else {
+      inner = '<div class="think-cloud">' + t.innerHTML + '</div>';
+    }
+    return '<div class="think-bubble' + (cls ? ' ' + cls : '') + '" role="group" aria-label="' + esc(opts.label || 'What the speaker thinks') + '">' + inner + '</div>';
+  }
+
+  var SVG = 'http://www.w3.org/2000/svg';
+  function trail(host, pts) {
+    var svg = host.querySelector(':scope > .think-trail');
+    if (!pts) { if (svg) svg.remove(); return; }
+    if (!svg) { svg = document.createElementNS(SVG, 'svg'); svg.setAttribute('class', 'think-trail'); svg.setAttribute('aria-hidden', 'true'); host.appendChild(svg); }
+    svg.innerHTML = pts.map(function (p) { return '<circle cx="' + p[0].toFixed(1) + '" cy="' + p[1].toFixed(1) + '" r="' + p[2] + '"/>'; }).join('');
+  }
+
+  function draw(tb) {
+    if (tb.closest('.vnad-think')) { trail(tb, null); return; }   /* on the visual-novel stage: it has its own trail */
+    var cloud = tb.querySelector('.think-cloud') || tb.firstElementChild;
+    var wrap = tb.closest('.bubble-wrap'), av = wrap && wrap.querySelector(':scope > .avatar');
+    if (!cloud) return;
+    var R = cloud.getBoundingClientRect();
+    if (!R.width) return;   /* hidden (the chat while the visual novel is shown) */
+    if (!wrap || !av) {
+      /* outside a conversation: two dots above the top corner */
+      tb.classList.add('think-free');
+      var B = tb.getBoundingClientRect(), x = R.left - B.left + 22, y = R.top - B.top;
+      trail(tb, [[x, y - 9, 6], [x - 9, y - 19, 4]]);
+      return;
+    }
+    wrap.classList.add('has-think');
+    var W = wrap.getBoundingClientRect(), A = av.getBoundingClientRect();
+    var right = wrap.classList.contains('right'), s = right ? -1 : 1;
+    var cx = A.left + A.width / 2 - W.left, ay = A.bottom - W.top;
+    var ex = (right ? R.right : R.left) - W.left - s * 8, ey = R.top - W.top + Math.min(22, R.height / 2);
+    if (ey - ay < 14) { trail(wrap, null); return; }
+    /* from the avatar down, then in to the cloud: the small dot by the avatar, the big one by the cloud */
+    trail(wrap, [
+      [cx + s * 1, ay + 7, 3.5],
+      [cx + (ex - cx) * 0.38, ay + (ey - ay) * 0.62, 5],
+      [ex, ey, 7]
+    ]);
+  }
+  function refresh() {
+    document.querySelectorAll('.bubble-wrap.has-think').forEach(function (w) { if (!w.querySelector('.think-bubble')) { w.classList.remove('has-think'); trail(w, null); } });
+    document.querySelectorAll('.think-bubble').forEach(draw);
+  }
+
+  var queued = false, ro = null;
+  function queue() { if (queued) return; queued = true; (global.requestAnimationFrame || setTimeout)(function () { queued = false; watch(); refresh(); }); }
+  function watch() {
+    if (!global.ResizeObserver) return;
+    if (!ro) ro = new ResizeObserver(queue);
+    document.querySelectorAll('.think-bubble').forEach(function (tb) {
+      if (tb._thinkWatched) return; tb._thinkWatched = true;
+      ro.observe(tb); var w = tb.closest('.bubble-wrap'); if (w) ro.observe(w);
+    });
+  }
+  function start() {
+    injectStyles();
+    queue();
+    if (global.MutationObserver) new MutationObserver(function (list) {
+      for (var i = 0; i < list.length; i++) {
+        var m = list[i];
+        if (m.target.closest && m.target.closest('.think-trail')) continue;   /* its own drawing */
+        queue(); return;
+      }
+    }).observe(document.body, { childList: true, subtree: true });
+    global.addEventListener('resize', queue);
+    if (document.fonts && document.fonts.ready) document.fonts.ready.then(queue);
+  }
+  if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', start); else start();
+
+  global.HouseThink = { html: html, refresh: refresh, injectStyles: injectStyles };
+})(window);
 
 /* ══════════════════════════════════════════════════════════════════════════
    HOUSE CONVERSATION AS A VISUAL NOVEL
