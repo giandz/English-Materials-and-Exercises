@@ -27,6 +27,38 @@
      once into <head> the first time an engine is created, so a page that
      draws houses needs no CSS of its own for them. */
   const STYLE_ID = 'house-engine-styles';
+  /* ── Pastel colours ───────────────────────────────────────────────────────
+     For ceramic tile (on walls and floors) and for the bathroom fixtures (toilet,
+     washbasin, bathtub). Each is one base colour; the lit, shaded and line tones
+     and the dark-theme ones are worked out from it. The plain (white / pale grey)
+     tile and white porcelain keep their own hand-picked tones. */
+  const PASTELS = [['pink', 'Pink', '#f2c4ce'], ['peach', 'Peach', '#f5d0b5'], ['lemon', 'Lemon', '#f1e3a0'],
+                   ['mint', 'Mint', '#bfe3cc'], ['blue', 'Baby blue', '#c3d9ee'], ['lilac', 'Lilac', '#d8c8ec']];
+  const PASTEL_IDS = PASTELS.map(p => p[0]);
+  // mix a colour toward white (k > 0) or black (k < 0)
+  function tint(hex, k) {
+    const n = parseInt(hex.slice(1), 16), to = k > 0 ? 255 : 0, a = Math.abs(k);
+    return '#' + [n >> 16, (n >> 8) & 255, n & 255].map(v => Math.round(v + (to - v) * a).toString(16).padStart(2, '0')).join('');
+  }
+  function pastelCSS() {
+    let light = '', dark = '';
+    const both = (sel, f) => { light += sel + '{' + f(x => x) + '}\n'; dark += 'html[data-theme="dark"] ' + sel.split(', ').join(', html[data-theme="dark"] ') + '{' + f(x => tint(x, -0.32)) + '}\n'; };
+    PASTELS.forEach(([id, , c]) => {
+      const tl = tint(c, 0.3), tr = tint(c, -0.1), tln = tint(c, -0.3), fl = tint(c, 0.12), fln = tint(c, -0.25);
+      both(`.m-ctile${id}.fl`, d => `fill:${d(tl)};stroke:${d(tl)};`);
+      both(`.m-ctile${id}.fr`, d => `fill:${d(tr)};stroke:${d(tr)};`);
+      both(`.pat-ctile${id}`, d => `stroke:${d(tln)};`);
+      both(`.m-ftile${id}.ft`, d => `fill:${d(fl)};stroke:${d(fln)};stroke-width:.8;`);
+      both(`.pat-ftile${id}`, d => `stroke:${d(fln)};stroke-width:.7;fill:none;`);
+      const pt = tint(c, 0.45), pl = tint(c, 0.2), pr = tint(c, -0.08), ps = tint(c, -0.25);
+      both(`.m-porc${id}.ft`, d => `fill:${d(pt)};stroke:${d(ps)};stroke-width:.6;`);
+      both(`.m-porc${id}.fl`, d => `fill:${d(pl)};stroke:${d(ps)};stroke-width:.6;`);
+      both(`.m-porc${id}.fr`, d => `fill:${d(pr)};stroke:${d(ps)};stroke-width:.6;`);
+      both(`.tubin.tint-${id}`, d => `fill:${d(tint(c, 0.3))};stroke:${d(ps)};`);
+      both(`.seat.tint-${id}`, d => `fill:${d(pt)};stroke:${d(ps)};`);
+    });
+    return light + dark;
+  }
   const CSS = `
 /* ═══════════ Scene tokens: isometric materials + blueprint ═══════════ */
 :root{
@@ -190,6 +222,8 @@ html[data-theme="dark"]{
 .wp-stripe{ fill:var(--wps-ink); }  .wp-dot{ fill:var(--wpd-ink); }  .wp-check{ fill:var(--wpc-ink); }
 .wp-petal{ fill:var(--wpf-petal); } .wp-heart{ fill:var(--wpf-heart); } .wp-leaf{ fill:var(--wpf-leaf); }
 .wp-trellis{ stroke:var(--wpt-ink); fill:none; }
+.wpx-dot{ stroke:var(--wpd-ink); fill:none; stroke-linecap:round; }  .wpx-petal{ stroke:var(--wpf-petal); fill:none; stroke-linecap:round; }
+.wpx-heart{ stroke:var(--wpf-heart); fill:none; stroke-linecap:round; } .wpx-leaf{ stroke:var(--wpf-leaf); fill:none; stroke-linecap:round; }
 .pnl-fl{ fill:var(--pnl-l); }  .pnl-fr{ fill:var(--pnl-r); }  .pnl-rail{ fill:var(--pnl-rail); }  .pnl-base{ fill:var(--pnl-base); }  .pnl-line{ stroke:var(--pnl-line); fill:none; }
 .m-fwood.ft{ fill:var(--floor); stroke:var(--floor); }
 .m-ftile.ft{ fill:var(--ftile); stroke:var(--ftile-line); stroke-width:.8; }
@@ -390,6 +424,7 @@ html[data-theme="dark"] .stair-rail{ stroke:#c9a77e; }
 .bp.gone .bp-arrowhead, .bp.gone .bp-stairtxt{ fill:var(--bp-gone); }
 .bp-hov{ fill:none; stroke:var(--bp-hi); stroke-width:6; stroke-linecap:round; opacity:.8; pointer-events:none; }
 .bp-hov.erase{ stroke:var(--bp-gone); }
+${pastelCSS()}
 `;
   function injectStyles() {
     if (typeof document === 'undefined' || document.getElementById(STYLE_ID)) return;
@@ -568,10 +603,10 @@ html[data-theme="dark"] .stair-rail{ stroke:#c9a77e; }
        wall around a door or window) have a finish on each side:
        sides.m = north / west side, sides.p = south / east side. */
     const STYLE_SETS = {
-      wall:   { label: 'Wall finish',  def: 'drywall',  plural: 'walls',   list: [['drywall', 'Drywall'], ['masonry', 'Masonry'], ['lap', 'Lap siding'], ['vertical', 'Vertical siding'], ['tile', 'Ceramic tile'],
+      wall:   { label: 'Wall finish',  def: 'drywall',  plural: 'walls',   list: [['drywall', 'Drywall'], ['masonry', 'Masonry'], ['lap', 'Lap siding'], ['vertical', 'Vertical siding'], ['tile', 'Ceramic tile'], ...PASTELS.map(([id, name]) => ['tile' + id, name + ' tile']),
                 ['wpstripe', 'Striped wallpaper'], ['wpfloral', 'Floral wallpaper'], ['wpdots', 'Polka dot wallpaper'], ['wptrellis', 'Trellis wallpaper'], ['wpcheck', 'Gingham wallpaper'],
                 ['pwpstripe', 'Striped, panelled'], ['pwpfloral', 'Floral, panelled'], ['pwpdots', 'Polka dot, panelled'], ['pwptrellis', 'Trellis, panelled'], ['pwpcheck', 'Gingham, panelled']] },
-      floor:  { label: 'Floor',        def: 'hardwood', plural: 'floors',  list: [['hardwood', 'Hardwood'], ['tile', 'Ceramic tile'], ['carpet', 'Carpet']] },
+      floor:  { label: 'Floor',        def: 'hardwood', plural: 'floors',  list: [['hardwood', 'Hardwood'], ['tile', 'Ceramic tile'], ...PASTELS.map(([id, name]) => ['tile' + id, name + ' tile']), ['carpet', 'Carpet']] },
       door:   { label: 'Door style',   def: 'flush',    plural: 'doors',   list: [['flush', 'Flush'], ['halfglass', 'Half-glass'], ['fullglass', 'Full-glass'], ['louvered', 'Louvered']] },
       window: { label: 'Window style', def: 'casement', plural: 'windows', list: [['casement', 'Casement'], ['round', 'Full round'], ['clerestory', 'Clerestory'], ['fullheight', 'Full height']] },
       column: { label: 'Column shape', def: 'square',   plural: 'columns', list: [['square', 'Square'], ['round', 'Round']] },
@@ -580,10 +615,13 @@ html[data-theme="dark"] .stair-rail{ stroke:#c9a77e; }
       roof:    { label: 'Roof type',     def: 'gable', plural: 'roofs', list: [['flat', 'Flat'], ['gable', 'Box gable'], ['opengable', 'Open gable'], ['shed', 'Box shed'], ['openshed', 'Open shed']] },
       stair:   { label: 'Stair style', def: 'solid', plural: 'staircases', list: [['solid', 'Solid'], ['cantilever', 'Cantilever']] },
       roofmat: { label: 'Roof material', def: 'clay',  plural: 'roofs', list: [['clay', 'Clay tile'], ['concrete', 'Concrete'], ['metal', 'Corrugated metal']] },
-      appliance: { label: 'Color', def: 'white', plural: 'appliances', list: [['white', 'White'], ['black', 'Black']] }
+      appliance: { label: 'Color', def: 'white', plural: 'appliances', list: [['white', 'White'], ['black', 'Black']] },
+      fixture: { label: 'Color', def: 'white', plural: 'bathroom fixtures', list: [['white', 'White'], ...PASTELS.map(([id, name]) => [id, name])] }
     };
     // the big "white goods" — the only appliances the Style tool's black finish applies to
     const STYLABLE_APPL = new Set(['fridge', 'freezer', 'washer', 'dryer', 'washdryer', 'oven']);
+    // the porcelain bathroom fixtures, which the Style tool can colour (white, or a pastel)
+    const STYLABLE_FIX = new Set(['toilet', 'washbasin', 'bathtub']);
     const ROOF_MAT = { clay: 'clay', concrete: 'rconc', metal: 'rmetal' };
     // 'gable' / 'shed' (box) close their ends with panels out to the roof's edge;
     // 'opengable' / 'openshed' leave the ends open and raise the walls under them instead
@@ -597,6 +635,9 @@ html[data-theme="dark"] .stair-rail{ stroke:#c9a77e; }
     const PANELLED = WALLPAPERS.map(w => 'p' + w);
     PANELLED.forEach(id => { WALL_MAT[id] = id; });
     const FLOOR_MAT = { hardwood: 'fwood', tile: 'ftile', carpet: 'fcarpet' };
+    // pastel tile: its own colours, the same tile lines
+    PASTEL_IDS.forEach(id => { WALL_MAT['tile' + id] = 'ctile' + id; FLOOR_MAT['tile' + id] = 'ftile' + id; });
+    const isTile = fin => /^tile/.test(fin || '');
     const floorStyleAt = (L, r, c) => (state.floors[L] && state.floors[L].floorStyles.get(r + ',' + c)) || 'hardwood';
     const FENCE_MAT = { picket: 'rail', board: 'board', lattice: 'latt', chain: 'metal', railing: 'appdark' };
     // tall versions (1.8 m) look the same as their short style, just higher
@@ -673,6 +714,14 @@ html[data-theme="dark"] .stair-rail{ stroke:#c9a77e; }
       shed: SW('<path d="M3 13L31 5V24H3Z" fill="#efe9dd" stroke="#c9c0b0"/><path d="M3 13L31 5" fill="none" stroke="#a9553c" stroke-width="2.4"/><path d="M6 12.2V24M28 5.9V24" stroke="#c9c0b0"/>'),
       openshed: SW('<path d="M6 13.4L28 7.2V24H6Z" fill="#efe9dd" stroke="#c9c0b0"/><path d="M2 14.5L32 6" fill="none" stroke="#a9553c" stroke-width="2.4"/>')
     };
+    // pastel tile and porcelain swatches, from the same base colours as the scene
+    PASTELS.forEach(([id, , c]) => {
+      SWATCH.wall['tile' + id] = SW(`<rect x="1" y="1" width="32" height="24" rx="3" fill="${tint(c, 0.25)}" stroke="${tint(c, -0.15)}"/><path d="M1 7H33M1 13H33M1 19H33M7 1V25M13 1V25M19 1V25M25 1V25M31 1V25" stroke="${tint(c, -0.3)}" stroke-width="1"/><path d="M3 3L5 3" stroke="#fff" stroke-width="1.4" stroke-linecap="round"/>`);
+      SWATCH.floor['tile' + id] = SW(`<rect x="1" y="1" width="32" height="24" rx="3" fill="${tint(c, 0.12)}" stroke="${tint(c, -0.15)}"/><path d="M1 9H33M1 17H33M9 1V25M17 1V25M25 1V25" stroke="${tint(c, -0.25)}" stroke-width="1.2"/>`);
+    });
+    const tubSW = (c, edge, inside) => SW(`<path d="M3 9H31V15Q31 22 24 22H10Q3 22 3 15Z" fill="${c}" stroke="${edge}"/><rect x="5" y="6" width="24" height="5" rx="2.5" fill="${inside}" stroke="${edge}"/><path d="M8 22V24M26 22V24" stroke="${edge}" stroke-width="1.6"/>`);
+    SWATCH.fixture = { white: tubSW('#f7f8f9', '#b9c1c7', '#e4edf2') };
+    PASTELS.forEach(([id, , c]) => { SWATCH.fixture[id] = tubSW(tint(c, 0.2), tint(c, -0.3), tint(c, 0.4)); });
     SWATCH.appliance = {
       white: SW('<rect x="6" y="1" width="20" height="22" rx="2" fill="#eceff1" stroke="#9aa0a5"/>'),
       black: SW('<rect x="6" y="1" width="20" height="22" rx="2" fill="#2c3035" stroke="#1f2226"/>')
@@ -812,13 +861,15 @@ html[data-theme="dark"] .stair-rail{ stroke:#c9a77e; }
       if (f.type === 'waterheater')   // the tankless unit, with a hot and a cold valve where the pipes enter underneath
         return [P_(-0.25, 0.25, -0.08, 0.08, 1.3, 1.95, 'tank', { front: SIDE_OF_DIR[fr.dir], fdeco: 'gauge' }),
                 P_(-0.16, -0.09, -0.07, -0.02, 1.2, 1.3, 'hot'), P_(0.09, 0.16, -0.07, -0.02, 1.2, 1.3, 'cold')];
+      // porcelain: white, or the pastel the Style tool gave it
+      const porc = 'porc' + (STYLABLE_FIX.has(f.type) && PASTEL_IDS.includes(f.color) ? f.color : ''), tintOf = PASTEL_IDS.includes(f.color) ? f.color : null;
       if (f.type === 'toilet')   // tank against the wall, pedestal, bowl with the seat on top
-        return [P_(-0.2, 0.2, -0.35, -0.17, 0.33, 0.8, 'porc'), P_(-0.12, 0.12, -0.17, 0.17, 0, 0.36, 'porc'), P_(-0.19, 0.19, -0.17, 0.35, 0.36, 0.42, 'porc', { tp: 'toilet' })];
+        return [P_(-0.2, 0.2, -0.35, -0.17, 0.33, 0.8, porc), P_(-0.12, 0.12, -0.17, 0.17, 0, 0.36, porc), P_(-0.19, 0.19, -0.17, 0.35, 0.36, 0.42, porc, { tp: 'toilet', tint: tintOf })];
       if (f.type === 'washbasin')
-        return [P_(-0.1, 0.1, -0.18, 0.04, 0, 0.75, 'porc'), P_(-0.275, 0.275, -0.225, 0.225, 0.75, 0.86, 'porc', { tp: 'basin' }),
+        return [P_(-0.1, 0.1, -0.18, 0.04, 0, 0.75, porc), P_(-0.275, 0.275, -0.225, 0.225, 0.75, 0.86, porc, { tp: 'basin' }),
                 P_(-0.015, 0.015, -0.215, -0.185, 0.86, 1.02, 'steel'), P_(-0.015, 0.015, -0.185, -0.07, 0.98, 1.02, 'steel')];
       if (f.type === 'bathtub')
-        return [P_(-0.375, 0.375, -0.85, 0.85, 0, 0.55, 'porc', { tp: 'tub' }), P_(-0.02, 0.02, -0.84, -0.8, 0.55, 0.68, 'steel'), P_(-0.02, 0.02, -0.8, -0.68, 0.64, 0.68, 'steel')];
+        return [P_(-0.375, 0.375, -0.85, 0.85, 0, 0.55, porc, { tp: 'tub', tint: tintOf }), P_(-0.02, 0.02, -0.84, -0.8, 0.55, 0.68, 'steel'), P_(-0.02, 0.02, -0.8, -0.68, 0.64, 0.68, 'steel')];
       if (f.type === 'shower')   // hot and cold valves either side of the pipe, an arm and the shower head
         return [P_(-0.16, -0.09, -0.15, -0.1, 0.95, 1.02, 'hot'), P_(0.09, 0.16, -0.15, -0.1, 0.95, 1.02, 'cold'),
                 P_(-0.012, 0.012, -0.15, -0.126, 0.95, 1.95, 'steel'), P_(-0.012, 0.012, -0.126, 0.02, 1.93, 1.96, 'steel'),
@@ -1585,53 +1636,107 @@ html[data-theme="dark"] .stair-rail{ stroke:#c9a77e; }
     function worldSide(axis) { return (axis === 'a' ? ['xp', 'ym', 'xm', 'yp'] : ['yp', 'xp', 'ym', 'xm'])[state.rot]; }
     const W = (x, y, z) => { const [a, b] = rotPt(x, y); const [sx, sy] = P(a, b, z); return sx.toFixed(2) + ' ' + sy.toFixed(2); };
     // a vertical face of a box, addressed by world side, with t running along it (metres)
-    /* The linear (shear/scale) part of the affine map from a face's own local
-       (t, z) — t a world coordinate along the wall, z a world height, both in
-       metres — to final screen pixels, for a given world side. Only the linear
-       part is needed: textures are tiled in world units via patternTransform,
-       and SVG's own infinite tiling grid (anchored at world (0,0)) takes care
-       of lining a wall segment up with its neighbours without a per-wall
-       translation term. The two faces that share a world axis (yp/ym both vary
-       t as world x; xp/xm both vary it as world y) share one matrix — only the
-       fixed coordinate differs, and that is exactly the translation this
-       intentionally leaves out. */
-    function sideMatrix(side) {
-      const onX = side === 'yp' || side === 'ym';  // t runs along world x (else world y)
-      const d = [[[1, 0], [0, 1], [-1, 0], [0, -1]], [[0, 1], [-1, 0], [0, -1], [1, 0]]][onX ? 0 : 1][state.rot];
-      const dxdt = (d[0] - d[1]) * HW, dydt = (d[0] + d[1]) * HH;
-      return `matrix(${dxdt.toFixed(3)},${dydt.toFixed(3)},0,${(-ZS).toFixed(3)},0,0)`;
-    }
-    const TEX_SIDES = ['yp', 'ym', 'xp', 'xm'];
-    // one small tileable pattern per (material, side): same visual period as the old per-course
-    // lines, but the browser repeats one tiny tile instead of this app stroking hundreds of them
-    function texturePatternDefs() {
-      const tile = (mat, w, h, inner) => TEX_SIDES.map(side =>
-        `<pattern id="pat-${mat}-${side}" patternUnits="userSpaceOnUse" width="${w}" height="${h}" patternTransform="${sideMatrix(side)}">${inner}</pattern>`).join('');
+    /* Surface textures as plain drawing instead of pattern fills. A <pattern> fill makes the
+       browser paint the tile into an image and then sample it, sheared, for every pixel of every
+       face, each time any part of the picture is painted again; with a few dozen textured faces
+       that was most of the time spent painting the house. Here each face gets one ordinary path
+       in its own (t, z) coordinates (t a world coordinate along the wall, z a world height,
+       metres), placed with a transform that is the face's own affine map to the screen, so the
+       browser just draws a handful of lines or shapes. The lines are measured from world t = 0
+       and z = 0, so courses and boards still run on from one piece of wall to the next, and now
+       also sit on the floor the same way on every storey.
+       Repeating prints (dots, flowers) are rows of zero-length dashes with round caps: one short
+       subpath draws a whole row of dots, so a big wall stays a short string. A dot or a flower
+       belongs to the face its centre falls on, so prints run on across joins between pieces of
+       the same wall. */
+    const TEX_SW = px => `style="stroke-width:${(px / 37).toFixed(4)}"`;   // the same screen widths the old pattern tiles had
+    const fx = n => +n.toFixed(4);
+    // grid positions k·P + c that fall in [a, b)
+    function steps(a, b, P, c = 0) { const out = []; for (let k = Math.ceil((a - c) / P - 1e-6); k * P + c < b - 1e-6; k++) out.push(k * P + c); return out; }
+    function texLines(f, z0, z1, tP, tC, zP, zC) {
       let d = '';
-      // vector-effect:non-scaling-stroke doesn't play well with a sheared patternTransform
-      // (the isometric faces are sheared, not just scaled), so each stroke-width here is
-      // pre-shrunk by the transform's own scale instead, to land back around the original
-      // ~0.7-1px screen width: ÷HW-ish (≈35.8) for a world-plane line, ÷ZS (≈39.2) for a
-      // vertical one — close enough together that one approximate divisor (37) suits both.
-      // a plain stroke-width ATTRIBUTE loses to the .pat-X class's own stroke-width in the
-      // cascade, so it has to go in style="" instead, which outranks a class selector
-      const sw = px => `style="stroke-width:${(px / 37).toFixed(4)}"`;
-      d += tile('lap', 1, 0.2, `<path class="pat-lap" d="M0 .2H1" ${sw(1)}/>`);
-      d += tile('vert', 0.15, 1, `<path class="pat-vert" d="M.15 0V1" ${sw(0.9)}/>`);
-      d += tile('board', 0.12, 1, `<path class="pat-board" d="M.12 0V1" ${sw(0.7)}/>`);
-      d += tile('ctile', 0.2, 0.2, `<path class="pat-ctile" d="M.2 0V.2H0" ${sw(0.7)}/>`);
-      // running bond: a 2-course-tall tile, the lower course's joint offset by half a brick
-      d += tile('brick', 0.3, 0.3, `<path class="pat-brick" d="M0 0H.3M0 .15H.3M0 0V.15M.15 .15V.3" ${sw(0.8)}/>`);
-      // wallpapers: filled prints, so a face's own light/dark shading shows through the see-through ink
-      d += tile('wpstripe', 0.24, 1, '<rect class="wp-stripe" x="0" y="0" width=".09" height="1"/><rect class="wp-stripe" x=".12" y="0" width=".018" height="1"/>');
-      const flower = (x, y, r) => `<ellipse class="wp-leaf" cx="${x - r * 1.2}" cy="${y - r * 1.5}" rx="${r * 0.9}" ry="${r * 0.42}"/>` +
-        [[0, 1], [1, 0], [0, -1], [-1, 0]].map(([a, b]) => `<circle class="wp-petal" cx="${x + a * r}" cy="${y + b * r}" r="${r * 0.82}"/>`).join('') +
-        `<circle class="wp-heart" cx="${x}" cy="${y}" r="${r * 0.55}"/>`;
-      d += tile('wpfloral', 0.36, 0.36, flower(0.09, 0.09, 0.028) + flower(0.27, 0.27, 0.028));
-      d += tile('wpdots', 0.16, 0.16, '<circle class="wp-dot" cx=".04" cy=".04" r=".022"/><circle class="wp-dot" cx=".12" cy=".12" r=".022"/>');
-      d += tile('wptrellis', 0.24, 0.32, `<path class="wp-trellis" d="M0 .16L.12 0L.24 .16L.12 .32Z" ${sw(1)}/>`);
-      d += tile('wpcheck', 0.2, 0.2, '<rect class="wp-check" x="0" y="0" width=".1" height=".2"/><rect class="wp-check" x="0" y="0" width=".2" height=".1"/>');
+      if (zP) steps(z0, z1, zP, zC).forEach(z => { d += `M${fx(f.t0)} ${fx(z)}H${fx(f.t1)}`; });
+      if (tP) steps(f.t0, f.t1, tP, tC).forEach(t => { d += `M${fx(t)} ${fx(z0)}V${fx(z1)}`; });
       return d;
+    }
+    // bands [c + k·P, c + k·P + w] across the face, cut to it (axis 't': upright bands)
+    function texBands(f, z0, z1, axis, P, w, c = 0) {
+      let d = '';
+      const [a, b] = axis === 't' ? [f.t0, f.t1] : [z0, z1];
+      for (let k = Math.floor((a - c - w) / P); k * P + c < b; k++) {
+        const u0 = Math.max(a, k * P + c), u1 = Math.min(b, k * P + c + w);
+        if (u1 - u0 < 1e-4) continue;
+        d += axis === 't' ? `M${fx(u0)} ${fx(z0)}H${fx(u1)}V${fx(z1)}H${fx(u0)}Z` : `M${fx(f.t0)} ${fx(u0)}H${fx(f.t1)}V${fx(u1)}H${fx(f.t0)}Z`;
+      }
+      return d;
+    }
+    // rows of a print whose motifs sit at (tc + k·P, zc + j·Q); each row one subpath, half a period
+    // longer than its motifs at each end, so the dash pattern below puts a motif in the middle of each
+    function texRows(f, z0, z1, P, Q, tc, zc, dz = 0) {
+      let d = '';
+      steps(z0, z1, Q, zc).forEach(z => {
+        const ts = steps(f.t0, f.t1, P, tc); if (!ts.length) return;
+        d += `M${fx(ts[0] - P / 2)} ${fx(z + dz)}h${fx(ts.length * P)}`;
+      });
+      return d;
+    }
+    // a dotted row: round dots of diameter w (or capsules dl long) at the middle of each period;
+    // pair: two dots ±pair either side of it
+    const dotted = (cls, d, P, w, o = {}) => {
+      if (!d) return '';
+      const arr = o.pair ? `0 ${fx(2 * o.pair)} 0 ${fx(P - 2 * o.pair)}` : `${fx(o.dl || 0)} ${fx(P - (o.dl || 0))}`;
+      const off = P / 2 + (o.pair || 0) + (o.dl || 0) / 2;
+      return `<path class="${cls}" d="${d}" style="stroke-width:${fx(w)};stroke-dasharray:${arr};stroke-dashoffset:${fx(off)}"/>`;
+    };
+    function texturePrint(mat, f, z0, z1) {
+      let tone = '';
+      if (/^ctile./.test(mat)) { tone = mat.slice(5); mat = 'ctile'; }   // a pastel tile
+      const path = (cls, d, extra = '') => d ? `<path class="${cls}" d="${d}"${extra ? ' ' + extra : ''}/>` : '';
+      switch (mat) {
+        case 'lap': return path('pat-lap', texLines(f, z0, z1, 0, 0, 0.2, 0), TEX_SW(1));
+        case 'vert': return path('pat-vert', texLines(f, z0, z1, 0.15, 0, 0, 0), TEX_SW(0.9));
+        case 'board': return path('pat-board', texLines(f, z0, z1, 0.12, 0, 0, 0), TEX_SW(0.7));
+        case 'ctile': return path('pat-ctile' + (tone ? ' pat-ctile' + tone : ''), texLines(f, z0, z1, 0.2, 0, 0.2, 0), TEX_SW(0.7));
+        case 'brick': {
+          // running bond: a course line every 0.15 m, the joints in alternate courses half a brick over
+          let d = texLines(f, z0, z1, 0, 0, 0.15, 0);
+          for (let k = Math.floor(z0 / 0.15 + 1e-6); k * 0.15 < z1 - 1e-6; k++) {
+            const a = Math.max(z0, k * 0.15), b = Math.min(z1, (k + 1) * 0.15);
+            steps(f.t0, f.t1, 0.3, (k & 1) ? 0.15 : 0).forEach(t => { d += `M${fx(t)} ${fx(a)}V${fx(b)}`; });
+          }
+          return path('pat-brick', d, TEX_SW(0.8));
+        }
+        case 'wpstripe': return path('wp-stripe', texBands(f, z0, z1, 't', 0.24, 0.09) + texBands(f, z0, z1, 't', 0.24, 0.018, 0.12));
+        case 'wpcheck':   // two layers, so the squares where they cross come out darker, as in gingham
+          return path('wp-check', texBands(f, z0, z1, 't', 0.2, 0.1)) + path('wp-check', texBands(f, z0, z1, 'z', 0.2, 0.1));
+        case 'wptrellis': {
+          // the two families of diagonals of a 0.24 × 0.32 diamond lattice, cut to the face
+          let d = '';
+          for (const sg of [1, -1]) {
+            const m = sg * 4 / 3, c0 = sg > 0 ? -0.16 : 0.16;      // z = m·t + c0 + 0.32·k
+            const cs = [m * f.t0, m * f.t1].map(v => [z0 - v, z1 - v]).flat();
+            for (let k = Math.floor((Math.min(...cs) - c0) / 0.32); k * 0.32 + c0 <= Math.max(...cs); k++) {
+              const c = k * 0.32 + c0;
+              let ta = (z0 - c) / m, tb = (z1 - c) / m; if (ta > tb) [ta, tb] = [tb, ta];
+              ta = Math.max(ta, f.t0); tb = Math.min(tb, f.t1);
+              if (tb - ta > 1e-4) d += `M${fx(ta)} ${fx(m * ta + c)}L${fx(tb)} ${fx(m * tb + c)}`;
+            }
+          }
+          return path('wp-trellis', d, TEX_SW(1));
+        }
+        case 'wpdots':
+          return dotted('wpx-dot', texRows(f, z0, z1, 0.16, 0.16, 0.04, 0.04) + texRows(f, z0, z1, 0.16, 0.16, 0.12, 0.12), 0.16, 0.044);
+        case 'wpfloral': {
+          // flowers at (0.09, 0.09) and (0.27, 0.27) of a 0.36 tile: a leaf, four petals, a heart
+          const r = 0.028, rows = dz => texRows(f, z0, z1, 0.36, 0.36, 0.09, 0.09, dz) + texRows(f, z0, z1, 0.36, 0.36, 0.27, 0.27, dz);
+          const leaf = (texRows(f, z0, z1, 0.36, 0.36, 0.09 - 1.2 * r, 0.09, -1.5 * r) + texRows(f, z0, z1, 0.36, 0.36, 0.27 - 1.2 * r, 0.27, -1.5 * r));
+          return dotted('wpx-leaf', leaf, 0.36, 0.84 * r, { dl: 0.96 * r })
+            + dotted('wpx-petal', rows(0), 0.36, 1.64 * r, { pair: r })
+            + dotted('wpx-petal', rows(r) + rows(-r), 0.36, 1.64 * r)
+            + dotted('wpx-heart', rows(0), 0.36, 1.1 * r);
+        }
+      }
+      return '';
     }
     function faceWorld(bx, side) {
       switch (side) {
@@ -1641,18 +1746,20 @@ html[data-theme="dark"] .stair-rail{ stroke:#c9a77e; }
         default:   return { t0: bx.y0, t1: bx.y1, pt: (t, z) => W(bx.x0, t, z) };
       }
     }
-    /* Surface textures: a rectangle over the face, the same shape the base
-       polygon already uses, filled with that material's tiled pattern (see
-       texturePatternDefs) instead of hundreds of individually stroked course
-       lines. The pattern is anchored to world coordinates, so courses and
-       boards still line up from one piece of wall to the next. */
+    /* Surface textures: the material's lines or print for one face (see
+       texturePrint), drawn in the face's own (t, z) coordinates inside a group
+       whose transform is that face's map to the screen. */
     function textureSVG(mat, bx, side) {
       const panelled = PANELLED.includes(mat);
       if (panelled) mat = mat.slice(1);
-      if (!['lap', 'ctile', 'vert', 'board', 'brick', ...WALLPAPERS].includes(mat)) return '';
+      if (!['lap', 'ctile', 'vert', 'board', 'brick', ...WALLPAPERS].includes(mat) && !/^ctile./.test(mat)) return '';
       const f = faceWorld(bx, side);
-      const q = [f.pt(f.t0, bx.z0), f.pt(f.t1, bx.z0), f.pt(f.t1, bx.z1), f.pt(f.t0, bx.z1)];
-      return `<polygon fill="url(#pat-${mat}-${side})" points="${q.join(' ')}"/>` + (panelled ? panelSVG(bx, side, f) : '');
+      const art = texturePrint(mat, f, bx.z0, bx.z1);
+      if (!art) return panelled ? panelSVG(bx, side, f) : '';
+      // the face's own map from (t, z) to the screen
+      const p = (t, z) => f.pt(t, z).split(' ').map(Number), o = p(0, 0), et = p(1, 0), ez = p(0, 1);
+      const m = [et[0] - o[0], et[1] - o[1], ez[0] - o[0], ez[1] - o[1], o[0], o[1]].map(v => +v.toFixed(3));
+      return `<g transform="matrix(${m.join(' ')})">${art}</g>` + (panelled ? panelSVG(bx, side, f) : '');
     }
     /* Half panelling under a wallpaper: drawn as real shapes on the face rather
        than a tiled pattern, because a pattern is only anchored up to a shift
@@ -1821,7 +1928,8 @@ html[data-theme="dark"] .stair-rail{ stroke:#c9a77e; }
         // an oval seat (or tub) opening fitted to the top, in world axes so it suits any turn
         const cx = (bx.x0 + bx.x1) / 2, cy = (bx.y0 + bx.y1) / 2, hx = (bx.x1 - bx.x0) / 2, hy = (bx.y1 - bx.y0) / 2;
         const oval = (k2, cls) => { const q = []; for (let i = 0; i < 28; i++) { const th = i / 28 * Math.PI * 2; q.push(W(cx + Math.cos(th) * hx * k2, cy + Math.sin(th) * hy * k2, bx.z1).replace(' ', ',')); } return `<polygon class="${cls}" points="${q.join(' ')}"/>`; };
-        return mat === 'toilet' ? oval(0.9, 'seat') + oval(0.58, 'seat-in') : oval(0.86, 'tubin');
+        const tn = bx.tint ? ' tint-' + bx.tint : '';
+        return mat === 'toilet' ? oval(0.9, 'seat' + tn) + oval(0.58, 'seat-in') : oval(0.86, 'tubin' + tn);
       } else if (mat === 'keys' || mat === 'rug' || mat === 'ps2' || mat === 'controller' || mat === 'toaster' || mat === 'cushion') {
         const inset = (mx, my) => [[bx.x0 + mx, bx.y0 + my], [bx.x1 - mx, bx.y0 + my], [bx.x1 - mx, bx.y1 - my], [bx.x0 + mx, bx.y1 - my]].map(([x, y]) => W(x, y, bx.z1).replace(' ', ',')).join(' ');
         const wx = bx.x1 - bx.x0, wy = bx.y1 - bx.y0;
@@ -1859,11 +1967,11 @@ html[data-theme="dark"] .stair-rail{ stroke:#c9a77e; }
         // a few glints on the water, two per square
         const c = Math.floor(bx.x0 + 1e-6), r = Math.floor(bx.y0 + 1e-6);
         ln(c + 0.18, r + 0.32, c + 0.42, r + 0.32); ln(c + 0.58, r + 0.72, c + 0.84, r + 0.72);
-      } else if (mat === 'ftile') {
+      } else if (/^ftile/.test(mat)) {
         for (let x = Math.ceil((bx.x0 + E) / 0.5) * 0.5; x < bx.x1 - E; x += 0.5) if (Math.abs(x - Math.round(x)) > E) ln(x, bx.y0, x, bx.y1);
         for (let y = Math.ceil((bx.y0 + E) / 0.5) * 0.5; y < bx.y1 - E; y += 0.5) if (Math.abs(y - Math.round(y)) > E) ln(bx.x0, y, bx.x1, y);
       } else return '';
-      return d ? `<path class="pat-${mat}" d="${d}"/>` : '';
+      return d ? `<path class="pat-${mat}${/^ftile./.test(mat) ? ' pat-ftile' : ''}" d="${d}"/>` : '';
     }
     /* A full round window is a real hole: the wall face (and its texture) is
        clipped with the circle cut out, so whatever was drawn behind the wall
@@ -2200,7 +2308,7 @@ html[data-theme="dark"] .stair-rail{ stroke:#c9a77e; }
       }
       // furniture
       // (with whatever appliances sit on it, as parts of the same drawable)
-      (st.furniture || []).forEach(({ f, cls }) => {
+      (st.furniture || []).forEach(({ f, cls, idx }) => {
         let raw = [...furnParts(f), ...itemParts(f)];
         // something hung on a wall is cut with its wall (walls down / cutout): nothing floats above it
         if (hung(f) && L === state.level) {
@@ -2209,7 +2317,7 @@ html[data-theme="dark"] .stair-rail{ stroke:#c9a77e; }
           if (!raw.length) return;
         }
         const parts = paintOrder(raw.map(pt => ({ fp: pt.rect, cls: '', boxes: [box(pt.rect, pt.z0, pt.z1, pt.m, pt.x)] })));
-        items.push({ fp: furnRect(f), cls, boxes: parts.map(o => o.boxes[0]) });
+        items.push({ fp: furnRect(f), cls, src: L === state.level && idx != null && STYLABLE_FIX.has(f.type) ? 'fix:' + idx : null, boxes: parts.map(o => o.boxes[0]) });
       });
       // appliances on the floor
       (st.appliances || []).forEach(({ a, cls }, ai) => {
@@ -2428,7 +2536,7 @@ html[data-theme="dark"] .stair-rail{ stroke:#c9a77e; }
       const vlines = step => { for (let t = Math.ceil((t0 + EPS) / step) * step; t < t1 - EPS; t += step) if (top(t) > ze + EPS) ln(t, ze, t, top(t)); };
       if (mat === 'lap') hlines(0.2);
       else if (mat === 'vert') vlines(0.15);
-      else if (mat === 'ctile') { hlines(0.2); vlines(0.2); }
+      else if (/^ctile/.test(mat)) { hlines(0.2); vlines(0.2); if (mat !== 'ctile') return d ? `<path class="pat-ctile pat-${mat}" d="${d}"/>` : ''; }
       else if (mat === 'brick') {
         const h = 0.15, bl = 0.3;
         for (let i = Math.floor(ze / h); i * h < zmax; i++) {
@@ -2784,7 +2892,7 @@ html[data-theme="dark"] .stair-rail{ stroke:#c9a77e; }
         const [dx, dy] = e.o === 'h' ? [0, off] : [off, 0];
         out.push(`<path class="sel-side" d="M${W(x0 + dx + (e.o === 'h' ? 0.12 : 0), y0 + dy + (e.o === 'v' ? 0.12 : 0), z)}L${W(x1 + dx - (e.o === 'h' ? 0.12 : 0), y1 + dy - (e.o === 'v' ? 0.12 : 0), z)}"/>`);
       }
-      const defs = `<defs><linearGradient id="colGrad" x1="0" x2="1"><stop offset="0" style="stop-color:var(--col-l)"/><stop offset=".55" style="stop-color:var(--col-l)"/><stop offset="1" style="stop-color:var(--col-r)"/></linearGradient>${texturePatternDefs()}</defs>`;
+      const defs = `<defs><linearGradient id="colGrad" x1="0" x2="1"><stop offset="0" style="stop-color:var(--col-l)"/><stop offset=".55" style="stop-color:var(--col-l)"/><stop offset="1" style="stop-color:var(--col-r)"/></linearGradient></defs>`;
       return `${defs}<g class="iso-scene">${out.join('')}</g>`;
     }
   
@@ -2855,7 +2963,7 @@ html[data-theme="dark"] .stair-rail{ stroke:#c9a77e; }
       // rooms on this floor: a light wash and the floor area
       rm.rooms.forEach(room => {
         room.cells.forEach(([r, c]) => out.push(`<rect class="bp-room" x="${f(c)}" y="${f(r)}" width="${s}" height="${s}"/>` +
-          `<rect class="bp-fpat" fill="url(#bpF-${floorStyleAt(state.level, r, c)})" x="${f(c)}" y="${f(r)}" width="${s}" height="${s}"/>`));
+          `<rect class="bp-fpat" fill="url(#bpF-${isTile(floorStyleAt(state.level, r, c)) ? 'tile' : floorStyleAt(state.level, r, c)})" x="${f(c)}" y="${f(r)}" width="${s}" height="${s}"/>`));
       });
       // fenced areas: garden on the ground floor, balcony upstairs (just a plain yard in the basement)
       const areaName = state.level === 0 ? 'Garden' : state.level > 0 ? 'Balcony' : '';
@@ -2882,7 +2990,7 @@ html[data-theme="dark"] .stair-rail{ stroke:#c9a77e; }
                                        : { x0: x0 + sg * T / 2 + (sg < 0 ? -0.06 : 0), x1: x0 + sg * T / 2 + (sg < 0 ? 0 : 0.06), y0: fp.y0, y1: fp.y1 };
               g += rect(band, 'bp-brick');
             } else if (fin === 'lap') g += along(edgeOff, 'bp-lap');
-            else if (fin === 'tile') g += along(edgeOff, 'bp-ctile');
+            else if (isTile(fin)) g += along(edgeOff, 'bp-ctile');
             else if (fin === 'vertical') g += along(edgeOff, 'bp-vert');
             else if (WALLPAPERS.includes(fin) || PANELLED.includes(fin)) g += along(edgeOff, 'bp-wp');
           });
@@ -3114,6 +3222,7 @@ html[data-theme="dark"] .stair-rail{ stroke:#c9a77e; }
           if (!t) return;
           if (t.kind === 'stair') { const st = state.floors[state.level].stairs[t.k]; if (st) stairCellRects(st).forEach(r2 => out.push(rect({ x0: r2.x0 + 0.05, x1: r2.x1 - 0.05, y0: r2.y0 + 0.05, y1: r2.y1 - 0.05 }, cls === 'bp-sel' ? 'bp-selring' : 'bp-selring bp-dash'))); return; }
           if (t.kind === 'appl') { const a = state.floors[state.level].appliances[t.k]; if (a) { const R_ = applRect(a); out.push(rect({ x0: R_.x0 - 0.06, x1: R_.x1 + 0.06, y0: R_.y0 - 0.06, y1: R_.y1 + 0.06 }, cls === 'bp-sel' ? 'bp-selring' : 'bp-selring bp-dash')); } return; }
+          if (t.kind === 'fix') { const o = state.floors[state.level].furniture[t.k]; if (o) { const R_ = furnRect(o); out.push(rect({ x0: R_.x0 - 0.06, x1: R_.x1 + 0.06, y0: R_.y0 - 0.06, y1: R_.y1 + 0.06 }, cls === 'bp-sel' ? 'bp-selring' : 'bp-selring bp-dash')); } return; }
           if (t.kind === 'roof') { const r = state.floors[state.level].roofs[t.k]; if (r) { const R_ = roofRect(r); out.push(rect({ x0: R_.x0 - 0.1, x1: R_.x1 + 0.1, y0: R_.y0 - 0.1, y1: R_.y1 + 0.1 }, cls === 'bp-sel' ? 'bp-selring' : 'bp-selring bp-dash')); } return; }
           if (t.kind === 'col') { const fp = colFootprint(t.k); out.push(rect({ x0: fp.x0 - 0.08, x1: fp.x1 + 0.08, y0: fp.y0 - 0.08, y1: fp.y1 + 0.08 }, cls === 'bp-sel' ? 'bp-selring' : 'bp-selring bp-dash')); return; }
           if (t.kind === 'floor') {
@@ -3236,7 +3345,9 @@ html[data-theme="dark"] .stair-rail{ stroke:#c9a77e; }
             const items = (o.items || []).map(it => ({ type: it.type, level: it.lvl, slot: it.slot, dir: it.rdir }));
             if (hung(o)) { const e = parseKey(o.ek); return { type: o.type, edge: { o: e.o, r: e.r, c: e.c }, side: o.side, items }; }
             if (o.type === 'countertop') { const e = parseKey(o.ek); return { type: o.type, edge: { o: e.o, r: e.r, c: e.c }, side: o.side, insets: [o.i0 || 0, o.i1 || 0], items }; }
-            return items.length ? { type: o.type, x: o.X / 2, y: o.Y / 2, dir: o.dir, items } : { type: o.type, x: o.X / 2, y: o.Y / 2, dir: o.dir };
+            const p = { type: o.type, x: o.X / 2, y: o.Y / 2, dir: o.dir };
+            if (o.color && STYLABLE_FIX.has(o.type)) p.color = o.color;
+            return items.length ? { ...p, items } : p;
           }),
           appliances: state.floors[L].appliances.map(a => a.color ? { type: a.type, x: a.X / 2, y: a.Y / 2, dir: a.dir, color: a.color } : { type: a.type, x: a.X / 2, y: a.Y / 2, dir: a.dir }),
           pools: state.floors[L].pools.map(q => ({ x0: q.c0, y0: q.r0, x1: q.c1, y1: q.r1 })),
@@ -3302,6 +3413,7 @@ html[data-theme="dark"] .stair-rail{ stroke:#c9a77e; }
             const X = Number(x.x) * 2, Y = Number(x.y) * 2;
             if (!Number.isInteger(X) || !Number.isInteger(Y) || (X % 2) !== (Y % 2) || ![0, 1, 2, 3].includes(x.dir)) return;
             o = { X, Y, type: x.type, dir: x.dir };
+            if (STYLABLE_FIX.has(x.type) && PASTEL_IDS.includes(x.color)) o.color = x.color;
             const R_ = furnRect(o);
             if (R_.x0 < -0.001 || R_.y0 < -0.001 || R_.x1 > cols + 0.001 || R_.y1 > rows + 0.001) return;
           }
@@ -3358,7 +3470,7 @@ html[data-theme="dark"] .stair-rail{ stroke:#c9a77e; }
 
     return {
       state, hooks,
-      APPL, APPL_ORDER, COL_W, FURN, FURN_ORDER, HH, HW, LEVELS, LEVEL_INFO, MAX_LEVEL, MAX_SIZE, MIN_LEVEL, MIN_SIZE, PIECES, PIECE_ORDER, PX, STAIR_PIECE, STAIR_TYPES, STYLABLE_APPL, STYLE_SETS, SWATCH, T, WALL_H, ZS, applFrame, applRect, applValid, baseZ, blockedEdges, colKey, colValid, colXY, computeAreas, computeRooms, cur, cutH, defaultSwing, displayState, edgeEnds, emptyLevel, frameRect, furnIndexAt, furnPt, furnRect, furnValid, hung, isGable, isIndoorEdge, isShed, isSofa, itemFrame, key, levelUsed, nearestColSpot, onLine, parseKey, pickRoofScreen, poolIndexAt, poolValid, renderIso, renderPlan, roofAtWorld, roofCorners, sType, scr, serializeHouse, shiftContent, sidesOf, slotFits, slotFree, slotU, holeRails, stairFlights, stairIndexAt, stairTreads, stairValid, styleOf, unrot, validEdge, validateHouse
+      APPL, APPL_ORDER, COL_W, FURN, FURN_ORDER, HH, HW, LEVELS, LEVEL_INFO, MAX_LEVEL, MAX_SIZE, MIN_LEVEL, MIN_SIZE, PIECES, PIECE_ORDER, PX, STAIR_PIECE, STAIR_TYPES, STYLABLE_APPL, STYLABLE_FIX, STYLE_SETS, SWATCH, T, WALL_H, ZS, applFrame, applRect, applValid, baseZ, blockedEdges, colKey, colValid, colXY, computeAreas, computeRooms, cur, cutH, defaultSwing, displayState, edgeEnds, emptyLevel, frameRect, furnIndexAt, furnPt, furnRect, furnValid, hung, isGable, isIndoorEdge, isShed, isSofa, itemFrame, key, levelUsed, nearestColSpot, onLine, parseKey, pickRoofScreen, poolIndexAt, poolValid, renderIso, renderPlan, roofAtWorld, roofCorners, sType, scr, serializeHouse, shiftContent, sidesOf, slotFits, slotFree, slotU, holeRails, stairFlights, stairIndexAt, stairTreads, stairValid, styleOf, unrot, validEdge, validateHouse
     };
   }
 
