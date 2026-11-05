@@ -508,6 +508,8 @@ html[data-theme="dark"] .stair-rail{ stroke:#c9a77e; }
       couch:    { emoji: '', word: 'Couch',    hint: 'Tap a grid corner or the middle of a square to put a three-seat couch there (2.1 m). Tap it again to turn it, or press R before you tap. Drag it to move it.' },
       bookshelf:  { emoji: '📚', word: 'Bookshelf', hint: 'Tap a grid corner or the middle of a square to put a bookshelf there. It has three levels for appliances: two inside and the top. Tap it again to turn it. Drag it to move it.' },
       wallshelf:  { emoji: '', word: 'Wall shelf', hint: 'Tap a wall, on the side you want, to hang a shelf on it (1.2 m up). Tap the shelf again to move it to the other side of the wall. Drag it to another wall.' },
+      poolladder: { emoji: '', word: 'Pool ladder', hint: 'Tap the edge of a swimming pool to put a ladder there. People going swimming climb down it, and climb up it to get out (a pool with no ladder: they get in and out anywhere). Tap it again to take it to the other side of that edge, if the pool is there.' },
+      countercorner: { emoji: '', word: 'Counter corner', hint: 'An L-shaped corner unit that joins two countertop runs where they meet in a corner. Tap the square in the corner; tap it again to turn it to another corner.' },
       countertop: { emoji: '', word: 'Countertop', hint: 'Drag along the grid lines, on the side you want, to build a run of kitchen counter (0.6 m deep), like a wall. Tap a line for one piece; drag on from the end of a counter to make it longer. Tap a piece to flip it to the other side of its line.' },
       officechair: { emoji: '', word: 'Office chair', hint: 'Tap a grid corner or the middle of a square to put an office chair there. A chair (any kind) can hold one appliance on its seat. Tap it again to turn it. Drag it to move it.' },
       tvstand:   { emoji: '', word: 'TV stand', hint: 'Tap a grid corner or the middle of a square to put a TV stand there (1.2 m). It has a shelf inside and a top for a television. Tap it again to turn it. Drag it to move it.' },
@@ -574,7 +576,7 @@ html[data-theme="dark"] .stair-rail{ stroke:#c9a77e; }
       window: { label: 'Window style', def: 'casement', plural: 'windows', list: [['casement', 'Casement'], ['round', 'Full round'], ['clerestory', 'Clerestory'], ['fullheight', 'Full height']] },
       column: { label: 'Column shape', def: 'square',   plural: 'columns', list: [['square', 'Square'], ['round', 'Round']] },
       fence:  { label: 'Fence style',  def: 'picket',   plural: 'fences',  list: [['picket', 'Picket'], ['board', 'Full board'], ['lattice', 'Lattice'], ['chain', 'Chain-link'],
-                                                                               ['boardtall', 'Tall full board'], ['latticetall', 'Tall lattice'], ['chaintall', 'Tall chain-link']] },
+                                                                               ['boardtall', 'Tall full board'], ['latticetall', 'Tall lattice'], ['chaintall', 'Tall chain-link'], ['railing', 'Stair railing']] },
       roof:    { label: 'Roof type',     def: 'gable', plural: 'roofs', list: [['flat', 'Flat'], ['gable', 'Box gable'], ['opengable', 'Open gable'], ['shed', 'Box shed'], ['openshed', 'Open shed']] },
       stair:   { label: 'Stair style', def: 'solid', plural: 'staircases', list: [['solid', 'Solid'], ['cantilever', 'Cantilever']] },
       roofmat: { label: 'Roof material', def: 'clay',  plural: 'roofs', list: [['clay', 'Clay tile'], ['concrete', 'Concrete'], ['metal', 'Corrugated metal']] },
@@ -596,11 +598,13 @@ html[data-theme="dark"] .stair-rail{ stroke:#c9a77e; }
     PANELLED.forEach(id => { WALL_MAT[id] = id; });
     const FLOOR_MAT = { hardwood: 'fwood', tile: 'ftile', carpet: 'fcarpet' };
     const floorStyleAt = (L, r, c) => (state.floors[L] && state.floors[L].floorStyles.get(r + ',' + c)) || 'hardwood';
-    const FENCE_MAT = { picket: 'rail', board: 'board', lattice: 'latt', chain: 'metal' };
+    const FENCE_MAT = { picket: 'rail', board: 'board', lattice: 'latt', chain: 'metal', railing: 'appdark' };
     // tall versions (1.8 m) look the same as their short style, just higher
     const FENCE_TALL = 1.8;
     const fenceBase = fs => fs.replace(/tall$/, '');
-    const fenceHeight = fs => /tall$/.test(fs) ? FENCE_TALL : FENCE_H;
+    const fenceHeight = fs => /tall$/.test(fs) ? FENCE_TALL : fs === 'railing' ? 0.9 : FENCE_H;   // a stair railing: the stairs' own rail height
+    // a railing round a stair hole doesn't make a garden or a balcony of what it closes in
+    const isRailing = v => !!v && v.type === 'fence' && v.style === 'railing';
     const sidesOf = v => ({ m: (v && v.sides && v.sides.m) || 'drywall', p: (v && v.sides && v.sides.p) || 'drywall' });
     const styleOf = (v, set) => (v && v.style) || STYLE_SETS[set].def;
     // world-side face materials for a wall-like piece on line o
@@ -656,6 +660,7 @@ html[data-theme="dark"] .stair-rail{ stroke:#c9a77e; }
         boardtall: SW('<rect x="5" y="1" width="24" height="23" fill="#c29566" stroke="#94693f"/><path d="M9 1V24M13 1V24M17 1V24M21 1V24M25 1V24" stroke="#94693f" stroke-width=".8"/>'),
         latticetall: SW('<rect x="5" y="1" width="24" height="23" fill="none" stroke="#b8996a" stroke-width="1.6"/><path d="M5 7L11 1M5 13L17 1M5 19L23 1M7 24L29 2M13 24L29 8M19 24L29 14M25 24L29 20M5 7L22 24M5 1L28 24M11 1L29 19M17 1L29 13M23 1L29 7M5 13L16 24M5 19L10 24" stroke="#b8996a" stroke-width="1.1"/>'),
         chaintall: SW('<rect x="5" y="1" width="24" height="23" fill="#d9dde0"/><path d="M5 5L9 1M5 9L13 1M5 13L17 1M5 17L21 1M5 21L25 1M8 24L29 3M12 24L29 7M16 24L29 11M20 24L29 15M24 24L29 19M5 5L24 24M5 1L28 24M9 1L29 21M13 1L29 17M17 1L29 13M21 1L29 9M25 1L29 5M5 9L20 24M5 13L16 24M5 17L12 24M5 21L8 24" stroke="#8d959c" stroke-width=".6"/><path d="M5 1H29" stroke="#979ea4" stroke-width="2"/>'),
+        railing: SW('<path d="M1 7H33" stroke="#a8764a" stroke-width="2.6" stroke-linecap="round"/><path d="M4 8V24M10 8V24M16 8V24M22 8V24M28 8V24" stroke="#33302b" stroke-width="1.6"/>'),
         chain: SW('<rect x="2" y="5" width="30" height="18" fill="#d9dde0"/><path d="M2 9L6 5M2 13L10 5M2 17L14 5M2 21L18 5M4 23L22 5M8 23L26 5M12 23L30 5M16 23L32 7M20 23L32 11M24 23L32 15M28 23L32 19M2 9L16 23M2 13L12 23M2 17L8 23M2 5L20 23M6 5L24 23M10 5L28 23M14 5L32 23M18 5L32 19M22 5L32 15M26 5L32 11" stroke="#8d959c" stroke-width=".6"/><path d="M2 5H32" stroke="#979ea4" stroke-width="2"/>')
       }
     };
@@ -706,6 +711,11 @@ html[data-theme="dark"] .stair-rail{ stroke:#c9a77e; }
       bookshelf:  { w: 0.9, d: 0.4, h: 1.26, inner: 0.84, innerD: 0.38, levels: [{ z: 0.06, clear: 0.56 }, { z: 0.66, clear: 0.56 }, { z: 1.26, top: true }] },
       wallshelf:  { w: 0.84, d: 0.38, h: 1.24, wall: true, hangZ: 1.06, pickZ: 1.2, levels: [{ z: 1.24, top: true }] },
       countertop: { w: 1.0, d: 0.6, h: 0.9, line: true, levels: [{ z: 0.9, top: true }] },
+      // the corner of an L of counters: fills one square, its back and its left side against walls (a counter-deep arm along each),
+      // its top usable along the back arm
+      // a pool ladder on a pool's edge: steel rails from the water, over the coping, down to the deck (frame: front = into the pool)
+      poolladder: { w: 0.56, d: 0.9, h: 0.6, ladder: true },
+      countercorner: { w: 1 - T / 2, d: 1 - T / 2, h: 0.9, corner: true, levels: [{ z: 0.9, top: true, v: -0.16, uw: 1 - T / 2 }] },
       tvstand:   { w: 1.2, d: 0.42, h: 0.5, inner: 1.15, innerD: 0.38, levels: [{ z: 0.06, clear: 0.4 }, { z: 0.5, top: true }] },
       nightstand: { w: 0.45, d: 0.4, h: 0.55, levels: [{ z: 0.55, top: true }] },
       coffeetable: { w: 1.0, d: 0.55, h: 0.42, levels: [{ z: 0.42, top: true }, { z: 0, under: true, clear: 0.37, uw: 0.84, ud: 0.44 }] },   // low, in front of a sofa
@@ -725,7 +735,7 @@ html[data-theme="dark"] .stair-rail{ stroke:#c9a77e; }
       waterheater: { w: 0.5, d: 0.16, h: 0.65, wall: true, appl: true, hangZ: 1.3, pickZ: 1.6 },  // tankless, with hot/cold valves
       wallcabinet: { w: 0.8, d: 0.32, h: 0.7,  wall: true, hangZ: 1.5, pickZ: 1.75 }   // upper kitchen cabinet, same doors as the countertop's base
     };
-    const FURN_ORDER = ['table', 'chair', 'officechair', 'singlebed', 'bed', 'bunkbed', 'nightstand', 'sidetable', 'coffeetable', 'dresser', 'wardrobe', 'armchair', 'loveseat', 'couch', 'bookshelf', 'tvstand', 'wallshelf', 'countertop', 'toilet', 'washbasin', 'bathtub', 'shower', 'mirrorcab', 'acwindow', 'acsplit', 'accondenser', 'exhaustfan', 'radiator', 'waterheater', 'wallcabinet'];
+    const FURN_ORDER = ['table', 'chair', 'officechair', 'singlebed', 'bed', 'bunkbed', 'nightstand', 'sidetable', 'coffeetable', 'dresser', 'wardrobe', 'armchair', 'loveseat', 'couch', 'bookshelf', 'tvstand', 'wallshelf', 'countertop', 'countercorner', 'toilet', 'washbasin', 'bathtub', 'shower', 'poolladder', 'mirrorcab', 'acwindow', 'acsplit', 'accondenser', 'exhaustfan', 'radiator', 'waterheater', 'wallcabinet'];
     const hung = o => !!FURN[o.type].wall;          // hangs on a wall (shelf, shower) instead of standing on the floor
     const SHELF_Z = 1.2;   // a wall shelf's board sits this high: anything lower than LOW_ENOUGH can stand under it
     const LOW_ENOUGH = 1.15;
@@ -737,14 +747,19 @@ html[data-theme="dark"] .stair-rail{ stroke:#c9a77e; }
     // Countertops hang off a grid line too ({ ek, side, i0, i1 }): back against
     // the line (where a wall would be), and stopping i0 / i1 short of either
     // end where something already meets that corner, so they never overlap it.
-    const onLine = f => hung(f) || f.type === 'countertop';
+    const onLine = f => hung(f) || f.type === 'countertop' || f.type === 'poolladder';
     function furnDims(f) {
       const F_ = FURN[f.type];
       return f.type === 'countertop' ? { w: 1 - (f.i0 || 0) - (f.i1 || 0), d: F_.d } : { w: F_.w, d: F_.d };
     }
     function furnFrame(f) {
+      if (f.type === 'countercorner') {
+        // in the middle of its square, moved off the two walls it stands against (their half thickness)
+        const [fx, fy] = FDIR[f.dir], u = T / 4, v = T / 4;
+        return { cx: f.X / 2 + u * -fy + v * fx, cy: f.Y / 2 + u * fx + v * fy, dir: f.dir };
+      }
       if (!onLine(f)) return { cx: f.X / 2, cy: f.Y / 2, dir: f.dir };
-      const e = parseKey(f.ek), off = (T / 2 + FURN[f.type].d / 2) * (f.side === 'p' ? 1 : -1);
+      const e = parseKey(f.ek), off = f.type === 'poolladder' ? 0 : (T / 2 + FURN[f.type].d / 2) * (f.side === 'p' ? 1 : -1);   // a pool ladder straddles its line
       const shift = f.type === 'countertop' ? ((f.i0 || 0) - (f.i1 || 0)) / 2 : 0;
       return e.o === 'h' ? { cx: e.c + 0.5 + shift, cy: e.r + off, dir: f.side === 'p' ? 2 : 0 } : { cx: e.c + off, cy: e.r + 0.5 + shift, dir: f.side === 'p' ? 1 : 3 };
     }
@@ -811,6 +826,23 @@ html[data-theme="dark"] .stair-rail{ stroke:#c9a77e; }
       if (f.type === 'countertop') {
         const hw = furnDims(f).w / 2;
         return [P_(-hw, hw, -0.3, 0.26, 0, 0.86, 'cab', { front: SIDE_OF_DIR[fr.dir], fdeco: 'cab' }), P_(-hw, hw, -0.3, 0.3, 0.86, 0.9, 'stone')];
+      }
+      if (f.type === 'poolladder') {
+        // two steel rails: up out of the water close to the pool wall, over the coping, down onto the deck; a tread just under the water
+        const parts = [];
+        const TOP = 0.6;   // the loops over the coping: about hand height for someone climbing out
+        [-0.25, 0.25].forEach(u => parts.push(P_(u - 0.02, u + 0.02, 0.16, 0.2, -0.15, TOP, 'metal'), P_(u - 0.02, u + 0.02, -0.34, 0.2, TOP - 0.04, TOP, 'metal'), P_(u - 0.02, u + 0.02, -0.34, -0.3, 0, TOP, 'metal')));
+        parts.push(P_(-0.23, 0.23, 0.08, 0.2, -0.14, -0.12, 'metal'));
+        return parts;
+      }
+      if (f.type === 'countercorner') {
+        // an L: the cabinets of the back arm (doors to the front) and of the left arm (doors to the right), the corner between
+        // them, and one stone top over both, 0.6 m deep like a countertop
+        const h = furnDims(f).w / 2, a = -h + 0.6, c = -h + 0.56;
+        return [P_(-h, c, -h, c, 0, 0.86, 'cab'),
+                P_(c, h, -h, c, 0, 0.86, 'cab', { front: SIDE_OF_DIR[fr.dir], fdeco: 'cab' }),
+                P_(-h, c, c, h, 0, 0.86, 'cab', { front: SIDE_OF_DIR[(fr.dir + 1) % 4], fdeco: 'cab' }),
+                P_(-h, h, -h, a, 0.86, 0.9, 'stone'), P_(-h, a, a, h, 0.86, 0.9, 'stone')];
       }
       if (isSofa(f.type)) {
         // upholstered base, a back along the back edge, an arm on each side,
@@ -960,6 +992,21 @@ html[data-theme="dark"] .stair-rail{ stroke:#c9a77e; }
     // furniture may not overlap walls (or open doors), columns, stairs, stair holes, pools or other furniture
     function furnValid(f, L, ignoreIdx = -1) {
       const F = state.floors[L];
+      if (f.type === 'countercorner' && (f.X % 2 !== 1 || f.Y % 2 !== 1)) return false;   // in the middle of a square
+      if (f.type === 'poolladder') {
+        // on the ground floor, on a line with pool on its side and deck on the other, nothing else on that line,
+        // and not where another ladder or anything standing on the deck already is
+        if (L !== 0 || !f.ek) return false;
+        const e = parseKey(f.ek), ps = poolSquares(), inG = (r, c) => r >= 0 && c >= 0 && r < state.ROWS && c < state.COLS;
+        const [pr, pc] = f.side === 'p' ? [e.r, e.c] : e.o === 'h' ? [e.r - 1, e.c] : [e.r, e.c - 1];
+        const [dr, dc] = f.side === 'p' ? (e.o === 'h' ? [e.r - 1, e.c] : [e.r, e.c - 1]) : [e.r, e.c];
+        if (!ps.has(pr + ',' + pc) || !inG(dr, dc) || ps.has(dr + ',' + dc) || F.edges.has(f.ek)) return false;
+        const deck = frameRect(furnFrame(f), -0.3, 0.3, -0.4, 0);
+        return F.furniture.every((g, i) => i === ignoreIdx || g === f || (g.type === 'poolladder' ? g.ek !== f.ek : !rectsOverlap(deck, furnRect(g))))
+          && (F.appliances || []).every(a => a.type === 'rug' || !rectsOverlap(deck, applRect(a)));
+      }
+      // a counter corner's back corner sits where its two walls meet: a column there may overlap that corner
+      const tucked = k => { if (f.type !== 'countercorner') return false; const [bx, by] = framePt({ cx: f.X / 2, cy: f.Y / 2, dir: f.dir }, -0.5, -0.5), [X, Y] = k.split(',').map(Number); return Math.abs(X / 2 - bx) < 1e-6 && Math.abs(Y / 2 - by) < 1e-6; };
       if (hung(f)) { const v = F.edges.get(f.ek); if (!v || v.type !== 'wall') return false; }
       const R_ = furnRect(f);
       if (R_.x0 < -0.001 || R_.y0 < -0.001 || R_.x1 > state.COLS + 0.001 || R_.y1 > state.ROWS + 0.001) return false;
@@ -969,7 +1016,7 @@ html[data-theme="dark"] .stair-rail{ stroke:#c9a77e; }
         if (rectsOverlap(R_, { x0: x0 - T / 2, x1: x1 + T / 2, y0: y0 - T / 2, y1: y1 + T / 2 })) return false;
         { const lf = openLeaf(e, v, st); if (lf && rectsOverlap(R_, lf)) return false; }
       }
-      for (const k of F.columns) if (rectsOverlap(R_, colFootprint(k))) return false;
+      for (const k of F.columns) if (!tucked(k) && rectsOverlap(R_, colFootprint(k))) return false;
       for (const s2 of F.stairs) if (stairCellRects(s2).some(r2 => rectsOverlap(R_, r2))) return false;
       for (const k of holeSquares(L)) if (rectsOverlap(R_, cellRect(k))) return false;
       if (L === 0) for (const k of poolSquares()) if (rectsOverlap(R_, cellRect(k))) return false;
@@ -1135,6 +1182,36 @@ html[data-theme="dark"] .stair-rail{ stroke:#c9a77e; }
     // squares of level L taken by stairs, and squares that are holes (stairs from below)
     function stairSquares(L) { const s = new Set(); if (state.floors[L]) state.floors[L].stairs.forEach(st => stairCells(st).forEach(([r, c]) => s.add(r + ',' + c))); return s; }
     const holeSquares = L => (L - 1 >= MIN_LEVEL ? stairSquares(L - 1) : new Set());
+    /* Where railings go round the stair holes in floor L (from the stairs on the floor below), by
+       default: along every side of a hole square that faces floor (not another square of the same
+       hole), unless a wall, fence, window or door is on that line already, and not where the stairs
+       come up (the line just past the top step). Pass stairs (a list) to ask about just those. The
+       builder puts a 'railing' style fence on each when a staircase goes in; they can be erased like
+       any fence. → [{ o, r, c, a: [x, y], b: [x, y], n: [nx, ny] }]: the grid line, its ends, and the
+       way into the hole */
+    function holeRails(L, stairs, all) {   // all: lines with something on them already too
+      const out = [], F = state.floors[L], below = state.floors[L - 1];
+      if (!F || !below || L - 1 < MIN_LEVEL) return out;
+      (stairs || below.stairs).forEach(s => {
+        const cells = new Set(stairCells(s).map(([r, c]) => r + ',' + c));
+        const fl = stairFlights(s), top = fl[fl.length - 1].climb, [ax, ay] = top[0], [bx, by] = top[1];
+        const len = Math.hypot(bx - ax, by - ay) || 1, ux = (bx - ax) / len, uy = (by - ay) / len;
+        const ex = [bx + ux * 0.8, by + uy * 0.8];   // a step past the top tread, onto the floor
+        const cross = (p, q, r2, t2) => { const d = (a2, b2, c2) => (b2[0] - a2[0]) * (c2[1] - a2[1]) - (b2[1] - a2[1]) * (c2[0] - a2[0]);
+          return d(p, q, r2) * d(p, q, t2) < 0 && d(r2, t2, p) * d(r2, t2, q) < 0; };
+        cells.forEach(k => {
+          const [r, c] = k.split(',').map(Number);
+          [['h', r, c, r - 1, c, [0, 1]], ['h', r + 1, c, r + 1, c, [0, -1]], ['v', r, c, r, c - 1, [1, 0]], ['v', r, c + 1, r, c + 1, [-1, 0]]].forEach(([o, er, ec, nr, nc, n]) => {
+            if (cells.has(nr + ',' + nc)) return;
+            if (!validEdge(o, er, ec, state.COLS, state.ROWS) || (!all && F.edges.has(key(o, er, ec)))) return;
+            const [a, b] = edgeEnds(o, er, ec);
+            if (cross([bx, by], ex, a, b)) return;   // the way up
+            out.push({ o, r: er, c: ec, a, b, n });
+          });
+        });
+      });
+      return out;
+    }
     // lines of level L that must stay empty: they would cut through a flight or a stair hole
     function blockedEdges(L) {
       const b = new Set();
@@ -1313,7 +1390,7 @@ html[data-theme="dark"] .stair-rail{ stroke:#c9a77e; }
        the indoor result as .fenced. */
     function computeAreas(edges) {
       const indoor = computeRooms(edges, isIndoorEdge);
-      const all = computeRooms(edges);
+      const all = computeRooms(edges, v => !isRailing(v));
       const rooms = all.rooms.filter(rm => !indoor.inRoom(rm.cells[0][0], rm.cells[0][1]));
       const set = new Set(); rooms.forEach(rm => rm.cells.forEach(([r, c]) => set.add(r + ',' + c)));
       indoor.fenced = { rooms, inRoom: (r, c) => set.has(r + ',' + c) };
@@ -2007,6 +2084,17 @@ html[data-theme="dark"] .stair-rail{ stroke:#c9a77e; }
           bal.sort((p, q) => p.d - q.d);
           return [box(thinAcross(fp, o, 0.05), 0.05, 0.1, 'rail'), ...bal.map(x => x.b), box(fp, FH - 0.06, FH, 'rail')];
         }
+        if (base === 'railing') {
+          // dark balusters about every 20 cm under a wooden handrail, like the stairs' own
+          const len = o === 'h' ? fp.x1 - fp.x0 : fp.y1 - fp.y0, n = Math.max(2, Math.round(len / 0.2)), bw = 0.03, thin = thinAcross(fp, o, 0.03), bal = [];
+          for (let i = 0; i < n; i++) {
+            const m = (i + 0.5) / n;
+            const b = o === 'h' ? { ...thin, x0: fp.x0 + m * len - bw / 2, x1: fp.x0 + m * len + bw / 2 } : { ...thin, y0: fp.y0 + m * len - bw / 2, y1: fp.y0 + m * len + bw / 2 };
+            const rb = rotBox(b); bal.push({ d: rb.a0 + rb.b0, b: box(b, 0, FH - 0.05, 'appdark') });
+          }
+          bal.sort((p, q) => p.d - q.d);
+          return [...bal.map(x => x.b), box(thinAcross(fp, o, 0.06), FH - 0.05, FH, 'stair')];
+        }
         if (base === 'board') return [box(thinAcross(fp, o, 0.03), 0.03, FH - 0.05, 'board'), box(fp, FH - 0.05, FH, 'board')];
         if (base === 'lattice') return [box(fp, 0.04, 0.1, 'latt'), box(thinAcross(fp, o, 0.02), 0.1, FH - 0.06, 'none', { deco: 'lattice' }), box(fp, FH - 0.06, FH, 'latt')];
         return [box(thinAcross(fp, o, 0.01), 0.03, FH - 0.05, 'mesh', { deco: 'chain' }), box(thinAcross(fp, o, 0.05), FH - 0.05, FH, 'metal')];
@@ -2079,7 +2167,9 @@ html[data-theme="dark"] .stair-rail{ stroke:#c9a77e; }
           // a fence post is as tall as the tallest fence it holds, in that fence's material
           const fl = [key('h', y, x), key('h', y, x - 1), key('v', y, x), key('v', y - 1, x)].map(edgeAt).filter(v => v && v.type === 'fence');
           const fs = fl.map(v => styleOf(v, 'fence')).sort((a, b) => fenceHeight(b) - fenceHeight(a))[0] || 'picket';
-          items.push({ fp, cls: pcls, boxes: [box(fp, 0, fenceHeight(fs) + 0.06, FENCE_MAT[fenceBase(fs)])] });
+          // a post that only holds stair railings is a slim newel, its top a little above the handrail
+          const slim = fs === 'railing' ? { x0: x - 0.03, x1: x + 0.03, y0: y - 0.03, y1: y + 0.03 } : fp;
+          items.push({ fp: slim, cls: pcls, boxes: [box(slim, 0, fenceHeight(fs) + (fs === 'railing' ? 0.03 : 0.06), FENCE_MAT[fenceBase(fs)])] });
           return;
         }
         const wallish = v => v && v.type !== 'fence' ? v : null;
@@ -2986,6 +3076,11 @@ html[data-theme="dark"] .stair-rail{ stroke:#c9a77e; }
         } else if (f.type === 'countertop') {
           const hw = furnDims(f).w / 2;
           g += ln(-hw + 0.02, 0.26, hw - 0.02, 0.26, 'bp-furnthin');
+        } else if (f.type === 'poolladder') {
+          g = ln(-0.25, -0.32, -0.25, 0.18, 'bp-furnthin') + ln(0.25, -0.32, 0.25, 0.18, 'bp-furnthin') + ln(-0.25, 0.14, 0.25, 0.14, 'bp-furnthin');
+        } else if (f.type === 'countercorner') {
+          const h = furnDims(f).w / 2, a = -h + 0.6, pts = [[-h, -h], [h, -h], [h, a], [a, a], [a, h], [-h, h]].map(([u, v]) => furnPt(f, u, v));
+          g = `<path class="bp-furn" d="M${pts.map(([x, y]) => f_(x) + ' ' + f_(y)).join('L')}Z"/>` + ln(a - 0.04, -h + 0.02, a - 0.04, a - 0.04, 'bp-furnthin') + ln(-h + 0.02, a - 0.04, a - 0.04, a - 0.04, 'bp-furnthin');
         } else g += rect(furnLocal(f, -0.5, 0.5, -0.3, 0.3), 'bp-furnthin');
         (f.items || []).forEach(it => { g += applPlanSVG(it.type, itemFrame(f, it)); });
         out.push(`<g class="bp ${cls}">${g}</g>`);
@@ -3263,7 +3358,7 @@ html[data-theme="dark"] .stair-rail{ stroke:#c9a77e; }
 
     return {
       state, hooks,
-      APPL, APPL_ORDER, COL_W, FURN, FURN_ORDER, HH, HW, LEVELS, LEVEL_INFO, MAX_LEVEL, MAX_SIZE, MIN_LEVEL, MIN_SIZE, PIECES, PIECE_ORDER, PX, STAIR_PIECE, STAIR_TYPES, STYLABLE_APPL, STYLE_SETS, SWATCH, T, WALL_H, ZS, applFrame, applRect, applValid, baseZ, blockedEdges, colKey, colValid, colXY, computeAreas, computeRooms, cur, cutH, defaultSwing, displayState, edgeEnds, emptyLevel, frameRect, furnIndexAt, furnPt, furnRect, furnValid, hung, isGable, isIndoorEdge, isShed, isSofa, itemFrame, key, levelUsed, nearestColSpot, onLine, parseKey, pickRoofScreen, poolIndexAt, poolValid, renderIso, renderPlan, roofAtWorld, roofCorners, sType, scr, serializeHouse, shiftContent, sidesOf, slotFits, slotFree, slotU, stairFlights, stairIndexAt, stairTreads, stairValid, styleOf, unrot, validEdge, validateHouse
+      APPL, APPL_ORDER, COL_W, FURN, FURN_ORDER, HH, HW, LEVELS, LEVEL_INFO, MAX_LEVEL, MAX_SIZE, MIN_LEVEL, MIN_SIZE, PIECES, PIECE_ORDER, PX, STAIR_PIECE, STAIR_TYPES, STYLABLE_APPL, STYLE_SETS, SWATCH, T, WALL_H, ZS, applFrame, applRect, applValid, baseZ, blockedEdges, colKey, colValid, colXY, computeAreas, computeRooms, cur, cutH, defaultSwing, displayState, edgeEnds, emptyLevel, frameRect, furnIndexAt, furnPt, furnRect, furnValid, hung, isGable, isIndoorEdge, isShed, isSofa, itemFrame, key, levelUsed, nearestColSpot, onLine, parseKey, pickRoofScreen, poolIndexAt, poolValid, renderIso, renderPlan, roofAtWorld, roofCorners, sType, scr, serializeHouse, shiftContent, sidesOf, slotFits, slotFree, slotU, holeRails, stairFlights, stairIndexAt, stairTreads, stairValid, styleOf, unrot, validEdge, validateHouse
     };
   }
 

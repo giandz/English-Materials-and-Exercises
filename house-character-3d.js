@@ -19,6 +19,11 @@
               facing: 'S',      N / E / S / W / NE … or degrees clockwise from north
               z: 0,             stand this much higher (a step, a stage)
               ground: 0,        the shadow this much higher than the floor (a stair tread)
+              bubbles: true,    soap bubbles over the chest and hips (in the shower)
+              drip: 0.8,        just out of the water: drops falling from them (0–1: how many)
+              key: '…',         written on the person's drawing as data-key, to find it again (a page
+                                that redraws only the people who move, in place: finish('', prefix)
+                                gives just the people's drawings)
               clipZ: 2.5,       draw only what is lower than this, in metres above the floor
                                 (someone climbing the stairs past cut-down walls or the ceiling)
               seat: i,          sitting on furniture number i of that floor. x, y and facing
@@ -30,6 +35,9 @@
               side: 0 | 1,      which half of a double bed (left / right seen from its foot); leave it out
                                 for the middle. A single bed (narrower than 1.2 m) is always the middle
               bunk: 'top',      in a bunk bed: the top bed (default: the bottom one)
+              sink: 1,          (with swim) how far into the water: 0 standing on the deck … 1
+                                swimming (someone on a pool ladder)
+              bob: 0,           (with swim) metres up or down from the swimming height
               swim: true,       in a swimming pool: standing on the bottom with the water just
                                 under the shoulders; below the surface the body shows only faintly
               garment: 'footwear' | 'upper' | 'lower' | 'headwear' | 'eyewear' | 'watch' | 'accessory',
@@ -56,6 +64,7 @@
              turn   45    trunk turn for the three-quarter view (also per person)
              joints 1     share of the floor slope taken by re-aiming the bones (0–1, see 2b)
              split  1     the split skew: both halves of the body lifted from the centre line (0–1)
+             exactSplit false bend every path point by point (the old, slow way; see warpBodyFast)
              flat   true  keep the authored pose (no retargeting, no split)
              back   false never use the back view
              ghostLine 1.2 width of the dashed outline round people drawn below 50 % (screen px)
@@ -86,6 +95,11 @@
                   warpBody): shapes become Bézier paths, long segments are
                   subdivided and every point is lifted. Heads stay rigid and ride up
                   with the body; the lift fades out below the knees.
+                  Done cheaply (warpBodyFast): each limb bone gets one matrix — the lift
+                  as a plane, exact at its two joints — and only the trunk and hips,
+                  which straddle the crease, are bent point by point, cut only where
+                  the lift curves. About 4–5× faster and smaller than bending every
+                  path (opts.exactSplit), and the same to within a pixel or so.
       opts.flat keeps the authored pose as it is.
    3. Depth: the engine has no hook for new drawables, so each person goes
       into the scene as an invisible stand-in piece of furniture with the
@@ -434,6 +448,122 @@
       // an open shape that was a <line>/<polyline> has no fill of its own
       const fillNone = (name === 'line' || name === 'polyline') && !/\sfill="/.test(rest) ? ' fill="none"' : '';
       return `<path d="${d1}"${rest}${fillNone}${self ? '/' : ''}>` + (self ? '' : '');
+    }).replace(/<\/(rect|circle|ellipse|line|polyline|polygon)>/g, '</path>');
+  }
+
+  /* ── The split skew, cheaply ──────────────────────────────────────────────────────
+     warpBody rewrites every shape: each one becomes Béziers cut into 6 px pieces, and every
+     point is lifted — about 100 ms and 7× the markup for a walking frame. Most of that is
+     wasted: over one bone the lift is very nearly a plane, and a plane is an affine map,
+     which SVG applies for free. So:
+       · each limb bone (upper arm, forearm, hand, thigh, shin, foot) gets ONE matrix: the
+         lift as a plane that is exact at the bone's own pivot and at the next joint's (so
+         the joints stay joined), sloping across the bone as the lift does at its middle.
+         The plane is checked against the true lift over a band round the bone; where it is
+         more than LIN_TOL off (a thigh in the rounded crease, an arm across the body) that
+         bone falls back to the bent path, as before;
+       · the rest (the trunk and the hips, which straddle the crease) is bent as before, but
+         a piece of path is only cut where the lift actually curves along it (FLAT_TOL), not
+         every 6 px;
+       · the head is lifted whole, as before. */
+  const LIMB_NEXT = { shoulderL: 'elbowL', elbowL: 'wristL', hipL: 'kneeL', kneeL: 'ankleL', shoulderR: 'elbowR', elbowR: 'wristR', hipR: 'kneeR', kneeR: 'ankleR', wristL: null, wristR: null, ankleL: null, ankleR: null };
+  const LIN_TOL = 3, FLAT_TOL = 0.6, SEG_MAX = 48, BAND = 14, END_LEN = 24;
+  // the lift as a plane through A and B (exact at both), with the cross slope at their middle
+  function liftPlane(A, B, wp) {
+    const la = liftAt(A[0], A[1], wp), lb = liftAt(B[0], B[1], wp);
+    let ux = B[0] - A[0], uy = B[1] - A[1]; const L2 = ux * ux + uy * uy || 1, L = Math.sqrt(L2);
+    const nx = -uy / L, ny = ux / L, mx = (A[0] + B[0]) / 2, my = (A[1] + B[1]) / 2, h = 1;
+    const dn = (liftAt(mx + nx * h, my + ny * h, wp) - liftAt(mx - nx * h, my - ny * h, wp)) / (2 * h);
+    // ℓ(p) = la + (lb − la)·((p−A)·u)/|u|² + dn·((p−A)·n)
+    const gx = (lb - la) * ux / L2 + dn * nx, gy = (lb - la) * uy / L2 + dn * ny;
+    const plane = (x, y) => la + gx * (x - A[0]) + gy * (y - A[1]);
+    let err = 0;
+    for (let t = 0; t <= 1.001; t += 0.25) for (let o = -BAND; o <= BAND; o += BAND) {
+      const x = A[0] + ux * t + nx * o, y = A[1] + uy * t + ny * o;
+      err = Math.max(err, Math.abs(plane(x, y) - liftAt(x, y, wp)));
+    }
+    return { gx, gy, c0: la - gx * A[0] - gy * A[1], err };
+  }
+  function splitFlat(p0, s, m, out, depth, wp) {
+    const q = [p0, [s[0], s[1]], [s[2], s[3]], [s[4], s[5]]].map(([x, y]) => mapPt(m, x, y));
+    const len = Math.hypot(q[3][0] - q[0][0], q[3][1] - q[0][1]) + Math.hypot(q[1][0] - q[0][0], q[1][1] - q[0][1]) + Math.hypot(q[2][0] - q[3][0], q[2][1] - q[3][1]);
+    if (depth > 7) { out.push(s); return; }
+    if (len <= SEG_MAX) {
+      // the curve's middle, and the lift there against the mean of the ends
+      const mx = (q[0][0] + 3 * q[1][0] + 3 * q[2][0] + q[3][0]) / 8, my = (q[0][1] + 3 * q[1][1] + 3 * q[2][1] + q[3][1]) / 8;
+      const bend = Math.abs(liftAt(mx, my, wp) - (liftAt(q[0][0], q[0][1], wp) + liftAt(q[3][0], q[3][1], wp)) / 2);
+      if (bend <= FLAT_TOL) { out.push(s); return; }
+    }
+    const mid = (a, b) => [(a[0] + b[0]) / 2, (a[1] + b[1]) / 2], P0 = p0, P1 = [s[0], s[1]], P2 = [s[2], s[3]], P3 = [s[4], s[5]];
+    const a = mid(P0, P1), b = mid(P1, P2), c = mid(P2, P3), d = mid(a, b), e = mid(b, c), f = mid(d, e);
+    splitFlat(P0, [a[0], a[1], d[0], d[1], f[0], f[1]], m, out, depth + 1, wp);
+    splitFlat(f, [e[0], e[1], c[0], c[1], P3[0], P3[1]], m, out, depth + 1, wp);
+  }
+  function warpPathFlat(d, m, wp) {
+    const inv = minv(m); if (!inv) return null;
+    const W = (x, y) => { const g = mapPt(m, x, y); return mapPt(inv, g[0], g[1] - liftAt(g[0], g[1], wp)); };
+    const f = v => +v.toFixed(2);
+    return pathToCubics(d).map(sp => {
+      const segs = []; let p = sp.start;
+      sp.segs.forEach(s => { splitFlat(p, s, m, segs, 0, wp); p = [s[4], s[5]]; });
+      const st = W(...sp.start);
+      return `M${f(st[0])},${f(st[1])}` + segs.map(s => { const a = W(s[0], s[1]), b = W(s[2], s[3]), c = W(s[4], s[5]);
+        return `C${f(a[0])},${f(a[1])} ${f(b[0])},${f(b[1])} ${f(c[0])},${f(c[1])}`; }).join('') + (sp.closed ? 'Z' : '');
+    }).join('');
+  }
+  function warpBodyFast(art, wp, headX) {
+    const headLift = liftAt(headX, -1e6, wp);
+    // first pass: where each joint group's origin is, in figure coordinates
+    const origin = {}, mats = {};
+    { const st = [[1, 0, 0, 1, 0, 0]];
+      art.replace(/<(\/?)([a-zA-Z]+)((?:\s+[^\s=>\/]+="[^"]*")*)\s*(\/?)>/g, (tag, close, name, attrs, self) => {
+        if (close) { if (st.length > 1) st.pop(); return tag; }
+        const m = mmul(st[st.length - 1], parseTransform(attr(tag, 'transform')));
+        if (name === 'g') { const j = attr(tag, 'data-joint'); if (j && !(j in origin)) { origin[j] = mapPt(m, 0, 0); mats[j] = m; } }
+        if (!self) st.push(m);
+        return tag;
+      }); }
+    const planeOf = j => {
+      if (!(j in LIMB_NEXT) || !origin[j]) return null;
+      const A = origin[j], nx = LIMB_NEXT[j], B = nx && origin[nx] ? origin[nx] : mapPt(mats[j], 0, END_LEN);
+      if (Math.hypot(B[0] - A[0], B[1] - A[1]) < 1) return null;
+      const P = liftPlane(A, B, wp);
+      return P.err <= LIN_TOL ? P : null;
+    };
+    const stack = [{ m: [1, 0, 0, 1, 0, 0], mode: 'bend', skip: 0 }];
+    return art.replace(/<(\/?)([a-zA-Z]+)((?:\s+[^\s=>\/]+="[^"]*")*)\s*(\/?)>/g, (tag, close, name, attrs, self) => {
+      const top = stack[stack.length - 1];
+      if (close) { if (stack.length > 1) stack.pop(); return tag; }
+      if (top.skip || OPAQUE.has(name)) { if (!self) stack.push({ m: top.m, mode: top.mode, skip: 1 }); return tag; }
+      const own = parseTransform(attr(tag, 'transform')), m = mmul(top.m, own);
+      if (name === 'g') {
+        let out = tag, mode = top.mode;
+        const j = mode === 'bend' ? attr(tag, 'data-joint') : null;
+        if (j === 'neck') {
+          mode = 'whole';   // the head: lifted whole
+          out = /\stransform="/.test(tag) ? tag.replace(/\stransform="/, ` transform="translate(0 ${(-headLift).toFixed(3)}) `) : tag.replace(/^<g/, `<g transform="translate(0 ${(-headLift).toFixed(3)})"`);
+        } else if (j) {
+          const P = planeOf(j);
+          if (P) {
+            // (x, y) → (x, y − ℓ(x, y)) in figure coordinates, put in front of the group's own transform
+            const Wm = [1, -P.gx, 0, 1 - P.gy, 0, -P.c0], pinv = minv(top.m);
+            if (pinv) {
+              const n = mmul(pinv, mmul(Wm, m)).map(v => +v.toFixed(5)).join(' ');
+              out = /\stransform="[^"]*"/.test(tag) ? tag.replace(/\stransform="[^"]*"/, ` transform="matrix(${n})"`) : tag.replace(/^<g/, `<g transform="matrix(${n})"`);
+              mode = 'whole';
+            }
+          }
+        }
+        if (!self) stack.push({ m, mode, skip: 0 });
+        return out;
+      }
+      if (!self) stack.push({ m, mode: top.mode, skip: 0 });
+      if (top.mode !== 'bend' || !GEOM[name]) return tag;
+      const d0 = shapePath(name, tag); if (!d0) return tag;
+      const d1 = warpPathFlat(d0, m, wp); if (d1 == null) return tag;
+      let rest = attrs; GEOM[name].forEach(k => { rest = rest.replace(new RegExp('\\s' + k + '="[^"]*"'), ''); });
+      const fillNone = (name === 'line' || name === 'polyline') && !/\sfill="/.test(rest) ? ' fill="none"' : '';
+      return `<path d="${d1}"${rest}${fillNone}${self ? '/' : ''}>`;
     }).replace(/<\/(rect|circle|ellipse|line|polyline|polygon)>/g, '</path>');
   }
 
@@ -876,8 +1006,8 @@
       }
       if (p.swim) {
         // in a swimming pool: standing on the bottom, the water just under the shoulders
-        const neckH = (STAGE_GROUND - pivotsOf(d).neck.y) / PX_PER_M;
-        out.z = WATER_Z - (neckH - 0.13);
+        const neckH = (STAGE_GROUND - pivotsOf(d).neck.y) / PX_PER_M, sink = p.sink != null ? Math.max(0, Math.min(1, +p.sink)) : 1;
+        out.z = (WATER_Z - (neckH - 0.13)) * sink + (+p.bob || 0);
       }
       if (!stBy[L]) return out;
       const type = 'hc3d_person_' + i;
@@ -904,10 +1034,11 @@
       // built standing (so long hair falls toward the body, as on a pillow); the picture is turned when drawn
       const d = HC.normalize(p.character), stand = (HC.POSES.find(q => q.id === 'standing') || { joints: {} }).joints;
       HC.JOINTS.forEach(([k]) => { d.joints[k] = stand[k] || 0; });
-      Object.assign(d, { torsoOrientation: 0, pelvisOrientation: 0, head: 'front', back: false, eyes: 'closed', eyebrows: 'neutral', mouth: 'rest', held: { left: null, right: null }, prop: null });
+      if (f.type === 'bathtub') Object.assign(d, d.bodyType === 'female' ? { upperGarment: 'swimsuit', lowerGarment: null } : { upperGarment: null }, { scarf: null, headwear: null });   // in the bath: bare shoulders
+      Object.assign(d, { torsoOrientation: 0, pelvisOrientation: 0, head: 'front', back: false, eyes: f.type === 'bathtub' ? 'open' : 'closed', eyebrows: 'neutral', mouth: 'rest', held: { left: null, right: null }, prop: null });
       // a single bed: in the middle. A double bed: in the middle, or on one half (side 0 / 1)
       const bw = eng.FURN[f.type].w, half = bw >= 1.2 ? bw / 4 : 0;
-      const zo = f.type === 'bunkbed' && (p.bunk === 'top' || p.bunk === 1) ? 0.9 : 0;   // the top bunk is 0.9 m higher
+      const zo = f.type === 'bunkbed' && (p.bunk === 'top' || p.bunk === 1) ? 0.9 : f.type === 'bathtub' ? -0.12 : 0;   // the top bunk is 0.9 m higher; in a bath, the head just over the water
       const u = p.side === 0 || p.side === 'left' ? -half : p.side === 1 || p.side === 'right' ? half : 0;
       const [x, y] = eng.furnPt(f, u, 0);
       const type = 'hc3d_person_' + i;
@@ -962,7 +1093,7 @@
         // upright, like the person who wore it but with nobody inside
         const [sx, sy] = eng.scr(w.x, w.y, zb);
         let art = looseGarment(w.d, 'footwear', g.side).replace('stroke-width="1.3" stroke-linejoin', lineW) + toplines(w.d, g.side);
-        if (w.warp.split) art = warpBody(art, w.warp, HC.pivots(w.d).neck.x);
+        if (w.warp.split) art = (opts.exactSplit ? warpBody : warpBodyFast)(art, w.warp, HC.pivots(w.d).neck.x);
         const kk = scale * (+w.p.scale || 1), bp = artPoints(art).map(([px, py]) => [sx + (px - STAGE_X) * kk, sy + (py - STAGE_GROUND) * kk]);
         art = `<g transform="translate(${sx.toFixed(2)} ${sy.toFixed(2)}) scale(${kk.toFixed(5)}) translate(${-STAGE_X} ${-STAGE_GROUND})">${art}</g>`;
         const sh = `<ellipse cx="${sx.toFixed(2)}" cy="${sy.toFixed(2)}" rx="${(0.2 * eng.HW).toFixed(2)}" ry="${(0.2 * eng.HH).toFixed(2)}" fill="#000" fill-opacity=".12"/>`;
@@ -1030,10 +1161,10 @@
       const [sx, sy] = eng.scr(w.x, w.y, eng.baseZ(w.L) + w.z);
       // the drawing's insides, moved into a plain transformed group: a nested <svg> would be
       // resized by any page CSS aimed at svg elements (svg{width:100%} and the like)
-      let art = cached('art|' + JSON.stringify(w.d) + '|' + (line / scale).toFixed(2) + '|' + w.warp.split, () => {
+      let art = cached('art|' + JSON.stringify(w.d) + '|' + (line / scale).toFixed(2) + '|' + w.warp.split + (opts.exactSplit ? 'x' : ''), () => {
         let a = HC.render(w.d).replace(/^<svg[^>]*>/, '').replace(/<\/svg>$/, '').replace(/<title>[\s\S]*?<\/title>/, '')
           .replace('stroke-width="1.3" stroke-linejoin', `stroke-width="${(line / scale).toFixed(2)}" stroke-linejoin`);
-        if (w.warp.split) a = warpBody(a, w.warp, HC.pivots(w.d).neck.x);
+        if (w.warp.split) a = (opts.exactSplit ? warpBody : warpBodyFast)(a, w.warp, HC.pivots(w.d).neck.x);
         return a;
       });
       /* armOver: one arm (and what its hand holds) is lifted out of the figure and drawn on top
@@ -1056,6 +1187,26 @@
           return open + out + close;
         });
         if (armArt) { art = body; armArt = art.match(/^<g[^>]*>/)[0] + armArt + '</g>'; }
+      }
+      if (w.p.bubbles || w.p.drip) {
+        const pv = HC.pivots(w.d), M = PX_PER_M, nx = pv.neck.x, ny = pv.neck.y, ry = pv.root.y;
+        if (w.p.bubbles) {
+          /* modesty bubbles: soap foam over the chest and the hips */
+          const chest = Array.from({ length: 9 }, (_, k) => [nx + (((k * 0.618034) % 1) - 0.5) * 0.3 * M, ny + (0.1 + ((k * 0.381966) % 1) * 0.16) * M]);
+          const hips = Array.from({ length: 11 }, (_, k) => [nx + (((k * 0.618034) % 1) - 0.5) * 0.32 * M, ry + (((k * 0.381966) % 1) * 0.2 - 0.04) * M]);
+          art += foam([...chest, ...hips], 0.05 * M, k => 0.55 + ((k * 0.37) % 0.55));
+        }
+        if (w.p.drip) {
+          /* just out of the water: drops falling from the body to the ground, fewer as it dries */
+          const t = (typeof performance !== 'undefined' ? performance.now() : Date.now()) / 1000, n = Math.max(2, Math.round(10 * Math.min(1, +w.p.drip)));
+          let d = '';
+          for (let k = 0; k < n; k++) {
+            const ph = ((t * 1.6 + k * 0.618034) % 1), x0 = nx + (((k * 0.381966) % 1) - 0.5) * 0.34 * M, y0 = ny + 0.15 * M + ((k * 0.7548) % 1) * (ry - ny);
+            const y = y0 + ph * (STAGE_GROUND - y0);
+            d += `<ellipse cx="${x0.toFixed(1)}" cy="${y.toFixed(1)}" rx="${(0.012 * M).toFixed(1)}" ry="${(0.022 * M).toFixed(1)}" fill="#5fb6e6" fill-opacity="${(0.85 * (1 - ph * 0.6)).toFixed(2)}" stroke="#fff" stroke-width="1.2" stroke-opacity=".7"/>`;
+          }
+          art += `<g class="hc3d-drips">${d}</g>`;
+        }
       }
       const inner = art;
       art = `<g transform="translate(${sx.toFixed(2)} ${sy.toFixed(2)}) scale(${scale.toFixed(5)}) translate(${-STAGE_X} ${-STAGE_GROUND})">${art}</g>`;
@@ -1095,14 +1246,17 @@
         const pool = ((st.floors[0] || {}).pools || []).find(q => w.x >= q.c0 && w.x <= q.c1 && w.y >= q.r0 && w.y <= q.r1);
         let under = art;
         if (pool) {
-          const pz = eng.baseZ(0) + WATER_Z, pc = [[pool.c0, pool.r0], [pool.c1, pool.r0], [pool.c1, pool.r1], [pool.c0, pool.r1]].map(([x, y]) => eng.scr(x, y, pz));
-          under = `<clipPath id="${ns}pool${w.i}"><path d="M${pc.map(q => q[0].toFixed(2) + ' ' + q[1].toFixed(2)).join('L')}Z"/></clipPath><g clip-path="url(#${ns}pool${w.i})">${art}</g>`;
+          /* what shows of the water: inside the pool's outline on the water and inside its outline at the
+             deck (the near rims, higher on screen, hide the water just inside them) — both clips at once */
+          const outline = z => [[pool.c0, pool.r0], [pool.c1, pool.r0], [pool.c1, pool.r1], [pool.c0, pool.r1]].map(([x, y]) => eng.scr(x, y, z)).map(q => q[0].toFixed(2) + ' ' + q[1].toFixed(2)).join('L');
+          under = `<clipPath id="${ns}pool${w.i}"><path d="M${outline(eng.baseZ(0) + WATER_Z)}Z"/></clipPath><clipPath id="${ns}rim${w.i}"><path d="M${outline(eng.baseZ(0))}Z"/></clipPath>`
+            + `<g clip-path="url(#${ns}rim${w.i})"><g clip-path="url(#${ns}pool${w.i})">${art}</g></g>`;
         }
         art = `<clipPath id="${up}"><rect x="-9999" y="-9999" width="19998" height="${(wy + 9999).toFixed(2)}"/>${ell}</clipPath>`
           + `<clipPath id="${dn}"><path clip-rule="evenodd" d="M-9999 ${wy.toFixed(2)}H9999V9999H-9999Z${ellD}"/></clipPath>`
-          + `<g clip-path="url(#${dn})" opacity=".2">${under}</g>${ripple}<g clip-path="url(#${up})">${art}</g>`;
+          + `<g clip-path="url(#${dn})" opacity=".2">${under}</g>${w.p.sink != null && w.p.sink < 0.35 ? '' : ripple}<g clip-path="url(#${up})">${art}</g>`;   // no ripples yet with only the feet in
       }
-      art = `<g class="hc3d-person" data-name="${esc(w.d.name)}"${op < 1 ? ` data-opacity="${op.toFixed(2)}"` : ''}>${shadow && op < 1 ? `<g opacity="${op.toFixed(3)}">${shadow}</g>` : shadow}${art}</g>`;
+      art = `<g class="hc3d-person" data-name="${esc(w.d.name)}"${w.p.key != null ? ` data-key="${esc(String(w.p.key))}"` : ''}${op < 1 ? ` data-opacity="${op.toFixed(2)}"` : ''}>${shadow && op < 1 ? `<g opacity="${op.toFixed(3)}">${shadow}</g>` : shadow}${art}</g>`;
       const g = findGroup(markup, 'hc3d-ref hc3d-ref-' + w.i + '"');
       if (g) markup = markup.slice(0, g[0]) + art + markup.slice(g[1]);
       else markup += art;   // not on a floor that is drawn in this sort: on top
@@ -1144,11 +1298,13 @@
          faded: the outline belongs to the character, not to the bedding. */
       const op = opacityOf(w.p), gid = ns + 'ghost' + w.i;
       const headArt = op < 1 ? ghost(gid, op, head, opts) : head;
-      const duvet = duvetLump(f, u, w.L, zo);
-      let html = headArt + (op < 1 ? `<g opacity="${op.toFixed(3)}">${duvet}</g>` : duvet);
+      const bath = f.type === 'bathtub';
+      const duvet = bath ? bathWater(f, w.L, hv) : duvetLump(f, u, w.L, zo), fade = h => op < 1 ? `<g opacity="${op.toFixed(3)}">${h}</g>` : h;
+      // in a bath the head is over the water (the foam over the body); in bed the duvet comes up over the neck
+      let html = bath ? fade(duvet.water) + headArt + fade(duvet.foam) : headArt + fade(duvet);
       // when the headboard is nearer the camera than the pillow, it hides part of the sleeper
       const near = (vv) => eng.scr(...P(u, vv), zb)[1];
-      if (near(-bd2 + 0.03) > near(hv - 0.17)) {
+      if (!bath && near(-bd2 + 0.03) > near(hv - 0.17)) {
         const pts = [];
         [-bw2, bw2].forEach(uu => [-bd2, -bd2 + 0.06].forEach(vv => (f.type === 'bunkbed' ? [0.3, 0.72] : [0, 0.95]).forEach(z => pts.push(eng.scr(...P(uu, vv), zb + z)))));
         html = hideMask(ns + 'hb' + w.i, [hull(pts)]) + `<g mask="url(#${ns}hb${w.i})">${html}</g>`;
@@ -1174,7 +1330,7 @@
         }
         if (polys.length) html = hideMask(ns + 'bunk' + w.i, polys) + `<g mask="url(#${ns}bunk${w.i})">${html}</g>`;
       }
-      html = `<g class="hc3d-person hc3d-asleep" data-name="${esc(w.d.name)}"${op < 1 ? ` data-opacity="${op.toFixed(2)}"` : ''}>${html}</g>`;
+      html = `<g class="hc3d-person hc3d-asleep" data-name="${esc(w.d.name)}"${w.p.key != null ? ` data-key="${esc(String(w.p.key))}"` : ''}${op < 1 ? ` data-opacity="${op.toFixed(2)}"` : ''}>${html}</g>`;
       if (g) markup = markup.slice(0, g[0]) + html + markup.slice(g[1]); else markup += html;
       const hd = eng.scr(...P(u, hv - 0.17), zb + 0.6), corners = [[-bw2, -bd2], [bw2, -bd2], [bw2, bd2], [-bw2, bd2]].map(([a, b]) => eng.scr(...P(a, b), zb));
       w.screen = { x0: Math.min(...corners.map(c => c[0])), x1: Math.max(...corners.map(c => c[0])), y0: hd[1] - 30, y1: Math.max(...corners.map(c => c[1])) };
@@ -1185,6 +1341,23 @@
        at the top and narrowing toward the feet, its sides sloping down to the sheet at 45°, from the chest to the foot of the bed, in the
        engine's own duvet colours (m-duvet), with the faces the camera sees. Two people in a
        double bed make two lumps side by side. */
+    /* In a bath: the water's surface inside the tub, see-through blue with a light outline, and a
+       raft of soap bubbles over the body (the head lies on it at the taps' end). */
+    function bathWater(f, L, hv) {
+      const z = eng.baseZ(L) + 0.45, W = (uu, vv) => eng.scr(...eng.furnPt(f, uu, vv), z), pts = q => q.map(([x, y]) => x.toFixed(2) + ',' + y.toFixed(2)).join(' ');
+      const rim = [[-0.3, -0.75], [0.3, -0.75], [0.3, 0.78], [-0.3, 0.78]].map(([a, b]) => W(a, b));
+      let out = `<polygon points="${pts(rim)}" fill="#8fd0ef" fill-opacity=".55" stroke="#fff" stroke-opacity=".9" stroke-width="1.2"/>`;
+      // a few rings on the water by the shoulders
+      const [cx, cy] = W(0, hv + 0.05);
+      out += `<ellipse cx="${cx.toFixed(2)}" cy="${cy.toFixed(2)}" rx="${(0.22 * eng.HW).toFixed(2)}" ry="${(0.22 * eng.HH).toFixed(2)}" fill="none" stroke="#fff" stroke-opacity=".7" stroke-width=".9"/>`;
+      return { water: out, foam: foam(Array.from({ length: 16 }, (_, k) => { const a = (k * 2.39996) % 1, b = (k * 0.618034) % 1; return W((a - 0.5) * 0.4, hv + 0.18 + b * 0.75); }), 0.055 * eng.HW, k => 0.6 + ((k * 0.37) % 0.5)) };
+    }
+    // soap bubbles: white rounds with a light rim and a gleam, at screen (or stage) points, radius r
+    function foam(at, r, size) {
+      return '<g class="hc3d-foam">' + at.map(([x, y], k) => { const rr = r * size(k);
+        return `<circle cx="${x.toFixed(2)}" cy="${y.toFixed(2)}" r="${rr.toFixed(2)}" fill="#fff" fill-opacity=".92" stroke="#b9dcef" stroke-width="${(rr * 0.12).toFixed(2)}"/>`
+          + `<circle cx="${(x - rr * 0.35).toFixed(2)}" cy="${(y - rr * 0.35).toFixed(2)}" r="${(rr * 0.22).toFixed(2)}" fill="#e6f5fd"/>`; }).join('') + '</g>';
+    }
     function duvetLump(f, u, L, zo) {
       const H = 0.12, bd2 = eng.FURN[f.type].d / 2, z0 = eng.baseZ(L) + (zo || 0) + 0.5, z1 = z0 + H, v0 = -bd2 + 0.5, v1 = bd2 - 0.03;
       const SH = 0.29, FT = 0.22;   // half-widths at the shoulders and at the feet, where it meets the sheet (m)
@@ -1245,7 +1418,7 @@
       + `<feMerge><feMergeNode in="line"/><feMergeNode in="SourceGraphic"/></feMerge></filter>`
       + `<g filter="url(#${id})">${html}</g>`;
   }
-  const isBed = t => /bed/i.test(t) && !/bedside/i.test(t);   // bed, and the single and double beds
+  const isBed = t => (/bed/i.test(t) && !/bedside/i.test(t)) || t === 'bathtub';   // bed, the single and double beds — and a bath, lain in the same way
   const opacityOf = p => p.opacity != null ? Math.max(0, Math.min(1, +p.opacity)) : 1;
 
   function pictureDraw(el, house, people, opts) {

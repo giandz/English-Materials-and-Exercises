@@ -101,7 +101,7 @@ function dict(map){
   dis-COV-er-y de-LIV-er-y re-COV-er-y for-GOT-ten e-RAS-er how-EV-er what-EV-er when-EV-er where-EV-er col-LECT cor-RECT suc-CEED BEAU-ti-ful IN-ter-est CIN-e-ma CAM-er-a ge-OG-ra-phy
   RE-a-lize im-ME-di-ate-ly
   +af-ter-NOON +un-der-STAND +in-tro-DUCE +re-com-MEND +en-ter-TAIN +vol-un-TEER +en-gi-NEER +un-der-NEATH
-    ma-RI-a AN-a CAR-los GA-bri-el lu-IS mi-GUEL JES-si-ca mi-CHELLE LU-cia ju-AN PE-dro DA-vid MI-chael so-PHI-a EM-i-ly o-LIV-i-a DAN-iel ROB-ert JEN-ni-fer an-TO-ni-o`)
+    ma-RI-a AN-a CAR-los GA-bri-el lu-IS mi-GUEL JES-si-ca mi-CHELLE LU-cia ju-AN PE-dro DA-vid MI-chael so-PHI-a EM-i-ly o-LIV-i-a DAN-iel ROB-ert JEN-ni-fer an-TO-ni-o ve-ge-TA-ri-an`)
   .split(/\s+/).forEach(s => { const k = s.replace(/[-+]/g,'').toLowerCase(); WORDS[k] = s; });
 BASE = Object.assign(Object.create(null), WORDS);
 
