@@ -80,6 +80,13 @@
     box-shadow:0 2px 8px rgba(0,0,0,.12);
   }
   .cut-float[hidden], .cut-row[hidden]{ display:none; }
+  /* day and night: the time of day, and the darkness laid over the 3D view (its own layers, so the
+     time going by only changes their opacity) */
+  .night-float{ left:auto; right:10px; }
+  .night-play{ width:28px; height:28px; padding:0; border-radius:50%; border:1px solid var(--color-border-secondary); background:var(--color-background-primary); cursor:pointer; font-size:13px; line-height:1; }
+  .night-play[aria-pressed="true"]{ background:var(--slot-accent); color:#fff; border-color:var(--slot-accent); }
+  .hb-night{ position:absolute; left:0; top:0; width:100%; pointer-events:none; will-change:opacity; opacity:0; }
+  .hb-night[hidden]{ display:none; }
   .cut-float .cut-ico{ font-size:15px; line-height:1; }
   .cut-range{ width:120px; accent-color:var(--slot-accent); cursor:pointer; margin:0; }
   .cut-val{ font-size:0.7857rem; font-weight:600; color:var(--text-secondary); min-width:2.6em; text-align:right; font-variant-numeric:tabular-nums; }
@@ -345,6 +352,8 @@
   <div class="views" id="views" data-view="both">
     <div class="view-frame iso-frame" id="isoFrame">
       <svg id="isoSvg" role="img" aria-label="Isometric view of the house" xmlns="http://www.w3.org/2000/svg"></svg>
+      <svg class="hb-night" id="duskSvg" aria-hidden="true" xmlns="http://www.w3.org/2000/svg"></svg>
+      <svg class="hb-night" id="nightSvg" aria-hidden="true" xmlns="http://www.w3.org/2000/svg"></svg>
       <div class="frame-tools">
         <button type="button" class="frame-btn" id="rotLeftBtn" title="Turn left (Q)" aria-label="Turn the house left">⟲</button>
         <button type="button" class="frame-btn" id="rotRightBtn" title="Turn right (E)" aria-label="Turn the house right">⟳</button>
@@ -352,6 +361,13 @@
         <button type="button" class="frame-btn" id="cutBtn" title="Cutout (X)" aria-label="Cutout" aria-pressed="false">✂️</button>
         <button type="button" class="frame-btn" id="walkFrameBtn" title="Walk mode: off — press to walk (G)" aria-label="Walk mode: off" aria-pressed="false">🚶</button>
         <button type="button" class="frame-btn" id="familyFrameBtn" title="Family mode: off — press to bring the house to life (H)" aria-label="Family mode: off" aria-pressed="false">🧑‍🧑‍🧒‍🧒</button>
+        <button type="button" class="frame-btn" id="nightBtn" title="Time of day (N)" aria-label="Time of day" aria-pressed="false">🌗</button>
+      </div>
+      <div class="cut-float night-float" id="nightFloat" hidden>
+        <span class="cut-ico" id="nightIco" aria-hidden="true">☀️</span>
+        <input type="range" class="cut-range" id="nightSlider" min="0" max="24" step="0.25" value="12" aria-label="Time of day" title="Time of day: drag it, or press ▶ to let the day go by">
+        <span class="cut-val" id="nightVal">12:00</span>
+        <button type="button" class="night-play" id="nightPlay" aria-pressed="false" title="Let the day go by (a whole day in 4 minutes)" aria-label="Let the day go by">▶</button>
       </div>
       <div class="cut-float" id="cutFloat" hidden>
         <span class="cut-ico" aria-hidden="true">✂️</span>
@@ -514,6 +530,8 @@
     <li><strong>🏠 Roof</strong> (box gable, open gable, box shed, open shed or flat): drag from one corner of the roof to the opposite corner. Corners snap to grid corners and the middles of squares, so a roof can hang half a square past the walls. Tap a roof to turn it. The roof sits on top of the walls of the floor you are on.</li>
     <li><strong>🛋️ Furniture</strong>: pick a 🍽️ dining table, 🪑 chair, 🛏️ single bed, double bed or bunk bed, side table, coffee table, dresser, wardrobe, armchair, loveseat or couch (and more) and tap a grid corner or the middle of a square. Tap it again to turn it, or press <strong>R</strong> before you tap. Drag it to move it.</li>
     <li><strong>📚 Bookshelf, wall shelf, countertop, wall cabinet</strong>: furniture with levels for appliances. A wall cabinet hangs like a shelf and shares the countertop's own cabinet-door look, for matching upper and lower kitchen cabinets. A countertop is built like a wall: drag along the grid lines, on the side you want, and drag on from its end to make it longer. Where two runs meet in a corner, the <strong>counter corner</strong> fills the square between them: tap the corner square, and tap it again to turn it. A bookshelf has three levels (two inside and the top). A wall shelf hangs on a wall: tap the wall on the side you want.</li>
+    <li><strong>💡 Light switches, curtains and blinds</strong>: tap a wall, on the room’s side, for a light switch (1.1 m up, towards either end of the wall or in the middle, wherever you tap). Every switch in a room turns its one ceiling light on and off; tap a switch with the switch tool to flick it yourself. Tap a window, on the side you want, for curtains or a roller blind; tap them again to close or open them. Colour them with 🎨 Style (white, or the tile pastels). Tap a table or stand lamp with its own tool to switch it on or off. A <strong>wall lamp</strong> goes on either side of a wall (inside or outside), at 1.8 m, round, square or long (🎨 Style); tap it to switch it. A <strong>lamppost</strong> and <strong>lawn lights</strong> stand outside and come on by themselves after dark (tap one to switch it off or back on), lighting the ground round them. In walk mode, tap any of these and the person goes and does it (💡 🪟). Someone going to bed with the room’s light on turns it off at a switch first.</li>
+    <li><strong>🌗 Time of day</strong> (<strong>N</strong>): drag the time, or press ▶ to let a whole day go by in 4 minutes. After dark the 3D view goes dark except where the lights are on: rooms with the ceiling light on, rooms with a lamp on (dimmer, with a glow round the lamp), and their windows, which glow (unless the curtains are shut). In family mode people turn lights on and shut the curtains after dark, open them and turn the lights off by day, and go to bed more.</li>
     <li><strong>🚿 Bathroom</strong>: a 🚽 toilet, a washbasin and a 🛁 bathtub stand on the floor like furniture, and a 🪞 mirror cabinet hangs on a wall. A 🚿 shower (a hot and a cold valve and the shower head) hangs on a wall, like a shelf: tap the wall on the side you want. It can go over a bathtub. A window or split air conditioner, an exhaust fan and a heating radiator mount on a wall the same way, from the Appliances row.</li>
     <li><strong>📺 Appliances</strong> (television, monitor, game console, stereo, laptop, computer case, a table lamp and a stand lamp, microwave, an oven, a toaster, a blender, stove, kitchen sink, a refrigerator, a chest freezer, a washing machine, a clothes dryer, an over-under washer-dryer, and a tankless water heater — the stove and sink only go on a countertop, and the oven and the other big appliances only go on the floor). A window or split air conditioner (evaporator and condenser), an exhaust fan, a heating radiator and a tankless water heater all mount on a wall, like the shower. A chair, office chair, armchair, loveseat or couch can hold one appliance on its seat (a loveseat or couch also takes two side by side), and something small (about the size of a laptop) can go under a table or an ordinary chair.</li>
     <li><strong>🪴 Objects</strong> (a rug, a planter, a book, four standing books): a rug lies on the floor, under furniture; the others go anywhere an appliance can — on the floor, on furniture, on a seat or under a table or chair — to show things like “the book is under the table”. In the 3D view, point at the floor under the table; on the plan, hold <strong>Shift</strong> while you tap the table to put it underneath. tap the floor, or a level of a table, bookshelf, shelf or countertop. Each level takes one appliance in the middle or two side by side, if they fit. A television only goes on the floor or on top of a piece. Tap an appliance to turn it, drag it to move it.</li>
@@ -588,7 +606,7 @@
   });
   const state = engine.state;
   const {
-    APPL, APPL_ORDER, COL_W, FURN, FURN_ORDER, HH, HW, LEVELS, LEVEL_INFO, MAX_LEVEL, MAX_SIZE, MIN_LEVEL, MIN_SIZE, PIECES, PIECE_ORDER, PX, STAIR_PIECE, STAIR_TYPES, STYLABLE_APPL, STYLABLE_FIX, STYLE_SETS, SWATCH, T, WALL_H, ZS, applFrame, applRect, applValid, baseZ, blockedEdges, colKey, colValid, colXY, computeAreas, computeRooms, cur, cutH, defaultSwing, displayState, edgeEnds, emptyLevel, frameRect, furnIndexAt, furnPt, furnRect, furnValid, hung, isGable, isIndoorEdge, isShed, isSofa, itemFrame, key, levelUsed, nearestColSpot, onLine, parseKey, pickRoofScreen, poolIndexAt, poolValid, renderIso, renderPlan, roofAtWorld, roofCorners, sType, scr, serializeHouse, shiftContent, sidesOf, slotFits, slotFree, slotU, stairIndexAt, stairValid, styleOf, unrot, validEdge, validateHouse
+    APPL, APPL_ORDER, COL_W, FURN, FURN_ORDER, HH, HW, LEVELS, LEVEL_INFO, MAX_LEVEL, MAX_SIZE, MIN_LEVEL, MIN_SIZE, PIECES, PIECE_ORDER, PX, STAIR_PIECE, STAIR_TYPES, STYLABLE_APPL, STYLABLE_FIX, STYLE_SETS, LAMPS, AUTO_LIGHTS, WALL_LAMP_STYLES, SWITCH_SLOT, isDressing, roomCellsAt: roomCellsIn, roomLit, setRoomLight, lampLitRoom, switchPt, winSpan, SWATCH, T, WALL_H, ZS, applFrame, applRect, applValid, baseZ, blockedEdges, colKey, colValid, colXY, computeAreas, computeRooms, cur, cutH, defaultSwing, displayState, edgeEnds, emptyLevel, frameRect, furnIndexAt, furnPt, furnRect, furnValid, hung, isGable, isIndoorEdge, isShed, isSofa, itemFrame, key, levelUsed, nearestColSpot, onLine, parseKey, pickRoofScreen, poolIndexAt, poolValid, renderIso, renderPlan, roofAtWorld, roofCorners, sType, scr, serializeHouse, shiftContent, sidesOf, slotFits, slotFree, slotU, stairIndexAt, stairValid, styleOf, unrot, validEdge, validateHouse
   } = engine;
   /* Railings round stair holes: the staircases on floor L went from `before` to `after` (a list
      each). On the floor above, take away the railings that only edged the holes of the ones that
@@ -613,6 +631,12 @@
     return `<svg class="piece-svg" viewBox="0 0 30 24" width="30" height="24" aria-hidden="true"><rect x="${x0}" y="5" width="${w}" height="10" rx="2.5" fill="#6f9a90"/><rect x="${x0 - 1}" y="11" width="4" height="9" rx="1.5" fill="#577f76"/><rect x="${x0 + w - 3}" y="11" width="4" height="9" rx="1.5" fill="#577f76"/>${cush}<rect x="${x0 + 2}" y="18" width="${w - 4}" height="2.5" fill="#577f76"/></svg>`;
   };
   const ICON_SVG = {
+    lamppost: '<svg class="piece-svg" viewBox="0 0 30 24" width="30" height="24" aria-hidden="true"><rect x="11" y="21" width="8" height="2.5" rx="1" fill="#3a3f45"/><rect x="14.2" y="7" width="1.6" height="14.5" fill="#3a3f45"/><rect x="11.5" y="2.5" width="7" height="5" fill="#ffe9a8" stroke="#3a3f45"/><rect x="10.5" y="1" width="9" height="2" fill="#3a3f45"/></svg>',
+    lawnlight: '<svg class="piece-svg" viewBox="0 0 30 24" width="30" height="24" aria-hidden="true"><rect x="2" y="19" width="26" height="4" rx="2" fill="#8bc47a"/><rect x="13.5" y="10" width="3" height="10" fill="#3a3f45"/><rect x="12.5" y="7" width="5" height="3.5" fill="#ffe9a8" stroke="#3a3f45" stroke-width=".8"/><rect x="12" y="5.5" width="6" height="2" rx="1" fill="#3a3f45"/></svg>',
+    walllamp: '<svg class="piece-svg" viewBox="0 0 30 24" width="30" height="24" aria-hidden="true"><rect x="2" y="2" width="5" height="20" fill="#d9d0c0"/><rect x="7" y="8" width="3" height="8" fill="#3a3f45"/><circle cx="16" cy="12" r="6" fill="#ffe9a8" stroke="#f2c96b"/></svg>',
+    lightswitch: '<svg class="piece-svg" viewBox="0 0 30 24" width="30" height="24" aria-hidden="true"><rect x="9" y="2" width="12" height="20" rx="2" fill="#f6f6f3" stroke="#9e9b92"/><rect x="12.5" y="5.5" width="5" height="7" rx="1" fill="#fff" stroke="#9e9b92"/><path d="M15 15.5v3" stroke="#f2b632" stroke-width="2" stroke-linecap="round"/></svg>',
+    curtains: '<svg class="piece-svg" viewBox="0 0 30 24" width="30" height="24" aria-hidden="true"><rect x="7" y="4" width="16" height="12" fill="#bfe0f5" stroke="#8fa3b0"/><path d="M2 2.5H28" stroke="#8c8f94" stroke-width="1.6"/><path d="M3 3H9Q8 12 10 22H3Z" fill="#f2c4ce" stroke="#d99aa8"/><path d="M27 3H21Q22 12 20 22H27Z" fill="#f2c4ce" stroke="#d99aa8"/></svg>',
+    blinds: '<svg class="piece-svg" viewBox="0 0 30 24" width="30" height="24" aria-hidden="true"><rect x="5" y="4" width="20" height="17" fill="#bfe0f5" stroke="#8fa3b0"/><rect x="4" y="2" width="22" height="3" rx="1.5" fill="#c3d9ee" stroke="#8fa9c2"/><rect x="5.5" y="5" width="19" height="9" fill="#c3d9ee" stroke="#8fa9c2"/><path d="M6 8H24M6 11H24" stroke="#8fa9c2" stroke-width=".7"/><path d="M15 14v3" stroke="#8fa9c2"/></svg>',
     wallshelf: '<svg class="piece-svg" viewBox="0 0 30 24" width="30" height="24" aria-hidden="true"><rect x="2" y="2" width="4" height="20" fill="#d9d0c0"/><rect x="6" y="9" width="21" height="3" rx="1" fill="#b07a4b"/><path d="M9 12L9 16L12 12M22 12L22 16L25 12" fill="#8e5f37"/><rect x="15" y="4" width="6" height="5" rx="1" fill="#7393c2"/></svg>',
     countertop: '<svg class="piece-svg" viewBox="0 0 30 24" width="30" height="24" aria-hidden="true"><rect x="2" y="7" width="26" height="3" fill="#8c8f94"/><rect x="3" y="10" width="24" height="12" fill="#f2efe8" stroke="#b7b0a2"/><path d="M15 10V22M12.5 14V17M17.5 14V17" stroke="#9aa0a5" stroke-width="1.2"/></svg>',
     countercorner: '<svg class="piece-svg" viewBox="0 0 30 24" width="30" height="24" aria-hidden="true"><path d="M4 3H26V13H14V22H4Z" fill="#f2efe8" stroke="#8c8f94" stroke-width="1.6"/><path d="M14 13V22M14 13H26" stroke="#b7b0a2" stroke-width="1"/><path d="M19 6V10M8 15V19" stroke="#9aa0a5" stroke-width="1.2"/></svg>',
@@ -692,6 +716,7 @@
     // the plan first: the 3D view adds stand-ins for the people to stBy
     if (state.viewMode !== 'iso') planSvg.innerHTML = renderPlan(stBy, rmBy) + `<g class="hb-plan-people">${planPeople()}</g>`;
     if (state.viewMode !== 'plan') isoSvg.innerHTML = isoWithPeople(stBy, rmBy);
+    if (typeof nightRefresh === 'function') nightRefresh();
   }
   /* Redrawing only the people. While people walk (and swimmers tread water) the house stays as it
      is: instead of drawing it all again every frame, the drawings of the people who move are swapped
@@ -1022,9 +1047,15 @@
   }
   // wall shelf / shower: hang it on the wall under the pointer, on the pointer's side
   function wallPieceAt(w, type) {
-    const k = nearestPresentEdge(w, 0.5); if (!k || cur().get(k).type !== 'wall') return null;
+    const k = nearestPresentEdge(w, 0.5); if (!k || cur().get(k).type !== (isDressing(type) ? 'window' : 'wall')) return null;
     const e = parseKey(k), side = e.o === 'h' ? (w.y > e.r ? 'p' : 'm') : (w.x > e.c ? 'p' : 'm');
-    return { type, ek: k, side, items: [] };
+    const o = { type, ek: k, side, items: [] };
+    if (FURN[type].slotted) {
+      // along the wall: towards its start, its middle or its end, wherever the pointer is (like things on a shelf)
+      const t = e.o === 'h' ? w.x - e.c : w.y - e.r;
+      o.slot = t < 0.36 ? 'L' : t > 0.64 ? 'R' : 'C';
+    }
+    return o;
   }
   // a countertop piece on line k, side sd, stopping short of whatever meets the line at either end
   function makeCounter(k, sd, extra) {
@@ -1049,15 +1080,24 @@
     return { furnAdds: keys.map(k => { const f = makeCounter(k, sd); return { f, bad: !furnValid(f, state.level) }; }) };
   }
   // furniture tool: put one on the nearest spot, or turn the one already here
+  let wallLampStyle = (() => { try { const v = localStorage.getItem('house-builder-walllamp'); return WALL_LAMP_STYLES.includes(v) ? v : 'round'; } catch (e) { return 'round'; } })();
   function furnTap(w, type) {
     const F = state.floors[state.level], idx = furnIndexAt(w);
     if (idx >= 0) {
       const o = F.furniture[idx];
+      // a light switch: flick it; curtains or a blind: open or close them (like a door)
+      if (o.type === 'lightswitch') { const [x, y] = switchPt(o); return { lightToggle: { L: state.level, x, y } }; }
+      if (o.type === 'walllamp') { const cand = { ...o }; if (o.on) delete cand.on; else cand.on = true; return { furnSet: { idx, f: cand } }; }
+      if (isDressing(o.type)) { const cand = { ...o }; if (o.closed) delete cand.closed; else cand.closed = true; return { furnSet: { idx, f: cand } }; }
       if (onLine(o)) { const cand = { ...o, side: o.side === 'p' ? 'm' : 'p' }; return furnValid(cand, state.level, idx) ? { furnSet: { idx, f: cand } } : null; }
       for (let k = 1; k < 4; k++) { const cand = { ...o, dir: (o.dir + k) % 4 }; if (furnValid(cand, state.level, idx)) return { furnSet: { idx, f: cand } }; }
       return null;
     }
-    if (FURN[type].wall) { const cand = wallPieceAt(w, type); return cand ? { furnAdd: { f: cand, bad: !furnValid(cand, state.level) } } : null; }
+    if (FURN[type].wall) {
+      const cand = wallPieceAt(w, type); if (!cand) return null;
+      if (type === 'walllamp') { if (wallLampStyle !== 'round') cand.style = wallLampStyle; cand.on = true; }   // in the style picked last, and on
+      return { furnAdd: { f: cand, bad: !furnValid(cand, state.level) } };
+    }
     if (type === 'poolladder') {
       // the pool edge nearest the tap, on the pool's side of it
       const ne = nearestEdge(w.x, w.y); if (!ne || state.level !== 0) return null;
@@ -1164,6 +1204,14 @@
     // Shift on the plan means "put it underneath": an item sitting on a higher level of the
     // same piece (a lamp on the side table) shouldn't swallow the tap by turning instead
     if (w.shift && hit && hit.kind === 'item' && !FURN[F.furniture[hit.fidx].type].levels[F.furniture[hit.fidx].items[hit.iidx].lvl].under) hit = null;
+    if (hit && hit.kind === 'floor' && LAMPS.has(F.appliances[hit.idx].type)) {   // a lamp: switch it on or off
+      const a = { ...F.appliances[hit.idx] }; if (a.on) delete a.on; else a.on = true;
+      return { applSet: { idx: hit.idx, a } };
+    }
+    if (hit && hit.kind === 'item' && LAMPS.has(F.furniture[hit.fidx].items[hit.iidx].type)) {
+      const f = F.furniture[hit.fidx];
+      return { furnSets: [{ idx: hit.fidx, f: { ...f, items: f.items.map((x, i) => { if (i !== hit.iidx) return x; const y = { ...x }; if (y.on) delete y.on; else y.on = true; return y; }) } }] };
+    }
     if (hit && hit.kind === 'floor') {           // tap an appliance: turn it
       const a = F.appliances[hit.idx];
       for (let k = 1; k < 4; k++) { const c = { ...a, dir: (a.dir + k) % 4 }; if (applValid(c, state.level, hit.idx)) return { applSet: { idx: hit.idx, a: c } }; }
@@ -1193,6 +1241,8 @@
   function commit(p) {
     if (!p) return;
     if (p.walkPick !== undefined || p.walkTo) { walkCommit(p); return; }
+    // flicking a light switch by hand: the room's light, not part of the undo history
+    if (p.lightToggle) { const t = p.lightToggle; setRoomLight(t.L, t.x, t.y, !roomLit(t.L, t.x, t.y)); houseDirty = true; return; }
     const hasEdges = p.edges && p.edges.size;
     const stair = (p.stairAdd && !p.stairAdd.bad) || p.stairSet || p.stairDel != null;
     const col = (p.colAdd && !p.colAdd.bad) || p.colDel || (p.colMove && !p.colMove.bad && p.colMove.from !== p.colMove.to);
@@ -1235,11 +1285,11 @@
     if (p.furnSets) p.furnSets.forEach(fs => { F.furniture[fs.idx] = fs.f; });
     if (p.furnAdds) p.furnAdds.forEach(fa => { if (!fa.bad) F.furniture.push(fa.f); });
     if (p.furnDel != null) F.furniture.splice(p.furnDel, 1);
-    if (p.applAdd && !p.applAdd.bad) { F.appliances.push(p.applAdd.a); state.applDir = p.applAdd.a.dir; }
+    if (p.applAdd && !p.applAdd.bad) { F.appliances.push(AUTO_LIGHTS.has(p.applAdd.a.type) ? { ...p.applAdd.a, on: true } : p.applAdd.a); state.applDir = p.applAdd.a.dir; }
     if (p.applSet && !p.applSet.bad) { F.appliances[p.applSet.idx] = p.applSet.a; state.applDir = p.applSet.a.dir; }
     if (p.applDel != null) F.appliances.splice(p.applDel, 1);
     // a shelf goes with its wall
-    F.furniture = F.furniture.filter(f => !hung(f) || (F.edges.get(f.ek) || {}).type === 'wall');
+    F.furniture = F.furniture.filter(f => !hung(f) || (F.edges.get(f.ek) || {}).type === (isDressing(f.type) ? 'window' : 'wall'));
     followFurniture(state.level, furnBefore);
     leavePools();
   }
@@ -1287,7 +1337,7 @@
       case 'roof': return F.roofs[state.selection.k] ? { type: 'roof', r: F.roofs[state.selection.k] } : null;
       case 'stair': return F.stairs[state.selection.k] ? { type: 'stair', st: F.stairs[state.selection.k] } : null;
       case 'appl': return F.appliances[state.selection.k] ? { type: 'appliance', a: F.appliances[state.selection.k] } : null;
-      case 'fix': { const o = F.furniture[state.selection.k]; return o && STYLABLE_FIX.has(o.type) ? { type: 'fixture', f: o } : null; }
+      case 'fix': { const o = F.furniture[state.selection.k]; return o && STYLABLE_FIX.has(o.type) ? { type: 'fixture', f: o } : o && isDressing(o.type) ? { type: 'drape', f: o } : o && o.type === 'walllamp' ? { type: 'walllamp', f: o } : null; }
       case 'edge': return F.edges.get(state.selection.k) || null;
       case 'edges': { const n = selEdges().length; return n ? { type: state.selection.sub === 'fence' ? 'fences' : 'walls', n } : null; }
       case 'floor': return state.selection.cells.length ? { type: 'floor', n: state.selection.cells.length } : null;
@@ -1348,8 +1398,14 @@
   // a toilet, washbasin or bathtub (their porcelain can be coloured), at world point w
   function styleFixAt(w) {
     const list = state.floors[state.level].furniture;
+    // curtains and blinds hang high: in the 3D view pick them where they are drawn
+    if (w.sp) for (let i = list.length - 1; i >= 0; i--) {
+      if (!isDressing(list[i].type) && list[i].type !== 'walllamp') continue;
+      const [cx, cy] = furnPt(list[i], 0, 0), [sx, sy] = scr(cx, cy, baseZ(state.level) + FURN[list[i].type].pickZ);
+      if (Math.hypot(sx - w.sp.x, sy - w.sp.y) < 26) return i;
+    }
     for (let i = list.length - 1; i >= 0; i--) {
-      if (!STYLABLE_FIX.has(list[i].type)) continue;
+      if (!STYLABLE_FIX.has(list[i].type) && !((isDressing(list[i].type) || list[i].type === 'walllamp') && !w.sp)) continue;
       const R_ = furnRect(list[i]);
       if (w.x > R_.x0 - 0.04 && w.x < R_.x1 + 0.04 && w.y > R_.y0 - 0.04 && w.y < R_.y1 + 0.04) return i;
     }
@@ -1432,7 +1488,8 @@
     if (set === 'roofmat') return v.r.mat;
     if (set === 'stair') return v.st.style || 'solid';
     if (set === 'appliance') return v.a.color || 'white';
-    if (set === 'fixture') return v.f.color || 'white';
+    if (set === 'fixture' || set === 'drape') return v.f.color || 'white';
+    if (set === 'walllamp') return v.f.style || 'round';
     if (set === 'floor') return uniq(state.selection.cells.map(k => F.floorStyles.get(k) || 'hardwood'));
     if (set === 'wall') {
       const rooms = computeRooms(F.edges, isIndoorEdge), vals = [];
@@ -1456,7 +1513,12 @@
       const a = F.appliances[k];
       if (val === 'white') { const { color, ...rest } = a; F.appliances[k] = rest; } else F.appliances[k] = { ...a, color: val };
     }
-    else if (set === 'fixture') {
+    else if (set === 'walllamp') {
+      const o = F.furniture[k], { style, ...rest } = o, cand = val === 'round' ? rest : { ...rest, style: val };
+      if (furnValid(cand, state.level, k)) F.furniture[k] = cand;   // (a long lamp that something on the wall is in the way of stays as it is)
+      wallLampStyle = val; try { localStorage.setItem('house-builder-walllamp', val); } catch (e) { /* ignore */ }
+    }
+    else if (set === 'fixture' || set === 'drape') {
       const o = F.furniture[k];
       if (val === 'white') { const { color, ...rest } = o; F.furniture[k] = rest; } else F.furniture[k] = { ...o, color: val };
     }
@@ -1486,8 +1548,13 @@
         F.appliances = F.appliances.map(a => { if (!STYLABLE_APPL.has(a.type)) return a; if (val === 'white') { const { color, ...rest } = a; return rest; } return { ...a, color: val }; });
         return;
       }
-      if (set === 'fixture') {
-        F.furniture = F.furniture.map(o => { if (!STYLABLE_FIX.has(o.type)) return o; if (val === 'white') { const { color, ...rest } = o; return rest; } return { ...o, color: val }; });
+      if (set === 'walllamp') {
+        F.furniture = F.furniture.map((o, i) => { if (o.type !== 'walllamp') return o; const { style, ...rest } = o, cand = val === 'round' ? rest : { ...rest, style: val }; return furnValid(cand, L, i) ? cand : o; });
+        return;
+      }
+      if (set === 'fixture' || set === 'drape') {
+        const fits = set === 'fixture' ? (o => STYLABLE_FIX.has(o.type)) : (o => isDressing(o.type));
+        F.furniture = F.furniture.map(o => { if (!fits(o)) return o; if (val === 'white') { const { color, ...rest } = o; return rest; } return { ...o, color: val }; });
         return;
       }
       if (set === 'roof') { const mat = currentStyle('roofmat'); F.roofs = F.roofs.map(r => ({ ...retypeRoof(r, val), mat })); return; }
@@ -1537,7 +1604,7 @@
         `<div style="height:6px"></div>` + row('wall') +
         applyBtn('wall', multiSide === 'both' ? 'Apply to all walls' : `Apply to all ${catWord(multiSide)} wall faces`);
     } else {
-      const title = { wall: 'Wall', door: 'Door', window: 'Window', fence: 'Fence', column: 'Column', roof: 'Roof', stair: STAIR_TYPES[sType(v.st || {})], appliance: v.a ? PIECES[v.a.type].word : '', fixture: v.f ? PIECES[v.f.type].word : '' }[type];
+      const title = { wall: 'Wall', door: 'Door', window: 'Window', fence: 'Fence', column: 'Column', roof: 'Roof', stair: STAIR_TYPES[sType(v.st || {})], appliance: v.a ? PIECES[v.a.type].word : '', fixture: v.f ? PIECES[v.f.type].word : '', drape: v.f ? PIECES[v.f.type].word : '', walllamp: v.f ? PIECES[v.f.type].word : '' }[type];
       html = `<p class="style-what">Selected: <strong>${title}</strong> ${where}</p>`;
       if (type === 'roof') {
         html += `<p class="drawer-label">Roof type</p>` + row('roof') + `<p class="drawer-label">Roof material</p>` + row('roofmat');
@@ -1625,6 +1692,163 @@
   function clearHover() { lastPointer = null; computeHover(null); }
   function refreshHover() { computeHover.sig = null; computeHover(lastPointer); }
 
+  /* ═══════════════ DAY AND NIGHT ═══════════════
+     🌗 (N) shows the time of day: drag it, or ▶ lets a whole day go by in 4 minutes. The cheapest
+     way found to darken the 3D view: two plain SVG layers laid over it (#duskSvg, an orange wash
+     for sunrise and sunset, and #nightSvg, a dark blue one), each a layer of its own that the
+     browser paints once and then only blends. The time going by changes nothing but their
+     opacity, so the house and the people under them are never painted again for it (a CSS filter
+     on the picture, or the darkness drawn into it, would make the browser repaint the whole
+     picture every step, and every frame people move).
+     #nightSvg has holes where the light is: the rooms of the floor shown whose ceiling light is on
+     (almost no darkness), rooms with only a lamp on (half), and a soft glow round each lamp that
+     is on; it is drawn again only when a light, the floor, the view or the house changes. At
+     night the windows of rooms with a light on glow (the engine draws them, from state.night). */
+  var clock = 12, clockRun = 0, nightShown = false, nightSig = '', nightLitWas = false;
+  try { const v = parseFloat(localStorage.getItem('house-builder-clock')); if (v >= 0 && v <= 24) clock = v; nightShown = localStorage.getItem('house-builder-night') === '1'; } catch (e) { /* ignore */ }
+  const NIGHT_DARK = 0.64, DUSK_TINT = 0.24;
+  const smooth = (a, b, x) => { const u = Math.max(0, Math.min(1, (x - a) / (b - a))); return u * u * (3 - 2 * u); };
+  // how dark it is (0 day … 1 night) and how much sunrise / sunset colour there is, at h o'clock
+  function skyAt(h) {
+    const dark = h < 12 ? 1 - smooth(5, 7.2, h) : smooth(17.6, 20.2, h);
+    const dusk = Math.max(0, 1 - Math.abs(h - 18.7) / 1.5) + 0.7 * Math.max(0, 1 - Math.abs(h - 6.1) / 1.1);
+    return { dark, dusk: Math.min(1, dusk) };
+  }
+  const isNight = () => nightShown && skyAt(clock).dark > 0.5;
+  const nightBtn = document.getElementById('nightBtn'), nightFloat = document.getElementById('nightFloat');
+  const nightSlider = document.getElementById('nightSlider'), nightVal = document.getElementById('nightVal'), nightPlay = document.getElementById('nightPlay'), nightIco = document.getElementById('nightIco');
+  const nightSvg = document.getElementById('nightSvg'), duskSvg = document.getElementById('duskSvg');
+  const hhmm = h => { const m = Math.round(h * 60) % 1440; return String(Math.floor(m / 60)).padStart(2, '0') + ':' + String(m % 60).padStart(2, '0'); };
+  // the darkness for the time now: only the two layers' opacity (and, at dusk and dawn, the windows)
+  function nightTime() {
+    const sky = nightShown ? skyAt(clock) : { dark: 0, dusk: 0 };
+    nightSvg.style.opacity = (sky.dark * NIGHT_DARK).toFixed(3);
+    duskSvg.style.opacity = (sky.dusk * DUSK_TINT * (1 - sky.dark * 0.6)).toFixed(3);
+    state.night = sky.dark;
+    nightSlider.value = clock; nightVal.textContent = hhmm(clock);
+    nightIco.textContent = sky.dark > 0.5 ? '🌙' : sky.dusk > 0.3 ? '🌇' : '☀️';
+    nightSlider.setAttribute('aria-valuetext', hhmm(clock));
+    const lit = sky.dark > 0.35;
+    if (lit !== nightLitWas) { nightLitWas = lit; houseDirty = true; if (!walkRaf) render(); }   // windows start (or stop) glowing
+  }
+  /* what of a room the light falls on, as seen in the 3D view: its floor, and the inner faces of
+     the walls round it that face the camera (the far ones), up to the top of the walls as drawn →
+     { lit, front }: front, the outer faces of the walls between it and us, which stay dark */
+  function roomLightPath(L, cells) {
+    const z0 = baseZ(L) + 0.02, H = state.wallsDown ? cutH() : WALL_H, set = new Set(cells), lit = [], front = [];
+    const F = state.floors[L], glass = [], poly = pts => 'M' + pts.map(p => p[0].toFixed(1) + ' ' + p[1].toFixed(1)).join('L') + 'Z';
+    cells.forEach(k => {
+      const [r, c] = k.split(',').map(Number);
+      lit.push(poly([scr(c, r, z0), scr(c + 1, r, z0), scr(c + 1, r + 1, z0), scr(c, r + 1, z0)]));
+      // the room's edges on this square: [neighbour, the line, its two ends, the way into the room]
+      [[r - 1 + ',' + c, key('h', r, c), [c, r], [c + 1, r], [0, 1]], [r + 1 + ',' + c, key('h', r + 1, c), [c, r + 1], [c + 1, r + 1], [0, -1]],
+       [r + ',' + (c - 1), key('v', r, c), [c, r], [c, r + 1], [1, 0]], [r + ',' + (c + 1), key('v', r, c + 1), [c + 1, r], [c + 1, r + 1], [-1, 0]]].forEach(([nb, ek, a, b, n]) => {
+        if (set.has(nb)) return;
+        const mx = (a[0] + b[0]) / 2, my = (a[1] + b[1]) / 2, far = scr(mx + n[0] * 0.2, my + n[1] * 0.2, z0)[1] > scr(mx, my, z0)[1];
+        const v = F && F.edges.get(ek), solid = v && v.type !== 'fence';
+        // a near wall: cut down in cutout as with the walls down; its outside stays dark
+        const zt = z0 + (far ? (state.cutout || state.wallsDown ? (state.wallsDown ? cutH() : WALL_H) : WALL_H) : (state.cutout || state.wallsDown ? cutH() : WALL_H));
+        const q = poly([scr(a[0], a[1], z0 - 0.02), scr(b[0], b[1], z0 - 0.02), scr(b[0], b[1], zt), scr(a[0], a[1], zt)]);
+        if (far) lit.push(q);
+        else if (solid) {
+          front.push(q);
+          // a window in it lets the light out: its glass stays lit (and glows, at night)
+          if (v.type === 'window' && styleOf(v, 'window') !== 'round') {
+            const [g0, g1] = winSpan(L, ek), u = 0.06, A = [a[0] + (b[0] - a[0]) * u, a[1] + (b[1] - a[1]) * u], B = [b[0] + (a[0] - b[0]) * u, b[1] + (a[1] - b[1]) * u];
+            const top = Math.min(z0 + g1, zt);
+            if (top > z0 + g0 + 0.05) glass.push(poly([scr(A[0], A[1], z0 + g0), scr(B[0], B[1], z0 + g0), scr(B[0], B[1], top), scr(A[0], A[1], top)]));
+          }
+        }
+      });
+    });
+    return { lit: lit.join(''), front: front.join(''), glass: glass.join('') };
+  }
+  // the holes in the darkness, drawn again only when they change
+  function nightRefresh() {
+    if (!nightSvg) return;
+    nightSvg.hidden = duskSvg.hidden = !nightShown || state.viewMode === 'plan';
+    const vb = isoSvg.getAttribute('viewBox'), hgt = isoSvg.getBoundingClientRect().height;
+    [nightSvg, duskSvg].forEach(g => { if (vb) g.setAttribute('viewBox', vb); g.style.height = hgt + 'px'; });
+    if (!nightShown) return;
+    const L = state.level, F = state.floors[L];
+    const underRoof = state.showRoofs && !state.wallsDown && !state.cutout && F && F.roofs.length;
+    const rooms = [], outside = [];
+    if (F && !underRoof) {
+      const seen = new Set(), lampsAt = [];
+      // the lamps that are on (where their shades are), without working out where people would stand
+      F.furniture.forEach(f => (f.items || []).forEach(it => { if (LAMPS.has(it.type) && it.on) { const fr = itemFrame(f, it); lampsAt.push({ cx: fr.cx, cy: fr.cy, z: fr.z + APPL[it.type].h * 0.8 }); } }));
+      (F.appliances || []).forEach(a => { if (LAMPS.has(a.type) && a.on) lampsAt.push({ cx: a.X / 2, cy: a.Y / 2, z: APPL[a.type].h * (a.type === 'lamppost' ? 0.93 : 0.8), type: a.type }); });
+      F.furniture.forEach(f => { if (f.type === 'walllamp' && f.on) { const [cx, cy] = furnPt(f, 0, 0), [rx, ry] = furnPt(f, 0, 0.3); lampsAt.push({ cx, cy, z: 1.85, type: 'walllamp', rx, ry }); } });
+      // the lights outside (not in any room): a pool of light on the ground under each, and a glow round it
+      lampsAt.forEach(t => {
+        if (roomCellsIn(L, t.rx != null ? t.rx : t.cx, t.ry != null ? t.ry : t.cy)) return;
+        const R = { lamppost: 3, lawnlight: 1.1, walllamp: 2.2 }[t.type] || 1.6, gx = t.rx != null ? t.cx + (t.rx - t.cx) * 3 : t.cx, gy = t.ry != null ? t.cy + (t.ry - t.cy) * 3 : t.cy;
+        outside.push({ ground: scr(gx, gy, baseZ(L)), head: scr(t.cx, t.cy, baseZ(L) + t.z), R });
+      });
+      for (let r = 0; r < state.ROWS; r++) for (let c = 0; c < state.COLS; c++) {
+        if (seen.has(r + ',' + c)) continue;
+        const cells = roomCellsIn(L, c + 0.5, r + 0.5); if (!cells) continue;
+        cells.forEach(k => seen.add(k));
+        const lit = roomLit(L, c + 0.5, r + 0.5) ? 2 : lampLitRoom(L, c + 0.5, r + 0.5) ? 1 : 0;
+        if (!lit) continue;
+        const lamps = lampsAt.filter(t => cells.includes(Math.floor(t.ry != null ? t.ry : t.cy) + ',' + Math.floor(t.rx != null ? t.rx : t.cx))).map(t => scr(t.cx, t.cy, baseZ(L) + t.z));
+        rooms.push({ cells, lit, lamps });
+      }
+    }
+    const sig = [vb, state.rot, L, underRoof, state.wallsDown, state.cutout, state.keepAmount, state.ROWS, state.COLS,
+      rooms.map(o => o.lit + ':' + o.cells.join(';') + ':' + o.lamps.map(p => p.map(v => v.toFixed(0)).join()).join()).join('/'),
+      outside.map(o => o.head.map(v => v.toFixed(0)).join() + o.R).join('/')].join('|');
+    if (sig === nightSig) return;
+    nightSig = sig;
+    const big = 'x="-20000" y="-20000" width="40000" height="40000"';
+    const unit = Math.hypot(...[0, 1].map(i => scr(1, 0, 0)[i] - scr(0, 0, 0)[i])), gr = (1.8 * unit).toFixed(1);
+    const glows = (o, fill) => o.lamps.map(([x, y]) => `<circle cx="${x.toFixed(1)}" cy="${y.toFixed(1)}" r="${gr}" fill="${fill}"/>`).join('');
+    let clips = '', mask = '', warm = '', warmMask = '', outWarm = '';
+    rooms.forEach((o, i) => {
+      const P = roomLightPath(L, o.cells);
+      clips += `<clipPath id="hbRoomClip${i}"><path d="${P.lit}"/></clipPath>`;
+      // a ceiling light: almost no darkness left; a lamp only: half, and less near the lamp
+      mask += `<path d="${P.lit}" fill="${o.lit === 2 ? '#262626' : '#8c8c8c'}"/><g clip-path="url(#hbRoomClip${i})">${glows(o, 'url(#hbGlowHole)')}</g>` + (P.front ? `<path d="${P.front}" fill="#fff"/>` : '') + (P.glass ? `<path d="${P.glass}" fill="#000"/>` : '');
+      warm += (o.lit === 2 ? `<path d="${P.lit}" fill="#ffcf70" opacity=".22"/>` : '') + `<g clip-path="url(#hbRoomClip${i})">${glows(o, 'url(#hbGlowWarm)')}</g>`;
+      warmMask += `<path d="${P.lit}" fill="#fff"/>` + (P.front ? `<path d="${P.front}" fill="#000"/>` : '');
+    });
+    outside.forEach(o => {
+      const rx = (o.R * unit).toFixed(1), ry = (o.R * unit * 0.5).toFixed(1), hr = (Math.min(o.R, 1.6) * unit * 0.45).toFixed(1);
+      const [gx, gy] = o.ground.map(v => v.toFixed(1)), [hx, hy] = o.head.map(v => v.toFixed(1));
+      mask += `<ellipse cx="${gx}" cy="${gy}" rx="${rx}" ry="${ry}" fill="url(#hbGlowHole)"/><circle cx="${hx}" cy="${hy}" r="${hr}" fill="url(#hbGlowHole)"/>`;
+      outWarm += `<ellipse cx="${gx}" cy="${gy}" rx="${rx}" ry="${ry}" fill="url(#hbGlowWarm)"/><circle cx="${hx}" cy="${hy}" r="${hr}" fill="url(#hbGlowWarm)"/>`;
+    });
+    nightSvg.innerHTML = `<defs><radialGradient id="hbGlowHole"><stop offset="0" stop-color="#000"/><stop offset="1" stop-color="#000" stop-opacity="0"/></radialGradient>` +
+      `<radialGradient id="hbGlowWarm"><stop offset="0" stop-color="#ffd27a" stop-opacity=".5"/><stop offset="1" stop-color="#ffd27a" stop-opacity="0"/></radialGradient>${clips}` +
+      `<mask id="hbNightMask" maskUnits="userSpaceOnUse" ${big}><rect ${big} fill="#fff"/>${mask}</mask>` +
+      `<mask id="hbWarmMask" maskUnits="userSpaceOnUse" ${big}>${warmMask}</mask></defs>` +
+      `<rect ${big} fill="#081536" mask="url(#hbNightMask)"/><g mask="url(#hbWarmMask)">${warm}</g>${outWarm}`;
+    duskSvg.innerHTML = `<rect ${big} fill="#ff7a2e"/>`;
+  }
+  function setNight(on, quiet) {
+    nightShown = on;
+    nightBtn.setAttribute('aria-pressed', String(on));
+    nightFloat.hidden = !on;
+    if (!on) setClockRun(false);
+    try { localStorage.setItem('house-builder-night', on ? '1' : '0'); } catch (e) { /* ignore */ }
+    nightSig = '';
+    nightRefresh(); nightTime();
+  }
+  function setClock(h) {
+    clock = ((h % 24) + 24) % 24;
+    try { localStorage.setItem('house-builder-clock', clock.toFixed(2)); } catch (e) { /* ignore */ }
+    nightTime();
+  }
+  function setClockRun(on) {
+    clearInterval(clockRun); clockRun = 0;
+    nightPlay.setAttribute('aria-pressed', String(on)); nightPlay.textContent = on ? '⏸' : '▶';
+    if (on) clockRun = setInterval(() => setClock(clock + 24 / (240 * 10)), 100);   // 24 hours in 240 s, ten steps a second
+  }
+  nightBtn.addEventListener('click', () => setNight(!nightShown));
+  nightSlider.addEventListener('input', () => setClock(Number(nightSlider.value)));
+  nightPlay.addEventListener('click', () => setClockRun(!clockRun));
+  if (window.ResizeObserver) new ResizeObserver(() => { nightSig = ''; nightRefresh(); }).observe(isoSvg);
+
   /* ═══════════════ ZOOM AND PAN ═══════════════
      Each view keeps a camera { z, ox, oy }: a zoom factor and an offset of
      the centre from the centre of the view's own frame (its "base" view box,
@@ -1640,6 +1864,7 @@
     const b = baseVB[v]; if (!b) return;
     const c = cam[v], w = b[2] / c.z, h = b[3] / c.z, [cx, cy] = camCentre(v);
     svgOf(v).setAttribute('viewBox', [cx - w / 2, cy - h / 2, w, h].map(n => n.toFixed(2)).join(' '));
+    if (v === 'iso' && typeof nightRefresh === 'function') nightRefresh();
     const lbl = document.querySelector(`.zoom-tools[data-view="${v}"] .zoom-reset`);
     if (lbl) lbl.textContent = Math.round(c.z * 100) + '%';
   }
@@ -2088,7 +2313,7 @@
       }
       pushHistory();
       state.COLS = house.cols; state.ROWS = house.rows;
-      state.floors = house.floors;
+      state.floors = house.floors; state.lights = house.lights;
       people = readPeople(raw.people);
       afterSizeChange();
       setLevel(0);
@@ -2142,6 +2367,7 @@
     if (k === 'g') { cycleWalk(); return; }
     if (k === 'h') { setFamily(!familyOn); return; }
     if (k === 'p') { setPaths(!showPaths); return; }
+    if (k === 'n') { setNight(!nightShown); return; }
     if (k === 'r' && state.currentTool === 'people') { personTurn = (personTurn + 45) % 360; refreshHover(); return; }
     if (k === 'r') {
       if (FURN[piece]) state.furnDir = (state.furnDir + 1) % 4;
@@ -2192,7 +2418,7 @@
   function inFamily(c) { const k = charKey(c.character); return k in famChoice ? !!famChoice[k] : cast.indexOf(c) < FAM_DEFAULT; }
   const famChoice = (() => { try { const o = JSON.parse(localStorage.getItem(FAM_STORE) || '{}'); return o && typeof o === 'object' && !Array.isArray(o) ? o : {}; } catch (e) { return {}; } })();
   let personTurn = 0;                            // R: how far a new standing person is turned from facing the camera
-  const isSeatT = t => t === 'chair' || t === 'officechair' || isSofa(t);
+  const isSeatT = t => t === 'chair' || t === 'officechair' || t === 'toilet' || isSofa(t);   // a toilet is sat on (one at a time, in a bathroom)
   const isBedT = t => t === 'singlebed' || t === 'bed' || t === 'bunkbed' || t === 'bathtub';   // a bath is lain in like a bed (one at a time)
   const capOf = t => isBedT(t) ? (t === 'bunkbed' || FURN[t].w >= 1.2 ? 2 : 1) : isSofa(t) ? FURN[t].seats : 1;
   const sameF = (f, on) => !!(f && on && f.type === on.type && f.X === on.X && f.Y === on.Y);
@@ -2266,6 +2492,12 @@
   }
   function personTarget0(w, skip) {
     const L = state.level, F = state.floors[L];
+    // a light switch, a lamp, curtains or a blind: going to it and switching it (💡)
+    const tg = toggleAt(w);
+    if (tg) {
+      const bad = tg.bad || spots(skip).some(p => p.L === L && !p.on && Math.hypot(p.x - tg.x, p.y - tg.y) < 0.35);
+      return { p: { L, on: null, place: 0, x: tg.x, y: tg.y, swim: false, act: null, facing: tg.facing, toggle: tg.ref }, bad };
+    }
     // at the stove, the sink, the shower… : standing there doing it (WALKING: acts)
     const at = actAt(w);
     if (at) {
@@ -2372,15 +2604,20 @@
   }
   // the pose for where they are: standing on the floor, sitting on a seat (a bed poses them itself)
   const poseCache = new WeakMap();
+  /* on the toilet: sitting, hands forward over the lap, holding the open newspaper the 3D view
+     draws over it (newspaper: true; it sets the arms itself so the hands hold the paper's edges) */
+  const TOILET_ARMS = { shoulderL: 30, elbowL: 50, shoulderR: 38, elbowR: 44 };
+  function onToilet(d) { Object.assign(d.joints, TOILET_ARMS); d.held = { left: null, right: null }; return d; }
   function posed(p) {
     const act = !p.on && p.act && HW_ && HW_.ACTS[p.act] ? p.act : null;
-    const how = act ? 'act:' + act : p.on && isSeatT(p.on.type) ? 'chair' : p.on ? 'bed' : 'standing';   // swimmers stand on the pool's bottom
+    const how = act ? 'act:' + act : p.on && p.on.type === 'toilet' ? 'toilet' : p.on && isSeatT(p.on.type) ? 'chair' : p.on ? 'bed' : 'standing';   // swimmers stand on the pool's bottom
     let m = poseCache.get(p.character); if (!m) poseCache.set(p.character, m = {});
     if (act) { if (!m[how]) m[how] = HW_.actPose(p.character, act); return m[how]; }
     if (!m[how]) {
       const d = HC.normalize(p.character);
       d.prop = null; d.back = false;
-      if (how !== 'bed') HC.applyPose(d, how);
+      if (how !== 'bed') HC.applyPose(d, how === 'toilet' ? 'chair' : how);
+      if (how === 'toilet') onToilet(d);
       m[how] = d;
     }
     return m[how];
@@ -2406,6 +2643,7 @@
       if (s.swim) { o.swim = true; if (s.sink != null) o.sink = s.sink; }   // on a pool ladder: part way in
       if (s.act) armOver(o, s.act);
       if (s.act === 'shower') o.bubbles = true;
+      if (s.newspaper) o.newspaper = true;   // sitting down on (or getting up from) the toilet
       const wt = wetUntil.get(p.id); if (wt > performance.now() && !s.swim) o.drip = (wt - performance.now()) / WET_MS;
       if (p.alpha != null) o.opacity = p.alpha;
       return o;
@@ -2416,7 +2654,7 @@
       o.bed = fi;
       if (p.on.type === 'bunkbed') o.bunk = p.place ? 'top' : 'bottom';
       else if (list.filter(q => q.L === p.L && sameF(q.on, p.on) && !(q.ghost && q.bad)).length > 1) o.side = p.place ? 1 : 0;
-    } else if (fi >= 0) { o.seat = fi; o.place = p.place | 0; }
+    } else if (fi >= 0) { o.seat = fi; o.place = p.place | 0; if (p.on.type === 'toilet') o.newspaper = true; }
     else {
       o.x = p.x; o.y = p.y; o.facing = p.facing == null ? 135 : p.facing; if (p.act) armOver(o, p.act);
       if (p.act === 'shower') o.bubbles = true;   // modesty soap
@@ -2664,6 +2902,102 @@
     });
     return best ? { act: best.act, x: best.x, y: best.y, facing: best.facing, bad: best.bad } : null;
   }
+  /* Things people switch on and off, or open and shut, with a hand (💡): light switches (the
+     room's light), table and stand lamps, curtains and blinds. Each with the spot in front of it
+     where someone stands to do it → [{ ref, x, y, facing, z, cx, cy, rect, bad, on }], ref saying
+     what to change: { kind: 'switch' | 'lamp' | 'drape', L, … }. */
+  function toggleSpots(L) {
+    const F = state.floors[L]; if (!F) return [];
+    const out = [];
+    const standOK = (x, y, from) => {
+      const prev = state.level; state.level = L;
+      let ok = x > 0.15 && y > 0.15 && x < state.COLS - 0.15 && y < state.ROWS - 0.15 && furnValid({ type: '__person', X: x * 2, Y: y * 2, dir: 0, items: [] }, L);
+      state.level = prev;
+      if (ok) {
+        const cross = (p1, p2, p3, p4) => { const d = (a, b, c) => (b[0] - a[0]) * (c[1] - a[1]) - (b[1] - a[1]) * (c[0] - a[0]); return d(p1, p2, p3) * d(p1, p2, p4) < 0 && d(p3, p4, p1) * d(p3, p4, p2) < 0; };
+        for (const [k, v] of F.edges) { if (v.type === 'door' || (v.type === 'fence' && v.gate)) continue; const e = parseKey(k), [a, b] = edgeEnds(e.o, e.r, e.c); if (cross(from, [x, y], a, b)) { ok = false; break; } }
+      }
+      return ok;
+    };
+    // the first of the standing spots cands that is free and on this side of the walls, facing (cx, cy)
+    const spotFor = (cands, cx, cy) => {
+      for (const [x0, y0] of cands) {
+        const x = +x0.toFixed(3), y = +y0.toFixed(3);
+        if (standOK(x, y, [cx, cy])) return { x, y, facing: HW_.headingOf([x, y], [cx, cy]), bad: false };
+      }
+      const [x, y] = cands[0]; return { x, y, facing: HW_.headingOf([x, y], [cx, cy]), bad: true };
+    };
+    F.furniture.forEach((f, i) => {
+      if (f.type === 'walllamp') {
+        const [cx, cy] = furnPt(f, 0, 0), sp = spotFor([furnPt(f, 0, 0.45), furnPt(f, 0.3, 0.45), furnPt(f, -0.3, 0.45)], cx, cy);
+        out.push({ ...sp, ref: { kind: 'lamp', L, furn: furnKey(f), type: 'walllamp' }, z: 1.85, cx, cy, rect: furnRect(f), on: !!f.on });
+      } else if (f.type === 'lightswitch') {
+        const [cx, cy] = furnPt(f, 0, 0), sp = spotFor([furnPt(f, 0, 0.45), furnPt(f, 0.3, 0.45), furnPt(f, -0.3, 0.45)], cx, cy);
+        out.push({ ...sp, ref: { kind: 'switch', L, ek: f.ek, side: f.side, slot: f.slot }, z: 1.1, cx, cy, rect: furnRect(f), on: roomLit(L, ...switchPt(f)) });
+      } else if (isDressing(f.type)) {
+        const [cx, cy] = furnPt(f, 0, 0), sp = spotFor([furnPt(f, 0, 0.5), furnPt(f, 0, 1)], cx, cy);
+        out.push({ ...sp, ref: { kind: 'drape', L, ek: f.ek, side: f.side, type: f.type }, z: FURN[f.type].pickZ, cx, cy, rect: furnRect(f), on: !f.closed });
+      }
+      (f.items || []).forEach((it, j) => {
+        if (!LAMPS.has(it.type)) return;
+        const fr = itemFrame(f, it), A = APPL[it.type], fw = FURN[f.type], d2 = (fw.d || 0.5) / 2;
+        const sp = spotFor([furnPt(f, 0, d2 + 0.4), furnPt(f, fw.w / 2 + 0.35, 0), furnPt(f, -fw.w / 2 - 0.35, 0), furnPt(f, 0, -d2 - 0.4)], fr.cx, fr.cy);
+        out.push({ ...sp, ref: { kind: 'lamp', L, furn: furnKey(f), item: j, type: it.type }, z: fr.z + A.h * 0.8, cx: fr.cx, cy: fr.cy, rect: frameRect(fr, -A.w / 2, A.w / 2, -A.d / 2, A.d / 2), on: !!it.on });
+      });
+    });
+    (F.appliances || []).forEach(a => {
+      if (!LAMPS.has(a.type)) return;
+      const cx = a.X / 2, cy = a.Y / 2, sp = spotFor([[cx, cy + 0.5], [cx + 0.5, cy], [cx - 0.5, cy], [cx, cy - 0.5]], cx, cy);
+      out.push({ ...sp, ref: { kind: 'lamp', L, appl: { X: a.X, Y: a.Y, type: a.type } }, z: APPL[a.type].h * 0.8, cx, cy, rect: applRect(a), on: !!a.on });
+    });
+    return out;
+  }
+  // a piece of furniture's place, to find it again later (it may have been swapped for an edited copy)
+  const furnKey = f => f.ek ? { ek: f.ek, side: f.side, type: f.type, slot: f.slot } : { X: f.X, Y: f.Y, type: f.type };
+  const furnByKey = (L, k) => (state.floors[L] ? state.floors[L].furniture : []).findIndex(f => f.type === k.type && (k.ek ? f.ek === k.ek && f.side === k.side && (f.slot || null) === (k.slot || null) : f.X === k.X && f.Y === k.Y));
+  // the switch, lamp or dressing under the pointer (3D: the nearest drawn within 24 px; plan: the one under it)
+  function toggleAt(w) {
+    const L = state.level;
+    let best = null, bd = Infinity;
+    toggleSpots(L).forEach(c => {
+      let d;
+      if (w.sp) { const [sx, sy] = scr(c.cx, c.cy, baseZ(L) + c.z); d = Math.hypot(sx - w.sp.x, sy - w.sp.y); if (d > 24) return; }
+      else { const R_ = c.rect; if (w.x < R_.x0 - 0.06 || w.x > R_.x1 + 0.06 || w.y < R_.y0 - 0.06 || w.y > R_.y1 + 0.06) return; d = Math.hypot(c.cx - w.x, c.cy - w.y); }
+      if (d < bd) { bd = d; best = c; }
+    });
+    return best;
+  }
+  // do it: flick the switch, turn the lamp on or off, open or shut the curtains (want: true on/open, false off/shut, else the other way)
+  function doToggle(ref, want) {
+    const F = state.floors[ref.L]; if (!F) return;
+    if (ref.kind === 'switch') {
+      const i = furnByKey(ref.L, { ek: ref.ek, side: ref.side, slot: ref.slot, type: 'lightswitch' }); if (i < 0) return;
+      const [x, y] = switchPt(F.furniture[i]), now = roomLit(ref.L, x, y);
+      setRoomLight(ref.L, x, y, want == null ? !now : want);
+    } else if (ref.kind === 'drape') {
+      const i = furnByKey(ref.L, { ek: ref.ek, side: ref.side, type: ref.type }); if (i < 0) return;
+      const o = { ...F.furniture[i] }, open = want == null ? !!o.closed : want;
+      if (open) delete o.closed; else o.closed = true;
+      F.furniture[i] = o;
+    } else if (ref.appl) {
+      const i = F.appliances.findIndex(a => a.X === ref.appl.X && a.Y === ref.appl.Y && a.type === ref.appl.type); if (i < 0) return;
+      const a = { ...F.appliances[i] }, on = want == null ? !a.on : want;
+      if (on) a.on = true; else delete a.on;
+      F.appliances[i] = a;
+    } else if (ref.furn && ref.type === 'walllamp') {
+      const i = furnByKey(ref.L, ref.furn); if (i < 0) return;
+      const o = { ...F.furniture[i] }, on = want == null ? !o.on : want;
+      if (on) o.on = true; else delete o.on;
+      F.furniture[i] = o;
+    } else if (ref.furn) {
+      const i = furnByKey(ref.L, ref.furn); if (i < 0) return;
+      const f = F.furniture[i], it = f.items && f.items[ref.item]; if (!it || !LAMPS.has(it.type)) return;
+      const on = want == null ? !it.on : want, y = { ...it }; if (on) y.on = true; else delete y.on;
+      F.furniture[i] = { ...f, items: f.items.map((x, j) => j === ref.item ? y : x) };
+    }
+    houseDirty = true;
+    if (typeof nightRefresh === 'function') nightRefresh();
+  }
   // the spots beside a bed someone can stand at to get in or out: its two long sides and its foot
   function bedSides(f) {
     const F = FURN[f.type];
@@ -2727,8 +3061,24 @@
     }));
     return best && best.t;
   }
+  // the nearest free switch in the room of the bed t is going to, when that room's light is on → a walk target
+  function bedSwitch(L, t, id) {
+    const F = state.floors[L], fi = furnOf(L, t.on); if (fi < 0) return null;
+    const [bx, by] = furnPt(F.furniture[fi], 0, 0), cells = roomCellsIn(L, bx, by);
+    if (!cells || !roomLit(L, bx, by)) return null;
+    const rec = people.find(q => q.id === id), taken = spots(id);
+    let best = null;
+    toggleSpots(L).forEach(c => {
+      if (c.ref.kind !== 'switch' || c.bad || !cells.includes(Math.floor(c.y) + ',' + Math.floor(c.x))) return;
+      if (taken.some(p => p.L === L && !p.on && Math.hypot(p.x - c.x, p.y - c.y) < 0.35)) return;
+      const d = rec ? Math.hypot(c.x - rec.x, c.y - rec.y) : 0;
+      if (!best || d < best.d) best = { d, t: { L, on: null, place: 0, x: c.x, y: c.y, swim: false, act: null, facing: c.facing, toggle: c.ref, want: false } };
+    });
+    return best && best.t;
+  }
   function afterArrival(id, W) {
     const rec = people.find(q => q.id === id); if (!rec) return;
+    if (W.thenBed && startWalk(id, W.thenBed, { auto: W.auto, gait: W.auto ? 'walking' : gait, lightsDone: true })) return;   // the light is off: now to bed
     if (W.dress && W.dress.swim) {
       // in swimwear: off to the pool (the spot they were sent to, or a free spot in it)
       if (W.thenSwim && startWalk(id, W.thenSwim, { auto: W.auto, gait: W.auto ? 'walking' : gait, dressed: true })) return;
@@ -2825,6 +3175,7 @@
   }
   // a door opening or shutting (a walker's reach, half way through)
   function doorEvent(id, ev) {
+    if (ev.toggle) { doToggle(ev.toggle.ref, ev.toggle.want); return; }   // a switch, a lamp, curtains
     const F = state.floors[ev.L], v = F && F.edges.get(ev.door); if (!v || v.type !== 'door') return;
     houseDirty = true;   // the house changes: the next frame is drawn whole
     if (ev.action === 'open') { if (v.closed) { const o = { ...v }; delete o.closed; F.edges.set(ev.door, o); } return; }
@@ -2903,8 +3254,13 @@
       post = { bed: true, at: best.sd, facing: fac };
     } else {
       way = go(start, [t.x, t.y]); if (!way) return null;
+      // at a switch, a lamp or a window: turn to it and reach out (it changes half way through)
+      if (t.toggle) {
+        after.push({ turn: t.facing }, { reach: t.toggle.kind === 'drape' ? 'high' : 'flick', door: null, toggle: { ref: t.toggle, want: t.want }, x: t.x, y: t.y, facing: t.facing });
+        finalFacing = t.facing;
+      }
       // at a wardrobe: open it, change, shut it. At the stove, the sink, the shower…: turn to it and start doing it
-      if (t.act === 'dress') {
+      else if (t.act === 'dress') {
         after.push({ turn: t.facing }, { reach: 'open', door: null, x: t.x, y: t.y, facing: t.facing }, { stand: 1.2, x: t.x, y: t.y, facing: t.facing, tag: 'dress' },
           { reach: 'close', door: null, x: t.x, y: t.y, facing: t.facing });
         finalFacing = t.facing;
@@ -2918,7 +3274,7 @@
     const end = trip.end();
     if (!(fiT >= 0) && finalFacing == null) finalFacing = Math.round(end.facing / 45) * 45 % 360;
     const final = { ...rec, ...t, L: LT, facing: finalFacing != null ? finalFacing : rec.facing };
-    delete final.wantSwim;
+    delete final.wantSwim; delete final.toggle; delete final.want;
     let dress = null;
     if (t.act === 'dress') {
       // the new clothes go on half way through standing at the open wardrobe
@@ -2927,7 +3283,9 @@
       final.character = { ...rec.character, ...o.clothes }; final.act = null;
       if (o.swim) final.swimsuit = { before: o.before }; else delete final.swimsuit;
     }
-    return { trip, pre, post, final, route: way.segs, dress };
+    // sitting down on (or getting up from) a toilet: the newspaper is in hand all the way
+    const toilet = !!((t.on && t.on.type === 'toilet') || (!from && rec.on && rec.on.type === 'toilet'));
+    return { trip, pre, post, final, route: way.segs, dress, toggle: t.toggle || null, toilet };
   }
   // the picture of a walker now: their frame, or (fading into or out of a bed) two pictures
   function walkerShown(p, W) {
@@ -2960,6 +3318,7 @@
       if (tt < W.trip.seconds) {
         let fr = W.trip.at(tt);
         if (W.dress && tt >= W.dress.t) fr = { ...fr, d: { ...fr.d, ...W.dress.clothes } };   // changed (at the wardrobe)
+        if (W.toilet && fr.kind === 'play') fr = { ...fr, newspaper: true };
         if (W.wasSwim && !fr.swim) wetUntil.set(id, now + WET_MS);   // out of the water: dripping for a while
         W.wasSwim = !!fr.swim;
         W.now = { ...fr, frame: fr, phase: 'go', tt }; return;
@@ -3003,6 +3362,15 @@
       walkers.get(id).thenSwim = t;
       if (!opts.auto) setCastStatus(`${rec.character.name || 'They'} will put on swimwear at the wardrobe first, then go swimming.`);
       return true;
+    }
+    // going to bed with the light on: to a switch in that room first, to turn it off
+    if (t.on && isBedT(t.on.type) && t.on.type !== 'bathtub' && !opts.lightsDone) {
+      const LT = t.L != null ? t.L : rec.L, sw = bedSwitch(LT, t, id);
+      if (sw && startWalk(id, sw, { ...opts, lightsDone: true })) {
+        walkers.get(id).thenBed = t;
+        if (!opts.auto) setCastStatus(`${rec.character.name || 'They'} will turn the light off first, then go to bed.`);
+        return true;
+      }
     }
     const g0 = gait; if (opts.gait) gait = opts.gait;
     let plan;
@@ -3084,9 +3452,11 @@
     const f = W.final || {};
     if (f.leave) return '🚪';
     if (W.dress) return '👕';
+    if (W.toggle) return W.toggle.kind === 'drape' ? '🪟' : '💡';
     if (f.act && HW_ && HW_.ACTS[f.act]) return HW_.ACTS[f.act].emoji || '';
     if (f.swim) return '🏊';
     if (f.on && isBedT(f.on.type)) return '🛏️';
+    if (f.on && f.on.type === 'toilet') return '🚽';
     if (f.on && isSeatT(f.on.type)) return '🪑';
     return '';
   }
@@ -3138,7 +3508,7 @@
       : !r ? 'Walk mode: tap the person who should walk.'
       : walkers.has(r.id) ? `${n} is on the way. Tap somewhere else to send ${n} there instead.`
       : r.L !== state.level ? `Walk mode: ${n} is on the ${LEVEL_INFO[r.L].name.toLowerCase()}. Tap where ${n} should go on this floor and ${n} will take the stairs.`
-      : `Walk mode: tap where ${n} should go — the floor, a seat, a bed, the pool, or the stove, sink, washbasin, shower or fridge to do something there. Go up or down a floor first to send ${n} up or down the stairs. Tap someone else to choose them.`);
+      : `Walk mode: tap where ${n} should go — the floor, a seat, a bed, the toilet, the pool, the stove, sink, washbasin, shower or fridge to do something there, or a light switch, a lamp or curtains to switch them (💡). Go up or down a floor first to send ${n} up or down the stairs. Tap someone else to choose them.`);
   }
   /* walk mode: 'off', 'walk' or 'run' — the 🚶 buttons (on the 3D view and in the drawer) and G go round them */
   const walkFrameBtn = document.getElementById('walkFrameBtn');
@@ -3224,16 +3594,23 @@
   /* Somewhere for someone to go, at random: an appliance to use, a seat, a bed, the pool or a
      spot in a room (or in the garden), on any floor — never one that is taken or being headed for. */
   function famTargets(id) {
-    const out = { act: [], seat: [], bed: [], pool: [], room: [], garden: [] };
+    const out = { act: [], seat: [], bed: [], pool: [], room: [], garden: [], toggle: [], toilet: [] };
     const taken = spots(id);
     const near = (L, x, y, d) => taken.some(p => p.L === L && !p.on && Math.hypot(p.x - x, p.y - y) < d);
     LEVELS.forEach(L => {
       const F = state.floors[L]; if (!F || !(levelUsed(L) || L === 0)) return;
       actSpots(L).forEach(c => { if (!c.bad && !near(L, c.x, c.y, 0.35)) out.act.push({ L, on: null, place: 0, x: c.x, y: c.y, swim: false, act: c.act, facing: c.facing }); });
+      // lights and curtains that want changing for the time of day: on (and shut) after dark, off (and open) by day
+      const night = isNight();
+      toggleSpots(L).forEach(c => {
+        if (c.bad || near(L, c.x, c.y, 0.35) || (c.ref.appl && AUTO_LIGHTS.has(c.ref.appl.type))) return;   // garden lights look after themselves
+        const want = c.ref.kind === 'drape' ? !night : night;
+        if (c.on !== want) out.toggle.push({ L, on: null, place: 0, x: c.x, y: c.y, swim: false, act: null, facing: c.facing, toggle: c.ref, want });
+      });
       F.furniture.forEach(f => {
         if (!isSeatT(f.type) && !isBedT(f.type)) return;
         const on = { type: f.type, X: f.X, Y: f.Y }, k = freePlace(L, on, id);
-        if (k >= 0) out[isBedT(f.type) ? 'bed' : 'seat'].push({ L, on, place: k, x: f.X / 2, y: f.Y / 2, swim: false, act: null });
+        if (k >= 0) out[f.type === 'toilet' ? 'toilet' : isBedT(f.type) ? 'bed' : 'seat'].push({ L, on, place: k, x: f.X / 2, y: f.Y / 2, swim: false, act: null });
       });
       // standing about: a few spots tried at random, in a room or (on the ground floor) outside
       const rm = computeRooms(F.edges, isIndoorEdge);
@@ -3259,9 +3636,11 @@
     return out;
   }
   // how likely each kind of outing is
-  const FAM_WEIGHTS = { act: 4, seat: 3, room: 3, bed: 1, garden: 1, pool: 1 };
+  const FAM_WEIGHTS = { act: 4, seat: 3, room: 3, bed: 1, garden: 1, pool: 1, toggle: 2, toilet: 1 };
+  // after dark: more going to bed, less going out to the garden or the pool
+  const famWeights = () => isNight() ? { ...FAM_WEIGHTS, bed: 4, garden: 0.3, pool: 0.2 } : FAM_WEIGHTS;
   function famPlan(id) {
-    const T = famTargets(id), kinds = Object.keys(FAM_WEIGHTS).filter(k => T[k].length);
+    const T = famTargets(id), FAM_WEIGHTS = famWeights(), kinds = Object.keys(FAM_WEIGHTS).filter(k => T[k].length);
     const tries = [];
     for (let n = 0; n < 5 && kinds.length; n++) {
       let w = Math.random() * kinds.reduce((a, k) => a + FAM_WEIGHTS[k], 0), kind = kinds[0];
@@ -3494,6 +3873,58 @@
     shiftContent(-1, -1, state.COLS, state.ROWS);
     // a railing round each stair hole (they can be erased like any fence)
     LEVELS.forEach(L => { if (state.floors[L - 1]) railStairs(L - 1, [], state.floors[L - 1].stairs); });
+    // a light switch by a door in every room, on the room's side, next to the door on its line
+    LEVELS.forEach(L => {
+      const F = state.floors[L]; if (!F) return;
+      const prev = state.level; state.level = L;
+      const done = new Set();
+      [...F.edges].filter(([, v]) => v.type === 'door').forEach(([k]) => {
+        const e = parseKey(k), next = e.o === 'h' ? [[key('h', e.r, e.c - 1), 'R'], [key('h', e.r, e.c + 1), 'L']] : [[key('v', e.r - 1, e.c), 'R'], [key('v', e.r + 1, e.c), 'L']];
+        ['m', 'p'].forEach(side => next.forEach(([k2, slot]) => {
+          if ((F.edges.get(k2) || {}).type !== 'wall') return;
+          const o = { type: 'lightswitch', ek: k2, side, slot, items: [] }, cells = roomCellsIn(L, ...switchPt(o));
+          if (!cells || done.has(cells[0]) || !furnValid(o, L)) return;
+          done.add(cells[0]); F.furniture.push(o);
+        }));
+      });
+      // curtains in the windows upstairs and in the living room, blinds in the kitchen and bathroom
+      const tones = ['lilac', 'peach', 'blue', 'mint', 'pink'];
+      [...F.edges].filter(([, v]) => v.type === 'window').forEach(([k], i) => {
+        const e = parseKey(k);
+        ['m', 'p'].forEach(side => {
+          const probe = { type: 'curtains', ek: k, side, items: [] }, cells = roomCellsIn(L, ...furnPt(probe, 0, 0.3));
+          if (!cells) return;
+          const bath = F.furniture.some(f => ['toilet', 'bathtub', 'shower'].includes(f.type) && cells.includes(Math.floor(furnPt(f, 0, 0.3)[1]) + ',' + Math.floor(furnPt(f, 0, 0.3)[0])));
+          const kitchen = F.furniture.some(f => f.type === 'countertop' && cells.includes(Math.floor(furnPt(f, 0, 0.3)[1]) + ',' + Math.floor(furnPt(f, 0, 0.3)[0])));
+          const o = bath || kitchen ? { type: 'blinds', ek: k, side, items: [], color: bath ? 'blue' : 'lemon' } : { type: 'curtains', ek: k, side, items: [] };
+          if (L > 0 && o.type === 'curtains') o.color = tones[(e.r * 3 + e.c) % tones.length];
+          if (furnValid(o, L)) F.furniture.push(o);
+        });
+      });
+      state.level = prev;
+    });
+    // outside: a square wall lamp by each outside door, a lamppost and a few lawn lights in the garden
+    {
+      const F = state.floors[0], prev = state.level; state.level = 0;
+      [...F.edges].filter(([, v]) => v.type === 'door').forEach(([k]) => {
+        const e = parseKey(k), next = e.o === 'h' ? [[key('h', e.r, e.c + 1), 'L'], [key('h', e.r, e.c - 1), 'R']] : [[key('v', e.r + 1, e.c), 'L'], [key('v', e.r - 1, e.c), 'R']];
+        for (const side of ['m', 'p']) for (const [k2, slot] of next) {
+          if ((F.edges.get(k2) || {}).type !== 'wall') continue;
+          const o = { type: 'walllamp', ek: k2, side, slot, items: [], style: 'square', on: true };
+          if (roomCellsIn(0, ...furnPt(o, 0, 0.3)) || !furnValid(o, 0)) continue;
+          F.furniture.push(o); return;
+        }
+      });
+      const rm = computeAreas(F.edges), garden = [];
+      for (let r = 0; r < state.ROWS; r++) for (let c = 0; c < state.COLS; c++) if (rm.fenced && rm.fenced.inRoom && rm.fenced.inRoom(r, c) && !rm.inRoom(r, c)) garden.push([r, c]);
+      const tryAppl = (type, X, Y) => { const a = { type, X, Y, dir: 0, on: true }; if (applValid(a, 0)) { F.appliances.push(a); return true; } return false; };
+      if (garden.length) {
+        const g = garden[Math.floor(garden.length / 2)];
+        tryAppl('lamppost', 2 * g[1] + 1, 2 * g[0] + 1);
+        garden.filter(([r, c]) => Math.hypot(r - g[0], c - g[1]) >= 2).filter((_, i) => i % 3 === 0).slice(0, 4).forEach(([r, c]) => tryAppl('lawnlight', 2 * c + 1, 2 * r + 1));
+      }
+      state.level = prev;
+    }
   })();
 
   afterSizeChange();
@@ -3503,6 +3934,7 @@
   setLevel(0, true);
   updateUndoUI();
   render();
+  setNight(nightShown, true);
 })();
 </script>
 </body>

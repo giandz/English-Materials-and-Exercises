@@ -56,6 +56,9 @@
       both(`.m-porc${id}.fr`, d => `fill:${d(pr)};stroke:${d(ps)};stroke-width:.6;`);
       both(`.tubin.tint-${id}`, d => `fill:${d(tint(c, 0.3))};stroke:${d(ps)};`);
       both(`.seat.tint-${id}`, d => `fill:${d(pt)};stroke:${d(ps)};`);
+      both(`.m-drape${id}.fl`, d => `fill:${d(tint(c, 0.15))};stroke:${d(tint(c, -0.18))};stroke-width:.5;`);
+      both(`.m-drape${id}.fr`, d => `fill:${d(tint(c, -0.08))};stroke:${d(tint(c, -0.18))};stroke-width:.5;`);
+      both(`.m-drape${id}.ft`, d => `fill:${d(tint(c, 0.35))};stroke:${d(tint(c, -0.18))};stroke-width:.5;`);
     });
     return light + dark;
   }
@@ -282,6 +285,19 @@ html[data-theme="dark"] .m-porc.fl{ fill:#cfd3d6; }  html[data-theme="dark"] .m-
 .m-bk3.fl, .m-bk3.ft{ fill:#3f8a4f; stroke:#285c33; stroke-width:.4; }  .m-bk3.fr{ fill:#326f3f; stroke:#285c33; stroke-width:.4; }
 .m-bk4.fl, .m-bk4.ft{ fill:#cfa62b; stroke:#8f711b; stroke-width:.4; }  .m-bk4.fr{ fill:#a9871f; stroke:#8f711b; stroke-width:.4; }
 .deco-spine{ fill:rgba(255,255,255,.75); stroke:none; }
+/* lights, switches and window dressings */
+.m-shadeon.fl{ fill:#ffe9a8; stroke:#f2c96b; stroke-width:.4; }  .m-shadeon.fr{ fill:#ffdc85; stroke:#f2c96b; stroke-width:.4; }  .m-shadeon.ft{ fill:#fff6d6; stroke:#f2c96b; stroke-width:.4; }
+.m-lampost{ fill:#3a3f45; stroke:#2a2e33; stroke-width:.4; }  .m-lampost.ft{ fill:#555b62; }
+.m-lantern{ fill:#e8ecef; stroke:#9aa3aa; stroke-width:.4; }  .m-lantern.fr{ fill:#d3d9de; }  .m-lantern.ft{ fill:#f4f6f7; }
+.m-lanternon{ fill:#ffe9a8; stroke:#f2c96b; stroke-width:.4; }  .m-lanternon.fr{ fill:#ffdc85; }  .m-lanternon.ft{ fill:#fff6d6; }
+.deco-lantern{ stroke:#3a3f45; stroke-width:.8; fill:none; }
+.m-swplate{ fill:#f6f6f3; stroke:#b9b6ad; stroke-width:.4; }  .m-swplate.fr{ fill:#e4e2dc; }
+.m-swrocker{ fill:#ffffff; stroke:#9e9b92; stroke-width:.4; }
+.m-drape.fl{ fill:#f7f5f0; stroke:#d8d3c8; stroke-width:.5; }  .m-drape.fr{ fill:#e6e2d8; stroke:#d8d3c8; stroke-width:.5; }  .m-drape.ft{ fill:#fbfaf6; stroke:#d8d3c8; stroke-width:.5; }
+.deco-fold{ stroke:rgba(0,0,0,.13); stroke-width:.7; fill:none; }
+.m-glasslit{ fill:rgba(255,214,120,.85); stroke:#fff3cf !important; stroke-width:1 !important; }
+html[data-theme="dark"] .m-swplate{ fill:#c9c8c3; stroke:#8d8a83; } html[data-theme="dark"] .m-swplate.fr{ fill:#b4b2ac; } html[data-theme="dark"] .m-swrocker{ fill:#dcdbd6; }
+html[data-theme="dark"] .m-drape.fl{ fill:#cfcdc7; stroke:#a9a59c; } html[data-theme="dark"] .m-drape.fr{ fill:#bbb8b0; stroke:#a9a59c; } html[data-theme="dark"] .m-drape.ft{ fill:#d8d6d0; stroke:#a9a59c; }
 .stair-rail{ stroke:#5b4128; stroke-width:2.2; stroke-linecap:round; fill:none; }
 html[data-theme="dark"] .stair-rail{ stroke:#c9a77e; }
 .it.ghost .stair-rail{ opacity:.6; }  .it.gone .stair-rail{ stroke:var(--gone); }
@@ -543,6 +559,9 @@ ${pastelCSS()}
       couch:    { emoji: '', word: 'Couch',    hint: 'Tap a grid corner or the middle of a square to put a three-seat couch there (2.1 m). Tap it again to turn it, or press R before you tap. Drag it to move it.' },
       bookshelf:  { emoji: '📚', word: 'Bookshelf', hint: 'Tap a grid corner or the middle of a square to put a bookshelf there. It has three levels for appliances: two inside and the top. Tap it again to turn it. Drag it to move it.' },
       wallshelf:  { emoji: '', word: 'Wall shelf', hint: 'Tap a wall, on the side you want, to hang a shelf on it (1.2 m up). Tap the shelf again to move it to the other side of the wall. Drag it to another wall.' },
+      lightswitch: { emoji: '', word: 'Light switch', hint: 'Tap a wall, on the room’s side, to put a light switch on it (1.1 m up): towards either end of the wall or in the middle, wherever you tap. Every switch in a room turns that room’s light on and off: in walk mode tap a switch and the person goes and flicks it (💡). Tap a switch with this tool to flick it yourself.' },
+      curtains:   { emoji: '', word: 'Curtains', hint: 'Tap a window, on the side you want, to hang curtains in it. Tap them again to close them, and again to open them (people open and close them too, like doors). Colour them with 🎨 Style: white, or the tile pastels.' },
+      blinds:     { emoji: '', word: 'Blinds', hint: 'Tap a window, on the side you want, to fit a roller blind in it. Tap it again to pull it down, and again to roll it up (people do it too, like doors). Colour it with 🎨 Style: white, or the tile pastels.' },
       poolladder: { emoji: '', word: 'Pool ladder', hint: 'Tap the edge of a swimming pool to put a ladder there. People going swimming climb down it, and climb up it to get out (a pool with no ladder: they get in and out anywhere). Tap it again to take it to the other side of that edge, if the pool is there.' },
       countercorner: { emoji: '', word: 'Counter corner', hint: 'An L-shaped corner unit that joins two countertop runs where they meet in a corner. Tap the square in the corner; tap it again to turn it to another corner.' },
       countertop: { emoji: '', word: 'Countertop', hint: 'Drag along the grid lines, on the side you want, to build a run of kitchen counter (0.6 m deep), like a wall. Tap a line for one piece; drag on from the end of a counter to make it longer. Tap a piece to flip it to the other side of its line.' },
@@ -577,13 +596,16 @@ ${pastelCSS()}
       waterheater: { emoji: '', word: 'Water heater (tankless)', hint: 'Tap a wall, on the side you want, to mount a tankless electric water heater on it, with its hot and cold valves. Tap it again to move it to the other side of the wall.' },
       rug:       { emoji: '', word: 'Rug', hint: 'A 2 × 1.4 m rug on the floor. It can go under furniture, but not under walls. Tap it again to turn it. Drag it to move it.' },
       cushion:   { emoji: '', word: 'Cushion', hint: 'A throw pillow for a chair, armchair, loveseat or couch seat, or a bed. Tap the seat or the bed. Tap it again to turn it. Drag it to move it.' },
-      toilet:    { emoji: '🚽', word: 'Toilet', hint: 'Tap a grid corner or the middle of a square to put a toilet there, tank at the back. Tap it again to turn it, or press R before you tap. Drag it to move it.' },
+      toilet:    { emoji: '🚽', word: 'Toilet', hint: 'Tap a grid corner or the middle of a square to put a toilet there, tank at the back. Tap it again to turn it, or press R before you tap. Drag it to move it. People can sit on it (one at a time in a bathroom), reading the newspaper.' },
       washbasin: { emoji: '', word: 'Washbasin', hint: 'Tap a grid corner or the middle of a square to put a washbasin on a pedestal there, tap at the back. Tap it again to turn it. Drag it to move it.' },
       bathtub:   { emoji: '🛁', word: 'Bathtub', hint: 'Tap a grid corner or the middle of a square to put a bathtub there (0.75 × 1.7 m), taps at the back end. Tap it again to turn it. Drag it to move it.' },
       shower:    { emoji: '🚿', word: 'Shower', hint: 'Tap a wall, on the side you want, to put a shower on it: a hot and a cold valve and the shower head. It can go over a bathtub. Tap it again to move it to the other side of the wall.' },
       tv:        { emoji: '📺', word: 'Television', hint: 'Tap the floor, or the top of a piece of furniture — a television is too big for the inside levels of a bookshelf. Tap it again to turn it. Drag it to move it.' },
-      lamp:      { emoji: '', word: 'Table lamp', hint: 'Tap the floor, or a level of a table, bookshelf, shelf or countertop. Each level takes one appliance in the middle or two side by side. Tap it again to turn it. Drag it to move it.' },
-      standlamp: { emoji: '', word: 'Stand lamp', hint: 'A tall floor lamp. Tap the floor. Tap it again to turn it. Drag it to move it.' },
+      lamp:      { emoji: '', word: 'Table lamp', hint: 'Tap the floor, or a level of a table, bookshelf, shelf or countertop. Each level takes one appliance in the middle or two side by side. Tap it again to switch it on or off (in walk mode, tap it and the person goes and does it: 💡). Drag it to move it.' },
+      lamppost:  { emoji: '', word: 'Lamppost', hint: 'A garden lamppost (2.6 m): tap the ground. It comes on by itself after dark (🌗); tap it again to switch it off, or back on. Drag it to move it.' },
+      lawnlight: { emoji: '', word: 'Lawn light', hint: 'A small light on a short post, for a garden or a path: tap the ground. It comes on by itself after dark (🌗); tap it again to switch it off, or back on. Drag it to move it.' },
+      walllamp:  { emoji: '', word: 'Wall lamp', hint: 'Tap a wall, on the side you want (inside or out), to put a lamp on it (1.8 m up): towards either end of the wall or in the middle, wherever you tap. Round, square or long: pick with 🎨 Style (new ones come in the style you picked last). Tap it again to switch it on or off; in walk mode, tap it and the person goes and does it (💡).' },
+      standlamp: { emoji: '', word: 'Stand lamp', hint: 'A tall floor lamp. Tap the floor. Tap it again to switch it on or off (in walk mode, tap it and the person goes and does it: 💡). Drag it to move it.' },
       oven:      { emoji: '', word: 'Oven', hint: 'A free-standing oven, with a window and control dials. Tap the floor. Tap it again to turn it. Drag it to move it.' },
       toaster:   { emoji: '', word: 'Toaster', hint: 'Tap a level of a countertop, table or similar surface where it fits — or the floor. Tap it again to turn it. Drag it to move it.' },
       blender:   { emoji: '', word: 'Blender', hint: 'Tap a level of a countertop, table or similar surface where it fits — or the floor. Tap it again to turn it. Drag it to move it.' },
@@ -616,7 +638,9 @@ ${pastelCSS()}
       stair:   { label: 'Stair style', def: 'solid', plural: 'staircases', list: [['solid', 'Solid'], ['cantilever', 'Cantilever']] },
       roofmat: { label: 'Roof material', def: 'clay',  plural: 'roofs', list: [['clay', 'Clay tile'], ['concrete', 'Concrete'], ['metal', 'Corrugated metal']] },
       appliance: { label: 'Color', def: 'white', plural: 'appliances', list: [['white', 'White'], ['black', 'Black']] },
-      fixture: { label: 'Color', def: 'white', plural: 'bathroom fixtures', list: [['white', 'White'], ...PASTELS.map(([id, name]) => [id, name])] }
+      fixture: { label: 'Color', def: 'white', plural: 'bathroom fixtures', list: [['white', 'White'], ...PASTELS.map(([id, name]) => [id, name])] },
+      walllamp: { label: 'Style', def: 'round', plural: 'wall lamps', list: [['round', 'Round'], ['square', 'Square'], ['long', 'Long']] },
+      drape: { label: 'Color', def: 'white', plural: 'curtains and blinds', list: [['white', 'White'], ...PASTELS.map(([id, name]) => [id, name])] }
     };
     // the big "white goods" — the only appliances the Style tool's black finish applies to
     const STYLABLE_APPL = new Set(['fridge', 'freezer', 'washer', 'dryer', 'washdryer', 'oven']);
@@ -721,6 +745,14 @@ ${pastelCSS()}
     });
     const tubSW = (c, edge, inside) => SW(`<path d="M3 9H31V15Q31 22 24 22H10Q3 22 3 15Z" fill="${c}" stroke="${edge}"/><rect x="5" y="6" width="24" height="5" rx="2.5" fill="${inside}" stroke="${edge}"/><path d="M8 22V24M26 22V24" stroke="${edge}" stroke-width="1.6"/>`);
     SWATCH.fixture = { white: tubSW('#f7f8f9', '#b9c1c7', '#e4edf2') };
+    const drapeSW = (c, edge) => SW(`<rect x="7" y="5" width="20" height="17" fill="#cfe6f6" stroke="#9bb0bf"/><path d="M3 3.5H31" stroke="#8c8f94" stroke-width="1.6"/><path d="M4 4H11Q10 13 12 24H4Z" fill="${c}" stroke="${edge}"/><path d="M30 4H23Q24 13 22 24H30Z" fill="${c}" stroke="${edge}"/>`);
+    SWATCH.walllamp = {
+      round: SW('<rect x="14" y="5" width="6" height="14" rx="1" fill="#3a3f45"/><circle cx="17" cy="12" r="6.5" fill="#ffe9a8" stroke="#f2c96b"/>'),
+      square: SW('<rect x="14" y="3" width="6" height="19" rx="1" fill="#3a3f45"/><rect x="11" y="6" width="12" height="13" fill="#ffe9a8" stroke="#3a3f45" stroke-width="1.4"/><path d="M17 6V19M11 12.5H23" stroke="#3a3f45"/><rect x="10" y="4" width="14" height="2.5" fill="#3a3f45"/>'),
+      long: SW('<rect x="3" y="9" width="28" height="3" fill="#3a3f45"/><rect x="4" y="12" width="26" height="4" rx="1" fill="#ffe9a8" stroke="#f2c96b"/>')
+    };
+    SWATCH.drape = { white: drapeSW('#f7f5f0', '#c9c3b6') };
+    PASTELS.forEach(([id, , c]) => { SWATCH.drape[id] = drapeSW(tint(c, 0.15), tint(c, -0.25)); });
     PASTELS.forEach(([id, , c]) => { SWATCH.fixture[id] = tubSW(tint(c, 0.2), tint(c, -0.3), tint(c, 0.4)); });
     SWATCH.appliance = {
       white: SW('<rect x="6" y="1" width="20" height="22" rx="2" fill="#eceff1" stroke="#9aa0a5"/>'),
@@ -782,9 +814,16 @@ ${pastelCSS()}
       exhaustfan:{ w: 0.3,  d: 0.1,  h: 0.3,  wall: true, appl: true, hangZ: 2.1,  pickZ: 2.25 },
       radiator:  { w: 0.8,  d: 0.12, h: 0.6,  wall: true, appl: true, hangZ: 0.15, pickZ: 0.4 },
       waterheater: { w: 0.5, d: 0.16, h: 0.65, wall: true, appl: true, hangZ: 1.3, pickZ: 1.6 },  // tankless, with hot/cold valves
-      wallcabinet: { w: 0.8, d: 0.32, h: 0.7,  wall: true, hangZ: 1.5, pickZ: 1.75 }   // upper kitchen cabinet, same doors as the countertop's base
+      wallcabinet: { w: 0.8, d: 0.32, h: 0.7,  wall: true, hangZ: 1.5, pickZ: 1.75 },   // upper kitchen cabinet, same doors as the countertop's base
+      // a light switch: on a wall at 1.1 m, at one of three places along it (slot L / C / R, like things on a shelf)
+      lightswitch: { w: 0.09, d: 0.025, h: 1.17, wall: true, slotted: true, hangZ: 1.04, pickZ: 1.1 },
+      // a wall lamp: round, square or long (style), at one of three places along the wall like a switch (long: in the middle)
+      walllamp:  { w: 0.22, d: 0.16, h: 2.0, wall: true, slotted: true, appl: true, hangZ: 1.7, pickZ: 1.85 },
+      // window dressings: hung in a window (not on a wall), open or closed (closed: true), white or a pastel
+      curtains:  { w: 1.0, d: 0.1,  h: 2.4, wall: true, win: true, hangZ: 0.05, pickZ: 1.7 },
+      blinds:    { w: 0.94, d: 0.06, h: 2.3, wall: true, win: true, hangZ: 1.9, pickZ: 2.05 }
     };
-    const FURN_ORDER = ['table', 'chair', 'officechair', 'singlebed', 'bed', 'bunkbed', 'nightstand', 'sidetable', 'coffeetable', 'dresser', 'wardrobe', 'armchair', 'loveseat', 'couch', 'bookshelf', 'tvstand', 'wallshelf', 'countertop', 'countercorner', 'toilet', 'washbasin', 'bathtub', 'shower', 'poolladder', 'mirrorcab', 'acwindow', 'acsplit', 'accondenser', 'exhaustfan', 'radiator', 'waterheater', 'wallcabinet'];
+    const FURN_ORDER = ['table', 'chair', 'officechair', 'singlebed', 'bed', 'bunkbed', 'nightstand', 'sidetable', 'coffeetable', 'dresser', 'wardrobe', 'armchair', 'loveseat', 'couch', 'bookshelf', 'tvstand', 'wallshelf', 'lightswitch', 'curtains', 'blinds', 'countertop', 'countercorner', 'toilet', 'washbasin', 'bathtub', 'shower', 'poolladder', 'mirrorcab', 'walllamp', 'acwindow', 'acsplit', 'accondenser', 'exhaustfan', 'radiator', 'waterheater', 'wallcabinet'];
     const hung = o => !!FURN[o.type].wall;          // hangs on a wall (shelf, shower) instead of standing on the floor
     const SHELF_Z = 1.2;   // a wall shelf's board sits this high: anything lower than LOW_ENOUGH can stand under it
     const LOW_ENOUGH = 1.15;
@@ -797,8 +836,16 @@ ${pastelCSS()}
     // the line (where a wall would be), and stopping i0 / i1 short of either
     // end where something already meets that corner, so they never overlap it.
     const onLine = f => hung(f) || f.type === 'countertop' || f.type === 'poolladder';
+    // where a switch sits along its wall (world x or y from the line's middle)
+    const SWITCH_SLOT = { L: -0.3, C: 0, R: 0.3 };
+    const isDressing = t => !!(FURN[t] && FURN[t].win);
+    const LAMPS = new Set(['lamp', 'standlamp', 'lamppost', 'lawnlight']);
+    // outdoor lights that come on by themselves after dark (while switched on, which they are when put down)
+    const AUTO_LIGHTS = new Set(['lamppost', 'lawnlight']);
+    const WALL_LAMP_STYLES = ['round', 'square', 'long'];
     function furnDims(f) {
       const F_ = FURN[f.type];
+      if (f.type === 'walllamp' && f.style === 'long') return { w: 0.64, d: 0.1 };
       return f.type === 'countertop' ? { w: 1 - (f.i0 || 0) - (f.i1 || 0), d: F_.d } : { w: F_.w, d: F_.d };
     }
     function furnFrame(f) {
@@ -808,8 +855,8 @@ ${pastelCSS()}
         return { cx: f.X / 2 + u * -fy + v * fx, cy: f.Y / 2 + u * fx + v * fy, dir: f.dir };
       }
       if (!onLine(f)) return { cx: f.X / 2, cy: f.Y / 2, dir: f.dir };
-      const e = parseKey(f.ek), off = f.type === 'poolladder' ? 0 : (T / 2 + FURN[f.type].d / 2) * (f.side === 'p' ? 1 : -1);   // a pool ladder straddles its line
-      const shift = f.type === 'countertop' ? ((f.i0 || 0) - (f.i1 || 0)) / 2 : 0;
+      const e = parseKey(f.ek), off = f.type === 'poolladder' ? 0 : (T / 2 + furnDims(f).d / 2) * (f.side === 'p' ? 1 : -1);   // a pool ladder straddles its line
+      const shift = f.type === 'countertop' ? ((f.i0 || 0) - (f.i1 || 0)) / 2 : FURN[f.type].slotted && !(f.type === 'walllamp' && f.style === 'long') ? SWITCH_SLOT[f.slot] || 0 : 0;
       return e.o === 'h' ? { cx: e.c + 0.5 + shift, cy: e.r + off, dir: f.side === 'p' ? 2 : 0 } : { cx: e.c + off, cy: e.r + 0.5 + shift, dir: f.side === 'p' ? 1 : 3 };
     }
     function framePt(fr, u, v) { const [fx, fy] = FDIR[fr.dir]; return [fr.cx + u * -fy + v * fx, fr.cy + u * fx + v * fy]; }
@@ -823,9 +870,58 @@ ${pastelCSS()}
     const furnRect = f => { const { w, d } = furnDims(f); return furnLocal(f, -w / 2, w / 2, -d / 2, d / 2); };
     // everything standing on (or hanging over) a floor: furniture and floor appliances
     const allRects = L => state.floors[L] ? [...state.floors[L].furniture.map(furnRect), ...(state.floors[L].appliances || []).filter(a => a.type !== 'rug').map(applRect)] : [];
-    function furnParts(f) {
+    // a window glows at night when the room on either side of it has its light (or a lamp) on — and no closed curtains
+    function winLit(L, e) {
+      if (!(state.night > 0.35) || !state.floors[L]) return false;
+      const k = key(e.o, e.r, e.c);
+      if (state.floors[L].furniture.some(f => isDressing(f.type) && f.ek === k && f.closed)) return false;
+      const [a, b] = e.o === 'h' ? [[e.c + 0.5, e.r - 0.5], [e.c + 0.5, e.r + 0.5]] : [[e.c - 0.5, e.r + 0.5], [e.c + 0.5, e.r + 0.5]];
+      return [a, b].some(p => roomLit(L, ...p) || lampLitRoom(L, ...p));
+    }
+    // a lamp that is on, in the room at (x, y)
+    function lampLitRoom(L, x, y) {
+      const cells = roomCellsAt(L, x, y), F = state.floors[L]; if (!cells || !F) return false;
+      const inIt = (px, py) => cells.includes(Math.floor(py) + ',' + Math.floor(px));
+      return (F.appliances || []).some(a => LAMPS.has(a.type) && a.on && inIt(a.X / 2, a.Y / 2))
+        || F.furniture.some(f => (f.type === 'walllamp' && f.on && inIt(...furnPt(f, 0, 0.3))) || (f.items || []).some(it => LAMPS.has(it.type) && it.on && (fr => inIt(fr.cx, fr.cy))(itemFrame(f, it))));
+    }
+    // the glass of the window on line ek of floor L: [bottom, top] above the floor
+    function winSpan(L, ek) {
+      const v = L != null && state.floors[L] ? state.floors[L].edges.get(ek) : null, ws = v ? styleOf(v, 'window') : 'casement';
+      return { casement: [SILL_H, WIN_TOP], clerestory: [1.75, 2.25], fullheight: [0.05, 2.3], round: [1.1, 1.9] }[ws] || [SILL_H, WIN_TOP];
+    }
+    function furnParts(f, L) {
       const fr = furnFrame(f);
       const P_ = (u0, u1, v0, v1, z0, z1, m, x) => ({ rect: frameRect(fr, u0, u1, v0, v1), z0, z1, m, x });
+      if (f.type === 'lightswitch') {
+        // a plate, and its rocker up (on) or down (off)
+        const on = L != null && roomLit(L, ...switchPt(f));
+        return [P_(-0.045, 0.045, -0.0125, 0.005, 1.04, 1.17, 'swplate'), P_(-0.016, 0.016, 0.005, 0.0125, on ? 1.105 : 1.07, on ? 1.14 : 1.105, 'swrocker')];
+      }
+      if (f.type === 'walllamp') {
+        // a small back plate on the wall and the shade: a round globe, a square lantern, or a long bar light
+        const m = f.on ? 'lanternon' : 'lantern', front = SIDE_OF_DIR[fr.dir], d = furnDims(f).d;
+        if (f.style === 'long') return [P_(-0.32, 0.32, -d / 2, -d / 2 + 0.02, 1.86, 1.94, 'lampost'), P_(-0.3, 0.3, -d / 2 + 0.02, d / 2, 1.87, 1.93, m)];
+        if (f.style === 'square') return [P_(-0.05, 0.05, -d / 2, -d / 2 + 0.02, 1.72, 1.98, 'lampost'), P_(-0.02, 0.02, -d / 2 + 0.02, -0.02, 1.84, 1.87, 'lampost'),
+          P_(-0.08, 0.08, -0.02, d / 2, 1.76, 1.95, m, { front, fdeco: 'lanternframe' }), P_(-0.09, 0.09, -0.03, d / 2 + 0.01, 1.95, 1.98, 'lampost')];
+        return [P_(-0.045, 0.045, -d / 2, -d / 2 + 0.02, 1.76, 1.92, 'lampost'), P_(-0.015, 0.015, -d / 2 + 0.02, -0.03, 1.82, 1.85, 'lampost'),
+          P_(-0.09, 0.09, -0.06, d / 2, 1.75, 1.93, m, { cyl: 'mat' })];
+      }
+      if (isDressing(f.type)) {
+        const [s0, s1] = winSpan(L, f.ek), m = 'drape' + (PASTEL_IDS.includes(f.color) ? f.color : '');
+        if (f.type === 'curtains') {
+          // a rod over the window, and two curtains down to the floor: bunched at the sides, or drawn across
+          const zr = Math.min(2.38, s1 + 0.12), lo = 0.06, w2 = f.closed ? 0.49 : 0.13;
+          return [P_(-0.5, 0.5, -0.045, -0.025, zr, zr + 0.025, 'steel'),
+            P_(-0.49, -0.49 + w2, -0.04, 0.035, lo, zr, m, { front: SIDE_OF_DIR[fr.dir], fdeco: 'pleats' }),
+            P_(0.49 - w2, 0.49, -0.04, 0.035, lo, zr, m, { front: SIDE_OF_DIR[fr.dir], fdeco: 'pleats' })];
+        }
+        // a roller blind: the roll at the top of the window, and (down) the blind over the glass
+        const zt = Math.min(2.35, s1 + 0.08);
+        const out = [P_(-0.47, 0.47, -0.03, 0.03, zt - 0.07, zt, m)];
+        if (f.closed) out.push(P_(-0.45, 0.45, -0.012, 0.004, Math.max(0.04, s0 - 0.03), zt - 0.07, m, { front: SIDE_OF_DIR[fr.dir], fdeco: 'slats' }));
+        return out;
+      }
       const legs = (du, dv, s2, h) => [[-1, -1], [1, -1], [1, 1], [-1, 1]].map(([a, b]) => P_(a * du - s2, a * du + s2, b * dv - s2, b * dv + s2, 0, h, 'furn'));
       if (f.type === 'table') return [...legs(0.52, 0.32, 0.03, 0.71), P_(-0.6, 0.6, -0.4, 0.4, 0.71, 0.75, 'furn')];
       if (f.type === 'chair') return [...legs(0.19, 0.19, 0.02, 0.43), P_(-0.225, 0.225, -0.225, 0.225, 0.43, 0.47, 'furn'), P_(-0.225, 0.225, -0.225, -0.185, 0.47, 0.92, 'furn')];
@@ -869,7 +965,7 @@ ${pastelCSS()}
         return [P_(-0.1, 0.1, -0.18, 0.04, 0, 0.75, porc), P_(-0.275, 0.275, -0.225, 0.225, 0.75, 0.86, porc, { tp: 'basin' }),
                 P_(-0.015, 0.015, -0.215, -0.185, 0.86, 1.02, 'steel'), P_(-0.015, 0.015, -0.185, -0.07, 0.98, 1.02, 'steel')];
       if (f.type === 'bathtub')
-        return [P_(-0.375, 0.375, -0.85, 0.85, 0, 0.55, porc, { tp: 'tub', tint: tintOf }), P_(-0.02, 0.02, -0.84, -0.8, 0.55, 0.68, 'steel'), P_(-0.02, 0.02, -0.8, -0.68, 0.64, 0.68, 'steel')];
+        return [P_(-0.375, 0.375, -0.85, 0.85, 0, 0.55, porc, { tp: 'tub', tint: tintOf }), P_(-0.02, 0.02, 0.8, 0.84, 0.55, 0.68, 'steel'), P_(-0.02, 0.02, 0.68, 0.8, 0.64, 0.68, 'steel')];   // the tap at the foot end, away from the bather's head
       if (f.type === 'shower')   // hot and cold valves either side of the pipe, an arm and the shower head
         return [P_(-0.16, -0.09, -0.15, -0.1, 0.95, 1.02, 'hot'), P_(0.09, 0.16, -0.15, -0.1, 0.95, 1.02, 'cold'),
                 P_(-0.012, 0.012, -0.15, -0.126, 0.95, 1.95, 'steel'), P_(-0.012, 0.012, -0.126, 0.02, 1.93, 1.96, 'steel'),
@@ -955,6 +1051,8 @@ ${pastelCSS()}
       toaster:   { w: 0.25, d: 0.2,  h: 0.18 },
       blender:   { w: 0.16, d: 0.16, h: 0.38 },
       standlamp: { w: 0.3,  d: 0.3,  h: 1.5,  floorOnly: true },
+      lamppost:  { w: 0.3,  d: 0.3,  h: 2.66, floorOnly: true },
+      lawnlight: { w: 0.12, d: 0.12, h: 0.36, floorOnly: true },
       // 🪴 objects: small things that go anywhere an appliance can
       rug:       { w: 2.0,  d: 1.4,  h: 0.01, floorOnly: true, obj: true },  // lies on the floor, under furniture
       cushion:   { w: 0.35, d: 0.35, h: 0.12, obj: true },   // a throw pillow — fits a chair, armchair, loveseat or couch seat
@@ -962,17 +1060,17 @@ ${pastelCSS()}
       book:      { w: 0.22, d: 0.16, h: 0.035, obj: true },  // one book lying flat
       books:     { w: 0.2,  d: 0.16, h: 0.24, obj: true }    // four books standing up
     };
-    const APPL_ORDER = ['tv', 'monitor', 'console', 'stereo', 'laptop', 'desktop', 'lamp', 'standlamp', 'microwave', 'stove', 'sink', 'oven', 'toaster', 'blender',
+    const APPL_ORDER = ['tv', 'monitor', 'console', 'stereo', 'laptop', 'desktop', 'lamp', 'standlamp', 'lamppost', 'lawnlight', 'microwave', 'stove', 'sink', 'oven', 'toaster', 'blender',
       'fridge', 'freezer', 'washer', 'dryer', 'washdryer', 'watertank', 'rug', 'cushion', 'planter', 'book', 'books'];
     /* (moved to S) */
-    function applParts(type, fr, z, color) {
+    function applParts(type, fr, z, color, on) {
       const P_ = (u0, u1, v0, v1, z0, z1, m, x) => ({ rect: frameRect(fr, u0, u1, v0, v1), z0: z + z0, z1: z + z1, m, x });
       const front = SIDE_OF_DIR[fr.dir];
       // the "white goods" styled black swap to the same dark finish already used for electronics —
       // only these few types ever call matOf; everything else just keeps its own material name
       const matOf = base => color === 'black' ? 'appdark' : base;
       if (type === 'tv') return [P_(-0.15, 0.15, -0.09, 0.09, 0, 0.03, 'appdark'), P_(-0.03, 0.03, -0.03, 0.01, 0.03, 0.1, 'appdark'), P_(-0.45, 0.45, -0.03, 0.02, 0.1, 0.62, 'tvbody', { front, fdeco: 'tv' })];
-      if (type === 'lamp') return [P_(-0.08, 0.08, -0.08, 0.08, 0, 0.03, 'lampbase'), P_(-0.012, 0.012, -0.012, 0.012, 0.03, 0.27, 'lampbase'), P_(-0.13, 0.13, -0.13, 0.13, 0.27, 0.45, 'shade')];
+      if (type === 'lamp') return [P_(-0.08, 0.08, -0.08, 0.08, 0, 0.03, 'lampbase'), P_(-0.012, 0.012, -0.012, 0.012, 0.03, 0.27, 'lampbase'), P_(-0.13, 0.13, -0.13, 0.13, 0.27, 0.45, on ? 'shadeon' : 'shade')];
       if (type === 'stove') return [P_(-0.3, 0.3, -0.26, 0.26, 0, 0.03, 'cooktop', { tp: 'burners' })];
       if (type === 'sink') return [P_(-0.3, 0.3, -0.25, 0.25, 0, 0.02, 'steel', { tp: 'basin' }),
         P_(-0.015, 0.015, -0.23, -0.2, 0.02, 0.28, 'steel'), P_(-0.015, 0.015, -0.2, -0.08, 0.24, 0.28, 'steel')];
@@ -998,7 +1096,17 @@ ${pastelCSS()}
       if (type === 'toaster') return [P_(-0.125, 0.125, -0.1, 0.1, 0, 0.18, 'appl', { tp: 'toaster' })];
       if (type === 'blender') return [P_(-0.08, 0.08, -0.08, 0.08, 0, 0.1, 'appdark'), P_(-0.06, 0.06, -0.06, 0.06, 0.1, 0.38, 'appl'),
         P_(-0.066, 0.066, -0.066, 0.066, 0.38, 0.41, 'appdark'), P_(-0.022, 0.022, -0.022, 0.022, 0.41, 0.43, 'appdark')];  // a black lid, with its knob
-      if (type === 'standlamp') return [P_(-0.14, 0.14, -0.14, 0.14, 0, 0.04, 'lampbase'), P_(-0.018, 0.018, -0.018, 0.018, 0.04, 1.3, 'lampbase'), P_(-0.18, 0.18, -0.18, 0.18, 1.3, 1.5, 'shade')];
+      if (type === 'lamppost') {
+        // a dark post on a round foot, a glass lantern (lit after dark) and its cap
+        const lit = on && state.night > 0.35;
+        return [P_(-0.13, 0.13, -0.13, 0.13, 0, 0.12, 'lampost', { cyl: 'mat' }), P_(-0.035, 0.035, -0.035, 0.035, 0.12, 2.3, 'lampost', { cyl: 'mat' }),
+          P_(-0.1, 0.1, -0.1, 0.1, 2.3, 2.34, 'lampost'), P_(-0.085, 0.085, -0.085, 0.085, 2.34, 2.58, lit ? 'lanternon' : 'lantern'), P_(-0.12, 0.12, -0.12, 0.12, 2.58, 2.66, 'lampost')];
+      }
+      if (type === 'lawnlight') {
+        const lit = on && state.night > 0.35;
+        return [P_(-0.04, 0.04, -0.04, 0.04, 0, 0.24, 'lampost', { cyl: 'mat' }), P_(-0.05, 0.05, -0.05, 0.05, 0.24, 0.31, lit ? 'lanternon' : 'lantern', { cyl: 'mat' }), P_(-0.06, 0.06, -0.06, 0.06, 0.31, 0.36, 'lampost', { cyl: 'mat' })];
+      }
+      if (type === 'standlamp') return [P_(-0.14, 0.14, -0.14, 0.14, 0, 0.04, 'lampbase'), P_(-0.018, 0.018, -0.018, 0.018, 0.04, 1.3, 'lampbase'), P_(-0.18, 0.18, -0.18, 0.18, 1.3, 1.5, on ? 'shadeon' : 'shade')];
       if (type === 'cushion') return [P_(-0.175, 0.175, -0.175, 0.175, 0, 0.12, 'cushion', { tp: 'cushion' })];
       if (type === 'rug') return [P_(-1, 1, -0.7, 0.7, 0, 0.01, 'rug', { tp: 'rug' })];
       if (type === 'planter') return [   // a round terracotta pot with a rim, and leaves fanning out of it
@@ -1036,7 +1144,7 @@ ${pastelCSS()}
       return along <= width + 1e-6 && across <= (L_.ud || (L_.top ? F_.d : (F_.innerD || F_.d))) + 1e-6 && A.h <= (L_.clear || Infinity) + 1e-6;
     }
     function itemParts(f) {
-      return (f.items || []).flatMap(it => { const fr = itemFrame(f, it); return applParts(it.type, fr, fr.z); });
+      return (f.items || []).flatMap(it => { const fr = itemFrame(f, it); return applParts(it.type, fr, fr.z, null, it.on); });
     }
     const rectsOverlap = (a, b, e = 0.005) => a.x0 < b.x1 - e && b.x0 < a.x1 - e && a.y0 < b.y1 - e && b.y0 < a.y1 - e;
     const cellRect = k => { const [r, c] = k.split(',').map(Number); return { x0: c, x1: c + 1, y0: r, y1: r + 1 }; };
@@ -1058,7 +1166,11 @@ ${pastelCSS()}
       }
       // a counter corner's back corner sits where its two walls meet: a column there may overlap that corner
       const tucked = k => { if (f.type !== 'countercorner') return false; const [bx, by] = framePt({ cx: f.X / 2, cy: f.Y / 2, dir: f.dir }, -0.5, -0.5), [X, Y] = k.split(',').map(Number); return Math.abs(X / 2 - bx) < 1e-6 && Math.abs(Y / 2 - by) < 1e-6; };
-      if (hung(f)) { const v = F.edges.get(f.ek); if (!v || v.type !== 'wall') return false; }
+      if (hung(f)) { const v = F.edges.get(f.ek); if (!v || v.type !== (isDressing(f.type) ? 'window' : 'wall')) return false; }
+      // curtains or a blind: one to a window side; they hang clear of anything else
+      if (isDressing(f.type)) return !F.furniture.some((o, i) => i !== ignoreIdx && o !== f && isDressing(o.type) && o.ek === f.ek && o.side === f.side);
+      // a light switch faces into a room (it is that room's switch)
+      if (f.type === 'lightswitch' && !roomCellsAt(L, ...furnPt(f, 0, 0.3))) return false;
       const R_ = furnRect(f);
       if (R_.x0 < -0.001 || R_.y0 < -0.001 || R_.x1 > state.COLS + 0.001 || R_.y1 > state.ROWS + 0.001) return false;
       const st = { edges: F.edges, colSet: F.columns };
@@ -1073,7 +1185,7 @@ ${pastelCSS()}
       if (L === 0) for (const k of poolSquares()) if (rectsOverlap(R_, cellRect(k))) return false;
       // something hung on a wall (a shelf, a shower) may be over low things: anything lower than its lowest part
       const under = (lo, hi) => hung(hi) && !hung(lo) && FURN[lo.type].h <= FURN[hi.type].hangZ - 0.02;
-      if (F.furniture.some((o, i) => i !== ignoreIdx && rectsOverlap(R_, furnRect(o)) && !under(o, f) && !under(f, o))) return false;
+      if (F.furniture.some((o, i) => i !== ignoreIdx && !isDressing(o.type) && rectsOverlap(R_, furnRect(o)) && !under(o, f) && !under(f, o))) return false;
       if (!hung(f) && (F.appliances || []).some(a => a.type !== 'rug' && rectsOverlap(R_, applRect(a)))) return false;
       return true;
     }
@@ -1109,6 +1221,37 @@ ${pastelCSS()}
     }
   
     const emptyLevel = () => ({ edges: new Map(), stairs: [], columns: new Set(), colStyles: new Map(), roofs: [], floorStyles: new Map(), pools: [], furniture: [], appliances: [] });
+    /* ═══════════════ LIGHTS ═══════════════
+       Each room has one ceiling light, on or off: state.lights[L] holds a square ('r,c') of each
+       room on floor L whose light is on, so a room keeps its light when it is changed a little.
+       Every switch in a room turns that light on or off. Lamps (table and stand lamps) are on or
+       off on their own (on: true). Not part of the undo history; saved with the house. */
+    // the squares of the room at (x, y) on floor L, or null (outside, or not in a room)
+    const roomMemo = new Map();
+    function roomsOf(L) {
+      const F = state.floors[L]; if (!F) return null;
+      const sig = state.COLS + 'x' + state.ROWS + '|' + [...F.edges].filter(([, v]) => isIndoorEdge(v)).map(([k]) => k).join(';');
+      const m = roomMemo.get(L);
+      if (m && m.sig === sig) return m.rm;
+      const rm = computeRooms(F.edges, isIndoorEdge);
+      roomMemo.set(L, { sig, rm });
+      return rm;
+    }
+    function roomCellsAt(L, x, y) {
+      const rm = roomsOf(L); if (!rm) return null;
+      const r = Math.floor(y), c = Math.floor(x);
+      if (r < 0 || c < 0 || r >= state.ROWS || c >= state.COLS || !rm.inRoom(r, c)) return null;
+      return rm.rooms[rm.id[r * state.COLS + c]].cells.map(([rr, cc]) => rr + ',' + cc);
+    }
+    const lightSet = L => { if (!state.lights) state.lights = {}; return state.lights[L] || (state.lights[L] = new Set()); };
+    function roomLit(L, x, y) { const cells = roomCellsAt(L, x, y); if (!cells) return false; const S = lightSet(L); return cells.some(k => S.has(k)); }
+    function setRoomLight(L, x, y, on) {
+      const cells = roomCellsAt(L, x, y); if (!cells) return false;
+      const S = lightSet(L); cells.forEach(k => S.delete(k)); if (on) S.add(cells[0]);
+      return true;
+    }
+    // the point in front of a switch (in its room)
+    const switchPt = f => furnPt(f, 0, 0.3);
     /* (moved to S) */
     LEVELS.forEach(L => { state.floors[L] = emptyLevel(); });
     /* (moved to S) */
@@ -1827,6 +1970,9 @@ ${pastelCSS()}
           return quad(0.1, 0.9, bx.z0 + H * 0.08, bx.z0 + H * 0.62, 'deco-ovenwin') + quad(0.08, 0.92, bx.z0 + H * 0.64, bx.z0 + H * 0.68, 'deco-vent') +
             [0.3, 0.5, 0.7].map(u => { const [cx, cy] = face.pt(u, bx.z0 + H * 0.82).split(' ').map(Number); return `<circle class="deco-knob" cx="${cx}" cy="${cy}" r="1.1"/>`; }).join('');
         }
+        case 'lanternframe': return `<path class="deco-lantern" d="${line(0.5, bx.z0 + 0.01, 0.5, bx.z1 - 0.01)}${line(0.02, (bx.z0 + bx.z1) / 2, 0.98, (bx.z0 + bx.z1) / 2)}"/>`;
+        case 'pleats': { let d = ''; const n = Math.max(2, Math.round(L / 0.07)); for (let i = 1; i < n; i++) d += line(i / n, bx.z0 + 0.02, i / n, bx.z1 - 0.04); return `<path class="deco-fold" d="${d}"/>`; }
+        case 'slats': { let d = ''; for (let z = bx.z0 + 0.05; z < bx.z1 - 0.02; z += 0.06) d += line(0.01, z, 0.99, z); return `<path class="deco-fold" d="${d}"/>`; }
         case 'spine': return quad(0.15, 0.85, bx.z1 - 0.06, bx.z1 - 0.04, 'deco-spine') + quad(0.15, 0.85, bx.z0 + 0.03, bx.z0 + 0.045, 'deco-spine');
         case 'mirror': return quad(0.06, 0.94, bx.z0 + 0.05, bx.z1 - 0.05, 'deco-mirror') + `<path class="deco-shine" d="${line(0.2, bx.z1 - 0.12, 0.42, bx.z0 + 0.15)}"/>`;
         case 'acwindow': { let d = ''; for (let u = 0.12; u < 0.98; u += 0.1) d += line(u, bx.z0 + 0.05, u, bx.z1 - 0.05); return `<path class="deco-vent" d="${d}"/>` + `<circle class="deco-led" cx="${face.pt(0.88, bx.z1 - 0.08).split(' ')[0]}" cy="${face.pt(0.88, bx.z1 - 0.08).split(' ')[1]}" r="1.3"/>`; }
@@ -1929,7 +2075,13 @@ ${pastelCSS()}
         const cx = (bx.x0 + bx.x1) / 2, cy = (bx.y0 + bx.y1) / 2, hx = (bx.x1 - bx.x0) / 2, hy = (bx.y1 - bx.y0) / 2;
         const oval = (k2, cls) => { const q = []; for (let i = 0; i < 28; i++) { const th = i / 28 * Math.PI * 2; q.push(W(cx + Math.cos(th) * hx * k2, cy + Math.sin(th) * hy * k2, bx.z1).replace(' ', ',')); } return `<polygon class="${cls}" points="${q.join(' ')}"/>`; };
         const tn = bx.tint ? ' tint-' + bx.tint : '';
-        return mat === 'toilet' ? oval(0.9, 'seat' + tn) + oval(0.58, 'seat-in') : oval(0.86, 'tubin' + tn);
+        if (mat === 'toilet') return oval(0.9, 'seat' + tn) + oval(0.58, 'seat-in');
+        // the bath's opening: a rectangle with rounded corners, 7 cm in from the outside all round
+        const ix = 0.07, x0 = bx.x0 + ix, x1 = bx.x1 - ix, y0 = bx.y0 + ix, y1 = bx.y1 - ix, rr = 0.07, q = [];
+        [[x1 - rr, y1 - rr, 0], [x0 + rr, y1 - rr, 1], [x0 + rr, y0 + rr, 2], [x1 - rr, y0 + rr, 3]].forEach(([qx, qy, n]) => {
+          for (let i = 0; i <= 4; i++) { const th = (n + i / 4) * Math.PI / 2; q.push(W(qx + Math.cos(th) * rr, qy + Math.sin(th) * rr, bx.z1).replace(' ', ',')); }
+        });
+        return `<polygon class="tubin${tn}" points="${q.join(' ')}"/>`;
       } else if (mat === 'keys' || mat === 'rug' || mat === 'ps2' || mat === 'controller' || mat === 'toaster' || mat === 'cushion') {
         const inset = (mx, my) => [[bx.x0 + mx, bx.y0 + my], [bx.x1 - mx, bx.y0 + my], [bx.x1 - mx, bx.y1 - my], [bx.x0 + mx, bx.y1 - my]].map(([x, y]) => W(x, y, bx.z1).replace(' ', ',')).join(' ');
         const wx = bx.x1 - bx.x0, wy = bx.y1 - bx.y0;
@@ -2242,7 +2394,7 @@ ${pastelCSS()}
             else {
               const top = Math.min(s1, H);
               const boxes = [box(fp, 0, s0, s0 > 0.1 ? 'wall' : 'sill', { fm: s0 > 0.1 ? fm : null }),
-                box(thinAcross(fp, e.o, 0.05), s0, top, 'glass', { deco: ws === 'casement' ? 'mullion' : ws === 'fullheight' ? 'transom' : null })];
+                box(thinAcross(fp, e.o, 0.05), s0, top, winLit(L, e) ? 'glasslit' : 'glass', { deco: ws === 'casement' ? 'mullion' : ws === 'fullheight' ? 'transom' : null })];
               if (H > s1) boxes.push(box(fp, s1, H, 'wall', { fm }));
               items.push({ fp, cls, src: k, boxes });
             }
@@ -2309,7 +2461,7 @@ ${pastelCSS()}
       // furniture
       // (with whatever appliances sit on it, as parts of the same drawable)
       (st.furniture || []).forEach(({ f, cls, idx }) => {
-        let raw = [...furnParts(f), ...itemParts(f)];
+        let raw = [...furnParts(f, L), ...itemParts(f)];
         // something hung on a wall is cut with its wall (walls down / cutout): nothing floats above it
         if (hung(f) && L === state.level) {
           const wh = edgeH(f.ek);
@@ -2317,12 +2469,12 @@ ${pastelCSS()}
           if (!raw.length) return;
         }
         const parts = paintOrder(raw.map(pt => ({ fp: pt.rect, cls: '', boxes: [box(pt.rect, pt.z0, pt.z1, pt.m, pt.x)] })));
-        items.push({ fp: furnRect(f), cls, src: L === state.level && idx != null && STYLABLE_FIX.has(f.type) ? 'fix:' + idx : null, boxes: parts.map(o => o.boxes[0]) });
+        items.push({ fp: furnRect(f), cls, src: L === state.level && idx != null && (STYLABLE_FIX.has(f.type) || isDressing(f.type)) ? 'fix:' + idx : null, boxes: parts.map(o => o.boxes[0]) });
       });
       // appliances on the floor
       (st.appliances || []).forEach(({ a, cls }, ai) => {
         if (a.type === 'rug') return;        // rugs are drawn with the floor (see rugSVG)
-        const parts = paintOrder(applParts(a.type, applFrame(a), 0, a.color).map(pt => ({ fp: pt.rect, cls: '', boxes: [box(pt.rect, pt.z0, pt.z1, pt.m, pt.x)] })));
+        const parts = paintOrder(applParts(a.type, applFrame(a), 0, a.color, a.on).map(pt => ({ fp: pt.rect, cls: '', boxes: [box(pt.rect, pt.z0, pt.z1, pt.m, pt.x)] })));
         items.push({ fp: applRect(a), cls, src: L === state.level ? 'appl:' + ai : null, boxes: parts.map(o => o.boxes[0]) });
       });
       // stairs: one drawable per step, each a solid block from the floor up to its tread
@@ -2916,6 +3068,7 @@ ${pastelCSS()}
         if (type === 'oven') return box2 + pl(0, -0.3, 0, 0.3, 'bp-furnline');
         if (type === 'toaster') return box2 + pl(-0.05, -0.06, -0.05, 0.06, 'bp-furnthin') + pl(0.05, -0.06, 0.05, 0.06, 'bp-furnthin');
         if (type === 'blender') return `<circle class="bp-appl" cx="${f(fr.cx)}" cy="${f(fr.cy)}" r="${f(0.08)}"/>`;
+        if (type === 'lamppost' || type === 'lawnlight') { const r = type === 'lamppost' ? 0.13 : 0.06; return `<circle class="bp-appl" cx="${f(fr.cx)}" cy="${f(fr.cy)}" r="${f(r)}"/>` + `<circle class="bp-furnthin" cx="${f(fr.cx)}" cy="${f(fr.cy)}" r="${f(r * 2.2)}"/>`; }
         if (type === 'standlamp') return `<circle class="bp-appl" cx="${f(fr.cx)}" cy="${f(fr.cy)}" r="${f(0.18)}"/>` + pl(-0.12, 0, 0.12, 0, 'bp-furnthin') + pl(0, -0.12, 0, 0.12, 'bp-furnthin');
         if (type === 'cushion') { const B_ = frameRect(fr, -0.15, 0.15, -0.15, 0.15); return `<rect class="bp-appl" x="${f(R_.x0)}" y="${f(R_.y0)}" width="${f(R_.x1 - R_.x0)}" height="${f(R_.y1 - R_.y0)}" rx="${f(0.04)}"/><path class="bp-furnthin" d="M${f(B_.x0)} ${f(B_.y0)}L${f(fr.cx)} ${f(fr.cy)}L${f(B_.x1)} ${f(B_.y0)}M${f(B_.x0)} ${f(B_.y1)}L${f(fr.cx)} ${f(fr.cy)}L${f(B_.x1)} ${f(B_.y1)}"/>`; }
         if (type === 'fridge') return box2 + pl(0, -0.35, 0, 0.35, 'bp-furnline');
@@ -3170,15 +3323,26 @@ ${pastelCSS()}
           const B_ = furnLocal(f, -0.17, 0.17, -0.15, 0.33);
           g = rect(furnLocal(f, -0.2, 0.2, -0.35, -0.17), 'bp-furn') + `<ellipse class="bp-furn" cx="${f_((B_.x0 + B_.x1) / 2)}" cy="${f_((B_.y0 + B_.y1) / 2)}" rx="${f_((B_.x1 - B_.x0) / 2)}" ry="${f_((B_.y1 - B_.y0) / 2)}"/>`;
         } else if (f.type === 'washbasin' || f.type === 'bathtub') {
-          const B_ = f.type === 'bathtub' ? furnLocal(f, -0.3, 0.3, -0.75, 0.78) : furnLocal(f, -0.21, 0.21, -0.15, 0.18);
+          const B_ = f.type === 'bathtub' ? furnLocal(f, -0.305, 0.305, -0.78, 0.78) : furnLocal(f, -0.21, 0.21, -0.15, 0.18);
           g += `<rect class="bp-furnthin" x="${f_(B_.x0)}" y="${f_(B_.y0)}" width="${f_(B_.x1 - B_.x0)}" height="${f_(B_.y1 - B_.y0)}" rx="${f_(0.1)}"/>`;
-          const [dx, dy] = furnPt(f, 0, f.type === 'bathtub' ? -0.6 : -0.06);
+          const [dx, dy] = furnPt(f, 0, f.type === 'bathtub' ? 0.6 : -0.06);
           g += `<circle class="bp-furnthin" cx="${f_(dx)}" cy="${f_(dy)}" r="${f_(0.03)}"/>`;
         } else if (f.type === 'shower') {
           // a shower head (circle with a cross) and the hot and cold valves on the wall
           const [hx, hy] = furnPt(f, 0, 0.05), [vx1, vy1] = furnPt(f, -0.125, -0.12), [vx2, vy2] = furnPt(f, 0.125, -0.12);
           g = `<circle class="bp-furn" cx="${f_(hx)}" cy="${f_(hy)}" r="${f_(0.09)}"/>` + ln(-0.06, 0.05, 0.06, 0.05, 'bp-furnthin') + ln(0, -0.01, 0, 0.11, 'bp-furnthin') +
               `<circle class="bp-fpost" cx="${f_(vx1)}" cy="${f_(vy1)}" r="${f_(0.035)}"/><circle class="bp-fpost" cx="${f_(vx2)}" cy="${f_(vy2)}" r="${f_(0.035)}"/>`;
+        } else if (f.type === 'walllamp') {
+          const [sx, sy] = furnPt(f, 0, 0);
+          g = f.style === 'long' ? rect(furnLocal(f, -0.3, 0.3, -0.04, 0.04), f.on ? 'bp-fpost' : 'bp-furn') : `<circle class="${f.on ? 'bp-fpost' : 'bp-furn'}" cx="${f_(sx)}" cy="${f_(sy)}" r="${f_(0.08)}"/>`;
+        } else if (f.type === 'lightswitch') {
+          // a small plate on the wall; filled when its room's light is on
+          const [sx, sy] = furnPt(f, 0, 0);
+          g = `<rect class="${roomLit(state.level, ...switchPt(f)) ? 'bp-fpost' : 'bp-furn'}" x="${f_(sx - 0.05)}" y="${f_(sy - 0.05)}" width="${f_(0.1)}" height="${f_(0.1)}"/>`;
+        } else if (isDressing(f.type)) {
+          // a line along the window on its side: wavy curtains (drawn across, or bunched at the ends), a straight blind
+          if (f.type === 'blinds') g = ln(-0.45, 0, 0.45, 0, f.closed ? 'bp-furnthin' : 'bp-furnthin bp-dash');
+          else g = f.closed ? ln(-0.48, 0, 0.48, 0, 'bp-furnthin') : ln(-0.48, 0, -0.34, 0, 'bp-furnthin') + ln(0.34, 0, 0.48, 0, 'bp-furnthin');
         } else if (f.type === 'wallshelf') {
           g = `<rect class="bp-furn bp-dash" x="${f_(R_.x0)}" y="${f_(R_.y0)}" width="${f_(R_.x1 - R_.x0)}" height="${f_(R_.y1 - R_.y0)}"/>`;
         } else if (f.type === 'countertop') {
@@ -3302,6 +3466,7 @@ ${pastelCSS()}
         }).filter(o => hung(o) ? m.has(o.ek) : o.type === 'countertop' ? (() => { const e = parseKey(o.ek); return validEdge(e.o, e.r, e.c, newCols, newRows) && inNew(furnRect(o)); })() : inNew(furnRect(o)));
         const appliances = state.floors[L].appliances.map(a => ({ ...a, X: a.X + 2 * dc, Y: a.Y + 2 * dr })).filter(a => inNew(applRect(a)));
         state.floors[L] = { edges: m, stairs, columns, colStyles, roofs, floorStyles, pools, furniture, appliances };
+        if (state.lights && state.lights[L]) state.lights[L] = new Set([...state.lights[L]].map(k => { const [r, c] = k.split(',').map(Number); return (r + dr) + ',' + (c + dc); }).filter(k => { const [r, c] = k.split(',').map(Number); return r >= 0 && c >= 0 && r < newRows && c < newCols; }));
       });
     }
   
@@ -3342,14 +3507,21 @@ ${pastelCSS()}
           }),
           stairs: state.floors[L].stairs.map(st => ({ r: st.r, c: st.c, dir: st.dir, type: sType(st), hand: st.hand | 0, style: st.style || 'solid' })),
           furniture: state.floors[L].furniture.map(o => {
-            const items = (o.items || []).map(it => ({ type: it.type, level: it.lvl, slot: it.slot, dir: it.rdir }));
-            if (hung(o)) { const e = parseKey(o.ek); return { type: o.type, edge: { o: e.o, r: e.r, c: e.c }, side: o.side, items }; }
+            const items = (o.items || []).map(it => it.on ? { type: it.type, level: it.lvl, slot: it.slot, dir: it.rdir, on: true } : { type: it.type, level: it.lvl, slot: it.slot, dir: it.rdir });
+            if (hung(o)) {
+              const e = parseKey(o.ek), p = { type: o.type, edge: { o: e.o, r: e.r, c: e.c }, side: o.side, items };
+              if (FURN[o.type].slotted) p.slot = o.slot || 'C';
+              if (o.type === 'walllamp') { if (o.style && o.style !== 'round') p.style = o.style; if (o.on) p.on = true; }
+              if (isDressing(o.type)) { if (o.closed) p.closed = true; if (PASTEL_IDS.includes(o.color)) p.color = o.color; }
+              return p;
+            }
             if (o.type === 'countertop') { const e = parseKey(o.ek); return { type: o.type, edge: { o: e.o, r: e.r, c: e.c }, side: o.side, insets: [o.i0 || 0, o.i1 || 0], items }; }
             const p = { type: o.type, x: o.X / 2, y: o.Y / 2, dir: o.dir };
             if (o.color && STYLABLE_FIX.has(o.type)) p.color = o.color;
             return items.length ? { ...p, items } : p;
           }),
-          appliances: state.floors[L].appliances.map(a => a.color ? { type: a.type, x: a.X / 2, y: a.Y / 2, dir: a.dir, color: a.color } : { type: a.type, x: a.X / 2, y: a.Y / 2, dir: a.dir }),
+          appliances: state.floors[L].appliances.map(a => Object.assign({ type: a.type, x: a.X / 2, y: a.Y / 2, dir: a.dir }, a.color ? { color: a.color } : {}, a.on ? { on: true } : {})),
+          lights: [...lightSet(L)].map(k => { const [r, c] = k.split(',').map(Number); return { r, c }; }),
           pools: state.floors[L].pools.map(q => ({ x0: q.c0, y0: q.r0, x1: q.c1, y1: q.r1 })),
           floorStyles: [...state.floors[L].floorStyles].map(([k, v]) => { const [r, c] = k.split(',').map(Number); return { r, c, style: v }; }),
           roofs: state.floors[L].roofs.map(r => ({ x0: r.X0 / 2, y0: r.Y0 / 2, x1: r.X1 / 2, y1: r.Y1 / 2, type: r.type, material: r.mat, dir: r.dir })),
@@ -3362,7 +3534,7 @@ ${pastelCSS()}
       if (typeof data.version !== 'number' || data.version > SAVE_VERSION) throw new Error('This file was made by a newer version of the House Builder.');
       const cols = Math.round(Number(data.cols)), rows = Math.round(Number(data.rows));
       if (!(cols >= MIN_SIZE && cols <= MAX_SIZE && rows >= MIN_SIZE && rows <= MAX_SIZE)) throw new Error('The grid size in this file is not valid.');
-      const out = {};
+      const out = {}, lights = {};
       LEVELS.forEach(L => { out[L] = emptyLevel(); });
       (Array.isArray(data.floors) ? data.floors : []).forEach((fl, i) => {
         if (!fl) return;
@@ -3394,8 +3566,11 @@ ${pastelCSS()}
             const e = x.edge || {};
             if (!validEdge(e.o, e.r, e.c, cols, rows) || !['m', 'p'].includes(x.side)) return;
             const k = key(e.o, e.r, e.c);
-            if ((out[L].edges.get(k) || {}).type !== 'wall') return;
+            if ((out[L].edges.get(k) || {}).type !== (FURN[x.type].win ? 'window' : 'wall')) return;
             o = { type: x.type, ek: k, side: x.side };
+            if (FURN[x.type].slotted) o.slot = ['L', 'C', 'R'].includes(x.slot) ? x.slot : 'C';
+            if (x.type === 'walllamp') { if (WALL_LAMP_STYLES.includes(x.style) && x.style !== 'round') o.style = x.style; if (x.on === true) o.on = true; }
+            if (FURN[x.type].win) { if (x.closed === true) o.closed = true; if (PASTEL_IDS.includes(x.color)) o.color = x.color; }
           } else if (x.type === 'countertop' && x.edge) {
             const e = x.edge;
             if (!validEdge(e.o, e.r, e.c, cols, rows) || !['m', 'p'].includes(x.side)) return;
@@ -3422,7 +3597,7 @@ ${pastelCSS()}
           (Array.isArray(x.items) ? x.items : []).forEach(it => {
             if (!it || !APPL[it.type] || !Number.isInteger(it.level) || !lv[it.level] || !['C', 'L', 'R'].includes(it.slot) || ![0, 1, 2, 3].includes(it.dir)) return;
             if (!slotFree(o, it.level, it.slot) || !slotFits(o, it.level, it.slot, it.type, it.dir)) return;
-            o.items.push({ type: it.type, lvl: it.level, slot: it.slot, rdir: it.dir });
+            o.items.push(Object.assign({ type: it.type, lvl: it.level, slot: it.slot, rdir: it.dir }, it.on === true && LAMPS.has(it.type) ? { on: true } : {}));
           });
           out[L].furniture.push(o);
         });
@@ -3433,6 +3608,7 @@ ${pastelCSS()}
           const a = { type: x.type, X, Y, dir: x.dir }, R_ = applRect(a);
           if (R_.x0 < -0.001 || R_.y0 < -0.001 || R_.x1 > cols + 0.001 || R_.y1 > rows + 0.001) return;
           if (STYLABLE_APPL.has(x.type) && x.color === 'black') a.color = 'black';
+          if (LAMPS.has(x.type) && x.on === true) a.on = true;
           out[L].appliances.push(a);
         });
         if (L === 0) (Array.isArray(fl.pools) ? fl.pools : []).forEach(x => {
@@ -3455,6 +3631,7 @@ ${pastelCSS()}
           const dir = Number.isInteger(x.dir) ? ((x.dir % 4) + 4) % 4 : 0;
           out[L].roofs.push({ X0, Y0, X1, Y1, type, mat, dir: isGable(type) ? dir % 2 : dir });
         });
+        lights[L] = new Set((Array.isArray(fl.lights) ? fl.lights : []).filter(x => x && Number.isInteger(x.r) && Number.isInteger(x.c) && x.r >= 0 && x.r < rows && x.c >= 0 && x.c < cols).map(x => x.r + ',' + x.c));
         if (L >= MAX_LEVEL) return;
         const taken = new Set();
         (Array.isArray(fl.stairs) ? fl.stairs : []).forEach(x => {
@@ -3465,12 +3642,12 @@ ${pastelCSS()}
           out[L].stairs.push(s);
         });
       });
-      return { cols, rows, floors: out };
+      return { cols, rows, floors: out, lights };
     }
 
     return {
       state, hooks,
-      APPL, APPL_ORDER, COL_W, FURN, FURN_ORDER, HH, HW, LEVELS, LEVEL_INFO, MAX_LEVEL, MAX_SIZE, MIN_LEVEL, MIN_SIZE, PIECES, PIECE_ORDER, PX, STAIR_PIECE, STAIR_TYPES, STYLABLE_APPL, STYLABLE_FIX, STYLE_SETS, SWATCH, T, WALL_H, ZS, applFrame, applRect, applValid, baseZ, blockedEdges, colKey, colValid, colXY, computeAreas, computeRooms, cur, cutH, defaultSwing, displayState, edgeEnds, emptyLevel, frameRect, furnIndexAt, furnPt, furnRect, furnValid, hung, isGable, isIndoorEdge, isShed, isSofa, itemFrame, key, levelUsed, nearestColSpot, onLine, parseKey, pickRoofScreen, poolIndexAt, poolValid, renderIso, renderPlan, roofAtWorld, roofCorners, sType, scr, serializeHouse, shiftContent, sidesOf, slotFits, slotFree, slotU, holeRails, stairFlights, stairIndexAt, stairTreads, stairValid, styleOf, unrot, validEdge, validateHouse
+      APPL, APPL_ORDER, COL_W, FURN, FURN_ORDER, HH, HW, LEVELS, LEVEL_INFO, MAX_LEVEL, MAX_SIZE, MIN_LEVEL, MIN_SIZE, PIECES, PIECE_ORDER, PX, STAIR_PIECE, STAIR_TYPES, STYLABLE_APPL, STYLABLE_FIX, STYLE_SETS, SWATCH, LAMPS, AUTO_LIGHTS, WALL_LAMP_STYLES, SWITCH_SLOT, isDressing, roomCellsAt, roomLit, setRoomLight, lampLitRoom, switchPt, winSpan, T, WALL_H, ZS, applFrame, applRect, applValid, baseZ, blockedEdges, colKey, colValid, colXY, computeAreas, computeRooms, cur, cutH, defaultSwing, displayState, edgeEnds, emptyLevel, frameRect, furnIndexAt, furnPt, furnRect, furnValid, hung, isGable, isIndoorEdge, isShed, isSofa, itemFrame, key, levelUsed, nearestColSpot, onLine, parseKey, pickRoofScreen, poolIndexAt, poolValid, renderIso, renderPlan, roofAtWorld, roofCorners, sType, scr, serializeHouse, shiftContent, sidesOf, slotFits, slotFree, slotU, holeRails, stairFlights, stairIndexAt, stairTreads, stairValid, styleOf, unrot, validEdge, validateHouse
     };
   }
 
@@ -3550,7 +3727,7 @@ ${pastelCSS()}
     injectPicStyles();
     const st = eng.state;
     const h = eng.validateHouse(Object.assign({ app: 'house-builder', version: 12 }, house));
-    st.COLS = h.cols; st.ROWS = h.rows; st.floors = h.floors;
+    st.COLS = h.cols; st.ROWS = h.rows; st.floors = h.floors; st.lights = h.lights;
     st.level = opts.level || 0;
     st.rot = ((opts.rot || 0) % 4 + 4) % 4;
     st.showRoofs = !!opts.roofs;

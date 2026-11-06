@@ -20,6 +20,7 @@
               z: 0,             stand this much higher (a step, a stage)
               ground: 0,        the shadow this much higher than the floor (a stair tread)
               bubbles: true,    soap bubbles over the chest and hips (in the shower)
+              newspaper: true,  an open newspaper held over the lap (sitting on the toilet)
               drip: 0.8,        just out of the water: drops falling from them (0–1: how many)
               key: '…',         written on the person's drawing as data-key, to find it again (a page
                                 that redraws only the people who move, in place: finish('', prefix)
@@ -765,15 +766,50 @@
     }).join('');
   }
 
+  /* Holding the newspaper over the lap (newspaper: true): the arms of the drawing as it is seen
+     (after the turn for the view) are set so the two hands come to either side of the lap, a
+     little apart, where the paper's outer edges then pass through them (see the drawing step).
+     A small search over each shoulder and elbow, kept per drawing. */
+  const paperMemo = new Map();
+  function paperArms(d0) {
+    const HC = global.HouseCharacter, key = JSON.stringify(d0);
+    if (paperMemo.has(key)) return paperMemo.get(key);
+    const d = HC.normalize(d0), M = PX_PER_M, pv0 = HC.pivots(d);
+    const kx = (pv0.kneeL.x + pv0.kneeR.x) / 2, ky = (pv0.kneeL.y + pv0.kneeR.y) / 2;
+    const lapX = (pv0.root.x + kx) / 2, lapY = Math.min(pv0.root.y, ky) - 0.12 * M;
+    const half = Math.max(0.21 * M, Math.abs(kx - pv0.root.x) / 2 + 0.13 * M);
+    // which arm goes to which side: the one whose shoulder is on that side (or left to the left)
+    const sideOf = k => Math.sign(pv0['shoulder' + k].x - (pv0.shoulderL.x + pv0.shoulderR.x) / 2) || (k === 'L' ? -1 : 1);
+    let sL = sideOf('L'), sR = sideOf('R'); if (sL === sR) { sL = -1; sR = 1; }
+    ['L', 'R'].forEach(k => {
+      const tx = lapX + (k === 'L' ? sL : sR) * half, ty = lapY;
+      let best = null;
+      const tryAt = (sh, el) => {
+        d.joints['shoulder' + k] = sh; d.joints['elbow' + k] = el;
+        const w0 = HC.pivots(d)['wrist' + k], e = Math.hypot(w0.x - tx, w0.y - ty) + Math.abs(el) * 0.02;   // (the elbow not bent more than it needs)
+        if (!best || e < best.e) best = { e, sh, el };
+      };
+      // every 30°, then every 6° round the best
+      for (let sh = -150; sh <= 150; sh += 30) for (let el = -150; el <= 150; el += 30) tryAt(sh, el);
+      const b0 = best;
+      for (let sh = b0.sh - 24; sh <= b0.sh + 24; sh += 6) for (let el = b0.el - 24; el <= b0.el + 24; el += 6) tryAt(sh, el);
+      d.joints['shoulder' + k] = best.sh; d.joints['elbow' + k] = best.el;
+    });
+    const out = HC.normalize(d);
+    if (paperMemo.size > 200) paperMemo.delete(paperMemo.keys().next().value);
+    paperMemo.set(key, out);
+    return out;
+  }
   /* Where a person sits on a piece of furniture: sitting back, with the hips placed so the
      knees come to the seat's front edge (thigh = the sitter's own thigh length, in metres),
      never closer than 5 cm to the backrest; on a sofa, on cushion number `place`. At the
      seat's height, facing the way the seat faces. Frame: u across, v from back to front. */
   function seatSpot(eng, f, place, thigh) {
     const F = eng.FURN[f.type], lv = (F.levels || [])[0];
-    const z = lv ? lv.z : F.h * 0.5;
+    let z = lv ? lv.z : F.h * 0.5;
     let u = 0, back = -F.d / 2, front = F.d / 2;
     if (f.type === 'chair') { back = -0.185; front = 0.225; }
+    else if (f.type === 'toilet') { z = 0.42; back = -0.17; front = 0.35; }   // on the seat, in front of the tank
     else if (f.type === 'officechair') { back = -0.22; front = 0.25; }
     else if (eng.isSofa(f.type)) {
       const a = 0.16, bd = 0.2, cw = (F.w - 2 * a) / F.seats, k = clamp(Math.round(place || 0), 0, F.seats - 1);
@@ -799,6 +835,9 @@
     } else if (f.type === 'officechair') {
       body.push([-0.22, 0.22, -0.28, -0.22, 0.56, 1.05]);
       legs.push([-0.24, 0.24, -0.22, 0.25, 0.42, 0.5], [-0.025, 0.025, -0.025, 0.025, 0.06, 0.42], [-0.28, 0.28, -0.03, 0.03, 0.02, 0.06], [-0.03, 0.03, -0.28, 0.28, 0.02, 0.06]);   // seat, post, base
+    } else if (f.type === 'toilet') {
+      body.push([-0.2, 0.2, -0.35, -0.17, 0.33, 0.8]);   // the tank behind the back
+      legs.push([-0.12, 0.12, -0.17, 0.17, 0, 0.36], [-0.19, 0.19, -0.17, 0.35, 0.36, 0.42]);   // the pedestal and the bowl
     } else if (eng.isSofa(f.type)) {
       const hw = F.w / 2, hd = F.d / 2, a = 0.16, bd = 0.2;
       const back = [-hw, hw, -hd, -hd + bd, 0.24, 0.82], arms = [[-hw, -hw + a, -hd + bd, hd, 0.24, 0.6], [hw - a, hw, -hd + bd, hd, 0.24, 0.6]];
@@ -996,7 +1035,7 @@
       const thigh = seat ? (() => { const pv = pivotsOf(p.character); return Math.hypot(pv.kneeL.x - pv.hipL.x, pv.kneeL.y - pv.hipL.y) / PX_PER_M; })() : 0;
       const sp = seat ? seatSpot(eng, seat, p.place, thigh) : null;
       const facing = p.facing != null ? p.facing : sp ? sp.facing : 'S';
-      const vp = viewPlan(p.character, facing, st.rot, Object.assign({}, opts, { turn: p.turn != null ? p.turn : opts.turn })), d = vp.d, ex = extent(d);
+      const vp = viewPlan(p.character, facing, st.rot, Object.assign({}, opts, { turn: p.turn != null ? p.turn : opts.turn })), d = p.newspaper && p.seat != null ? paperArms(vp.d) : vp.d, ex = extent(d);   // (sitting down or getting up, the animation's own arms)
       const H = (ex.bottom - ex.top) / PX_PER_M;
       const out = { p, i, L, d, ex, H, warp: vp.warp, away: vp.away, x: p.x != null ? p.x : sp ? sp.x : 0, y: p.y != null ? p.y : sp ? sp.y : 0, z: p.z || 0 };
       if (sp) {
@@ -1038,7 +1077,7 @@
       Object.assign(d, { torsoOrientation: 0, pelvisOrientation: 0, head: 'front', back: false, eyes: f.type === 'bathtub' ? 'open' : 'closed', eyebrows: 'neutral', mouth: 'rest', held: { left: null, right: null }, prop: null });
       // a single bed: in the middle. A double bed: in the middle, or on one half (side 0 / 1)
       const bw = eng.FURN[f.type].w, half = bw >= 1.2 ? bw / 4 : 0;
-      const zo = f.type === 'bunkbed' && (p.bunk === 'top' || p.bunk === 1) ? 0.9 : f.type === 'bathtub' ? -0.12 : 0;   // the top bunk is 0.9 m higher; in a bath, the head just over the water
+      const zo = f.type === 'bunkbed' && (p.bunk === 'top' || p.bunk === 1) ? 0.9 : f.type === 'bathtub' ? -0.07 : 0;   // the top bunk is 0.9 m higher; in a bath, the head just over the water
       const u = p.side === 0 || p.side === 'left' ? -half : p.side === 1 || p.side === 'right' ? half : 0;
       const [x, y] = eng.furnPt(f, u, 0);
       const type = 'hc3d_person_' + i;
@@ -1188,13 +1227,62 @@
         });
         if (armArt) { art = body; armArt = art.match(/^<g[^>]*>/)[0] + armArt + '</g>'; }
       }
+      if (w.p.newspaper) {
+        /* on the toilet: an open newspaper held over the lap, from the hips to the knees, always
+           facing us (flat over the drawing, like the bubbles), so it covers the hips from any side.
+           It is half folded down the middle, top to bottom: each half page turned 30° back from the
+           fold, so it looks a little narrower (cos 30°), its outer edge set back and higher, and the
+           left half in a little shade. */
+        const pv = HC.pivots(w.d), M = PX_PER_M, kx = (pv.kneeL.x + pv.kneeR.x) / 2, ky = (pv.kneeL.y + pv.kneeR.y) / 2;
+        let cx = (pv.root.x + kx) / 2, cy = (pv.root.y + ky) / 2 - 0.09 * M;
+        const C = Math.cos(Math.PI / 6), S = Math.sin(Math.PI / 6), H = 0.53 * M;   // (20% taller than it was)
+        let PW = Math.max(0.42 * M, Math.abs(kx - pv.root.x) + 0.26 * M) / 2 / C;     // one page's own width, so the two together still span the lap
+        /* held in the person's own hands: the paper's outer edges go through the middle of each
+           hand (a little past the wrist), so half of each hand shows beyond the paper. Seen from
+           the side the hands are together: then the nearer edge goes through them. */
+        const handAt = k => { const w0 = pv['wrist' + k], e0 = pv['elbow' + k], dx = w0.x - e0.x, dy = w0.y - e0.y, l = Math.hypot(dx, dy) || 1; const hx = w0.x + dx / l * 0.04 * M, hy = w0.y + dy / l * 0.04 * M; return [hx, hy - (w.warp && w.warp.split ? liftAt(hx, hy, w.warp) : 0)]; };   // (where the 3D bend has put it)
+        const hs = ['L', 'R'].map(handAt).sort((a, b) => a[0] - b[0]), spread = hs[1][0] - hs[0][0];
+        let handY = (hs[0][1] + hs[1][1]) / 2;
+        if (spread > 0.3 * M) { PW = Math.min(spread, 0.75 * M) / 2 / C; cx = (hs[0][0] + hs[1][0]) / 2; }
+        else {
+          // turned: the hand further out from the hips takes the edge, the other is behind the paper
+          const far = Math.abs(hs[1][0] - pv.root.x) > Math.abs(hs[0][0] - pv.root.x) ? hs[1] : hs[0];
+          cx = far[0] > pv.root.x ? far[0] - PW * C : far[0] + PW * C; handY = far[1];
+        }
+        const lift = S * PW * 0.35;
+        // the hands about half way down the outer edges, as long as the hips stay covered
+        let y0 = handY + lift - H * 0.46;
+        y0 = Math.min(y0, pv.root.y - 0.08 * M); y0 = Math.max(y0, ky - H + 0.04 * M);
+        cy = y0 + H / 2;
+        const f1 = v => v.toFixed(1);
+        // one half page in its own coordinates (u from the fold out to 0…PW, v down 0…H), as a matrix onto the screen
+        const page = (side, shade, body) => {
+          const m = [side * C, -lift / PW, 0, 1, cx, y0].map(v => +v.toFixed(4));
+          return `<g transform="matrix(${m.join(' ')})"><rect x="0" y="0" width="${f1(PW)}" height="${f1(H)}" fill="${shade}" stroke="#8a8578" stroke-width="1.4"/>${body}</g>`;
+        };
+        const lines = (u0, u1, v0, n, step) => { let d = ''; for (let k = 0; k < n; k++) d += `M${f1(PW * u0)} ${f1(H * (v0 + k * step))}H${f1(PW * (k === n - 1 ? u0 + (u1 - u0) * 0.6 : u1))}`; return d; };
+        const ink = `stroke="#77736a" stroke-width="${f1(H * 0.025)}" fill="none"`;
+        // the left page: the masthead and a photo; the right page: the masthead's other half and columns of print
+        const left = `<rect x="${f1(PW * 0.08)}" y="${f1(H * 0.05)}" width="${f1(PW * 0.88)}" height="${f1(H * 0.08)}" fill="#1b1b1b"/>`
+          + `<rect x="${f1(PW * 0.12)}" y="${f1(H * 0.2)}" width="${f1(PW * 0.76)}" height="${f1(H * 0.26)}" fill="#9a968c"/>`
+          + `<path d="${lines(0.12, 0.88, 0.54, 7, 0.065)}" ${ink}/>`;
+        const right = `<rect x="${f1(PW * 0.04)}" y="${f1(H * 0.05)}" width="${f1(PW * 0.88)}" height="${f1(H * 0.08)}" fill="#1b1b1b"/>`
+          + `<path d="${lines(0.08, 0.46, 0.2, 11, 0.065)}${lines(0.54, 0.92, 0.2, 11, 0.065)}" ${ink}/>`;
+        art += `<g class="hc3d-paper" transform="rotate(-3 ${f1(cx)} ${f1(cy)})">` + page(-1, '#e6e2d6', left) + page(1, '#f6f3ea', right)
+          + `<path d="M${f1(cx)} ${f1(y0)}v${f1(H)}" stroke="#a7a294" stroke-width="1.6"/></g>`;
+      }
       if (w.p.bubbles || w.p.drip) {
         const pv = HC.pivots(w.d), M = PX_PER_M, nx = pv.neck.x, ny = pv.neck.y, ry = pv.root.y;
         if (w.p.bubbles) {
           /* modesty bubbles: soap foam over the chest and the hips */
-          const chest = Array.from({ length: 9 }, (_, k) => [nx + (((k * 0.618034) % 1) - 0.5) * 0.3 * M, ny + (0.1 + ((k * 0.381966) % 1) * 0.16) * M]);
-          const hips = Array.from({ length: 11 }, (_, k) => [nx + (((k * 0.618034) % 1) - 0.5) * 0.32 * M, ry + (((k * 0.381966) % 1) * 0.2 - 0.04) * M]);
-          art += foam([...chest, ...hips], 0.05 * M, k => 0.55 + ((k * 0.37) % 0.55));
+          // (big enough to cover from any side: a wide band of overlapping bubbles over each)
+          // (two unrelated sequences across and down, so they spread over a patch, not along a line)
+          const chest = Array.from({ length: 18 }, (_, k) => [nx + (((k * 0.618034) % 1) - 0.5) * 0.42 * M, ny + (0.03 + ((k * 0.754878 + 0.3) % 1) * 0.27) * M]);
+          const hips = Array.from({ length: 20 }, (_, k) => [nx + (((k * 0.618034 + 0.2) % 1) - 0.5) * 0.4 * M, ry + (((k * 0.754878 + 0.5) % 1) * 0.32 - 0.08) * M]);
+          // and the belly between them, so the whole swimsuit is under the foam
+          const top = ny + 0.26 * M, bot = ry - 0.06 * M;
+          const belly = bot > top ? Array.from({ length: 8 }, (_, k) => [nx + (((k * 0.618034 + 0.45) % 1) - 0.5) * 0.34 * M, top + ((k * 0.754878 + 0.15) % 1) * (bot - top)]) : [];
+          art += foam([...chest, ...belly, ...hips], 0.085 * M, k => 0.6 + ((k * 0.37) % 0.55));
         }
         if (w.p.drip) {
           /* just out of the water: drops falling from the body to the ground, fewer as it dries */
@@ -1342,15 +1430,19 @@
        engine's own duvet colours (m-duvet), with the faces the camera sees. Two people in a
        double bed make two lumps side by side. */
     /* In a bath: the water's surface inside the tub, see-through blue with a light outline, and a
-       raft of soap bubbles over the body (the head lies on it at the taps' end). */
+       raft of soap bubbles over the body (the head lies on it at the far end from the tap), and a row
+       of bubbles along the shoulders, over the line where the drawing of the head is cut off. */
     function bathWater(f, L, hv) {
-      const z = eng.baseZ(L) + 0.45, W = (uu, vv) => eng.scr(...eng.furnPt(f, uu, vv), z), pts = q => q.map(([x, y]) => x.toFixed(2) + ',' + y.toFixed(2)).join(' ');
-      const rim = [[-0.3, -0.75], [0.3, -0.75], [0.3, 0.78], [-0.3, 0.78]].map(([a, b]) => W(a, b));
+      const z = eng.baseZ(L) + 0.5, W = (uu, vv) => eng.scr(...eng.furnPt(f, uu, vv), z), pts = q => q.map(([x, y]) => x.toFixed(2) + ',' + y.toFixed(2)).join(' ');
+      // the tub's opening (house-engine.js: 7 cm in from the outside all round)
+      const rim = [[-0.3, -0.775], [0.3, -0.775], [0.3, 0.775], [-0.3, 0.775]].map(([a, b]) => W(a, b));
       let out = `<polygon points="${pts(rim)}" fill="#8fd0ef" fill-opacity=".55" stroke="#fff" stroke-opacity=".9" stroke-width="1.2"/>`;
       // a few rings on the water by the shoulders
       const [cx, cy] = W(0, hv + 0.05);
       out += `<ellipse cx="${cx.toFixed(2)}" cy="${cy.toFixed(2)}" rx="${(0.22 * eng.HW).toFixed(2)}" ry="${(0.22 * eng.HH).toFixed(2)}" fill="none" stroke="#fff" stroke-opacity=".7" stroke-width=".9"/>`;
-      return { water: out, foam: foam(Array.from({ length: 16 }, (_, k) => { const a = (k * 2.39996) % 1, b = (k * 0.618034) % 1; return W((a - 0.5) * 0.4, hv + 0.18 + b * 0.75); }), 0.055 * eng.HW, k => 0.6 + ((k * 0.37) % 0.5)) };
+      // a row of bubbles along the shoulders, over the line where the drawing of the head is cut off
+      const neckRow = Array.from({ length: 12 }, (_, k) => W(-0.28 + k * 0.051, hv + 0.01 + ((k * 0.618034) % 1) * 0.06));
+      return { water: out, foam: foam([...neckRow, ...Array.from({ length: 24 }, (_, k) => { const a = (k * 2.39996) % 1, b = (k * 0.618034) % 1; return W((a - 0.5) * 0.48, hv + 0.12 + b * 0.82); })], 0.085 * eng.HW, k => 0.65 + ((k * 0.37) % 0.5)) };
     }
     // soap bubbles: white rounds with a light rim and a gleam, at screen (or stage) points, radius r
     function foam(at, r, size) {
