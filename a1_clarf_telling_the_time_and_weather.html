@@ -196,23 +196,27 @@ document.getElementById('mistakes').innerHTML = MISTAKES.map(([no, yes]) =>
   '<div class="pair-card"><div class="pair-line no"><span class="mark">✗</span>' + no + '</div>' +
   '<div class="pair-line yes"><span class="mark">✓</span>' + yes + '</div></div>').join('');
 
-/* ── error hunt ────────────────────────────────────────────────────────── */
+/* ── error hunt (A1: every sentence has one mistake; none repeat the common mistakes) ── */
 const EH_ITEMS = [
-  { words: ['Is', 'cold', 'today', '.'],
-    error: { type: 'wrong', wordIndex: 0, options: ['It’s', 'There', 'Has'], correct: 'It’s' } },
-  { words: ['It', 'makes', 'very', 'hot', '.'],
-    error: { type: 'wrong', wordIndex: 1, options: ['is', 'has', 'does'], correct: 'is' } },
-  { words: ['It’s', 'twenty-one', 'grades', '.'],
-    error: { type: 'wrong', wordIndex: 2, options: ['degrees', 'numbers', 'hours'], correct: 'degrees' } },
-  { words: ['It’s', 'rain', 'in', 'Toronto', '.'],
-    error: { type: 'wrong', wordIndex: 1, options: ['raining', 'rains', 'rained'], correct: 'raining' } },
-  { words: ['What', 'hour', 'is', 'it', '?'],
-    error: { type: 'wrong', wordIndex: 1, options: ['time', 'clock', 'o’clock'], correct: 'time' } },
-  { words: ['What’s', 'the', 'weather', '?'],
-    error: { type: 'missing', gapIndex: 3, options: ['like', 'how', 'is'], correct: 'like' } },
-  { words: ['It’s', 'half', 'past', 'ten', 'o’clock', '.'],
+  { words: ['Is', 'sunny', 'in', 'Lima', '.'],
+    error: { type: 'missing', gapIndex: 0, options: ['It', 'There', 'Has'], correct: 'It' } },
+  { words: ['It', 'has', 'very', 'hot', 'in', 'July', '.'],
+    error: { type: 'wrong', wordIndex: 1, options: ['is', 'makes', 'does'], correct: 'is' } },
+  { words: ['It’s', 'thirty', 'degree', 'today', '.'],
+    error: { type: 'wrong', wordIndex: 2, options: ['degrees', 'grade', 'grades'], correct: 'degrees' } },
+  { words: ['It’s', 'snow', 'in', 'Moscow', '.'],
+    error: { type: 'wrong', wordIndex: 1, options: ['snowing', 'snows', 'snowed'], correct: 'snowing' } },
+  { words: ['What', 'time', 'it', 'is', '?'],
+    error: { type: 'misplaced', wordIndex: 3, targetGapIndex: 2 } },
+  { words: ['What', 'the', 'weather', 'like', 'today', '?'],
+    error: { type: 'missing', gapIndex: 1, options: ['is', 'does', 'are'], correct: 'is' } },
+  { words: ['It’s', 'eleven', 'o’clock', 'in', 'night', '.'],
+    error: { type: 'wrong', wordIndex: 3, options: ['at', 'on', 'the'], correct: 'at' } },
+  { words: ['It’s', '8:30', '.', 'It’s', 'half', 'past', 'nine', '.'],
+    error: { type: 'wrong', wordIndex: 6, options: ['eight', 'seven', 'ten'], correct: 'eight' } },
+  { words: ['It’s', 'quarter', 'past', 'three', 'o’clock', '.'],
     error: { type: 'extra', wordIndex: 4 } },
-  { words: ['It’s', '7:45', '.', 'It’s', 'quarter', 'past', 'eight', '.'],
+  { words: ['It’s', '5:50', '.', 'It’s', 'ten', 'past', 'six', '.'],
     error: { type: 'wrong', wordIndex: 5, options: ['to', 'half', 'and'], correct: 'to' } }
 ];
 HouseErrorHunt.build({ container: 'errorHuntItems', items: EH_ITEMS, scoreEl: 'errorScore', totalEl: 'errorTotal' });

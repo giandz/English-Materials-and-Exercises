@@ -3,11 +3,8 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-<title>Third Person Singular — Grammar Focus</title>
+<title>Third Person Singular — Clarification</title>
 <script>
-// Applies the saved/system theme to <html> as early as possible, before the
-// stylesheet below paints anything, so there's no flash of the wrong theme.
-// Self-contained: no dependency on any external script.
 (function(){
   try{
     var saved = localStorage.getItem('theme-preference');
@@ -15,668 +12,245 @@
       ? saved
       : ((window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches) ? 'dark' : 'light');
     document.documentElement.setAttribute('data-theme', theme);
-    // Same idea for the text size: apply it before house.css paints, so a
-    // person who chose 28px doesn't watch the page reflow from 14px on load.
     var fs = parseFloat(localStorage.getItem('font-size-preference'));
-    if (fs >= 10 && fs <= 28){
-      document.documentElement.style.setProperty('--fs-base', fs + 'px');
-    }
+    if (fs >= 10 && fs <= 28) document.documentElement.style.setProperty('--fs-base', fs + 'px');
   }catch(e){ /* localStorage/matchMedia unavailable — CSS media query still applies */ }
 })();
 </script>
 <link rel="stylesheet" href="house.css">
 <style>
-/* Page-specific design tokens — this lesson's own palette, not
-   house tokens. house.css owns everything else. */
+/* page-specific palette (noun · pronoun · negative · question), light and dark */
 :root{
-  --noun-color: #185fa5;
-  --noun-bg: #e6f1fb;
-  --pron-color: #7c3aed;
-  --pron-bg: #f3effe;
-  --neg-color: #a32d2d;
-  --neg-bg: #fce8e8;
-  --q-color: #8a6d00;
-  --q-bg: #fdf3d0;
+  --noun-color:#185fa5; --noun-bg:#e6f1fb;
+  --pron-color:#7c3aed; --pron-bg:#f3effe;
+  --neg-color:#a32d2d;  --neg-bg:#fce8e8;
+  --q-color:#8a6d00;    --q-bg:#fdf3d0;
+  --head-bg:#185fa5;
 }
-@media (prefers-color-scheme: dark){
-:root{
-  --noun-color: #7fb2e0;
-  --noun-bg: #16283a;
-  --pron-color: #b79aff;
-  --pron-bg: #2a2145;
-  --neg-color: #e2827a;
-  --neg-bg: #3a201e;
-  --q-color: #e8c94a;
-  --q-bg: #3a3115;
-}
-}
-
-
-h1{ font-size:1.3rem; font-weight:600; letter-spacing:-0.01em; margin:0 0 4px; }
-
-  .noun{ color:var(--noun-color); font-weight:700; background:var(--noun-bg); padding:1px 5px; border-radius:4px; }
-  .pron{ color:var(--pron-color); font-weight:700; background:var(--pron-bg); padding:1px 5px; border-radius:4px; }
-  .neg{ color:var(--neg-color); font-weight:700; background:var(--neg-bg); padding:1px 5px; border-radius:4px; }
-  .q{ color:var(--q-color); font-weight:700; background:var(--q-bg); padding:1px 5px; border-radius:4px; }
-
-  /* Honorific reference cards */
-    .honor-grid{
-    display:grid;
-    grid-template-columns:repeat(auto-fill,minmax(150px,1fr));
-    gap:10px;
-    margin-bottom:1.25rem;
-  }
-  .honor-card{
-    border:.5px solid var(--color-border-tertiary);
-    border-radius:var(--border-radius-lg);
-    padding:12px 14px;
-    background:var(--surface-2);
-  }
-  .honor-title{ font-size:1rem; font-weight:700; color:var(--text-accent); margin-bottom:4px; }
-  .honor-use{ font-size:0.7667rem; color:var(--text-secondary); margin-bottom:6px; }
-  .honor-ex{ font-size:0.8333rem; color:var(--text-primary); }
-  .honor-emoji{ font-size:1.3333rem; margin-bottom:4px; }
-
-  .honor-details{
-    border:.5px solid var(--color-border-tertiary);
-    border-radius:var(--border-radius-lg);
-    margin-bottom:10px;
-    background:var(--surface-2);
-    overflow:hidden;
-  }
-  .honor-details summary{
-    cursor:pointer;
-    padding:12px 15px;
-    font-size:0.9rem;
-    font-weight:600;
-    color:var(--text-primary);
-    display:flex;
-    align-items:center;
-    gap:8px;
-    list-style:none;
-    justify-content: left;
-  }
-  .honor-details summary::-webkit-details-marker{ display:none; }
-  .honor-details summary::before{
-    content:'▸';
-    color:var(--text-muted);
-    font-size:0.8rem;
-    transition:transform .15s;
-  }
-  .honor-details[open] summary::before{ transform:rotate(90deg); }
-  .honor-details .honor-body{
-    padding:15px 15px;
-  }
-
-  /* Form cards */
-  .tense-card{
-    border:.5px solid var(--color-border-tertiary);
-    border-radius:var(--border-radius-lg);
-    overflow:hidden;
-    margin-bottom:14px;
-  }
-  .tense-head{
-    padding:10px 14px;
-    font-weight:700;
-    font-size:0.9rem;
-    color:#fff;
-    background:#185fa5;
-  }
-  .form-block{
-    padding:10px 14px;
-    border-bottom:.5px solid var(--color-border-tertiary);
-  }
-  .form-block:last-child{ border-bottom:none; }
-  .form-label{
-    font-size:0.7rem;
-    font-weight:700;
-    letter-spacing:.05em;
-    text-transform:uppercase;
-    color:var(--text-muted);
-    margin-bottom:5px;
-  }
-  .form-line {
-    display: flex;
-    font-size:0.9rem;
-    justify-content: left;
-    align-items: center;
-    white-space: break-spaces;
-    margin: 1em 0;
+@media (prefers-color-scheme: dark){ :root:not([data-theme="light"]){
+  --noun-color:#7fb2e0; --noun-bg:#16283a;
+  --pron-color:#b79aff; --pron-bg:#2a2145;
+  --neg-color:#e2827a;  --neg-bg:#3a201e;
+  --q-color:#e8c94a;    --q-bg:#3a3115;
+  --head-bg:#1f4f80;
+} }
+:root[data-theme="dark"]{
+  --noun-color:#7fb2e0; --noun-bg:#16283a;
+  --pron-color:#b79aff; --pron-bg:#2a2145;
+  --neg-color:#e2827a;  --neg-bg:#3a201e;
+  --q-color:#e8c94a;    --q-bg:#3a3115;
+  --head-bg:#1f4f80;
 }
 
-.vert {
-    display: inline-flex;
-    flex-direction: column;
-    align-items: center;
-    border-left: 1px solid var(--color-text-primary);
-    border-right: 1px solid var(--color-text-primary);
-    padding: 0 0.5em;
-    justify-content: center;
-    justify-self: center;
-}
+/* highlight classes — prefixed so they don't clash with the house .neg / .q tags */
+.t-noun{ color:var(--noun-color); font-weight:700; background:var(--noun-bg); padding:1px 5px; border-radius:4px; }
+.t-pron{ color:var(--pron-color); font-weight:700; background:var(--pron-bg); padding:1px 5px; border-radius:4px; }
+.t-neg{ color:var(--neg-color); font-weight:700; background:var(--neg-bg); padding:1px 5px; border-radius:4px; }
+.t-q{ color:var(--q-color); font-weight:700; background:var(--q-bg); padding:1px 5px; border-radius:4px; }
+.t-legend{ display:flex; flex-wrap:wrap; gap:8px; margin:0 0 10px; font-size:.8rem; }
 
-  /* Drag matching activity */
-  .status-bar{
-    display:flex;
-    justify-content:space-between;
-    align-items:center;
-    margin-bottom:1rem;
-    flex-wrap:wrap;
-    gap:10px;
-  }
-  .score-pill{
-    font-family:var(--font-mono);
-    font-size:0.8667rem;
-    background:var(--surface-1);
-    border:.5px solid var(--border);
-    padding:5px 13px;
-    border-radius:20px;
-  }
-  .score-pill strong{ color:var(--good); }
-  .reset-btn{
-    font-family:inherit;
-    font-size:0.8333rem;
-    font-weight:600;
-    background:var(--text-accent);
-    color:#fff;
-    border:none;
-    padding:6px 14px;
-    border-radius:20px;
-    cursor:pointer;
-  }
+/* title cards */
+.honor-grid{ display:grid; grid-template-columns:repeat(auto-fill, minmax(150px, 1fr)); gap:10px; }
+.honor-card{ border:.5px solid var(--color-border-tertiary); border-radius:var(--border-radius-lg); padding:12px 14px; background:var(--surface-2); }
+.honor-title{ font-size:1rem; font-weight:700; color:var(--text-accent); margin-bottom:4px; }
+.honor-use{ font-size:.7667rem; color:var(--text-secondary); margin-bottom:6px; }
+.honor-ex{ font-size:.8333rem; color:var(--text-primary); }
+.honor-emoji{ font-size:1.3333rem; margin-bottom:4px; }
+.honor-details{ border:.5px solid var(--color-border-tertiary); border-radius:var(--border-radius-lg); margin-bottom:10px; background:var(--surface-2); overflow:hidden; }
+.honor-details summary{ cursor:pointer; padding:12px 15px; font-size:.9rem; font-weight:600; color:var(--text-primary); display:flex; align-items:center; gap:8px; list-style:none; justify-content:flex-start; text-align:left; }
+.honor-details summary::-webkit-details-marker{ display:none; }
+.honor-details summary::before{ content:'▸'; color:var(--text-muted); font-size:.8rem; transition:transform .15s; }
+.honor-details[open] summary::before{ transform:rotate(90deg); }
+.honor-body{ padding:15px; }
 
-  .pron-bins{
-    display:grid;
-    grid-template-columns:repeat(auto-fill,minmax(150px,1fr));
-    gap:10px;
-    margin-bottom:20px;
-  }
-  .bin{
-    border:1.5px dashed var(--border);
-    border-radius:10px;
-    padding:10px;
-    background:var(--surface-2);
-    transition:border-color .15s, background .15s;
-  }
-  .bin.drag-over{ border-color:var(--text-accent); background:var(--surface-1); }
-  .bin.complete{ border-style:solid; border-color:var(--good); background:var(--good-bg); }
-  .bin-label{
-    font-weight:700;
-    font-size:1rem;
-    color:var(--text-primary);
-    margin-bottom:6px;
-    text-align:center;
-  }
-  .bin-slots{ display:flex; flex-direction:column; gap:5px; min-height:64px; }
-  .slot{
-    border:1px solid var(--border);
-    border-radius:7px;
-    min-height:30px;
-    background:var(--surface-1);
-    display:flex;
-    align-items:center;
-    padding:0 4px;
-  }
-  .slot.filled{ border:none; background:transparent; padding:0; }
-
-  .pool-heading{
-    font-size:0.7333rem;
-    font-weight:500;
-    letter-spacing:.06em;
-    text-transform:uppercase;
-    color:var(--text-muted);
-    margin:0 0 10px;
-  }
-  .pool{
-    display:flex;
-    flex-wrap:wrap;
-    gap:8px;
-    min-height:50px;
-    padding:12px;
-    background:var(--surface-1);
-    border-radius:var(--radius);
-    margin-bottom:1.5rem;
-  }
-  @keyframes shake{
-    0%,100%{transform:translateX(0);}
-    20%{transform:translateX(-5px);} 40%{transform:translateX(5px);}
-    60%{transform:translateX(-3px);} 80%{transform:translateX(3px);}
-  }
-
-  .win-banner{
-    display:none;
-    text-align:center;
-    padding:14px;
-    background:var(--surface-1);
-    border:.5px solid var(--good);
-    color:var(--good);
-    border-radius:var(--radius);
-    font-weight:600;
-    font-size:0.9333rem;
-    margin-bottom:1.5rem;
-  }
-  .win-banner.show{ display:block; }
-
-  /* Gap fill */
-  .gf-item{
-    border:.5px solid var(--color-border-tertiary);
-    border-radius:var(--border-radius-lg);
-    padding:13px 15px;
-    margin-bottom:10px;
-    background:var(--surface-2);
-  }
-  .gf-top{
-    display:flex;
-    align-items:center;
-    gap:8px;
-    margin-bottom:8px;
-  }
-  .gf-pron-tag{
-    font-family:var(--font-mono);
-    font-size:0.7333rem;
-    font-weight:700;
-    padding:2px 9px;
-    border-radius:20px;
-    background:var(--pron-bg);
-    color:var(--pron-color);
-  }
-  .gf-form-tag{
-    font-size:0.6667rem;
-    font-weight:600;
-    text-transform:uppercase;
-    letter-spacing:.03em;
-    color:var(--text-muted);
-  }
-  .gf-sentence{
-    font-size:0.9333rem;
-    margin-bottom:9px;
-    line-height:1.8;
-  }
-  .gf-sentence input{
-    font-family:inherit;
-    font-size:0.9rem;
-    width:110px;
-    padding:5px 8px;
-    border-radius:6px;
-    border:1px solid var(--color-border-secondary);
-    background:var(--color-background-primary);
-    color:var(--text-primary);
-    text-align:center;
-  }
-  .gf-sentence input:focus{ outline:none; border-color:var(--text-accent); }
-  .gf-check{
-    font-family:inherit;
-    font-size:0.8333rem;
-    font-weight:600;
-    padding:6px 13px;
-    border-radius:8px;
-    border:none;
-    background:var(--text-accent);
-    color:#fff;
-    cursor:pointer;
-  }
-  .gf-feedback{
-    font-size:0.8rem;
-    margin-top:7px;
-    padding:5px 9px;
-    border-radius:6px;
-    display:none;
-  }
-  .gf-feedback.show{ display:block; }
-  .gf-feedback.correct{ background:var(--good-bg); color:var(--good); }
-  .gf-feedback.incorrect{ background:var(--bad-bg); color:var(--bad); }
-  .reveal-btn{
-    font-family:inherit;
-    font-size:0.8rem;
-    font-weight:500;
-    padding:5px 12px;
-    border-radius:20px;
-    border:.5px solid var(--border);
-    background:var(--surface-1);
-    color:var(--text-secondary);
-    cursor:pointer;
-  }
-
-  footer{ text-align:center; font-size:0.8rem; color:var(--text-muted); margin-top:2rem; }
+/* form card */
+.tense-card{ border:.5px solid var(--color-border-tertiary); border-radius:var(--border-radius-lg); overflow:hidden; margin-bottom:14px; }
+.tense-head{ padding:10px 14px; font-weight:700; font-size:.9rem; color:#fff; background:var(--head-bg); }
+.form-block{ padding:10px 14px; border-bottom:.5px solid var(--color-border-tertiary); }
+.form-block:last-child{ border-bottom:none; }
+.form-label{ font-size:.7rem; font-weight:700; letter-spacing:.05em; text-transform:uppercase; color:var(--text-muted); margin-bottom:5px; }
+.form-line{ display:flex; flex-wrap:wrap; align-items:center; gap:0 .35em; font-size:.9rem; margin:1em 0; }
+.form-line .why{ color:var(--text-muted); font-style:italic; }
+.vert{ display:inline-flex; flex-direction:column; align-items:center; gap:2px; border-left:1px solid var(--text-primary); border-right:1px solid var(--text-primary); padding:0 .5em; }
 </style>
 </head>
 <body>
 <div class="page" id="page">
-
-  <span class="cefr-tag cefr-a1a2">A1/A2 · Grammar Focus</span>
+  <span class="cefr-tag cefr-a1a2">A1/A2 · Elementary</span>
   <h1>Third Person Singular</h1>
   <p class="subtitle">He, she, and it. Titles for people. Verbs with -s.</p>
 
-  <!-- ══ HONORIFICS REFERENCE ══ -->
-  <div class="sec-div">titles for people</div>
+  <!-- ══ TITLES ══ -->
+  <div class="sec-div">Titles for people</div>
 
   <details class="honor-details" open>
     <summary>👋 Everyday</summary>
-    <div class="honor-body">
-      <div class="honor-grid">
-        <div class="honor-card">
-          <div class="honor-emoji">🧑</div>
-          <div class="honor-title">Mr.</div>
-          <div class="honor-use">mister, for any men</div>
-          <div class="honor-ex">Mr. Smith teaches math.</div>
-        </div>
-        <div class="honor-card">
-          <div class="honor-emoji">👩</div>
-          <div class="honor-title">Ms.</div>
-          <div class="honor-use">miss /MIZ/, for any women</div>
-          <div class="honor-ex">Ms. Baker likes art.</div>
-        </div>
-        <div class="honor-card">
-          <div class="honor-emoji">👩‍🦳</div>
-          <div class="honor-title">Mrs.</div>
-          <div class="honor-use">missus, for married women</div>
-          <div class="honor-ex">Mrs. Lopez has two kids.</div>
-        </div>
-        <div class="honor-card">
-          <div class="honor-emoji">👧</div>
-          <div class="honor-title">Miss</div>
-          <div class="honor-use">miss /MIS/, for young or unmarried women</div>
-          <div class="honor-ex">Miss Turner is new here.</div>
-        </div>
-        <div class="honor-card">
-          <div class="honor-emoji">🙋‍♂️</div>
-          <div class="honor-title">Sir</div>
-          <div class="honor-use">second person, polite, (use no name)</div>
-          <div class="honor-ex">Excuse me, sir.</div>
-        </div>
-        <div class="honor-card">
-          <div class="honor-emoji">🙋‍♀️</div>
-          <div class="honor-title">Ma'am</div>
-          <div class="honor-use">second person, polite, (use no name)</div>
-          <div class="honor-ex">Thank you, ma'am.</div>
-        </div>
-      </div>
-    </div>
+    <div class="honor-body"><div class="honor-grid">
+      <div class="honor-card"><div class="honor-emoji">🧑</div><div class="honor-title">Mr.</div><div class="honor-use">mister, for any man</div><div class="honor-ex">Mr. Smith teaches math.</div></div>
+      <div class="honor-card"><div class="honor-emoji">👩</div><div class="honor-title">Ms.</div><div class="honor-use">/MIZ/, for any woman</div><div class="honor-ex">Ms. Baker likes art.</div></div>
+      <div class="honor-card"><div class="honor-emoji">👩‍🦳</div><div class="honor-title">Mrs.</div><div class="honor-use">missus, for married women</div><div class="honor-ex">Mrs. Lopez has two kids.</div></div>
+      <div class="honor-card"><div class="honor-emoji">👧</div><div class="honor-title">Miss</div><div class="honor-use">/MIS/, for young or unmarried women</div><div class="honor-ex">Miss Turner is new here.</div></div>
+      <div class="honor-card"><div class="honor-emoji">🙋‍♂️</div><div class="honor-title">Sir</div><div class="honor-use">to talk to a man, politely (no name)</div><div class="honor-ex">Excuse me, sir.</div></div>
+      <div class="honor-card"><div class="honor-emoji">🙋‍♀️</div><div class="honor-title">Ma'am</div><div class="honor-use">to talk to a woman, politely (no name)</div><div class="honor-ex">Thank you, ma'am.</div></div>
+    </div></div>
   </details>
 
   <details class="honor-details">
     <summary>🎓 School & work</summary>
-    <div class="honor-body">
-      <div class="honor-grid">
-        <div class="honor-card">
-          <div class="honor-emoji">⚕️</div>
-          <div class="honor-title">Dr.</div>
-          <div class="honor-use">doctor</div>
-          <div class="honor-ex">Dr. Chen works at the hospital.</div>
-        </div>
-        <div class="honor-card">
-          <div class="honor-emoji">📚</div>
-          <div class="honor-title">Prof.</div>
-          <div class="honor-use">professor, teacher at university</div>
-          <div class="honor-ex">Prof. Diaz teaches electronics.</div>
-        </div>
-        <div class="honor-card">
-          <div class="honor-emoji">🏅</div>
-          <div class="honor-title">Coach</div>
-          <div class="honor-use">sports team leader</div>
-          <div class="honor-ex">Coach Martinez starts at 6.</div>
-        </div>
-        <div class="honor-card">
-          <div class="honor-emoji">👮</div>
-          <div class="honor-title">Officer</div>
-          <div class="honor-use">police</div>
-          <div class="honor-ex">Officer McLane helped us.</div>
-        </div>
-      </div>
-    </div>
+    <div class="honor-body"><div class="honor-grid">
+      <div class="honor-card"><div class="honor-emoji">⚕️</div><div class="honor-title">Dr.</div><div class="honor-use">doctor</div><div class="honor-ex">Dr. Chen works at the hospital.</div></div>
+      <div class="honor-card"><div class="honor-emoji">📚</div><div class="honor-title">Prof.</div><div class="honor-use">professor, teacher at university</div><div class="honor-ex">Prof. Diaz teaches electronics.</div></div>
+      <div class="honor-card"><div class="honor-emoji">🏅</div><div class="honor-title">Coach</div><div class="honor-use">sports team leader</div><div class="honor-ex">Coach Martinez starts at 6.</div></div>
+      <div class="honor-card"><div class="honor-emoji">👮</div><div class="honor-title">Officer</div><div class="honor-use">police</div><div class="honor-ex">Officer McLane helped us.</div></div>
+    </div></div>
   </details>
 
   <details class="honor-details">
     <summary>🙏 Religion</summary>
-    <div class="honor-body">
-	  <div class="honor-grid">
-        <div class="honor-card">
-          <div class="honor-emoji">✝️</div>
-          <div class="honor-title">Fr. </div>
-          <div class="honor-use">father, Catholic priest</div>
-          <div class="honor-ex">Fr. Murphy is kind.</div>
-        </div>
-        <div class="honor-card">
-          <div class="honor-emoji">🕊️</div>
-          <div class="honor-title">Sr.</div>
-          <div class="honor-use">sister, Catholic nun</div>
-          <div class="honor-ex">Sr. Teresa teaches here.</div>
-        </div>
-        <div class="honor-card">
-          <div class="honor-emoji">⛪</div>
-          <div class="honor-title">Rev.</div>
-          <div class="honor-use">reverend, Protestant minister</div>
-          <div class="honor-ex">Rev. Adams leads the service.</div>
-        </div>
-        <div class="honor-card">
-          <div class="honor-emoji">✡️</div>
-          <div class="honor-title">Rabbi</div>
-          <div class="honor-use">Jewish leader</div>
-          <div class="honor-ex">Rabbi Cohen is speaking today.</div>
-        </div>
-        <div class="honor-card">
-          <div class="honor-emoji">☪️</div>
-          <div class="honor-title">Imam</div>
-          <div class="honor-use">Muslim leader</div>
-          <div class="honor-ex">Imam Hassan says the prayers.</div>
-        </div>
-      </div>
-    </div>
+    <div class="honor-body"><div class="honor-grid">
+      <div class="honor-card"><div class="honor-emoji">✝️</div><div class="honor-title">Fr.</div><div class="honor-use">father, Catholic priest</div><div class="honor-ex">Fr. Murphy is kind.</div></div>
+      <div class="honor-card"><div class="honor-emoji">🕊️</div><div class="honor-title">Sr.</div><div class="honor-use">sister, Catholic nun</div><div class="honor-ex">Sr. Teresa teaches here.</div></div>
+      <div class="honor-card"><div class="honor-emoji">⛪</div><div class="honor-title">Rev.</div><div class="honor-use">reverend, Protestant minister</div><div class="honor-ex">Rev. Adams leads the service.</div></div>
+      <div class="honor-card"><div class="honor-emoji">✡️</div><div class="honor-title">Rabbi</div><div class="honor-use">Jewish leader</div><div class="honor-ex">Rabbi Cohen is speaking today.</div></div>
+      <div class="honor-card"><div class="honor-emoji">☪️</div><div class="honor-title">Imam</div><div class="honor-use">Muslim leader</div><div class="honor-ex">Imam Hassan says the prayers.</div></div>
+    </div></div>
   </details>
 
   <details class="honor-details">
     <summary>⚖️ Law & government</summary>
-    <div class="honor-body">
-      <div class="honor-grid">
-        <div class="honor-card">
-          <div class="honor-emoji">👩‍⚖️</div>
-          <div class="honor-title">Judge</div>
-          <div class="honor-use">in court</div>
-          <div class="honor-ex">Judge Williams is fair.</div>
-        </div>
-        <div class="honor-card">
-          <div class="honor-emoji">🏛️</div>
-          <div class="honor-title">Sen.</div>
-          <div class="honor-use">senator</div>
-          <div class="honor-ex">Sen. Ramirez gave a speech.</div>
-        </div>
-        <div class="honor-card">
-          <div class="honor-emoji">📜</div>
-          <div class="honor-title">Hon.</div>
-          <div class="honor-use">honorable, for judges and mayors (use full name)</div>
-          <div class="honor-ex">The Hon. Sarah Cole is speaking.</div>
-        </div>
-      </div>
-    </div>
+    <div class="honor-body"><div class="honor-grid">
+      <div class="honor-card"><div class="honor-emoji">👩‍⚖️</div><div class="honor-title">Judge</div><div class="honor-use">in court</div><div class="honor-ex">Judge Williams is fair.</div></div>
+      <div class="honor-card"><div class="honor-emoji">🏛️</div><div class="honor-title">Sen.</div><div class="honor-use">senator</div><div class="honor-ex">Sen. Ramirez gave a speech.</div></div>
+      <div class="honor-card"><div class="honor-emoji">📜</div><div class="honor-title">Hon.</div><div class="honor-use">honorable, for judges and mayors (use full name)</div><div class="honor-ex">The Hon. Sarah Cole is speaking.</div></div>
+    </div></div>
   </details>
 
   <details class="honor-details">
     <summary>🎖️ Military</summary>
-    <div class="honor-body">
-      <div class="honor-grid">
-		<div class="honor-card">
-          <div class="honor-emoji">🪖</div>
-          <div class="honor-title">Pvt.</div>
-          <div class="honor-use">private (soldier)</div>
-          <div class="honor-ex">Pvt. Green is training right now.</div>
-        </div>
-        <div class="honor-card">
-          <div class="honor-emoji">🔰</div>
-          <div class="honor-title">Sgt.</div>
-          <div class="honor-use">sergeant</div>
-          <div class="honor-ex">Sgt. Brown trains new soldiers.</div>
-        </div>
-        <div class="honor-card">
-          <div class="honor-emoji">🎗️</div>
-          <div class="honor-title">Lt.</div>
-          <div class="honor-use">lieutenant</div>
-          <div class="honor-ex">Lt. Drebin is patrolling the base.</div>
-        </div>
-        <div class="honor-card">
-          <div class="honor-emoji">🫡</div>
-          <div class="honor-title">Capt.</div>
-          <div class="honor-use">captain</div>
-          <div class="honor-ex">Capt. Sheps gives orders very day.</div>
-        </div>
-        <div class="honor-card">
-          <div class="honor-emoji">🦅</div>
-          <div class="honor-title">Col.</div>
-          <div class="honor-use">colonel (/KER nel/)</div>
-          <div class="honor-ex">Col. Reyes is not here right now.</div>
-        </div>
-        <div class="honor-card">
-          <div class="honor-emoji">⭐</div>
-          <div class="honor-title">Gen.</div>
-          <div class="honor-use">general</div>
-          <div class="honor-ex">Gen. Lee is very busy.</div>
-        </div>
-      </div>
-    </div>
+    <div class="honor-body"><div class="honor-grid">
+      <div class="honor-card"><div class="honor-emoji">🪖</div><div class="honor-title">Pvt.</div><div class="honor-use">private (soldier)</div><div class="honor-ex">Pvt. Green is training right now.</div></div>
+      <div class="honor-card"><div class="honor-emoji">🔰</div><div class="honor-title">Sgt.</div><div class="honor-use">sergeant</div><div class="honor-ex">Sgt. Brown trains new soldiers.</div></div>
+      <div class="honor-card"><div class="honor-emoji">🎗️</div><div class="honor-title">Lt.</div><div class="honor-use">lieutenant</div><div class="honor-ex">Lt. Drebin is patrolling the base.</div></div>
+      <div class="honor-card"><div class="honor-emoji">🫡</div><div class="honor-title">Capt.</div><div class="honor-use">captain</div><div class="honor-ex">Capt. Sheps gives orders every day.</div></div>
+      <div class="honor-card"><div class="honor-emoji">🦅</div><div class="honor-title">Col.</div><div class="honor-use">colonel (/KER nel/)</div><div class="honor-ex">Col. Reyes is not here right now.</div></div>
+      <div class="honor-card"><div class="honor-emoji">⭐</div><div class="honor-title">Gen.</div><div class="honor-use">general</div><div class="honor-ex">Gen. Lee is very busy.</div></div>
+    </div></div>
   </details>
 
   <details class="honor-details">
     <summary>👑 Royalty & nobility</summary>
-      <div class="honor-body">
-       <div class="honor-grid">
-		<div class="honor-card">
-	      <div class="honor-emoji">🏰</div>
-	      <div class="honor-title">Lord / Lady</div>
-	      <div class="honor-use">British nobility</div>
-	      <div class="honor-ex">Lord Graham owns a big mansion.</div>
-	    </div>
-        <div class="honor-card">
-          <div class="honor-emoji">🤴</div>
-          <div class="honor-title">Sir</div>
-          <div class="honor-use">knighted man (use first name)</div>
-          <div class="honor-ex">Sir Paul plays music.</div>
-        </div>
-        <div class="honor-card">
-          <div class="honor-emoji">👸</div>
-          <div class="honor-title">Dame</div>
-          <div class="honor-use">knighted woman (use first name)</div>
-          <div class="honor-ex">Dame Judi is an actor.</div>
-        </div>
-      </div>
-    </div>
+    <div class="honor-body"><div class="honor-grid">
+      <div class="honor-card"><div class="honor-emoji">🏰</div><div class="honor-title">Lord / Lady</div><div class="honor-use">British nobility</div><div class="honor-ex">Lord Graham owns a big mansion.</div></div>
+      <div class="honor-card"><div class="honor-emoji">🤴</div><div class="honor-title">Sir</div><div class="honor-use">knighted man (use first name)</div><div class="honor-ex">Sir Paul plays music.</div></div>
+      <div class="honor-card"><div class="honor-emoji">👸</div><div class="honor-title">Dame</div><div class="honor-use">knighted woman (use first name)</div><div class="honor-ex">Dame Judi is an actor.</div></div>
+    </div></div>
   </details>
 
   <div class="rule-box">
-    <strong>Note:</strong> we use these titles with a family name. We say <em>Mr. Smith</em>. We don't say <em>Mr. John</em>. And remember: <em>Mrs. Lopez</em> = <span class="pron">she</span>.
+    <strong>Note:</strong> we use these titles with a family name. We say <em>Mr. Smith</em>. We don't say <em>Mr. John</em>. And remember: <em>Mrs. Lopez</em> = <span class="t-pron">she</span>.
   </div>
 
-  <!-- ══ GRAMMAR FOCUS ══ -->
-  <div class="sec-div">grammar: he, she, it</div>
-
-  <div class="legend">
-    <span class="legend-pill noun">●&nbsp; noun</span>
-    <span class="legend-pill pron">●&nbsp; pronoun</span>
-    <span class="legend-pill neg">●&nbsp; negative</span>
-    <span class="legend-pill q">●&nbsp; question</span>
+  <!-- ══ GRAMMAR ══ -->
+  <div class="sec-div">Grammar: he, she, it</div>
+  <div class="t-legend">
+    <span class="t-noun">● noun</span><span class="t-pron">● pronoun</span><span class="t-neg">● negative</span><span class="t-q">● question</span>
   </div>
 
   <div class="tense-card">
     <div class="tense-head">he / she / it</div>
-
     <div class="form-block">
       <div class="form-label">✓ Positive</div>
-      <div class="form-line"><div class=vert><span class="noun">Mr. Smith</span> <span class="pron">he</span></div> work<strong>s</strong> in the city. <span style="color:var(--text-muted);font-style:italic;">(work → works)</span></div>
-      <div class="form-line"><div class=vert><span class="noun">My bike</span> <span class="pron">it</span></div> need<strong>s</strong> new tires. <span style="color:var(--text-muted);font-style:italic;">(need → needs)</span></div>
-      <div class="form-line"><div class=vert><span class="noun">Your sister</span> <span class="pron">she</span></div> stud<strong>ies</strong> a lot. <span style="color:var(--text-muted);font-style:italic;">(study → studies)</span></div>
+      <div class="form-line"><span class="vert"><span class="t-noun">Mr. Smith</span><span class="t-pron">he</span></span> work<strong>s</strong> in the city. <span class="why">(work → works)</span></div>
+      <div class="form-line"><span class="vert"><span class="t-noun">My bike</span><span class="t-pron">it</span></span> need<strong>s</strong> new tires. <span class="why">(need → needs)</span></div>
+      <div class="form-line"><span class="vert"><span class="t-noun">Your sister</span><span class="t-pron">she</span></span> stud<strong>ies</strong> a lot. <span class="why">(study → studies)</span></div>
     </div>
-
     <div class="form-block">
       <div class="form-label">✗ Negative</div>
-      <div class="form-line"><div class=vert><span class="noun">Mrs. Lopez</span> <span class="pron">she</span></div> <span class="neg">doesn't drink</span> coffee. <span style="color:var(--text-muted);font-style:italic;">(do → does)</span></div>
-      <div class="form-line"><div class=vert><span class="noun">The store</span> <span class="pron">it</span></div> <span class="neg">doesn't open</span> on Sundays. <span style="color:var(--text-muted);font-style:italic;">(do → does)</span></div>
+      <div class="form-line"><span class="vert"><span class="t-noun">Mrs. Lopez</span><span class="t-pron">she</span></span> <span class="t-neg">doesn't drink</span> coffee. <span class="why">(do → does)</span></div>
+      <div class="form-line"><span class="vert"><span class="t-noun">The store</span><span class="t-pron">it</span></span> <span class="t-neg">doesn't open</span> on Sundays. <span class="why">(do → does)</span></div>
     </div>
-
     <div class="form-block">
       <div class="form-label">? Question</div>
-      <div class="form-line"><span class="q">Does</span> <div class=vert><span class="noun">your brother</span> <span class="pron">he</span></div> play soccer? <span style="color:var(--text-muted);font-style:italic;">(do → does)</span></div>
-      <div class="form-line"><span class="q">Does</span> <div class=vert><span class="noun">the bus</span> <span class="pron">it</span></div> stop here? <span style="color:var(--text-muted);font-style:italic;">(do → does)</span></div>
+      <div class="form-line"><span class="t-q">Does</span> <span class="vert"><span class="t-noun">your brother</span><span class="t-pron">he</span></span> play soccer? <span class="why">(do → does)</span></div>
+      <div class="form-line"><span class="t-q">Does</span> <span class="vert"><span class="t-noun">the bus</span><span class="t-pron">it</span></span> stop here? <span class="why">(do → does)</span></div>
     </div>
   </div>
 
+  <div class="sec-div">Look at the form</div>
+  <p class="subtitle">What is each part of the sentence? Drag a label (or tap a label, then tap a box). Compare the rows — what changes, and what stays the same?</p>
+  <div class="score-bar"><span>Correct: <strong id="fcScore">0</strong> / <span id="fcTotal">0</span></span></div>
+  <div id="formClarf"></div>
+
   <div class="rule-box">
-    <strong>Remember:</strong> the verb has <strong>-s</strong> only in the positive sentence. We use <span class="neg">doesn't</span> and <span class="q">does</span> for negative and question. The main verb has no -s: ✗ <em>Does he plays?</em> → ✓ Does he play?
+    <strong>Remember:</strong> the verb has <strong>-s</strong> only in the positive sentence. We use <span class="t-neg">doesn't</span> and <span class="t-q">does</span> for negatives and questions, and the main verb has no -s: Does he <strong>play</strong>? (not <s>Does he plays?</s>)
   </div>
 
-
-  <div class="sec-div">Work out the form</div>
-  <div class="rule-box">Tap a label, then tap the box <strong>above</strong> the word it describes. Compare the rows — what changes, and what stays exactly the same?</div>
-  <div class="score-bar"><span>Labelled: <strong id="fcScore">0</strong> / <span id="fcTotal">0</span></span></div>
-  <div id="formClarf"></div>
-  <div class="rule-box">The <strong>-s</strong> appears once and once only. Add <em>does</em> or <em>doesn't</em> and the -s moves onto it, leaving the main verb plain.</div>
-
-  
   <div class="sec-div">Common mistakes</div>
-  <div class="pair-card"><div class="pair-line no"><span class="mark">✗</span>She teach English.</div><div class="pair-line yes"><span class="mark">✓</span>She teaches English.</div></div>
-  <div class="pair-card"><div class="pair-line no"><span class="mark">✗</span>He doesn't works on Sundays.</div><div class="pair-line yes"><span class="mark">✓</span>He doesn't work on Sundays.</div></div>
-  <div class="pair-card"><div class="pair-line no"><span class="mark">✗</span>Does she likes coffee?</div><div class="pair-line yes"><span class="mark">✓</span>Does she like coffee?</div></div>
-  <div class="pair-card"><div class="pair-line no"><span class="mark">✗</span>My sister study at university.</div><div class="pair-line yes"><span class="mark">✓</span>My sister studies at university.</div></div>
-  <div class="pair-card"><div class="pair-line no"><span class="mark">✗</span>He have a big office.</div><div class="pair-line yes"><span class="mark">✓</span>He has a big office.</div></div>
+  <div id="mistakes"></div>
 
+  <div class="sec-div">Error hunt</div>
+  <p class="subtitle">Some sentences have a mistake. Some are correct! Tap a word — or a space between words — to fix it. Then press OK.</p>
+  <div class="score-bar"><span>Done: <strong id="errorScore">0</strong> / <span id="errorTotal">0</span></span></div>
+  <div id="errorHuntItems"></div>
 
-  <div class="sec-div">Find the mistake</div>
-  <div class="rule-box">Every sentence below has <strong>one or two mistakes</strong>. Tap the word you think is wrong and choose the correct one. When you think the sentence is right, press <strong>OK</strong>.</div>
-  <div class="score-bar"><span>Corrected: <strong id="ehScore">0</strong> / <span id="ehTotal">0</span></span></div>
-  <div id="errorHunt"></div>
+  <footer>Third Person Singular — Clarification (A1/A2)</footer>
+</div>
 
-  <div id="theme-toggle-wrap">
+<div id="theme-toggle-wrap">
   <button id="theme-toggle" aria-label="Toggle light/dark mode" title="Toggle light/dark mode">
     <span id="theme-icon">☀️</span>
   </button>
 </div>
 <script src="house.js"></script>
 <script>
-const EH_ITEMS = [
-  {
-    "words": ["She", "teach", "English", "and", "Spanish", "."],
-    "errors": [ { "type": "wrong", "wordIndex": 1, "options": ["teaches", "teach", "teachs"], "correct": "teaches" } ]
-  },
-  {
-    "words": ["He", "doesn't", "works", "on", "Sundays", "."],
-    "errors": [ { "type": "wrong", "wordIndex": 2, "options": ["work", "works", "working"], "correct": "work" } ]
-  },
-  {
-    "words": ["Does", "she", "likes", "coffee", "?"],
-    "errors": [ { "type": "wrong", "wordIndex": 2, "options": ["like", "likes", "liking"], "correct": "like" } ]
-  },
-  {
-    "words": ["My", "sister", "study", "at", "university", "."],
-    "errors": [ { "type": "wrong", "wordIndex": 2, "options": ["studies", "study", "studys"], "correct": "studies" } ]
-  },
-  {
-    "words": ["He", "have", "a", "big", "office", "."],
-    "errors": [ { "type": "wrong", "wordIndex": 1, "options": ["has", "have", "haves"], "correct": "has" } ]
-  },
-  {
-    "words": ["What", "time", "do", "your", "class", "start", "?"],
-    "errors": [ { "type": "wrong", "wordIndex": 2, "options": ["does", "do", "is"], "correct": "does" } ]
-  }
-];
-
-HouseErrorHunt.build({
-  container: "errorHunt",
-  items: EH_ITEMS,
-  scoreEl: "ehScore",
-  totalEl: "ehTotal"
-});
-</script>
-<script>
+/* ── form ──────────────────────────────────────────────────────────────── */
 HouseFormClarf.build({
-  container: 'formClarf',
-  scoreEl: 'fcScore', totalEl: 'fcTotal',
-  pool: ["wh", "subject", "aux", "neg", "verb", "object"],
+  container: 'formClarf', scoreEl: 'fcScore', totalEl: 'fcTotal',
+  pool: ['wh', 'subject', 'aux', 'neg', 'verb', 'object'],
   items: [
-    { form: "aff", parts: [["She", "subject"], ["teaches", "verb"], ["English", "object"], [".", null]] },
-    { form: "aff", parts: [["He", "subject"], ["has", "verb"], ["a big office", "object"], [".", null]] },
-    { form: "neg", parts: [["He", "subject"], ["doesn't", "neg"], ["drink", "verb"], ["coffee", "object"], [".", null]] },
-    { form: "wh", parts: [["What time", "wh"], ["does", "aux"], ["your class", "subject"], ["start", "verb"], ["?", null]] }
+    { form: 'aff', parts: [['She', 'subject'], ['teaches', 'verb'], ['English', 'object'], ['.', null]] },
+    { form: 'aff', parts: [['He', 'subject'], ['has', 'verb'], ['a big office', 'object'], ['.', null]] },
+    { form: 'neg', parts: [['He', 'subject'], ['doesn’t', 'neg'], ['drink', 'verb'], ['coffee', 'object'], ['.', null]] },
+    { form: 'wh',  parts: [['What time', 'wh'], ['does', 'aux'], ['your class', 'subject'], ['start', 'verb'], ['?', null]] }
   ]
 });
 
-HouseGrammar.init();
+/* ── common mistakes ───────────────────────────────────────────────────── */
+const MISTAKES = [
+  ['She teach English.', 'She teaches English.'],
+  ['He doesn’t works on Sundays.', 'He doesn’t work on Sundays.'],
+  ['Does she likes coffee?', 'Does she like coffee?'],
+  ['My sister study at university.', 'My sister studies at university.'],
+  ['He have a big office.', 'He has a big office.']
+];
+document.getElementById('mistakes').innerHTML = MISTAKES.map(([no, yes]) =>
+  '<div class="pair-card"><div class="pair-line no"><span class="mark">✗</span>' + no + '</div>' +
+  '<div class="pair-line yes"><span class="mark">✓</span>' + yes + '</div></div>').join('');
+
+/* ── error hunt (A1/A2: some sentences are already correct; none repeat the common mistakes) ── */
+const EH_ITEMS = [
+  { words: ['Mr.', 'Smith', 'teach', 'math', '.'],
+    error: { type: 'wrong', wordIndex: 2, options: ['teaches', 'teachs', 'teaching'], correct: 'teaches' } },
+  { words: ['The', 'store', 'doesn’t', 'opens', 'on', 'Sundays', '.'],
+    error: { type: 'wrong', wordIndex: 3, options: ['open', 'opening', 'opened'], correct: 'open' } },
+  { words: ['Dr.', 'Chen', 'works', 'at', 'the', 'hospital', '.'], error: null },
+  { words: ['Does', 'your', 'brother', 'plays', 'soccer', '?'],
+    error: { type: 'wrong', wordIndex: 3, options: ['play', 'playing', 'played'], correct: 'play' } },
+  { words: ['Your', 'sister', 'studys', 'a', 'lot', '.'],
+    error: { type: 'wrong', wordIndex: 2, options: ['studies', 'study', 'studyes'], correct: 'studies' } },
+  { words: ['Mrs.', 'Lopez', 'has', 'two', 'kids', '.'], error: null },
+  { words: ['My', 'bike', 'need', 'new', 'tires', '.'],
+    error: { type: 'wrong', wordIndex: 2, options: ['needs', 'needes', 'needing'], correct: 'needs' } },
+  { words: ['What', 'time', 'do', 'your', 'class', 'start', '?'],
+    error: { type: 'wrong', wordIndex: 2, options: ['does', 'is', 'are'], correct: 'does' } },
+  { words: ['She', 'don’t', 'drink', 'coffee', '.'],
+    error: { type: 'wrong', wordIndex: 1, options: ['doesn’t', 'isn’t', 'not'], correct: 'doesn’t' } },
+  { words: ['Does', 'the', 'bus', 'stop', 'here', '?'], error: null },
+  { words: ['Ms.', 'Baker', 'watchs', 'TV', 'at', 'night', '.'],
+    error: { type: 'wrong', wordIndex: 2, options: ['watches', 'watch', 'watching'], correct: 'watches' } }
+];
+HouseErrorHunt.build({ container: 'errorHuntItems', items: EH_ITEMS, scoreEl: 'errorScore', totalEl: 'errorTotal' });
 </script>
+<script>HouseGrammar.init();</script>
 </body>
 </html>

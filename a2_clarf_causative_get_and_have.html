@@ -3,11 +3,8 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-<title>Causative Get and Have — Quick Reference</title>
+<title>Causative Get and Have — Clarification</title>
 <script>
-// Applies the saved/system theme to <html> as early as possible, before the
-// stylesheet below paints anything, so there's no flash of the wrong theme.
-// Self-contained: no dependency on any external script.
 (function(){
   try{
     var saved = localStorage.getItem('theme-preference');
@@ -15,66 +12,42 @@
       ? saved
       : ((window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches) ? 'dark' : 'light');
     document.documentElement.setAttribute('data-theme', theme);
+    var fs = parseFloat(localStorage.getItem('font-size-preference'));
+    if (fs >= 10 && fs <= 28) document.documentElement.style.setProperty('--fs-base', fs + 'px');
   }catch(e){ /* localStorage/matchMedia unavailable — CSS media query still applies */ }
 })();
 </script>
 <link rel="stylesheet" href="house.css">
 <style>
-.hl-have{font-weight:600;color:#185fa5;}
-.hl-get{font-weight:600;color:#27500a;}
+/* have = blue, get = green — light and dark */
+:root{ --have:#185fa5; --have-bg:#e6f1fb; --have-ink:#0c447c; --get:#27500a; --get-bg:#eaf3de; --get-ink:#27500a; }
+@media (prefers-color-scheme: dark){ :root:not([data-theme="light"]){ --have:#7cb8f2; --have-bg:#13314f; --have-ink:#b9dbfb; --get:#9ed17a; --get-bg:#1f3014; --get-ink:#c6e8ad; } }
+:root[data-theme="dark"]{ --have:#7cb8f2; --have-bg:#13314f; --have-ink:#b9dbfb; --get:#9ed17a; --get-bg:#1f3014; --get-ink:#c6e8ad; }
 
-.ref-grid{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:1.5rem;}
-.ref-card{border:.5px solid var(--color-border-tertiary);border-radius:var(--border-radius-lg);overflow:hidden;}
-.ref-head{padding:8px 12px;border-bottom:.5px solid var(--color-border-tertiary);font-family:var(--font-mono,monospace);font-size:13px;font-weight:500;}
-.ref-head-have{background:#e6f1fb;color:#0c447c;}
-.ref-head-get{background:#eaf3de;color:#27500a;}
-.ref-body{padding:10px 12px;font-size:13px;color:var(--color-text-secondary);line-height:1.6;}
-.ref-body strong{color:var(--color-text-primary);font-weight:500;}
-.ref-formula{font-family:var(--font-mono,monospace);font-size:12px;padding:5px 8px;border-radius:6px;margin-bottom:6px;}
-.formula-have{background:#e6f1fb;color:#0c447c;}
-.formula-get{background:#eaf3de;color:#27500a;}
+.hl-have{ font-weight:600; color:var(--have); }
+.hl-get{ font-weight:600; color:var(--get); }
 
-.note-box{background:var(--color-background-secondary);border-radius:var(--border-radius-md);padding:9px 12px;font-size:13px;color:var(--color-text-secondary);line-height:1.6;margin-bottom:1.25rem;}
-.note-box strong{color:var(--color-text-primary);font-weight:500;}
+.ref-grid{ display:grid; grid-template-columns:1fr 1fr; gap:10px; margin-bottom:1.5rem; }
+@media (max-width:480px){ .ref-grid{ grid-template-columns:1fr; } }
+.ref-card{ border:.5px solid var(--color-border-tertiary); border-radius:var(--border-radius-lg); overflow:hidden; }
+.ref-head{ padding:8px 12px; border-bottom:.5px solid var(--color-border-tertiary); font-family:var(--font-mono, monospace); font-size:.8667rem; font-weight:500; }
+.ref-head-have{ background:var(--have-bg); color:var(--have-ink); }
+.ref-head-get{ background:var(--get-bg); color:var(--get-ink); }
+.ref-body{ padding:10px 12px; font-size:.8667rem; color:var(--text-secondary); line-height:1.6; }
+.ref-body strong{ color:var(--text-primary); font-weight:500; }
 
-.pair-card{
-  background:var(--surface-2);
-  border:1px solid var(--color-border-tertiary);
-  border-radius:12px;
-  padding:10px 12px;
-  margin-bottom:8px;
-}
-.pair-line{ font-size:14px; line-height:1.7; padding:2px 0; }
-.pair-line.no{ color:var(--bad); }
-.pair-line.yes{ color:var(--good); font-weight:600; }
-.mark{ font-weight:700; margin-right:5px; }
+.note-box{ background:var(--surface-2); border-radius:var(--border-radius-md); padding:9px 12px; font-size:.8667rem; color:var(--text-secondary); line-height:1.6; margin-bottom:1.25rem; }
+.note-box strong{ color:var(--text-primary); font-weight:500; }
 
 .phrase-grid{ display:flex; flex-wrap:wrap; gap:6px; margin-bottom:1.5rem; }
-.phrase{ font-size:13px; padding:4px 10px; border-radius:20px; background:var(--surface-2); border:.5px solid var(--border); color:var(--text-secondary); }
-
-@media(max-width:480px){.ref-grid{grid-template-columns:1fr;}}
-
-/* "Work out the form": once a sentence is fully labelled, its words should
-   read in the same POS colors used everywhere else in the library (the same
-   .pos-* keys the label pool itself is drawn from: subject, aux, neg, verb,
-   object, part). Best-effort override — HouseFormClarf's own house.js source
-   isn't visible here, so this assumes it applies the canonical .pos-* class
-   names to labelled words; if it uses different class/attribute names, this
-   won't take effect and will need retargeting. */
-#formClarf .pos-subject{ color:var(--pos-subject); background:var(--pos-subject-bg); border-color:var(--pos-subject); }
-#formClarf .pos-verb{ color:var(--pos-verb); background:var(--pos-verb-bg); border-color:var(--pos-verb); }
-#formClarf .pos-object{ color:var(--pos-object); background:var(--pos-object-bg); border-color:var(--pos-object); }
-#formClarf .pos-aux{ color:var(--pos-aux); background:var(--pos-aux-bg); border-color:var(--pos-aux); }
-#formClarf .pos-neg{ color:var(--pos-neg); background:var(--pos-neg-bg); border-color:var(--pos-neg); }
-#formClarf .pos-part{ color:var(--pos-part); background:var(--pos-part-bg); border-color:var(--pos-part); }
-
+.phrase{ font-size:.8667rem; padding:4px 10px; border-radius:20px; background:var(--surface-2); border:.5px solid var(--border); color:var(--text-secondary); }
+.why{ font-style:italic; color:var(--text-muted); }
 </style>
 </head>
-<body class="exercise-page" id="page">
-<span class="cefr-tag cefr-a2">A2 · Elementary</span>
-<div style="padding:.75rem 0 1rem;">
-
-  <h1>Causative Get and Have — Quick Reference</h1>
+<body>
+<div class="page" id="page">
+  <span class="cefr-tag cefr-a2">A2 · Pre-intermediate</span>
+  <h1>Causative Get and Have</h1>
   <p class="subtitle">Talking about things someone else does for you</p>
 
   <div class="rule-box">
@@ -85,7 +58,6 @@
     <div class="ref-card">
       <div class="ref-head ref-head-have">have + object + past participle</div>
       <div class="ref-body">
-        <div class="ref-formula formula-have">have + object + past participle</div>
         More <strong>formal</strong> and neutral, often planned in advance.<br><br>
         I <span class="hl-have">had</span> the sofa <strong>delivered</strong>.<br>
         She <span class="hl-have">had</span> her windows <strong>cleaned</strong>.
@@ -94,9 +66,8 @@
     <div class="ref-card">
       <div class="ref-head ref-head-get">get + object + past participle</div>
       <div class="ref-body">
-        <div class="ref-formula formula-get">get + object + past participle</div>
         More <strong>informal</strong>. Similar meaning — often a bit more effort involved.<br><br>
-        I <span class="hl-get">got</span> the kettle <strong>fixed</strong>.<br>
+        I <span class="hl-get">got</span> the coffee maker <strong>fixed</strong>.<br>
         She <span class="hl-get">got</span> her shelves <strong>installed</strong>.
       </div>
     </div>
@@ -106,35 +77,17 @@
     <strong>Key point:</strong> both mean <em>you did not do it yourself</em> — someone did it <em>for</em> you. The object always goes right after <span class="hl-have">have</span>/<span class="hl-get">get</span>, and the past participle comes last.
   </div>
 
-  <div class="sec-div">Common mistakes</div>
-
-  <div class="pair-card">
-    <div class="pair-line no"><span class="mark">✗</span>I had delivered the sofa.</div>
-    <div class="pair-line yes"><span class="mark">✓</span>I had the sofa delivered.</div>
-  </div>
-  <div class="pair-card">
-    <div class="pair-line no"><span class="mark">✗</span>She got fixed her car.</div>
-    <div class="pair-line yes"><span class="mark">✓</span>She got her car fixed.</div>
-  </div>
-  <div class="pair-card">
-    <div class="pair-line no"><span class="mark">✗</span>I have cut my hair. <span style="font-style:italic;color:var(--text-muted);">(this means YOU cut it)</span></div>
-    <div class="pair-line yes"><span class="mark">✓</span>I have my hair cut. <span style="font-style:italic;color:var(--text-muted);">(someone else cuts it for you)</span></div>
-  </div>
-
-
-  <div class="sec-div">Work out the form</div>
-  <div class="rule-box">Tap a label, then tap the box <strong>above</strong> the word it describes. Compare the rows — what changes, and what stays exactly the same?</div>
-  <div class="score-bar"><span>Labelled: <strong id="fcScore">0</strong> / <span id="fcTotal">0</span></span></div>
+  <div class="sec-div">Look at the form</div>
+  <p class="subtitle">What is each part of the sentence? Drag a label (or tap a label, then tap a box). Compare the rows — what changes, and what stays the same?</p>
+  <div class="score-bar"><span>Correct: <strong id="fcScore">0</strong> / <span id="fcTotal">0</span></span></div>
   <div id="formClarf"></div>
   <div class="rule-box">The order never changes: <em>have / get</em> + <strong>the thing</strong> + <strong>past participle</strong>. You did not do it — someone else did it for you.</div>
 
-
   <div class="sec-div">Other forms</div>
-
   <div class="note-box">
     <strong>Question:</strong> Did you <span class="hl-get">get</span> your roof repaired? &nbsp;·&nbsp; Have you <span class="hl-have">had</span> your car serviced?<br>
     <strong>Negative:</strong> I haven't <span class="hl-have">had</span> my hair cut yet. &nbsp;·&nbsp; We didn't <span class="hl-get">get</span> the windows cleaned this month.<br>
-    <strong>Continuous:</strong> We're <span class="hl-have">having</span> the kitchen renovated. &nbsp;·&nbsp; I'm <span class="hl-get">getting</span> my curtains fitted.
+    <strong>Continuous:</strong> We're <span class="hl-have">having</span> the kitchen renovated. &nbsp;·&nbsp; I'm <span class="hl-get">getting</span> my curtains put up.
   </div>
 
   <div class="sec-div">Verbs you often see with this structure</div>
@@ -147,17 +100,19 @@
     <span class="phrase">replaced</span>
     <span class="phrase">checked</span>
     <span class="phrase">repaired</span>
-    <span class="phrase">fitted</span>
+    <span class="phrase">cut</span>
     <span class="phrase">renovated</span>
   </div>
 
-  
-  <div class="sec-div">Find the mistake</div>
-  <div class="rule-box">Tap a word — or a space between words — to check it. Some sentences are already correct. Fix the mistake, then press <strong>OK</strong>.</div>
-  <div class="score-bar"><span>Corrected: <strong id="ehScore">0</strong> / <span id="ehTotal">0</span></span></div>
-  <div id="errorHunt"></div>
+  <div class="sec-div">Common mistakes</div>
+  <div id="mistakes"></div>
 
-  <footer>Causative Get and Have — Quick Reference (A2)</footer>
+  <div class="sec-div">Error hunt</div>
+  <p class="subtitle">Some sentences have a mistake. Some are correct! Tap a word — or a space between words — to fix it. Then press OK.</p>
+  <div class="score-bar"><span>Done: <strong id="errorScore">0</strong> / <span id="errorTotal">0</span></span></div>
+  <div id="errorHuntItems"></div>
+
+  <footer>Causative Get and Have — Clarification (A2)</footer>
 </div>
 
 <div id="theme-toggle-wrap">
@@ -167,58 +122,48 @@
 </div>
 <script src="house.js"></script>
 <script>
-const EH_ITEMS = [
-  {
-    "words": ["I", "had", "cut", "my", "hair", "."],
-    "error": { "type": "misplaced", "wordIndex": 2, "targetGapIndex": 5 }
-  },
-  {
-    "words": ["She", "got", "repaired", "her", "car", "."],
-    "error": { "type": "misplaced", "wordIndex": 2, "targetGapIndex": 5 }
-  },
-  {
-    "words": ["We", "had", "the", "kitchen", "painted", "last", "year", "."],
-    "error": null
-  },
-  {
-    "words": ["I", "need", "to", "have", "my", "eyes", "test", "."],
-    "error": { "type": "wrong", "wordIndex": 6, "options": ["tested", "test", "testing"], "correct": "tested" }
-  },
-  {
-    "words": ["Did", "you", "had", "the", "shelves", "painted", "?"],
-    "error": { "type": "wrong", "wordIndex": 2, "options": ["have", "had", "having"], "correct": "have" }
-  },
-  {
-    "words": ["He", "is", "getting", "his", "passport", "renewed", "."],
-    "error": null
-  },
-  {
-    "words": ["I", "haven't", "had", "the", "fridge", "check", "yet", "."],
-    "error": { "type": "wrong", "wordIndex": 5, "options": ["checked", "check", "checking"], "correct": "checked" }
-  }
-];
-
-HouseErrorHunt.build({
-  container: 'errorHunt',
-  items: EH_ITEMS,
-  scoreEl: 'ehScore',
-  totalEl: 'ehTotal'
-});
-</script>
-<script>
+/* ── form ──────────────────────────────────────────────────────────────── */
 HouseFormClarf.build({
-  container: 'formClarf',
-  scoreEl: 'fcScore', totalEl: 'fcTotal',
-  pool: ["subject", "aux", "neg", "verb", "object", "part"],
+  container: 'formClarf', scoreEl: 'fcScore', totalEl: 'fcTotal',
+  pool: ['subject', 'aux', 'neg', 'verb', 'object', 'part'],
   items: [
-    { form: "aff", parts: [["I", "subject"], ["had", "verb"], ["my hair", "object"], ["cut", "part"], [".", null]] },
-    { form: "aff", parts: [["She", "subject"], ["got", "verb"], ["her car", "object"], ["repaired", "part"], [".", null]] },
-    { form: "q", parts: [["Did", "aux"], ["you", "subject"], ["have", "verb"], ["the shelves", "object"], ["painted", "part"], ["?", null]] },
-    { form: "neg", parts: [["I", "subject"], ["haven't", "neg"], ["had", "verb"], ["the fridge", "object"], ["checked", "part"], [".", null]] }
+    { form: 'aff', parts: [['I', 'subject'], ['had', 'verb'], ['my hair', 'object'], ['cut', 'part'], ['.', null]] },
+    { form: 'aff', parts: [['She', 'subject'], ['got', 'verb'], ['her car', 'object'], ['repaired', 'part'], ['.', null]] },
+    { form: 'q',   parts: [['Did', 'aux'], ['you', 'subject'], ['have', 'verb'], ['the shelves', 'object'], ['painted', 'part'], ['?', null]] },
+    { form: 'neg', parts: [['I', 'subject'], ['haven’t', 'neg'], ['had', 'verb'], ['the fridge', 'object'], ['checked', 'part'], ['.', null]] }
   ]
 });
 
-HouseGrammar.init();
+/* ── common mistakes ───────────────────────────────────────────────────── */
+const MISTAKES = [
+  ['I had delivered the sofa.', 'I had the sofa delivered.'],
+  ['She got fixed her car.', 'She got her car fixed.'],
+  ['I have cut my hair. <span class="why">(this means YOU cut it)</span>', 'I have my hair cut. <span class="why">(someone else cuts it for you)</span>']
+];
+document.getElementById('mistakes').innerHTML = MISTAKES.map(([no, yes]) =>
+  '<div class="pair-card"><div class="pair-line no"><span class="mark">✗</span>' + no + '</div>' +
+  '<div class="pair-line yes"><span class="mark">✓</span>' + yes + '</div></div>').join('');
+
+/* ── error hunt (A2: some sentences are already correct; none repeat the common mistakes) ── */
+const EH_ITEMS = [
+  { words: ['We', 'got', 'cleaned', 'the', 'carpets', '.'],
+    error: { type: 'misplaced', wordIndex: 2, targetGapIndex: 5 } },
+  { words: ['She', 'had', 'her', 'nails', 'do', '.'],
+    error: { type: 'wrong', wordIndex: 4, options: ['done', 'did', 'doing'], correct: 'done' } },
+  { words: ['We', 'had', 'the', 'kitchen', 'painted', 'last', 'year', '.'], error: null },
+  { words: ['I', 'need', 'to', 'have', 'my', 'eyes', 'test', '.'],
+    error: { type: 'wrong', wordIndex: 6, options: ['tested', 'test', 'testing'], correct: 'tested' } },
+  { words: ['Did', 'you', 'had', 'the', 'shelves', 'painted', '?'],
+    error: { type: 'wrong', wordIndex: 2, options: ['have', 'had', 'having'], correct: 'have' } },
+  { words: ['He', 'is', 'getting', 'his', 'passport', 'renewed', '.'], error: null },
+  { words: ['I', 'haven’t', 'had', 'the', 'fridge', 'check', 'yet', '.'],
+    error: { type: 'wrong', wordIndex: 5, options: ['checked', 'check', 'checking'], correct: 'checked' } },
+  { words: ['They', 'are', 'having', 'their', 'roof', 'repair', '.'],
+    error: { type: 'wrong', wordIndex: 5, options: ['repaired', 'repairs', 'repairing'], correct: 'repaired' } },
+  { words: ['I', 'got', 'my', 'bike', 'fixed', 'yesterday', '.'], error: null }
+];
+HouseErrorHunt.build({ container: 'errorHuntItems', items: EH_ITEMS, scoreEl: 'errorScore', totalEl: 'errorTotal' });
 </script>
+<script>HouseGrammar.init();</script>
 </body>
 </html>

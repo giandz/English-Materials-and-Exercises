@@ -5,9 +5,6 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
 <title>Passive Voice — Clarification</title>
 <script>
-// Applies the saved/system theme to <html> as early as possible, before the
-// stylesheet below paints anything, so there's no flash of the wrong theme.
-// Self-contained: no dependency on any external script.
 (function(){
   try{
     var saved = localStorage.getItem('theme-preference');
@@ -15,95 +12,102 @@
       ? saved
       : ((window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches) ? 'dark' : 'light');
     document.documentElement.setAttribute('data-theme', theme);
-    // Same idea for the text size: apply it before house.css paints, so a
-    // person who chose 28px doesn't watch the page reflow from 14px on load.
     var fs = parseFloat(localStorage.getItem('font-size-preference'));
-    if (fs >= 10 && fs <= 28){
-      document.documentElement.style.setProperty('--fs-base', fs + 'px');
-    }
+    if (fs >= 10 && fs <= 28) document.documentElement.style.setProperty('--fs-base', fs + 'px');
   }catch(e){ /* localStorage/matchMedia unavailable — CSS media query still applies */ }
 })();
 </script>
 <link rel="stylesheet" href="house.css">
 <style>
-.formula-box{background:var(--surface-1);border-radius:12px;padding:14px 18px;margin-bottom:1.25rem;font-family:var(--font-mono);font-size:0.8667rem;color:var(--color-text-primary);line-height:2;}
-  .formula-row{display:flex;align-items:center;gap:8px;flex-wrap:wrap;}
-  .f-part{padding:3px 10px;border-radius:8px;border:1px solid transparent;font-size:0.8667rem;white-space:nowrap;}
-  .f-sub{background:var(--color-background-info);color:var(--text-accent);}
-  .f-be{background:var(--color-background-success);color:var(--color-text-success);}
-  .f-pp{background:var(--color-background-info);color:var(--color-text-info);}
-  .f-plus{color:var(--text-muted);font-size:0.9333rem;}
-	
-  .tense-card{border:.5px solid var(--color-border-secondary);border-radius:12px;overflow:hidden;margin-bottom:12px;}
-  .tense-head{padding:9px 14px;border-bottom:.5px solid var(--color-border-secondary);background:var(--surface-1);}
-  .tense-name{font-size:0.9333rem;font-weight:500;color:var(--color-text-primary);}
-  .tense-formula{font-family:var(--font-mono);font-size:0.7333rem;color:var(--text-secondary);margin-top:2px;}
-  .form-row{display:flex;align-items:flex-start;gap:8px;padding:8px 14px;border-bottom:.5px solid var(--color-border-secondary);}
-  .form-row:last-child{border-bottom:none;}
-  .form-badge{font-size:0.7333rem;font-weight:500;padding:2px 9px;border-radius:20px;border:1px solid transparent;flex-shrink:0;margin-top:1px;white-space:nowrap;}
-  .badge-aff{background:var(--color-background-success);color:var(--color-text-success);}
-  .badge-neg{background:var(--color-background-danger);color:var(--color-text-danger);}
-  .form-examples{display:flex;flex-direction:column;gap:4px;}
-  .form-ex{font-size:0.8667rem;color:var(--color-text-primary);line-height:1.5;}
-  .hl-be{font-weight:500;color:var(--color-text-success);}
-  .hl-neg{font-weight:500;color:var(--color-text-danger);}
-  .hl-pp{font-weight:500;color:var(--color-text-info);}
+.formula-box{ background:var(--surface-1); border-radius:12px; padding:14px 18px; margin-bottom:1.25rem; font-family:var(--font-mono); font-size:.8667rem; color:var(--text-primary); line-height:2; }
+.formula-row{ display:flex; align-items:center; gap:8px; flex-wrap:wrap; }
+.f-part{ padding:3px 10px; border-radius:8px; border:1px solid transparent; font-size:.8667rem; white-space:nowrap; }
+.f-sub{ background:var(--color-background-info); color:var(--text-accent); }
+.f-be{ background:var(--color-background-success); color:var(--color-text-success); }
+.f-pp{ background:var(--color-background-info); color:var(--color-text-info); }
+.f-plus{ color:var(--text-muted); font-size:.9333rem; }
+.note{ font-size:.8667rem; color:var(--text-secondary); margin-bottom:1.25rem; line-height:1.6; }
+.note strong{ color:var(--text-primary); font-weight:500; }
+.tip{ font-size:.8rem; color:var(--text-muted); line-height:1.6; margin:.5rem 0 1rem; }
 
-  .summary-table{width:100%;border-collapse:collapse;font-size:0.8667rem;margin-top:.5rem;margin-bottom:1.5rem;}
-  .summary-table th{font-size:0.7333rem;font-weight:500;letter-spacing:.05em;text-transform:uppercase;color:var(--text-secondary);text-align:left;padding:6px 10px;border-bottom:1px solid var(--color-border-secondary);background:var(--surface-1);}
-  .summary-table td{padding:7px 10px;border-bottom:.5px solid var(--color-border-secondary);color:var(--color-text-primary);vertical-align:top;}
-  .summary-table tr:last-child td{border-bottom:none;}
-  .summary-table .tense-label{font-size:0.8rem;font-weight:500;color:var(--text-secondary);}
+.tense-card{ border:.5px solid var(--color-border-secondary); border-radius:12px; overflow:hidden; margin-bottom:12px; }
+.tense-head{ padding:9px 14px; border-bottom:.5px solid var(--color-border-secondary); background:var(--surface-1); }
+.tense-name{ font-size:.9333rem; font-weight:500; color:var(--text-primary); }
+.tense-formula{ font-family:var(--font-mono); font-size:.7333rem; color:var(--text-secondary); margin-top:2px; }
+.form-row{ display:flex; align-items:flex-start; gap:8px; padding:8px 14px; border-bottom:.5px solid var(--color-border-secondary); }
+.form-row:last-child{ border-bottom:none; }
+.form-badge{ font-size:.7333rem; font-weight:500; padding:2px 9px; border-radius:20px; border:1px solid transparent; flex-shrink:0; margin-top:1px; white-space:nowrap; }
+.badge-aff{ background:var(--color-background-success); color:var(--color-text-success); }
+.badge-neg{ background:var(--color-background-danger); color:var(--color-text-danger); }
+.form-examples{ display:flex; flex-direction:column; gap:4px; }
+.form-ex{ font-size:.8667rem; color:var(--text-primary); line-height:1.5; }
+.hl-be{ font-weight:500; color:var(--color-text-success); }
+.hl-neg{ font-weight:500; color:var(--color-text-danger); }
+.hl-pp{ font-weight:500; color:var(--color-text-info); }
 
-  .use-grid{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:1.25rem;}
-  .use-card{border:.5px solid var(--color-border-secondary);border-radius:12px;overflow:hidden;}
-  .use-head{padding:9px 14px;border-bottom:.5px solid var(--color-border-secondary);font-size:0.8667rem;font-weight:500;}
-  .use-head-active{background:var(--color-background-info);color:var(--text-accent);}
-  .use-head-passive{background:var(--color-background-info);color:var(--color-text-info);}
-  .use-body{padding:10px 14px;display:flex;flex-direction:column;gap:8px;}
-  .use-point{font-size:0.8667rem;color:var(--text-secondary);line-height:1.5;}
-  .use-point strong{color:var(--color-text-primary);font-weight:500;}
+.summary-table{ width:100%; border-collapse:collapse; font-size:.8667rem; margin-top:.5rem; margin-bottom:1.5rem; }
+.summary-table th{ font-size:.7333rem; font-weight:500; letter-spacing:.05em; text-transform:uppercase; color:var(--text-secondary); text-align:left; padding:6px 10px; border-bottom:1px solid var(--color-border-secondary); background:var(--surface-1); }
+.summary-table td{ padding:7px 10px; border-bottom:.5px solid var(--color-border-secondary); color:var(--text-primary); vertical-align:top; }
+.summary-table tr:last-child td{ border-bottom:none; }
+.summary-table .tense-label{ font-size:.8rem; font-weight:500; color:var(--text-secondary); }
 
-  .compare-row{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:8px;}
-  .compare-card{border:.5px solid var(--color-border-secondary);border-radius:12px;padding:10px 14px;}
-  .compare-tag{font-size:0.7333rem;font-weight:500;padding:2px 9px;border-radius:20px;border:1px solid transparent;margin-bottom:6px;display:inline-block;}
-  .tag-active{background:var(--color-background-info);color:var(--text-accent);}
-  .tag-passive{background:var(--color-background-info);color:var(--color-text-info);}
-  .compare-text{font-size:0.8667rem;color:var(--color-text-primary);line-height:1.5;}
-  .compare-note{font-size:0.7333rem;color:var(--text-muted);margin-top:4px;line-height:1.4;}
-  .gf-pic {width: 50%;border-radius: 18px;}
-  .use-pic{display:flex; flex-direction:column;align-items: center;}
-  @media(max-width:520px){.use-grid,.compare-row{grid-template-columns:1fr;}}
+.pic{ display:flex; flex-direction:column; align-items:center; gap:8px; margin-bottom:1rem; }
+.pic img{ width:50%; min-width:200px; max-width:100%; border-radius:18px; }
+.pic-caps{ display:grid; grid-template-columns:1fr 1fr; gap:10px; width:100%; }
+.pic-cap{ padding:9px 14px; border-radius:12px; font-size:.8667rem; font-weight:700; text-align:center; }
+.use-grid{ display:grid; grid-template-columns:1fr 1fr; gap:10px; margin-bottom:1.25rem; }
+.use-card{ border:.5px solid var(--color-border-secondary); border-radius:12px; overflow:hidden; }
+.use-head{ padding:9px 14px; border-bottom:.5px solid var(--color-border-secondary); font-size:.8667rem; font-weight:500; }
+.use-head-active, .pic-cap.active{ background:var(--color-background-info); color:var(--text-accent); }
+.use-head-passive, .pic-cap.passive{ background:var(--color-background-info); color:var(--color-text-info); }
+.use-body{ padding:10px 14px; display:flex; flex-direction:column; gap:8px; }
+.use-point{ font-size:.8667rem; color:var(--text-secondary); line-height:1.5; }
+
+.compare-row{ display:grid; grid-template-columns:1fr 1fr; gap:10px; margin-bottom:8px; }
+.compare-card{ border:.5px solid var(--color-border-secondary); border-radius:12px; padding:10px 14px; }
+.compare-tag{ font-size:.7333rem; font-weight:500; padding:2px 9px; border-radius:20px; border:1px solid transparent; margin-bottom:6px; display:inline-block; }
+.tag-active{ background:var(--color-background-info); color:var(--text-accent); }
+.tag-passive{ background:var(--color-background-info); color:var(--color-text-info); }
+.compare-text{ font-size:.8667rem; color:var(--text-primary); line-height:1.5; }
+.compare-note{ font-size:.7333rem; color:var(--text-muted); margin-top:4px; line-height:1.4; }
+@media (max-width:520px){ .use-grid, .compare-row, .pic-caps{ grid-template-columns:1fr; } }
 </style>
 </head>
-<body class="exercise-page" id="page">
-<span class="cefr-tag cefr-a2">A2 · Elementary</span>
-<div style="padding:.75rem 0 1rem;">
-  <div class="sec-div">active vs passive — when to use each</div>
- <div class="use-pic"><img class="gf-pic" src="eng_mats_images/passive_active_voice.png">
-  <div class="use-grid"><div class="use-head use-head-active"><b>My sister beat that guy!</b></div><div class="use-head use-head-passive"><b>My brother was beaten by that girl!</b></div></div></div>
+<body>
+<div class="page" id="page">
+  <span class="cefr-tag cefr-a2">A2 · Pre-intermediate</span>
+  <h1>Passive Voice</h1>
+  <p class="subtitle">be + past participle — when the action or the thing is more important than the person who does it</p>
+
+  <div class="sec-div">Active vs passive — when to use each</div>
+  <div class="pic">
+    <img src="eng_mats_images/passive_active_voice.png" alt="A girl beats a boy in a game">
+    <div class="pic-caps">
+      <div class="pic-cap active">Active: My sister beat that guy!</div>
+      <div class="pic-cap passive">Passive: My brother was beaten by that girl!</div>
+    </div>
+  </div>
+
   <div class="use-grid">
     <div class="use-card">
-      <div class="use-head use-head-active">use active voice when…</div>
+      <div class="use-head use-head-active">Use the active voice when…</div>
       <div class="use-body">
         <div class="use-point"><b>the doer is important</b> or is the focus of the sentence</div>
         <div class="use-point"><b>the sentence is clearer or shorter</b> in active form</div>
-        <div class="use-point">writing in a <b>direct, personal style</b> — most everyday speech</div>
+        <div class="use-point">you speak or write in a <b>direct, personal style</b> — most everyday speech</div>
       </div>
     </div>
     <div class="use-card">
-      <div class="use-head use-head-passive">use passive voice when…</div>
+      <div class="use-head use-head-passive">Use the passive voice when…</div>
       <div class="use-body">
         <div class="use-point">the <b>receiver, action or result</b> is more important than the doer</div>
         <div class="use-point">the doer is <b>unknown, obvious, or unimportant</b></div>
-        <div class="use-point">writing in a <b>formal, scientific, or news</b> style</div>
+        <div class="use-point">you write in a <b>formal, scientific, or news</b> style</div>
       </div>
     </div>
   </div>
 
-  <div style="font-size:0.8667rem;color:var(--text-secondary);margin-bottom:1rem;line-height:1.6;">
-    Compare the same idea in both voices:
-  </div>
+  <p class="subtitle">Compare the same idea in both voices:</p>
 
   <div class="compare-row">
     <div class="compare-card">
@@ -144,21 +148,17 @@
     </div>
   </div>
 
-  <div style="font-size:0.8rem;color:var(--text-muted);line-height:1.6;margin-top:.5rem;">
-    Tip: if you can finish the sentence with "…but I don't know who" and it sounds natural, passive voice is probably the better choice.
-  </div>
-
-</div>
+  <p class="tip">Tip: if you can finish the sentence with "…but I don't know who" and it sounds natural, the passive voice is probably the better choice.</p>
 
   <div class="sec-div">The passive keeps the tense</div>
   <div id="timeline"></div>
   <div class="rule-box">The passive does not change <strong>when</strong> something happened — only <strong>who</strong> we put first. The tense lives in <em>be</em>.</div>
+
   <div class="sec-div">Check the meaning</div>
-  <div class="rule-box">Answer the questions about each sentence. These check the <strong>meaning</strong>, not the form.</div>
+  <p class="subtitle">Read the sentence. Answer the questions.</p>
   <div id="ccq"></div>
 
-  <div class="sec-div">formation</div>
-
+  <div class="sec-div">Form</div>
   <div class="formula-box">
     <div class="formula-row">
       <span class="f-part f-sub">subject</span><span class="f-plus">+</span>
@@ -166,21 +166,15 @@
       <span class="f-part f-pp">past participle</span>
     </div>
   </div>
+  <p class="note">The form of <strong>be</strong> changes with the tense. The past participle stays the same.</p>
 
-  <div style="font-size:0.8667rem;color:var(--text-secondary);margin-bottom:1.25rem;line-height:1.6;">
-    The form of <strong style="color:var(--color-text-primary);font-weight:500;">be</strong> changes with the tense. The past participle stays the same.
-  </div>
-
-
-  <div class="sec-div">Work out the form</div>
-  <div class="rule-box">Tap a label, then tap the box <strong>above</strong> the word it describes. Compare the rows — what changes, and what stays exactly the same?</div>
-  <div class="score-bar"><span>Labelled: <strong id="fcScore">0</strong> / <span id="fcTotal">0</span></span></div>
+  <div class="sec-div">Look at the form</div>
+  <p class="subtitle">What is each part of the sentence? Drag a label (or tap a label, then tap a box). Compare the rows — what changes, and what stays the same?</p>
+  <div class="score-bar"><span>Correct: <strong id="fcScore">0</strong> / <span id="fcTotal">0</span></span></div>
   <div id="formClarf"></div>
   <div class="rule-box">Two pieces, always: a form of <em>be</em> plus the <strong>past participle</strong>. Change the tense and only <em>be</em> changes.</div>
 
-
-  <div class="sec-div">present simple passive</div>
-
+  <div class="sec-div">Present simple passive</div>
   <div class="tense-card">
     <div class="tense-head">
       <div class="tense-name">am / is / are + past participle</div>
@@ -202,8 +196,7 @@
     </div>
   </div>
 
-  <div class="sec-div">past simple passive</div>
-
+  <div class="sec-div">Past simple passive</div>
   <div class="tense-card">
     <div class="tense-head">
       <div class="tense-name">was / were + past participle</div>
@@ -225,8 +218,7 @@
     </div>
   </div>
 
-  <div class="sec-div">present perfect passive</div>
-
+  <div class="sec-div">Present perfect passive</div>
   <div class="tense-card">
     <div class="tense-head">
       <div class="tense-name">have / has been + past participle</div>
@@ -248,104 +240,37 @@
     </div>
   </div>
 
-  <div class="sec-div">summary</div>
-
+  <div class="sec-div">Summary</div>
   <table class="summary-table">
     <thead>
       <tr><th>tense</th><th>affirmative</th><th>negative</th></tr>
     </thead>
     <tbody>
-      <tr>
-        <td><span class="tense-label">present simple</span></td>
-        <td>It <strong>is made</strong> here.</td>
-        <td>It <strong>isn't made</strong> here.</td>
-      </tr>
-      <tr>
-        <td><span class="tense-label">past simple</span></td>
-        <td>It <strong>was made</strong> here.</td>
-        <td>It <strong>wasn't made</strong> here.</td>
-      </tr>
-      <tr>
-        <td><span class="tense-label">present perfect</span></td>
-        <td>It <strong>has been made</strong> here.</td>
-        <td>It <strong>hasn't been made</strong> here.</td>
-      </tr>
+      <tr><td><span class="tense-label">present simple</span></td><td>It <strong>is made</strong> here.</td><td>It <strong>isn't made</strong> here.</td></tr>
+      <tr><td><span class="tense-label">past simple</span></td><td>It <strong>was made</strong> here.</td><td>It <strong>wasn't made</strong> here.</td></tr>
+      <tr><td><span class="tense-label">present perfect</span></td><td>It <strong>has been made</strong> here.</td><td>It <strong>hasn't been made</strong> here.</td></tr>
     </tbody>
   </table>
 
-
   <div class="sec-div">Common mistakes</div>
-  <div class="pair-card"><div class="pair-line no"><span class="mark">✗</span>The house was abandon in 1962.</div><div class="pair-line yes"><span class="mark">✓</span>The house was abandoned in 1962.</div></div>
-  <div class="pair-card"><div class="pair-line no"><span class="mark">✗</span>Some photos were find behind the shelf.</div><div class="pair-line yes"><span class="mark">✓</span>Some photos were found behind the shelf.</div></div>
-  <div class="pair-card"><div class="pair-line no"><span class="mark">✗</span>The diary is study by researchers.</div><div class="pair-line yes"><span class="mark">✓</span>The diary is studied by researchers.</div></div>
-  <div class="pair-card"><div class="pair-line no"><span class="mark">✗</span>The mystery has not solved.</div><div class="pair-line yes"><span class="mark">✓</span>The mystery has not been solved.</div></div>
-  <div class="pair-card"><div class="pair-line no"><span class="mark">✗</span>The door was opened by someone. It discovered last year.</div><div class="pair-line yes"><span class="mark">✓</span>It was discovered last year.</div></div>
+  <div id="mistakes"></div>
 
+  <div class="sec-div">Error hunt</div>
+  <p class="subtitle">Some sentences have a mistake. Some are correct! Tap a word — or a space between words — to fix it. Then press OK.</p>
+  <div class="score-bar"><span>Done: <strong id="errorScore">0</strong> / <span id="errorTotal">0</span></span></div>
+  <div id="errorHuntItems"></div>
 
-  <div class="sec-div">Find the mistake</div>
-  <div class="rule-box">Each sentence below has <strong>one or two mistakes</strong> — but <strong>some are already correct</strong>. Tap a word you think is wrong and choose the right one. When you think the sentence is right, press <strong>OK</strong>.</div>
-  <div class="score-bar"><span>Corrected: <strong id="ehScore">0</strong> / <span id="ehTotal">0</span></span></div>
-  <div id="errorHunt"></div>
+  <footer>Passive Voice — Clarification (A2)</footer>
+</div>
 
-  <div id="theme-toggle-wrap">
+<div id="theme-toggle-wrap">
   <button id="theme-toggle" aria-label="Toggle light/dark mode" title="Toggle light/dark mode">
     <span id="theme-icon">☀️</span>
   </button>
 </div>
 <script src="house.js"></script>
 <script>
-const EH_ITEMS = [
-  {
-    "words": ["The", "house", "was", "abandon", "in", "1962", "."],
-    "errors": [ { "type": "wrong", "wordIndex": 3, "options": ["abandoned", "abandon", "abandoning"], "correct": "abandoned" } ]
-  },
-  {
-    "words": ["Some", "photographs", "were", "found", "behind", "the", "bookshelf", "."],
-    "errors": []
-  },
-  {
-    "words": ["The", "diary", "is", "study", "by", "researchers", "."],
-    "errors": [ { "type": "wrong", "wordIndex": 3, "options": ["studied", "study", "studying"], "correct": "studied" } ]
-  },
-  {
-    "words": ["The", "mystery", "has", "not", "solved", "yet", "."],
-    "errors": [ { "type": "wrong", "wordIndex": 4, "options": ["been solved", "solved", "solve"], "correct": "been solved" } ]
-  },
-  {
-    "words": ["The", "bridge", "was", "built", "in", "1890", "."],
-    "errors": []
-  },
-  {
-    "words": ["The", "photos", "was", "taken", "last", "year", "."],
-    "errors": [ { "type": "wrong", "wordIndex": 2, "options": ["were", "was", "are"], "correct": "were" } ]
-  },
-  {
-    "words": ["When", "the", "house", "was", "built", "?"],
-    "errors": [ { "type": "misplaced", "wordIndex": 3, "targetGapIndex": 1 } ]
-  }
-];
-
-HouseErrorHunt.build({
-  container: "errorHunt",
-  items: EH_ITEMS,
-  scoreEl: "ehScore",
-  totalEl: "ehTotal"
-});
-</script>
-<script>
-HouseFormClarf.build({
-  container: 'formClarf',
-  scoreEl: 'fcScore', totalEl: 'fcTotal',
-  pool: ["wh", "subject", "aux", "neg", "part", "object", "time"],
-  items: [
-    { form: "aff", parts: [["The house", "subject"], ["was", "aux"], ["abandoned", "part"], ["in 1962", "time"], [".", null]] },
-    { form: "aff", parts: [["Some photos", "subject"], ["were", "aux"], ["found", "part"], ["behind the bookshelf", "object"], [".", null]] },
-    { form: "neg", parts: [["The mystery", "subject"], ["hasn't", "neg"], ["been", "aux"], ["solved", "part"], [".", null]] },
-    { form: "wh", parts: [["When", "wh"], ["was", "aux"], ["the house", "subject"], ["built", "part"], ["?", null]] }
-  ]
-});
-</script>
-<script>
+/* ── the passive keeps the tense ───────────────────────────────────────── */
 HouseTimeline.build({
   container: 'timeline',
   startLabel: 'Past', nowNote: 'now',
@@ -359,6 +284,7 @@ HouseTimeline.build({
   caption: 'Three passives, three different times — the tense is in was / has been / is.'
 });
 
+/* ── concept checking questions ────────────────────────────────────────── */
 HouseCCQ.build({
   container: 'ccq',
   items: [
@@ -368,16 +294,61 @@ HouseCCQ.build({
           why: 'No — and that is usually why we choose the passive. The doer is unknown or not important.' },
         { q: 'Is the house the doer or the receiver?', opts: ['The doer', 'The receiver'], correct: 1,
           why: 'The receiver. In a passive, the thing affected comes first.' }
-      ]},
+      ] },
     { sentence: 'Some photographs were found behind the bookshelf.',
       questions: [
         { q: 'Is this past or present?', opts: ['Past', 'Present'], correct: 0,
           why: 'Past — <em>were</em> carries the tense, exactly as in the active.' }
-      ]}
+      ] }
   ]
 });
 
-HouseGrammar.init();
+/* ── form ──────────────────────────────────────────────────────────────── */
+HouseFormClarf.build({
+  container: 'formClarf', scoreEl: 'fcScore', totalEl: 'fcTotal',
+  pool: ['wh', 'subject', 'aux', 'neg', 'part', 'object', 'time'],
+  items: [
+    { form: 'aff', parts: [['The house', 'subject'], ['was', 'aux'], ['abandoned', 'part'], ['in 1962', 'time'], ['.', null]] },
+    { form: 'aff', parts: [['Some photos', 'subject'], ['were', 'aux'], ['found', 'part'], ['behind the bookshelf', 'object'], ['.', null]] },
+    { form: 'neg', parts: [['The mystery', 'subject'], ['hasn’t', 'neg'], ['been', 'aux'], ['solved', 'part'], ['.', null]] },
+    { form: 'wh',  parts: [['When', 'wh'], ['was', 'aux'], ['the house', 'subject'], ['built', 'part'], ['?', null]] }
+  ]
+});
+
+/* ── common mistakes ───────────────────────────────────────────────────── */
+const MISTAKES = [
+  ['The house was abandon in 1962.', 'The house was abandoned in 1962.'],
+  ['Some photos were find behind the shelf.', 'Some photos were found behind the shelf.'],
+  ['The diary is study by researchers.', 'The diary is studied by researchers.'],
+  ['The mystery has not solved.', 'The mystery has not been solved.'],
+  ['The door discovered last year.', 'The door was discovered last year.']
+];
+document.getElementById('mistakes').innerHTML = MISTAKES.map(([no, yes]) =>
+  '<div class="pair-card"><div class="pair-line no"><span class="mark">✗</span>' + no + '</div>' +
+  '<div class="pair-line yes"><span class="mark">✓</span>' + yes + '</div></div>').join('');
+
+/* ── error hunt (A2: some sentences are already correct; none repeat the common mistakes) ── */
+const EH_ITEMS = [
+  { words: ['The', 'museum', 'was', 'open', 'in', '1995', '.'],
+    error: { type: 'wrong', wordIndex: 3, options: ['opened', 'opening', 'opens'], correct: 'opened' } },
+  { words: ['The', 'letters', 'were', 'write', 'by', 'hand', '.'],
+    error: { type: 'wrong', wordIndex: 3, options: ['written', 'wrote', 'writing'], correct: 'written' } },
+  { words: ['These', 'phones', 'are', 'made', 'in', 'China', '.'], error: null },
+  { words: ['The', 'bridge', 'has', 'repaired', '.'],
+    error: { type: 'missing', gapIndex: 3, options: ['been', 'be', 'being'], correct: 'been' } },
+  { words: ['The', 'room', 'cleaned', 'every', 'day', '.'],
+    error: { type: 'missing', gapIndex: 2, options: ['is', 'has', 'does'], correct: 'is' } },
+  { words: ['The', 'bridge', 'was', 'built', 'in', '1890', '.'], error: null },
+  { words: ['The', 'photos', 'was', 'taken', 'last', 'year', '.'],
+    error: { type: 'wrong', wordIndex: 2, options: ['were', 'was', 'are'], correct: 'were' } },
+  { words: ['When', 'the', 'house', 'was', 'built', '?'],
+    error: { type: 'misplaced', wordIndex: 3, targetGapIndex: 1 } },
+  { words: ['The', 'windows', 'weren’t', 'cleaned', 'last', 'week', '.'], error: null },
+  { words: ['Hamlet', 'was', 'written', 'from', 'Shakespeare', '.'],
+    error: { type: 'wrong', wordIndex: 3, options: ['by', 'of', 'with'], correct: 'by' } }
+];
+HouseErrorHunt.build({ container: 'errorHuntItems', items: EH_ITEMS, scoreEl: 'errorScore', totalEl: 'errorTotal' });
 </script>
+<script>HouseGrammar.init();</script>
 </body>
 </html>

@@ -12,6 +12,8 @@
       ? saved
       : ((window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches) ? 'dark' : 'light');
     document.documentElement.setAttribute('data-theme', theme);
+    var fs = parseFloat(localStorage.getItem('font-size-preference'));
+    if (fs >= 10 && fs <= 28) document.documentElement.style.setProperty('--fs-base', fs + 'px');
   }catch(e){ /* localStorage/matchMedia unavailable — CSS media query still applies */ }
 })();
 </script>
@@ -25,12 +27,6 @@
 .prep-sentence{ font-size:.9333rem; color:var(--text-primary); margin:6px 4px 0; line-height:1.5; }
 /* the target language is the lesson, so it stays coloured (not a grammar-toggle colour) */
 .tgt{ color:var(--text-accent); font-weight:700; }
-
-.pair-card{ background:var(--surface-2); border:1px solid var(--color-border-tertiary); border-radius:12px; padding:10px 12px; margin-bottom:8px; }
-.pair-line{ font-size:.9333rem; line-height:1.7; padding:2px 0; }
-.pair-line.no{ color:var(--bad); }
-.pair-line.yes{ color:var(--good); font-weight:600; }
-.mark{ font-weight:700; margin-right:5px; }
 .rule-box p{ margin:0 0 6px; }
 .rule-box p:last-child{ margin-bottom:0; }
 /* emoji pictures above the sentences: ❌ laid over a thing = there isn't one */
@@ -200,22 +196,24 @@ document.getElementById('mistakes').innerHTML = MISTAKES.map(([no, yes]) =>
   '<div class="pair-card"><div class="pair-line no"><span class="mark">✗</span>' + no + '</div>' +
   '<div class="pair-line yes"><span class="mark">✓</span>' + yes + '</div></div>').join('');
 
-/* ── error hunt ────────────────────────────────────────────────────────── */
+/* ── error hunt (A1: every sentence has one mistake; none repeat the common mistakes) ── */
 const EH_ITEMS = [
-  { words: ['There', 'is', 'two', 'chairs', 'in', 'the', 'kitchen', '.'],
+  { words: ['There', 'is', 'three', 'beds', 'in', 'the', 'bedroom', '.'],
     error: { type: 'wrong', wordIndex: 1, options: ['are', 'am', 'be'], correct: 'are' } },
-  { words: ['There', 'are', 'a', 'dining', 'table', 'in', 'the', 'kitchen', '.'],
+  { words: ['There', 'are', 'a', 'fridge', 'in', 'the', 'kitchen', '.'],
     error: { type: 'wrong', wordIndex: 1, options: ['is', 'am', 'be'], correct: 'is' } },
-  { words: ['Have', 'a', 'sofa', 'in', 'the', 'living', 'room', '.'],
-    error: { type: 'wrong', wordIndex: 0, options: ['There’s', 'It', 'Is'], correct: 'There’s' } },
-  { words: ['There', 'aren’t', 'chairs', 'in', 'the', 'bedroom', '.'],
-    error: { type: 'missing', gapIndex: 2, options: ['any', 'a', 'one'], correct: 'any' } },
-  { words: ['Is', 'there', 'any', 'plants', '?'],
+  { words: ['There', 'have', 'two', 'bathrooms', '.'],
+    error: { type: 'wrong', wordIndex: 1, options: ['are', 'is', 'has'], correct: 'are' } },
+  { words: ['There', 'is', 'sofa', 'in', 'the', 'living', 'room', '.'],
+    error: { type: 'missing', gapIndex: 2, options: ['a', 'an', 'any'], correct: 'a' } },
+  { words: ['There', 'isn’t', 'any', 'plants', 'in', 'the', 'kitchen', '.'],
+    error: { type: 'wrong', wordIndex: 1, options: ['aren’t', 'don’t', 'not'], correct: 'aren’t' } },
+  { words: ['Is', 'there', 'two', 'bathrooms', '?'],
     error: { type: 'wrong', wordIndex: 0, options: ['Are', 'Am', 'Do'], correct: 'Are' } },
-  { words: ['Yes,', 'there’s', '.'],
-    error: { type: 'wrong', wordIndex: 1, options: ['there is', 'there are', 'it’s'], correct: 'there is' } },
-  { words: ['How', 'many', 'chairs', 'there', 'are', '?'],
-    error: { type: 'misplaced', wordIndex: 4, targetGapIndex: 3 } }
+  { words: ['Are', 'there', 'any', 'chairs', '?', 'Yes', ',', 'there', 'is', '.'],
+    error: { type: 'wrong', wordIndex: 8, options: ['are', 'am', 'have'], correct: 'are' } },
+  { words: ['How', 'many', 'plants', 'is', 'there', '?'],
+    error: { type: 'wrong', wordIndex: 3, options: ['are', 'am', 'do'], correct: 'are' } }
 ];
 HouseErrorHunt.build({ container: 'errorHuntItems', items: EH_ITEMS, scoreEl: 'errorScore', totalEl: 'errorTotal' });
 </script>

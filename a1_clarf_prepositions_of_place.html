@@ -12,6 +12,8 @@
       ? saved
       : ((window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches) ? 'dark' : 'light');
     document.documentElement.setAttribute('data-theme', theme);
+    var fs = parseFloat(localStorage.getItem('font-size-preference'));
+    if (fs >= 10 && fs <= 28) document.documentElement.style.setProperty('--fs-base', fs + 'px');
   }catch(e){ /* localStorage/matchMedia unavailable — CSS media query still applies */ }
 })();
 </script>
@@ -29,12 +31,6 @@
 .tgt-place{ color:var(--pos-noun); font-weight:700; }      /* the furniture it is on / under / next to… */
 .tgt-key{ display:flex; flex-wrap:wrap; gap:6px 14px; font-size:.8667rem; margin:0 0 10px; }
 .tgt-key span{ padding:2px 9px; border-radius:999px; background:var(--surface-2); border:1px solid var(--color-border-tertiary); }
-
-.pair-card{ background:var(--surface-2); border:1px solid var(--color-border-tertiary); border-radius:12px; padding:10px 12px; margin-bottom:8px; }
-.pair-line{ font-size:.9333rem; line-height:1.7; padding:2px 0; }
-.pair-line.no{ color:var(--bad); }
-.pair-line.yes{ color:var(--good); font-weight:600; }
-.mark{ font-weight:700; margin-right:5px; }
 .rule-box p{ margin:0 0 6px; }
 .rule-box p:last-child{ margin-bottom:0; }
 </style>
@@ -68,38 +64,7 @@
   </div>
 
   <div class="sec-div">Common mistakes</div>
-  <div class="pair-card">
-    <div class="pair-line no"><span class="mark">✗</span>The lamp is next the sofa.</div>
-    <div class="pair-line yes"><span class="mark">✓</span>The lamp is next to the sofa.</div>
-  </div>
-  <div class="pair-card">
-    <div class="pair-line no"><span class="mark">✗</span>The bookcase is behind of the sofa.</div>
-    <div class="pair-line yes"><span class="mark">✓</span>The bookcase is behind the sofa.</div>
-  </div>
-  <div class="pair-card">
-    <div class="pair-line no"><span class="mark">✗</span>The rug is in front the sofa.</div>
-    <div class="pair-line yes"><span class="mark">✓</span>The rug is in front of the sofa.</div>
-  </div>
-  <div class="pair-card">
-    <div class="pair-line no"><span class="mark">✗</span>The books are under of the coffee table.</div>
-    <div class="pair-line yes"><span class="mark">✓</span>The books are under the coffee table.</div>
-  </div>
-  <div class="pair-card">
-    <div class="pair-line no"><span class="mark">✗</span>The lamp is in the coffee table.</div>
-    <div class="pair-line yes"><span class="mark">✓</span>The lamp is on the coffee table.</div>
-  </div>
-  <div class="pair-card">
-    <div class="pair-line no"><span class="mark">✗</span>The lamp is on coffee table.</div>
-    <div class="pair-line yes"><span class="mark">✓</span>The lamp is on the coffee table.</div>
-  </div>
-  <div class="pair-card">
-    <div class="pair-line no"><span class="mark">✗</span>Where the books are?</div>
-    <div class="pair-line yes"><span class="mark">✓</span>Where are the books?</div>
-  </div>
-  <div class="pair-card">
-    <div class="pair-line no"><span class="mark">✗</span>The side table is between the sofa or the armchair.</div>
-    <div class="pair-line yes"><span class="mark">✓</span>The side table is between the sofa and the armchair.</div>
-  </div>
+  <div id="mistakes"></div>
 
   <div class="sec-div">Error hunt</div>
   <p class="subtitle">Every sentence has one mistake. Tap a word — or a space between words — to fix it. Then press OK.</p>
@@ -201,22 +166,39 @@ HouseFormClarf.build({
   ]
 });
 
-/* ── error hunt ────────────────────────────────────────────────────────── */
+/* ── common mistakes ───────────────────────────────────────────────────── */
+const MISTAKES = [
+  ['The lamp is next the sofa.', 'The lamp is next to the sofa.'],
+  ['The bookcase is behind of the sofa.', 'The bookcase is behind the sofa.'],
+  ['The rug is in front the sofa.', 'The rug is in front of the sofa.'],
+  ['The books are under of the coffee table.', 'The books are under the coffee table.'],
+  ['The lamp is in the coffee table.', 'The lamp is on the coffee table.'],
+  ['The lamp is on coffee table.', 'The lamp is on the coffee table.'],
+  ['Where the books are?', 'Where are the books?'],
+  ['The side table is between the sofa or the armchair.', 'The side table is between the sofa and the armchair.']
+];
+document.getElementById('mistakes').innerHTML = MISTAKES.map(([no, yes]) =>
+  '<div class="pair-card"><div class="pair-line no"><span class="mark">✗</span>' + no + '</div>' +
+  '<div class="pair-line yes"><span class="mark">✓</span>' + yes + '</div></div>').join('');
+
+/* ── error hunt (A1: every sentence has one mistake; none repeat the common mistakes) ── */
 const EH_ITEMS = [
-  { words: ['The', 'lamp', 'is', 'next', 'the', 'sofa', '.'],
+  { words: ['The', 'plant', 'is', 'next', 'the', 'armchair', '.'],
     error: { type: 'missing', gapIndex: 4, options: ['to', 'of', 'at'], correct: 'to' } },
-  { words: ['The', 'bookcase', 'is', 'behind', 'of', 'the', 'sofa', '.'],
+  { words: ['The', 'cat', 'is', 'behind', 'of', 'the', 'TV', '.'],
     error: { type: 'extra', wordIndex: 4 } },
-  { words: ['The', 'rug', 'is', 'in', 'front', 'the', 'sofa', '.'],
-    error: { type: 'missing', gapIndex: 5, options: ['of', 'to', 'at'], correct: 'of' } },
+  { words: ['The', 'TV', 'is', 'in', 'front', 'to', 'the', 'sofa', '.'],
+    error: { type: 'wrong', wordIndex: 5, options: ['of', 'at', 'on'], correct: 'of' } },
   { words: ['The', 'books', 'is', 'under', 'the', 'coffee', 'table', '.'],
     error: { type: 'wrong', wordIndex: 2, options: ['are', 'am', 'be'], correct: 'are' } },
-  { words: ['The', 'lamp', 'is', 'on', 'coffee', 'table', '.'],
+  { words: ['The', 'plant', 'is', 'on', 'floor', '.'],
     error: { type: 'missing', gapIndex: 4, options: ['the', 'of', 'to'], correct: 'the' } },
-  { words: ['Where', 'the', 'books', 'are', '?'],
+  { words: ['Where', 'the', 'lamp', 'is', '?'],
     error: { type: 'misplaced', wordIndex: 3, targetGapIndex: 1 } },
-  { words: ['The', 'plant', 'is', 'between', 'the', 'sofa', 'or', 'the', 'armchair', '.'],
-    error: { type: 'wrong', wordIndex: 6, options: ['and', 'with', 'to'], correct: 'and' } }
+  { words: ['The', 'rug', 'is', 'between', 'the', 'sofa', 'with', 'the', 'TV', '.'],
+    error: { type: 'wrong', wordIndex: 6, options: ['and', 'or', 'to'], correct: 'and' } },
+  { words: ['The', 'books', 'are', 'in', 'the', 'coffee', 'table', '.'],
+    error: { type: 'wrong', wordIndex: 3, options: ['on', 'of', 'at'], correct: 'on' } }
 ];
 HouseErrorHunt.build({ container: 'errorHuntItems', items: EH_ITEMS, scoreEl: 'errorScore', totalEl: 'errorTotal' });
 </script>
