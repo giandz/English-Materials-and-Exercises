@@ -47,9 +47,10 @@
                                                 from the water to the deck), facing the deck all the way,
                                                 played with going-upstairs (backwards going down);
                                                 at(t) says swim, and sink: 0 on the deck … 1 swimming
-       { reach: 'open' | 'close', door, x, y, facing, dur }   a hand out in front and back (opening or
-                                                closing a door): trip.events gets { t, door, L, action }
-                                                at the middle of it, when the door should open or shut
+       { reach: 'open' | 'close' | 'flick' | 'high', door, x, y, facing, dur, toggle }   a hand out in front and back (opening
+                                                or closing a door, flicking a switch): trip.events gets
+                                                { t, door, L, action, toggle } at the middle of it, when the
+                                                door should open or shut (toggle: whatever the page passed)
        { stand: seconds, x, y, facing }         wait
        { act: id, x, y, facing, into: true }    get into one of the ACTS below (eased from standing
                                                 into its pose, then doing it for a moment)
@@ -484,7 +485,9 @@
   const TURN_RATE = 420;   // degrees a second, turning on the spot or at a corner
   /* a hand out to a door handle: the upper arm forward (closing: about half as far, from 8°
      standing), the forearm bent well up from the elbow */
-  const REACH = { open: { shoulderR: 72, elbowR: 55, wristR: 0 }, close: { shoulderR: 40, elbowR: 55, wristR: 0 } };
+  const REACH = { open: { shoulderR: 72, elbowR: 55, wristR: 0 }, close: { shoulderR: 40, elbowR: 55, wristR: 0 },
+    flick: { shoulderR: 85, elbowR: 35, wristR: 0 },   // a light switch, at chest height
+    high: { shoulderR: 130, elbowR: 25, wristR: 0 } };  // curtains or a blind, up at the top of the window
   function sizeOf(character) {
     // how tall they are, against an average adult: strides scale with it
     const H = HC(), d = H.normalize(character);
@@ -542,7 +545,7 @@
         if (L.facing != null) facing = L.facing;
         const dur = L.dur || 0.7;
         plan.push({ kind: 'reach', t0: t, dur, x, y, facing, L: floor, seg, action: L.reach, door: L.door });
-        events.push({ t: t + dur / 2, door: L.door, L: floor, action: L.reach });
+        events.push({ t: t + dur / 2, door: L.door, L: floor, action: L.reach, toggle: L.toggle || null });
         t += dur;
       } else if (L.turn != null) {
         const f1 = ((L.turn % 360) + 360) % 360, big = Math.abs(turnTo(facing, f1));
