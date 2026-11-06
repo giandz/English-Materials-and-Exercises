@@ -2000,11 +2000,29 @@
                  in the sentence). Moving a word into or out of the
                  sentence-initial slot re-capitalizes both words involved
                  automatically.
+                 Adjacent swaps: when the misplaced word is only ONE word away
+                 from its right place ("Where I can find…"), the move can be
+                 started from either word — moving "can" before "I" or "I"
+                 after "can" both fix it.
+                 Drag: after choosing Move, the student can drag that word
+                 onto a gap instead of tapping one (the gaps double as drop
+                 targets). A correct drop does the move; a wrong one flashes
+                 red, exactly like a wrong tap. Words can't be dragged before
+                 Move is chosen.
    A tapped gap only ever offers Insert — deleting or moving "nothing" makes
    no sense. Wrong action/word/destination flashes the offending chip(s) red
    and shakes them, then the popover closes so the student can try again.
    Some sentences can have no error at all (error: null) — OK on those just
    confirms "✓ Correct — nothing was wrong!" instead of "✓ Fixed!".
+
+   Capitals: whenever a word lands in the first slot (a MISSING word inserted
+   at gapIndex 0, a move to gap 0, or the first word DELETED), it gets a
+   capital letter and the word it pushes out of first place loses its own.
+   Some words keep their capital wherever they are. Built in: I (and I'm,
+   I'll, I'd, I've), Mr. / Mrs. / Ms. / Dr. / Prof., words with a capital
+   inside (TV, OK, McDonald's) and letter-hyphen words (T-shirt, U-turn).
+   Add others — names, places — with keepCaps, for the whole set or for one
+   item:  build({ …, keepCaps: ['Ben', 'Lima'] })  ·  { words, error, keepCaps: ['Kate'] }
 
    Usage:
      HouseErrorHunt.build({
@@ -2012,7 +2030,8 @@
        items: EH_ITEMS,          // see item shape below
        scoreEl: 'ehScore',       // element id for the running "fixed" count
        totalEl: 'ehTotal',       // element id for the item count
-       prompt: 'optional hint shown once above all the sentences'
+       prompt: 'optional hint shown once above all the sentences',
+       keepCaps: ['Ben']         // optional: words that never lose their capital
      });
 
    Item shape — one of:
@@ -2058,7 +2077,15 @@
     + '.eh2-verdict{ font-size:13px; margin-top:6px; min-height:18px; }'
     + '.eh2-verdict.correct{ color:var(--good); font-weight:600; }'
     + '.eh2-verdict.incorrect{ color:var(--bad); }'
-    + '.eh2-prompt{ font-size:13px; color:var(--text-secondary); margin-bottom:10px; }';
+    + '.eh2-prompt{ font-size:13px; color:var(--text-secondary); margin-bottom:10px; }'
+    // drag to move: the original chip fades, a ghost follows the pointer, gaps light up as drop targets
+    + '.eh2-word{ user-select:none; -webkit-user-select:none; }'
+    + '.eh2-word.movable{ touch-action:none; cursor:grab; background:var(--color-background-info); border-color:var(--text-accent); color:var(--text-accent); }'
+    + '.eh2-word.drag-src{ opacity:.35; }'
+    + '.eh2-sentence.dragging .eh2-gap:not(.no-dot):not(.drag-self){ background:var(--surface-1); border-color:var(--border); border-style:dashed; }'
+    + '.eh2-sentence.dragging .eh2-gap:not(.no-dot):not(.drag-self)::after{ opacity:1; }'
+    + '.eh2-sentence.dragging .eh2-gap.drop-hover{ background:var(--color-background-info); border-color:var(--text-accent); border-style:solid; color:var(--text-accent); }'
+    + '.eh2-ghost{ position:fixed; z-index:1000; pointer-events:none; padding:4px 10px; border-radius:8px; font-size:15px; font-weight:600; color:var(--text-accent); background:var(--surface-1); border:1px solid var(--text-accent); box-shadow:0 6px 16px rgba(0,0,0,0.2); transform:translate(-50%, -60%); white-space:nowrap; }';
 
   function injectStyles() {
     if (document.getElementById(STYLE_ID)) return;
@@ -2082,6 +2109,15 @@
   function capitalizeFirst(s) { return s.charAt(0).toUpperCase() + s.slice(1); }
   function decapitalizeFirst(s) { return s.charAt(0).toLowerCase() + s.slice(1); }
 
+  // Words that keep their capital letter wherever they are in a sentence.
+  var TITLES = /^(Mr|Mrs|Ms|Dr|Prof|St)\.$/;
+  function builtInKeepCaps(w) {
+    return /^I(['’](m|ll|d|ve|s))?$/.test(w) ||   // I, I'm, I'll…
+           TITLES.test(w) ||                       // Mr. Smith
+           /^[A-Z][-.]/.test(w) ||                 // T-shirt, U-turn, D.C.
+           /[A-Z]/.test(w.slice(1));               // TV, OK, McDonald's
+  }
+
   function build(opts) {
     injectStyles();
 
@@ -2101,6 +2137,7 @@
 
     var fixedCount = 0;
     var counted = new Set();
+    var globalKeep = opts.keepCaps || [];
 
     items.forEach(function (item, idx) { renderSentence(item, idx); });
 
@@ -2135,9 +2172,32 @@
       var resolved = !item.error; // error-free sentences start already "solved"
       var activeTarget = null;    // { kind: 'word'|'gap', index }
       var pickingDestination = false;
+      var moveSrc = null;         // index of the word being moved (tap-to-move)
       var anchorEl = null;
       var gapEls = [];
       var wordEls = [];
+      var suppressClick = false;  // a drag ends with a click event — ignore it
+      var itemKeep = item.keepCaps || [];
+
+      function keepsCaps(w) {
+        var bare = w.replace(/[.,!?;:"“”]+$/, '');
+        return builtInKeepCaps(bare) || globalKeep.indexOf(w) !== -1 || globalKeep.indexOf(bare) !== -1 ||
+               itemKeep.indexOf(w) !== -1 || itemKeep.indexOf(bare) !== -1;
+      }
+      function lowerUnlessKept(w) { return keepsCaps(w) ? w : decapitalizeFirst(w); }
+
+      // Which words can start the move, and where each must go. Normally only
+      // the misplaced word itself; when it is just ONE word away from its
+      // right place, the neighbour it swaps with is an equally good start
+      // ("Where I can…": move "can" to before "I", or "I" to after "can").
+      function moveSolutions() {
+        var e = item.error, sols = {};
+        if (!e || e.type !== 'misplaced') return sols;
+        sols[e.wordIndex] = e.targetGapIndex;
+        if (e.targetGapIndex === e.wordIndex + 2) sols[e.wordIndex + 1] = e.wordIndex;
+        else if (e.targetGapIndex === e.wordIndex - 1) sols[e.wordIndex - 1] = e.wordIndex + 1;
+        return sols;
+      }
 
       function buildSentenceDOM() {
         sentEl.innerHTML = '';
@@ -2155,7 +2215,11 @@
               var w = document.createElement('span');
               w.className = 'eh2-word';
               w.textContent = item.words[i];
-              w.addEventListener('click', function () { onWordClick(i); });
+              w.addEventListener('click', function () {
+                if (suppressClick) { suppressClick = false; return; }
+                onWordClick(i);
+              });
+              attachDrag(w, i);
               sentEl.appendChild(w);
               wordEls[i] = w;
             }
@@ -2167,7 +2231,7 @@
         var e = item.error;
         if (!e) return false;
         return (e.type === 'extra' && e.wordIndex === i) ||
-               (e.type === 'misplaced' && e.wordIndex === i) ||
+               (e.type === 'misplaced' && moveSolutions().hasOwnProperty(i)) ||
                (e.type === 'wrong' && e.wordIndex === i);
       }
       function isErrorGap(i) {
@@ -2182,7 +2246,9 @@
         activeTarget = null;
         anchorEl = null;
         pickingDestination = false;
+        moveSrc = null;
         gapEls.forEach(function (g) { g.classList.remove('target-pick'); });
+        wordEls.forEach(function (w) { if (w) w.classList.remove('movable'); });
       }
 
       // Centers the menu horizontally on whichever chip opened it, with its
@@ -2217,20 +2283,15 @@
 
       function onGapClick(i) {
         if (pickingDestination) {
-          var e = item.error;
+          var src = moveSrc;
           // The two gaps immediately touching the word itself aren't real
           // destinations — moving it there is a no-op. They were never
           // offered as options (see startDestinationPick), so a click here
           // shouldn't register as an attempt at all, right or wrong.
-          if (i === e.wordIndex || i === e.wordIndex + 1) return;
-          if (e.type === 'misplaced' && i === e.targetGapIndex) {
-            performMove(e.wordIndex, i);
-            resolved = true;
-            closeMenu();
-          } else {
-            flashWrong([wordEls[e.wordIndex], gapEls[i]]);
-            closeMenu();
-          }
+          if (i === src || i === src + 1) return;
+          if (gapEls[i].classList.contains('no-dot')) return;
+          tryMove(src, i);
+          closeMenu();
           return;
         }
         if (resolved) return;
@@ -2292,6 +2353,8 @@
         if (action === 'delete') {
           if (e.type === 'extra' && t.kind === 'word' && t.index === e.wordIndex) {
             removeWordAndGaps(t.index);
+            // the first word was deleted: the next one now starts the sentence
+            if (t.index === 0 && wordEls[1]) wordEls[1].textContent = capitalizeFirst(wordEls[1].textContent);
             resolved = true;
             closeMenu();
           } else {
@@ -2301,8 +2364,8 @@
           return;
         }
         if (action === 'move') {
-          if (e.type === 'misplaced' && t.kind === 'word' && t.index === e.wordIndex) {
-            startDestinationPick();
+          if (e.type === 'misplaced' && t.kind === 'word' && moveSolutions().hasOwnProperty(t.index)) {
+            startDestinationPick(t.index);
           } else {
             flashWrong([targetEl]);
             closeMenu();
@@ -2338,31 +2401,120 @@
         positionMenu();
       }
 
-      function startDestinationPick() {
+      function startDestinationPick(src) {
         menuEl.innerHTML = '';
         var hint = document.createElement('div');
         hint.className = 'eh2-menu-hint';
-        hint.textContent = 'Where to?';
+        hint.textContent = 'Where to? Tap a space — or drag the word there.';
         menuEl.appendChild(hint);
         menuEl.classList.add('open');
         pickingDestination = true;
-        var e = item.error;
+        moveSrc = src;
+        wordEls[src].classList.add('movable');   // only this word can be dragged, and only now
         gapEls.forEach(function (g, i) {
           // A gap right after sentence-ending punctuation isn't a real
           // position in the sentence — never offer it as a move destination.
           if (i > 0 && ENDERS.indexOf(item.words[i - 1]) !== -1) return;
           // Nor are the two gaps immediately touching the word being moved —
           // dropping it right back next to itself doesn't move anything.
-          if (i === e.wordIndex || i === e.wordIndex + 1) return;
+          if (i === src || i === src + 1) return;
           g.classList.add('target-pick');
         });
         positionMenu();
       }
 
+      // One check for both tap-to-move and drag-to-move.
+      function tryMove(src, gapIndex) {
+        var sols = moveSolutions();
+        if (!resolved && sols.hasOwnProperty(src) && sols[src] === gapIndex) {
+          performMove(src, gapIndex);
+          resolved = true;
+        } else {
+          flashWrong([wordEls[src], gapEls[gapIndex]]);
+        }
+      }
+
+      /* ── drag to move ─────────────────────────────────────────────────────
+         Only after ↔️ Move: the word being moved (and only that word) can be
+         dragged instead of tapping a gap. Past a small threshold a ghost
+         follows the pointer and the gaps light up as drop targets; releasing
+         over a gap tries the move. A tiny wobble is still a tap. */
+      function attachDrag(w, i) {
+        var start = null, dragging = false, ghost = null, overGap = -1;
+
+        function gapAt(x, y) {
+          var els = document.elementsFromPoint(x, y);
+          for (var k = 0; k < els.length; k++) {
+            var gi = gapEls.indexOf(els[k]);
+            if (gi !== -1) return gi;
+          }
+          return -1;
+        }
+        function setHover(gi) {
+          if (overGap !== -1 && gapEls[overGap]) gapEls[overGap].classList.remove('drop-hover');
+          overGap = gi;
+          if (gi !== -1 && gi !== i && gi !== i + 1 && !gapEls[gi].classList.contains('no-dot')) gapEls[gi].classList.add('drop-hover');
+        }
+        function end() {
+          if (ghost && ghost.parentNode) ghost.parentNode.removeChild(ghost);
+          ghost = null;
+          w.classList.remove('drag-src');
+          sentEl.classList.remove('dragging');
+          gapEls.forEach(function (g) { g.classList.remove('drop-hover', 'drag-self'); });
+          overGap = -1; start = null; dragging = false;
+        }
+
+        w.addEventListener('pointerdown', function (ev) {
+          if (resolved || ev.button > 0 || !pickingDestination || moveSrc !== i) return;
+          start = { x: ev.clientX, y: ev.clientY, id: ev.pointerId };
+          dragging = false;
+        });
+        w.addEventListener('pointermove', function (ev) {
+          if (!start || ev.pointerId !== start.id) return;
+          if (!dragging) {
+            if (Math.abs(ev.clientX - start.x) + Math.abs(ev.clientY - start.y) < 8) return;
+            dragging = true;
+            try { w.setPointerCapture(ev.pointerId); } catch (err) { /* already released */ }
+            closeMenu();
+            w.classList.add('drag-src');
+            sentEl.classList.add('dragging');
+            if (gapEls[i]) gapEls[i].classList.add('drag-self');
+            if (gapEls[i + 1]) gapEls[i + 1].classList.add('drag-self');
+            ghost = document.createElement('span');
+            ghost.className = 'eh2-ghost';
+            ghost.textContent = w.textContent;
+            document.body.appendChild(ghost);
+          }
+          ev.preventDefault();
+          ghost.style.left = ev.clientX + 'px';
+          ghost.style.top = ev.clientY + 'px';
+          setHover(gapAt(ev.clientX, ev.clientY));
+        });
+        w.addEventListener('pointerup', function (ev) {
+          if (!start || ev.pointerId !== start.id) return;
+          if (!dragging) { start = null; return; }   // a tap: the click handler takes it
+          var gi = gapAt(ev.clientX, ev.clientY);
+          end();
+          suppressClick = true;
+          setTimeout(function () { suppressClick = false; }, 0);
+          // dropped back where it was, after a ".", or outside any gap: nothing happens
+          if (gi === -1 || gi === i || gi === i + 1 || gapEls[gi].classList.contains('no-dot')) return;
+          tryMove(i, gi);
+        });
+        w.addEventListener('pointercancel', end);
+      }
+
       function insertWordAt(gapIndex, word) {
         var chip = document.createElement('span');
         chip.className = 'eh2-word inserted';
-        chip.textContent = word;
+        // A word inserted in front of the sentence starts it: capital letter,
+        // and the old first word loses its own (unless it always keeps it).
+        if (gapIndex === 0) {
+          chip.textContent = capitalizeFirst(word);
+          if (wordEls[0]) wordEls[0].textContent = lowerUnlessKept(wordEls[0].textContent);
+        } else {
+          chip.textContent = word;
+        }
         gapEls[gapIndex].insertAdjacentElement('afterend', chip);
 
         var dot = document.createElement('span');
@@ -2416,7 +2568,7 @@
         // capitalized, everything else isn't.
         var displayWord = willBeFirst
           ? capitalizeFirst(originalWord)
-          : (wasFirst ? decapitalizeFirst(originalWord) : originalWord);
+          : (wasFirst ? lowerUnlessKept(originalWord) : originalWord);
 
         var chip = document.createElement('span');
         chip.className = 'eh2-word moved-in';
@@ -2430,7 +2582,7 @@
         if (willBeFirst && currentFirstWordEl && currentFirstWordEl.parentNode) {
           // Another word used to be first — it no longer is, so it loses
           // its capital letter.
-          currentFirstWordEl.textContent = decapitalizeFirst(currentFirstWordEl.textContent);
+          currentFirstWordEl.textContent = lowerUnlessKept(currentFirstWordEl.textContent);
         } else if (wasFirst && !willBeFirst) {
           // The moved word WAS first and has left; whichever word is now
           // at the front of the sentence needs to gain a capital letter.
@@ -2476,7 +2628,6 @@
 
   global.HouseErrorHunt = { build: build };
 })(window);
-
 
 /* ══════════════════════════════════════════════════════════════════════════
    HOUSE CCQ — concept checking questions
