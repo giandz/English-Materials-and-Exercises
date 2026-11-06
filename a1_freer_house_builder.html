@@ -3383,7 +3383,10 @@
   }
   /* walk mode's taps: someone (pick them), or somewhere (the picked person walks there) */
   function walkTap(w) {
-    const hit = personAt(w);
+    let hit = personAt(w);
+    /* a switch, lamp or curtains under the pointer, with the picked person standing in front of
+       it (as they do, after flicking it): that is a tap on the switch, not on them */
+    if (hit && hit.id === walkPick && toggleAt(w)) hit = null;
     if (hit && hit.id !== walkPick) return { walkPick: hit.id };
     if (hit && hit.id === walkPick && !walkers.has(hit.id)) return { walkPick: null };
     if (walkPick == null || !people.some(q => q.id === walkPick)) return null;
