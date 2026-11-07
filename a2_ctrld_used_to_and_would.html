@@ -23,7 +23,7 @@
 <div class="page" id="page">
   <span class="cefr-tag cefr-a2">A2 · Pre-intermediate</span>
   <h1>Used to / Would — Practice</h1>
-  <p class="subtitle">Choose the correct form, then complete the sentences.</p>
+  <p class="subtitle">Choose the correct form, put the words in order, then complete the sentences.</p>
 
   <div class="rule-box">
     <strong>Remember:</strong> <em>used to</em> works for actions and states. <em>Would</em> only works for repeated actions — never for states like <em>be, have, like, know</em>.
@@ -33,7 +33,14 @@
   <p class="subtitle">Read the sentence. Choose the words for the gap.</p>
   <div id="pcItems"></div>
 
-  <div class="sec-div">2 · Write the missing words</div>
+  <div class="sec-div">2 · Put the words in order</div>
+  <p class="subtitle">Drag the words into the line. You can also tap a word to add it, and tap it again to send it back.</p>
+  <button class="grammar-toggle-btn" id="grammarToggle">🎨 Hide Grammar</button>
+  <div class="pos-legend"></div>
+  <div class="score-bar"><span>Correct: <strong id="woScore">0</strong> / <span id="woTotal">0</span></span></div>
+  <div id="woItems"></div>
+
+  <div class="sec-div">3 · Write the missing words</div>
   <p class="subtitle">Read the clue. Write the words. The bar goes from red to green 🔴→🟢. Green = correct!</p>
   <div id="gfItems"></div>
 
@@ -62,7 +69,20 @@ const PC_ITEMS = [
 ];
 HouseComprehension.build({ quiz: 'pcItems', items: PC_ITEMS });
 
-/* ── 2 · gap fill (easiest first: one word → two words → several gaps) ──── */
+/* ── 2 · word order (short first) ──────────────────────────────────────── */
+const WO_ITEMS = [
+  { speaker: 'Leo', avatar: '👦', text: 'I / used to / have / a dog / .', pos: ['subject', 'aux', 'verb', 'object', 'none'] },
+  { speaker: 'Ana', avatar: '👩', text: 'He / used to / be / very shy / .', pos: ['subject', 'aux', 'verb', 'complement', 'none'] },
+  { speaker: 'Sam', avatar: '🧑', text: 'She / didn’t use to / like / vegetables / .', pos: ['subject', 'neg', 'verb', 'object', 'none'] },
+  { speaker: 'Maria', avatar: '👩‍🦱', text: 'Did / you / use to / play / sports / ?', pos: ['aux', 'subject', 'aux', 'verb', 'object', 'none'] },
+  { speaker: 'Grandpa', avatar: '👴', text: 'We / would / visit / our grandparents / every summer / .', pos: ['subject', 'aux', 'verb', 'object', 'time', 'none'] },
+  { speaker: 'Emma', avatar: '👧', text: 'They / didn’t use to / live / in the city / .', pos: ['subject', 'neg', 'verb', 'prep', 'none'] },
+  { speaker: 'Omar', avatar: '👨', text: 'Every Friday, / my dad / would / take / us / for ice cream / .', pos: ['time', 'subject', 'aux', 'verb', 'object', 'prep', 'none'] },
+  { speaker: 'Grace', avatar: '👩‍🏫', text: 'What games / did / you / use to / play / ?', pos: ['wh', 'aux', 'subject', 'aux', 'verb', 'none'] }
+];
+HouseWordOrder.build({ container: 'woItems', items: WO_ITEMS, scoreEl: 'woScore', totalEl: 'woTotal' });
+
+/* ── 3 · gap fill (easiest first: one word → two words → several gaps) ──── */
 const AP = list => list.concat(list.map(w => w.replace(/'/g, '’')));
 const GF_ITEMS = [
   { category: 'pos', direct: '🧒 A habit in the past. Verb: play', template: 'When I was young, I used {0} outside all day.',
@@ -85,5 +105,6 @@ const GF_ITEMS = [
 ];
 HouseGapFill.build({ container: 'gfItems', items: GF_ITEMS });
 </script>
+<script>HouseGrammar.init();</script>
 </body>
 </html>
