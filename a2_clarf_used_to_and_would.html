@@ -3,11 +3,8 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-<title>Grammar Focus — Used to / Would</title>
+<title>Used to / Would — Clarification</title>
 <script>
-// Applies the saved/system theme to <html> as early as possible, before the
-// stylesheet below paints anything, so there's no flash of the wrong theme.
-// Self-contained: no dependency on any external script.
 (function(){
   try{
     var saved = localStorage.getItem('theme-preference');
@@ -15,271 +12,155 @@
       ? saved
       : ((window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches) ? 'dark' : 'light');
     document.documentElement.setAttribute('data-theme', theme);
-    // Same idea for the text size: apply it before house.css paints, so a
-    // person who chose 28px doesn't watch the page reflow from 14px on load.
     var fs = parseFloat(localStorage.getItem('font-size-preference'));
-    if (fs >= 10 && fs <= 28){
-      document.documentElement.style.setProperty('--fs-base', fs + 'px');
-    }
+    if (fs >= 10 && fs <= 28) document.documentElement.style.setProperty('--fs-base', fs + 'px');
   }catch(e){ /* localStorage/matchMedia unavailable — CSS media query still applies */ }
 })();
 </script>
 <link rel="stylesheet" href="house.css">
 <style>
-/* Page-specific design tokens — this lesson's own palette, not
-   house tokens. house.css owns everything else. */
+/* page-specific palette (question · negative · positive), light and dark */
 :root{
-  --q-color: #8a6d00;
-  --q-bg: #fdf3d0;
-  --neg-color: #a32d2d;
-  --neg-bg: #fce8e8;
-  --pos-color: #27500a;
-  --pos-bg: #eaf3de;
+  --q-color:#8a6d00;   --q-bg:#fdf3d0;
+  --neg-color:#a32d2d; --neg-bg:#fce8e8;
+  --pos-color:#27500a; --pos-bg:#eaf3de;
+  --head-bg:#185fa5;
 }
-@media (prefers-color-scheme: dark){
-:root{
-  --q-color: #e8c94a;
-  --q-bg: #3a3115;
-  --neg-color: #e2827a;
-  --neg-bg: #3a201e;
-  --pos-color: #9ed17a;
-  --pos-bg: #1f3014;
+@media (prefers-color-scheme: dark){ :root:not([data-theme="light"]){
+  --q-color:#e8c94a;   --q-bg:#3a3115;
+  --neg-color:#e2827a; --neg-bg:#3a201e;
+  --pos-color:#9ed17a; --pos-bg:#1f3014;
+  --head-bg:#1f4f80;
+} }
+:root[data-theme="dark"]{
+  --q-color:#e8c94a;   --q-bg:#3a3115;
+  --neg-color:#e2827a; --neg-bg:#3a201e;
+  --pos-color:#9ed17a; --pos-bg:#1f3014;
+  --head-bg:#1f4f80;
 }
-}
 
+/* highlight classes — prefixed so they don't clash with the house .q / .neg / .pos tags */
+.t-q{ color:var(--q-color); font-weight:700; background:var(--q-bg); padding:1px 5px; border-radius:4px; }
+.t-neg{ color:var(--neg-color); font-weight:700; background:var(--neg-bg); padding:1px 5px; border-radius:4px; }
+.t-pos{ color:var(--pos-color); font-weight:700; background:var(--pos-bg); padding:1px 5px; border-radius:4px; }
+.t-legend{ display:flex; flex-wrap:wrap; gap:8px; margin:0 0 10px; font-size:.8rem; }
 
-h1{ font-size:1.3rem; font-weight:600; letter-spacing:-0.01em; margin:0 0 4px; }
+/* one person, different ages */
+.ages{ display:flex; justify-content:space-between; align-items:flex-start; gap:6px; margin-bottom:1rem; padding:16px 10px; background:var(--surface-1); border-radius:var(--radius); position:relative; }
+.ages::before{ content:''; position:absolute; top:3.2rem; left:8%; right:8%; height:1.5px; background:var(--border); z-index:0; }
+.age-stop{ display:flex; flex-direction:column; align-items:center; gap:5px; flex:1; position:relative; z-index:1; }
+.age-emoji{ font-size:1.8667rem; background:var(--surface-2); border-radius:50%; width:3.2rem; height:3.2rem; display:flex; align-items:center; justify-content:center; border:1.5px solid var(--border); }
+.age-label{ font-size:.7rem; font-weight:600; color:var(--text-muted); text-transform:uppercase; letter-spacing:.03em; text-align:center; }
+.age-habit{ font-size:1.4667rem; }
+.story{ font-size:.9333rem; line-height:1.7; margin-bottom:1.25rem; }
 
-  .q{ color:var(--q-color); font-weight:700; background:var(--q-bg); padding:1px 5px; border-radius:4px; }
-  .neg{ color:var(--neg-color); font-weight:700; background:var(--neg-bg); padding:1px 5px; border-radius:4px; }
-  .pos{ color:var(--pos-color); font-weight:700; background:var(--pos-bg); padding:1px 5px; border-radius:4px; }
-
-  /* Age timeline */
-  .timeline{
-    display:flex;
-    justify-content:space-between;
-    align-items:flex-start;
-    gap:6px;
-    margin-bottom:1.5rem;
-    padding:16px 10px;
-    background:var(--surface-1);
-    border-radius:var(--radius);
-    position:relative;
-  }
-  .timeline::before{
-    content:'';
-    position:absolute;
-    top:38px;
-    left:8%;
-    right:8%;
-    height:1.5px;
-    background:var(--border);
-    z-index:0;
-  }
-  .timeline-stop{
-    display:flex;
-    flex-direction:column;
-    align-items:center;
-    gap:5px;
-    flex:1;
-    position:relative;
-    z-index:1;
-  }
-  .timeline-emoji{
-    font-size:1.8667rem;
-    background:var(--surface-2);
-    border-radius:50%;
-    width:48px;
-    height:48px;
-    display:flex;
-    align-items:center;
-    justify-content:center;
-    border:1.5px solid var(--border);
-  }
-  .timeline-age{
-    font-size:0.7rem;
-    font-weight:600;
-    color:var(--text-muted);
-    text-transform:uppercase;
-    letter-spacing:.03em;
-  }
-  .timeline-habit{
-    font-size:1.4667rem;
-  }
-
-  /* Form cards */
-  .tense-card{
-    border:.5px solid var(--color-border-tertiary);
-    border-radius:var(--border-radius-lg);
-    overflow:hidden;
-    margin-bottom:14px;
-  }
-  .tense-head{
-    padding:11px 14px;
-    font-weight:700;
-    font-size:0.9667rem;
-    color:#fff;
-    background:#185fa5;
-    display:flex;
-    align-items:center;
-    justify-content:space-between;
-  }
-  .tense-head .badge{
-    font-size:0.6667rem;
-    font-weight:600;
-    background:rgba(255,255,255,0.25);
-    padding:2px 8px;
-    border-radius:20px;
-  }
-  .form-block{
-    padding:10px 14px;
-    border-bottom:.5px solid var(--color-border-tertiary);
-  }
-  .form-block:last-child{ border-bottom:none; }
-  .form-label{
-    font-size:0.7rem;
-    font-weight:700;
-    letter-spacing:.05em;
-    text-transform:uppercase;
-    color:var(--text-muted);
-    margin-bottom:5px;
-  }
-  .form-line{
-    font-size:0.9rem;
-    margin-bottom:5px;
-  }
-
-  footer{ text-align:center; font-size:0.8rem; color:var(--text-muted); margin-top:2rem; }
+/* form cards */
+.tense-card{ border:.5px solid var(--color-border-tertiary); border-radius:var(--border-radius-lg); overflow:hidden; margin-bottom:14px; }
+.tense-head{ padding:11px 14px; font-weight:700; font-size:.9667rem; color:#fff; background:var(--head-bg); display:flex; align-items:center; justify-content:space-between; }
+.tense-head .badge{ font-size:.6667rem; font-weight:600; background:rgba(255,255,255,0.25); padding:2px 8px; border-radius:20px; }
+.form-block{ padding:10px 14px; border-bottom:.5px solid var(--color-border-tertiary); }
+.form-block:last-child{ border-bottom:none; }
+.form-label{ font-size:.7rem; font-weight:700; letter-spacing:.05em; text-transform:uppercase; color:var(--text-muted); margin-bottom:5px; }
+.form-line{ font-size:.9rem; margin-bottom:5px; line-height:1.7; }
+.form-line.muted{ color:var(--text-muted); }
+.rule-box p{ margin:0 0 6px; }
+.rule-box p:last-child{ margin-bottom:0; }
 </style>
 </head>
 <body>
 <div class="page" id="page">
-
-  <span class="cefr-tag cefr-a2">A2 · Elementary</span>
+  <span class="cefr-tag cefr-a2">A2 · Pre-intermediate</span>
   <h1>Used to / Would — Past Habits</h1>
   <p class="subtitle">Talking about things we did regularly in the past, but don't do anymore.</p>
-
-  <div class="legend">
-    <span class="legend-pill q">●&nbsp; question</span>
-    <span class="legend-pill neg">●&nbsp; negative</span>
-    <span class="legend-pill pos">●&nbsp; positive</span>
-  </div>
 
   <div class="rule-box">
     <strong>Used to</strong> + base verb talks about past habits, routines, and states that are no longer true. <strong>Would</strong> + base verb also talks about repeated past actions — but <strong>only actions</strong>, not states like "be", "have", or "like".
   </div>
 
   <div class="sec-div">One person, different ages</div>
-
-  <div class="timeline">
-    <div class="timeline-stop">
-      <span class="timeline-age">Baby</span>
-      <span class="timeline-emoji">👶</span>
-      <span class="timeline-habit">😴🍼</span>
-    </div>
-    <div class="timeline-stop">
-      <span class="timeline-age">Child</span>
-      <span class="timeline-emoji">🧒</span>
-      <span class="timeline-habit">🌳🚲</span>
-    </div>
-    <div class="timeline-stop">
-      <span class="timeline-age">Teenager</span>
-      <span class="timeline-emoji">🧑</span>
-      <span class="timeline-habit">🎮🫣</span>
-    </div>
-    <div class="timeline-stop">
-      <span class="timeline-age">Adult (now)</span>
-      <span class="timeline-emoji">🧑‍💼</span>
-      <span class="timeline-habit">☕💻</span>
-    </div>
+  <div class="ages">
+    <div class="age-stop"><span class="age-label">Baby</span><span class="age-emoji">👶</span><span class="age-habit">😴🍼</span></div>
+    <div class="age-stop"><span class="age-label">Child</span><span class="age-emoji">🧒</span><span class="age-habit">🌳🚲</span></div>
+    <div class="age-stop"><span class="age-label">Teenager</span><span class="age-emoji">🧑</span><span class="age-habit">🎮🫣</span></div>
+    <div class="age-stop"><span class="age-label">Adult (now)</span><span class="age-emoji">🧑‍💼</span><span class="age-habit">☕💻</span></div>
   </div>
-
-  <div class="rule-box">
-    As a baby 👶, I <strong>used to</strong> sleep all day 😴 and drink milk out of a baby bottle 🍼. As a child 🧒, I <strong>used to</strong> climb trees 🌳 and I <strong>would</strong> ride my bike 🚲 every afternoon. I <strong>used to</strong> be very shy 🫣 as a teenager 🧑, so I <strong>would</strong> play videogames at home 🎮, but I became more confident when I went to college.
-  </div>
+  <p class="story">
+    As a baby 👶, I <span class="t-pos">used to</span> sleep all day 😴 and drink milk out of a baby bottle 🍼. As a child 🧒, I <span class="t-pos">used to</span> climb trees 🌳 and I <span class="t-pos">would</span> ride my bike 🚲 every afternoon. I <span class="t-pos">used to</span> be very shy 🫣 as a teenager 🧑, so I <span class="t-pos">would</span> play video games at home 🎮, but I became more confident when I went to college.
+  </p>
 
   <div class="sec-div">A habit that stopped</div>
   <div id="timeline"></div>
   <div class="rule-box"><em>Used to</em> and <em>would</em> both describe a repeated past habit — and both tell you it is <strong>over</strong>.</div>
+
   <div class="sec-div">Check the meaning</div>
-  <div class="rule-box">Answer the questions about each sentence. These check the <strong>meaning</strong>, not the form.</div>
+  <p class="subtitle">Read the sentence. Answer the questions.</p>
   <div id="ccq"></div>
 
-
   <div class="sec-div">Used to — all forms</div>
-
+  <div class="t-legend">
+    <span class="t-pos">● positive</span><span class="t-neg">● negative</span><span class="t-q">● question</span>
+  </div>
   <div class="tense-card">
-    <div class="tense-head">used to <span class="badge">actions & states</span></div>
+    <div class="tense-head">used to <span class="badge">actions &amp; states</span></div>
     <div class="form-block">
       <div class="form-label">✓ Affirmative</div>
-      <div class="form-line">👶 → 🧒 I <span class="pos">used to</span> be scared of the dark.</div>
-      <div class="form-line">🧒 → 🧑 She <span class="pos">used to</span> play the piano.</div>
+      <div class="form-line">👶 → 🧒 I <span class="t-pos">used to</span> be scared of the dark.</div>
+      <div class="form-line">🧒 → 🧑 She <span class="t-pos">used to</span> play the piano.</div>
     </div>
     <div class="form-block">
       <div class="form-label">✗ Negative</div>
-      <div class="form-line">I <span class="neg">didn't use to</span> like vegetables.</div>
-      <div class="form-line">They <span class="neg">didn't use to</span> live here.</div>
+      <div class="form-line">I <span class="t-neg">didn't use to</span> like vegetables.</div>
+      <div class="form-line">They <span class="t-neg">didn't use to</span> live here.</div>
     </div>
     <div class="form-block">
       <div class="form-label">? Question</div>
-      <div class="form-line"><span class="q">Did</span> you <span class="q">use to</span> play sports?</div>
-      <div class="form-line"><span class="q">Did</span> he <span class="q">use to</span> have long hair?</div>
+      <div class="form-line"><span class="t-q">Did</span> you <span class="t-q">use to</span> play sports?</div>
+      <div class="form-line"><span class="t-q">Did</span> he <span class="t-q">use to</span> have long hair?</div>
     </div>
   </div>
 
   <div class="sec-div">Would — affirmative only</div>
-
   <div class="tense-card">
     <div class="tense-head">would <span class="badge">actions only</span></div>
     <div class="form-block">
       <div class="form-label">✓ Affirmative</div>
-      <div class="form-line">🧒 Every summer, we <span class="pos">would</span> visit my grandparents 👵👴.</div>
-      <div class="form-line">🧑 On weekends, he <span class="pos">would</span> skateboard 🛹 for hours.</div>
+      <div class="form-line">🧒 Every summer, we <span class="t-pos">would</span> visit my grandparents 👵👴.</div>
+      <div class="form-line">🧑 On weekends, he <span class="t-pos">would</span> skateboard 🛹 for hours.</div>
     </div>
     <div class="form-block">
       <div class="form-label">✗ Negative / ? Question — uncommon</div>
-      <div class="form-line" style="color:var(--text-muted);">We rarely use <em>wouldn't</em> or <em>would...?</em> for past habits — use <span class="pos">used to</span> instead: <span class="neg">didn't use to</span> / <span class="q">did...use to</span>.</div>
+      <div class="form-line muted">We rarely use <em>wouldn't</em> or <em>would…?</em> for past habits — use <span class="t-pos">used to</span> instead: <span class="t-neg">didn't use to</span> / <span class="t-q">did … use to</span>.</div>
     </div>
     <div class="form-block">
       <div class="form-label">✗ Not for states</div>
-      <div class="form-line">✗ <em>I would be shy.</em> → ✓ I <span class="pos">used to</span> be shy 😳 <em>(be = state)</em></div>
-      <div class="form-line">✗ <em>I would have a dog.</em> → ✓ I <span class="pos">used to</span> have a dog 🐶 <em>(have = state)</em></div>
+      <div class="form-line">✗ <em>I would be shy.</em> → ✓ I <span class="t-pos">used to</span> be shy 😳 <em>(be = state)</em></div>
+      <div class="form-line">✗ <em>I would have a dog.</em> → ✓ I <span class="t-pos">used to</span> have a dog 🐶 <em>(have = state)</em></div>
     </div>
   </div>
 
-
-  <div class="sec-div">Work out the form</div>
-  <div class="rule-box">Tap a label, then tap the box <strong>above</strong> the word it describes. Compare the rows — what changes, and what stays exactly the same?</div>
-  <div class="score-bar"><span>Labelled: <strong id="fcScore">0</strong> / <span id="fcTotal">0</span></span></div>
+  <div class="sec-div">Look at the form</div>
+  <p class="subtitle">What is each part of the sentence? Drag a label (or tap a label, then tap a box). Compare the rows — what changes, and what stays the same?</p>
+  <div class="score-bar"><span>Correct: <strong id="fcScore">0</strong> / <span id="fcTotal">0</span></span></div>
   <div id="formClarf"></div>
-  <div class="rule-box">In the negative and the question it becomes <em>use to</em> — no <strong>d</strong>. <em>did</em> is already carrying the past, exactly as with any other verb.</div>
-
+  <div class="rule-box">In the negative and the question it becomes <em>use to</em> — no <strong>d</strong>. <em>Did</em> already carries the past, exactly as with any other verb.</div>
 
   <div class="sec-div">Side by side</div>
-
   <div class="rule-box">
-    👶🧒 I <span class="pos">used to</span> be afraid of dogs 🐶, but now I love them.<br>
-    🧒🧑 Every Friday, my dad <span class="pos">would</span> take us for ice cream 🍦.<br>
-    <span class="q">Did</span> you <span class="q">use to</span> live in another city 🏙️?<br>
-    I <span class="neg">didn't use to</span> drink coffee ☕ — now I drink it every day!
+    <p>👶🧒 I <span class="t-pos">used to</span> be afraid of dogs 🐶, but now I love them.</p>
+    <p>🧒🧑 Every Friday, my dad <span class="t-pos">would</span> take us for ice cream 🍦.</p>
+    <p><span class="t-q">Did</span> you <span class="t-q">use to</span> live in another city 🏙️?</p>
+    <p>I <span class="t-neg">didn't use to</span> drink coffee ☕ — now I drink it every day!</p>
   </div>
 
-  
   <div class="sec-div">Common mistakes</div>
-  <div class="pair-card"><div class="pair-line no"><span class="mark">✗</span>I used to played soccer.</div><div class="pair-line yes"><span class="mark">✓</span>I used to play soccer.</div></div>
-  <div class="pair-card"><div class="pair-line no"><span class="mark">✗</span>I didn't used to like coffee.</div><div class="pair-line yes"><span class="mark">✓</span>I didn't use to like coffee.</div></div>
-  <div class="pair-card"><div class="pair-line no"><span class="mark">✗</span>Did you used to live here?</div><div class="pair-line yes"><span class="mark">✓</span>Did you use to live here?</div></div>
-  <div class="pair-card"><div class="pair-line no"><span class="mark">✗</span>I would have a car when I was young.</div><div class="pair-line yes"><span class="mark">✓</span>I used to have a car when I was young.</div></div>
-  <div class="pair-card"><div class="pair-line no"><span class="mark">✗</span>I am used to play soccer every weekend.</div><div class="pair-line yes"><span class="mark">✓</span>I used to play soccer every weekend.</div></div>
+  <div id="mistakes"></div>
 
+  <div class="sec-div">Error hunt</div>
+  <p class="subtitle">Some sentences have a mistake. Some are correct! Tap a word — or a space between words — to fix it. Then press OK.</p>
+  <div class="score-bar"><span>Done: <strong id="errorScore">0</strong> / <span id="errorTotal">0</span></span></div>
+  <div id="errorHuntItems"></div>
 
-  <div class="sec-div">Find the mistake</div>
-  <div class="rule-box">Each sentence below has <strong>one or two mistakes</strong> — but <strong>some are already correct</strong>. Tap a word you think is wrong and choose the right one. When you think the sentence is right, press <strong>OK</strong>.</div>
-  <div class="score-bar"><span>Corrected: <strong id="ehScore">0</strong> / <span id="ehTotal">0</span></span></div>
-  <div id="errorHunt"></div>
-
-  <footer>Grammar Focus — Used to / Would (A2)</footer>
-
+  <footer>Used to / Would — Clarification (A2)</footer>
 </div>
 
 <div id="theme-toggle-wrap">
@@ -289,61 +170,10 @@ h1{ font-size:1.3rem; font-weight:600; letter-spacing:-0.01em; margin:0 0 4px; }
 </div>
 <script src="house.js"></script>
 <script>
-const EH_ITEMS = [
-  {
-    "words": ["I", "used", "to", "played", "soccer", "."],
-    "errors": [ { "type": "wrong", "wordIndex": 3, "options": ["play", "played", "playing"], "correct": "play" } ]
-  },
-  {
-    "words": ["My", "dad", "would", "read", "me", "a", "story", "every", "night", "."],
-    "errors": []
-  },
-  {
-    "words": ["I", "didn't", "used", "to", "like", "coffee", "."],
-    "errors": [ { "type": "wrong", "wordIndex": 2, "options": ["use", "used", "using"], "correct": "use" } ]
-  },
-  {
-    "words": ["Did", "you", "used", "to", "live", "here", "?"],
-    "errors": [ { "type": "wrong", "wordIndex": 2, "options": ["use", "used", "using"], "correct": "use" } ]
-  },
-  {
-    "words": ["We", "used", "to", "go", "to", "the", "beach", "every", "summer", "."],
-    "errors": []
-  },
-  {
-    "words": ["I", "would", "have", "a", "car", "when", "I", "was", "young", "."],
-    "errors": [ { "type": "wrong", "wordIndex": 1, "options": ["used to", "would", "was used to"], "correct": "used to" } ]
-  },
-  {
-    "words": ["She", "use", "to", "work", "in", "a", "bank", "."],
-    "errors": [ { "type": "wrong", "wordIndex": 1, "options": ["used", "use", "uses"], "correct": "used" } ]
-  }
-];
-
-HouseErrorHunt.build({
-  container: "errorHunt",
-  items: EH_ITEMS,
-  scoreEl: "ehScore",
-  totalEl: "ehTotal"
-});
-</script>
-<script>
-HouseFormClarf.build({
-  container: 'formClarf',
-  scoreEl: 'fcScore', totalEl: 'fcTotal',
-  pool: ["subject", "aux", "neg", "verb", "object", "adverb"],
-  items: [
-    { form: "aff", parts: [["I", "subject"], ["used to", "aux"], ["play", "verb"], ["soccer", "object"], [".", null]] },
-    { form: "neg", parts: [["I", "subject"], ["didn't", "neg"], ["use to", "aux"], ["like", "verb"], ["coffee", "object"], [".", null]] },
-    { form: "q", parts: [["Did", "aux"], ["you", "subject"], ["use to", "aux"], ["live", "verb"], ["here", "adverb"], ["?", null]] },
-    { form: "aff", parts: [["My dad", "subject"], ["would", "aux"], ["read", "verb"], ["me a story", "object"], [".", null]] }
-  ]
-});
-</script>
-<script>
+/* ── a habit that stopped ──────────────────────────────────────────────── */
 HouseTimeline.build({
   container: 'timeline',
-  startLabel: 'Past', nowNote: 'now — not any more',
+  startLabel: 'Past', nowNote: 'now — not anymore',
   bands: [{ from: 0.06, to: 0.62, label: 'when I was a child' }],
   events: [
     { at: 0.14, emoji: '⚽', kind: 'point' }, { at: 0.30, emoji: '⚽', kind: 'point' },
@@ -352,6 +182,7 @@ HouseTimeline.build({
   caption: 'Repeated inside a finished period — and it does not reach now.'
 });
 
+/* ── concept checking questions ────────────────────────────────────────── */
 HouseCCQ.build({
   container: 'ccq',
   items: [
@@ -361,16 +192,61 @@ HouseCCQ.build({
           why: 'Many times — it was a habit, not a single event.' },
         { q: 'Do I play now?', opts: ['Yes', 'No'], correct: 1,
           why: 'No. <em>Used to</em> always means the habit has stopped.' }
-      ]},
+      ] },
     { sentence: 'My dad would read me a story every night.',
       questions: [
         { q: 'Could we say "used to read" here?', opts: ['Yes', 'No'], correct: 0,
           why: 'Yes — for repeated <strong>actions</strong> both work. But only <em>used to</em> works for states: <em>I used to have a car</em>, not <s>I would have a car</s>.' }
-      ]}
+      ] }
   ]
 });
 
-HouseGrammar.init();
+/* ── form ──────────────────────────────────────────────────────────────── */
+HouseFormClarf.build({
+  container: 'formClarf', scoreEl: 'fcScore', totalEl: 'fcTotal',
+  pool: ['subject', 'aux', 'neg', 'verb', 'object', 'adverb'],
+  items: [
+    { form: 'aff', parts: [['I', 'subject'], ['used to', 'aux'], ['play', 'verb'], ['soccer', 'object'], ['.', null]] },
+    { form: 'neg', parts: [['I', 'subject'], ['didn’t', 'neg'], ['use to', 'aux'], ['like', 'verb'], ['coffee', 'object'], ['.', null]] },
+    { form: 'q',   parts: [['Did', 'aux'], ['you', 'subject'], ['use to', 'aux'], ['live', 'verb'], ['here', 'adverb'], ['?', null]] },
+    { form: 'aff', parts: [['My dad', 'subject'], ['would', 'aux'], ['read', 'verb'], ['me a story', 'object'], ['.', null]] }
+  ]
+});
+
+/* ── common mistakes ───────────────────────────────────────────────────── */
+const MISTAKES = [
+  ['I used to played soccer.', 'I used to play soccer.'],
+  ['I didn’t used to like coffee.', 'I didn’t use to like coffee.'],
+  ['Did you used to live here?', 'Did you use to live here?'],
+  ['I would have a car when I was young.', 'I used to have a car when I was young.'],
+  ['I am used to play soccer every weekend.', 'I used to play soccer every weekend.']
+];
+document.getElementById('mistakes').innerHTML = MISTAKES.map(([no, yes]) =>
+  '<div class="pair-card"><div class="pair-line no"><span class="mark">✗</span>' + no + '</div>' +
+  '<div class="pair-line yes"><span class="mark">✓</span>' + yes + '</div></div>').join('');
+
+/* ── error hunt (A2: some sentences are already correct; none repeat the common mistakes) ── */
+const EH_ITEMS = [
+  { words: ['She', 'used', 'to', 'worked', 'in', 'a', 'bank', '.'],
+    error: { type: 'wrong', wordIndex: 3, options: ['work', 'works', 'working'], correct: 'work' } },
+  { words: ['My', 'dad', 'would', 'read', 'me', 'a', 'story', 'every', 'night', '.'], error: null },
+  { words: ['We', 'didn’t', 'used', 'to', 'have', 'a', 'TV', '.'],
+    error: { type: 'wrong', wordIndex: 2, options: ['use', 'uses', 'using'], correct: 'use' } },
+  { words: ['Did', 'he', 'used', 'to', 'play', 'the', 'guitar', '?'],
+    error: { type: 'wrong', wordIndex: 2, options: ['use', 'uses', 'using'], correct: 'use' } },
+  { words: ['We', 'used', 'to', 'go', 'to', 'the', 'beach', 'every', 'summer', '.'], error: null },
+  { words: ['She', 'would', 'like', 'horror', 'movies', 'when', 'she', 'was', 'young', '.'],
+    error: { type: 'wrong', wordIndex: 1, options: ['used to', 'use to', 'was'], correct: 'used to' } },
+  { words: ['He', 'use', 'to', 'live', 'in', 'Chicago', '.'],
+    error: { type: 'wrong', wordIndex: 1, options: ['used', 'uses', 'using'], correct: 'used' } },
+  { words: ['I', 'am', 'used', 'to', 'ride', 'my', 'bike', 'to', 'school', '.'],
+    error: { type: 'extra', wordIndex: 1 } },
+  { words: ['Every', 'Sunday', ',', 'my', 'grandma', 'would', 'cook', 'a', 'big', 'lunch', '.'], error: null },
+  { words: ['They', 'used', 'to', 'visiting', 'their', 'cousins', '.'],
+    error: { type: 'wrong', wordIndex: 3, options: ['visit', 'visited', 'visits'], correct: 'visit' } }
+];
+HouseErrorHunt.build({ container: 'errorHuntItems', items: EH_ITEMS, scoreEl: 'errorScore', totalEl: 'errorTotal' });
 </script>
+<script>HouseGrammar.init();</script>
 </body>
 </html>
