@@ -1211,6 +1211,9 @@
    Only letters count towards the length, so "I've" is a 3-letter word and
    "don't" a 4-letter one. Punctuation, numbers and emoji are left alone.
 
+   It never shows together with the 🎵 pronunciation marks: switching either
+   one on switches the other off.
+
    The extra markup exists only while the mode is ON and is removed completely
    when it is switched off, so scripts that read or measure bubble text (the
    stick figures over words, for instance) see the page exactly as authored
@@ -1353,8 +1356,29 @@
     btn.title = on ? 'Bionic reading: on' : 'Bionic reading: off';
   }
 
+  // Bionic reading and the pronunciation marks never show at the same time:
+  // turning one on turns the other off. The marks are switched through their
+  // own switch (the page's #pmToggle, or the visual novel's own 🎵), so the
+  // page remembers the change the same way as a click. The switch itself is
+  // read, not its round copy, which follows it a moment later.
+  var PRON_BTNS = ['pmToggle', 'vnPron'];
+  function marksOn() {
+    return PRON_BTNS.some(function (id) { var b = document.getElementById(id); return !!b && b.getAttribute('aria-pressed') === 'true'; });
+  }
+  function marksOff() {
+    PRON_BTNS.forEach(function (id) { var b = document.getElementById(id); if (b && b.getAttribute('aria-pressed') === 'true') b.click(); });
+  }
+  var hadMarks = false;
+  function watchMarks() {
+    var now = marksOn();
+    if (now && !hadMarks && on) set(false);   // the marks were just turned on
+    hadMarks = now;
+  }
+
   function set(state) {
     on = !!state;
+    if (on && marksOn()) marksOff();
+    hadMarks = marksOn();
     setStored(on);
     if (on) apply(); else strip();
     redrawMarks();
@@ -1400,6 +1424,11 @@
 
   function start() {
     sync();
+    var rail = document.getElementById('house-rail');
+    if (rail && global.MutationObserver) {
+      hadMarks = marksOn();
+      new MutationObserver(watchMarks).observe(rail, { attributes: true, attributeFilter: ['aria-pressed'], subtree: true, childList: true });
+    }
     if (global.MutationObserver) {
       new MutationObserver(queue).observe(document.body, { childList: true, subtree: true });
     }
