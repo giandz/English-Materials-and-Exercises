@@ -1242,7 +1242,8 @@
   var WORD = new RegExp('[' + L + ']+(?:[\'\u2019][' + L + ']+)*', 'g');
   var APOS = /['\u2019]/;
 
-  var SKIP = '.bionic-w, .pm-line, input, textarea, select, script, style, [contenteditable]';
+  // Never bolded: form fields, and the drawings (stick figures, pronunciation marks) inside a bubble.
+  var SKIP = 'input, textarea, select, script, style, svg, [contenteditable]';
 
   var on = false;
   var btn = null;
@@ -1271,49 +1272,61 @@
     return word.length;
   }
 
-  function wrapTextNode(node) {
-    var text = node.nodeValue;
-    WORD.lastIndex = 0;
-    if (!WORD.test(text)) return;
-    WORD.lastIndex = 0;
+  // A bubble's words are read across its inline pieces, so a word the
+  // pronunciation marks have split into letter spans (w·e·nt) is still one
+  // word: only its opening letters are bolded, whichever spans they sit in.
+  // Each bold run is a <span class="bionic-w bionic-b"> round those letters
+  // and nothing else, so stripping it leaves the page's own markup intact.
+  // Stick-figure words have no spaces between their units, so a unit boundary
+  // counts as one.
+  function boldBubble(bubble) {
+    var has = bubble.querySelector('.bionic-w');
+    if (has && bubble._bionicSig === bubble.textContent) return false;   // done, and unchanged since
+    if (has) stripIn(bubble);
 
-    var frag = document.createDocumentFragment();
-    var last = 0, m;
-    while ((m = WORD.exec(text))) {
-      if (m.index > last) frag.appendChild(document.createTextNode(text.slice(last, m.index)));
-      var w = m[0];
-      var cut = cutIndex(w);
-      var span = document.createElement('span');
-      span.className = 'bionic-w';
-      var b = document.createElement('span');
-      b.className = 'bionic-b';
-      b.textContent = w.slice(0, cut);
-      span.appendChild(b);
-      if (cut < w.length) span.appendChild(document.createTextNode(w.slice(cut)));
-      frag.appendChild(span);
-      last = m.index + w.length;
+    var walker = document.createTreeWalker(bubble, NodeFilter.SHOW_TEXT, null, false);
+    var nodes = [], text = '', prevUnit = null, n;
+    while ((n = walker.nextNode())) {
+      var parent = n.parentNode;
+      if (!n.nodeValue || (parent && parent.closest && parent.closest(SKIP))) continue;
+      var unit = parent.closest('.ss-unit');
+      if (nodes.length && unit !== prevUnit) text += ' ';
+      prevUnit = unit;
+      nodes.push({ node: n, from: text.length });
+      text += n.nodeValue;
     }
-    if (last < text.length) frag.appendChild(document.createTextNode(text.slice(last)));
-    node.parentNode.replaceChild(frag, node);
-  }
 
-  function apply() {
-    document.querySelectorAll(SELECTOR).forEach(function (bubble) {
-      var walker = document.createTreeWalker(bubble, NodeFilter.SHOW_TEXT, null, false);
-      var nodes = [], n;
-      while ((n = walker.nextNode())) {
-        if (!n.nodeValue || !/\S/.test(n.nodeValue)) continue;
-        var parent = n.parentNode;
-        if (parent && parent.closest && parent.closest(SKIP)) continue;
-        nodes.push(n);
+    var runs = [], m;
+    WORD.lastIndex = 0;
+    while ((m = WORD.exec(text))) runs.push([m.index, m.index + cutIndex(m[0])]);
+
+    // From the last text node back, and right to left inside each, so the
+    // offsets still to be wrapped never move.
+    for (var i = nodes.length - 1; i >= 0; i--) {
+      var t = nodes[i], a = t.from, z = a + t.node.nodeValue.length;
+      for (var k = runs.length - 1; k >= 0; k--) {
+        var s0 = Math.max(a, runs[k][0]), e0 = Math.min(z, runs[k][1]);
+        if (s0 >= e0) continue;
+        var r = document.createRange();
+        r.setStart(t.node, s0 - a); r.setEnd(t.node, e0 - a);
+        var span = document.createElement('span');
+        span.className = 'bionic-w bionic-b';
+        r.surroundContents(span);
       }
-      nodes.forEach(wrapTextNode);
-    });
+    }
+    bubble._bionicSig = bubble.textContent;
+    return runs.length > 0;
   }
 
-  function strip() {
+  function apply() {   // → true when some bubble was (re)bolded
+    var changed = false;
+    document.querySelectorAll(SELECTOR).forEach(function (b) { if (boldBubble(b)) changed = true; });
+    return changed;
+  }
+
+  function stripIn(root) {
     var parents = [];
-    document.querySelectorAll('.bionic-w').forEach(function (span) {
+    root.querySelectorAll('.bionic-w').forEach(function (span) {
       var parent = span.parentNode;
       if (!parent) return;
       parent.replaceChild(document.createTextNode(span.textContent), span);
@@ -1321,6 +1334,13 @@
     });
     // Merge the split text back into single nodes, as the page authored it.
     parents.forEach(function (p) { p.normalize(); });
+  }
+
+  function strip() { stripIn(document); }
+
+  // Bold letters are wider: the pronunciation marks re-measure.
+  function redrawMarks() {
+    document.querySelectorAll('.pm-line').forEach(function (el) { if (el._pm && el._pm.draw) el._pm.draw(); });
   }
 
   function notifyLayout() {
@@ -1337,6 +1357,7 @@
     on = !!state;
     setStored(on);
     if (on) apply(); else strip();
+    redrawMarks();
     render();
     notifyLayout();
   }
@@ -1368,7 +1389,7 @@
       buildButton();
       if (getStored()) { set(true); return; }
     }
-    if (on) apply();
+    if (on && apply()) redrawMarks();
   }
 
   function queue() {
