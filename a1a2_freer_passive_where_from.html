@@ -1,0 +1,119 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<title>World Quiz — Passive Voice</title>
+<script>
+(function(){
+  try{
+    var saved = localStorage.getItem('theme-preference');
+    var theme = (saved === 'light' || saved === 'dark')
+      ? saved
+      : ((window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches) ? 'dark' : 'light');
+    document.documentElement.setAttribute('data-theme', theme);
+    var fs = parseFloat(localStorage.getItem('font-size-preference'));
+    if (fs >= 10 && fs <= 28) document.documentElement.style.setProperty('--fs-base', fs + 'px');
+  }catch(e){ /* localStorage/matchMedia unavailable — CSS media query still applies */ }
+})();
+</script>
+<link rel="stylesheet" href="house.css">
+<style>
+/* a verb and its past participle, with a picture */
+.pp-card{ display:flex; align-items:center; gap:6px; }
+.pp-card .pic{ white-space:nowrap; }
+.cast-row{ display:flex; flex-wrap:wrap; gap:14px 18px; justify-content:center; align-items:flex-end; margin:0 0 1rem; padding:10px; background:var(--surface-1); border:1px solid var(--border); border-radius:var(--border-radius-lg); font-size:.8667rem; }
+
+.wq-cue{ font-size:1.25rem; font-weight:700; margin:4px 0 8px; text-align:center; }
+.wq-cue .big{ display:block; font-size:2.4rem; line-height:1.1; margin-bottom:4px; }
+.wq-opts{ display:flex; flex-wrap:wrap; gap:8px; justify-content:center; margin:0 0 8px; }
+.wq-opts span{ padding:5px 14px; border-radius:999px; border:1px solid var(--color-border-secondary); background:var(--surface-2); font-weight:600; font-size:.95rem; }
+.q-card details.check{ margin-top:4px; width:100%; max-width:440px; text-align:left; }
+.q-card .check-body{ padding:8px 12px; font-size:.9rem; }
+.q-card .check-body p{ margin:0 0 4px; }
+</style>
+</head>
+<body>
+<div class="page" id="page">
+  <span class="cefr-tag cefr-a1a2">A1/A2 · Elementary</span>
+  <h1>World Quiz</h1>
+  <p class="subtitle">Ask and answer about food, languages, money and celebrations around the world.</p>
+
+  <div class="rule-box">
+    <p><strong>How to play (pairs, or teacher + student):</strong></p>
+    <p>1. Student A rolls 🎲 and makes the question: <b>Where / avocados / grow?</b> → “<b>Where are avocados grown?</b>”</p>
+    <p>2. Student B chooses an answer and says the full sentence: “<b>I think they’re grown in Mexico.</b>”</p>
+    <p>3. Press 👀 to check. A correct answer = 1 point. Then change: B rolls, A answers.</p>
+  </div>
+
+  <div class="q-card" id="qCard"><span class="q-placeholder">Roll the dice to start.</span></div>
+  <button class="dice-btn" id="diceBtn" aria-label="Roll">🎲</button>
+  <div class="roll-count">Rolls: <strong id="rollCount">0</strong></div>
+
+  <div class="sec-div">Now you</div>
+  <div class="rule-box">
+    <p><strong>Talk about your country</strong> (or a country you know well). Ask your partner:</p>
+    <p>“<b>What food is grown or made in your country?</b>” · “<b>What languages are spoken there?</b>”</p>
+    <p>“<b>What money is used there? What money was used before?</b>” · “<b>What festivals are celebrated? What is eaten?</b>”</p>
+    <p>Example: “<b>Arepas are made in Venezuela. They’re made with corn. The bolívar is used there. Carnival is celebrated in February or March.</b>”</p>
+  </div>
+
+  <footer>World Quiz — Passive voice: products, money and celebrations (A1/A2)</footer>
+</div>
+
+<div id="theme-toggle-wrap">
+  <button id="theme-toggle" aria-label="Toggle light/dark mode" title="Toggle light/dark mode">
+    <span id="theme-icon">☀️</span>
+  </button>
+</div>
+<script src="house.js"></script>
+<script>
+/* [topic, picture, cue words, three choices (the first is right), the question, the answer] — the choices are shuffled on the card */
+const FOOD = '🌱 Food and things', LANG = '🗣️ Languages', MONEY = '💰 Money now', OLD = '🪙 Money before the euro', FEST = '🎉 Celebrations';
+const QUIZ = [
+  [FOOD, '🥑', 'Where / avocados / grow?', ['Mexico', 'Norway', 'Egypt'], 'Where are avocados grown?', 'A lot of avocados are grown in Mexico.'],
+  [FOOD, '☕', 'Where / coffee / grow?', ['Brazil', 'Iceland', 'Canada'], 'Where is coffee grown?', 'A lot of coffee is grown in Brazil.'],
+  [FOOD, '🍵', 'Where / tea / grow?', ['India', 'Belgium', 'Norway'], 'Where is tea grown?', 'A lot of tea is grown in India.'],
+  [FOOD, '🫒', 'Where / olives / grow?', ['Spain', 'Finland', 'Canada'], 'Where are olives grown?', 'A lot of olives are grown in Spain.'],
+  [FOOD, '⌚', 'Where / famous watches / make?', ['Switzerland', 'Egypt', 'Peru'], 'Where are famous watches made?', 'Famous watches are made in Switzerland.'],
+  [FOOD, '🍁', 'Where / maple syrup / make?', ['Canada', 'India', 'Spain'], 'Where is maple syrup made?', 'Maple syrup is made in Canada.'],
+  [FOOD, '🧀', 'Where / Parmesan cheese / make?', ['Italy', 'Japan', 'Mexico'], 'Where is Parmesan cheese made?', 'Parmesan cheese is made in Italy.'],
+  [FOOD, '🍌', 'Where / bananas / grow?', ['Ecuador', 'Sweden', 'Poland'], 'Where are bananas grown?', 'A lot of bananas are grown in Ecuador.'],
+  [LANG, '🗣️🇧🇷', 'What language / speak / in Brazil?', ['Portuguese', 'Spanish', 'French'], 'What language is spoken in Brazil?', 'Portuguese is spoken in Brazil.'],
+  [LANG, '🗣️🇨🇦', 'What languages / speak / in Canada?', ['English and French', 'Spanish and Arabic', 'Japanese'], 'What languages are spoken in Canada?', 'English and French are spoken in Canada.'],
+  [LANG, '🗣️🇪🇬', 'What language / speak / in Egypt?', ['Arabic', 'Portuguese', 'Korean'], 'What language is spoken in Egypt?', 'Arabic is spoken in Egypt.'],
+  [MONEY, '💴🇯🇵', 'What money / use / in Japan?', ['the yen', 'the peso', 'the real'], 'What money is used in Japan?', 'The yen is used in Japan.'],
+  [MONEY, '💵🇲🇽', 'What money / use / in Mexico?', ['the peso', 'the rupee', 'the euro'], 'What money is used in Mexico?', 'The peso is used in Mexico.'],
+  [MONEY, '💵🇧🇷', 'What money / use / in Brazil?', ['the real', 'the yen', 'the pound'], 'What money is used in Brazil?', 'The real is used in Brazil.'],
+  [MONEY, '💵🇮🇳', 'What money / use / in India?', ['the rupee', 'the peso', 'the euro'], 'What money is used in India?', 'The rupee is used in India.'],
+  [MONEY, '💷🇬🇧', 'What money / use / in the UK?', ['the pound', 'the euro', 'the bolívar'], 'What money is used in the UK?', 'The pound is used in the UK.'],
+  [OLD, '🪙🇪🇸', 'What money / use / in Spain before the euro?', ['pesetas', 'francs', 'marks'], 'What money was used in Spain before the euro?', 'Pesetas were used in Spain before the euro.'],
+  [OLD, '🪙🇮🇹', 'What money / use / in Italy before the euro?', ['the lira', 'the drachma', 'the peseta'], 'What money was used in Italy before the euro?', 'The lira was used in Italy before the euro.'],
+  [OLD, '🪙🇫🇷', 'What money / use / in France before the euro?', ['francs', 'pesetas', 'drachmas'], 'What money was used in France before the euro?', 'Francs were used in France before the euro.'],
+  [OLD, '🪙🇩🇪', 'What money / use / in Germany before the euro?', ['marks', 'lira', 'pesetas'], 'What money was used in Germany before the euro?', 'Marks were used in Germany before the euro.'],
+  [OLD, '🪙🇬🇷', 'What money / use / in Greece before the euro?', ['drachmas', 'francs', 'marks'], 'What money was used in Greece before the euro?', 'Drachmas were used in Greece before the euro.'],
+  [FEST, '🫘👹', 'When / Setsubun / celebrate?', ['at the start of February', 'in July', 'in December'], 'When is Setsubun celebrated?', 'Setsubun is celebrated in Japan at the start of February.'],
+  [FEST, '💀🌼', 'Where / the Day of the Dead / celebrate?', ['Mexico', 'Japan', 'Canada'], 'Where is the Day of the Dead celebrated?', 'The Day of the Dead is celebrated in Mexico, on November 1 and 2.'],
+  [FEST, '🦃🇺🇸', 'What / eat / at Thanksgiving?', ['turkey', 'sushi', 'pizza'], 'What is eaten at Thanksgiving?', 'Turkey is eaten at Thanksgiving, in the US in November.'],
+  [FEST, '🌈🇮🇳', 'What / throw / at Holi?', ['colored powder', 'tomatoes', 'beans'], 'What is thrown at Holi?', 'Colored powder is thrown at Holi, in India in March.'],
+  [FEST, '🍅🇪🇸', 'What / throw / at La Tomatina?', ['tomatoes', 'water', 'grapes'], 'What is thrown at La Tomatina?', 'Tomatoes are thrown at La Tomatina, in Spain in August.'],
+  [FEST, '💦🇹🇭', 'What / throw / at Songkran?', ['water', 'beans', 'colored powder'], 'What is thrown at Songkran?', 'Water is thrown at Songkran, in Thailand in April.'],
+  [FEST, '🧧🇨🇳', 'What / give / to children at Lunar New Year?', ['red envelopes with money', 'chocolate eggs', 'beans'], 'What is given to children at Lunar New Year?', 'Red envelopes with money are given to children.'],
+  [FEST, '☘️🇮🇪', 'What color / wear / on St. Patrick’s Day?', ['green', 'red', 'black'], 'What color is worn on St. Patrick’s Day?', 'Green is worn on St. Patrick’s Day.'],
+  [FEST, '🪔🇮🇳', 'What / light / at Diwali?', ['lamps', 'candles on a cake', 'fires on the beach'], 'What is lit at Diwali?', 'Lamps are lit at Diwali, the festival of lights.']
+];
+const shuffle = a => a.map(x => [Math.random(), x]).sort((p, q) => p[0] - q[0]).map(p => p[1]);
+
+HouseRandomGen.build({
+  items: QUIZ.map(([topic, pic, cue, opts, q, a]) => ({ topic, pic, cue, opts, q, a, text: cue })),
+  render: it =>
+    '<span class="q-topic">' + it.topic + '</span>' +
+    '<div class="wq-cue"><span class="big">' + it.pic + '</span>' + it.cue + '</div>' +
+    '<div class="wq-opts">' + shuffle(it.opts).map(o => '<span>' + o + '</span>').join('') + '</div>' +
+    '<span class="q-prompt">A: make the question. B: choose and answer with a full sentence.</span>' +
+    '<details class="check"><summary>👀 Check</summary><div class="check-body">' +
+    '<p>❓ “' + it.q + '”</p><p>✅ “' + it.a + '”</p></div></details>'
+});
+</script>
+</body>
+</html>

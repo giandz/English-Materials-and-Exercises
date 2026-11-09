@@ -1,0 +1,143 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<title>Where Is It From? — Passive Voice Practice</title>
+<script>
+(function(){
+  try{
+    var saved = localStorage.getItem('theme-preference');
+    var theme = (saved === 'light' || saved === 'dark')
+      ? saved
+      : ((window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches) ? 'dark' : 'light');
+    document.documentElement.setAttribute('data-theme', theme);
+    var fs = parseFloat(localStorage.getItem('font-size-preference'));
+    if (fs >= 10 && fs <= 28) document.documentElement.style.setProperty('--fs-base', fs + 'px');
+  }catch(e){ /* localStorage/matchMedia unavailable — CSS media query still applies */ }
+})();
+</script>
+<link rel="stylesheet" href="house.css">
+<style>
+/* a verb and its past participle, with a picture */
+.pp-card{ display:flex; align-items:center; gap:6px; }
+.pp-card .pic{ white-space:nowrap; }
+.cast-row{ display:flex; flex-wrap:wrap; gap:14px 18px; justify-content:center; align-items:flex-end; margin:0 0 1rem; padding:10px; background:var(--surface-1); border:1px solid var(--border); border-radius:var(--border-radius-lg); font-size:.8667rem; }
+
+.blank{ display:inline-block; min-width:3em; border-bottom:2px solid var(--color-border-primary); }
+.ctx{ display:inline-flex; align-items:center; gap:8px; font-weight:400; font-style:normal; margin:0 0 6px; padding:3px 10px; border-radius:8px;
+  border:1px solid var(--color-border-tertiary); background:var(--surface-2); color:var(--text-secondary); font-size:.85rem; }
+.ctx .emo{ font-size:1.3rem; }
+.quiz-q .q-text .ctx{ display:flex; width:max-content; max-width:100%; }
+.base{ color:var(--text-muted); font-style:italic; }
+</style>
+</head>
+<body>
+<div class="page" id="page">
+  <span class="cefr-tag cefr-a1a2">A1/A2 · Elementary</span>
+  <h1>Where Is It From? — Practice</h1>
+  <p class="subtitle">Practice: Coffee is grown in Brazil · Pesetas were used in Spain · When is Diwali celebrated?</p>
+
+  <div class="sec-div">1 · Choose</div>
+  <p class="subtitle">Look at the picture. Choose the right words.</p>
+  <div id="pcItems"></div>
+
+  <div class="sec-div">2 · Put the words in order</div>
+  <p class="subtitle">Look at the picture. Make the sentence.</p>
+  <button class="grammar-toggle-btn" id="grammarToggle">🎨 Hide Grammar</button>
+  <div class="pos-legend"></div>
+  <div class="score-bar"><span>Correct: <strong id="woScore">0</strong> / <span id="woTotal">0</span></span></div>
+  <div id="woItems"></div>
+
+  <div class="sec-div">3 · Write the missing words</div>
+  <p class="subtitle">Look at the picture. Write the missing words. The verb in (brackets) helps you.</p>
+  <div id="gfItems"></div>
+
+  <footer>Passive voice: products, money and celebrations — Controlled Practice (A1/A2)</footer>
+</div>
+
+<div id="theme-toggle-wrap">
+  <button id="theme-toggle" aria-label="Toggle light/dark mode" title="Toggle light/dark mode">
+    <span id="theme-icon">☀️</span>
+  </button>
+</div>
+<script src="house.js"></script>
+<script src="stick-character.js"></script>
+<script src="stick-sentence.js"></script>
+<script>
+/* Lucía (from Spain) and Daichi (from Japan) work together — the same people on every page of this lesson */
+StickSentence.cast({
+  lucia:  { base:'woman', colour:'#CC0000', label:'Lucía' },
+  daichi: { base:'man',   colour:'#0066CC', label:'Daichi' },
+  dad:    { base:'man',   colour:'#666666', label:'Daichi’s dad' }
+});
+StickSentence.toggle();   /* stick figures hidden by default */
+
+/* verb → past participle, with a picture of the meaning */
+const PP = [
+  ['grow', 'grown', '🌱➡️🌳'], ['make', 'made', '🏭➡️🍫'], ['speak', 'spoken', '🗣️💬'], ['use', 'used', '💶➡️🛒'],
+  ['celebrate', 'celebrated', '🎉🎊'], ['eat', 'eaten', '🍇😋'], ['throw', 'thrown', '✋➡️🫘'], ['sell', 'sold', '🏪💰'],
+  ['give', 'given', '🎁➡️🙂'], ['wear', 'worn', '👕🙂']
+];
+
+/* the learner's dictionary (right-click / long press a word): what these words mean in this lesson */
+window.LESSON_DICT = {
+  'currency':  { pos:'noun', def:'the money that a country uses', ex:'The yen is the currency of Japan.', es:'moneda' },
+  'peseta':    { pos:'noun', def:'the money that was used in Spain before the euro', ex:'Pesetas were used in Spain until 2002.' },
+  'Setsubun':  { pos:'name', def:'a festival in Japan at the start of February: people throw beans to chase away bad luck', ipa:'ˈsɛtsʊbʊn', say:'SET-soo-boon' },
+  'demon':     { pos:'noun', def:'a bad monster in stories', ex:'At Setsubun, beans are thrown at a demon.' },
+  'cacao':     { pos:'noun', def:'the beans that chocolate is made from', ex:'Cacao is grown in Ghana.' },
+  'festival':  { pos:'noun', def:'a special day or time when people celebrate something', ex:'Diwali is a festival of lights.' },
+  'grown':     { pos:'verb', def:'past participle of grow: plants are grown on a farm', ex:'Coffee is grown in Brazil.' },
+  'celebrated':{ pos:'verb', def:'past participle of celebrate: a special day is celebrated with a party, food or music', ex:'Setsubun is celebrated in February.' }
+};
+
+const S = StickSentence.html;
+const BLANK = '<span class="blank">&nbsp;</span>';
+const rep = m => S(m).replace('____', BLANK);
+/* the picture and the time: 🌍 now (is / are), ⏪ in the past (was / were) */
+const ctx = (emo, note) => '<span class="ctx"><span class="emo">' + emo + '</span>' + note + '</span>';
+const NOW = '🌍 now', PAST = '⏪ in the past — before the euro';
+const base = v => ' <span class="base">(' + v + ')</span>';
+
+/* ── 1 · choose ────────────────────────────────────────────────────────── */
+const PC_ITEMS = [
+  { q: ctx('🍫🇧🇪', NOW) + rep('{Chocolate|@🍫} ____ made in Belgium.'), opts: ['are', 'is', 'were'], correct: 1 },
+  { q: ctx('🥑🇲🇽', NOW) + rep('{Avocados|@🥑} ____ in Mexico.'), opts: ['are grown', 'is grown', 'grow'], correct: 0 },
+  { q: ctx('🪙🇪🇸', PAST) + rep('{Pesetas|@🪙} ____ in Spain.'), opts: ['are used', 'was used', 'were used'], correct: 2 },
+  { q: ctx('🗣️🇧🇷', NOW) + rep('Portuguese ____ in Brazil.'), opts: ['is speak', 'is spoken', 'speaks'], correct: 1 },
+  { q: ctx('🪔🇮🇳', '🌍 every year') + rep('{Diwali|@🪔} ____ in October or November.'), opts: ['celebrates', 'are celebrated', 'is celebrated'], correct: 2 },
+  { q: ctx('➖☕🇨🇦', '🌍 now — not') + rep('{Coffee|@☕} ____ grown in Canada.'), opts: ['isn’t', 'aren’t', 'doesn’t'], correct: 0 },
+  { q: ctx('❓💴🇯🇵', 'a yes / no question') + rep('____ the yen used in Japan?'), opts: ['Does', 'Is', 'Are'], correct: 1 },
+  { q: ctx('❓🧀🇮🇹', 'a question') + rep('Where ____ Parmesan cheese made?'), opts: ['is', 'does', 'are'], correct: 0 }
+];
+HouseComprehension.build({ quiz: 'pcItems', items: PC_ITEMS });
+
+/* ── 2 · word order ────────────────────────────────────────────────────── */
+const WO_ITEMS = [
+  { context: ctx('🍚🇹🇭', NOW), text: 'Rice / is / grown / in / Thailand', pos: ['subject', 'aux', 'part', 'prep', 'noun'] },
+  { context: ctx('🪙🇮🇹', PAST), text: 'The lira / was / used / in / Italy', pos: ['subject', 'aux', 'part', 'prep', 'noun'] },
+  { context: ctx('🍅🎉🇪🇸', 'La Tomatina — a festival in Spain'), text: 'Tomatoes / are / thrown / at / the festival', pos: ['subject', 'aux', 'part', 'prep', 'noun'] },
+  { context: ctx('🪙🇩🇪', PAST), text: 'Marks / were / used / in / Germany', pos: ['subject', 'aux', 'part', 'prep', 'noun'] },
+  { context: ctx('❓🍵', 'a question about a place'), text: 'Where / is / tea / grown / ?', pos: ['wh', 'aux', 'subject', 'part', 'none'] },
+  { context: ctx('❓🗣️🇦🇺', 'a yes / no question'), text: 'Is / English / spoken / in / Australia / ?', pos: ['aux', 'subject', 'part', 'prep', 'noun', 'none'] }
+];
+HouseWordOrder.build({ container: 'woItems', items: WO_ITEMS, scoreEl: 'woScore', totalEl: 'woTotal' });
+
+/* ── 3 · gap fill (easiest first; the gaps move around the sentence) ───── */
+const gaps = m => S(m).replace(/____(\d)/g, '{$1}');
+const GF_ITEMS = [
+  { direct: ctx('🏭🍁🇨🇦', NOW), template: gaps('{Maple syrup|@🍁} is ____0 in Canada.') + base('make'), hints: [{ accepted: ['made'] }] },
+  { direct: ctx('🥝🥝🇳🇿', NOW + ' — more than one'), template: gaps('{Kiwis|@🥝} ____0 grown in New Zealand.'), hints: [{ accepted: ['are'] }] },
+  { direct: ctx('💵🇮🇳', NOW), template: gaps('The rupee is ____0 in India.') + base('use'), hints: [{ accepted: ['used'] }] },
+  { direct: ctx('🪙🇬🇷', PAST), template: gaps('{Drachmas|@🪙} ____0 used in Greece before the euro.'), hints: [{ accepted: ['were'] }] },
+  { direct: ctx('🧧🇨🇳', '🌍 every year — Lunar New Year'), template: gaps('{Red envelopes|@🧧} are ____0 to children at Lunar New Year.') + base('give'), hints: [{ accepted: ['given'] }] },
+  { direct: ctx('☘️👕🇮🇪', '🌍 every year — March 17'), template: gaps('{Green clothes|@☘️👕} are ____0 on St. Patrick’s Day.') + base('wear'), hints: [{ accepted: ['worn'] }] },
+  { direct: ctx('❓📅🫘', 'ask about the day'), template: gaps('____0 is Setsubun ____1? — At the start of February.') + base('celebrate'), hints: [{ accepted: ['When', 'when'] }, { accepted: ['celebrated'] }] },
+  { direct: ctx('❓🗣️🇦🇷', 'a yes / no question'), template: gaps('____0 Spanish ____1 in Argentina? — Yes, it is.') + base('speak'), hints: [{ accepted: ['Is', 'is'] }, { accepted: ['spoken'] }] }
+];
+HouseGapFill.build({ container: 'gfItems', items: GF_ITEMS });
+</script>
+<script>HouseGrammar.init();</script>
+</body>
+</html>

@@ -1,0 +1,266 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<title>The Passive: products, money and celebrations — Clarification</title>
+<script>
+(function(){
+  try{
+    var saved = localStorage.getItem('theme-preference');
+    var theme = (saved === 'light' || saved === 'dark')
+      ? saved
+      : ((window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches) ? 'dark' : 'light');
+    document.documentElement.setAttribute('data-theme', theme);
+    var fs = parseFloat(localStorage.getItem('font-size-preference'));
+    if (fs >= 10 && fs <= 28) document.documentElement.style.setProperty('--fs-base', fs + 'px');
+  }catch(e){ /* localStorage/matchMedia unavailable — CSS media query still applies */ }
+})();
+</script>
+<link rel="stylesheet" href="house.css">
+<style>
+/* a verb and its past participle, with a picture */
+.pp-card{ display:flex; align-items:center; gap:6px; }
+.pp-card .pic{ white-space:nowrap; }
+.cast-row{ display:flex; flex-wrap:wrap; gap:14px 18px; justify-content:center; align-items:flex-end; margin:0 0 1rem; padding:10px; background:var(--surface-1); border:1px solid var(--border); border-radius:var(--border-radius-lg); font-size:.8667rem; }
+
+/* the target language is the lesson, so it stays coloured (not a grammar-toggle colour) */
+.tgt-be{ color:var(--pos-aux); font-weight:700; }
+.tgt-pp{ color:var(--pos-part); font-weight:700; }
+.gs{ display:grid; grid-template-columns:repeat(2, minmax(0,1fr)); gap:10px; margin-bottom:1rem; }
+@media (max-width:560px){ .gs{ grid-template-columns:1fr; } }
+.gs > div{ border:1px solid var(--color-border-tertiary); border-radius:12px; background:var(--surface-2); padding:9px 11px; font-size:.9333rem; }
+.gs h3{ margin:0 0 2px; font-size:.95rem; }
+.gs .sub{ font-size:.8rem; color:var(--text-secondary); margin:0 0 6px; }
+.gs ul{ list-style:none; margin:0; padding:0; }
+.gs li{ padding:5px 0; line-height:1.5; }
+.gs li + li{ border-top:.5px dashed var(--color-border-secondary); }
+.compare-row{ display:grid; grid-template-columns:1fr 1fr; gap:10px; margin-bottom:8px; }
+@media (max-width:520px){ .compare-row{ grid-template-columns:1fr; } }
+.compare-card{ border:1px solid var(--color-border-tertiary); border-radius:12px; padding:9px 12px; background:var(--surface-2); }
+.compare-tag{ font-size:.7333rem; font-weight:700; padding:2px 9px; border-radius:20px; display:inline-block; margin-bottom:5px; background:var(--color-background-info); color:var(--color-text-info); }
+.compare-tag.act{ background:var(--surface-1); color:var(--text-secondary); border:1px solid var(--color-border-secondary); }
+.compare-text{ font-size:.9333rem; line-height:1.5; }
+.compare-note{ font-size:.7667rem; color:var(--text-muted); margin-top:3px; }
+.formula{ display:flex; align-items:center; gap:8px; flex-wrap:wrap; justify-content:center; margin:0 0 1rem; }
+.formula span{ padding:4px 12px; border-radius:8px; font-weight:700; font-size:.9rem; }
+.formula .f-s{ background:var(--pos-subject-bg); color:var(--pos-subject); }
+.formula .f-be{ background:var(--pos-aux-bg); color:var(--pos-aux); }
+.formula .f-pp{ background:var(--pos-part-bg); color:var(--pos-part); }
+.formula .plus{ padding:0; color:var(--text-muted); }
+.pp-table{ width:100%; border-collapse:collapse; font-size:.9rem; margin-bottom:1rem; }
+.pp-table th{ font-size:.7333rem; text-transform:uppercase; letter-spacing:.05em; color:var(--text-secondary); text-align:left; padding:5px 8px; border-bottom:1px solid var(--color-border-secondary); background:var(--surface-1); }
+.pp-table td{ padding:5px 8px; border-bottom:.5px solid var(--color-border-tertiary); }
+.pp-table td.pic{ white-space:nowrap; }
+.rule-box p{ margin:0 0 6px; }
+.rule-box p:last-child{ margin-bottom:0; }
+</style>
+</head>
+<body>
+<div class="page" id="page">
+  <span class="cefr-tag cefr-a1a2">A1/A2 · Elementary</span>
+  <h1>The Passive: Coffee is grown in Ethiopia.</h1>
+  <p class="subtitle">is / are + past participle · was / were + past participle</p>
+
+  <div class="sec-div">Look</div>
+  <p class="subtitle">From the conversation. Compare the two lists.</p>
+  <div class="gs" id="gs"></div>
+
+  <div class="sec-div">Why the passive?</div>
+  <p class="subtitle">Compare. Who grows the coffee? Who uses the money? It’s not important!</p>
+  <div id="compare"></div>
+
+  <div class="sec-div">Check the meaning</div>
+  <p class="subtitle">Read the sentence. Answer the questions.</p>
+  <div id="ccq"></div>
+
+  <div class="sec-div">Look at the form</div>
+  <p class="subtitle">What is each part of the sentence? Drag a label (or tap a label, then tap a box).</p>
+  <div class="score-bar"><span>Correct: <strong id="fcScore">0</strong> / <span id="fcTotal">0</span></span></div>
+  <div id="formClarf"></div>
+
+  <div class="formula"><span class="f-s">subject</span><span class="plus">+</span><span class="f-be">is / are · was / were</span><span class="plus">+</span><span class="f-pp">past participle</span></div>
+  <div class="rule-box" id="ruleBox"></div>
+
+  <div class="sec-div">Past participles for this lesson</div>
+  <table class="pp-table" id="ppTable"></table>
+
+  <div class="sec-div">Common mistakes</div>
+  <div id="mistakes"></div>
+
+  <div class="sec-div">Error hunt</div>
+  <p class="subtitle">Some sentences have a mistake. Some are correct! Tap a word — or a space between words — to fix it. Then press OK.</p>
+  <div class="score-bar"><span>Done: <strong id="errorScore">0</strong> / <span id="errorTotal">0</span></span></div>
+  <div id="errorHuntItems"></div>
+
+  <footer>Passive voice: products, money and celebrations — Clarification (A1/A2)</footer>
+</div>
+
+<div id="theme-toggle-wrap">
+  <button id="theme-toggle" aria-label="Toggle light/dark mode" title="Toggle light/dark mode">
+    <span id="theme-icon">☀️</span>
+  </button>
+</div>
+<script src="house.js"></script>
+<script src="stick-character.js"></script>
+<script src="stick-sentence.js"></script>
+<script>
+/* Lucía (from Spain) and Daichi (from Japan) work together — the same people on every page of this lesson */
+StickSentence.cast({
+  lucia:  { base:'woman', colour:'#CC0000', label:'Lucía' },
+  daichi: { base:'man',   colour:'#0066CC', label:'Daichi' },
+  dad:    { base:'man',   colour:'#666666', label:'Daichi’s dad' }
+});
+StickSentence.toggle();   /* stick figures hidden by default */
+
+/* verb → past participle, with a picture of the meaning */
+const PP = [
+  ['grow', 'grown', '🌱➡️🌳'], ['make', 'made', '🏭➡️🍫'], ['speak', 'spoken', '🗣️💬'], ['use', 'used', '💶➡️🛒'],
+  ['celebrate', 'celebrated', '🎉🎊'], ['eat', 'eaten', '🍇😋'], ['throw', 'thrown', '✋➡️🫘'], ['sell', 'sold', '🏪💰'],
+  ['give', 'given', '🎁➡️🙂'], ['wear', 'worn', '👕🙂']
+];
+
+/* the learner's dictionary (right-click / long press a word): what these words mean in this lesson */
+window.LESSON_DICT = {
+  'currency':  { pos:'noun', def:'the money that a country uses', ex:'The yen is the currency of Japan.', es:'moneda' },
+  'peseta':    { pos:'noun', def:'the money that was used in Spain before the euro', ex:'Pesetas were used in Spain until 2002.' },
+  'Setsubun':  { pos:'name', def:'a festival in Japan at the start of February: people throw beans to chase away bad luck', ipa:'ˈsɛtsʊbʊn', say:'SET-soo-boon' },
+  'demon':     { pos:'noun', def:'a bad monster in stories', ex:'At Setsubun, beans are thrown at a demon.' },
+  'cacao':     { pos:'noun', def:'the beans that chocolate is made from', ex:'Cacao is grown in Ghana.' },
+  'festival':  { pos:'noun', def:'a special day or time when people celebrate something', ex:'Diwali is a festival of lights.' },
+  'grown':     { pos:'verb', def:'past participle of grow: plants are grown on a farm', ex:'Coffee is grown in Brazil.' },
+  'celebrated':{ pos:'verb', def:'past participle of celebrate: a special day is celebrated with a party, food or music', ex:'Setsubun is celebrated in February.' }
+};
+
+/* the target words stay coloured: is / are / was / were, and the past participle.
+   They are written as ⟦b…⟧ / ⟦p…⟧ first, so the stick-figure markup can read the sentence, then coloured. */
+const B = s => '⟦b' + s + '⟧';
+const P = s => '⟦p' + s + '⟧';
+const fix = h => h.replace(/⟦b([^⟧]*)⟧/g, '<span class="tgt-be">$1</span>').replace(/⟦p([^⟧]*)⟧/g, '<span class="tgt-pp">$1</span>');
+const S = m => fix(StickSentence.html(m));
+
+/* ── look: now (is / are) vs. in the past (was / were) ─────────────────── */
+const li = m => '<li>' + S(m) + '</li>';
+document.getElementById('gs').innerHTML =
+  '<div><h3>🌍 Now — is / are</h3><p class="sub">Facts about things and places today.</p><ul>' +
+    li('{Coffee|@☕} ' + B('is') + ' ' + P('grown') + ' in {Ethiopia|@🇪🇹}.') +
+    li('{The chocolate|@🍫} ' + B('is') + ' ' + P('made') + ' in Belgium.') +
+    li('{The euro|@💶} ' + B('is') + ' ' + P('used') + ' in Spain.') +
+    li('{Setsubun|@🫘👹} ' + B('is') + ' ' + P('celebrated') + ' in February.') +
+    li('{Beans|@🫘} ' + B('are') + ' ' + P('thrown') + ' at a demon.') +
+    li('{Grapes|@🍇} ' + B('are') + ' ' + P('eaten') + ' on New Year’s Eve.') +
+  '</ul></div>' +
+  '<div><h3>⏪ In the past — was / were</h3><p class="sub">Finished: it’s not true now.</p><ul>' +
+    li('{Pesetas|@🪙} ' + B('were') + ' ' + P('used') + ' in Spain before the euro.') +
+    li('{The lira|@🪙} ' + B('was') + ' ' + P('used') + ' in Italy before the euro.') +
+    li('{Francs|@🪙} ' + B('were') + ' ' + P('used') + ' in France before the euro.') +
+  '</ul></div>';
+
+/* ── why the passive: the thing is the topic; the people are not important ─ */
+const CMP = [
+  ['{Farmers|man,woman} grow {coffee|@☕} in Ethiopia.', '{Coffee|@☕} ' + B('is') + ' ' + P('grown') + ' in Ethiopia.',
+   'Which farmers? We don’t know their names.', 'Better: the coffee is the topic.'],
+  ['{People|man,woman} used {pesetas|@🪙} in Spain.', '{Pesetas|@🪙} ' + B('were') + ' ' + P('used') + ' in Spain.',
+   '“People” = everybody. It says nothing new.', 'Better: the money is the topic.'],
+  ['{People|man,woman} celebrate {Setsubun|@🫘👹} in February.', '{Setsubun|@🫘👹} ' + B('is') + ' ' + P('celebrated') + ' in February.',
+   'OK, but “people” is not important.', 'Better: the festival is the topic.']
+];
+document.getElementById('compare').innerHTML = CMP.map(([a, p, na, np]) =>
+  '<div class="compare-row">' +
+    '<div class="compare-card"><span class="compare-tag act">active</span><div class="compare-text">' + S(a) + '</div><div class="compare-note">' + na + '</div></div>' +
+    '<div class="compare-card"><span class="compare-tag">passive</span><div class="compare-text">' + S(p) + '</div><div class="compare-note">' + np + '</div></div>' +
+  '</div>').join('');
+
+/* ── concept checking questions ────────────────────────────────────────── */
+HouseCCQ.build({
+  container: 'ccq',
+  items: [
+    { sentence: S('{Coffee|@☕} is grown in Ethiopia.'),
+      questions: [
+        { q: 'Who grows the coffee?', opts: ['Farmers', 'The coffee'], correct: 0,
+          why: 'Farmers grow it. The coffee doesn’t do the action — the action happens to the coffee.' },
+        { q: 'Do we know the farmers’ names?', opts: ['Yes', 'No'], correct: 1,
+          why: 'No — and it’s not important. That’s why we use the passive.' }
+      ] },
+    { sentence: S('{Pesetas|@🪙} were used in Spain before the euro.'),
+      questions: [
+        { q: 'Are pesetas used in Spain now?', opts: ['Yes', 'No'], correct: 1,
+          why: 'No. “Were” = the past. Now the euro is used in Spain.' }
+      ] },
+    { sentence: S('{Beans|@🫘} are thrown at a demon.'),
+      questions: [
+        { q: 'Why “are”, not “is”?', opts: ['Beans = more than one', 'It’s the past'], correct: 0,
+          why: 'Beans are plural, so: are. One bean is thrown. Many beans are thrown.' }
+      ] },
+    { sentence: S('{Spanish tortillas|@🥚🥔} are made with eggs and potatoes.'),
+      questions: [
+        { q: 'Is this about one tortilla, today?', opts: ['Yes', 'No'], correct: 1,
+          why: 'No. It’s a fact — this is how all Spanish tortillas are made.' }
+      ] }
+  ]
+});
+
+/* ── form ──────────────────────────────────────────────────────────────── */
+HouseFormClarf.build({
+  container: 'formClarf', scoreEl: 'fcScore', totalEl: 'fcTotal',
+  pool: ['wh', 'subject', 'aux', 'neg', 'part', 'prep', 'noun', 'time'],
+  items: [
+    { form: 'aff', parts: [['Coffee', 'subject'], ['is', 'aux'], ['grown', 'part'], ['in', 'prep'], ['Ethiopia', 'noun'], ['.', null]] },
+    { form: 'aff', parts: [['Pesetas', 'subject'], ['were', 'aux'], ['used', 'part'], ['before the euro', 'time'], ['.', null]] },
+    { form: 'neg', parts: [['Cacao', 'subject'], ['isn’t', 'neg'], ['grown', 'part'], ['in', 'prep'], ['Belgium', 'noun'], ['.', null]] },
+    { form: 'q',   parts: [['Is', 'aux'], ['this chocolate', 'subject'], ['made', 'part'], ['in', 'prep'], ['Belgium', 'noun'], ['?', null]] },
+    { form: 'wh',  parts: [['When', 'wh'], ['is', 'aux'], ['Setsubun', 'subject'], ['celebrated', 'part'], ['?', null]] }
+  ]
+});
+
+/* ── the rule ──────────────────────────────────────────────────────────── */
+document.getElementById('ruleBox').innerHTML = fix(
+  '<p><strong>Use the passive</strong> when the thing is important, and the people who do the action are not important (or we don’t know them).</p>' +
+  '<p><strong>One thing / no -s:</strong> Coffee ' + B('is') + ' ' + P('grown') + ' in Ethiopia. · The yen ' + B('is') + ' ' + P('used') + ' in Japan.</p>' +
+  '<p><strong>More than one:</strong> Beans ' + B('are') + ' ' + P('thrown') + '. · Tortillas ' + B('are') + ' ' + P('made') + ' with eggs.</p>' +
+  '<p><strong>The past:</strong> The lira ' + B('was') + ' ' + P('used') + ' in Italy. · Pesetas ' + B('were') + ' ' + P('used') + ' in Spain.</p>' +
+  '<p><strong>Negative:</strong> Cacao ' + B('isn’t') + ' ' + P('grown') + ' in Belgium. · Pesetas ' + B('aren’t') + ' ' + P('used') + ' now.</p>' +
+  '<p><strong>Questions:</strong> ' + B('Is') + ' it ' + P('made') + ' in Belgium? · Where ' + B('is') + ' coffee ' + P('grown') + '? · What money ' + B('is') + ' ' + P('used') + ' in Japan?</p>');
+
+/* ── past participles ──────────────────────────────────────────────────── */
+document.getElementById('ppTable').innerHTML = '<tr><th></th><th>verb</th><th>past participle</th></tr>' +
+  fix(PP.map(([v, p, e]) => '<tr><td class="pic">' + e + '</td><td>' + v + '</td><td>' + P(p) + '</td></tr>').join(''));
+
+/* ── common mistakes ───────────────────────────────────────────────────── */
+const MISTAKES = [
+  ['Coffee grown in Ethiopia.', 'Coffee is grown in Ethiopia.'],
+  ['Coffee is grow in Ethiopia.', 'Coffee is grown in Ethiopia.'],
+  ['Beans is thrown at a demon.', 'Beans are thrown at a demon.'],
+  ['Pesetas are used in Spain before the euro.', 'Pesetas were used in Spain before the euro.'],
+  ['The chocolate is make in Belgium.', 'The chocolate is made in Belgium.'],
+  ['Where coffee is grown?', 'Where is coffee grown?'],
+  ['Setsubun celebrates in February.', 'Setsubun is celebrated in February.']
+];
+document.getElementById('mistakes').innerHTML = MISTAKES.map(([no, yes]) =>
+  '<div class="pair-card"><div class="pair-line no"><span class="mark">✗</span>' + no + '</div>' +
+  '<div class="pair-line yes"><span class="mark">✓</span>' + yes + '</div></div>').join('');
+
+/* ── error hunt (A1/A2: some sentences are already correct) ── */
+const EH_ITEMS = [
+  { words: ['Tea', 'is', 'grow', 'in', 'India', '.'],
+    error: { type: 'wrong', wordIndex: 2, options: ['grown', 'grew', 'growing'], correct: 'grown' } },
+  { words: ['The', 'yen', 'is', 'used', 'in', 'Japan', '.'], error: null },
+  { words: ['Avocados', 'is', 'grown', 'in', 'Mexico', '.'],
+    error: { type: 'wrong', wordIndex: 1, options: ['are', 'were', 'be'], correct: 'are' } },
+  { words: ['Portuguese', 'spoken', 'in', 'Brazil', '.'],
+    error: { type: 'missing', gapIndex: 1, options: ['is', 'are', 'does'], correct: 'is' } },
+  { words: ['Francs', 'were', 'used', 'in', 'France', 'before', 'the', 'euro', '.'], error: null },
+  { words: ['The', 'lira', 'is', 'used', 'in', 'Italy', 'before', 'the', 'euro', '.'],
+    error: { type: 'wrong', wordIndex: 2, options: ['was', 'were', 'are'], correct: 'was' } },
+  { words: ['Diwali', 'is', 'celebrate', 'in', 'India', '.'],
+    error: { type: 'wrong', wordIndex: 2, options: ['celebrated', 'celebrates', 'celebrating'], correct: 'celebrated' } },
+  { words: ['Where', 'chocolate', 'is', 'made', '?'],
+    error: { type: 'misplaced', wordIndex: 2, targetGapIndex: 1 } },
+  { words: ['Maple', 'syrup', 'is', 'made', 'in', 'Canada', '.'], error: null },
+  { words: ['Watches', 'are', 'is', 'made', 'in', 'Switzerland', '.'], error: { type: 'extra', wordIndex: 2 } }
+];
+HouseErrorHunt.build({ container: 'errorHuntItems', items: EH_ITEMS, scoreEl: 'errorScore', totalEl: 'errorTotal' });
+</script>
+<script>HouseGrammar.init();</script>
+</body>
+</html>
