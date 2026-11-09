@@ -1,12 +1,8 @@
-<!DOCTYPE html>
-<html lang="en">
-<head>
-<meta charset="utf-8">
-<meta name="viewport" content="width=device-width, initial-scale=1">
 <title>Learner Dictionary Demo</title>
+<meta name="claude:viewport-fit-sides" content="cover">
 <style>
-/* A test page for house-dict.js. It carries a small copy of the house tokens so it works on its own;
-   a real lesson links house.css and house.js instead, and house.js loads house-dict.js by itself. */
+/* A test page for the learner's dictionary in house.js (HouseDict). It carries a small copy of the
+   house tokens so it works on its own; a real lesson links house.css too. */
 :root{
   --color-background-primary:#fff; --color-background-secondary:#f7f7f8; --color-background-tertiary:#eeeef0;
   --color-background-info:#e6f1fb; --color-text-info:#0c447c; --color-text-success:#27500a;
@@ -23,7 +19,7 @@
   --pos-none:#8b8b90; --pos-none-bg:#f3f4f6; --pos-subject:#10b981; --pos-subject-bg:#d1fae5; --pos-prep:#65a30d; --pos-prep-bg:#ecfccb;
   --cefr-text:#000;
 }
-@media (prefers-color-scheme: dark){ :root{
+@media (prefers-color-scheme: dark){ :root:not([data-theme="light"]){
   --color-background-primary:#1e1e20; --color-background-secondary:#26262a; --color-background-tertiary:#2f2f34;
   --color-background-info:#042c53; --color-text-info:#b5d4f4; --color-text-success:#c0dd97;
   --color-text-primary:#f0f0f2; --color-text-secondary:#b4b4ba; --color-text-tertiary:#85858c;
@@ -31,10 +27,20 @@
   --good-bg:#1d2f1f; --bad-bg:#3a201e; --bg-cel:#2e1065; --text-cel:#c4b5fd; --text-accent:#6aa9e8;
   --pos-verb-bg:#422006; --pos-noun-bg:#431407; --pos-adj-bg:#4a044e; --pos-adverb-bg:#164e63; --pos-det-bg:#1e1b4b;
   --pos-aux-bg:#4a1833; --pos-none-bg:#2f3136; --pos-subject-bg:#064e3b; --pos-prep-bg:#1a2e05; --cefr-text:#fff;
-}}
+ color-scheme:dark; }}
+:root[data-theme="dark"]{
+  --color-background-primary:#1e1e20; --color-background-secondary:#26262a; --color-background-tertiary:#2f2f34;
+  --color-background-info:#042c53; --color-text-info:#b5d4f4; --color-text-success:#c0dd97;
+  --color-text-primary:#f0f0f2; --color-text-secondary:#b4b4ba; --color-text-tertiary:#85858c;
+  --color-border-primary:#4a4a50; --color-border-secondary:#3a3a3f; --color-border-tertiary:#34343a;
+  --good-bg:#1d2f1f; --bad-bg:#3a201e; --bg-cel:#2e1065; --text-cel:#c4b5fd; --text-accent:#6aa9e8;
+  --pos-verb-bg:#422006; --pos-noun-bg:#431407; --pos-adj-bg:#4a044e; --pos-adverb-bg:#164e63; --pos-det-bg:#1e1b4b;
+  --pos-aux-bg:#4a1833; --pos-none-bg:#2f3136; --pos-subject-bg:#064e3b; --pos-prep-bg:#1a2e05; --cefr-text:#fff;
+ color-scheme:dark; }
 html{ font-size:14px; }
 body{ margin:0; background:var(--color-background-primary); color:var(--text-primary); font-family:var(--font-sans); line-height:1.5; }
-.page{ max-width:700px; margin:0 auto; padding:20px 14px 40px; }
+.page{ max-width:700px; margin:0 auto; padding-block:20px 40px; padding-left:max(16px, env(safe-area-inset-left, 0px)); padding-right:max(16px, env(safe-area-inset-right, 0px)); }
+@media (max-width:520px){ .match-grid{ column-gap:34px; } }
 h1{ font-size:1.28rem; margin:0 0 2px; }
 .subtitle{ font-size:.8333rem; color:var(--text-secondary); margin:0 0 8px; }
 .cefr-tag{ display:inline-block; font-size:.7333rem; font-weight:700; padding:3px 10px; border-radius:20px; margin-bottom:8px; color:var(--cefr-text);
@@ -62,8 +68,6 @@ h1{ font-size:1.28rem; margin:0 0 2px; }
 .try span{ border:1px solid var(--border); background:var(--surface-1); border-radius:999px; padding:3px 10px; font-size:.9rem; }
 footer{ text-align:center; font-size:.8rem; color:var(--text-muted); margin-top:1.4rem; }
 </style>
-</head>
-<body>
 <div class="page" id="page">
   <span class="cefr-tag cefr-a1a2">A1 / A2</span>
   <h1>Learner dictionary</h1>
@@ -83,9 +87,9 @@ footer{ text-align:center; font-size:.8rem; color:var(--text-muted); margin-top:
   </div>
 
   <div class="sec-div">Try more words</div>
-  <div class="try"><span>went</span><span>cities</span><span>bigger</span><span>children</span><span>saw</span><span>didn't</span><span>meaning</span><span>right-click</span><span>stayed</span></div>
+  <div class="try"><span>neighbour</span><span>comfortable</span><span>teeth</span><span>struggled</span><span>colour</span><span>opportunity</span><span>environment</span><span>would like</span><span>according to</span><span>went</span><span>cities</span><span>bigger</span><span>children</span><span>saw</span><span>didn't</span><span>meaning</span><span>right-click</span><span>stayed</span><span>practise</span><span>kilometres</span><span>umbrella</span><span>coworkers</span></div>
 
-  <footer>Pronunciation from the CMU Pronouncing Dictionary · simple definitions written for this course</footer>
+  <footer>The 3000 most common words (New General Service List and its sister lists, CC BY-SA 4.0) · American spelling · definitions and pronunciations written for this course · audio: your browser’s voices</footer>
 </div>
 
 <!-- What the words mean IN THIS LESSON. "bank" here is the river bank, the 2nd meaning in learner-dict;
@@ -124,6 +128,4 @@ footer{ text-align:center; font-size:.8rem; color:var(--text-muted); margin-top:
   shuffle(PAIRS).forEach(p => R.appendChild(card(p[0], '<span class="emoji">' + p[1] + '</span>', 'right')));
 })();
 </script>
-<script src="house-dict.js"></script>
-</body>
-</html>
+<script src="house.js"></script>

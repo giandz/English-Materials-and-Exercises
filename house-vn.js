@@ -110,14 +110,15 @@
      easing: { out:'cubic', in:'bounce' } the departure and the arrival separately, as in the editor
      moveTime: 0.45                       seconds a move takes
    A line's easing and moveTime apply to the moves it starts (its own and its cues'); the scene's are the default.
-   Reading aids (buttons under the stage, and the page's own switches, kept in step both ways):
-     🦾 Bionic   the opening letters of each word in bold, as house.js's bionic reading does in the bubbles
+   Reading aids: the page's round buttons (house.js HouseRail) switch them, for the bubbles and the stage together.
+   B and M toggle the same switches from the keyboard.
+     🦾 bionic   the opening letters of each word in bold, as house.js's bionic reading does in the bubbles
                  (1–3 letters → 1, 4–6 → 2, 7+ → 3). Follows HouseBionic and its 🦾 button; script.bionic true/false fixes it.
-     🎵 Marks    pronunciation marks (pron-mark.js, loaded from this file's folder the first time): a circle over each
+     🎵 marks    pronunciation marks (pron-mark.js, loaded from this file's folder the first time): a circle over each
                  syllable (bigger for stress, biggest for the main stress), rising or falling arrows on questions, and
                  connected speech under the gaps, in the page's stress / connected speech / intonation colours. They
                  appear with the letters as the line is said; {stress} moves the main stress. Follows the page's
-                 "🎵 Show pronunciation marks" switch (pron-adapter.js); script.pron true/false fixes it.
+                 🎵 switch (pron-adapter.js), or makes one when the page has none; script.pron true/false fixes it.
    The text appears letter by letter in step with the mouth (the words' timing from HouseCharacter.speech).
    A click, Space, Enter or 🔽 finishes the line if it is still being said, otherwise goes to the next one.
    ══════════════════════════════════════════════════════════════════════════ */
@@ -360,8 +361,6 @@ function create(host, script){
       <span class="vn-count" aria-live="off"></span>
       <button type="button" data-act="next" title="Next (Space, Enter or a click)"><span class="ic" aria-hidden="true">🔽</span><span class="lb">Next</span></button>
       <button type="button" data-act="auto" aria-pressed="false" title="Auto: go on by itself after each line, leaving time to read (A). It waits at questions."><span class="ic" aria-hidden="true">⏯️</span><span class="lb">Auto</span></button>
-      <button type="button" data-act="bionic" aria-pressed="false" title="Bionic reading: the start of each word in bold"><span class="ic" aria-hidden="true">🦾</span><span class="lb">Bionic</span></button>
-      <button type="button" data-act="pron" aria-pressed="false" title="Pronunciation marks: stress, intonation and connected speech"><span class="ic" aria-hidden="true">🎵</span><span class="lb">Marks</span></button>
     </div>`;
   host.appendChild(root);
   const $ = c => root.querySelector(c);
@@ -973,7 +972,7 @@ function create(host, script){
   });
   root.querySelector('.vn-bar').addEventListener('click', e => {
     const b = e.target.closest('button'); if(!b) return;
-    ({next, back, restart, auto:() => setAuto(!auto), bionic:() => setBionic(!bionicOn()), pron:() => setPron(!pronOn())})[b.dataset.act]();
+    const act = ({next, back, restart, auto:() => setAuto(!auto)})[b.dataset.act]; if(act) act();
   });
   root.addEventListener('keydown', e => {
     if(e.target.closest('input, textarea, select')) return;
@@ -1119,9 +1118,7 @@ function create(host, script){
     if(dead) return;
     const b = bionicOn(), p = pronOn();
     root.classList.toggle('bionic', b);
-    const bb = root.querySelector('[data-act="bionic"]'), pb = root.querySelector('[data-act="pron"]');
-    const press = (el, v) => { if(el.getAttribute('aria-pressed') !== String(v)) el.setAttribute('aria-pressed', String(v)); };   /* only on a change: the observer below hears these too */
-    press(bb, b); press(pb, p);
+    pronButton();
     const had = root.classList.contains('pron');
     root.classList.toggle('pron', p);
     if(p !== had || (p && !pron)) pronLine();
@@ -1138,6 +1135,23 @@ function create(host, script){
     loadPron().then(syncModes, () => {});
   else if(!global.PronMark && document.getElementById('pmStart') && (() => { try{ return localStorage.getItem('pron-marks-shown') === '1'; }catch(e){ return false; } })()) whenPron();   /* the page is turning them on by itself */
 
+  /* 🎵 on a page that has no pronunciation switch of its own (visual-novel.html): the visual novel puts one in the
+     round-button column (house.js HouseRail). Where the page has one (pron-adapter.js), that one drives both. */
+  let ownPron = false;
+  const pageSwitch = () => !!(document.getElementById('pmStart') || document.getElementById('pmToggle'));
+  function pronButton(){
+    if(!ownPron) return;
+    if(pageSwitch()){ global.HouseRail.remove('vnPron'); ownPron = false; return; }
+    global.HouseRail.set('vnPron', pronWanted());
+  }
+  setTimeout(() => {   /* pron-adapter.js looks for its content at 0 and 800 ms */
+    if(dead || ownPron || pageSwitch() || !global.HouseRail) return;
+    if(script.pron === undefined){ let on = false; try{ on = localStorage.getItem('pron-marks-shown') === '1'; }catch(e){} DOC.classList.toggle('pm-hidden', !on); }
+    ownPron = true;
+    global.HouseRail.add({id:'vnPron', icon:'🎵', label:'Pronunciation marks', order:40, pressed:pronWanted(), onClick:() => setPron(!pronWanted())});
+    syncModes();
+  }, 1200);
+
   let dead = false;
   function destroy(){   /* stop everything (animations, timers) and empty the host */
     if(dead) return; dead = true;
@@ -1146,6 +1160,7 @@ function create(host, script){
     for(const s of sprites.values()){ clearTimeout(s.faceTimer); clearTimeout(s.moveTimer); clearTimeout(s.blinkTimer); s.anim = null; }
     talk = null; sprites.clear(); host.innerHTML = '';
     modeObs.disconnect(); if(pronRO) pronRO.disconnect(); clearInterval(pronWait);
+    if(ownPron && global.HouseRail) global.HouseRail.remove('vnPron');
   }
 
   setAuto(auto);

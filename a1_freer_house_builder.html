@@ -82,7 +82,30 @@
   .cut-float[hidden], .cut-row[hidden]{ display:none; }
   /* day and night: the time of day, and the darkness laid over the 3D view (its own layers, so the
      time going by only changes their opacity) */
-  .night-float{ left:auto; right:10px; }
+  /* the time of day: an analog clock in the 3D frame's bottom right corner (above the floor's name),
+     its hands dragged round to set the time */
+  .night-clock{ position:absolute; right:10px; bottom:30px; display:flex; flex-direction:column; align-items:center; gap:4px;
+    padding:8px 8px 6px; border-radius:18px; background:var(--color-background-primary); border:1px solid var(--color-border-secondary);
+    box-shadow:0 2px 8px rgba(0,0,0,.12); user-select:none; -webkit-user-select:none; }
+  .night-clock[hidden]{ display:none; }
+  .night-clock .nc-face{ display:block; width:104px !important; height:104px !important; max-height:none; margin:0; touch-action:none; cursor:grab; border-radius:50%; }
+  .nc-face:active{ cursor:grabbing; }
+  .nc-face:focus-visible{ outline:2px solid var(--slot-accent); outline-offset:2px; }
+  .nc-dial{ fill:#fdfcf8; stroke:#8a8f96; stroke-width:2; transition:fill .4s; }
+  .nc-num{ font:600 9.5px/1 system-ui, sans-serif; fill:#3a3f45; text-anchor:middle; dominant-baseline:central; transition:fill .4s; }
+  .nc-tick{ stroke:#8a8f96; stroke-width:1; }  .nc-tick.big{ stroke-width:1.8; stroke:#5a6067; }
+  .nc-hour{ stroke:#2b2f34; stroke-width:4; stroke-linecap:round; }
+  .nc-min{ stroke:#2b2f34; stroke-width:2.6; stroke-linecap:round; }
+  .nc-hub{ fill:#2b2f34; }
+  .nc-sky{ font-size:14px; line-height:1; }
+  .night-clock.is-night .nc-dial{ fill:#1d2a4a; stroke:#5d6b8c; }
+  .night-clock.is-night .nc-num{ fill:#e6ecf8; }
+  .night-clock.is-night .nc-tick{ stroke:#7f8db0; }
+  .night-clock.is-night .nc-hour, .night-clock.is-night .nc-min{ stroke:#f3d27a; }
+  .night-clock.is-night .nc-hub{ fill:#f3d27a; }
+  .nc-row{ display:flex; align-items:center; gap:6px; }
+  .nc-val{ font-size:0.8571rem; font-weight:700; color:var(--text-primary); font-variant-numeric:tabular-nums; min-width:4.4em; text-align:center; }
+  .nc-ampm{ padding:2px 7px; border-radius:100px; border:1px solid var(--color-border-secondary); background:var(--color-background-primary); color:var(--text-secondary); font-size:0.7143rem; font-weight:700; cursor:pointer; }
   .night-play{ width:28px; height:28px; padding:0; border-radius:50%; border:1px solid var(--color-border-secondary); background:var(--color-background-primary); cursor:pointer; font-size:13px; line-height:1; }
   .night-play[aria-pressed="true"]{ background:var(--slot-accent); color:#fff; border-color:var(--slot-accent); }
   .hb-night{ position:absolute; left:0; top:0; width:100%; pointer-events:none; will-change:opacity; opacity:0; }
@@ -363,11 +386,14 @@
         <button type="button" class="frame-btn" id="familyFrameBtn" title="Family mode: off — press to bring the house to life (H)" aria-label="Family mode: off" aria-pressed="false">🧑‍🧑‍🧒‍🧒</button>
         <button type="button" class="frame-btn" id="nightBtn" title="Time of day (N)" aria-label="Time of day" aria-pressed="false">🌗</button>
       </div>
-      <div class="cut-float night-float" id="nightFloat" hidden>
-        <span class="cut-ico" id="nightIco" aria-hidden="true">☀️</span>
-        <input type="range" class="cut-range" id="nightSlider" min="0" max="24" step="0.25" value="12" aria-label="Time of day" title="Time of day: drag it, or press ▶ to let the day go by">
-        <span class="cut-val" id="nightVal">12:00</span>
-        <button type="button" class="night-play" id="nightPlay" aria-pressed="false" title="Let the day go by (a whole day in 4 minutes)" aria-label="Let the day go by">▶</button>
+      <div class="night-clock" id="nightFloat" hidden>
+        <svg class="nc-face" id="nightClock" viewBox="-52 -52 104 104" role="slider" tabindex="0" aria-label="Time of day" aria-valuemin="0" aria-valuemax="24" title="Drag the long hand for the minutes, the short hand for the hours (← → a quarter of an hour)"></svg>
+        <div class="nc-row">
+          <span class="nc-sky" id="nightIco" aria-hidden="true">☀️</span>
+          <button type="button" class="nc-ampm" id="nightAmPm" title="Morning or afternoon (am / pm): 12 hours on or back" aria-label="Switch between am and pm">am</button>
+          <span class="nc-val" id="nightVal">12:00</span>
+          <button type="button" class="night-play" id="nightPlay" aria-pressed="false" title="Let the day go by (a whole day in 4 minutes)" aria-label="Let the day go by">▶</button>
+        </div>
       </div>
       <div class="cut-float" id="cutFloat" hidden>
         <span class="cut-ico" aria-hidden="true">✂️</span>
@@ -531,7 +557,7 @@
     <li><strong>🛋️ Furniture</strong>: pick a 🍽️ dining table, 🪑 chair, 🛏️ single bed, double bed or bunk bed, side table, coffee table, dresser, wardrobe, armchair, loveseat or couch (and more) and tap a grid corner or the middle of a square. Tap it again to turn it, or press <strong>R</strong> before you tap. Drag it to move it.</li>
     <li><strong>📚 Bookshelf, wall shelf, countertop, wall cabinet</strong>: furniture with levels for appliances. A wall cabinet hangs like a shelf and shares the countertop's own cabinet-door look, for matching upper and lower kitchen cabinets. A countertop is built like a wall: drag along the grid lines, on the side you want, and drag on from its end to make it longer. Where two runs meet in a corner, the <strong>counter corner</strong> fills the square between them: tap the corner square, and tap it again to turn it. A bookshelf has three levels (two inside and the top). A wall shelf hangs on a wall: tap the wall on the side you want.</li>
     <li><strong>💡 Light switches, curtains and blinds</strong>: tap a wall, on the room’s side, for a light switch (1.1 m up, towards either end of the wall or in the middle, wherever you tap). Every switch in a room turns its one ceiling light on and off; tap a switch with the switch tool to flick it yourself. Tap a window, on the side you want, for curtains or a roller blind; tap them again to close or open them. Colour them with 🎨 Style (white, or the tile pastels). Tap a table or stand lamp with its own tool to switch it on or off. A <strong>wall lamp</strong> goes on either side of a wall (inside or outside), at 1.8 m, round, square or long (🎨 Style); tap it to switch it. A <strong>lamppost</strong> and <strong>lawn lights</strong> stand outside and come on by themselves after dark (tap one to switch it off or back on), lighting the ground round them. In walk mode, tap any of these and the person goes and does it (💡 🪟). Someone going to bed with the room’s light on turns it off at a switch first.</li>
-    <li><strong>🌗 Time of day</strong> (<strong>N</strong>): drag the time, or press ▶ to let a whole day go by in 4 minutes. After dark the 3D view goes dark except where the lights are on: rooms with the ceiling light on, rooms with a lamp on (dimmer, with a glow round the lamp), and their windows, which glow (unless the curtains are shut). In family mode people turn lights on and shut the curtains after dark, open them and turn the lights off by day, and go to bed more.</li>
+    <li><strong>🌗 Time of day</strong> (<strong>N</strong>): a clock appears in the bottom corner of the 3D view: drag its long hand for the minutes and its short hand for the hours (am / pm switches morning and afternoon), or press ▶ to let a whole day go by in 4 minutes. Press 🌗 again to put the clock away: the time of day (and the day going by) stays as it is. After dark the 3D view goes dark except where the lights are on: rooms with the ceiling light on, rooms with a lamp on (dimmer, with a glow round the lamp), and their windows, which glow (unless the curtains are shut). In family mode people turn lights on and shut the curtains after dark, open them and turn the lights off by day, and go to bed more.</li>
     <li><strong>🚿 Bathroom</strong>: a 🚽 toilet, a washbasin and a 🛁 bathtub stand on the floor like furniture, and a 🪞 mirror cabinet hangs on a wall. A 🚿 shower (a hot and a cold valve and the shower head) hangs on a wall, like a shelf: tap the wall on the side you want. It can go over a bathtub. A window or split air conditioner, an exhaust fan and a heating radiator mount on a wall the same way, from the Appliances row.</li>
     <li><strong>📺 Appliances</strong> (television, monitor, game console, stereo, laptop, computer case, a table lamp and a stand lamp, microwave, an oven, a toaster, a blender, stove, kitchen sink, a refrigerator, a chest freezer, a washing machine, a clothes dryer, an over-under washer-dryer, and a tankless water heater — the stove and sink only go on a countertop, and the oven and the other big appliances only go on the floor). A window or split air conditioner (evaporator and condenser), an exhaust fan, a heating radiator and a tankless water heater all mount on a wall, like the shower. A chair, office chair, armchair, loveseat or couch can hold one appliance on its seat (a loveseat or couch also takes two side by side), and something small (about the size of a laptop) can go under a table or an ordinary chair.</li>
     <li><strong>🪴 Objects</strong> (a rug, a planter, a book, four standing books): a rug lies on the floor, under furniture; the others go anywhere an appliance can — on the floor, on furniture, on a seat or under a table or chair — to show things like “the book is under the table”. In the 3D view, point at the floor under the table; on the plan, hold <strong>Shift</strong> while you tap the table to put it underneath. tap the floor, or a level of a table, bookshelf, shelf or countertop. Each level takes one appliance in the middle or two side by side, if they fit. A television only goes on the floor or on top of a piece. Tap an appliance to turn it, drag it to move it.</li>
@@ -1693,7 +1719,7 @@
   function refreshHover() { computeHover.sig = null; computeHover(lastPointer); }
 
   /* ═══════════════ DAY AND NIGHT ═══════════════
-     🌗 (N) shows the time of day: drag it, or ▶ lets a whole day go by in 4 minutes. The cheapest
+     🌗 (N) shows or hides the time of day's clock: drag its hands, or ▶ lets a whole day go by in 4 minutes. The darkness follows the time whether the clock is showing or not. The cheapest
      way found to darken the 3D view: two plain SVG layers laid over it (#duskSvg, an orange wash
      for sunrise and sunset, and #nightSvg, a dark blue one), each a layer of its own that the
      browser paints once and then only blends. The time going by changes nothing but their
@@ -1714,20 +1740,33 @@
     const dusk = Math.max(0, 1 - Math.abs(h - 18.7) / 1.5) + 0.7 * Math.max(0, 1 - Math.abs(h - 6.1) / 1.1);
     return { dark, dusk: Math.min(1, dusk) };
   }
-  const isNight = () => nightShown && skyAt(clock).dark > 0.5;
+  // (the darkness follows the clock whether the clock is showing or not: 🌗 only shows or hides the clock)
+  const isNight = () => skyAt(clock).dark > 0.5;
   const nightBtn = document.getElementById('nightBtn'), nightFloat = document.getElementById('nightFloat');
-  const nightSlider = document.getElementById('nightSlider'), nightVal = document.getElementById('nightVal'), nightPlay = document.getElementById('nightPlay'), nightIco = document.getElementById('nightIco');
+  const nightFace = document.getElementById('nightClock'), nightVal = document.getElementById('nightVal'), nightPlay = document.getElementById('nightPlay'), nightAmPm = document.getElementById('nightAmPm');
+  // the clock face: the dial, its numbers and minute marks, the sun or moon, and the two hands
+  nightFace.innerHTML = '<circle class="nc-dial" r="49"/>' +
+    Array.from({ length: 60 }, (_, i) => { const a = i * Math.PI / 30, r0 = i % 5 ? 44 : 41.5; return `<line class="nc-tick${i % 5 ? '' : ' big'}" x1="${(Math.sin(a) * r0).toFixed(2)}" y1="${(-Math.cos(a) * r0).toFixed(2)}" x2="${(Math.sin(a) * 46.5).toFixed(2)}" y2="${(-Math.cos(a) * 46.5).toFixed(2)}"/>`; }).join('') +
+    Array.from({ length: 12 }, (_, i) => { const a = (i + 1) * Math.PI / 6; return `<text class="nc-num" x="${(Math.sin(a) * 34).toFixed(2)}" y="${(-Math.cos(a) * 34).toFixed(2)}">${i + 1}</text>`; }).join('') +
+    '<line class="nc-hour" id="ncHour" x1="0" y1="0" x2="0" y2="-22"/><line class="nc-min" id="ncMin" x1="0" y1="0" x2="0" y2="-36"/><circle class="nc-hub" r="3.2"/>';
+  const nightIco = document.getElementById('nightIco'), ncHour = document.getElementById('ncHour'), ncMin = document.getElementById('ncMin');
   const nightSvg = document.getElementById('nightSvg'), duskSvg = document.getElementById('duskSvg');
   const hhmm = h => { const m = Math.round(h * 60) % 1440; return String(Math.floor(m / 60)).padStart(2, '0') + ':' + String(m % 60).padStart(2, '0'); };
   // the darkness for the time now: only the two layers' opacity (and, at dusk and dawn, the windows)
   function nightTime() {
-    const sky = nightShown ? skyAt(clock) : { dark: 0, dusk: 0 };
+    const sky = skyAt(clock);
     nightSvg.style.opacity = (sky.dark * NIGHT_DARK).toFixed(3);
     duskSvg.style.opacity = (sky.dusk * DUSK_TINT * (1 - sky.dark * 0.6)).toFixed(3);
     state.night = sky.dark;
-    nightSlider.value = clock; nightVal.textContent = hhmm(clock);
+    // the hands: the hour hand creeps on with the minutes, as on a real clock
+    const mins = Math.round(clock * 60) % 1440, ha = ((mins / 60) % 12) * 30, ma = (mins % 60) * 6;
+    ncHour.setAttribute('transform', `rotate(${ha.toFixed(1)})`); ncMin.setAttribute('transform', `rotate(${ma.toFixed(1)})`);
+    const pm = mins >= 720, h12 = Math.floor(mins / 60) % 12 || 12;
+    nightVal.textContent = h12 + ':' + String(mins % 60).padStart(2, '0') + (pm ? ' pm' : ' am');
+    nightAmPm.textContent = pm ? 'pm' : 'am';
     nightIco.textContent = sky.dark > 0.5 ? '🌙' : sky.dusk > 0.3 ? '🌇' : '☀️';
-    nightSlider.setAttribute('aria-valuetext', hhmm(clock));
+    nightFloat.classList.toggle('is-night', sky.dark > 0.5);
+    nightFace.setAttribute('aria-valuenow', clock.toFixed(2)); nightFace.setAttribute('aria-valuetext', nightVal.textContent);
     const lit = sky.dark > 0.35;
     if (lit !== nightLitWas) { nightLitWas = lit; houseDirty = true; if (!walkRaf) render(); }   // windows start (or stop) glowing
   }
@@ -1766,10 +1805,9 @@
   // the holes in the darkness, drawn again only when they change
   function nightRefresh() {
     if (!nightSvg) return;
-    nightSvg.hidden = duskSvg.hidden = !nightShown || state.viewMode === 'plan';
+    nightSvg.hidden = duskSvg.hidden = state.viewMode === 'plan';
     const vb = isoSvg.getAttribute('viewBox'), hgt = isoSvg.getBoundingClientRect().height;
     [nightSvg, duskSvg].forEach(g => { if (vb) g.setAttribute('viewBox', vb); g.style.height = hgt + 'px'; });
-    if (!nightShown) return;
     const L = state.level, F = state.floors[L];
     const underRoof = state.showRoofs && !state.wallsDown && !state.cutout && F && F.roofs.length;
     const rooms = [], outside = [];
@@ -1828,8 +1866,7 @@
   function setNight(on, quiet) {
     nightShown = on;
     nightBtn.setAttribute('aria-pressed', String(on));
-    nightFloat.hidden = !on;
-    if (!on) setClockRun(false);
+    nightFloat.hidden = !on;   // closing the clock leaves the time (and the day going by) as it is
     try { localStorage.setItem('house-builder-night', on ? '1' : '0'); } catch (e) { /* ignore */ }
     nightSig = '';
     nightRefresh(); nightTime();
@@ -1845,7 +1882,40 @@
     if (on) clockRun = setInterval(() => setClock(clock + 24 / (240 * 10)), 100);   // 24 hours in 240 s, ten steps a second
   }
   nightBtn.addEventListener('click', () => setNight(!nightShown));
-  nightSlider.addEventListener('input', () => setClock(Number(nightSlider.value)));
+  /* dragging the hands: near the middle (or nearer the hour hand's tip) the hour hand, otherwise the
+     minute hand. The minute hand going past 12 moves the hour on (or back); the hour hand going
+     past 12 goes from am to pm (or back). */
+  let ncDrag = null;
+  const ncAngle = e => { const R_ = nightFace.getBoundingClientRect(), x = e.clientX - (R_.left + R_.width / 2), y = e.clientY - (R_.top + R_.height / 2); return { a: ((Math.atan2(x, -y) * 180 / Math.PI) + 360) % 360, r: Math.hypot(x, y) / (R_.width / 2) * 52 }; };
+  nightFace.addEventListener('pointerdown', e => {
+    const { a, r } = ncAngle(e), mins = Math.round(clock * 60) % 1440, ha = ((mins / 60) % 12) * 30, ma = (mins % 60) * 6;
+    const off = (x, y) => Math.abs(((x - y + 540) % 360) - 180);
+    ncDrag = { hand: r < 20 || (r < 30 && off(a, ha) < off(a, ma)) ? 'hour' : 'min', id: e.pointerId };
+    nightFace.setPointerCapture(e.pointerId); setClockRun(false); e.preventDefault();
+    ncMove(e);
+  });
+  function ncMove(e) {
+    if (!ncDrag) return;
+    const { a } = ncAngle(e), mins = Math.round(clock * 60) % 1440;
+    if (ncDrag.hand === 'min') {
+      const m0 = mins % 60, m1 = Math.round(a / 6) % 60;
+      let H = Math.floor(mins / 60);
+      if (m0 > 45 && m1 < 15) H++; else if (m0 < 15 && m1 > 45) H--;
+      setClock(((H * 60 + m1) % 1440 + 1440) % 1440 / 60);
+    } else {
+      const h0 = Math.floor(mins / 60) % 12, h1 = Math.floor(a / 30) % 12;
+      let half = mins >= 720 ? 12 : 0;
+      if ((h0 >= 9 && h1 <= 2) || (h0 <= 2 && h1 >= 9)) half = 12 - half;   // past 12: am ↔ pm
+      setClock(((half + h1) * 60 + mins % 60) / 60);
+    }
+  }
+  nightFace.addEventListener('pointermove', ncMove);
+  ['pointerup', 'pointercancel', 'lostpointercapture'].forEach(t => nightFace.addEventListener(t, () => { ncDrag = null; }));
+  nightFace.addEventListener('keydown', e => {
+    const d = { ArrowRight: 0.25, ArrowUp: 0.25, ArrowLeft: -0.25, ArrowDown: -0.25, PageUp: 1, PageDown: -1 }[e.key];
+    if (d) { e.preventDefault(); e.stopPropagation(); setClockRun(false); setClock(Math.round((clock + d) * 4) / 4); }
+  });
+  nightAmPm.addEventListener('click', () => setClock(clock + 12));
   nightPlay.addEventListener('click', () => setClockRun(!clockRun));
   if (window.ResizeObserver) new ResizeObserver(() => { nightSig = ''; nightRefresh(); }).observe(isoSvg);
 
