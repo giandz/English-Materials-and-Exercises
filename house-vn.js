@@ -10,6 +10,9 @@
      vn.index       the line shown now     vn.vars            answers saved so far
      vn.setAuto(on) auto-advance (also the ⏯️ Auto button or A): after each line, time to read, then the next
      vn.destroy()   stop it and empty the host
+     vn.start()     start playing (also a click or tap anywhere on the stage, the 🎬 Start button, 🔽, Space or Enter);
+                    until then the first scene waits, blurred, behind the 🎬 Start button
+     vn.started     whether it has started      script.autostart: true   plays at once, with no 🎬 Start screen
      HouseVN.addBackground(id, '<svg …>')   a backdrop for any scene on the page (or script.backgrounds: { id: svg })
      script.onLine = (i, line) => …          called as each line starts
 
@@ -238,10 +241,20 @@ const CSS = `
 .vn-input.shake{ animation:vn-shake .3s; }
 @keyframes vn-in{ from{ opacity:0; transform:translate(-50%, 8px); } to{ opacity:1; transform:translate(-50%, 0); } }
 @keyframes vn-shake{ 0%,100%{ transform:translateX(-50%); } 25%{ transform:translateX(calc(-50% - 6px)); } 75%{ transform:translateX(calc(-50% + 6px)); } }
+/* the start screen: the first scene waits blurred behind 🎬 Start until the stage or the button is pressed */
+.vn-box{ transition:opacity .35s ease, filter .4s ease; }
+.vn-stage.gated .vn-bg, .vn-stage.gated .vn-cast, .vn-stage.gated .vn-box{ filter:blur(7px) saturate(.85); }
+.vn-gate{ position:absolute; inset:0; z-index:150; display:flex; align-items:center; justify-content:center; background:rgba(0,0,0,.16); transition:opacity .4s ease; }
+.vn-gate.gone{ opacity:0; pointer-events:none; }
+.vn-gate-btn{ font:inherit; font-size:clamp(1.1rem, 3.2vw, 1.7rem); font-weight:700; padding:.55em 1.4em; border-radius:999px; cursor:pointer;
+  border:2px solid var(--text-accent, #185fa5); color:var(--text-primary, #1a1a1a); background:color-mix(in srgb, var(--surface-2, #fff) 94%, transparent);
+  box-shadow:0 6px 22px rgba(0,0,0,.25); animation:vn-pulse 1.8s ease-in-out infinite; }
+.vn-gate-btn:hover, .vn-gate-btn:focus-visible{ background:var(--color-background-info, #e6f1fb); outline:2px solid var(--text-accent, #185fa5); outline-offset:3px; }
+@keyframes vn-pulse{ 0%,100%{ transform:scale(1); } 50%{ transform:scale(1.05); } }
 @keyframes vn-bob{ 0%,100%{ transform:translateY(0); } 50%{ transform:translateY(4px); } }
 /* narrow screens: a taller picture and text box, so two or three lines of text fit (longer lines scroll) */
 @media (max-width:560px){ .vn{ --vn-box:31%; } .vn-stage{ aspect-ratio:4/3; } .vn-text{ font-size:.95rem; line-height:1.35; } .vn-box{ padding:2.2% 3% 1.6%; } }
-@media (prefers-reduced-motion: reduce){ .vn-next.ready, .vn-ask, .vn-input.shake, .c.l.sh.on, .vn-ch.quake{ animation:none; } .vn-ch, .vn-bg, .vn-cast, .vn-insert, .vn-box{ transition:none; } }
+@media (prefers-reduced-motion: reduce){ .vn-next.ready, .vn-ask, .vn-input.shake, .c.l.sh.on, .vn-ch.quake, .vn-gate-btn{ animation:none; } .vn-ch, .vn-bg, .vn-cast, .vn-insert, .vn-box, .vn-gate{ transition:none; } }
 .vn-bar{ display:flex; align-items:center; justify-content:center; gap:8px; margin-top:10px; }
 .vn-bar button[aria-pressed="true"]{ background:var(--color-background-info, #e6f1fb); border-color:var(--color-border-info, #85b7eb); }
 .vn-bar button[aria-pressed="true"] .lb{ color:var(--color-text-info, #0c447c); }
@@ -354,7 +367,8 @@ function create(host, script){
   root.innerHTML = `<div class="vn-stage" tabindex="0" role="group" aria-label="Scene. Click, Space or Enter to go on.">
       <div class="vn-bg"></div><div class="vn-cast"></div><div class="vn-insert" aria-hidden="true"><div class="vn-insert-text"></div></div>
       <div class="vn-box"><div class="vn-name none"></div><div class="vn-text" aria-hidden="true"></div><div class="vn-sr" aria-live="polite"></div>
-        <button type="button" class="vn-next" title="Next (Space, Enter or a click)" aria-label="Next">🔽</button></div></div>
+        <button type="button" class="vn-next" title="Next (Space, Enter or a click)" aria-label="Next">🔽</button></div>
+      <div class="vn-gate"><button type="button" class="vn-gate-btn" aria-label="Start the scene">🎬 Start</button></div></div>
     <div class="vn-bar">
       <button type="button" data-act="restart" title="Start again (Home)"><span class="ic" aria-hidden="true">⏮️</span><span class="lb">Start</span></button>
       <button type="button" data-act="back" title="The line before (←)"><span class="ic" aria-hidden="true">⏪</span><span class="lb">Back</span></button>
@@ -965,17 +979,37 @@ function create(host, script){
   const restart = () => { if(!lines.length) return; history = [{i:0, vars:{}}]; show(); };
   const go = g => jump(target(g));
 
+  /* ── the start screen ── */
+  let started = !!script.autostart;
+  const gate = $('.vn-gate');
+  function preview(){   /* the first scene, still and blurred: who is there and where, before anything is said */
+    if(!lines.length) return;
+    scene = sceneAt([0]); setBg(scene.bg); syncSprites();
+    for(const [id, c] of scene) drawSprite(id, c);
+    layout(scene, null);
+    syncButtons(); countEl.textContent = '';
+  }
+  function start(){
+    if(started || dead) return; started = true;
+    stage.classList.remove('gated'); gate.classList.add('gone'); setTimeout(() => gate.remove(), REDUCED ? 0 : 450);
+    restart();
+    stage.focus({preventScroll:true});
+  }
+  gate.querySelector('.vn-gate-btn').addEventListener('click', e => { e.stopPropagation(); start(); });
   stage.addEventListener('click', e => {
+    if(!started){ start(); return; }   /* a click or tap anywhere on the stage starts it */
     if(e.target.closest('.vn-ask')) return;
     if(e.target.closest('button') && !e.target.closest('.vn-next')) return;
     next();
   });
   root.querySelector('.vn-bar').addEventListener('click', e => {
     const b = e.target.closest('button'); if(!b) return;
+    if(!started && (b.dataset.act === 'next' || b.dataset.act === 'restart')){ start(); return; }
     const act = ({next, back, restart, auto:() => setAuto(!auto)})[b.dataset.act]; if(act) act();
   });
   root.addEventListener('keydown', e => {
     if(e.target.closest('input, textarea, select')) return;
+    if(!started && (e.key === ' ' || e.key === 'Enter' || e.key === 'ArrowRight' || e.key === 'ArrowDown' || e.key === 'Home')){ e.preventDefault(); start(); return; }
     if(askEl && /^[1-9]$/.test(e.key)){ const b = askEl.querySelectorAll('.vn-choice')[+e.key - 1]; if(b){ e.preventDefault(); b.click(); } return; }
     if(e.target.closest('button') && (e.key === ' ' || e.key === 'Enter')) return;   /* a focused button does its own job */
     if(e.key === ' ' || e.key === 'Enter' || e.key === 'ArrowRight' || e.key === 'ArrowDown'){ e.preventDefault(); next(); }
@@ -1164,9 +1198,12 @@ function create(host, script){
   }
 
   setAuto(auto);
-  restart();
+  if(started){ gate.remove(); restart(); }
+  else { stage.classList.add('gated'); preview(); }
   syncModes();
-  return {destroy, setAuto, get auto(){ return auto; }, next, back, restart, go, get index(){ return index; }, get length(){ return lines.length; }, get vars(){ return {...vars}; }};
+  return {destroy, setAuto, get auto(){ return auto; }, start, get started(){ return started; },
+    next:() => started ? next() : start(), back:() => { if(started) back(); }, restart:() => started ? restart() : start(),
+    go:g => { if(!started) start(); go(g); }, get index(){ return index; }, get length(){ return lines.length; }, get vars(){ return {...vars}; }};
 }
 
 global.HouseVN = {create, get BACKGROUNDS(){ return Object.keys(BG); },
