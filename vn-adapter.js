@@ -30,6 +30,10 @@
                       window.VNPeople) to the middle of the stage in a full shot as it is said, in place
                       of whoever was there before; data-vn-enter="id" and data-vn-leave="id" bring
                       someone on (beside the others) or take them off. They are house-vn.js stage cues.
+     pictures         the pictures stick-sentence.js puts over words ({pizza|@🍕}) and emoji typed in a line
+                      go to the stage only while the page's stick figures are shown (🧍); with them hidden
+                      (html.ss-sticks-hidden) the lines are read without them, and the visual novel starts
+                      again when the figures are switched on or off.
      the extras       pictures under a line (thought bubbles, memories) become a thought bubble on the
                       stage while that line is said: between the characters at the thinker's head level, with a
                       trail of dots from the cloud to their head, made smaller if it would not fit. A page's own
@@ -497,11 +501,23 @@
     el.childNodes.forEach(walk);
     return out.join('').replace(/[{}]/g, '').replace(/\s+/g, ' ').replace(/\s+([,.!?;:…])/g, '$1').replace(/\s+(\[[,.!?;:…]+\/\w+\])/g, '$1').trim().replace(/\u0001/g, '{').replace(/\u0002/g, '}');
   }
+  /* the stick figures are hidden (stick-sentence.js's 🧍 switch): no pictures over words, no emoji in the lines */
+  const sticksHidden = () => document.documentElement.classList.contains('ss-sticks-hidden');
+  const EMOJI = /(?:\p{Extended_Pictographic}|\p{Regional_Indicator}|\p{Emoji_Modifier}|[\u200D\uFE0F\u20E3])+/gu;
+  function noPictures(el) {
+    el.querySelectorAll('.ss-pic, .ss-obj').forEach(n => n.remove());
+    const walker = document.createTreeWalker(el, NodeFilter.SHOW_TEXT), texts = [];
+    for (let n; (n = walker.nextNode());) texts.push(n);
+    /* a dash left with nothing between it and the next one (“And — 🔔 — the pizza”) becomes just one */
+    texts.forEach(n => { n.nodeValue = n.nodeValue.replace(EMOJI, '').replace(/([—–])(\s*[—–])+/g, '$1'); });
+  }
   function linesOf(container) {
     return [...container.querySelectorAll('.bubble-wrap')].map(w => {
       const nameEl = w.querySelector('.bname, .bubble-name'), bubble = w.querySelector('.bubble');
       const clone = bubble ? bubble.cloneNode(true) : document.createElement('div');
       clone.querySelectorAll('.ss-figs, .pp-country, svg, .think-bubble, .dh-think, .pp-memories, script, style').forEach(n => n.remove());
+      if (sticksHidden()) noPictures(clone);
+      else clone.querySelectorAll('.ss-pic').forEach(n => { n.textContent = n.textContent.trim() + ' '; });   /* “☕ this coffee”, not “☕this coffee” */
       const col = bubble && bubble.parentElement;
       const extras = col ? [...col.children].filter(n => n !== bubble && n !== nameEl && !n.matches('.bname, .bubble-name')) : [];
       return { name: (nameEl ? nameEl.textContent : '').trim() || 'Someone', avatar: ((w.querySelector('.avatar') || {}).textContent || '').trim(),
@@ -845,6 +861,13 @@
   function init() {
     injectCSS();
     conversations().forEach(setup);
+    /* stick figures shown or hidden: a running visual novel starts again, with or without the pictures */
+    let hidden = sticksHidden();
+    if (window.MutationObserver) new MutationObserver(() => {
+      if (sticksHidden() === hidden) return;
+      hidden = sticksHidden();
+      convs.forEach(C => { if (C.vn) { C.stop(); if (mode === 'vn') C.start(); } });   /* one still loading reads the lines when it is ready */
+    }).observe(document.documentElement, { attributes: true, attributeFilter: ['class'] });
   }
   if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', () => setTimeout(init, 0));
   else setTimeout(init, 0);
