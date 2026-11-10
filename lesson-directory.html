@@ -2,307 +2,161 @@
 <html lang="en">
 <head>
 <meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
 <title>Lesson Directory</title>
-<link rel="stylesheet" href="general.css">
+<script>
+(function(){
+  try{
+    var saved = localStorage.getItem('theme-preference');
+    var theme = (saved === 'light' || saved === 'dark')
+      ? saved
+      : ((window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches) ? 'dark' : 'light');
+    document.documentElement.setAttribute('data-theme', theme);
+    var fs = parseFloat(localStorage.getItem('font-size-preference'));
+    if (fs >= 10 && fs <= 28) document.documentElement.style.setProperty('--fs-base', fs + 'px');
+  }catch(e){ /* localStorage/matchMedia unavailable — CSS media query still applies */ }
+})();
+</script>
+<link rel="stylesheet" href="house.css">
 <style>
-  :root {
-    --ld-bg: var(--color-background-primary, #fafafa);
-    --ld-surface: var(--surface-1, #fff);
-    --ld-surface-2: var(--surface-2, #f3f3f3);
-    --ld-text: var(--text-primary, #1a1a1a);
-    --ld-text-muted: var(--text-muted, #666);
-    --ld-border: var(--border, #ddd);
-    --ld-radius: var(--radius, 8px);
-    --ld-accent: var(--text-accent, #0969da);
-  }
-  @media (prefers-color-scheme: dark) {
-    :root {
-      --ld-bg: var(--color-background-primary, #15171a);
-      --ld-surface: var(--surface-1, #1e2126);
-      --ld-surface-2: var(--surface-2, #262a30);
-      --ld-text: var(--text-primary, #eaeaea);
-      --ld-text-muted: var(--text-muted, #9aa0a6);
-      --ld-border: var(--border, #33383e);
-      --ld-accent: var(--text-accent, #6cb6ff);
-    }
-  }
+[hidden]{ display:none !important; }
 
-  * { box-sizing: border-box; }
+/* Keep the heading clear of the fixed ☀️ / 🔎 buttons on narrow screens. */
+@media (max-width:820px){ .dir-head{ padding-right:46px; } }
 
-  body {
-    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Helvetica, Arial, sans-serif;
-    max-width: 900px;
-    margin: 48px auto 96px;
-    padding: 0 20px;
-    color: var(--ld-text);
-    background: var(--ld-bg);
-  }
+/* ── Toolbar ─────────────────────────────────────────────────────────────── */
+.dir-toolbar{ display:flex; align-items:center; gap:8px; flex-wrap:wrap; margin:0 0 .7rem; }
+.dir-toolbar input[type="search"]{ flex:1 1 14rem; min-width:0; }
+.dir-toolbar button:disabled{ opacity:.45; cursor:default; transform:none; }
+.dir-toolbar button:disabled:hover{ background:var(--surface-1); }
+.dir-count{ font-size:.8rem; color:var(--text-muted); white-space:nowrap; margin-left:auto; }
 
-  h1 {
-    font-size: 1.4rem;
-    margin: 0 0 4px;
-  }
-  p.sub {
-    color: var(--ld-text-muted);
-    margin: 0 0 28px;
-    font-size: 0.95rem;
-  }
+/* ── Notes ───────────────────────────────────────────────────────────────── */
+.dir-note{
+  font-size:.8667rem; line-height:1.5; padding:9px 12px; margin:0 0 .7rem;
+  border:1px solid; border-radius:var(--border-radius-md);
+}
+.dir-note.warn{ background:var(--color-background-warning); color:var(--color-text-warning); border-color:var(--color-border-warning); }
+.dir-note.error{ background:var(--color-background-danger); color:var(--color-text-danger); border-color:var(--color-border-danger); }
+.dir-source{ display:flex; align-items:center; gap:8px; flex-wrap:wrap; font-size:.8rem; color:var(--text-muted); margin:0 0 .7rem; }
+.dir-fallback p{ margin:0 0 .6rem; }
 
-  .toolbar {
-    display: flex;
-    align-items: center;
-    gap: 12px;
-    margin-bottom: 16px;
-    flex-wrap: wrap;
-  }
-  .toolbar input[type="text"] {
-    flex: 1;
-    min-width: 200px;
-    padding: 9px 12px;
-    font-size: 0.95rem;
-    border: 1px solid var(--ld-border);
-    border-radius: var(--ld-radius);
-    background: var(--ld-surface);
-    color: var(--ld-text);
-  }
-  .toolbar-btn {
-    padding: 8px 14px;
-    font-size: 0.88rem;
-    white-space: nowrap;
-    border: 1px solid var(--ld-border);
-    border-radius: var(--ld-radius);
-    background: var(--ld-surface-2);
-    color: var(--ld-text);
-    cursor: pointer;
-  }
-  .toolbar-btn:hover:not(:disabled) { background: var(--ld-border); }
-  .toolbar-btn:disabled {
-    opacity: 0.5;
-    cursor: not-allowed;
-  }
-  .count {
-    font-size: 0.85rem;
-    color: var(--ld-text-muted);
-    white-space: nowrap;
-  }
+/* ── Table ───────────────────────────────────────────────────────────────── */
+.dir-table-wrap{
+  overflow-x:auto; background:var(--surface-2);
+  border:1px solid var(--border); border-radius:var(--border-radius-lg);
+}
+.dir-table{ width:100%; border-collapse:collapse; font-size:.9333rem; }
+.dir-table th{
+  text-align:left; font-size:.8rem; font-weight:600; color:var(--text-secondary);
+  background:var(--surface-1); padding:8px 10px; white-space:nowrap;
+}
+.dir-table thead tr:last-child th{ border-bottom:1px solid var(--border); }
+.dir-table th[data-col]{ cursor:pointer; user-select:none; }
+.dir-table th[data-col]:hover{ color:var(--text-primary); }
+.dir-table th[data-col]:focus-visible{ outline:2px solid var(--text-accent); outline-offset:-2px; }
+.dir-table .sort-arrow{ display:inline-block; width:1em; font-size:.7333rem; color:var(--text-accent); }
+.dir-filters th{ padding:0 10px 8px; font-weight:400; }
+.dir-filters select,
+.dir-filters input[type="search"]{
+  width:100%; font:inherit; font-size:.8rem; padding:4px 8px;
+  border:1px solid var(--color-border-secondary); border-radius:var(--border-radius-md);
+  background:var(--color-background-primary); color:var(--text-primary);
+}
+.dir-filters select{ cursor:pointer; }
+.dir-filters select:focus{ outline:none; border-color:var(--text-accent); }
 
-  table {
-    width: 100%;
-    border-collapse: collapse;
-    background: var(--ld-surface);
-    border: 1px solid var(--ld-border);
-    border-radius: var(--ld-radius);
-    overflow: hidden;
-  }
-  thead th {
-    text-align: left;
-    padding: 10px 14px;
-    font-size: 0.85rem;
-    font-weight: 600;
-    background: var(--ld-surface-2);
-    border-bottom: 1px solid var(--ld-border);
-    cursor: pointer;
-    user-select: none;
-    white-space: nowrap;
-  }
-  thead th .arrow {
-    display: inline-block;
-    width: 0.9em;
-    opacity: 0.5;
-    font-size: 0.75em;
-  }
-  thead th.sorted .arrow { opacity: 1; }
-  thead tr.header-row th {
-    cursor: pointer;
-  }
-  thead tr.header-row th:hover { background: var(--ld-border); }
-
-  thead tr.filter-row th {
-    cursor: default;
-    padding: 6px 10px 10px;
-    font-weight: 400;
-  }
-  thead tr.filter-row th:hover { background: var(--ld-surface-2); }
-
-  .filter-row select,
-  .filter-row input[type="text"] {
-    width: 100%;
-    padding: 5px 8px;
-    font-size: 0.82rem;
-    font-weight: 400;
-    border: 1px solid var(--ld-border);
-    border-radius: 6px;
-    background: var(--ld-surface);
-    color: var(--ld-text);
-  }
-
-  tbody td {
-    padding: 9px 14px;
-    font-size: 0.92rem;
-    border-bottom: 1px solid var(--ld-border);
-    vertical-align: middle;
-  }
-  th.select-col, td.select-col {
-    width: 1%;
-    padding-right: 4px;
-  }
-  .row-select, #select-all {
-    width: 16px;
-    height: 16px;
-    cursor: pointer;
-  }
-  tbody tr:last-child td { border-bottom: none; }
-  tbody tr:hover td { background: var(--ld-surface-2); }
-
-  .level-pill {
-    display: inline-block;
-    min-width: 2.6em;
-    padding: 2px 9px;
-    border-radius: 999px;
-    font-size: 0.78rem;
-    font-weight: 700;
-    color: #fff;
-    text-align: center;
-    text-shadow: 0 1px 1px rgba(0, 0, 0, 0.25);
-  }
-
-  td.topic-cell a {
-    color: var(--ld-accent);
-    text-decoration: none;
-  }
-  td.topic-cell a:hover { text-decoration: underline; }
-
-  #status-box {
-    padding: 14px;
-    border-radius: var(--ld-radius);
-    background: var(--ld-surface);
-    border: 1px solid var(--ld-border);
-    color: var(--ld-text-muted);
-    font-size: 0.92rem;
-  }
-  #error-box {
-    padding: 14px;
-    border-radius: var(--ld-radius);
-    background: var(--ld-surface);
-    border: 1px solid #e0a6a1;
-    color: #b3261e;
-    font-size: 0.9rem;
-    margin-bottom: 16px;
-  }
-  .hidden { display: none; }
-
-  #local-fallback {
-    padding: 14px;
-    border-radius: var(--ld-radius);
-    background: var(--ld-surface);
-    border: 1px solid var(--ld-border);
-    margin-bottom: 16px;
-    font-size: 0.9rem;
-    color: var(--ld-text-muted);
-  }
-  #local-fallback p {
-    margin: 0 0 10px;
-  }
-  #folder-picker-btn {
-    padding: 8px 14px;
-    font-size: 0.88rem;
-    border: 1px solid var(--ld-border);
-    border-radius: var(--ld-radius);
-    background: var(--ld-surface-2);
-    color: var(--ld-text);
-    cursor: pointer;
-  }
-  #folder-picker-btn:hover { background: var(--ld-border); }
-  #popup-note {
-    margin: -4px 0 16px;
-    padding: 10px 14px;
-    border-radius: var(--ld-radius);
-    border: 1px solid #e0c48a;
-    background: var(--ld-surface);
-    color: #8a5a00;
-    font-size: 0.85rem;
-  }
-  #source-note {
-    font-size: 0.82rem;
-    color: var(--ld-text-muted);
-    margin: -8px 0 16px;
-  }
-  #source-note a {
-    color: var(--ld-accent);
-    cursor: pointer;
-    text-decoration: underline;
-  }
+.dir-table td{ padding:7px 10px; border-bottom:1px solid var(--border); vertical-align:middle; }
+.dir-table tbody tr:last-child td{ border-bottom:none; }
+.dir-table tbody tr:hover td{ background:var(--surface-1); }
+.dir-table tbody tr.is-selected td{ background:var(--color-background-info); }
+.dir-table .sel-col{ width:1%; padding-right:2px; }
+.dir-table input[type="checkbox"]{ width:1rem; height:1rem; margin:0; cursor:pointer; accent-color:var(--text-accent); vertical-align:middle; }
+.dir-table .cefr-tag{ margin:0; white-space:nowrap; }
+.dir-table .type-cell{ color:var(--text-secondary); white-space:nowrap; }
+.dir-table .topic-cell a{ color:var(--text-accent); text-decoration:none; font-weight:500; }
+.dir-table .topic-cell a:hover{ text-decoration:underline; }
+.dir-empty td{ text-align:center; color:var(--text-muted); padding:18px 10px; }
 </style>
 </head>
 <body>
+<div class="page" id="page">
+  <div class="dir-head">
+  <h1>Lesson Directory</h1>
+  <p class="subtitle">Every lesson in this folder. Tick lessons to open them together.</p>
 
-<h1>Lesson Directory</h1>
-<p class="sub">Auto-generated index of lesson files in this folder.</p>
+  <div id="status-box" class="rule-box">Loading lesson files…</div>
+  <div id="error-box" class="dir-note error" hidden></div>
 
-<div id="error-box" class="hidden"></div>
+  <div id="local-fallback" class="rule-box dir-fallback" hidden>
+    <p id="local-fallback-msg"></p>
+    <button id="folder-picker-btn" type="button">📁 Choose folder…</button>
+    <input type="file" id="folder-input" webkitdirectory directory multiple hidden>
+  </div>
 
-<div id="local-fallback" class="hidden">
-  <p id="local-fallback-msg">Couldn't load the file list from GitHub. Pick the local folder containing the lesson files instead:</p>
-  <button id="folder-picker-btn" type="button">Choose folder…</button>
-  <input type="file" id="folder-input" webkitdirectory directory multiple class="hidden">
+  <div id="source-note" class="dir-source" hidden>
+    <span id="source-label"></span>
+    <button id="switch-source-btn" type="button"></button>
+  </div>
+  </div>
+
+  <div id="directory" hidden>
+    <div class="dir-toolbar">
+      <input type="search" id="filter-input" placeholder="Search level, type or topic…" aria-label="Search all columns">
+      <button id="open-all-btn" type="button" disabled>↗️ Open all</button>
+      <button id="filter-by-btn" type="button" disabled>🔍 Filter by</button>
+      <span class="dir-count" id="count-label"></span>
+    </div>
+
+    <p id="popup-note" class="dir-note warn" hidden></p>
+
+    <div class="dir-table-wrap">
+      <table class="dir-table">
+        <thead>
+          <tr class="header-row">
+            <th class="sel-col"><input type="checkbox" id="select-all" aria-label="Select all shown lessons"></th>
+            <th data-col="level" tabindex="0">Level <span class="sort-arrow"></span></th>
+            <th data-col="type" tabindex="0">Type <span class="sort-arrow"></span></th>
+            <th data-col="topic" tabindex="0">Topic <span class="sort-arrow"></span></th>
+          </tr>
+          <tr class="dir-filters">
+            <th class="sel-col"></th>
+            <th>
+              <select id="level-filter" aria-label="Filter by level">
+                <option value="">All levels</option>
+                <option value="a1">A1</option>
+                <option value="a2">A2</option>
+                <option value="b1">B1</option>
+                <option value="b2">B2</option>
+                <option value="c1">C1</option>
+                <option value="c2">C2</option>
+              </select>
+            </th>
+            <th>
+              <select id="type-filter" aria-label="Filter by type">
+                <option value="">All types</option>
+                <option value="intro">Language Introduction</option>
+                <option value="clarf">Clarification</option>
+                <option value="ctrld">Controlled Practice</option>
+                <option value="freer">Freer Practice</option>
+                <option value="extra">Extra Activity</option>
+              </select>
+            </th>
+            <th><input type="search" id="topic-filter" placeholder="Topic…" aria-label="Filter by topic"></th>
+          </tr>
+        </thead>
+        <tbody id="table-body"></tbody>
+      </table>
+    </div>
+  </div>
 </div>
 
-<p id="source-note" class="hidden"></p>
-
-<div class="toolbar">
-  <input type="text" id="filter-input" placeholder="Filter by level, type, or topic…">
-  <button id="open-all-btn" type="button" class="toolbar-btn" disabled>Open all</button>
-  <button id="filter-by-btn" type="button" class="toolbar-btn" disabled>Filter by</button>
-  <span class="count" id="count-label"></span>
+<div id="theme-toggle-wrap">
+  <button id="theme-toggle" aria-label="Toggle light/dark mode" title="Toggle light/dark mode">
+    <span id="theme-icon">☀️</span>
+  </button>
 </div>
-
-<p id="popup-note" class="hidden"></p>
-
-<div id="status-box">Loading lesson files…</div>
-
-<table id="lesson-table" class="hidden">
-  <thead>
-    <tr class="header-row">
-      <th class="select-col"><input type="checkbox" id="select-all" title="Select all"></th>
-      <th data-col="level">Level <span class="arrow"></span></th>
-      <th data-col="type">Type <span class="arrow"></span></th>
-      <th data-col="topic">Topic <span class="arrow"></span></th>
-    </tr>
-    <tr class="filter-row">
-      <th></th>
-      <th>
-        <select id="level-filter">
-          <option value="">All levels</option>
-          <option value="a1">A1</option>
-          <option value="a2">A2</option>
-          <option value="b1">B1</option>
-          <option value="b2">B2</option>
-          <option value="c1">C1</option>
-          <option value="c2">C2</option>
-        </select>
-      </th>
-      <th>
-        <select id="type-filter">
-          <option value="">All types</option>
-          <option value="intro">Language Introduction</option>
-          <option value="clarf">Clarification</option>
-          <option value="ctrld">Controlled Practice</option>
-          <option value="freer">Freer Practice</option>
-          <option value="extra">Extra Activity</option>
-        </select>
-      </th>
-      <th>
-        <input type="text" id="topic-filter" placeholder="Filter topic…">
-      </th>
-    </tr>
-  </thead>
-  <tbody id="table-body"></tbody>
-</table>
-
-<div id="theme-toggle-wrap"><button id="theme-toggle" aria-label="Toggle light/dark mode" title="Toggle light/dark mode"><span id="theme-icon">☀️</span></button></div>
-<script src="theme-toggle-behavior.js"></script>
-
+<script src="house.js"></script>
 <script>
   const TYPE_LABELS = {
     intro: 'Language Introduction',
@@ -311,42 +165,33 @@
     freer: 'Freer Practice',
     extra: 'Extra Activity'
   };
+  // Pedagogical order, used whenever the Type column is compared.
   const TYPE_ORDER = ['intro', 'clarf', 'ctrld', 'freer', 'extra'];
   const LEVEL_TOKEN = 'a1|a2|b1|b2|c1|c2';
   const FILE_PATTERN = new RegExp(
     `^((?:${LEVEL_TOKEN}){1,2})_(intro|clarf|ctrld|freer|extra)_(.+)\\.html$`, 'i'
   );
-  const LEVEL_HUES = { a1: 120, a2: 96, b1: 72, b2: 48, c1: 24, c2: 0 };
 
-  function levelColor(level) {
-    return `hsl(${LEVEL_HUES[level]}deg, 50%, 50%)`;
-  }
-
-  // Single level: solid tint. Transitional level (e.g. a1a2): the pill is
-  // split half-and-half along an oblique edge aligned with the "/" in "A1/A2".
-  function levelBackground(levels) {
-    if (levels.length === 1) return levelColor(levels[0]);
-    const [first, second] = levels.map(levelColor);
-    return `linear-gradient(104deg, ${first} 0%, ${first} 50%, ${second} 50%, ${second} 100%)`;
-  }
-
-  const statusBox = document.getElementById('status-box');
-  const errorBox = document.getElementById('error-box');
-  const localFallback = document.getElementById('local-fallback');
-  const folderPickerBtn = document.getElementById('folder-picker-btn');
-  const folderInput = document.getElementById('folder-input');
-  const sourceNote = document.getElementById('source-note');
-  const table = document.getElementById('lesson-table');
-  const tableBody = document.getElementById('table-body');
-  const filterInput = document.getElementById('filter-input');
-  const levelFilter = document.getElementById('level-filter');
-  const typeFilter = document.getElementById('type-filter');
-  const topicFilter = document.getElementById('topic-filter');
-  const countLabel = document.getElementById('count-label');
-  const selectAllCheckbox = document.getElementById('select-all');
-  const openAllBtn = document.getElementById('open-all-btn');
-  const popupNote = document.getElementById('popup-note');
-  const filterByBtn = document.getElementById('filter-by-btn');
+  const $ = id => document.getElementById(id);
+  const statusBox = $('status-box');
+  const errorBox = $('error-box');
+  const localFallback = $('local-fallback');
+  const folderPickerBtn = $('folder-picker-btn');
+  const folderInput = $('folder-input');
+  const sourceNote = $('source-note');
+  const sourceLabel = $('source-label');
+  const switchSourceBtn = $('switch-source-btn');
+  const directory = $('directory');
+  const tableBody = $('table-body');
+  const filterInput = $('filter-input');
+  const levelFilter = $('level-filter');
+  const typeFilter = $('type-filter');
+  const topicFilter = $('topic-filter');
+  const countLabel = $('count-label');
+  const selectAllCheckbox = $('select-all');
+  const openAllBtn = $('open-all-btn');
+  const filterByBtn = $('filter-by-btn');
+  const popupNote = $('popup-note');
 
   let rows = [];
   let rowsById = new Map();
@@ -355,9 +200,13 @@
   let sortCol = 'level';
   let sortDir = 'asc';
   let nextRowId = 1;
+  let onSwitchSource = null;
 
-  // Same conversion approach as the GitHub → GitHub Pages link converter:
-  // parse a github.com/.../blob/branch/path URL into its github.io equivalent.
+  const escapeHtml = s => String(s).replace(/[&<>"']/g, c =>
+    ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
+
+  // Same conversion as the GitHub → GitHub Pages link converter:
+  // github.com/<user>/<repo>/blob/<branch>/<path> → <user>.github.io/<repo>/<path>
   function convertToPagesUrl(blobUrl) {
     const match = blobUrl.match(
       /^https?:\/\/github\.com\/([^\/]+)\/([^\/]+)\/blob\/([^\/]+)\/(.+)$/
@@ -379,9 +228,10 @@
     const match = fileName.match(FILE_PATTERN);
     if (!match) return null;
     const [, levelGroup, type, topicSlug] = match;
-    const levels = levelGroup.toLowerCase().match(new RegExp(LEVEL_TOKEN, 'g'));
+    const level = levelGroup.toLowerCase();
+    const levels = level.match(new RegExp(LEVEL_TOKEN, 'g'));
     return {
-      level: levelGroup.toLowerCase(),
+      level,
       levels,
       levelLabel: levels.map(l => l.toUpperCase()).join('/'),
       type: type.toLowerCase(),
@@ -396,66 +246,11 @@
     return { ...parts, url, fileName, id: nextRowId++ };
   }
 
-  function parseFile(item) {
-    return buildRow(item.name, convertToPagesUrl(item.html_url));
-  }
-
-  function isRelativeUrl(url) {
-    return !/^[a-z][a-z0-9+.-]*:/i.test(url) && !url.startsWith('//');
-  }
-
-  // blob: URLs have no directory of their own, so a lesson file's relative
-  // <link href="general.css"> / <script src="theme-toggle-behavior.js">
-  // can't resolve once it's opened from one. Inline those sibling files'
-  // actual contents (found by filename in the picked folder) directly into
-  // the markup before it's turned into a blob, so the opened page is fully
-  // self-contained. Anything the CSS/JS itself references by a further
-  // relative path (fonts, background images) is not covered by this.
-  async function inlineLocalAssets(htmlText, fileMap) {
-    const doc = new DOMParser().parseFromString(htmlText, 'text/html');
-
-    const links = Array.from(doc.querySelectorAll('link[rel="stylesheet"][href]'));
-    for (const link of links) {
-      const href = link.getAttribute('href');
-      if (!isRelativeUrl(href)) continue;
-      const assetFile = fileMap.get(href.split('/').pop().toLowerCase());
-      if (!assetFile) continue;
-      const style = doc.createElement('style');
-      style.textContent = await assetFile.text();
-      link.replaceWith(style);
-    }
-
-    const scripts = Array.from(doc.querySelectorAll('script[src]'));
-    for (const script of scripts) {
-      const src = script.getAttribute('src');
-      if (!isRelativeUrl(src)) continue;
-      const assetFile = fileMap.get(src.split('/').pop().toLowerCase());
-      if (!assetFile) continue;
-      const inlined = doc.createElement('script');
-      inlined.textContent = await assetFile.text();
-      script.replaceWith(inlined);
-    }
-
-    return '<!DOCTYPE html>\n' + doc.documentElement.outerHTML;
-  }
-
-  async function buildLocalRow(file, fileMap) {
-    const name = file.webkitRelativePath ? file.webkitRelativePath.split('/').pop() : file.name;
-    const parts = parseFileNameParts(name);
-    if (!parts) return null;
-    const html = await inlineLocalAssets(await file.text(), fileMap);
-    const url = URL.createObjectURL(new Blob([html], { type: 'text/html' }));
-    return { ...parts, url, fileName: name, id: nextRowId++ };
-  }
-
+  /* ── GitHub source ─────────────────────────────────────────────────────── */
   async function fetchContents(owner, repo, dirPath) {
     const apiPath = dirPath ? `/${dirPath}` : '';
     const res = await fetch(`https://api.github.com/repos/${owner}/${repo}/contents${apiPath}`);
-    if (!res.ok) {
-      const err = new Error(`GitHub API responded with ${res.status}`);
-      err.status = res.status;
-      throw err;
-    }
+    if (!res.ok) throw new Error(`GitHub API responded with ${res.status}`);
     return res.json();
   }
 
@@ -463,7 +258,6 @@
     if (location.protocol === 'file:') {
       throw new Error('page opened as a local file, no GitHub host to query');
     }
-
     const owner = location.hostname.split('.')[0];
     const pathParts = location.pathname.split('/').filter(Boolean);
 
@@ -485,23 +279,104 @@
         lastError = e;
       }
     }
-
-    if (!items) {
-      throw lastError || new Error('Could not locate this repository.');
-    }
+    if (!items) throw lastError || new Error('Could not locate this repository.');
 
     return items
       .filter(item => item.type === 'file' && /\.html?$/i.test(item.name))
-      .map(parseFile)
+      .map(item => buildRow(item.name, convertToPagesUrl(item.html_url)))
       .filter(Boolean);
   }
 
-  function compareByCol(a, b, col) {
-    if (col === 'type') {
-      return TYPE_ORDER.indexOf(a.type) - TYPE_ORDER.indexOf(b.type);
+  /* ── Local folder source ───────────────────────────────────────────────── */
+  function isRelativeUrl(url) {
+    return !/^[a-z][a-z0-9+.-]*:/i.test(url) && !url.startsWith('//');
+  }
+
+  // Only needed when the picked folder is NOT the one this page lives in:
+  // a blob: page has no folder, so its relative house.css / house.js links are
+  // inlined from the picked files. Anything house.js loads on its own later
+  // (pron-adapter.js, vn-adapter.js, favicons) still can't be found that way.
+  async function inlineLocalAssets(htmlText, fileMap) {
+    const doc = new DOMParser().parseFromString(htmlText, 'text/html');
+
+    for (const link of Array.from(doc.querySelectorAll('link[rel="stylesheet"][href]'))) {
+      const href = link.getAttribute('href');
+      if (!isRelativeUrl(href)) continue;
+      const assetFile = fileMap.get(href.split('/').pop().toLowerCase());
+      if (!assetFile) continue;
+      const style = doc.createElement('style');
+      style.textContent = await assetFile.text();
+      link.replaceWith(style);
     }
-    if (typeof a[col] !== 'string') return 0;
-    return a[col].localeCompare(b[col]);
+
+    for (const script of Array.from(doc.querySelectorAll('script[src]'))) {
+      const src = script.getAttribute('src');
+      if (!isRelativeUrl(src)) continue;
+      const assetFile = fileMap.get(src.split('/').pop().toLowerCase());
+      if (!assetFile) continue;
+      const inlined = doc.createElement('script');
+      inlined.textContent = await assetFile.text();
+      script.replaceWith(inlined);
+    }
+
+    return '<!DOCTYPE html>\n' + doc.documentElement.outerHTML;
+  }
+
+  // The folder this directory page itself sits in, e.g. "lessons".
+  function ownFolderName() {
+    const parts = decodeURIComponent(location.pathname).split('/').filter(Boolean);
+    return parts.length >= 2 ? parts[parts.length - 2] : '';
+  }
+
+  async function loadLocalFolder(fileList) {
+    const files = Array.from(fileList);
+    // Top-level files only, to match the GitHub listing of a single folder.
+    const topLevel = files.filter(f => (f.webkitRelativePath || f.name).split('/').length <= 2);
+    const pickedFolder = (files[0] && files[0].webkitRelativePath)
+      ? files[0].webkitRelativePath.split('/')[0] : '';
+    // If the picked folder is the one this page lives in, plain relative links
+    // open the real files, so every asset (house.js add-ons included) loads.
+    const sameFolder = pickedFolder && pickedFolder === ownFolderName();
+
+    const fileMap = new Map(topLevel.map(f => [f.name.toLowerCase(), f]));
+    const parsed = [];
+    for (const f of topLevel) {
+      if (!parseFileNameParts(f.name)) continue;
+      let url;
+      if (sameFolder) {
+        url = encodeURIComponent(f.name);
+      } else {
+        const html = await inlineLocalAssets(await f.text(), fileMap);
+        url = URL.createObjectURL(new Blob([html], { type: 'text/html' }));
+      }
+      parsed.push(buildRow(f.name, url));
+    }
+    return parsed;
+  }
+
+  /* ── Sorting & filtering ───────────────────────────────────────────────── */
+  const COMPARE = {
+    level: (a, b) => a.level.localeCompare(b.level),
+    type:  (a, b) => TYPE_ORDER.indexOf(a.type) - TYPE_ORDER.indexOf(b.type),
+    topic: (a, b) => a.topic.localeCompare(b.topic)
+  };
+  // Tie-breakers keep each lesson set together and in teaching order
+  // (intro → clarf → ctrld → freer → extra) whatever column is sorted.
+  const TIE_BREAKERS = {
+    level: ['topic', 'type'],
+    type:  ['level', 'topic'],
+    topic: ['level', 'type']
+  };
+
+  function compareRows(a, b) {
+    if (!COMPARE[sortCol]) return 0;
+    const primary = COMPARE[sortCol](a, b);
+    if (primary !== 0) return sortDir === 'asc' ? primary : -primary;
+    for (const key of TIE_BREAKERS[sortCol]) {
+      const cmp = COMPARE[key](a, b);
+      if (cmp !== 0) return cmp;
+    }
+    return 0;
   }
 
   function render() {
@@ -523,28 +398,28 @@
       return true;
     });
 
-    filtered.sort((a, b) => {
-      const cmp = compareByCol(a, b, sortCol);
-      return sortDir === 'asc' ? cmp : -cmp;
-    });
-
+    filtered.sort(compareRows);
     lastFiltered = filtered;
 
-    tableBody.innerHTML = filtered.map(r => `
-      <tr>
-        <td class="select-col"><input type="checkbox" class="row-select" data-id="${r.id}" ${selectedIds.has(r.id) ? 'checked' : ''}></td>
-        <td><span class="level-pill" style="background:${levelBackground(r.levels)}">${r.levelLabel}</span></td>
-        <td>${r.typeLabel}</td>
-        <td class="topic-cell"><a href="${r.url}" target="_blank" rel="noopener">${r.topic}</a></td>
-      </tr>
-    `).join('');
+    tableBody.innerHTML = filtered.length
+      ? filtered.map(r => {
+          const sel = selectedIds.has(r.id);
+          return `
+          <tr class="${sel ? 'is-selected' : ''}">
+            <td class="sel-col"><input type="checkbox" class="row-select" data-id="${r.id}" aria-label="Select ${escapeHtml(r.topic)}" ${sel ? 'checked' : ''}></td>
+            <td><span class="cefr-tag cefr-${r.level}">${r.levelLabel}</span></td>
+            <td class="type-cell">${r.typeLabel}</td>
+            <td class="topic-cell"><a href="${escapeHtml(r.url)}" target="_blank">${escapeHtml(r.topic)}</a></td>
+          </tr>`;
+        }).join('')
+      : '<tr class="dir-empty"><td colspan="4">No lessons match these filters.</td></tr>';
 
-    countLabel.textContent = `${filtered.length} of ${rows.length} files`;
+    countLabel.textContent = `${filtered.length} of ${rows.length} lessons`;
 
     document.querySelectorAll('.header-row th[data-col]').forEach(th => {
-      const col = th.dataset.col;
-      th.classList.toggle('sorted', col === sortCol);
-      th.querySelector('.arrow').textContent = col === sortCol ? (sortDir === 'asc' ? '▲' : '▼') : '';
+      const active = th.dataset.col === sortCol;
+      th.setAttribute('aria-sort', active ? (sortDir === 'asc' ? 'ascending' : 'descending') : 'none');
+      th.querySelector('.sort-arrow').textContent = active ? (sortDir === 'asc' ? '▲' : '▼') : '';
     });
 
     updateSelectionUI();
@@ -552,28 +427,29 @@
 
   function updateSelectionUI() {
     openAllBtn.disabled = selectedIds.size === 0;
+    openAllBtn.textContent = selectedIds.size > 1 ? `↗️ Open all (${selectedIds.size})` : '↗️ Open all';
     filterByBtn.disabled = selectedIds.size !== 1;
 
-    if (lastFiltered.length === 0) {
-      selectAllCheckbox.checked = false;
-      selectAllCheckbox.indeterminate = false;
-      return;
-    }
     const selectedVisible = lastFiltered.filter(r => selectedIds.has(r.id)).length;
-    selectAllCheckbox.checked = selectedVisible === lastFiltered.length;
+    selectAllCheckbox.checked = lastFiltered.length > 0 && selectedVisible === lastFiltered.length;
     selectAllCheckbox.indeterminate = selectedVisible > 0 && selectedVisible < lastFiltered.length;
   }
 
+  /* ── Events ────────────────────────────────────────────────────────────── */
+  function sortBy(col) {
+    if (sortCol === col) {
+      sortDir = sortDir === 'asc' ? 'desc' : 'asc';
+    } else {
+      sortCol = col;
+      sortDir = 'asc';
+    }
+    render();
+  }
+
   document.querySelectorAll('.header-row th[data-col]').forEach(th => {
-    th.addEventListener('click', () => {
-      const col = th.dataset.col;
-      if (sortCol === col) {
-        sortDir = sortDir === 'asc' ? 'desc' : 'asc';
-      } else {
-        sortCol = col;
-        sortDir = 'asc';
-      }
-      render();
+    th.addEventListener('click', () => sortBy(th.dataset.col));
+    th.addEventListener('keydown', e => {
+      if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); sortBy(th.dataset.col); }
     });
   });
 
@@ -582,24 +458,23 @@
     const id = Number(e.target.dataset.id);
     if (e.target.checked) selectedIds.add(id);
     else selectedIds.delete(id);
+    e.target.closest('tr').classList.toggle('is-selected', e.target.checked);
     updateSelectionUI();
   });
 
   selectAllCheckbox.addEventListener('change', () => {
-    if (selectAllCheckbox.checked) {
-      lastFiltered.forEach(r => selectedIds.add(r.id));
-    } else {
-      lastFiltered.forEach(r => selectedIds.delete(r.id));
-    }
+    lastFiltered.forEach(r => selectAllCheckbox.checked ? selectedIds.add(r.id) : selectedIds.delete(r.id));
     render();
   });
 
   openAllBtn.addEventListener('click', () => {
-    popupNote.classList.add('hidden');
+    popupNote.hidden = true;
     let blocked = 0;
     selectedIds.forEach(id => {
       const row = rowsById.get(id);
       if (!row) return;
+      // No 'noopener' here: with it, window.open always returns null and a
+      // blocked tab can't be told apart from an opened one.
       const win = window.open(row.url, '_blank');
       if (win) {
         try { win.opener = null; } catch (e) { /* ignore */ }
@@ -608,8 +483,8 @@
       }
     });
     if (blocked > 0) {
-      popupNote.textContent = `Your browser blocked ${blocked} of ${selectedIds.size} tabs. Allow pop-ups for this site (see the icon in the address bar), then click "Open all" again.`;
-      popupNote.classList.remove('hidden');
+      popupNote.textContent = `Your browser blocked ${blocked} of ${selectedIds.size} tabs. Allow pop-ups for this site (look for the icon in the address bar), then press "Open all" again.`;
+      popupNote.hidden = false;
     }
   });
 
@@ -622,92 +497,84 @@
     render();
   });
 
+  // The two text filters clear each other, so only one is ever active.
   filterInput.addEventListener('input', () => {
     if (filterInput.value) topicFilter.value = '';
     render();
   });
-  levelFilter.addEventListener('change', render);
-  typeFilter.addEventListener('change', render);
   topicFilter.addEventListener('input', () => {
     if (topicFilter.value) filterInput.value = '';
     render();
   });
+  levelFilter.addEventListener('change', render);
+  typeFilter.addEventListener('change', render);
 
-  function showLoaded(parsed, sourceLabel, switchLabel, onSwitch) {
+  switchSourceBtn.addEventListener('click', () => onSwitchSource && onSwitchSource());
+
+  /* ── Loading ───────────────────────────────────────────────────────────── */
+  function showLoaded(parsed, label, switchLabel, onSwitch) {
     rows = parsed;
     rowsById = new Map(rows.map(r => [r.id, r]));
     selectedIds = new Set();
-    statusBox.classList.add('hidden');
-    localFallback.classList.add('hidden');
-    errorBox.classList.add('hidden');
+    statusBox.hidden = true;
+    localFallback.hidden = true;
+    popupNote.hidden = true;
 
     if (rows.length === 0) {
-      errorBox.textContent = 'No matching lesson files were found in this folder.';
-      errorBox.classList.remove('hidden');
-      table.classList.add('hidden');
-      lastFiltered = [];
-      updateSelectionUI();
+      errorBox.textContent = 'No lesson files with a level_type_topic.html name were found in this folder.';
+      errorBox.hidden = false;
+      directory.hidden = true;
     } else {
-      table.classList.remove('hidden');
+      errorBox.hidden = true;
+      directory.hidden = false;
       render();
     }
 
-    sourceNote.innerHTML = `${sourceLabel} <a id="switch-source-link">${switchLabel}</a>`;
-    sourceNote.classList.remove('hidden');
-    document.getElementById('switch-source-link').addEventListener('click', onSwitch);
+    sourceLabel.textContent = label;
+    switchSourceBtn.textContent = switchLabel;
+    onSwitchSource = onSwitch;
+    sourceNote.hidden = false;
   }
 
   function offerLocalFallback(message) {
-    statusBox.classList.add('hidden');
-    table.classList.add('hidden');
-    sourceNote.classList.add('hidden');
-    errorBox.classList.add('hidden');
-    document.getElementById('local-fallback-msg').textContent = message;
-    localFallback.classList.remove('hidden');
+    statusBox.hidden = true;
+    errorBox.hidden = true;
+    directory.hidden = true;
+    sourceNote.hidden = true;
+    $('local-fallback-msg').textContent = message;
+    localFallback.hidden = false;
   }
 
   folderPickerBtn.addEventListener('click', () => folderInput.click());
 
   folderInput.addEventListener('change', async () => {
-    const files = Array.from(folderInput.files);
-    const fileMap = new Map();
-    files.forEach(f => {
-      const base = (f.webkitRelativePath ? f.webkitRelativePath.split('/').pop() : f.name).toLowerCase();
-      fileMap.set(base, f);
-    });
-
-    const parsed = (await Promise.all(files.map(f => buildLocalRow(f, fileMap)))).filter(Boolean);
-    showLoaded(
-      parsed,
-      `Showing ${parsed.length} file(s) from a local folder.`,
-      'Try GitHub again',
-      () => loadFromGitHub()
-    );
+    if (!folderInput.files.length) return;
+    localFallback.hidden = true;
+    statusBox.textContent = 'Reading the folder…';
+    statusBox.hidden = false;
+    const parsed = await loadLocalFolder(folderInput.files);
+    folderInput.value = '';
+    showLoaded(parsed, `${parsed.length} lessons from a folder on this computer.`, '☁️ Try GitHub again', loadFromGitHub);
   });
 
   function loadFromGitHub() {
-    statusBox.classList.remove('hidden');
     statusBox.textContent = 'Loading lesson files…';
-    errorBox.classList.add('hidden');
-    localFallback.classList.add('hidden');
-    sourceNote.classList.add('hidden');
+    statusBox.hidden = false;
+    errorBox.hidden = true;
+    localFallback.hidden = true;
+    sourceNote.hidden = true;
 
     loadDirectory()
       .then(parsed => {
-        showLoaded(
-          parsed,
-          `Showing ${parsed.length} file(s) loaded from GitHub.`,
-          'Browse a local folder instead',
-          () => offerLocalFallback('Pick the local folder containing the lesson files:')
-        );
+        showLoaded(parsed, `${parsed.length} lessons from GitHub.`, '📁 Use a local folder',
+          () => offerLocalFallback('Choose the folder that has the lesson files.'));
       })
       .catch(() => {
-        offerLocalFallback('Could not load the file list from GitHub. Pick the local folder containing the lesson files instead:');
+        offerLocalFallback("Couldn't get the file list from GitHub. Choose the folder that has the lesson files instead.");
       });
   }
 
   loadFromGitHub();
 </script>
-
 </body>
 </html>
