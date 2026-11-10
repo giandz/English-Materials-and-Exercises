@@ -1,0 +1,113 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<title>My Profile — Dependent Prepositions</title>
+<script>
+(function(){
+  try{
+    var saved = localStorage.getItem('theme-preference');
+    var theme = (saved === 'light' || saved === 'dark')
+      ? saved
+      : ((window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches) ? 'dark' : 'light');
+    document.documentElement.setAttribute('data-theme', theme);
+    var fs = parseFloat(localStorage.getItem('font-size-preference'));
+    if (fs >= 10 && fs <= 28) document.documentElement.style.setProperty('--fs-base', fs + 'px');
+  }catch(e){ /* localStorage/matchMedia unavailable — CSS media query still applies */ }
+})();
+</script>
+<link rel="stylesheet" href="house.css">
+<style>
+/* a verb and its past participle, with a picture */
+.pp-card{ display:flex; align-items:center; gap:6px; }
+.pp-card .pic{ white-space:nowrap; }
+.cast-row{ display:flex; flex-wrap:wrap; gap:14px 18px; justify-content:center; align-items:flex-end; margin:0 0 1rem; padding:10px; background:var(--surface-1); border:1px solid var(--border); border-radius:var(--border-radius-lg); font-size:.8667rem; }
+
+.pq-cue{ font-size:1.25rem; font-weight:700; margin:4px 0 6px; text-align:center; }
+.pq-cue .big{ display:block; font-size:2.4rem; line-height:1.1; margin-bottom:4px; }
+.pq-ideas{ font-size:.9rem; color:var(--text-secondary); text-align:center; }
+.q-card details.check{ margin-top:4px; width:100%; max-width:440px; text-align:left; }
+.q-card .check-body{ padding:8px 12px; font-size:.9rem; }
+.q-card .check-body p{ margin:0 0 4px; }
+.profile{ display:grid; grid-template-columns:auto 1fr; gap:6px 10px; align-items:center; font-size:.9333rem; }
+.profile b{ white-space:nowrap; }
+.profile .line{ border-bottom:1.5px dashed var(--color-border-primary); min-height:1.6em; }
+</style>
+</head>
+<body>
+<div class="page" id="page">
+  <span class="cefr-tag cefr-a1a2">A1/A2 · Elementary</span>
+  <h1>My Profile</h1>
+  <p class="subtitle">Ask and answer questions for a profile on an app for meeting new people.</p>
+
+  <div class="rule-box">
+    <p><strong>How to play (pairs, or teacher + student):</strong></p>
+    <p>1. Student A rolls 🎲 and makes the question: <b>What / you / good at?</b> → “<b>What are you good at?</b>”</p>
+    <p>2. Student B answers with a full sentence and one more detail: “<b>I’m good at cooking. I make great pizza!</b>”</p>
+    <p>3. Press 👀 to check the question. Then change: B rolls, A answers.</p>
+  </div>
+
+  <div class="q-card" id="qCard"><span class="q-placeholder">Roll the dice to start.</span></div>
+  <button class="dice-btn" id="diceBtn" aria-label="Roll">🎲</button>
+  <div class="roll-count">Rolls: <strong id="rollCount">0</strong></div>
+
+  <div class="sec-div">Now you</div>
+  <div class="rule-box">
+    <p><strong>Write your partner’s profile.</strong> Then read it to them: “<b>Your name is Ana. You’re good at…</b>” Is it correct?</p>
+    <div class="profile">
+      <b>💪 good at</b><span class="line"></span>
+      <b>🤩 interested in</b><span class="line"></span>
+      <b>😨 afraid of</b><span class="line"></span>
+      <b>🎧 listens to</b><span class="line"></span>
+      <b>🔍 looking for</b><span class="line"></span>
+    </div>
+  </div>
+
+  <footer>My Profile — Dependent prepositions: to, for, at, in, with, of, about (A1/A2)</footer>
+</div>
+
+<div id="theme-toggle-wrap">
+  <button id="theme-toggle" aria-label="Toggle light/dark mode" title="Toggle light/dark mode">
+    <span id="theme-icon">☀️</span>
+  </button>
+</div>
+<script src="house.js"></script>
+<script>
+/* [picture, question words, ideas for the answer, the question, an example answer] */
+const QUESTIONS = [
+  ['💪', 'What / you / good at?', 'cooking · sports · math · singing', 'What are you good at?', 'I’m good at cooking.'],
+  ['👎', 'What / you / bad at?', 'dancing · drawing · getting up early', 'What are you bad at?', 'I’m bad at dancing!'],
+  ['🤩', 'What / you / interested in?', 'music · history · cars · fashion', 'What are you interested in?', 'I’m interested in history.'],
+  ['😨', 'What / you / afraid of?', 'spiders · the dark · planes · dogs', 'What are you afraid of?', 'I’m afraid of the dark.'],
+  ['🥱', 'What / you / tired of?', 'my job · the rain · this song', 'What are you tired of?', 'I’m tired of the rain.'],
+  ['🏅', 'Who / you / proud of?', 'my mom · my kids · my team', 'Who are you proud of?', 'I’m proud of my sister.'],
+  ['😟', 'What / you / worry about?', 'money · my family · exams · work', 'What do you worry about?', 'I worry about money.'],
+  ['🎧', 'What music / you / listen to?', 'pop · rock · salsa · jazz', 'What music do you listen to?', 'I listen to salsa.'],
+  ['🗣️', 'Who / you / talk to / when you’re sad?', 'my best friend · my mom · my dog', 'Who do you talk to when you’re sad?', 'I talk to my best friend.'],
+  ['💭', 'What / you / think about / at night?', 'work · the next day · my vacation', 'What do you think about at night?', 'I think about the next day.'],
+  ['🔍', 'What / you / look for / in a friend?', 'kind · funny · good at listening', 'What do you look for in a friend?', 'I look for a funny friend.'],
+  ['🥣', 'What / you / have / for breakfast?', 'eggs · coffee · arepas · fruit', 'What do you have for breakfast?', 'I have arepas for breakfast.'],
+  ['👫', 'What / you / do / with your friends?', 'go to the movies · play soccer · cook', 'What do you do with your friends?', 'I play soccer with my friends.'],
+  ['🌅', 'What / you / do / in the morning?', 'have a shower · go to work · run', 'What do you do in the morning?', 'I go to work in the morning.'],
+  ['🏠', 'What / you / do / at home / at night?', 'watch TV · read · play video games', 'What do you do at home at night?', 'I watch TV at home at night.'],
+  ['🤝', 'Who / you / agree with / in your family?', 'my dad · my sister · nobody!', 'Who do you agree with in your family?', 'I agree with my sister.'],
+  ['💳', 'What / you / pay for / every month?', 'my phone · rent · the gym · Netflix', 'What do you pay for every month?', 'I pay for my phone and the gym.'],
+  ['😊', 'Who / you / kind to?', 'animals · old people · my neighbors', 'Who are you kind to?', 'I’m kind to animals.'],
+  ['📖', 'What / you / like / reading about?', 'sports · famous people · science', 'What do you like reading about?', 'I like reading about science.'],
+  ['⏳', 'What / you / waiting for / this year?', 'a vacation · a new job · my birthday', 'What are you waiting for this year?', 'I’m waiting for my vacation!']
+];
+
+HouseRandomGen.build({
+  items: QUESTIONS.map(([pic, cue, ideas, q, a]) => ({ pic, cue, ideas, q, a, text: cue })),
+  render: it =>
+    '<span class="q-topic">🙋 Ask your partner</span>' +
+    '<div class="pq-cue"><span class="big">' + it.pic + '</span>' + it.cue + '</div>' +
+    '<div class="pq-ideas">💡 ' + it.ideas + '</div>' +
+    '<span class="q-prompt">A: make the question. B: answer, and say one more thing.</span>' +
+    '<details class="check"><summary>👀 Check</summary><div class="check-body">' +
+    '<p>❓ “' + it.q + '”</p><p>💬 “' + it.a + '”</p></div></details>'
+});
+</script>
+</body>
+</html>

@@ -1,0 +1,149 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<title>What Are You Good At? — Dependent Prepositions Practice</title>
+<script>
+(function(){
+  try{
+    var saved = localStorage.getItem('theme-preference');
+    var theme = (saved === 'light' || saved === 'dark')
+      ? saved
+      : ((window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches) ? 'dark' : 'light');
+    document.documentElement.setAttribute('data-theme', theme);
+    var fs = parseFloat(localStorage.getItem('font-size-preference'));
+    if (fs >= 10 && fs <= 28) document.documentElement.style.setProperty('--fs-base', fs + 'px');
+  }catch(e){ /* localStorage/matchMedia unavailable — CSS media query still applies */ }
+})();
+</script>
+<link rel="stylesheet" href="house.css">
+<style>
+/* a verb and its past participle, with a picture */
+.pp-card{ display:flex; align-items:center; gap:6px; }
+.pp-card .pic{ white-space:nowrap; }
+.cast-row{ display:flex; flex-wrap:wrap; gap:14px 18px; justify-content:center; align-items:flex-end; margin:0 0 1rem; padding:10px; background:var(--surface-1); border:1px solid var(--border); border-radius:var(--border-radius-lg); font-size:.8667rem; }
+
+.blank{ display:inline-block; min-width:3em; border-bottom:2px solid var(--color-border-primary); }
+.ctx{ display:inline-flex; align-items:center; gap:8px; font-weight:400; font-style:normal; margin:0 0 6px; padding:3px 10px; border-radius:8px;
+  border:1px solid var(--color-border-tertiary); background:var(--surface-2); color:var(--text-secondary); font-size:.85rem; }
+.ctx .emo{ font-size:1.3rem; }
+.quiz-q .q-text .ctx{ display:flex; width:max-content; max-width:100%; }
+</style>
+</head>
+<body>
+<div class="page" id="page">
+  <span class="cefr-tag cefr-a1a2">A1/A2 · Elementary</span>
+  <h1>What Are You Good At? — Practice</h1>
+  <p class="subtitle">Practice: listen to · wait for · good at · afraid of · What are you interested in?</p>
+
+  <div class="sec-div">1 · Choose</div>
+  <p class="subtitle">Look at the picture. Choose the right preposition.</p>
+  <div id="pcItems"></div>
+
+  <div class="sec-div">2 · Put the words in order</div>
+  <p class="subtitle">Look at the picture. Make the sentence.</p>
+  <button class="grammar-toggle-btn" id="grammarToggle">🎨 Hide Grammar</button>
+  <div class="pos-legend"></div>
+  <div class="score-bar"><span>Correct: <strong id="woScore">0</strong> / <span id="woTotal">0</span></span></div>
+  <div id="woItems"></div>
+
+  <div class="sec-div">3 · Write the missing words</div>
+  <p class="subtitle">Look at the picture. Write the missing words.</p>
+  <div id="gfItems"></div>
+
+  <footer>Dependent prepositions: to, for, at, in, with, of, about — Controlled Practice (A1/A2)</footer>
+</div>
+
+<div id="theme-toggle-wrap">
+  <button id="theme-toggle" aria-label="Toggle light/dark mode" title="Toggle light/dark mode">
+    <span id="theme-icon">☀️</span>
+  </button>
+</div>
+<script src="house.js"></script>
+<script src="stick-character.js"></script>
+<script src="stick-sentence.js"></script>
+<script>
+/* Maya and Tom are friends — the same people on every page of this lesson */
+StickSentence.cast({
+  maya:    { base:'woman', colour:'#6600CC', label:'Maya' },
+  tom:     { base:'man',   colour:'#00CC66', label:'Tom' },
+  brother: { base:'man',   colour:'#FF6600', label:'Tom’s brother' }
+});
+StickSentence.toggle();   /* stick figures hidden by default */
+
+/* the chunks of this lesson, by preposition: [preposition, picture, chunk] */
+const CHUNKS = {
+  to:    [['🎧', 'listen to'], ['🗣️', 'talk to'], ['🏫', 'go to school'], ['💼', 'go to work'], ['😊', 'kind to']],
+  for:   [['⏳', 'wait for'], ['🔍', 'look for'], ['💳', 'pay for'], ['🙋', 'ask for'], ['🥣', 'for breakfast'], ['🙏', 'thanks for']],
+  at:    [['👀', 'look at'], ['💪', 'good at'], ['👎', 'bad at'], ['🏠', 'at home'], ['💼', 'at work'], ['🌙', 'at night'], ['📍', 'arrive at']],
+  in:    [['🤩', 'interested in'], ['🌅', 'in the morning'], ['🇺🇸', 'in English'], ['🎸', 'in a band'], ['🏙️', 'arrive in']],
+  with:  [['🤝', 'agree with'], ['🆘', 'help with'], ['👫', 'with friends']],
+  of:    [['😨', 'afraid of'], ['🥱', 'tired of'], ['🏅', 'proud of'], ['🍪', 'full of']],
+  about: [['💭', 'think about'], ['😟', 'worry about'], ['💬', 'talk about'], ['📖', 'read about']]
+};
+
+/* the learner's dictionary (right-click / long press a word): what these words mean in this lesson */
+window.LESSON_DICT = {
+  'look for':      { pos:'phrasal verb', def:'to try to find something or someone', ex:'I’m looking for my keys.', es:'buscar' },
+  'look at':       { pos:'phrasal verb', def:'to turn your eyes to something and see it', ex:'Look at this photo!', es:'mirar' },
+  'wait for':      { pos:'phrasal verb', def:'to stay in a place until someone comes or something happens', ex:'I’m waiting for the bus.', es:'esperar' },
+  'listen to':     { pos:'phrasal verb', def:'to pay attention to a sound or music', ex:'I listen to music at night.', es:'escuchar' },
+  'pay for':       { pos:'phrasal verb', def:'to give money to get something', ex:'I’ll pay for the coffee.', es:'pagar' },
+  'ask for':       { pos:'phrasal verb', def:'to say that you want something', ex:'Can I ask for a hot chocolate?', es:'pedir' },
+  'agree with':    { pos:'phrasal verb', def:'to have the same idea as another person', ex:'I agree with you.', es:'estar de acuerdo con' },
+  'afraid of':     { pos:'adjective', def:'scared: you don’t like it because it can hurt you', ex:'Tom is afraid of spiders.', es:'tener miedo de' },
+  'interested in': { pos:'adjective', def:'you like it and want to know more about it', ex:'I’m interested in music.', es:'interesado en' },
+  'good at':       { pos:'adjective', def:'you can do it well', ex:'Tom is good at cooking.', es:'bueno en / para' },
+  'tired of':      { pos:'adjective', def:'you don’t want any more of it', ex:'I’m tired of coffee!', es:'harto de' },
+  'profile':       { pos:'noun', def:'a page about you on an app or a website', ex:'Tom is making his profile.', es:'perfil' }
+};
+
+const S = StickSentence.html;
+const BLANK = '<span class="blank">&nbsp;</span>';
+const rep = m => S(m).replace('____', BLANK);
+/* the picture and what it means */
+const ctx = (emo, note) => '<span class="ctx"><span class="emo">' + emo + '</span>' + note + '</span>';
+const pick = (right, a, b) => ({ opts: [right, a, b].sort(() => Math.random() - .5), right });
+
+/* ── 1 · choose ────────────────────────────────────────────────────────── */
+const PC = [
+  [ctx('🎧🎶', 'music in her ears'), '{Maya|maya} is listening ____ {music|@🎵}.', 'to', 'at', 'for'],
+  [ctx('🚌⏳', 'the bus isn’t here yet'), '{We|maya,tom} are waiting ____ the {bus|@🚌}.', 'for', 'to', 'at'],
+  [ctx('🍳💪', 'his food is great'), '{Tom|tom} is good ____ {cooking|@🍳}.', 'at', 'in', 'of'],
+  [ctx('🕷️😨', 'scary!'), '{Tom|tom:😨} is afraid ____ {spiders|@🕷️}.', 'of', 'from', 'at'],
+  [ctx('🎬🤩', 'she loves films'), '{Maya|maya} is interested ____ {movies|@🎬}.', 'in', 'on', 'at'],
+  [ctx('🤝✅', 'the same idea'), '{I|tom} agree ____ {you|maya}.', 'with', 'to', 'for'],
+  [ctx('💭👨‍👩‍👧', 'in her head'), '{Maya|maya} is thinking ____ her {family|@👨‍👩‍👧}.', 'about', 'in', 'for'],
+  [ctx('🔑❓', 'where are they?'), '{Tom|tom:❓} is looking ____ his {keys|@🔑}.', 'for', 'at', 'to']
+];
+HouseComprehension.build({ quiz: 'pcItems', items: PC.map(([c, s, r, a, b]) => { const p = pick(r, a, b); return { q: c + rep(s), opts: p.opts, correct: p.opts.indexOf(r) }; }) });
+
+/* ── 2 · word order ────────────────────────────────────────────────────── */
+const WO_ITEMS = [
+  { context: ctx('💳☕', 'Tom gives the money'), text: 'Tom / pays / for / the coffee', pos: ['subject', 'verb', 'prep', 'object'] },
+  { context: ctx('🥱☕', 'no more coffee, please'), text: 'Maya / is / tired / of / coffee', pos: ['subject', 'verb', 'adj', 'prep', 'noun'] },
+  { context: ctx('🏠🌙', 'where and when'), text: 'I / read / at home / at night', pos: ['subject', 'verb', 'prep', 'time'] },
+  { context: ctx('❓🤩', 'ask about likes'), text: 'What / are / you / interested / in / ?', pos: ['wh', 'verb', 'subject', 'adj', 'prep', 'none'] },
+  { context: ctx('❓🗣️', 'ask about the person on the phone'), text: 'Who / are / you / talking / to / ?', pos: ['wh', 'verb', 'subject', 'verb', 'prep', 'none'] },
+  { context: ctx('🎸👫', 'a band with friends'), text: 'Tom / plays / in a band / with / his brother', pos: ['subject', 'verb', 'prep', 'prep', 'object'] }
+];
+HouseWordOrder.build({ container: 'woItems', items: WO_ITEMS, scoreEl: 'woScore', totalEl: 'woTotal' });
+
+/* ── 3 · gap fill (easiest first; the gaps move around the sentence) ───── */
+const gaps = m => S(m).replace(/____(\d)/g, '{$1}');
+const GF_ITEMS = [
+  { direct: ctx('👀🖼️', 'use your eyes'), template: gaps('Look ____0 this {photo|@🖼️}!'), hints: [{ accepted: ['at'] }] },
+  { direct: ctx('🥣🍳', 'the morning meal'), template: gaps('{I|tom} have {eggs|@🍳} ____0 breakfast.'), hints: [{ accepted: ['for'] }] },
+  { direct: ctx('🌅', 'early, after you get up'), template: gaps('{I|maya} drink coffee ____0 the morning.'), hints: [{ accepted: ['in'] }] },
+  { direct: ctx('😟📝', 'a test tomorrow'), template: gaps('{She|maya:😟} is worried ____0 her {exam|@📝}.'), hints: [{ accepted: ['about'] }] },
+  { direct: ctx('🆘📚', 'the homework is difficult'), template: gaps('Can {you|tom} ____0 {me|maya:me} ____1 my homework?'), hints: [{ accepted: ['help'] }, { accepted: ['with'] }] },
+  { direct: ctx('🧮👎', 'numbers are difficult for him'), template: gaps('{Tom|tom} is ____0 ____1 math.'), hints: [{ accepted: ['bad'] }, { accepted: ['at'] }] },
+  { direct: ctx('❓😨', 'ask about scary things'), template: gaps('What are {you|maya} ____0 ____1? — Spiders!'), hints: [{ accepted: ['afraid', 'scared'] }, { accepted: ['of'] }] },
+  { direct: ctx('❓⏳', 'ask: which person is coming?'), template: gaps('____0 are {you|tom} waiting ____1? — Maya.'), hints: [{ accepted: ['Who', 'who'] }, { accepted: ['for'] }] }
+];
+HouseGapFill.build({ container: 'gfItems', items: GF_ITEMS });
+</script>
+<script>HouseGrammar.init();</script>
+</body>
+</html>

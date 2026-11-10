@@ -1,0 +1,260 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<title>Words That Go Together — Dependent Prepositions Clarification</title>
+<script>
+(function(){
+  try{
+    var saved = localStorage.getItem('theme-preference');
+    var theme = (saved === 'light' || saved === 'dark')
+      ? saved
+      : ((window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches) ? 'dark' : 'light');
+    document.documentElement.setAttribute('data-theme', theme);
+    var fs = parseFloat(localStorage.getItem('font-size-preference'));
+    if (fs >= 10 && fs <= 28) document.documentElement.style.setProperty('--fs-base', fs + 'px');
+  }catch(e){ /* localStorage/matchMedia unavailable — CSS media query still applies */ }
+})();
+</script>
+<link rel="stylesheet" href="house.css">
+<style>
+/* a verb and its past participle, with a picture */
+.pp-card{ display:flex; align-items:center; gap:6px; }
+.pp-card .pic{ white-space:nowrap; }
+.cast-row{ display:flex; flex-wrap:wrap; gap:14px 18px; justify-content:center; align-items:flex-end; margin:0 0 1rem; padding:10px; background:var(--surface-1); border:1px solid var(--border); border-radius:var(--border-radius-lg); font-size:.8667rem; }
+
+/* the target language is the lesson, so it stays coloured (not a grammar-toggle colour) */
+.tgt{ color:var(--pos-prep); font-weight:700; }
+.gs{ display:grid; grid-template-columns:repeat(3, minmax(0,1fr)); gap:10px; margin-bottom:1rem; }
+@media (max-width:640px){ .gs{ grid-template-columns:1fr; } }
+.gs > div{ border:1px solid var(--color-border-tertiary); border-radius:12px; background:var(--surface-2); padding:9px 11px; font-size:.9333rem; }
+.gs h3{ margin:0 0 2px; font-size:.95rem; }
+.gs .sub{ font-size:.8rem; color:var(--text-secondary); margin:0 0 6px; }
+.gs ul{ list-style:none; margin:0; padding:0; }
+.gs li{ padding:5px 0; line-height:1.5; }
+.gs li + li{ border-top:.5px dashed var(--color-border-secondary); }
+.prep-grid{ display:grid; grid-template-columns:repeat(auto-fill, minmax(150px, 1fr)); gap:8px; margin-bottom:1rem; }
+.prep-card{ border:1px solid var(--color-border-tertiary); border-radius:12px; background:var(--surface-2); padding:8px 10px; }
+.prep-card h4{ margin:0 0 4px; font-size:1.05rem; color:var(--pos-prep); }
+.prep-card div{ font-size:.8667rem; line-height:1.7; }
+.compare-row{ display:grid; grid-template-columns:1fr 1fr; gap:10px; margin-bottom:8px; }
+@media (max-width:520px){ .compare-row{ grid-template-columns:1fr; } }
+.compare-card{ border:1px solid var(--color-border-tertiary); border-radius:12px; padding:9px 12px; background:var(--surface-2); }
+.compare-tag{ font-size:.7333rem; font-weight:700; padding:2px 9px; border-radius:20px; display:inline-block; margin-bottom:5px; background:var(--pos-prep-bg); color:var(--pos-prep); }
+.compare-text{ font-size:.9333rem; line-height:1.5; }
+.compare-note{ font-size:.7667rem; color:var(--text-muted); margin-top:3px; }
+.rule-box p{ margin:0 0 6px; }
+.rule-box p:last-child{ margin-bottom:0; }
+</style>
+</head>
+<body>
+<div class="page" id="page">
+  <span class="cefr-tag cefr-a1a2">A1/A2 · Elementary</span>
+  <h1>Words That Go Together: good at, listen to, afraid of</h1>
+  <p class="subtitle">Some verbs and adjectives always take the same preposition. Learn them together, as one chunk.</p>
+
+  <div class="sec-div">Look</div>
+  <p class="subtitle">From the conversation. Look at the words in colour.</p>
+  <div class="gs" id="gs"></div>
+
+  <div class="sec-div">One preposition, many chunks</div>
+  <div class="prep-grid" id="prepGrid"></div>
+
+  <div class="sec-div">Be careful: different preposition, different meaning</div>
+  <div id="compare"></div>
+
+  <div class="sec-div">Check the meaning</div>
+  <p class="subtitle">Read the sentence. Answer the questions.</p>
+  <div id="ccq"></div>
+
+  <div class="sec-div">Look at the form</div>
+  <p class="subtitle">What is each part of the sentence? Drag a label (or tap a label, then tap a box). Where is the preposition in the question?</p>
+  <div class="score-bar"><span>Correct: <strong id="fcScore">0</strong> / <span id="fcTotal">0</span></span></div>
+  <div id="formClarf"></div>
+  <div class="rule-box" id="ruleBox"></div>
+
+  <div class="sec-div">Common mistakes</div>
+  <div id="mistakes"></div>
+
+  <div class="sec-div">Error hunt</div>
+  <p class="subtitle">Some sentences have a mistake. Some are correct! Tap a word — or a space between words — to fix it. Then press OK.</p>
+  <div class="score-bar"><span>Done: <strong id="errorScore">0</strong> / <span id="errorTotal">0</span></span></div>
+  <div id="errorHuntItems"></div>
+
+  <footer>Dependent prepositions: to, for, at, in, with, of, about — Clarification (A1/A2)</footer>
+</div>
+
+<div id="theme-toggle-wrap">
+  <button id="theme-toggle" aria-label="Toggle light/dark mode" title="Toggle light/dark mode">
+    <span id="theme-icon">☀️</span>
+  </button>
+</div>
+<script src="house.js"></script>
+<script src="stick-character.js"></script>
+<script src="stick-sentence.js"></script>
+<script>
+/* Maya and Tom are friends — the same people on every page of this lesson */
+StickSentence.cast({
+  maya:    { base:'woman', colour:'#6600CC', label:'Maya' },
+  tom:     { base:'man',   colour:'#00CC66', label:'Tom' },
+  brother: { base:'man',   colour:'#FF6600', label:'Tom’s brother' }
+});
+StickSentence.toggle();   /* stick figures hidden by default */
+
+/* the chunks of this lesson, by preposition: [preposition, picture, chunk] */
+const CHUNKS = {
+  to:    [['🎧', 'listen to'], ['🗣️', 'talk to'], ['🏫', 'go to school'], ['💼', 'go to work'], ['😊', 'kind to']],
+  for:   [['⏳', 'wait for'], ['🔍', 'look for'], ['💳', 'pay for'], ['🙋', 'ask for'], ['🥣', 'for breakfast'], ['🙏', 'thanks for']],
+  at:    [['👀', 'look at'], ['💪', 'good at'], ['👎', 'bad at'], ['🏠', 'at home'], ['💼', 'at work'], ['🌙', 'at night'], ['📍', 'arrive at']],
+  in:    [['🤩', 'interested in'], ['🌅', 'in the morning'], ['🇺🇸', 'in English'], ['🎸', 'in a band'], ['🏙️', 'arrive in']],
+  with:  [['🤝', 'agree with'], ['🆘', 'help with'], ['👫', 'with friends']],
+  of:    [['😨', 'afraid of'], ['🥱', 'tired of'], ['🏅', 'proud of'], ['🍪', 'full of']],
+  about: [['💭', 'think about'], ['😟', 'worry about'], ['💬', 'talk about'], ['📖', 'read about']]
+};
+
+/* the learner's dictionary (right-click / long press a word): what these words mean in this lesson */
+window.LESSON_DICT = {
+  'look for':      { pos:'phrasal verb', def:'to try to find something or someone', ex:'I’m looking for my keys.', es:'buscar' },
+  'look at':       { pos:'phrasal verb', def:'to turn your eyes to something and see it', ex:'Look at this photo!', es:'mirar' },
+  'wait for':      { pos:'phrasal verb', def:'to stay in a place until someone comes or something happens', ex:'I’m waiting for the bus.', es:'esperar' },
+  'listen to':     { pos:'phrasal verb', def:'to pay attention to a sound or music', ex:'I listen to music at night.', es:'escuchar' },
+  'pay for':       { pos:'phrasal verb', def:'to give money to get something', ex:'I’ll pay for the coffee.', es:'pagar' },
+  'ask for':       { pos:'phrasal verb', def:'to say that you want something', ex:'Can I ask for a hot chocolate?', es:'pedir' },
+  'agree with':    { pos:'phrasal verb', def:'to have the same idea as another person', ex:'I agree with you.', es:'estar de acuerdo con' },
+  'afraid of':     { pos:'adjective', def:'scared: you don’t like it because it can hurt you', ex:'Tom is afraid of spiders.', es:'tener miedo de' },
+  'interested in': { pos:'adjective', def:'you like it and want to know more about it', ex:'I’m interested in music.', es:'interesado en' },
+  'good at':       { pos:'adjective', def:'you can do it well', ex:'Tom is good at cooking.', es:'bueno en / para' },
+  'tired of':      { pos:'adjective', def:'you don’t want any more of it', ex:'I’m tired of coffee!', es:'harto de' },
+  'profile':       { pos:'noun', def:'a page about you on an app or a website', ex:'Tom is making his profile.', es:'perfil' }
+};
+
+/* the prepositions stay coloured. They are written as ⟦…⟧ first, so the stick-figure markup can read the sentence, then coloured. */
+const T = s => '⟦' + s + '⟧';
+const fix = h => h.replace(/⟦([^⟧]*)⟧/g, '<span class="tgt">$1</span>');
+const S = m => fix(StickSentence.html(m));
+
+/* ── look: verb + preposition · adjective + preposition · phrases ──────── */
+const li = m => '<li>' + S(m) + '</li>';
+document.getElementById('gs').innerHTML =
+  '<div><h3>🏃 verb + preposition</h3><p class="sub">listen to · wait for · look at</p><ul>' +
+    li('{I|tom} listen ' + T('to') + ' {music|@🎵} all day.') +
+    li('Were {you|tom} waiting ' + T('for') + ' {me|maya:me}?') +
+    li('Look ' + T('at') + ' this!') +
+    li('{I|tom} agree ' + T('with') + ' {you|maya}.') +
+    li('{I’ll|tom} pay ' + T('for') + ' the drinks.') +
+  '</ul></div>' +
+  '<div><h3>🙂 adjective + preposition</h3><p class="sub">good at · afraid of · interested in</p><ul>' +
+    li('{You’re|tom} good ' + T('at') + ' {cooking|@🍳}.') +
+    li('{I’m|tom:😨} afraid ' + T('of') + ' {spiders|@🕷️}.') +
+    li('{I’m|tom} interested ' + T('in') + ' {movies|@🎬}.') +
+    li('{I’m|maya:🥱} tired ' + T('of') + ' {coffee|@☕}!') +
+  '</ul></div>' +
+  '<div><h3>📍 phrases</h3><p class="sub">preposition + noun: when, where, who with</p><ul>' +
+    li(T('in') + ' the morning') +
+    li(T('at') + ' work · ' + T('at') + ' night · ' + T('at') + ' home') +
+    li('in a band ' + T('with') + ' {my|tom} {brother|brother}') +
+    li('a hot chocolate ' + T('for') + ' {Maya|maya}') +
+  '</ul></div>';
+
+/* ── by preposition ────────────────────────────────────────────────────── */
+document.getElementById('prepGrid').innerHTML = Object.keys(CHUNKS).map(p =>
+  '<div class="prep-card"><h4>' + p + '</h4>' + CHUNKS[p].map(([e, c]) =>
+    '<div>' + e + ' ' + c.replace(new RegExp('\\b' + p + '\\b'), '<span class="tgt">' + p + '</span>') + '</div>').join('') + '</div>').join('');
+
+/* ── different preposition, different meaning ──────────────────────────── */
+const CMP = [
+  ['look at', '{Look at|maya} the {photo|@🖼️}!', 'Use your eyes. It’s here.', 'look for', '{I’m looking for|tom:❓} my {keys|@🔑}.', 'Try to find it. Where is it?'],
+  ['talk to', '{Maya|maya} is talking to {Tom|tom}.', 'to + a person', 'talk about', 'They’re talking about {music|@🎵}.', 'about + a topic'],
+  ['arrive at', '{I|tom} arrived at the {café|@☕}.', 'at + a building or a small place', 'arrive in', '{I|maya} arrived in {New York|@🗽}.', 'in + a city or a country']
+];
+document.getElementById('compare').innerHTML = CMP.map(([t1, s1, n1, t2, s2, n2]) =>
+  '<div class="compare-row">' +
+    '<div class="compare-card"><span class="compare-tag">' + t1 + '</span><div class="compare-text">' + S(s1) + '</div><div class="compare-note">' + n1 + '</div></div>' +
+    '<div class="compare-card"><span class="compare-tag">' + t2 + '</span><div class="compare-text">' + S(s2) + '</div><div class="compare-note">' + n2 + '</div></div>' +
+  '</div>').join('');
+
+/* ── concept checking questions ────────────────────────────────────────── */
+HouseCCQ.build({
+  container: 'ccq',
+  items: [
+    { sentence: S('{I’m|tom} looking for {my phone|@📱}.'),
+      questions: [
+        { q: 'Does Tom have his phone in his hand?', opts: ['Yes', 'No'], correct: 1,
+          why: 'No. “Look for” = try to find. He doesn’t know where it is.' }
+      ] },
+    { sentence: S('{Tom|tom} is good at {cooking|@🍳}.'),
+      questions: [
+        { q: 'Is Tom’s food nice?', opts: ['Yes', 'No'], correct: 0,
+          why: 'Yes. “Good at” = he can do it well.' },
+        { q: 'Can we say “good in cooking”?', opts: ['Yes', 'No'], correct: 1,
+          why: 'No. It’s always <b>good at</b> — learn the chunk.' }
+      ] },
+    { sentence: S('{Maya|maya:🥱} is tired of {coffee|@☕}.'),
+      questions: [
+        { q: 'Does Maya want a coffee now?', opts: ['Yes', 'No'], correct: 1,
+          why: 'No. “Tired of” = she doesn’t want any more of it. (It’s not about sleep!)' }
+      ] },
+    { sentence: S('{Maya|maya} is waiting for {Tom|tom}.'),
+      questions: [
+        { q: 'Is Tom here now?', opts: ['Yes', 'No'], correct: 1,
+          why: 'No. Maya is in one place, and Tom is coming later.' }
+      ] }
+  ]
+});
+
+/* ── form: the preposition stays with its verb or adjective — even at the end of a question ── */
+HouseFormClarf.build({
+  container: 'formClarf', scoreEl: 'fcScore', totalEl: 'fcTotal',
+  pool: ['wh', 'subject', 'verb', 'adj', 'prep', 'noun', 'object'],
+  items: [
+    { form: 'aff', parts: [['Tom', 'subject'], ['is', 'verb'], ['good', 'adj'], ['at', 'prep'], ['cooking', 'noun'], ['.', null]] },
+    { form: 'aff', parts: [['I', 'subject'], ['listen', 'verb'], ['to', 'prep'], ['music', 'noun'], ['.', null]] },
+    { form: 'wh',  parts: [['What', 'wh'], ['are', 'verb'], ['you', 'subject'], ['good', 'adj'], ['at', 'prep'], ['?', null]] },
+    { form: 'wh',  parts: [['Who', 'wh'], ['are', 'verb'], ['you', 'subject'], ['waiting', 'verb'], ['for', 'prep'], ['?', null]] }
+  ]
+});
+document.getElementById('ruleBox').innerHTML = fix(
+  '<p><strong>Learn the chunk:</strong> listen ' + T('to') + ', wait ' + T('for') + ', look ' + T('at') + ', good ' + T('at') + ', interested ' + T('in') + ', agree ' + T('with') + ', afraid ' + T('of') + ', think ' + T('about') + '. There is no rule — the verb or adjective chooses the preposition.</p>' +
+  '<p><strong>After the preposition:</strong> a noun, a pronoun or an <em>-ing</em> verb. I’m good ' + T('at') + ' cooking. · Listen ' + T('to') + ' me! · I’m interested ' + T('in') + ' playing the guitar.</p>' +
+  '<p><strong>Questions:</strong> the preposition goes to the end. What are you afraid ' + T('of') + '? · Who are you talking ' + T('to') + '? · What are you thinking ' + T('about') + '?</p>');
+
+/* ── common mistakes ───────────────────────────────────────────────────── */
+const MISTAKES = [
+  ['I listen music every day.', 'I listen to music every day.'],
+  ['We’re waiting the bus.', 'We’re waiting for the bus.'],
+  ['She’s good in English.', 'She’s good at English.'],
+  ['I’m interested on movies.', 'I’m interested in movies.'],
+  ['He’s afraid from dogs.', 'He’s afraid of dogs.'],
+  ['What are you interested?', 'What are you interested in?'],
+  ['I arrived to the café at 3.', 'I arrived at the café at 3.'],
+  ['I’m good at cook.', 'I’m good at cooking.']
+];
+document.getElementById('mistakes').innerHTML = MISTAKES.map(([no, yes]) =>
+  '<div class="pair-card"><div class="pair-line no"><span class="mark">✗</span>' + no + '</div>' +
+  '<div class="pair-line yes"><span class="mark">✓</span>' + yes + '</div></div>').join('');
+
+/* ── error hunt (A1/A2: some sentences are already correct) ── */
+const EH_ITEMS = [
+  { words: ['Can', 'you', 'help', 'me', 'for', 'my', 'homework', '?'],
+    error: { type: 'wrong', wordIndex: 4, options: ['with', 'at', 'of'], correct: 'with' } },
+  { words: ['I', 'often', 'think', 'about', 'my', 'family', '.'], error: null },
+  { words: ['She', 'is', 'very', 'kind', 'to', 'animals', '.'], error: null },
+  { words: ['Look', 'this', 'photo', '!'],
+    error: { type: 'missing', gapIndex: 1, options: ['at', 'for', 'to'], correct: 'at' } },
+  { words: ['My', 'brother', 'is', 'bad', 'in', 'math', '.'],
+    error: { type: 'wrong', wordIndex: 4, options: ['at', 'of', 'with'], correct: 'at' } },
+  { words: ['Who', 'are', 'you', 'talking', '?'],
+    error: { type: 'missing', gapIndex: 4, options: ['to', 'at', 'for'], correct: 'to' } },
+  { words: ['I', 'paid', 'for', 'the', 'tickets', 'yesterday', '.'], error: null },
+  { words: ['We', 'arrived', 'at', 'Paris', 'at', 'night', '.'],
+    error: { type: 'wrong', wordIndex: 2, options: ['in', 'to', 'for'], correct: 'in' } },
+  { words: ['He', 'worries', 'of', 'his', 'exams', '.'],
+    error: { type: 'wrong', wordIndex: 2, options: ['about', 'with', 'at'], correct: 'about' } },
+  { words: ['I’m', 'looking', 'for', 'for', 'my', 'glasses', '.'], error: { type: 'extra', wordIndex: 3 } }
+];
+HouseErrorHunt.build({ container: 'errorHuntItems', items: EH_ITEMS, scoreEl: 'errorScore', totalEl: 'errorTotal' });
+</script>
+<script>HouseGrammar.init();</script>
+</body>
+</html>

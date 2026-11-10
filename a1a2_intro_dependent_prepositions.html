@@ -1,0 +1,167 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<title>What Are You Good At? — Dependent Prepositions</title>
+<script>
+(function(){
+  try{
+    var saved = localStorage.getItem('theme-preference');
+    var theme = (saved === 'light' || saved === 'dark')
+      ? saved
+      : ((window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches) ? 'dark' : 'light');
+    document.documentElement.setAttribute('data-theme', theme);
+    var fs = parseFloat(localStorage.getItem('font-size-preference'));
+    if (fs >= 10 && fs <= 28) document.documentElement.style.setProperty('--fs-base', fs + 'px');
+  }catch(e){ /* localStorage/matchMedia unavailable — CSS media query still applies */ }
+})();
+</script>
+<link rel="stylesheet" href="house.css">
+<style>
+/* a verb and its past participle, with a picture */
+.pp-card{ display:flex; align-items:center; gap:6px; }
+.pp-card .pic{ white-space:nowrap; }
+.cast-row{ display:flex; flex-wrap:wrap; gap:14px 18px; justify-content:center; align-items:flex-end; margin:0 0 1rem; padding:10px; background:var(--surface-1); border:1px solid var(--border); border-radius:var(--border-radius-lg); font-size:.8667rem; }
+
+.match-wrap .match-col-label{ text-align:center; }
+#picCol .match-card{ font-size:1.35rem; justify-content:center; }
+</style>
+</head>
+<body>
+<div class="page" id="page">
+  <span class="cefr-tag cefr-a1a2">A1/A2 · Elementary</span>
+  <h1>What Are You Good At?</h1>
+  <p class="subtitle">Tom is making a profile on an app for meeting new people. His friend Maya helps him.</p>
+
+  <div class="sec-div">Words for this lesson</div>
+  <p class="subtitle">Match the picture and the words. Tap a picture, then tap its words.</p>
+  <div class="score-bar"><span>Matched: <strong id="mScore">0</strong> / <span id="mTotal">0</span></span><button id="mReset">↺ Reset</button></div>
+  <div class="match-grid match-wrap">
+    <div><div class="match-col-label">Picture</div><div class="match-col" id="picCol"></div></div>
+    <div><div class="match-col-label">Words</div><div class="match-col" id="wordCol"></div></div>
+  </div>
+  <div class="win-msg" id="mWin">🎉 Great! You know the words for the conversation.</div>
+  <div class="feedback" id="mFeedback"></div>
+
+  <div class="sec-div">Before you read</div>
+  <div id="preQuestions"></div>
+
+  <div class="sec-div">The people</div>
+  <div class="cast-row" id="castRow"></div>
+
+  <div class="sec-div">The conversation</div>
+  <div class="setting-chip"><span class="section-icon">☕</span> Saturday afternoon — at a café</div>
+  <button class="grammar-toggle-btn" id="grammarToggle">🎨 Show Grammar</button>
+  <div class="pos-legend"></div>
+  <div id="conversation"></div>
+
+  <div class="sec-div">Check your answers</div>
+  <div id="quiz"></div>
+
+  <footer>What Are You Good At? — Dependent prepositions: to, for, at, in, with, of, about (A1/A2)</footer>
+</div>
+
+<div id="theme-toggle-wrap">
+  <button id="theme-toggle" aria-label="Toggle light/dark mode" title="Toggle light/dark mode">
+    <span id="theme-icon">☀️</span>
+  </button>
+</div>
+<script src="house.js"></script>
+<script src="stick-character.js"></script>
+<script src="stick-sentence.js"></script>
+<script>
+/* Maya and Tom are friends — the same people on every page of this lesson */
+StickSentence.cast({
+  maya:    { base:'woman', colour:'#6600CC', label:'Maya' },
+  tom:     { base:'man',   colour:'#00CC66', label:'Tom' },
+  brother: { base:'man',   colour:'#FF6600', label:'Tom’s brother' }
+});
+StickSentence.toggle();   /* stick figures hidden by default */
+
+/* the chunks of this lesson, by preposition: [preposition, picture, chunk] */
+const CHUNKS = {
+  to:    [['🎧', 'listen to'], ['🗣️', 'talk to'], ['🏫', 'go to school'], ['💼', 'go to work'], ['😊', 'kind to']],
+  for:   [['⏳', 'wait for'], ['🔍', 'look for'], ['💳', 'pay for'], ['🙋', 'ask for'], ['🥣', 'for breakfast'], ['🙏', 'thanks for']],
+  at:    [['👀', 'look at'], ['💪', 'good at'], ['👎', 'bad at'], ['🏠', 'at home'], ['💼', 'at work'], ['🌙', 'at night'], ['📍', 'arrive at']],
+  in:    [['🤩', 'interested in'], ['🌅', 'in the morning'], ['🇺🇸', 'in English'], ['🎸', 'in a band'], ['🏙️', 'arrive in']],
+  with:  [['🤝', 'agree with'], ['🆘', 'help with'], ['👫', 'with friends']],
+  of:    [['😨', 'afraid of'], ['🥱', 'tired of'], ['🏅', 'proud of'], ['🍪', 'full of']],
+  about: [['💭', 'think about'], ['😟', 'worry about'], ['💬', 'talk about'], ['📖', 'read about']]
+};
+
+/* the learner's dictionary (right-click / long press a word): what these words mean in this lesson */
+window.LESSON_DICT = {
+  'look for':      { pos:'phrasal verb', def:'to try to find something or someone', ex:'I’m looking for my keys.', es:'buscar' },
+  'look at':       { pos:'phrasal verb', def:'to turn your eyes to something and see it', ex:'Look at this photo!', es:'mirar' },
+  'wait for':      { pos:'phrasal verb', def:'to stay in a place until someone comes or something happens', ex:'I’m waiting for the bus.', es:'esperar' },
+  'listen to':     { pos:'phrasal verb', def:'to pay attention to a sound or music', ex:'I listen to music at night.', es:'escuchar' },
+  'pay for':       { pos:'phrasal verb', def:'to give money to get something', ex:'I’ll pay for the coffee.', es:'pagar' },
+  'ask for':       { pos:'phrasal verb', def:'to say that you want something', ex:'Can I ask for a hot chocolate?', es:'pedir' },
+  'agree with':    { pos:'phrasal verb', def:'to have the same idea as another person', ex:'I agree with you.', es:'estar de acuerdo con' },
+  'afraid of':     { pos:'adjective', def:'scared: you don’t like it because it can hurt you', ex:'Tom is afraid of spiders.', es:'tener miedo de' },
+  'interested in': { pos:'adjective', def:'you like it and want to know more about it', ex:'I’m interested in music.', es:'interesado en' },
+  'good at':       { pos:'adjective', def:'you can do it well', ex:'Tom is good at cooking.', es:'bueno en / para' },
+  'tired of':      { pos:'adjective', def:'you don’t want any more of it', ex:'I’m tired of coffee!', es:'harto de' },
+  'profile':       { pos:'noun', def:'a page about you on an app or a website', ex:'Tom is making his profile.', es:'perfil' }
+};
+
+/* ── picture → words ──────────────────────────────────────────────────── */
+const WORDS = [
+  ['🎧', 'listen to'], ['⏳', 'wait for'], ['👀', 'look at'], ['🔍', 'look for'], ['💳', 'pay for'], ['💭', 'think about'],
+  ['🗣️', 'talk to'], ['💪', 'good at'], ['😨', 'afraid of'], ['🤩', 'interested in'], ['🤝', 'agree with'], ['🥱', 'tired of']
+];
+HouseMatching.build({
+  left: 'picCol', right: 'wordCol', scoreEl: 'mScore', totalEl: 'mTotal', winEl: 'mWin', resetBtn: 'mReset', feedbackEl: 'mFeedback',
+  pairs: WORDS.map(([e, w]) => ({ id: w, left: e, right: w }))
+});
+
+/* ── the people ───────────────────────────────────────────────────────── */
+document.getElementById('castRow').innerHTML = ['{Maya|maya}', '{Tom|tom}'].map(StickSentence.html).join('');
+
+const SPEAKERS = {
+  Maya: { cast: 'maya', avatar: '👩', av: 'av-b', side: 'left' },
+  Tom:  { cast: 'tom',  avatar: '👨', av: 'av-a', side: 'right' }
+};
+/* each speaker's avatar takes the colour of their stick figure (overrides the house.css av-* colours) */
+const avStyle = s => { const c = (StickSentence.cast()[s.cast] || {}).colour;
+  return c ? 'background:' + c + '40;box-shadow:inset 0 0 0 2px ' + c : ''; };
+
+/* {words|figures} puts stick figures (or @ pictures) over the words; [words/pos] marks the grammar colours.
+   The preposition that goes with a verb or an adjective is [prep]. */
+const LINES = [
+  ['Maya', '[Hi/none], {[Tom/noun]|tom}! [Sorry/adj] {[I’m/subject]|maya} [late/adj]. [Were/aux] {[you/subject]|tom} [waiting/verb] [for/prep] {[me/object]|maya:me} [a long time/time]?'],
+  ['Tom',  '[No/none], {[I/subject]|tom} [arrived/verb] [at/prep] {[the café/noun]|@☕} [five minutes ago/time]. [Look/verb] [at/prep] [this/object] — [it’s/subject] [a new app/complement] [for meeting people/prep]. {[I’m/subject]|tom:📱} [making/verb] [my profile/object].'],
+  ['Maya', '[Cool/adj]! [Can/aux] {[I/subject]|maya} [help/verb] {[you/object]|tom} [with/prep] [it/object]?'],
+  ['Tom',  '[Yes, please/none]! [The first question/subject] [is/verb]: “[What/wh] [are/verb] [you/subject] [good/adj] [at/prep]?”'],
+  ['Maya', '[Easy/adj]. {[You’re/subject]|tom} [good/adj] [at/prep] {[cooking/noun]|@🍳}. [And/conj] {[you’re/subject]|tom:😄} [very good/adj] [at/prep] {[video games/noun]|@🎮}!'],
+  ['Tom',  '[Ha/none]! [Next/adverb]: “[What/wh] [are/verb] [you/subject] [interested/adj] [in/prep]?” {[I’m/subject]|tom} [interested/adj] [in/prep] {[music/noun]|@🎵} [and/conj] {[movies/noun]|@🎬}. {[I/subject]|tom} [listen/verb] [to/prep] [music/noun] [all day/time] — [in the morning/time], [at work/prep] [and/conj] [at night/time].'],
+  ['Maya', '[Write/verb] [about/prep] {[your band/noun]|@🎸}, [too/adverb]! {[You/subject]|tom} [play/verb] [in a band/prep] [with/prep] {[your/det]|tom} {[brother/noun]|brother}.'],
+  ['Tom',  '[Good idea/none]. [Next/adverb]: “[What/wh] [are/verb] [you/subject] [afraid/adj] [of/prep]?” [Hmm/none]… {[I’m/subject]|tom:😨} [afraid/adj] [of/prep] {[spiders/noun]|@🕷️}. [And/conj] {[I’m/subject]|tom} [afraid/adj] [of/prep] {[big dogs/noun]|dog:running}.'],
+  ['Maya', '[Really/none]? [Don’t write/verb] [that/object]! [People/subject] [don’t want/verb] [to read/verb] [about/prep] [spiders/noun]! 😂'],
+  ['Tom',  '[OK/none], {[I/subject]|tom} [agree/verb] [with/prep] {[you/object]|maya}. [Last question/subject]: “[What/wh] [are/verb] [you/subject] [looking/verb] [for/prep]?”'],
+  ['Maya', '[Friends/noun]! [People/noun] [to talk/verb] [to/prep] [about/prep] [music and movies/noun]. [Not/neg] [people/noun] [with/prep] {[big dogs/noun]|dog}!'],
+  ['Tom',  '[Perfect/adj]. [Thanks/none] [for/prep] [your help/noun]! [What/wh] [do/aux] {[you/subject]|maya} [want/verb]? {[I’ll/subject]|tom:💳} [pay/verb] [for/prep] [the drinks/object].'],
+  ['Maya', '[Thanks/none]! [Can/aux] {[I/subject]|maya} [ask/verb] [for/prep] {[a hot chocolate/object]|@🍫☕}? {[I’m/subject]|maya:🥱} [tired/adj] [of/prep] {[coffee/noun]|@☕}!']
+];
+const conv = document.getElementById('conversation');
+LINES.forEach(([who, text]) => {
+  const s = SPEAKERS[who], right = s.side === 'right';
+  conv.insertAdjacentHTML('beforeend',
+    '<div class="bubble-wrap' + (right ? ' right' : '') + '">' +
+      '<div class="avatar ' + s.av + '" style="' + avStyle(s) + '">' + s.avatar + '</div>' +
+      '<div class="bubble-col"><div class="bname' + (right ? ' right' : '') + '">' + who + '</div>' +
+      '<div class="bubble ' + (right ? 'right' : 'left') + '">' + StickSentence.html(text) + '</div></div>' +
+    '</div>');
+});
+
+const CQ_ITEMS = [
+  { q: 'What is Tom good at?', opts: ['Cooking and video games', 'Music and movies', 'Spiders and dogs'], correct: 0 },
+  { q: 'What is Tom afraid of?', opts: ['Coffee', 'Spiders and big dogs', 'Video games'], correct: 1 },
+  { q: 'What is Maya tired of?', opts: ['Hot chocolate', 'Music', 'Coffee'], correct: 2 }
+];
+HouseComprehension.build({ pre: 'preQuestions', quiz: 'quiz', items: CQ_ITEMS });
+</script>
+<script>HouseGrammar.init();</script>
+</body>
+</html>
