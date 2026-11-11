@@ -1,0 +1,156 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<title>How Was Your Vacation? — Simple Past</title>
+<script>
+(function(){
+  try{
+    var saved = localStorage.getItem('theme-preference');
+    var theme = (saved === 'light' || saved === 'dark')
+      ? saved
+      : ((window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches) ? 'dark' : 'light');
+    document.documentElement.setAttribute('data-theme', theme);
+    var fs = parseFloat(localStorage.getItem('font-size-preference'));
+    if (fs >= 10 && fs <= 28) document.documentElement.style.setProperty('--fs-base', fs + 'px');
+  }catch(e){ /* localStorage/matchMedia unavailable — CSS media query still applies */ }
+})();
+</script>
+<link rel="stylesheet" href="house.css">
+<style>
+/* a verb and its past participle, with a picture */
+.pp-card{ display:flex; align-items:center; gap:6px; }
+.pp-card .pic{ white-space:nowrap; }
+.cast-row{ display:flex; flex-wrap:wrap; gap:14px 18px; justify-content:center; align-items:flex-end; margin:0 0 1rem; padding:10px; background:var(--surface-1); border:1px solid var(--border); border-radius:var(--border-radius-lg); font-size:.8667rem; }
+.say-btn{ font-size:.8667rem; padding:3px 10px; margin:2px; }
+
+.match-wrap .match-col-label{ text-align:center; }
+#picCol .match-card{ font-size:1.35rem; justify-content:center; }
+</style>
+</head>
+<body>
+<div class="page" id="page">
+  <span class="cefr-tag cefr-a1">A1 · Beginner</span>
+  <h1>How Was Your Vacation?</h1>
+  <p class="subtitle">Leo is back from a beach vacation. His friend Mia has a lot of questions.</p>
+
+  <div class="sec-div">Words for this lesson</div>
+  <p class="subtitle">Match the picture and the verb. Tap a picture, then tap its verb.</p>
+  <div class="score-bar"><span>Matched: <strong id="mScore">0</strong> / <span id="mTotal">0</span></span><button id="mReset">↺ Reset</button></div>
+  <div class="match-grid match-wrap">
+    <div><div class="match-col-label">Picture</div><div class="match-col" id="picCol"></div></div>
+    <div><div class="match-col-label">Verb</div><div class="match-col" id="wordCol"></div></div>
+  </div>
+  <div class="win-msg" id="mWin">🎉 Great! You know the verbs for the conversation.</div>
+  <div class="feedback" id="mFeedback"></div>
+
+  <div class="sec-div">Before you read</div>
+  <div id="preQuestions"></div>
+
+  <div class="sec-div">The people</div>
+  <div class="cast-row" id="castRow"></div>
+
+  <div class="sec-div">The conversation</div>
+  <div class="setting-chip" data-vn-bg="cafe"><span class="section-icon">☕</span> Monday morning — at a café</div>
+  <button class="grammar-toggle-btn" id="grammarToggle">🎨 Show Grammar</button>
+  <div class="pos-legend"></div>
+  <div id="conversation"></div>
+
+  <div class="sec-div">Check your answers</div>
+  <div id="quiz"></div>
+
+  <footer>How Was Your Vacation? — Simple past: regular verbs (A1)</footer>
+</div>
+
+<div id="theme-toggle-wrap">
+  <button id="theme-toggle" aria-label="Toggle light/dark mode" title="Toggle light/dark mode">
+    <span id="theme-icon">☀️</span>
+  </button>
+</div>
+<script src="house.js"></script>
+<script src="stick-character.js"></script>
+<script src="stick-sentence.js"></script>
+<script>
+/* Mia and Leo are friends — the same people on every page of this lesson */
+StickSentence.cast({
+  mia: { base:'woman', colour:'#FF66CC', label:'Mia' },
+  leo: { base:'man',   colour:'#0066CC', label:'Leo' },
+  mom: { base:'woman', colour:'#663300', label:'Leo’s mom' }
+});
+StickSentence.toggle();   /* stick figures hidden by default */
+
+/* say a word with the browser's voice (the learner's dictionary in house.js does the speaking) */
+const say = w => '<button class="say-btn" type="button" onclick="HouseDict.say(\'' + w + '\')" aria-label="Listen: ' + w + '">🔊 ' + w + '</button>';
+
+/* the learner's dictionary (right-click / long press a word): what these words mean in this lesson */
+window.LESSON_DICT = {
+  'host':       { pos:'noun', def:'a person who lets a visitor stay in their home', ex:'I thanked my host.', es:'anfitrión' },
+  'sunset':     { pos:'noun', def:'the time in the evening when the sun goes down', ex:'We watched the sunset.', es:'atardecer' },
+  'volleyball': { pos:'noun', def:'a game: two teams hit a big ball over a high net with their hands', ex:'I played volleyball on the beach.', es:'voleibol' },
+  'pack':       { pos:'verb', def:'to put your things in a bag for a trip', ex:'I packed my bags.', es:'empacar, hacer la maleta' },
+  'relax':      { pos:'verb', def:'to rest and feel calm', ex:'I relaxed at the beach.', es:'relajarse' },
+  'order':      { pos:'verb', def:'to ask for food or drinks in a restaurant or by phone', ex:'We ordered pizza.', es:'pedir' }
+};
+
+/* ── picture → verb ───────────────────────────────────────────────────── */
+const WORDS = [
+  ['🚶🌊', 'walk'], ['🏛️👀', 'visit'], ['🎧🎶', 'listen to'], ['🏐', 'play'], ['🌅👀', 'watch'], ['🍳', 'cook'],
+  ['📱🍕', 'order'], ['🗣️💬', 'talk'], ['🧹', 'clean'], ['🧳', 'pack'], ['😌🏖️', 'relax'], ['📚✏️', 'study']
+];
+HouseMatching.build({
+  left: 'picCol', right: 'wordCol', scoreEl: 'mScore', totalEl: 'mTotal', winEl: 'mWin', resetBtn: 'mReset', feedbackEl: 'mFeedback',
+  pairs: WORDS.map(([e, w]) => ({ id: w, left: e, right: w }))
+});
+
+/* ── the people ───────────────────────────────────────────────────────── */
+document.getElementById('castRow').innerHTML = ['{Mia|mia}', '{Leo|leo}'].map(StickSentence.html).join('');
+
+const SPEAKERS = {
+  Mia: { cast: 'mia', avatar: '👩', av: 'av-b', side: 'left' },
+  Leo: { cast: 'leo', avatar: '👨', av: 'av-a', side: 'right' }
+};
+/* each speaker's avatar takes the colour of their stick figure (overrides the house.css av-* colours) */
+const avStyle = s => { const c = (StickSentence.cast()[s.cast] || {}).colour;
+  return c ? 'background:' + c + '40;box-shadow:inset 0 0 0 2px ' + c : ''; };
+
+/* {words|figures} puts stick figures (or @ pictures) over the words; [words/pos] marks the grammar colours.
+   The past verbs are [verb]; did / didn’t are [aux] / [neg]. */
+const LINES = [
+  ['Mia', '[Hi/none], {[Leo/noun]|leo}! [Did/aux] {[you/subject]|leo} [enjoy/verb] [your vacation/object]?'],
+  ['Leo', '[Yes/none], {[I/subject]|leo:😄} [did/aux]! {[I/subject]|leo} [relaxed/verb] {[at the beach/prep]|@🏖️} [and/conj] [walked/verb] [near the water/prep] [every morning/time].'],
+  ['Mia', '[Great/adj]! [What/wh] [did/aux] {[you/subject]|leo} [do/verb] [on Monday/time]?'],
+  ['Leo', '{[I/subject]|leo} [visited/verb] {[a small museum/object]|@🏛️}. {[I/subject]|leo:🎶} [listened/verb] [to/prep] [music/object] [there/adverb] — [a band/subject] [played/verb] [in the garden/prep].'],
+  ['Mia', '[Did/aux] {[you/subject]|leo} [play/verb] [any sports/object]?'],
+  ['Leo', '[Yes/none]. {[I/subject]|leo} [played/verb] {[volleyball/object]|@🏐} [with/prep] {[my/det]|leo} {[friends/noun]|man,woman}. {[We/subject]|leo,man} [watched/verb] {[the sunset/object]|@🌅} [too/adverb].'],
+  ['Mia', '[That sounds fun/none]! [Did/aux] {[you/subject]|leo} [cook/verb] [dinner/object]?'],
+  ['Leo', '[No/none], {[I/subject]|leo} [didn’t/neg]. {[We/subject]|leo,man} [ordered/verb] {[pizza/object]|@🍕} [and/conj] [talked/verb] [at a café/prep].'],
+  ['Mia', '[What/wh] [did/aux] {[you/subject]|leo} [do/verb] [on your last day/time]?'],
+  ['Leo', '{[I/subject]|leo} [cleaned/verb] [my room/object], [packed/verb] {[my bags/object]|@🧳}, [and/conj] [thanked/verb] [my host/object]. [Then/adverb] {[I/subject]|leo:📞} [called/verb] {[my/det]|leo} {[mom/noun]|mom}.'],
+  ['Mia', '[Wonderful/adj]. {[I’m/subject]|mia:😊} [happy/adj] {[you/subject]|leo} [enjoyed/verb] [your trip/object]!'],
+  ['Leo', '[Thanks/none]! [And/conj] {[you/subject]|mia}? [What/wh] [did/aux] {[you/subject]|mia} [do/verb] [last week/time]?'],
+  ['Mia', '[Oh/none], {[I/subject]|mia} [stayed/verb] [at home/prep]. {[I/subject]|mia:🧹} [cleaned/verb] [the house/object] [and/conj] [studied/verb] [for an exam/prep]. {[I/subject]|mia:😴} [worked/verb] [a lot/adverb]!'],
+  ['Leo', '[Ha/none]! {[You/subject]|mia} [didn’t/neg] [relax/verb] [at all/adverb]!']
+];
+const conv = document.getElementById('conversation');
+LINES.forEach(([who, text]) => {
+  const s = SPEAKERS[who], right = s.side === 'right';
+  conv.insertAdjacentHTML('beforeend',
+    '<div class="bubble-wrap' + (right ? ' right' : '') + '">' +
+      '<div class="avatar ' + s.av + '" style="' + avStyle(s) + '">' + s.avatar + '</div>' +
+      '<div class="bubble-col"><div class="bname' + (right ? ' right' : '') + '">' + who + '</div>' +
+      '<div class="bubble ' + (right ? 'right' : 'left') + '">' + StickSentence.html(text) + '</div></div>' +
+    '</div>');
+});
+
+/* the same three questions before reading (no options) and after (three options) */
+const CQ_ITEMS = [
+  { q: 'What did Leo do on Monday?', opts: ['He played volleyball', 'He visited a small museum', 'He ordered pizza'], correct: 1 },
+  { q: 'Did Leo cook dinner?', opts: ['No — they ordered pizza', 'Yes, every evening', 'Yes, but only on the last day'], correct: 0 },
+  { q: 'What did Leo do on his last day?', opts: ['He watched the sunset', 'He relaxed at the beach', 'He cleaned his room and packed his bags'], correct: 2 }
+];
+HouseComprehension.build({ pre: 'preQuestions', quiz: 'quiz', items: CQ_ITEMS });
+</script>
+<script>HouseGrammar.init();</script>
+</body>
+</html>

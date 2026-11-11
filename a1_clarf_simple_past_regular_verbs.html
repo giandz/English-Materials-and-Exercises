@@ -1,0 +1,236 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<title>Simple Past: Regular Verbs — Clarification</title>
+<script>
+(function(){
+  try{
+    var saved = localStorage.getItem('theme-preference');
+    var theme = (saved === 'light' || saved === 'dark')
+      ? saved
+      : ((window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches) ? 'dark' : 'light');
+    document.documentElement.setAttribute('data-theme', theme);
+    var fs = parseFloat(localStorage.getItem('font-size-preference'));
+    if (fs >= 10 && fs <= 28) document.documentElement.style.setProperty('--fs-base', fs + 'px');
+  }catch(e){ /* localStorage/matchMedia unavailable — CSS media query still applies */ }
+})();
+</script>
+<link rel="stylesheet" href="house.css">
+<style>
+/* a verb and its past participle, with a picture */
+.pp-card{ display:flex; align-items:center; gap:6px; }
+.pp-card .pic{ white-space:nowrap; }
+.cast-row{ display:flex; flex-wrap:wrap; gap:14px 18px; justify-content:center; align-items:flex-end; margin:0 0 1rem; padding:10px; background:var(--surface-1); border:1px solid var(--border); border-radius:var(--border-radius-lg); font-size:.8667rem; }
+.say-btn{ font-size:.8667rem; padding:3px 10px; margin:2px; }
+
+/* the target language is the lesson, so it stays coloured (not a grammar-toggle colour) */
+.ed{ color:var(--pos-verb); font-weight:700; }
+.gs ul{ list-style:none; margin:0 0 1rem; padding:0; border:1px solid var(--color-border-tertiary); border-radius:12px; background:var(--surface-2); }
+.gs li{ padding:7px 12px; line-height:1.5; font-size:.9333rem; }
+.gs li + li{ border-top:.5px dashed var(--color-border-secondary); }
+.cards{ display:grid; grid-template-columns:repeat(auto-fill, minmax(190px, 1fr)); gap:8px; margin-bottom:1rem; }
+.cards > div{ border:1px solid var(--color-border-tertiary); border-radius:12px; background:var(--surface-2); padding:9px 11px; }
+.cards h4{ margin:0 0 3px; font-size:.95rem; }
+.cards .rule{ font-size:.8rem; color:var(--text-secondary); margin-bottom:5px; }
+.cards .ex{ font-size:.9333rem; line-height:1.7; }
+.cards .sound{ font-family:"Doulos SIL","Charis SIL","Lucida Sans Unicode","Segoe UI",sans-serif; font-size:1.25rem; color:var(--pos-verb); }
+.rule-box p{ margin:0 0 6px; }
+.rule-box p:last-child{ margin-bottom:0; }
+</style>
+</head>
+<body>
+<div class="page" id="page">
+  <span class="cefr-tag cefr-a1">A1 · Beginner</span>
+  <h1>Simple Past: walked, played, visited</h1>
+  <p class="subtitle">For finished actions in the past: yesterday, last week, on Monday.</p>
+
+  <div class="sec-div">Look</div>
+  <p class="subtitle">From the conversation. Look at the verbs.</p>
+  <div class="gs" id="gs"></div>
+
+  <div class="sec-div">When?</div>
+  <div id="timeline"></div>
+
+  <div class="sec-div">Check the meaning</div>
+  <p class="subtitle">Read. Answer the questions.</p>
+  <div id="ccq"></div>
+
+  <div class="sec-div">Spelling: verb + ed</div>
+  <div class="cards" id="spelling"></div>
+
+  <div class="sec-div">Say it: three sounds</div>
+  <p class="subtitle">Tap 🔊 to listen. Then say the words.</p>
+  <div class="cards" id="sounds"></div>
+
+  <div class="sec-div">Look at the form</div>
+  <p class="subtitle">What is each word? Drag a label (or tap a label, then tap a box).</p>
+  <div class="score-bar"><span>Correct: <strong id="fcScore">0</strong> / <span id="fcTotal">0</span></span></div>
+  <div id="formClarf"></div>
+  <div class="rule-box" id="ruleBox"></div>
+
+  <div class="sec-div">Common mistakes</div>
+  <div id="mistakes"></div>
+
+  <div class="sec-div">Error hunt</div>
+  <p class="subtitle">Every sentence has one mistake. Tap a word — or a space between words — to fix it. Then press OK.</p>
+  <div class="score-bar"><span>Done: <strong id="errorScore">0</strong> / <span id="errorTotal">0</span></span></div>
+  <div id="errorHuntItems"></div>
+
+  <footer>Simple past: regular verbs — Clarification (A1)</footer>
+</div>
+
+<div id="theme-toggle-wrap">
+  <button id="theme-toggle" aria-label="Toggle light/dark mode" title="Toggle light/dark mode">
+    <span id="theme-icon">☀️</span>
+  </button>
+</div>
+<script src="house.js"></script>
+<script src="stick-character.js"></script>
+<script src="stick-sentence.js"></script>
+<script>
+/* Mia and Leo are friends — the same people on every page of this lesson */
+StickSentence.cast({
+  mia: { base:'woman', colour:'#FF66CC', label:'Mia' },
+  leo: { base:'man',   colour:'#0066CC', label:'Leo' },
+  mom: { base:'woman', colour:'#663300', label:'Leo’s mom' }
+});
+StickSentence.toggle();   /* stick figures hidden by default */
+
+/* say a word with the browser's voice (the learner's dictionary in house.js does the speaking) */
+const say = w => '<button class="say-btn" type="button" onclick="HouseDict.say(\'' + w + '\')" aria-label="Listen: ' + w + '">🔊 ' + w + '</button>';
+
+/* the learner's dictionary (right-click / long press a word): what these words mean in this lesson */
+window.LESSON_DICT = {
+  'host':       { pos:'noun', def:'a person who lets a visitor stay in their home', ex:'I thanked my host.', es:'anfitrión' },
+  'sunset':     { pos:'noun', def:'the time in the evening when the sun goes down', ex:'We watched the sunset.', es:'atardecer' },
+  'volleyball': { pos:'noun', def:'a game: two teams hit a big ball over a high net with their hands', ex:'I played volleyball on the beach.', es:'voleibol' },
+  'pack':       { pos:'verb', def:'to put your things in a bag for a trip', ex:'I packed my bags.', es:'empacar, hacer la maleta' },
+  'relax':      { pos:'verb', def:'to rest and feel calm', ex:'I relaxed at the beach.', es:'relajarse' },
+  'order':      { pos:'verb', def:'to ask for food or drinks in a restaurant or by phone', ex:'We ordered pizza.', es:'pedir' }
+};
+
+/* the -ed endings stay coloured. They are written as ⟦…⟧ first, so the stick-figure markup can read the sentence, then coloured. */
+const E = s => '⟦' + s + '⟧';
+const fix = h => h.replace(/⟦([^⟧]*)⟧/g, '<span class="ed">$1</span>');
+const S = m => fix(StickSentence.html(m));
+
+/* ── look ──────────────────────────────────────────────────────────────── */
+document.getElementById('gs').innerHTML = '<ul>' + [
+  '{I|leo} walk' + E('ed') + ' near the {water|@🌊}.',
+  '{I|leo} visit' + E('ed') + ' a small {museum|@🏛️}.',
+  '{I|leo} play' + E('ed') + ' {volleyball|@🏐} with {my|leo} {friends|man,woman}.',
+  '{We|leo,man} order' + E('ed') + ' {pizza|@🍕}.',
+  '{I|leo} pack' + E('ed') + ' {my bags|@🧳}.',
+  '{I|mia} stud' + E('ied') + ' for an {exam|@📚}.'
+].map(m => '<li>' + S(m) + '</li>').join('') + '</ul>';
+
+/* ── when: finished, at a time before now ──────────────────────────────── */
+HouseTimeline.build({
+  container: 'timeline',
+  startLabel: 'Past', nowNote: 'Leo is at the café',
+  bands: [{ from: 0.08, to: 0.72, label: 'Leo’s vacation' }],
+  events: [
+    { at: 0.18, emoji: '🏛️', label: 'visited a museum', kind: 'point' },
+    { at: 0.42, emoji: '🏐', label: 'played volleyball', kind: 'point' },
+    { at: 0.64, emoji: '🧳', label: 'packed his bags', kind: 'point' }
+  ],
+  caption: 'Finished actions — the vacation is over.'
+});
+
+/* ── concept checking questions ────────────────────────────────────────── */
+HouseCCQ.build({
+  container: 'ccq',
+  items: [
+    { sentence: S('{Leo|leo} played {volleyball|@🏐} on the beach.'),
+      questions: [
+        { q: 'Is Leo playing now?', opts: ['Yes', 'No'], correct: 1,
+          why: 'No. <b>played</b> = before now. It’s finished.' },
+        { q: 'Is it the past?', opts: ['Yes', 'No'], correct: 0,
+          why: 'Yes. <b>-ed</b> = the past.' }
+      ] },
+    { sentence: S('{Mia|mia} cleaned the {house|@🏠} last week.'),
+      questions: [
+        { q: 'Is the house clean now?', opts: ['Yes', 'We don’t know'], correct: 1,
+          why: 'We don’t know! It was clean last week. The sentence is about last week.' }
+      ] },
+    { sentence: S('Did {you|leo} cook dinner?'),
+      questions: [
+        { q: 'Why “cook”, not “cooked”?', opts: ['“Did” is the past', 'It’s the present'], correct: 0,
+          why: '<b>Did</b> is the past. So the verb is the base: cook. Not “Did you cooked?”' }
+      ] }
+  ]
+});
+
+/* ── spelling ──────────────────────────────────────────────────────────── */
+const SPELL = [
+  ['➕ most verbs', '+ ed', 'walk → walk' + E('ed') + '<br>play → play' + E('ed') + '<br>watch → watch' + E('ed')],
+  ['🔚 verb ends in e', '+ d', 'dance → danc' + E('ed') + '<br>like → lik' + E('ed') + '<br>live → liv' + E('ed')],
+  ['🔁 consonant + y', 'y → ied', 'study → stud' + E('ied') + '<br>try → tr' + E('ied') + '<br>but: play → play' + E('ed') + ' (a + y)'],
+  ['✌️ short verb: vowel + consonant', 'double the last letter + ed', 'stop → stop' + E('ped') + '<br>plan → plan' + E('ned') + '<br>shop → shop' + E('ped')]
+];
+document.getElementById('spelling').innerHTML = fix(SPELL.map(([h, r, ex]) =>
+  '<div><h4>' + h + '</h4><div class="rule">' + r + '</div><div class="ex">' + ex + '</div></div>').join(''));
+
+/* ── pronunciation ─────────────────────────────────────────────────────── */
+const SOUNDS = [
+  ['/t/', 'after p, k, s, sh, ch, f, x', ['walked', 'cooked', 'watched', 'packed', 'danced']],
+  ['/d/', 'after most other sounds', ['played', 'cleaned', 'listened', 'called', 'stayed']],
+  ['/ɪd/ — an extra syllable!', 'only after t or d', ['visited', 'wanted', 'waited', 'needed', 'started']]
+];
+document.getElementById('sounds').innerHTML = SOUNDS.map(([snd, when, ws]) =>
+  '<div><h4 class="sound">' + snd + '</h4><div class="rule">' + when + '</div><div class="ex">' + ws.map(say).join('') + '</div></div>').join('');
+
+/* ── form ──────────────────────────────────────────────────────────────── */
+HouseFormClarf.build({
+  container: 'formClarf', scoreEl: 'fcScore', totalEl: 'fcTotal',
+  pool: ['wh', 'aux', 'subject', 'verb', 'neg', 'object', 'time'],
+  items: [
+    { form: 'aff', parts: [['I', 'subject'], ['visited', 'verb'], ['a museum', 'object'], ['on Monday', 'time'], ['.', null]] },
+    { form: 'neg', parts: [['I', 'subject'], ['didn’t', 'neg'], ['cook', 'verb'], ['dinner', 'object'], ['.', null]] },
+    { form: 'q',   parts: [['Did', 'aux'], ['you', 'subject'], ['play', 'verb'], ['volleyball', 'object'], ['?', null]] },
+    { form: 'wh',  parts: [['What', 'wh'], ['did', 'aux'], ['you', 'subject'], ['do', 'verb'], ['on Monday', 'time'], ['?', null]] }
+  ]
+});
+document.getElementById('ruleBox').innerHTML = fix(
+  '<p><strong>✅ Positive:</strong> verb + ' + E('ed') + ' — the same for I, you, he, she, we, they. I walk' + E('ed') + '. She walk' + E('ed') + '.</p>' +
+  '<p><strong>❌ Negative:</strong> didn’t + verb (no -ed). I didn’t cook.</p>' +
+  '<p><strong>❓ Question:</strong> Did + you + verb (no -ed)? Did you play? — Yes, I did. / No, I didn’t.</p>');
+
+/* ── common mistakes ───────────────────────────────────────────────────── */
+const MISTAKES = [
+  ['Yesterday I walk to the park.', 'Yesterday I walked to the park.'],
+  ['I didn’t cooked dinner.', 'I didn’t cook dinner.'],
+  ['Did you played volleyball?', 'Did you play volleyball?'],
+  ['She studyed for an exam.', 'She studied for an exam.'],
+  ['He stoped at the store.', 'He stopped at the store.'],
+  ['We danceed at a party.', 'We danced at a party.']
+];
+document.getElementById('mistakes').innerHTML = MISTAKES.map(([no, yes]) =>
+  '<div class="pair-card"><div class="pair-line no"><span class="mark">✗</span>' + no + '</div>' +
+  '<div class="pair-line yes"><span class="mark">✓</span>' + yes + '</div></div>').join('');
+
+/* ── error hunt (A1: every sentence has one mistake) ───────────────────── */
+const EH_ITEMS = [
+  { words: ['Last', 'night', 'we', 'watch', 'a', 'movie', '.'],
+    error: { type: 'wrong', wordIndex: 3, options: ['watched', 'watching', 'watches'], correct: 'watched' } },
+  { words: ['She', 'cleanned', 'her', 'room', '.'],
+    error: { type: 'wrong', wordIndex: 1, options: ['cleaned', 'cleaning', 'clean'], correct: 'cleaned' } },
+  { words: ['I', 'tryed', 'a', 'new', 'café', '.'],
+    error: { type: 'wrong', wordIndex: 1, options: ['tried', 'try', 'trying'], correct: 'tried' } },
+  { words: ['They', 'didn’t', 'liked', 'the', 'hotel', '.'],
+    error: { type: 'wrong', wordIndex: 2, options: ['like', 'likes', 'liking'], correct: 'like' } },
+  { words: ['you', 'visit', 'your', 'grandma', '?'],
+    error: { type: 'missing', gapIndex: 0, options: ['Did', 'Do', 'Are'], correct: 'Did' } },
+  { words: ['He', 'shoped', 'for', 'clothes', '.'],
+    error: { type: 'wrong', wordIndex: 1, options: ['shopped', 'shops', 'shop'], correct: 'shopped' } },
+  { words: ['What', 'you', 'did', 'do', 'on', 'Sunday', '?'],
+    error: { type: 'misplaced', wordIndex: 2, targetGapIndex: 1 } },
+  { words: ['We', 'did', 'played', 'soccer', 'yesterday', '.'], error: { type: 'extra', wordIndex: 1 } }
+];
+HouseErrorHunt.build({ container: 'errorHuntItems', items: EH_ITEMS, scoreEl: 'errorScore', totalEl: 'errorTotal' });
+</script>
+<script>HouseGrammar.init();</script>
+</body>
+</html>

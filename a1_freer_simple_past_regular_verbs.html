@@ -1,0 +1,97 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<title>True or False? — Simple Past</title>
+<script>
+(function(){
+  try{
+    var saved = localStorage.getItem('theme-preference');
+    var theme = (saved === 'light' || saved === 'dark')
+      ? saved
+      : ((window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches) ? 'dark' : 'light');
+    document.documentElement.setAttribute('data-theme', theme);
+    var fs = parseFloat(localStorage.getItem('font-size-preference'));
+    if (fs >= 10 && fs <= 28) document.documentElement.style.setProperty('--fs-base', fs + 'px');
+  }catch(e){ /* localStorage/matchMedia unavailable — CSS media query still applies */ }
+})();
+</script>
+<link rel="stylesheet" href="house.css">
+<style>
+/* a verb and its past participle, with a picture */
+.pp-card{ display:flex; align-items:center; gap:6px; }
+.pp-card .pic{ white-space:nowrap; }
+.cast-row{ display:flex; flex-wrap:wrap; gap:14px 18px; justify-content:center; align-items:flex-end; margin:0 0 1rem; padding:10px; background:var(--surface-1); border:1px solid var(--border); border-radius:var(--border-radius-lg); font-size:.8667rem; }
+.say-btn{ font-size:.8667rem; padding:3px 10px; margin:2px; }
+
+.tf-cue{ font-size:1.25rem; font-weight:700; margin:4px 0 6px; text-align:center; }
+.tf-cue .big{ display:block; font-size:2.6rem; line-height:1.1; margin-bottom:4px; }
+.tf-when{ font-size:.95rem; color:var(--text-secondary); text-align:center; }
+.q-card details.check{ margin-top:4px; width:100%; max-width:440px; text-align:left; }
+.q-card .check-body{ padding:8px 12px; font-size:.9rem; }
+.q-card .check-body p{ margin:0 0 4px; }
+</style>
+</head>
+<body>
+<div class="page" id="page">
+  <span class="cefr-tag cefr-a1">A1 · Beginner</span>
+  <h1>True or False?</h1>
+  <p class="subtitle">Talk about your past. Is your partner telling the truth?</p>
+
+  <div class="rule-box">
+    <p><strong>How to play (pairs, or teacher + student):</strong></p>
+    <p>1. Student A rolls 🎲 and makes a sentence. It can be true or false! “<b>Last weekend I played soccer.</b>”</p>
+    <p>2. Student B asks one question: “<b>Did you play with friends?</b>” Then B says: “<b>True!</b>” or “<b>False!</b>”</p>
+    <p>3. A says the answer: “<b>Yes, I did.</b>” / “<b>No, I didn’t. I stayed at home!</b>” Press 👀 to check. Then change.</p>
+  </div>
+
+  <div class="q-card" id="qCard"><span class="q-placeholder">Roll the dice to start.</span></div>
+  <button class="dice-btn" id="diceBtn" aria-label="Roll">🎲</button>
+  <div class="roll-count">Rolls: <strong id="rollCount">0</strong></div>
+
+  <div class="sec-div">Now you</div>
+  <div class="rule-box">
+    <p><strong>Your last vacation (or your last weekend).</strong> Tell your partner five things. Use these verbs:</p>
+    <p>visit · walk · play · watch · listen to · cook · order · relax · stay · talk · dance · study</p>
+    <p>Your partner asks: “<b>Did you…?</b>” and “<b>What did you do on…?</b>”</p>
+  </div>
+
+  <footer>True or False? — Simple past: regular verbs (A1)</footer>
+</div>
+
+<div id="theme-toggle-wrap">
+  <button id="theme-toggle" aria-label="Toggle light/dark mode" title="Toggle light/dark mode">
+    <span id="theme-icon">☀️</span>
+  </button>
+</div>
+<script src="house.js"></script>
+<script>
+/* [picture, verb, the rest of the sentence, the past form, its sound] — the time is picked at random */
+const ACTS = [
+  ['⚽', 'play', 'soccer', 'played', '/d/'], ['🎬', 'watch', 'a movie', 'watched', '/t/'], ['🍳', 'cook', 'dinner', 'cooked', '/t/'],
+  ['🏛️', 'visit', 'a museum', 'visited', '/ɪd/'], ['🎧', 'listen to', 'music', 'listened to', '/d/'], ['🧹', 'clean', 'my room', 'cleaned', '/d/'],
+  ['💃', 'dance', 'at a party', 'danced', '/t/'], ['📞', 'call', 'my mom', 'called', '/d/'], ['📚', 'study', 'English', 'studied', '/d/'],
+  ['🏠', 'stay', 'at home', 'stayed', '/d/'], ['🚶', 'walk', 'in the park', 'walked', '/t/'], ['📱🍕', 'order', 'pizza', 'ordered', '/d/'],
+  ['🛍️', 'shop', 'for clothes', 'shopped', '/t/'], ['🎮', 'play', 'video games', 'played', '/d/'], ['😴', 'relax', 'all day', 'relaxed', '/t/'],
+  ['🎂', 'bake', 'a cake', 'baked', '/t/'], ['👵👴', 'visit', 'my grandparents', 'visited', '/ɪd/'], ['🚲', 'travel', 'by bike', 'traveled', '/d/']
+];
+const TIMES = ['Yesterday', 'Last weekend', 'Last night', 'Last summer', 'On Sunday', 'Last Friday'];
+const pickFrom = HouseRandomGen.pickFrom;
+
+HouseRandomGen.build({
+  pick: () => { const a = pickFrom(ACTS), t = pickFrom(TIMES); return { a, t, text: t + a[1] + a[2] }; },
+  key: it => it.text,
+  render: ({ a: [pic, verb, rest, past, snd], t }) =>
+    '<span class="q-topic">🤔 True or false?</span>' +
+    '<div class="tf-cue"><span class="big">' + pic + '</span>' + verb + ' ' + rest + '</div>' +
+    '<div class="tf-when">⏪ ' + t + '</div>' +
+    '<span class="q-prompt">A: make a sentence — true or false. B: ask “Did you…?”</span>' +
+    '<details class="check"><summary>👀 Check</summary><div class="check-body">' +
+    '<p>✅ “' + t + ' I <b>' + past + '</b> ' + rest + '.” <span class="text-secondary">(-ed = ' + snd + ')</span></p>' +
+    '<p>❌ “' + t + ' I <b>didn’t ' + verb + '</b> ' + rest + '.”</p>' +
+    '<p>❓ “<b>Did you ' + verb + '</b> ' + rest.replace(/^my /, 'your ') + '?”</p></div></details>'
+});
+</script>
+</body>
+</html>

@@ -1,0 +1,139 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<title>How Was Your Vacation? — Simple Past Practice</title>
+<script>
+(function(){
+  try{
+    var saved = localStorage.getItem('theme-preference');
+    var theme = (saved === 'light' || saved === 'dark')
+      ? saved
+      : ((window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches) ? 'dark' : 'light');
+    document.documentElement.setAttribute('data-theme', theme);
+    var fs = parseFloat(localStorage.getItem('font-size-preference'));
+    if (fs >= 10 && fs <= 28) document.documentElement.style.setProperty('--fs-base', fs + 'px');
+  }catch(e){ /* localStorage/matchMedia unavailable — CSS media query still applies */ }
+})();
+</script>
+<link rel="stylesheet" href="house.css">
+<style>
+/* a verb and its past participle, with a picture */
+.pp-card{ display:flex; align-items:center; gap:6px; }
+.pp-card .pic{ white-space:nowrap; }
+.cast-row{ display:flex; flex-wrap:wrap; gap:14px 18px; justify-content:center; align-items:flex-end; margin:0 0 1rem; padding:10px; background:var(--surface-1); border:1px solid var(--border); border-radius:var(--border-radius-lg); font-size:.8667rem; }
+.say-btn{ font-size:.8667rem; padding:3px 10px; margin:2px; }
+
+.blank{ display:inline-block; min-width:3em; border-bottom:2px solid var(--color-border-primary); }
+.ctx{ display:inline-flex; align-items:center; gap:8px; font-weight:400; font-style:normal; margin:0 0 6px; padding:3px 10px; border-radius:8px;
+  border:1px solid var(--color-border-tertiary); background:var(--surface-2); color:var(--text-secondary); font-size:.85rem; }
+.ctx .emo{ font-size:1.3rem; }
+.quiz-q .q-text .ctx{ display:flex; width:max-content; max-width:100%; }
+.base{ color:var(--text-muted); font-style:italic; }
+</style>
+</head>
+<body>
+<div class="page" id="page">
+  <span class="cefr-tag cefr-a1">A1 · Beginner</span>
+  <h1>How Was Your Vacation? — Practice</h1>
+  <p class="subtitle">Practice: I walked · We played · I didn’t cook · Did you visit…?</p>
+
+  <div class="sec-div">1 · Choose</div>
+  <p class="subtitle">Look at the picture. Choose the right word.</p>
+  <div id="pcItems"></div>
+
+  <div class="sec-div">2 · Put the words in order</div>
+  <p class="subtitle">Look at the picture. Make the sentence.</p>
+  <button class="grammar-toggle-btn" id="grammarToggle">🎨 Hide Grammar</button>
+  <div class="pos-legend"></div>
+  <div class="score-bar"><span>Correct: <strong id="woScore">0</strong> / <span id="woTotal">0</span></span></div>
+  <div id="woItems"></div>
+
+  <div class="sec-div">3 · Write the verb</div>
+  <p class="subtitle">Write the past form of the verb in (brackets).</p>
+  <div id="gfItems"></div>
+
+  <footer>Simple past: regular verbs — Controlled Practice (A1)</footer>
+</div>
+
+<div id="theme-toggle-wrap">
+  <button id="theme-toggle" aria-label="Toggle light/dark mode" title="Toggle light/dark mode">
+    <span id="theme-icon">☀️</span>
+  </button>
+</div>
+<script src="house.js"></script>
+<script src="stick-character.js"></script>
+<script src="stick-sentence.js"></script>
+<script>
+/* Mia and Leo are friends — the same people on every page of this lesson */
+StickSentence.cast({
+  mia: { base:'woman', colour:'#FF66CC', label:'Mia' },
+  leo: { base:'man',   colour:'#0066CC', label:'Leo' },
+  mom: { base:'woman', colour:'#663300', label:'Leo’s mom' }
+});
+StickSentence.toggle();   /* stick figures hidden by default */
+
+/* say a word with the browser's voice (the learner's dictionary in house.js does the speaking) */
+const say = w => '<button class="say-btn" type="button" onclick="HouseDict.say(\'' + w + '\')" aria-label="Listen: ' + w + '">🔊 ' + w + '</button>';
+
+/* the learner's dictionary (right-click / long press a word): what these words mean in this lesson */
+window.LESSON_DICT = {
+  'host':       { pos:'noun', def:'a person who lets a visitor stay in their home', ex:'I thanked my host.', es:'anfitrión' },
+  'sunset':     { pos:'noun', def:'the time in the evening when the sun goes down', ex:'We watched the sunset.', es:'atardecer' },
+  'volleyball': { pos:'noun', def:'a game: two teams hit a big ball over a high net with their hands', ex:'I played volleyball on the beach.', es:'voleibol' },
+  'pack':       { pos:'verb', def:'to put your things in a bag for a trip', ex:'I packed my bags.', es:'empacar, hacer la maleta' },
+  'relax':      { pos:'verb', def:'to rest and feel calm', ex:'I relaxed at the beach.', es:'relajarse' },
+  'order':      { pos:'verb', def:'to ask for food or drinks in a restaurant or by phone', ex:'We ordered pizza.', es:'pedir' }
+};
+
+const S = StickSentence.html;
+const BLANK = '<span class="blank">&nbsp;</span>';
+const rep = m => S(m).replace('____', BLANK);
+/* the picture and the time */
+const ctx = (emo, note) => '<span class="ctx"><span class="emo">' + emo + '</span>' + note + '</span>';
+const base = v => ' <span class="base">(' + v + ')</span>';
+
+/* ── 1 · choose ────────────────────────────────────────────────────────── */
+const PC_ITEMS = [
+  { q: ctx('🚶🌳', '⏪ yesterday') + rep('{I|leo} ____ to the {park|@🌳}.'), opts: ['walk', 'walked', 'walkt'], correct: 1 },
+  { q: ctx('📺🎬', '⏪ last night') + rep('{We|mia,leo} ____ a {movie|@🎬}.'), opts: ['watched', 'watch', 'watchd'], correct: 0 },
+  { q: ctx('💃🎉', '⏪ on Saturday') + rep('{She|mia} ____ at a party.'), opts: ['danceed', 'dance', 'danced'], correct: 2 },
+  { q: ctx('📚✏️', '⏪ last week') + rep('{Mia|mia} ____ for an {exam|@📚}.'), opts: ['studyed', 'studied', 'studed'], correct: 1 },
+  { q: ctx('🛑🏪', '⏪ this morning') + rep('{He|leo} ____ at the {store|@🏪}.'), opts: ['stopped', 'stoped', 'stopt'], correct: 0 },
+  { q: ctx('🏐🏖️', '⏪ on vacation') + rep('{They|man,woman} ____ volleyball.'), opts: ['plaied', 'played', 'playd'], correct: 1 },
+  { q: ctx('❌🍳', '⏪ last night — no') + rep('{I|leo} didn’t ____ dinner.'), opts: ['cooked', 'cooking', 'cook'], correct: 2 },
+  { q: ctx('❓🏛️', '⏪ a question') + rep('____ {you|leo} visit the museum?'), opts: ['Did', 'Do', 'Visited'], correct: 0 }
+];
+HouseComprehension.build({ quiz: 'pcItems', items: PC_ITEMS });
+
+/* ── 2 · word order ────────────────────────────────────────────────────── */
+const WO_ITEMS = [
+  { context: ctx('🧹🏠', '⏪ yesterday'), text: 'Mia / cleaned / the house / yesterday', pos: ['subject', 'verb', 'object', 'time'] },
+  { context: ctx('🎧🎶', '⏪ last night'), text: 'I / listened / to / music / last night', pos: ['subject', 'verb', 'prep', 'object', 'time'] },
+  { context: ctx('📱🍕', '⏪ on Friday'), text: 'We / ordered / pizza / on Friday', pos: ['subject', 'verb', 'object', 'time'] },
+  { context: ctx('❌🌧️', '⏪ it rained'), text: 'They / didn’t / walk / to school', pos: ['subject', 'neg', 'verb', 'object'] },
+  { context: ctx('❓📞', '⏪ a question'), text: 'Did / you / call / your mom / ?', pos: ['aux', 'subject', 'verb', 'object', 'none'] },
+  { context: ctx('❓🏖️', '⏪ a question'), text: 'What / did / you / do / on vacation / ?', pos: ['wh', 'aux', 'subject', 'verb', 'time', 'none'] }
+];
+HouseWordOrder.build({ container: 'woItems', items: WO_ITEMS, scoreEl: 'woScore', totalEl: 'woTotal' });
+
+/* ── 3 · gap fill (easiest first: + ed, + d, y → ied, double letter, then didn’t / did) ── */
+const gaps = m => S(m).replace(/____(\d)/g, '{$1}');
+const GF_ITEMS = [
+  { direct: ctx('🚶🌳', '⏪ yesterday'), template: gaps('Yesterday {I|leo} ____0 to the park.') + base('walk'), hints: [{ accepted: ['walked'] }] },
+  { direct: ctx('🧹🛏️', '⏪ this morning'), template: gaps('{She|mia} ____0 her room this morning.') + base('clean'), hints: [{ accepted: ['cleaned'] }] },
+  { direct: ctx('🍳👫', '⏪ last night'), template: gaps('{They|man,woman} ____0 dinner together.') + base('cook'), hints: [{ accepted: ['cooked'] }] },
+  { direct: ctx('🏛️👀', '⏪ last vacation'), template: gaps('{We|mia,leo} ____0 a museum.') + base('visit'), hints: [{ accepted: ['visited'] }] },
+  { direct: ctx('🗺️😊', '⏪ last vacation'), template: gaps('{She|mia:😊} ____0 the tour.') + base('like'), hints: [{ accepted: ['liked'] }] },
+  { direct: ctx('🏖️⏳', '⏪ last vacation'), template: gaps('{He|leo} ____0 to stay longer.') + base('want'), hints: [{ accepted: ['wanted'] }] },
+  { direct: ctx('📚✏️', '⏪ last weekend'), template: gaps('{I|mia} ____0 English for two hours.') + base('study'), hints: [{ accepted: ['studied'] }] },
+  { direct: ctx('🛑🏪', '⏪ on the way home'), template: gaps('{He|leo} ____0 at the store.') + base('stop'), hints: [{ accepted: ['stopped'] }] },
+  { direct: ctx('❌🍳📱', '⏪ no cooking — pizza!'), template: gaps('{We|mia,leo} ____0 cook. We ____1 pizza.') + base('not · order'), hints: [{ accepted: ['didn’t', "didn't", 'did not'] }, { accepted: ['ordered'] }] },
+  { direct: ctx('❓🏐', '⏪ a question about sports'), template: gaps('____0 {you|leo} ____1 volleyball? — Yes, I did.') + base('play'), hints: [{ accepted: ['Did', 'did'] }, { accepted: ['play'] }] }
+];
+HouseGapFill.build({ container: 'gfItems', items: GF_ITEMS });
+</script>
+<script>HouseGrammar.init();</script>
+</body>
+</html>
