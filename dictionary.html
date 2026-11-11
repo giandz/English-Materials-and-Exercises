@@ -1,0 +1,442 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Learner's Dictionary</title>
+<script>
+(function(){
+  try{
+    var saved = localStorage.getItem('theme-preference');
+    var theme = (saved === 'light' || saved === 'dark')
+      ? saved
+      : ((window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches) ? 'dark' : 'light');
+    document.documentElement.setAttribute('data-theme', theme);
+    var fs = parseFloat(localStorage.getItem('font-size-preference'));
+    if (fs >= 10 && fs <= 28) document.documentElement.style.setProperty('--fs-base', fs + 'px');
+  }catch(e){ /* localStorage/matchMedia unavailable — CSS media query still applies */ }
+})();
+</script>
+<link rel="stylesheet" href="house.css">
+<style>
+/* ── Dictionary browser: every word in learner-dict/, by search or by first two letters ── */
+.db-search{ position:relative; display:flex; gap:8px; align-items:center; margin-bottom:.7rem; }
+.db-search input{ flex:1; min-width:0; font-family:inherit; font-size:1rem; padding:10px 2.4rem 10px 2.3rem; border-radius:999px;
+  border:1px solid var(--color-border-secondary); background:var(--surface-2); color:var(--text-primary); }
+.db-search input:focus{ outline:2px solid var(--text-accent); outline-offset:1px; border-color:transparent; }
+.db-search input::-webkit-search-cancel-button{ display:none; }
+.db-search .db-glass{ position:absolute; left:.85rem; top:50%; transform:translateY(-50%); font-size:.95rem; pointer-events:none; opacity:.7; }
+.db-search .db-clear{ position:absolute; right:.35rem; top:50%; transform:translateY(-50%); min-width:2rem; height:2rem; padding:0; border-radius:999px; font-size:.85rem; line-height:1; }
+.db-search .db-clear[hidden]{ display:none; }
+
+.db-bar{ display:flex; flex-wrap:wrap; align-items:center; gap:.5rem 1rem; margin-bottom:.8rem; font-size:.8rem; color:var(--text-secondary); }
+.db-seg{ display:inline-flex; flex-wrap:wrap; align-items:center; gap:4px; }
+.db-seg button{ font-size:.8rem; padding:3px 10px; min-height:1.9rem; }
+.db-seg button[aria-pressed="true"]{ background:var(--color-background-info); border-color:var(--text-accent); color:var(--color-text-info); font-weight:600; }
+
+/* A–Z, then the two-letter tabs of the chosen letter */
+.db-letters{ display:grid; grid-template-columns:repeat(auto-fill, minmax(2.2rem, 1fr)); gap:4px; margin-bottom:.6rem; }
+.db-letters button{ padding:0; min-height:2.2rem; font-weight:700; font-size:.9333rem; }
+.db-letters button[aria-pressed="true"]{ background:var(--text-accent); border-color:var(--text-accent); color:var(--surface-2); }
+.db-letters button:disabled{ opacity:.35; cursor:default; }
+.db-tabs{ display:flex; gap:4px; overflow-x:auto; padding-bottom:6px; margin-bottom:.4rem; border-bottom:.5px solid var(--color-border-tertiary); scrollbar-width:thin; }
+.db-tabs [role="tab"]{ flex:0 0 auto; font-size:.8667rem; font-weight:600; letter-spacing:.04em; padding:5px 12px; border-radius:var(--border-radius-md) var(--border-radius-md) 0 0;
+  border-bottom-color:transparent; font-variant-numeric:tabular-nums; }
+.db-tabs [role="tab"] small{ font-weight:500; color:var(--text-muted); margin-left:4px; letter-spacing:0; }
+.db-tabs [role="tab"][aria-selected="true"]{ background:var(--color-background-info); color:var(--color-text-info); border-color:var(--text-accent); }
+.db-tabs [role="tab"][aria-selected="true"] small{ color:inherit; }
+
+.db-status{ font-size:.8rem; color:var(--text-muted); margin:.3rem 0 .6rem; min-height:1.2em; }
+.db-status b{ color:var(--text-secondary); }
+
+/* entries */
+.db-list{ display:flex; flex-direction:column; border:.5px solid var(--color-border-tertiary); border-radius:var(--border-radius-lg); background:var(--surface-2); overflow:hidden; }
+.db-list:empty{ display:none; }
+.db-entry{ padding:.7rem .85rem; border-top:.5px solid var(--color-border-tertiary); scroll-margin-top:1rem; }
+.db-entry:first-child{ border-top:none; }
+.db-entry.flash{ animation:db-flash 1.6s ease-out; }
+@keyframes db-flash{ from{ background:var(--color-background-info); } to{ background:transparent; } }
+@media (prefers-reduced-motion: reduce){ .db-entry.flash{ animation:none; outline:2px solid var(--text-accent); } }
+.db-head{ display:flex; flex-wrap:wrap; align-items:center; gap:.2rem .5rem; }
+.db-word{ font-size:1.1333rem; font-weight:700; margin:0; }
+.db-emoji{ font-size:1.25rem; line-height:1; }
+.db-ipa{ font-size:.8667rem; color:var(--text-accent); font-family:"Doulos SIL","Charis SIL","Gentium Plus","Lucida Sans Unicode","Segoe UI",var(--font-sans); }
+.db-sl{ font-size:.7667rem; color:var(--text-muted); }
+.db-acts{ margin-left:auto; display:inline-flex; gap:4px; }
+.db-icon{ min-width:2rem; height:2rem; padding:0 .45rem; font-size:.85rem; line-height:1; display:inline-flex; align-items:center; justify-content:center; }
+.db-star[aria-pressed="true"]{ color:#c98a00; border-color:#c98a00; }
+.db-form, .db-variant{ font-size:.8rem; color:var(--text-secondary); margin-top:.15rem; }
+.db-senses{ list-style:none; margin:.35rem 0 0; padding:0; display:flex; flex-direction:column; gap:.45rem; }
+.db-senses.many{ counter-reset:sense; }
+.db-senses.many > li{ counter-increment:sense; position:relative; padding-left:1.3rem; }
+.db-senses.many > li::before{ content:counter(sense) "."; position:absolute; left:0; top:.05rem; font-size:.8rem; font-weight:700; color:var(--text-muted); }
+.db-meta{ display:flex; flex-wrap:wrap; gap:4px; margin-bottom:.15rem; }
+.db-pos{ font-size:.6667rem; font-weight:700; padding:1px 7px; border-radius:999px; background:var(--k-bg, var(--pos-none-bg)); color:var(--k-fg, var(--text-secondary)); }
+.db-lvl{ font-size:.6667rem; font-weight:700; padding:1px 7px; border-radius:999px; border:.5px solid var(--color-border-secondary); color:var(--text-secondary); }
+.db-def{ font-size:.9333rem; }
+.db-ex{ font-size:.8667rem; color:var(--text-secondary); font-style:italic; margin-top:.1rem; display:flex; align-items:flex-start; gap:.35rem; }
+.db-ex .db-icon{ min-width:1.6rem; height:1.6rem; font-size:.75rem; font-style:normal; flex:0 0 auto; }
+.db-es{ font-size:.8333rem; color:var(--color-text-success); margin-top:.1rem; display:none; }
+.show-es .db-es{ display:block; }
+.db-xref{ font-size:.9rem; color:var(--text-secondary); }
+.db-xref a{ color:var(--text-accent); font-weight:600; }
+.db-group{ font-size:.75rem; font-weight:700; letter-spacing:.06em; text-transform:uppercase; color:var(--text-muted); padding:.5rem .85rem .3rem; background:var(--surface-1); border-top:.5px solid var(--color-border-tertiary); }
+.db-group:first-child{ border-top:none; }
+.db-more{ display:block; margin:.6rem auto 0; }
+.db-more[hidden]{ display:none; }
+.db-empty{ font-size:.9rem; color:var(--text-secondary); padding:1rem; text-align:center; }
+mark.db-hit{ background:var(--color-background-warning); color:inherit; border-radius:2px; padding:0 1px; }
+
+@media (max-width:520px){
+  .db-acts{ margin-left:0; }
+  .db-entry{ padding:.65rem .7rem; }
+}
+</style>
+</head>
+<body>
+<div class="page" id="page">
+  <h1>🔤 Learner's Dictionary</h1>
+  <p class="subtitle">Every word in the course dictionary, with its meaning, its sound and an example. Search for a word, or browse by its first two letters.</p>
+
+  <div class="db-search" role="search">
+    <span class="db-glass" aria-hidden="true">🔎</span>
+    <input type="search" id="dbQ" placeholder="Search in English or Spanish… (try: went, colour, cocina)" aria-label="Search the dictionary" autocomplete="off" spellcheck="false" enterkeyhint="search">
+    <button type="button" class="db-clear" id="dbClear" aria-label="Clear the search" hidden>✕</button>
+  </div>
+
+  <div class="db-bar">
+    <div class="db-seg" role="group" aria-label="Level">
+      <span>Level:</span>
+      <button type="button" data-lvl="" aria-pressed="true">All</button>
+      <button type="button" data-lvl="A1" aria-pressed="false">A1</button>
+      <button type="button" data-lvl="A2" aria-pressed="false">A2</button>
+      <button type="button" data-lvl="B1" aria-pressed="false">B1</button>
+      <button type="button" data-lvl="B2" aria-pressed="false">B2</button>
+      <button type="button" data-lvl="C1" aria-pressed="false">C1</button>
+    </div>
+    <div class="db-seg">
+      <button type="button" id="dbEs" aria-pressed="false" title="Show the Spanish translations">🇪🇸 Spanish</button>
+    </div>
+  </div>
+
+  <div id="dbBrowse">
+    <div class="db-letters" id="dbLetters" role="group" aria-label="First letter"></div>
+    <div class="db-tabs" id="dbTabs" role="tablist" aria-label="First two letters"></div>
+  </div>
+
+  <div class="db-status" id="dbStatus" role="status">Loading the dictionary…</div>
+  <div class="db-list" id="dbList" role="tabpanel" aria-labelledby=""></div>
+  <button type="button" class="db-more" id="dbMore" hidden>Show more</button>
+
+  <footer>Word lists: New General Service List and its sister lists (Browne, Culligan &amp; Phillips, CC BY-SA 4.0) · meanings and pronunciations written for this course · American spelling · sounds: your browser’s voices · ☆ saves a word to <a href="my_words.html">My Words</a></footer>
+</div>
+
+<div id="theme-toggle-wrap">
+  <button id="theme-toggle" aria-label="Toggle light/dark mode" title="Toggle light/dark mode">
+    <span id="theme-icon">☀️</span>
+  </button>
+</div>
+<script src="house.js"></script>
+<script>
+(function () {
+  'use strict';
+  /* Reads learner-dict/ (next to house.js) straight from its shards: a.json … z.json.
+     Browsing loads one letter at a time; the first search loads the rest.
+     Sound, the ☆ list and the word-form finder (went → go) come from HouseDict in house.js. */
+  const $ = id => document.getElementById(id);
+  const esc = t => String(t == null ? '' : t).replace(/[&<>"]/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]));
+  const store = {
+    get(k, d) { try { const v = localStorage.getItem(k); return v == null ? d : JSON.parse(v); } catch (e) { return d; } },
+    set(k, v) { try { localStorage.setItem(k, JSON.stringify(v)); } catch (e) { /* private mode */ } }
+  };
+  const PAGE = 'dictionary.html';
+  const TAB_SIZE = 70;        /* about this many words per two-letter tab */
+  const PAGE_SIZE = 120;      /* entries drawn before "Show more" */
+  const LETTERS = 'abcdefghijklmnopqrstuvwxyz'.split('');
+  const SHARDS = LETTERS.concat('_');
+
+  const houseSrc = ([].slice.call(document.querySelectorAll('script[src]')).map(s => s.src).filter(u => /house\.js(\?|#|$)/.test(u))[0] || '');
+  const DATA = document.documentElement.getAttribute('data-dict-base') || (houseSrc ? houseSrc.replace(/[?#].*$/, '').replace(/[^/]*$/, '') : '') + 'learner-dict/';
+
+  /* "Café", "ma'am", "a bit" → "cafe", "maam", "abit": what sorting and the two-letter tabs use */
+  const fold = s => String(s || '').normalize('NFD').replace(/[̀-ͯ]/g, '').toLowerCase();
+  const sortKey = k => fold(k).replace(/[^a-z0-9]/g, '');
+  const cmp = (a, b) => (a.sk < b.sk ? -1 : a.sk > b.sk ? 1 : a.key < b.key ? -1 : 1);
+
+  const POS_KEY = { noun: 'noun', verb: 'verb', 'phrasal verb': 'verb', 'modal verb': 'aux', 'auxiliary verb': 'aux', auxiliary: 'aux',
+    adjective: 'adj', adverb: 'adverb', preposition: 'prep', determiner: 'det', article: 'det', number: 'det', conjunction: 'conj',
+    pronoun: 'subject', contraction: 'aux', exclamation: 'none', phrase: 'none' };
+  const posStyle = p => { const k = POS_KEY[String(p || '').toLowerCase()] || 'none'; return k === 'none' ? '' : ` style="--k-bg:var(--pos-${k}-bg);--k-fg:var(--pos-${k})"`; };
+
+  /* ── data ── */
+  const shardCache = {};
+  function loadShard(s) {
+    if (!shardCache[s]) shardCache[s] = fetch(DATA + s + '.json').then(r => r.ok ? r.json() : {}).catch(() => ({})).then(obj => {
+      return Object.keys(obj).map(key => {
+        const e = obj[key];
+        return { key, e, sk: sortKey(key), d: e.display || key };
+      }).sort(cmp);
+    });
+    return shardCache[s];
+  }
+  let allPromise = null;
+  const loadAll = () => allPromise || (allPromise = Promise.all(SHARDS.map(loadShard)).then(parts => [].concat.apply([], parts)));
+
+  /* ── state ── */
+  let level = store.get('dict-browser-level', '');
+  let letter = store.get('dict-browser-letter', 'a');
+  let tabIx = store.get('dict-browser-tab', 0);
+  let showEs = !!store.get('house-dict-es', false);
+  let current = [];            /* rows being shown: {kind:'entry'|'group', ...} */
+  let shown = 0;
+  let searchSeq = 0;
+
+  const levelOk = e => !level || (e.senses || []).some(s => s.level === level);
+
+  /* ── the two-letter tabs: consecutive prefixes packed into tabs of about TAB_SIZE words ── */
+  function makeTabs(items) {
+    const byPre = [];
+    items.forEach(it => {
+      const p = (it.sk.slice(0, 2) || it.sk).padEnd(2, it.sk[0] || '');
+      const last = byPre[byPre.length - 1];
+      if (last && last.p === p) last.items.push(it); else byPre.push({ p, items: [it] });
+    });
+    const tabs = [];
+    byPre.forEach(g => {
+      const t = tabs[tabs.length - 1];
+      if (t && t.items.length + g.items.length <= TAB_SIZE) { t.to = g.p; t.items = t.items.concat(g.items); }
+      else tabs.push({ from: g.p, to: g.p, items: g.items.slice() });
+    });
+    return tabs.map(t => Object.assign(t, { label: t.from === t.to ? t.from.toUpperCase() : (t.from + '–' + t.to).toUpperCase() }));
+  }
+
+  /* ── drawing ── */
+  function drawLetters(counts) {
+    $('dbLetters').innerHTML = LETTERS.map(l => `<button type="button" data-letter="${l}" aria-pressed="${l === letter}" ${counts && !counts[l] ? 'disabled' : ''} aria-label="Words that start with ${l.toUpperCase()}">${l.toUpperCase()}</button>`).join('');
+  }
+  let tabs = [];
+  async function browse(keepScroll) {
+    const seq = ++searchSeq;
+    $('dbBrowse').hidden = false;
+    $('dbStatus').textContent = 'Loading…';
+    const items = (await loadShard(letter)).filter(it => levelOk(it.e));
+    if (seq !== searchSeq) return;
+    tabs = makeTabs(items);
+    if (tabIx >= tabs.length) tabIx = 0;
+    $('dbTabs').innerHTML = tabs.map((t, i) => `<button type="button" role="tab" id="dbTab${i}" aria-selected="${i === tabIx}" tabindex="${i === tabIx ? 0 : -1}" aria-controls="dbList" data-tab="${i}">${esc(t.label)}<small>${t.items.length}</small></button>`).join('');
+    const t = tabs[tabIx];
+    $('dbList').setAttribute('aria-labelledby', t ? 'dbTab' + tabIx : '');
+    if (!t) { $('dbStatus').textContent = ''; show([], `No ${level || ''} words start with ${letter.toUpperCase()}.`); return; }
+    $('dbStatus').innerHTML = `<b>${t.items.length}</b> word${t.items.length === 1 ? '' : 's'} from <b>${esc(t.from.toUpperCase())}</b> to <b>${esc(t.to.toUpperCase())}</b>${level ? ' at level <b>' + level + '</b>' : ''} · ${items.length} under ${letter.toUpperCase()}`;
+    show(t.items.map(it => ({ kind: 'entry', it })), '', keepScroll);
+    const sel = $('dbTabs').querySelector('[aria-selected="true"]');
+    if (sel && sel.scrollIntoView) sel.scrollIntoView({ block: 'nearest', inline: 'nearest' });
+  }
+
+  function show(rows, emptyText, keepScroll) {
+    current = rows; shown = 0;
+    $('dbList').innerHTML = rows.length ? '' : `<p class="db-empty">${esc(emptyText || 'Nothing to show.')}</p>`;
+    more();
+    if (!keepScroll && $('dbList').getBoundingClientRect().top < 0) $('dbList').scrollIntoView({ block: 'start' });
+  }
+  function more() {
+    const next = current.slice(shown, shown + PAGE_SIZE);
+    $('dbList').insertAdjacentHTML('beforeend', next.map(rowHtml).join(''));
+    shown += next.length;
+    const left = current.length - shown;
+    $('dbMore').hidden = left <= 0;
+    $('dbMore').textContent = `Show ${Math.min(left, PAGE_SIZE)} more (${left} left)`;
+    markStars();
+  }
+
+  let hiRe = null;   /* search highlight */
+  const hi = t => { const s = esc(t); return hiRe ? s.replace(hiRe, m => `<mark class="db-hit">${m}</mark>`) : s; };
+
+  function rowHtml(row) {
+    if (row.kind === 'group') return `<div class="db-group">${esc(row.label)}</div>`;
+    const { it, form } = row, e = it.e;
+    const id = 'w-' + it.sk;
+    if (e.us) {   /* British spelling filed for lookups: point to the American headword */
+      return `<div class="db-entry" id="${id}"><p class="db-xref"><b>${hi(it.key)}</b> → British spelling of <a href="#" data-goto="${esc(e.us)}">${esc(e.us)}</a></p></div>`;
+    }
+    const senses = (e.senses || []).filter(s => !level || s.level === level || row.search);
+    const ipa = (e.ipa || [])[0], sl = (e.say || [])[0];
+    const variant = e.variant ? e.variant.replace(/^British: (.*)$/, 'British spelling: $1').replace(/^American: (.*)$/, 'American spelling: $1') : '';
+    return `<article class="db-entry" id="${id}" data-key="${esc(it.key)}">
+      <div class="db-head">
+        <h2 class="db-word">${hi(it.d)}</h2>${e.emoji ? `<span class="db-emoji" aria-hidden="true">${e.emoji}</span>` : ''}
+        ${ipa ? `<span class="db-ipa">/${esc(ipa)}/</span>` : ''}${sl ? `<span class="db-sl">sounds like ${esc(sl)}</span>` : ''}
+        <span class="db-acts">
+          <button type="button" class="db-icon" data-say="${esc(it.d)}" aria-label="Listen to ${esc(it.d)}" title="Listen">🔊</button>
+          <button type="button" class="db-icon" data-say="${esc(it.d)}" data-slow="1" aria-label="Listen slowly" title="Listen slowly">🐢</button>
+          <button type="button" class="db-icon db-star" data-star="${esc(it.key)}" data-word="${esc(it.d)}" aria-pressed="false" aria-label="Save ${esc(it.d)} to My Words" title="Save to My Words">☆</button>
+        </span>
+      </div>
+      ${form ? `<div class="db-form">${esc(form)}</div>` : ''}
+      ${variant ? `<div class="db-variant">${esc(variant)}</div>` : ''}
+      <ol class="db-senses${senses.length > 1 ? ' many' : ''}">${senses.map(s => `<li>
+        <div class="db-meta">${s.pos ? `<span class="db-pos"${posStyle(s.pos)}>${esc(s.pos)}</span>` : ''}${s.level ? `<span class="db-lvl">${esc(s.level)}</span>` : ''}</div>
+        <div class="db-def">${hi(s.def || '')}</div>
+        ${s.ex ? `<div class="db-ex"><button type="button" class="db-icon" data-say="${esc(s.ex)}" aria-label="Listen to the example">🔊</button><span>“${esc(s.ex)}”</span></div>` : ''}
+        ${s.es ? `<div class="db-es" lang="es">${hi(s.es)}</div>` : ''}
+      </li>`).join('')}</ol>
+    </article>`;
+  }
+
+  /* ── search ── */
+  async function search(q) {
+    const seq = ++searchSeq;
+    const raw = q.trim();
+    $('dbBrowse').hidden = true;
+    $('dbStatus').textContent = allPromise ? 'Searching…' : 'Loading all the words…';
+    const all = await loadAll();
+    if (seq !== searchSeq) return;
+    const f = fold(raw).replace(/[’‘]/g, "'"), fs = sortKey(raw);
+    if (!fs) { $('dbStatus').textContent = ''; show([], 'Type a word.'); return; }
+    hiRe = new RegExp('(' + raw.replace(/[.*+?^${}()|[\]\\]/g, '\\$&') + ')', 'gi');
+    const byKey = new Map(all.map(it => [it.key, it]));
+    const used = new Set();
+    const groups = [];
+    const take = (label, list, extra) => {
+      const rows = list.filter(it => !used.has(it.key) && !(it.e.us && used.has(it.e.us)) && levelOk(it.e)).map(it => { used.add(it.key); return Object.assign({ kind: 'entry', it, search: true }, extra ? extra(it) : {}); });
+      if (rows.length) groups.push({ label, rows });
+    };
+    /* 1. the word itself, and the dictionary word for a form of it (went → go, colours → color) */
+    const exact = all.filter(it => fold(it.key) === f || fold(it.d) === f || it.sk === fs);
+    const D = window.HouseDict;
+    const forms = [];
+    if (D && D.core && D.core.candidates) {
+      D.core.candidates(raw).forEach(c => {
+        const it = byKey.get(c.key);
+        if (it && c.key !== f && !exact.includes(it)) forms.push({ it, tag: c.tag });
+      });
+    }
+    /* a British spelling (colour) is shown as its American headword (color) */
+    const best = [], notes = new Map();
+    const addBest = (it, tag) => {
+      let target = it, note = '';
+      if (it.e.us && byKey.get(it.e.us)) target = byKey.get(it.e.us);
+      if (tag) {
+        const lbl = D.core.formLabel ? D.core.formLabel(tag, ((target.e.senses || [])[0] || {}).pos) : tag;
+        note = `${raw}: ${lbl} ${it.key}` + (it.e.us ? ' (British spelling)' : '');
+      }
+      if (!best.includes(target)) best.push(target);
+      if (note && !notes.has(target)) notes.set(target, note);
+    };
+    exact.forEach(it => addBest(it, null));
+    forms.forEach(x => addBest(x.it, x.tag));
+    take('Best match', best, it => notes.has(it) ? { form: notes.get(it) } : {});
+    /* 2. words that start with it, then words that have it inside */
+    take('Words that start with “' + raw + '”', all.filter(it => it.sk.startsWith(fs) || fold(it.key).startsWith(f)));
+    if (fs.length >= 2) take('Words with “' + raw + '” inside', all.filter(it => fold(it.key).includes(f) || it.sk.includes(fs)));
+    /* 3. Spanish translations, then meanings */
+    if (f.length >= 3) {
+      const wb = new RegExp('(^|[^a-zñ])' + f.replace(/[.*+?^${}()|[\]\\]/g, '\\$&'));
+      take('In the Spanish translations', all.filter(it => (it.e.senses || []).some(s => s.es && wb.test(fold(s.es)))));
+      take('In the meanings', all.filter(it => (it.e.senses || []).some(s => s.def && wb.test(fold(s.def)))));
+    }
+    const rows = [];
+    let n = 0;
+    groups.forEach(g => { rows.push({ kind: 'group', label: g.label + ' · ' + g.rows.length }); rows.push.apply(rows, g.rows); n += g.rows.length; });
+    $('dbStatus').innerHTML = n ? `<b>${n}</b> result${n === 1 ? '' : 's'} for “${esc(raw)}”${level ? ' at level <b>' + level + '</b>' : ''}` : '';
+    show(rows, `No words found for “${raw}”${level ? ' at level ' + level : ''}.` + (level ? ' Try “All” levels.' : ''));
+  }
+
+  /* ── stars: the same list as the ☆ on the dictionary card ── */
+  const savedKeys = () => new Set(((window.HouseDict && HouseDict.saved) ? HouseDict.saved() : store.get('house-dict-saved', [])).map(s => s.key));
+  function markStars() {
+    const set = savedKeys();
+    $('dbList').querySelectorAll('[data-star]').forEach(b => {
+      const on = set.has(b.dataset.star);
+      b.setAttribute('aria-pressed', String(on)); b.textContent = on ? '★' : '☆';
+      b.title = on ? 'Saved in My Words (press to remove)' : 'Save to My Words';
+    });
+  }
+  function toggleStar(b) {
+    const key = b.dataset.star;
+    if (!window.HouseDict) return;
+    const list = HouseDict.saved();
+    if (list.some(s => s.key === key)) HouseDict.unsave(key);
+    else HouseDict.setSaved(list.concat([{ word: b.dataset.word, key, page: PAGE, time: Date.now() }]));
+    markStars();
+  }
+
+  /* ── go to a headword (from a cross-reference) ── */
+  async function goTo(key) {
+    $('dbQ').value = ''; $('dbClear').hidden = true; hiRe = null;
+    const sk = sortKey(key), l = /[a-z]/.test(sk[0]) ? sk[0] : 'a';
+    letter = l; level = ''; markLevel();
+    const items = await loadShard(l);
+    const ts = makeTabs(items);
+    tabIx = Math.max(0, ts.findIndex(t => t.items.some(it => it.key === key)));
+    saveState(); drawLetters(await letterCounts()); await browse(true);
+    const el = document.getElementById('w-' + sk);
+    if (el) { el.scrollIntoView({ block: 'center' }); el.classList.add('flash'); setTimeout(() => el.classList.remove('flash'), 1700); }
+  }
+
+  /* ── controls ── */
+  function saveState() { store.set('dict-browser-letter', letter); store.set('dict-browser-tab', tabIx); store.set('dict-browser-level', level); }
+  function markLevel() { document.querySelectorAll('[data-lvl]').forEach(b => b.setAttribute('aria-pressed', String(b.dataset.lvl === level))); }
+  function markEs() { $('page').classList.toggle('show-es', showEs); $('dbEs').setAttribute('aria-pressed', String(showEs)); }
+  let counts = null;
+  async function letterCounts() {
+    /* letters with no words are greyed out once everything has loaded; until then all are on */
+    if (counts) return counts;
+    if (!allPromise) return null;
+    const all = await allPromise; counts = {};
+    all.forEach(it => { const l = it.sk[0]; if (l) counts[l] = (counts[l] || 0) + 1; });
+    return counts;
+  }
+
+  $('dbLetters').addEventListener('click', e => {
+    const b = e.target.closest('[data-letter]'); if (!b || b.disabled) return;
+    letter = b.dataset.letter; tabIx = 0; saveState();
+    $('dbLetters').querySelectorAll('[data-letter]').forEach(x => x.setAttribute('aria-pressed', String(x === b)));
+    browse();
+  });
+  $('dbTabs').addEventListener('click', e => {
+    const b = e.target.closest('[data-tab]'); if (!b) return;
+    tabIx = +b.dataset.tab; saveState();
+    browse(true).then(() => { const t = $('dbTab' + tabIx); if (t) t.focus({ preventScroll: true }); });
+  });
+  $('dbTabs').addEventListener('keydown', e => {   /* arrow keys move between tabs */
+    const k = e.key; if (!/^(ArrowLeft|ArrowRight|Home|End)$/.test(k)) return;
+    e.preventDefault();
+    const n = tabs.length; if (!n) return;
+    tabIx = k === 'Home' ? 0 : k === 'End' ? n - 1 : (tabIx + (k === 'ArrowRight' ? 1 : -1) + n) % n;
+    saveState(); browse().then(() => { const t = $('dbTab' + tabIx); if (t) t.focus(); });
+  });
+  document.querySelectorAll('[data-lvl]').forEach(b => b.addEventListener('click', () => {
+    level = b.dataset.lvl; tabIx = 0; saveState(); markLevel(); refresh();
+  }));
+  $('dbEs').addEventListener('click', () => { showEs = !showEs; store.set('house-dict-es', showEs); markEs(); });
+  $('dbMore').addEventListener('click', more);
+  $('dbList').addEventListener('click', e => {
+    const s = e.target.closest('[data-say]');
+    if (s) { if (window.HouseDict && HouseDict.say) HouseDict.say(s.dataset.say, !!s.dataset.slow); return; }
+    const st = e.target.closest('[data-star]');
+    if (st) { toggleStar(st); return; }
+    const g = e.target.closest('[data-goto]');
+    if (g) { e.preventDefault(); goTo(g.dataset.goto); }
+  });
+
+  let timer = null;
+  const q = $('dbQ');
+  function refresh() { const v = q.value.trim(); $('dbClear').hidden = !q.value; if (v) search(v); else { hiRe = null; browse(); } }
+  q.addEventListener('input', () => { clearTimeout(timer); timer = setTimeout(refresh, 180); });
+  q.addEventListener('keydown', e => { if (e.key === 'Escape' && q.value) { q.value = ''; refresh(); } if (e.key === 'Enter') { clearTimeout(timer); refresh(); } });
+  $('dbClear').addEventListener('click', () => { q.value = ''; refresh(); q.focus(); });
+  window.addEventListener('house-dict-saved', markStars);
+  window.addEventListener('storage', e => { if (e.key === 'house-dict-saved') markStars(); });
+
+  /* start */
+  markLevel(); markEs(); drawLetters(null);
+  browse(true).then(() => {
+    /* load the rest quietly, so the first search is quick and empty letters can be greyed out */
+    setTimeout(() => loadAll().then(letterCounts).then(c => { if (!$('dbBrowse').hidden || !q.value) drawLetters(c); }), 600);
+  });
+  if (location.hash.length > 1) { const k = decodeURIComponent(location.hash.slice(1)).replace(/^w-/, ''); if (k) { q.value = k; refresh(); } }
+})();
+</script>
+</body>
+</html>
