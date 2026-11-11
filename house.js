@@ -1573,6 +1573,9 @@
      HouseMatching.build({ left:'nouns-col', right:'defs-col', pairs: pairs,
                            leftKey:'noun', rightKey:'def' });
 
+   Every card is as tall as the tallest card in either column, so the two
+   columns always end level (a picture card beside a long definition included).
+
    The lines are laid over the columns' common ancestor and recomputed whenever
    anything resizes — which matters here, because the 🔎 text-size slider
    reflows the cards underneath them.
@@ -1678,15 +1681,43 @@
       });
     }
 
+    // ── one row height for every card ────────────────────────────────────
+    // Both columns are separate flex stacks, so an emoji-only card on one side
+    // and a two-line definition on the other would leave them out of step.
+    // Every card takes the height of the tallest card in EITHER column: the
+    // columns end at the same place and every connector line runs level.
+    // The inline min-height is cleared before measuring so the cards shrink
+    // back when the text gets smaller; a page's own min-height still counts.
+    function cards() {
+      return Array.prototype.slice.call(leftEl.children).concat(Array.prototype.slice.call(rightEl.children))
+        .filter(function (c) { return c.classList.contains(cardClass); });
+    }
+    function equalize() {
+      var all = cards(), tallest = 0;
+      all.forEach(function (c) { c.style.minHeight = ''; });
+      all.forEach(function (c) { tallest = Math.max(tallest, c.getBoundingClientRect().height); });
+      if (tallest) all.forEach(function (c) { c.style.minHeight = Math.ceil(tallest) + 'px'; });
+    }
+    function layout() { equalize(); drawLinks(); }
+
     // Cards reflow when the window resizes and when the text-size slider moves,
-    // so the lines have to be recomputed rather than drawn once.
+    // so heights and lines are recomputed rather than set once. Batched to one
+    // pass per frame, which also keeps the resize observer from looping on the
+    // heights it has just set.
+    var queued = false;
+    function schedule() {
+      if (queued) return;
+      queued = true;
+      (global.requestAnimationFrame || setTimeout)(function () { queued = false; layout(); });
+    }
     if (global.ResizeObserver) {
-      var ro = new ResizeObserver(function () { drawLinks(); });
+      var ro = new ResizeObserver(schedule);
       ro.observe(stage);
       ro.observe(leftEl);
       ro.observe(rightEl);
     }
-    global.addEventListener('resize', drawLinks);
+    global.addEventListener('resize', schedule);
+    if (document.fonts && document.fonts.ready) document.fonts.ready.then(schedule);
 
     // ── game state ───────────────────────────────────────────────────────
     var matched = 0, pickedLeft = null, pickedRight = null;
@@ -1771,13 +1802,13 @@
       // Shuffled independently, or the two columns would line up row for row.
       shuffle(pairs).forEach(function (p) { leftEl.appendChild(makeCard(p, 'left')); });
       shuffle(pairs).forEach(function (p) { rightEl.appendChild(makeCard(p, 'right')); });
-      drawLinks();
+      layout();
     }
 
     if (resetBtn) resetBtn.addEventListener('click', render);
     render();
 
-    return { render: render, redraw: drawLinks };
+    return { render: render, redraw: layout };
   }
 
   global.HouseMatching = { build: build };
