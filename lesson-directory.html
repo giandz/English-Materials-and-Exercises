@@ -104,6 +104,7 @@
     <div class="dir-toolbar">
       <input type="search" id="filter-input" placeholder="Search level, type or topic…" aria-label="Search all columns">
       <button id="open-all-btn" type="button" disabled>↗️ Open all</button>
+      <button id="copy-all-btn" type="button" disabled>📋 Copy all</button>
       <button id="filter-by-btn" type="button" disabled>🔍 Filter by</button>
       <span class="dir-count" id="count-label"></span>
     </div>
@@ -190,6 +191,7 @@
   const countLabel = $('count-label');
   const selectAllCheckbox = $('select-all');
   const openAllBtn = $('open-all-btn');
+  const copyAllBtn = $('copy-all-btn');
   const filterByBtn = $('filter-by-btn');
   const popupNote = $('popup-note');
 
@@ -428,6 +430,8 @@
   function updateSelectionUI() {
     openAllBtn.disabled = selectedIds.size === 0;
     openAllBtn.textContent = selectedIds.size > 1 ? `↗️ Open all (${selectedIds.size})` : '↗️ Open all';
+    copyAllBtn.disabled = selectedIds.size === 0;
+    copyAllBtn.textContent = selectedIds.size > 1 ? `📋 Copy all (${selectedIds.size})` : '📋 Copy all';
     filterByBtn.disabled = selectedIds.size !== 1;
 
     const selectedVisible = lastFiltered.filter(r => selectedIds.has(r.id)).length;
@@ -467,12 +471,53 @@
     render();
   });
 
+  // Selected rows in the table's current sort order (including any selected
+  // rows a filter is hiding right now).
+  function selectedRowsInOrder() {
+    return Array.from(selectedIds)
+      .map(id => rowsById.get(id))
+      .filter(Boolean)
+      .sort(compareRows);
+  }
+
+  async function copyText(text) {
+    try {
+      await navigator.clipboard.writeText(text);
+      return true;
+    } catch (e) {
+      // navigator.clipboard is missing on file:// and other insecure pages.
+      const ta = document.createElement('textarea');
+      ta.value = text;
+      ta.setAttribute('readonly', '');
+      ta.style.position = 'fixed';
+      ta.style.opacity = '0';
+      document.body.appendChild(ta);
+      ta.select();
+      let ok = false;
+      try { ok = document.execCommand('copy'); } catch (err) { ok = false; }
+      ta.remove();
+      return ok;
+    }
+  }
+
+  let copyResetTimer = null;
+  copyAllBtn.addEventListener('click', async () => {
+    const rowsToCopy = selectedRowsInOrder();
+    if (!rowsToCopy.length) return;
+    // Relative links (local-folder mode) are made absolute so they still work when pasted.
+    const text = rowsToCopy.map(r => new URL(r.url, location.href).href).join('\n');
+    const ok = await copyText(text);
+    copyAllBtn.textContent = ok
+      ? `✅ Copied ${rowsToCopy.length}`
+      : '⚠️ Copy failed';
+    clearTimeout(copyResetTimer);
+    copyResetTimer = setTimeout(updateSelectionUI, 1600);
+  });
+
   openAllBtn.addEventListener('click', () => {
     popupNote.hidden = true;
     let blocked = 0;
-    selectedIds.forEach(id => {
-      const row = rowsById.get(id);
-      if (!row) return;
+    selectedRowsInOrder().forEach(row => {
       // No 'noopener' here: with it, window.open always returns null and a
       // blocked tab can't be told apart from an opened one.
       const win = window.open(row.url, '_blank');
