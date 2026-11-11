@@ -3117,6 +3117,10 @@
 
    Kept deliberately small: a CCQ that needs a paragraph to answer is not a
    CCQ. Two options is the norm, three the maximum.
+
+   Each question is joined to its options by a dotted line, the way a
+   worksheet runs a row of dots out to the answer, and the options are
+   separated by a slash:  Do we know when? ·········· Yes / No
    ══════════════════════════════════════════════════════════════════════════ */
 (function (global) {
   'use strict';
@@ -3150,6 +3154,14 @@
         var btns = document.createElement('span');
         btns.className = 'ccq-opts';
         q.opts.forEach(function (o, oi) {
+          // A slash between the options reads like the paper version: Yes / No.
+          if (oi > 0) {
+            var sep = document.createElement('span');
+            sep.className = 'ccq-sep';
+            sep.setAttribute('aria-hidden', 'true');
+            sep.textContent = '/';
+            btns.appendChild(sep);
+          }
           var b = document.createElement('button');
           b.className = 'ccq-opt';
           b.textContent = o;
@@ -3167,7 +3179,9 @@
               var why = document.createElement('div');
               why.className = 'ccq-why';
               why.innerHTML = q.why;
-              row.appendChild(why);
+              // Under the row, not in it: the row stays one line, so the
+              // dotted line always runs from the question to the options.
+              row.parentNode.insertBefore(why, row.nextSibling);
             }
           });
           btns.appendChild(b);

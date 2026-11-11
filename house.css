@@ -906,9 +906,19 @@ input.gap.wrong{ border-bottom-color:var(--bad); color:var(--bad); }
   padding-bottom:8px; margin-bottom:6px;
   border-bottom:.5px solid var(--color-border-tertiary);
 }
-.ccq-row{ display:flex; flex-wrap:wrap; align-items:center; gap:8px; padding:5px 0; }
-.ccq-q{ flex:1 1 200px; font-size:.8667rem; color:var(--text-secondary); }
-.ccq-opts{ display:inline-flex; gap:6px; }
+/* Question ········ Yes / No — the dotted line is the row's own ::after, put
+   between the question and the options with `order`, so it always stretches to
+   fill whatever space is left. A long question wraps; the line never drops
+   below 1.5rem, and the options never drop to a line of their own. The
+   explanation (.ccq-why) goes under the row, not inside it. */
+.ccq-row{ display:flex; flex-wrap:nowrap; align-items:center; gap:8px; padding:5px 0; }
+.ccq-q{ order:0; flex:0 1 auto; min-width:0; font-size:.8667rem; color:var(--text-secondary); }
+.ccq-row::after{
+  content:''; order:1; flex:1 0 1.5rem; height:0; align-self:center;
+  border-top:2px dotted var(--color-border-primary);
+}
+.ccq-opts{ order:2; flex:0 0 auto; display:inline-flex; flex-wrap:wrap; justify-content:flex-end; align-items:center; gap:6px; }
+.ccq-sep{ font-size:.9333rem; color:var(--text-muted); user-select:none; }
 .ccq-opt{ font-size:.8rem; padding:3px 13px; }
 .ccq-opt:disabled{ cursor:default; opacity:1; }
 .ccq-opt.correct{ border-color:var(--good); background:var(--good-bg); color:var(--good); font-weight:600; }
@@ -916,7 +926,7 @@ input.gap.wrong{ border-bottom-color:var(--bad); color:var(--bad); }
 .ccq-why{
   flex:1 1 100%; font-size:.8rem; line-height:1.55; color:var(--color-text-info);
   background:var(--color-background-info); border-radius:var(--border-radius-md);
-  padding:7px 10px; margin-top:2px;
+  padding:7px 10px; margin:2px 0 5px;
 }
 
 /* ── Common mistakes (✗ / ✓ pairs) ─────────────────────────────────────── */
