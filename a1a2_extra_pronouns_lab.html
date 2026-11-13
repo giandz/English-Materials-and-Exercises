@@ -1,0 +1,547 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<title>Pronouns Lab — I / me, he / him, they / them</title>
+<script>
+(function(){
+  try{
+    var saved = localStorage.getItem('theme-preference');
+    var theme = (saved === 'light' || saved === 'dark')
+      ? saved
+      : ((window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches) ? 'dark' : 'light');
+    document.documentElement.setAttribute('data-theme', theme);
+    var fs = parseFloat(localStorage.getItem('font-size-preference'));
+    if (fs >= 10 && fs <= 28) document.documentElement.style.setProperty('--fs-base', fs + 'px');
+  }catch(e){ /* localStorage/matchMedia unavailable — CSS media query still applies */ }
+})();
+</script>
+<link rel="stylesheet" href="house.css">
+<style>
+/* the pronoun table at the top: subject → object */
+.pron-pair .verb-big .s{ color:var(--pos-subject); }
+.pron-pair .verb-big .o{ color:var(--pos-object); }
+.pron-pair .verb-big .arr{ color:var(--text-muted); font-weight:400; margin:0 .2em; }
+
+/* meaning: one card per pronoun, the stick figures over the words */
+.lab-block{ font-size:.7333rem; font-weight:700; letter-spacing:.05em; text-transform:uppercase; color:var(--text-accent); margin:12px 0 6px; }
+.pr-grid{ display:grid; grid-template-columns:repeat(auto-fit, minmax(11.5rem, 1fr)); gap:8px; margin:0 0 10px; }
+.pr-card{ background:var(--surface-1); border:1px solid var(--border); border-radius:12px; padding:8px 10px 7px; display:flex; flex-direction:column; align-items:center; justify-content:flex-end; gap:4px; text-align:center; }
+.pr-card .ss-line{ justify-content:center; font-size:.9333rem; }
+.pr-word{ font-size:1.15rem; font-weight:700; line-height:1.1; }
+.pr-word.s{ color:var(--pos-subject); }
+.pr-word.o{ color:var(--pos-object); }
+.pr-note{ font-size:.7333rem; color:var(--text-muted); }
+.pr-wide{ grid-column:1 / -1; }
+.where{ display:flex; flex-wrap:wrap; gap:6px 14px; font-size:.8667rem; color:var(--text-secondary); margin:2px 0 8px; }
+.where b{ color:var(--text-primary); }
+
+/* pronunciation: lines to say, with 🔊 */
+.say-row{ display:flex; align-items:flex-end; gap:8px; margin:2px 0 6px; }
+.say-row .say-btn{ flex:0 0 auto; font-size:.8rem; padding:3px 9px; margin-bottom:.2em; }
+.say-line{ font-size:1.0667rem; line-height:1.4; }
+.say-note{ font-size:.8rem; color:var(--text-secondary); margin:0 0 6px; }
+.strong-w{ text-transform:uppercase; font-weight:700; }
+.dlg{ font-size:.9667rem; margin:0 0 6px; }
+.dlg .who{ display:inline-block; min-width:1.6em; font-weight:700; color:var(--text-muted); }
+
+/* sentence stress: tap the strong word */
+.tw-line{ display:flex; flex-wrap:wrap; align-items:center; gap:6px; margin:4px 0 2px; }
+.tw-line .who{ font-weight:700; color:var(--text-muted); }
+.tw-btn{ font-size:1rem; padding:6px 12px; border-radius:var(--border-radius-md); background:var(--surface-2); }
+.tw-btn:disabled{ cursor:default; opacity:1; }
+.tw-btn.correct{ border-color:var(--good); background:var(--good-bg); color:var(--good); font-weight:700; }
+.tw-btn.incorrect{ border-color:var(--bad); background:var(--bad-bg); color:var(--bad); }
+.tw-after .ccq-why{ margin-top:8px; }
+.tw-after .say-row{ margin-top:8px; }
+</style>
+</head>
+<body>
+<div class="page" id="page">
+  <span class="cefr-tag cefr-a1a2">A1/A2 · Elementary</span>
+  <h1>Pronouns Lab</h1>
+  <p class="subtitle"><strong>She</strong> likes <strong>him</strong>. · <strong>He</strong> likes <strong>her</strong>. · <strong>They</strong> call <strong>me</strong>. · <strong>I</strong> call <strong>them</strong>.</p>
+
+  <div class="sec-div">The pronouns</div>
+  <div class="rule-box">
+    <p><strong>Subject</strong> pronouns do the action. They go <strong>before the verb</strong>. <strong>Object</strong> pronouns get the action. They go <strong>after the verb</strong> or after <strong>to, for, with, at</strong>.</p>
+    <div class="subj-grid pron-pair" id="pronTable"></div>
+    <p><strong>You</strong> and <strong>it</strong> are the same in both places. In English, a sentence always needs a subject: <em>She is a teacher.</em> (not <em>Is a teacher.</em>)</p>
+  </div>
+
+  <button class="grammar-toggle-btn" id="grammarToggle">🎨 Show Grammar</button>
+  <div class="pos-legend"></div>
+
+  <div class="score-bar"><span>Mastered: <strong id="masteredScore">0</strong> / <span id="masteredTotal">0</span></span></div>
+  <nav class="lab-tabs" id="labTabs" aria-label="Sections"></nav>
+  <div id="labPanels"></div>
+
+  <footer>Pronouns Lab — subject and object pronouns (A1/A2 · self-study)</footer>
+</div>
+
+<div id="theme-toggle-wrap">
+  <button id="theme-toggle" aria-label="Toggle light/dark mode" title="Toggle light/dark mode">
+    <span id="theme-icon">☀️</span>
+  </button>
+</div>
+<script src="house.js"></script>
+<script src="stick-character.js"></script>
+<script src="stick-sentence.js"></script>
+<script src="house-character.js"></script>
+<script src="pron-mark.js"></script>
+<script src="pron-dict.js" onerror="void 0"></script>
+<script src="lab-kit.js"></script>
+<script>
+/* ════ THE PEOPLE ═══════════════════════════════════════════════════════════
+   Ana is the person speaking on this page: she is "I" and "me". */
+StickSentence.cast({
+  ana:     { base:'woman',   colour:'#FF66CC', label:'Ana' },
+  leo:     { base:'man',     colour:'#0066CC', label:'Leo' },
+  mia:     { base:'girl',    colour:'#6600CC', label:'Mia' },
+  sam:     { base:'boy',     colour:'#00CC66', label:'Sam' },
+  grandma: { base:'grandma', colour:'#663300', label:'Grandma' },
+  max:     { base:'dog',     colour:'#FF6600', label:'Max, the dog' }
+});
+StickSentence.toggle({ shown:true });   /* the figures show the meaning here, so they start visible */
+PronMark.toggle({ shown:true });        /* and the marks show the stress */
+
+const S = StickSentence.html;
+const say = t => '<button class="say-btn" type="button" data-say="' + t.replace(/<[^>]+>/g, '') + '" aria-label="Listen">🔊</button>';
+const sayLine = html => '<div class="say-row">' + say(html) + '<span class="say-line">' + html + '</span></div>';
+document.addEventListener('click', e => {
+  const b = e.target.closest('.say-btn[data-say]');
+  if (b && window.HouseDict) HouseDict.say(b.dataset.say);
+});
+
+/* ════ THE TABLE AT THE TOP ═════════════════════════════════════════════ */
+const TABLE = [['I', 'me', 'the person speaking'], ['you', 'you', 'the person I talk to'], ['he', 'him', 'a man or a boy'],
+  ['she', 'her', 'a woman or a girl'], ['it', 'it', 'a thing or an animal'], ['we', 'us', 'me + other people'], ['they', 'them', 'other people or things']];
+document.getElementById('pronTable').innerHTML = TABLE.map(([s, o, n]) =>
+  '<div class="subj-card"><span class="verb-big"><span class="s">' + s + '</span><span class="arr">→</span><span class="o">' + o + '</span></span><span class="subj-note">' + n + '</span></div>').join('');
+
+/* ════ MEANING: stick figures over the words ═══════════════════════════════
+   The doer stands on the subject. The person or thing that gets the action stands
+   on the object and turns to the doer. */
+const card = (word, cls, line, note, wide) => '<div class="pr-card' + (wide ? ' pr-wide' : '') + '">' + S(line) +
+  (word ? '<span class="pr-word ' + cls + '">' + word + '</span>' : '') + '<span class="pr-note">' + note + '</span></div>';
+
+const SUBJ_MEANING = '<div class="lab-block">👀 Meaning: who does it?</div><div class="pr-grid">' + [
+  card('I', 's', '{[I/subject]|ana} [am/verb] [Ana/complement].', 'Ana is speaking'),
+  card('you', 's', '{[You/subject]|leo:arrow} [are/verb] [my friend/complement].', 'Ana is talking to Leo'),
+  card('he', 's', '{[He/subject]|leo:guitar} [plays/verb] [the guitar/object].', 'Leo'),
+  card('she', 's', '{[She/subject]|mia:book} [reads/verb] [a lot/adverb].', 'Mia'),
+  card('it', 's', '{[It/subject]|max:🦴} [wants/verb] [a bone/object].', 'Max, the dog'),
+  card('we', 's', '{[We/subject]|ana:me,leo} [are/verb] [friends/complement].', 'Ana + Leo'),
+  card('they', 's', '{[They/subject]|sam:ball,mia} [play/verb] [soccer/object].', 'Sam + Mia')
+].join('') + '</div>';
+
+const OBJ_MEANING = '<div class="lab-block">👀 Meaning: who gets it?</div><div class="pr-grid">' + [
+  card('me', 'o', '{[Leo/subject]|leo} [helps/verb] {[me/object]|ana:me:left}.', 'Ana'),
+  card('you', 'o', '{[I/subject]|ana:❤️} [love/verb] {[you/object]|leo:left:arrow}.', 'Leo'),
+  card('him', 'o', '{[I/subject]|ana:phone} [call/verb] {[him/object]|leo:left:phone}.', 'Leo'),
+  card('her', 'o', '{[We/subject]|ana:me,leo} [visit/verb] {[her/object]|grandma:left:happy}.', 'Grandma'),
+  card('it', 'o', '{[Sam/subject]|sam} [feeds/verb] {[it/object]|max:left:eating}.', 'Max, the dog'),
+  card('us', 'o', '{[Grandma/subject]|grandma:phone} [calls/verb] {[us/object]|ana:me:left,leo:left}.', 'Ana + Leo'),
+  card('them', 'o', '{[I/subject]|ana} [help/verb] {[them/object]|sam:left,mia:left}.', 'Sam + Mia'),
+  card('after to, for, with, at', 'o', '{[Leo/subject]|leo:say} [talks/verb] [to/prep] {[her/object]|mia:left}.', 'Mia')
+].join('') + '</div>';
+
+const CONTRAST_MEANING = '<div class="lab-block">👀 Meaning: same people, different jobs</div><div class="pr-grid">' + [
+  card('', '', '{[She/subject]|mia:❤️} [likes/verb] {[him/object]|sam:left}.', 'Mia does it. Sam gets it.'),
+  card('', '', '{[He/subject]|sam:❤️} [likes/verb] {[her/object]|mia:left}.', 'Sam does it. Mia gets it.'),
+  card('', '', '{[I/subject]|ana} [see/verb] {[them/object]|sam:left,mia:left}.', 'Ana does it.'),
+  card('', '', '{[They/subject]|sam,mia} [see/verb] {[me/object]|ana:me:left}.', 'Sam and Mia do it.')
+].join('') + '</div>' +
+  '<div class="where"><span><b>Before</b> the verb → <span class="pos-hl pos-subject">I, he, she, we, they</span></span>' +
+  '<span><b>After</b> the verb or to / for / with → <span class="pos-hl pos-object">me, him, her, us, them</span></span></div>';
+
+/* ════ PRONUNCIATION: lines with stress marks ═════════════════════════════ */
+const SAY_WEAK = note => '<div class="lab-block">🎵 Say it</div><p class="say-note">' + note + '</p>';
+const SUBJ_SAY = SAY_WEAK('Pronouns are small and quick. The verb and the other important words are strong.') +
+  ['She works in a hospital.', 'They live near the park.', 'Is he at home?'].map(sayLine).join('');
+const OBJ_SAY = SAY_WEAK('Object pronouns are weak, too. We often lose the <b>h</b>: call him → “call ’im”, tell her → “tell ’er”.') +
+  ['I know her.', 'Call him tomorrow.', 'Listen to them.'].map(sayLine).join('');
+const CONTRAST_SAY = SAY_WEAK('Usually both pronouns are weak. When we compare two people, the pronoun is strong:') +
+  sayLine('She likes him.') +
+  '<p class="dlg"><span class="who">A:</span> Does Leo like Mia?</p>' +
+  sayLine('No. He likes <span class="strong-w" data-pm-main>me</span>!');
+
+/* GEN START ════ GENERATORS — Node-testable: they use only LabKit helpers and S() ════ */
+const { pick, words, cap, join } = LabKit;
+const cue = s => ' <span class="cue">(' + s + ')</span>';
+// '{Yes|none}, {I|subject} {know|verb} {her|object}.' → tokens; plain words → none, . , ? ! → their own token
+function T(str) {
+  const out = [];
+  str.replace(/\{([^|}]+)\|(\w+)\}|([.,?!])(?=\s|$)|([^\s{]+)/g, (m, w, pos, p, plain) => {
+    if (w) words(w, pos).forEach(t => out.push(t));
+    else if (p) out.push([p, null]);
+    else out.push([plain, 'none']);
+  });
+  return out;
+}
+const plainOf = str => str.replace(/\{([^|}]+)\|\w+\}/g, '$1');
+const uniq = (list, right) => list.filter((w, i) => w !== right && list.indexOf(w) === i);
+const SUBJ_OF = { me: 'I', you: 'you', him: 'he', her: 'she', it: 'it', us: 'we', them: 'they' };
+const OBJ_OF = { i: 'me', you: 'you', he: 'him', she: 'her', it: 'it', we: 'us', they: 'them' };
+const POSS_OF = { me: 'my', you: 'your', him: 'his', her: 'hers', it: 'its', us: 'our', them: 'their' };
+const OTHER_OBJ = { me: 'you', you: 'me', him: 'her', her: 'him', it: 'them', us: 'them', them: 'it' };
+
+/* ── 🙋 SUBJECT PRONOUNS ───────────────────────────────────────────────────
+   A sentence with a name, then the next sentence with a pronoun. */
+const PEOPLE = [
+  { n: 'Ana', pr: 'she', sg: 1 }, { n: 'Leo', pr: 'he', sg: 1 }, { n: 'Mia', pr: 'she', sg: 1 },
+  { n: 'Mr. Brown', pr: 'he', sg: 1 }, { n: 'My mom', pr: 'she', sg: 1 }, { n: 'My grandpa', pr: 'he', sg: 1 },
+  { n: 'Leo and Mia', pr: 'they' }, { n: 'My parents', pr: 'they' }, { n: 'The kids', pr: 'they' },
+  { n: 'Leo and I', pr: 'we' }, { n: 'My sister and I', pr: 'we' }
+];
+const ABOUT_SG = ['my friend', 'my neighbor', 'very nice', 'from Brazil', 'very busy this week'];
+const ABOUT_PL = ['my friends', 'my neighbors', 'very nice', 'from Brazil', 'very busy this week'];
+const ABOUT_WE = ['good friends', 'from Brazil', 'very busy this week', 'very happy'];
+const ACTS = [
+  { v: 'work', s3: 'works', rest: 'in a hospital', pos: 'prep' }, { v: 'live', s3: 'lives', rest: 'near the park', pos: 'prep' },
+  { v: 'like', s3: 'likes', rest: 'pizza', pos: 'object' }, { v: 'speak', s3: 'speaks', rest: 'French', pos: 'object' },
+  { v: 'play', s3: 'plays', rest: 'the guitar', pos: 'object' }, { v: 'have', s3: 'has', rest: 'a new car', pos: 'object' },
+  { v: 'get up', s3: 'gets up', rest: 'at 6:00', pos: 'time' }, { v: 'walk', s3: 'walks', rest: 'to work', pos: 'prep' }
+];
+const PLACES = { 'at home': 'prep', 'at work': 'prep', 'here': 'adverb', 'from Mexico': 'prep', 'OK': 'complement', 'ready': 'complement' };
+const THINGS = [   /* it: animals and things */
+  { n: 'The dog', about: 'is hungry', act: { v: 'want', s3: 'wants', rest: 'some food' } },
+  { n: 'Our cat', about: 'is very old', act: { v: 'sleep', s3: 'sleeps', rest: 'a lot' } },
+  { n: 'The movie', about: 'is very good', act: { v: 'start', s3: 'starts', rest: 'at 8:00' } },
+  { n: 'This bus', about: 'is new', act: { v: 'go', s3: 'goes', rest: 'to the beach' } },
+  { n: 'My phone', about: 'is old', act: { v: 'work', s3: 'works', rest: 'very slowly' } }
+];
+const WRONG_PERSON = { she: 'he', he: 'she', they: 'we', we: 'they' };
+
+function subjectItem() {
+  const r = Math.random();
+  if (r < 0.2) {   /* it */
+    const t = pick(THINGS), a = t.act;
+    const ctx = t.n + ' ' + t.about + '.';
+    const tokens = [['It', 'subject'], ...words(a.s3, 'verb'), ...words(a.rest, 'object'), ['.', null]];
+    const right = join(tokens);
+    return { ctx: '💬 ' + ctx, key: ctx + a.v, tokens, gapCtx: '💬 ' + ctx + cue(a.s3 + ' ' + a.rest), gapDirect: 'Write the next sentence. Use a pronoun, not the name.',
+      wrong: uniq([`${cap(a.s3)} ${a.rest}.`, `It ${a.v} ${a.rest}.`, `${t.n} it ${a.s3} ${a.rest}.`, `They ${a.s3} ${a.rest}.`], right) };
+  }
+  const p = pick(PEOPLE), pr = p.pr, Pr = cap(pr);
+  const about = pick(p.pr === 'we' ? ABOUT_WE : p.sg ? ABOUT_SG : ABOUT_PL);
+  const ctx = `${p.n} ${p.sg ? 'is' : 'are'} ${about}.`;
+  if (r < 0.45) {   /* a question: be + subject */
+    const place = pick(Object.keys(PLACES)), Be = p.sg ? 'Is' : 'Are', be = p.sg ? 'is' : 'are';
+    const tokens = [[Be, 'verb'], [pr, 'subject'], ...words(place, PLACES[place]), ['?', null]];
+    const right = join(tokens);
+    return { ctx: '💬 ' + ctx + ' ❓ Ask:' + cue(place + '?'), key: ctx + place, tokens,
+      gapDirect: 'Ask a question. Use a pronoun, not the name.',
+      wrong: uniq([`${Be} ${OBJ_OF[pr]} ${place}?`, `${Pr} ${be} ${place}?`, `${Be} ${place}?`, `${p.sg ? 'Are' : 'Is'} ${pr} ${place}?`, `${Be} ${WRONG_PERSON[pr]} ${place}?`], right) };
+  }
+  const a = pick(ACTS), verb = p.sg ? a.s3 : a.v, other = p.sg ? a.v : a.s3;
+  const tokens = [[Pr, 'subject'], ...words(verb, 'verb'), ...words(a.rest, a.pos), ['.', null]];
+  const right = join(tokens);
+  return { ctx: '💬 ' + ctx, key: ctx + a.v, tokens,
+    gapCtx: '💬 ' + ctx + cue(verb + ' ' + a.rest), gapDirect: 'Write the next sentence. Use a pronoun, not the name.',
+    wrong: uniq([`${cap(OBJ_OF[pr])} ${verb} ${a.rest}.`, `${cap(verb)} ${a.rest}.`, `${Pr} ${other} ${a.rest}.`,
+                 `${p.n} ${pr} ${verb} ${a.rest}.`, `${cap(WRONG_PERSON[pr])} ${verb} ${a.rest}.`], right) };
+}
+
+/* ── 👉 OBJECT PRONOUNS ────────────────────────────────────────────────────
+   Answer a question about a person or thing with Yes + an object pronoun. */
+const WHO = [
+  { n: 'Ana', o: 'her' }, { n: 'Leo', o: 'him' }, { n: 'Mr. Brown', o: 'him' }, { n: 'your grandma', o: 'her' },
+  { n: 'Leo and Mia', o: 'them' }, { n: 'your neighbors', o: 'them' }, { n: 'Sam', o: 'him' }, { n: 'Ms. Lee', o: 'her' }
+];
+const WHAT = [   /* things you like or listen to */
+  { n: 'pizza', o: 'it', k: 'food' }, { n: 'tomatoes', o: 'them', k: 'food' }, { n: 'coffee', o: 'it', k: 'food' },
+  { n: 'this song', o: 'it', k: 'music' }, { n: 'jazz', o: 'it', k: 'music' }, { n: 'podcasts', o: 'them', k: 'music' },
+  { n: 'cats', o: 'them', k: 'pet' }, { n: 'my new shoes', o: 'them', k: 'look' }
+];
+// q / a: X = the name, O = the pronoun. prep: the pronoun comes after a preposition. kinds: p = people, food / music / pet / look = things
+const FRAMES = [
+  { q: 'Do you know X?', a: '{Yes|none} , {I|subject} {know|verb} O .', kinds: 'p' },
+  { q: 'Do you like X?', a: '{Yes|none} , {I|subject} {like|verb} O .', kinds: 'p food music pet' },
+  { q: 'Do you visit X on Sundays?', a: '{Yes|none} , {I|subject} {visit|verb} O {on Sundays|time} .', kinds: 'p' },
+  { q: 'Do you call X every week?', a: '{Yes|none} , {I|subject} {call|verb} O {every week|time} .', kinds: 'p' },
+  { q: 'Do you live with X?', a: '{Yes|none} , {I|subject} {live|verb} {with|prep} O .', kinds: 'p', prep: 1 },
+  { q: 'Are you waiting for X?', a: '{Yes|none} , {I’m|subject} {waiting|verb} {for|prep} O .', kinds: 'p', prep: 1 },
+  { q: 'Do you often talk to X?', a: '{Yes|none} , {I|subject} {often|adverb} {talk|verb} {to|prep} O .', kinds: 'p', prep: 1 },
+  { q: 'Is this present for X?', a: '{Yes|none} , {it’s|subject} {for|prep} O .', kinds: 'p', prep: 1 },
+  { q: 'Do you listen to X?', a: '{Yes|none} , {I|subject} {listen|verb} {to|prep} O {every day|time} .', kinds: 'music', prep: 1 },
+  { q: 'Do you eat X?', a: '{Yes|none} , {I|subject} {eat|verb} O {every day|time} .', kinds: 'food' },
+  { q: 'Do you want to look at X?', a: '{Yes|none} , {I|subject} {want|verb} {to|none} {look|verb} {at|prep} O .', kinds: 'look', prep: 1 }
+];
+const SELF = [   /* me / us in the question → you in the answer */
+  { q: 'Do you remember me?', a: '{Yes|none} , {I|subject} {remember|verb} O .', o: 'you', from: 'me' },
+  { q: 'Can you help us?', a: '{Yes|none} , {I|subject} {can|aux} {help|verb} O .', o: 'you', from: 'us' },
+  { q: 'Is this coffee for me?', a: '{Yes|none} , {it’s|subject} {for|prep} O .', o: 'you', from: 'me', prep: 1 },
+  { q: 'Can you wait for us?', a: '{Yes|none} , {I|subject} {can|aux} {wait|verb} {for|prep} O .', o: 'you', from: 'us', prep: 1 }
+];
+function answerWith(a, o) { return a.replace(' O ', ' {' + o + '|object} '); }
+function sayAs(a, o) { return plainOf(a.replace(' O ', ' ' + o + ' ')).replace(/ ([.,?!])/g, '$1'); }
+// "Yes, I know." / "Yes, I live with." — the object left out
+function noObject(a) { return plainOf(a.replace(' O ', ' ')).replace(/ ([.,?!])/g, '$1'); }
+// "Yes, I her know." — the pronoun before the verb, as in Spanish (le / la / lo)
+function beforeVerb(a, o) {
+  const m = a.match(/\{([^|}]+)\|verb\}/);
+  if (!m) return null;
+  return plainOf(a.replace(' O ', ' ').replace(m[0], o + ' ' + m[0])).replace(/ ([.,?!])/g, '$1');
+}
+function objectItem() {
+  let f, x, o, ctx, extra = [];
+  if (Math.random() < 0.2) {
+    f = pick(SELF); o = f.o; ctx = f.q;
+    extra = [sayAs(f.a, f.from)];   /* "Yes, I remember me." — the speaker did not change */
+  } else {
+    do { f = pick(FRAMES); x = Math.random() < 0.6 ? pick(WHO) : pick(WHAT); } while (!f.kinds.split(' ').includes(x.k || 'p'));
+    o = x.o; ctx = f.q.replace('X', x.n);
+  }
+  const tokens = T(answerWith(f.a, o)), right = join(tokens);
+  const wrong = [sayAs(f.a, SUBJ_OF[o]), sayAs(f.a, POSS_OF[o]), sayAs(f.a, OTHER_OBJ[o]), noObject(f.a), ...extra];
+  if (!f.prep) wrong.push(beforeVerb(f.a, o));
+  return { ctx: '💬 ' + ctx, key: ctx, tokens, alts: [right.replace(',', '')],
+    gapDirect: 'Answer with Yes. Use a pronoun, not the name.', wrong: uniq(wrong.filter(Boolean), right) };
+}
+
+/* ── ⚖️ SUBJECT OR OBJECT? ────────────────────────────────────────────────
+   One sentence with two names → the same sentence with two pronouns. The names have
+   their stick figures over them: the doer, and the one who gets it, turned to the doer. */
+const CAST = [
+  { n: 'Ana', s: 'she', o: 'her', f: 'ana' }, { n: 'Leo', s: 'he', o: 'him', f: 'leo' },
+  { n: 'Mia', s: 'she', o: 'her', f: 'mia' }, { n: 'Sam', s: 'he', o: 'him', f: 'sam' },
+  { n: 'Grandma', s: 'she', o: 'her', f: 'grandma' },
+  { n: 'Max', s: 'it', o: 'it', f: 'max', dog: 1 },
+  { n: 'Sam and Mia', s: 'they', o: 'them', f: 'sam,mia', pl: 1, has: ['Sam', 'Mia'] },
+  { n: 'Leo and I', on: 'Leo and me', s: 'we', o: 'us', f: 'leo,ana:me', pl: 1, has: ['Leo', 'Ana'] }
+];
+const VERBS2 = [   /* dog: 0 = not with the dog, 1 = fine with the dog, 'obj' = only with the dog as the object */
+  ['help', 'helps', 0], ['call', 'calls', 0], ['visit', 'visits', 0], ['like', 'likes', 1], ['love', 'loves', 1],
+  ['see', 'sees', 1], ['wait for', 'waits for', 1], ['talk to', 'talks to', 0], ['look at', 'looks at', 1],
+  ['feed', 'feeds', 'obj'], ['walk', 'walks', 'obj']
+];
+const overlaps = (a, b) => a.n === b.n || (a.has || [a.n]).some(n => (b.has || [b.n]).includes(n));
+const figsLeft = f => f.split(',').map(x => x + ':left').join(',');
+function contrastItem() {
+  let A, B, v;
+  do {
+    A = pick(CAST); B = pick(CAST); v = pick(VERBS2);
+  } while (overlaps(A, B) || (A.dog && v[2] !== 1) || (B.dog && !v[2]) || (!B.dog && v[2] === 'obj') ||
+           (A.s === B.s && (A.s === 'he' || A.s === 'she')));   /* not "He calls him.": who is who? */
+  const verb = A.pl ? v[0] : v[1], [vw, ...pw] = verb.split(' ');
+  const objName = B.on || B.n;
+  const ctxLine = S('{[' + A.n + '/subject]|' + A.f + '} [' + verb + '/verb] {[' + objName + '/object]|' + figsLeft(B.f) + '}.');
+  const tokens = [[cap(A.s), 'subject'], [vw, 'verb'], ...words(pw.join(' '), 'prep'), [B.o, 'object'], ['.', null]];
+  const right = join(tokens);
+  const swapVerb = B.pl ? v[0] : v[1];   /* "He likes her." — the meaning turned round */
+  const wrong = uniq([
+    `${cap(OBJ_OF[A.s])} ${verb} ${B.o}.`, `${cap(A.s)} ${verb} ${B.s}.`, `${cap(OBJ_OF[A.s])} ${verb} ${B.s}.`,
+    `${cap(B.s)} ${swapVerb} ${OBJ_OF[A.s]}.`, `${cap(A.s)} ${verb} ${POSS_OF[B.o]}.`
+  ], right);
+  return { ctx: ctxLine, key: A.n + verb + B.n, tokens, gapCtx: ctxLine, wrong };
+}
+
+/* ── 🎵 SENTENCE STRESS ───────────────────────────────────────────────────
+   Items for "tap the strong word": words = [[word, punctuation after it], …], strong = the index,
+   cands = the words shown in CAPITALS in the choose step (the right one first). */
+const NAMES = [{ n: 'Ana', s: 'she', o: 'her' }, { n: 'Leo', s: 'he', o: 'him' }, { n: 'Mia', s: 'she', o: 'her' },
+               { n: 'Sam', s: 'he', o: 'him' }, { n: 'Grandma', s: 'she', o: 'her' }, { n: 'Mr. Brown', s: 'he', o: 'him' }];
+const SV = [['call', 'calls'], ['help', 'helps'], ['visit', 'visits'], ['like', 'likes'], ['see', 'sees'], ['know', 'knows']];
+function W(str) {   /* 'No, she calls me.' → [['No', ','], ['she', ''], ['calls', ''], ['me', '.']] */
+  return str.split(' ').map(w => { const m = w.match(/^(.*?)([.,?!]*)$/); return [m[1], m[2]]; });
+}
+const SUBJ_PAIRS = [['I', 'me'], ['You', 'you'], ['He', 'him'], ['She', 'her'], ['We', 'us'], ['They', 'them']];
+const OBJS = ['me', 'you', 'him', 'her', 'us', 'them'];
+function normalItem() {
+  const r = Math.random();
+  let b;
+  if (r < 0.25) {
+    const o = pick(OBJS.filter(x => x !== 'you'));
+    b = pick([`Can you help ${o}?`, `Do you know ${o}?`, `Did you call ${o}?`, `Look at ${o}!`, `Listen to ${o}!`]);
+  } else {
+    const [s, self] = pick(SUBJ_PAIRS), sg = s === 'He' || s === 'She';
+    const o = pick(OBJS.filter(x => x !== self && !(s === 'We' && x === 'me') && !(s === 'I' && x === 'us')));
+    const v = pick(SV.concat([['listen to', 'listens to'], ['wait for', 'waits for']]));
+    b = `${s} ${sg ? v[1] : v[0]} ${o}.`;
+  }
+  const w = W(b), lead = ['Can', 'Do', 'Did'].includes(w[0][0]) ? 2 : 0;
+  const strong = lead ? 2 : w[0][0] === 'Look' || w[0][0] === 'Listen' ? 0 : 1;
+  return { key: b, words: w, strong, why: 'A normal sentence: the pronouns are weak. The verb has the meaning, so it is strong.' };
+}
+function contrastStress() {
+  const t = pick(['no', 'no', 'whoObj', 'whoSubj', 'for', 'yes']);
+  const a = pick(NAMES); let b = pick(NAMES);
+  while (b.n === a.n) b = pick(NAMES);
+  const v = pick(SV), me = pick(['me', 'us']);
+  if (t === 'no') return { key: t + a.n + b.n + v[0] + me, q: `Does ${a.n} ${v[0]} ${b.n}?`, words: W(`No, ${a.s} ${v[1]} ${me}.`), strong: 3, cands: [3, 2, 1],
+    why: `Not ${b.n} — ${me}! A different person is new information, so the pronoun is strong.` };
+  if (t === 'whoObj') return { key: t + a.n + v[0] + me, q: `Who does ${a.n} ${v[0]}?`, words: W(`${cap(a.s)} ${v[1]} ${me}.`), strong: 2, cands: [2, 1, 0],
+    why: `The question asks “who?”. The answer, ${me}, is the new information, so it is strong.` };
+  if (t === 'whoSubj') { const s = pick(['I', 'We']);
+    return { key: t + b.n + v[0] + s, q: `Who ${v[1]} ${b.n}?`, words: W(`${s} ${v[0]} ${b.o}.`), strong: 0, cands: [0, 1, 2],
+      why: `The question asks “who?”. ${s} is the new information, so it is strong. ${cap(b.o)} = ${b.n}: we know that, so it is weak.` }; }
+  if (t === 'for') { const thing = pick(['coffee', 'pizza', 'present', 'cake']), o = pick(['me', 'you', 'us']);
+    return { key: t + thing + b.n + o, q: `Is this ${thing} for ${b.n}?`, words: W(`No, it’s for ${o}.`), strong: 3, cands: [3, 1, 2],
+      why: `Not ${b.n} — ${o}! A different person, so the pronoun is strong.` }; }
+  return { key: t + a.n + b.n + v[0], q: `Does ${a.n} ${v[0]} ${b.n}?`, words: W(`Yes, ${a.s} ${v[1]} ${b.o}.`), strong: 2, cands: [2, 3, 1],
+    why: `Same people: ${a.s} = ${a.n}, ${b.o} = ${b.n}. We know them, so the pronouns are weak. The verb is strong.` };
+}
+/* GEN END */
+
+/* the sentence of a stress item as a marked line: the strong word in capitals, with the main stress on it */
+function stressLine(item) {
+  return item.words.map(([w, p], i) => (i === item.strong ? '<span class="strong-w" data-pm-main>' + w + '</span>' : w) + p).join(' ');
+}
+const capsVersion = (item, k) => item.words.map(([w, p], i) => (i === k ? '<b>' + w.toUpperCase() + '</b>' : w) + p).join(' ');
+const qLine = item => item.q ? '<p class="dlg"><span class="who">A:</span> ' + item.q + '</p>' : '';
+
+function afterAnswer(host, item) {
+  const after = host.querySelector('.tw-after');
+  after.innerHTML = '<div class="ccq-why">' + item.why + '</div>' + sayLine(stressLine(item));
+  PronMark.mark(after.querySelectorAll('.say-line'));
+}
+function tapRender(host, item, ok) {
+  host.innerHTML = '<div class="quiz-q">' + qLine(item) +
+    '<div class="tw-line">' + (item.q ? '<span class="who">B:</span>' : '') +
+    item.words.map(([w, p], i) => '<button class="tw-btn" type="button" data-i="' + i + '">' + w + p + '</button>').join('') + '</div>' +
+    '<div class="q-feedback"></div><div class="tw-after"></div></div>';
+  host.addEventListener('click', e => {
+    const b = e.target.closest('.tw-btn');
+    if (!b || b.disabled) return;
+    const all = host.querySelectorAll('.tw-btn'), fb = host.querySelector('.q-feedback');
+    all.forEach(x => { x.disabled = true; });
+    if (+b.dataset.i === item.strong) {
+      b.classList.add('correct'); fb.textContent = '✓ Correct!'; fb.className = 'q-feedback correct'; ok();
+    } else {
+      b.classList.add('incorrect'); all[item.strong].classList.add('correct');
+      fb.textContent = '✗ Not quite — the strong word is green. Press 🎲 Again to try another.'; fb.className = 'q-feedback incorrect';
+    }
+    afterAnswer(host, item);
+  });
+}
+function chooseRender(host, item, ok) {
+  const opts = LabKit.shuffle(item.cands.map(k => ({ k, text: capsVersion(item, k) })));
+  host.innerHTML = '<div class="quiz-q">' + qLine(item) + '<div class="q-text">B answers. Which way do you say it? (CAPITALS = strong)</div>' +
+    opts.map((o, i) => '<button class="opt" type="button" data-i="' + i + '">' + o.text + '</button>').join('') +
+    '<div class="q-feedback"></div><div class="tw-after"></div></div>';
+  host.addEventListener('click', e => {
+    const b = e.target.closest('.opt');
+    if (!b || b.disabled) return;
+    const all = host.querySelectorAll('.opt'), fb = host.querySelector('.q-feedback');
+    all.forEach(x => { x.disabled = true; });
+    if (opts[+b.dataset.i].k === item.strong) {
+      b.classList.add('correct'); fb.textContent = '✓ Correct!'; fb.className = 'q-feedback correct'; ok();
+    } else {
+      b.classList.add('incorrect'); all[opts.findIndex(o => o.k === item.strong)].classList.add('correct');
+      fb.textContent = '✗ Not quite — the correct answer is green. Press 🎲 Again to try another.'; fb.className = 'q-feedback incorrect';
+    }
+    afterAnswer(host, item);
+  });
+}
+
+const STRESS_INTRO = '<div class="lab-block">🎵 Weak pronouns</div>' +
+  '<p class="say-note">Big circles = strong. Small dots = weak. In a normal sentence, pronouns are weak: short and quick.</p>' +
+  ['I like him.', 'Can you help me?', 'We visit them on Sundays.'].map(sayLine).join('') +
+  '<div class="lab-block">🎵 Strong pronouns</div>' +
+  '<p class="say-note">When the person is <b>new</b> or <b>different</b>, the pronoun is strong.</p>' +
+  '<p class="dlg"><span class="who">A:</span> Is this coffee for Leo?</p>' + sayLine('No, it’s for <span class="strong-w" data-pm-main>you</span>.') +
+  '<p class="dlg"><span class="who">A:</span> Who helps Mia?</p>' + sayLine('<span class="strong-w" data-pm-main>I</span> help her.');
+
+/* ════ THE SECTIONS ═══════════════════════════════════════════════════════ */
+const SECTIONS = [
+  { id: 'subject', emoji: '🙋', label: 'Subject pronouns', pill: 'I · you · he · she · it · we · they',
+    note: 'A subject pronoun is the person or thing that does the action. It goes before the verb. Use it in place of a name we already know.',
+    intro: SUBJ_MEANING + '<div class="lab-block">📐 Form: common patterns</div>',
+    examples: [
+      ['pos', '{She|subject} {works|verb} {in a hospital|prep}.', 'subject + verb + …', 'Subject + verb'],
+      ['pos', '{They|subject} {are|verb} {very busy|complement}.', 'subject + be + …', 'Subject + be'],
+      ['pos', '{We|subject} {like|verb} {pizza|object}.', 'subject + verb + object', 'Subject + verb + object'],
+      ['q', '{Is|verb} {he|subject} {at home|prep}?', 'be + subject + … ?', 'Question with be'],
+      ['q', '{Does|aux} {she|subject} {speak|verb} {French|object}?', 'do / does + subject + verb … ?', 'Question with do / does'],
+      ['pos', '{I’m|subject} {tired|complement}. {It’s|subject} {cold|complement}.', 'I’m = I am · it’s = it is · they’re = they are', 'Short forms']
+    ],
+    outro: SUBJ_SAY,
+    prompts: { choice: 'Which sentence is correct?', drag: 'Tap or drag the words. Use a pronoun.', gap: 'Write the next sentence. Use a pronoun, not the name.' },
+    gen: subjectItem },
+
+  { id: 'object', emoji: '👉', label: 'Object pronouns', pill: 'me · you · him · her · it · us · them',
+    note: 'An object pronoun is the person or thing that gets the action. It goes after the verb, or after a preposition: to, for, with, at.',
+    intro: OBJ_MEANING + '<div class="lab-block">📐 Form: common patterns</div>',
+    examples: [
+      ['pos', '{I|subject} {know|verb} {her|object}.', 'subject + verb + object', 'Verb + object'],
+      ['pos', '{Listen|verb} {to|prep} {me|object}. {Wait|verb} {for|prep} {us|object}.', 'preposition + object', 'Preposition + object'],
+      ['pos', '{This|subject} {is|verb} {for|prep} {you|object}. {Come|verb} {with|prep} {them|object}!', 'for / with + object', 'For / with + object'],
+      ['pos', '{Call|verb} {him|object}! {Help|verb} {me|object}!', 'verb + object — no subject in an order', 'Orders and requests'],
+      ['pos', '{Give|verb} {me|object} {the pen|object}, {please|none}.', 'give / tell / show + person + thing', 'Verb + person + thing'],
+      ['cel', '{Who|wh} {wants|verb} {coffee|object}? — {Me|object}! · {I’m|subject} {hungry|complement}. — {Me|object} {too|adverb}!', 'a pronoun alone: me, not I', 'Short answers']
+    ],
+    outro: OBJ_SAY,
+    prompts: { choice: 'Which answer is correct?', drag: 'Tap or drag the words to answer.', gap: 'Answer with Yes. Use a pronoun, not the name.' },
+    gen: objectItem },
+
+  { id: 'contrast', emoji: '⚖️', label: 'Subject or object?', pill: 'she → her · he → him · they → them',
+    note: 'The same person has two pronouns. Before the verb: the subject (she, he, they). After the verb: the object (her, him, them).',
+    intro: CONTRAST_MEANING + '<div class="lab-block">📐 Form: common patterns</div>',
+    examples: [
+      ['pos', '{She|subject} {likes|verb} {him|object}. {He|subject} {likes|verb} {her|object}.', 'subject + verb + object', 'Two pronouns'],
+      ['pos', '{They|subject} {call|verb} {me|object}. {I|subject} {call|verb} {them|object}.', 'they → them · me → I', 'Two pronouns'],
+      ['pos', '{We|subject} {wait|verb} {for|prep} {her|object}.', 'subject + verb + preposition + object', 'With a preposition'],
+      ['pos', '{Leo and I|subject} {are|verb} {friends|complement}. {Grandma|subject} {visits|verb} {Leo and me|object}.', 'before the verb: … and I · after the verb: … and me', '… and I / … and me']
+    ],
+    outro: CONTRAST_SAY,
+    prompts: { choice: 'Which sentence means the same?', drag: 'Tap or drag the words. Use two pronouns.', gap: 'Write it again with two pronouns.' },
+    gen: contrastItem },
+
+  { id: 'stress', emoji: '🎵', label: 'Sentence stress', pill: 'weak pronouns · strong for contrast',
+    note: 'In a sentence, some words are strong and some are weak. Pronouns are usually weak. They are strong when the person is new or different.',
+    intro: STRESS_INTRO,
+    steps: [
+      { key: 'normal', title: 'Tap', prompt: 'Tap the strongest word.', gen: normalItem, render: tapRender },
+      { key: 'contrast', title: 'Tap', prompt: 'Read A. Then tap the strongest word in B’s answer.', gen: contrastStress, render: tapRender },
+      { key: 'choose', title: 'Choose', prompt: null, gen: contrastStress, render: chooseRender }
+    ] }
+];
+
+/* Different sentences from the Common mistakes list. A1/A2: some are already correct. */
+const EH_POOL = [
+  { words: ['Her', 'lives', 'near', 'the', 'park', '.'], error: { type: 'wrong', wordIndex: 0, options: ['She', 'Hers', 'It'], correct: 'She' } },
+  { words: ['I', 'see', 'they', 'every', 'morning', '.'], error: { type: 'wrong', wordIndex: 2, options: ['them', 'their', 'it'], correct: 'them' } },
+  { words: ['Can', 'you', 'help', 'I', '?'], error: { type: 'wrong', wordIndex: 3, options: ['me', 'my', 'mine'], correct: 'me' } },
+  { words: ['Leo', 'and', 'me', 'are', 'in', 'the', 'same', 'class', '.'], error: { type: 'wrong', wordIndex: 2, options: ['I', 'my', 'mine'], correct: 'I' } },
+  { words: ['We', 'visit', 'her', 'on', 'Sundays', '.'], error: null },
+  { words: ['The', 'teacher', 'talks', 'to', 'we', 'every', 'day', '.'], error: { type: 'wrong', wordIndex: 4, options: ['us', 'our', 'ours'], correct: 'us' } },
+  { words: ['My', 'dad', 'he', 'is', 'a', 'taxi', 'driver', '.'], error: { type: 'extra', wordIndex: 2 } },
+  { words: ['I', 'like', 'this', 'song', '.', 'I', 'listen', 'to', 'it', 'a', 'lot', '.'], error: null },
+  { words: ['Please', 'call', 'tomorrow', 'me', '.'], error: { type: 'misplaced', wordIndex: 3, targetGapIndex: 2 } },
+  { words: ['This', 'present', 'is', 'for', 'he', '.'], error: { type: 'wrong', wordIndex: 4, options: ['him', 'his', 'he’s'], correct: 'him' } },
+  { words: ['My', 'cat', 'is', 'old', ',', 'but', 'I', 'love', 'it', '.'], error: null },
+  { words: ['Do', 'you', 'know', 'Ana', '?', 'Yes', ',', 'I', 'know', '.'], error: { type: 'missing', gapIndex: 9, options: ['her', 'she', 'it'], correct: 'her' } },
+  { words: ['Sam', 'is', 'hungry', ',', 'so', 'his', 'mom', 'gives', 'him', 'a', 'sandwich', '.'], error: null },
+  { words: ['I', 'them', 'call', 'every', 'week', '.'], error: { type: 'misplaced', wordIndex: 1, targetGapIndex: 3 } },
+  { words: ['Is', 'it', 'your', 'phone', '?'], error: null },
+  { words: ['My', 'grandparents', 'are', 'old', ',', 'so', 'I', 'help', 'they', 'a', 'lot', '.'], error: { type: 'wrong', wordIndex: 8, options: ['them', 'their', 'we'], correct: 'them' } }
+];
+
+LabKit.build({
+  sections: SECTIONS,
+  mistakes: [
+    ['Ana is my friend. Is a teacher.', 'Ana is my friend. <b>She</b> is a teacher.'],
+    ['Her works in a hospital.', '<b>She</b> works in a hospital.'],
+    ['My sister she is a nurse.', 'My sister is a nurse. · <b>She</b> is a nurse.'],
+    ['I love she.', 'I love <b>her</b>.'],
+    ['Help I, please!', 'Help <b>me</b>, please!'],
+    ['This is for he.', 'This is for <b>him</b>.'],
+    ['Leo is nice. I her know. (Ana)', 'I know <b>her</b>.'],
+    ['Do you know Leo? — Yes, I know.', 'Yes, I know <b>him</b>.'],
+    ['The book is good. I like him.', 'I like <b>it</b>. (a thing = it)'],
+    ['Them are my parents.', '<b>They</b> are my parents.'],
+    ['Me and Leo are friends.', 'Leo and <b>I</b> are friends.'],
+    ['Who wants coffee? — I!', 'Who wants coffee? — <b>Me</b>!']
+  ],
+  errorHunt: EH_POOL, ehCount: 6,
+  ehPrompt: 'Some sentences have a mistake. Some are correct! Tap a word — or a space between words — to fix it. Then press OK. 🎲 Again gives you new sentences.'
+});
+
+/* stress marks on the lines to say (a hidden tab draws its marks when it is shown) */
+PronMark.mark(document.querySelectorAll('#labPanels .say-line'));
+</script>
+<script>HouseGrammar.init();</script>
+</body>
+</html>

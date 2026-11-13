@@ -1,7 +1,7 @@
 /* ══════════════════════════════════════════════════════════════════════════
    lab-kit.js — shared behaviour for the self-study grammar labs
    (a1_extra_wh_questions_be_lab, a1_extra_wh_questions_do_does_lab,
-   a2_extra_modal_verbs_lab). Load it after house.js.
+   a2_extra_modal_verbs_lab, a1a2_extra_pronouns_lab …). Load it after house.js.
 
    A lab page supplies only data; this file builds:
      · tabs — one per section, plus ⚠️ Common mistakes and 🔍 Error hunt.
@@ -12,15 +12,18 @@
      · 🎲 Again on every exercise — draws a new random item from the
        section's generator (never the same one twice in a row).
      · the error hunt (HouseErrorHunt) — a random set from a larger pool.
-     · the "Mastered" counter: a section is mastered once all three steps
-       have been answered correctly at least once.
+     · the "Mastered" counter: a section is mastered once every one of its
+       steps has been answered correctly at least once.
 
      LabKit.build({
        sections: [{
          id, emoji, label, pill, note,
+         intro?: '<html>',      // after the note, before the examples (pictures, a table …)
          examples: [[cat, '{words|pos} …', why, label?], …],   // cat: pos | neg | q | cel
+         outro?: '<html>',      // after the examples, before "Try it"
          prompts: { choice, drag, gap },
-         gen: () => ({ ctx, tokens:[[word,pos], …], wrong:[…], alts?, gapCtx?, gapDirect?, key? })
+         gen: () => ({ ctx, tokens:[[word,pos], …], wrong:[…], alts?, gapCtx?, gapDirect?, key? }),
+         steps?: [{ key, title, prompt, gen, render(host, item, ok) }]   // own steps instead of the three
        }],
        mistakes: [[wrong, right], …],
        errorHunt: [HouseErrorHunt items], ehCount: 6, ehPrompt: '…'
@@ -30,6 +33,12 @@
    pos null. It drives all three steps: its text is the right option, the
    word-order chips, and the gap-fill answer (plus `alts`). `wrong` holds the
    distractors; two are drawn at random each time.
+
+   `steps` (optional) replaces the three standard steps with the section's own:
+   each step gets the same chrome (Step n · title, ✓, 🎲 Again) and calls
+   render(host, item, ok) with a fresh item from its own gen (or sec.gen);
+   the page calls ok() when the learner gets it right. intro / outro / steps
+   are all optional, so older labs are unchanged.
    ══════════════════════════════════════════════════════════════════════════ */
 (function (global) {
   'use strict';
@@ -123,6 +132,7 @@
   var LABEL = { pos: 'Affirmative', neg: 'Negative', q: 'Question', cel: 'Wh-question' };
   var uid = 0;
   function nid(p) { return p + '-' + (++uid); }
+  function itemKey(item) { return item.key || (item.tokens ? join(item.tokens) : JSON.stringify(item)); }
 
   function build(cfg) {
     injectStyles();
@@ -136,7 +146,7 @@
     var mastered = new Set();
     var tabs = [];
 
-    /* ── a section: card + three steps ──────────────────────────────────── */
+    /* ── a section: card + its steps ────────────────────────────────────── */
     function sectionPanel(sec) {
       var panel = document.createElement('div');
       var card = document.createElement('section');
@@ -146,20 +156,22 @@
           '<div><h2>' + sec.label + '</h2><span class="wh-pill">' + sec.pill + '</span></div>' +
           '<span class="wh-done">✓ Mastered</span></div>' +
         '<p class="wh-note">' + sec.note + '</p>' +
-        sec.examples.map(function (ex) {
+        (sec.intro || '') +
+        (sec.examples || []).map(function (ex) {
           return '<div class="ex-row"><span class="cat-tag ' + ex[0] + '">' + (ex[3] || LABEL[ex[0]]) + '</span>' +
             '<div class="ex-sent">' + tag(ex[1]) + '</div>' +
             (ex[2] ? '<div class="ex-why">' + ex[2] + '</div>' : '') + '</div>';
         }).join('') +
+        (sec.outro || '') +
         '<div class="sec-div">Try it</div>';
       panel.appendChild(card);
 
-      var done = { choice: false, drag: false, gap: false };
+      var done = {}, keys = [];
       function markStep(key, stepEl) {
         if (done[key]) return;
         done[key] = true;
         stepEl.classList.add('done');
-        if (done.choice && done.drag && done.gap && !mastered.has(sec.id)) {
+        if (keys.every(function (k) { return done[k]; }) && !mastered.has(sec.id)) {
           mastered.add(sec.id);
           card.classList.add('done');
           var btn = tabsEl.querySelector('[data-tab="' + sec.id + '"]');
@@ -168,7 +180,9 @@
         }
       }
 
-      function step(n, key, title, prompt, render) {
+      function step(n, key, title, prompt, render, gen) {
+        keys.push(key);
+        gen = gen || sec.gen;
         var el = document.createElement('div');
         el.className = 'lab-step';
         el.innerHTML =
@@ -183,9 +197,9 @@
 
         function roll() {
           var item, tries = 0;
-          do { item = sec.gen(); tries++; }
-          while ((item.key || join(item.tokens)) === last && tries < 15);
-          last = item.key || join(item.tokens);
+          do { item = gen(); tries++; }
+          while (itemKey(item) === last && tries < 15);
+          last = itemKey(item);
           // A fresh host each time, so the engines' own listeners never stack up.
           body.innerHTML = '';
           var host = document.createElement('div');
@@ -197,7 +211,7 @@
         roll();
       }
 
-      step(1, 'choice', 'Choose', null, function (host, item, ok) {
+      function choiceStep(host, item, ok) {
         var right = join(item.tokens);
         var pool = [];
         item.wrong.forEach(function (w) { if (w !== right && pool.indexOf(w) === -1) pool.push(w); });
@@ -224,9 +238,9 @@
             fb.className = 'q-feedback incorrect';
           }
         });
-      });
+      }
 
-      step(2, 'drag', 'Build', sec.prompts.drag, function (host, item, ok) {
+      function dragStep(host, item, ok) {
         HouseWordOrder.build({
           container: host,
           items: [{
@@ -238,9 +252,9 @@
         new MutationObserver(function () {
           if (host.querySelector('.target-zone.correct')) ok();
         }).observe(host, { subtree: true, attributes: true, attributeFilter: ['class'] });
-      });
+      }
 
-      step(3, 'gap', 'Write', null, function (host, item, ok) {
+      function gapStep(host, item, ok) {
         HouseGapFill.build({
           container: host,
           items: [{
@@ -254,7 +268,17 @@
         host.addEventListener('input', function () {
           if (host.querySelector('.gf-gap-input.gap-correct')) ok();
         });
-      });
+      }
+
+      if (sec.steps) {
+        sec.steps.forEach(function (s, i) {
+          step(i + 1, s.key || ('step' + (i + 1)), s.title, s.prompt || null, s.render, s.gen);
+        });
+      } else {
+        step(1, 'choice', 'Choose', null, choiceStep);
+        step(2, 'drag', 'Build', sec.prompts.drag, dragStep);
+        step(3, 'gap', 'Write', null, gapStep);
+      }
 
       return panel;
     }
@@ -350,6 +374,6 @@
   global.LabKit = {
     build: build,
     pick: pick, shuffle: shuffle, sample: sample,
-    words: words, join: join, cap: cap
+    words: words, join: join, cap: cap, tag: tag, variants: variants
   };
 })(window);
