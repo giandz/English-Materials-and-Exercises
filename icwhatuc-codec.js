@@ -1,67 +1,46 @@
 /* ══════════════════════════════════════════════════════════════════════════
    ICwhatUC CODEC — phase 0
-   Turns the few facts two browsers must tell each other before a WebRTC link
-   can form into a row of five-word animal phrases, and back again:
+   Packs the few facts two browsers must tell each other before a WebRTC link
+   can form into one short base64 string, and back again:
 
-       seven sad blue dancing monkeys, two happy red flying birds, …
+       YFt4vwZV94uJRO6xvPM_RhsFNdy4X2QaJMJD8KFY0KEsGQgQXk3-…
 
-   One phrase = one word from each of five lists of 16 = 20 bits.
-   Order: number · state · colour · action · animal (the usual English order).
-   The numbers run from two to seventeen, so the animal is always plural.
+   The string uses the URL-safe base64 letters (A-Z a-z 0-9 - _), so it has no
+   spaces and nothing a chat app turns into a link or an emoji. About 90
+   letters with one address, about 115 with two.
 
    What a code carries (see pack / unpack):
-       version, offer or answer, DTLS role
+       version, and whose code it is (host or learner)
        the browser certificate's SHA-256 fingerprint      256 bits
        ICE user name and password                         about 31 + 152 bits
        up to three addresses (public, local network)      51 to 147 bits each
-       a check phrase at the end (CRC-16 plus 4 more bits)
+       a CRC-16 at the end, so a cut or changed code is refused
 
-   The receiving side rebuilds a full session description from those fields
-   (buildSdp). Nothing here touches the page: it runs in a browser and in Node.
+   BOTH CODES ARE MADE THE SAME WAY, each from the browser's own offer, and
+   neither depends on the other. Nothing starts until a person presses Connect:
+   only then does each side hand the other's facts to WebRTC, rebuilt as an
+   answer (buildSdp). The host takes the DTLS client role and the learner the
+   server role, so the two rebuilt answers agree.
 
-     ICwhatUCCodec.encode(fields)        → 'seven sad blue dancing monkeys, …'
+     ICwhatUCCodec.encode(fields)        → 'YFt4vwZV94uJ…'
      ICwhatUCCodec.decode(text)          → fields            (throws CodeError)
      ICwhatUCCodec.parseSdp(sdp)         → fields found in a browser's own SDP
-     ICwhatUCCodec.pickCandidates(list, { host, max })
-     ICwhatUCCodec.buildSdp(fields, { mid })  → SDP text for setRemoteDescription
-     ICwhatUCCodec.measure(text)         → { phrases, words, bits }
+     ICwhatUCCodec.pickCandidates(list, { max })
+     ICwhatUCCodec.buildSdp(fields, { mid, role })  → SDP for setRemoteDescription
+                                           role = MY role: 'host' | 'learner'
 
-   fields = { type:'offer'|'answer', setup:'actpass'|'active'|'passive',
-              fingerprint:'AA:BB:…' (32 bytes), ufrag, pwd,
+   fields = { role:'host'|'learner', fingerprint:'AA:BB:…' (32 bytes), ufrag, pwd,
               candidates:[{ kind:'v4'|'v6'|'mdns', typ:'host'|'srflx', address, port }] }
-
-   THE WORD LISTS ARE FIXED. Both sides must agree on them, so changing a word
-   or its place breaks every code. A new set needs a new VERSION.
    ══════════════════════════════════════════════════════════════════════════ */
 (function (root) {
   'use strict';
 
-  var VERSION = 2;       /* 1 = four-word phrases (no number), never released */
-
-  var LISTS = [
-    /* number */ ['two', 'three', 'four', 'five', 'six', 'seven', 'eight', 'nine', 'ten', 'eleven', 'twelve', 'thirteen', 'fourteen', 'fifteen', 'sixteen', 'seventeen'],
-    /* state  */ ['happy', 'sad', 'tired', 'hungry', 'thirsty', 'angry', 'sleepy', 'busy', 'quiet', 'noisy', 'fast', 'slow', 'friendly', 'funny', 'clean', 'dirty'],
-    /* colour */ ['red', 'orange', 'yellow', 'green', 'blue', 'purple', 'pink', 'brown', 'black', 'white', 'gray', 'gold', 'silver', 'beige', 'violet', 'turquoise'],
-    /* action */ ['flying', 'dancing', 'running', 'swimming', 'jumping', 'singing', 'sleeping', 'eating', 'walking', 'reading', 'cooking', 'smiling', 'laughing', 'playing', 'drawing', 'climbing'],
-    /* animal */ ['tigers', 'birds', 'cats', 'dogs', 'fish', 'horses', 'cows', 'pigs', 'ducks', 'bears', 'lions', 'monkeys', 'rabbits', 'mice', 'sheep', 'frogs']
-  ];
-  var SLOTS = LISTS.length, PHRASE_BITS = SLOTS * 4;
-  var SLOT_NAMES = ['number', 'feeling', 'colour', 'action', 'animal'];
-  /* what a chat app or a person might change: a spelling, a figure for a number word, a singular animal */
-  var ALIAS = { grey: 'gray', fishes: 'fish', mouse: 'mice', mouses: 'mice', sheeps: 'sheep' };
-  LISTS[0].forEach(function (w, i) { ALIAS[String(i + 2)] = w; });
-  LISTS[4].forEach(function (w) { if (/s$/.test(w)) ALIAS[w.slice(0, -1)] = w; });
-
-  var INDEX = LISTS.map(function (list) {
-    var m = {};
-    list.forEach(function (w, i) { m[w] = i; });
-    return m;
-  });
+  var VERSION = 3;       /* 1, 2 = word-phrase codes, never released */
 
   function CodeError(code, message, detail) {
     var e = new Error(message);
     e.name = 'CodeError';
-    e.code = code;            /* 'empty' | 'incomplete' | 'word' | 'check' | 'version' | 'format' */
+    e.code = code;            /* 'empty' | 'incomplete' | 'check' | 'version' | 'format' */
     e.detail = detail || null;
     return e;
   }
@@ -72,27 +51,26 @@
     for (var i = n - 1; i >= 0; i--) this.bits.push(Math.floor(value / Math.pow(2, i)) % 2);
   };
   Writer.prototype.bytes = function (arr) { for (var i = 0; i < arr.length; i++) this.put(arr[i], 8); };
-  /* whole phrases only: the bits as 20-bit numbers, zero-filled at the end */
-  Writer.prototype.toValues = function () {
+  Writer.prototype.toBytes = function () {
     var b = this.bits.slice(), out = [];
-    while (b.length % PHRASE_BITS) b.push(0);
-    for (var i = 0; i < b.length; i += PHRASE_BITS) {
+    while (b.length % 8) b.push(0);
+    for (var i = 0; i < b.length; i += 8) {
       var v = 0;
-      for (var k = 0; k < PHRASE_BITS; k++) v = v * 2 + b[i + k];
+      for (var k = 0; k < 8; k++) v = v * 2 + b[i + k];
       out.push(v);
     }
     return out;
   };
 
-  function Reader(values) {
-    this.bits = [];
-    for (var i = 0; i < values.length; i++) for (var k = PHRASE_BITS - 1; k >= 0; k--) this.bits.push(Math.floor(values[i] / Math.pow(2, k)) % 2);
-    this.pos = 0;
-  }
+  function Reader(bytes) { this.bytes = bytes; this.pos = 0; }
   Reader.prototype.get = function (n) {
-    if (this.pos + n > this.bits.length) throw CodeError('format', 'The code is too short for what it says it holds.');
     var v = 0;
-    for (var i = 0; i < n; i++) v = v * 2 + this.bits[this.pos++];
+    for (var i = 0; i < n; i++) {
+      var byte = this.bytes[this.pos >> 3];
+      if (byte === undefined) throw CodeError('format', 'The code is too short for what it says it holds.');
+      v = v * 2 + ((byte >> (7 - (this.pos & 7))) & 1);
+      this.pos++;
+    }
     return v;
   };
   Reader.prototype.take = function (n) { var a = []; for (var i = 0; i < n; i++) a.push(this.get(8)); return a; };
@@ -106,18 +84,42 @@
     }
     return crc;
   }
-  /* the last phrase: CRC-16 of every phrase before it, plus 4 bits of a plain sum, to fill its 20 bits */
-  function checkOf(values) {
-    var bytes = [], sum = values.length;
-    values.forEach(function (v) { bytes.push(Math.floor(v / 65536), (v >> 8) & 255, v & 255); });
-    bytes.forEach(function (b) { sum += b; });
-    return (sum & 15) * 65536 + crc16(bytes);
+
+  /* ── base64, URL-safe, no padding ─────────────────────────────────────── */
+  var B64URL = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789-_';
+  function toBase64(bytes) {
+    var out = '';
+    for (var i = 0; i < bytes.length; i += 3) {
+      var a = bytes[i], b = bytes[i + 1], c = bytes[i + 2];
+      out += B64URL[a >> 2] + B64URL[((a & 3) << 4) | ((b || 0) >> 4)];
+      if (b !== undefined) out += B64URL[((b & 15) << 2) | ((c || 0) >> 6)];
+      if (c !== undefined) out += B64URL[c & 63];
+    }
+    return out;
+  }
+  /* Forgiving on the way in: spaces and line breaks a chat app added, quotes
+     round the code, the ordinary + and / letters, and = padding are all fine. */
+  function clean(text) {
+    return String(text || '').replace(/\s+/g, '').replace(/^["'“”‘’`<]+|["'“”‘’`>.,]+$/g, '')
+      .replace(/\+/g, '-').replace(/\//g, '_').replace(/=+$/, '');
+  }
+  function fromBase64(s) {
+    if (!/^[A-Za-z0-9_-]*$/.test(s) || s.length % 4 === 1) {
+      throw CodeError('incomplete', 'This code is not complete. Copy it again.');
+    }
+    var bytes = [];
+    for (var i = 0; i < s.length; i += 4) {
+      var n = [0, 1, 2, 3].map(function (k) { return s[i + k] === undefined ? -1 : B64URL.indexOf(s[i + k]); });
+      bytes.push((n[0] << 2) | (n[1] >> 4));
+      if (n[2] >= 0) bytes.push(((n[1] & 15) << 4) | (n[2] >> 2));
+      if (n[3] >= 0) bytes.push(((n[2] & 3) << 6) | n[3]);
+    }
+    return bytes;
   }
 
   /* ── short strings (ICE user name and password) ───────────────────────────
      Browsers write these as hex (Firefox) or in the base64 alphabet (Chrome,
-     Safari). Packing by alphabet instead of as plain text saves 2 to 4 bits a
-     letter, which is 4 or 5 phrases a code. */
+     Safari). Packing by alphabet instead of as plain text keeps the code short. */
   var B64 = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789+/';
   var HEX = '0123456789abcdef';
   function putStr(w, s, lenBits) {
@@ -208,7 +210,6 @@
   }
 
   /* ── fields ⇄ bytes ───────────────────────────────────────────────────── */
-  var SETUPS = ['actpass', 'active', 'passive'];
   function fingerprintBytes(fp) {
     var b = String(fp).split(':').map(function (x) { return parseInt(x, 16); });
     if (b.length !== 32 || b.some(isNaN)) throw CodeError('format', 'This browser did not give a SHA-256 fingerprint.');
@@ -217,22 +218,20 @@
   function pack(f) {
     var w = new Writer();
     w.put(VERSION, 3);
-    w.put(f.type === 'answer' ? 1 : 0, 1);
-    w.put(Math.max(0, SETUPS.indexOf(f.setup)), 2);
+    w.put(f.role === 'learner' ? 1 : 0, 1);
     w.bytes(fingerprintBytes(f.fingerprint));
     putStr(w, f.ufrag, 5);
     putStr(w, f.pwd, 6);
     var cands = (f.candidates || []).slice(0, 3);
     w.put(cands.length, 2);
     cands.forEach(function (c) { putCandidate(w, c); });
-    return w.toValues();
+    return w.toBytes();
   }
-  function unpack(values) {
-    var r = new Reader(values);
+  function unpack(bytes) {
+    var r = new Reader(bytes);
     var version = r.get(3);
     if (version !== VERSION) throw CodeError('version', 'This code is from a different version of the page.', { version: version });
-    var f = { type: r.get(1) ? 'answer' : 'offer', setup: SETUPS[r.get(2)] };
-    if (!f.setup) throw CodeError('format', 'The code has a part this page does not understand.');
+    var f = { role: r.get(1) ? 'learner' : 'host' };
     f.fingerprint = r.take(32).map(function (n) { return hex2(n).toUpperCase(); }).join(':');
     f.ufrag = getStr(r, 5);
     f.pwd = getStr(r, 6);
@@ -241,58 +240,18 @@
     return f;
   }
 
-  /* ── 20-bit numbers ⇄ phrases ─────────────────────────────────────────── */
-  function phrasesOf(values) {
-    return values.map(function (v) {
-      var w = [];
-      for (var s = 0; s < SLOTS; s++) w.push(LISTS[s][Math.floor(v / Math.pow(16, SLOTS - 1 - s)) % 16]);
-      return w.join(' ');
-    });
-  }
-  /* commas, line breaks, capitals, list numbering with a dot, smart quotes: whatever a chat app did to it */
-  function words(text) {
-    return (String(text || '').toLowerCase().replace(/(^|\n)\s*\d+[.)]\s/g, '$1').match(/[a-z]+|\d+/g) || []).map(function (w) {
-      return Object.prototype.hasOwnProperty.call(ALIAS, w) ? ALIAS[w] : w;
-    });
-  }
-  function fromText(text) {
-    var ws = words(text);
-    if (!ws.length) throw CodeError('empty', 'There is no code here.');
-    var values = [];
-    for (var i = 0; i < ws.length; i += SLOTS) {
-      var v = 0;
-      for (var s = 0; s < SLOTS; s++) {
-        var word = ws[i + s];
-        if (word === undefined) throw CodeError('incomplete', 'This code is not complete. Copy it again.', { phrase: i / SLOTS + 1 });
-        var n = INDEX[s][word];
-        if (n === undefined) {
-          throw CodeError('word', 'This code is not complete. Copy it again.',
-            { phrase: i / SLOTS + 1, slot: SLOT_NAMES[s], word: word });
-        }
-        v = v * 16 + n;
-      }
-      values.push(v);
-    }
-    return values;
-  }
-
   function encode(fields) {
-    var values = pack(fields);
-    var phrases = phrasesOf(values.concat([checkOf(values)]));
-    var lines = [];
-    for (var i = 0; i < phrases.length; i += 2) lines.push(phrases.slice(i, i + 2).join(', '));
-    return lines.join(',\n');
+    var bytes = pack(fields), crc = crc16(bytes);
+    return toBase64(bytes.concat([crc >> 8, crc & 255]));
   }
   function decode(text) {
-    var values = fromText(text);
-    if (values.length < 2) throw CodeError('incomplete', 'This code is not complete. Copy it again.');
-    var body = values.slice(0, -1);
-    if (checkOf(body) !== values[values.length - 1]) throw CodeError('check', 'This code is not complete. Copy it again.');
+    var s = clean(text);
+    if (!s) throw CodeError('empty', 'There is no code here.');
+    var bytes = fromBase64(s);
+    if (bytes.length < 4) throw CodeError('incomplete', 'This code is not complete. Copy it again.');
+    var body = bytes.slice(0, -2), crc = (bytes[bytes.length - 2] << 8) | bytes[bytes.length - 1];
+    if (crc16(body) !== crc) throw CodeError('check', 'This code is not complete. Copy it again.');
     return unpack(body);
-  }
-  function measure(text) {
-    var n = words(text).length;
-    return { words: n, phrases: Math.ceil(n / SLOTS), bits: n * 4 };
   }
 
   /* ── a browser's own SDP → fields ─────────────────────────────────────── */
@@ -302,7 +261,6 @@
       fingerprint: line(/^a=fingerprint:sha-256 (.+)$/mi),
       ufrag: line(/^a=ice-ufrag:(.+)$/m),
       pwd: line(/^a=ice-pwd:(.+)$/m),
-      setup: line(/^a=setup:(.+)$/m),
       mid: line(/^a=mid:(.+)$/m),
       candidates: []
     };
@@ -316,25 +274,28 @@
     return f;
   }
 
-  /* Which addresses go in the code. The public one (from the single address
-     lookup) reaches people in other places; a local-network one reaches people
-     on the same Wi-Fi, where the public one often does not. Shortest first
-     within each kind, because every address costs phrases. */
+  /* Which addresses go in the code, three at most: the public ones (from the
+     single address lookup) reach people in other places; a local-network one
+     reaches people on the same Wi-Fi, where the public one often does not. */
   function pickCandidates(list, opts) {
-    opts = opts || {};
-    var max = opts.max == null ? 2 : opts.max;
+    var max = opts && opts.max != null ? opts.max : 3;
     var cost = { v4: 0, mdns: 1, v6: 2 };
     var by = function (typ) {
       return list.filter(function (c) { return c.typ === typ; })
         .sort(function (a, b) { return cost[a.kind] - cost[b.kind] || b.priority - a.priority; });
     };
-    var out = [], pub = by('srflx'), loc = by('host');
+    var pub = by('srflx'), loc = by('host'), out = [];
     if (pub[0]) out.push(pub[0]);
-    if (opts.host !== false || !out.length) { if (loc[0]) out.push(loc[0]); }
+    if (loc[0]) out.push(loc[0]);
+    var other = pub.filter(function (c) { return pub[0] && c.kind !== pub[0].kind; })[0];
+    if (other) out.push(other);
     return out.slice(0, max).map(function (c) { return { kind: c.kind, typ: c.typ, address: c.address, port: c.port }; });
   }
 
-  /* ── fields → SDP for setRemoteDescription ────────────────────────────── */
+  /* ── fields → SDP for setRemoteDescription ────────────────────────────────
+     Always an answer to my own offer. opts.role is MY role: the host hears the
+     learner say "passive" and so becomes the DTLS client; the learner hears the
+     host say "active" and becomes the server. */
   function buildSdp(f, opts) {
     opts = opts || {};
     var mid = opts.mid == null ? '0' : String(opts.mid);
@@ -351,7 +312,7 @@
       'a=ice-pwd:' + f.pwd,
       'a=ice-options:trickle',
       'a=fingerprint:sha-256 ' + f.fingerprint,
-      'a=setup:' + (f.type === 'offer' ? 'actpass' : (f.setup === 'passive' ? 'passive' : 'active')),
+      'a=setup:' + (opts.role === 'host' ? 'passive' : 'active'),
       'a=mid:' + mid,
       'a=sctp-port:5000',
       'a=max-message-size:262144'
@@ -366,10 +327,10 @@
   }
 
   var api = {
-    VERSION: VERSION, LISTS: LISTS,
-    encode: encode, decode: decode, measure: measure,
+    VERSION: VERSION,
+    encode: encode, decode: decode,
     parseSdp: parseSdp, pickCandidates: pickCandidates, buildSdp: buildSdp,
-    addressKind: addressKind, phrasesOf: phrasesOf, checkOf: checkOf
+    addressKind: addressKind, crc16: crc16
   };
   if (typeof module !== 'undefined' && module.exports) module.exports = api;
   else root.ICwhatUCCodec = api;

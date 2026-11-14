@@ -22,7 +22,7 @@
   button:disabled{ opacity:.45; cursor:not-allowed; }
   label{ display:flex; gap:.45rem; align-items:flex-start; margin:.25rem 0; }
   input[type=text]{ font:inherit; padding:.45rem .6rem; border-radius:8px; border:1px solid var(--line); background:var(--bg); color:var(--fg); flex:1 1 12rem; min-width:0; }
-  textarea{ width:100%; min-height:9.5rem; font:13px/1.5 ui-monospace, SFMono-Regular, Menlo, Consolas, monospace; padding:.6rem .7rem; border-radius:8px; border:1px solid var(--line); background:var(--bg); color:var(--fg); resize:vertical; }
+  textarea{ width:100%; min-height:4.6rem; word-break:break-all; font:13px/1.5 ui-monospace, SFMono-Regular, Menlo, Consolas, monospace; padding:.6rem .7rem; border-radius:8px; border:1px solid var(--line); background:var(--bg); color:var(--fg); resize:vertical; }
   .step{ display:none; } .step.on{ display:block; }
   .num{ display:inline-flex; width:1.5rem; height:1.5rem; border-radius:50%; background:var(--accent); color:#fff; align-items:center; justify-content:center; font-size:.8rem; font-weight:700; margin-right:.35rem; }
   @media (prefers-color-scheme: dark){ .num{ color:#10202f; } }
@@ -40,44 +40,35 @@
 <body>
 <main>
   <h1>🤝 ICwhatUC · phase 0 code test</h1>
-  <p class="sub">Two browsers, two codes, no relay server. One person is the host, the other is the learner. Send the codes to each other in the chat of your video call.</p>
+  <p class="sub">Two browsers, two codes, no relay server. One person is the host, the other is the learner. Send the codes to each other in the chat of your video call. Nothing starts until you both press Connect.</p>
 
   <div class="card" id="setup">
     <h2>Before you start</h2>
     <label><input type="checkbox" id="optStun" checked> <span>Ask for my public address <span class="note">(one STUN lookup; needed when the two people are in different places)</span></span></label>
-    <label><input type="checkbox" id="optHost" checked> <span>Put my local-network address in the code too <span class="note">(needed on the same Wi-Fi; makes the code about 8 phrases longer)</span></span></label>
     <div class="row" style="margin-top:.6rem">
-      <button class="main" id="beHost">I am the host: make Code 1</button>
-      <button id="beGuest">I am the learner: I have Code 1</button>
+      <button class="main" id="beHost">I am the host</button>
+      <button id="beGuest">I am the learner</button>
     </div>
   </div>
 
-  <!-- host -->
-  <div class="card step" id="h1">
-    <h2><span class="num">1</span>Copy Code 1. Send it in the chat.</h2>
-    <textarea id="code1out" readonly aria-label="Code 1"></textarea>
-    <div class="row"><button class="main" data-copy="code1out">Copy</button><span class="note" id="code1info"></span></div>
+  <div class="card step" id="mine">
+    <h2><span class="num" id="mineNum">1</span><span id="mineTitle">Copy your code. Send it in the chat.</span></h2>
+    <textarea id="codeOut" readonly aria-label="My code"></textarea>
+    <div class="row"><button class="main" data-copy="codeOut">Copy</button><span class="note" id="codeInfo"></span></div>
   </div>
-  <div class="card step" id="h2">
-    <h2><span class="num">2</span>Paste Code 2 from your partner here.</h2>
-    <textarea id="code2in" aria-label="Code 2" placeholder="seven sad blue dancing monkeys, …"></textarea>
-    <div class="row"><button class="main" id="acceptBtn">Connect</button><span class="err" id="hostErr" role="alert"></span></div>
+  <div class="card step" id="theirs">
+    <h2><span class="num" id="theirsNum">2</span><span id="theirsTitle">Paste your partner's code here.</span></h2>
+    <textarea id="codeIn" aria-label="My partner's code" placeholder="YFt4vwZV94uJRO6x…" autocapitalize="off" autocomplete="off" autocorrect="off" spellcheck="false"></textarea>
+    <div class="row"><span class="ok" id="pasteOk"></span><span class="err" id="pasteErr" role="alert"></span></div>
   </div>
-
-  <!-- learner -->
-  <div class="card step" id="g1">
-    <h2><span class="num">1</span>Paste Code 1 from the host here.</h2>
-    <textarea id="code1in" aria-label="Code 1" placeholder="seven sad blue dancing monkeys, …"></textarea>
-    <div class="row"><button class="main" id="joinBtn">Make Code 2</button><span class="err" id="guestErr" role="alert"></span></div>
-  </div>
-  <div class="card step" id="g2">
-    <h2><span class="num">2</span>Copy Code 2. Send it in the chat.</h2>
-    <textarea id="code2out" readonly aria-label="Code 2"></textarea>
-    <div class="row"><button class="main" data-copy="code2out">Copy</button><span class="note" id="code2info"></span></div>
+  <div class="card step" id="go">
+    <h2><span class="num">3</span>Press Connect together.</h2>
+    <p class="note">Wait until you both have each other's code. There is no hurry: a code does not start anything. Then say "3, 2, 1" and both press Connect.</p>
+    <div class="row"><button class="main" id="connectBtn" disabled>Connect</button><span class="note" id="trying"></span></div>
   </div>
 
   <div class="card step" id="live">
-    <h2>Connection: <span id="state">waiting</span></h2>
+    <h2>Connection: <span id="state">not started</span></h2>
     <div id="chat" aria-live="polite"></div>
     <div class="row">
       <input type="text" id="msg" placeholder="Write a message" disabled>
@@ -92,7 +83,7 @@
       <button data-copy="report">Copy the result line</button>
       <button id="again">Start again</button>
     </div>
-    <textarea id="report" readonly style="min-height:3.2rem; margin-top:.6rem" aria-label="Result line"></textarea>
+    <textarea id="report" readonly style="min-height:3.2rem; margin-top:.6rem; word-break:normal" aria-label="Result line"></textarea>
   </div>
 
   <div class="card">
@@ -114,9 +105,9 @@
 
   var $ = function (id) { return document.getElementById(id); };
   var t0 = performance.now();
-  var pc = null, dc = null, role = null, local = null;
+  var pc = null, dc = null, role = null, local = null, remote = null;
   var M = {};                      /* measurements */
-  var timers = [];
+  var ticker = null;
 
   function log(msg) {
     var s = ((performance.now() - t0) / 1000).toFixed(2);
@@ -124,35 +115,31 @@
     $('log').scrollTop = $('log').scrollHeight;
   }
   function show(id, on) { $(id).classList.toggle('on', on !== false); }
-  function fail(el, e) {
-    var d = e && e.detail;
-    $(el).textContent = (e && e.message) || String(e);
-    if (d && d.phrase) $(el).textContent += ' (phrase ' + d.phrase + (d.word ? ', "' + d.word + '" is not a ' + d.slot + ' word' : '') + ')';
-    log('! ' + $(el).textContent + (e && e.code ? ' [' + e.code + ']' : ''));
-  }
   function browserName() {
     var u = navigator.userAgent, m;
     if ((m = u.match(/Firefox\/(\d+)/))) return 'Firefox ' + m[1];
+    if ((m = u.match(/Vivaldi\/([\d.]+)/))) return 'Vivaldi ' + m[1];
     if ((m = u.match(/Edg\/(\d+)/))) return 'Edge ' + m[1];
     if ((m = u.match(/(?:Chrome|CriOS)\/(\d+)/))) return 'Chrome ' + m[1];
     if ((m = u.match(/Version\/(\d+).*Safari/))) return 'Safari ' + m[1];
     return u;
   }
   function device() { return /Android/.test(navigator.userAgent) ? 'Android' : (/iPhone|iPad/.test(navigator.userAgent) ? 'iOS' : (navigator.platform || 'desktop')); }
+  function kinds(list) { return list.map(function (c) { return c.typ + '/' + c.kind; }).join(', ') || 'none'; }
 
   function facts() {
     var rows = [
       ['Browser', browserName() + ' · ' + device()],
       ['Role', role || ''],
       ['Address lookup', $('optStun').checked ? 'on' : 'off'],
-      ['Local address in code', $('optHost').checked ? 'yes' : 'no'],
       ['Addresses found', M.found || ''],
       ['Addresses in my code', M.sent || ''],
+      ['Addresses in their code', M.got || ''],
       ['Time to make my code', M.gather != null ? M.gather + ' ms' : ''],
-      ['My code', M.mine ? M.mine.phrases + ' phrases · ' + M.mine.words + ' words · ' + M.mine.chars + ' characters' : ''],
-      ['Their code', M.theirs ? M.theirs.phrases + ' phrases · ' + M.theirs.words + ' words' : ''],
-      ['Code 1 was waiting', M.waited != null ? M.waited + ' s' : ''],
-      ['Time to connect', M.connect != null ? M.connect + ' ms' : ''],
+      ['My code', M.chars ? M.chars + ' characters' : ''],
+      ['My code waited', M.waited != null ? M.waited + ' s before Connect' : ''],
+      ['Time to connect', M.connect != null ? M.connect + ' ms after my Connect' : ''],
+      ['Gave up after', M.gaveUp != null ? M.gaveUp + ' s' : ''],
       ['Route', M.route || ''],
       ['Round trip', M.rtt != null ? M.rtt + ' ms' : ''],
       ['Result', M.result || 'not connected yet']
@@ -179,14 +166,22 @@
     pc.onconnectionstatechange = function () { log('connection: ' + pc.connectionState); setState(); };
     pc.onicecandidateerror = function (e) { log('address lookup problem: ' + (e.errorText || e.errorCode || '') + ' ' + (e.url || '')); };
     show('live');
-    setState();
   }
   function setState() {
     if (!pc) return;
-    var s = dc && dc.readyState === 'open' ? 'connected' : pc.connectionState || pc.iceConnectionState;
+    var open = dc && dc.readyState === 'open';
+    var s = open ? 'connected' : (M.pressed == null ? 'not started' : (pc.connectionState || pc.iceConnectionState));
+    if (s === 'connecting' || s === 'new') s = 'trying';
     $('state').textContent = s;
     $('state').className = s === 'connected' ? 'ok' : (s === 'failed' ? 'err' : '');
-    if (s === 'failed' && !M.result) { M.result = 'FAILED: no route between the two browsers'; facts(); }
+    if ((pc.connectionState === 'failed' || pc.iceConnectionState === 'failed') && !open && !M.result) {
+      M.gaveUp = Math.round((performance.now() - M.pressed) / 1000);
+      M.result = 'FAILED: no answer from the other browser';
+      clearInterval(ticker);
+      $('trying').textContent = 'Time ran out after ' + M.gaveUp + ' s. Both people: press Start again and make new codes.';
+      $('trying').className = 'err';
+      facts();
+    }
   }
   /* Wait for the addresses the code needs, not for the browser to finish looking:
      some browsers keep "gathering" for seconds after the useful addresses are in. */
@@ -198,56 +193,86 @@
       if (!e.candidate) return finish('complete');
       var typ = e.candidate.type || (/ typ (\S+)/.exec(e.candidate.candidate) || [])[1];
       seen[typ] = true;
-      if (seen[want] && (seen.host || !$('optHost').checked)) setTimeout(function () { finish('enough'); }, 250);
+      if (seen[want] && seen.host) setTimeout(function () { finish('enough'); }, 400);
     });
     pc.addEventListener('icegatheringstatechange', function () { if (pc.iceGatheringState === 'complete') finish('complete'); });
     setTimeout(function () { finish('timeout'); }, GATHER_TIMEOUT);
     return p;
   }
-  async function makeCode(type) {
+  /* My code comes from my own offer and nothing else. Making it starts no
+     connection attempt: the browser only looks up its own addresses. */
+  async function makeCode() {
     var start = performance.now();
     var wait = gathered();                         /* listen before the browser starts looking */
-    await pc.setLocalDescription(type === 'offer' ? await pc.createOffer() : await pc.createAnswer());
+    await pc.setLocalDescription(await pc.createOffer());
     var why = await wait;
     M.gather = Math.round(performance.now() - start);
     local = C.parseSdp(pc.localDescription.sdp);
-    var picked = C.pickCandidates(local.candidates, { host: $('optHost').checked, max: 2 });
-    var describe = function (c) { return c.typ + '/' + c.kind; };
-    M.found = local.candidates.map(describe).join(', ') || 'none';
-    M.sent = picked.map(describe).join(', ') || 'none';
+    var picked = C.pickCandidates(local.candidates);
+    M.found = kinds(local.candidates);
+    M.sent = kinds(picked);
     log('addresses (' + why + ' after ' + M.gather + ' ms): ' + M.found);
     if (!picked.length) throw new Error('This browser found no address to put in a code.');
     if ($('optStun').checked && !picked.some(function (c) { return c.typ === 'srflx'; })) {
       log('! the address lookup gave nothing: this code works on the same Wi-Fi only');
     }
-    var code = C.encode({ type: type, setup: local.setup, fingerprint: local.fingerprint, ufrag: local.ufrag, pwd: local.pwd, candidates: picked });
-    M.mine = C.measure(code); M.mine.chars = code.length;
-    log('my code: ' + M.mine.phrases + ' phrases, ' + M.mine.words + ' words');
+    var code = C.encode({ role: role, fingerprint: local.fingerprint, ufrag: local.ufrag, pwd: local.pwd, candidates: picked });
+    M.chars = code.length; M.madeAt = performance.now();
+    log('my code: ' + code.length + ' characters');
     return code;
   }
-  async function setRemote(text, expect) {
-    var f = C.decode(text);
-    if (f.type !== expect) {
-      throw new Error(expect === 'offer' ? 'This is Code 2. Paste Code 1 from the host.' : 'This is Code 1. Paste Code 2 from your partner.');
+
+  /* Pasting only checks the code. Nothing is handed to WebRTC yet. */
+  function checkPaste() {
+    remote = null;
+    $('pasteErr').textContent = ''; $('pasteOk').textContent = '';
+    var text = $('codeIn').value;
+    if (text.trim()) {
+      try {
+        var f = C.decode(text);
+        if (f.role === role) throw new Error('This is your own code. Paste the code from your partner.');
+        remote = f; M.got = kinds(f.candidates);
+        $('pasteOk').textContent = 'This code is good.';
+      } catch (e) {
+        $('pasteErr').textContent = e.message;
+      }
     }
-    M.theirs = C.measure(text);
-    var sdp = C.buildSdp(f, { mid: expect === 'answer' ? local.mid : '0' });
-    log('their code: ' + M.theirs.phrases + ' phrases; addresses ' + f.candidates.map(function (c) { return c.typ + '/' + c.kind; }).join(', '));
-    await pc.setRemoteDescription({ type: expect, sdp: sdp });
-    M.connectStart = performance.now();
+    $('connectBtn').disabled = !(remote && local) || M.pressed != null;
+  }
+  /* The connection attempt starts here and only here, for host and learner alike. */
+  async function connect() {
+    if (!remote || !local) return;
+    $('connectBtn').disabled = true; $('codeIn').readOnly = true;
+    M.pressed = performance.now();
+    M.waited = Math.round((M.pressed - M.madeAt) / 1000);
+    log('Connect pressed, ' + M.waited + ' s after my code was made');
+    ticker = setInterval(function () {
+      if (dc.readyState !== 'open') $('trying').textContent = 'Trying… ' + Math.round((performance.now() - M.pressed) / 1000) + ' s';
+    }, 500);
+    try {
+      await pc.setRemoteDescription({ type: 'answer', sdp: C.buildSdp(remote, { mid: local.mid, role: role }) });
+      setState(); facts();
+    } catch (e) {
+      clearInterval(ticker);
+      M.result = 'FAILED: this browser refused the rebuilt description (' + e.message + ')';
+      $('trying').textContent = M.result; $('trying').className = 'err';
+      log('! ' + M.result); facts();
+    }
   }
 
   async function onOpen() {
-    M.connect = Math.round(performance.now() - M.connectStart);
+    clearInterval(ticker);
+    M.connect = Math.round(performance.now() - M.pressed);
     M.result = 'CONNECTED';
-    log('channel open after ' + M.connect + ' ms');
+    $('trying').textContent = 'Connected.'; $('trying').className = 'ok';
+    log('channel open ' + M.connect + ' ms after my Connect');
     $('msg').disabled = false; $('sendBtn').disabled = false; $('msg').focus();
     setState();
     try { M.route = await route(); } catch (e) { M.route = 'unknown'; }
     facts();
     dc.send(JSON.stringify({ t: 'hello', from: browserName() + ' · ' + device() }));
     ping();
-    timers.push(setInterval(ping, 4000));
+    setInterval(ping, 4000);
   }
   function ping() { if (dc && dc.readyState === 'open') dc.send(JSON.stringify({ t: 'ping', at: performance.now() })); }
   function onMessage(ev) {
@@ -275,49 +300,34 @@
   }
 
   /* ── steps ────────────────────────────────────────────────────────────── */
-  function lockOptions() { $('optStun').disabled = $('optHost').disabled = $('beHost').disabled = $('beGuest').disabled = true; }
-
-  $('beHost').addEventListener('click', async function () {
-    role = 'host'; lockOptions(); log('host · ' + browserName());
+  async function begin(r) {
+    role = r;
+    $('optStun').disabled = $('beHost').disabled = $('beGuest').disabled = true;
+    log(role + ' · ' + browserName());
+    /* The host sends first; the learner reads first. Both make their code at once. */
+    if (role === 'learner') {
+      $('theirsNum').textContent = '1'; $('mineNum').textContent = '2';
+      $('theirsTitle').textContent = 'Paste the code from the host here.';
+      $('mine').parentNode.insertBefore($('theirs'), $('mine'));
+    }
+    show('mine'); show('theirs'); show('go');
+    $('codeOut').value = 'Making your code…';
     try {
       makePc();
-      var code = await makeCode('offer');
-      $('code1out').value = code;
-      show('h1'); show('h2');
-      M.madeAt = performance.now();
-      timers.push(setInterval(function () {
-        if (M.connect != null) return;
-        $('code1info').textContent = M.mine.phrases + ' phrases · made ' + Math.round((performance.now() - M.madeAt) / 1000) + ' s ago';
-      }, 1000));
-      facts();
-    } catch (e) { fail('hostErr', e); show('h2'); }
-  });
-  $('acceptBtn').addEventListener('click', async function () {
-    $('hostErr').textContent = '';
-    try {
-      await setRemote($('code2in').value, 'answer');
-      M.waited = Math.round((performance.now() - M.madeAt) / 1000);
-      $('acceptBtn').disabled = true;
-      log('Code 2 accepted ' + M.waited + ' s after Code 1 was made');
-      facts();
-    } catch (e) { fail('hostErr', e); }
-  });
-
-  $('beGuest').addEventListener('click', function () { role = 'learner'; lockOptions(); log('learner · ' + browserName()); show('g1'); $('code1in').focus(); });
-  $('joinBtn').addEventListener('click', async function () {
-    $('guestErr').textContent = '';
-    try {
-      C.decode($('code1in').value);                 /* refuse a bad code before touching WebRTC */
-      if (!pc) makePc();
-      await setRemote($('code1in').value, 'offer');
-      var code = await makeCode('answer');
-      $('code2out').value = code;
-      $('code2info').textContent = M.mine.phrases + ' phrases';
-      $('joinBtn').disabled = true;
-      show('g2');
-      facts();
-    } catch (e) { fail('guestErr', e); }
-  });
+      $('codeOut').value = await makeCode();
+      setInterval(function () {
+        if (M.pressed == null) $('codeInfo').textContent = M.chars + ' characters · made ' + Math.round((performance.now() - M.madeAt) / 1000) + ' s ago';
+      }, 1000);
+      checkPaste(); facts();
+    } catch (e) {
+      $('codeOut').value = '';
+      $('pasteErr').textContent = e.message; log('! ' + e.message);
+    }
+  }
+  $('beHost').addEventListener('click', function () { begin('host'); });
+  $('beGuest').addEventListener('click', function () { begin('learner'); });
+  $('codeIn').addEventListener('input', checkPaste);
+  $('connectBtn').addEventListener('click', connect);
 
   function send() {
     var text = $('msg').value.trim();
