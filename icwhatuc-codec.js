@@ -1,24 +1,25 @@
 /* ══════════════════════════════════════════════════════════════════════════
    ICwhatUC CODEC — phase 0
    Turns the few facts two browsers must tell each other before a WebRTC link
-   can form into a row of four-word animal phrases, and back again:
+   can form into a row of five-word animal phrases, and back again:
 
-       happy red dancing tiger, tired blue flying bird, …
+       seven sad blue dancing monkeys, two happy red flying birds, …
 
-   One phrase = one word from each of four lists of 16 = 16 bits.
-   Order: state · colour · action · animal (the usual English order).
+   One phrase = one word from each of five lists of 16 = 20 bits.
+   Order: number · state · colour · action · animal (the usual English order).
+   The numbers run from two to seventeen, so the animal is always plural.
 
    What a code carries (see pack / unpack):
        version, offer or answer, DTLS role
        the browser certificate's SHA-256 fingerprint      256 bits
        ICE user name and password                         about 31 + 152 bits
        up to three addresses (public, local network)      51 to 147 bits each
-       a CRC-16 check phrase at the end
+       a check phrase at the end (CRC-16 plus 4 more bits)
 
    The receiving side rebuilds a full session description from those fields
    (buildSdp). Nothing here touches the page: it runs in a browser and in Node.
 
-     ICwhatUCCodec.encode(fields)        → 'happy red dancing tiger, …'
+     ICwhatUCCodec.encode(fields)        → 'seven sad blue dancing monkeys, …'
      ICwhatUCCodec.decode(text)          → fields            (throws CodeError)
      ICwhatUCCodec.parseSdp(sdp)         → fields found in a browser's own SDP
      ICwhatUCCodec.pickCandidates(list, { host, max })
@@ -35,17 +36,21 @@
 (function (root) {
   'use strict';
 
-  var VERSION = 1;
+  var VERSION = 2;       /* 1 = four-word phrases (no number), never released */
 
   var LISTS = [
+    /* number */ ['two', 'three', 'four', 'five', 'six', 'seven', 'eight', 'nine', 'ten', 'eleven', 'twelve', 'thirteen', 'fourteen', 'fifteen', 'sixteen', 'seventeen'],
     /* state  */ ['happy', 'sad', 'tired', 'hungry', 'thirsty', 'angry', 'sleepy', 'busy', 'quiet', 'noisy', 'fast', 'slow', 'friendly', 'funny', 'clean', 'dirty'],
     /* colour */ ['red', 'orange', 'yellow', 'green', 'blue', 'purple', 'pink', 'brown', 'black', 'white', 'gray', 'gold', 'silver', 'beige', 'violet', 'turquoise'],
     /* action */ ['flying', 'dancing', 'running', 'swimming', 'jumping', 'singing', 'sleeping', 'eating', 'walking', 'reading', 'cooking', 'smiling', 'laughing', 'playing', 'drawing', 'climbing'],
-    /* animal */ ['tiger', 'bird', 'cat', 'dog', 'fish', 'horse', 'cow', 'pig', 'duck', 'bear', 'lion', 'monkey', 'rabbit', 'mouse', 'sheep', 'frog']
+    /* animal */ ['tigers', 'birds', 'cats', 'dogs', 'fish', 'horses', 'cows', 'pigs', 'ducks', 'bears', 'lions', 'monkeys', 'rabbits', 'mice', 'sheep', 'frogs']
   ];
-  var SLOT_NAMES = ['feeling', 'colour', 'action', 'animal'];
-  /* spellings a chat app or a person might change */
-  var ALIAS = { grey: 'gray' };
+  var SLOTS = LISTS.length, PHRASE_BITS = SLOTS * 4;
+  var SLOT_NAMES = ['number', 'feeling', 'colour', 'action', 'animal'];
+  /* what a chat app or a person might change: a spelling, a figure for a number word, a singular animal */
+  var ALIAS = { grey: 'gray', fishes: 'fish', mouse: 'mice', mouses: 'mice', sheeps: 'sheep' };
+  LISTS[0].forEach(function (w, i) { ALIAS[String(i + 2)] = w; });
+  LISTS[4].forEach(function (w) { if (/s$/.test(w)) ALIAS[w.slice(0, -1)] = w; });
 
   var INDEX = LISTS.map(function (list) {
     var m = {};
@@ -67,27 +72,27 @@
     for (var i = n - 1; i >= 0; i--) this.bits.push(Math.floor(value / Math.pow(2, i)) % 2);
   };
   Writer.prototype.bytes = function (arr) { for (var i = 0; i < arr.length; i++) this.put(arr[i], 8); };
-  Writer.prototype.toBytes = function () {
-    var b = this.bits.slice();
-    while (b.length % 16) b.push(0);                    /* whole phrases only */
-    var out = [];
-    for (var i = 0; i < b.length; i += 8) {
+  /* whole phrases only: the bits as 20-bit numbers, zero-filled at the end */
+  Writer.prototype.toValues = function () {
+    var b = this.bits.slice(), out = [];
+    while (b.length % PHRASE_BITS) b.push(0);
+    for (var i = 0; i < b.length; i += PHRASE_BITS) {
       var v = 0;
-      for (var k = 0; k < 8; k++) v = v * 2 + b[i + k];
+      for (var k = 0; k < PHRASE_BITS; k++) v = v * 2 + b[i + k];
       out.push(v);
     }
     return out;
   };
 
-  function Reader(bytes) { this.bytes = bytes; this.pos = 0; }
+  function Reader(values) {
+    this.bits = [];
+    for (var i = 0; i < values.length; i++) for (var k = PHRASE_BITS - 1; k >= 0; k--) this.bits.push(Math.floor(values[i] / Math.pow(2, k)) % 2);
+    this.pos = 0;
+  }
   Reader.prototype.get = function (n) {
+    if (this.pos + n > this.bits.length) throw CodeError('format', 'The code is too short for what it says it holds.');
     var v = 0;
-    for (var i = 0; i < n; i++) {
-      var byte = this.bytes[this.pos >> 3];
-      if (byte === undefined) throw CodeError('format', 'The code is too short for what it says it holds.');
-      v = v * 2 + ((byte >> (7 - (this.pos & 7))) & 1);
-      this.pos++;
-    }
+    for (var i = 0; i < n; i++) v = v * 2 + this.bits[this.pos++];
     return v;
   };
   Reader.prototype.take = function (n) { var a = []; for (var i = 0; i < n; i++) a.push(this.get(8)); return a; };
@@ -100,6 +105,13 @@
       for (var k = 0; k < 8; k++) crc = (crc & 0x8000) ? ((crc << 1) ^ 0x1021) & 0xFFFF : (crc << 1) & 0xFFFF;
     }
     return crc;
+  }
+  /* the last phrase: CRC-16 of every phrase before it, plus 4 bits of a plain sum, to fill its 20 bits */
+  function checkOf(values) {
+    var bytes = [], sum = values.length;
+    values.forEach(function (v) { bytes.push(Math.floor(v / 65536), (v >> 8) & 255, v & 255); });
+    bytes.forEach(function (b) { sum += b; });
+    return (sum & 15) * 65536 + crc16(bytes);
   }
 
   /* ── short strings (ICE user name and password) ───────────────────────────
@@ -213,10 +225,10 @@
     var cands = (f.candidates || []).slice(0, 3);
     w.put(cands.length, 2);
     cands.forEach(function (c) { putCandidate(w, c); });
-    return { bytes: w.toBytes(), bits: w.bits.length };
+    return w.toValues();
   }
-  function unpack(bytes) {
-    var r = new Reader(bytes);
+  function unpack(values) {
+    var r = new Reader(values);
     var version = r.get(3);
     if (version !== VERSION) throw CodeError('version', 'This code is from a different version of the page.', { version: version });
     var f = { type: r.get(1) ? 'answer' : 'offer', setup: SETUPS[r.get(2)] };
@@ -229,60 +241,58 @@
     return f;
   }
 
-  /* ── bytes ⇄ phrases ──────────────────────────────────────────────────── */
-  function toPhrases(bytes) {
-    var out = [];
-    for (var i = 0; i < bytes.length; i += 2) {
-      var v = (bytes[i] << 8) | bytes[i + 1];
-      out.push([LISTS[0][v >> 12], LISTS[1][(v >> 8) & 15], LISTS[2][(v >> 4) & 15], LISTS[3][v & 15]].join(' '));
-    }
-    return out;
+  /* ── 20-bit numbers ⇄ phrases ─────────────────────────────────────────── */
+  function phrasesOf(values) {
+    return values.map(function (v) {
+      var w = [];
+      for (var s = 0; s < SLOTS; s++) w.push(LISTS[s][Math.floor(v / Math.pow(16, SLOTS - 1 - s)) % 16]);
+      return w.join(' ');
+    });
   }
-  /* commas, line breaks, capitals, numbering, smart quotes: whatever a chat app did to it */
+  /* commas, line breaks, capitals, list numbering with a dot, smart quotes: whatever a chat app did to it */
   function words(text) {
-    return (String(text || '').toLowerCase().match(/[a-z]+/g) || []).map(function (w) {
+    return (String(text || '').toLowerCase().replace(/(^|\n)\s*\d+[.)]\s/g, '$1').match(/[a-z]+|\d+/g) || []).map(function (w) {
       return Object.prototype.hasOwnProperty.call(ALIAS, w) ? ALIAS[w] : w;
-    }).filter(Boolean);
+    });
   }
   function fromText(text) {
     var ws = words(text);
     if (!ws.length) throw CodeError('empty', 'There is no code here.');
-    var bytes = [];
-    for (var i = 0; i < ws.length; i += 4) {
+    var values = [];
+    for (var i = 0; i < ws.length; i += SLOTS) {
       var v = 0;
-      for (var s = 0; s < 4; s++) {
+      for (var s = 0; s < SLOTS; s++) {
         var word = ws[i + s];
-        if (word === undefined) throw CodeError('incomplete', 'This code is not complete. Copy it again.', { phrase: i / 4 + 1 });
+        if (word === undefined) throw CodeError('incomplete', 'This code is not complete. Copy it again.', { phrase: i / SLOTS + 1 });
         var n = INDEX[s][word];
         if (n === undefined) {
           throw CodeError('word', 'This code is not complete. Copy it again.',
-            { phrase: i / 4 + 1, slot: SLOT_NAMES[s], word: word });
+            { phrase: i / SLOTS + 1, slot: SLOT_NAMES[s], word: word });
         }
         v = v * 16 + n;
       }
-      bytes.push(v >> 8, v & 255);
+      values.push(v);
     }
-    return bytes;
+    return values;
   }
 
   function encode(fields) {
-    var p = pack(fields);
-    var crc = crc16(p.bytes);
-    var phrases = toPhrases(p.bytes.concat([crc >> 8, crc & 255]));
+    var values = pack(fields);
+    var phrases = phrasesOf(values.concat([checkOf(values)]));
     var lines = [];
     for (var i = 0; i < phrases.length; i += 2) lines.push(phrases.slice(i, i + 2).join(', '));
     return lines.join(',\n');
   }
   function decode(text) {
-    var bytes = fromText(text);
-    if (bytes.length < 4) throw CodeError('incomplete', 'This code is not complete. Copy it again.');
-    var body = bytes.slice(0, -2), crc = (bytes[bytes.length - 2] << 8) | bytes[bytes.length - 1];
-    if (crc16(body) !== crc) throw CodeError('check', 'This code is not complete. Copy it again.');
+    var values = fromText(text);
+    if (values.length < 2) throw CodeError('incomplete', 'This code is not complete. Copy it again.');
+    var body = values.slice(0, -1);
+    if (checkOf(body) !== values[values.length - 1]) throw CodeError('check', 'This code is not complete. Copy it again.');
     return unpack(body);
   }
   function measure(text) {
     var n = words(text).length;
-    return { words: n, phrases: Math.ceil(n / 4), bits: n * 4 };
+    return { words: n, phrases: Math.ceil(n / SLOTS), bits: n * 4 };
   }
 
   /* ── a browser's own SDP → fields ─────────────────────────────────────── */
@@ -359,7 +369,7 @@
     VERSION: VERSION, LISTS: LISTS,
     encode: encode, decode: decode, measure: measure,
     parseSdp: parseSdp, pickCandidates: pickCandidates, buildSdp: buildSdp,
-    addressKind: addressKind, crc16: crc16
+    addressKind: addressKind, phrasesOf: phrasesOf, checkOf: checkOf
   };
   if (typeof module !== 'undefined' && module.exports) module.exports = api;
   else root.ICwhatUCCodec = api;
