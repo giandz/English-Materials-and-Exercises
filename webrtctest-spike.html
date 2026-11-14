@@ -48,13 +48,17 @@
     <div class="row" style="margin-top:.6rem">
       <button class="main" id="beHost">I am the host</button>
       <button id="beGuest">I am the learner</button>
+      <button id="netBtn">Check my network</button>
     </div>
+    <p class="note" id="netOut" style="margin:.6rem 0 0"></p>
   </div>
+  <div class="card step" id="handoff"><p id="handoffText" style="margin:0"></p></div>
 
   <div class="card step" id="mine">
     <h2><span class="num" id="mineNum">1</span><span id="mineTitle">Copy your code. Send it in the chat.</span></h2>
     <textarea id="codeOut" readonly aria-label="My code"></textarea>
-    <div class="row"><button class="main" data-copy="codeOut">Copy</button><span class="note" id="codeInfo"></span></div>
+    <div class="row"><button class="main" data-copy="codeOut">Copy code</button><button id="linkBtn">Copy link</button><span class="note" id="codeInfo"></span></div>
+    <p class="note" style="margin:.5rem 0 0">A link opens this page with your code already in it. Your partner then needs no paste.</p>
   </div>
   <div class="card step" id="theirs">
     <h2><span class="num" id="theirsNum">2</span><span id="theirsTitle">Paste your partner's code here.</span></h2>
@@ -132,6 +136,7 @@
       ['Browser', browserName() + ' · ' + device()],
       ['Role', role || ''],
       ['Address lookup', $('optStun').checked ? 'on' : 'off'],
+      ['Network check', M.net || ''],
       ['Addresses found', M.found || ''],
       ['Addresses in my code', M.sent || ''],
       ['Addresses in their code', M.got || ''],
@@ -140,6 +145,7 @@
       ['My code waited', M.waited != null ? M.waited + ' s before Connect' : ''],
       ['Time to connect', M.connect != null ? M.connect + ' ms after my Connect' : ''],
       ['Gave up after', M.gaveUp != null ? M.gaveUp + ' s' : ''],
+      ['Heard from the other browser', M.heard || ''],
       ['Route', M.route || ''],
       ['Round trip', M.rtt != null ? M.rtt + ' ms' : ''],
       ['Result', M.result || 'not connected yet']
@@ -152,6 +158,106 @@
     });
     $('report').value = rows.map(function (r) { return r[0] + ': ' + r[1]; }).join(' | ');
     show('results');
+  }
+
+  /* ── links ────────────────────────────────────────────────────────────────
+     A code can ride in a link, after the #. That part of an address is never
+     sent to the web server, so the code still travels only through the chat. */
+  function linkFor(code) { return location.href.split('#')[0] + '#c=' + code; }
+  function codeInAddress() {
+    var m = /[#&]c=([A-Za-z0-9_\-+\/=]+)/.exec(location.hash);
+    if (!m) return null;
+    try { history.replaceState(null, '', location.href.split('#')[0]); } catch (e) { /* file pages: leave it */ }
+    return m[1];
+  }
+  function copyText(text, btn, ta) {
+    var old = btn.textContent;
+    var done = function () { btn.textContent = 'Copied'; setTimeout(function () { btn.textContent = old; }, 1200); };
+    var byHand = function () {
+      var t = ta || document.createElement('textarea');
+      if (!ta) { t.value = text; t.style.cssText = 'position:fixed;opacity:0'; document.body.appendChild(t); }
+      t.select();
+      try { document.execCommand('copy'); done(); } catch (err) { /* the text is selected: copy by hand */ }
+      if (!ta) t.remove();
+    };
+    if (navigator.clipboard && window.isSecureContext) navigator.clipboard.writeText(text).then(done, byHand);
+    else byHand();
+  }
+  /* A link always opens a NEW page, and a new page would make a new code. So when
+     the link carries my partner's reply and I already have a page waiting, the new
+     page hands the code to the waiting one (same browser, no server) and steps aside. */
+  var channel = null;
+  try { channel = new BroadcastChannel('icwhatuc-spike'); } catch (e) { /* older browsers: paste instead */ }
+  if (channel) channel.onmessage = function (ev) {
+    var m = ev.data || {};
+    if (m.t === 'code' && role && M.pressed == null) {
+      try { if (C.decode(m.code).role === role) return; } catch (e) { return; }
+      $('codeIn').value = m.code; checkPaste();
+      log('my partner\'s code arrived from a link opened in another tab');
+      channel.postMessage({ t: 'taken', id: m.id });
+      try { window.focus(); } catch (e) { /* the browser decides */ }
+    }
+  };
+  function offerToWaitingTab(code) {
+    return new Promise(function (resolve) {
+      if (!channel) return resolve(false);
+      var id = String(Math.random()), done = false;
+      var finish = function (ok) { if (!done) { done = true; channel.removeEventListener('message', on); resolve(ok); } };
+      var on = function (ev) { if (ev.data && ev.data.t === 'taken' && ev.data.id === id) finish(true); };
+      channel.addEventListener('message', on);
+      channel.postMessage({ t: 'code', code: code, id: id });
+      setTimeout(function () { finish(false); }, 700);
+    });
+  }
+
+  /* ── network check ────────────────────────────────────────────────────────
+     Asks two address servers from the same local port. A home router normally
+     shows the same public port to both. A network that shows a different port to
+     each (a "symmetric" NAT, common on mobile data and with some providers) cannot
+     be reached at the address in a code, so direct links across the internet fail. */
+  var CHECK_SERVERS = ['stun:stun.l.google.com:19302', 'stun:stun.cloudflare.com:3478'];
+  async function checkNetwork() {
+    $('netBtn').disabled = true; $('netOut').textContent = 'Checking…';
+    var seen = {}, hosts = 0;
+    var p = new RTCPeerConnection({ iceServers: [{ urls: CHECK_SERVERS }] });
+    p.createDataChannel('check');
+    p.onicecandidate = function (e) {
+      var c = e.candidate; if (!c || !c.candidate) return;
+      var m = /^(?:a=)?candidate:\S+ 1 udp \d+ (\S+) (\d+) typ (\S+)/i.exec(c.candidate);
+      if (!m) return;
+      if (m[3] === 'host') hosts++;
+      if (m[3] === 'srflx') { var fam = m[1].indexOf(':') === -1 ? 'v4' : 'v6'; (seen[fam] = seen[fam] || {})[m[1] + ' ' + m[2]] = true; }
+    };
+    await p.setLocalDescription(await p.createOffer());
+    await new Promise(function (r) { p.onicegatheringstatechange = function () { if (p.iceGatheringState === 'complete') r(); }; setTimeout(r, 6000); });
+    p.close();
+    var v4 = Object.keys(seen.v4 || {}), v6 = Object.keys(seen.v6 || {}), text;
+    if (!v4.length && !v6.length) text = 'No public address came back. The address lookup is blocked on this network, or the device is offline. Codes from here work on the same Wi-Fi only.';
+    else if (v4.length > 1) text = 'This network shows a different public port to each server (' + v4.length + ' seen). That is a symmetric NAT: a direct link across the internet will usually fail from here, whatever the other side is.';
+    else text = 'This network shows one public address and port' + (v4.length ? '' : ' (IPv6 only)') + '. A direct link across the internet can work from here, if the other side is the same.';
+    if (v6.length) text += ' It also has a public IPv6 address.';
+    M.net = v4.length > 1 ? 'symmetric (' + v4.length + ' ports)' : (v4.length || v6.length ? 'one public port' + (v6.length ? ' + IPv6' : '') : 'no public address');
+    $('netOut').textContent = text; $('netBtn').disabled = false;
+    log('network check: ' + M.net + ' · local addresses ' + hosts);
+    if (role) facts();
+  }
+  $('netBtn').addEventListener('click', function () { checkNetwork().catch(function (e) { $('netOut').textContent = e.message; $('netBtn').disabled = false; }); });
+
+  /* every route the browser tried, for the log: what it paired and how far each got */
+  async function dumpPairs(why) {
+    try {
+      var stats = await pc.getStats(), byId = {}, lines = [];
+      stats.forEach(function (r) { byId[r.id] = r; });
+      stats.forEach(function (r) {
+        if (r.type !== 'candidate-pair') return;
+        var l = byId[r.localCandidateId] || {}, t = byId[r.remoteCandidateId] || {};
+        lines.push('   ' + (l.candidateType || '?') + (l.address && l.address.indexOf(':') !== -1 ? '6' : '') + ' → ' + (t.candidateType || '?') + (t.address && t.address.indexOf(':') !== -1 ? '6' : '') +
+          '  ' + r.state + '  sent ' + (r.requestsSent || 0) + ' answers ' + (r.responsesReceived || 0) + ' heard ' + (r.requestsReceived || 0));
+      });
+      log(why + ': routes tried\n' + (lines.join('\n') || '   none'));
+      var heard = 0; stats.forEach(function (r) { if (r.type === 'candidate-pair') heard += (r.requestsReceived || 0) + (r.responsesReceived || 0); });
+      M.heard = heard ? 'yes' : 'nothing';
+    } catch (e) { /* stats are a help, not a need */ }
   }
 
   /* ── WebRTC ───────────────────────────────────────────────────────────── */
@@ -180,7 +286,7 @@
       clearInterval(ticker);
       $('trying').textContent = 'Time ran out after ' + M.gaveUp + ' s. Both people: press Start again and make new codes.';
       $('trying').className = 'err';
-      facts();
+      dumpPairs('failed').then(facts);
     }
   }
   /* Wait for the addresses the code needs, not for the browser to finish looking:
@@ -252,6 +358,7 @@
     try {
       await pc.setRemoteDescription({ type: 'answer', sdp: C.buildSdp(remote, { mid: local.mid, role: role }) });
       setState(); facts();
+      setTimeout(function () { if (dc.readyState !== 'open' && !M.result) dumpPairs('after 20 s').then(facts); }, 20000);
     } catch (e) {
       clearInterval(ticker);
       M.result = 'FAILED: this browser refused the rebuilt description (' + e.message + ')';
@@ -300,8 +407,9 @@
   }
 
   /* ── steps ────────────────────────────────────────────────────────────── */
-  async function begin(r) {
+  async function begin(r, theirCode) {
     role = r;
+    if (theirCode) $('codeIn').value = theirCode;
     $('optStun').disabled = $('beHost').disabled = $('beGuest').disabled = true;
     log(role + ' · ' + browserName());
     /* The host sends first; the learner reads first. Both make their code at once. */
@@ -341,17 +449,39 @@
   document.addEventListener('click', function (e) {
     var b = e.target.closest('[data-copy]');
     if (!b) return;
-    var ta = $(b.getAttribute('data-copy')), old = b.textContent;
-    var done = function () { b.textContent = 'Copied'; setTimeout(function () { b.textContent = old; }, 1200); };
-    if (navigator.clipboard && window.isSecureContext) navigator.clipboard.writeText(ta.value).then(done, function () { ta.select(); });
-    else { ta.select(); try { document.execCommand('copy'); done(); } catch (err) { /* the text is selected: copy by hand */ } }
+    var ta = $(b.getAttribute('data-copy'));
+    copyText(ta.value, b, ta);
   });
+  $('linkBtn').addEventListener('click', function () { if (M.chars) copyText(linkFor($('codeOut').value), $('linkBtn')); });
   $('again').addEventListener('click', function () { location.reload(); });
 
   if (!window.RTCPeerConnection) {
     $('setup').innerHTML = '<p class="err">This browser has no WebRTC, so it cannot make a code.</p>';
   }
   log(browserName() + ' · ' + device() + ' · codec v' + C.VERSION);
+
+  /* opened from a link with a code in it */
+  (async function () {
+    var code = codeInAddress();
+    if (!code || !window.RTCPeerConnection) return;
+    var f;
+    try { f = C.decode(code); } catch (e) {
+      show('handoff'); $('handoffText').className = 'err'; $('handoffText').textContent = 'The code in this link is not complete. Ask for the link again.'; return;
+    }
+    if (await offerToWaitingTab(code)) {
+      $('setup').style.display = 'none'; show('handoff');
+      $('handoffText').className = 'ok';
+      $('handoffText').textContent = 'The code went to your other tab. Close this tab and go back to it.';
+      log('handed the code to the waiting tab');
+      return;
+    }
+    /* nobody is waiting: start here, as the other role, with their code already in */
+    log('opened from a link with the ' + f.role + '\'s code');
+    show('handoff');
+    $('handoffText').className = 'note';
+    $('handoffText').textContent = 'You opened a link from your partner, so their code is already here. If you made your own code earlier in another browser or device, do not use this page: go back to that one and paste their code there.';
+    begin(f.role === 'host' ? 'learner' : 'host', code);
+  })();
 })();
 </script>
 </body>
