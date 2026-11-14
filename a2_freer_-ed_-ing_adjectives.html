@@ -46,7 +46,7 @@
   <h1>-ed and -ing Adjectives — Let’s Talk</h1>
   <p class="subtitle">Talk about these questions with a partner. Try to use <span class="hl-ing">-ing</span> and <span class="hl-ed">-ed</span> adjectives in your answers.</p>
 
-  <div class="sec-div">Discussion questions</div>
+  <div class="sec-div">1 · Discussion questions</div>
   <div id="questions"></div>
 
   <div class="phrase-box">
@@ -62,6 +62,12 @@
       <span class="phrase-chip">It was the most <strong class="i">…ing</strong> thing</span>
     </div>
   </div>
+
+  <div class="sec-div">2 · Roll the dice</div>
+  <p class="subtitle">Roll the dice and ask your partner the question. Your partner answers with an <span class="hl-ing">-ing</span> or <span class="hl-ed">-ed</span> adjective and one more detail. Then pass the dice!</p>
+  <div class="q-card" id="qCard"><span class="q-placeholder">Press the dice to start.</span></div>
+  <button class="dice-btn" id="diceBtn" aria-label="Roll the dice">🎲</button>
+  <div class="roll-count">Questions: <strong id="rollCount">0</strong></div>
 
   <footer>-ed and -ing Adjectives — Freer Practice (A2)</footer>
 </div>
@@ -96,6 +102,37 @@ document.getElementById('questions').innerHTML = QUESTIONS.map(([ing, ed, q, ex]
   '<div class="dq-card"><div class="dq-num">' + String(i + 1).padStart(2, '0') + '</div>' +
   '<div class="dq-tag"><span class="hl-ing">' + ing + '</span> / <span class="hl-ed">' + ed + '</span></div>' +
   '<div class="dq-text">' + q + '</div><div class="dq-prompt">e.g. ' + ex + '</div></div>').join('');
+
+/* ── 2 · the dice: [emoji, -ing, -ed, -ing question, -ed question] ─────────
+   Two questions for every verb in the lesson; none repeats a discussion question. */
+const DICE = [
+  ['🥱', 'boring', 'bored', 'What is the most boring job in the world? Why?', 'What do you do when you feel bored at home?'],
+  ['🤯', 'amazing', 'amazed', 'What is the most amazing place you have ever visited?', 'When were you amazed by something a person did?'],
+  ['🫢', 'shocking', 'shocked', 'What was the most shocking news you heard this year?', 'Have you ever been shocked by a price? What was it?'],
+  ['🤩', 'exciting', 'excited', 'What is the most exciting sport to watch? Why?', 'What are you excited about this month?'],
+  ['🧐', 'interesting', 'interested', 'Who is the most interesting person in your family?', 'What were you interested in when you were a child?'],
+  ['😲', 'surprising', 'surprised', 'What is a surprising fact that you know?', 'When was the last time you were really surprised?'],
+  ['🤔', 'confusing', 'confused', 'What is the most confusing thing about English for you?', 'When did you feel confused in a new place?'],
+  ['😤', 'annoying', 'annoyed', 'What is the most annoying sound in the world?', 'What makes you annoyed on the bus or in traffic?'],
+  ['😞', 'disappointing', 'disappointed', 'What was the most disappointing gift you ever got?', 'When were you disappointed with yourself? What happened?'],
+  ['😌', 'satisfying', 'satisfied', 'What is a satisfying thing to do on a Sunday?', 'Are you satisfied with your phone? Why or why not?'],
+  ['😳', 'embarrassing', 'embarrassed', 'What is an embarrassing thing to do on a first date?', 'When do people feel embarrassed at work or at school?'],
+  ['😓', 'tiring', 'tired', 'What is the most tiring thing you do every week?', 'What do you do when you feel tired in the afternoon?'],
+  ['😱', 'frightening', 'frightened', 'What is the most frightening movie you have seen?', 'Were you frightened of anything when you were little?'],
+  ['👀', 'fascinating', 'fascinated', 'What topic do you find fascinating?', 'What animals are you fascinated by? Why?'],
+  ['😵', 'exhausting', 'exhausted', 'What was the most exhausting day of your life?', 'When did you last feel completely exhausted?']
+];
+const ROLLS = [];
+DICE.forEach(([e, ing, ed, qIng, qEd]) => {
+  ROLLS.push({ icon: e, ing, ed, use: 'ing', text: qIng });
+  ROLLS.push({ icon: e, ing, ed, use: 'ed', text: qEd });
+});
+HouseRandomGen.build({
+  items: ROLLS,
+  render: x => '<span class="q-topic">' + x.icon + ' <span class="hl-ing">' + x.ing + '</span> / <span class="hl-ed">' + x.ed + '</span></span>' +
+    '<span class="q-text">' + x.text + '</span>' +
+    '<span class="q-placeholder">Answer with <b class="' + (x.use === 'ing' ? 'hl-ing">' + x.ing : 'hl-ed">' + x.ed) + '</b> — then ask: “And you?”</span>'
+});
 </script>
 </body>
 </html>
