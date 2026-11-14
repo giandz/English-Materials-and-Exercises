@@ -99,9 +99,9 @@ function dict(map){
   be-GIN-ner cre-ATE cre-A-tive a-TTRAC-tive de-CI-sion u-NIQUE ma-CHINE ca-REER ga-RAGE ga-ZELLE ho-TEL gi-RAFFE gui-TAR bal-LOON bam-BOO be-NEATH be-YOND ad-MIRE ad-MIT de-LAY de-BATE de-CREASE
   AC-ci-dent AC-tive AD-jec-tive AL-co-hol AL-pha-bet AM-bu-lance AN-i-mal AN-y-thing AN-y-one AN-y AR-ti-cle AT-mos-phere AV-e-nue AV-er-age CAL-en-dar CAP-i-tal CAR-pen-ter CHAR-ac-ter COM-fort-a-ble COM-pa-ny COM-pli-ment CON-cen-trate CON-fi-dent CON-ti-nent COUN-try CUS-tom-er DAN-ger-ous DEC-o-rate DEL-i-cate DEM-on-strate DIF-fi-cult DOC-u-ment ED-u-cate EL-e-phant EL-e-ment EN-er-gy EN-e-my EN-gine EN-ter EN-ve-lope EM-pe-ror EX-cel-lent EX-er-cise GOV-ern-ment GOV-ern HAM-bur-ger HOL-i-day IM-age IN-come IN-dus-try IN-sect IN-stru-ment IN-ter-net IM-mi-grant IN-no-cent MAR-ket MES-sen-ger MOD-ern NAT-u-ral NEG-a-tive OF-fice OF-fi-cer OP-po-site PAS-sen-ger PER-son PER-fect PER-son-al POL-i-tics POS-i-tive PRES-i-dent PROB-lem PROD-uct PRO-gram PROM-ise REC-i-pe REG-u-lar REL-a-tive RES-i-dent SAND-wich SAT-ur-day SEV-er-al SUN-day TEL-e-phone TEL-e-vi-sion TOUR-na-ment WON-der-ful YES-ter-day
   dis-COV-er-y de-LIV-er-y re-COV-er-y for-GOT-ten e-RAS-er how-EV-er what-EV-er when-EV-er where-EV-er col-LECT cor-RECT suc-CEED BEAU-ti-ful IN-ter-est CIN-e-ma CAM-er-a ge-OG-ra-phy
-  RE-a-lize im-ME-di-ate-ly
+  RE-a-lize im-ME-di-ate-ly ve-ge-TA-ri-an a-PPA-rent-ly SKATE-board a-NNO-ying
   +af-ter-NOON +un-der-STAND +in-tro-DUCE +re-com-MEND +en-ter-TAIN +vol-un-TEER +en-gi-NEER +un-der-NEATH
-    ma-RI-a AN-a CAR-los GA-bri-el lu-IS mi-GUEL JES-si-ca mi-CHELLE LU-cia ju-AN PE-dro DA-vid MI-chael so-PHI-a EM-i-ly o-LIV-i-a DAN-iel ROB-ert JEN-ni-fer an-TO-ni-o ve-ge-TA-ri-an a-PPA-rent-ly SKATE-board`)
+    ma-RI-a AN-a CAR-los GA-bri-el lu-IS mi-GUEL JES-si-ca mi-CHELLE LU-cia ju-AN PE-dro DA-vid MI-chael so-PHI-a EM-i-ly o-LIV-i-a DAN-iel ROB-ert JEN-ni-fer an-TO-ni-o`)
   .split(/\s+/).forEach(s => { const k = s.replace(/[-+]/g,'').toLowerCase(); WORDS[k] = s; });
 BASE = Object.assign(Object.create(null), WORDS);
 

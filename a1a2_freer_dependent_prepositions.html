@@ -30,9 +30,7 @@
 .q-card details.check{ margin-top:4px; width:100%; max-width:440px; text-align:left; }
 .q-card .check-body{ padding:8px 12px; font-size:.9rem; }
 .q-card .check-body p{ margin:0 0 4px; }
-.profile{ display:grid; grid-template-columns:auto 1fr; gap:6px 10px; align-items:center; font-size:.9333rem; }
-.profile b{ white-space:nowrap; }
-.profile .line{ border-bottom:1.5px dashed var(--color-border-primary); min-height:1.6em; }
+.q-card .clue-chunk{ font-size:1.1rem; font-weight:700; color:var(--pos-prep); text-align:center; }
 </style>
 </head>
 <body>
@@ -43,9 +41,10 @@
 
   <div class="rule-box">
     <p><strong>How to play (pairs, or teacher + student):</strong></p>
-    <p>1. Student A rolls 🎲 and makes the question: <b>What / you / good at?</b> → “<b>What are you good at?</b>”</p>
+    <p>1. Student A rolls 🎲, reads what to ask about and makes the question: <b>💪 something they do well</b> → “<b>What are you good at?</b>”</p>
+    <p>Need help? Press 🧩 for a clue: the words that go together (<b>good at</b>).</p>
     <p>2. Student B answers with a full sentence and one more detail: “<b>I’m good at cooking. I make great pizza!</b>”</p>
-    <p>3. Press 👀 to check the question. Then change: B rolls, A answers.</p>
+    <p>3. Press 👀 to check the question. Was it the same? Then change: B rolls, A answers.</p>
   </div>
 
   <div class="q-card" id="qCard"><span class="q-placeholder">Roll the dice to start.</span></div>
@@ -54,15 +53,10 @@
 
   <div class="sec-div">Now you</div>
   <div class="rule-box">
-    <p><strong>Write your partner’s profile.</strong> Then read it to them: “<b>Your name is Ana. You’re good at…</b>” Is it correct?</p>
-    <div class="profile">
-      <b>💪 good at</b><span class="line"></span>
-      <b>🤩 interested in</b><span class="line"></span>
-      <b>😨 afraid of</b><span class="line"></span>
-      <b>🎧 listens to</b><span class="line"></span>
-      <b>🔍 looking for</b><span class="line"></span>
-    </div>
+    <p><strong>Write your partner’s profile.</strong> Write their name, then write their answers. Then read it to them: “<b>Your name is Ana. You’re good at…</b>” Is it correct?</p>
+    <p>Another partner? Press <b>➕ Add partner</b>.</p>
   </div>
+  <div id="interview"></div>
 
   <footer>My Profile — Dependent prepositions: to, for, at, in, with, of, about (A1/A2)</footer>
 </div>
@@ -73,40 +67,55 @@
   </button>
 </div>
 <script src="house.js"></script>
+<script src="house-interview.js"></script>
 <script>
-/* [picture, question words, ideas for the answer, the question, an example answer] */
+/* [picture, what to ask about (no question words, no preposition), ideas for the answer, the question, an example answer, the chunk (the 🧩 clue)] */
 const QUESTIONS = [
-  ['💪', 'What / you / good at?', 'cooking · sports · math · singing', 'What are you good at?', 'I’m good at cooking.'],
-  ['👎', 'What / you / bad at?', 'dancing · drawing · getting up early', 'What are you bad at?', 'I’m bad at dancing!'],
-  ['🤩', 'What / you / interested in?', 'music · history · cars · fashion', 'What are you interested in?', 'I’m interested in history.'],
-  ['😨', 'What / you / afraid of?', 'spiders · the dark · planes · dogs', 'What are you afraid of?', 'I’m afraid of the dark.'],
-  ['🥱', 'What / you / tired of?', 'my job · the rain · this song', 'What are you tired of?', 'I’m tired of the rain.'],
-  ['🏅', 'Who / you / proud of?', 'my mom · my kids · my team', 'Who are you proud of?', 'I’m proud of my sister.'],
-  ['😟', 'What / you / worry about?', 'money · my family · exams · work', 'What do you worry about?', 'I worry about money.'],
-  ['🎧', 'What music / you / listen to?', 'pop · rock · salsa · jazz', 'What music do you listen to?', 'I listen to salsa.'],
-  ['🗣️', 'Who / you / talk to / when you’re sad?', 'my best friend · my mom · my dog', 'Who do you talk to when you’re sad?', 'I talk to my best friend.'],
-  ['💭', 'What / you / think about / at night?', 'work · the next day · my vacation', 'What do you think about at night?', 'I think about the next day.'],
-  ['🔍', 'What / you / look for / in a friend?', 'kind · funny · good at listening', 'What do you look for in a friend?', 'I look for a funny friend.'],
-  ['🥣', 'What / you / have / for breakfast?', 'eggs · coffee · arepas · fruit', 'What do you have for breakfast?', 'I have arepas for breakfast.'],
-  ['👫', 'What / you / do / with your friends?', 'go to the movies · play soccer · cook', 'What do you do with your friends?', 'I play soccer with my friends.'],
-  ['🌅', 'What / you / do / in the morning?', 'have a shower · go to work · run', 'What do you do in the morning?', 'I go to work in the morning.'],
-  ['🏠', 'What / you / do / at home / at night?', 'watch TV · read · play video games', 'What do you do at home at night?', 'I watch TV at home at night.'],
-  ['🤝', 'Who / you / agree with / in your family?', 'my dad · my sister · nobody!', 'Who do you agree with in your family?', 'I agree with my sister.'],
-  ['💳', 'What / you / pay for / every month?', 'my phone · rent · the gym · Netflix', 'What do you pay for every month?', 'I pay for my phone and the gym.'],
-  ['😊', 'Who / you / kind to?', 'animals · old people · my neighbors', 'Who are you kind to?', 'I’m kind to animals.'],
-  ['📖', 'What / you / like / reading about?', 'sports · famous people · science', 'What do you like reading about?', 'I like reading about science.'],
-  ['⏳', 'What / you / waiting for / this year?', 'a vacation · a new job · my birthday', 'What are you waiting for this year?', 'I’m waiting for my vacation!']
+  ['💪', 'something they do well', 'cooking · sports · math · singing', 'What are you good at?', 'I’m good at cooking.', 'good at'],
+  ['👎', 'something they do badly', 'dancing · drawing · getting up early', 'What are you bad at?', 'I’m bad at dancing!', 'bad at'],
+  ['🤩', 'a topic they like and want to learn more about', 'music · history · cars · fashion', 'What are you interested in?', 'I’m interested in history.', 'interested in'],
+  ['😨', 'something that scares them', 'spiders · the dark · planes · dogs', 'What are you afraid of?', 'I’m afraid of the dark.', 'afraid of'],
+  ['🥱', 'something they don’t want any more of', 'my job · the rain · this song', 'What are you tired of?', 'I’m tired of the rain.', 'tired of'],
+  ['🏅', 'a person in their life who did something great', 'my mom · my kids · my team', 'Who are you proud of?', 'I’m proud of my sister.', 'proud of'],
+  ['😟', 'a problem that is often in their head', 'money · my family · exams · work', 'What do you worry about?', 'I worry about money.', 'worry about'],
+  ['🎧', 'the music they like', 'pop · rock · salsa · jazz', 'What music do you listen to?', 'I listen to salsa.', 'listen to'],
+  ['🗣️', 'the person they call when they’re sad', 'my best friend · my mom · my dog', 'Who do you talk to when you’re sad?', 'I talk to my best friend.', 'talk to'],
+  ['💭', 'what’s in their head when they go to bed', 'work · the next day · my vacation', 'What do you think about at night?', 'I think about the next day.', 'think about'],
+  ['🔍', 'what they want in a good friend', 'kind · funny · good at listening', 'What do you look for in a friend?', 'I look for a funny friend.', 'look for'],
+  ['🥣', 'their first meal of the day', 'eggs · coffee · arepas · fruit', 'What do you have for breakfast?', 'I have arepas for breakfast.', 'for breakfast'],
+  ['👫', 'what they and their friends do together', 'go to the movies · play soccer · cook', 'What do you do with your friends?', 'I play soccer with my friends.', 'with your friends'],
+  ['🌅', 'their routine after they wake up', 'have a shower · go to work · run', 'What do you do in the morning?', 'I go to work in the morning.', 'in the morning'],
+  ['🏠', 'their evenings, when they don’t go out', 'watch TV · read · play video games', 'What do you do at home at night?', 'I watch TV at home at night.', 'at home · at night'],
+  ['🤝', 'the family member who has the same ideas as them', 'my dad · my sister · nobody!', 'Who do you agree with in your family?', 'I agree with my sister.', 'agree with'],
+  ['💳', 'the bills they get every month', 'my phone · rent · the gym · Netflix', 'What do you pay for every month?', 'I pay for my phone and the gym.', 'pay for'],
+  ['😊', 'the people or animals they are nice to', 'animals · old people · my neighbors', 'Who are you kind to?', 'I’m kind to animals.', 'kind to'],
+  ['📖', 'the topics they like to read', 'sports · famous people · science', 'What do you like reading about?', 'I like reading about science.', 'read about'],
+  ['⏳', 'something they want to happen soon', 'a vacation · a new job · my birthday', 'What are you waiting for this year?', 'I’m waiting for my vacation!', 'wait for']
 ];
 
 HouseRandomGen.build({
-  items: QUESTIONS.map(([pic, cue, ideas, q, a]) => ({ pic, cue, ideas, q, a, text: cue })),
+  items: QUESTIONS.map(([pic, cue, ideas, q, a, chunk]) => ({ pic, cue, ideas, q, a, chunk, text: cue })),
   render: it =>
-    '<span class="q-topic">🙋 Ask your partner</span>' +
+    '<span class="q-topic">🙋 Ask your partner about…</span>' +
     '<div class="pq-cue"><span class="big">' + it.pic + '</span>' + it.cue + '</div>' +
     '<div class="pq-ideas">💡 ' + it.ideas + '</div>' +
-    '<span class="q-prompt">A: make the question. B: answer, and say one more thing.</span>' +
+    '<span class="q-prompt">A: make a question with a preposition. B: answer, and say one more thing.</span>' +
+    '<details class="check clue"><summary>🧩 Clue</summary><div class="check-body"><p class="clue-chunk">' + it.chunk + '</p></div></details>' +
     '<details class="check"><summary>👀 Check</summary><div class="check-body">' +
     '<p>❓ “' + it.q + '”</p><p>💬 “' + it.a + '”</p></div></details>'
+});
+
+/* ── your partner’s profile: one card per partner (house-interview.js) ── */
+HouseInterview.build({
+  container: 'interview',
+  storageKey: 'dependent-prepositions-profile',
+  fields: [
+    { icon: '💪', label: 'good at', placeholder: 'cooking, math…' },
+    { icon: '🤩', label: 'interested in', placeholder: 'music, history…' },
+    { icon: '😨', label: 'afraid of', placeholder: 'spiders, the dark…' },
+    { icon: '🎧', label: 'listens to', placeholder: 'pop, salsa…' },
+    { icon: '🔍', label: 'looking for', placeholder: 'a new job, friends…' }
+  ]
 });
 </script>
 </body>
