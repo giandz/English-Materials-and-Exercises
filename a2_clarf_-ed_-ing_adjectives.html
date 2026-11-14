@@ -3,11 +3,8 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-<title>Ed  Ing Adjectives — Clarification</title>
+<title>-ed and -ing Adjectives — Clarification</title>
 <script>
-// Applies the saved/system theme to <html> as early as possible, before the
-// stylesheet below paints anything, so there's no flash of the wrong theme.
-// Self-contained: no dependency on any external script.
 (function(){
   try{
     var saved = localStorage.getItem('theme-preference');
@@ -15,284 +12,224 @@
       ? saved
       : ((window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches) ? 'dark' : 'light');
     document.documentElement.setAttribute('data-theme', theme);
-    // Same idea for the text size: apply it before house.css paints, so a
-    // person who chose 28px doesn't watch the page reflow from 14px on load.
     var fs = parseFloat(localStorage.getItem('font-size-preference'));
-    if (fs >= 10 && fs <= 28){
-      document.documentElement.style.setProperty('--fs-base', fs + 'px');
-    }
+    if (fs >= 10 && fs <= 28) document.documentElement.style.setProperty('--fs-base', fs + 'px');
   }catch(e){ /* localStorage/matchMedia unavailable — CSS media query still applies */ }
 })();
 </script>
 <link rel="stylesheet" href="house.css">
 <style>
-.activity-bar{display:flex;justify-content:space-between;align-items:center;margin-bottom:1.25rem;flex-wrap:wrap;gap:8px;}
-  .activity-hint{font-size:0.8667rem;color:var(--color-text-secondary);}
-  .score-pill{font-size:0.8667rem;color:var(--color-text-secondary);}
-  .bank-label{font-size:0.7333rem;font-weight:500;letter-spacing:.06em;text-transform:uppercase;color:var(--color-text-secondary);margin-bottom:10px;}
-  .bank{display:flex;flex-wrap:wrap;gap:8px;margin-bottom:1.5rem;min-height:56px;padding:10px 12px;background:var(--color-background-secondary);border-radius:var(--border-radius-lg);border:.5px solid var(--color-border-tertiary);}
-  .sent-chip{font-size:0.8667rem;padding:7px 12px;border-radius:var(--border-radius-md);border:1px solid var(--color-border-secondary);background:var(--color-background-primary);color:var(--color-text-primary);cursor:grab;user-select:none;-webkit-user-select:none;touch-action:none;line-height:1.4;max-width:220px;}
-  .sent-chip:active{cursor:grabbing;opacity:.7;}
-  .sent-chip.dragging{opacity:.4;}
-  .img-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(155px,1fr));gap:10px;}
-  .img-card{border:.5px solid var(--color-border-tertiary);border-radius:var(--border-radius-lg);overflow:hidden;background:var(--color-background-primary);}
-  .img-slot{height:95px;background:var(--color-background-secondary);display:flex;align-items:center;justify-content:center;border-bottom:.5px solid var(--color-border-tertiary);transition:background .12s;position:relative;}
-  .img-slot img{width:100%;height:100%;object-fit:contain;padding:6px;display:none;}
-  .img-placeholder{display:flex;flex-direction:column;align-items:center;gap:4px;}
-  .img-placeholder i{font-size:1.4667rem;color:var(--color-text-tertiary);}
-  .img-placeholder span{font-size:0.6667rem;color:var(--color-text-tertiary);font-family:var(--font-mono);}
-  .img-slot.over{background:var(--color-background-info);}
-  .img-slot.matched{background:var(--color-background-success);}
-  .img-slot.wrong-flash{animation:shake .3s;}
-  .drop-label{padding:7px 10px;min-height:36px;font-size:0.8rem;color:var(--color-text-secondary);line-height:1.4;align-items:center;}
-  .drop-label.placed-correct{color:var(--color-text-success);font-weight:500;}
-  .reset-row{display:flex;gap:8px;align-items:center;margin-top:1.25rem;}
-  @keyframes shake{0%,100%{transform:translateX(0)}25%{transform:translateX(-5px)}75%{transform:translateX(5px)}}
+/* -ing (the cause) = blue · -ed (the feeling) = green — light and dark */
+:root{ --ing:#185fa5; --ing-bg:#e6f1fb; --ed:#27500a; --ed-bg:#eaf3de; }
+@media (prefers-color-scheme: dark){ :root:not([data-theme="light"]){ --ing:#7cb8f2; --ing-bg:#13314f; --ed:#9ed17a; --ed-bg:#1f3014; } }
+:root[data-theme="dark"]{ --ing:#7cb8f2; --ing-bg:#13314f; --ed:#9ed17a; --ed-bg:#1f3014; }
+.hl-ing{ font-weight:700; color:var(--ing); }
+.hl-ed{ font-weight:700; color:var(--ed); }
+
+/* cause → feeling */
+.cf{ display:grid; grid-template-columns:minmax(0,1fr) auto minmax(0,1fr); gap:10px; align-items:stretch; margin-bottom:10px; }
+.cf-side{ border-radius:12px; padding:10px 12px; text-align:center; }
+.cf-side.ing{ background:var(--ing-bg); border:1px solid var(--ing); }
+.cf-side.ed{ background:var(--ed-bg); border:1px solid var(--ed); }
+.cf-e{ font-size:2rem; line-height:1.1; }
+.cf-h{ font-size:.7rem; font-weight:700; letter-spacing:.05em; text-transform:uppercase; margin:4px 0 2px; }
+.cf-side.ing .cf-h{ color:var(--ing); }
+.cf-side.ed .cf-h{ color:var(--ed); }
+.cf-s{ font-size:.9333rem; }
+.cf-ar{ align-self:center; font-size:1.4rem; color:var(--text-muted); }
+@media (max-width:480px){ .cf{ grid-template-columns:1fr; } .cf-ar{ transform:rotate(90deg); justify-self:center; } }
+
+/* the word pairs */
+.pairs{ display:grid; grid-template-columns:repeat(auto-fill, minmax(10.5rem, 1fr)); gap:6px; margin:0 0 1rem; }
+.pairs > div{ padding:6px 9px; border-radius:8px; background:var(--surface-2); border:1px solid var(--color-border-tertiary); font-size:.8667rem; line-height:1.5; }
+.pairs .v{ font-size:.75rem; color:var(--text-muted); display:block; }
+
+/* picture matching */
+.pic{ display:flex; flex-direction:column; align-items:center; justify-content:center; width:100%; min-height:6rem; }
+.pic img{ max-width:100%; max-height:6.5rem; object-fit:contain; border-radius:8px; }
+.pic-missing{ font-size:.7rem; color:var(--text-muted); font-family:var(--font-mono); text-align:center; }
+#rightCol .match-card{ justify-content:center; padding:6px; }
+#leftCol .match-card{ font-weight:400; font-size:.8667rem; line-height:1.45; }
+.match-row{ display:flex; align-items:center; gap:10px; flex-wrap:wrap; margin-top:.75rem; }
+.rule-box p{ margin:0 0 6px; }
+.rule-box p:last-child{ margin-bottom:0; }
 </style>
 </head>
-<body class="exercise-page" id="page">
-<span class="cefr-tag cefr-a2">A2 · Elementary</span>
-	
-<div style="padding:.75rem 0;">
-  <div class="activity-bar">
-    <span class="activity-hint"><i class="ti ti-drag-drop" aria-hidden="true" style="font-size:1rem;vertical-align:-1px;margin-right:4px;"></i>Drag each sentence onto the matching picture.</span>
-    <span class="score-pill"><span id="score">0</span> / 12 matched</span>
-  </div>
-  <div class="bank-label">Sentence bank</div>
-  <div class="bank" id="bank"></div>
-  <div class="img-grid" id="img-grid"></div>
-  <div class="reset-row">
-    <button id="reset-btn">↺ Reset</button>
-    <span style="font-size:0.8667rem;color:var(--color-text-secondary);" id="fb-msg"></span>
-  </div>
-</div>
+<body>
+<div class="page" id="page">
+  <span class="cefr-tag cefr-a2">A2 · Pre-intermediate</span>
+  <h1>-ed and -ing Adjectives</h1>
+  <p class="subtitle">The movie was <span class="hl-ing">boring</span>. I was <span class="hl-ed">bored</span>. — What makes the feeling, and who has it?</p>
 
+  <div class="sec-div">Look: match the sentences and the pictures</div>
+  <p class="subtitle">Tap a sentence, then tap its picture. How do the people (and the dog!) feel?</p>
+  <div class="score-bar"><span>Matched: <strong id="mScore">0</strong> / <span id="mTotal">0</span></span></div>
+  <div class="win-msg" id="mWin">🎉 All matched! Well done!</div>
+  <div class="match-grid">
+    <div><div class="match-col-label">Sentences</div><div class="match-col" id="leftCol"></div></div>
+    <div><div class="match-col-label">Pictures</div><div class="match-col" id="rightCol"></div></div>
+  </div>
+  <div class="match-row"><button id="mReset">↺ Reset</button><span class="feedback" id="mFeedback" style="margin-top:0"></span></div>
+
+  <div class="sec-div">What makes the feeling? Who has it?</div>
+  <div class="cf">
+    <div class="cf-side ing"><div class="cf-e">📺</div><div class="cf-h">-ing · the cause</div><div class="cf-s">The talk show was <span class="hl-ing">boring</span>.</div></div>
+    <div class="cf-ar" aria-hidden="true">→</div>
+    <div class="cf-side ed"><div class="cf-e">😴</div><div class="cf-h">-ed · the feeling</div><div class="cf-s">I was <span class="hl-ed">bored</span>.</div></div>
+  </div>
+  <div class="cf">
+    <div class="cf-side ing"><div class="cf-e">🎬</div><div class="cf-h">-ing · the cause</div><div class="cf-s">The special effects were <span class="hl-ing">frightening</span>.</div></div>
+    <div class="cf-ar" aria-hidden="true">→</div>
+    <div class="cf-side ed"><div class="cf-e">😱</div><div class="cf-h">-ed · the feeling</div><div class="cf-s">We were <span class="hl-ed">frightened</span>.</div></div>
+  </div>
+  <div class="pairs" id="pairs"></div>
+
+  <div class="sec-div">Check the meaning</div>
+  <p class="subtitle">Read the sentence. Answer the questions.</p>
+  <div id="ccq"></div>
+
+  <div class="sec-div">Look at the form</div>
+  <p class="subtitle">What is each part of the sentence? Drag a label (or tap a label, then tap a box).</p>
+  <div class="score-bar"><span>Correct: <strong id="fcScore">0</strong> / <span id="fcTotal">0</span></span></div>
+  <div id="formClarf"></div>
+
+  <div class="rule-box">
+    <p><strong><span class="hl-ing">-ing</span> = the thing or person that causes the feeling.</strong> The lecture was <span class="hl-ing">boring</span>. · Long meetings are <span class="hl-ing">tiring</span>. · He is an <span class="hl-ing">interesting</span> person.</p>
+    <p><strong><span class="hl-ed">-ed</span> = the person (or animal) who has the feeling.</strong> I was <span class="hl-ed">bored</span>. · He is <span class="hl-ed">tired</span>. · Rex is <span class="hl-ed">interested</span> in his plate.</p>
+    <p><strong>Ask:</strong> Does it <em>make</em> the feeling? → <span class="hl-ing">-ing</span>. Does it <em>have</em> the feeling? → <span class="hl-ed">-ed</span>.</p>
+    <p><strong>Careful with people:</strong> <em>She is boring</em> = other people feel bored with her. <em>She is bored</em> = she feels bored.</p>
+    <p><strong>-ed adjectives + preposition:</strong> interested <b>in</b> · excited <b>about</b> · bored <b>with</b> / <b>by</b> · tired <b>of</b> · surprised <b>by</b> · disappointed <b>with</b> / <b>by</b> · annoyed <b>at</b> / <b>with</b> · frightened <b>of</b> / <b>by</b>.</p>
+    <p><strong>Spelling:</strong> -e verbs drop the e before -ing (excite → exciting, but excited) · -y after a consonant → -ied (satisfy → satisfied, but satisfying).</p>
+  </div>
 
   <div class="sec-div">Common mistakes</div>
-  <div class="pair-card"><div class="pair-line no"><span class="mark">✗</span>The film was very bored.</div><div class="pair-line yes"><span class="mark">✓</span>The film was very boring.</div></div>
-  <div class="pair-card"><div class="pair-line no"><span class="mark">✗</span>I am interesting in history.</div><div class="pair-line yes"><span class="mark">✓</span>I am interested in history.</div></div>
-  <div class="pair-card"><div class="pair-line no"><span class="mark">✗</span>She was very exciting about the trip.</div><div class="pair-line yes"><span class="mark">✓</span>She was very excited about the trip.</div></div>
-  <div class="pair-card"><div class="pair-line no"><span class="mark">✗</span>The news was surprised.</div><div class="pair-line yes"><span class="mark">✓</span>The news was surprising.</div></div>
-  <div class="pair-card"><div class="pair-line no"><span class="mark">✗</span>I felt very confusing.</div><div class="pair-line yes"><span class="mark">✓</span>I felt very confused.</div></div>
+  <div id="mistakes"></div>
 
+  <div class="sec-div">Error hunt</div>
+  <p class="subtitle">Some sentences have a mistake. Some are correct! Tap a word — or a space between words — to fix it. Then press OK.</p>
+  <div class="score-bar"><span>Done: <strong id="errorScore">0</strong> / <span id="errorTotal">0</span></span></div>
+  <div id="errorHuntItems"></div>
 
-  <div class="sec-div">Find the mistake</div>
-  <div class="rule-box">Each sentence below has <strong>one or two mistakes</strong> — but <strong>some are already correct</strong>. Tap a word you think is wrong and choose the right one. When you think the sentence is right, press <strong>OK</strong>.</div>
-  <div class="score-bar"><span>Corrected: <strong id="ehScore">0</strong> / <span id="ehTotal">0</span></span></div>
-  <div id="errorHunt"></div>
+  <footer>-ed and -ing Adjectives — Clarification (A2)</footer>
+</div>
 
-  <div id="theme-toggle-wrap">
+<div id="theme-toggle-wrap">
   <button id="theme-toggle" aria-label="Toggle light/dark mode" title="Toggle light/dark mode">
     <span id="theme-icon">☀️</span>
   </button>
 </div>
 <script src="house.js"></script>
 <script>
-const EH_ITEMS = [
-  {
-    "words": ["The", "film", "was", "very", "bored", "."],
-    "errors": [ { "type": "wrong", "wordIndex": 4, "options": ["boring", "bored", "bore"], "correct": "boring" } ]
-  },
-  {
-    "words": ["I", "was", "bored", "during", "the", "lesson", "."],
-    "errors": []
-  },
-  {
-    "words": ["I", "am", "interesting", "in", "history", "."],
-    "errors": [ { "type": "wrong", "wordIndex": 2, "options": ["interested", "interesting", "interest"], "correct": "interested" } ]
-  },
-  {
-    "words": ["She", "was", "very", "exciting", "about", "the", "trip", "."],
-    "errors": [ { "type": "wrong", "wordIndex": 3, "options": ["excited", "exciting", "excite"], "correct": "excited" } ]
-  },
-  {
-    "words": ["The", "story", "was", "fascinating", "from", "start", "to", "finish", "."],
-    "errors": []
-  },
-  {
-    "words": ["The", "news", "was", "surprised", "."],
-    "errors": [ { "type": "wrong", "wordIndex": 3, "options": ["surprising", "surprised", "surprise"], "correct": "surprising" } ]
-  },
-  {
-    "words": ["I", "felt", "very", "confusing", "after", "the", "class", "."],
-    "errors": [ { "type": "wrong", "wordIndex": 3, "options": ["confused", "confusing", "confuse"], "correct": "confused" } ]
-  }
+/* ── look: sentences ↔ pictures ────────────────────────────────────────── */
+const PICS = [
+  { id: 'interest',   sentence: 'Rex is very <b class="hl-ed">interested</b> in his new plate. He doesn’t know it’s empty.', file: 'eng_mats_images/interest.png' },
+  { id: 'bore',       sentence: 'I was so <b class="hl-ed">bored</b> by the talk show I fell asleep ten minutes in.', file: 'eng_mats_images/bore.png' },
+  { id: 'excite',     sentence: 'They are <b class="hl-ed">excited</b> about the new anime and can’t help but jump.', file: 'eng_mats_images/excite.png' },
+  { id: 'frighten',   sentence: 'My wife and I were <b class="hl-ed">frightened</b> by the special effects at the movie.', file: 'eng_mats_images/frighten.png' },
+  { id: 'tire',       sentence: 'He is already <b class="hl-ed">tired</b> of working, and it’s only lunch break.', file: 'eng_mats_images/tire.png' },
+  { id: 'confuse',    sentence: 'I was very <b class="hl-ed">confused</b> by the new sport that this kid invented.', file: 'eng_mats_images/confuse.png' },
+  { id: 'annoy',      sentence: 'My grandfather got very <b class="hl-ed">annoyed</b> at the kids’ soccer practice.', file: 'eng_mats_images/annoy.png' },
+  { id: 'disappoint', sentence: 'Mike’s parents were <b class="hl-ed">disappointed</b> by all the F’s on his report card.', file: 'eng_mats_images/disappoint.png' },
+  { id: 'embarrass',  sentence: 'The professor was so <b class="hl-ed">embarrassed</b>. He forgot how to do math.', file: 'eng_mats_images/embarrass.png' },
+  { id: 'satisfy',    sentence: 'The customer was very <b class="hl-ed">satisfied</b> with the quality of the meal.', file: 'eng_mats_images/satisfy.png' },
+  { id: 'shock',      sentence: 'Her parents were <b class="hl-ed">shocked</b> when they met her new boyfriend.', file: 'eng_mats_images/shock.png' },
+  { id: 'surprise',   sentence: 'She was <b class="hl-ed">surprised</b> by the cat, who was inside the washing machine.', file: 'eng_mats_images/surprise.png' }
 ];
-
-HouseErrorHunt.build({
-  container: "errorHunt",
-  items: EH_ITEMS,
-  scoreEl: "ehScore",
-  totalEl: "ehTotal"
+/* a missing picture shows its file name instead of a broken image */
+const picHtml = p => '<span class="pic"><img src="' + p.file + '" alt="' + p.id + '" ' +
+  'onerror="this.outerHTML=\'<span class=&quot;pic-missing&quot;>🖼️ ' + p.file + '</span>\'"></span>';
+HouseMatching.build({
+  left: 'leftCol', right: 'rightCol',
+  pairs: PICS.map(p => ({ id: p.id, left: p.sentence, right: picHtml(p) })),
+  scoreEl: 'mScore', totalEl: 'mTotal', resetBtn: 'mReset', winEl: 'mWin', feedbackEl: 'mFeedback'
 });
-</script>
-<script>
-const items = [
-  { id:"interest",    sentence:"Rex is very <b>interested</b> in his new plate, he doesn't know it's empty.",          file:"eng_mats_images/interest.png"    },
-  { id:"bore",        sentence:"I was so <b>bored</b> by the talk show I fell asleep ten minutes in.",   file:"eng_mats_images/bore.png"        },
-  { id:"excite",      sentence:"They are <b>excited</b> about the new anime and can't help but jump.",        file:"eng_mats_images/excite.png"      },
-  { id:"frighten",    sentence:"My wife and I were <b>frightened</b> by the special effects at the movie.",        file:"eng_mats_images/frighten.png"    },
-  { id:"tire",        sentence:"He is already <b>tired</b> of working and it's only lunch break.",           file:"eng_mats_images/tire.png"        },
-  { id:"confuse",     sentence:"I was very <b>confused</b> by the new sport that this kid invented.",    file:"eng_mats_images/confuse.png"     },
-  { id:"annoy",       sentence:"My grandfather got very <b>annoyed</b> at the kids' soccer practice.",             file:"eng_mats_images/annoy.png"       },
-  { id:"disappoint",  sentence:"Mike's parents were <b>disappointed</b> by all the F's in his report card.",    file:"eng_mats_images/disappoint.png"  },
-  { id:"embarrass",   sentence:"The professor was so <b>embarrassed</b> he forgot how to do math.", file:"eng_mats_images/embarrass.png"   },
-  { id:"satisfy",     sentence:"The customer was very <b>satisfied</b> by the quality of the meal.",         file:"eng_mats_images/satisfy.png"     },
-  { id:"shock",       sentence:"Her parents were <b>shocked</b> when they met her new boyfriend.",              file:"eng_mats_images/shock.png"       },
-  { id:"surprise",    sentence:"She was <b>surprised</b> by the cat, who was inside the washing machine.",        file:"eng_mats_images/surprise.png"    },
+
+/* ── the word pairs ────────────────────────────────────────────────────── */
+const PAIRS = [['bore', 'boring', 'bored'], ['interest', 'interesting', 'interested'], ['excite', 'exciting', 'excited'],
+  ['surprise', 'surprising', 'surprised'], ['confuse', 'confusing', 'confused'], ['annoy', 'annoying', 'annoyed'],
+  ['disappoint', 'disappointing', 'disappointed'], ['satisfy', 'satisfying', 'satisfied'], ['embarrass', 'embarrassing', 'embarrassed'],
+  ['tire', 'tiring', 'tired'], ['frighten', 'frightening', 'frightened'], ['shock', 'shocking', 'shocked'],
+  ['fascinate', 'fascinating', 'fascinated'], ['exhaust', 'exhausting', 'exhausted']];
+document.getElementById('pairs').innerHTML = PAIRS.map(([v, ing, ed]) =>
+  '<div><span class="v">' + v + '</span><span class="hl-ing">' + ing + '</span> · <span class="hl-ed">' + ed + '</span></div>').join('');
+
+/* ── concept checking questions ────────────────────────────────────────── */
+HouseCCQ.build({
+  container: 'ccq',
+  items: [
+    { sentence: 'The talk show was <span class="hl-ing">boring</span>.',
+      questions: [
+        { q: 'Does the talk show have a feeling?', opts: ['Yes', 'No'], correct: 1,
+          why: 'No. The talk show <b>makes</b> people feel bored. So: boring.' },
+        { q: 'How do the people watching it feel?', opts: ['Bored', 'Boring'], correct: 0,
+          why: 'Bored — they have the feeling.' }
+      ] },
+    { sentence: 'Rex is <span class="hl-ed">interested</span> in his new plate.',
+      questions: [
+        { q: 'Who has the feeling?', opts: ['Rex', 'The plate'], correct: 0,
+          why: 'Rex. He has the feeling, so: interested. The plate is interesting (for Rex).' }
+      ] },
+    { sentence: 'My new teacher is very <span class="hl-ing">boring</span>.',
+      questions: [
+        { q: 'Do the students enjoy the class?', opts: ['Yes', 'No'], correct: 1,
+          why: 'No. The teacher makes the students feel bored.' },
+        { q: 'Is the teacher bored?', opts: ['Yes', 'We don’t know'], correct: 1,
+          why: 'We don’t know. “She is boring” is about how <b>other people</b> feel.' }
+      ] },
+    { sentence: 'He was <span class="hl-ed">embarrassed</span>. He forgot how to do math.',
+      questions: [
+        { q: 'Was it a good feeling?', opts: ['Yes', 'No'], correct: 1,
+          why: 'No. Embarrassed = you feel silly or stupid in front of other people.' }
+      ] }
+  ]
+});
+
+/* ── form ──────────────────────────────────────────────────────────────── */
+HouseFormClarf.build({
+  container: 'formClarf', scoreEl: 'fcScore', totalEl: 'fcTotal',
+  pool: ['subject', 'verb', 'adverb', 'adj', 'prep', 'noun'],
+  items: [
+    { form: 'aff', parts: [['The talk show', 'subject'], ['was', 'verb'], ['boring', 'adj'], ['.', null]] },
+    { form: 'aff', parts: [['I', 'subject'], ['was', 'verb'], ['bored', 'adj'], ['by', 'prep'], ['the talk show', 'noun'], ['.', null]] },
+    { form: 'aff', parts: [['She', 'subject'], ['is', 'verb'], ['very', 'adverb'], ['interested', 'adj'], ['in', 'prep'], ['Japanese', 'noun'], ['.', null]] },
+    { form: 'neg', parts: [['The meal', 'subject'], ['wasn’t', 'verb'], ['very', 'adverb'], ['satisfying', 'adj'], ['.', null]] }
+  ]
+});
+
+/* ── common mistakes ───────────────────────────────────────────────────── */
+const MISTAKES = [
+  ['The movie was very bored.', 'The movie was very boring.'],
+  ['I am interesting in history.', 'I am interested in history.'],
+  ['She was very exciting about the trip.', 'She was very excited about the trip.'],
+  ['The news was surprised.', 'The news was surprising.'],
+  ['I felt very confusing.', 'I felt very confused.']
 ];
+document.getElementById('mistakes').innerHTML = MISTAKES.map(([no, yes]) =>
+  '<div class="pair-card"><div class="pair-line no"><span class="mark">✗</span>' + no + '</div>' +
+  '<div class="pair-line yes"><span class="mark">✓</span>' + yes + '</div></div>').join('');
 
-const TOTAL = items.length;
-let matched = 0;
-let dragging = null;
-let touchClone = null;
-
-function shuffle(a){
-  const b=[...a];
-  for(let i=b.length-1;i>0;i--){const j=Math.floor(Math.random()*(i+1));[b[i],b[j]]=[b[j],b[i]];}
-  return b;
-}
-
-function makeDraggable(chip){
-  chip.setAttribute('draggable','true');
-
-  chip.addEventListener('dragstart',e=>{
-    dragging=chip;chip.classList.add('dragging');
-    e.dataTransfer.effectAllowed='move';
-  });
-  chip.addEventListener('dragend',()=>{
-    chip.classList.remove('dragging');dragging=null;
-  });
-
-  chip.addEventListener('touchstart',e=>{
-    e.preventDefault();
-    dragging=chip;chip.classList.add('dragging');
-    const r=chip.getBoundingClientRect();
-    touchClone=chip.cloneNode(true);
-    touchClone.style.cssText=`position:fixed;left:${r.left}px;top:${r.top}px;width:${r.width}px;pointer-events:none;opacity:.85;z-index:9999;margin:0;touch-action:none;`;
-    document.body.appendChild(touchClone);
-  },{passive:false});
-
-  chip.addEventListener('touchmove',e=>{
-    e.preventDefault();if(!touchClone)return;
-    const t=e.touches[0];const r=touchClone.getBoundingClientRect();
-    touchClone.style.left=(t.clientX-r.width/2)+'px';
-    touchClone.style.top=(t.clientY-r.height/2)+'px';
-    touchClone.style.display='none';
-    const el=document.elementFromPoint(t.clientX,t.clientY);
-    touchClone.style.display='';
-    document.querySelectorAll('.img-slot').forEach(z=>z.classList.remove('over'));
-    const zone=el?el.closest('.img-slot'):null;
-    if(zone&&!zone.dataset.matched)zone.classList.add('over');
-  },{passive:false});
-
-  chip.addEventListener('touchend',e=>{
-    e.preventDefault();
-    if(touchClone){touchClone.remove();touchClone=null;}
-    if(dragging)dragging.classList.remove('dragging');
-    document.querySelectorAll('.img-slot').forEach(z=>z.classList.remove('over'));
-    const t=e.changedTouches[0];
-    const el=document.elementFromPoint(t.clientX,t.clientY);
-    const zone=el?el.closest('.img-slot'):null;
-    if(zone){
-      const itemId=zone.dataset.id;
-      const item=items.find(i=>i.id===itemId);
-      handleDrop(zone,item);
-    }
-    dragging=null;
-  },{passive:false});
-}
-
-function handleDrop(zone,item){
-  if(!dragging||!zone||!item)return;
-  if(zone.dataset.matched)return;
-  const chipId=dragging.dataset.id;
-  const zoneId=zone.dataset.id;
-  const lbl=document.getElementById('lbl-'+zoneId);
-
-  if(chipId===zoneId){
-    zone.dataset.matched='true';
-    zone.classList.add('matched');
-    if(lbl){lbl.innerHTML=dragging.innerHTML;lbl.classList.add('placed-correct');}
-    dragging.remove();
-    matched++;
-    document.getElementById('score').textContent=matched;
-    if(matched===TOTAL){
-      const fb=document.getElementById('fb-msg');
-      fb.textContent='All matched! Well done!';
-      fb.style.color='var(--color-text-success)';
-    }
-  } else {
-    zone.classList.add('wrong-flash');
-    const d=dragging;
-    setTimeout(()=>{zone.classList.remove('wrong-flash');},500);
-  }
-  dragging=null;
-}
-
-function wireZones(){
-  document.querySelectorAll('.img-slot').forEach(zone=>{
-    zone.addEventListener('dragover',e=>{e.preventDefault();if(!zone.dataset.matched)zone.classList.add('over');});
-    zone.addEventListener('dragleave',()=>zone.classList.remove('over'));
-    zone.addEventListener('drop',e=>{
-      e.preventDefault();zone.classList.remove('over');
-      const item=items.find(i=>i.id===zone.dataset.id);
-      handleDrop(zone,item);
-    });
-  });
-}
-
-function build(){
-  matched=0;dragging=null;
-  if(touchClone){touchClone.remove();touchClone=null;}
-  document.getElementById('score').textContent='0';
-  document.getElementById('fb-msg').textContent='';
-
-  const bank=document.getElementById('bank');
-  bank.innerHTML='';
-  shuffle(items.map(item=>({...item}))).forEach(item=>{
-    const chip=document.createElement('div');
-    chip.className='sent-chip';
-    chip.dataset.id=item.id;
-    chip.innerHTML=item.sentence;
-    bank.appendChild(chip);
-    makeDraggable(chip);
-  });
-
-  const grid=document.getElementById('img-grid');
-  grid.innerHTML='';
-  shuffle(items.map(item=>({...item}))).forEach(item=>{
-    const card=document.createElement('div');
-    card.className='img-card';
-
-    const slot=document.createElement('div');
-    slot.className='img-slot';
-    slot.dataset.id=item.id;
-
-    const ph=document.createElement('div');
-    ph.className='img-placeholder';
-    ph.innerHTML=`<i class="ti ti-photo" aria-hidden="true"></i><span>${item.file}</span>`;
-
-    const img=document.createElement('img');
-    img.src=item.file;
-    img.alt=item.id;
-    img.addEventListener('load',()=>{ph.style.display='none';img.style.display='block';});
-
-    slot.appendChild(ph);slot.appendChild(img);
-
-    const lbl=document.createElement('div');
-    lbl.className='drop-label';
-    lbl.id='lbl-'+item.id;
-
-    card.appendChild(slot);card.appendChild(lbl);
-    grid.appendChild(card);
-  });
-
-  wireZones();
-}
-
-document.getElementById('reset-btn').addEventListener('click',build);
-build();
+/* ── error hunt (A2: some sentences are already correct; none repeat the common mistakes) ── */
+const EH_ITEMS = [
+  { words: ['The', 'museum', 'was', 'really', 'interested', '.'],
+    error: { type: 'wrong', wordIndex: 4, options: ['interesting', 'interest', 'interests'], correct: 'interesting' } },
+  { words: ['I', 'was', 'bored', 'during', 'the', 'lesson', '.'], error: null },
+  { words: ['We', 'were', 'very', 'exciting', 'about', 'the', 'concert', '.'],
+    error: { type: 'wrong', wordIndex: 3, options: ['excited', 'excite', 'excites'], correct: 'excited' } },
+  { words: ['The', 'story', 'was', 'fascinating', 'from', 'start', 'to', 'finish', '.'], error: null },
+  { words: ['Her', 'answer', 'was', 'very', 'surprised', '.'],
+    error: { type: 'wrong', wordIndex: 4, options: ['surprising', 'surprise', 'surprises'], correct: 'surprising' } },
+  { words: ['The', 'map', 'was', 'so', 'confused', 'that', 'we', 'got', 'lost', '.'],
+    error: { type: 'wrong', wordIndex: 4, options: ['confusing', 'confuse', 'confuses'], correct: 'confusing' } },
+  { words: ['He', 'felt', 'embarrassing', 'when', 'he', 'fell', 'down', '.'],
+    error: { type: 'wrong', wordIndex: 2, options: ['embarrassed', 'embarrass', 'embarrasses'], correct: 'embarrassed' } },
+  { words: ['It', 'was', 'a', 'long', 'and', 'tiring', 'day', '.'], error: null },
+  { words: ['The', 'noise', 'from', 'the', 'street', 'is', 'very', 'annoyed', '.'],
+    error: { type: 'wrong', wordIndex: 7, options: ['annoying', 'annoy', 'annoys'], correct: 'annoying' } },
+  { words: ['I', 'am', 'disappointing', 'with', 'my', 'test', 'results', '.'],
+    error: { type: 'wrong', wordIndex: 2, options: ['disappointed', 'disappoint', 'disappoints'], correct: 'disappointed' } }
+];
+HouseErrorHunt.build({ container: 'errorHuntItems', items: EH_ITEMS, scoreEl: 'errorScore', totalEl: 'errorTotal' });
 </script>
+<script>HouseGrammar.init();</script>
 </body>
 </html>
