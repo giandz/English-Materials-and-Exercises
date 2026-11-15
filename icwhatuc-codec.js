@@ -9,11 +9,16 @@
    spaces and nothing a chat app turns into a link or an emoji. About 90
    letters with one address, about 115 with two.
 
+   A RELAY ADDRESS is one the host's browser was lent by a TURN server. It goes
+   in the host's code like any other address; the learner needs no relay
+   settings. The browsers still try the direct addresses first.
+
    What a code carries (see pack / unpack):
        version, and whose code it is (host or learner)
        the browser certificate's SHA-256 fingerprint      256 bits
        ICE user name and password                         about 31 + 152 bits
-       up to three addresses (public, local network)      51 to 147 bits each
+       up to four addresses (public, local network,       52 to 148 bits each
+         and a relay when the host has one)
        a CRC-16 at the end, so a cut or changed code is refused
 
    BOTH CODES ARE MADE THE SAME WAY, each from the browser's own offer, and
@@ -30,12 +35,12 @@
                                            role = MY role: 'host' | 'learner'
 
    fields = { role:'host'|'learner', fingerprint:'AA:BB:…' (32 bytes), ufrag, pwd,
-              candidates:[{ kind:'v4'|'v6'|'mdns', typ:'host'|'srflx', address, port }] }
+              candidates:[{ kind:'v4'|'v6'|'mdns', typ:'host'|'srflx'|'relay', address, port }] }
    ══════════════════════════════════════════════════════════════════════════ */
 (function (root) {
   'use strict';
 
-  var VERSION = 3;       /* 1, 2 = word-phrase codes, never released */
+  var VERSION = 4;       /* 1, 2 = word-phrase codes; 3 = no relay addresses; none released */
 
   function CodeError(code, message, detail) {
     var e = new Error(message);
@@ -183,12 +188,12 @@
     if (v6Bytes(address)) return 'v6';
     return null;
   }
-  var KINDS = ['v4', 'v6', 'mdns'];
+  var KINDS = ['v4', 'v6', 'mdns'], TYPS = ['host', 'srflx', 'relay'];
   function putCandidate(w, c) {
     var kind = KINDS.indexOf(c.kind);
     if (kind === -1) throw CodeError('format', 'An address of this kind cannot go in a code.');
     w.put(kind, 2);
-    w.put(c.typ === 'srflx' ? 1 : 0, 1);
+    w.put(Math.max(0, TYPS.indexOf(c.typ)), 2);
     if (c.kind === 'v4') w.bytes(v4Bytes(c.address));
     else if (c.kind === 'v6') w.bytes(v6Bytes(c.address));
     else {
@@ -198,8 +203,8 @@
     w.put(c.port, 16);
   }
   function getCandidate(r) {
-    var kind = KINDS[r.get(2)], typ = r.get(1) ? 'srflx' : 'host', address;
-    if (!kind) throw CodeError('format', 'The code has an address this page does not understand.');
+    var kind = KINDS[r.get(2)], typ = TYPS[r.get(2)], address;
+    if (!kind || !typ) throw CodeError('format', 'The code has an address this page does not understand.');
     if (kind === 'v4') address = r.take(4).join('.');
     else if (kind === 'v6') address = v6Text(r.take(16));
     else {
@@ -222,8 +227,8 @@
     w.bytes(fingerprintBytes(f.fingerprint));
     putStr(w, f.ufrag, 5);
     putStr(w, f.pwd, 6);
-    var cands = (f.candidates || []).slice(0, 3);
-    w.put(cands.length, 2);
+    var cands = (f.candidates || []).slice(0, 4);
+    w.put(cands.length, 3);
     cands.forEach(function (c) { putCandidate(w, c); });
     return w.toBytes();
   }
@@ -236,7 +241,7 @@
     f.ufrag = getStr(r, 5);
     f.pwd = getStr(r, 6);
     f.candidates = [];
-    for (var n = r.get(2); n > 0; n--) f.candidates.push(getCandidate(r));
+    for (var n = r.get(3); n > 0; n--) f.candidates.push(getCandidate(r));
     return f;
   }
 
@@ -268,25 +273,28 @@
     while ((m = re.exec(sdp))) {
       if (m[2] !== '1' || m[3].toLowerCase() !== 'udp') continue;       /* RTP component, UDP only */
       var kind = addressKind(m[5]);
-      if (!kind || (m[7] !== 'host' && m[7] !== 'srflx')) continue;
+      if (!kind || TYPS.indexOf(m[7]) === -1) continue;
       f.candidates.push({ kind: kind, typ: m[7], address: m[5], port: +m[6], priority: +m[4] });
     }
     return f;
   }
 
-  /* Which addresses go in the code, three at most: the public ones (from the
-     single address lookup) reach people in other places; a local-network one
-     reaches people on the same Wi-Fi, where the public one often does not. */
+  /* Which addresses go in the code, four at most: the public one (from the
+     single address lookup) reaches people in other places; a local-network one
+     reaches people on the same Wi-Fi, where the public one often does not; a
+     relay one, when the host has a relay, reaches people the others cannot;
+     and a second public one of the other family (IPv4 / IPv6) if there is room. */
   function pickCandidates(list, opts) {
-    var max = opts && opts.max != null ? opts.max : 3;
+    var max = opts && opts.max != null ? opts.max : 4;
     var cost = { v4: 0, mdns: 1, v6: 2 };
     var by = function (typ) {
       return list.filter(function (c) { return c.typ === typ; })
         .sort(function (a, b) { return cost[a.kind] - cost[b.kind] || b.priority - a.priority; });
     };
-    var pub = by('srflx'), loc = by('host'), out = [];
+    var pub = by('srflx'), loc = by('host'), rel = by('relay'), out = [];
     if (pub[0]) out.push(pub[0]);
     if (loc[0]) out.push(loc[0]);
+    if (rel[0]) out.push(rel[0]);
     var other = pub.filter(function (c) { return pub[0] && c.kind !== pub[0].kind; })[0];
     if (other) out.push(other);
     return out.slice(0, max).map(function (c) { return { kind: c.kind, typ: c.typ, address: c.address, port: c.port }; });
@@ -319,7 +327,9 @@
     ];
     (f.candidates || []).forEach(function (c, i) {
       var host = c.typ === 'host';
-      lines.push('a=candidate:' + (i + 1) + ' 1 udp ' + (host ? 2122260223 - i : 1686052607 - i) + ' ' + c.address + ' ' + c.port +
+      /* the usual priorities: local first, then public, the relay last */
+      var priority = (host ? 2122260223 : (c.typ === 'relay' ? 41885439 : 1686052607)) - i;
+      lines.push('a=candidate:' + (i + 1) + ' 1 udp ' + priority + ' ' + c.address + ' ' + c.port +
         ' typ ' + c.typ + (host ? '' : ' raddr ' + (c.kind === 'v6' ? '::' : '0.0.0.0') + ' rport 0'));
     });
     lines.push('a=end-of-candidates');

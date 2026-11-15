@@ -21,7 +21,7 @@
   @media (prefers-color-scheme: dark){ button.main{ color:#10202f; } }
   button:disabled{ opacity:.45; cursor:not-allowed; }
   label{ display:flex; gap:.45rem; align-items:flex-start; margin:.25rem 0; }
-  input[type=text]{ font:inherit; padding:.45rem .6rem; border-radius:8px; border:1px solid var(--line); background:var(--bg); color:var(--fg); flex:1 1 12rem; min-width:0; }
+  input[type=text], input[type=password]{ font:inherit; padding:.45rem .6rem; border-radius:8px; border:1px solid var(--line); background:var(--bg); color:var(--fg); flex:1 1 12rem; min-width:0; }
   textarea{ width:100%; min-height:4.6rem; word-break:break-all; font:13px/1.5 ui-monospace, SFMono-Regular, Menlo, Consolas, monospace; padding:.6rem .7rem; border-radius:8px; border:1px solid var(--line); background:var(--bg); color:var(--fg); resize:vertical; }
   .step{ display:none; } .step.on{ display:block; }
   .num{ display:inline-flex; width:1.5rem; height:1.5rem; border-radius:50%; background:var(--accent); color:#fff; align-items:center; justify-content:center; font-size:.8rem; font-weight:700; margin-right:.35rem; }
@@ -35,12 +35,14 @@
   #chat{ font-size:.9rem; max-height:9rem; overflow:auto; margin:.4rem 0; }
   #chat div{ padding:.1rem 0; } #chat .me{ color:var(--accent); }
   #state{ font-weight:700; }
+  details{ margin-top:.7rem; border-top:1px solid var(--line); padding-top:.6rem; }
+  summary{ cursor:pointer; font-weight:600; }
 </style>
 </head>
 <body>
 <main>
   <h1>🤝 ICwhatUC · phase 0 code test</h1>
-  <p class="sub">Two browsers, two codes, no relay server. One person is the host, the other is the learner. Send the codes to each other in the chat of your video call. Nothing starts until you both press Connect.</p>
+  <p class="sub">Two browsers, two codes, no signaling server. One person is the host, the other is the learner. Send the codes to each other in the chat of your video call. Nothing starts until you both press Connect.</p>
 
   <div class="card" id="setup">
     <h2>Before you start</h2>
@@ -51,6 +53,20 @@
       <button id="netBtn">Check my network</button>
     </div>
     <p class="note" id="netOut" style="margin:.6rem 0 0"></p>
+    <details id="relayBox">
+      <summary>Relay (TURN) · for the host, when a network cannot be reached directly</summary>
+      <p class="note">Only the host fills this in. The learner needs nothing. The settings stay on this device: they are never put in a code or a link. The browsers still try a direct link first and use the relay only if that fails.</p>
+      <div class="row">
+        <input type="text" id="turnUrl" placeholder="turn:example.com:3478   (or paste the JSON from your provider)" autocapitalize="off" autocomplete="off" spellcheck="false" aria-label="Relay address">
+      </div>
+      <div class="row" style="margin-top:.4rem">
+        <input type="text" id="turnUser" placeholder="user name" autocapitalize="off" autocomplete="off" spellcheck="false" aria-label="Relay user name">
+        <input type="password" id="turnPass" placeholder="password" autocomplete="off" aria-label="Relay password">
+      </div>
+      <label style="margin-top:.5rem"><input type="checkbox" id="optRelay"> <span>Put a relay address in my code</span></label>
+      <label><input type="checkbox" id="optRelayOnly"> <span>Use only the relay <span class="note">(a test: proves the relay itself works, even on the same Wi-Fi. Both people keep the address lookup on)</span></span></label>
+      <div class="row" style="margin-top:.4rem"><button id="turnSave">Save on this device</button><button id="turnForget">Forget</button><span class="note" id="turnMsg"></span></div>
+    </details>
   </div>
   <div class="card step" id="handoff"><p id="handoffText" style="margin:0"></p></div>
 
@@ -137,6 +153,7 @@
       ['Role', role || ''],
       ['Address lookup', $('optStun').checked ? 'on' : 'off'],
       ['Network check', M.net || ''],
+      ['Relay', M.relay || ''],
       ['Addresses found', M.found || ''],
       ['Addresses in my code', M.sent || ''],
       ['Addresses in their code', M.got || ''],
@@ -260,9 +277,56 @@
     } catch (e) { /* stats are a help, not a need */ }
   }
 
+  /* ── relay settings ───────────────────────────────────────────────────────
+     Kept in this browser only. A provider usually hands them out as JSON; pasting
+     that into the address box fills all three boxes. */
+  var RELAY_KEY = 'icwhatuc-relay';
+  function readRelayBoxes() {
+    var urls = $('turnUrl').value.split(/[\s,]+/).filter(function (u) { return /^turns?:/i.test(u); });
+    return { urls: urls, username: $('turnUser').value.trim(), credential: $('turnPass').value, on: $('optRelay').checked };
+  }
+  function fromProviderJson(text) {
+    var j = JSON.parse(text), list = Array.isArray(j) ? j : (j.iceServers ? [].concat(j.iceServers) : [j]);
+    var out = { urls: [], username: '', credential: '' };
+    list.forEach(function (s) {
+      [].concat(s.urls || s.url || []).forEach(function (u) { if (/^turns?:/i.test(u)) out.urls.push(u); });
+      if (s.username && !out.username) { out.username = s.username; out.credential = s.credential || ''; }
+    });
+    return out;
+  }
+  function fillRelayBoxes(r) {
+    $('turnUrl').value = (r.urls || []).join(', '); $('turnUser').value = r.username || ''; $('turnPass').value = r.credential || '';
+    $('optRelay').checked = !!r.on;
+  }
+  $('turnUrl').addEventListener('input', function () {
+    var v = $('turnUrl').value.trim();
+    if (!/^[\[{]/.test(v)) return;
+    try {
+      var r = fromProviderJson(v); r.on = true; fillRelayBoxes(r);
+      $('turnMsg').textContent = r.urls.length ? 'Read ' + r.urls.length + ' relay address' + (r.urls.length > 1 ? 'es' : '') + ' from the JSON.' : 'That JSON has no turn: address in it.';
+    } catch (e) { $('turnMsg').textContent = 'That JSON is not complete yet.'; }
+  });
+  $('turnSave').addEventListener('click', function () {
+    var r = readRelayBoxes();
+    if (!r.urls.length) { $('turnMsg').textContent = 'The address must start with turn: or turns:'; return; }
+    try { localStorage.setItem(RELAY_KEY, JSON.stringify(r)); $('turnMsg').textContent = 'Saved on this device.'; }
+    catch (e) { $('turnMsg').textContent = 'This browser will not save it. It still works until you close the page.'; }
+  });
+  $('turnForget').addEventListener('click', function () {
+    try { localStorage.removeItem(RELAY_KEY); } catch (e) { /* nothing was saved */ }
+    fillRelayBoxes({}); $('optRelayOnly').checked = false; $('turnMsg').textContent = 'Forgotten.';
+  });
+  try { var savedRelay = JSON.parse(localStorage.getItem(RELAY_KEY) || 'null'); if (savedRelay) { fillRelayBoxes(savedRelay); $('relayBox').open = !!savedRelay.on; } } catch (e) { /* no saved settings */ }
+  var relayInUse = false, relayOnly = false;
+
   /* ── WebRTC ───────────────────────────────────────────────────────────── */
   function makePc() {
-    pc = new RTCPeerConnection({ iceServers: $('optStun').checked ? [{ urls: STUN }] : [] });
+    var servers = $('optStun').checked ? [{ urls: STUN }] : [];
+    var relay = readRelayBoxes();
+    relayInUse = (relay.on || $('optRelayOnly').checked) && relay.urls.length > 0;
+    relayOnly = relayInUse && $('optRelayOnly').checked;
+    if (relayInUse) { servers.push({ urls: relay.urls, username: relay.username, credential: relay.credential }); log('relay: ' + relay.urls.length + ' address(es) set' + (relayOnly ? ', relay only' : '')); }
+    pc = new RTCPeerConnection({ iceServers: servers, iceTransportPolicy: relayOnly ? 'relay' : 'all' });
     /* the same channel is declared on both sides, so no extra negotiation is needed */
     dc = pc.createDataChannel('icwhatuc', { negotiated: true, id: 0 });
     dc.onopen = onOpen;
@@ -270,7 +334,7 @@
     dc.onclose = function () { log('channel closed'); setState(); };
     pc.oniceconnectionstatechange = function () { log('ice: ' + pc.iceConnectionState); setState(); };
     pc.onconnectionstatechange = function () { log('connection: ' + pc.connectionState); setState(); };
-    pc.onicecandidateerror = function (e) { log('address lookup problem: ' + (e.errorText || e.errorCode || '') + ' ' + (e.url || '')); };
+    pc.onicecandidateerror = function (e) { log((/^turn/i.test(e.url || '') ? 'relay problem: ' : 'address lookup problem: ') + (e.errorCode || '') + ' ' + (e.errorText || '') + ' ' + (e.url || '').split('?')[0]); };
     show('live');
   }
   function setState() {
@@ -292,17 +356,17 @@
   /* Wait for the addresses the code needs, not for the browser to finish looking:
      some browsers keep "gathering" for seconds after the useful addresses are in. */
   function gathered() {
-    var want = $('optStun').checked ? 'srflx' : 'host';
+    var want = relayOnly ? ['relay'] : ['host'].concat($('optStun').checked ? ['srflx'] : [], relayInUse ? ['relay'] : []);
     var done = false, finish = null, seen = {};
     var p = new Promise(function (resolve) { finish = function (why) { if (!done) { done = true; resolve(why); } }; });
     pc.addEventListener('icecandidate', function (e) {
       if (!e.candidate) return finish('complete');
       var typ = e.candidate.type || (/ typ (\S+)/.exec(e.candidate.candidate) || [])[1];
       seen[typ] = true;
-      if (seen[want] && seen.host) setTimeout(function () { finish('enough'); }, 400);
+      if (want.every(function (w) { return seen[w]; })) setTimeout(function () { finish('enough'); }, 400);
     });
     pc.addEventListener('icegatheringstatechange', function () { if (pc.iceGatheringState === 'complete') finish('complete'); });
-    setTimeout(function () { finish('timeout'); }, GATHER_TIMEOUT);
+    setTimeout(function () { finish('timeout'); }, GATHER_TIMEOUT + (relayInUse ? 3000 : 0));
     return p;
   }
   /* My code comes from my own offer and nothing else. Making it starts no
@@ -318,7 +382,12 @@
     M.found = kinds(local.candidates);
     M.sent = kinds(picked);
     log('addresses (' + why + ' after ' + M.gather + ' ms): ' + M.found);
-    if (!picked.length) throw new Error('This browser found no address to put in a code.');
+    if (relayInUse) {
+      var gotRelay = picked.some(function (c) { return c.typ === 'relay'; });
+      M.relay = gotRelay ? 'address in my code' + (relayOnly ? ' (relay only)' : '') : 'asked, but the relay gave no address';
+      if (!gotRelay) log('! the relay gave no address: check its address, user name and password');
+    }
+    if (!picked.length) throw new Error(relayOnly ? 'The relay gave no address. Check its address, user name and password.' : 'This browser found no address to put in a code.');
     if ($('optStun').checked && !picked.some(function (c) { return c.typ === 'srflx'; })) {
       log('! the address lookup gave nothing: this code works on the same Wi-Fi only');
     }
@@ -339,6 +408,9 @@
         if (f.role === role) throw new Error('This is your own code. Paste the code from your partner.');
         remote = f; M.got = kinds(f.candidates);
         $('pasteOk').textContent = 'This code is good.';
+        if (relayOnly && f.candidates.every(function (c) { return c.kind === 'mdns'; })) {
+          $('pasteOk').textContent += ' But it holds no public address, and a relay-only test needs one: ask your partner to turn the address lookup on.';
+        }
       } catch (e) {
         $('pasteErr').textContent = e.message;
       }
@@ -410,7 +482,7 @@
   async function begin(r, theirCode) {
     role = r;
     if (theirCode) $('codeIn').value = theirCode;
-    $('optStun').disabled = $('beHost').disabled = $('beGuest').disabled = true;
+    ['optStun', 'beHost', 'beGuest', 'turnUrl', 'turnUser', 'turnPass', 'optRelay', 'optRelayOnly', 'turnSave', 'turnForget'].forEach(function (id) { $(id).disabled = true; });
     log(role + ' · ' + browserName());
     /* The host sends first; the learner reads first. Both make their code at once. */
     if (role === 'learner') {
