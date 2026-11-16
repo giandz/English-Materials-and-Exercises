@@ -275,14 +275,19 @@
     return $('libUrl').value.trim() || (q ? decodeURIComponent(q[1]) : '') || LIBS[strategy];
   }
 
-  /* Trystero's API has had two shapes. Older releases: makeAction returns [send, receive]
-     and onPeerJoin(fn) registers a handler. Newer ones: makeAction returns an object with
-     send() and an onMessage property, and handlers are assigned. This page speaks both. */
+  /* Trystero's API has had several shapes. makeAction has returned [send, receive]; an
+     object whose onMessage is a method you call with a handler; and an object whose
+     onMessage you assign. Room events likewise are called or assigned. This page speaks all three. */
+  /* Every message goes to the whole room. How a build addresses one person differs,
+     and with a handful of people in a room it is not needed. */
   function makeAction(name, handler) {
     var a = room.makeAction(name);
-    if (Array.isArray(a)) { M.api = 'older'; a[1](handler); return function (data, to) { return a[0](data, to); }; }
-    M.api = 'newer'; a.onMessage = handler;
-    return function (data, to) { return to ? a.send(data, to) : a.send(data); };
+    if (Array.isArray(a)) { M.api = 'array'; a[1](handler); return function (data) { return a[0](data); }; }
+    var slot;
+    try { slot = a.onMessage; } catch (e) { slot = undefined; }
+    if (typeof slot === 'function') { slot.call(a, handler); M.api = 'method'; }      /* onMessage(handler) */
+    else { a.onMessage = handler; M.api = 'property'; }                              /* onMessage = handler */
+    return function (data) { return a.send(data); };
   }
   /* Register a handler whichever way this build of the library wants it: by calling
      room.onX(fn), or by assigning room.onX = fn. A registrar is a function that is
@@ -363,8 +368,9 @@
       peers[id].name = String((data && data.from) || 'partner').slice(0, 60); people(); facts();
     });
     actions.msg = makeAction('msg', function (data, meta) { var p = peers[idOf(meta)] || {}; say((p.name ? p.name + ': ' : '') + String(data && data.text).slice(0, 500), false); });
-    actions.ping = makeAction('ping', function (data, meta) { actions.pong(data, idOf(meta)); });
-    actions.pong = makeAction('pong', function (data, meta) { var p = peers[idOf(meta)]; if (p && data) { p.rtt = Math.round(performance.now() - data.at); facts(); } });
+    var myPings = random(8);                     /* marks my own pings, since every message goes to the whole room */
+    actions.ping = makeAction('ping', function (data) { actions.pong(data); });
+    actions.pong = makeAction('pong', function (data, meta) { var p = peers[idOf(meta)]; if (p && data && data.n === myPings) { p.rtt = Math.round(performance.now() - data.at); facts(); } });
     log('library API: ' + M.api);
 
     on('onPeerJoin', function (id) {
@@ -373,7 +379,7 @@
       M.result = 'CONNECTED';
       log('partner joined: ' + String(id).slice(0, 6) + ' (' + Math.round(performance.now() - joined) + ' ms after joining)');
       people(); facts();
-      actions.hello({ from: browserName() + ' · ' + device() + ' (' + me.role + ')' }, id);
+      actions.hello({ from: browserName() + ' · ' + device() + ' (' + me.role + ')' });
       setTimeout(function () { routeOf(id).then(function (rt) { if (rt && peers[id]) { peers[id].route = rt; log('route to ' + String(id).slice(0, 6) + ': ' + rt); people(); facts(); } }); }, 1500);
     });
     on('onPeerLeave', function (id) {
@@ -381,7 +387,7 @@
       delete peers[id]; if (!Object.keys(peers).length) M.result = 'partner left';
       people(); facts();
     });
-    setInterval(function () { if (room) Object.keys(peers).forEach(function (id) { actions.ping({ at: performance.now() }, id); }); }, 4000);
+    setInterval(function () { if (room && Object.keys(peers).length) actions.ping({ at: performance.now(), n: myPings }); }, 4000);
     setTimeout(function () {
       if (room && M.first == null) log('nobody yet after 30 s. If your partner has opened the link, the relays may be slow or blocked on one of the networks: try the other relay network.');
     }, 30000);
