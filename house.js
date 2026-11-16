@@ -99,7 +99,7 @@
      HouseRail.place(element, order) put any element in the column
      HouseRail.adopt(id, { icon, label, order })   a page's own text switch
    Orders in use: theme 0, text size 10, grammar 20, stick figures 30,
-   pronunciation 40, bionic 50, ICwhatUC 60 (🤝) and 62–63 (🖍️ 👀; 61 is kept for 🖱️). Fixed chrome stays in px, like the theme toggle.
+   pronunciation 40, bionic 50, ICwhatUC 60–64 (🤝 🖱️ 🖍️ 👀 📣). Fixed chrome stays in px, like the theme toggle.
    ══════════════════════════════════════════════════════════════════════════ */
 (function (global) {
   'use strict';

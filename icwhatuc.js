@@ -4,11 +4,16 @@
    page is opened from an invitation link (#icw=…), or when this tab is already
    in a session (a new lesson page in the same tab rejoins by itself).
 
-   Version 1 (phase 1): the panel, names and colours, a ring round the element
-   under each person's pointer, a live mirror of each person's text selection,
-   tags on the screen edge for highlights that are off screen, and two rail
-   buttons:  🖍️ show my highlights (starts on)   👀 see the others (starts on).
-   Nothing stays on the page: each message replaces that person's last one.
+   What each person sees of the others: a ring round the element under their
+   pointer, a live mirror of their text selection, their cursor (when they show
+   it), and tags on the screen edge for anything that is off screen. My own
+   highlights look the same on my page as on theirs. Nothing stays on the page:
+   each message replaces that person's last one.
+   Rail:  🖱️ show my cursor (starts off) · 🖍️ show my highlights (starts on) ·
+          👀 see the others (starts on) · 📣 bring the others here
+   Bring here: a "!" badge on my highlight (anyone), or, for the host only, the
+   others' pages scroll to it. A browser notification and a tab mark reach
+   someone who is on another tab.
 
    CONNECTING
      The host presses Start and sends one link. Anyone who opens it types a name
@@ -33,7 +38,8 @@
      ICwhatUC.leave()  ICwhatUC.end()   (end: host only, for everyone)
      ICwhatUC.peers()               [{ id, name, color, host }]
      ICwhatUC.link()                the invitation link for this page, or null
-     ICwhatUC.showHighlights(on)    🖍️      ICwhatUC.seeOthers(on)   👀
+     ICwhatUC.showCursor(on)  🖱️   ICwhatUC.showHighlights(on)  🖍️   ICwhatUC.seeOthers(on)  👀
+     ICwhatUC.canBring()  ICwhatUC.bring('soft' | 'hard')    (hard: host only)
      ICwhatUC.key(element[, key])   read or set an element's shared key
      ICwhatUC.on(type, fn)  ICwhatUC.send(type, data)   for later features
    ══════════════════════════════════════════════════════════════════════════ */
@@ -41,13 +47,13 @@
   'use strict';
   if (global.ICwhatUC) return;
 
-  var PROTOCOL = 1;
+  var PROTOCOL = 2;
   var APP_ID = 'icwhatuc-english-materials';
   var LIB = global.ICWHATUC_LIB || document.documentElement.getAttribute('data-icwhatuc-lib') || 'https://esm.run/trystero';
   var SESSION = 'icwhatuc-session';
-  var KEY = { name: 'icwhatuc-name', hl: 'icwhatuc-show-highlights', see: 'icwhatuc-see-others', relay: 'icwhatuc-relay' };
+  var KEY = { name: 'icwhatuc-name', cur: 'icwhatuc-show-cursor', hl: 'icwhatuc-show-highlights', see: 'icwhatuc-see-others', relay: 'icwhatuc-relay', notify: 'icwhatuc-notify' };
   var COLORS = ['#1f7ae0', '#d6336c', '#2f9e44', '#9c36b5', '#e8590c', '#0c8599'];
-  var OURS = '#icw-layer, #icw-panel, #house-rail, #font-size-panel, .hd-card, .hd-arrow, .hd-hint';
+  var OURS = '#icw-layer, #icw-panel, #icw-bring, #icw-toast, #house-rail, #font-size-panel, .hd-card, .hd-arrow, .hd-hint';
   /* what a ring goes round: the smallest of these under the pointer */
   var RING = '.word-chip, .match-card, .match-stage .card, .hm-card, .fc-chip, .fc-zone, .fc-word, .opt, .ccq-opt, ' +
     '.eh2-word, .eh2-gap, .eh-word, .gf-gap-input, input.gap, .word-btn, .bubble, .think-cloud, .avatar, td, th, li, ' +
@@ -238,15 +244,16 @@
   var S = {
     mod: null, room: null, self: null, role: null, name: '', sess: null, joinedAt: 0,
     peers: {}, actions: {}, status: 'idle', note: '', listeners: {},
-    mine: { over: null, sel: null, selJson: 'null' }
+    mine: { over: null, sel: null, selJson: 'null', lastOver: null, lastSel: null, lastSelAt: 0, bring: null }
   };
   var prefs = {
+    cur: store(KEY.cur) === true,
     hl: store(KEY.hl) !== false,
     see: store(KEY.see) !== false
   };
 
   function peer(id) {
-    if (!S.peers[id]) S.peers[id] = { id: id, name: '', host: false, color: COLORS[0], over: null, sel: null, dirty: true, gen: -1, overEl: null, ranges: [], blocks: [], rate: { t: 0, n: 0 } };
+    if (!S.peers[id]) S.peers[id] = { id: id, name: '', host: false, color: COLORS[0], over: null, sel: null, cur: null, bring: null, dirty: true, gen: -1, overEl: null, ranges: [], blocks: [], rate: { t: 0, n: 0 } };
     return S.peers[id];
   }
   function assignColors() {
@@ -328,11 +335,17 @@
       if (k !== p.over) { p.over = k; p.dirty = true; kick(); }
     });
     S.actions.sel = makeAction('sel', function (d, p) {
-      var list = Array.isArray(d.p) ? d.p.slice(0, 12).filter(function (x) {
-        return x && typeof x.k === 'string' && x.k.length <= 600 && typeof x.w === 'string' && x.w && x.w.length <= 1000 && x.n >= 0 && x.n < 1000;
-      }) : [];
-      p.sel = list.length ? list : null; p.dirty = true; kick();
+      p.sel = Array.isArray(d.p) ? cleanPieces(d.p) : null; p.dirty = true; kick();
     });
+    S.actions.cur = makeAction('cur', function (d, p) {
+      if (typeof d.k !== 'string' || d.k.length > 600 || !isFinite(d.x) || !isFinite(d.y)) p.cur = null;
+      else p.cur = { k: d.k, x: Math.max(-5, Math.min(6, +d.x)), y: Math.max(-5, Math.min(6, +d.y)), d: d.d === true, t: Date.now(), gen: -1, el: p.cur && p.cur.k === d.k ? p.cur.el : null };
+      kick();
+    });
+    S.actions.tap = makeAction('tap', function (d, p) {
+      if (typeof d.k === 'string' && d.k.length <= 600 && isFinite(d.x) && isFinite(d.y)) ripple(p, d);
+    });
+    S.actions.bring = makeAction('bring', function (d, p) { if (p.name) received(p, d); });
     S.actions.bye = makeAction('bye', function (d, p) {
       if (d.end && p.host) { ended(p.name); return; }
       gone(p.id);
@@ -375,7 +388,8 @@
     if (room) { try { S.actions.bye({}); } catch (e) { /* already closed */ } try { room.leave(); } catch (e) { /* already closed */ } }
     Object.keys(S.peers).forEach(clearPeerDrawing);
     S.peers = {}; S.actions = {};
-    clearDrawing();
+    clearDrawing(); markTab(false); cur.on = false;
+    S.mine.bring = null;
   }
   function leave() {
     quietLeave();
@@ -395,7 +409,10 @@
   }
   global.addEventListener('pagehide', function () { if (S.room) { try { S.actions.bye({}); } catch (e) { /* closing */ } try { S.room.leave(); } catch (e) { /* closing */ } } });
 
-  /* ══ WHAT I SEND ═════════════════════════════════════════════════════════ */
+  /* ══ WHAT I SEND ═════════════════════════════════════════════════════════
+     My pointed-at element and my selection are worked out whenever I am in a
+     session (so "Bring here" knows them) but sent only while 🖍️ is on. My cursor
+     is sent only while 🖱️ is on. */
   function ringTarget(t) {
     if (!t || t.nodeType !== 1 || ours(t)) return null;
     var el = t.closest(RING);
@@ -405,34 +422,77 @@
     var k = el ? keyOf(el) : null;
     S.mine.over = k;
     S.mine.overEl = el;
+    if (k) { S.mine.lastOver = k; S.mine.lastOverEl = el; }
     if (S.room && prefs.hl && !document.hidden) S.actions.over({ k: k });
+    kick();
   }
   var overQueued = null, overRaf = 0, tapTimer = 0;
+  var cur = { last: 0, timer: 0, ev: null, down: false, on: false };
+  function curAnchor(t) {
+    if (!t || t.nodeType !== 1 || ours(t)) return null;
+    return t.closest(RING) || t.closest('div, section, main, article, form, table, ul, ol') || document.body;
+  }
+  function curPoint(e) {
+    var el = curAnchor(e.target);
+    if (!el) return null;
+    var r = el.getBoundingClientRect();
+    return { k: keyOf(el), x: +((e.clientX - r.left) / (r.width || 1)).toFixed(4), y: +((e.clientY - r.top) / (r.height || 1)).toFixed(4) };
+  }
+  function sendCur(e) {
+    cur.timer = 0; cur.last = Date.now();
+    if (!S.room || !prefs.cur || document.hidden) return;
+    var pt = curPoint(e);
+    if (!pt) { curOff(); return; }
+    pt.d = cur.down;
+    S.actions.cur(pt); cur.on = true;
+  }
+  function curOff() { if (cur.on && S.room) S.actions.cur({ k: null }); cur.on = false; }
   document.addEventListener('pointermove', function (e) {
-    if (!S.room || !prefs.hl || e.pointerType === 'touch') return;
+    if (!S.room || e.pointerType === 'touch') return;
     overQueued = e.target;
-    if (overRaf) return;
-    overRaf = requestAnimationFrame(function () {
+    if (!overRaf) overRaf = requestAnimationFrame(function () {
       overRaf = 0;
       var el = ringTarget(overQueued);
       if (el !== S.mine.overEl) sendOver(el);
     });
+    if (prefs.cur) {                                   /* at most 20 a second, and the last one always */
+      var ev = { target: e.target, clientX: e.clientX, clientY: e.clientY };
+      var wait = 50 - (Date.now() - cur.last);
+      if (wait <= 0) sendCur(ev);
+      else { cur.ev = ev; if (!cur.timer) cur.timer = setTimeout(function () { sendCur(cur.ev); }, wait); }
+    }
   }, { capture: true, passive: true });
   document.addEventListener('pointerout', function (e) {
-    if (S.room && prefs.hl && !e.relatedTarget && e.pointerType !== 'touch') sendOver(null);
+    if (!S.room || e.relatedTarget || e.pointerType === 'touch') return;
+    sendOver(null); curOff();
   }, true);
-  /* a touch screen has no resting pointer: a tap rings the tapped element for two seconds */
   document.addEventListener('pointerdown', function (e) {
-    if (!S.room || !prefs.hl || e.pointerType !== 'touch') return;
-    var el = ringTarget(e.target);
-    if (!el) return;
-    clearTimeout(tapTimer);
-    sendOver(el);
-    tapTimer = setTimeout(function () { if (S.mine.overEl === el) sendOver(null); }, 2000);
+    if (!S.room) return;
+    if (e.pointerType === 'touch') {
+      /* a touch screen has no resting pointer: a tap rings the tapped element for two seconds,
+         and with 🖱️ on it sends a ripple at that spot */
+      var el = ringTarget(e.target);
+      if (el) {
+        clearTimeout(tapTimer);
+        sendOver(el);
+        tapTimer = setTimeout(function () { if (S.mine.overEl === el) sendOver(null); }, 2000);
+      }
+      if (prefs.cur) { var pt = curPoint(e); if (pt) S.actions.tap(pt); }
+      return;
+    }
+    cur.down = true;
+    if (prefs.cur) sendCur(e);
   }, true);
-  var selTimer = 0;
+  document.addEventListener('pointerup', function (e) {
+    if (!S.room || e.pointerType === 'touch') return;
+    cur.down = false;
+    if (prefs.cur) sendCur(e);
+  }, true);
+
+  var selTimer = 0, selfVer = 0;
   document.addEventListener('selectionchange', function () {
-    if (!S.room || !prefs.hl) return;
+    if (!S.room) return;
+    selfVer++; kick();                                 /* my own tint follows at once */
     clearTimeout(selTimer);
     selTimer = setTimeout(sendSel, 120);
   });
@@ -441,20 +501,149 @@
     try { p = selectionPieces(); } catch (e) { p = null; }
     var j = JSON.stringify(p);
     if (j === S.mine.selJson) return;
+    if (!p && S.mine.sel) { S.mine.lastSel = S.mine.sel; S.mine.lastSelAt = Date.now(); }
     S.mine.sel = p; S.mine.selJson = j;
     if (S.room && prefs.hl) S.actions.sel({ p: p });
   }
   document.addEventListener('visibilitychange', function () {
-    if (!S.room || !prefs.hl) return;
-    if (document.hidden) S.actions.over({ k: null }); else S.actions.over({ k: S.mine.over });
+    if (!S.room) return;
+    if (document.hidden) { if (prefs.hl) S.actions.over({ k: null }); curOff(); }
+    else { if (prefs.hl) S.actions.over({ k: S.mine.over }); markTab(false); }
   });
+  global.addEventListener('focus', function () { markTab(false); });
+
+  /* ══ BRING HERE ══════════════════════════════════════════════════════════
+     Calls the others to my highlight: my text selection, or failing that the last
+     element I pointed at (the pointer has usually moved to the button by then).
+       soft  everyone   a "!" badge on my highlight on their page, next to the edge tag if
+                        it is off their screen; nothing moves
+       hard  host only  their page scrolls to my highlight, which gets the "!" badge
+     Someone on another tab or window gets a browser notification (if they said yes)
+     and "(!)" in the tab title with a dot on its icon. */
+  var lastBring = 0;
+  function bringTarget() {
+    var sel = S.mine.sel || (S.mine.lastSel && Date.now() - S.mine.lastSelAt < 2500 ? S.mine.lastSel : null);
+    if (sel) return { sel: sel, k: null };
+    if (S.mine.lastOver && S.mine.lastOverEl && S.mine.lastOverEl.isConnected) return { sel: null, k: S.mine.lastOver };
+    return null;
+  }
+  function canBring() { return !!(S.room && bringTarget()); }
+  function bring(mode) {
+    if (!S.room) return false;
+    var t = bringTarget();
+    if (!t) { toast('First, select some words or point at something.'); return false; }
+    if (Date.now() - lastBring < 3000) { toast('Wait a moment, then try again.'); return false; }
+    lastBring = Date.now();
+    mode = mode === 'hard' && S.role === 'host' ? 'hard' : 'soft';
+    S.actions.bring({ m: mode, sel: t.sel, k: t.k });
+    S.mine.bring = { sel: t.sel, k: t.k, until: Date.now() + 5000, gen: -1 };
+    if (!named().length) toast('Nobody is here to call yet.');
+    else toast(mode === 'hard' ? 'Their page moves here now.' : 'They see a ! here now.');
+    kick();
+    return true;
+  }
+  function received(p, d) {
+    var now = Date.now();
+    if (p.lastBring && now - p.lastBring < 2500) return;        /* one every few seconds */
+    p.lastBring = now;
+    var sel = Array.isArray(d.sel) ? cleanPieces(d.sel) : null;
+    var k = typeof d.k === 'string' && d.k.length <= 600 ? d.k : null;
+    if (!sel && !k) return;
+    var hard = d.m === 'hard' && p.host;                        /* only the host can move my page */
+    p.bring = { hard: hard, sel: sel, k: k, t: now, seen: 0, last: now, gen: -1 };
+    resolveBring(p.bring);
+    if (hard) {
+      var where = bringFocusNode(p.bring);
+      if (where) { where.scrollIntoView({ block: 'center', behavior: 'smooth' }); toast(p.name + ' brought you here.'); }
+      else toast(p.name + ' called you, but it is not on your page.');
+    }
+    if (document.hidden || !document.hasFocus()) { markTab(true); osNotify(p); }
+    emit('bring', { from: publicPeer(p), hard: hard });
+    kick();
+  }
+  function cleanPieces(list) {
+    list = list.slice(0, 12).filter(function (x) {
+      return x && typeof x.k === 'string' && x.k.length <= 600 && typeof x.w === 'string' && x.w && x.w.length <= 1000 && x.n >= 0 && x.n < 1000;
+    });
+    return list.length ? list : null;
+  }
+  function resolveBring(b) {
+    if (!b || b.gen === gen) return;
+    b.el = b.k ? resolveKey(b.k) : null;
+    b.ranges = []; b.block = null;
+    (b.sel || []).forEach(function (piece) {
+      var block = resolveKey(piece.k);
+      if (!block) return;
+      var r = rangeForPiece(block, piece);
+      if (r) b.ranges.push(r); else if (!b.block) b.block = block;
+    });
+    b.gen = gen;
+    hlSig = '';
+  }
+  function bringFocusNode(b) {
+    var n = b.ranges && b.ranges[0] ? b.ranges[0].startContainer : (b.el || b.block);
+    return n && n.nodeType !== 1 ? n.parentElement : n;
+  }
+
+  /* the tab's own mark, when the person is on another tab or window */
+  var tabMark = null;
+  function markTab(on) {
+    if (on && !tabMark) {
+      tabMark = { link: document.querySelector('link[rel~="icon"]'), href: null, made: false };
+      if (!/^\(!\) /.test(document.title)) document.title = '(!) ' + document.title;
+      var link = tabMark.link;
+      if (!link) { link = document.createElement('link'); link.rel = 'icon'; document.head.appendChild(link); tabMark.link = link; tabMark.made = true; }
+      else tabMark.href = link.href;
+      var c = document.createElement('canvas'); c.width = c.height = 32;
+      var g = c.getContext('2d'), dot = function () {
+        g.beginPath(); g.arc(23, 9, 8, 0, Math.PI * 2); g.fillStyle = '#e03131'; g.fill();
+        g.lineWidth = 2; g.strokeStyle = '#fff'; g.stroke();
+        try { if (tabMark) link.href = c.toDataURL('image/png'); } catch (e) { /* a tainted icon: keep the title mark */ }
+      };
+      if (tabMark.href) { var img = new Image(); img.onload = function () { g.drawImage(img, 0, 0, 32, 32); dot(); }; img.onerror = dot; img.src = tabMark.href; }
+      else dot();
+    } else if (!on && tabMark) {
+      document.title = document.title.replace(/^\(!\) /, '');
+      if (tabMark.made) tabMark.link.remove(); else if (tabMark.href) tabMark.link.href = tabMark.href;
+      tabMark = null;
+    }
+  }
+  function notifyOk() { return 'Notification' in global && global.isSecureContext !== false; }
+  function osNotify(p) {
+    if (!notifyOk() || store(KEY.notify) !== 'yes' || Notification.permission !== 'granted') return;
+    try {
+      var n = new Notification(p.name + ': come here!', { body: document.title.replace(/^\(!\) /, ''), tag: 'icwhatuc-bring', renotify: true });
+      n.onclick = function () { try { global.focus(); } catch (e) { /* the browser decides */ } n.close(); markTab(false); goTo(p.id); };
+    } catch (e) { /* some phones only allow notifications from a service worker: the tab mark is still there */ }
+  }
+  function askNotify(yes) {
+    if (!yes || !notifyOk()) { store(KEY.notify, 'no'); renderPanel(); return; }
+    var done = function (r) { store(KEY.notify, r === 'granted' ? 'yes' : 'no'); renderPanel(); };
+    try { var pr = Notification.requestPermission(done); if (pr && pr.then) pr.then(done, function () { done('denied'); }); }
+    catch (e) { done('denied'); }
+  }
+
+  /* a short line at the bottom of the screen */
+  var toastTimer = 0;
+  function toast(text) {
+    injectStyles();
+    var t = $('icw-toast');
+    if (!t) { t = document.createElement('div'); t.id = 'icw-toast'; t.setAttribute('role', 'status'); document.body.appendChild(t); }
+    t.textContent = text; t.hidden = false;
+    clearTimeout(toastTimer);
+    toastTimer = setTimeout(function () { t.hidden = true; }, 3200);
+  }
 
   /* ══ WHAT I SEE ══════════════════════════════════════════════════════════
      One fixed layer that ignores the pointer, under the rail and the dictionary
      card. Selections are painted with the CSS Custom Highlight API, so the page's
-     own markup is never touched; browsers without it get boxes in the layer. */
+     own markup is never touched; browsers without it get boxes in the layer.
+     My own highlights are drawn the same way, in my colour and with my name, while
+     🖍️ is on: I see them as the others see them. */
   var layer = null, edgeTop = null, edgeBottom = null, raf = 0, hasHL = !!(global.CSS && CSS.highlights && global.Highlight);
-  var drawn = {};            /* id → { ring, tag, selTag, edge, boxes:[] } */
+  var drawn = {};            /* id → the elements drawn for that person */
+  var hlSig = '';
+  var ARROW = '<svg width="20" height="20" viewBox="0 0 20 20" aria-hidden="true"><path d="M3 2 L3 16.5 L7 12.8 L9.8 18.6 L12.4 17.4 L9.7 11.8 L15 11.6 Z" fill="currentColor" stroke="#fff" stroke-width="1.4" stroke-linejoin="round"/></svg>';
 
   function ensureLayer() {
     if (layer && layer.isConnected) return;
@@ -467,33 +656,33 @@
     layer.appendChild(edgeTop); layer.appendChild(edgeBottom);
     document.body.appendChild(layer);
   }
+  function el(cls, tag) { var e = document.createElement(tag || 'div'); e.className = cls; e.hidden = true; layer.appendChild(e); return e; }
   function parts(id) {
     if (drawn[id]) return drawn[id];
     ensureLayer();
     var d = { boxes: [] };
-    d.ring = document.createElement('div'); d.ring.className = 'icw-ring';
-    d.tag = document.createElement('div'); d.tag.className = 'icw-name';
-    d.selTag = document.createElement('div'); d.selTag.className = 'icw-name icw-selname';
+    d.ring = el('icw-ring'); d.tag = el('icw-name'); d.selTag = el('icw-name icw-selname');
+    d.bring = el('icw-ring icw-bringring'); d.badge = el('icw-badge'); d.badge.textContent = '!';
+    d.cur = el('icw-cursor'); d.cur.innerHTML = ARROW + '<span class="icw-curname"></span>';
     d.edge = document.createElement('button'); d.edge.type = 'button'; d.edge.className = 'icw-edge'; d.edge.tabIndex = -1;
     d.edge.addEventListener('click', function (e) { e.stopPropagation(); goTo(id); });
-    layer.appendChild(d.ring); layer.appendChild(d.tag); layer.appendChild(d.selTag);
     return (drawn[id] = d);
   }
   function clearPeerDrawing(id) {
     var d = drawn[id];
     if (!d) return;
-    [d.ring, d.tag, d.selTag, d.edge].concat(d.boxes).forEach(function (n) { if (n && n.parentNode) n.parentNode.removeChild(n); });
+    [d.ring, d.tag, d.selTag, d.bring, d.badge, d.cur, d.edge].concat(d.boxes).forEach(function (n) { if (n && n.parentNode) n.parentNode.removeChild(n); });
     delete drawn[id];
-    if (hasHL) try { CSS.highlights.delete('icw-' + id); } catch (e) { /* gone */ }
   }
   function clearDrawing() {
     Object.keys(drawn).forEach(clearPeerDrawing);
     if (hasHL) for (var i = 0; i < COLORS.length; i++) try { CSS.highlights.delete('icw-c' + i); } catch (e) { /* gone */ }
+    hlSig = '';
   }
   function kick() { if (!raf) raf = requestAnimationFrame(frame); }
 
-  var hlSig = '';
   function resolvePeer(p) {
+    if (p.bring) resolveBring(p.bring);
     if (!p.dirty && p.gen === gen && (!p.overEl || p.overEl.isConnected)) return;
     p.overEl = p.over ? resolveKey(p.over) : null;
     p.ranges = []; p.blocks = [];
@@ -504,23 +693,39 @@
       if (r) p.ranges.push(r); else if (p.blocks.indexOf(block) === -1) p.blocks.push(block);
     });
     p.dirty = false; p.gen = gen;
-    hlSig = '';              /* repaint the selections */
+    hlSig = '';
   }
-  function paintSelections(list) {
+  var selfCache = { ver: -1, ranges: [] };
+  function selfRanges() {
+    if (selfCache.ver === selfVer) return selfCache.ranges;
+    var s = global.getSelection && global.getSelection(), out = [];
+    if (s && !s.isCollapsed && s.rangeCount) {
+      var r = s.getRangeAt(0), root = r.commonAncestorContainer;
+      if (root.nodeType !== 1) root = root.parentElement;
+      if (root && !ours(root) && !root.closest('input, textarea')) out.push(r.cloneRange());
+    }
+    selfCache = { ver: selfVer, ranges: out };
+    hlSig = '';
+    return out;
+  }
+  function paintSelections(views) {
     if (!hasHL) return;
-    var sigNow = list.map(function (p) { return p.id + p.color + p.gen + (p.sel ? p.sel.length : 0) + p.ranges.length; }).join('|');
+    var sigNow = views.map(function (v) { return v.id + v.color + v.sig; }).join('|');
     if (sigNow === hlSig) return;
     hlSig = sigNow;
     var byColor = {};
-    list.forEach(function (p) { if (p.ranges.length) { var c = COLORS.indexOf(p.color); (byColor[c] = byColor[c] || []).push.apply(byColor[c], p.ranges); } });
+    views.forEach(function (v) {
+      var list = v.ranges.concat(v.bringRanges || []);
+      if (list.length) { var c = COLORS.indexOf(v.color); (byColor[c] = byColor[c] || []).push.apply(byColor[c], list); }
+    });
     for (var i = 0; i < COLORS.length; i++) {
       try { if (byColor[i]) CSS.highlights.set('icw-c' + i, new Highlight(...byColor[i])); else CSS.highlights.delete('icw-c' + i); } catch (e) { /* no highlights */ }
     }
   }
-  function place(el, r, pad) {
-    el.style.transform = 'translate(' + Math.round(r.left - pad) + 'px,' + Math.round(r.top - pad) + 'px)';
-    el.style.width = Math.round(r.width + pad * 2) + 'px';
-    el.style.height = Math.round(r.height + pad * 2) + 'px';
+  function place(node, r, pad) {
+    node.style.transform = 'translate(' + Math.round(r.left - pad) + 'px,' + Math.round(r.top - pad) + 'px)';
+    node.style.width = Math.round(r.width + pad * 2) + 'px';
+    node.style.height = Math.round(r.height + pad * 2) + 'px';
   }
   function placeName(tag, r, name, color) {
     if (tag.textContent !== name) tag.textContent = name;
@@ -529,57 +734,153 @@
     tag.style.transform = 'translate(' + Math.round(Math.max(2, r.left - 3)) + 'px,' + Math.round(y) + 'px)';
     tag.hidden = false;
   }
-  function visibleRect(r) { return r && (r.width || r.height); }
+  function shown(r) { return !!(r && (r.width || r.height)); }
+  function firstRect(ranges) {
+    for (var i = 0; i < ranges.length; i++) { var rs = ranges[i].getClientRects(); for (var j = 0; j < rs.length; j++) if (rs[j].width) return rs[j]; }
+    return null;
+  }
+  function rectsOf(ranges) {
+    var out = [];
+    ranges.forEach(function (r) { [].forEach.call(r.getClientRects(), function (x) { if (x.width) out.push(x); }); });
+    return out;
+  }
+
+  /* one person's view: what to draw, wherever it comes from */
+  function peerView(p, now) {
+    var b = p.bring, v = { id: p.id, name: p.name, color: p.color, ringEl: p.overEl || p.blocks[0] || null, ranges: p.ranges, bringRanges: [], badge: false, cur: null };
+    if (b) { v.bringEl = b.el || b.block; v.bringRanges = b.ranges || []; v.badge = true; }
+    v.sig = p.gen + ':' + p.ranges.length + ':' + (b ? b.t + ':' + b.gen : '');
+    if (p.cur && p.cur.k) {
+      var age = now - p.cur.t;
+      if (age < 5000) {
+        if (p.cur.gen !== gen || !p.cur.el || !p.cur.el.isConnected) { p.cur.el = resolveKey(p.cur.k); p.cur.gen = gen; }
+        if (p.cur.el) { var r = p.cur.el.getBoundingClientRect(); v.cur = { x: r.left + p.cur.x * r.width, y: r.top + p.cur.y * r.height, down: p.cur.d, fade: age > 4000 ? 1 - (age - 4000) / 1000 : 1 }; }
+      }
+    }
+    return v;
+  }
+  function selfView(now) {
+    var mb = S.mine.bring && now < S.mine.bring.until ? S.mine.bring : null;
+    if (mb) resolveBring(mb);
+    var ranges = selfRanges();
+    return {
+      id: 'me', name: S.name, color: S.color || COLORS[0], ringEl: S.mine.overEl && S.mine.overEl.isConnected ? S.mine.overEl : null, ranges: ranges,
+      bringEl: mb ? (mb.el || mb.block) : null, bringRanges: mb && !ranges.length ? mb.ranges : [], badge: !!mb, cur: null,
+      sig: 'v' + selfVer + (mb ? 'b' + mb.until + ':' + mb.gen : '')
+    };
+  }
+
+  /* draw one view; → the edge tag it needs, if its focus is off screen */
+  function drawView(v, now, vh, edges) {
+    var d = parts(v.id);
+    var ringR = v.ringEl && v.ringEl.isConnected ? v.ringEl.getBoundingClientRect() : null;
+    if (shown(ringR)) { d.ring.hidden = false; d.ring.style.borderColor = v.color; place(d.ring, ringR, 3); placeName(d.tag, ringR, v.name, v.color); }
+    else { d.ring.hidden = true; d.tag.hidden = true; }
+
+    var selR = firstRect(v.ranges);
+    if (!hasHL) {                                   /* boxes instead of the highlight */
+      var rects = rectsOf(v.ranges.concat(v.bringRanges || []));
+      while (d.boxes.length < Math.min(rects.length, 40)) d.boxes.push(el('icw-box'));
+      d.boxes.forEach(function (b, i) { if (i < rects.length) { b.hidden = false; b.style.background = v.color; place(b, rects[i], 0); } else b.hidden = true; });
+    }
+    if (selR && !(shown(ringR) && Math.abs(ringR.top - selR.top) < 4)) placeName(d.selTag, selR, v.name, v.color);
+    else d.selTag.hidden = true;
+
+    /* a bring: its own ring if it is not already ringed, and the "!" badge */
+    var bringR = null;
+    if (v.badge) {
+      bringR = firstRect(v.bringRanges) || (v.bringEl && v.bringEl.isConnected ? v.bringEl.getBoundingClientRect() : null) || selR || ringR;
+      var sameAsRing = shown(ringR) && v.bringEl === v.ringEl;
+      if (v.bringEl && shown(bringR) && !sameAsRing && !v.bringRanges.length) { d.bring.hidden = false; d.bring.style.borderColor = v.color; place(d.bring, v.bringEl.getBoundingClientRect(), 5); }
+      else d.bring.hidden = true;
+      if (shown(bringR)) {
+        d.badge.hidden = false; d.badge.style.background = v.color;
+        d.badge.style.transform = 'translate(' + Math.round(Math.min(global.innerWidth - 24, bringR.right - 4)) + 'px,' + Math.round(bringR.top - 14) + 'px)';
+      } else d.badge.hidden = true;
+    } else { d.bring.hidden = true; d.badge.hidden = true; }
+
+    /* a cursor: an arrow in the person's colour with the name, eased between positions */
+    if (v.cur) {
+      var c = v.cur;
+      if (d.cx == null || Math.abs(c.x - d.cx) > 400 || Math.abs(c.y - d.cy) > 400) { d.cx = c.x; d.cy = c.y; }
+      d.cx += (c.x - d.cx) * 0.4; d.cy += (c.y - d.cy) * 0.4;
+      var off = c.y < 0 || c.y > vh;
+      d.cur.hidden = off;
+      if (!off) {
+        d.cur.style.color = v.color;
+        d.cur.style.transform = 'translate(' + Math.round(d.cx - 3) + 'px,' + Math.round(d.cy - 2) + 'px)';
+        d.cur.style.opacity = String(Math.max(0, c.fade));
+        var nm = d.cur.lastChild;
+        if (nm.textContent !== v.name) nm.textContent = v.name;
+        nm.style.background = v.color;
+        if (c.down && !d.wasDown) { d.cur.classList.remove('icw-pulse'); void d.cur.offsetWidth; d.cur.classList.add('icw-pulse'); }
+      }
+      d.wasDown = c.down;
+    } else { d.cur.hidden = true; d.cx = null; }
+
+    if (!edges) return;
+    /* off screen: a tag on the top or bottom edge, which takes me there */
+    var focus = shown(bringR) ? bringR : (selR || (shown(ringR) ? ringR : null) || (v.cur ? { top: v.cur.y, bottom: v.cur.y } : null)), side = null;
+    if (focus) { if (focus.bottom < 6) side = 'top'; else if (focus.top > vh - 6) side = 'bottom'; }
+    if (side) {
+      var label = (side === 'top' ? '▲ ' : '▼ ') + v.name, sigE = label + (v.badge ? '!' : '');
+      if (d.edge.dataset.sig !== sigE) {
+        d.edge.textContent = label;
+        if (v.badge) { var bg = document.createElement('span'); bg.className = 'icw-edgebadge'; bg.textContent = '!'; d.edge.appendChild(bg); }
+        d.edge.dataset.sig = sigE;
+      }
+      d.edge.style.background = v.color;
+      d.edge.title = 'Go to ' + v.name;
+      (side === 'top' ? edges.top : edges.bottom).push(d.edge);
+    } else if (d.edge.parentNode) d.edge.parentNode.removeChild(d.edge);
+    return bringR;
+  }
 
   function frame() {
     raf = 0;
-    if (!S.room || !prefs.see) { clearDrawing(); hlSig = ''; return; }
-    var vh = global.innerHeight, list = named(), keep = {};
-    var tops = [], bottoms = [];
-    list.forEach(function (p) {
+    if (!S.room) { clearDrawing(); return; }
+    var now = Date.now(), vh = global.innerHeight, keep = {}, views = [], edges = { top: [], bottom: [] }, busy = false;
+    if (prefs.hl) { var me = selfView(now); drawView(me, now, vh, null); keep.me = true; views.push(me); }
+    if (prefs.see) named().forEach(function (p) {
       resolvePeer(p);
-      var d = parts(p.id);
-      keep[p.id] = true;
-      var ringEl = p.overEl || p.blocks[0] || null, ringR = ringEl && ringEl.isConnected ? ringEl.getBoundingClientRect() : null;
-      if (visibleRect(ringR)) {
-        d.ring.hidden = false; d.ring.style.borderColor = p.color; place(d.ring, ringR, 3);
-        placeName(d.tag, ringR, p.name, p.color);
-      } else { d.ring.hidden = true; d.tag.hidden = true; }
-
-      var first = null, rects = [];
-      p.ranges.forEach(function (r) { [].forEach.call(r.getClientRects(), function (x) { if (x.width) rects.push(x); }); });
-      if (rects.length) first = rects[0];
-      if (!hasHL) {                           /* boxes instead of the highlight */
-        while (d.boxes.length < Math.min(rects.length, 40)) { var b = document.createElement('div'); b.className = 'icw-box'; layer.appendChild(b); d.boxes.push(b); }
-        d.boxes.forEach(function (b, i) {
-          if (i < rects.length) { b.hidden = false; b.style.background = p.color; place(b, rects[i], 0); } else b.hidden = true;
-        });
+      var v = peerView(p, now), bringR = drawView(v, now, vh, edges);
+      keep[p.id] = true; views.push(v);
+      if (p.bring) {
+        /* a bring stays until I have had it on my screen for a moment, or for a minute at most */
+        var onScreen = shown(bringR) && bringR.bottom > 0 && bringR.top < vh && !document.hidden;
+        if (onScreen) p.bring.seen += now - p.bring.last;
+        p.bring.last = now;
+        if (p.bring.seen > 2500 || now - p.bring.t > 60000) { p.bring = null; hlSig = ''; }
       }
-      if (first && !(ringR && visibleRect(ringR) && Math.abs(ringR.top - first.top) < 4)) placeName(d.selTag, first, p.name, p.color);
-      else d.selTag.hidden = true;
-
-      /* off screen: a tag on the top or bottom edge, which takes me there */
-      var focus = first || (visibleRect(ringR) ? ringR : null), edge = null;
-      if (focus) { if (focus.bottom < 6) edge = 'top'; else if (focus.top > vh - 6) edge = 'bottom'; }
-      if (edge) {
-        d.edge.textContent = (edge === 'top' ? '▲ ' : '▼ ') + p.name;
-        d.edge.style.background = p.color;
-        d.edge.title = 'Go to ' + p.name;
-        (edge === 'top' ? tops : bottoms).push(d.edge);
-      } else if (d.edge.parentNode) d.edge.parentNode.removeChild(d.edge);
+      if (p.cur && now - p.cur.t < 5200) busy = true;
     });
-    tops.forEach(function (e) { if (e.parentNode !== edgeTop) edgeTop.appendChild(e); });
-    bottoms.forEach(function (e) { if (e.parentNode !== edgeBottom) edgeBottom.appendChild(e); });
+    edges.top.forEach(function (e) { if (e.parentNode !== edgeTop) edgeTop.appendChild(e); });
+    edges.bottom.forEach(function (e) { if (e.parentNode !== edgeBottom) edgeBottom.appendChild(e); });
     Object.keys(drawn).forEach(function (id) { if (!keep[id]) clearPeerDrawing(id); });
-    paintSelections(list);
-    raf = requestAnimationFrame(frame);       /* follows scrolling, resizing and reflow */
+    paintSelections(views);
+    raf = requestAnimationFrame(frame);       /* follows scrolling, resizing, reflow and easing */
   }
   function goTo(id) {
     var p = S.peers[id];
     if (!p) return;
-    var el = p.ranges[0] ? p.ranges[0].startContainer : (p.overEl || p.blocks[0]);
-    if (el && el.nodeType !== 1) el = el.parentElement;
-    if (el && el.scrollIntoView) el.scrollIntoView({ block: 'center', behavior: 'smooth' });
+    var node = p.bring ? bringFocusNode(p.bring) : null;
+    if (!node) { node = p.ranges[0] ? p.ranges[0].startContainer : (p.overEl || p.blocks[0]); if (node && node.nodeType !== 1) node = node.parentElement; }
+    if (!node && p.cur && p.cur.el) node = p.cur.el;
+    if (node && node.scrollIntoView) node.scrollIntoView({ block: 'center', behavior: 'smooth' });
+  }
+  function ripple(p, d) {
+    if (!prefs.see) return;
+    var target = resolveKey(d.k);
+    if (!target) return;
+    ensureLayer();
+    var r = target.getBoundingClientRect(), x = r.left + d.x * r.width, y = r.top + d.y * r.height;
+    if (y < 0 || y > global.innerHeight) return;
+    var e = document.createElement('div');
+    e.className = 'icw-ripple';
+    e.style.borderColor = p.color;
+    e.style.left = Math.round(x) + 'px'; e.style.top = Math.round(y) + 'px';
+    layer.appendChild(e);
+    setTimeout(function () { e.remove(); }, 800);
   }
 
   /* the page changed: keys and ranges are worked out again */
@@ -591,28 +892,41 @@
   });
   mo.observe(document.body, { childList: true, subtree: true, characterData: true });
 
-  /* ══ RAIL BUTTONS ════════════════════════════════════════════════════════ */
+  /* ══ RAIL BUTTONS ════════════════════════════════════════════════════════
+     🤝 60 (from the loader) · 🖱️ 61 · 🖍️ 62 · 👀 63 · 📣 64 */
   function rail(on) {
     var R = global.HouseRail;
+    document.documentElement.classList.toggle('icw-own', !!(on && prefs.hl));
     if (!R) return;
     R.set('icwhatuc-toggle', on);
     var main = $('icwhatuc-toggle');
     if (main) main.title = on ? 'Work together: on' : 'Work together';
     if (on) {
+      R.add({ id: 'icwhatuc-cur', icon: '🖱️', label: 'Show my cursor', order: 61, pressed: prefs.cur, onClick: function () { showCursor(!prefs.cur); } });
       R.add({ id: 'icwhatuc-hl', icon: '🖍️', label: 'Show my highlights', order: 62, pressed: prefs.hl, onClick: function () { showHighlights(!prefs.hl); } });
       R.add({ id: 'icwhatuc-see', icon: '👀', label: 'See the others', order: 63, pressed: prefs.see, onClick: function () { seeOthers(!prefs.see); } });
+      R.add({ id: 'icwhatuc-bring', icon: '📣', label: 'Bring the others here', order: 64, onClick: function () { onBringButton(); } });
       titles();
-    } else { R.remove('icwhatuc-hl'); R.remove('icwhatuc-see'); }
+    } else { ['icwhatuc-cur', 'icwhatuc-hl', 'icwhatuc-see', 'icwhatuc-bring'].forEach(function (id) { R.remove(id); }); closeChooser(); }
   }
   function titles() {
-    var a = $('icwhatuc-hl'), b = $('icwhatuc-see');
-    if (a) a.title = prefs.hl ? 'Others see what I point at and select: on' : 'Others see what I point at and select: off';
-    if (b) b.title = prefs.see ? 'I see the others: on' : 'I see the others: off';
+    var t = { 'icwhatuc-cur': prefs.cur ? 'Others see my cursor: on' : 'Others see my cursor: off',
+      'icwhatuc-hl': prefs.hl ? 'Others see what I point at and select: on' : 'Others see what I point at and select: off',
+      'icwhatuc-see': prefs.see ? 'I see the others: on' : 'I see the others: off',
+      'icwhatuc-bring': S.role === 'host' ? 'Bring the others here: show them, or take them there' : 'Bring the others here' };
+    Object.keys(t).forEach(function (id) { var b = $(id); if (b) b.title = t[id]; });
+  }
+  function showCursor(v) {
+    prefs.cur = !!v; store(KEY.cur, prefs.cur);
+    if (global.HouseRail) global.HouseRail.set('icwhatuc-cur', prefs.cur);
+    titles();
+    if (!prefs.cur) curOff();
   }
   function showHighlights(v) {
     prefs.hl = !!v; store(KEY.hl, prefs.hl);
     if (global.HouseRail) global.HouseRail.set('icwhatuc-hl', prefs.hl);
-    titles();
+    document.documentElement.classList.toggle('icw-own', !!(S.room && prefs.hl));
+    titles(); hlSig = ''; kick();
     if (!S.room) return;
     if (prefs.hl) { S.mine.selJson = ''; sendSel(); S.actions.over({ k: S.mine.over }); }
     else { S.actions.over({ k: null }); S.actions.sel({ p: null }); }
@@ -621,9 +935,38 @@
     prefs.see = !!v; store(KEY.see, prefs.see);
     if (global.HouseRail) global.HouseRail.set('icwhatuc-see', prefs.see);
     titles();
-    if (prefs.see) { Object.keys(S.peers).forEach(function (id) { S.peers[id].dirty = true; }); kick(); }
-    else { clearDrawing(); hlSig = ''; }
+    Object.keys(S.peers).forEach(function (id) { S.peers[id].dirty = true; });
+    Object.keys(drawn).forEach(function (id) { if (id !== 'me') clearPeerDrawing(id); });
+    hlSig = ''; kick();
   }
+
+  /* 📣: everyone calls with a "!"; the host chooses between that and moving the others' pages */
+  var chooser = null;
+  function onBringButton() {
+    if (!canBring()) { toast('First, select some words or point at something.'); return; }
+    if (S.role !== 'host') { bring('soft'); return; }
+    if (chooser && !chooser.hidden) { closeChooser(); return; }
+    injectStyles();
+    if (!chooser) {
+      chooser = document.createElement('div');
+      chooser.id = 'icw-bring';
+      chooser.setAttribute('role', 'menu');
+      chooser.innerHTML = '<button type="button" role="menuitem" data-m="soft">❗ Show them</button><button type="button" role="menuitem" data-m="hard">➡️ Take them there</button>';
+      chooser.addEventListener('click', function (e) {
+        e.stopPropagation();
+        var b = e.target.closest('[data-m]');
+        if (b) { closeChooser(); bring(b.getAttribute('data-m')); }
+      });
+      document.body.appendChild(chooser);
+      document.addEventListener('click', function (e) { if (chooser && !chooser.hidden && !chooser.contains(e.target)) closeChooser(); });
+      document.addEventListener('keydown', function (e) { if (e.key === 'Escape') closeChooser(); });
+    }
+    chooser.hidden = false;
+    var btn = $('icwhatuc-bring'), r = btn ? btn.getBoundingClientRect() : { left: global.innerWidth - 14, top: 200, height: 38 };
+    chooser.style.right = Math.max(8, document.documentElement.clientWidth - r.left + 8) + 'px';
+    chooser.style.top = Math.round(r.top + r.height / 2 - chooser.offsetHeight / 2) + 'px';
+  }
+  function closeChooser() { if (chooser) chooser.hidden = true; }
 
   /* ══ THE PANEL ═══════════════════════════════════════════════════════════
      English only, short sentences, words from the first thousand. */
@@ -643,6 +986,11 @@
     panel.setAttribute('data-dict', 'off');
     panel.hidden = true;
     panel.addEventListener('click', onPanelClick);
+    panel.addEventListener('change', function (e) {
+      if (e.target.id !== 'icw-notify-on') return;
+      if (!e.target.checked) { store(KEY.notify, 'no'); return; }
+      if (Notification.permission === 'granted') store(KEY.notify, 'yes'); else askNotify(true);
+    });
     panel.addEventListener('keydown', function (e) {
       if (e.key === 'Escape') openPanel(false);
       if (e.key === 'Enter' && e.target.id === 'icw-name') { var b = panel.querySelector('[data-do="start"], [data-do="join"]'); if (b) b.click(); }
@@ -676,6 +1024,22 @@
       '<input id="icw-name" type="text" maxlength="24" autocomplete="given-name" placeholder="First name" value="' + esc(n) + '">';
   }
   var FIRST = '<p class="icw-small">The others see what you point at and select. They cannot see your answers.</p>';
+  function notifyQuestion() {
+    if (store(KEY.notify) != null) return '';
+    if (!notifyOk()) { store(KEY.notify, 'no'); return ''; }
+    return '<div class="icw-ask"><p>Can we tell you when someone calls you?</p><div class="icw-row"><button type="button" data-do="notify-yes">Yes</button><button type="button" data-do="notify-no">No</button></div></div>';
+  }
+  function bringBox() {
+    var ready = canBring();
+    return '<div class="icw-bringbox"><p class="icw-label">Bring the others to what you select or point at</p><div class="icw-row">' +
+      '<button type="button" data-do="bring-soft"' + (ready ? '' : ' class="icw-grey"') + '>❗ Show them</button>' +
+      (S.role === 'host' ? '<button type="button" data-do="bring-hard"' + (ready ? '' : ' class="icw-grey"') + '>➡️ Take them there</button>' : '') +
+      '</div>' + (ready ? '' : '<p class="icw-small">First, select some words or point at something.</p>') + '</div>';
+  }
+  function notifySwitch() {
+    if (!notifyOk()) return '';
+    return '<label class="icw-check"><input id="icw-notify-on" type="checkbox"' + (store(KEY.notify) === 'yes' ? ' checked' : '') + '> Tell me when someone calls me, if I am on another tab</label>';
+  }
   function relayBox() {
     var r = store(KEY.relay) || {};
     return '<details class="icw-more"><summary>Relay for difficult networks</summary>' +
@@ -715,10 +1079,10 @@
     var h = '<div class="icw-head"><span>🤝 Work together</span><button type="button" class="icw-x" data-do="close" aria-label="Close">✕</button></div>';
     var st = S.status;
     if (st === 'idle' && invite) {
-      h += '<p>Someone invites you to work together on this page.</p>' + nameField() +
+      h += notifyQuestion() + '<p>Someone invites you to work together on this page.</p>' + nameField() +
         '<div class="icw-row"><button type="button" class="icw-main" data-do="join">Join</button><button type="button" data-do="no">Not now</button></div>' + FIRST;
     } else if (st === 'idle') {
-      h += '<p>Work together on this page.</p>' + nameField() +
+      h += notifyQuestion() + '<p>Work together on this page.</p>' + nameField() +
         '<div class="icw-row"><button type="button" class="icw-main" data-do="start">Start</button></div>' + FIRST + relayBox();
     } else if (st === 'connecting') {
       h += '<p class="icw-status">Connecting…</p>';
@@ -733,6 +1097,7 @@
       h += '<p class="icw-status" id="icw-status">' + (others ? 'You are together now.' :
         (waited >= 30 ? 'Nobody is here yet. Is your partner on this page?' : 'Waiting for your partner… ' + waited + ' s')) + '</p>';
       if (S.note) h += '<p class="icw-small">' + esc(S.note) + '</p>';
+      h += bringBox() + notifySwitch();
       h += '<p class="icw-small">On another lesson page in this tab, you join again by yourself.</p>';
       h += '<div class="icw-row">' + (S.role === 'host' ? '<button type="button" data-do="end">End for everyone</button>' : '<button type="button" data-do="leave">Leave</button>') + '</div>';
       if (!others && waited < 30) ticker = setInterval(function () { var e = $('icw-status'); if (!e || named().length) { renderPanel(); return; } var w = Math.round((Date.now() - S.joinedAt) / 1000); if (w >= 30) renderPanel(); else e.textContent = 'Waiting for your partner… ' + w + ' s'; }, 1000);
@@ -764,6 +1129,8 @@
       var byHand = function () { var f = $('icw-link'); if (f) { f.select(); try { document.execCommand('copy'); done(); } catch (err) { /* selected: copy by hand */ } } };
       if (navigator.clipboard && global.isSecureContext) navigator.clipboard.writeText(link).then(done, byHand); else byHand();
     }
+    else if (what === 'notify-yes' || what === 'notify-no') askNotify(what === 'notify-yes');
+    else if (what === 'bring-soft' || what === 'bring-hard') { if (bring(what === 'bring-hard' ? 'hard' : 'soft')) openPanel(false); }
     else if (what === 'leave') leave();
     else if (what === 'end') end();
     else if (what === 'again') { S.note = ''; setStatus('idle'); }
@@ -818,7 +1185,28 @@
       + '#icw-panel .icw-check{ display:flex; gap:6px; align-items:center; font-size:12px; }'
       + '#icw-panel details.icw-more{ margin:6px 0 0; border:none; }'
       + '#icw-panel details.icw-more summary{ background:none; padding:2px 0; font-size:12px; font-weight:600; color:var(--text-accent, #185fa5); display:list-item; list-style:revert; }'
-      + '@media print{ #icw-layer, #icw-panel{ display:none !important; } }';
+      + '.icw-bringring{ border-style:dashed; }'
+      + '.icw-badge{ position:absolute; left:0; top:0; width:20px; height:20px; border-radius:50%; color:#fff; font:800 13px/20px system-ui, sans-serif; text-align:center; box-shadow:0 0 0 2px #fff, 0 2px 6px rgba(0,0,0,.3); animation:icw-pop .5s ease 2; }'
+      + '.icw-edgebadge{ display:inline-block; margin-left:6px; width:16px; height:16px; border-radius:50%; background:#fff; color:#c92a2a; font:800 11px/16px system-ui, sans-serif; text-align:center; }'
+      + '@keyframes icw-pop{ 50%{ transform-origin:center; scale:1.35; } }'
+      + '.icw-cursor{ position:absolute; left:0; top:0; display:flex; align-items:flex-start; filter:drop-shadow(0 1px 2px rgba(0,0,0,.35)); transition:opacity .3s; }'
+      + '.icw-curname{ margin:14px 0 0 -4px; color:#fff; font:600 11px/16px system-ui, -apple-system, "Segoe UI", sans-serif; padding:0 6px; border-radius:6px; white-space:nowrap; max-width:140px; overflow:hidden; text-overflow:ellipsis; }'
+      + '.icw-cursor.icw-pulse svg{ animation:icw-click .45s ease-out; }'
+      + '@keyframes icw-click{ 0%{ scale:1; } 40%{ scale:1.45; } 100%{ scale:1; } }'
+      + '.icw-ripple{ position:absolute; width:14px; height:14px; margin:-7px 0 0 -7px; border:3px solid; border-radius:50%; animation:icw-ripple .8s ease-out forwards; }'
+      + '@keyframes icw-ripple{ to{ width:56px; height:56px; margin:-28px 0 0 -28px; opacity:0; } }'
+      /* while 🖍️ is on, my selection is drawn in my colour, as the others see it */
+      + 'html.icw-own *::selection{ background:transparent; }'
+      + 'html.icw-own #icw-panel *::selection, html.icw-own input::selection, html.icw-own textarea::selection{ background:Highlight; color:HighlightText; }'
+      + '#icw-toast{ position:fixed; left:50%; bottom:58px; transform:translateX(-50%); z-index:1060; max-width:calc(100vw - 24px); padding:8px 14px; border-radius:999px;'
+      +   ' background:var(--text-primary, #1a1a1a); color:var(--surface-2, #fff); font:600 13px/1.35 var(--font-sans, system-ui, sans-serif); box-shadow:0 6px 18px rgba(0,0,0,.2); }'
+      + '#icw-toast[hidden], #icw-bring[hidden]{ display:none; }'
+      + '#icw-bring{ position:fixed; z-index:1050; display:flex; flex-direction:column; gap:6px; padding:8px; border-radius:12px; background:var(--surface-2, #fff); border:1px solid var(--border, #e3e3e6); box-shadow:0 8px 24px rgba(0,0,0,.18); }'
+      + '#icw-bring button, #icw-panel .icw-bringbox button{ font:600 13px/1.2 var(--font-sans, system-ui, sans-serif); padding:7px 13px; border-radius:999px; border:1px solid var(--border, #e3e3e6); background:var(--surface-1, #f7f7f8); color:var(--text-primary, #1a1a1a); cursor:pointer; text-align:left; white-space:nowrap; }'
+      + '#icw-panel button.icw-grey{ opacity:.5; }'
+      + '#icw-panel .icw-ask{ background:var(--color-background-info, #e6f1fb); border-radius:10px; padding:8px 10px 2px; margin-bottom:10px; }'
+      + '#icw-panel .icw-bringbox{ border-top:1px solid var(--border, #e3e3e6); padding-top:8px; margin-top:4px; }'
+      + '@media print{ #icw-layer, #icw-panel, #icw-bring, #icw-toast{ display:none !important; } }';
     for (var i = 0; i < COLORS.length; i++) css += '::highlight(icw-c' + i + '){ background-color:' + COLORS[i] + '4d; }';
     var s = document.createElement('style');
     s.id = 'icwhatuc-styles';
@@ -850,7 +1238,8 @@
     peers: function () { return named().map(publicPeer); },
     link: linkNow,
     status: function () { return S.status; },
-    showHighlights: showHighlights, seeOthers: seeOthers,
+    showCursor: showCursor, showHighlights: showHighlights, seeOthers: seeOthers,
+    canBring: canBring, bring: bring,
     key: function (el, k) { if (k != null) { el.dataset.icwKey = k; gen++; return 'k:' + k; } return keyOf(el); },
     resolve: resolveKey,
     on: function (type, fn) { (S.listeners[type] = S.listeners[type] || []).push(fn); },
