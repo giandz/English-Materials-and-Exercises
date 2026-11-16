@@ -21,6 +21,8 @@
      · HouseThink     — thought bubbles under a line of a conversation
      · HouseDict      — the learner's dictionary: right-click / long press a word
                         for its meaning and sound; ☆ saves it for My Words
+     · ICwhatUC loader — the 🤝 button; icwhatuc.js (work together on a page)
+                        loads only when it is used
 
    Load it once at the end of <body>, before the page's own script.
    ══════════════════════════════════════════════════════════════════════════ */
@@ -97,7 +99,7 @@
      HouseRail.place(element, order) put any element in the column
      HouseRail.adopt(id, { icon, label, order })   a page's own text switch
    Orders in use: theme 0, text size 10, grammar 20, stick figures 30,
-   pronunciation 40, bionic 50. Fixed chrome stays in px, like the theme toggle.
+   pronunciation 40, bionic 50, ICwhatUC 60 (🤝) and 62–63 (🖍️ 👀; 61 is kept for 🖱️). Fixed chrome stays in px, like the theme toggle.
    ══════════════════════════════════════════════════════════════════════════ */
 (function (global) {
   'use strict';
@@ -3464,6 +3466,56 @@
 
 
 /* ══════════════════════════════════════════════════════════════════════════
+   HOUSE ICwhatUC — work together on a lesson page
+   A 🤝 button in the rail. Everything else lives in icwhatuc.js, next to
+   house.js, loaded on the first press, or by itself when the page was opened
+   from an invitation link (#icw=…) or this tab is already in a session.
+   A page where nobody presses 🤝 downloads nothing more. Turn it off for a
+   page with <html data-icwhatuc="off">.
+   ══════════════════════════════════════════════════════════════════════════ */
+(function () {
+  'use strict';
+  var waiting = [];
+  function base() {
+    var scripts = document.querySelectorAll('script[src]');
+    for (var i = 0; i < scripts.length; i++) {
+      if (/house\.js(\?|#|$)/.test(scripts[i].src)) return scripts[i].src.replace(/[?#].*$/, '').replace(/house\.js$/, '');
+    }
+    return '';
+  }
+  function load(then) {
+    if (window.ICwhatUC) { if (then) then(window.ICwhatUC); return; }
+    if (then) waiting.push(then);
+    if (document.getElementById('icwhatuc-js')) return;
+    var s = document.createElement('script');
+    s.id = 'icwhatuc-js';
+    s.src = base() + 'icwhatuc.js';
+    s.onload = function () { var w = waiting; waiting = []; w.forEach(function (f) { f(window.ICwhatUC); }); };
+    s.onerror = function () {
+      waiting = []; s.remove();
+      var b = document.getElementById('icwhatuc-toggle');
+      if (b) { b.disabled = false; b.title = 'Work together: could not load. Try again.'; }
+    };
+    document.body.appendChild(s);
+  }
+  function start() {
+    if (!window.RTCPeerConnection || !window.HouseRail || document.documentElement.getAttribute('data-icwhatuc') === 'off') return;
+    var btn = window.HouseRail.add({ id: 'icwhatuc-toggle', icon: '🤝', label: 'Work together', order: 60, pressed: false,
+      onClick: function () {
+        if (window.ICwhatUC) { window.ICwhatUC.toggle(); return; }
+        btn.disabled = true;
+        load(function (m) { btn.disabled = false; m.open(); });
+      } });
+    var inSession = false;
+    try { inSession = !!sessionStorage.getItem('icwhatuc-session'); } catch (e) { /* no storage: no session */ }
+    if (/[#&]icw=/.test(location.hash) || inSession) load();
+  }
+  if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', start);
+  else setTimeout(start, 0);
+})();
+
+
+/* ══════════════════════════════════════════════════════════════════════════
    HOUSE LEARNER'S DICTIONARY (HouseDict)
 
    Right-click a word (computer) or press and hold it (phone, tablet). A card
@@ -4302,6 +4354,8 @@ html.hd-pressing body{ -webkit-user-select:none; user-select:none; -webkit-touch
       return list;
     },
     say: (text, slow) => say(text, null, slow),
+    /* the text helpers, shared with icwhatuc.js so a selection is found on the same words */
+    text: { blockOf, textModel, rangeFor },
     voice: () => { const v = pickVoice(); return v ? v.name + ' (' + v.lang + ')' : null; },
     core: CORE
   };
