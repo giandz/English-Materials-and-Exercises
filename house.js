@@ -98,6 +98,12 @@
      HouseRail.set(id, pressed)      HouseRail.remove(id)
      HouseRail.place(element, order) put any element in the column
      HouseRail.adopt(id, { icon, label, order })   a page's own text switch
+     HouseRail.across()              true when the rail is a row across the top
+   On a narrow screen (520 px or less), or a short one held sideways (500 px high
+   or less), the rail is a row across the top instead of a column: the buttons
+   are a little smaller, the row scrolls sideways if they do not all fit, and the
+   page is pushed down so the row never covers the title. Panels that open from
+   a button (🔎, 🤝) open below the row.
    Orders in use: theme 0, text size 10, grammar 20, stick figures 30,
    pronunciation 40, bionic 50, ICwhatUC 60–64 (🤝 🖱️ 🖍️ 👀 📣). Fixed chrome stays in px, like the theme toggle.
    ══════════════════════════════════════════════════════════════════════════ */
@@ -105,6 +111,9 @@
   'use strict';
 
   var STYLE_ID = 'house-rail-styles';
+  /* when the rail is a row across the top instead of a column */
+  var ACROSS = '(max-width: 520px), (max-height: 500px) and (orientation: landscape)';
+  function across() { return !!(global.matchMedia && global.matchMedia(ACROSS).matches); }
   var CSS = ''
     + '#house-rail{ position:fixed; top:14px; right:14px; z-index:1000; display:flex; flex-direction:column; align-items:center; gap:8px; }'
     + '#house-rail > #theme-toggle-wrap, #house-rail > #font-size-wrap{ position:static; top:auto; right:auto; }'
@@ -120,7 +129,15 @@
     /* the 🔎 panel opens beside its button, wherever the button is in the column */
     + '#font-size-panel{ box-sizing:border-box; }'
     + '#font-size-panel #font-size-slider{ width:auto; flex:1 1 132px; min-width:56px; }'
-    + '@media print{ #house-rail, #font-size-panel{ display:none !important; } }';
+    + '@media ' + ACROSS + '{'
+    +   '#house-rail{ flex-direction:row; top:4px; right:6px; left:auto; max-width:calc(100vw - 12px); overflow-x:auto; overflow-y:hidden;'
+    +     ' padding:3px 3px 7px; gap:6px; scrollbar-width:none; -webkit-overflow-scrolling:touch; overscroll-behavior-x:contain; }'
+    +   '#house-rail::-webkit-scrollbar{ display:none; }'
+    +   '#house-rail > *{ flex:0 0 auto; }'
+    +   '#house-rail .house-rail-btn, #house-rail #theme-toggle, #house-rail #font-size-toggle{ width:34px; height:34px; }'
+    +   'body{ padding-top:50px; }'
+    + '}'
+    + '@media print{ #house-rail, #font-size-panel{ display:none !important; } body{ padding-top:0; } }';
 
   var rail = null;
 
@@ -250,7 +267,7 @@
   if (document.body) start();
   else document.addEventListener('DOMContentLoaded', start);
 
-  global.HouseRail = { add: add, set: set, remove: remove, place: place, adopt: adopt, refresh: scan };
+  global.HouseRail = { add: add, set: set, remove: remove, place: place, adopt: adopt, refresh: scan, across: across };
 })(window);
 
 
@@ -604,6 +621,7 @@
         if (origIdx === -1) origIdx = correctOrder.indexOf(word);
         posCursor[word] = origIdx + 1;
         chip.dataset.pos = (entry.pos && entry.pos[origIdx]) || 'none';
+        chip.dataset.wo = idx + '.' + origIdx;   /* the same on every page, whatever the shuffle (ICwhatUC) */
         attachChipEvents(chip, targetZone, poolZone, feedback, itemEl, indicator);
         poolZone.appendChild(chip);
       });
@@ -1140,6 +1158,14 @@
     function placePanel() {
       if (!global.HouseRail || !panel.classList.contains('open')) return;
       var r = btn.getBoundingClientRect(), vw = document.documentElement.clientWidth;
+      if (global.HouseRail.across && global.HouseRail.across()) {
+        /* the rail is a row across the top: the panel opens below it, across the screen */
+        var rail = document.getElementById('house-rail'), bottom = rail ? rail.getBoundingClientRect().bottom : r.bottom;
+        panel.style.left = '8px'; panel.style.right = '8px'; panel.style.maxWidth = 'none';
+        panel.style.top = Math.round(bottom + 6) + 'px';
+        return;
+      }
+      panel.style.left = '';
       panel.style.right = Math.max(8, vw - r.left + 8) + 'px';
       panel.style.maxWidth = Math.max(160, r.left - 16) + 'px';
       panel.style.top = Math.max(8, r.top + (r.height - panel.offsetHeight) / 2) + 'px';
@@ -2581,6 +2607,7 @@
     function renderSentence(item, idx) {
       var wrap = document.createElement('div');
       wrap.className = 'eh2-item';
+      wrap.dataset.eh = idx;                     /* keys shared by ICwhatUC: item, words (w) and gaps (g) */
 
       var sentEl = document.createElement('div');
       sentEl.className = 'eh2-sentence';
@@ -2643,6 +2670,7 @@
           (function (i) {
             var gap = document.createElement('span');
             gap.className = 'eh2-gap';
+            gap.dataset.eh = idx + '.g' + i;
             if (i > 0 && ENDERS.indexOf(item.words[i - 1]) !== -1) gap.classList.add('no-dot');
             gap.addEventListener('click', function () { onGapClick(i); });
             sentEl.appendChild(gap);
@@ -2651,6 +2679,7 @@
             if (i < item.words.length) {
               var w = document.createElement('span');
               w.className = 'eh2-word';
+              w.dataset.eh = idx + '.w' + i;
               w.textContent = item.words[i];
               w.addEventListener('click', function () {
                 if (suppressClick) { suppressClick = false; return; }
@@ -2944,6 +2973,7 @@
       function insertWordAt(gapIndex, word) {
         var chip = document.createElement('span');
         chip.className = 'eh2-word inserted';
+        chip.dataset.eh = idx + '.in';
         // A word inserted in front of the sentence starts it: capital letter,
         // and the old first word loses its own (unless it always keeps it).
         if (gapIndex === 0) {
@@ -2962,6 +2992,7 @@
       function replaceWordAt(i, word) {
         var chip = document.createElement('span');
         chip.className = 'eh2-word inserted';
+        chip.dataset.eh = idx + '.w' + i;
         chip.textContent = word;
         wordEls[i].parentNode.insertBefore(chip, wordEls[i]);
         wordEls[i].parentNode.removeChild(wordEls[i]);
@@ -2980,6 +3011,7 @@
 
         var dot = document.createElement('span');
         dot.className = 'eh2-gap deleted-ok';
+        dot.dataset.eh = idx + '.del';
         dot.textContent = '·';
         wordEl.parentNode.insertBefore(dot, wordEl);
 
@@ -3009,6 +3041,7 @@
 
         var chip = document.createElement('span');
         chip.className = 'eh2-word moved-in';
+        chip.dataset.eh = idx + '.mv';
         chip.textContent = displayWord;
         gapEls[targetGapIndex].insertAdjacentElement('afterend', chip);
 
@@ -3509,6 +3542,8 @@
     var inSession = false;
     try { inSession = !!sessionStorage.getItem('icwhatuc-session'); } catch (e) { /* no storage: no session */ }
     if (/[#&]icw=/.test(location.hash) || inSession) load();
+    /* the link pasted into a tab that already shows this lesson: only the # changes, the page does not reload */
+    window.addEventListener('hashchange', function () { if (/[#&]icw=/.test(location.hash)) load(); });
   }
   if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', start);
   else setTimeout(start, 0);

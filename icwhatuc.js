@@ -57,7 +57,8 @@
   /* what a ring goes round: the smallest of these under the pointer */
   var RING = '.word-chip, .match-card, .match-stage .card, .hm-card, .fc-chip, .fc-zone, .fc-word, .opt, .ccq-opt, ' +
     '.eh2-word, .eh2-gap, .eh-word, .gf-gap-input, input.gap, .word-btn, .bubble, .think-cloud, .avatar, td, th, li, ' +
-    '.q-card, .seq-step, .pair-line, .ccq-sentence, .ccq-row, .rule-box, .timeline-wrap, .setting-chip, p, h1, h2, h3, summary, button, img';
+    '.q-card, .seq-step, .pair-line, .ccq-sentence, .ccq-row, .rule-box, .timeline-wrap, .setting-chip, [data-id], [data-icw-key], ' +
+    'p, h1, h2, h3, summary, button, img';
 
   /* ── small helpers ──────────────────────────────────────────────────── */
   var $ = function (id) { return document.getElementById(id); };
@@ -108,10 +109,16 @@
     fp: ['.fc-chip[data-pos]', function (el) { return [scope(el), el.dataset.pos]; }],
     o:  ['.opt[data-q][data-o]', function (el) { return [scope(el), el.dataset.q, el.dataset.o]; }],
     wo: ['.wo-item[data-idx]', function (el) { return [scope(el), el.dataset.idx]; }],
+    /* house.js stamps these: a word chip's item and place in the correct order; error-hunt items, words and gaps */
+    wk: ['.word-chip[data-wo]', function (el) { return [scope(el), el.dataset.wo]; }],
+    eh: ['[data-eh]', function (el) { return [scope(el), el.dataset.eh]; }],
+    /* an older house.js: the chip's word, and which of the same word it is (two of one word can swap) */
     wc: ['.word-chip[data-word]', function (el) {
       var item = el.closest('.wo-item'), same = item ? [].filter.call(item.querySelectorAll('.word-chip'), function (c) { return c.dataset.word === el.dataset.word; }) : [el];
       return [item ? scope(item) + '.' + item.dataset.idx : scope(el), el.dataset.word, same.indexOf(el)];
-    }]
+    }],
+    /* a page's own engine: cards built from data usually carry data-id (and data-side) */
+    d:  ['[data-id]', function (el) { return [scope(el), (el.className && typeof el.className === 'string' ? el.className.split(/\s+/)[0] : el.tagName), el.dataset.id, el.dataset.side || '']; }]
   };
   var TABLE_ORDER = Object.keys(TABLE);
 
@@ -821,7 +828,7 @@
     if (!edges) return;
     /* off screen: a tag on the top or bottom edge, which takes me there */
     var focus = shown(bringR) ? bringR : (selR || (shown(ringR) ? ringR : null) || (v.cur ? { top: v.cur.y, bottom: v.cur.y } : null)), side = null;
-    if (focus) { if (focus.bottom < 6) side = 'top'; else if (focus.top > vh - 6) side = 'bottom'; }
+    if (focus) { if (focus.bottom < (S.topClear || 0) + 6) side = 'top'; else if (focus.top > vh - 6) side = 'bottom'; }
     if (side) {
       var label = (side === 'top' ? '▲ ' : '▼ ') + v.name, sigE = label + (v.badge ? '!' : '');
       if (d.edge.dataset.sig !== sigE) {
@@ -840,6 +847,10 @@
     raf = 0;
     if (!S.room) { clearDrawing(); return; }
     var now = Date.now(), vh = global.innerHeight, keep = {}, views = [], edges = { top: [], bottom: [] }, busy = false;
+    var clear = topClear();
+    ensureLayer();
+    edgeTop.style.top = (clear + 6) + 'px';
+    S.topClear = clear;
     if (prefs.hl) { var me = selfView(now); drawView(me, now, vh, null); keep.me = true; views.push(me); }
     if (prefs.see) named().forEach(function (p) {
       resolvePeer(p);
@@ -962,11 +973,24 @@
       document.addEventListener('keydown', function (e) { if (e.key === 'Escape') closeChooser(); });
     }
     chooser.hidden = false;
-    var btn = $('icwhatuc-bring'), r = btn ? btn.getBoundingClientRect() : { left: global.innerWidth - 14, top: 200, height: 38 };
-    chooser.style.right = Math.max(8, document.documentElement.clientWidth - r.left + 8) + 'px';
-    chooser.style.top = Math.round(r.top + r.height / 2 - chooser.offsetHeight / 2) + 'px';
+    var btn = $('icwhatuc-bring'), r = btn ? btn.getBoundingClientRect() : { left: global.innerWidth - 14, right: global.innerWidth - 14, top: 200, bottom: 238, height: 38 };
+    var vw = document.documentElement.clientWidth;
+    if (railAcross()) {                      /* the rail runs across the top: open below the button */
+      chooser.style.right = Math.max(8, Math.min(vw - r.right, vw - chooser.offsetWidth - 8)) + 'px';
+      chooser.style.top = Math.round(r.bottom + 8) + 'px';
+    } else {
+      chooser.style.right = Math.max(8, vw - r.left + 8) + 'px';
+      chooser.style.top = Math.round(r.top + r.height / 2 - chooser.offsetHeight / 2) + 'px';
+    }
   }
   function closeChooser() { if (chooser) chooser.hidden = true; }
+  /* is the rail a row across the top (narrow or short screens)? → where it ends */
+  function railAcross() { return !!(global.HouseRail && global.HouseRail.across && global.HouseRail.across()); }
+  function topClear() {
+    if (!railAcross()) return 0;
+    var rail = $('house-rail');
+    return rail ? Math.max(0, rail.getBoundingClientRect().bottom) : 0;
+  }
 
   /* ══ THE PANEL ═══════════════════════════════════════════════════════════
      English only, short sentences, words from the first thousand. */
@@ -1006,7 +1030,13 @@
     var btn = $('icwhatuc-toggle'), vw = document.documentElement.clientWidth;
     if (!btn) { panel.style.right = '14px'; panel.style.top = '14px'; return; }
     var r = btn.getBoundingClientRect();
-    if (vw < 520) { panel.style.right = '8px'; panel.style.left = '8px'; panel.style.top = Math.min(r.bottom + 8, global.innerHeight - panel.offsetHeight - 8) + 'px'; return; }
+    if (railAcross() || vw < 520) {
+      panel.style.right = '8px'; panel.style.left = '8px'; panel.style.width = 'auto';
+      panel.style.top = Math.max(8, Math.min(Math.max(r.bottom, topClear()) + 8, global.innerHeight - panel.offsetHeight - 8)) + 'px';
+      panel.style.maxHeight = (global.innerHeight - Math.max(r.bottom, topClear()) - 16) + 'px'; panel.style.overflowY = 'auto';
+      return;
+    }
+    panel.style.width = ''; panel.style.maxHeight = ''; panel.style.overflowY = '';
     panel.style.left = '';
     panel.style.right = Math.max(8, vw - r.left + 8) + 'px';
     panel.style.top = Math.max(8, Math.min(r.top - 8, global.innerHeight - panel.offsetHeight - 8)) + 'px';
@@ -1217,17 +1247,20 @@
   /* ══ START-UP ════════════════════════════════════════════════════════════
      Opened from a link: ask for a name (the panel opens by itself). In a
      session already (a reload, or the next lesson page in this tab): join again. */
-  function boot() {
+  function boot() { invited(true); }
+  function invited(first) {
     var inv = parseInvite(location.hash), saved = session();
+    if (!inv && !first) return;
     if (inv) {
       try { history.replaceState(null, '', location.href.split('#')[0]); } catch (e) { /* file pages */ }
-      if (saved && saved.room === inv.room && saved.key === inv.key) { enter(saved); return; }
+      if (saved && saved.room === inv.room && saved.key === inv.key) { if (!(S.room && S.sess && S.sess.room === inv.room)) enter(saved); return; }
       invite = inv;
       openPanel(true);
       return;
     }
-    if (saved && saved.room && saved.key && saved.role && saved.name) enter(saved);
+    if (first && saved && saved.room && saved.key && saved.role && saved.name) enter(saved);
   }
+  global.addEventListener('hashchange', function () { invited(false); });
 
   global.ICwhatUC = {
     toggle: toggle,
