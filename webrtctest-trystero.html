@@ -284,9 +284,18 @@
     M.api = 'newer'; a.onMessage = handler;
     return function (data, to) { return to ? a.send(data, to) : a.send(data); };
   }
+  /* Register a handler whichever way this build of the library wants it: by calling
+     room.onX(fn), or by assigning room.onX = fn. A registrar is a function that is
+     already there before anything was assigned; a plain assignable slot is not. */
   function on(event, handler) {
-    if (M.api === 'older' && typeof room[event] === 'function') room[event](handler);
-    else room[event] = handler;
+    var slot;
+    try { slot = room[event]; } catch (e) { slot = undefined; }
+    if (typeof slot === 'function') {
+      try { slot.call(room, handler); M.events = 'called'; } catch (e) { /* not a registrar after all */ }
+    }
+    /* Assign as well. Where the call above registered the handler this only replaces the
+       registrar, which is not needed again; where the slot was a placeholder, this is what registers it. */
+    try { room[event] = handler; M.events = M.events || 'assigned'; } catch (e) { if (!M.events) log('! could not listen for ' + event + ': ' + e.message); }
   }
   function idOf(meta) { return typeof meta === 'string' ? meta : (meta && meta.peerId); }
 
@@ -339,13 +348,15 @@
     }
     var joined = performance.now();
     try {
-      room = mod.joinRoom(config, r.id, { onJoinError: function (e) { log('! join problem: ' + (e && (e.error || e.message) || JSON.stringify(e))); } });
+      room = mod.joinRoom(config, r.id);          /* two arguments only: the library refuses a third */
     } catch (e) {
       M.result = 'FAILED: could not join (' + e.message + ')';
       $('state').textContent = 'could not join'; $('state').className = 'err';
       log('! ' + M.result); facts(); return;
     }
     log('joined room ' + r.id + ' over ' + r.strategy + (mod.selfId ? ' as ' + String(mod.selfId).slice(0, 6) : ''));
+    on('onError', function (e) { log('! library problem: ' + (e && (e.error || e.message) || String(e))); });
+    on('onJoinError', function (e) { log('! join problem: ' + (e && (e.error || e.message) || String(e))); });
 
     actions.hello = makeAction('hello', function (data, meta) {
       var id = idOf(meta); if (!peers[id]) peers[id] = {};
@@ -399,6 +410,14 @@
     var byHand = function () { ta.select(); try { document.execCommand('copy'); done(); } catch (err) { /* the text is selected: copy by hand */ } };
     if (navigator.clipboard && window.isSecureContext) navigator.clipboard.writeText(ta.value).then(done, byHand); else byHand();
   });
+
+  /* anything the page or the library throws ends up in the log and the result line, not only in the console */
+  function problem(what) {
+    log('! ' + what);
+    if (!Object.keys(peers).length) { M.result = 'FAILED: ' + what; $('state').textContent = 'stopped by an error'; $('state').className = 'err'; facts(); }
+  }
+  window.addEventListener('error', function (e) { problem(e.message || 'script error'); });
+  window.addEventListener('unhandledrejection', function (e) { problem((e.reason && (e.reason.message || String(e.reason))) || 'promise rejected'); });
 
   log(browserName() + ' · ' + device());
   if (!window.RTCPeerConnection) { $('setup').innerHTML = '<p class="err">This browser has no WebRTC.</p>'; return; }
