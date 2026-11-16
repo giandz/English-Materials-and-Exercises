@@ -1,0 +1,414 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>ICwhatUC · Trystero test</title>
+<style>
+  :root{ color-scheme: light dark; --bg:#fbfbfa; --fg:#1b1b1f; --mute:#62626b; --line:#d9d9de; --card:#fff; --accent:#185fa5; --good:#1c7a3d; --bad:#b3261e; }
+  @media (prefers-color-scheme: dark){ :root{ --bg:#17171a; --fg:#ececf0; --mute:#a2a2ad; --line:#3a3a42; --card:#202025; --accent:#7db7f0; --good:#6fd08c; --bad:#ff8a80; } }
+  *{ box-sizing:border-box; }
+  body{ margin:0; background:var(--bg); color:var(--fg); font:15px/1.5 system-ui, -apple-system, "Segoe UI", sans-serif; }
+  main{ max-width:46rem; margin:0 auto; padding:1.25rem 1rem 3rem; }
+  h1{ font-size:1.35rem; margin:0 0 .2rem; }
+  h2{ font-size:1rem; margin:0 0 .5rem; }
+  p{ margin:.3rem 0 .7rem; }
+  .sub{ color:var(--mute); margin-bottom:1rem; }
+  .card{ background:var(--card); border:1px solid var(--line); border-radius:12px; padding:.9rem 1rem; margin-bottom:.9rem; }
+  .row{ display:flex; flex-wrap:wrap; gap:.5rem; align-items:center; }
+  button{ font:inherit; font-weight:600; padding:.5rem .95rem; border-radius:999px; border:1px solid var(--line); background:var(--card); color:var(--fg); cursor:pointer; }
+  button.main{ background:var(--accent); border-color:var(--accent); color:#fff; }
+  @media (prefers-color-scheme: dark){ button.main{ color:#10202f; } }
+  button:disabled{ opacity:.45; cursor:not-allowed; }
+  label{ display:flex; gap:.45rem; align-items:flex-start; margin:.25rem 0; }
+  input[type=text], input[type=password]{ font:inherit; padding:.45rem .6rem; border-radius:8px; border:1px solid var(--line); background:var(--bg); color:var(--fg); flex:1 1 12rem; min-width:0; }
+  textarea{ width:100%; min-height:4.6rem; word-break:break-all; font:13px/1.5 ui-monospace, SFMono-Regular, Menlo, Consolas, monospace; padding:.6rem .7rem; border-radius:8px; border:1px solid var(--line); background:var(--bg); color:var(--fg); resize:vertical; }
+  .step{ display:none; } .step.on{ display:block; }
+  .num{ display:inline-flex; width:1.5rem; height:1.5rem; border-radius:50%; background:var(--accent); color:#fff; align-items:center; justify-content:center; font-size:.8rem; font-weight:700; margin-right:.35rem; }
+  @media (prefers-color-scheme: dark){ .num{ color:#10202f; } }
+  .note{ font-size:.85rem; color:var(--mute); }
+  .err{ color:var(--bad); font-weight:600; min-height:1.3em; }
+  .ok{ color:var(--good); font-weight:600; }
+  dl{ display:grid; grid-template-columns:max-content 1fr; gap:.15rem .9rem; margin:0; font-size:.9rem; }
+  dt{ color:var(--mute); } dd{ margin:0; font-variant-numeric:tabular-nums; overflow-wrap:anywhere; }
+  #log{ font:12px/1.5 ui-monospace, Menlo, Consolas, monospace; white-space:pre-wrap; max-height:14rem; overflow:auto; color:var(--mute); margin:0; }
+  #chat{ font-size:.9rem; max-height:9rem; overflow:auto; margin:.4rem 0; }
+  #chat div{ padding:.1rem 0; } #chat .me{ color:var(--accent); }
+  #state{ font-weight:700; }
+  details{ margin-top:.7rem; border-top:1px solid var(--line); padding-top:.6rem; }
+  summary{ cursor:pointer; font-weight:600; }
+  select{ font:inherit; padding:.4rem .5rem; border-radius:8px; border:1px solid var(--line); background:var(--bg); color:var(--fg); }
+  .who{ display:inline-block; padding:.1rem .55rem; border-radius:999px; border:1px solid var(--line); margin:.1rem .25rem .1rem 0; font-size:.85rem; }
+</style>
+</head>
+<body>
+<main>
+  <h1>🤝 ICwhatUC · Trystero test</h1>
+  <p class="sub">One link, no codes. The host starts a room and sends the link; everyone who opens it is connected. Public relays carry the handshake only; messages go browser to browser.</p>
+
+  <div class="card" id="setup">
+    <h2>Before you start</h2>
+    <div class="row">
+      <label style="margin:0"><span>Relays:</span></label>
+      <select id="strategy" aria-label="Relay network">
+        <option value="nostr">Nostr (Trystero's default)</option>
+        <option value="mqtt">MQTT</option>
+      </select>
+      <button id="netBtn">Check my network</button>
+    </div>
+    <p class="note" id="netOut" style="margin:.6rem 0 0"></p>
+    <details id="relayBox">
+      <summary>Relay (TURN) · when a network cannot be reached directly</summary>
+      <p class="note">The same settings as on the code test page: they are read from this device if you saved them there. They stay on this device and are never put in the link.</p>
+      <div class="row">
+        <input type="text" id="turnUrl" placeholder="turn:example.com:3478   (or paste the JSON from your provider)" autocapitalize="off" autocomplete="off" spellcheck="false" aria-label="Relay address">
+      </div>
+      <div class="row" style="margin-top:.4rem">
+        <input type="text" id="turnUser" placeholder="user name" autocapitalize="off" autocomplete="off" spellcheck="false" aria-label="Relay user name">
+        <input type="password" id="turnPass" placeholder="password" autocomplete="off" aria-label="Relay password">
+      </div>
+      <label style="margin-top:.5rem"><input type="checkbox" id="optRelay"> <span>Use my relay when a direct link fails</span></label>
+      <label><input type="checkbox" id="optRelayOnly"> <span>Use only the relay <span class="note">(a test: proves the relay works under Trystero)</span></span></label>
+      <div class="row" style="margin-top:.4rem"><button id="turnSave">Save on this device</button><button id="turnForget">Forget</button><span class="note" id="turnMsg"></span></div>
+    </details>
+    <details>
+      <summary>Library address</summary>
+      <p class="note">Where the Trystero library is loaded from. Leave it empty to use the public CDN. Put a file name here once a copy sits beside this page.</p>
+      <div class="row"><input type="text" id="libUrl" placeholder="https://esm.run/trystero" autocapitalize="off" autocomplete="off" spellcheck="false" aria-label="Library address"></div>
+    </details>
+    <div class="row" style="margin-top:.8rem">
+      <button class="main" id="startBtn">Start a room</button>
+      <span class="note" id="joinNote"></span>
+    </div>
+  </div>
+
+  <div class="card step" id="roomCard">
+    <h2 id="roomTitle">Send this link to your partner</h2>
+    <textarea id="linkOut" readonly aria-label="Room link" style="min-height:3.4rem"></textarea>
+    <div class="row"><button class="main" data-copy="linkOut">Copy link</button><span class="note" id="roomInfo"></span></div>
+    <p class="note" style="margin:.5rem 0 0">Your partner only opens the link. Reload this page to test what happens on a new lesson page: it should join the same room again by itself.</p>
+  </div>
+
+  <div class="card step" id="live">
+    <h2>Room: <span id="state">loading</span></h2>
+    <div id="people"></div>
+    <div id="chat" aria-live="polite"></div>
+    <div class="row">
+      <input type="text" id="msg" placeholder="Write a message" disabled>
+      <button id="sendBtn" disabled>Send</button>
+    </div>
+  </div>
+
+  <div class="card step" id="results">
+    <h2>Measurements</h2>
+    <dl id="facts"></dl>
+    <div class="row" style="margin-top:.7rem">
+      <button data-copy="report">Copy the result line</button>
+      <button id="leaveBtn">Leave the room</button>
+    </div>
+    <textarea id="report" readonly style="min-height:3.2rem; margin-top:.6rem; word-break:normal" aria-label="Result line"></textarea>
+  </div>
+
+  <div class="card">
+    <h2>Log</h2>
+    <pre id="log"></pre>
+  </div>
+</main>
+
+<script>
+(function () {
+  'use strict';
+
+  var APP_ID = 'icwhatuc-english-materials';
+  /* Where each relay strategy's build of the library lives on the CDN the README names. */
+  var LIBS = { nostr: 'https://esm.run/trystero', mqtt: 'https://esm.run/@trystero-p2p/mqtt' };
+  var STORE = 'icwhatuc-trystero-room';       /* this tab's room, so a reload (a new lesson page) rejoins */
+  var RELAY_KEY = 'icwhatuc-relay';           /* shared with the code test page */
+
+  var $ = function (id) { return document.getElementById(id); };
+  var t0 = performance.now();
+  var room = null, actions = {}, peers = {}, me = { role: null };
+  var M = {};
+  function log(msg) {
+    var s = ((performance.now() - t0) / 1000).toFixed(2);
+    $('log').textContent += s.padStart(7) + '  ' + msg + '\n';
+    $('log').scrollTop = $('log').scrollHeight;
+  }
+  function show(id, on) { $(id).classList.toggle('on', on !== false); }
+  function browserName() {
+    var u = navigator.userAgent, m;
+    if ((m = u.match(/Firefox\/(\d+)/))) return 'Firefox ' + m[1];
+    if ((m = u.match(/Vivaldi\/([\d.]+)/))) return 'Vivaldi ' + m[1];
+    if ((m = u.match(/Edg\/(\d+)/))) return 'Edge ' + m[1];
+    if ((m = u.match(/(?:Chrome|CriOS)\/(\d+)/))) return 'Chrome ' + m[1];
+    if ((m = u.match(/Version\/(\d+).*Safari/))) return 'Safari ' + m[1];
+    return u;
+  }
+  function device() { return /Android/.test(navigator.userAgent) ? 'Android' : (/iPhone|iPad/.test(navigator.userAgent) ? 'iOS' : (navigator.platform || 'desktop')); }
+  function random(n) {
+    var a = new Uint8Array(n), s = '', L = 'ABCDEFGHJKLMNPQRSTUVWXYZabcdefghijkmnopqrstuvwxyz23456789';
+    crypto.getRandomValues(a);
+    for (var i = 0; i < n; i++) s += L[a[i] % L.length];
+    return s;
+  }
+
+  function facts() {
+    var ids = Object.keys(peers);
+    var rows = [
+      ['Browser', browserName() + ' · ' + device()],
+      ['Role', me.role || ''],
+      ['Relays', M.strategy || ''],
+      ['Library', M.lib ? M.lib + (M.api ? ' · ' + M.api + ' API' : '') : ''],
+      ['Library load', M.load != null ? M.load + ' ms' : ''],
+      ['Network check', M.net || ''],
+      ['TURN relay', M.relay || ''],
+      ['Rejoined after reload', M.rejoin ? 'yes' : ''],
+      ['Time to first partner', M.first != null ? M.first + ' ms after joining' : ''],
+      ['People connected', ids.length ? String(ids.length) : ''],
+      ['Route', ids.map(function (id) { return peers[id].route || '?'; }).join(' ; ')],
+      ['Round trip', ids.map(function (id) { return peers[id].rtt != null ? peers[id].rtt + ' ms' : ''; }).filter(Boolean).join(' ; ')],
+      ['Result', M.result || (room ? 'in the room, nobody else yet' : 'not started')]
+    ].filter(function (r) { return r[1] !== ''; });
+    $('facts').innerHTML = '';
+    rows.forEach(function (r) {
+      var dt = document.createElement('dt'), dd = document.createElement('dd');
+      dt.textContent = r[0]; dd.textContent = r[1];
+      $('facts').appendChild(dt); $('facts').appendChild(dd);
+    });
+    $('report').value = rows.map(function (r) { return r[0] + ': ' + r[1]; }).join(' | ');
+    show('results');
+  }
+  function people() {
+    $('people').innerHTML = '';
+    Object.keys(peers).forEach(function (id) {
+      var s = document.createElement('span'); s.className = 'who';
+      s.textContent = (peers[id].name || 'partner') + (peers[id].route ? ' · ' + peers[id].route : '');
+      $('people').appendChild(s);
+    });
+    var n = Object.keys(peers).length;
+    $('state').textContent = n ? 'connected to ' + n + (n === 1 ? ' person' : ' people') : 'waiting for a partner';
+    $('state').className = n ? 'ok' : '';
+    $('msg').disabled = $('sendBtn').disabled = !n;
+  }
+  function say(text, mine) {
+    var d = document.createElement('div');
+    if (mine) d.className = 'me';
+    d.textContent = (mine ? 'Me: ' : '') + text;
+    $('chat').appendChild(d); $('chat').scrollTop = $('chat').scrollHeight;
+  }
+
+  /* ── relay (TURN) settings: the same boxes and the same saved settings as the code test page ── */
+  function readRelayBoxes() {
+    var urls = $('turnUrl').value.split(/[\s,]+/).filter(function (u) { return /^turns?:/i.test(u); });
+    return { urls: urls, username: $('turnUser').value.trim(), credential: $('turnPass').value, on: $('optRelay').checked };
+  }
+  function fromProviderJson(text) {
+    var j = JSON.parse(text), list = Array.isArray(j) ? j : (j.iceServers ? [].concat(j.iceServers) : [j]);
+    var out = { urls: [], username: '', credential: '' };
+    list.forEach(function (s) {
+      [].concat(s.urls || s.url || []).forEach(function (u) { if (/^turns?:/i.test(u)) out.urls.push(u); });
+      if (s.username && !out.username) { out.username = s.username; out.credential = s.credential || ''; }
+    });
+    return out;
+  }
+  function fillRelayBoxes(r) {
+    $('turnUrl').value = (r.urls || []).join(', '); $('turnUser').value = r.username || ''; $('turnPass').value = r.credential || '';
+    $('optRelay').checked = !!r.on;
+  }
+  $('turnUrl').addEventListener('input', function () {
+    var v = $('turnUrl').value.trim();
+    if (!/^[\[{]/.test(v)) return;
+    try {
+      var r = fromProviderJson(v); r.on = true; fillRelayBoxes(r);
+      $('turnMsg').textContent = r.urls.length ? 'Read ' + r.urls.length + ' relay address' + (r.urls.length > 1 ? 'es' : '') + ' from the JSON.' : 'That JSON has no turn: address in it.';
+    } catch (e) { $('turnMsg').textContent = 'That JSON is not complete yet.'; }
+  });
+  $('turnSave').addEventListener('click', function () {
+    var r = readRelayBoxes();
+    if (!r.urls.length) { $('turnMsg').textContent = 'The address must start with turn: or turns:'; return; }
+    try { localStorage.setItem(RELAY_KEY, JSON.stringify(r)); $('turnMsg').textContent = 'Saved on this device.'; }
+    catch (e) { $('turnMsg').textContent = 'This browser will not save it. It still works until you close the page.'; }
+  });
+  $('turnForget').addEventListener('click', function () {
+    try { localStorage.removeItem(RELAY_KEY); } catch (e) { /* nothing was saved */ }
+    fillRelayBoxes({}); $('optRelayOnly').checked = false; $('turnMsg').textContent = 'Forgotten.';
+  });
+  try { var savedRelay = JSON.parse(localStorage.getItem(RELAY_KEY) || 'null'); if (savedRelay) { fillRelayBoxes(savedRelay); $('relayBox').open = !!savedRelay.on; } } catch (e) { /* no saved settings */ }
+
+  /* ── network check (the same test as on the code page) ── */
+  var CHECK_SERVERS = ['stun:stun.l.google.com:19302', 'stun:stun.cloudflare.com:3478'];
+  async function checkNetwork() {
+    $('netBtn').disabled = true; $('netOut').textContent = 'Checking…';
+    var seen = {};
+    var p = new RTCPeerConnection({ iceServers: [{ urls: CHECK_SERVERS }] });
+    p.createDataChannel('check');
+    p.onicecandidate = function (e) {
+      var c = e.candidate; if (!c || !c.candidate) return;
+      var m = /^(?:a=)?candidate:\S+ 1 udp \d+ (\S+) (\d+) typ (\S+)/i.exec(c.candidate);
+      if (m && m[3] === 'srflx') { var fam = m[1].indexOf(':') === -1 ? 'v4' : 'v6'; (seen[fam] = seen[fam] || {})[m[1] + ' ' + m[2]] = true; }
+    };
+    await p.setLocalDescription(await p.createOffer());
+    await new Promise(function (r) { p.onicegatheringstatechange = function () { if (p.iceGatheringState === 'complete') r(); }; setTimeout(r, 6000); });
+    p.close();
+    var v4 = Object.keys(seen.v4 || {}), v6 = Object.keys(seen.v6 || {});
+    M.net = v4.length > 1 ? 'symmetric (' + v4.length + ' ports)' : (v4.length || v6.length ? 'one public port' + (v6.length ? ' + IPv6' : '') : 'no public address');
+    $('netOut').textContent = v4.length > 1 ? 'Symmetric NAT: a direct link across the internet will usually fail from here. Use the TURN relay.'
+      : (v4.length || v6.length ? 'One public address and port: a direct link across the internet can work from here.' : 'No public address came back: the lookup is blocked, or the device is offline.');
+    $('netBtn').disabled = false; log('network check: ' + M.net);
+    if (room) facts();
+  }
+  $('netBtn').addEventListener('click', function () { checkNetwork().catch(function (e) { $('netOut').textContent = e.message; $('netBtn').disabled = false; }); });
+
+  /* ── the room ─────────────────────────────────────────────────────────────
+     The link holds the room name and a password, both after the #, which is never
+     sent to the web server. The password encrypts the handshake, so the relays
+     pass text they cannot read. */
+  function linkFor(r) { return location.href.split('#')[0] + '#r=' + r.id + '&k=' + r.key + (r.strategy !== 'nostr' ? '&s=' + r.strategy : ''); }
+  function roomInAddress() {
+    var h = location.hash.replace(/^#/, ''), o = {};
+    h.split('&').forEach(function (kv) { var i = kv.indexOf('='); if (i > 0) o[kv.slice(0, i)] = decodeURIComponent(kv.slice(i + 1)); });
+    if (!/^[A-Za-z0-9]{6,40}$/.test(o.r || '') || !/^[A-Za-z0-9]{8,64}$/.test(o.k || '')) return null;
+    return { id: o.r, key: o.k, strategy: LIBS[o.s] ? o.s : 'nostr' };
+  }
+  function libAddress(strategy) {
+    var q = /[?&]lib=([^&#]+)/.exec(location.search);
+    return $('libUrl').value.trim() || (q ? decodeURIComponent(q[1]) : '') || LIBS[strategy];
+  }
+
+  /* Trystero's API has had two shapes. Older releases: makeAction returns [send, receive]
+     and onPeerJoin(fn) registers a handler. Newer ones: makeAction returns an object with
+     send() and an onMessage property, and handlers are assigned. This page speaks both. */
+  function makeAction(name, handler) {
+    var a = room.makeAction(name);
+    if (Array.isArray(a)) { M.api = 'older'; a[1](handler); return function (data, to) { return a[0](data, to); }; }
+    M.api = 'newer'; a.onMessage = handler;
+    return function (data, to) { return to ? a.send(data, to) : a.send(data); };
+  }
+  function on(event, handler) {
+    if (M.api === 'older' && typeof room[event] === 'function') room[event](handler);
+    else room[event] = handler;
+  }
+  function idOf(meta) { return typeof meta === 'string' ? meta : (meta && meta.peerId); }
+
+  async function routeOf(id) {
+    try {
+      var map = room.getPeers(), conn = map && (map[id] || (map.get && map.get(id)));
+      if (!conn || !conn.getStats) return null;
+      var stats = await conn.getStats(), pair = null, byId = {};
+      stats.forEach(function (r) { byId[r.id] = r; });
+      stats.forEach(function (r) { if (r.type === 'transport' && r.selectedCandidatePairId) pair = byId[r.selectedCandidatePairId]; });
+      if (!pair) stats.forEach(function (r) { if (r.type === 'candidate-pair' && (r.selected || (r.nominated && r.state === 'succeeded'))) pair = pair || r; });
+      if (!pair) return null;
+      var l = byId[pair.localCandidateId] || {}, r = byId[pair.remoteCandidateId] || {};
+      return 'mine ' + (l.candidateType || '?') + ' → theirs ' + (r.candidateType || '?');
+    } catch (e) { return null; }
+  }
+
+  async function join(r, role, rejoined) {
+    me.role = role; M.strategy = r.strategy; M.rejoin = !!rejoined;
+    ['strategy', 'startBtn', 'turnUrl', 'turnUser', 'turnPass', 'optRelay', 'optRelayOnly', 'turnSave', 'turnForget', 'libUrl'].forEach(function (id) { $(id).disabled = true; });
+    $('strategy').value = r.strategy;
+    try { sessionStorage.setItem(STORE, JSON.stringify({ id: r.id, key: r.key, strategy: r.strategy, role: role })); } catch (e) { /* a reload will not rejoin */ }
+    try { history.replaceState(null, '', location.href.split('#')[0]); } catch (e) { /* file pages */ }
+    show('live'); show('roomCard');
+    $('roomTitle').textContent = role === 'host' ? 'Send this link to your partner' : 'You joined from a link. This is the room link:';
+    $('linkOut').value = linkFor(r);
+    $('roomInfo').textContent = 'room ' + r.id;
+    log(role + ' · ' + browserName() + (rejoined ? ' · rejoining after a reload' : ''));
+
+    var lib = libAddress(r.strategy), mod, start = performance.now();
+    M.lib = lib.replace(/^https:\/\//, '');
+    $('state').textContent = 'loading the library';
+    try { mod = await import(lib); }
+    catch (e) {
+      M.result = 'FAILED: the library did not load (' + e.message + ')';
+      $('state').textContent = 'the library did not load'; $('state').className = 'err';
+      log('! ' + M.result); facts(); return;
+    }
+    M.load = Math.round(performance.now() - start);
+    log('library loaded in ' + M.load + ' ms from ' + lib);
+
+    var config = { appId: APP_ID, password: r.key };
+    var relay = readRelayBoxes(), relayOnly = $('optRelayOnly').checked && relay.urls.length > 0;
+    if ((relay.on || relayOnly) && relay.urls.length) {
+      var turn = { urls: relay.urls, username: relay.username, credential: relay.credential };
+      if (relayOnly) config.rtcConfig = { iceServers: [turn], iceTransportPolicy: 'relay' };
+      else config.turnConfig = [turn];
+      M.relay = relayOnly ? 'set, relay only' : 'set, used if direct fails';
+      log('TURN relay: ' + relay.urls.length + ' address(es)' + (relayOnly ? ', relay only' : ''));
+    }
+    var joined = performance.now();
+    try {
+      room = mod.joinRoom(config, r.id, { onJoinError: function (e) { log('! join problem: ' + (e && (e.error || e.message) || JSON.stringify(e))); } });
+    } catch (e) {
+      M.result = 'FAILED: could not join (' + e.message + ')';
+      $('state').textContent = 'could not join'; $('state').className = 'err';
+      log('! ' + M.result); facts(); return;
+    }
+    log('joined room ' + r.id + ' over ' + r.strategy + (mod.selfId ? ' as ' + String(mod.selfId).slice(0, 6) : ''));
+
+    actions.hello = makeAction('hello', function (data, meta) {
+      var id = idOf(meta); if (!peers[id]) peers[id] = {};
+      peers[id].name = String((data && data.from) || 'partner').slice(0, 60); people(); facts();
+    });
+    actions.msg = makeAction('msg', function (data, meta) { var p = peers[idOf(meta)] || {}; say((p.name ? p.name + ': ' : '') + String(data && data.text).slice(0, 500), false); });
+    actions.ping = makeAction('ping', function (data, meta) { actions.pong(data, idOf(meta)); });
+    actions.pong = makeAction('pong', function (data, meta) { var p = peers[idOf(meta)]; if (p && data) { p.rtt = Math.round(performance.now() - data.at); facts(); } });
+    log('library API: ' + M.api);
+
+    on('onPeerJoin', function (id) {
+      if (!peers[id]) peers[id] = {};
+      if (M.first == null) M.first = Math.round(performance.now() - joined);
+      M.result = 'CONNECTED';
+      log('partner joined: ' + String(id).slice(0, 6) + ' (' + Math.round(performance.now() - joined) + ' ms after joining)');
+      people(); facts();
+      actions.hello({ from: browserName() + ' · ' + device() + ' (' + me.role + ')' }, id);
+      setTimeout(function () { routeOf(id).then(function (rt) { if (rt && peers[id]) { peers[id].route = rt; log('route to ' + String(id).slice(0, 6) + ': ' + rt); people(); facts(); } }); }, 1500);
+    });
+    on('onPeerLeave', function (id) {
+      log('partner left: ' + String(id).slice(0, 6));
+      delete peers[id]; if (!Object.keys(peers).length) M.result = 'partner left';
+      people(); facts();
+    });
+    setInterval(function () { if (room) Object.keys(peers).forEach(function (id) { actions.ping({ at: performance.now() }, id); }); }, 4000);
+    setTimeout(function () {
+      if (room && M.first == null) log('nobody yet after 30 s. If your partner has opened the link, the relays may be slow or blocked on one of the networks: try the other relay network.');
+    }, 30000);
+    people(); facts();
+  }
+
+  $('startBtn').addEventListener('click', function () {
+    join({ id: random(10), key: random(20), strategy: $('strategy').value }, 'host', false);
+  });
+  $('leaveBtn').addEventListener('click', function () {
+    try { if (room) room.leave(); } catch (e) { /* already gone */ }
+    try { sessionStorage.removeItem(STORE); } catch (e) { /* nothing stored */ }
+    location.href = location.href.split('#')[0];
+  });
+  function send() {
+    var text = $('msg').value.trim();
+    if (!text || !room) return;
+    actions.msg({ text: text }); say(text, true); $('msg').value = '';
+  }
+  $('sendBtn').addEventListener('click', send);
+  $('msg').addEventListener('keydown', function (e) { if (e.key === 'Enter') send(); });
+  document.addEventListener('click', function (e) {
+    var b = e.target.closest('[data-copy]'); if (!b) return;
+    var ta = $(b.getAttribute('data-copy')), old = b.textContent;
+    var done = function () { b.textContent = 'Copied'; setTimeout(function () { b.textContent = old; }, 1200); };
+    var byHand = function () { ta.select(); try { document.execCommand('copy'); done(); } catch (err) { /* the text is selected: copy by hand */ } };
+    if (navigator.clipboard && window.isSecureContext) navigator.clipboard.writeText(ta.value).then(done, byHand); else byHand();
+  });
+
+  log(browserName() + ' · ' + device());
+  if (!window.RTCPeerConnection) { $('setup').innerHTML = '<p class="err">This browser has no WebRTC.</p>'; return; }
+
+  /* opened from a link, or reloaded while in a room */
+  var fromLink = roomInAddress(), saved = null;
+  try { saved = JSON.parse(sessionStorage.getItem(STORE) || 'null'); } catch (e) { /* none */ }
+  if (fromLink) join(fromLink, saved && saved.id === fromLink.id ? saved.role : 'learner', !!(saved && saved.id === fromLink.id));
+  else if (saved) join(saved, saved.role, true);
+})();
+</script>
+</body>
+</html>
