@@ -1,0 +1,160 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<title>Is Denver as Big as New York? — Equative Comparisons</title>
+<script>
+(function(){
+  try{
+    var saved = localStorage.getItem('theme-preference');
+    var theme = (saved === 'light' || saved === 'dark')
+      ? saved
+      : ((window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches) ? 'dark' : 'light');
+    document.documentElement.setAttribute('data-theme', theme);
+    var fs = parseFloat(localStorage.getItem('font-size-preference'));
+    if (fs >= 10 && fs <= 28) document.documentElement.style.setProperty('--fs-base', fs + 'px');
+  }catch(e){ /* localStorage/matchMedia unavailable — CSS media query still applies */ }
+})();
+</script>
+<link rel="stylesheet" href="house.css">
+<style>
+.cast-row{ display:flex; flex-wrap:wrap; gap:14px 18px; justify-content:center; align-items:flex-end; margin:0 0 1rem; padding:10px; background:var(--surface-1); border:1px solid var(--border); border-radius:var(--border-radius-lg); font-size:.8667rem; }
+/* the meaning symbols: = the same · < less · > more */
+.sym{ display:inline-flex; align-items:center; justify-content:center; min-width:1.7em; height:1.7em; padding:0 .3em; border-radius:.45em;
+  font-family:var(--font-mono); font-weight:800; font-size:1rem; line-height:1; vertical-align:middle; }
+.sym-eq{ background:var(--good-bg); color:var(--good); box-shadow:inset 0 0 0 1.5px var(--good); }
+.sym-lt{ background:var(--color-background-info); color:var(--color-text-info); box-shadow:inset 0 0 0 1.5px var(--color-border-info); }
+.sym-gt{ background:var(--color-background-warning); color:var(--color-text-warning); box-shadow:inset 0 0 0 1.5px var(--color-border-warning); }
+.sym-adj{ margin-left:.35em; font-size:.8rem; font-weight:700; color:var(--text-secondary); vertical-align:middle; }
+.cue{ display:inline-flex; align-items:center; gap:6px; flex-wrap:wrap; font-weight:400; font-style:normal; margin:0 0 6px; padding:4px 10px; border-radius:8px;
+  border:1px solid var(--color-border-tertiary); background:var(--surface-2); color:var(--text-secondary); font-size:.9rem; }
+.cue .pic{ font-size:1.3rem; }
+.quiz-q .q-text .cue{ display:flex; width:max-content; max-width:100%; }
+
+.match-wrap .match-col-label{ text-align:center; }
+#picCol .match-card{ font-size:1.35rem; justify-content:center; }
+</style>
+</head>
+<body>
+<div class="page" id="page">
+  <span class="cefr-tag cefr-a2">A2 · Pre-intermediate</span>
+  <h1>Is Denver as Big as New York?</h1>
+  <p class="subtitle">Nadia moved from New York to Denver for a new job. Her friend Omar calls her to hear about her new city and her new apartment.</p>
+
+  <div class="sec-div">Words for this lesson</div>
+  <p class="subtitle">Match the picture and the adjective. Tap a picture, then tap its word.</p>
+  <div class="score-bar"><span>Matched: <strong id="mScore">0</strong> / <span id="mTotal">0</span></span><button id="mReset">↺ Reset</button></div>
+  <div class="match-grid match-wrap">
+    <div><div class="match-col-label">Picture</div><div class="match-col" id="picCol"></div></div>
+    <div><div class="match-col-label">Adjective</div><div class="match-col" id="wordCol"></div></div>
+  </div>
+  <div class="win-msg" id="mWin">🎉 Great! You know the adjectives for the conversation.</div>
+  <div class="feedback" id="mFeedback"></div>
+
+  <div class="sec-div">Before you read</div>
+  <div id="preQuestions"></div>
+
+  <div class="sec-div">The people</div>
+  <div class="cast-row" id="castRow"></div>
+
+  <div class="sec-div">The conversation</div>
+  <div class="setting-chip" data-vn-bg="livingroom|livingroom"><span class="section-icon">📱</span> A video call: New York ↔ Denver</div>
+  <button class="grammar-toggle-btn" id="grammarToggle">🎨 Show Grammar</button>
+  <div class="pos-legend"></div>
+  <div id="conversation"></div>
+
+  <div class="sec-div">Check your answers</div>
+  <div id="quiz"></div>
+
+  <footer>Is Denver as Big as New York? — Equative comparisons: (just) as … as / not as … as (A2)</footer>
+</div>
+
+<div id="theme-toggle-wrap">
+  <button id="theme-toggle" aria-label="Toggle light/dark mode" title="Toggle light/dark mode">
+    <span id="theme-icon">☀️</span>
+  </button>
+</div>
+<script src="house.js"></script>
+<script src="stick-character.js"></script>
+<script src="stick-sentence.js"></script>
+<script>
+/* Nadia moved from New York to Denver; Omar still lives in New York — the same people on every page of this lesson */
+StickSentence.cast({
+  nadia: { base:'woman', colour:'#00CC66', label:'Nadia' },
+  omar:  { base:'man',   colour:'#FF6600', label:'Omar' }
+});
+StickSentence.toggle();   /* stick figures hidden by default */
+
+/* the three meanings, as symbols: A = B · A < B · A > B (for one adjective, e.g. big) */
+const SYM = { eq: '=', lt: '&lt;', gt: '&gt;' };
+const sym = (k, adj) => '<span class="sym sym-' + k + '" title="' + { eq: 'the same', lt: 'less', gt: 'more' }[k] + '">' + SYM[k] + '</span>' + (adj ? '<span class="sym-adj">' + adj + '</span>' : '');
+
+/* the learner's dictionary (right-click / long press a word): what these words mean in this lesson */
+window.LESSON_DICT = {
+  'just as':   { pos:'phrase', def:'exactly the same: not more, not less', ex:'Denver is just as exciting as New York.', es:'igual de' },
+  'not as':    { pos:'phrase', def:'less: “A is not as big as B” means B is bigger', ex:'Denver isn’t as big as New York.', es:'no tan … como' },
+  'crowded':   { pos:'adjective', def:'with too many people in one place', ex:'The subway is very crowded.', es:'lleno de gente, abarrotado' },
+  'spacious':  { pos:'adjective', def:'big, with a lot of space inside', ex:'My new apartment is spacious.', es:'amplio, espacioso' },
+  'rent':      { pos:'noun', def:'the money you pay every month to live in a house or apartment', ex:'My rent is $1,500 a month.', es:'alquiler, renta' },
+  'balcony':   { pos:'noun', def:'a small place outside a window, high up, where you can stand or sit', ex:'My apartment has a balcony.', es:'balcón' }
+};
+
+/* ── picture → adjective ──────────────────────────────────────────────── */
+const WORDS = [
+  ['🐘', 'big'], ['🐭', 'small'], ['💰💰', 'expensive'], ['🪙', 'cheap'], ['🤫', 'quiet'], ['📢', 'noisy'],
+  ['🏙️✨', 'modern'], ['🏚️', 'old'], ['🥶', 'cold'], ['☀️☀️', 'sunny'], ['🎉🎶', 'exciting'], ['🤗', 'friendly']
+];
+HouseMatching.build({
+  left: 'picCol', right: 'wordCol', scoreEl: 'mScore', totalEl: 'mTotal', winEl: 'mWin', resetBtn: 'mReset', feedbackEl: 'mFeedback',
+  pairs: WORDS.map(([e, w]) => ({ id: w, left: e, right: w }))
+});
+
+/* ── the people ───────────────────────────────────────────────────────── */
+document.getElementById('castRow').innerHTML = ['{Nadia (in Denver)|nadia}', '{Omar (in New York)|omar}'].map(StickSentence.html).join('');
+
+const SPEAKERS = {
+  Omar:  { cast: 'omar',  avatar: '👨', av: 'av-a', side: 'left' },
+  Nadia: { cast: 'nadia', avatar: '👩', av: 'av-b', side: 'right' }
+};
+/* each speaker's avatar takes the colour of their stick figure (overrides the house.css av-* colours) */
+const avStyle = s => { const c = (StickSentence.cast()[s.cast] || {}).colour;
+  return c ? 'background:' + c + '40;box-shadow:inset 0 0 0 2px ' + c : ''; };
+
+/* {words|figures} puts stick figures (or @ pictures) over the words; [words/pos] marks the grammar colours.
+   as … as: the first “as” is [adverb], the second [prep]; than is [prep]; the adjective is [adj]. */
+const LINES = [
+  ['Omar',  '[So/none], {[Nadia/noun]|nadia}, [how’s/wh] {[Denver/noun]|@🏔️}? [Is/verb] [it/subject] [as/adverb] [big/adj] [as/prep] {[New York/noun]|@🗽}?'],
+  ['Nadia', '[No/none], [it/subject] [isn’t/neg] [as/adverb] [big/adj] [as/prep] [New York/noun] — [not even close/none]! [But/conj] [it’s/subject] [just/adverb] [as/adverb] [exciting/adj]. [There are/verb] [great restaurants/noun] [and/conj] [lots of concerts/noun]. 🎶'],
+  ['Omar',  '[And/conj] {[your/det]|nadia} [new apartment/noun]? [Is/verb] [it/subject] [bigger/adj] [than/prep] [your old one/noun]?'],
+  ['Nadia', '[Yes/none], [it’s/subject] [much/adverb] [bigger/adj]! [And/conj] [it/subject] [isn’t/neg] [as/adverb] [expensive/adj] [as/prep] {[my/det]|nadia} [place in Brooklyn/noun]. {[I/subject]|nadia:💰} [pay/verb] [30% less/adverb].'],
+  ['Omar',  '[Wow/none]! [Is/verb] [it/subject] [as/adverb] [nice/adj] [as/prep] [your old apartment/noun]?'],
+  ['Nadia', '[It’s/subject] [just/adverb] [as/adverb] [nice/adj]. [It/subject] [has/verb] [a big kitchen/object] [and/conj] {[a balcony/object]|@🌇}. [But/conj] [the building/subject] [isn’t/neg] [as/adverb] [modern/adj] [as/prep] {[my/det]|nadia} [old building/noun].'],
+  ['Omar',  '[What about/wh] [the weather/noun]? [Is/verb] [Denver/subject] [colder/adj] [than/prep] [New York/noun]?'],
+  ['Nadia', '[In winter/time], [it’s/subject] [just/adverb] [as/adverb] [cold/adj]. 🥶 [But/conj] [it’s/subject] [sunnier/adj] — [there are/verb] [lots of sunny days/noun] [here/adverb]! ☀️'],
+  ['Omar',  '[And/conj] [the people/noun]?'],
+  ['Nadia', '[People/subject] [here/adverb] [are/verb] [just/adverb] [as/adverb] [friendly/adj] [as/prep] [in New York/prep]. [And/conj] [the city/subject] [isn’t/neg] [as/adverb] [noisy/adj]. {[I/subject]|nadia:😴} [can sleep/verb] [at night/time]!'],
+  ['Omar',  '[Lucky you/none]! {[My/det]|omar} [street/subject] [is/verb] [as/adverb] [noisy/adj] [as/prep] {[a rock concert/noun]|@🎸📢}.'],
+  ['Nadia', '[Ha/none]! [Come/verb] [and/conj] [visit/verb]! {[The mountains/subject]|@🏔️} [are/verb] [only an hour away/adverb].']
+];
+const conv = document.getElementById('conversation');
+LINES.forEach(([who, text]) => {
+  const s = SPEAKERS[who], right = s.side === 'right';
+  conv.insertAdjacentHTML('beforeend',
+    '<div class="bubble-wrap' + (right ? ' right' : '') + '">' +
+      '<div class="avatar ' + s.av + '" style="' + avStyle(s) + '">' + s.avatar + '</div>' +
+      '<div class="bubble-col"><div class="bname' + (right ? ' right' : '') + '">' + who + '</div>' +
+      '<div class="bubble ' + (right ? 'right' : 'left') + '">' + StickSentence.html(text) + '</div></div>' +
+    '</div>');
+});
+
+const CQ_ITEMS = [
+  { q: 'Is Denver as big as New York?', opts: ['Yes, it’s just as big.', 'No, it isn’t as big.', 'Yes, it’s bigger.'], correct: 1 },
+  { q: 'Is Nadia’s new apartment as expensive as her old place?', opts: ['No, it isn’t as expensive.', 'Yes, it’s just as expensive.', 'Yes, it’s more expensive.'], correct: 0 },
+  { q: 'Is Denver as cold as New York in winter?', opts: ['No, it isn’t as cold.', 'No, it’s much colder.', 'Yes, it’s just as cold.'], correct: 2 }
+];
+HouseComprehension.build({ pre: 'preQuestions', quiz: 'quiz', items: CQ_ITEMS });
+</script>
+<script>HouseGrammar.init();</script>
+</body>
+</html>

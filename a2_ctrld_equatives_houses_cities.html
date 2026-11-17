@@ -1,0 +1,138 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<title>Just as Big, Not as Big, Bigger — Practice</title>
+<script>
+(function(){
+  try{
+    var saved = localStorage.getItem('theme-preference');
+    var theme = (saved === 'light' || saved === 'dark')
+      ? saved
+      : ((window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches) ? 'dark' : 'light');
+    document.documentElement.setAttribute('data-theme', theme);
+    var fs = parseFloat(localStorage.getItem('font-size-preference'));
+    if (fs >= 10 && fs <= 28) document.documentElement.style.setProperty('--fs-base', fs + 'px');
+  }catch(e){ /* localStorage/matchMedia unavailable — CSS media query still applies */ }
+})();
+</script>
+<link rel="stylesheet" href="house.css">
+<style>
+.cast-row{ display:flex; flex-wrap:wrap; gap:14px 18px; justify-content:center; align-items:flex-end; margin:0 0 1rem; padding:10px; background:var(--surface-1); border:1px solid var(--border); border-radius:var(--border-radius-lg); font-size:.8667rem; }
+/* the meaning symbols: = the same · < less · > more */
+.sym{ display:inline-flex; align-items:center; justify-content:center; min-width:1.7em; height:1.7em; padding:0 .3em; border-radius:.45em;
+  font-family:var(--font-mono); font-weight:800; font-size:1rem; line-height:1; vertical-align:middle; }
+.sym-eq{ background:var(--good-bg); color:var(--good); box-shadow:inset 0 0 0 1.5px var(--good); }
+.sym-lt{ background:var(--color-background-info); color:var(--color-text-info); box-shadow:inset 0 0 0 1.5px var(--color-border-info); }
+.sym-gt{ background:var(--color-background-warning); color:var(--color-text-warning); box-shadow:inset 0 0 0 1.5px var(--color-border-warning); }
+.sym-adj{ margin-left:.35em; font-size:.8rem; font-weight:700; color:var(--text-secondary); vertical-align:middle; }
+.cue{ display:inline-flex; align-items:center; gap:6px; flex-wrap:wrap; font-weight:400; font-style:normal; margin:0 0 6px; padding:4px 10px; border-radius:8px;
+  border:1px solid var(--color-border-tertiary); background:var(--surface-2); color:var(--text-secondary); font-size:.9rem; }
+.cue .pic{ font-size:1.3rem; }
+.quiz-q .q-text .cue{ display:flex; width:max-content; max-width:100%; }
+
+.blank{ display:inline-block; min-width:3em; border-bottom:2px solid var(--color-border-primary); }
+</style>
+</head>
+<body>
+<div class="page" id="page">
+  <span class="cefr-tag cefr-a2">A2 · Pre-intermediate</span>
+  <h1>Just as Big, Not as Big, Bigger — Practice</h1>
+  <p class="subtitle">Look at the symbol: <span class="sym sym-eq">=</span> the same · <span class="sym sym-lt">&lt;</span> less · <span class="sym sym-gt">&gt;</span> more.</p>
+
+  <div class="sec-div">1 · Choose</div>
+  <p class="subtitle">Look at the symbol. Choose the right words.</p>
+  <div id="pcItems"></div>
+
+  <div class="sec-div">2 · Put the words in order</div>
+  <p class="subtitle">Look at the symbol. Make the sentence.</p>
+  <button class="grammar-toggle-btn" id="grammarToggle">🎨 Hide Grammar</button>
+  <div class="pos-legend"></div>
+  <div class="score-bar"><span>Correct: <strong id="woScore">0</strong> / <span id="woTotal">0</span></span></div>
+  <div id="woItems"></div>
+
+  <div class="sec-div">3 · Write the missing words</div>
+  <p class="subtitle">Look at the symbol. Write the missing words.</p>
+  <div id="gfItems"></div>
+
+  <footer>Equative comparisons: (just) as … as / not as … as — Controlled Practice (A2)</footer>
+</div>
+
+<div id="theme-toggle-wrap">
+  <button id="theme-toggle" aria-label="Toggle light/dark mode" title="Toggle light/dark mode">
+    <span id="theme-icon">☀️</span>
+  </button>
+</div>
+<script src="house.js"></script>
+<script src="stick-character.js"></script>
+<script src="stick-sentence.js"></script>
+<script>
+/* Nadia moved from New York to Denver; Omar still lives in New York — the same people on every page of this lesson */
+StickSentence.cast({
+  nadia: { base:'woman', colour:'#00CC66', label:'Nadia' },
+  omar:  { base:'man',   colour:'#FF6600', label:'Omar' }
+});
+StickSentence.toggle();   /* stick figures hidden by default */
+
+/* the three meanings, as symbols: A = B · A < B · A > B (for one adjective, e.g. big) */
+const SYM = { eq: '=', lt: '&lt;', gt: '&gt;' };
+const sym = (k, adj) => '<span class="sym sym-' + k + '" title="' + { eq: 'the same', lt: 'less', gt: 'more' }[k] + '">' + SYM[k] + '</span>' + (adj ? '<span class="sym-adj">' + adj + '</span>' : '');
+
+/* the learner's dictionary (right-click / long press a word): what these words mean in this lesson */
+window.LESSON_DICT = {
+  'just as':   { pos:'phrase', def:'exactly the same: not more, not less', ex:'Denver is just as exciting as New York.', es:'igual de' },
+  'not as':    { pos:'phrase', def:'less: “A is not as big as B” means B is bigger', ex:'Denver isn’t as big as New York.', es:'no tan … como' },
+  'crowded':   { pos:'adjective', def:'with too many people in one place', ex:'The subway is very crowded.', es:'lleno de gente, abarrotado' },
+  'spacious':  { pos:'adjective', def:'big, with a lot of space inside', ex:'My new apartment is spacious.', es:'amplio, espacioso' },
+  'rent':      { pos:'noun', def:'the money you pay every month to live in a house or apartment', ex:'My rent is $1,500 a month.', es:'alquiler, renta' },
+  'balcony':   { pos:'noun', def:'a small place outside a window, high up, where you can stand or sit', ex:'My apartment has a balcony.', es:'balcón' }
+};
+
+const S = StickSentence.html;
+const BLANK = '<span class="blank">&nbsp;</span>';
+const rep = m => S(m).replace('____', BLANK);
+/* the cue: picture A, the symbol, picture B, the adjective — never the answer words */
+const cue = (a, k, b, adj) => '<span class="cue"><span class="pic">' + a + '</span>' + sym(k) + '<span class="pic">' + b + '</span>' + (adj ? '<span class="sym-adj">' + adj + '</span>' : '') + '</span>';
+
+/* ── 1 · choose ────────────────────────────────────────────────────────── */
+const PC = [
+  [cue('🏠', 'eq', '🏡', 'big'), '{My|omar} house is ____ your house.', ['just as big as', 'bigger than', 'not as big as'], 0],
+  [cue('🏔️', 'lt', '🗽', 'noisy'), '{Denver|@🏔️} ____ New York.', ['is noisier than', 'isn’t as noisy as', 'is as noisy as'], 1],
+  [cue('🏙️', 'gt', '🏡', 'expensive'), 'Big cities are ____ small towns.', ['as expensive as', 'not as expensive as', 'more expensive than'], 2],
+  [cue('🏢', 'lt', '🏢✨', 'modern'), 'The old building isn’t ____ the new one.', ['as modern as', 'more modern than', 'as modern than'], 0],
+  [cue('🥶', 'eq', '🥶', 'cold'), 'In winter, Denver is ____ cold as New York.', ['just as', 'not as', 'more'], 0],
+  [cue('🏡', 'gt', '🏢', 'quiet'), 'Our street is ____ the city center.', ['as quiet as', 'quieter than', 'not as quiet as'], 1],
+  [cue('🚇', 'lt', '🚗', 'fast'), 'At night, the subway ____ as fast as a taxi.', ['is', 'isn’t', 'is just'], 1],
+  [cue('❓🏠', 'eq', '🏠', 'nice'), 'Is {your|nadia} new apartment ____ your old one?', ['as nice as', 'nicer as', 'as nice than'], 0]
+];
+HouseComprehension.build({ quiz: 'pcItems', items: PC.map(([c, s, opts, correct]) => ({ q: c + rep(s), opts, correct })) });
+
+/* ── 2 · word order ────────────────────────────────────────────────────── */
+const WO_ITEMS = [
+  { context: cue('🏔️', 'eq', '🗽', 'exciting'), text: 'Denver / is / just / as / exciting / as / New York', pos: ['subject', 'verb', 'adverb', 'adverb', 'adj', 'prep', 'noun'] },
+  { context: cue('🏠', 'lt', '🏢', 'expensive'), text: 'My house / isn’t / as / expensive / as / your apartment', pos: ['subject', 'neg', 'adverb', 'adj', 'prep', 'noun'] },
+  { context: cue('🏙️', 'gt', '🏡', 'crowded'), text: 'Big cities / are / more / crowded / than / small towns', pos: ['subject', 'verb', 'adverb', 'adj', 'prep', 'noun'] },
+  { context: cue('🏡', 'lt', '🏙️', 'noisy'), text: 'Small towns / aren’t / as / noisy / as / big cities', pos: ['subject', 'neg', 'adverb', 'adj', 'prep', 'noun'] },
+  { context: cue('❓🛏️', 'eq', '🛏️', 'big'), text: 'Is / your bedroom / as / big / as / mine / ?', pos: ['verb', 'subject', 'adverb', 'adj', 'prep', 'noun', 'none'] },
+  { context: cue('🏢', 'gt', '🏠', 'tall'), text: 'My building / is / taller / than / your house', pos: ['subject', 'verb', 'adj', 'prep', 'noun'] }
+];
+HouseWordOrder.build({ container: 'woItems', items: WO_ITEMS, scoreEl: 'woScore', totalEl: 'woTotal' });
+
+/* ── 3 · gap fill (easiest first; the gaps move around the sentence) ───── */
+const gaps = m => S(m).replace(/____(\d)/g, '{$1}');
+const GF_ITEMS = [
+  { direct: cue('🍳', 'eq', '🍳', 'big'), template: gaps('{My|omar} kitchen is ____0 big as yours.'), hints: [{ accepted: ['as'] }] },
+  { direct: cue('🏘️', 'lt', '🏙️', 'crowded'), template: gaps('{My|nadia} neighborhood isn’t as crowded ____0 downtown.'), hints: [{ accepted: ['as'] }] },
+  { direct: cue('🏙️', 'gt', '🏡', 'big'), template: gaps('A city is ____0 than a town.'), hints: [{ accepted: ['bigger'] }] },
+  { direct: cue('🏢', 'lt', '🏠', 'cheap'), template: gaps('{My|omar} apartment ____0 as cheap as {your|nadia} house.'), hints: [{ accepted: ['isn’t', "isn't", 'is not'] }] },
+  { direct: cue('🏔️', 'eq', '🗽', 'friendly'), template: gaps('People in {Denver|@🏔️} are ____0 ____1 friendly as people in {New York|@🗽}.'), hints: [{ accepted: ['just'] }, { accepted: ['as'] }] },
+  { direct: cue('🏢✨', 'gt', '🏚️', 'modern'), template: gaps('The new building is ____0 modern ____1 the old one.'), hints: [{ accepted: ['more'] }, { accepted: ['than'] }] },
+  { direct: cue('🏡', 'lt', '🏙️', 'noisy'), template: gaps('Our town ____0 ____1 noisy as the city.'), hints: [{ accepted: ['isn’t', "isn't", 'is not'] }, { accepted: ['as'] }] },
+  { direct: cue('❓🌇', 'eq', '🌇', 'nice'), template: gaps('____0 {your|nadia} balcony ____1 nice as mine? — Yes, it’s just as nice.'), hints: [{ accepted: ['Is', 'is'] }, { accepted: ['as'] }] }
+];
+HouseGapFill.build({ container: 'gfItems', items: GF_ITEMS });
+</script>
+<script>HouseGrammar.init();</script>
+</body>
+</html>

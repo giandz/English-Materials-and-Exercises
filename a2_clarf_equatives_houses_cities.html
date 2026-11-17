@@ -1,0 +1,246 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<title>Just as Big, Not as Big, Bigger — Clarification</title>
+<script>
+(function(){
+  try{
+    var saved = localStorage.getItem('theme-preference');
+    var theme = (saved === 'light' || saved === 'dark')
+      ? saved
+      : ((window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches) ? 'dark' : 'light');
+    document.documentElement.setAttribute('data-theme', theme);
+    var fs = parseFloat(localStorage.getItem('font-size-preference'));
+    if (fs >= 10 && fs <= 28) document.documentElement.style.setProperty('--fs-base', fs + 'px');
+  }catch(e){ /* localStorage/matchMedia unavailable — CSS media query still applies */ }
+})();
+</script>
+<link rel="stylesheet" href="house.css">
+<style>
+.cast-row{ display:flex; flex-wrap:wrap; gap:14px 18px; justify-content:center; align-items:flex-end; margin:0 0 1rem; padding:10px; background:var(--surface-1); border:1px solid var(--border); border-radius:var(--border-radius-lg); font-size:.8667rem; }
+/* the meaning symbols: = the same · < less · > more */
+.sym{ display:inline-flex; align-items:center; justify-content:center; min-width:1.7em; height:1.7em; padding:0 .3em; border-radius:.45em;
+  font-family:var(--font-mono); font-weight:800; font-size:1rem; line-height:1; vertical-align:middle; }
+.sym-eq{ background:var(--good-bg); color:var(--good); box-shadow:inset 0 0 0 1.5px var(--good); }
+.sym-lt{ background:var(--color-background-info); color:var(--color-text-info); box-shadow:inset 0 0 0 1.5px var(--color-border-info); }
+.sym-gt{ background:var(--color-background-warning); color:var(--color-text-warning); box-shadow:inset 0 0 0 1.5px var(--color-border-warning); }
+.sym-adj{ margin-left:.35em; font-size:.8rem; font-weight:700; color:var(--text-secondary); vertical-align:middle; }
+.cue{ display:inline-flex; align-items:center; gap:6px; flex-wrap:wrap; font-weight:400; font-style:normal; margin:0 0 6px; padding:4px 10px; border-radius:8px;
+  border:1px solid var(--color-border-tertiary); background:var(--surface-2); color:var(--text-secondary); font-size:.9rem; }
+.cue .pic{ font-size:1.3rem; }
+.quiz-q .q-text .cue{ display:flex; width:max-content; max-width:100%; }
+
+/* the target language is the lesson, so it stays coloured (not a grammar-toggle colour) */
+.tgt{ color:var(--pos-adj); font-weight:700; }
+.groups{ display:grid; grid-template-columns:repeat(3, minmax(0,1fr)); gap:10px; margin-bottom:1rem; }
+@media (max-width:680px){ .groups{ grid-template-columns:1fr; } }
+.groups > div{ border:1px solid var(--color-border-tertiary); border-radius:12px; background:var(--surface-2); padding:9px 11px; }
+.groups h3{ display:flex; align-items:center; gap:8px; margin:0 0 2px; font-size:1rem; }
+.groups .sub{ font-size:.8rem; color:var(--text-secondary); margin:0 0 6px; }
+.groups ul{ list-style:none; margin:0; padding:0; }
+.groups li{ padding:6px 0; line-height:1.5; font-size:.9333rem; }
+.groups li + li{ border-top:.5px dashed var(--color-border-secondary); }
+.scale{ display:flex; align-items:center; gap:6px; font-size:.8rem; color:var(--text-secondary); margin-bottom:2px; }
+.scale .pic{ font-size:1.15rem; }
+.pairs .row{ display:grid; grid-template-columns:minmax(0,1fr) auto minmax(0,1fr); gap:8px; align-items:center; margin-bottom:8px; }
+.pairs .pcard{ border:1px solid var(--color-border-tertiary); border-radius:12px; background:var(--surface-2); padding:8px 11px; font-size:.9333rem; line-height:1.5; text-align:left; cursor:default; }
+.pairs .pcard .scale{ margin-bottom:4px; }
+.pairs .same{ font-weight:800; color:var(--text-muted); font-size:1.1rem; }
+@media (max-width:560px){ .pairs .row{ grid-template-columns:1fr; } .pairs .same{ text-align:center; } }
+.key{ display:grid; grid-template-columns:auto minmax(0,1fr); gap:8px 12px; align-items:center; margin:0 0 1rem; padding:10px 12px;
+  border:1px solid var(--border); border-radius:var(--border-radius-lg); background:var(--surface-1); font-size:.9333rem; }
+.rule-box p{ margin:0 0 6px; }
+.rule-box p:last-child{ margin-bottom:0; }
+</style>
+</head>
+<body>
+<div class="page" id="page">
+  <span class="cefr-tag cefr-a2">A2 · Pre-intermediate</span>
+  <h1>Just as big · Not as big · Bigger</h1>
+  <p class="subtitle">Compare two things: the same, less, or more.</p>
+
+  <div class="sec-div">The symbols in this lesson</div>
+  <div class="key" id="key"></div>
+
+  <div class="sec-div">Look</div>
+  <p class="subtitle">From the conversation. Look at the symbol, then the words.</p>
+  <div class="groups" id="groups"></div>
+
+  <div class="sec-div">Same meaning, two ways</div>
+  <p class="subtitle">“Not as … as” and “-er than” can say the same thing. Look at the order of the places.</p>
+  <div class="pairs" id="pairs"></div>
+
+  <div class="sec-div">Check the meaning</div>
+  <p class="subtitle">Read the sentence. Answer the questions.</p>
+  <div id="ccq"></div>
+
+  <div class="sec-div">Look at the form</div>
+  <p class="subtitle">What is each part of the sentence? Drag a label (or tap a label, then tap a box).</p>
+  <div class="score-bar"><span>Correct: <strong id="fcScore">0</strong> / <span id="fcTotal">0</span></span></div>
+  <div id="formClarf"></div>
+  <div class="rule-box" id="ruleBox"></div>
+
+  <div class="sec-div">Common mistakes</div>
+  <div id="mistakes"></div>
+
+  <div class="sec-div">Error hunt</div>
+  <p class="subtitle">Some sentences have a mistake. Some are correct! Tap a word — or a space between words — to fix it. Then press OK.</p>
+  <div class="score-bar"><span>Done: <strong id="errorScore">0</strong> / <span id="errorTotal">0</span></span></div>
+  <div id="errorHuntItems"></div>
+
+  <footer>Equative comparisons: (just) as … as / not as … as — Clarification (A2)</footer>
+</div>
+
+<div id="theme-toggle-wrap">
+  <button id="theme-toggle" aria-label="Toggle light/dark mode" title="Toggle light/dark mode">
+    <span id="theme-icon">☀️</span>
+  </button>
+</div>
+<script src="house.js"></script>
+<script src="stick-character.js"></script>
+<script src="stick-sentence.js"></script>
+<script>
+/* Nadia moved from New York to Denver; Omar still lives in New York — the same people on every page of this lesson */
+StickSentence.cast({
+  nadia: { base:'woman', colour:'#00CC66', label:'Nadia' },
+  omar:  { base:'man',   colour:'#FF6600', label:'Omar' }
+});
+StickSentence.toggle();   /* stick figures hidden by default */
+
+/* the three meanings, as symbols: A = B · A < B · A > B (for one adjective, e.g. big) */
+const SYM = { eq: '=', lt: '&lt;', gt: '&gt;' };
+const sym = (k, adj) => '<span class="sym sym-' + k + '" title="' + { eq: 'the same', lt: 'less', gt: 'more' }[k] + '">' + SYM[k] + '</span>' + (adj ? '<span class="sym-adj">' + adj + '</span>' : '');
+
+/* the learner's dictionary (right-click / long press a word): what these words mean in this lesson */
+window.LESSON_DICT = {
+  'just as':   { pos:'phrase', def:'exactly the same: not more, not less', ex:'Denver is just as exciting as New York.', es:'igual de' },
+  'not as':    { pos:'phrase', def:'less: “A is not as big as B” means B is bigger', ex:'Denver isn’t as big as New York.', es:'no tan … como' },
+  'crowded':   { pos:'adjective', def:'with too many people in one place', ex:'The subway is very crowded.', es:'lleno de gente, abarrotado' },
+  'spacious':  { pos:'adjective', def:'big, with a lot of space inside', ex:'My new apartment is spacious.', es:'amplio, espacioso' },
+  'rent':      { pos:'noun', def:'the money you pay every month to live in a house or apartment', ex:'My rent is $1,500 a month.', es:'alquiler, renta' },
+  'balcony':   { pos:'noun', def:'a small place outside a window, high up, where you can stand or sit', ex:'My apartment has a balcony.', es:'balcón' }
+};
+
+/* the target words stay coloured. They are written as ⟦…⟧ first, so the stick-figure markup can read the sentence, then coloured. */
+const T = s => '⟦' + s + '⟧';
+const fix = h => h.replace(/⟦([^⟧]*)⟧/g, '<span class="tgt">$1</span>');
+const S = m => fix(StickSentence.html(m));
+/* a little scale: picture A, the symbol, picture B, and the adjective */
+const scale = (a, k, b, adj) => '<div class="scale"><span class="pic">' + a + '</span>' + sym(k) + '<span class="pic">' + b + '</span><span class="sym-adj">' + adj + '</span></div>';
+
+/* ── the key ───────────────────────────────────────────────────────────── */
+document.getElementById('key').innerHTML =
+  sym('eq') + '<span><b>A = B</b> — the same. <span class="tgt">(just) as</span> big <span class="tgt">as</span></span>' +
+  sym('lt') + '<span><b>A &lt; B</b> — A is less. A <span class="tgt">isn’t as</span> big <span class="tgt">as</span> B</span>' +
+  sym('gt') + '<span><b>A &gt; B</b> — A is more. A is <span class="tgt">bigger than</span> B · <span class="tgt">more</span> modern <span class="tgt">than</span> B</span>';
+
+/* ── look: = · < · > ───────────────────────────────────────────────────── */
+const li = (pic, m) => '<li>' + pic + S(m) + '</li>';
+document.getElementById('groups').innerHTML =
+  '<div><h3>' + sym('eq') + ' the same</h3><p class="sub">(just) as + adjective + as</p><ul>' +
+    li(scale('🏔️', 'eq', '🗽', 'exciting'), '{Denver|@🏔️} is ' + T('just as') + ' exciting ' + T('as') + ' New York.') +
+    li(scale('🥶', 'eq', '🥶', 'cold'), 'In winter, it’s ' + T('just as') + ' cold.') +
+    li(scale('🤗', 'eq', '🤗', 'friendly'), 'People here are ' + T('just as') + ' friendly ' + T('as') + ' in New York.') +
+    li(scale('🏠', 'eq', '📢🎸', 'noisy'), '{My|omar} street is ' + T('as') + ' noisy ' + T('as') + ' a rock concert!') +
+  '</ul></div>' +
+  '<div><h3>' + sym('lt') + ' less</h3><p class="sub">not as + adjective + as</p><ul>' +
+    li(scale('🏔️', 'lt', '🗽', 'big'), '{Denver|@🏔️} ' + T('isn’t as') + ' big ' + T('as') + ' New York.') +
+    li(scale('🏠', 'lt', '🏢', 'expensive'), 'It ' + T('isn’t as') + ' expensive ' + T('as') + ' {my|nadia} place in Brooklyn.') +
+    li(scale('🏢', 'lt', '🏢✨', 'modern'), 'The building ' + T('isn’t as') + ' modern ' + T('as') + ' {my|nadia} old building.') +
+    li(scale('🏔️', 'lt', '🗽', 'noisy'), 'The city ' + T('isn’t as') + ' noisy.') +
+  '</ul></div>' +
+  '<div><h3>' + sym('gt') + ' more</h3><p class="sub">adjective-er than · more + adjective + than</p><ul>' +
+    li(scale('🏠', 'gt', '🏚️', 'big'), '{My|nadia} new apartment is much ' + T('bigger than') + ' {my|nadia} old one.') +
+    li(scale('🏔️', 'gt', '🗽', 'sunny'), '{Denver|@🏔️} is ' + T('sunnier') + '.') +
+    li(scale('🗽', 'gt', '🏔️', 'big'), '{New York|@🗽} is ' + T('bigger than') + ' Denver.') +
+  '</ul></div>';
+
+/* ── same meaning, two ways ────────────────────────────────────────────── */
+const PAIRS = [
+  ['🏔️', '🗽', 'big', 'Denver ⟦isn’t as⟧ big ⟦as⟧ New York.', 'New York is ⟦bigger than⟧ Denver.'],
+  ['🏠', '🏢', 'expensive', 'My apartment ⟦isn’t as⟧ expensive ⟦as⟧ your house.', 'Your house is ⟦more⟧ expensive ⟦than⟧ my apartment.'],
+  ['🏡', '🏙️', 'noisy', 'Small towns ⟦aren’t as⟧ noisy ⟦as⟧ big cities.', 'Big cities are ⟦noisier than⟧ small towns.']
+];
+document.getElementById('pairs').innerHTML = PAIRS.map(([a, b, adj, s1, s2]) =>
+  '<div class="row"><div class="pcard">' + scale(a, 'lt', b, adj) + fix(s1) + '</div>' +
+  '<span class="same">=</span>' +
+  '<div class="pcard">' + scale(b, 'gt', a, adj) + fix(s2) + '</div></div>').join('');
+
+/* ── concept checking questions ────────────────────────────────────────── */
+HouseCCQ.build({
+  container: 'ccq',
+  items: [
+    { sentence: S('{Denver|@🏔️} isn’t as big as {New York|@🗽}.'),
+      questions: [
+        { q: 'Which city is bigger?', opts: ['Denver', 'New York'], correct: 1,
+          why: 'New York. “Not as big as” = less big. Denver < New York.' },
+        { q: 'Is Denver big?', opts: ['Maybe — we only know it’s smaller', 'No, it’s very small'], correct: 0,
+          why: 'Denver is a big city! It’s only smaller than New York. “Not as big as” compares; it doesn’t say “small”.' }
+      ] },
+    { sentence: S('People here are just as friendly as in New York.'),
+      questions: [
+        { q: 'Are people in Denver friendlier?', opts: ['Yes', 'No, the same'], correct: 1,
+          why: 'No. “Just as” = exactly the same. Denver = New York.' }
+      ] },
+    { sentence: S('{My|nadia} new apartment is bigger than {my|nadia} old one.'),
+      questions: [
+        { q: 'Can we say “My old apartment isn’t as big as my new one”?', opts: ['Yes', 'No'], correct: 0,
+          why: 'Yes — it’s the same meaning. New > old, so old < new.' }
+      ] }
+  ]
+});
+
+/* ── form ──────────────────────────────────────────────────────────────── */
+HouseFormClarf.build({
+  container: 'formClarf', scoreEl: 'fcScore', totalEl: 'fcTotal',
+  pool: ['subject', 'verb', 'neg', 'adverb', 'adj', 'prep', 'noun'],
+  items: [
+    { form: 'aff', parts: [['Denver', 'subject'], ['is', 'verb'], ['just', 'adverb'], ['as', 'adverb'], ['exciting', 'adj'], ['as', 'prep'], ['New York', 'noun'], ['.', null]] },
+    { form: 'neg', parts: [['Denver', 'subject'], ['isn’t', 'neg'], ['as', 'adverb'], ['big', 'adj'], ['as', 'prep'], ['New York', 'noun'], ['.', null]] },
+    { form: 'q',   parts: [['Is', 'verb'], ['it', 'subject'], ['as', 'adverb'], ['nice', 'adj'], ['as', 'prep'], ['your old apartment', 'noun'], ['?', null]] },
+    { form: 'aff', parts: [['New York', 'subject'], ['is', 'verb'], ['bigger', 'adj'], ['than', 'prep'], ['Denver', 'noun'], ['.', null]] }
+  ]
+});
+document.getElementById('ruleBox').innerHTML = fix(
+  '<p>' + sym('eq') + ' <strong>The same:</strong> ⟦as⟧ + adjective + ⟦as⟧. <em>Just</em> makes it stronger: exactly the same. The adjective doesn’t change — no -er, no more! Denver is ⟦just as⟧ cold ⟦as⟧ New York.</p>' +
+  '<p>' + sym('lt') + ' <strong>Less:</strong> ⟦not as⟧ + adjective + ⟦as⟧. Use <em>isn’t / aren’t / don’t</em>. Denver ⟦isn’t as⟧ big ⟦as⟧ New York. (It sounds kinder than “Denver is smaller”.)</p>' +
+  '<p>' + sym('gt') + ' <strong>More:</strong> adjective ⟦-er than⟧ (short adjectives), ⟦more⟧ + adjective ⟦than⟧ (long adjectives). bigger than · sunnier than · more modern than.</p>' +
+  '<p><strong>No second place?</strong> We can stop after the adjective when we know what we compare: It’s ⟦just as⟧ nice. · The city ⟦isn’t as⟧ noisy.</p>');
+
+/* ── common mistakes ───────────────────────────────────────────────────── */
+const MISTAKES = [
+  ['Denver is as bigger as New York.', 'Denver is as big as New York.'],
+  ['My house is as big than your house.', 'My house is as big as your house.'],
+  ['Denver is not as big like New York.', 'Denver is not as big as New York.'],
+  ['My apartment is just as modern than yours.', 'My apartment is just as modern as yours.'],
+  ['It’s as more expensive as my old place.', 'It’s as expensive as my old place.'],
+  ['New York is more big than Denver.', 'New York is bigger than Denver.']
+];
+document.getElementById('mistakes').innerHTML = MISTAKES.map(([no, yes]) =>
+  '<div class="pair-card"><div class="pair-line no"><span class="mark">✗</span>' + no + '</div>' +
+  '<div class="pair-line yes"><span class="mark">✓</span>' + yes + '</div></div>').join('');
+
+/* ── error hunt (A2: some sentences are already correct) ── */
+const EH_ITEMS = [
+  { words: ['My', 'room', 'is', 'as', 'small', 'than', 'a', 'closet', '!'],
+    error: { type: 'wrong', wordIndex: 5, options: ['as', 'like', 'that'], correct: 'as' } },
+  { words: ['Chicago', 'isn’t', 'as', 'expensive', 'as', 'San', 'Francisco', '.'], error: null },
+  { words: ['This', 'kitchen', 'is', 'just', 'as', 'bigger', 'as', 'the', 'old', 'one', '.'],
+    error: { type: 'wrong', wordIndex: 5, options: ['big', 'biggest', 'more big'], correct: 'big' } },
+  { words: ['Small', 'towns', 'are', 'quieter', 'than', 'big', 'cities', '.'], error: null },
+  { words: ['Our', 'street', 'isn’t', 'as', 'noisy', 'yours', '.'],
+    error: { type: 'missing', gapIndex: 5, options: ['as', 'than', 'like'], correct: 'as' } },
+  { words: ['The', 'subway', 'is', 'as', 'crowded', 'as', 'the', 'bus', '.'], error: null },
+  { words: ['Is', 'your', 'new', 'house', 'as', 'cheap', 'like', 'your', 'old', 'house', '?'],
+    error: { type: 'wrong', wordIndex: 6, options: ['as', 'than', 'that'], correct: 'as' } },
+  { words: ['This', 'neighborhood', 'is', 'more', 'safer', 'than', 'downtown', '.'], error: { type: 'extra', wordIndex: 3 } },
+  { words: ['My', 'apartment', 'not', 'is', 'as', 'modern', 'as', 'yours', '.'],
+    error: { type: 'misplaced', wordIndex: 2, targetGapIndex: 4 } }
+];
+HouseErrorHunt.build({ container: 'errorHuntItems', items: EH_ITEMS, scoreEl: 'errorScore', totalEl: 'errorTotal', keepCaps: ['Chicago', 'San', 'Francisco'] });
+</script>
+<script>HouseGrammar.init();</script>
+</body>
+</html>

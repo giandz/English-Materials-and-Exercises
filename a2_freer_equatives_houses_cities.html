@@ -1,0 +1,131 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<title>Which Is Better? — Equative Comparisons</title>
+<script>
+(function(){
+  try{
+    var saved = localStorage.getItem('theme-preference');
+    var theme = (saved === 'light' || saved === 'dark')
+      ? saved
+      : ((window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches) ? 'dark' : 'light');
+    document.documentElement.setAttribute('data-theme', theme);
+    var fs = parseFloat(localStorage.getItem('font-size-preference'));
+    if (fs >= 10 && fs <= 28) document.documentElement.style.setProperty('--fs-base', fs + 'px');
+  }catch(e){ /* localStorage/matchMedia unavailable — CSS media query still applies */ }
+})();
+</script>
+<link rel="stylesheet" href="house.css">
+<style>
+.cast-row{ display:flex; flex-wrap:wrap; gap:14px 18px; justify-content:center; align-items:flex-end; margin:0 0 1rem; padding:10px; background:var(--surface-1); border:1px solid var(--border); border-radius:var(--border-radius-lg); font-size:.8667rem; }
+/* the meaning symbols: = the same · < less · > more */
+.sym{ display:inline-flex; align-items:center; justify-content:center; min-width:1.7em; height:1.7em; padding:0 .3em; border-radius:.45em;
+  font-family:var(--font-mono); font-weight:800; font-size:1rem; line-height:1; vertical-align:middle; }
+.sym-eq{ background:var(--good-bg); color:var(--good); box-shadow:inset 0 0 0 1.5px var(--good); }
+.sym-lt{ background:var(--color-background-info); color:var(--color-text-info); box-shadow:inset 0 0 0 1.5px var(--color-border-info); }
+.sym-gt{ background:var(--color-background-warning); color:var(--color-text-warning); box-shadow:inset 0 0 0 1.5px var(--color-border-warning); }
+.sym-adj{ margin-left:.35em; font-size:.8rem; font-weight:700; color:var(--text-secondary); vertical-align:middle; }
+.cue{ display:inline-flex; align-items:center; gap:6px; flex-wrap:wrap; font-weight:400; font-style:normal; margin:0 0 6px; padding:4px 10px; border-radius:8px;
+  border:1px solid var(--color-border-tertiary); background:var(--surface-2); color:var(--text-secondary); font-size:.9rem; }
+.cue .pic{ font-size:1.3rem; }
+.quiz-q .q-text .cue{ display:flex; width:max-content; max-width:100%; }
+
+.cmp{ display:flex; align-items:center; justify-content:center; gap:12px; flex-wrap:wrap; margin:4px 0 6px; }
+.cmp .side{ display:flex; flex-direction:column; align-items:center; gap:2px; min-width:7em; font-weight:700; font-size:1rem; }
+.cmp .big{ font-size:2.4rem; line-height:1.1; }
+.cmp .q{ font-family:var(--font-mono); font-weight:800; font-size:1.3rem; color:var(--text-muted); }
+.cmp-adj{ font-size:1.05rem; font-weight:700; color:var(--pos-adj); text-align:center; }
+.q-card details.check{ margin-top:4px; width:100%; max-width:460px; text-align:left; }
+.q-card .check-body{ padding:8px 12px; font-size:.9rem; }
+.q-card .check-body p{ margin:0 0 5px; }
+</style>
+</head>
+<body>
+<div class="page" id="page">
+  <span class="cefr-tag cefr-a2">A2 · Pre-intermediate</span>
+  <h1>Which Is Better?</h1>
+  <p class="subtitle">Compare homes and places. Do you and your partner agree?</p>
+
+  <div class="rule-box">
+    <p><strong>How to play (pairs, or teacher + student):</strong></p>
+    <p>1. Student A rolls 🎲. Choose a symbol: <span class="sym sym-eq">=</span> <span class="sym sym-lt">&lt;</span> or <span class="sym sym-gt">&gt;</span>. Say your sentence: “<b>A house isn’t as cheap as an apartment.</b>”</p>
+    <p>2. Student B agrees or doesn’t agree: “<b>I agree.</b>” / “<b>I don’t think so. I think it’s just as cheap.</b>” Say why!</p>
+    <p>3. Press 👀 to see three example sentences. Then change: B rolls, A answers.</p>
+  </div>
+
+  <div class="q-card" id="qCard"><span class="q-placeholder">Roll the dice to start.</span></div>
+  <button class="dice-btn" id="diceBtn" aria-label="Roll">🎲</button>
+  <div class="roll-count">Rolls: <strong id="rollCount">0</strong></div>
+
+  <div class="sec-div">Now you</div>
+  <div class="rule-box">
+    <p><strong>Ask your partner about their home and their city.</strong> Write the answers. “<b>Do you live in a house or an apartment? Is it big? Is your street noisy?</b>”</p>
+    <p>Then compare: “<b>Ana’s apartment isn’t as big as my house, but it’s just as nice.</b>” Another partner? Press <b>➕ Add partner</b>.</p>
+  </div>
+  <div id="interview"></div>
+
+  <footer>Which Is Better? — Equative comparisons: (just) as … as / not as … as (A2)</footer>
+</div>
+
+<div id="theme-toggle-wrap">
+  <button id="theme-toggle" aria-label="Toggle light/dark mode" title="Toggle light/dark mode">
+    <span id="theme-icon">☀️</span>
+  </button>
+</div>
+<script src="house.js"></script>
+<script src="house-interview.js"></script>
+<script>
+/* [picture A, A, picture B, B, the adjectives to talk about (one is picked), comparative form for each adjective] */
+const PAIRS = [
+  ['🏠', 'a house', '🏢', 'an apartment', [['big', 'bigger'], ['expensive', 'more expensive'], ['quiet', 'quieter'], ['safe', 'safer']]],
+  ['🏙️', 'big cities', '🏡', 'small towns', [['exciting', 'more exciting'], ['noisy', 'noisier'], ['friendly', 'friendlier'], ['expensive', 'more expensive']]],
+  ['🏖️', 'a beach town', '🏔️', 'a mountain town', [['beautiful', 'more beautiful'], ['relaxing', 'more relaxing'], ['cold', 'colder'], ['busy', 'busier']]],
+  ['🚇', 'the subway', '🚗', 'a car', [['fast', 'faster'], ['cheap', 'cheaper'], ['comfortable', 'more comfortable'], ['safe', 'safer']]],
+  ['🏚️', 'old buildings', '🏢✨', 'new buildings', [['beautiful', 'more beautiful'], ['interesting', 'more interesting'], ['comfortable', 'more comfortable'], ['expensive', 'more expensive']]],
+  ['🌆', 'downtown', '🏘️', 'the suburbs', [['noisy', 'noisier'], ['crowded', 'more crowded'], ['safe', 'safer'], ['fun', 'more fun']]],
+  ['🛋️', 'the living room', '🛏️', 'the bedroom', [['important', 'more important'], ['comfortable', 'more comfortable'], ['big', 'bigger']]],
+  ['🌳', 'a yard', '🌇', 'a balcony', [['useful', 'more useful'], ['nice', 'nicer'], ['big', 'bigger']]],
+  ['🗽', 'New York', '🏔️', 'Denver', [['big', 'bigger'], ['exciting', 'more exciting'], ['sunny', 'sunnier'], ['expensive', 'more expensive']]],
+  ['🏠', 'your home', '🏠', 'your partner’s home', [['big', 'bigger'], ['modern', 'more modern'], ['quiet', 'quieter'], ['old', 'older']]],
+  ['🏙️', 'your city', '🌍', 'the capital of your country', [['big', 'bigger'], ['exciting', 'more exciting'], ['safe', 'safer'], ['clean', 'cleaner']]],
+  ['🏫', 'living near school or work', '🏞️', 'living near a park', [['important', 'more important'], ['nice', 'nicer'], ['useful', 'more useful']]]
+];
+const pick = HouseRandomGen.pickFrom;
+const cap = s => s.charAt(0).toUpperCase() + s.slice(1);
+/* the meaning symbols: = the same · < less · > more */
+const sym = k => '<span class="sym sym-' + k + '">' + { eq: '=', lt: '&lt;', gt: '&gt;' }[k] + '</span>';
+/* is or are: plurals take are; the “living near…” ideas take is */
+const beOf = x => /^living /.test(x) ? 'is' : (/s$/.test(x) ? 'are' : 'is');
+const neg = x => beOf(x) === 'are' ? 'aren’t' : 'isn’t';
+
+HouseRandomGen.build({
+  pick: () => { const p = pick(PAIRS), adj = pick(p[4]); return { p, adj, text: p[1] + p[3] + adj[0] }; },
+  key: it => it.text,
+  render: ({ p: [pa, a, pb, b], adj: [adj, more] }) =>
+    '<span class="q-topic">⚖️ Compare</span>' +
+    '<div class="cmp"><span class="side"><span class="big">' + pa + '</span>' + a + '</span><span class="q">= &lt; &gt; ?</span><span class="side"><span class="big">' + pb + '</span>' + b + '</span></div>' +
+    '<div class="cmp-adj">' + adj + '</div>' +
+    '<span class="q-prompt">A: choose a symbol and say your sentence. B: Do you agree? Why?</span>' +
+    '<details class="check"><summary>👀 Example sentences</summary><div class="check-body">' +
+    '<p>' + sym('eq') + ' “' + cap(a) + ' ' + beOf(a) + ' just as ' + adj + ' as ' + b + '.”</p>' +
+    '<p>' + sym('lt') + ' “' + cap(a) + ' ' + neg(a) + ' as ' + adj + ' as ' + b + '.”</p>' +
+    '<p>' + sym('gt') + ' “' + cap(a) + ' ' + beOf(a) + ' ' + more + ' than ' + b + '.”</p></div></details>'
+});
+
+/* ── your partner’s home and city: one card per partner (house-interview.js) ── */
+HouseInterview.build({
+  container: 'interview',
+  storageKey: 'equatives-homes-cities',
+  fields: [
+    { icon: '🏠', label: 'home', placeholder: 'a house, an apartment…' },
+    { icon: '📏', label: 'size', placeholder: 'big, small, two bedrooms…' },
+    { icon: '🔊', label: 'street', placeholder: 'quiet, noisy…' },
+    { icon: '🏙️', label: 'city or town', placeholder: 'Caracas, a small town…' },
+    { icon: '💰', label: 'expensive?', placeholder: 'very, a little, no…' }
+  ]
+});
+</script>
+</body>
+</html>
