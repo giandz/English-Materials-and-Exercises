@@ -20,9 +20,12 @@
      and presses Join. The handshake goes through public relays by the Trystero
      library (Nostr by default), encrypted with the key after the # in the link,
      which is never sent to the web server. Highlights then go browser to browser.
-     The room is per page: people see each other when they are on the same lesson.
-     The session belongs to the tab (sessionStorage), so the next lesson page in
-     that tab joins its own room with no new link.
+     One room for the whole session: everyone knows who is on which lesson page, and
+     highlights are shown only between people on the same page. The session belongs
+     to the tab (sessionStorage), so the next lesson page in that tab joins again with
+     no new link. When the host moves to another page, the others are offered a
+     "Go there"; the host can also take everyone to the page they are on, and can
+     take a person out of the session.
      An optional TURN relay, set by the host only, helps networks that cannot be
      reached directly (saved on that device, never in a link).
 
@@ -36,6 +39,7 @@
      ICwhatUC.start({ name })       host: make a room → Promise of the link
      ICwhatUC.join(link, { name })  join from a link
      ICwhatUC.leave()  ICwhatUC.end()   (end: host only, for everyone)
+     ICwhatUC.everyoneHere()  ICwhatUC.remove(id)    (host only)
      ICwhatUC.peers()               [{ id, name, color, host }]
      ICwhatUC.link()                the invitation link for this page, or null
      ICwhatUC.showCursor(on)  🖱️   ICwhatUC.showHighlights(on)  🖍️   ICwhatUC.seeOthers(on)  👀
@@ -47,13 +51,13 @@
   'use strict';
   if (global.ICwhatUC) return;
 
-  var PROTOCOL = 2;
+  var PROTOCOL = 3;
   var APP_ID = 'icwhatuc-english-materials';
   var LIB = global.ICWHATUC_LIB || document.documentElement.getAttribute('data-icwhatuc-lib') || 'https://esm.run/trystero';
   var SESSION = 'icwhatuc-session';
   var KEY = { name: 'icwhatuc-name', cur: 'icwhatuc-show-cursor', hl: 'icwhatuc-show-highlights', see: 'icwhatuc-see-others', relay: 'icwhatuc-relay', notify: 'icwhatuc-notify' };
   var COLORS = ['#1f7ae0', '#d6336c', '#2f9e44', '#9c36b5', '#e8590c', '#0c8599'];
-  var OURS = '#icw-layer, #icw-panel, #icw-bring, #icw-toast, #house-rail, #font-size-panel, .hd-card, .hd-arrow, .hd-hint';
+  var OURS = '#icw-layer, #icw-panel, #icw-bring, #icw-toast, #icw-follow, #house-rail, #font-size-panel, .hd-card, .hd-arrow, .hd-hint';
   /* what a ring goes round: the smallest of these under the pointer */
   var RING = '.word-chip, .match-card, .match-stage .card, .hm-card, .fc-chip, .fc-zone, .fc-word, .opt, .ccq-opt, ' +
     '.eh2-word, .eh2-gap, .eh-word, .gf-gap-input, input.gap, .word-btn, .bubble, .think-cloud, .avatar, td, th, li, ' +
@@ -91,6 +95,15 @@
   }
   function cleanName(s) { return String(s == null ? '' : s).replace(/[\u0000-\u001f\u007f]/g, '').replace(/\s+/g, ' ').trim().slice(0, 24); }
   function pagePath() { return location.pathname.replace(/\/index\.html?$/i, '/').toLowerCase(); }
+  /* one room for the whole session; what belongs to one page carries that page's tag */
+  var PAGE = pagePath(), PG = null;
+  var PAGED = { over: 1, sel: 1, cur: 1, tap: 1, bring: 1 };
+  function pageTitle() { return String(document.title || '').replace(/^\(!\) /, '').replace(/\s+/g, ' ').trim().slice(0, 80) || PAGE.split('/').pop(); }
+  /* a page of this site, from a path a peer sent: never anywhere else */
+  function sameSite(path) {
+    try { var u = new URL(String(path), location.origin); return u.origin === location.origin && /^\/[^/]/.test(u.pathname + 'x') ? u.pathname : null; }
+    catch (e) { return null; }
+  }
 
   /* ══ SHARED KEYS ═════════════════════════════════════════════════════════
      An element is sent as a key that every browser computes the same way,
@@ -250,7 +263,7 @@
   /* ══ STATE ═══════════════════════════════════════════════════════════════ */
   var S = {
     mod: null, room: null, self: null, role: null, name: '', sess: null, joinedAt: 0,
-    peers: {}, actions: {}, status: 'idle', note: '', listeners: {},
+    peers: {}, out: {}, actions: {}, status: 'idle', note: '', listeners: {},
     mine: { over: null, sel: null, selJson: 'null', lastOver: null, lastSel: null, lastSelAt: 0, bring: null }
   };
   var prefs = {
@@ -288,15 +301,22 @@
   }
   function makeAction(name, handler) {
     var a = S.room.makeAction(name);
+    var paged = !!PAGED[name];
     var wrapped = function (data, meta) {
       var id = typeof meta === 'string' ? meta : (meta && meta.peerId);
-      if (id && S.room) receive(name, data, id, handler);
+      if (!id || !S.room || S.out[id]) return;
+      if (paged && data && data.pg !== PG) {             /* from someone on another page */
+        if (name === 'bring') receive(name, data, id, farBring);
+        return;
+      }
+      receive(name, data, id, handler);
     };
-    if (Array.isArray(a)) { a[1](wrapped); return function (d) { try { return a[0](d); } catch (e) { /* the link is going */ } }; }
+    var put = function (send) { return function (d) { if (paged && d) d.pg = PG; try { return send(d); } catch (e) { /* the link is going */ } }; };
+    if (Array.isArray(a)) { a[1](wrapped); return put(function (d) { return a[0](d); }); }
     var slot;
     try { slot = a.onMessage; } catch (e) { slot = undefined; }
     if (typeof slot === 'function') slot.call(a, wrapped); else a.onMessage = wrapped;
-    return function (d) { try { return a.send(d); } catch (e) { /* the link is going */ } };
+    return put(function (d) { return a.send(d); });
   }
   function receive(name, data, id, handler) {
     var p = peer(id), now = Date.now();
@@ -323,18 +343,29 @@
     if (S.sess !== sess) return;                           /* left while loading */
     var config = { appId: APP_ID, password: sess.key }, turn = relayFor(sess.role);
     if (turn) config.turnConfig = [turn];
-    try { S.room = S.mod.joinRoom(config, sess.room + ':' + pagePath()); }
+    PG = hash(sess.key + PAGE);
+    try { S.room = S.mod.joinRoom(config, sess.room); }
     catch (e) { console.warn('ICwhatUC: could not join', e); setStatus('error', 'We cannot connect now. Try again.'); return; }
     S.self = String(S.mod.selfId || random(10));
     S.joinedAt = Date.now();
-    S.peers = {};
+    S.peers = {}; S.out = S.out || {};
     on(S.room, 'onError', function (e) { console.warn('ICwhatUC: library problem', e); });
     on(S.room, 'onJoinError', function (e) { console.warn('ICwhatUC: join problem', e); });
 
     S.actions.hello = makeAction('hello', function (d, p) {
-      var fresh = !p.name;
+      var fresh = !p.name, wasHere = here(p);
       p.name = cleanName(d.name) || 'Partner'; p.host = d.host === true; p.v = +d.v || 0;
+      p.pg = typeof d.pg === 'string' ? d.pg.slice(0, 16) : '';
+      p.title = cleanName(String(d.title || '').slice(0, 80)) ? String(d.title).replace(/[\u0000-\u001f]/g, '').slice(0, 80) : 'another page';
+      p.path = sameSite(d.path);
+      if (p.host && Array.isArray(d.out)) d.out.slice(0, 50).forEach(function (id) {
+        if (typeof id !== 'string') return;
+        if (id === S.self) removed(p.name); else { S.out[id] = true; if (S.peers[id]) gone(id, true); }
+      });
+      if (!S.room) return;
+      if (!here(p)) { p.over = null; p.sel = null; p.cur = null; p.bring = null; p.dirty = true; }
       assignColors(); renderPanel(); kick();
+      if (p.host && S.role !== 'host') hostIs(p, fresh || wasHere);
       if (fresh) emit('join', publicPeer(p));
     });
     S.actions.over = makeAction('over', function (d, p) {
@@ -353,6 +384,11 @@
       if (typeof d.k === 'string' && d.k.length <= 600 && isFinite(d.x) && isFinite(d.y)) ripple(p, d);
     });
     S.actions.bring = makeAction('bring', function (d, p) { if (p.name) received(p, d); });
+    S.actions.go = makeAction('go', function (d, p) { if (p.host && S.role !== 'host') takenTo(p, d); });
+    S.actions.kick = makeAction('kick', function (d, p) {
+      if (!p.host || typeof d.id !== 'string') return;
+      if (d.id === S.self) removed(p.name); else { S.out[d.id] = true; gone(d.id, true); }
+    });
     S.actions.bye = makeAction('bye', function (d, p) {
       if (d.end && p.host) { ended(p.name); return; }
       gone(p.id);
@@ -372,21 +408,25 @@
     setTimeout(function () { if (S.room && S.sess === sess && !named().length) renderPanel(); }, 30000);
   }
   function emit(type, data) { (S.listeners[type] || []).forEach(function (fn) { try { fn(data); } catch (e) { console.warn(e); } }); }
-  function named() { return Object.keys(S.peers).filter(function (id) { return S.peers[id].name; }).map(function (id) { return S.peers[id]; }); }
+  function named() { return Object.keys(S.peers).filter(function (id) { return S.peers[id].name && !S.out[id]; }).map(function (id) { return S.peers[id]; }); }
+  function here(p) { return !!p && !!p.name && p.pg === PG; }
+  function hereNow() { return named().filter(here); }
   function publicPeer(p) { return { id: p.id, name: p.name, color: p.color, host: p.host }; }
 
   /* everything I show, to everyone: a newcomer gets it this way */
   function sayHello() {
     if (!S.room) return;
-    S.actions.hello({ v: PROTOCOL, name: S.name, host: S.role === 'host' });
+    var hello = { v: PROTOCOL, name: S.name, host: S.role === 'host', pg: PG, path: location.pathname, title: pageTitle() };
+    if (S.role === 'host') hello.out = Object.keys(S.out || {}).slice(0, 50);
+    S.actions.hello(hello);
     S.actions.over({ k: prefs.hl ? S.mine.over : null });
     S.actions.sel({ p: prefs.hl ? S.mine.sel : null });
   }
-  function gone(id) {
+  function gone(id, quiet) {
     var p = S.peers[id];
     if (!p) return;
     delete S.peers[id];
-    if (p.name) { S.note = p.name + ' left this page.'; emit('leave', publicPeer(p)); }
+    if (p.name && !quiet) { S.note = p.name + (here(p) ? ' left this page.' : ' left.'); emit('leave', publicPeer(p)); }
     assignColors(); renderPanel(); clearPeerDrawing(id); kick();
   }
   function quietLeave() {
@@ -395,12 +435,12 @@
     if (room) { try { S.actions.bye({}); } catch (e) { /* already closed */ } try { room.leave(); } catch (e) { /* already closed */ } }
     Object.keys(S.peers).forEach(clearPeerDrawing);
     S.peers = {}; S.actions = {};
-    clearDrawing(); markTab(false); cur.on = false;
+    clearDrawing(); markTab(false); cur.on = false; follow(null);
     S.mine.bring = null;
   }
   function leave() {
     quietLeave();
-    session(null); S.sess = null; S.note = '';
+    session(null); S.sess = null; S.note = ''; S.out = {};
     rail(false); setStatus('idle');
   }
   function end() {
@@ -414,6 +454,88 @@
     rail(false); setStatus('ended', (by ? by + ' ended the session.' : 'The session is over.'));
     openPanel(true);
   }
+  /* ══ GROUPS ══════════════════════════════════════════════════════════════
+     Everyone in the session is in one room, whatever page they are on. */
+  var hostWas = null;          /* the page I last told the learner about */
+  function hostIs(p, news) {
+    if (here(p)) { hostWas = null; follow(null); return; }
+    if (!news && hostWas === p.pg) return;
+    hostWas = p.pg;
+    follow({ text: p.name + ' is on “' + p.title + '”.', path: p.path, go: 'Go there' });
+    if (document.hidden || !document.hasFocus()) { markTab(true); osNotify(p, p.name + ' is on another page', p.title); }
+  }
+  /* the host takes everyone to their page: a few seconds to say "Stay here" */
+  var goTimer = 0;
+  function takenTo(p, d) {
+    var path = sameSite(d.path);
+    if (!path || d.pg === PG) return;
+    var title = String(d.title || '').replace(/[\u0000-\u001f]/g, '').slice(0, 80) || 'another page';
+    var left = 3;
+    follow({ text: p.name + ' is taking you to “' + title + '”… ' + left, path: path, go: 'Go now', stay: true });
+    if (document.hidden || !document.hasFocus()) { markTab(true); osNotify(p, p.name + ' is taking you to another page', title); }
+    clearInterval(goTimer);
+    goTimer = setInterval(function () {
+      var box = $('icw-follow');
+      if (!box || box.hidden) { clearInterval(goTimer); return; }
+      if (--left <= 0) { clearInterval(goTimer); go(path); return; }
+      box.querySelector('.icw-ftext').textContent = p.name + ' is taking you to “' + title + '”… ' + left;
+    }, 1000);
+  }
+  /* a call from someone on another page */
+  function farBring(d, p) {
+    if (!p.name || !p.path) return;
+    var now = Date.now();
+    if (p.lastBring && now - p.lastBring < 2500) return;
+    p.lastBring = now;
+    follow({ text: p.name + ' calls you to “' + p.title + '”.', path: p.path, go: 'Go there' });
+    if (document.hidden || !document.hasFocus()) { markTab(true); osNotify(p); }
+  }
+  function go(path) { clearInterval(goTimer); if (sameSite(path)) location.href = sameSite(path); }
+  /* the line at the bottom that offers to go to another page */
+  function follow(o) {
+    var box = $('icw-follow');
+    if (!o) { if (box) box.hidden = true; clearInterval(goTimer); return; }
+    injectStyles();
+    if (!box) {
+      box = document.createElement('div'); box.id = 'icw-follow'; box.setAttribute('role', 'status');
+      box.innerHTML = '<span class="icw-ftext"></span><button type="button" class="icw-fgo"></button><button type="button" class="icw-fstay"></button>';
+      box.addEventListener('click', function (e) {
+        e.stopPropagation();
+        if (e.target.closest('.icw-fgo')) go(box.dataset.path);
+        else if (e.target.closest('.icw-fstay')) { follow(null); }
+      });
+      document.body.appendChild(box);
+    }
+    box.querySelector('.icw-ftext').textContent = o.text;
+    var g = box.querySelector('.icw-fgo'), st = box.querySelector('.icw-fstay');
+    g.textContent = o.go; g.hidden = !o.path;
+    st.textContent = o.stay ? 'Stay here' : '✕'; st.setAttribute('aria-label', o.stay ? 'Stay here' : 'Close');
+    box.dataset.path = o.path || '';
+    box.hidden = false;
+  }
+  function everyoneHere() {
+    if (S.role !== 'host' || !S.room) return false;
+    S.actions.go({ pg: PG, path: location.pathname, title: pageTitle() });
+    var away = named().filter(function (p) { return !here(p); }).length;
+    toast(away ? 'Everyone comes to this page now.' : 'Everyone is on this page already.');
+    return true;
+  }
+  function remove(id) {
+    if (S.role !== 'host' || !S.room || !S.peers[id]) return false;
+    var name = S.peers[id].name;
+    S.out[id] = true;
+    S.actions.kick({ id: id });
+    gone(id, true);
+    S.note = name + ' is out of the session. To keep them out for good, end the session and start a new link.';
+    renderPanel();
+    return true;
+  }
+  function removed(by) {
+    quietLeave(); session(null); S.sess = null; S.out = {};
+    rail(false); setStatus('ended', (by || 'The host') + ' took you out of the session.');
+    openPanel(true);
+  }
+
   global.addEventListener('pagehide', function () { if (S.room) { try { S.actions.bye({}); } catch (e) { /* closing */ } try { S.room.leave(); } catch (e) { /* closing */ } } });
 
   /* ══ WHAT I SEND ═════════════════════════════════════════════════════════
@@ -544,7 +666,7 @@
     mode = mode === 'hard' && S.role === 'host' ? 'hard' : 'soft';
     S.actions.bring({ m: mode, sel: t.sel, k: t.k });
     S.mine.bring = { sel: t.sel, k: t.k, until: Date.now() + 5000, gen: -1 };
-    if (!named().length) toast('Nobody is here to call yet.');
+    if (!hereNow().length) toast(named().length ? 'The others are on another page. They get a “Go there”.' : 'Nobody is here to call yet.');
     else toast(mode === 'hard' ? 'Their page moves here now.' : 'They see a ! here now.');
     kick();
     return true;
@@ -616,10 +738,10 @@
     }
   }
   function notifyOk() { return 'Notification' in global && global.isSecureContext !== false; }
-  function osNotify(p) {
+  function osNotify(p, text, body) {
     if (!notifyOk() || store(KEY.notify) !== 'yes' || Notification.permission !== 'granted') return;
     try {
-      var n = new Notification(p.name + ': come here!', { body: document.title.replace(/^\(!\) /, ''), tag: 'icwhatuc-bring', renotify: true });
+      var n = new Notification(text || p.name + ': come here!', { body: body || document.title.replace(/^\(!\) /, ''), tag: 'icwhatuc-bring', renotify: true });
       n.onclick = function () { try { global.focus(); } catch (e) { /* the browser decides */ } n.close(); markTab(false); goTo(p.id); };
     } catch (e) { /* some phones only allow notifications from a service worker: the tab mark is still there */ }
   }
@@ -852,7 +974,7 @@
     edgeTop.style.top = (clear + 6) + 'px';
     S.topClear = clear;
     if (prefs.hl) { var me = selfView(now); drawView(me, now, vh, null); keep.me = true; views.push(me); }
-    if (prefs.see) named().forEach(function (p) {
+    if (prefs.see) hereNow().forEach(function (p) {
       resolvePeer(p);
       var v = peerView(p, now), bringR = drawView(v, now, vh, edges);
       keep[p.id] = true; views.push(v);
@@ -1098,9 +1220,12 @@
     else if (!text) { try { localStorage.removeItem(KEY.relay); } catch (e) { /* nothing saved */ } }
   }
   function people() {
-    var me = '<li><span class="icw-dot" style="background:' + (S.color || COLORS[0]) + '"></span>' + esc(S.name) + ' <span class="icw-small">(you' + (S.role === 'host' ? ', host' : '') + ')</span></li>';
-    return '<ul class="icw-people">' + me + named().map(function (p) {
-      return '<li><span class="icw-dot" style="background:' + p.color + '"></span>' + esc(p.name) + (p.host ? ' <span class="icw-small">(host)</span>' : '') + '</li>';
+    var me = '<li><span class="icw-dot" style="background:' + (S.color || COLORS[0]) + '"></span><span class="icw-who">' + esc(S.name) + ' <span class="icw-small">(you' + (S.role === 'host' ? ', host' : '') + ')</span></span></li>';
+    var list = named().sort(function (a, b) { return (here(b) - here(a)) || (b.host - a.host); });
+    return '<ul class="icw-people">' + me + list.map(function (p) {
+      var where = here(p) ? '' : '<br><span class="icw-small">on “' + esc(p.title) + '”</span>' + (p.path ? ' <button type="button" class="icw-mini" data-goto="' + esc(p.id) + '">Go there</button>' : '');
+      var out = S.role === 'host' ? '<button type="button" class="icw-mini icw-out" data-out="' + esc(p.id) + '" title="Take ' + esc(p.name) + ' out of the session">Remove</button>' : '';
+      return '<li><span class="icw-dot" style="background:' + p.color + '"></span><span class="icw-who">' + esc(p.name) + (p.host ? ' <span class="icw-small">(host)</span>' : '') + where + '</span>' + out + '</li>';
     }).join('') + '</ul>';
   }
   function renderPanel() {
@@ -1117,20 +1242,21 @@
     } else if (st === 'connecting') {
       h += '<p class="icw-status">Connecting…</p>';
     } else if (st === 'room') {
-      var others = named().length;
+      var others = hereNow().length, away = named().length - others;
       if (S.role === 'host') {
-        h += '<p>Send this link to your partner:</p><input id="icw-link" type="text" readonly value="' + esc(linkNow()) + '">' +
+        h += '<p>Invite people: send them this link.</p><input id="icw-link" type="text" readonly value="' + esc(linkNow()) + '">' +
           '<div class="icw-row"><button type="button" class="icw-main" data-do="copy">Copy link</button></div>';
       }
       h += people();
       var waited = Math.round((Date.now() - S.joinedAt) / 1000);
-      h += '<p class="icw-status" id="icw-status">' + (others ? 'You are together now.' :
-        (waited >= 30 ? 'Nobody is here yet. Is your partner on this page?' : 'Waiting for your partner… ' + waited + ' s')) + '</p>';
+      h += '<p class="icw-status" id="icw-status">' + (others ? 'You are together now.' : (away ? 'Nobody else is on this page.' :
+        (waited >= 30 ? 'Nobody is here yet. Is your partner on this page?' : 'Waiting for your partner… ' + waited + ' s'))) + '</p>';
+      if (S.role === 'host' && away) h += '<div class="icw-row"><button type="button" data-do="everyone">Bring everyone to this page</button></div>';
       if (S.note) h += '<p class="icw-small">' + esc(S.note) + '</p>';
       h += bringBox() + notifySwitch();
       h += '<p class="icw-small">On another lesson page in this tab, you join again by yourself.</p>';
       h += '<div class="icw-row">' + (S.role === 'host' ? '<button type="button" data-do="end">End for everyone</button>' : '<button type="button" data-do="leave">Leave</button>') + '</div>';
-      if (!others && waited < 30) ticker = setInterval(function () { var e = $('icw-status'); if (!e || named().length) { renderPanel(); return; } var w = Math.round((Date.now() - S.joinedAt) / 1000); if (w >= 30) renderPanel(); else e.textContent = 'Waiting for your partner… ' + w + ' s'; }, 1000);
+      if (!others && !away && waited < 30) ticker = setInterval(function () { var e = $('icw-status'); if (!e || named().length) { renderPanel(); return; } var w = Math.round((Date.now() - S.joinedAt) / 1000); if (w >= 30) renderPanel(); else e.textContent = 'Waiting for your partner… ' + w + ' s'; }, 1000);
     } else if (st === 'ended') {
       h += '<p class="icw-status">' + esc(S.note || 'The session is over.') + '</p><div class="icw-row"><button type="button" class="icw-main" data-do="again">Start again</button></div>';
     } else if (st === 'error') {
@@ -1147,6 +1273,9 @@
   }
   function onPanelClick(e) {
     e.stopPropagation();
+    var t = e.target.closest('[data-goto], [data-out]');
+    if (t && t.dataset.goto) { var gp = S.peers[t.dataset.goto]; if (gp && gp.path) go(gp.path); return; }
+    if (t && t.dataset.out) { remove(t.dataset.out); return; }
     var b = e.target.closest('[data-do]');
     if (!b) return;
     var what = b.getAttribute('data-do');
@@ -1163,6 +1292,7 @@
     else if (what === 'bring-soft' || what === 'bring-hard') { if (bring(what === 'bring-hard' ? 'hard' : 'soft')) openPanel(false); }
     else if (what === 'leave') leave();
     else if (what === 'end') end();
+    else if (what === 'everyone') { everyoneHere(); openPanel(false); }
     else if (what === 'again') { S.note = ''; setStatus('idle'); }
     else if (what === 'retry') { if (S.sess) enter(S.sess); else setStatus('idle'); }
   }
@@ -1228,7 +1358,7 @@
       /* while 🖍️ is on, my selection is drawn in my colour, as the others see it */
       + 'html.icw-own *::selection{ background:transparent; }'
       + 'html.icw-own #icw-panel *::selection, html.icw-own input::selection, html.icw-own textarea::selection{ background:Highlight; color:HighlightText; }'
-      + '#icw-toast{ position:fixed; left:50%; bottom:58px; transform:translateX(-50%); z-index:1060; max-width:calc(100vw - 24px); padding:8px 14px; border-radius:999px;'
+      + '#icw-toast{ position:fixed; left:0; right:0; margin:0 auto; width:max-content; bottom:58px; z-index:1060; text-align:center; max-width:calc(100vw - 24px); padding:8px 14px; border-radius:999px;'
       +   ' background:var(--text-primary, #1a1a1a); color:var(--surface-2, #fff); font:600 13px/1.35 var(--font-sans, system-ui, sans-serif); box-shadow:0 6px 18px rgba(0,0,0,.2); }'
       + '#icw-toast[hidden], #icw-bring[hidden]{ display:none; }'
       + '#icw-bring{ position:fixed; z-index:1050; display:flex; flex-direction:column; gap:6px; padding:8px; border-radius:12px; background:var(--surface-2, #fff); border:1px solid var(--border, #e3e3e6); box-shadow:0 8px 24px rgba(0,0,0,.18); }'
@@ -1236,7 +1366,20 @@
       + '#icw-panel button.icw-grey{ opacity:.5; }'
       + '#icw-panel .icw-ask{ background:var(--color-background-info, #e6f1fb); border-radius:10px; padding:8px 10px 2px; margin-bottom:10px; }'
       + '#icw-panel .icw-bringbox{ border-top:1px solid var(--border, #e3e3e6); padding-top:8px; margin-top:4px; }'
-      + '@media print{ #icw-layer, #icw-panel, #icw-bring, #icw-toast{ display:none !important; } }';
+      + '#icw-follow{ position:fixed; left:0; right:0; margin:0 auto; width:max-content; bottom:14px; z-index:1110; display:flex; align-items:center; gap:8px; max-width:calc(100vw - 20px);'
+      +   ' padding:8px 8px 8px 14px; border-radius:14px; background:var(--surface-2, #fff); color:var(--text-primary, #1a1a1a); border:1px solid var(--text-accent, #185fa5);'
+      +   ' box-shadow:0 8px 24px rgba(0,0,0,.2); font:600 13px/1.35 var(--font-sans, system-ui, sans-serif); }'
+      + '#icw-follow[hidden]{ display:none; }'
+      + '#icw-follow .icw-ftext{ flex:1 1 auto; min-width:0; }'
+      + '#icw-follow button{ font:600 13px/1.2 var(--font-sans, system-ui, sans-serif); padding:7px 12px; border-radius:999px; border:1px solid var(--border, #e3e3e6); background:var(--surface-1, #f7f7f8); color:inherit; cursor:pointer; white-space:nowrap; }'
+      + '#icw-follow .icw-fgo{ background:var(--text-accent, #185fa5); border-color:var(--text-accent, #185fa5); color:#fff; }'
+      + '#icw-follow button[hidden]{ display:none; }'
+      + '#icw-panel .icw-people li{ align-items:flex-start; }'
+      + '#icw-panel .icw-people .icw-dot{ margin-top:4px; }'
+      + '#icw-panel .icw-who{ flex:1 1 auto; min-width:0; overflow-wrap:anywhere; }'
+      + '#icw-panel button.icw-mini{ font-size:11px; padding:2px 8px; margin-top:1px; }'
+      + '#icw-panel button.icw-out{ color:var(--bad, #b0392f); }'
+      + '@media print{ #icw-layer, #icw-panel, #icw-bring, #icw-toast, #icw-follow{ display:none !important; } }';
     for (var i = 0; i < COLORS.length; i++) css += '::highlight(icw-c' + i + '){ background-color:' + COLORS[i] + '4d; }';
     var s = document.createElement('style');
     s.id = 'icwhatuc-styles';
@@ -1268,11 +1411,11 @@
     start: start,
     join: function (link, o) { var i = parseInvite(link); if (!i) return Promise.reject(new Error('not an ICwhatUC link')); return enter({ room: i.room, key: i.key, role: 'learner', name: cleanName((o && o.name) || store(KEY.name)) || 'Learner' }); },
     leave: leave, end: end,
-    peers: function () { return named().map(publicPeer); },
+    peers: function () { return named().map(function (p) { var o = publicPeer(p); o.here = here(p); o.page = p.title; return o; }); },
     link: linkNow,
     status: function () { return S.status; },
     showCursor: showCursor, showHighlights: showHighlights, seeOthers: seeOthers,
-    canBring: canBring, bring: bring,
+    canBring: canBring, bring: bring, everyoneHere: everyoneHere, remove: remove,
     key: function (el, k) { if (k != null) { el.dataset.icwKey = k; gen++; return 'k:' + k; } return keyOf(el); },
     resolve: resolveKey,
     on: function (type, fn) { (S.listeners[type] = S.listeners[type] || []).push(fn); },
