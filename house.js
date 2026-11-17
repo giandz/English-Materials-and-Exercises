@@ -3502,7 +3502,9 @@
    HOUSE ICwhatUC — work together on a lesson page
    A 🤝 button in the rail. Everything else lives in icwhatuc.js, next to
    house.js, loaded on the first press, or by itself when the page was opened
-   from an invitation link (#icw=…) or this tab is already in a session.
+   from an invitation link (#icw=…) or this tab is already in a session. When a
+   session starts, the tab moves to together.html (next to house.js), which keeps
+   the connection open while the lesson pages change inside it.
    A page where nobody presses 🤝 downloads nothing more. Turn it off for a
    page with <html data-icwhatuc="off">.
    ══════════════════════════════════════════════════════════════════════════ */
@@ -3540,7 +3542,8 @@
         load(function (m) { btn.disabled = false; m.open(); });
       } });
     var inSession = false;
-    try { inSession = !!sessionStorage.getItem('icwhatuc-session'); } catch (e) { /* no storage: no session */ }
+    /* in a session, or just out of one with a line to show ("Teacher ended the session.") */
+    try { inSession = !!(sessionStorage.getItem('icwhatuc-session') || sessionStorage.getItem('icwhatuc-note')); } catch (e) { /* no storage: no session */ }
     if (/[#&]icw=/.test(location.hash) || inSession) load();
     /* the link pasted into a tab that already shows this lesson: only the # changes, the page does not reload */
     window.addEventListener('hashchange', function () { if (/[#&]icw=/.test(location.hash)) load(); });

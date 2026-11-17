@@ -29,6 +29,17 @@
      An optional TURN relay, set by the host only, helps networks that cannot be
      reached directly (saved on that device, never in a link).
 
+   ONE CONNECTION FOR THE WHOLE LESSON
+     A connection belongs to a page, and a browser closes it when the page goes. So
+     when a session starts (Start or Join), the tab moves to the session page,
+     together.html next to house.js, which holds the connection and shows the lesson
+     pages in a frame that fills the window. Moving to the next lesson changes only
+     the frame: the connection stays open, nobody leaves or joins again. The lesson
+     pages run this same file and borrow the session page's connection (the hub).
+     Without together.html (or with <html data-icwhatuc-session-page="off">, or
+     window.ICWHATUC_SESSION_PAGE = false), each lesson page connects by itself and
+     joins again on the next page, as before.
+
    WHERE THE LIBRARY COMES FROM
      https://esm.run/trystero, or <html data-icwhatuc-lib="trystero.js">,
      or window.ICWHATUC_LIB set before house.js. A copy next to the lesson files
@@ -52,6 +63,8 @@
   if (global.ICwhatUC) return;
 
   var PROTOCOL = 3;
+  var SCRIPT_SRC = (document.currentScript && document.currentScript.src) || '';
+  var HERE_DIR = SCRIPT_SRC ? SCRIPT_SRC.replace(/[?#].*$/, '').replace(/[^/]*$/, '') : '';
   var APP_ID = 'icwhatuc-english-materials';
   var LIB = global.ICWHATUC_LIB || document.documentElement.getAttribute('data-icwhatuc-lib') || 'https://esm.run/trystero';
   var SESSION = 'icwhatuc-session';
@@ -104,6 +117,148 @@
     try { var u = new URL(String(path), location.origin); return u.origin === location.origin && /^\/[^/]/.test(u.pathname + 'x') ? u.pathname : null; }
     catch (e) { return null; }
   }
+
+  /* ══ THE HUB ═════════════════════════════════════════════════════════════
+     Holds the Trystero room and nothing else. In a lesson page opened on its own,
+     the hub lives and dies with the page. In the session page it belongs to the
+     session page, and each lesson page shown in its frame borrows it: attaches when
+     it opens, detaches when it goes. The hub keeps the last hello, pointed-at element
+     and selection of each person, so the next page knows everyone at once.
+     Trystero's interface has had three shapes; all are spoken here. joinRoom takes
+     exactly two arguments. Handlers are registered by calling onX(fn), by assigning
+     onX = fn, or (oldest) through the second item of makeAction's array. */
+  var ACTIONS = ['hello', 'over', 'sel', 'cur', 'tap', 'bring', 'go', 'kick', 'bye', 'x'];
+  var REPLAY = ['hello', 'over', 'sel'];
+  function listen(room, event, handler) {
+    var slot, done = false;
+    try { slot = room[event]; } catch (e) { slot = undefined; }
+    if (typeof slot === 'function') { try { slot.call(room, handler); done = true; } catch (e) { /* not a registrar */ } }
+    try { room[event] = handler; } catch (e) { if (!done) console.warn('ICwhatUC: cannot listen for ' + event, e); }
+  }
+  function makeHub() {
+    var H = { room: null, ident: '', selfId: null, sends: {}, peers: {}, last: {}, client: null, joins: 0, mod: null };
+    function deliver(name, data, id) {
+      if (REPLAY.indexOf(name) !== -1) (H.last[id] = H.last[id] || {})[name] = data;
+      var c = H.client;
+      if (c && c.handlers[name]) { try { c.handlers[name](data, id); } catch (e) { console.warn('ICwhatUC: a message was not understood', e); } }
+    }
+    H.join = async function (lib, config, roomId) {
+      var ident = roomId + '|' + config.password;
+      if (H.room && H.ident === ident) return H;         /* the session page is already in this room */
+      if (H.room) H.leave();
+      if (!H.mod) H.mod = await import(lib);
+      var room = H.mod.joinRoom(config, roomId);
+      H.room = room; H.ident = ident; H.joins++; H.peers = {}; H.last = {}; H.sends = {};
+      H.selfId = String(H.mod.selfId || random(10));
+      listen(room, 'onError', function (e) { console.warn('ICwhatUC: library problem', e); });
+      listen(room, 'onJoinError', function (e) { console.warn('ICwhatUC: join problem', e); });
+      ACTIONS.forEach(function (name) {
+        var a = room.makeAction(name);
+        var recv = function (data, meta) {
+          var id = typeof meta === 'string' ? meta : (meta && meta.peerId);
+          if (id && H.room === room && data && typeof data === 'object') deliver(name, data, String(id));
+        };
+        if (Array.isArray(a)) { a[1](recv); H.sends[name] = function (d) { return a[0](d); }; return; }
+        var slot;
+        try { slot = a.onMessage; } catch (e) { slot = undefined; }
+        if (typeof slot === 'function') slot.call(a, recv); else a.onMessage = recv;
+        H.sends[name] = function (d) { return a.send(d); };
+      });
+      listen(room, 'onPeerJoin', function (id) {
+        id = String(id); H.peers[id] = true;
+        var c = H.client; if (c) { try { c.join(id); } catch (e) { /* a page that is going */ } }
+      });
+      listen(room, 'onPeerLeave', function (id) {
+        id = String(id); delete H.peers[id]; delete H.last[id];
+        var c = H.client; if (c) { try { c.leave(id); } catch (e) { /* a page that is going */ } }
+      });
+      return H;
+    };
+    H.send = function (name, d) { if (H.room && H.sends[name]) { try { return H.sends[name](d); } catch (e) { /* the link is going */ } } };
+    H.attach = function (client) {
+      H.client = client;
+      Object.keys(H.peers).forEach(function (id) {
+        client.join(id);
+        var l = H.last[id] || {};
+        REPLAY.forEach(function (n) { if (l[n] && client.handlers[n]) client.handlers[n](l[n], id); });
+      });
+    };
+    H.detach = function (client) { if (H.client === client) H.client = null; };
+    H.leave = function () {
+      var r = H.room;
+      H.room = null; H.client = null; H.ident = ''; H.peers = {}; H.last = {};
+      if (r) { try { r.leave(); } catch (e) { /* already closed */ } }
+    };
+    return H;
+  }
+
+  /* the session page's hub, when this lesson page is shown in its frame */
+  function shellHub() {
+    try {
+      if (global.parent !== global && global.parent.location.origin === location.origin && global.parent.ICwhatUCHub) return global.parent.ICwhatUCHub;
+    } catch (e) { /* another site's page around this one: no hub */ }
+    return null;
+  }
+  function sessionPage() {
+    var c = global.ICWHATUC_SESSION_PAGE;
+    if (c === false) return null;
+    var a = document.documentElement.getAttribute('data-icwhatuc-session-page');
+    if (a === 'off') return null;
+    var u = (typeof c === 'string' && c) || a || (HERE_DIR ? HERE_DIR + 'together.html' : '');
+    if (!u) return null;
+    try { var url = new URL(u, location.href); return url.origin === location.origin ? url.href.replace(/[?#].*$/, '') : null; } catch (e) { return null; }
+  }
+  function framePath(raw) {   /* a page of this site for the frame, with its query and #, or null */
+    try { var u = new URL(String(raw || ''), location.origin); return u.origin === location.origin ? u.pathname + u.search + u.hash : null; }
+    catch (e) { return null; }
+  }
+
+  /* ══ THE SESSION PAGE (together.html) ════════════════════════════════════
+     A frame that fills the window, and the hub. It mirrors the lesson's title, icon
+     and address, so the tab reads as the lesson. Without a session it opens the
+     lesson by itself. */
+  function shell() {
+    var hub = global.ICwhatUCHub = makeHub();
+    var q = new URLSearchParams(location.search), path = framePath(q.get('p')) || '/';
+    var frame = document.getElementById('icw-frame');
+    if (!session() || !frame) { location.replace(path); return; }
+    function note(text) {
+      var n = document.getElementById('icw-shell-note');
+      if (!text) { if (n) n.hidden = true; return; }
+      if (!n) {
+        n = document.createElement('div'); n.id = 'icw-shell-note';
+        n.innerHTML = '<span></span><button type="button">Go back</button>';
+        n.querySelector('button').addEventListener('click', function () { history.back(); });
+        document.body.appendChild(n);
+      }
+      n.firstChild.textContent = text; n.hidden = false;
+    }
+    var mo = null;
+    frame.addEventListener('load', function () {
+      var w = frame.contentWindow, d = null, loc = null;
+      try { d = frame.contentDocument; loc = w.location; if (loc.origin !== location.origin) d = null; } catch (e) { d = null; }
+      if (mo) { mo.disconnect(); mo = null; }
+      if (!d) { note('This page is not one of the lessons, so it cannot open here.'); return; }
+      note(null);
+      if (!session()) { location.replace(loc.pathname + loc.search + loc.hash); return; }   /* the session ended while that page loaded */
+      try { history.replaceState(null, '', location.pathname + '?p=' + encodeURIComponent(loc.pathname + loc.search + loc.hash)); } catch (e) { /* fine */ }
+      var mirror = function () {
+        if (document.title !== d.title) document.title = d.title;
+        var src = d.querySelector('link[rel~="icon"]'), mine = document.querySelector('link[rel~="icon"]');
+        if (src) {
+          if (!mine) { mine = document.createElement('link'); mine.rel = 'icon'; document.head.appendChild(mine); }
+          if (mine.href !== src.href) mine.href = src.href;
+        }
+      };
+      mirror();
+      mo = new MutationObserver(mirror);
+      mo.observe(d.head, { subtree: true, childList: true, characterData: true, attributes: true });
+      try { w.focus(); } catch (e) { /* the browser decides */ }
+    });
+    frame.src = path;
+  }
+  global.ICwhatUCMakeHub = makeHub;
+  if (global.ICWHATUC_SHELL) { shell(); return; }
 
   /* ══ SHARED KEYS ═════════════════════════════════════════════════════════
      An element is sent as a key that every browser computes the same way,
@@ -289,34 +444,46 @@
     });
   }
 
-  /* ══ THE LIBRARY ═════════════════════════════════════════════════════════
-     Trystero's interface has had three shapes; all are spoken here. joinRoom takes
-     exactly two arguments. Handlers are registered by calling onX(fn), by assigning
-     onX = fn, or (oldest) through the second item of makeAction's array. */
-  function on(room, event, handler) {
-    var slot, done = false;
-    try { slot = room[event]; } catch (e) { slot = undefined; }
-    if (typeof slot === 'function') { try { slot.call(room, handler); done = true; } catch (e) { /* not a registrar */ } }
-    try { room[event] = handler; } catch (e) { if (!done) console.warn('ICwhatUC: cannot listen for ' + event, e); }
-  }
+  /* ══ CONNECTING ══════════════════════════════════════════════════════════
+     Through the hub: the session page's, when this page is in its frame, or one of
+     this page's own. */
+  var HUB = shellHub(), localHub = null;
   function makeAction(name, handler) {
-    var a = S.room.makeAction(name);
-    var paged = !!PAGED[name];
-    var wrapped = function (data, meta) {
-      var id = typeof meta === 'string' ? meta : (meta && meta.peerId);
+    var paged = !!PAGED[name], hub = S.hub;
+    S.client.handlers[name] = function (data, id) {
       if (!id || !S.room || S.out[id]) return;
-      if (paged && data && data.pg !== PG) {             /* from someone on another page */
+      if (paged && data.pg !== PG) {                     /* from someone on another page */
         if (name === 'bring') receive(name, data, id, farBring);
         return;
       }
       receive(name, data, id, handler);
     };
-    var put = function (send) { return function (d) { if (paged && d) d.pg = PG; try { return send(d); } catch (e) { /* the link is going */ } }; };
-    if (Array.isArray(a)) { a[1](wrapped); return put(function (d) { return a[0](d); }); }
-    var slot;
-    try { slot = a.onMessage; } catch (e) { slot = undefined; }
-    if (typeof slot === 'function') slot.call(a, wrapped); else a.onMessage = wrapped;
-    return put(function (d) { return a.send(d); });
+    return function (d) { if (paged && d) d.pg = PG; return hub.send(name, d); };
+  }
+  /* people the host took out: kept for this tab, so the next page knows them too */
+  function loadOut() { try { return JSON.parse(sessionStorage.getItem('icwhatuc-out') || '{}') || {}; } catch (e) { return {}; } }
+  function saveOut() { try { sessionStorage.setItem('icwhatuc-out', JSON.stringify(S.out || {})); } catch (e) { /* fine */ } }
+  /* on another tab or window? (in the session page's frame, the session page decides) */
+  function away() {
+    if (document.hidden) return true;
+    try { return !global.top.document.hasFocus(); } catch (e) { return !document.hasFocus(); }
+  }
+  /* Start and Join move the tab to the session page, when there is one */
+  function toShell(sess) {
+    var page = sessionPage();
+    if (!page || HUB || !global.fetch) return Promise.resolve(false);
+    return fetch(page, { method: 'HEAD', cache: 'no-store' }).then(function (r) {
+      if (!r.ok) return false;
+      sess.fresh = true; session(sess);
+      location.replace(page + '?p=' + encodeURIComponent(location.pathname + location.search));
+      return true;
+    }, function () { return false; });
+  }
+  /* the session is over for me: back to the plain lesson page, with a line to say why */
+  function unwrap(status, note) {
+    if (!HUB) return false;
+    try { sessionStorage.setItem('icwhatuc-note', JSON.stringify({ status: status || 'idle', note: note || '' })); } catch (e) { /* fine */ }
+    try { global.top.location.replace(location.href.split('#')[0]); return true; } catch (e) { return false; }
   }
   function receive(name, data, id, handler) {
     var p = peer(id), now = Date.now();
@@ -333,24 +500,26 @@
     return { urls: r.urls, username: r.username || '', credential: r.credential || '' };
   }
 
-  async function enter(sess) {
+  async function enter(sess, o) {
     if (S.room) quietLeave();
     S.sess = sess; S.role = sess.role; S.name = sess.name;
     session(sess);
     setStatus('connecting');
-    try { if (!S.mod) S.mod = await import(LIB); }
-    catch (e) { console.warn('ICwhatUC: the library did not load', e); setStatus('error', 'We cannot connect now. Check the internet and try again.'); return; }
-    if (S.sess !== sess) return;                           /* left while loading */
+    if (o && o.fresh && await toShell(sess)) return;     /* the tab is moving to the session page */
+    var hub = HUB || localHub || (localHub = makeHub());
     var config = { appId: APP_ID, password: sess.key }, turn = relayFor(sess.role);
     if (turn) config.turnConfig = [turn];
     PG = hash(sess.key + PAGE);
-    try { S.room = S.mod.joinRoom(config, sess.room); }
-    catch (e) { console.warn('ICwhatUC: could not join', e); setStatus('error', 'We cannot connect now. Try again.'); return; }
-    S.self = String(S.mod.selfId || random(10));
+    var lib = LIB;
+    try { lib = new URL(LIB, document.baseURI).href; } catch (e) { /* as it is */ }
+    try { await hub.join(lib, config, sess.room); }
+    catch (e) { console.warn('ICwhatUC: could not connect', e); setStatus('error', 'We cannot connect now. Check the internet and try again.'); return; }
+    if (S.sess !== sess) return;                           /* left while connecting */
+    S.hub = hub; S.room = hub;
+    S.self = hub.selfId;
     S.joinedAt = Date.now();
-    S.peers = {}; S.out = S.out || {};
-    on(S.room, 'onError', function (e) { console.warn('ICwhatUC: library problem', e); });
-    on(S.room, 'onJoinError', function (e) { console.warn('ICwhatUC: join problem', e); });
+    S.peers = {}; S.out = loadOut();
+    S.client = { handlers: {}, join: function (id) { peer(id); sayHello(); renderPanel(); }, leave: function (id) { gone(id); } };
 
     S.actions.hello = makeAction('hello', function (d, p) {
       var fresh = !p.name, wasHere = here(p);
@@ -360,7 +529,7 @@
       p.path = sameSite(d.path);
       if (p.host && Array.isArray(d.out)) d.out.slice(0, 50).forEach(function (id) {
         if (typeof id !== 'string') return;
-        if (id === S.self) removed(p.name); else { S.out[id] = true; if (S.peers[id]) gone(id, true); }
+        if (id === S.self) removed(p.name); else { S.out[id] = true; saveOut(); if (S.peers[id]) gone(id, true); }
       });
       if (!S.room) return;
       if (!here(p)) { p.over = null; p.sel = null; p.cur = null; p.bring = null; p.dirty = true; }
@@ -387,7 +556,7 @@
     S.actions.go = makeAction('go', function (d, p) { if (p.host && S.role !== 'host') takenTo(p, d); });
     S.actions.kick = makeAction('kick', function (d, p) {
       if (!p.host || typeof d.id !== 'string') return;
-      if (d.id === S.self) removed(p.name); else { S.out[d.id] = true; gone(d.id, true); }
+      if (d.id === S.self) removed(p.name); else { S.out[d.id] = true; saveOut(); gone(d.id, true); }
     });
     S.actions.bye = makeAction('bye', function (d, p) {
       if (d.end && p.host) { ended(p.name); return; }
@@ -397,14 +566,14 @@
       var fns = S.listeners[String(d.t)];
       if (fns) fns.forEach(function (fn) { try { fn(d.d, publicPeer(p)); } catch (e) { console.warn(e); } });
     });
-    on(S.room, 'onPeerJoin', function (id) { peer(String(id)); sayHello(); renderPanel(); });
-    on(S.room, 'onPeerLeave', function (id) { gone(String(id)); });
+    hub.attach(S.client);                                  /* the people already here, and what they show */
 
     assignColors();
     setStatus('room');
     rail(true);
     sayHello();
     kick();
+    if (sess.fresh) { delete sess.fresh; session(sess); openPanel(true); }
     setTimeout(function () { if (S.room && S.sess === sess && !named().length) renderPanel(); }, 30000);
   }
   function emit(type, data) { (S.listeners[type] || []).forEach(function (fn) { try { fn(data); } catch (e) { console.warn(e); } }); }
@@ -430,9 +599,12 @@
     assignColors(); renderPanel(); clearPeerDrawing(id); kick();
   }
   function quietLeave() {
-    var room = S.room;
-    S.room = null;
-    if (room) { try { S.actions.bye({}); } catch (e) { /* already closed */ } try { room.leave(); } catch (e) { /* already closed */ } }
+    var hub = S.hub;
+    S.room = null; S.hub = null;
+    if (hub) {
+      try { if (S.actions.bye) S.actions.bye({}); } catch (e) { /* already closed */ }
+      hub.detach(S.client); hub.leave();
+    }
     Object.keys(S.peers).forEach(clearPeerDrawing);
     S.peers = {}; S.actions = {};
     clearDrawing(); markTab(false); cur.on = false; follow(null);
@@ -440,7 +612,8 @@
   }
   function leave() {
     quietLeave();
-    session(null); S.sess = null; S.note = ''; S.out = {};
+    session(null); S.sess = null; S.note = ''; S.out = {}; saveOut();
+    if (unwrap('idle', '')) return;
     rail(false); setStatus('idle');
   }
   function end() {
@@ -450,8 +623,10 @@
     setTimeout(leave, 150);
   }
   function ended(by) {
-    quietLeave(); session(null); S.sess = null;
-    rail(false); setStatus('ended', (by ? by + ' ended the session.' : 'The session is over.'));
+    quietLeave(); session(null); S.sess = null; S.out = {}; saveOut();
+    var said = by ? by + ' ended the session.' : 'The session is over.';
+    if (unwrap('ended', said)) return;
+    rail(false); setStatus('ended', said);
     openPanel(true);
   }
   /* ══ GROUPS ══════════════════════════════════════════════════════════════
@@ -462,7 +637,7 @@
     if (!news && hostWas === p.pg) return;
     hostWas = p.pg;
     follow({ text: p.name + ' is on “' + p.title + '”.', path: p.path, go: 'Go there' });
-    if (document.hidden || !document.hasFocus()) { markTab(true); osNotify(p, p.name + ' is on another page', p.title); }
+    if (away()) { markTab(true); osNotify(p, p.name + ' is on another page', p.title); }
   }
   /* the host takes everyone to their page: a few seconds to say "Stay here" */
   var goTimer = 0;
@@ -472,7 +647,7 @@
     var title = String(d.title || '').replace(/[\u0000-\u001f]/g, '').slice(0, 80) || 'another page';
     var left = 3;
     follow({ text: p.name + ' is taking you to “' + title + '”… ' + left, path: path, go: 'Go now', stay: true });
-    if (document.hidden || !document.hasFocus()) { markTab(true); osNotify(p, p.name + ' is taking you to another page', title); }
+    if (away()) { markTab(true); osNotify(p, p.name + ' is taking you to another page', title); }
     clearInterval(goTimer);
     goTimer = setInterval(function () {
       var box = $('icw-follow');
@@ -488,7 +663,7 @@
     if (p.lastBring && now - p.lastBring < 2500) return;
     p.lastBring = now;
     follow({ text: p.name + ' calls you to “' + p.title + '”.', path: p.path, go: 'Go there' });
-    if (document.hidden || !document.hasFocus()) { markTab(true); osNotify(p); }
+    if (away()) { markTab(true); osNotify(p); }
   }
   function go(path) { clearInterval(goTimer); if (sameSite(path)) location.href = sameSite(path); }
   /* the line at the bottom that offers to go to another page */
@@ -523,7 +698,7 @@
   function remove(id) {
     if (S.role !== 'host' || !S.room || !S.peers[id]) return false;
     var name = S.peers[id].name;
-    S.out[id] = true;
+    S.out[id] = true; saveOut();
     S.actions.kick({ id: id });
     gone(id, true);
     S.note = name + ' is out of the session. To keep them out for good, end the session and start a new link.';
@@ -531,12 +706,25 @@
     return true;
   }
   function removed(by) {
-    quietLeave(); session(null); S.sess = null; S.out = {};
-    rail(false); setStatus('ended', (by || 'The host') + ' took you out of the session.');
+    quietLeave(); session(null); S.sess = null; S.out = {}; saveOut();
+    var said = (by || 'The host') + ' took you out of the session.';
+    if (unwrap('ended', said)) return;
+    rail(false); setStatus('ended', said);
     openPanel(true);
   }
 
-  global.addEventListener('pagehide', function () { if (S.room) { try { S.actions.bye({}); } catch (e) { /* closing */ } try { S.room.leave(); } catch (e) { /* closing */ } } });
+  global.addEventListener('pagehide', function () {
+    if (!S.room) return;
+    if (HUB) { HUB.detach(S.client); return; }             /* the session page keeps the connection open */
+    try { S.actions.bye({}); } catch (e) { /* closing */ }
+    try { S.hub.leave(); } catch (e) { /* closing */ }
+  });
+  /* in the session page's frame, a link to another site opens in a new tab, so the session stays */
+  if (HUB) document.addEventListener('click', function (e) {
+    var a = e.target.closest && e.target.closest('a[href]');
+    if (!a || a.target) return;
+    try { if (new URL(a.href, location.href).origin !== location.origin) { a.target = '_blank'; a.rel = 'noopener'; } } catch (err) { /* not a link */ }
+  }, true);
 
   /* ══ WHAT I SEND ═════════════════════════════════════════════════════════
      My pointed-at element and my selection are worked out whenever I am in a
@@ -686,7 +874,7 @@
       if (where) { where.scrollIntoView({ block: 'center', behavior: 'smooth' }); toast(p.name + ' brought you here.'); }
       else toast(p.name + ' called you, but it is not on your page.');
     }
-    if (document.hidden || !document.hasFocus()) { markTab(true); osNotify(p); }
+    if (away()) { markTab(true); osNotify(p); }
     emit('bring', { from: publicPeer(p), hard: hard });
     kick();
   }
@@ -1283,7 +1471,7 @@
     var what = b.getAttribute('data-do');
     if (what === 'close') openPanel(false);
     else if (what === 'start') { var n = readName(); if (!n) return; saveRelay(); start({ name: n }); }
-    else if (what === 'join') { var m = readName(); if (!m || !invite) return; var i = invite; invite = null; enter({ room: i.room, key: i.key, role: 'learner', name: m }); }
+    else if (what === 'join') { var m = readName(); if (!m || !invite) return; var i = invite; invite = null; enter({ room: i.room, key: i.key, role: 'learner', name: m }, { fresh: true }); }
     else if (what === 'no') { invite = null; renderPanel(); }
     else if (what === 'copy') {
       var link = linkNow(), done = function () { b.textContent = 'Copied'; setTimeout(function () { b.textContent = 'Copy link'; }, 1200); };
@@ -1301,7 +1489,7 @@
 
   function start(o) {
     var sess = { room: random(10), key: random(20), role: 'host', name: cleanName((o && o.name) || S.name || store(KEY.name)) || 'Teacher' };
-    return enter(sess).then(linkNow);
+    return enter(sess, { fresh: true }).then(linkNow);
   }
   function parseInvite(text) {
     var m = /[#&]icw=([A-Za-z0-9]{6,40})\.([A-Za-z0-9]{8,64})/.exec(String(text || ''));
@@ -1392,7 +1580,12 @@
   /* ══ START-UP ════════════════════════════════════════════════════════════
      Opened from a link: ask for a name (the panel opens by itself). In a
      session already (a reload, or the next lesson page in this tab): join again. */
-  function boot() { invited(true); }
+  function boot() {
+    var said = null;
+    try { said = JSON.parse(sessionStorage.getItem('icwhatuc-note') || 'null'); sessionStorage.removeItem('icwhatuc-note'); } catch (e) { said = null; }
+    if (said && said.status === 'ended') { setStatus('ended', said.note); openPanel(true); }
+    invited(true);
+  }
   function invited(first) {
     var inv = parseInvite(location.hash), saved = session();
     if (!inv && !first) return;
@@ -1416,6 +1609,7 @@
     peers: function () { return named().map(function (p) { var o = publicPeer(p); o.here = here(p); o.page = p.title; return o; }); },
     link: linkNow,
     status: function () { return S.status; },
+    persistent: function () { return !!HUB; },
     showCursor: showCursor, showHighlights: showHighlights, seeOthers: seeOthers,
     canBring: canBring, bring: bring, everyoneHere: everyoneHere, remove: remove,
     key: function (el, k) { if (k != null) { el.dataset.icwKey = k; gen++; return 'k:' + k; } return keyOf(el); },
