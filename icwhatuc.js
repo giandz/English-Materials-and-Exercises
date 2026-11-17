@@ -924,7 +924,9 @@
       else d.bring.hidden = true;
       if (shown(bringR)) {
         d.badge.hidden = false; d.badge.style.background = v.color;
-        d.badge.style.transform = 'translate(' + Math.round(Math.min(global.innerWidth - 24, bringR.right - 4)) + 'px,' + Math.round(bringR.top - 14) + 'px)';
+        /* placed by left/top, not transform, so the pop below grows and shrinks round its own centre */
+        d.badge.style.left = Math.round(Math.min(global.innerWidth - 24, bringR.right - 4)) + 'px';
+        d.badge.style.top = Math.round(bringR.top - 14) + 'px';
       } else d.badge.hidden = true;
     } else { d.bring.hidden = true; d.badge.hidden = true; }
 
@@ -1346,9 +1348,9 @@
       + '#icw-panel details.icw-more{ margin:6px 0 0; border:none; }'
       + '#icw-panel details.icw-more summary{ background:none; padding:2px 0; font-size:12px; font-weight:600; color:var(--text-accent, #185fa5); display:list-item; list-style:revert; }'
       + '.icw-bringring{ border-style:dashed; }'
-      + '.icw-badge{ position:absolute; left:0; top:0; width:20px; height:20px; border-radius:50%; color:#fff; font:800 13px/20px system-ui, sans-serif; text-align:center; box-shadow:0 0 0 2px #fff, 0 2px 6px rgba(0,0,0,.3); animation:icw-pop .5s ease 2; }'
+      + '.icw-badge{ position:absolute; left:0; top:0; transform-origin:50% 50%; width:20px; height:20px; border-radius:50%; color:#fff; font:800 13px/20px system-ui, sans-serif; text-align:center; box-shadow:0 0 0 2px #fff, 0 2px 6px rgba(0,0,0,.3); animation:icw-pop .5s ease 2; }'
       + '.icw-edgebadge{ display:inline-block; margin-left:6px; width:16px; height:16px; border-radius:50%; background:#fff; color:#c92a2a; font:800 11px/16px system-ui, sans-serif; text-align:center; }'
-      + '@keyframes icw-pop{ 50%{ transform-origin:center; scale:1.35; } }'
+      + '@keyframes icw-pop{ 0%, 100%{ transform:scale(1); } 50%{ transform:scale(1.35); } }'
       + '.icw-cursor{ position:absolute; left:0; top:0; display:flex; align-items:flex-start; filter:drop-shadow(0 1px 2px rgba(0,0,0,.35)); transition:opacity .3s; }'
       + '.icw-curname{ margin:14px 0 0 -4px; color:#fff; font:600 11px/16px system-ui, -apple-system, "Segoe UI", sans-serif; padding:0 6px; border-radius:6px; white-space:nowrap; max-width:140px; overflow:hidden; text-overflow:ellipsis; }'
       + '.icw-cursor.icw-pulse svg{ animation:icw-click .45s ease-out; }'
