@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-<title>Just as Big, Not as Big, Bigger — Clarification</title>
+<title>Not as Big, Just as Big, Bigger — Clarification</title>
 <script>
 (function(){
   try{
@@ -34,8 +34,7 @@
 
 /* the target language is the lesson, so it stays coloured (not a grammar-toggle colour) */
 .tgt{ color:var(--pos-adj); font-weight:700; }
-.groups{ display:grid; grid-template-columns:repeat(3, minmax(0,1fr)); gap:10px; margin-bottom:1rem; }
-@media (max-width:680px){ .groups{ grid-template-columns:1fr; } }
+.groups{ display:grid; grid-template-columns:minmax(0,1fr); gap:10px; margin-bottom:1rem; }   /* one group per row: the stick-figure words need the full width */
 .groups > div{ border:1px solid var(--color-border-tertiary); border-radius:12px; background:var(--surface-2); padding:9px 11px; }
 .groups h3{ display:flex; align-items:center; gap:8px; margin:0 0 2px; font-size:1rem; }
 .groups .sub{ font-size:.8rem; color:var(--text-secondary); margin:0 0 6px; }
@@ -58,8 +57,8 @@
 <body>
 <div class="page" id="page">
   <span class="cefr-tag cefr-a2">A2 · Pre-intermediate</span>
-  <h1>Just as big · Not as big · Bigger</h1>
-  <p class="subtitle">Compare two things: the same, less, or more.</p>
+  <h1>Not as big · Just as big · Bigger</h1>
+  <p class="subtitle">Compare two things: less, the same, or more.</p>
 
   <div class="sec-div">The symbols in this lesson</div>
   <div class="key" id="key"></div>
@@ -132,24 +131,24 @@ const scale = (a, k, b, adj) => '<div class="scale"><span class="pic">' + a + '<
 
 /* ── the key ───────────────────────────────────────────────────────────── */
 document.getElementById('key').innerHTML =
-  sym('eq') + '<span><b>A = B</b> — the same. <span class="tgt">(just) as</span> big <span class="tgt">as</span></span>' +
   sym('lt') + '<span><b>A &lt; B</b> — A is less. A <span class="tgt">isn’t as</span> big <span class="tgt">as</span> B</span>' +
+  sym('eq') + '<span><b>A = B</b> — the same. A is <span class="tgt">(just) as</span> big <span class="tgt">as</span> B</span>' +
   sym('gt') + '<span><b>A &gt; B</b> — A is more. A is <span class="tgt">bigger than</span> B · <span class="tgt">more</span> modern <span class="tgt">than</span> B</span>';
 
 /* ── look: = · < · > ───────────────────────────────────────────────────── */
 const li = (pic, m) => '<li>' + pic + S(m) + '</li>';
 document.getElementById('groups').innerHTML =
-  '<div><h3>' + sym('eq') + ' the same</h3><p class="sub">(just) as + adjective + as</p><ul>' +
-    li(scale('🏔️', 'eq', '🗽', 'exciting'), '{Denver|@🏔️} is ' + T('just as') + ' exciting ' + T('as') + ' New York.') +
-    li(scale('🥶', 'eq', '🥶', 'cold'), 'In winter, it’s ' + T('just as') + ' cold.') +
-    li(scale('🤗', 'eq', '🤗', 'friendly'), 'People here are ' + T('just as') + ' friendly ' + T('as') + ' in New York.') +
-    li(scale('🏠', 'eq', '📢🎸', 'noisy'), '{My|omar} street is ' + T('as') + ' noisy ' + T('as') + ' a rock concert!') +
-  '</ul></div>' +
   '<div><h3>' + sym('lt') + ' less</h3><p class="sub">not as + adjective + as</p><ul>' +
     li(scale('🏔️', 'lt', '🗽', 'big'), '{Denver|@🏔️} ' + T('isn’t as') + ' big ' + T('as') + ' New York.') +
     li(scale('🏠', 'lt', '🏢', 'expensive'), 'It ' + T('isn’t as') + ' expensive ' + T('as') + ' {my|nadia} place in Brooklyn.') +
     li(scale('🏢', 'lt', '🏢✨', 'modern'), 'The building ' + T('isn’t as') + ' modern ' + T('as') + ' {my|nadia} old building.') +
     li(scale('🏔️', 'lt', '🗽', 'noisy'), 'The city ' + T('isn’t as') + ' noisy.') +
+  '</ul></div>' +
+  '<div><h3>' + sym('eq') + ' the same</h3><p class="sub">(just) as + adjective + as</p><ul>' +
+    li(scale('🏔️', 'eq', '🗽', 'exciting'), '{Denver|@🏔️} is ' + T('just as') + ' exciting ' + T('as') + ' New York.') +
+    li(scale('🥶', 'eq', '🥶', 'cold'), 'In winter, it’s ' + T('just as') + ' cold.') +
+    li(scale('🤗', 'eq', '🤗', 'friendly'), 'People here are ' + T('just as') + ' friendly ' + T('as') + ' in New York.') +
+    li(scale('🏠', 'eq', '📢🎸', 'noisy'), '{My|omar} street is ' + T('as') + ' noisy ' + T('as') + ' a rock concert!') +
   '</ul></div>' +
   '<div><h3>' + sym('gt') + ' more</h3><p class="sub">adjective-er than · more + adjective + than</p><ul>' +
     li(scale('🏠', 'gt', '🏚️', 'big'), '{My|nadia} new apartment is much ' + T('bigger than') + ' {my|nadia} old one.') +
@@ -204,8 +203,8 @@ HouseFormClarf.build({
   ]
 });
 document.getElementById('ruleBox').innerHTML = fix(
-  '<p>' + sym('eq') + ' <strong>The same:</strong> ⟦as⟧ + adjective + ⟦as⟧. <em>Just</em> makes it stronger: exactly the same. The adjective doesn’t change — no -er, no more! Denver is ⟦just as⟧ cold ⟦as⟧ New York.</p>' +
   '<p>' + sym('lt') + ' <strong>Less:</strong> ⟦not as⟧ + adjective + ⟦as⟧. Use <em>isn’t / aren’t / don’t</em>. Denver ⟦isn’t as⟧ big ⟦as⟧ New York. (It sounds kinder than “Denver is smaller”.)</p>' +
+  '<p>' + sym('eq') + ' <strong>The same:</strong> ⟦as⟧ + adjective + ⟦as⟧. <em>Just</em> makes it stronger: exactly the same. The adjective doesn’t change — no -er, no more! Denver is ⟦just as⟧ cold ⟦as⟧ New York.</p>' +
   '<p>' + sym('gt') + ' <strong>More:</strong> adjective ⟦-er than⟧ (short adjectives), ⟦more⟧ + adjective ⟦than⟧ (long adjectives). bigger than · sunnier than · more modern than.</p>' +
   '<p><strong>No second place?</strong> We can stop after the adjective when we know what we compare: It’s ⟦just as⟧ nice. · The city ⟦isn’t as⟧ noisy.</p>');
 

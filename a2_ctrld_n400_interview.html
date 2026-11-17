@@ -1,0 +1,152 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<title>The Citizenship Interview — Controlled Practice</title>
+<script>
+(function(){
+  try{
+    var saved = localStorage.getItem('theme-preference');
+    var theme = (saved === 'light' || saved === 'dark')
+      ? saved
+      : ((window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches) ? 'dark' : 'light');
+    document.documentElement.setAttribute('data-theme', theme);
+    var fs = parseFloat(localStorage.getItem('font-size-preference'));
+    if (fs >= 10 && fs <= 28) document.documentElement.style.setProperty('--fs-base', fs + 'px');
+  }catch(e){ /* localStorage/matchMedia unavailable — CSS media query still applies */ }
+})();
+</script>
+<link rel="stylesheet" href="house.css">
+<style>
+.bank{ display:flex; flex-wrap:wrap; gap:6px; margin-bottom:1rem; }
+.bank-chip{ font-family:inherit; font-size:.8667rem; padding:4px 11px; border-radius:20px; background:var(--surface-2);
+  border:.5px solid var(--color-border-secondary); color:var(--text-primary); cursor:pointer; user-select:none; -webkit-user-select:none; }
+.bank-chip[aria-pressed="true"]{ text-decoration:line-through; color:var(--text-muted); }
+.ak{ margin-top:1.25rem; border:.5px solid var(--color-border-tertiary); border-radius:var(--border-radius-md); overflow:hidden; }
+.ak summary{ padding:9px 14px; cursor:pointer; font-size:.9333rem; font-weight:500; background:var(--surface-2); }
+.ak-body{ padding:10px 14px; display:flex; flex-direction:column; gap:2px; }
+.ak-row{ display:flex; gap:10px; align-items:baseline; padding:4px 0; border-bottom:.5px solid var(--color-border-tertiary); font-size:.8667rem; }
+.ak-row:last-child{ border-bottom:none; }
+.ak-num{ color:var(--text-secondary); min-width:20px; }
+.ak-word{ font-weight:600; min-width:80px; color:var(--text-accent); }
+.ak-note{ color:var(--text-secondary); }
+.legal-note{ font-size:.7333rem; color:var(--text-muted); text-align:center; margin-top:.4rem; }
+</style>
+</head>
+<body>
+<div class="page" id="page">
+  <span class="cefr-tag cefr-a2">A2 · Pre-intermediate</span>
+  <h1>The Citizenship Interview — Practice</h1>
+  <p class="subtitle">Choose, build and write the sentences you hear and say at the interview.</p>
+
+  <div class="sec-div">1 · Choose the best answer</div>
+  <p class="subtitle">Read what the officer says. What do you say or do?</p>
+  <div id="pcItems"></div>
+
+  <div class="sec-div">2 · Put the words in order</div>
+  <p class="subtitle">Drag the words into the line. You can also tap a word to add it, and tap it again to send it back.</p>
+  <button class="grammar-toggle-btn" id="grammarToggle">🎨 Hide Grammar</button>
+  <div class="pos-legend"></div>
+  <div class="score-bar"><span>Correct: <strong id="woScore">0</strong> / <span id="woTotal">0</span></span></div>
+  <div id="woItems"></div>
+
+  <div class="sec-div">3 · Write the missing words</div>
+  <p class="subtitle">Choose a word from the box and write it in the gap. Tap a word in the box to cross it out. The bar goes from red to green 🔴→🟢. Green = correct!</p>
+  <div class="bank" id="bank"></div>
+  <div id="gfItems"></div>
+
+  <details class="ak">
+    <summary>Answer key</summary>
+    <div class="ak-body" id="akBody"></div>
+  </details>
+
+  <footer>The Citizenship Interview (N-400) — Controlled Practice (A2)</footer>
+  <p class="legal-note">English practice only. This page is not legal advice.</p>
+</div>
+
+<div id="theme-toggle-wrap">
+  <button id="theme-toggle" aria-label="Toggle light/dark mode" title="Toggle light/dark mode">
+    <span id="theme-icon">☀️</span>
+  </button>
+</div>
+<script src="house.js"></script>
+<script>
+/* what the hard words mean in this lesson (the learner's dictionary shows these first) */
+window.LESSON_DICT = {
+  'oath': { pos: 'noun', def: 'a serious promise', ex: 'You take an oath to tell the truth.', es: 'juramento' },
+  'swear': { pos: 'verb', def: 'to make a serious promise that something is true', ex: 'Do you swear to tell the truth?', es: 'jurar' },
+  'allegiance': { pos: 'noun', def: 'loyalty to a country: you support it and you are true to it', es: 'lealtad' },
+  'bear arms': { pos: 'verb', def: 'to carry and use a weapon, like a gun, to fight for your country', es: 'portar armas' },
+  'spouse': { pos: 'noun', def: 'your husband or your wife', es: 'cónyuge' },
+  'willing': { pos: 'adjective', def: 'ready to do something; you agree to do it', ex: 'Are you willing to take the oath?', es: 'dispuesto, dispuesta' },
+  'claim': { pos: 'verb', def: 'to say that something is true', ex: 'He claimed to be a citizen.', es: 'afirmar' },
+  'owe': { pos: 'verb', def: 'to need to pay money to a person or to the government', es: 'deber (dinero)' },
+  'remain': { pos: 'verb', def: 'to stay the same; not to change or move', ex: 'Please remain standing.', es: 'permanecer' },
+  'permanent resident': { pos: 'noun', def: 'a person with a green card, who can live and work in the U.S.', es: 'residente permanente' }
+};
+function sayIt(text){ if (window.HouseDict && HouseDict.say) HouseDict.say(String(text).replace(/\s+/g, ' ').trim()); }
+
+/* ── 1 · choose (easiest first) ────────────────────────────────────────── */
+const PC_ITEMS = [
+  { q: 'Officer: “How are you today?”', opts: ['I’m fine, thank you.', 'I’m Daniela.', 'Yes, I do.'], correct: 0 },
+  { q: 'Officer: “Did you have any trouble finding the office?”', opts: ['No, I’m not.', 'No, it was easy.', 'Yes, I am fine.'], correct: 1 },
+  { q: 'Officer: “Please remain standing.” What do you do?', opts: ['You sit down.', 'You leave the room.', 'You don’t sit down.'], correct: 2 },
+  { q: 'Officer: “Do you swear to tell the truth?”', opts: ['Yes, I am.', 'Yes, I do.', 'Yes, I have.'], correct: 1 },
+  { q: 'Officer: “May I see your green card?”', opts: ['Here you are.', 'Yes, I see.', 'I’m fine, thanks.'], correct: 0 },
+  { q: 'Officer: “How long have you lived at your current address?”', opts: ['In Houston.', 'Three years ago.', 'For three years.'], correct: 2 },
+  { q: 'The officer speaks very fast. You didn’t hear the question.', opts: ['No, never.', 'Could you repeat that, please?', 'Yes, I do.'], correct: 1 },
+  { q: 'Officer: “Have you ever voted in a U.S. election?” (Leo has never voted in the U.S.)', opts: ['No, I haven’t.', 'No, I don’t.', 'No, I’m not.'], correct: 0 },
+  { q: 'Officer: “Are you willing to take the Oath of Allegiance?” (Leo agrees.)', opts: ['Yes, I do.', 'Yes, I have.', 'Yes, I am.'], correct: 2 },
+  { q: 'Officer: “What does ‘oath’ mean?”', opts: ['It is a kind of test.', 'It is a serious promise.', 'It is a government office.'], correct: 1 },
+  { q: 'Officer: “What does ‘bear arms’ mean?”', opts: ['To carry a gun and fight for the country.', 'To pay taxes every year.', 'To raise your right hand.'], correct: 0 }
+];
+HouseComprehension.build({ quiz: 'pcItems', items: PC_ITEMS });
+
+/* ── 2 · word order (short first) ──────────────────────────────────────── */
+const O = { speaker: 'Officer', avatar: '👨‍💼' }, Y = { speaker: 'You', avatar: '🙋' };
+const WO_ITEMS = [
+  { ...Y, text: 'I / came / by / bus / .', pos: ['subject', 'verb', 'prep', 'noun', 'none'] },
+  { ...O, text: 'Raise / your / right / hand / .', pos: ['verb', 'det', 'adj', 'noun', 'none'] },
+  { ...O, text: 'May / I / see / your passport / ?', pos: ['aux', 'subject', 'verb', 'object', 'none'] },
+  { ...Y, text: 'Could / you / repeat / that / please / ?', pos: ['aux', 'subject', 'verb', 'object', 'none', 'none'] },
+  { ...Y, text: 'What / does / “bear arms” / mean / ?', pos: ['wh', 'aux', 'subject', 'verb', 'none'] },
+  { ...O, text: 'Do / you / swear / to tell / the truth / ?', pos: ['aux', 'subject', 'verb', 'verb', 'object', 'none'] },
+  { ...O, text: 'Have / you / ever / been / arrested / ?', pos: ['aux', 'subject', 'adverb', 'part', 'part', 'none'] },
+  { ...O, text: 'How long / have / you / lived / at this address / ?', pos: ['wh', 'aux', 'subject', 'part', 'prep', 'none'] },
+  { ...Y, text: 'I / have / never / claimed / to be / a U.S. citizen / .', pos: ['subject', 'aux', 'adverb', 'part', 'verb', 'complement', 'none'] }
+];
+HouseWordOrder.build({ container: 'woItems', items: WO_ITEMS, scoreEl: 'woScore', totalEl: 'woTotal' });
+
+/* ── 3 · gap fill with the word box ────────────────────────────────────── */
+/* [sentence, accepted answers, why] — the word box and the answer key are built from the same rows */
+const GAPS = [
+  ['Officer: Please {0} me. My office is this way.', ['follow'], 'walk behind the officer'],
+  ['Officer: Please {0} your right hand.', ['raise'], 'put your hand up'],
+  ['Officer: Do you swear to tell the {0}?', ['truth'], 'the real facts; not a lie'],
+  ['Officer: Thank you. Please have a {0}.', ['seat'], '= please sit down'],
+  ['Officer: Please {0} your name here.', ['sign'], 'write your name, your way'],
+  ['You: Sorry, could you {0} the question, please?', ['repeat'], 'say it again'],
+  ['Officer: Have you {0} been arrested?', ['ever'], 'at any time in your life'],
+  ['You: I have lived in Texas {0} 2019.', ['since'], 'since + the year it started'],
+  ['You: I have been married {0} eight years.', ['for'], 'for + a number of years'],
+  ['You: Sorry, what does “allegiance” {0}?', ['mean'], 'What does … mean?'],
+  ['Officer: Is your {0} a U.S. citizen? — You: Yes, my husband was born in Ohio.', ['spouse'], 'your husband or wife'],
+  ['You: An {0} is a serious promise.', ['oath'], 'the officer can ask what this word means']
+];
+const BANK = GAPS.map(g => g[1][0]).sort();
+document.getElementById('bank').innerHTML = BANK.map(w => '<button type="button" class="bank-chip" aria-pressed="false">' + w + '</button>').join('');
+document.getElementById('bank').addEventListener('click', e => {
+  const b = e.target.closest('.bank-chip');
+  if (b) b.setAttribute('aria-pressed', String(b.getAttribute('aria-pressed') !== 'true'));
+});
+HouseGapFill.build({
+  container: 'gfItems',
+  items: GAPS.map(([t, acc], i) => ({ template: (i + 1) + '. ' + t, hints: [{ accepted: acc }] }))   /* numbered, to match the answer key */
+});
+document.getElementById('akBody').innerHTML = GAPS.map(([, acc, why], i) =>
+  '<div class="ak-row"><span class="ak-num">' + (i + 1) + '.</span><span class="ak-word">' + acc.join(' / ') + '</span><span class="ak-note">' + why + '</span></div>').join('');
+</script>
+<script>HouseGrammar.init();</script>
+</body>
+</html>

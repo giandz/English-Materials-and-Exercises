@@ -1,0 +1,152 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<title>The Citizenship Interview — Key Words</title>
+<script>
+(function(){
+  try{
+    var saved = localStorage.getItem('theme-preference');
+    var theme = (saved === 'light' || saved === 'dark')
+      ? saved
+      : ((window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches) ? 'dark' : 'light');
+    document.documentElement.setAttribute('data-theme', theme);
+    var fs = parseFloat(localStorage.getItem('font-size-preference'));
+    if (fs >= 10 && fs <= 28) document.documentElement.style.setProperty('--fs-base', fs + 'px');
+  }catch(e){ /* localStorage/matchMedia unavailable — CSS media query still applies */ }
+})();
+</script>
+<link rel="stylesheet" href="house.css">
+<style>
+#actRight .match-card{ justify-content:center; font-size:1.5rem; letter-spacing:.08em; padding:6px 10px; }
+#wordLeft .match-card{ font-weight:700; }
+#wordRight .match-card{ font-weight:400; font-size:.8667rem; line-height:1.45; }
+.match-row{ display:flex; align-items:center; gap:10px; flex-wrap:wrap; margin-top:.75rem; }
+.say-btn{ font-size:.7333rem; padding:2px 9px; }
+.legal-note{ font-size:.7333rem; color:var(--text-muted); text-align:center; margin-top:.4rem; }
+</style>
+</head>
+<body>
+<div class="page" id="page">
+  <span class="cefr-tag cefr-a2">A2 · Pre-intermediate</span>
+  <h1>The Citizenship Interview: Key Words</h1>
+  <p class="subtitle">You want to become a U.S. citizen. First you send a form: the <b>N-400</b>. Then you have an interview with an immigration officer. These are the words you hear there.</p>
+
+  <div class="sec-div">1 · What does the officer want?</div>
+  <p class="subtitle">The officer tells you what to do. Tap a sentence, then tap its picture.</p>
+  <div class="score-bar"><span>Matched: <strong id="aScore">0</strong> / <span id="aTotal">0</span></span></div>
+  <div class="win-msg" id="aWin">🎉 All matched! Well done!</div>
+  <div class="match-grid">
+    <div><div class="match-col-label">The officer says</div><div class="match-col" id="actLeft"></div></div>
+    <div><div class="match-col-label">Pictures</div><div class="match-col" id="actRight"></div></div>
+  </div>
+  <div class="match-row"><button id="aReset">↺ Reset</button><span class="feedback" id="aFeedback" style="margin-top:0"></span></div>
+
+  <div class="sec-div">2 · Words from the interview</div>
+  <p class="subtitle">Tap a word, then tap its meaning.</p>
+  <div class="score-bar"><span>Matched: <strong id="wScore">0</strong> / <span id="wTotal">0</span></span></div>
+  <div class="win-msg" id="wWin">🎉 All matched! Well done!</div>
+  <div class="match-grid">
+    <div><div class="match-col-label">Words</div><div class="match-col" id="wordLeft"></div></div>
+    <div><div class="match-col-label">Meanings</div><div class="match-col" id="wordRight"></div></div>
+  </div>
+  <div class="match-row"><button id="wReset">↺ Reset</button><span class="feedback" id="wFeedback" style="margin-top:0"></span></div>
+
+  <div class="sec-div">3 · Which word?</div>
+  <p class="subtitle">Read the sentence. Choose the word for the gap.</p>
+  <div id="pick"></div>
+
+  <div class="sec-div">4 · Listen and say</div>
+  <p class="subtitle">Tap a sentence to hear it. Say it again. Do what the officer says!</p>
+  <div class="match-row" id="listen"></div>
+
+  <footer>The Citizenship Interview (N-400) — Key Words (A2)</footer>
+  <p class="legal-note">English practice only. This page is not legal advice.</p>
+</div>
+
+<div id="theme-toggle-wrap">
+  <button id="theme-toggle" aria-label="Toggle light/dark mode" title="Toggle light/dark mode">
+    <span id="theme-icon">☀️</span>
+  </button>
+</div>
+<script src="house.js"></script>
+<script>
+/* what the hard words mean in this lesson (the learner's dictionary shows these first) */
+window.LESSON_DICT = {
+  'oath': { pos: 'noun', def: 'a serious promise', ex: 'You take an oath to tell the truth.', es: 'juramento' },
+  'swear': { pos: 'verb', def: 'to make a serious promise that something is true', ex: 'Do you swear to tell the truth?', es: 'jurar' },
+  'allegiance': { pos: 'noun', def: 'loyalty to a country: you support it and you are true to it', es: 'lealtad' },
+  'bear arms': { pos: 'verb', def: 'to carry and use a weapon, like a gun, to fight for your country', es: 'portar armas' },
+  'spouse': { pos: 'noun', def: 'your husband or your wife', es: 'cónyuge' },
+  'willing': { pos: 'adjective', def: 'ready to do something; you agree to do it', ex: 'Are you willing to take the oath?', es: 'dispuesto, dispuesta' },
+  'claim': { pos: 'verb', def: 'to say that something is true', ex: 'He claimed to be a citizen.', es: 'afirmar' },
+  'owe': { pos: 'verb', def: 'to need to pay money to a person or to the government', es: 'deber (dinero)' },
+  'remain': { pos: 'verb', def: 'to stay the same; not to change or move', ex: 'Please remain standing.', es: 'permanecer' },
+  'permanent resident': { pos: 'noun', def: 'a person with a green card, who can live and work in the U.S.', es: 'residente permanente' }
+};
+function sayIt(text){ if (window.HouseDict && HouseDict.say) HouseDict.say(String(text).replace(/\s+/g, ' ').trim()); }
+
+/* ── 1 · instructions ↔ pictures ───────────────────────────────────────── */
+const ACTIONS = [
+  ['Please follow me.', '🚶‍♀️🚪'],
+  ['Please remain standing.', '🧍🚫🪑'],
+  ['Raise your right hand.', '✋'],
+  ['Please have a seat.', '🪑'],
+  ['May I see your ID?', '🪪👀'],
+  ['Please sign here.', '✍️'],
+  ['Read this sentence out loud.', '📖🗣️'],
+  ['Write this sentence.', '📝']
+];
+HouseMatching.build({
+  left: 'actLeft', right: 'actRight',
+  pairs: ACTIONS.map(([say, pic], i) => ({ id: 'a' + i, left: say, right: pic })),
+  scoreEl: 'aScore', totalEl: 'aTotal', resetBtn: 'aReset', winEl: 'aWin', feedbackEl: 'aFeedback'
+});
+
+/* ── 2 · words ↔ meanings ──────────────────────────────────────────────── */
+const WORDS = [
+  ['oath', 'a serious promise'],
+  ['swear', 'to promise that something is true'],
+  ['the truth', 'the real facts; not a lie'],
+  ['application', 'the form you sent to ask for something'],
+  ['permanent resident', 'a person with a green card'],
+  ['citizen', 'a person who belongs to a country and can vote there'],
+  ['spouse', 'your husband or your wife'],
+  ['employer', 'the company or person you work for'],
+  ['current address', 'the place where you live now'],
+  ['trip', 'you travel to a place and then you come back'],
+  ['arrested', 'taken away by the police'],
+  ['taxes', 'money that people pay to the government']
+];
+HouseMatching.build({
+  left: 'wordLeft', right: 'wordRight',
+  pairs: WORDS.map(([w, m], i) => ({ id: 'w' + i, left: w, right: m })),
+  scoreEl: 'wScore', totalEl: 'wTotal', resetBtn: 'wReset', winEl: 'wWin', feedbackEl: 'wFeedback'
+});
+
+/* ── 3 · which word? (easiest first) ───────────────────────────────────── */
+HouseComprehension.build({
+  quiz: 'pick',
+  items: [
+    { q: 'My ___ is 25 Oak Street. I moved there last year.', opts: ['current address', 'employer', 'oath'], correct: 0 },
+    { q: 'Ana is married. Her ___ is from Mexico.', opts: ['trip', 'spouse', 'citizen'], correct: 1 },
+    { q: 'I work at Sunny Bakery. Sunny Bakery is my ___.', opts: ['application', 'spouse', 'employer'], correct: 2 },
+    { q: 'Last year I took a ___ to Colombia for two weeks.', opts: ['trip', 'truth', 'tax'], correct: 0 },
+    { q: 'I have a green card. I am a ___.', opts: ['citizen', 'permanent resident', 'officer'], correct: 1 },
+    { q: 'Before the interview, you promise to tell the truth. This promise is an ___.', opts: ['address', 'application', 'oath'], correct: 2 },
+    { q: 'The N-400 is your ___ for citizenship.', opts: ['application', 'employer', 'trip'], correct: 0 }
+  ]
+});
+
+/* ── 4 · listen and say ────────────────────────────────────────────────── */
+document.getElementById('listen').innerHTML = ACTIONS.map(([say]) =>
+  '<button type="button" class="say-btn" data-line="' + say + '">🔊 ' + say + '</button>').join('');
+document.getElementById('listen').addEventListener('click', e => {
+  const b = e.target.closest('[data-line]');
+  if (b) sayIt(b.dataset.line);
+});
+</script>
+<script>HouseGrammar.init();</script>
+</body>
+</html>

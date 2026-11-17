@@ -1,0 +1,242 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<title>The Citizenship Interview — Clarification</title>
+<script>
+(function(){
+  try{
+    var saved = localStorage.getItem('theme-preference');
+    var theme = (saved === 'light' || saved === 'dark')
+      ? saved
+      : ((window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches) ? 'dark' : 'light');
+    document.documentElement.setAttribute('data-theme', theme);
+    var fs = parseFloat(localStorage.getItem('font-size-preference'));
+    if (fs >= 10 && fs <= 28) document.documentElement.style.setProperty('--fs-base', fs + 'px');
+  }catch(e){ /* localStorage/matchMedia unavailable — CSS media query still applies */ }
+})();
+</script>
+<link rel="stylesheet" href="house.css">
+<style>
+.rule-box p{ margin:0 0 6px; }
+.rule-box p:last-child{ margin-bottom:0; }
+.qa{ display:grid; grid-template-columns:repeat(auto-fill, minmax(13rem, 1fr)); gap:6px; margin:0 0 1rem; }
+.qa > div{ padding:7px 10px; border-radius:8px; background:var(--surface-2); border:1px solid var(--color-border-tertiary); font-size:.8667rem; line-height:1.5; }
+.qa .k{ font-weight:700; color:var(--text-accent); display:block; }
+.qa .a{ color:var(--good); font-weight:600; }
+.pair-ctx{ font-size:.8rem; color:var(--text-secondary); font-style:italic; }
+.legal-note{ font-size:.7333rem; color:var(--text-muted); text-align:center; margin-top:.4rem; }
+</style>
+</head>
+<body>
+<div class="page" id="page">
+  <span class="cefr-tag cefr-a2">A2 · Pre-intermediate</span>
+  <h1>The Citizenship Interview</h1>
+  <p class="subtitle">What happens at the interview? What do the questions mean? How do you answer?</p>
+
+  <div class="sec-div">The parts of the interview</div>
+  <div id="steps"></div>
+
+  <div class="sec-div">Check the meaning</div>
+  <p class="subtitle">Read what the officer says. Answer the questions.</p>
+  <div id="ccq"></div>
+
+  <div class="sec-div">Look at the form</div>
+  <p class="subtitle">What is each part of the sentence? Drag a label (or tap a label, then tap a box).</p>
+  <div class="score-bar"><span>Correct: <strong id="fcScore">0</strong> / <span id="fcTotal">0</span></span></div>
+  <div id="formClarf"></div>
+
+  <div class="rule-box">
+    <p><strong>Have you ever + past participle …?</strong> = at any time in your life, in any country. <em>Have you ever been arrested?</em> — <em>Yes, I have.</em> / <em>No, I haven’t.</em> / <em>No, never.</em></p>
+    <p><strong>The short answer uses the first word of the question.</strong> See the table below.</p>
+    <p><strong>Always tell the truth.</strong> Listen to the whole question. Then answer. Some questions need “yes” and some need “no”.</p>
+    <p><strong>Small talk:</strong> give a short, friendly answer. The officer listens to your English from the first “hello”.</p>
+    <p><strong>How long …?</strong> <em>for</em> + a number of years (for six years) · <em>since</em> + the year it started (since 2020).</p>
+  </div>
+
+  <div class="sec-div">Question → short answer</div>
+  <div class="qa" id="shortAnswers"></div>
+
+  <div class="sec-div">When you don’t understand</div>
+  <p class="subtitle">It is OK to ask! These sentences are polite. Tap one to hear it.</p>
+  <div class="qa" id="repair"></div>
+
+  <div class="sec-div">Hard words: “What does … mean?”</div>
+  <p class="subtitle">The officer can ask you what a word means. Use easy words to answer.</p>
+  <div class="qa" id="hardWords"></div>
+
+  <div class="sec-div">The tests</div>
+  <div class="rule-box">
+    <p><strong>Reading:</strong> the officer shows you a sentence. You read it out loud. You need to read one sentence correctly. You have three chances.</p>
+    <p><strong>Writing:</strong> the officer says a sentence. You write it. You need to write one sentence correctly. You have three chances.</p>
+    <p><strong>Civics:</strong> the officer asks questions about U.S. history and government. You answer by speaking. Did you send your N-400 before October 20, 2025? Up to 10 questions; you need 6 correct. On or after that date? Up to 20 questions; you need 12 correct.</p>
+  </div>
+
+  <div class="sec-div">Common mistakes</div>
+  <div id="mistakes"></div>
+
+  <div class="sec-div">Error hunt</div>
+  <p class="subtitle">Some sentences have a mistake. Some are correct! Tap a word — or a space between words — to fix it. Then press OK.</p>
+  <div class="score-bar"><span>Done: <strong id="errorScore">0</strong> / <span id="errorTotal">0</span></span></div>
+  <div id="errorHuntItems"></div>
+
+  <footer>The Citizenship Interview (N-400) — Clarification (A2)</footer>
+  <p class="legal-note">English practice only. This page is not legal advice.</p>
+</div>
+
+<div id="theme-toggle-wrap">
+  <button id="theme-toggle" aria-label="Toggle light/dark mode" title="Toggle light/dark mode">
+    <span id="theme-icon">☀️</span>
+  </button>
+</div>
+<script src="house.js"></script>
+<script>
+/* what the hard words mean in this lesson (the learner's dictionary shows these first) */
+window.LESSON_DICT = {
+  'oath': { pos: 'noun', def: 'a serious promise', ex: 'You take an oath to tell the truth.', es: 'juramento' },
+  'swear': { pos: 'verb', def: 'to make a serious promise that something is true', ex: 'Do you swear to tell the truth?', es: 'jurar' },
+  'allegiance': { pos: 'noun', def: 'loyalty to a country: you support it and you are true to it', es: 'lealtad' },
+  'bear arms': { pos: 'verb', def: 'to carry and use a weapon, like a gun, to fight for your country', es: 'portar armas' },
+  'spouse': { pos: 'noun', def: 'your husband or your wife', es: 'cónyuge' },
+  'willing': { pos: 'adjective', def: 'ready to do something; you agree to do it', ex: 'Are you willing to take the oath?', es: 'dispuesto, dispuesta' },
+  'claim': { pos: 'verb', def: 'to say that something is true', ex: 'He claimed to be a citizen.', es: 'afirmar' },
+  'owe': { pos: 'verb', def: 'to need to pay money to a person or to the government', es: 'deber (dinero)' },
+  'remain': { pos: 'verb', def: 'to stay the same; not to change or move', ex: 'Please remain standing.', es: 'permanecer' },
+  'permanent resident': { pos: 'noun', def: 'a person with a green card, who can live and work in the U.S.', es: 'residente permanente' }
+};
+function sayIt(text){ if (window.HouseDict && HouseDict.say) HouseDict.say(String(text).replace(/\s+/g, ' ').trim()); }
+
+/* ── the parts of the interview ────────────────────────────────────────── */
+HouseTimeline.build({
+  container: 'steps',
+  steps: [
+    { emoji: '👋', word: '1 · Small talk', example: 'How are you today?' },
+    { emoji: '✋', word: '2 · The oath', example: 'Do you swear to tell the truth?' },
+    { emoji: '🪪', word: '3 · Your documents', example: 'May I see your green card?' },
+    { emoji: '📄', word: '4 · Your N-400', example: 'Have you ever …? Are you willing to …?' },
+    { emoji: '📖', word: '5 · English test', example: 'Please read this sentence.' },
+    { emoji: '🇺🇸', word: '6 · Civics test', example: 'Who was the first president?' },
+    { emoji: '✍️', word: '7 · Sign and result', example: 'Please sign here.' }
+  ],
+  caption: 'The order can change. Some officers do the tests before the N-400 questions.'
+});
+
+/* ── concept checking questions ────────────────────────────────────────── */
+HouseCCQ.build({
+  container: 'ccq',
+  items: [
+    { sentence: '“How was the traffic this morning?”',
+      questions: [
+        { q: 'Does the officer want a long answer?', opts: ['Yes', 'No'], correct: 1,
+          why: 'No. This is small talk. A short, friendly answer is good: <b>“Not bad, thank you.”</b>' },
+        { q: 'Is the officer listening to your English?', opts: ['Yes', 'No'], correct: 0,
+          why: 'Yes. The officer checks your speaking in every part of the interview.' }
+      ] },
+    { sentence: '“Do you swear to tell the truth?”',
+      questions: [
+        { q: 'Is the officer asking about bad words?', opts: ['Yes', 'No'], correct: 1,
+          why: 'No. Here <b>swear</b> = make a serious promise.' },
+        { q: 'What do you say?', opts: ['Yes, I do.', 'Yes, I am.'], correct: 0,
+          why: 'The question starts with <b>Do</b>, so the answer is: Yes, I <b>do</b>.' }
+      ] },
+    { sentence: '“Have you ever been arrested?”',
+      questions: [
+        { q: 'Is the question only about this year?', opts: ['Yes', 'No'], correct: 1,
+          why: 'No. <b>Ever</b> = at any time in your life, in any country.' },
+        { q: 'A person was never arrested. What is the answer?', opts: ['No, I don’t.', 'No, I haven’t.'], correct: 1,
+          why: 'The question starts with <b>Have</b>, so: No, I <b>haven’t</b>. “No, never.” is good too.' }
+      ] },
+    { sentence: '“Are you willing to take the Oath of Allegiance?”',
+      questions: [
+        { q: 'Is the officer asking: “Do you agree to do it?”', opts: ['Yes', 'No'], correct: 0,
+          why: 'Yes. <b>Willing</b> = you are ready to do it; you agree.' },
+        { q: 'Is the question about the past?', opts: ['Yes', 'No'], correct: 1,
+          why: 'No. It is about now and the future. You take this oath on the day you become a citizen.' }
+      ] }
+  ]
+});
+
+/* ── form ──────────────────────────────────────────────────────────────── */
+HouseFormClarf.build({
+  container: 'formClarf', scoreEl: 'fcScore', totalEl: 'fcTotal',
+  pool: ['aux', 'subject', 'adverb', 'part', 'verb', 'object'],
+  items: [
+    { form: 'q', parts: [['Have', 'aux'], ['you', 'subject'], ['ever', 'adverb'], ['claimed', 'part'], ['to be a U.S. citizen', 'object'], ['?', null]] },
+    { form: 'aff', parts: [['Yes,', null], ['I', 'subject'], ['have', 'aux'], ['.', null]] },
+    { form: 'neg', parts: [['No,', null], ['I', 'subject'], ['have', 'aux'], ['never', 'adverb'], ['been arrested', 'part'], ['.', null]] },
+    { form: 'q', parts: [['Do', 'aux'], ['you', 'subject'], ['owe', 'verb'], ['any taxes', 'object'], ['?', null]] }
+  ]
+});
+
+/* ── question → short answer ───────────────────────────────────────────── */
+const grid = (id, rows, f) => { document.getElementById(id).innerHTML = rows.map(f).join(''); };
+grid('shortAnswers', [
+  ['Do you …?', 'Yes, I do.', 'No, I don’t.'],
+  ['Did you …?', 'Yes, I did.', 'No, I didn’t.'],
+  ['Are you …?', 'Yes, I am.', 'No, I’m not.'],
+  ['Were you …?', 'Yes, I was.', 'No, I wasn’t.'],
+  ['Have you ever …?', 'Yes, I have.', 'No, I haven’t.'],
+  ['Is your spouse …?', 'Yes, he is. / Yes, she is.', 'No, he isn’t. / No, she isn’t.']
+], ([q, y, n]) => '<div><span class="k">' + q + '</span><span class="a">' + y + '</span><br>' + n + '</div>');
+
+/* ── when you don't understand ─────────────────────────────────────────── */
+grid('repair', [
+  ['You didn’t hear', 'Could you repeat that, please?'],
+  ['It was too fast', 'Could you speak more slowly, please?'],
+  ['One word is new', 'Sorry, what does “…” mean?'],
+  ['The question is hard', 'Could you say that in a different way, please?'],
+  ['You want to check', 'Do you mean my job now?'],
+  ['You need a moment', 'Let me think, please.']
+], ([k, s]) => '<div data-line="' + s + '" role="button" tabindex="0" style="cursor:pointer"><span class="k">' + k + '</span>🔊 ' + s + '</div>');
+document.getElementById('repair').addEventListener('click', e => {
+  const d = e.target.closest('[data-line]');
+  if (d) sayIt(d.dataset.line.replace('“…”', 'that'));
+});
+
+/* ── hard words ────────────────────────────────────────────────────────── */
+grid('hardWords', [
+  ['an oath', 'a serious promise'],
+  ['allegiance', 'loyalty to a country: you support it'],
+  ['to bear arms', 'to carry a gun and fight for the country'],
+  ['noncombatant service', 'you help the army, but you don’t fight'],
+  ['to claim', 'to say that something is true'],
+  ['to owe taxes', 'you need to pay taxes, but you didn’t pay them'],
+  ['deported', 'sent out of the country by the government'],
+  ['the Constitution', 'the most important law of the United States']
+], ([w, m]) => '<div><span class="k">' + w + '</span>' + m + '</div>');
+
+/* ── common mistakes: [what the officer says, ✗, ✓] ────────────────────── */
+const MISTAKES = [
+  ['Do you swear to tell the truth?', 'Yes, I am.', 'Yes, I do.'],
+  ['Have you ever voted in a U.S. election?', 'No, I don’t.', 'No, I haven’t.'],
+  ['(You didn’t hear the question.)', 'What?', 'Could you repeat that, please?'],
+  ['(You don’t know the word “oath”.)', 'What means “oath”?', 'What does “oath” mean?'],
+  ['How long have you lived here?', 'I live here since 2020.', 'I have lived here since 2020.'],
+  ['How old are you?', 'I have 34 years.', 'I am 34 years old.'],
+  ['How long have you been married?', 'I am married since five years.', 'I have been married for five years.']
+];
+document.getElementById('mistakes').innerHTML = MISTAKES.map(([ctx, no, yes]) =>
+  '<div class="pair-card"><div class="pair-ctx">' + ctx + '</div><div class="pair-line no"><span class="mark">✗</span>' + no + '</div>' +
+  '<div class="pair-line yes"><span class="mark">✓</span>' + yes + '</div></div>').join('');
+
+/* ── error hunt (A2: some sentences are already correct; none repeat the common mistakes) ── */
+const EH_ITEMS = [
+  { words: ['I', 'came', 'here', 'by', 'the', 'bus', '.'], error: { type: 'extra', wordIndex: 4 } },
+  { words: ['I', 'have', 'never', 'been', 'arrested', '.'], error: null },
+  { words: ['I', 'have', 'work', 'at', 'the', 'hospital', 'for', 'six', 'years', '.'],
+    error: { type: 'wrong', wordIndex: 2, options: ['worked', 'working', 'works'], correct: 'worked' } },
+  { words: ['I', 'want', 'become', 'a', 'U.S.', 'citizen', '.'],
+    error: { type: 'missing', gapIndex: 2, options: ['to', 'for', 'of'], correct: 'to' } },
+  { words: ['I', 'don’t', 'understand', 'that', 'word', '.'], error: null },
+  { words: ['Could', 'you', 'speak', 'slowly', 'more', '?'], error: { type: 'misplaced', wordIndex: 4, targetGapIndex: 3 } },
+  { words: ['My', 'wife', 'born', 'in', 'Peru', '.'],
+    error: { type: 'missing', gapIndex: 2, options: ['was', 'is', 'has'], correct: 'was' } },
+  { words: ['I', 'am', 'pay', 'my', 'taxes', 'every', 'year', '.'], error: { type: 'extra', wordIndex: 1 } },
+  { words: ['I', 'am', 'willing', 'to', 'take', 'the', 'oath', '.'], error: null }
+];
+HouseErrorHunt.build({ container: 'errorHuntItems', items: EH_ITEMS, scoreEl: 'errorScore', totalEl: 'errorTotal' });
+</script>
+<script>HouseGrammar.init();</script>
+</body>
+</html>

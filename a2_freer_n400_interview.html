@@ -1,0 +1,179 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<title>The Citizenship Interview — Role Play</title>
+<script>
+(function(){
+  try{
+    var saved = localStorage.getItem('theme-preference');
+    var theme = (saved === 'light' || saved === 'dark')
+      ? saved
+      : ((window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches) ? 'dark' : 'light');
+    document.documentElement.setAttribute('data-theme', theme);
+    var fs = parseFloat(localStorage.getItem('font-size-preference'));
+    if (fs >= 10 && fs <= 28) document.documentElement.style.setProperty('--fs-base', fs + 'px');
+  }catch(e){ /* localStorage/matchMedia unavailable — CSS media query still applies */ }
+})();
+</script>
+<link rel="stylesheet" href="house.css">
+<style>
+.phrase-box{ background:var(--surface-2); border-radius:var(--border-radius-md); padding:10px 14px; margin-bottom:1rem; border:.5px solid var(--color-border-tertiary); }
+.phrase-title{ font-size:.7333rem; font-weight:500; text-transform:uppercase; letter-spacing:.05em; color:var(--text-secondary); margin-bottom:8px; }
+.phrase-grid{ display:flex; flex-wrap:wrap; gap:6px; }
+.phrase-chip{ font-size:.8667rem; padding:4px 10px; border-radius:20px; background:var(--surface-1); border:.5px solid var(--color-border-secondary); color:var(--text-primary); }
+.dice-tools{ display:flex; justify-content:center; flex-wrap:wrap; gap:8px; margin-bottom:.8rem; }
+.q-card.hide-words .q-text{ filter:blur(.45em); user-select:none; -webkit-user-select:none; }
+.step-card{ background:var(--surface-2); border:.5px solid var(--color-border-tertiary); border-radius:var(--border-radius-lg); padding:.8rem 1.1rem; margin-bottom:8px; }
+.step-num{ font-size:.7333rem; font-weight:500; color:var(--text-muted); font-family:var(--font-mono); }
+.step-title{ font-size:.9333rem; font-weight:600; }
+.step-lines{ font-size:.8667rem; color:var(--text-secondary); line-height:1.6; }
+.legal-note{ font-size:.7333rem; color:var(--text-muted); text-align:center; margin-top:.4rem; }
+</style>
+</head>
+<body>
+<div class="page" id="page">
+  <span class="cefr-tag cefr-a2">A2 · Pre-intermediate</span>
+  <h1>The Citizenship Interview — Role Play</h1>
+  <p class="subtitle">Work with a partner. One person is the officer. One person is the applicant. Then change! At the real interview, always give your true answers.</p>
+
+  <div class="phrase-box">
+    <div class="phrase-title">You can always say</div>
+    <div class="phrase-grid">
+      <span class="phrase-chip">Could you repeat that, please?</span>
+      <span class="phrase-chip">Could you speak more slowly, please?</span>
+      <span class="phrase-chip">Sorry, what does “…” mean?</span>
+      <span class="phrase-chip">Do you mean …?</span>
+      <span class="phrase-chip">Let me think, please.</span>
+      <span class="phrase-chip">Sorry, I’m a little nervous.</span>
+    </div>
+  </div>
+
+  <div class="sec-div">1 · Small talk: meet your partners</div>
+  <p class="subtitle">You are the officer. Say hello and ask the four questions. Write your partner’s answers. Then meet a new partner.</p>
+  <div class="phrase-box">
+    <div class="phrase-grid">
+      <span class="phrase-chip">🚌 How did you get here today?</span>
+      <span class="phrase-chip">🌦️ How is the weather outside?</span>
+      <span class="phrase-chip">😊 How are you feeling today?</span>
+      <span class="phrase-chip">🏙️ How long have you lived in this city?</span>
+    </div>
+  </div>
+  <div id="interview"></div>
+
+  <div class="sec-div">2 · Roll the dice: you are the officer</div>
+  <p class="subtitle">Roll the dice. Your partner hears the question and answers. Press 🙈 to hide the words: at the interview you only listen! Then pass the dice.</p>
+  <div class="q-card" id="qCard"><span class="q-placeholder">Press the dice to start.</span></div>
+  <div class="dice-tools">
+    <button type="button" id="again">🔊 Again</button>
+    <button type="button" id="hide" aria-pressed="false">🙈 Hide the words</button>
+  </div>
+  <button class="dice-btn" id="diceBtn" aria-label="Roll the dice">🎲</button>
+  <div class="roll-count">Questions: <strong id="rollCount">0</strong></div>
+  <div class="topic-legend" id="topics"></div>
+
+  <div class="sec-div">3 · The full interview</div>
+  <p class="subtitle">Now do the interview from start to finish. The officer follows these steps. Use the applicant’s name from your teacher, or your own.</p>
+  <div id="stepsList"></div>
+
+  <footer>The Citizenship Interview (N-400) — Freer Practice (A2)</footer>
+  <p class="legal-note">English practice only. This page is not legal advice.</p>
+</div>
+
+<div id="theme-toggle-wrap">
+  <button id="theme-toggle" aria-label="Toggle light/dark mode" title="Toggle light/dark mode">
+    <span id="theme-icon">☀️</span>
+  </button>
+</div>
+<script src="house.js"></script>
+<script src="house-interview.js"></script>
+<script>
+/* what the hard words mean in this lesson (the learner's dictionary shows these first) */
+window.LESSON_DICT = {
+  'oath': { pos: 'noun', def: 'a serious promise', ex: 'You take an oath to tell the truth.', es: 'juramento' },
+  'swear': { pos: 'verb', def: 'to make a serious promise that something is true', ex: 'Do you swear to tell the truth?', es: 'jurar' },
+  'allegiance': { pos: 'noun', def: 'loyalty to a country: you support it and you are true to it', es: 'lealtad' },
+  'bear arms': { pos: 'verb', def: 'to carry and use a weapon, like a gun, to fight for your country', es: 'portar armas' },
+  'spouse': { pos: 'noun', def: 'your husband or your wife', es: 'cónyuge' },
+  'willing': { pos: 'adjective', def: 'ready to do something; you agree to do it', ex: 'Are you willing to take the oath?', es: 'dispuesto, dispuesta' },
+  'claim': { pos: 'verb', def: 'to say that something is true', ex: 'He claimed to be a citizen.', es: 'afirmar' },
+  'owe': { pos: 'verb', def: 'to need to pay money to a person or to the government', es: 'deber (dinero)' },
+  'remain': { pos: 'verb', def: 'to stay the same; not to change or move', ex: 'Please remain standing.', es: 'permanecer' },
+  'permanent resident': { pos: 'noun', def: 'a person with a green card, who can live and work in the U.S.', es: 'residente permanente' }
+};
+function sayIt(text){ if (window.HouseDict && HouseDict.say) HouseDict.say(String(text).replace(/\s+/g, ' ').trim()); }
+
+/* ── 1 · small talk cards ──────────────────────────────────────────────── */
+HouseInterview.build({
+  container: 'interview',
+  storageKey: 'n400-small-talk',
+  fields: [
+    { icon: '🚌', label: 'came by', placeholder: 'bus, car, train…' },
+    { icon: '🌦️', label: 'weather', placeholder: 'sunny, cold, raining…' },
+    { icon: '😊', label: 'feels', placeholder: 'fine, a little nervous…' },
+    { icon: '🏙️', label: 'in this city', placeholder: 'for … years / since …' }
+  ]
+});
+
+/* ── 2 · the dice: [topic, how to answer, questions] ───────────────────── */
+const TOPICS = [
+  ['👋', 'Small talk', 'Give a short, friendly answer.', [
+    'How are you today?', 'Did you have any trouble finding the office?', 'How was the traffic this morning?',
+    'Is it cold outside?', 'Did you come here alone today?', 'How long did you wait?', 'Are you nervous today?',
+    'Do you know why you are here today?']],
+  ['✋', 'Do it!', 'Don’t speak. Do the action.', [
+    'Please remain standing.', 'Please raise your right hand.', 'Please have a seat.',
+    'Please show me your ID.', 'Please sign your name on the paper.', 'Please write today’s date.']],
+  ['🪪', 'About you', 'Answer with a full sentence.', [
+    'What is your full name?', 'Could you spell your last name, please?', 'What is your date of birth?',
+    'Where were you born?', 'What is your current address?', 'How long have you lived at your current address?',
+    'Are you married, single or divorced?', 'Do you have any children?', 'Where do you work?',
+    'How long have you been a permanent resident?', 'What was your last trip outside the United States?']],
+  ['📄', 'Yes or no', 'Start with “Yes, …” or “No, …”. Listen to the first word!', [
+    'Do you swear to tell the truth?', 'Have you ever claimed to be a U.S. citizen?', 'Have you ever voted in a U.S. election?',
+    'Do you owe any taxes?', 'Have you ever been arrested?', 'Do you support the Constitution of the United States?',
+    'Are you willing to take the Oath of Allegiance?', 'Do you understand what an oath is?',
+    'Did you study for the civics test?', 'Were you born in the United States?']],
+  ['🔤', 'What does it mean?', 'Use easy words.', [
+    'What does “oath” mean?', 'What does “bear arms” mean?', 'What does “allegiance” mean?', 'What is a spouse?',
+    'What does “arrested” mean?', 'What is an employer?', 'What does “the truth” mean?']]
+];
+const ROLLS = [];
+TOPICS.forEach(([icon, label, tip, qs]) => qs.forEach(text => ROLLS.push({ icon, label, tip, text })));
+document.getElementById('topics').innerHTML = TOPICS.map(([icon, label]) => '<span class="topic-pill">' + icon + ' ' + label + '</span>').join('');
+
+let lastQuestion = '';
+HouseRandomGen.build({
+  items: ROLLS,
+  render: x => {
+    lastQuestion = x.text;
+    sayIt(x.text);                      /* inside the tap, so phones speak it too */
+    return '<span class="q-topic">' + x.icon + ' ' + x.label + '</span><span class="q-text">' + x.text + '</span>' +
+      '<span class="q-placeholder">' + x.tip + '</span>';
+  }
+});
+document.getElementById('again').addEventListener('click', () => { if (lastQuestion) sayIt(lastQuestion); });
+document.getElementById('hide').addEventListener('click', e => {
+  const on = e.currentTarget.getAttribute('aria-pressed') !== 'true';
+  e.currentTarget.setAttribute('aria-pressed', String(on));
+  e.currentTarget.textContent = on ? '🙉 Show the words' : '🙈 Hide the words';
+  document.getElementById('qCard').classList.toggle('hide-words', on);
+});
+
+/* ── 3 · the full interview: what the officer does ─────────────────────── */
+const STEPS = [
+  ['Call the applicant', 'Say the applicant’s name. Say hello. Say your name: “I’m Officer …”.'],
+  ['Small talk', 'Walk to your office. Ask two small talk questions.'],
+  ['The oath', '“Please remain standing and raise your right hand. Do you swear to tell the truth, the whole truth, and nothing but the truth?”'],
+  ['Documents', '“Please have a seat. May I see your green card, your passport and your state ID?”'],
+  ['About you', 'Ask five questions: name, date of birth, address, family, work.'],
+  ['Yes or no', 'Ask five “Have you ever …?”, “Do you …?” and “Are you willing to …?” questions. Ask what one hard word means.'],
+  ['Finish', '“Please sign here. Thank you. That is the end of the questions about your application.”']
+];
+document.getElementById('stepsList').innerHTML = STEPS.map(([t, l], i) =>
+  '<div class="step-card"><div class="step-num">' + String(i + 1).padStart(2, '0') + '</div><div class="step-title">' + t + '</div><div class="step-lines">' + l + '</div></div>').join('');
+</script>
+<script>HouseGrammar.init();</script>
+</body>
+</html>
