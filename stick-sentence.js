@@ -273,7 +273,7 @@ function text(markup){
 
 const CSS = ''
   + '.ss-line{ display:flex; flex-wrap:wrap; align-items:flex-end; column-gap:.3em; row-gap:.35em; }'
-  + '.ss-unit{ display:inline-flex; flex-direction:column; align-items:center; }'
+  + '.ss-unit{ display:inline-flex; align-items:center; gap: 0.4em;}'
   + '.ss-txt{ white-space:nowrap; }'
   + '.ss-figs{ position:relative; display:block; flex:0 0 auto; margin-bottom:.1em; color:currentColor; }'
   + '.ss-figs svg{ display:block; width:100%; height:100%; overflow:visible; }'
