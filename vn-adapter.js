@@ -376,7 +376,8 @@
     dad: P({ faceShape: 'rectangle', eyeType: 'deepset', noseType: 'greek', earType: 'rectangular', bodyType: 'male', skin: 3, hairStyle: 'sidepart', hairColor: '3-0', facialHair: 'stubble', upperGarment: 'polo', upperColor: '#663300', lowerGarment: 'chinos', footwear: 'shoes', height: 4 }),
     grandma: P({ faceShape: 'round', eyeType: 'hooded', noseType: 'bulbous', earType: 'oval', bodyType: 'female', skin: 2, hairStyle: 'bun', hairColor: 'white', eyewear: 'glasses', upperGarment: 'blouse', upperColor: '#6666CC', lowerGarment: 'skirt', lowerColor: '#333333', footwear: 'shoes', height: 2 }),
     grandpa: P({ faceShape: 'oblong', eyeType: 'downturned', noseType: 'hawk', earType: 'rectangular', bodyType: 'male', skin: 2, hairStyle: 'sidepart', hairColor: 'grey', facialHair: 'moustache', eyewear: 'round', upperGarment: 'vest', upperColor: '#666666', lowerGarment: 'trousers', footwear: 'shoes' }),
-    daniel: P({ faceShape: 'square', eyeType: 'almond', noseType: 'lowbridge', earType: 'round', bodyType: 'male', skin: 4, hairStyle: 'curly', hairColor: '1-0', upperGarment: 'shirt', upperColor: '#0066CC', lowerGarment: 'chinos', footwear: 'shoes' }),
+    daniel: P({ faceShape: 'square', eyeType: 'almond', noseType: 'lowbridge', earType: 'round', bodyType: 'male', skin: 4, hairStyle: 'l', hairColor: '1-0', upperGarment: 'shirt', upperColor: '#0066CC', lowerGarment: 'chinos', footwear: 'shoes' }),
+	daniela: P({ faceShape: 'oval', eyeType: 'almond', noseType: 'lowbridge', earType: 'round', bodyType: 'female', skin: 4, hairStyle: 'long', hairColor: '1-0', upperGarment: 'blouse', upperColor: '#0066CC', lowerGarment: 'chinos', footwear: 'shoes' }),
     sofia: P({ faceShape: 'oval', eyeType: 'upturned', noseType: 'greek', earType: 'oval', bodyType: 'female', skin: 3, hairStyle: 'long', hairColor: '4-0', upperGarment: 'blouse', upperColor: '#CC0066', lowerGarment: 'jeans', footwear: 'shoes' }),
     park: P({ faceShape: 'oval', eyeType: 'monolid', noseType: 'lowbridge', earType: 'oval', bodyType: 'female', skin: 2, hairStyle: 'bun', hairColor: '1-0', upperGarment: 'jacket', upperColor: '#6600CC', lowerGarment: 'trousers', footwear: 'heels' }),
     dan: P({ faceShape: 'triangle', eyeType: 'closeset', noseType: 'crooked', earType: 'oval', bodyType: 'male', skin: 4, hairStyle: 'short', hairColor: '1-0', eyewear: 'glasses', upperGarment: 'shirt', upperColor: '#0066CC', lowerGarment: 'chinos', footwear: 'shoes' }),
@@ -430,7 +431,7 @@
   }
   /* people named by their job (Waiter, Doctor, Security officer…) wear its clothes */
   const ROLES = [
-    [/security|officer|police|guard/, { upperGarment: 'shirt', upperColor: '#1f3a68', lowerGarment: 'trousers', lowerColor: '#1f2a44', footwear: 'shoes', headwear: 'cap', headwearColor: '#1f3a68' }],
+    [/security|officer|police|guard/, { upperGarment: 'shirt', upperColor: '#FFFFFF', lowerGarment: 'trousers', lowerColor: '#1f2a44', footwear: 'shoes', accessories: ['tie'], tieColor: '#990000' }],
     [/doctor|pharmacist|dentist|vet\b/, { upperGarment: 'coat', upperColor: '#FFFFFF', lowerGarment: 'trousers', lowerColor: '#333333', footwear: 'shoes' }],
     [/nurse/, { upperGarment: 'tshirt', upperColor: '#4bacc6', lowerGarment: 'trackpants', lowerColor: '#4bacc6', footwear: 'sneakers' }],
     [/waiter|waitress|server/, { upperGarment: 'vest', upperColor: '#222222', lowerGarment: 'trousers', lowerColor: '#222222', footwear: 'shoes', accessories: ['tie'], tieColor: '#990000' }],
