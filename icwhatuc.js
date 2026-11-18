@@ -14,6 +14,12 @@
    Bring here: a "!" badge on my highlight (anyone), or, for the host only, the
    others' pages scroll to it. A browser notification and a tab mark reach
    someone who is on another tab.
+   Colours: each person picks their own colour in the panel's list of people; the
+   host can change anyone's.
+   🗣️ How to say it (host only): PronMark's stress, connected speech and
+   intonation marks over the selected words, on everyone's page, until the host
+   presses it again. The marks are drawn on see-through copies of those lines laid
+   over the page, so the page itself does not move.
 
    CONNECTING
      The host presses Start and sends one link. Anyone who opens it types a name
@@ -69,8 +75,10 @@
   var LIB = global.ICWHATUC_LIB || document.documentElement.getAttribute('data-icwhatuc-lib') || 'https://esm.run/trystero';
   var SESSION = 'icwhatuc-session';
   var KEY = { name: 'icwhatuc-name', cur: 'icwhatuc-show-cursor', hl: 'icwhatuc-show-highlights', see: 'icwhatuc-see-others', relay: 'icwhatuc-relay', notify: 'icwhatuc-notify' };
-  var COLORS = ['#1f7ae0', '#d6336c', '#2f9e44', '#9c36b5', '#e8590c', '#0c8599'];
-  var OURS = '#icw-layer, #icw-panel, #icw-bring, #icw-toast, #icw-follow, #house-rail, #font-size-panel, .hd-card, .hd-arrow, .hd-hint';
+  var COLORS = ['#1f7ae0', '#d6336c', '#2f9e44', '#9c36b5', '#e8590c', '#0c8599', '#8b5e3c', '#5c940d', '#6c757d'];
+  var COLOR_NAMES = ['blue', 'pink', 'green', 'purple', 'orange', 'teal', 'brown', 'olive', 'grey'];
+  var okColor = function (c) { return typeof c === 'number' && c >= 0 && c < COLORS.length && Math.floor(c) === c; };
+  var OURS = '#icw-layer, .icw-say, #icw-panel, #icw-bring, #icw-toast, #icw-follow, #house-rail, #font-size-panel, .hd-card, .hd-arrow, .hd-hint';
   /* what a ring goes round: the smallest of these under the pointer */
   var RING = '.word-chip, .match-card, .match-stage .card, .hm-card, .fc-chip, .fc-zone, .fc-word, .opt, .ccq-opt, ' +
     '.eh2-word, .eh2-gap, .eh-word, .gf-gap-input, input.gap, .word-btn, .bubble, .think-cloud, .avatar, td, th, li, ' +
@@ -110,7 +118,7 @@
   function pagePath() { return location.pathname.replace(/\/index\.html?$/i, '/').toLowerCase(); }
   /* one room for the whole session; what belongs to one page carries that page's tag */
   var PAGE = pagePath(), PG = null;
-  var PAGED = { over: 1, sel: 1, cur: 1, tap: 1, bring: 1 };
+  var PAGED = { over: 1, sel: 1, cur: 1, tap: 1, bring: 1, say: 1 };
   function pageTitle() { return String(document.title || '').replace(/^\(!\) /, '').replace(/\s+/g, ' ').trim().slice(0, 80) || PAGE.split('/').pop(); }
   /* a page of this site, from a path a peer sent: never anywhere else */
   function sameSite(path) {
@@ -127,8 +135,8 @@
      Trystero's interface has had three shapes; all are spoken here. joinRoom takes
      exactly two arguments. Handlers are registered by calling onX(fn), by assigning
      onX = fn, or (oldest) through the second item of makeAction's array. */
-  var ACTIONS = ['hello', 'over', 'sel', 'cur', 'tap', 'bring', 'go', 'kick', 'bye', 'x'];
-  var REPLAY = ['hello', 'over', 'sel'];
+  var ACTIONS = ['hello', 'over', 'sel', 'cur', 'tap', 'bring', 'go', 'kick', 'bye', 'x', 'paint', 'say'];
+  var REPLAY = ['hello', 'over', 'sel', 'say'];
   function listen(room, event, handler) {
     var slot, done = false;
     try { slot = room[event]; } catch (e) { slot = undefined; }
@@ -432,11 +440,18 @@
     return S.peers[id];
   }
   function assignColors() {
-    var all = Object.keys(S.peers).map(function (id) { return { id: id, host: S.peers[id].host }; });
-    if (S.self) all.push({ id: S.self, host: S.role === 'host' });
+    var all = Object.keys(S.peers).map(function (id) { return { id: id, host: S.peers[id].host, c: S.peers[id].c }; });
+    if (S.self) all.push({ id: S.self, host: S.role === 'host', c: S.sess && S.sess.c });
     all.sort(function (a, b) { return (b.host - a.host) || (a.id < b.id ? -1 : 1); });
     var used = {};
+    /* a colour someone picked is theirs, even if someone else has it too */
     all.forEach(function (p) {
+      if (!okColor(p.c)) return;
+      used[p.c] = true;
+      if (p.id === S.self) S.color = COLORS[p.c]; else S.peers[p.id].color = COLORS[p.c];
+    });
+    all.forEach(function (p) {
+      if (okColor(p.c)) return;
       var c = p.host ? 0 : parseInt(hash(p.id), 36) % COLORS.length, tries = 0;
       while (used[c] && tries++ < COLORS.length) c = (c + 1) % COLORS.length;
       used[c] = true;
@@ -527,12 +542,15 @@
       p.pg = typeof d.pg === 'string' ? d.pg.slice(0, 16) : '';
       p.title = cleanName(String(d.title || '').slice(0, 80)) ? String(d.title).replace(/[\u0000-\u001f]/g, '').slice(0, 80) : 'another page';
       p.path = sameSite(d.path);
+      var oldC = p.c;
+      p.c = okColor(d.c) ? d.c : -1;
+      if (oldC !== p.c) { p.dirty = true; hlSig = ''; }
       if (p.host && Array.isArray(d.out)) d.out.slice(0, 50).forEach(function (id) {
         if (typeof id !== 'string') return;
         if (id === S.self) removed(p.name); else { S.out[id] = true; saveOut(); if (S.peers[id]) gone(id, true); }
       });
       if (!S.room) return;
-      if (!here(p)) { p.over = null; p.sel = null; p.cur = null; p.bring = null; p.dirty = true; }
+      if (!here(p)) { p.over = null; p.sel = null; p.cur = null; p.bring = null; p.dirty = true; if (S.say && S.say.from === p.id) showSay(null); }
       assignColors(); renderPanel(); kick();
       if (p.host && S.role !== 'host') hostIs(p, fresh || wasHere);
       if (fresh) emit('join', publicPeer(p));
@@ -562,6 +580,15 @@
       if (d.end && p.host) { ended(p.name); return; }
       gone(p.id);
     });
+    /* the host changes someone's colour: that person takes it as their own */
+    S.actions.paint = makeAction('paint', function (d, p) {
+      if (!p.host || d.id !== S.self || !okColor(d.c)) return;
+      setColor('me', d.c, true);
+    });
+    S.actions.say = makeAction('say', function (d, p) {
+      if (!p.host) return;
+      showSay(Array.isArray(d.sel) ? cleanPieces(d.sel) : null, p.id);
+    });
     S.actions.x = makeAction('x', function (d, p) {
       var fns = S.listeners[String(d.t)];
       if (fns) fns.forEach(function (fn) { try { fn(d.d, publicPeer(p)); } catch (e) { console.warn(e); } });
@@ -585,15 +612,17 @@
   /* everything I show, to everyone: a newcomer gets it this way */
   function sayHello() {
     if (!S.room) return;
-    var hello = { v: PROTOCOL, name: S.name, host: S.role === 'host', pg: PG, path: location.pathname, title: pageTitle() };
+    var hello = { v: PROTOCOL, name: S.name, host: S.role === 'host', pg: PG, path: location.pathname, title: pageTitle(), c: S.sess && okColor(S.sess.c) ? S.sess.c : -1 };
     if (S.role === 'host') hello.out = Object.keys(S.out || {}).slice(0, 50);
     S.actions.hello(hello);
     S.actions.over({ k: prefs.hl ? S.mine.over : null });
     S.actions.sel({ p: prefs.hl ? S.mine.sel : null });
+    if (S.role === 'host' && S.say && S.say.from === 'me') S.actions.say({ sel: S.say.pieces });
   }
   function gone(id, quiet) {
     var p = S.peers[id];
     if (!p) return;
+    if (S.say && S.say.from === id) showSay(null);
     delete S.peers[id];
     if (p.name && !quiet) { S.note = p.name + (here(p) ? ' left this page.' : ' left.'); emit('leave', publicPeer(p)); }
     assignColors(); renderPanel(); clearPeerDrawing(id); kick();
@@ -607,7 +636,7 @@
     }
     Object.keys(S.peers).forEach(clearPeerDrawing);
     S.peers = {}; S.actions = {};
-    clearDrawing(); markTab(false); cur.on = false; follow(null);
+    clearDrawing(); markTab(false); cur.on = false; follow(null); clearSay(); S.say = null;
     S.mine.bring = null;
   }
   function leave() {
@@ -712,6 +741,144 @@
     rail(false); setStatus('ended', said);
     openPanel(true);
   }
+
+  /* ══ COLOURS ═════════════════════════════════════════════════════════════
+     Everyone picks their own; the host can pick anyone's. My choice is kept for this
+     tab, so it follows me to the next page, and goes to the others in my hello. */
+  function setColor(id, c, fromHost) {
+    if (!S.room || !okColor(c)) return false;
+    if (id === 'me' || id === S.self) {
+      S.sess.c = c; session(S.sess);
+      assignColors(); hlSig = ''; sayHello(); renderPanel(); kick();
+      if (fromHost) toast('Your colour is now ' + COLOR_NAMES[c] + '.');
+      return true;
+    }
+    if (S.role !== 'host' || !S.peers[id]) return false;
+    S.actions.paint({ id: id, c: c });
+    var p = S.peers[id];                         /* shown at once here; their hello confirms it */
+    p.c = c; p.dirty = true; assignColors(); hlSig = ''; renderPanel(); kick();
+    return true;
+  }
+
+  /* ══ HOW TO SAY IT (host only) ═══════════════════════════════════════════
+     PronMark's marks over the selected words, on everyone's page. The page's own
+     text is never touched: each selected line gets a see-through copy, in the same
+     font, laid exactly over it in the layer, and PronMark marks the copy. The marks
+     have a halo in the page colour, so they read clearly over the lines above and
+     below. The copies follow scrolling, and are made again when the page changes. */
+  var pronLoading = null;
+  function loadScript(src) {
+    return new Promise(function (ok, bad) {
+      var s = document.createElement('script');
+      s.src = HERE_DIR + src; s.onload = ok; s.onerror = function () { bad(new Error('Could not load ' + src)); };
+      document.head.appendChild(s);
+    });
+  }
+  function pronEngines() {
+    if (global.PronMark && global.HouseCharacter) return Promise.resolve();
+    return pronLoading || (pronLoading = (global.HouseCharacter ? Promise.resolve() : loadScript('house-character.js'))
+      .then(function () { return global.PronMark ? null : loadScript('pron-mark.js'); })
+      .then(function () { return global.PRON_DICT_LOADED ? null : loadScript('pron-dict.js').catch(function () { return null; }); })
+      .catch(function (e) { pronLoading = null; throw e; }));
+  }
+  function showSay(pieces, from) {
+    clearSay();
+    S.say = pieces && pieces.length ? { pieces: pieces, from: from || 'me', gen: -1, els: [], token: {} } : null;
+    if (global.HouseRail) global.HouseRail.set('icwhatuc-say', !!(S.say && S.say.from === 'me'));
+    titles();
+    if (!S.say) return;
+    var token = S.say.token;
+    pronEngines().then(function () { if (S.say && S.say.token === token) buildSay(); }, function () {
+      if (S.say && S.say.token === token) { toast('The pronunciation marks did not load.'); S.say = null; if (global.HouseRail) global.HouseRail.set('icwhatuc-say', false); }
+    });
+  }
+  function clearSay() {
+    if (!S.say) return;
+    S.say.els.forEach(function (o) { try { if (global.PronMark) PronMark.unmark(o.el); } catch (e) { /* gone */ } o.el.remove(); });
+    S.say.els = [];
+  }
+  function sayButton() {
+    if (S.role !== 'host' || !S.room) return;
+    if (S.say && S.say.from === 'me') { showSay(null); S.actions.say({ sel: null }); return; }
+    var t = bringTarget();
+    if (!t || !t.sel) { toast('First, select the words to say.'); return; }
+    showSay(t.sel, 'me');
+    S.actions.say({ sel: t.sel });
+    if (!global.PronMark) toast('Loading the pronunciation marks…');
+  }
+  /* the [from, to) of a piece in its block's text, as rangeForPiece finds it */
+  function pieceSpan(model, piece) {
+    var nt = normText(model.text), at = -1;
+    for (var i = 0; i <= piece.n; i++) { at = nt.t.indexOf(piece.w, at + 1); if (at === -1) return null; }
+    return [nt.map[at], nt.map[at + piece.w.length - 1] + 1];
+  }
+  function charRect(model, T, at) {
+    try { var r = T.rangeFor(model, at, at + 1), rs = r.getClientRects(); return rs[0] || r.getBoundingClientRect(); } catch (e) { return null; }
+  }
+  function buildSay() {
+    var T = textApi();
+    if (!T || !S.say) return;
+    clearSay();
+    ensureLayer();
+    S.say.gen = gen; S.say.built = Date.now();
+    S.say.pieces.forEach(function (piece) {
+      var block = resolveKey(piece.k);
+      if (!block) return;
+      var model = T.textModel(block), span = pieceSpan(model, piece);
+      if (!span) return;
+      /* the words, grouped by the line they are on */
+      var re = /\S+/g, m, lines = [], text = model.text;
+      re.lastIndex = span[0];
+      while ((m = re.exec(text)) && m.index < span[1]) {
+        var a = m.index, b = Math.min(m.index + m[0].length, span[1]), r = charRect(model, T, a);
+        if (!r) continue;
+        var line = lines[lines.length - 1];
+        if (line && Math.abs(r.top - line.top) < r.height / 2) line.to = b;
+        else lines.push({ from: a, to: b, top: r.top });
+      }
+      lines.forEach(function (ln) {
+        var part = null;
+        for (var i = 0; i < model.parts.length; i++) if (ln.from >= model.parts[i].start && ln.from < model.parts[i].end) { part = model.parts[i]; break; }
+        if (!part) return;
+        var cs = getComputedStyle(part.node.parentElement);
+        var el = document.createElement('div');
+        el.className = 'icw-say';
+        ['fontFamily', 'fontSize', 'fontWeight', 'fontStyle', 'fontVariant', 'letterSpacing', 'wordSpacing', 'textTransform', 'fontKerning', 'fontStretch'].forEach(function (k) { el.style[k] = cs[k]; });
+        el.textContent = text.slice(ln.from, ln.to);
+        layer.appendChild(el);
+        var anchor = T.rangeFor(model, ln.from, ln.from + 1), ar = anchor.getClientRects()[0] || anchor.getBoundingClientRect();
+        el.style.transform = 'translate(' + ar.left + 'px,' + ar.top + 'px)';
+        try { PronMark.mark(el, { colours: null }); } catch (e) { el.remove(); return; }
+        /* lay the copy's first letter exactly on the page's */
+        var first = null, w = document.createTreeWalker(el, NodeFilter.SHOW_TEXT, null);
+        while ((first = w.nextNode()) && !first.nodeValue.trim()) { /* the first letter */ }
+        var dx = 0, dy = 0;
+        if (first) {
+          var fr = document.createRange(), off = first.nodeValue.search(/\S/);
+          fr.setStart(first, off); fr.setEnd(first, off + 1);
+          var cr = fr.getBoundingClientRect();
+          dx = ar.left - cr.left; dy = ar.top - cr.top;
+        }
+        var o = { el: el, anchor: anchor, dx: dx, dy: dy, w: ar.width, h: ar.height };
+        placeSay(o);
+        S.say.els.push(o);
+      });
+    });
+  }
+  function placeSay(o) {
+    var r = o.anchor.getClientRects()[0] || o.anchor.getBoundingClientRect();
+    /* the letter has changed size (the 🔎 text size, a font loading): the copies are made again */
+    if (Math.abs(r.width - o.w) > 0.5 || Math.abs(r.height - o.h) > 0.5) { if (S.say) S.say.resized = true; }
+    o.el.hidden = !(r.width || r.height);
+    o.el.style.transform = 'translate(' + (r.left + o.dx) + 'px,' + (r.top + o.dy) + 'px)';
+  }
+  function frameSay() {
+    if (!S.say || !S.say.els) return;
+    /* the page changed under the marks (a reflow, the text size): made again, at most a few times a second */
+    if ((S.say.gen !== gen || S.say.resized) && Date.now() - (S.say.built || 0) > 300 && global.PronMark) { S.say.resized = false; buildSay(); return; }
+    S.say.els.forEach(placeSay);
+  }
+  global.addEventListener('resize', function () { if (S.say) S.say.resized = true; });
 
   global.addEventListener('pagehide', function () {
     if (!S.room) return;
@@ -1100,7 +1267,8 @@
       while (d.boxes.length < Math.min(rects.length, 40)) d.boxes.push(el('icw-box'));
       d.boxes.forEach(function (b, i) { if (i < rects.length) { b.hidden = false; b.style.background = v.color; place(b, rects[i], 0); } else b.hidden = true; });
     }
-    if (selR && !(shown(ringR) && Math.abs(ringR.top - selR.top) < 4)) placeName(d.selTag, selR, v.name, v.color);
+    var saying = S.say && S.say.els && S.say.els.length && (S.say.from === v.id || (S.say.from === 'me' && v.id === 'me'));   /* the name would sit on the marks */
+    if (selR && !saying && !(shown(ringR) && Math.abs(ringR.top - selR.top) < 4)) placeName(d.selTag, selR, v.name, v.color);
     else d.selTag.hidden = true;
 
     /* a bring: its own ring if it is not already ringed, and the "!" badge */
@@ -1181,6 +1349,7 @@
     edges.bottom.forEach(function (e) { if (e.parentNode !== edgeBottom) edgeBottom.appendChild(e); });
     Object.keys(drawn).forEach(function (id) { if (!keep[id]) clearPeerDrawing(id); });
     paintSelections(views);
+    frameSay();
     raf = requestAnimationFrame(frame);       /* follows scrolling, resizing, reflow and easing */
   }
   function goTo(id) {
@@ -1229,14 +1398,16 @@
       R.add({ id: 'icwhatuc-hl', icon: '🖍️', label: 'Show my highlights', order: 62, pressed: prefs.hl, onClick: function () { showHighlights(!prefs.hl); } });
       R.add({ id: 'icwhatuc-see', icon: '👀', label: 'See the others', order: 63, pressed: prefs.see, onClick: function () { seeOthers(!prefs.see); } });
       R.add({ id: 'icwhatuc-bring', icon: '📣', label: 'Bring the others here', order: 64, onClick: function () { onBringButton(); } });
+      if (S.role === 'host') R.add({ id: 'icwhatuc-say', icon: '🗣️', label: 'Show how to say the selected words', order: 65, pressed: !!(S.say && S.say.from === 'me'), onClick: function () { sayButton(); } });
       titles();
-    } else { ['icwhatuc-cur', 'icwhatuc-hl', 'icwhatuc-see', 'icwhatuc-bring'].forEach(function (id) { R.remove(id); }); closeChooser(); }
+    } else { ['icwhatuc-cur', 'icwhatuc-hl', 'icwhatuc-see', 'icwhatuc-bring', 'icwhatuc-say'].forEach(function (id) { R.remove(id); }); closeChooser(); }
   }
   function titles() {
     var t = { 'icwhatuc-cur': prefs.cur ? 'Others see my cursor: on' : 'Others see my cursor: off',
       'icwhatuc-hl': prefs.hl ? 'Others see what I point at and select: on' : 'Others see what I point at and select: off',
       'icwhatuc-see': prefs.see ? 'I see the others: on' : 'I see the others: off',
-      'icwhatuc-bring': S.role === 'host' ? 'Bring the others here: show them, or take them there' : 'Bring the others here' };
+      'icwhatuc-bring': S.role === 'host' ? 'Bring the others here: show them, or take them there' : 'Bring the others here',
+      'icwhatuc-say': S.say && S.say.from === 'me' ? 'How to say it: shown to everyone. Press to hide' : 'How to say it: select some words, then press' };
     Object.keys(t).forEach(function (id) { var b = $(id); if (b) b.title = t[id]; });
   }
   function showCursor(v) {
@@ -1355,6 +1526,7 @@
   }
   function openPanel(v) {
     ensurePanel();
+    if (!v) picking = null;
     panel.hidden = !v;
     if (v) { renderPanel(); placePanel(); var f = panel.querySelector('#icw-name'); if (f && !f.value) f.focus({ preventScroll: true }); }
   }
@@ -1409,14 +1581,28 @@
     if (out.urls.length) store(KEY.relay, out);
     else if (!text) { try { localStorage.removeItem(KEY.relay); } catch (e) { /* nothing saved */ } }
   }
+  var picking = null;      /* whose colour swatches are open: 'me' or a person's id */
+  function dot(id, color, name, mine) {
+    var can = mine || S.role === 'host';
+    if (!can) return '<span class="icw-dot" style="background:' + color + '"></span>';
+    return '<button type="button" class="icw-dot icw-pick" data-pick="' + esc(id) + '" style="background:' + color + '" aria-expanded="' + (picking === id) + '" ' +
+      'title="' + (mine ? 'Change your colour' : 'Change ' + esc(name) + '\'s colour') + '" aria-label="' + (mine ? 'Change your colour' : 'Change ' + esc(name) + '\'s colour') + '"></button>';
+  }
+  function swatches(id, color) {
+    if (picking !== id) return '';
+    return '<li class="icw-swatches" role="group" aria-label="Colours">' + COLORS.map(function (c, i) {
+      return '<button type="button" class="icw-swatch" data-paint="' + esc(id) + '" data-c="' + i + '" style="background:' + c + '" aria-pressed="' + (c === color) + '" title="' + COLOR_NAMES[i] + '" aria-label="' + COLOR_NAMES[i] + '"></button>';
+    }).join('') + '</li>';
+  }
   function people() {
-    var me = '<li><span class="icw-dot" style="background:' + (S.color || COLORS[0]) + '"></span><span class="icw-who">' + esc(S.name) + ' <span class="icw-small">(you' + (S.role === 'host' ? ', host' : '') + ')</span></span></li>';
+    var mine = S.color || COLORS[0];
+    var me = '<li>' + dot('me', mine, S.name, true) + '<span class="icw-who">' + esc(S.name) + ' <span class="icw-small">(you' + (S.role === 'host' ? ', host' : '') + ')</span></span></li>' + swatches('me', mine);
     var list = named().sort(function (a, b) { return (here(b) - here(a)) || (b.host - a.host); });
     return '<ul class="icw-people">' + me + list.map(function (p) {
       var where = here(p) ? '' : '<br><span class="icw-small">on “' + esc(p.title) + '”</span>' + (p.path ? ' <button type="button" class="icw-mini" data-goto="' + esc(p.id) + '">Go there</button>' : '');
       var out = S.role === 'host' ? '<button type="button" class="icw-mini icw-out" data-out="' + esc(p.id) + '" title="Take ' + esc(p.name) + ' out of the session">Remove</button>' : '';
-      return '<li><span class="icw-dot" style="background:' + p.color + '"></span><span class="icw-who">' + esc(p.name) + (p.host ? ' <span class="icw-small">(host)</span>' : '') + where + '</span>' + out + '</li>';
-    }).join('') + '</ul>';
+      return '<li>' + dot(p.id, p.color, p.name, false) + '<span class="icw-who">' + esc(p.name) + (p.host ? ' <span class="icw-small">(host)</span>' : '') + where + '</span>' + out + '</li>' + swatches(p.id, p.color);
+    }).join('') + '</ul><p class="icw-small icw-hint">' + (S.role === 'host' ? 'Tap a colour dot to change that person\'s colour.' : 'Tap your colour dot to change it.') + '</p>';
   }
   function renderPanel() {
     clearInterval(ticker); ticker = 0;
@@ -1463,6 +1649,10 @@
   }
   function onPanelClick(e) {
     e.stopPropagation();
+    var pk = e.target.closest('[data-pick]');
+    if (pk) { picking = picking === pk.dataset.pick ? null : pk.dataset.pick; renderPanel(); return; }
+    var sw = e.target.closest('[data-paint]');
+    if (sw) { setColor(sw.dataset.paint, +sw.dataset.c); picking = null; renderPanel(); return; }
     var t = e.target.closest('[data-goto], [data-out]');
     if (t && t.dataset.goto) { var gp = S.peers[t.dataset.goto]; if (gp && gp.path) go(gp.path); return; }
     if (t && t.dataset.out) { remove(t.dataset.out); return; }
@@ -1569,6 +1759,17 @@
       + '#icw-panel .icw-who{ flex:1 1 auto; min-width:0; overflow-wrap:anywhere; }'
       + '#icw-panel button.icw-mini{ font-size:11px; padding:2px 8px; margin-top:1px; }'
       + '#icw-panel button.icw-out{ color:var(--bad, #b0392f); }'
+      + '#icw-panel button.icw-pick{ width:15px; height:15px; padding:0; border:2px solid var(--surface-2, #fff); box-shadow:0 0 0 1px var(--border, #ccc); cursor:pointer; margin-top:2px; }'
+      + '#icw-panel button.icw-pick[aria-expanded="true"]{ box-shadow:0 0 0 2px var(--text-primary, #1a1a1a); }'
+      + '#icw-panel .icw-swatches{ display:flex; flex-wrap:wrap; gap:6px; padding:4px 0 6px 18px; }'
+      + '#icw-panel button.icw-swatch{ width:24px; height:24px; padding:0; border-radius:50%; border:2px solid var(--surface-2, #fff); box-shadow:0 0 0 1px var(--border, #ccc); cursor:pointer; }'
+      + '#icw-panel button.icw-swatch[aria-pressed="true"]{ box-shadow:0 0 0 2px var(--text-primary, #1a1a1a); }'
+      + '#icw-panel .icw-hint{ margin-top:-4px; }'
+      /* the pronunciation copies: see-through text, PronMark's marks with a halo in the page colour */
+      + '#icw-layer .icw-say{ position:absolute; left:0; top:0; white-space:pre; color:transparent !important; -webkit-text-stroke:0; line-height:normal; pointer-events:none; }'
+      + '#icw-layer .icw-say svg{ filter:drop-shadow(0 0 1px var(--color-background-primary, #fff)) drop-shadow(0 0 1.5px var(--color-background-primary, #fff)) drop-shadow(0 0 2px var(--color-background-primary, #fff)); }'
+      + 'html #icw-layer .icw-say .pm-v > svg, html #icw-layer .icw-say .pm-arrows{ display:block !important; }'
+      + 'html #icw-layer .icw-say .pm-w::before{ display:inline-block !important; }'
       + '@media print{ #icw-layer, #icw-panel, #icw-bring, #icw-toast, #icw-follow{ display:none !important; } }';
     for (var i = 0; i < COLORS.length; i++) css += '::highlight(icw-c' + i + '){ background-color:' + COLORS[i] + '4d; }';
     var s = document.createElement('style');
@@ -1612,6 +1813,8 @@
     persistent: function () { return !!HUB; },
     showCursor: showCursor, showHighlights: showHighlights, seeOthers: seeOthers,
     canBring: canBring, bring: bring, everyoneHere: everyoneHere, remove: remove,
+    setColor: setColor, colors: function () { return COLORS.slice(); },
+    say: function () { sayButton(); return !!S.say; }, saying: function () { return !!S.say; },
     key: function (el, k) { if (k != null) { el.dataset.icwKey = k; gen++; return 'k:' + k; } return keyOf(el); },
     resolve: resolveKey,
     on: function (type, fn) { (S.listeners[type] = S.listeners[type] || []).push(fn); },
