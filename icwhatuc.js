@@ -14,12 +14,16 @@
    Bring here: a "!" badge on my highlight (anyone), or, for the host only, the
    others' pages scroll to it. A browser notification and a tab mark reach
    someone who is on another tab.
-   Colours: each person picks their own colour in the panel's list of people; the
-   host can change anyone's.
+   Colours: each person picks their own colour, from the 140 web colours, in the
+   panel's list of people; the host can change anyone's. Until someone picks, they
+   have one of nine automatic colours.
+   🏹 Arrow (host only): an arrow from one highlight to another, on everyone's page:
+   choose 🏹, highlight where it starts, 👍 (or ❌), highlight where it ends (a dashed
+   preview follows), 👍 (or ❌). Arrows stay until the host removes them.
    🗣️ How to say it (host only): PronMark's stress, connected speech and
    intonation marks over the selected words, on everyone's page, until the host
    presses it again. The marks are drawn on see-through copies of those lines laid
-   over the page, so the page itself does not move.
+   over the page, so the page itself does not move. The host picks their colour.
 
    CONNECTING
      The host presses Start and sends one link. Anyone who opens it types a name
@@ -75,10 +79,36 @@
   var LIB = global.ICWHATUC_LIB || document.documentElement.getAttribute('data-icwhatuc-lib') || 'https://esm.run/trystero';
   var SESSION = 'icwhatuc-session';
   var KEY = { name: 'icwhatuc-name', cur: 'icwhatuc-show-cursor', hl: 'icwhatuc-show-highlights', see: 'icwhatuc-see-others', relay: 'icwhatuc-relay', notify: 'icwhatuc-notify' };
+  /* the automatic colours, for people who have not picked one */
   var COLORS = ['#1f7ae0', '#d6336c', '#2f9e44', '#9c36b5', '#e8590c', '#0c8599', '#8b5e3c', '#5c940d', '#6c757d'];
-  var COLOR_NAMES = ['blue', 'pink', 'green', 'purple', 'orange', 'teal', 'brown', 'olive', 'grey'];
-  var okColor = function (c) { return typeof c === 'number' && c >= 0 && c < COLORS.length && Math.floor(c) === c; };
-  var OURS = '#icw-layer, .icw-say, #icw-panel, #icw-bring, #icw-toast, #icw-follow, #house-rail, #font-size-panel, .hd-card, .hd-arrow, .hd-hint';
+  /* the 140 web colours, greys first, then by hue, each hue dark to light */
+  var WEB = 'black:000000,dim gray:696969,gray:808080,dark gray:a9a9a9,silver:c0c0c0,light gray:d3d3d3,gainsboro:dcdcdc,white smoke:f5f5f5,white:ffffff,maroon:800000,dark red:8b0000,brown:a52a2a,fire brick:b22222,crimson:dc143c,red:ff0000,indian red:cd5c5c,tomato:ff6347,rosy brown:bc8f8f,salmon:fa8072,light coral:f08080,light pink:ffb6c1,pink:ffc0cb,misty rose:ffe4e1,snow:fffafa,saddle brown:8b4513,dark golden rod:b8860b,sienna:a0522d,chocolate:d2691e,golden rod:daa520,dark orange:ff8c00,orange:ffa500,orange red:ff4500,peru:cd853f,coral:ff7f50,sandy brown:f4a460,tan:d2b48c,dark salmon:e9967a,burly wood:deb887,light salmon:ffa07a,wheat:f5deb3,navajo white:ffdead,moccasin:ffe4b5,peach puff:ffdab9,bisque:ffe4c4,blanched almond:ffebcd,antique white:faebd7,papaya whip:ffefd5,linen:faf0e6,old lace:fdf5e6,sea shell:fff5ee,floral white:fffaf0,olive:808000,gold:ffd700,yellow:ffff00,dark khaki:bdb76b,khaki:f0e68c,pale golden rod:eee8aa,light golden rod yellow:fafad2,lemon chiffon:fffacd,beige:f5f5dc,cornsilk:fff8dc,light yellow:ffffe0,ivory:fffff0,dark olive green:556b2f,olive drab:6b8e23,lawn green:7cfc00,chartreuse:7fff00,yellow green:9acd32,green yellow:adff2f,dark green:006400,green:008000,forest green:228b22,lime:00ff00,lime green:32cd32,dark sea green:8fbc8f,light green:90ee90,pale green:98fb98,honey dew:f0fff0,sea green:2e8b57,medium sea green:3cb371,medium spring green:00fa9a,spring green:00ff7f,medium aqua marine:66cdaa,aquamarine:7fffd4,mint cream:f5fffa,dark slate gray:2f4f4f,teal:008080,dark cyan:008b8b,dark turquoise:00ced1,light sea green:20b2aa,aqua:00ffff,cadet blue:5f9ea0,cyan:00ffff,medium turquoise:48d1cc,turquoise:40e0d0,light blue:add8e6,powder blue:b0e0e6,pale turquoise:afeeee,light cyan:e0ffff,azure:f0ffff,steel blue:4682b4,deep sky blue:00bfff,slate gray:708090,light slate gray:778899,dodger blue:1e90ff,cornflower blue:6495ed,sky blue:87ceeb,light sky blue:87cefa,light steel blue:b0c4de,alice blue:f0f8ff,navy:000080,midnight blue:191970,dark blue:00008b,dark slate blue:483d8b,medium blue:0000cd,blue:0000ff,royal blue:4169e1,slate blue:6a5acd,medium slate blue:7b68ee,lavender:e6e6fa,ghost white:f8f8ff,indigo:4b0082,dark violet:9400d3,dark orchid:9932cc,blue violet:8a2be2,medium purple:9370db,purple:800080,dark magenta:8b008b,fuchsia:ff00ff,magenta:ff00ff,medium orchid:ba55d3,orchid:da70d6,violet:ee82ee,plum:dda0dd,thistle:d8bfd8,medium violet red:c71585,deep pink:ff1493,pale violet red:db7093,hot pink:ff69b4,lavender blush:fff0f5'.split(',').map(function (x) { var i = x.lastIndexOf(':'); return { name: x.slice(0, i), hex: '#' + x.slice(i + 1) }; });
+  var ALLOWED = {};
+  COLORS.concat(WEB.map(function (w) { return w.hex; })).forEach(function (h) { ALLOWED[h] = true; });
+  function okColor(c) { return typeof c === 'string' && ALLOWED[c.toLowerCase()] === true; }
+  function colorName(hex) { for (var i = 0; i < WEB.length; i++) if (WEB[i].hex === hex) return WEB[i].name; return 'an automatic colour'; }
+  /* black or white writing on a colour, whichever reads better */
+  function ink(hex) {
+    var m = /^#?([0-9a-f]{6})$/i.exec(hex || ''); if (!m) return '#fff';
+    var n = parseInt(m[1], 16), lum = function (v) { v /= 255; return v <= 0.03928 ? v / 12.92 : Math.pow((v + 0.055) / 1.055, 2.4); };
+    var L = 0.2126 * lum(n >> 16) + 0.7152 * lum((n >> 8) & 255) + 0.0722 * lum(n & 255);
+    return L > 0.35 ? '#1a1a1a' : '#fff';
+  }
+  /* one named highlight per colour in use, its style added the first time */
+  var hlRules = {};
+  function hlName(hex) {
+    var h = String(hex || '').toLowerCase().replace('#', '');
+    if (!/^[0-9a-f]{6}$/.test(h)) h = COLORS[0].slice(1);
+    var name = 'icw-h' + h;
+    if (!hlRules[name]) {
+      hlRules[name] = true;
+      var st = document.getElementById('icwhatuc-hl-styles');
+      if (!st) { st = document.createElement('style'); st.id = 'icwhatuc-hl-styles'; document.head.appendChild(st); }
+      st.textContent += '::highlight(' + name + '){ background-color:#' + h + '4d; }';
+    }
+    return name;
+  }
+  var OURS = '#icw-layer, .icw-say, #icw-tool, #icw-panel, #icw-bring, #icw-toast, #icw-follow, #house-rail, #font-size-panel, .hd-card, .hd-arrow, .hd-hint';
   /* what a ring goes round: the smallest of these under the pointer */
   var RING = '.word-chip, .match-card, .match-stage .card, .hm-card, .fc-chip, .fc-zone, .fc-word, .opt, .ccq-opt, ' +
     '.eh2-word, .eh2-gap, .eh-word, .gf-gap-input, input.gap, .word-btn, .bubble, .think-cloud, .avatar, td, th, li, ' +
@@ -118,7 +148,7 @@
   function pagePath() { return location.pathname.replace(/\/index\.html?$/i, '/').toLowerCase(); }
   /* one room for the whole session; what belongs to one page carries that page's tag */
   var PAGE = pagePath(), PG = null;
-  var PAGED = { over: 1, sel: 1, cur: 1, tap: 1, bring: 1, say: 1 };
+  var PAGED = { over: 1, sel: 1, cur: 1, tap: 1, bring: 1, say: 1, arrows: 1 };
   function pageTitle() { return String(document.title || '').replace(/^\(!\) /, '').replace(/\s+/g, ' ').trim().slice(0, 80) || PAGE.split('/').pop(); }
   /* a page of this site, from a path a peer sent: never anywhere else */
   function sameSite(path) {
@@ -135,8 +165,8 @@
      Trystero's interface has had three shapes; all are spoken here. joinRoom takes
      exactly two arguments. Handlers are registered by calling onX(fn), by assigning
      onX = fn, or (oldest) through the second item of makeAction's array. */
-  var ACTIONS = ['hello', 'over', 'sel', 'cur', 'tap', 'bring', 'go', 'kick', 'bye', 'x', 'paint', 'say'];
-  var REPLAY = ['hello', 'over', 'sel', 'say'];
+  var ACTIONS = ['hello', 'over', 'sel', 'cur', 'tap', 'bring', 'go', 'kick', 'bye', 'x', 'paint', 'say', 'arrows'];
+  var REPLAY = ['hello', 'over', 'sel', 'say', 'arrows'];
   function listen(room, event, handler) {
     var slot, done = false;
     try { slot = room[event]; } catch (e) { slot = undefined; }
@@ -426,7 +456,7 @@
   /* ══ STATE ═══════════════════════════════════════════════════════════════ */
   var S = {
     mod: null, room: null, self: null, role: null, name: '', sess: null, joinedAt: 0,
-    peers: {}, out: {}, actions: {}, status: 'idle', note: '', listeners: {},
+    peers: {}, out: {}, actions: {}, status: 'idle', arrows: [], arrowMode: null, note: '', listeners: {},
     mine: { over: null, sel: null, selJson: 'null', lastOver: null, lastSel: null, lastSelAt: 0, bring: null }
   };
   var prefs = {
@@ -447,8 +477,9 @@
     /* a colour someone picked is theirs, even if someone else has it too */
     all.forEach(function (p) {
       if (!okColor(p.c)) return;
-      used[p.c] = true;
-      if (p.id === S.self) S.color = COLORS[p.c]; else S.peers[p.id].color = COLORS[p.c];
+      var hx = p.c.toLowerCase(), k = COLORS.indexOf(hx);
+      if (k >= 0) used[k] = true;
+      if (p.id === S.self) S.color = hx; else S.peers[p.id].color = hx;
     });
     all.forEach(function (p) {
       if (okColor(p.c)) return;
@@ -543,14 +574,14 @@
       p.title = cleanName(String(d.title || '').slice(0, 80)) ? String(d.title).replace(/[\u0000-\u001f]/g, '').slice(0, 80) : 'another page';
       p.path = sameSite(d.path);
       var oldC = p.c;
-      p.c = okColor(d.c) ? d.c : -1;
+      p.c = okColor(d.c) ? d.c.toLowerCase() : null;
       if (oldC !== p.c) { p.dirty = true; hlSig = ''; }
       if (p.host && Array.isArray(d.out)) d.out.slice(0, 50).forEach(function (id) {
         if (typeof id !== 'string') return;
         if (id === S.self) removed(p.name); else { S.out[id] = true; saveOut(); if (S.peers[id]) gone(id, true); }
       });
       if (!S.room) return;
-      if (!here(p)) { p.over = null; p.sel = null; p.cur = null; p.bring = null; p.dirty = true; if (S.say && S.say.from === p.id) showSay(null); }
+      if (!here(p)) { p.over = null; p.sel = null; p.cur = null; p.bring = null; p.dirty = true; if (S.say && S.say.from === p.id) showSay(null); if (S.arrowsFrom === p.id) S.arrows = []; }
       assignColors(); renderPanel(); kick();
       if (p.host && S.role !== 'host') hostIs(p, fresh || wasHere);
       if (fresh) emit('join', publicPeer(p));
@@ -585,14 +616,21 @@
       if (!p.host || d.id !== S.self || !okColor(d.c)) return;
       setColor('me', d.c, true);
     });
+    S.actions.arrows = makeAction('arrows', function (d, p) {
+      if (!p.host) return;
+      S.arrows = Array.isArray(d.list) ? d.list.slice(0, 30).map(cleanArrow).filter(Boolean) : [];
+      S.arrowsFrom = p.id; kick();
+    });
     S.actions.say = makeAction('say', function (d, p) {
       if (!p.host) return;
-      showSay(Array.isArray(d.sel) ? cleanPieces(d.sel) : null, p.id);
+      showSay(Array.isArray(d.sel) ? cleanPieces(d.sel) : null, p.id, d.c);
     });
     S.actions.x = makeAction('x', function (d, p) {
       var fns = S.listeners[String(d.t)];
       if (fns) fns.forEach(function (fn) { try { fn(d.d, publicPeer(p)); } catch (e) { console.warn(e); } });
     });
+    S.arrows = []; S.arrowMode = null;
+    if (sess.role === 'host') { try { S.arrows = (JSON.parse(sessionStorage.getItem('icwhatuc-arrows-' + PG) || '[]') || []).map(cleanArrow).filter(Boolean); } catch (e) { S.arrows = []; } }
     hub.attach(S.client);                                  /* the people already here, and what they show */
 
     assignColors();
@@ -612,17 +650,19 @@
   /* everything I show, to everyone: a newcomer gets it this way */
   function sayHello() {
     if (!S.room) return;
-    var hello = { v: PROTOCOL, name: S.name, host: S.role === 'host', pg: PG, path: location.pathname, title: pageTitle(), c: S.sess && okColor(S.sess.c) ? S.sess.c : -1 };
+    var hello = { v: PROTOCOL, name: S.name, host: S.role === 'host', pg: PG, path: location.pathname, title: pageTitle(), c: S.sess && okColor(S.sess.c) ? S.sess.c : '' };
     if (S.role === 'host') hello.out = Object.keys(S.out || {}).slice(0, 50);
     S.actions.hello(hello);
     S.actions.over({ k: prefs.hl ? S.mine.over : null });
     S.actions.sel({ p: prefs.hl ? S.mine.sel : null });
-    if (S.role === 'host' && S.say && S.say.from === 'me') S.actions.say({ sel: S.say.pieces });
+    if (S.role === 'host' && S.say && S.say.from === 'me') S.actions.say({ sel: S.say.pieces, c: S.say.c });
+    if (S.role === 'host' && S.arrows.length) S.actions.arrows({ list: S.arrows });
   }
   function gone(id, quiet) {
     var p = S.peers[id];
     if (!p) return;
     if (S.say && S.say.from === id) showSay(null);
+    if (S.arrowsFrom === id) S.arrows = [];
     delete S.peers[id];
     if (p.name && !quiet) { S.note = p.name + (here(p) ? ' left this page.' : ' left.'); emit('leave', publicPeer(p)); }
     assignColors(); renderPanel(); clearPeerDrawing(id); kick();
@@ -636,7 +676,7 @@
     }
     Object.keys(S.peers).forEach(clearPeerDrawing);
     S.peers = {}; S.actions = {};
-    clearDrawing(); markTab(false); cur.on = false; follow(null); clearSay(); S.say = null;
+    clearDrawing(); markTab(false); cur.on = false; follow(null); clearSay(); S.say = null; S.arrows = []; S.arrowMode = null; renderTool();
     S.mine.bring = null;
   }
   function leave() {
@@ -747,10 +787,11 @@
      tab, so it follows me to the next page, and goes to the others in my hello. */
   function setColor(id, c, fromHost) {
     if (!S.room || !okColor(c)) return false;
+    c = c.toLowerCase();
     if (id === 'me' || id === S.self) {
       S.sess.c = c; session(S.sess);
       assignColors(); hlSig = ''; sayHello(); renderPanel(); kick();
-      if (fromHost) toast('Your colour is now ' + COLOR_NAMES[c] + '.');
+      if (fromHost) toast('Your colour is now ' + colorName(c) + '.');
       return true;
     }
     if (S.role !== 'host' || !S.peers[id]) return false;
@@ -758,6 +799,193 @@
     var p = S.peers[id];                         /* shown at once here; their hello confirms it */
     p.c = c; p.dirty = true; assignColors(); hlSig = ''; renderPanel(); kick();
     return true;
+  }
+
+  /* ══ ARROWS (host only) ══════════════════════════════════════════════════
+     An arrow joins two highlights: each end is a text selection (as words, like a
+     selection) or a tapped element (by its key). The host builds one in two steps,
+     with 👍 and ❌ in the tool bar, and sees a dashed preview before the second 👍. */
+  function cleanTarget(t) {
+    if (!t || typeof t !== 'object') return null;
+    var sel = Array.isArray(t.sel) ? cleanPieces(t.sel) : null, k = typeof t.k === 'string' && t.k.length <= 600 ? t.k : null;
+    return sel || k ? { sel: sel, k: sel ? null : k } : null;
+  }
+  function cleanArrow(a) {
+    if (!a || typeof a !== 'object') return null;
+    var A = cleanTarget(a.a), B = cleanTarget(a.b);
+    if (!A || !B) return null;
+    return { id: String(a.id || random(6)).slice(0, 12), a: A, b: B, c: okColor(a.c) ? a.c.toLowerCase() : COLORS[0] };
+  }
+  /* what the host has highlighted for an arrow: a selection, or else the last thing they tapped since this step began */
+  function arrowTarget(since) {
+    var t = bringTarget();
+    if (t && t.sel) return { sel: t.sel, k: null };
+    var pk = S.mine.picked;
+    if (pk && pk.t >= since && pk.el && pk.el.isConnected) return { sel: null, k: keyOf(pk.el) };
+    return null;
+  }
+  function arrowColor() { var c = store('icwhatuc-arrow-color'); return okColor(c) ? c.toLowerCase() : (S.color || COLORS[0]); }
+  function saveArrows() {
+    try { sessionStorage.setItem('icwhatuc-arrows-' + PG, JSON.stringify(S.arrows)); } catch (e) { /* fine */ }
+    S.actions.arrows({ list: S.arrows });
+    kick();
+  }
+  function arrowButton() {
+    if (S.role !== 'host' || !S.room) return;
+    if (S.arrowMode) { arrowCancel(); return; }
+    S.arrowMode = { step: 'a', since: Date.now(), a: null };
+    renderTool(); railArrow();
+  }
+  function arrowOk() {
+    var m = S.arrowMode;
+    if (!m) return;
+    var t = arrowTarget(m.since);
+    if (!t) { toast('First, select some words or tap something.'); return; }
+    if (m.step === 'a') {
+      m.a = t; m.step = 'b'; m.since = Date.now();
+      try { global.getSelection().removeAllRanges(); } catch (e) { /* fine */ }
+      S.mine.lastSel = null; S.mine.sel = null; S.mine.selJson = 'null'; S.mine.picked = null;
+      renderTool(); kick();
+      return;
+    }
+    S.arrows.push({ id: random(6), a: m.a, b: t, c: arrowColor() });
+    if (S.arrows.length > 30) S.arrows.shift();
+    S.arrowMode = null;
+    try { global.getSelection().removeAllRanges(); } catch (e) { /* fine */ }
+    saveArrows(); renderTool(); railArrow();
+    toast(named().length ? 'Everyone sees the arrow now.' : 'The arrow is placed.');
+  }
+  function arrowCancel() { S.arrowMode = null; renderTool(); railArrow(); kick(); }
+  function railArrow() { if (global.HouseRail) global.HouseRail.set('icwhatuc-arrow', !!S.arrowMode); titles(); }
+
+  /* where an end of an arrow is on my page: the box round its words or its element */
+  /* found on my page: kept beside the arrow, not in it, so the arrow itself stays plain data to send */
+  var found = new WeakMap();
+  function targetBox(t) {
+    if (!t) return null;
+    var f = found.get(t);
+    if (!f || f.gen !== gen || (f.el && !f.el.isConnected)) {
+      f = { gen: gen, ranges: [], el: null };
+      if (t.sel) t.sel.forEach(function (piece) { var b = resolveKey(piece.k), r = b && rangeForPiece(b, piece); if (r) f.ranges.push(r); else if (b && !f.el) f.el = b; });
+      else if (t.k) f.el = resolveKey(t.k);
+      found.set(t, f);
+    }
+    return boxOf(f.ranges, f.el);
+  }
+  function boxOf(ranges, elx) {
+    var L = Infinity, T = Infinity, R = -Infinity, B = -Infinity, any = false;
+    (ranges || []).forEach(function (r) { [].forEach.call(r.getClientRects(), function (x) { if (!x.width) return; any = true; L = Math.min(L, x.left); T = Math.min(T, x.top); R = Math.max(R, x.right); B = Math.max(B, x.bottom); }); });
+    if (!any && elx && elx.isConnected) { var e = elx.getBoundingClientRect(); if (e.width || e.height) return e; }
+    return any ? { left: L, top: T, right: R, bottom: B, width: R - L, height: B - T } : null;
+  }
+  /* the preview's second end: what the host has highlighted right now */
+  function liveBox(since) {
+    var r = selfRanges();
+    if (r.length) return boxOf(r, null);
+    var pk = S.mine.picked;
+    return pk && pk.t >= since && pk.el && pk.el.isConnected ? pk.el.getBoundingClientRect() : null;
+  }
+  function edgePoint(r, tx, ty, pad) {
+    var cx = (r.left + r.right) / 2, cy = (r.top + r.bottom) / 2, dx = tx - cx, dy = ty - cy;
+    if (!dx && !dy) return [cx, cy];
+    var s = Math.min((r.width / 2 + pad) / Math.abs(dx || 1e-9), (r.height / 2 + pad) / Math.abs(dy || 1e-9));
+    return [cx + dx * s, cy + dy * s];
+  }
+  function arrowSvg(A, B, color, dashed) {
+    var f = function (v) { return Math.round(v * 10) / 10; };
+    var ca = [(A.left + A.right) / 2, (A.top + A.bottom) / 2], cb = [(B.left + B.right) / 2, (B.top + B.bottom) / 2];
+    var p0 = edgePoint(A, cb[0], cb[1], 5), p1 = edgePoint(B, ca[0], ca[1], 7);
+    var dx = p1[0] - p0[0], dy = p1[1] - p0[1], dist = Math.sqrt(dx * dx + dy * dy) || 1;
+    var bend = Math.min(70, dist * 0.2), q = [(p0[0] + p1[0]) / 2 - dy / dist * bend, (p0[1] + p1[1]) / 2 + dx / dist * bend];
+    var ang = Math.atan2(p1[1] - q[1], p1[0] - q[0]), hl = 13, spread = 0.5;
+    var h1 = [p1[0] - hl * Math.cos(ang - spread), p1[1] - hl * Math.sin(ang - spread)], h2 = [p1[0] - hl * Math.cos(ang + spread), p1[1] - hl * Math.sin(ang + spread)];
+    var dash = dashed ? ' stroke-dasharray="8 6"' : '', line = ' fill="none" stroke="' + color + '" stroke-linecap="round" stroke-linejoin="round"';
+    var box = function (r) { return '<rect x="' + f(r.left - 3) + '" y="' + f(r.top - 3) + '" width="' + f(r.width + 6) + '" height="' + f(r.height + 6) + '" rx="6"' + line + ' stroke-width="2"' + dash + '/>'; };
+    return '<g class="icw-arrow' + (dashed ? ' icw-preview' : '') + '" data-color="' + color + '" data-from="' + f(p0[0]) + ',' + f(p0[1]) + '" data-to="' + f(p1[0]) + ',' + f(p1[1]) + '">' + box(A) + box(B) +
+      '<path d="M' + f(p0[0]) + ',' + f(p0[1]) + ' Q' + f(q[0]) + ',' + f(q[1]) + ' ' + f(p1[0]) + ',' + f(p1[1]) + '"' + line + ' stroke-width="3"' + dash + '/>' +
+      '<path d="M' + f(h1[0]) + ',' + f(h1[1]) + ' L' + f(p1[0]) + ',' + f(p1[1]) + ' L' + f(h2[0]) + ',' + f(h2[1]) + '"' + line + ' stroke-width="3"/></g>';
+  }
+  var arrowsEl = null, arrowsSig = '';
+  function frameArrows() {
+    var html = '';
+    S.arrows.forEach(function (a) { var A = targetBox(a.a), B = targetBox(a.b); if (A && B) html += arrowSvg(A, B, a.c, false); });
+    var m = S.arrowMode;
+    if (m && m.step === 'b' && m.a) {
+      var A = targetBox(m.a), B = liveBox(m.since);
+      if (A && B) html += arrowSvg(A, B, arrowColor(), true);
+      else if (A) html += '<g class="icw-arrow icw-preview"><rect x="' + (A.left - 3) + '" y="' + (A.top - 3) + '" width="' + (A.width + 6) + '" height="' + (A.height + 6) + '" rx="6" fill="none" stroke="' + arrowColor() + '" stroke-width="2" stroke-dasharray="8 6"/></g>';
+    }
+    if (html === arrowsSig) return;
+    arrowsSig = html;
+    if (!arrowsEl || !arrowsEl.isConnected) {
+      ensureLayer();
+      arrowsEl = document.createElementNS('http://www.w3.org/2000/svg', 'svg');
+      arrowsEl.setAttribute('id', 'icw-arrows');
+      arrowsEl.setAttribute('aria-hidden', 'true');
+      layer.insertBefore(arrowsEl, layer.firstChild);
+    }
+    arrowsEl.innerHTML = html;
+  }
+
+  /* ══ THE TOOL BAR (host) ═════════════════════════════════════════════════
+     At the bottom of the screen while a tool is in use: the steps of 🏹 with 👍 and ❌,
+     and the colours of the arrows and of 🗣️. */
+  var toolOpen = { arrow: false, say: false };
+  function renderTool() {
+    var bar = $('icw-tool'), m = S.arrowMode, saying = S.role === 'host' && S.say && S.say.from === 'me';
+    if (!m && !saying) { if (bar) bar.hidden = true; toolOpen.arrow = toolOpen.say = false; return; }
+    injectStyles();
+    if (!bar) {
+      bar = document.createElement('div'); bar.id = 'icw-tool'; bar.setAttribute('role', 'toolbar'); bar.setAttribute('aria-label', 'Teacher tools');
+      bar.setAttribute('data-dict', 'off');
+      bar.addEventListener('click', onTool);
+      document.body.appendChild(bar);
+    }
+    var h = '';
+    if (m) {
+      var ac = arrowColor();
+      h += '<div class="icw-trow"><span class="icw-ttext">🏹 ' + (m.step === 'a' ? '1. Highlight where the arrow starts.' : '2. Highlight where the arrow ends.') + '</span>' +
+        '<button type="button" class="icw-ok" data-tool="ok" title="' + (m.step === 'a' ? 'The arrow starts here' : 'The arrow ends here') + '" aria-label="' + (m.step === 'a' ? 'The arrow starts here' : 'The arrow ends here') + '">👍</button>' +
+        '<button type="button" data-tool="cancel" title="Cancel this arrow" aria-label="Cancel this arrow">❌</button>' +
+        '<button type="button" class="icw-tdot" data-tool="arrow-colours" style="background:' + ac + '" aria-expanded="' + toolOpen.arrow + '" title="Arrow colour: ' + esc(colorName(ac)) + '" aria-label="Arrow colour"></button>' +
+        (S.arrows.length && m.step === 'a' ? '<button type="button" data-tool="undo" title="Take away the last arrow" aria-label="Take away the last arrow">↩︎</button><button type="button" data-tool="clear">Remove all arrows (' + S.arrows.length + ')</button>' : '') +
+        '</div>' + (toolOpen.arrow ? grid('data-tool-c', 'arrow', ac) : '');
+    }
+    if (saying) {
+      var sc = S.say.c;
+      h += '<div class="icw-trow"><span class="icw-ttext">🗣️ How to say it</span>' +
+        '<button type="button" class="icw-tdot' + (sc ? '' : ' icw-default') + '" data-tool="say-colours" style="' + (sc ? 'background:' + sc : '') + '" aria-expanded="' + toolOpen.say + '" title="Colour of the marks: ' + (sc ? esc(colorName(sc)) : 'the usual colours') + '" aria-label="Colour of the marks">' + (sc ? '' : 'A') + '</button>' +
+        '<button type="button" data-tool="say-hide">Hide</button></div>' + (toolOpen.say ? grid('data-tool-c', 'say', sc, true) : '');
+    }
+    bar.innerHTML = h;
+    bar.hidden = false;
+  }
+  function onTool(e) {
+    e.stopPropagation();
+    var c = e.target.closest('[data-tool-c]');
+    if (c) {
+      var which = c.getAttribute('data-tool-c'), hex = c.dataset.c;
+      if (which === 'arrow') { store('icwhatuc-arrow-color', hex); toolOpen.arrow = false; kick(); }
+      else if (which === 'say' && S.say) {
+        store('icwhatuc-say-color', hex || '');
+        S.say.c = hex || '';
+        S.actions.say({ sel: S.say.pieces, c: S.say.c });
+        toolOpen.say = false;
+        if (global.PronMark) buildSay();
+      }
+      renderTool();
+      return;
+    }
+    var b = e.target.closest('[data-tool]');
+    if (!b) return;
+    var what = b.getAttribute('data-tool');
+    if (what === 'ok') arrowOk();
+    else if (what === 'cancel') arrowCancel();
+    else if (what === 'arrow-colours') { toolOpen.arrow = !toolOpen.arrow; renderTool(); }
+    else if (what === 'say-colours') { toolOpen.say = !toolOpen.say; renderTool(); }
+    else if (what === 'undo') { S.arrows.pop(); saveArrows(); renderTool(); }
+    else if (what === 'clear') { S.arrows = []; saveArrows(); renderTool(); }
+    else if (what === 'say-hide') sayButton();
   }
 
   /* ══ HOW TO SAY IT (host only) ═══════════════════════════════════════════
@@ -781,11 +1009,11 @@
       .then(function () { return global.PRON_DICT_LOADED ? null : loadScript('pron-dict.js').catch(function () { return null; }); })
       .catch(function (e) { pronLoading = null; throw e; }));
   }
-  function showSay(pieces, from) {
+  function showSay(pieces, from, c) {
     clearSay();
-    S.say = pieces && pieces.length ? { pieces: pieces, from: from || 'me', gen: -1, els: [], token: {} } : null;
+    S.say = pieces && pieces.length ? { pieces: pieces, from: from || 'me', c: okColor(c) ? c.toLowerCase() : '', gen: -1, els: [], token: {} } : null;
     if (global.HouseRail) global.HouseRail.set('icwhatuc-say', !!(S.say && S.say.from === 'me'));
-    titles();
+    titles(); renderTool();
     if (!S.say) return;
     var token = S.say.token;
     pronEngines().then(function () { if (S.say && S.say.token === token) buildSay(); }, function () {
@@ -802,8 +1030,8 @@
     if (S.say && S.say.from === 'me') { showSay(null); S.actions.say({ sel: null }); return; }
     var t = bringTarget();
     if (!t || !t.sel) { toast('First, select the words to say.'); return; }
-    showSay(t.sel, 'me');
-    S.actions.say({ sel: t.sel });
+    showSay(t.sel, 'me', store('icwhatuc-say-color'));
+    S.actions.say({ sel: t.sel, c: S.say ? S.say.c : '' });
     if (!global.PronMark) toast('Loading the pronunciation marks…');
   }
   /* the [from, to) of a piece in its block's text, as rangeForPiece finds it */
@@ -848,7 +1076,9 @@
         layer.appendChild(el);
         var anchor = T.rangeFor(model, ln.from, ln.from + 1), ar = anchor.getClientRects()[0] || anchor.getBoundingClientRect();
         el.style.transform = 'translate(' + ar.left + 'px,' + ar.top + 'px)';
-        try { PronMark.mark(el, { colours: null }); } catch (e) { el.remove(); return; }
+        var sc = S.say.c;
+        if (sc) ['--pm-stress', '--pm-connected', '--pm-tune'].forEach(function (v) { el.style.setProperty(v, sc); });
+        try { PronMark.mark(el, { colours: sc ? { stress: sc, connected: sc, intonation: sc } : null }); } catch (e) { el.remove(); return; }
         /* lay the copy's first letter exactly on the page's */
         var first = null, w = document.createTreeWalker(el, NodeFilter.SHOW_TEXT, null);
         while ((first = w.nextNode()) && !first.nodeValue.trim()) { /* the first letter */ }
@@ -952,6 +1182,7 @@
   }, true);
   document.addEventListener('pointerdown', function (e) {
     if (!S.room) return;
+    if (S.arrowMode && e.target && e.target.nodeType === 1 && !ours(e.target)) { var pe = ringTarget(e.target); if (pe) { S.mine.picked = { el: pe, t: Date.now() }; kick(); } }
     if (e.pointerType === 'touch') {
       /* a touch screen has no resting pointer: a tap rings the tapped element for two seconds,
          and with 🖱️ on it sends a ripple at that spot */
@@ -1160,7 +1391,7 @@
   }
   function clearDrawing() {
     Object.keys(drawn).forEach(clearPeerDrawing);
-    if (hasHL) for (var i = 0; i < COLORS.length; i++) try { CSS.highlights.delete('icw-c' + i); } catch (e) { /* gone */ }
+    if (hasHL) Object.keys(hlRules).forEach(function (n) { try { CSS.highlights.delete(n); } catch (e) { /* gone */ } });
     hlSig = '';
   }
   function kick() { if (!raf) raf = requestAnimationFrame(frame); }
@@ -1200,11 +1431,11 @@
     var byColor = {};
     views.forEach(function (v) {
       var list = v.ranges.concat(v.bringRanges || []);
-      if (list.length) { var c = COLORS.indexOf(v.color); (byColor[c] = byColor[c] || []).push.apply(byColor[c], list); }
+      if (list.length) { var c = hlName(v.color); (byColor[c] = byColor[c] || []).push.apply(byColor[c], list); }
     });
-    for (var i = 0; i < COLORS.length; i++) {
-      try { if (byColor[i]) CSS.highlights.set('icw-c' + i, new Highlight(...byColor[i])); else CSS.highlights.delete('icw-c' + i); } catch (e) { /* no highlights */ }
-    }
+    Object.keys(hlRules).forEach(function (n) {
+      try { if (byColor[n]) CSS.highlights.set(n, new Highlight(...byColor[n])); else CSS.highlights.delete(n); } catch (e) { /* no highlights */ }
+    });
   }
   function place(node, r, pad) {
     node.style.transform = 'translate(' + Math.round(r.left - pad) + 'px,' + Math.round(r.top - pad) + 'px)';
@@ -1213,7 +1444,7 @@
   }
   function placeName(tag, r, name, color) {
     if (tag.textContent !== name) tag.textContent = name;
-    tag.style.background = color;
+    tag.style.background = color; tag.style.color = ink(color);
     var y = r.top - 19 < 2 ? r.bottom + 3 : r.top - 19;
     tag.style.transform = 'translate(' + Math.round(Math.max(2, r.left - 3)) + 'px,' + Math.round(y) + 'px)';
     tag.hidden = false;
@@ -1279,7 +1510,7 @@
       if (v.bringEl && shown(bringR) && !sameAsRing && !v.bringRanges.length) { d.bring.hidden = false; d.bring.style.borderColor = v.color; place(d.bring, v.bringEl.getBoundingClientRect(), 5); }
       else d.bring.hidden = true;
       if (shown(bringR)) {
-        d.badge.hidden = false; d.badge.style.background = v.color;
+        d.badge.hidden = false; d.badge.style.background = v.color; d.badge.style.color = ink(v.color);
         /* placed by left/top, not transform, so the pop below grows and shrinks round its own centre */
         d.badge.style.left = Math.round(Math.min(global.innerWidth - 24, bringR.right - 4)) + 'px';
         d.badge.style.top = Math.round(bringR.top - 14) + 'px';
@@ -1299,7 +1530,7 @@
         d.cur.style.opacity = String(Math.max(0, c.fade));
         var nm = d.cur.lastChild;
         if (nm.textContent !== v.name) nm.textContent = v.name;
-        nm.style.background = v.color;
+        nm.style.background = v.color; nm.style.color = ink(v.color);
         if (c.down && !d.wasDown) { d.cur.classList.remove('icw-pulse'); void d.cur.offsetWidth; d.cur.classList.add('icw-pulse'); }
       }
       d.wasDown = c.down;
@@ -1316,7 +1547,7 @@
         if (v.badge) { var bg = document.createElement('span'); bg.className = 'icw-edgebadge'; bg.textContent = '!'; d.edge.appendChild(bg); }
         d.edge.dataset.sig = sigE;
       }
-      d.edge.style.background = v.color;
+      d.edge.style.background = v.color; d.edge.style.color = ink(v.color);
       d.edge.title = 'Go to ' + v.name;
       (side === 'top' ? edges.top : edges.bottom).push(d.edge);
     } else if (d.edge.parentNode) d.edge.parentNode.removeChild(d.edge);
@@ -1350,6 +1581,7 @@
     Object.keys(drawn).forEach(function (id) { if (!keep[id]) clearPeerDrawing(id); });
     paintSelections(views);
     frameSay();
+    frameArrows();
     raf = requestAnimationFrame(frame);       /* follows scrolling, resizing, reflow and easing */
   }
   function goTo(id) {
@@ -1399,15 +1631,17 @@
       R.add({ id: 'icwhatuc-see', icon: '👀', label: 'See the others', order: 63, pressed: prefs.see, onClick: function () { seeOthers(!prefs.see); } });
       R.add({ id: 'icwhatuc-bring', icon: '📣', label: 'Bring the others here', order: 64, onClick: function () { onBringButton(); } });
       if (S.role === 'host') R.add({ id: 'icwhatuc-say', icon: '🗣️', label: 'Show how to say the selected words', order: 65, pressed: !!(S.say && S.say.from === 'me'), onClick: function () { sayButton(); } });
+      if (S.role === 'host') R.add({ id: 'icwhatuc-arrow', icon: '🏹', label: 'Draw an arrow between two highlights', order: 66, pressed: !!S.arrowMode, onClick: function () { arrowButton(); } });
       titles();
-    } else { ['icwhatuc-cur', 'icwhatuc-hl', 'icwhatuc-see', 'icwhatuc-bring', 'icwhatuc-say'].forEach(function (id) { R.remove(id); }); closeChooser(); }
+    } else { ['icwhatuc-cur', 'icwhatuc-hl', 'icwhatuc-see', 'icwhatuc-bring', 'icwhatuc-say', 'icwhatuc-arrow'].forEach(function (id) { R.remove(id); }); closeChooser(); }
   }
   function titles() {
     var t = { 'icwhatuc-cur': prefs.cur ? 'Others see my cursor: on' : 'Others see my cursor: off',
       'icwhatuc-hl': prefs.hl ? 'Others see what I point at and select: on' : 'Others see what I point at and select: off',
       'icwhatuc-see': prefs.see ? 'I see the others: on' : 'I see the others: off',
       'icwhatuc-bring': S.role === 'host' ? 'Bring the others here: show them, or take them there' : 'Bring the others here',
-      'icwhatuc-say': S.say && S.say.from === 'me' ? 'How to say it: shown to everyone. Press to hide' : 'How to say it: select some words, then press' };
+      'icwhatuc-say': S.say && S.say.from === 'me' ? 'How to say it: shown to everyone. Press to hide' : 'How to say it: select some words, then press',
+      'icwhatuc-arrow': S.arrowMode ? 'Arrow: press to stop' : 'Arrow: join two highlights with an arrow everyone sees' };
     Object.keys(t).forEach(function (id) { var b = $(id); if (b) b.title = t[id]; });
   }
   function showCursor(v) {
@@ -1588,11 +1822,17 @@
     return '<button type="button" class="icw-dot icw-pick" data-pick="' + esc(id) + '" style="background:' + color + '" aria-expanded="' + (picking === id) + '" ' +
       'title="' + (mine ? 'Change your colour' : 'Change ' + esc(name) + '\'s colour') + '" aria-label="' + (mine ? 'Change your colour' : 'Change ' + esc(name) + '\'s colour') + '"></button>';
   }
+  /* the 140 colours in a box that scrolls; attr names what a press changes */
+  function grid(attr, value, current, withDefault) {
+    return '<div class="icw-grid" role="group" aria-label="Colours">' +
+      (withDefault ? '<button type="button" class="icw-swatch icw-default" ' + attr + '="' + esc(value) + '" data-c="" aria-pressed="' + !current + '" title="the usual colours" aria-label="the usual colours">A</button>' : '') +
+      WEB.map(function (w) {
+        return '<button type="button" class="icw-swatch" ' + attr + '="' + esc(value) + '" data-c="' + w.hex + '" style="background:' + w.hex + '" aria-pressed="' + (w.hex === current) + '" title="' + w.name + '" aria-label="' + w.name + '"></button>';
+      }).join('') + '</div>';
+  }
   function swatches(id, color) {
     if (picking !== id) return '';
-    return '<li class="icw-swatches" role="group" aria-label="Colours">' + COLORS.map(function (c, i) {
-      return '<button type="button" class="icw-swatch" data-paint="' + esc(id) + '" data-c="' + i + '" style="background:' + c + '" aria-pressed="' + (c === color) + '" title="' + COLOR_NAMES[i] + '" aria-label="' + COLOR_NAMES[i] + '"></button>';
-    }).join('') + '</li>';
+    return '<li class="icw-swatches">' + grid('data-paint', id, color) + '<span class="icw-small">' + esc(colorName(color)) + '</span></li>';
   }
   function people() {
     var mine = S.color || COLORS[0];
@@ -1652,7 +1892,7 @@
     var pk = e.target.closest('[data-pick]');
     if (pk) { picking = picking === pk.dataset.pick ? null : pk.dataset.pick; renderPanel(); return; }
     var sw = e.target.closest('[data-paint]');
-    if (sw) { setColor(sw.dataset.paint, +sw.dataset.c); picking = null; renderPanel(); return; }
+    if (sw) { setColor(sw.dataset.paint, sw.dataset.c); picking = null; renderPanel(); return; }
     var t = e.target.closest('[data-goto], [data-out]');
     if (t && t.dataset.goto) { var gp = S.peers[t.dataset.goto]; if (gp && gp.path) go(gp.path); return; }
     if (t && t.dataset.out) { remove(t.dataset.out); return; }
@@ -1761,9 +2001,27 @@
       + '#icw-panel button.icw-out{ color:var(--bad, #b0392f); }'
       + '#icw-panel button.icw-pick{ width:15px; height:15px; padding:0; border:2px solid var(--surface-2, #fff); box-shadow:0 0 0 1px var(--border, #ccc); cursor:pointer; margin-top:2px; }'
       + '#icw-panel button.icw-pick[aria-expanded="true"]{ box-shadow:0 0 0 2px var(--text-primary, #1a1a1a); }'
-      + '#icw-panel .icw-swatches{ display:flex; flex-wrap:wrap; gap:6px; padding:4px 0 6px 18px; }'
-      + '#icw-panel button.icw-swatch{ width:24px; height:24px; padding:0; border-radius:50%; border:2px solid var(--surface-2, #fff); box-shadow:0 0 0 1px var(--border, #ccc); cursor:pointer; }'
-      + '#icw-panel button.icw-swatch[aria-pressed="true"]{ box-shadow:0 0 0 2px var(--text-primary, #1a1a1a); }'
+      + '#icw-panel .icw-people li.icw-swatches{ display:block; padding:4px 0 6px 0; }'
+      + '#icw-panel .icw-people li.icw-swatches .icw-grid{ width:100%; box-sizing:border-box; }'
+      /* the 140 colours: a box that scrolls */
+      + '.icw-grid{ display:grid; grid-template-columns:repeat(auto-fill, 24px); gap:5px; max-height:148px; overflow-y:auto; overscroll-behavior:contain; padding:5px; margin:2px 0 4px;'
+      +   ' border:1px solid var(--border, #e3e3e6); border-radius:10px; background:var(--surface-1, #f7f7f8); }'
+      + '.icw-grid button.icw-swatch{ width:24px; height:24px; padding:0; border-radius:50%; border:2px solid var(--surface-2, #fff); box-shadow:0 0 0 1px rgba(0,0,0,.18); cursor:pointer; }'
+      + '.icw-grid button.icw-swatch[aria-pressed="true"]{ box-shadow:0 0 0 2px var(--text-primary, #1a1a1a); }'
+      + '.icw-grid button.icw-default, #icw-tool button.icw-default{ background:var(--surface-2, #fff); color:var(--text-primary, #1a1a1a); font:700 11px/20px var(--font-sans, system-ui, sans-serif); }'
+      + '#icw-arrows{ position:absolute; left:0; top:0; width:100%; height:100%; overflow:visible; filter:drop-shadow(0 0 1.5px var(--color-background-primary, #fff)) drop-shadow(0 0 1.5px var(--color-background-primary, #fff)); }'
+      + '#icw-tool{ position:fixed; left:0; right:0; margin:0 auto; width:max-content; max-width:calc(100vw - 16px); bottom:64px; z-index:1105; box-sizing:border-box; padding:8px 10px;'
+      +   ' border-radius:14px; background:var(--surface-2, #fff); color:var(--text-primary, #1a1a1a); border:1px solid var(--border, #e3e3e6); box-shadow:0 8px 24px rgba(0,0,0,.2);'
+      +   ' font:600 13px/1.35 var(--font-sans, system-ui, sans-serif); }'
+      + '#icw-tool[hidden]{ display:none; }'
+      + '#icw-tool .icw-trow{ display:flex; flex-wrap:wrap; align-items:center; gap:6px; }'
+      + '#icw-tool .icw-trow + .icw-trow, #icw-tool .icw-grid + .icw-trow{ margin-top:6px; padding-top:6px; border-top:1px solid var(--border, #e3e3e6); }'
+      + '#icw-tool .icw-ttext{ flex:1 1 auto; min-width:0; margin-right:4px; }'
+      + '#icw-tool button{ font:600 13px/1.2 var(--font-sans, system-ui, sans-serif); padding:6px 11px; border-radius:999px; border:1px solid var(--border, #e3e3e6); background:var(--surface-1, #f7f7f8); color:inherit; cursor:pointer; }'
+      + '#icw-tool button.icw-ok{ font-size:16px; padding:4px 12px; }'
+      + '#icw-tool button.icw-tdot{ width:26px; height:26px; padding:0; border-radius:50%; border:2px solid var(--surface-2, #fff); box-shadow:0 0 0 1px rgba(0,0,0,.25); }'
+      + '#icw-tool .icw-grid{ max-width:min(520px, calc(100vw - 40px)); }'
+      + '@media print{ #icw-tool{ display:none !important; } }'
       + '#icw-panel .icw-hint{ margin-top:-4px; }'
       /* the pronunciation copies: see-through text, PronMark's marks with a halo in the page colour */
       + '#icw-layer .icw-say{ position:absolute; left:0; top:0; white-space:pre; color:transparent !important; -webkit-text-stroke:0; line-height:normal; pointer-events:none; }'
@@ -1771,7 +2029,6 @@
       + 'html #icw-layer .icw-say .pm-v > svg, html #icw-layer .icw-say .pm-arrows{ display:block !important; }'
       + 'html #icw-layer .icw-say .pm-w::before{ display:inline-block !important; }'
       + '@media print{ #icw-layer, #icw-panel, #icw-bring, #icw-toast, #icw-follow{ display:none !important; } }';
-    for (var i = 0; i < COLORS.length; i++) css += '::highlight(icw-c' + i + '){ background-color:' + COLORS[i] + '4d; }';
     var s = document.createElement('style');
     s.id = 'icwhatuc-styles';
     s.textContent = css;
@@ -1813,8 +2070,11 @@
     persistent: function () { return !!HUB; },
     showCursor: showCursor, showHighlights: showHighlights, seeOthers: seeOthers,
     canBring: canBring, bring: bring, everyoneHere: everyoneHere, remove: remove,
-    setColor: setColor, colors: function () { return COLORS.slice(); },
+    setColor: setColor, colors: function () { return WEB.map(function (w) { return w.hex; }); },
     say: function () { sayButton(); return !!S.say; }, saying: function () { return !!S.say; },
+    arrowTool: function () { arrowButton(); return S.arrowMode ? S.arrowMode.step : null; },
+    arrowOk: function () { arrowOk(); return S.arrowMode ? S.arrowMode.step : null; }, arrowCancel: function () { arrowCancel(); },
+    arrows: function () { return S.arrows.map(function (a) { return { id: a.id, c: a.c }; }); },
     key: function (el, k) { if (k != null) { el.dataset.icwKey = k; gen++; return 'k:' + k; } return keyOf(el); },
     resolve: resolveKey,
     on: function (type, fn) { (S.listeners[type] = S.listeners[type] || []).push(fn); },
