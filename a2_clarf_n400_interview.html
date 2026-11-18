@@ -25,6 +25,13 @@
 .qa > div{ padding:7px 10px; border-radius:8px; background:var(--surface-2); border:1px solid var(--color-border-tertiary); font-size:.8667rem; line-height:1.5; }
 .qa .k{ font-weight:700; color:var(--text-accent); display:block; }
 .qa .a{ color:var(--good); font-weight:600; }
+.st-groups{ display:grid; grid-template-columns:repeat(auto-fill, minmax(17rem, 1fr)); gap:8px; margin:0 0 1rem; }
+.st-group{ background:var(--surface-2); border:1px solid var(--color-border-tertiary); border-radius:var(--border-radius-lg); padding:9px 12px; }
+.st-head{ font-size:.7333rem; font-weight:700; letter-spacing:.05em; text-transform:uppercase; color:var(--color-text-info); margin-bottom:4px; }
+.st-item{ padding:5px 0; border-top:.5px solid var(--color-border-tertiary); font-size:.8667rem; line-height:1.45; cursor:pointer; }
+.st-item:first-of-type{ border-top:none; }
+.st-q{ display:block; font-weight:600; color:var(--text-primary); }
+.st-a{ display:block; color:var(--good); }
 .pair-ctx{ font-size:.8rem; color:var(--text-secondary); font-style:italic; }
 .legal-note{ font-size:.7333rem; color:var(--text-muted); text-align:center; margin-top:.4rem; }
 </style>
@@ -54,6 +61,18 @@
     <p><strong>Small talk:</strong> give a short, friendly answer. The officer listens to your English from the first “hello”.</p>
     <p><strong>How long …?</strong> <em>for</em> + a number of years (for six years) · <em>since</em> + the year it started (since 2020).</p>
   </div>
+
+  <div class="sec-div">More small talk questions</div>
+  <p class="subtitle">The officer can ask about many things before the interview starts. Tap a question to hear it. The green line is one good answer.</p>
+  <div class="rule-box">
+    <p><strong>Answer + one more thing.</strong> Not only “Yes.” Say a little more: <em>“Yes, I drove. My son is waiting in the car.”</em></p>
+    <p><strong>“…, isn’t it?”</strong> The officer thinks you agree. Answer with the same verb: <em>It’s cold today, isn’t it?</em> — <em>Yes, it is!</em></p>
+    <p><strong>“Sorry to keep you waiting.”</strong> It is not a question. Say: <em>That’s OK.</em> / <em>No problem.</em></p>
+    <p><strong>Small talk is in the past or the present.</strong> How <b>did</b> you get here? (this morning) · How <b>are</b> you feeling? (now)</p>
+  </div>
+  <div class="st-groups" id="smallTalk"></div>
+  <p class="subtitle">Two questions that people often understand wrong:</p>
+  <div id="stCcq"></div>
 
   <div class="sec-div">Question → short answer</div>
   <div class="qa" id="shortAnswers"></div>
@@ -169,8 +188,66 @@ HouseFormClarf.build({
   ]
 });
 
+/* ── more small talk questions: [group, [question, a good answer], …] ──────
+   The same questions are on the freer page's dice (Small talk). */
+const SMALL_TALK = [
+  ['🚗 Getting here', [
+    ['How did you get here today?', 'I came by car. My brother drove me.'],
+    ['Did you drive here?', 'No, I didn’t. I took the train.'],
+    ['Was it easy to find parking?', 'Not really. I parked two blocks away.'],
+    ['How long did it take you to get here?', 'About forty minutes.'],
+    ['Where are you coming from?', 'From my house, in Kissimmee.'],
+    ['How was the traffic?', 'There was a lot of traffic on the highway.']]],
+  ['🌦️ The weather', [
+    ['How’s the weather out there?', 'It’s sunny, but it’s a little cold.'],
+    ['It’s hot today, isn’t it?', 'Yes, it is! Very hot.'],
+    ['Did you bring an umbrella?', 'Yes, I did. It’s raining a lot.']]],
+  ['⏳ Waiting', [
+    ['Sorry to keep you waiting.', 'That’s OK. No problem.'],
+    ['Did you wait long?', 'No, only about twenty minutes.'],
+    ['Have you been to this office before?', 'Yes, I came here for my fingerprints.']]],
+  ['👥 Who is with you', [
+    ['Did anyone come with you today?', 'Yes, my wife. She’s in the waiting room.'],
+    ['Do you have a lawyer with you today?', 'No, I don’t. I came alone.'],
+    ['Is that your daughter outside?', 'Yes, it is. She’s fifteen.']]],
+  ['😊 You and your day', [
+    ['How are you feeling today?', 'I’m good, thank you. A little nervous.'],
+    ['Did you take the day off work?', 'Yes, I did. I took the morning off.'],
+    ['Did you have breakfast?', 'Yes, I had coffee and toast.'],
+    ['What are you going to do after the interview?', 'I’m going to go back to work.']]],
+  ['📄 Ready to start', [
+    ['Are you ready to start?', 'Yes, I’m ready.'],
+    ['Do you know why you are here today?', 'Yes. For my citizenship interview.'],
+    ['Did you bring your appointment letter?', 'Yes, here it is.'],
+    ['Did you study for the test?', 'Yes, I did. I studied every day with my teacher.']]]
+];
+document.getElementById('smallTalk').innerHTML = SMALL_TALK.map(([head, rows]) =>
+  '<div class="st-group"><div class="st-head">' + head + '</div>' + rows.map(([q, a]) =>
+    '<div class="st-item" data-line="' + q + '" role="button" tabindex="0"><span class="st-q">🔊 ' + q + '</span><span class="st-a">' + a + '</span></div>').join('') +
+  '</div>').join('');
+document.getElementById('smallTalk').addEventListener('click', e => {
+  const d = e.target.closest('[data-line]');
+  if (d) sayIt(d.dataset.line);
+});
+
+HouseCCQ.build({
+  container: 'stCcq',
+  items: [
+    { sentence: '“Where are you coming from?”',
+      questions: [
+        { q: 'Is the officer asking about your country?', opts: ['Yes', 'No'], correct: 1,
+          why: 'No. Here it means: where were you <b>this morning</b>, before you came? “From home.” / “From work.”' }
+      ] },
+    { sentence: '“How did you get here today?”',
+      questions: [
+        { q: 'Is it about your trip to the U.S. years ago?', opts: ['Yes', 'No'], correct: 1,
+          why: 'No. <b>Today</b> = this morning. “By bus.” / “I drove.” / “My son drove me.”' }
+      ] }
+  ]
+});
+
 /* ── question → short answer ───────────────────────────────────────────── */
-const grid = (id, rows, f) => { document.getElementById(id).innerHTML = rows.map(f).join(''); };
+const grid =(id, rows, f) => { document.getElementById(id).innerHTML = rows.map(f).join(''); };
 grid('shortAnswers', [
   ['Do you …?', 'Yes, I do.', 'No, I don’t.'],
   ['Did you …?', 'Yes, I did.', 'No, I didn’t.'],
