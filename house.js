@@ -82,7 +82,7 @@
    button each, in a fixed order:
 
        ☀️/🌙 theme · 🔎 text size · 🎨 grammar colours · 🧍 stick figures ·
-       🎵 pronunciation marks · 🦾 bionic reading
+       🎵 pronunciation marks · 🦾 bionic reading · 📖 dictionary
 
    A button only appears on a page that has something for it to do.
 
@@ -105,7 +105,7 @@
    page is pushed down so the row never covers the title. Panels that open from
    a button (🔎, 🤝) open below the row.
    Orders in use: theme 0, text size 10, grammar 20, stick figures 30,
-   pronunciation 40, bionic 50, ICwhatUC 60–64 (🤝 🖱️ 🖍️ 👀 📣). Fixed chrome stays in px, like the theme toggle.
+   pronunciation 40, bionic 50, dictionary 55, ICwhatUC 60–67 (🤝 🖱️ 🖍️ 👀 📣, and the host's 🗣️ 🏹 ⭕). Fixed chrome stays in px, like the theme toggle.
    ══════════════════════════════════════════════════════════════════════════ */
 (function (global) {
   'use strict';
@@ -3747,6 +3747,27 @@
     set(k, v) { try { localStorage.setItem(k, JSON.stringify(v)); } catch (e) { /* private mode */ } }
   };
 
+  /* ── the 📖 switch: the dictionary on or off on this device (saved), for all pages ── */
+  let userOff = !!store.get('house-dict-off', false);
+  const pageOff = () => document.documentElement.getAttribute('data-dict') === 'off';
+  const dictOff = () => userOff || pageOff();
+  function setDict(on) {
+    userOff = !on; store.set('house-dict-off', userOff);
+    if (userOff) close();
+    railDict();
+    return !userOff;
+  }
+  function railDict() {
+    if (!window.HouseRail) return;
+    if (pageOff() || !document.querySelector('.page, .exercise-page')) { window.HouseRail.remove('house-dict-toggle'); return; }
+    const touch = window.matchMedia && matchMedia('(pointer: coarse)').matches;
+    const b = window.HouseRail.add({ id: 'house-dict-toggle', icon: '📖', label: 'Dictionary', order: 55, pressed: !userOff, onClick: () => setDict(userOff) });
+    window.HouseRail.set('house-dict-toggle', !userOff);
+    if (b) b.title = userOff ? 'Dictionary: off. Press to turn it on' : 'Dictionary: on (' + (touch ? 'press and hold' : 'right-click') + ' a word). Press to turn it off';
+  }
+  if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', railDict); else railDict();
+  window.addEventListener('storage', ev => { if (ev.key === 'house-dict-off') { userOff = !!store.get('house-dict-off', false); if (userOff) close(); railDict(); } });
+
   /* ── data ─────────────────────────────────────────────────────────────── */
   const files = {};
   const json = name => files[name] || (files[name] = fetch(DATA + name).then(r => (r.ok ? r.json() : null)).catch(() => null));
@@ -3849,7 +3870,7 @@
   }
   function access(node) {
     const el = node.nodeType === 1 ? node : node.parentElement;
-    if (!el || document.documentElement.getAttribute('data-dict') === 'off') return 'never';
+    if (!el || dictOff()) return 'never';
     if (el.closest('[data-dict="on"]')) return 'ok';
     if (el.closest(NEVER)) return 'never';
     if (el.closest(NOT_YET)) return 'notyet';
@@ -4350,7 +4371,7 @@ html.hd-pressing body{ -webkit-user-select:none; user-select:none; -webkit-touch
 
   /* ── one tip, the first time ───────────────────────────────────────────── */
   function hint() {
-    if (store.get('house-dict-hint-seen', false) || document.documentElement.getAttribute('data-dict') === 'off') return;
+    if (store.get('house-dict-hint-seen', false) || dictOff()) return;
     if (!document.querySelector('.page, .exercise-page')) return;
     setTimeout(() => {
       injectStyles();
@@ -4373,6 +4394,8 @@ html.hd-pressing body{ -webkit-user-select:none; user-select:none; -webkit-touch
       return open({ status: 'ok', node: document.body, toks: [{ text: String(word), joined: false }], idx: 0 }, { focus: true });
     },
     close,
+    /* the 📖 switch: HouseDict.enabled() → on or off; HouseDict.enabled(false) turns it off on this device */
+    enabled: on => (on == null ? !dictOff() : (setDict(!!on), !dictOff())),
     saved: () => store.get('house-dict-saved', []),
     /* one entry, as the card shows it: {key, display, emoji, ipa:[], say:[], senses:[{pos, level, def, ex, es}], rank, variant}, or null */
     get: key => getEntry(norm(key), glossary()),

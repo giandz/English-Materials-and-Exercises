@@ -19,7 +19,11 @@
    have one of nine automatic colours.
    🏹 Arrow (host only): an arrow from one highlight to another, on everyone's page:
    choose 🏹, highlight where it starts, 👍 (or ❌), highlight where it ends (a dashed
-   preview follows), 👍 (or ❌). Arrows stay until the host removes them.
+   preview follows), 👍 (or ❌). Arrows stay until the host removes them. An arrow
+   leaves and reaches its highlights at right angles (above or below words), with an
+   S-bend when it has to.
+   ⭕ Circle or underline (host only): choose ⭕, pick Circle or Underline, highlight
+   (a dashed preview follows), 👍 (or ❌). Each line of the words is marked.
    🗣️ How to say it (host only): PronMark's stress, connected speech and
    intonation marks over the selected words, on everyone's page, until the host
    presses it again. The marks are drawn on see-through copies of those lines laid
@@ -148,7 +152,7 @@
   function pagePath() { return location.pathname.replace(/\/index\.html?$/i, '/').toLowerCase(); }
   /* one room for the whole session; what belongs to one page carries that page's tag */
   var PAGE = pagePath(), PG = null;
-  var PAGED = { over: 1, sel: 1, cur: 1, tap: 1, bring: 1, say: 1, arrows: 1 };
+  var PAGED = { over: 1, sel: 1, cur: 1, tap: 1, bring: 1, say: 1, arrows: 1, marks: 1 };
   function pageTitle() { return String(document.title || '').replace(/^\(!\) /, '').replace(/\s+/g, ' ').trim().slice(0, 80) || PAGE.split('/').pop(); }
   /* a page of this site, from a path a peer sent: never anywhere else */
   function sameSite(path) {
@@ -165,8 +169,8 @@
      Trystero's interface has had three shapes; all are spoken here. joinRoom takes
      exactly two arguments. Handlers are registered by calling onX(fn), by assigning
      onX = fn, or (oldest) through the second item of makeAction's array. */
-  var ACTIONS = ['hello', 'over', 'sel', 'cur', 'tap', 'bring', 'go', 'kick', 'bye', 'x', 'paint', 'say', 'arrows'];
-  var REPLAY = ['hello', 'over', 'sel', 'say', 'arrows'];
+  var ACTIONS = ['hello', 'over', 'sel', 'cur', 'tap', 'bring', 'go', 'kick', 'bye', 'x', 'paint', 'say', 'arrows', 'marks'];
+  var REPLAY = ['hello', 'over', 'sel', 'say', 'arrows', 'marks'];
   function listen(room, event, handler) {
     var slot, done = false;
     try { slot = room[event]; } catch (e) { slot = undefined; }
@@ -456,7 +460,7 @@
   /* ══ STATE ═══════════════════════════════════════════════════════════════ */
   var S = {
     mod: null, room: null, self: null, role: null, name: '', sess: null, joinedAt: 0,
-    peers: {}, out: {}, actions: {}, status: 'idle', arrows: [], arrowMode: null, note: '', listeners: {},
+    peers: {}, out: {}, actions: {}, status: 'idle', arrows: [], arrowMode: null, marks: [], markMode: null, note: '', listeners: {},
     mine: { over: null, sel: null, selJson: 'null', lastOver: null, lastSel: null, lastSelAt: 0, bring: null }
   };
   var prefs = {
@@ -581,7 +585,7 @@
         if (id === S.self) removed(p.name); else { S.out[id] = true; saveOut(); if (S.peers[id]) gone(id, true); }
       });
       if (!S.room) return;
-      if (!here(p)) { p.over = null; p.sel = null; p.cur = null; p.bring = null; p.dirty = true; if (S.say && S.say.from === p.id) showSay(null); if (S.arrowsFrom === p.id) S.arrows = []; }
+      if (!here(p)) { p.over = null; p.sel = null; p.cur = null; p.bring = null; p.dirty = true; if (S.say && S.say.from === p.id) showSay(null); if (S.arrowsFrom === p.id) S.arrows = []; if (S.marksFrom === p.id) S.marks = []; }
       assignColors(); renderPanel(); kick();
       if (p.host && S.role !== 'host') hostIs(p, fresh || wasHere);
       if (fresh) emit('join', publicPeer(p));
@@ -621,6 +625,11 @@
       S.arrows = Array.isArray(d.list) ? d.list.slice(0, 30).map(cleanArrow).filter(Boolean) : [];
       S.arrowsFrom = p.id; kick();
     });
+    S.actions.marks = makeAction('marks', function (d, p) {
+      if (!p.host) return;
+      S.marks = Array.isArray(d.list) ? d.list.slice(0, MAX_MARKS).map(cleanMark).filter(Boolean) : [];
+      S.marksFrom = p.id; kick();
+    });
     S.actions.say = makeAction('say', function (d, p) {
       if (!p.host) return;
       showSay(Array.isArray(d.sel) ? cleanPieces(d.sel) : null, p.id, d.c);
@@ -629,8 +638,11 @@
       var fns = S.listeners[String(d.t)];
       if (fns) fns.forEach(function (fn) { try { fn(d.d, publicPeer(p)); } catch (e) { console.warn(e); } });
     });
-    S.arrows = []; S.arrowMode = null;
-    if (sess.role === 'host') { try { S.arrows = (JSON.parse(sessionStorage.getItem('icwhatuc-arrows-' + PG) || '[]') || []).map(cleanArrow).filter(Boolean); } catch (e) { S.arrows = []; } }
+    S.arrows = []; S.arrowMode = null; S.marks = []; S.markMode = null;
+    if (sess.role === 'host') {
+      try { S.arrows = (JSON.parse(sessionStorage.getItem('icwhatuc-arrows-' + PG) || '[]') || []).map(cleanArrow).filter(Boolean); } catch (e) { S.arrows = []; }
+      try { S.marks = (JSON.parse(sessionStorage.getItem('icwhatuc-marks-' + PG) || '[]') || []).map(cleanMark).filter(Boolean); } catch (e) { S.marks = []; }
+    }
     hub.attach(S.client);                                  /* the people already here, and what they show */
 
     assignColors();
@@ -657,12 +669,14 @@
     S.actions.sel({ p: prefs.hl ? S.mine.sel : null });
     if (S.role === 'host' && S.say && S.say.from === 'me') S.actions.say({ sel: S.say.pieces, c: S.say.c });
     if (S.role === 'host' && S.arrows.length) S.actions.arrows({ list: S.arrows });
+    if (S.role === 'host' && S.marks.length) S.actions.marks({ list: S.marks });
   }
   function gone(id, quiet) {
     var p = S.peers[id];
     if (!p) return;
     if (S.say && S.say.from === id) showSay(null);
     if (S.arrowsFrom === id) S.arrows = [];
+    if (S.marksFrom === id) S.marks = [];
     delete S.peers[id];
     if (p.name && !quiet) { S.note = p.name + (here(p) ? ' left this page.' : ' left.'); emit('leave', publicPeer(p)); }
     assignColors(); renderPanel(); clearPeerDrawing(id); kick();
@@ -676,7 +690,7 @@
     }
     Object.keys(S.peers).forEach(clearPeerDrawing);
     S.peers = {}; S.actions = {};
-    clearDrawing(); markTab(false); cur.on = false; follow(null); clearSay(); S.say = null; S.arrows = []; S.arrowMode = null; renderTool();
+    clearDrawing(); markTab(false); cur.on = false; follow(null); clearSay(); S.say = null; S.arrows = []; S.arrowMode = null; S.marks = []; S.markMode = null; renderTool();
     S.mine.bring = null;
   }
   function leave() {
@@ -818,10 +832,10 @@
   }
   /* what the host has highlighted for an arrow: a selection, or else the last thing they tapped since this step began */
   function arrowTarget(since) {
-    var t = bringTarget();
-    if (t && t.sel) return { sel: t.sel, k: null };
-    var pk = S.mine.picked;
+    if (S.mine.sel) return { sel: S.mine.sel, k: null };          /* words selected right now */
+    var pk = S.mine.picked;                                        /* else something tapped in this step (the tap may have just cleared a selection) */
     if (pk && pk.t >= since && pk.el && pk.el.isConnected) return { sel: null, k: keyOf(pk.el) };
+    if (S.mine.lastSel && S.mine.lastSelAt >= since && Date.now() - S.mine.lastSelAt < 2500) return { sel: S.mine.lastSel, k: null };
     return null;
   }
   function arrowColor() { var c = store('icwhatuc-arrow-color'); return okColor(c) ? c.toLowerCase() : (S.color || COLORS[0]); }
@@ -833,6 +847,7 @@
   function arrowButton() {
     if (S.role !== 'host' || !S.room) return;
     if (S.arrowMode) { arrowCancel(); return; }
+    if (S.markMode) { S.markMode = null; railMark(); }
     S.arrowMode = { step: 'a', since: Date.now(), a: null };
     renderTool(); railArrow();
   }
@@ -858,11 +873,54 @@
   function arrowCancel() { S.arrowMode = null; renderTool(); railArrow(); kick(); }
   function railArrow() { if (global.HouseRail) global.HouseRail.set('icwhatuc-arrow', !!S.arrowMode); titles(); }
 
-  /* where an end of an arrow is on my page: the box round its words or its element */
-  /* found on my page: kept beside the arrow, not in it, so the arrow itself stays plain data to send */
-  var found = new WeakMap();
-  function targetBox(t) {
+  /* ══ ⭕ CIRCLE OR UNDERLINE (host only) ═══════════════════════════════════
+     A mark on a highlight: each line of the words is circled or underlined (a tapped
+     element is marked as one box). Choose ⭕, pick the shape, highlight, 👍 or ❌;
+     the host sees a dashed preview while highlighting. */
+  var MAX_MARKS = 40;
+  function cleanMark(m) {
+    if (!m || typeof m !== 'object') return null;
+    var t = cleanTarget(m.t);
     if (!t) return null;
+    return { id: String(m.id || random(6)).slice(0, 12), t: t, s: m.s === 'line' ? 'line' : 'circle', c: okColor(m.c) ? m.c.toLowerCase() : COLORS[0] };
+  }
+  function markColor() { var c = store('icwhatuc-mark-color'); return okColor(c) ? c.toLowerCase() : (S.color || COLORS[0]); }
+  function markShape() { return store('icwhatuc-mark-shape') === 'line' ? 'line' : 'circle'; }
+  function setShape(s) { store('icwhatuc-mark-shape', s === 'line' ? 'line' : 'circle'); renderTool(); kick(); }
+  function saveMarks() {
+    try { sessionStorage.setItem('icwhatuc-marks-' + PG, JSON.stringify(S.marks)); } catch (e) { /* fine */ }
+    S.actions.marks({ list: S.marks });
+    kick();
+  }
+  function markButton() {
+    if (S.role !== 'host' || !S.room) return;
+    if (S.markMode) { markCancel(); return; }
+    if (S.arrowMode) { S.arrowMode = null; railArrow(); }
+    S.markMode = { since: Date.now() };
+    renderTool(); railMark(); kick();
+  }
+  function markOk() {
+    var m = S.markMode;
+    if (!m) return;
+    var t = arrowTarget(m.since);
+    if (!t) { toast('First, select some words or tap something.'); return; }
+    S.marks.push({ id: random(6), t: t, s: markShape(), c: markColor() });
+    if (S.marks.length > MAX_MARKS) S.marks.shift();
+    S.markMode = null;
+    try { global.getSelection().removeAllRanges(); } catch (e) { /* fine */ }
+    S.mine.picked = null;
+    saveMarks(); renderTool(); railMark();
+    toast(named().length ? 'Everyone sees the mark now.' : 'The mark is placed.');
+  }
+  function markCancel() { S.markMode = null; renderTool(); railMark(); kick(); }
+  function railMark() { if (global.HouseRail) global.HouseRail.set('icwhatuc-mark', !!S.markMode); titles(); }
+
+  /* ══ WHERE THINGS ARE ON MY PAGE ═════════════════════════════════════════
+     An end of an arrow, or a mark, is found on each person's own layout: the lines
+     of its words, or its element's box. What is found is kept beside the target,
+     not in it, so the target itself stays plain data to send. */
+  var found = new WeakMap();
+  function lookup(t) {
     var f = found.get(t);
     if (!f || f.gen !== gen || (f.el && !f.el.isConnected)) {
       f = { gen: gen, ranges: [], el: null };
@@ -870,51 +928,123 @@
       else if (t.k) f.el = resolveKey(t.k);
       found.set(t, f);
     }
-    return boxOf(f.ranges, f.el);
+    return f;
   }
-  function boxOf(ranges, elx) {
-    var L = Infinity, T = Infinity, R = -Infinity, B = -Infinity, any = false;
-    (ranges || []).forEach(function (r) { [].forEach.call(r.getClientRects(), function (x) { if (!x.width) return; any = true; L = Math.min(L, x.left); T = Math.min(T, x.top); R = Math.max(R, x.right); B = Math.max(B, x.bottom); }); });
-    if (!any && elx && elx.isConnected) { var e = elx.getBoundingClientRect(); if (e.width || e.height) return e; }
-    return any ? { left: L, top: T, right: R, bottom: B, width: R - L, height: B - T } : null;
+  /* the rectangles of some ranges, joined into one box per line */
+  function linesOf(ranges) {
+    var rs = [];
+    (ranges || []).forEach(function (r) { [].forEach.call(r.getClientRects(), function (x) { if (x.width > 0.5 && x.height > 0.5) rs.push({ left: x.left, top: x.top, right: x.right, bottom: x.bottom }); }); });
+    rs.sort(function (a, b) { return a.top - b.top || a.left - b.left; });
+    var out = [];
+    rs.forEach(function (x) {
+      var l = out[out.length - 1];
+      if (l) {
+        var ov = Math.min(l.bottom, x.bottom) - Math.max(l.top, x.top), hm = Math.min(l.bottom - l.top, x.bottom - x.top);
+        if (ov > hm * 0.5) { l.left = Math.min(l.left, x.left); l.right = Math.max(l.right, x.right); l.top = Math.min(l.top, x.top); l.bottom = Math.max(l.bottom, x.bottom); return; }
+      }
+      out.push({ left: x.left, top: x.top, right: x.right, bottom: x.bottom });
+    });
+    out.forEach(function (l) { l.width = l.right - l.left; l.height = l.bottom - l.top; });
+    return out;
   }
-  /* the preview's second end: what the host has highlighted right now */
-  function liveBox(since) {
+  function rectOf(el) { var e = el.getBoundingClientRect(); return e.width || e.height ? { left: e.left, top: e.top, right: e.right, bottom: e.bottom, width: e.width, height: e.height } : null; }
+  /* a place on my page: { lines, box, text } — text: words, so only above or below them */
+  function spot(lines, el) {
+    if (lines && lines.length) {
+      var L = Infinity, T = Infinity, R = -Infinity, B = -Infinity;
+      lines.forEach(function (l) { L = Math.min(L, l.left); T = Math.min(T, l.top); R = Math.max(R, l.right); B = Math.max(B, l.bottom); });
+      return { lines: lines, box: { left: L, top: T, right: R, bottom: B, width: R - L, height: B - T }, text: true };
+    }
+    var r = el && el.isConnected ? rectOf(el) : null;
+    return r ? { lines: [r], box: r, text: false } : null;
+  }
+  function targetPlace(t) { if (!t) return null; var f = lookup(t); return spot(linesOf(f.ranges), f.el); }
+  function targetBox(t) { var p = targetPlace(t); return p && p.box; }
+  /* what the host has highlighted right now (for the previews) */
+  function livePlace(since) {
     var r = selfRanges();
-    if (r.length) return boxOf(r, null);
+    if (r.length) return spot(linesOf(r), null);
     var pk = S.mine.picked;
-    return pk && pk.t >= since && pk.el && pk.el.isConnected ? pk.el.getBoundingClientRect() : null;
+    return pk && pk.t >= since && pk.el && pk.el.isConnected ? spot(null, pk.el) : null;
   }
-  function edgePoint(r, tx, ty, pad) {
-    var cx = (r.left + r.right) / 2, cy = (r.top + r.bottom) / 2, dx = tx - cx, dy = ty - cy;
-    if (!dx && !dy) return [cx, cy];
-    var s = Math.min((r.width / 2 + pad) / Math.abs(dx || 1e-9), (r.height / 2 + pad) / Math.abs(dy || 1e-9));
-    return [cx + dx * s, cy + dy * s];
+
+  /* ══ ARROW SHAPES ════════════════════════════════════════════════════════
+     An arrow leaves its first highlight at a right angle to one side and reaches the
+     second at a right angle too. Words are left from above or below (never through
+     the line), elements from any side. Of the possible pairs of sides, the shortest
+     one that leaves towards the other end and arrives from outside is used; that gives
+     a straight arrow, an L, an S-bend between lines, or an arch over the line. */
+  var PAD_FROM = 6, PAD_TO = 7;
+  function sidesOf(P) {
+    var f = P.lines[0], l = P.lines[P.lines.length - 1], b = P.box, out = [
+      { s: 'top', p: [(f.left + f.right) / 2, f.top], n: [0, -1] },
+      { s: 'bottom', p: [(l.left + l.right) / 2, l.bottom], n: [0, 1] }];
+    if (!P.text) out.push({ s: 'left', p: [b.left, (b.top + b.bottom) / 2], n: [-1, 0] }, { s: 'right', p: [b.right, (b.top + b.bottom) / 2], n: [1, 0] });
+    return out;
   }
-  function arrowSvg(A, B, color, dashed) {
-    var f = function (v) { return Math.round(v * 10) / 10; };
-    var ca = [(A.left + A.right) / 2, (A.top + A.bottom) / 2], cb = [(B.left + B.right) / 2, (B.top + B.bottom) / 2];
-    var p0 = edgePoint(A, cb[0], cb[1], 5), p1 = edgePoint(B, ca[0], ca[1], 7);
-    var dx = p1[0] - p0[0], dy = p1[1] - p0[1], dist = Math.sqrt(dx * dx + dy * dy) || 1;
-    var bend = Math.min(70, dist * 0.2), q = [(p0[0] + p1[0]) / 2 - dy / dist * bend, (p0[1] + p1[1]) / 2 + dx / dist * bend];
-    var ang = Math.atan2(p1[1] - q[1], p1[0] - q[0]), hl = 13, spread = 0.5;
+  function clamp(v, a, b) { return Math.max(a, Math.min(b, v)); }
+  function route(PA, PB) {
+    var best = null;
+    sidesOf(PA).forEach(function (a) {
+      sidesOf(PB).forEach(function (b) {
+        var p0 = [a.p[0] + a.n[0] * PAD_FROM, a.p[1] + a.n[1] * PAD_FROM], p1 = [b.p[0] + b.n[0] * PAD_TO, b.p[1] + b.n[1] * PAD_TO];
+        var v = [p1[0] - p0[0], p1[1] - p0[1]], len = Math.sqrt(v[0] * v[0] + v[1] * v[1]) || 1;
+        var da = a.n[0] * v[0] + a.n[1] * v[1], db = -(b.n[0] * v[0] + b.n[1] * v[1]);
+        var pen = function (d) { return d > 4 ? 0 : 40 + Math.min(200, 4 - d) * 1.5; };
+        var cost = len + pen(da) + pen(db) + (a.s === 'bottom' ? 3 : 0) + (b.s === 'bottom' ? 3 : 0);
+        if (!best || cost < best.cost) best = { cost: cost, a: a, b: b, p0: p0, p1: p1, v: v, len: len, da: da, db: db };
+      });
+    });
+    var r = best, ka, kb;
+    if (r.a.n[0] * r.b.n[0] + r.a.n[1] * r.b.n[1] > 0.5) {
+      /* both sides face the same way: an arch, higher on the side that is further back */
+      var base = clamp(24 + r.len * 0.18, 28, 90), extra = r.a.n[0] * r.v[0] + r.a.n[1] * r.v[1];
+      ka = base + Math.max(0, extra); kb = base + Math.max(0, -extra);
+    } else {
+      ka = clamp(Math.abs(r.da) * 0.55, 14, 150); kb = clamp(Math.abs(r.db) * 0.55, 14, 150);
+      if (r.a.n[0] * r.b.n[0] + r.a.n[1] * r.b.n[1] > -0.5) { ka = Math.max(ka, 24); kb = Math.max(kb, 24); }   /* an L */
+    }
+    r.c1 = [r.p0[0] + r.a.n[0] * ka, r.p0[1] + r.a.n[1] * ka];
+    r.c2 = [r.p1[0] + r.b.n[0] * kb, r.p1[1] + r.b.n[1] * kb];
+    return r;
+  }
+  function rd(v) { return Math.round(v * 10) / 10; }
+  function strokeAttrs(color) { return ' fill="none" stroke="' + color + '" stroke-linecap="round" stroke-linejoin="round"'; }
+  function arrowSvg(PA, PB, color, dashed) {
+    var r = route(PA, PB), p0 = r.p0, p1 = r.p1;
+    var ang = Math.atan2(-r.b.n[1], -r.b.n[0]), hl = 13, spread = 0.5;   /* the head points straight in */
     var h1 = [p1[0] - hl * Math.cos(ang - spread), p1[1] - hl * Math.sin(ang - spread)], h2 = [p1[0] - hl * Math.cos(ang + spread), p1[1] - hl * Math.sin(ang + spread)];
-    var dash = dashed ? ' stroke-dasharray="8 6"' : '', line = ' fill="none" stroke="' + color + '" stroke-linecap="round" stroke-linejoin="round"';
-    var box = function (r) { return '<rect x="' + f(r.left - 3) + '" y="' + f(r.top - 3) + '" width="' + f(r.width + 6) + '" height="' + f(r.height + 6) + '" rx="6"' + line + ' stroke-width="2"' + dash + '/>'; };
-    return '<g class="icw-arrow' + (dashed ? ' icw-preview' : '') + '" data-color="' + color + '" data-from="' + f(p0[0]) + ',' + f(p0[1]) + '" data-to="' + f(p1[0]) + ',' + f(p1[1]) + '">' + box(A) + box(B) +
-      '<path d="M' + f(p0[0]) + ',' + f(p0[1]) + ' Q' + f(q[0]) + ',' + f(q[1]) + ' ' + f(p1[0]) + ',' + f(p1[1]) + '"' + line + ' stroke-width="3"' + dash + '/>' +
-      '<path d="M' + f(h1[0]) + ',' + f(h1[1]) + ' L' + f(p1[0]) + ',' + f(p1[1]) + ' L' + f(h2[0]) + ',' + f(h2[1]) + '"' + line + ' stroke-width="3"/></g>';
+    var dash = dashed ? ' stroke-dasharray="8 6"' : '', line = strokeAttrs(color);
+    var boxes = function (P) { return P.lines.map(function (l) { return '<rect x="' + rd(l.left - 3) + '" y="' + rd(l.top - 3) + '" width="' + rd(l.width + 6) + '" height="' + rd(l.height + 6) + '" rx="6"' + line + ' stroke-width="2"' + dash + '/>'; }).join(''); };
+    return '<g class="icw-arrow' + (dashed ? ' icw-preview' : '') + '" data-color="' + color + '" data-from="' + rd(p0[0]) + ',' + rd(p0[1]) + '" data-to="' + rd(p1[0]) + ',' + rd(p1[1]) + '" data-sides="' + r.a.s + '>' + r.b.s + '">' + boxes(PA) + boxes(PB) +
+      '<path class="icw-line" d="M' + rd(p0[0]) + ',' + rd(p0[1]) + ' C' + rd(r.c1[0]) + ',' + rd(r.c1[1]) + ' ' + rd(r.c2[0]) + ',' + rd(r.c2[1]) + ' ' + rd(p1[0]) + ',' + rd(p1[1]) + '"' + line + ' stroke-width="3"' + dash + '/>' +
+      '<path class="icw-head" d="M' + rd(h1[0]) + ',' + rd(h1[1]) + ' L' + rd(p1[0]) + ',' + rd(p1[1]) + ' L' + rd(h2[0]) + ',' + rd(h2[1]) + '"' + line + ' stroke-width="3"/></g>';
+  }
+  function markSvg(P, shape, color, dashed) {
+    var dash = dashed ? ' stroke-dasharray="8 6"' : '', line = strokeAttrs(color), h = '';
+    P.lines.forEach(function (l) {
+      if (shape === 'line') {
+        var y = l.bottom + 3;
+        h += '<path d="M' + rd(l.left) + ',' + rd(y) + ' L' + rd(l.right) + ',' + rd(y) + '"' + line + ' stroke-width="3"' + dash + '/>';
+      } else {
+        var px = P.text ? 7 : 6, py = P.text ? 4 : 6, w = l.width + px * 2, ht = l.height + py * 2, rr = Math.min(ht / 2, P.text ? ht / 2 : 22);
+        h += '<rect x="' + rd(l.left - px) + '" y="' + rd(l.top - py) + '" width="' + rd(w) + '" height="' + rd(ht) + '" rx="' + rd(rr) + '"' + line + ' stroke-width="2.5"' + dash + '/>';
+      }
+    });
+    return '<g class="icw-mark' + (dashed ? ' icw-preview' : '') + '" data-shape="' + shape + '" data-color="' + color + '" data-lines="' + P.lines.length + '">' + h + '</g>';
   }
   var arrowsEl = null, arrowsSig = '';
   function frameArrows() {
     var html = '';
-    S.arrows.forEach(function (a) { var A = targetBox(a.a), B = targetBox(a.b); if (A && B) html += arrowSvg(A, B, a.c, false); });
+    S.marks.forEach(function (m) { var P = targetPlace(m.t); if (P) html += markSvg(P, m.s, m.c, false); });
+    S.arrows.forEach(function (a) { var A = targetPlace(a.a), B = targetPlace(a.b); if (A && B) html += arrowSvg(A, B, a.c, false); });
     var m = S.arrowMode;
     if (m && m.step === 'b' && m.a) {
-      var A = targetBox(m.a), B = liveBox(m.since);
+      var A = targetPlace(m.a), B = livePlace(m.since);
       if (A && B) html += arrowSvg(A, B, arrowColor(), true);
-      else if (A) html += '<g class="icw-arrow icw-preview"><rect x="' + (A.left - 3) + '" y="' + (A.top - 3) + '" width="' + (A.width + 6) + '" height="' + (A.height + 6) + '" rx="6" fill="none" stroke="' + arrowColor() + '" stroke-width="2" stroke-dasharray="8 6"/></g>';
+      else if (A) html += '<g class="icw-arrow icw-preview">' + A.lines.map(function (l) { return '<rect x="' + rd(l.left - 3) + '" y="' + rd(l.top - 3) + '" width="' + rd(l.width + 6) + '" height="' + rd(l.height + 6) + '" rx="6" fill="none" stroke="' + arrowColor() + '" stroke-width="2" stroke-dasharray="8 6"/>'; }).join('') + '</g>';
     }
+    if (S.markMode) { var P = livePlace(S.markMode.since); if (P) html += markSvg(P, markShape(), markColor(), true); }
     if (html === arrowsSig) return;
     arrowsSig = html;
     if (!arrowsEl || !arrowsEl.isConnected) {
@@ -928,12 +1058,15 @@
   }
 
   /* ══ THE TOOL BAR (host) ═════════════════════════════════════════════════
-     At the bottom of the screen while a tool is in use: the steps of 🏹 with 👍 and ❌,
-     and the colours of the arrows and of 🗣️. */
-  var toolOpen = { arrow: false, say: false };
+     At the bottom of the screen while a tool is in use: the steps of 🏹 and ⭕ with
+     👍 and ❌, and the colours of the arrows, the marks and 🗣️. */
+  var toolOpen = { arrow: false, say: false, mark: false };
+  function toolDot(tool, color, open, title) {
+    return '<button type="button" class="icw-tdot" data-tool="' + tool + '" style="background:' + color + '" aria-expanded="' + open + '" title="' + title + ': ' + esc(colorName(color)) + '" aria-label="' + title + '"></button>';
+  }
   function renderTool() {
-    var bar = $('icw-tool'), m = S.arrowMode, saying = S.role === 'host' && S.say && S.say.from === 'me';
-    if (!m && !saying) { if (bar) bar.hidden = true; toolOpen.arrow = toolOpen.say = false; return; }
+    var bar = $('icw-tool'), m = S.arrowMode, mk = S.markMode, saying = S.role === 'host' && S.say && S.say.from === 'me';
+    if (!m && !mk && !saying) { if (bar) bar.hidden = true; toolOpen.arrow = toolOpen.say = toolOpen.mark = false; return; }
     injectStyles();
     if (!bar) {
       bar = document.createElement('div'); bar.id = 'icw-tool'; bar.setAttribute('role', 'toolbar'); bar.setAttribute('aria-label', 'Teacher tools');
@@ -943,13 +1076,25 @@
     }
     var h = '';
     if (m) {
-      var ac = arrowColor();
+      var ac = arrowColor(), okText = m.step === 'a' ? 'The arrow starts here' : 'The arrow ends here';
       h += '<div class="icw-trow"><span class="icw-ttext">🏹 ' + (m.step === 'a' ? '1. Highlight where the arrow starts.' : '2. Highlight where the arrow ends.') + '</span>' +
-        '<button type="button" class="icw-ok" data-tool="ok" title="' + (m.step === 'a' ? 'The arrow starts here' : 'The arrow ends here') + '" aria-label="' + (m.step === 'a' ? 'The arrow starts here' : 'The arrow ends here') + '">👍</button>' +
+        '<button type="button" class="icw-ok" data-tool="ok" title="' + okText + '" aria-label="' + okText + '">👍</button>' +
         '<button type="button" data-tool="cancel" title="Cancel this arrow" aria-label="Cancel this arrow">❌</button>' +
-        '<button type="button" class="icw-tdot" data-tool="arrow-colours" style="background:' + ac + '" aria-expanded="' + toolOpen.arrow + '" title="Arrow colour: ' + esc(colorName(ac)) + '" aria-label="Arrow colour"></button>' +
-        (S.arrows.length && m.step === 'a' ? '<button type="button" data-tool="undo" title="Take away the last arrow" aria-label="Take away the last arrow">↩︎</button><button type="button" data-tool="clear">Remove all arrows (' + S.arrows.length + ')</button>' : '') +
+        toolDot('arrow-colours', ac, toolOpen.arrow, 'Arrow colour') +
+        (S.arrows.length && m.step === 'a' ? '<button type="button" data-tool="undo" title="Take away the last arrow" aria-label="Take away the last arrow">↩️</button><button type="button" data-tool="clear">Remove all arrows (' + S.arrows.length + ')</button>' : '') +
         '</div>' + (toolOpen.arrow ? grid('data-tool-c', 'arrow', ac) : '');
+    }
+    if (mk) {
+      var mc = markColor(), sh = markShape();
+      h += '<div class="icw-trow"><span class="icw-ttext">⭕ Highlight what to ' + (sh === 'line' ? 'underline' : 'circle') + '.</span>' +
+        '<span class="icw-seg" role="group" aria-label="Shape">' +
+        '<button type="button" data-tool="shape-circle" aria-pressed="' + (sh === 'circle') + '" title="Circle it">⭕ Circle</button>' +
+        '<button type="button" data-tool="shape-line" aria-pressed="' + (sh === 'line') + '" title="Underline it"><u>Underline</u></button></span>' +
+        '<button type="button" class="icw-ok" data-tool="mark-ok" title="Mark it" aria-label="Mark it">👍</button>' +
+        '<button type="button" data-tool="mark-cancel" title="Cancel this mark" aria-label="Cancel this mark">❌</button>' +
+        toolDot('mark-colours', mc, toolOpen.mark, 'Mark colour') +
+        (S.marks.length ? '<button type="button" data-tool="mark-undo" title="Take away the last mark" aria-label="Take away the last mark">↩️</button><button type="button" data-tool="mark-clear">Remove all marks (' + S.marks.length + ')</button>' : '') +
+        '</div>' + (toolOpen.mark ? grid('data-tool-c', 'mark', mc) : '');
     }
     if (saying) {
       var sc = S.say.c;
@@ -966,6 +1111,7 @@
     if (c) {
       var which = c.getAttribute('data-tool-c'), hex = c.dataset.c;
       if (which === 'arrow') { store('icwhatuc-arrow-color', hex); toolOpen.arrow = false; kick(); }
+      else if (which === 'mark') { store('icwhatuc-mark-color', hex); toolOpen.mark = false; kick(); }
       else if (which === 'say' && S.say) {
         store('icwhatuc-say-color', hex || '');
         S.say.c = hex || '';
@@ -982,9 +1128,15 @@
     if (what === 'ok') arrowOk();
     else if (what === 'cancel') arrowCancel();
     else if (what === 'arrow-colours') { toolOpen.arrow = !toolOpen.arrow; renderTool(); }
-    else if (what === 'say-colours') { toolOpen.say = !toolOpen.say; renderTool(); }
     else if (what === 'undo') { S.arrows.pop(); saveArrows(); renderTool(); }
     else if (what === 'clear') { S.arrows = []; saveArrows(); renderTool(); }
+    else if (what === 'mark-ok') markOk();
+    else if (what === 'mark-cancel') markCancel();
+    else if (what === 'mark-colours') { toolOpen.mark = !toolOpen.mark; renderTool(); }
+    else if (what === 'shape-circle' || what === 'shape-line') setShape(what === 'shape-line' ? 'line' : 'circle');
+    else if (what === 'mark-undo') { S.marks.pop(); saveMarks(); renderTool(); }
+    else if (what === 'mark-clear') { S.marks = []; saveMarks(); renderTool(); }
+    else if (what === 'say-colours') { toolOpen.say = !toolOpen.say; renderTool(); }
     else if (what === 'say-hide') sayButton();
   }
 
@@ -1182,7 +1334,7 @@
   }, true);
   document.addEventListener('pointerdown', function (e) {
     if (!S.room) return;
-    if (S.arrowMode && e.target && e.target.nodeType === 1 && !ours(e.target)) { var pe = ringTarget(e.target); if (pe) { S.mine.picked = { el: pe, t: Date.now() }; kick(); } }
+    if ((S.arrowMode || S.markMode) && e.target && e.target.nodeType === 1 && !ours(e.target)) { var pe = ringTarget(e.target); if (pe) { S.mine.picked = { el: pe, t: Date.now() }; kick(); } }
     if (e.pointerType === 'touch') {
       /* a touch screen has no resting pointer: a tap rings the tapped element for two seconds,
          and with 🖱️ on it sends a ripple at that spot */
@@ -1617,7 +1769,7 @@
   mo.observe(document.body, { childList: true, subtree: true, characterData: true });
 
   /* ══ RAIL BUTTONS ════════════════════════════════════════════════════════
-     🤝 60 (from the loader) · 🖱️ 61 · 🖍️ 62 · 👀 63 · 📣 64 */
+     🤝 60 (from the loader) · 🖱️ 61 · 🖍️ 62 · 👀 63 · 📣 64 · host only: 🗣️ 65 · 🏹 66 · ⭕ 67 */
   function rail(on) {
     var R = global.HouseRail;
     document.documentElement.classList.toggle('icw-own', !!(on && prefs.hl));
@@ -1632,8 +1784,9 @@
       R.add({ id: 'icwhatuc-bring', icon: '📣', label: 'Bring the others here', order: 64, onClick: function () { onBringButton(); } });
       if (S.role === 'host') R.add({ id: 'icwhatuc-say', icon: '🗣️', label: 'Show how to say the selected words', order: 65, pressed: !!(S.say && S.say.from === 'me'), onClick: function () { sayButton(); } });
       if (S.role === 'host') R.add({ id: 'icwhatuc-arrow', icon: '🏹', label: 'Draw an arrow between two highlights', order: 66, pressed: !!S.arrowMode, onClick: function () { arrowButton(); } });
+      if (S.role === 'host') R.add({ id: 'icwhatuc-mark', icon: '⭕', label: 'Circle or underline a highlight', order: 67, pressed: !!S.markMode, onClick: function () { markButton(); } });
       titles();
-    } else { ['icwhatuc-cur', 'icwhatuc-hl', 'icwhatuc-see', 'icwhatuc-bring', 'icwhatuc-say', 'icwhatuc-arrow'].forEach(function (id) { R.remove(id); }); closeChooser(); }
+    } else { ['icwhatuc-cur', 'icwhatuc-hl', 'icwhatuc-see', 'icwhatuc-bring', 'icwhatuc-say', 'icwhatuc-arrow', 'icwhatuc-mark'].forEach(function (id) { R.remove(id); }); closeChooser(); }
   }
   function titles() {
     var t = { 'icwhatuc-cur': prefs.cur ? 'Others see my cursor: on' : 'Others see my cursor: off',
@@ -1641,7 +1794,8 @@
       'icwhatuc-see': prefs.see ? 'I see the others: on' : 'I see the others: off',
       'icwhatuc-bring': S.role === 'host' ? 'Bring the others here: show them, or take them there' : 'Bring the others here',
       'icwhatuc-say': S.say && S.say.from === 'me' ? 'How to say it: shown to everyone. Press to hide' : 'How to say it: select some words, then press',
-      'icwhatuc-arrow': S.arrowMode ? 'Arrow: press to stop' : 'Arrow: join two highlights with an arrow everyone sees' };
+      'icwhatuc-arrow': S.arrowMode ? 'Arrow: press to stop' : 'Arrow: join two highlights with an arrow everyone sees',
+      'icwhatuc-mark': S.markMode ? 'Circle or underline: press to stop' : 'Circle or underline: mark a highlight so everyone sees it' };
     Object.keys(t).forEach(function (id) { var b = $(id); if (b) b.title = t[id]; });
   }
   function showCursor(v) {
@@ -2019,6 +2173,11 @@
       + '#icw-tool .icw-ttext{ flex:1 1 auto; min-width:0; margin-right:4px; }'
       + '#icw-tool button{ font:600 13px/1.2 var(--font-sans, system-ui, sans-serif); padding:6px 11px; border-radius:999px; border:1px solid var(--border, #e3e3e6); background:var(--surface-1, #f7f7f8); color:inherit; cursor:pointer; }'
       + '#icw-tool button.icw-ok{ font-size:16px; padding:4px 12px; }'
+      + '#icw-tool .icw-seg{ display:inline-flex; }'
+      + '#icw-tool .icw-seg button{ border-radius:0; }'
+      + '#icw-tool .icw-seg button:first-child{ border-radius:999px 0 0 999px; }'
+      + '#icw-tool .icw-seg button:last-child{ border-radius:0 999px 999px 0; border-left:none; }'
+      + '#icw-tool button[aria-pressed="true"]{ background:var(--text-accent, #185fa5); color:#fff; border-color:var(--text-accent, #185fa5); }'
       + '#icw-tool button.icw-tdot{ width:26px; height:26px; padding:0; border-radius:50%; border:2px solid var(--surface-2, #fff); box-shadow:0 0 0 1px rgba(0,0,0,.25); }'
       + '#icw-tool .icw-grid{ max-width:min(520px, calc(100vw - 40px)); }'
       + '@media print{ #icw-tool{ display:none !important; } }'
@@ -2075,6 +2234,9 @@
     arrowTool: function () { arrowButton(); return S.arrowMode ? S.arrowMode.step : null; },
     arrowOk: function () { arrowOk(); return S.arrowMode ? S.arrowMode.step : null; }, arrowCancel: function () { arrowCancel(); },
     arrows: function () { return S.arrows.map(function (a) { return { id: a.id, c: a.c }; }); },
+    markTool: function (shape) { if (!S.markMode) markButton(); if (S.markMode && shape) setShape(shape); return !!S.markMode; },
+    markOk: function () { markOk(); return !!S.markMode; }, markCancel: function () { markCancel(); },
+    marks: function () { return S.marks.map(function (m) { return { id: m.id, s: m.s, c: m.c }; }); },
     key: function (el, k) { if (k != null) { el.dataset.icwKey = k; gen++; return 'k:' + k; } return keyOf(el); },
     resolve: resolveKey,
     on: function (type, fn) { (S.listeners[type] = S.listeners[type] || []).push(fn); },
