@@ -460,7 +460,7 @@
   /* ══ STATE ═══════════════════════════════════════════════════════════════ */
   var S = {
     mod: null, room: null, self: null, role: null, name: '', sess: null, joinedAt: 0,
-    peers: {}, out: {}, actions: {}, status: 'idle', arrows: [], arrowMode: null, marks: [], markMode: null, note: '', listeners: {},
+    peers: {}, out: {}, actions: {}, status: 'idle', arrows: [], arrowMode: null, marks: [], markMode: null, nums: {}, own: '', note: '', listeners: {},
     mine: { over: null, sel: null, selJson: 'null', lastOver: null, lastSel: null, lastSelAt: 0, bring: null }
   };
   var prefs = {
@@ -524,7 +524,7 @@
     if (!page || HUB || !global.fetch) return Promise.resolve(false);
     return fetch(page, { method: 'HEAD', cache: 'no-store' }).then(function (r) {
       if (!r.ok) return false;
-      sess.fresh = true; session(sess);
+      sess.fresh = !sess.cont; session(sess);   /* a later link: no panel, the lesson just goes on */
       location.replace(page + '?p=' + encodeURIComponent(location.pathname + location.search));
       return true;
     }, function () { return false; });
@@ -552,7 +552,7 @@
 
   async function enter(sess, o) {
     if (S.room) quietLeave();
-    S.sess = sess; S.role = sess.role; S.name = sess.name;
+    S.sess = sess; S.role = sess.role; setOwn(sess.name);
     session(sess);
     setStatus('connecting');
     if (o && o.fresh && await toShell(sess)) return;     /* the tab is moving to the session page */
@@ -569,11 +569,16 @@
     S.self = hub.selfId;
     S.joinedAt = Date.now();
     S.peers = {}; S.out = loadOut();
+    S.nums = sess.role === 'host' ? loadNums(sess.room) : {};
     S.client = { handlers: {}, join: function (id) { peer(id); sayHello(); renderPanel(); }, leave: function (id) { gone(id); } };
 
     S.actions.hello = makeAction('hello', function (d, p) {
       var fresh = !p.name, wasHere = here(p);
-      p.name = cleanName(d.name) || 'Partner'; p.host = d.host === true; p.v = +d.v || 0;
+      p.own = cleanName(d.name); p.host = d.host === true; p.v = +d.v || 0;
+      p.u = typeof d.u === 'string' && /^[A-Za-z0-9]{6,20}$/.test(d.u) ? d.u : null;
+      if (p.host && S.role !== 'host' && d.nums && typeof d.nums === 'object') takeNums(d.nums);
+      if (S.role === 'host' && !p.host && p.u && !S.nums[p.u]) numberFor(p.u);
+      label(p);
       p.pg = typeof d.pg === 'string' ? d.pg.slice(0, 16) : '';
       p.title = cleanName(String(d.title || '').slice(0, 80)) ? String(d.title).replace(/[\u0000-\u001f]/g, '').slice(0, 80) : 'another page';
       p.path = sameSite(d.path);
@@ -649,6 +654,8 @@
     setStatus('room');
     rail(true);
     sayHello();
+    remember(sess);
+    if (sess.cont) { delete sess.cont; session(sess); handOver(sess); toast('You are in the lesson.'); }   /* a later link of the lesson: the old tab steps out */
     kick();
     if (sess.fresh) { delete sess.fresh; session(sess); openPanel(true); }
     setTimeout(function () { if (S.room && S.sess === sess && !named().length) renderPanel(); }, 30000);
@@ -662,9 +669,7 @@
   /* everything I show, to everyone: a newcomer gets it this way */
   function sayHello() {
     if (!S.room) return;
-    var hello = { v: PROTOCOL, name: S.name, host: S.role === 'host', pg: PG, path: location.pathname, title: pageTitle(), c: S.sess && okColor(S.sess.c) ? S.sess.c : '' };
-    if (S.role === 'host') hello.out = Object.keys(S.out || {}).slice(0, 50);
-    S.actions.hello(hello);
+    S.actions.hello(helloData());
     S.actions.over({ k: prefs.hl ? S.mine.over : null });
     S.actions.sel({ p: prefs.hl ? S.mine.sel : null });
     if (S.role === 'host' && S.say && S.say.from === 'me') S.actions.say({ sel: S.say.pieces, c: S.say.c });
@@ -677,6 +682,7 @@
     if (S.say && S.say.from === id) showSay(null);
     if (S.arrowsFrom === id) S.arrows = [];
     if (S.marksFrom === id) S.marks = [];
+    if (p.u && Object.keys(S.peers).some(function (o) { return o !== id && S.peers[o].u === p.u && S.peers[o].name; })) quiet = true;   /* the same person, now in another tab */
     delete S.peers[id];
     if (p.name && !quiet) { S.note = p.name + (here(p) ? ' left this page.' : ' left.'); emit('leave', publicPeer(p)); }
     assignColors(); renderPanel(); clearPeerDrawing(id); kick();
@@ -694,6 +700,7 @@
     S.mine.bring = null;
   }
   function leave() {
+    forget();
     quietLeave();
     session(null); S.sess = null; S.note = ''; S.out = {}; saveOut();
     if (unwrap('idle', '')) return;
@@ -706,12 +713,106 @@
     setTimeout(leave, 150);
   }
   function ended(by) {
+    forget();
     quietLeave(); session(null); S.sess = null; S.out = {}; saveOut();
     var said = by ? by + ' ended the session.' : 'The session is over.';
     if (unwrap('ended', said)) return;
     rail(false); setStatus('ended', said);
     openPanel(true);
   }
+  /* ══ NAMES AND NUMBERS ═══════════════════════════════════════════════════
+     A learner who has not typed a name is "Me" on their own screen, and "Student 1",
+     "Student 2"… on everyone else's. The host gives the numbers, in the order people
+     first join, and keeps them for the whole lesson (on this device, for the room), so
+     a student keeps the same number on every page. The number follows the student's
+     own id for the lesson, made when they press Join and kept with the lesson. */
+  function setOwn(n) { S.own = cleanName(n); S.name = S.own || (S.role === 'host' ? 'Teacher' : 'Me'); }
+  function label(p) { p.name = p.own || (p.host ? 'Teacher' : (S.nums[p.u] ? 'Student ' + S.nums[p.u] : 'Student')); }
+  function loadNums(room) { var n = store('icwhatuc-nums-' + room); return n && typeof n === 'object' ? n : {}; }
+  function numberFor(u) {
+    var top = 0;
+    Object.keys(S.nums).forEach(function (k) { top = Math.max(top, +S.nums[k] || 0); });
+    S.nums[u] = top + 1;
+    if (S.sess) store('icwhatuc-nums-' + S.sess.room, S.nums);
+    setTimeout(function () { if (S.room && S.role === 'host') S.actions.hello(helloData()); }, 0);   /* the others learn the number too */
+  }
+  function takeNums(n) {
+    var out = {};
+    Object.keys(n).slice(0, 60).forEach(function (k) { var v = +n[k]; if (/^[A-Za-z0-9]{6,20}$/.test(k) && v >= 1 && v <= 999) out[k] = Math.floor(v); });
+    S.nums = out;
+    Object.keys(S.peers).forEach(function (id) { if (S.peers[id].name) label(S.peers[id]); });
+    renderPanel(); kick();
+  }
+  function helloData() {
+    var d = { v: PROTOCOL, name: S.own, u: S.sess && S.sess.u ? S.sess.u : undefined, host: S.role === 'host', pg: PG, path: location.pathname, title: pageTitle(), c: S.sess && okColor(S.sess.c) ? S.sess.c : '' };
+    if (S.role === 'host') {
+      d.out = Object.keys(S.out || {}).slice(0, 50);
+      var nums = {};
+      Object.keys(S.nums).slice(-60).forEach(function (k) { nums[k] = S.nums[k]; });
+      d.nums = nums;
+    }
+    return d;
+  }
+  function saveMyName() {
+    var f = $('icw-myname');
+    if (!f || !S.sess) return;
+    var n = cleanName(f.value);
+    if (n === S.own) return;
+    setOwn(n);
+    store(KEY.name, n);
+    S.sess.name = n; session(S.sess); remember(S.sess);
+    sayHello(); renderPanel(); kick();
+    toast(n ? 'The others see you as ' + n + ' now.' : 'Your name is “Me” again.');
+  }
+
+  /* ══ ONE LINK AFTER ANOTHER ══════════════════════════════════════════════
+     The teacher can send each page's link in the video call. A device that has joined
+     a lesson remembers it (for 12 hours), so the next link of that lesson joins by
+     itself, with no name to type and no button to press, in whatever tab it opens.
+     The tab it replaces steps out, so nobody is there twice. Only a link to another page
+     joins by itself: the same page's link opened again is taken to be someone else (two
+     students on one computer), who gets the usual Join box. A link opened on the teacher's
+     device joins as a learner too; the teacher continues with 🤝 "Continue the lesson". */
+  var DAY = 12 * 3600 * 1000;
+  function remember(sess) {
+    var rec = { room: sess.room, key: sess.key, name: S.own, at: Date.now(), page: PAGE };
+    if (sess.role === 'host') store('icwhatuc-hosting', rec);
+    else { rec.u = sess.u || ''; store('icwhatuc-joined', rec); }
+  }
+  function recent(k) {
+    var r = store(k);
+    if (!r || typeof r !== 'object' || !r.room || !r.key) return null;
+    if (!(Date.now() - (+r.at || 0) < DAY)) { try { localStorage.removeItem(k); } catch (e) { /* fine */ } return null; }
+    return r;
+  }
+  function hosting() { return recent('icwhatuc-hosting'); }
+  /* the next page of a lesson I am in; the same page's link again is someone else (two students on one computer) */
+  function joinedBefore(inv) { var r = recent('icwhatuc-joined'); return r && r.room === inv.room && r.key === inv.key && r.page !== PAGE ? r : null; }
+  function forget() {
+    try { localStorage.removeItem(S.role === 'host' ? 'icwhatuc-hosting' : 'icwhatuc-joined'); } catch (e) { /* fine */ }
+  }
+  /* the tabs of this browser tell each other when the lesson moves to a new one */
+  var TAB = (function () {
+    try { var t = sessionStorage.getItem('icwhatuc-tab'); if (!t) { t = random(8); sessionStorage.setItem('icwhatuc-tab', t); } return t; }
+    catch (e) { return random(8); }
+  })();
+  var tabs = null;
+  try { tabs = new BroadcastChannel('icwhatuc-tabs'); } catch (e) { tabs = null; }
+  if (tabs) tabs.onmessage = function (e) {
+    var d = e.data;
+    if (!d || d.t !== 'moved' || d.tab === TAB || !S.room || !S.sess) return;
+    if (d.room !== S.sess.room || d.role !== S.role || (d.u && S.sess.u && d.u !== S.sess.u)) return;
+    movedAway();
+  };
+  function handOver(sess) { if (tabs) { try { tabs.postMessage({ t: 'moved', tab: TAB, room: sess.room, role: sess.role, u: sess.u || '' }); } catch (e) { /* fine */ } } }
+  function movedAway() {
+    quietLeave(); session(null); S.sess = null;
+    var said = 'The lesson goes on in another tab now. You can close this one.';
+    if (unwrap('ended', said)) return;
+    rail(false); setStatus('ended', said);
+    openPanel(true);
+  }
+
   /* ══ GROUPS ══════════════════════════════════════════════════════════════
      Everyone in the session is in one room, whatever page they are on. */
   var hostWas = null;          /* the page I last told the learner about */
@@ -789,6 +890,7 @@
     return true;
   }
   function removed(by) {
+    forget();
     quietLeave(); session(null); S.sess = null; S.out = {}; saveOut();
     var said = (by || 'The host') + ' took you out of the session.';
     if (unwrap('ended', said)) return;
@@ -1882,6 +1984,7 @@
     panel.hidden = true;
     panel.addEventListener('click', onPanelClick);
     panel.addEventListener('change', function (e) {
+      if (e.target.id === 'icw-myname') { saveMyName(); return; }
       if (e.target.id !== 'icw-notify-on') return;
       if (!e.target.checked) { store(KEY.notify, 'no'); return; }
       if (Notification.permission === 'granted') store(KEY.notify, 'yes'); else askNotify(true);
@@ -1889,6 +1992,7 @@
     panel.addEventListener('keydown', function (e) {
       if (e.key === 'Escape') openPanel(false);
       if (e.key === 'Enter' && e.target.id === 'icw-name') { var b = panel.querySelector('[data-do="start"], [data-do="join"]'); if (b) b.click(); }
+      if (e.key === 'Enter' && e.target.id === 'icw-myname') saveMyName();
     });
     document.body.appendChild(panel);
     document.addEventListener('click', function (e) {
@@ -1920,10 +2024,22 @@
   }
   function toggle() { ensurePanel(); openPanel(panel.hidden); }
 
-  function nameField() {
-    var n = cleanName(S.name || store(KEY.name) || '');
-    return '<label class="icw-label" for="icw-name">Your name</label>' +
+  function nameField(optional) {
+    var n = cleanName(S.own || store(KEY.name) || '');
+    return '<label class="icw-label" for="icw-name">Your name' + (optional ? ' <span class="icw-small">(you can leave it empty)</span>' : '') + '</label>' +
       '<input id="icw-name" type="text" maxlength="24" autocomplete="given-name" placeholder="First name" value="' + esc(n) + '">';
+  }
+  /* in the session: my name, which can be typed or changed at any time */
+  function myNameBox() {
+    return '<label class="icw-label" for="icw-myname">Your name</label><div class="icw-row">' +
+      '<input id="icw-myname" type="text" maxlength="24" autocomplete="given-name" placeholder="' + (S.role === 'host' ? 'First name' : 'First name (now: Me)') + '" value="' + esc(S.own) + '">' +
+      '<button type="button" data-do="myname">OK</button></div>';
+  }
+  function resumeBox() {
+    var r = hosting();
+    if (!r) return '';
+    return '<div class="icw-ask"><p>Your lesson is still on. Continue it on this page, with the same people.</p>' +
+      '<div class="icw-row"><button type="button" class="icw-main" data-do="resume">Continue the lesson</button></div></div><p class="icw-small">Or start a new one:</p>';
   }
   var FIRST = '<p class="icw-small">The others see what you point at and select. They cannot see your answers.</p>';
   function notifyQuestion() {
@@ -1990,7 +2106,7 @@
   }
   function people() {
     var mine = S.color || COLORS[0];
-    var me = '<li>' + dot('me', mine, S.name, true) + '<span class="icw-who">' + esc(S.name) + ' <span class="icw-small">(you' + (S.role === 'host' ? ', host' : '') + ')</span></span></li>' + swatches('me', mine);
+    var me = '<li>' + dot('me', mine, S.name, true) + '<span class="icw-who">' + (S.own ? esc(S.own) + ' <span class="icw-small">(you' + (S.role === 'host' ? ', host' : '') + ')</span>' : 'Me' + (S.role === 'host' ? ' <span class="icw-small">(host)</span>' : '')) + '</span></li>' + swatches('me', mine);
     var list = named().sort(function (a, b) { return (here(b) - here(a)) || (b.host - a.host); });
     return '<ul class="icw-people">' + me + list.map(function (p) {
       var where = here(p) ? '' : '<br><span class="icw-small">on “' + esc(p.title) + '”</span>' + (p.path ? ' <button type="button" class="icw-mini" data-goto="' + esc(p.id) + '">Go there</button>' : '');
@@ -2001,13 +2117,14 @@
   function renderPanel() {
     clearInterval(ticker); ticker = 0;
     if (!panel || panel.hidden) return;
+    var typing = document.activeElement, kept = typing && panel.contains(typing) && (typing.id === 'icw-myname' || typing.id === 'icw-name') ? { id: typing.id, v: typing.value, a: typing.selectionStart, b: typing.selectionEnd } : null;
     var h = '<div class="icw-head"><span>🤝 Work together</span><button type="button" class="icw-x" data-do="close" aria-label="Close">✕</button></div>';
     var st = S.status;
     if (st === 'idle' && invite) {
-      h += notifyQuestion() + '<p>Someone invites you to work together on this page.</p>' + nameField() +
+      h += notifyQuestion() + '<p>Someone invites you to work together on this page.</p>' + nameField(true) +
         '<div class="icw-row"><button type="button" class="icw-main" data-do="join">Join</button><button type="button" data-do="no">Not now</button></div>' + FIRST;
     } else if (st === 'idle') {
-      h += notifyQuestion() + '<p>Work together on this page.</p>' + nameField() +
+      h += notifyQuestion() + resumeBox() + '<p>Work together on this page.</p>' + nameField() +
         '<div class="icw-row"><button type="button" class="icw-main" data-do="start">Start</button></div>' + FIRST + relayBox();
     } else if (st === 'connecting') {
       h += '<p class="icw-status">Connecting…</p>';
@@ -2017,14 +2134,14 @@
         h += '<p>Invite people: send them this link.</p><input id="icw-link" type="text" readonly value="' + esc(linkNow()) + '">' +
           '<div class="icw-row"><button type="button" class="icw-main" data-do="copy">Copy link</button></div>';
       }
-      h += people();
+      h += people() + (S.role === 'host' && S.own ? '' : myNameBox());
       var waited = Math.round((Date.now() - S.joinedAt) / 1000);
       h += '<p class="icw-status" id="icw-status">' + (others ? 'You are together now.' : (away ? 'Nobody else is on this page.' :
         (waited >= 30 ? 'Nobody is here yet. Is your partner on this page?' : 'Waiting for your partner… ' + waited + ' s'))) + '</p>';
       if (S.role === 'host' && away) h += '<div class="icw-row"><button type="button" data-do="everyone">Bring everyone to this page</button></div>';
       if (S.note) h += '<p class="icw-small">' + esc(S.note) + '</p>';
       h += bringBox() + notifySwitch();
-      h += '<p class="icw-small">On another lesson page in this tab, you join again by yourself.</p>';
+      h += '<p class="icw-small">' + (S.role === 'host' ? 'On the next page, send its link the same way: the students join it by themselves.' : 'On another lesson page, or from the next link, you join again by yourself.') + '</p>';
       h += '<div class="icw-row">' + (S.role === 'host' ? '<button type="button" data-do="end">End for everyone</button>' : '<button type="button" data-do="leave">Leave</button>') + '</div>';
       if (!others && !away && waited < 30) ticker = setInterval(function () { var e = $('icw-status'); if (!e || named().length) { renderPanel(); return; } var w = Math.round((Date.now() - S.joinedAt) / 1000); if (w >= 30) renderPanel(); else e.textContent = 'Waiting for your partner… ' + w + ' s'; }, 1000);
     } else if (st === 'ended') {
@@ -2033,6 +2150,7 @@
       h += '<p class="icw-status icw-bad">' + esc(S.note) + '</p><div class="icw-row"><button type="button" class="icw-main" data-do="retry">Try again</button><button type="button" data-do="leave">Stop</button></div>';
     }
     panel.innerHTML = h;
+    if (kept) { var f = $(kept.id); if (f) { f.value = kept.v; f.focus({ preventScroll: true }); try { f.setSelectionRange(kept.a, kept.b); } catch (e) { /* fine */ } } }
     placePanel();
   }
   function readName() {
@@ -2055,7 +2173,15 @@
     var what = b.getAttribute('data-do');
     if (what === 'close') openPanel(false);
     else if (what === 'start') { var n = readName(); if (!n) return; saveRelay(); start({ name: n }); }
-    else if (what === 'join') { var m = readName(); if (!m || !invite) return; var i = invite; invite = null; enter({ room: i.room, key: i.key, role: 'learner', name: m }, { fresh: true }); }
+    else if (what === 'join') {
+      var nf = $('icw-name'), m = cleanName(nf && nf.value);
+      if (!invite) return;
+      store(KEY.name, m);
+      var i = invite; invite = null;
+      enter({ room: i.room, key: i.key, role: 'learner', name: m, u: random(12) }, { fresh: true });
+    }
+    else if (what === 'myname') saveMyName();
+    else if (what === 'resume') { var r = hosting(); if (r) enter({ room: r.room, key: r.key, role: 'host', name: r.name, cont: true }, { fresh: true }); }
     else if (what === 'no') { invite = null; renderPanel(); }
     else if (what === 'copy') {
       var link = linkNow(), done = function () { b.textContent = 'Copied'; setTimeout(function () { b.textContent = 'Copy link'; }, 1200); };
@@ -2208,12 +2334,15 @@
     if (!inv && !first) return;
     if (inv) {
       try { history.replaceState(null, '', location.href.split('#')[0]); } catch (e) { /* file pages */ }
-      if (saved && saved.room === inv.room && saved.key === inv.key) { if (!(S.room && S.sess && S.sess.room === inv.room)) enter(saved); return; }
+      if (saved && saved.room === inv.room && saved.key === inv.key) { if (!(S.room && S.sess && S.sess.room === inv.room)) { saved.cont = true; enter(saved, { fresh: true }); } return; }
+      var j = joinedBefore(inv);
+      if (j) { enter({ room: inv.room, key: inv.key, role: 'learner', name: j.name || '', u: j.u, cont: true }, { fresh: true }); return; }
       invite = inv;
       openPanel(true);
       return;
     }
-    if (first && saved && saved.room && saved.key && saved.role && saved.name) enter(saved);
+    /* in a session already: a reload, or the teacher typed the next page's address. Back into the session page too */
+    if (first && saved && saved.room && saved.key && saved.role) { if (!HUB) saved.cont = true; enter(saved, { fresh: !HUB }); }
   }
   global.addEventListener('hashchange', function () { invited(false); });
 
@@ -2221,7 +2350,7 @@
     toggle: toggle,
     open: function () { openPanel(true); },
     start: start,
-    join: function (link, o) { var i = parseInvite(link); if (!i) return Promise.reject(new Error('not an ICwhatUC link')); return enter({ room: i.room, key: i.key, role: 'learner', name: cleanName((o && o.name) || store(KEY.name)) || 'Learner' }); },
+    join: function (link, o) { var i = parseInvite(link); if (!i) return Promise.reject(new Error('not an ICwhatUC link')); return enter({ room: i.room, key: i.key, role: 'learner', name: cleanName((o && o.name) || store(KEY.name)), u: random(12) }); },
     leave: leave, end: end,
     peers: function () { return named().map(function (p) { var o = publicPeer(p); o.here = here(p); o.page = p.title; return o; }); },
     link: linkNow,
