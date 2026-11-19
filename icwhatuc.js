@@ -112,7 +112,7 @@
     }
     return name;
   }
-  var OURS = '#icw-layer, .icw-say, #icw-tool, #icw-panel, #icw-bring, #icw-toast, #icw-follow, #house-rail, #font-size-panel, .hd-card, .hd-arrow, .hd-hint';
+  var OURS = '#icw-layer, .icw-say, #icw-tool, #icw-panel, #icw-bring, #icw-toast, #icw-follow, #house-rail, #font-size-panel, #house-tts-panel, .hd-card, .hd-arrow, .hd-hint';
   /* what a ring goes round: the smallest of these under the pointer */
   var RING = '.word-chip, .match-card, .match-stage .card, .hm-card, .fc-chip, .fc-zone, .fc-word, .opt, .ccq-opt, ' +
     '.eh2-word, .eh2-gap, .eh-word, .gf-gap-input, input.gap, .word-btn, .bubble, .think-cloud, .avatar, td, th, li, ' +

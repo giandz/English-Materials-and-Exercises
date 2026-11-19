@@ -21,6 +21,7 @@
      · HouseThink     — thought bubbles under a line of a conversation
      · HouseDict      — the learner's dictionary: right-click / long press a word
                         for its meaning and sound; ☆ saves it for My Words
+     · HouseReadAloud — the 🔊 button: reads the selected words aloud, with a drawer of voice options
      · ICwhatUC loader — the 🤝 button; icwhatuc.js (work together on a page)
                         loads only when it is used
 
@@ -82,7 +83,7 @@
    button each, in a fixed order:
 
        ☀️/🌙 theme · 🔎 text size · 🎨 grammar colours · 🧍 stick figures ·
-       🎵 pronunciation marks · 🦾 bionic reading · 📖 dictionary
+       🎵 pronunciation marks · 🦾 bionic reading · 📖 dictionary · 🔊 read aloud
 
    A button only appears on a page that has something for it to do.
 
@@ -105,7 +106,7 @@
    page is pushed down so the row never covers the title. Panels that open from
    a button (🔎, 🤝) open below the row.
    Orders in use: theme 0, text size 10, grammar 20, stick figures 30,
-   pronunciation 40, bionic 50, dictionary 55, ICwhatUC 60–67 (🤝 🖱️ 🖍️ 👀 📣, and the host's 🗣️ 🏹 ⭕). Fixed chrome stays in px, like the theme toggle.
+   pronunciation 40, bionic 50, dictionary 55, read aloud 57, ICwhatUC 60–67 (🤝 🖱️ 🖍️ 👀 📣, and the host's 🗣️ 🏹 ⭕). Fixed chrome stays in px, like the theme toggle.
    ══════════════════════════════════════════════════════════════════════════ */
 (function (global) {
   'use strict';
@@ -4124,7 +4125,11 @@ html.hd-pressing body{ -webkit-user-select:none; user-select:none; -webkit-touch
     const u = new SpeechSynthesisUtterance(text);
     const v = pickVoice();
     if (v) { u.voice = v; u.lang = v.lang; } else u.lang = ACCENT;
-    u.rate = slow ? 0.6 : 0.85;
+    /* the speed and pitch chosen in 🔊's drawer (0.9 is its normal speed) */
+    const sp = parseFloat(store.get('house-speak-rate', 0.9)), pi = parseFloat(store.get('house-speak-pitch', 1));
+    const k = sp >= 0.5 && sp <= 1.5 ? sp / 0.9 : 1;
+    u.rate = (slow ? 0.6 : 0.85) * k;
+    if (pi >= 0.5 && pi <= 1.5) u.pitch = pi;
     synth.speak(u);                              /* synchronous inside the tap: iOS needs that */
   }
   const sayBtn = (text, label, slow) => canSpeak()
@@ -4421,3 +4426,367 @@ html.hd-pressing body{ -webkit-user-select:none; user-select:none; -webkit-touch
     core: CORE
   };
 })();
+
+
+/* ══════════════════════════════════════════════════════════════════════════
+   HOUSE READ ALOUD (HouseReadAloud)
+   A 🔊 button in the rail, for everyone (a learner on their own, or anyone in a
+   🤝 session). Select some words, press 🔊: the browser's or device's own voice
+   (speechSynthesis) reads them, each word lit up as it is read. Press 🔊 again to
+   stop. Nothing is downloaded and nothing leaves the device.
+
+   Pressed with nothing selected, 🔊 opens its drawer: the voice options.
+     · Voice: Automatic, or any English voice on this device, grouped by accent.
+       \"online\" voices need the internet. Novelty voices are never offered.
+     · Speed (🐢 0.5× … 🐇 1.5×) and pitch.
+     · Light up each word as it is read (on by default; some online voices do not
+       say where they are, so nothing lights up with them).
+     · Try it, and Reset.
+   The drawer opens by itself the same way: right-click or press and hold 🔊.
+
+   The choices are remembered on the device and shared with the rest of the page: the
+   dictionary card's 🔊 and 🐢 and a page's HouseSpeak voice picker use the same voice
+   (localStorage 'house-speak-voice', the voice's voiceURI) and the dictionary the same
+   speed and pitch ('house-speak-rate', 'house-speak-pitch').
+
+   What is read: the words selected on the page, or in a text box; just after a tap
+   has cleared a selection (a phone), the words selected a moment before. Long
+   selections are read in short pieces, a sentence or so at a time, because some
+   browsers stop a long one halfway.
+
+   The button only appears on lesson pages, and only where the browser can speak.
+
+     HouseReadAloud.read('Hello')   read some text
+     HouseReadAloud.readSelection() HouseReadAloud.stop()   HouseReadAloud.speaking()
+     HouseReadAloud.open() / close()                        the drawer
+     HouseReadAloud.settings()      → { voice, rate, pitch, follow }
+   ══════════════════════════════════════════════════════════════════════════ */
+(function (global) {
+  'use strict';
+  if (global.HouseReadAloud) return;
+  var synth = global.speechSynthesis || null;
+  var Utter = global.SpeechSynthesisUtterance || null;
+
+  var KEY = { voice: 'house-speak-voice', rate: 'house-speak-rate', pitch: 'house-speak-pitch', follow: 'house-speak-follow' };
+  var DEF = { rate: 0.9, pitch: 1, follow: true };
+  var ACCENT = document.documentElement.getAttribute('data-dict-accent') || 'en-US';
+  var NOVELTY = /\b(Albert|Bad News|Bahh|Bells|Boing|Bubbles|Cellos|Deranged|Good News|Hysterical|Jester|Organ|Superstar|Trinoids|Whisper|Wobble|Zarvox|Eloquence|Eddy|Flo|Grandma|Grandpa|Reed|Rocko|Sandy|Shelley|Junior|Ralph|Fred|Kathy)\b/i;
+  var PREFERRED = ['Samantha', 'Microsoft Aria', 'Microsoft Jenny', 'Microsoft Ava', 'Microsoft Zira', 'Google US English', 'Alex'];
+  var PICS = /\p{Extended_Pictographic}|\p{Regional_Indicator}|[\u200D\uFE0F\u20E3]|\p{Emoji_Modifier}/gu;
+  var SKIP = 'script, style, svg, textarea, select, #house-rail, #house-tts-panel, #icw-layer, #icw-panel, #icw-tool, .hd-card, .hd-hint, [aria-hidden="true"]';
+
+  function get(k) { try { return localStorage.getItem(k); } catch (e) { return null; } }
+  function put(k, v) { try { if (v == null) localStorage.removeItem(k); else localStorage.setItem(k, String(v)); } catch (e) { /* private mode */ } }
+  function num(k, d, lo, hi) { var v = parseFloat(get(k)); return v >= lo && v <= hi ? v : d; }
+  function settings() {
+    var f = get(KEY.follow);
+    return { voice: get(KEY.voice) || '', rate: num(KEY.rate, DEF.rate, 0.5, 1.5), pitch: num(KEY.pitch, DEF.pitch, 0.5, 1.5), follow: f == null ? DEF.follow : f === 'true' };
+  }
+  function esc(t) { return String(t == null ? '' : t).replace(/[&<>"]/g, function (c) { return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]; }); }
+
+  /* ── voices ── */
+  var voices = [];
+  function normLang(l) { return String(l || '').replace('_', '-').toLowerCase(); }
+  function loadVoices() {
+    try { voices = (synth.getVoices() || []).filter(function (v) { return /^en(-|$)/.test(normLang(v.lang)) && !NOVELTY.test(v.name); }); } catch (e) { voices = []; }
+    if (panel && !panel.hidden) fillVoices();
+  }
+  function autoVoice() {
+    var want = normLang(ACCENT);
+    var score = function (v) {
+      var p = PREFERRED.findIndex(function (n) { return v.name.indexOf(n) === 0; });
+      return (normLang(v.lang) === want ? 20 : 4) + (v.localService ? 10 : 0) + (p >= 0 ? 6 - p * 0.5 : 0) + (/natural|neural|premium|enhanced/i.test(v.name) ? 3 : 0) + (v.default ? 1 : 0);
+    };
+    return voices.slice().sort(function (a, b) { return score(b) - score(a); })[0] || null;
+  }
+  function voiceNow() {
+    if (!voices.length) loadVoices();
+    var uri = settings().voice;
+    return (uri && voices.filter(function (v) { return v.voiceURI === uri || v.name === uri; })[0]) || autoVoice();
+  }
+
+  /* ── what is selected: the text, and where each piece of it is on the page ── */
+  var lastSel = null;      /* the last selection, kept for a moment after a tap clears it */
+  function ours(n) { var el = n && (n.nodeType === 1 ? n : n.parentElement); return !!(el && el.closest && el.closest(SKIP)); }
+  document.addEventListener('selectionchange', function () {
+    var s = global.getSelection && global.getSelection();
+    if (s && !s.isCollapsed && s.rangeCount && !ours(s.getRangeAt(0).commonAncestorContainer)) lastSel = { range: s.getRangeAt(0).cloneRange(), t: Date.now() };
+  });
+  var isInline = function (d) { return d === 'inline' || d === 'contents'; };
+  function fromRange(range) {
+    var root = range.commonAncestorContainer;
+    if (root.nodeType !== 1) root = root.parentElement;
+    if (!root) return null;
+    var parts = [], text = '', prevBox = null, cache = new Map();
+    var boxOf = function (n) {
+      for (var e = n.parentElement; e && e !== root.parentElement; e = e.parentElement) {
+        var d = cache.get(e);
+        if (d === undefined) { d = getComputedStyle(e).display; cache.set(e, d); }
+        if (d === 'none') return null;
+        if (!isInline(d)) return e;
+      }
+      return root;
+    };
+    var w = document.createTreeWalker(root, NodeFilter.SHOW_TEXT, { acceptNode: function (n) { return ours(n) ? NodeFilter.FILTER_REJECT : NodeFilter.FILTER_ACCEPT; } });
+    for (var n = w.nextNode(); n; n = w.nextNode()) {
+      if (!range.intersectsNode(n)) { if (parts.length) break; continue; }
+      var s = n === range.startContainer ? range.startOffset : 0, e = n === range.endContainer ? range.endOffset : n.nodeValue.length;
+      if (e <= s) continue;
+      var box = boxOf(n);
+      if (box === null) continue;                               /* hidden */
+      if (prevBox && box !== prevBox && text && !/\s$/.test(text)) text += ' ';   /* one block to the next: a space */
+      parts.push({ node: n, s: s, e: e, at: text.length });
+      text += n.nodeValue.slice(s, e);
+      prevBox = box;
+    }
+    /* pictures are not read (a voice would say \"woman\" for 👩): spaces of the same length keep every place */
+    text = text.replace(PICS, function (m) { return ' '.repeat(m.length); }).replace(/\s+$/, '');
+    return /\S/.test(text) ? { text: text, parts: parts } : null;
+  }
+  function grab() {
+    var a = document.activeElement;
+    if (a && (a.tagName === 'TEXTAREA' || (a.tagName === 'INPUT' && /^(text|search|)$/i.test(a.type || ''))) && a.selectionEnd > a.selectionStart && !ours(a)) {
+      var t = a.value.slice(a.selectionStart, a.selectionEnd).replace(PICS, ' ');
+      if (/\S/.test(t)) return { text: t, parts: null };
+    }
+    var s = global.getSelection && global.getSelection();
+    if (s && !s.isCollapsed && s.rangeCount && !ours(s.getRangeAt(0).commonAncestorContainer)) { var r = fromRange(s.getRangeAt(0)); if (r) return r; }
+    if (lastSel && Date.now() - lastSel.t < 20000) return fromRange(lastSel.range);
+    return null;
+  }
+
+  /* ── reading ── */
+  var job = null;          /* { token, chunks, parts, done } */
+  function chunksOf(text) {
+    var out = [], re = /[^.!?;:\n]+(?:[.!?;:]+["”’)\]]*|\n|$)\s*/g, m;
+    while ((m = re.exec(text)) && m[0]) {
+      var at = m.index, str = m[0];
+      while (str.length > 220) {                               /* a very long sentence: cut at a comma, else a space */
+        var cut = str.lastIndexOf(', ', 200); if (cut < 60) cut = str.lastIndexOf(' ', 200); if (cut < 60) cut = 200;
+        out.push({ at: at, str: str.slice(0, cut + 1) }); at += cut + 1; str = str.slice(cut + 1);
+      }
+      if (/\S/.test(str)) out.push({ at: at, str: str });
+      if (re.lastIndex >= text.length) break;
+    }
+    return out;
+  }
+  function lightWord(gi) {
+    if (!job || !job.parts || !settings().follow) return;
+    var m = /\S+/.exec(job.text.slice(gi)), len = m && m.index === 0 ? m[0].length : 0;
+    if (!len) return;
+    var a = locate(gi), b = locate(gi + len - 1);
+    if (!a || !b) return;
+    try {
+      var r = document.createRange(); r.setStart(a.node, a.off); r.setEnd(b.node, b.off + 1);
+      if (global.CSS && CSS.highlights && global.Highlight) CSS.highlights.set('house-tts', new Highlight(r));
+    } catch (e) { /* the page changed under the words */ }
+  }
+  function locate(gi) {
+    var ps = job.parts;
+    for (var i = 0; i < ps.length; i++) { var p = ps[i], L = p.e - p.s; if (gi >= p.at && gi < p.at + L) return p.node.isConnected ? { node: p.node, off: p.s + gi - p.at } : null; }
+    return null;
+  }
+  function unlight() { try { if (global.CSS && CSS.highlights) CSS.highlights.delete('house-tts'); } catch (e) { /* none */ } }
+  function finished(token) {
+    if (!job || job.token !== token) return;
+    job = null; unlight(); state();
+  }
+  function speak(text, parts) {
+    if (!synth || !Utter || !text) return false;
+    stop();
+    injectStyles();
+    var token = {}, st = settings(), v = voiceNow(), chunks = chunksOf(text);
+    job = { token: token, text: text, parts: parts, left: chunks.length };
+    if (synth.paused) synth.resume();                         /* Chrome can get stuck paused */
+    chunks.forEach(function (c, i) {
+      var u = new Utter(c.str);
+      if (v) { u.voice = v; u.lang = v.lang; } else u.lang = ACCENT;
+      u.rate = st.rate; u.pitch = st.pitch;
+      u.onboundary = function (e) { if (job && job.token === token && (!e.name || e.name === 'word')) lightWord(c.at + (e.charIndex || 0)); };
+      u.onstart = function () { if (job && job.token === token) lightWord(c.at + (c.str.search(/\S/) || 0)); };
+      u.onend = u.onerror = function () { if (job && job.token === token && --job.left <= 0) finished(token); };
+      (job.utts = job.utts || []).push(u);                    /* kept: Chrome can lose an utterance nobody holds */
+      synth.speak(u);                                          /* in the tap itself: iOS needs that */
+    });
+    state();
+    return true;
+  }
+  function stop() {
+    if (!job) return;
+    var t = job.token;
+    job = null;
+    try { synth.cancel(); } catch (e) { /* fine */ }
+    unlight(); state(t);
+  }
+  function readSelection() {
+    var g = grab();
+    if (!g) { open('Select some words on the page, then press 🔊.'); return false; }
+    return speak(g.text, g.parts);
+  }
+
+  /* ── the rail button ── */
+  var btn = null;
+  function state() {
+    document.documentElement.classList.toggle('house-tts-reading', !!job);
+    if (btn) {
+      btn.setAttribute('aria-pressed', String(!!job));
+      btn.textContent = job ? '⏹️' : '🔊';
+      btn.title = job ? 'Stop reading' : 'Read aloud: select some words, then press. Press with nothing selected for the voice options.';
+    }
+    if (panel && !panel.hidden) {
+      var st = panel.querySelector('.tts-status'), go = panel.querySelector('[data-tts="read"]');
+      if (st && job) st.textContent = 'Reading… Press ⏹️ to stop.';
+      else if (st && st.dataset.reading) st.textContent = st.dataset.idle || '';
+      if (st) st.dataset.reading = job ? '1' : '';
+      if (go) { go.textContent = job ? '⏹️ Stop' : '▶️ Read the selection'; go.dataset.tts = job ? 'stop' : 'read'; }
+    }
+  }
+  function onButton() { if (job) stop(); else readSelection(); }
+
+  /* ── the drawer ── */
+  var panel = null;
+  var STYLE = ''
+    + '#house-tts-panel{ position:fixed; z-index:1050; width:300px; max-width:calc(100vw - 16px); box-sizing:border-box; padding:12px 14px; border-radius:14px;'
+    +   ' background:var(--surface-2, #fff); color:var(--text-primary, #1a1a1a); border:1px solid var(--border, #e3e3e6); box-shadow:0 8px 24px rgba(0,0,0,.18);'
+    +   ' font:14px/1.45 var(--font-sans, system-ui, sans-serif); }'
+    + '#house-tts-panel[hidden]{ display:none; }'
+    + '#house-tts-panel .tts-head{ display:flex; align-items:center; justify-content:space-between; font-weight:700; margin-bottom:6px; }'
+    + '#house-tts-panel .tts-status{ margin:0 0 8px; font-size:13px; color:var(--text-secondary, #5b5b60); min-height:18px; }'
+    + '#house-tts-panel button{ font:600 13px/1.2 var(--font-sans, system-ui, sans-serif); padding:7px 13px; border-radius:999px; border:1px solid var(--border, #e3e3e6); background:var(--surface-1, #f7f7f8); color:inherit; cursor:pointer; }'
+    + '#house-tts-panel button.tts-main{ background:var(--text-accent, #185fa5); border-color:var(--text-accent, #185fa5); color:#fff; }'
+    + '#house-tts-panel .tts-x{ padding:2px 8px; border:none; background:none; font-size:14px; }'
+    + '#house-tts-panel .tts-row{ display:flex; flex-wrap:wrap; align-items:center; gap:6px; margin:0 0 10px; }'
+    + '#house-tts-panel label.tts-label{ display:block; font-size:12px; font-weight:600; color:var(--text-secondary, #5b5b60); margin:0 0 3px; }'
+    + '#house-tts-panel select{ width:100%; box-sizing:border-box; font:14px/1.3 var(--font-sans, system-ui, sans-serif); padding:6px 8px; margin:0 0 10px; border-radius:8px; border:1px solid var(--color-border-secondary, #e3e3e6); background:var(--color-background-primary, #fff); color:inherit; }'
+    + '#house-tts-panel .tts-slider{ display:flex; align-items:center; gap:6px; margin:0 0 10px; }'
+    + '#house-tts-panel .tts-slider input{ flex:1 1 auto; min-width:60px; }'
+    + '#house-tts-panel .tts-val{ font:600 12px/1 var(--font-mono, monospace); min-width:40px; text-align:right; }'
+    + '#house-tts-panel .tts-check{ display:flex; gap:6px; align-items:center; font-size:13px; margin:0 0 10px; }'
+    + '#house-tts-panel .tts-small{ font-size:11.5px; color:var(--text-secondary, #5b5b60); margin:0; }'
+    /* while reading, the selection goes faint, so the word being read shows through it */
+    + 'html.house-tts-reading *::selection{ background-color:rgba(127,127,127,.16); color:inherit; }'
+    + '::highlight(house-tts){ background-color:var(--color-background-warning, #faeeda); color:var(--color-text-warning, #633806); text-decoration:underline 2px; }'
+    + '@media print{ #house-tts-panel{ display:none !important; } }';
+  function injectStyles() {
+    if (document.getElementById('house-tts-styles')) return;
+    var s = document.createElement('style'); s.id = 'house-tts-styles'; s.textContent = STYLE; document.head.appendChild(s);
+  }
+  function region(lang) {
+    var code = String(lang || '').replace('_', '-');
+    try { if (global.Intl && Intl.DisplayNames) return new Intl.DisplayNames(['en'], { type: 'language' }).of(code); } catch (e) { /* odd tag */ }
+    return code;
+  }
+  function fillVoices() {
+    var sel = panel && panel.querySelector('#house-tts-voice');
+    if (!sel) return;
+    var st = settings(), auto = autoVoice(), groups = {};
+    voices.forEach(function (v) { var g = region(v.lang); (groups[g] = groups[g] || []).push(v); });
+    var want = region(ACCENT);
+    var names = Object.keys(groups).sort(function (a, b) { return (b === want) - (a === want) || a.localeCompare(b); });
+    var h = '<option value="">Automatic' + (auto ? ' (' + esc(auto.name) + ')' : '') + '</option>';
+    names.forEach(function (g) {
+      h += '<optgroup label="' + esc(g) + '">' + groups[g].map(function (v) {
+        return '<option value="' + esc(v.voiceURI) + '"' + (st.voice && (v.voiceURI === st.voice || v.name === st.voice) ? ' selected' : '') + '>' + esc(v.name) + (v.localService ? '' : ' · online') + '</option>';
+      }).join('') + '</optgroup>';
+    });
+    sel.innerHTML = h;
+    sel.disabled = !voices.length;
+  }
+  function render(msg) {
+    var st = settings();
+    var idle = msg || 'Select some words on the page, then press 🔊.';
+    panel.innerHTML =
+      '<div class="tts-head"><span>🔊 Read aloud</span><button type="button" class="tts-x" data-tts="close" aria-label="Close">✕</button></div>' +
+      '<p class="tts-status" role="status" data-idle="' + esc(idle) + '">' + esc(job ? 'Reading… Press ⏹️ to stop.' : idle) + '</p>' +
+      '<div class="tts-row"><button type="button" class="tts-main" data-tts="' + (job ? 'stop' : 'read') + '">' + (job ? '⏹️ Stop' : '▶️ Read the selection') + '</button><button type="button" data-tts="try">Try it</button></div>' +
+      '<label class="tts-label" for="house-tts-voice">Voice</label><select id="house-tts-voice"></select>' +
+      '<label class="tts-label" for="house-tts-rate">Speed</label><div class="tts-slider"><span aria-hidden="true">🐢</span>' +
+        '<input id="house-tts-rate" type="range" min="0.5" max="1.5" step="0.05" value="' + st.rate + '"><span aria-hidden="true">🐇</span><span class="tts-val" id="house-tts-rate-v">' + st.rate.toFixed(2) + '×</span></div>' +
+      '<label class="tts-label" for="house-tts-pitch">Pitch</label><div class="tts-slider"><span aria-hidden="true">🔉</span>' +
+        '<input id="house-tts-pitch" type="range" min="0.5" max="1.5" step="0.05" value="' + st.pitch + '"><span aria-hidden="true">🔊</span><span class="tts-val" id="house-tts-pitch-v">' + st.pitch.toFixed(2) + '</span></div>' +
+      '<label class="tts-check"><input id="house-tts-follow" type="checkbox"' + (st.follow ? ' checked' : '') + '> Light up each word as it is read</label>' +
+      '<div class="tts-row"><button type="button" data-tts="reset">Reset</button></div>' +
+      '<p class="tts-small">The voices are this device\'s own. “online” voices need the internet. The dictionary\'s 🔊 uses the same voice and speed.</p>';
+    fillVoices();
+  }
+  function ensurePanel() {
+    if (panel && panel.isConnected) return;
+    injectStyles();
+    panel = document.createElement('div');
+    panel.id = 'house-tts-panel';
+    panel.setAttribute('role', 'dialog');
+    panel.setAttribute('aria-label', 'Read aloud');
+    panel.setAttribute('data-dict', 'off');
+    panel.hidden = true;
+    /* a press inside the drawer must not take the page's selection away */
+    panel.addEventListener('mousedown', function (e) { if (e.target.closest('button')) e.preventDefault(); });
+    panel.addEventListener('click', function (e) {
+      e.stopPropagation();
+      var b = e.target.closest('[data-tts]');
+      if (!b) return;
+      var what = b.dataset.tts;
+      if (what === 'close') close();
+      else if (what === 'read') readSelection();
+      else if (what === 'stop') stop();
+      else if (what === 'try') speak('Hello! This is how I sound when I read for you.', null);
+      else if (what === 'reset') { put(KEY.voice, null); put(KEY.rate, null); put(KEY.pitch, null); put(KEY.follow, null); render(); state(); }
+    });
+    panel.addEventListener('input', function (e) {
+      var t = e.target;
+      if (t.id === 'house-tts-rate') { put(KEY.rate, t.value); panel.querySelector('#house-tts-rate-v').textContent = (+t.value).toFixed(2) + '×'; }
+      if (t.id === 'house-tts-pitch') { put(KEY.pitch, t.value); panel.querySelector('#house-tts-pitch-v').textContent = (+t.value).toFixed(2); }
+    });
+    panel.addEventListener('change', function (e) {
+      var t = e.target;
+      if (t.id === 'house-tts-voice') { put(KEY.voice, t.value || null); speak('Hello! This is my voice.', null); }
+      if (t.id === 'house-tts-follow') put(KEY.follow, t.checked ? 'true' : 'false');
+    });
+    panel.addEventListener('keydown', function (e) { if (e.key === 'Escape') { close(); if (btn) btn.focus(); } });
+    document.body.appendChild(panel);
+    document.addEventListener('click', function (e) { if (panel && !panel.hidden && !panel.contains(e.target) && e.target !== btn) close(); });
+    document.addEventListener('keydown', function (e) { if (e.key === 'Escape' && panel && !panel.hidden) close(); });
+    global.addEventListener('resize', place);
+  }
+  function place() {
+    if (!panel || panel.hidden || !btn) return;
+    var r = btn.getBoundingClientRect(), vw = document.documentElement.clientWidth, vh = global.innerHeight;
+    if (global.HouseRail && global.HouseRail.across && global.HouseRail.across()) {
+      var rail = document.getElementById('house-rail'), bottom = rail ? rail.getBoundingClientRect().bottom : r.bottom;
+      panel.style.left = '8px'; panel.style.right = '8px'; panel.style.width = 'auto';
+      panel.style.top = Math.round(bottom + 6) + 'px'; panel.style.maxHeight = (vh - bottom - 14) + 'px'; panel.style.overflowY = 'auto';
+      return;
+    }
+    panel.style.left = ''; panel.style.width = ''; panel.style.maxHeight = (vh - 16) + 'px'; panel.style.overflowY = 'auto';
+    panel.style.right = Math.max(8, vw - r.left + 8) + 'px';
+    panel.style.top = Math.max(8, Math.min(r.top - 8, vh - panel.offsetHeight - 8)) + 'px';
+  }
+  function open(msg) {
+    ensurePanel();
+    render(msg);
+    panel.hidden = false;
+    place();
+    if (btn) btn.setAttribute('aria-expanded', 'true');
+  }
+  function close() { if (panel) panel.hidden = true; if (btn) btn.setAttribute('aria-expanded', 'false'); }
+
+  function start() {
+    if (!synth || !Utter || !global.HouseRail) return;
+    if (!document.querySelector('.page, .exercise-page')) return;
+    loadVoices();
+    if (synth.addEventListener) synth.addEventListener('voiceschanged', loadVoices); else synth.onvoiceschanged = loadVoices;
+    btn = global.HouseRail.add({ id: 'house-tts-toggle', icon: '🔊', label: 'Read aloud', order: 57, pressed: false, onClick: onButton });
+    btn.setAttribute('aria-expanded', 'false');
+    /* the drawer, for a selection already made: right-click, or press and hold */
+    btn.addEventListener('contextmenu', function (e) { e.preventDefault(); e.stopPropagation(); open(); });
+    state();
+    global.addEventListener('pagehide', stop);
+  }
+  if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', start); else start();
+
+  global.HouseReadAloud = {
+    read: function (text) { return speak(String(text || '').replace(PICS, ' '), null); },
+    readSelection: readSelection, stop: stop, speaking: function () { return !!job; },
+    open: function () { open(); }, close: close,
+    settings: settings, voice: function () { var v = voiceNow(); return v ? v.name + ' (' + v.lang + ')' : null; }
+  };
+})(window);
