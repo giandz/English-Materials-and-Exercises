@@ -1,0 +1,150 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<title>And Then…! — Story Dice</title>
+<script>
+(function(){
+  try{
+    var saved = localStorage.getItem('theme-preference');
+    var theme = (saved === 'light' || saved === 'dark')
+      ? saved
+      : ((window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches) ? 'dark' : 'light');
+    document.documentElement.setAttribute('data-theme', theme);
+    var fs = parseFloat(localStorage.getItem('font-size-preference'));
+    if (fs >= 10 && fs <= 28) document.documentElement.style.setProperty('--fs-base', fs + 'px');
+  }catch(e){ /* localStorage/matchMedia unavailable — CSS media query still applies */ }
+})();
+</script>
+<link rel="stylesheet" href="house.css">
+<style>
+.cast-row{ display:flex; flex-wrap:wrap; gap:14px 18px; justify-content:center; align-items:flex-end; margin:0 0 1rem; padding:10px; background:var(--surface-1); border:1px solid var(--border); border-radius:var(--border-radius-lg); font-size:.8667rem; }
+/* past simple ⚡ · past continuous ⏳ · linking words: always coloured (the lesson's own contrast) */
+.tense-ps{ color:#1d4ed8; font-weight:700; }
+.tense-pc{ color:#c2410c; font-weight:700; text-decoration:underline wavy 1.5px; text-underline-offset:4px; }
+[data-theme="dark"] .tense-ps{ color:#93c5fd; } [data-theme="dark"] .tense-pc{ color:#fdba74; }
+.t-link{ font-weight:800; background:var(--surface-1); border:1px solid var(--color-border-secondary); border-radius:6px; padding:0 4px; }
+.colour-key{ display:flex; flex-wrap:wrap; gap:6px 16px; justify-content:center; font-size:.8667rem; color:var(--text-secondary); margin:0 0 8px; }
+/* a picture cue for the practice pages: never the answer words */
+.cue{ display:inline-flex; align-items:center; gap:8px; flex-wrap:wrap; font-weight:400; font-style:normal; margin:0 0 6px; padding:4px 10px; border-radius:8px;
+  border:1px solid var(--color-border-tertiary); background:var(--surface-2); color:var(--text-secondary); font-size:.9rem; }
+.cue .pic{ font-size:1.3rem; }
+.quiz-q .q-text .cue{ display:flex; width:max-content; max-width:100%; }
+
+.story{ display:flex; align-items:center; justify-content:center; gap:14px; flex-wrap:wrap; margin:4px 0 6px; }
+.story .side{ display:flex; flex-direction:column; align-items:center; gap:2px; min-width:8em; max-width:12em; text-align:center; font-weight:700; font-size:.95rem; }
+.story .big{ font-size:2.4rem; line-height:1.15; }
+.story .kind{ font-size:.75rem; font-weight:700; letter-spacing:.05em; text-transform:uppercase; color:var(--text-muted); }
+.story .plus{ font-size:1.3rem; font-weight:800; color:var(--text-muted); }
+.q-card .q-ask{ font-size:1.1rem; font-weight:700; text-align:center; margin:2px 0 4px; }
+.q-card details.check{ margin-top:4px; width:100%; max-width:460px; text-align:left; }
+.q-card .check-body{ padding:8px 12px; font-size:.9rem; }
+.q-card .check-body p{ margin:0 0 5px; }
+</style>
+</head>
+<body>
+<div class="page" id="page">
+  <span class="cefr-tag cefr-a2">A2 · Pre-intermediate</span>
+  <h1>And Then…!</h1>
+  <p class="subtitle">Make crazy stories together. Then find out what your partner was doing yesterday.</p>
+  <div class="colour-key"><span><span class="tense-ps">⚡ past simple</span></span><span><span class="tense-pc">⏳ past continuous</span></span><span><span class="t-link">when · while</span></span></div>
+
+  <div class="sec-div">Story dice</div>
+  <div class="rule-box">
+    <p><strong>How to play (pairs, or teacher + student):</strong></p>
+    <p>1. Student A rolls 🎲 and makes one sentence with ⏳ and ⚡: “<b>I <span class="tense-pc">was taking</span> a shower <span class="t-link">when</span> the lights <span class="tense-ps">went</span> out.</b>”</p>
+    <p>2. Student B asks: “<b>Oh no! What did you do then?</b>” A says one more sentence. B asks one more question.</p>
+    <p>3. Press 👀 to see examples. Then change: B rolls, A asks.</p>
+  </div>
+
+  <div class="q-card" id="qCard"><span class="q-placeholder">Roll the dice to start.</span></div>
+  <button class="dice-btn" id="diceBtn" aria-label="Roll">🎲</button>
+  <div class="roll-count">Rolls: <strong id="rollCount">0</strong></div>
+
+  <div class="sec-div">Now you: what were you doing?</div>
+  <div class="rule-box">
+    <p><strong>Ask your partner:</strong> “<b>What were you doing yesterday at 8 a.m.? … at 1 p.m.? … at 7 p.m.?</b>” Write the answers. Then ask: “<b>Did anything happen? What happened while you were …?</b>”</p>
+    <p>Then tell the class: “<b>At 8 a.m., Ana <span class="tense-pc">was driving</span> to work <span class="t-link">when</span> her phone <span class="tense-ps">rang</span>.</b>” Another partner? Press <b>➕ Add partner</b>.</p>
+  </div>
+  <div id="interview"></div>
+
+  <footer>And Then…! — Narrative tenses: past simple and past continuous with when and while (A2)</footer>
+</div>
+
+<div id="theme-toggle-wrap">
+  <button id="theme-toggle" aria-label="Toggle light/dark mode" title="Toggle light/dark mode">
+    <span id="theme-icon">☀️</span>
+  </button>
+</div>
+<script src="house.js"></script>
+<script src="house-interview.js"></script>
+<script>
+/* The two tenses are the lesson, so they stay coloured on every page (tense-* classes, not grammar-toggle colours):
+   ⟦…⟧ past simple (the short action ⚡) · ⟪…⟫ past continuous (the long action ⏳) · ⦃…⦄ when, while, as …
+   Write the markers first, so the stick-figure markup can still read the sentence, then colour them. */
+const fix = h => h.replace(/⟦([^⟧]*)⟧/g, '<span class="tense-ps">$1</span>')
+                  .replace(/⟪([^⟫]*)⟫/g, '<span class="tense-pc">$1</span>')
+                  .replace(/⦃([^⦄]*)⦄/g, '<span class="t-link">$1</span>');
+
+/* the learner's dictionary (right-click / long press a word): what these words mean in this lesson */
+window.LESSON_DICT = {
+  'chores':     { pos:'noun', def:'the small jobs you do at home, like cleaning and washing clothes', ex:'I was doing chores when a car pulled up.', es:'quehaceres, tareas de la casa' },
+  'pull up':    { pos:'phrasal verb', def:'(for a car) to arrive and stop', ex:'A car pulled up to the driveway.', es:'detenerse, estacionarse (un carro)' },
+  'driveway':   { pos:'noun', def:'the short road from the street to a house or garage', ex:'There was a red car in the driveway.', es:'entrada para carros' },
+  'vacuum':     { pos:'noun / verb', def:'a machine that cleans floors; to clean floors with it', ex:'I was vacuuming the living room.', es:'aspiradora; pasar la aspiradora' },
+  'bark':       { pos:'verb', def:'to make the loud short sound a dog makes', ex:'My dog was barking.', es:'ladrar' },
+  'rent':       { pos:'verb', def:'to pay money to use something for a short time', ex:'She rented a car at the airport.', es:'alquilar, rentar' },
+  'while':      { pos:'conjunction', def:'during the time that something is happening', ex:'While I was making coffee, Kim was talking.', es:'mientras' },
+  'just as':    { pos:'conjunction', def:'exactly at the same moment', ex:'I opened the door just as she was walking up to the house.', es:'justo cuando' },
+  'suddenly':   { pos:'adverb', def:'quickly, and when you don’t expect it', ex:'Suddenly, it started to rain.', es:'de repente' }
+};
+
+const pick = HouseRandomGen.pickFrom;
+/* ⏳ long actions: [picture, the idea, I was …-ing] */
+const LONG = [
+  ['🚿', 'take a shower', 'taking a shower'], ['🧹', 'do chores', 'doing chores'], ['🍳', 'cook dinner', 'cooking dinner'],
+  ['🚗', 'drive to work', 'driving to work'], ['😴', 'sleep', 'sleeping'], ['🏃', 'run in the park', 'running in the park'],
+  ['📺', 'watch TV', 'watching TV'], ['🛒', 'shop at the supermarket', 'shopping at the supermarket'], ['🏖️', 'lie on the beach', 'lying on the beach'],
+  ['💻', 'work on my computer', 'working on my computer'], ['🚌', 'wait for the bus', 'waiting for the bus'], ['🎤', 'sing in the shower', 'singing in the shower']
+];
+/* ⚡ short actions: [picture, the idea, past simple] */
+const SHORT = [
+  ['💡❌', 'the lights / go out', 'the lights went out'], ['🔔', 'the doorbell / ring', 'the doorbell rang'], ['🐕', 'a dog / jump on me', 'a dog jumped on me'],
+  ['🌧️', 'it / start to rain', 'it started to rain'], ['📱', 'my phone / ring', 'my phone rang'], ['🚗', 'a car / pull up', 'a car pulled up'],
+  ['🌟', 'I / see a famous actor', 'I saw a famous actor'], ['🐍', 'I / see a snake', 'I saw a snake'], ['💸', 'I / find $100', 'I found $100'],
+  ['🦜', 'a bird / fly in the window', 'a bird flew in the window'], ['👻', 'I / hear a strange noise', 'I heard a strange noise'], ['🎁', 'an old friend / call me', 'an old friend called me']
+];
+const cap = s => s.charAt(0).toUpperCase() + s.slice(1);
+/* the short action’s verb gets the past-simple colour: the word after the subject (or the first word after “I”) */
+const ps = s => s.replace(/^(the lights|the doorbell|a dog|it|my phone|a car|I|a bird|an old friend) (\S+)/, '$1 ⟦$2⟧');
+
+HouseRandomGen.build({
+  pick: () => ({ l: pick(LONG), s: pick(SHORT) }),
+  key: it => it.l[1] + it.s[1],
+  render: ({ l: [lp, li, ling], s: [sp, si, past] }) =>
+    '<span class="q-topic">📖 Make a story</span>' +
+    '<div class="story"><span class="side"><span class="kind">⏳ long</span><span class="big">' + lp + '</span>' + li + '</span><span class="plus">+</span>' +
+    '<span class="side"><span class="kind">⚡ short</span><span class="big">' + sp + '</span>' + si + '</span></div>' +
+    '<span class="q-prompt">A: say the sentence with “when” or “while”. B: “What did you do then?”</span>' +
+    '<details class="check"><summary>👀 Examples</summary><div class="check-body">' +
+    '<p>' + fix('I ⟪was ' + ling + '⟫ ⦃when⦄ ' + ps(past) + '.') + '</p>' +
+    '<p>' + fix('⦃While⦄ I ⟪was ' + ling + '⟫, ' + ps(past) + '.') + '</p>' +
+    '<p>' + fix('⦃When⦄ ' + ps(past) + ', I ⟪was ' + ling + '⟫.') + '</p></div></details>'
+});
+
+/* ── what was your partner doing yesterday? one card per partner (house-interview.js) ── */
+HouseInterview.build({
+  container: 'interview',
+  storageKey: 'past-continuous-yesterday',
+  fields: [
+    { icon: '🌅', label: 'at 8 a.m.', placeholder: 'was having breakfast…' },
+    { icon: '🕐', label: 'at 1 p.m.', placeholder: 'was working, was eating lunch…' },
+    { icon: '🌆', label: 'at 7 p.m.', placeholder: 'was cooking dinner…' },
+    { icon: '🌙', label: 'at 10 p.m.', placeholder: 'was watching TV, was sleeping…' },
+    { icon: '⚡', label: 'something happened!', placeholder: 'when … the phone rang' }
+  ]
+});
+</script>
+</body>
+</html>

@@ -1,0 +1,149 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<title>I Was Doing Chores When… — Practice</title>
+<script>
+(function(){
+  try{
+    var saved = localStorage.getItem('theme-preference');
+    var theme = (saved === 'light' || saved === 'dark')
+      ? saved
+      : ((window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches) ? 'dark' : 'light');
+    document.documentElement.setAttribute('data-theme', theme);
+    var fs = parseFloat(localStorage.getItem('font-size-preference'));
+    if (fs >= 10 && fs <= 28) document.documentElement.style.setProperty('--fs-base', fs + 'px');
+  }catch(e){ /* localStorage/matchMedia unavailable — CSS media query still applies */ }
+})();
+</script>
+<link rel="stylesheet" href="house.css">
+<style>
+.cast-row{ display:flex; flex-wrap:wrap; gap:14px 18px; justify-content:center; align-items:flex-end; margin:0 0 1rem; padding:10px; background:var(--surface-1); border:1px solid var(--border); border-radius:var(--border-radius-lg); font-size:.8667rem; }
+/* past simple ⚡ · past continuous ⏳ · linking words: always coloured (the lesson's own contrast) */
+.tense-ps{ color:#1d4ed8; font-weight:700; }
+.tense-pc{ color:#c2410c; font-weight:700; text-decoration:underline wavy 1.5px; text-underline-offset:4px; }
+[data-theme="dark"] .tense-ps{ color:#93c5fd; } [data-theme="dark"] .tense-pc{ color:#fdba74; }
+.t-link{ font-weight:800; background:var(--surface-1); border:1px solid var(--color-border-secondary); border-radius:6px; padding:0 4px; }
+.colour-key{ display:flex; flex-wrap:wrap; gap:6px 16px; justify-content:center; font-size:.8667rem; color:var(--text-secondary); margin:0 0 8px; }
+/* a picture cue for the practice pages: never the answer words */
+.cue{ display:inline-flex; align-items:center; gap:8px; flex-wrap:wrap; font-weight:400; font-style:normal; margin:0 0 6px; padding:4px 10px; border-radius:8px;
+  border:1px solid var(--color-border-tertiary); background:var(--surface-2); color:var(--text-secondary); font-size:.9rem; }
+.cue .pic{ font-size:1.3rem; }
+.quiz-q .q-text .cue{ display:flex; width:max-content; max-width:100%; }
+
+.blank{ display:inline-block; min-width:3em; border-bottom:2px solid var(--color-border-primary); }
+</style>
+</head>
+<body>
+<div class="page" id="page">
+  <span class="cefr-tag cefr-a2">A2 · Pre-intermediate</span>
+  <h1>I Was Doing Chores When… — Practice</h1>
+  <p class="subtitle">Look at the pictures: ⏳ a long action (in progress) · ⚡ a short action.</p>
+  <div class="colour-key"><span><span class="tense-ps">⚡ past simple</span></span><span><span class="tense-pc">⏳ past continuous</span></span></div>
+
+  <div class="sec-div">1 · Choose</div>
+  <p class="subtitle">Choose the best answer.</p>
+  <div id="pcItems"></div>
+
+  <div class="sec-div">2 · Put the words in order</div>
+  <p class="subtitle">Make the sentence.</p>
+  <button class="grammar-toggle-btn" id="grammarToggle">🎨 Hide Grammar</button>
+  <div class="pos-legend"></div>
+  <div class="score-bar"><span>Correct: <strong id="woScore">0</strong> / <span id="woTotal">0</span></span></div>
+  <div id="woItems"></div>
+
+  <div class="sec-div">3 · Write the missing words</div>
+  <p class="subtitle">Write the missing words. Use the verb in the box.</p>
+  <div id="gfItems"></div>
+
+  <footer>Narrative tenses: past simple and past continuous with when and while — Controlled Practice (A2)</footer>
+</div>
+
+<div id="theme-toggle-wrap">
+  <button id="theme-toggle" aria-label="Toggle light/dark mode" title="Toggle light/dark mode">
+    <span id="theme-icon">☀️</span>
+  </button>
+</div>
+<script src="house.js"></script>
+<script src="stick-character.js"></script>
+<script src="stick-sentence.js"></script>
+<script>
+/* Jenna tells her friend Tom about a surprise visit from her sister Kim — the same people on every page of this lesson */
+StickSentence.cast({
+  jenna: { base:'woman', colour:'#CC0066', label:'Jenna' },
+  tom:   { base:'man',   colour:'#009999', label:'Tom' },
+  kim:   { base:'woman', colour:'#9966FF', label:'Kim' }
+});
+StickSentence.toggle();   /* stick figures hidden by default */
+
+/* The two tenses are the lesson, so they stay coloured on every page (tense-* classes, not grammar-toggle colours):
+   ⟦…⟧ past simple (the short action ⚡) · ⟪…⟫ past continuous (the long action ⏳) · ⦃…⦄ when, while, as …
+   Write the markers first, so the stick-figure markup can still read the sentence, then colour them. */
+const fix = h => h.replace(/⟦([^⟧]*)⟧/g, '<span class="tense-ps">$1</span>')
+                  .replace(/⟪([^⟫]*)⟫/g, '<span class="tense-pc">$1</span>')
+                  .replace(/⦃([^⦄]*)⦄/g, '<span class="t-link">$1</span>');
+
+/* the learner's dictionary (right-click / long press a word): what these words mean in this lesson */
+window.LESSON_DICT = {
+  'chores':     { pos:'noun', def:'the small jobs you do at home, like cleaning and washing clothes', ex:'I was doing chores when a car pulled up.', es:'quehaceres, tareas de la casa' },
+  'pull up':    { pos:'phrasal verb', def:'(for a car) to arrive and stop', ex:'A car pulled up to the driveway.', es:'detenerse, estacionarse (un carro)' },
+  'driveway':   { pos:'noun', def:'the short road from the street to a house or garage', ex:'There was a red car in the driveway.', es:'entrada para carros' },
+  'vacuum':     { pos:'noun / verb', def:'a machine that cleans floors; to clean floors with it', ex:'I was vacuuming the living room.', es:'aspiradora; pasar la aspiradora' },
+  'bark':       { pos:'verb', def:'to make the loud short sound a dog makes', ex:'My dog was barking.', es:'ladrar' },
+  'rent':       { pos:'verb', def:'to pay money to use something for a short time', ex:'She rented a car at the airport.', es:'alquilar, rentar' },
+  'while':      { pos:'conjunction', def:'during the time that something is happening', ex:'While I was making coffee, Kim was talking.', es:'mientras' },
+  'just as':    { pos:'conjunction', def:'exactly at the same moment', ex:'I opened the door just as she was walking up to the house.', es:'justo cuando' },
+  'suddenly':   { pos:'adverb', def:'quickly, and when you don’t expect it', ex:'Suddenly, it started to rain.', es:'de repente' }
+};
+
+const S = m => fix(StickSentence.html(m));
+const BLANK = '<span class="blank">&nbsp;</span>';
+const rep = m => S(m).replace('____', BLANK);
+/* the cue: ⏳ the long action's picture, ⚡ the short action's picture — never the answer words */
+const cue = (long, short) => '<span class="cue">' + (long ? '<span>⏳</span><span class="pic">' + long + '</span>' : '') +
+  (short ? '<span>⚡</span><span class="pic">' + short + '</span>' : '') + '</span>';
+
+/* ── 1 · choose ────────────────────────────────────────────────────────── */
+const PC = [
+  [cue('🍳', '📞'), 'I ____ dinner when the phone rang.', ['cooked', 'was cooking', 'were cooking'], 1],
+  [cue('🚶‍♀️', '🌧️'), 'We were walking home when it ____ to rain.', ['started', 'was starting', 'starts'], 0],
+  [cue('🚿', '💡❌'), '____ I was taking a shower, the lights went out.', ['When', 'While', 'Then'], 1],
+  [cue('📺', '🚪'), 'The kids ____ TV when their dad came home.', ['was watching', 'watched', 'were watching'], 2],
+  [cue(null, '🚌⚡🚶'), 'When the bus stopped, we ____ off.', ['got', 'were getting', 'was getting'], 0],
+  [cue('🏃‍♂️', '🐕'), 'He was running in the park ____ a dog jumped on him.', ['while', 'when', 'as'], 1],
+  [cue('🍽️ + 🎸', null), 'While I was washing the dishes, my brother ____ the guitar.', ['played', 'was playing', 'plays'], 1],
+  [cue('😴', '📱'), 'What ____ you doing when I called?', ['did', 'was', 'were'], 2]
+];
+HouseComprehension.build({ quiz: 'pcItems', items: PC.map(([c, s, opts, correct]) => ({ q: c + rep(s), opts, correct })) });
+
+/* ── 2 · word order ────────────────────────────────────────────────────── */
+const WO_ITEMS = [
+  { context: cue('🧹', '🚗'), text: 'I / was / doing / chores / when / a car / pulled up', pos: ['subject', 'aux', 'verb', 'object', 'conj', 'subject', 'verb'] },
+  { context: cue('🚲', '🕳️'), text: 'She / was / riding / her bike / when / she / fell', pos: ['subject', 'aux', 'verb', 'object', 'conj', 'subject', 'verb'] },
+  { context: cue('📖', '🔔'), text: 'While / I / was / reading / , / the doorbell / rang', pos: ['conj', 'subject', 'aux', 'verb', 'none', 'subject', 'verb'] },
+  { context: cue('😴', '🐕'), text: 'The baby / was / sleeping / when / the dog / barked', pos: ['subject', 'aux', 'verb', 'conj', 'subject', 'verb'] },
+  { context: cue('❓', '📞'), text: 'What / were / you / doing / when / I / called / ?', pos: ['wh', 'aux', 'subject', 'verb', 'conj', 'subject', 'verb', 'none'] },
+  { context: cue('🏖️', '☀️'), text: 'It / wasn’t / raining / when / we / arrived', pos: ['subject', 'neg', 'verb', 'conj', 'subject', 'verb'] }
+];
+HouseWordOrder.build({ container: 'woItems', items: WO_ITEMS, scoreEl: 'woScore', totalEl: 'woTotal' });
+
+/* ── 3 · gap fill (easiest first; the gaps move around the sentence) ───── */
+const gaps = m => S(m).replace(/____(\d)/g, '{$1}');
+const box = (pics, verbs) => cue(pics[0], pics[1]) + (verbs ? ' <span class="cue">' + verbs + '</span>' : '');
+const AP = a => a.flatMap(s => [s, s.replace(/’/g, "'")]);
+const GF_ITEMS = [
+  { direct: box(['🛒', '👋'], 'shop'), template: gaps('I was ____0 at the supermarket when I saw my teacher.'), hints: [{ accepted: ['shopping'] }] },
+  { direct: box(['🎮', '💡❌'], 'play'), template: gaps('We ____0 ____1 video games when the lights went out.'), hints: [{ accepted: ['were'] }, { accepted: ['playing'] }] },
+  { direct: box(['🍳', '🔥'], 'burn'), template: gaps('{Jenna|jenna} was cooking when she ____0 her hand.'), hints: [{ accepted: ['burned', 'burnt'] }] },
+  { direct: box(['🚗', '🦌']), template: gaps('____0 we were driving home, we saw a deer on the road.'), hints: [{ accepted: ['While', 'while', 'As', 'as'] }] },
+  { direct: box(['🧹', '🚗'], 'do · pull up'), template: gaps('{I|jenna:me} ____0 ____1 chores when a car ____2 up.'), hints: [{ accepted: ['was'] }, { accepted: ['doing'] }, { accepted: ['pulled'] }] },
+  { direct: box(['🚶', '☔'], 'not rain'), template: gaps('It ____0 raining when I left the house, so I didn’t take an umbrella.'), hints: [{ accepted: AP(['wasn’t', 'was not']) }] },
+  { direct: box([null, '🕶️➡️😄'], 'take off · see'), template: gaps('When she ____0 off her sunglasses, I ____1 it was {Kim|kim}.'), hints: [{ accepted: ['took'] }, { accepted: ['saw'] }] },
+  { direct: box(['❓', '🌧️'], 'you · do'), template: gaps('What ____0 you ____1 when it started to rain?'), hints: [{ accepted: ['were'] }, { accepted: ['doing'] }] }
+];
+HouseGapFill.build({ container: 'gfItems', items: GF_ITEMS });
+</script>
+<script>HouseGrammar.init();</script>
+</body>
+</html>

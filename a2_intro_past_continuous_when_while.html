@@ -1,0 +1,171 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<title>A Car Pulled Up — Past Simple and Past Continuous</title>
+<script>
+(function(){
+  try{
+    var saved = localStorage.getItem('theme-preference');
+    var theme = (saved === 'light' || saved === 'dark')
+      ? saved
+      : ((window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches) ? 'dark' : 'light');
+    document.documentElement.setAttribute('data-theme', theme);
+    var fs = parseFloat(localStorage.getItem('font-size-preference'));
+    if (fs >= 10 && fs <= 28) document.documentElement.style.setProperty('--fs-base', fs + 'px');
+  }catch(e){ /* localStorage/matchMedia unavailable — CSS media query still applies */ }
+})();
+</script>
+<link rel="stylesheet" href="house.css">
+<style>
+.cast-row{ display:flex; flex-wrap:wrap; gap:14px 18px; justify-content:center; align-items:flex-end; margin:0 0 1rem; padding:10px; background:var(--surface-1); border:1px solid var(--border); border-radius:var(--border-radius-lg); font-size:.8667rem; }
+/* past simple ⚡ · past continuous ⏳ · linking words: always coloured (the lesson's own contrast) */
+.tense-ps{ color:#1d4ed8; font-weight:700; }
+.tense-pc{ color:#c2410c; font-weight:700; text-decoration:underline wavy 1.5px; text-underline-offset:4px; }
+[data-theme="dark"] .tense-ps{ color:#93c5fd; } [data-theme="dark"] .tense-pc{ color:#fdba74; }
+.t-link{ font-weight:800; background:var(--surface-1); border:1px solid var(--color-border-secondary); border-radius:6px; padding:0 4px; }
+.colour-key{ display:flex; flex-wrap:wrap; gap:6px 16px; justify-content:center; font-size:.8667rem; color:var(--text-secondary); margin:0 0 8px; }
+/* a picture cue for the practice pages: never the answer words */
+.cue{ display:inline-flex; align-items:center; gap:8px; flex-wrap:wrap; font-weight:400; font-style:normal; margin:0 0 6px; padding:4px 10px; border-radius:8px;
+  border:1px solid var(--color-border-tertiary); background:var(--surface-2); color:var(--text-secondary); font-size:.9rem; }
+.cue .pic{ font-size:1.3rem; }
+.quiz-q .q-text .cue{ display:flex; width:max-content; max-width:100%; }
+
+.match-wrap .match-col-label{ text-align:center; }
+#picCol .match-card{ font-size:1.35rem; justify-content:center; }
+</style>
+</head>
+<body>
+<div class="page" id="page">
+  <span class="cefr-tag cefr-a2">A2 · Pre-intermediate</span>
+  <h1>A Car Pulled Up</h1>
+  <p class="subtitle">On Saturday afternoon, Jenna was at home alone. Then something strange happened. Now she is telling her friend Tom about it on the phone.</p>
+
+  <div class="sec-div">Words for this lesson</div>
+  <p class="subtitle">Match the picture and the words. Tap a picture, then tap its words.</p>
+  <div class="score-bar"><span>Matched: <strong id="mScore">0</strong> / <span id="mTotal">0</span></span><button id="mReset">↺ Reset</button></div>
+  <div class="match-grid match-wrap">
+    <div><div class="match-col-label">Picture</div><div class="match-col" id="picCol"></div></div>
+    <div><div class="match-col-label">Words</div><div class="match-col" id="wordCol"></div></div>
+  </div>
+  <div class="win-msg" id="mWin">🎉 Great! You know the words for the story.</div>
+  <div class="feedback" id="mFeedback"></div>
+
+  <div class="sec-div">Before you read</div>
+  <div id="preQuestions"></div>
+
+  <div class="sec-div">The people</div>
+  <div class="cast-row" id="castRow"></div>
+
+  <div class="sec-div">The conversation</div>
+  <div class="setting-chip" data-vn-bg="livingroom|livingroom"><span class="section-icon">📱</span> Sunday morning: a phone call</div>
+  <div class="colour-key"><span><span class="tense-ps">⚡ past simple</span></span><span><span class="tense-pc">⏳ past continuous</span></span><span><span class="t-link">when · while</span></span></div>
+  <button class="grammar-toggle-btn" id="grammarToggle">🎨 Show Grammar</button>
+  <div class="pos-legend"></div>
+  <div id="conversation"></div>
+
+  <div class="sec-div">Check your answers</div>
+  <div id="quiz"></div>
+
+  <footer>A Car Pulled Up — Narrative tenses: past simple and past continuous with when and while (A2)</footer>
+</div>
+
+<div id="theme-toggle-wrap">
+  <button id="theme-toggle" aria-label="Toggle light/dark mode" title="Toggle light/dark mode">
+    <span id="theme-icon">☀️</span>
+  </button>
+</div>
+<script src="house.js"></script>
+<script src="stick-character.js"></script>
+<script src="stick-sentence.js"></script>
+<script>
+/* Jenna tells her friend Tom about a surprise visit from her sister Kim — the same people on every page of this lesson */
+StickSentence.cast({
+  jenna: { base:'woman', colour:'#CC0066', label:'Jenna' },
+  tom:   { base:'man',   colour:'#009999', label:'Tom' },
+  kim:   { base:'woman', colour:'#9966FF', label:'Kim' }
+});
+StickSentence.toggle();   /* stick figures hidden by default */
+
+/* The two tenses are the lesson, so they stay coloured on every page (tense-* classes, not grammar-toggle colours):
+   ⟦…⟧ past simple (the short action ⚡) · ⟪…⟫ past continuous (the long action ⏳) · ⦃…⦄ when, while, as …
+   Write the markers first, so the stick-figure markup can still read the sentence, then colour them. */
+const fix = h => h.replace(/⟦([^⟧]*)⟧/g, '<span class="tense-ps">$1</span>')
+                  .replace(/⟪([^⟫]*)⟫/g, '<span class="tense-pc">$1</span>')
+                  .replace(/⦃([^⦄]*)⦄/g, '<span class="t-link">$1</span>');
+
+/* the learner's dictionary (right-click / long press a word): what these words mean in this lesson */
+window.LESSON_DICT = {
+  'chores':     { pos:'noun', def:'the small jobs you do at home, like cleaning and washing clothes', ex:'I was doing chores when a car pulled up.', es:'quehaceres, tareas de la casa' },
+  'pull up':    { pos:'phrasal verb', def:'(for a car) to arrive and stop', ex:'A car pulled up to the driveway.', es:'detenerse, estacionarse (un carro)' },
+  'driveway':   { pos:'noun', def:'the short road from the street to a house or garage', ex:'There was a red car in the driveway.', es:'entrada para carros' },
+  'vacuum':     { pos:'noun / verb', def:'a machine that cleans floors; to clean floors with it', ex:'I was vacuuming the living room.', es:'aspiradora; pasar la aspiradora' },
+  'bark':       { pos:'verb', def:'to make the loud short sound a dog makes', ex:'My dog was barking.', es:'ladrar' },
+  'rent':       { pos:'verb', def:'to pay money to use something for a short time', ex:'She rented a car at the airport.', es:'alquilar, rentar' },
+  'while':      { pos:'conjunction', def:'during the time that something is happening', ex:'While I was making coffee, Kim was talking.', es:'mientras' },
+  'just as':    { pos:'conjunction', def:'exactly at the same moment', ex:'I opened the door just as she was walking up to the house.', es:'justo cuando' },
+  'suddenly':   { pos:'adverb', def:'quickly, and when you don’t expect it', ex:'Suddenly, it started to rain.', es:'de repente' }
+};
+
+/* ── picture → words ──────────────────────────────────────────────────── */
+const WORDS = [
+  ['🧹🧺', 'do chores'], ['🧹🔌', 'vacuum'], ['🚗➡️🏠', 'pull up'], ['🏠🛣️', 'driveway'], ['🚗🚶‍♀️', 'get out of the car'], ['👀🪟', 'look out the window'],
+  ['🐕💬', 'bark'], ['🕶️', 'sunglasses'], ['📱✋', 'pick up the phone'], ['🔑🚗', 'rent a car'], ['🎁😮', 'surprise'], ['🌧️', 'start to rain']
+];
+HouseMatching.build({
+  left: 'picCol', right: 'wordCol', scoreEl: 'mScore', totalEl: 'mTotal', winEl: 'mWin', resetBtn: 'mReset', feedbackEl: 'mFeedback',
+  pairs: WORDS.map(([e, w]) => ({ id: w, left: e, right: w }))
+});
+
+/* ── the people ───────────────────────────────────────────────────────── */
+document.getElementById('castRow').innerHTML = ['{Jenna|jenna}', '{Tom (her friend)|tom}', '{Kim (Jenna’s sister)|kim}'].map(StickSentence.html).join('');
+
+const SPEAKERS = {
+  Tom:   { cast: 'tom',   avatar: '👨', av: 'av-a', side: 'left' },
+  Jenna: { cast: 'jenna', avatar: '👩', av: 'av-b', side: 'right' }
+};
+/* each speaker's avatar takes the colour of their stick figure (overrides the house.css av-* colours) */
+const avStyle = s => { const c = (StickSentence.cast()[s.cast] || {}).colour;
+  return c ? 'background:' + c + '40;box-shadow:inset 0 0 0 2px ' + c : ''; };
+
+/* {words|figures} puts stick figures (or @ pictures) over the words; [words/pos] marks the grammar colours.
+   was / were are [aux], the -ing verb is [verb]; when, while, as are [conj].
+   ⟦…⟧ past simple · ⟪…⟫ past continuous · ⦃…⦄ the linking word (always coloured). */
+const LINES = [
+  ['Tom',   '[Hi/none], {[Jenna/noun]|jenna}! [How/wh] [⟦was⟧/verb] [your Saturday/subject]?'],
+  ['Jenna', '[Crazy/adj]! {[I/subject]|jenna:me} [⟪was doing⟫/aux] {[chores/object]|@🧹} [⦃when⦄/conj] {[a car/subject]|@🚗} [⟦pulled up⟧/verb] [to the driveway/prep].'],
+  ['Tom',   '[A car/noun]? [Who/wh] [⟦was⟧/verb] [it/subject]?'],
+  ['Jenna', '{[I/subject]|jenna:me} [⟦didn’t know⟧/neg]! [⦃While⦄/conj] {[I/subject]|jenna:👀} [⟪was looking⟫/aux] [out the window/prep], [a woman/subject] [⟦got out⟧/verb] [of the car/prep]. [She/subject] [⟪was wearing⟫/aux] {[big sunglasses/object]|@🕶️} [and/conj] [a hat/object].'],
+  ['Tom',   '[That’s strange/none]! [What/wh] [⟦did⟧/aux] [you/subject] [⟦do⟧/verb]?'],
+  ['Jenna', '{[I/subject]|jenna:😨} [⟦was⟧/verb] [a little scared/adj]. {[My dog/subject]|dog} [⟪was barking⟫/aux], [and/conj] {[my/det]|jenna} [heart/subject] [⟪was beating⟫/aux] [fast/adverb]! [So/conj] {[I/subject]|jenna:me} [⟦picked up⟧/verb] {[my phone/object]|@📱} [and/conj] [⟦called⟧/verb] [my neighbor, Mr. Lee/object].'],
+  ['Tom',   '[⟦Was⟧/verb] [he/subject] [home/adverb]?'],
+  ['Jenna', '[No/none]. [He/subject] [⟪was working⟫/aux]. [So/conj] {[I/subject]|jenna:me} [⟦opened⟧/verb] [the door/object] [⦃just as⦄/conj] [the woman/subject] [⟪was walking⟫/aux] [up to the house/prep]. [Then/time] [she/subject] [⟦took off⟧/verb] [her sunglasses/object]…'],
+  ['Tom',   '[And/conj]? [Who/wh] [⟦was⟧/verb] [she/subject]?'],
+  ['Jenna', '[It/subject] [⟦was⟧/verb] {[my/det]|jenna} {[sister, Kim/noun]|kim:😄}! [She/subject] [lives/verb] [in Chicago/prep]. [She/subject] [⟪was visiting⟫/aux] [friends/object] [near here/adverb], [so/conj] [she/subject] [⟦rented⟧/verb] {[a car/object]|@🚗} [and/conj] [⟦came⟧/verb] [to see me/none].'],
+  ['Tom',   '[What a surprise/none]! 🎁 [What/wh] [⟦did⟧/aux] [you/subject] [⟦do⟧/verb] [then/time]?'],
+  ['Jenna', '[⦃While⦄/conj] {[I/subject]|jenna:me} [⟪was making⟫/aux] {[coffee/object]|@☕}, {[Kim/subject]|kim} [⟪was telling⟫/aux] [me/object] [about Chicago/prep]. [Then/time], [⦃suddenly⦄/adverb], [it/subject] [⟦started⟧/verb] [to rain/verb]! 🌧️ [So/conj] {[we/subject]|jenna,kim} [⟦stayed⟧/verb] [home/adverb] [and/conj] [⟦watched⟧/verb] [movies/object].'],
+  ['Tom',   '[Fun/adj]! [And/conj] [what about/wh] [the chores/noun]?'],
+  ['Jenna', '[Ha/none]! {[I/subject]|jenna:me} [⟦didn’t finish⟧/neg] [them/object]. [⦃When⦄/conj] {[Kim/subject]|kim} [⟦left⟧/verb] [at ten/time], {[the dog/subject]|dog} [⟪was sleeping⟫/aux] [on the vacuum/prep]! 😂']
+];
+const conv = document.getElementById('conversation');
+LINES.forEach(([who, text]) => {
+  const s = SPEAKERS[who], right = s.side === 'right';
+  conv.insertAdjacentHTML('beforeend',
+    '<div class="bubble-wrap' + (right ? ' right' : '') + '">' +
+      '<div class="avatar ' + s.av + '" style="' + avStyle(s) + '">' + s.avatar + '</div>' +
+      '<div class="bubble-col"><div class="bname' + (right ? ' right' : '') + '">' + who + '</div>' +
+      '<div class="bubble ' + (right ? 'right' : 'left') + '">' + fix(StickSentence.html(text)) + '</div></div>' +
+    '</div>');
+});
+
+const CQ_ITEMS = [
+  { q: 'What was Jenna doing when the car pulled up?', opts: ['She was looking out the window.', 'She was doing chores.', 'She was talking to Mr. Lee.'], correct: 1 },
+  { q: 'Who was the woman in the car?', opts: ['Jenna’s neighbor', 'a friend from Chicago', 'Jenna’s sister, Kim'], correct: 2 },
+  { q: 'What happened while Jenna and Kim were talking in the kitchen?', opts: ['It started to rain.', 'Mr. Lee came home.', 'Kim left.'], correct: 0 }
+];
+HouseComprehension.build({ pre: 'preQuestions', quiz: 'quiz', items: CQ_ITEMS });
+</script>
+<script>HouseGrammar.init();</script>
+</body>
+</html>

@@ -1,0 +1,244 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<title>We’re Going to Be Late! — Will and Going to</title>
+<script>
+(function(){
+  try{
+    var saved = localStorage.getItem('theme-preference');
+    var theme = (saved === 'light' || saved === 'dark')
+      ? saved
+      : ((window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches) ? 'dark' : 'light');
+    document.documentElement.setAttribute('data-theme', theme);
+    var fs = parseFloat(localStorage.getItem('font-size-preference'));
+    if (fs >= 10 && fs <= 28) document.documentElement.style.setProperty('--fs-base', fs + 'px');
+  }catch(e){ /* localStorage/matchMedia unavailable — CSS media query still applies */ }
+})();
+</script>
+<link rel="stylesheet" href="house.css">
+<style>
+.cast-row{ display:flex; flex-wrap:wrap; gap:14px 18px; justify-content:center; align-items:flex-end; margin:0 0 1rem; padding:10px; background:var(--surface-1); border:1px solid var(--border); border-radius:var(--border-radius-lg); font-size:.8667rem; }
+/* will · going to · how sure: always coloured (the lesson's own contrast) */
+.t-will{ color:#7c3aed; font-weight:700; }
+.t-gt{ color:#0f766e; font-weight:700; }
+[data-theme="dark"] .t-will{ color:#c4b5fd; } [data-theme="dark"] .t-gt{ color:#5eead4; }
+.t-prob{ font-weight:700; text-decoration:underline dotted 2px; text-underline-offset:3px; }
+.pct-chip{ display:inline-block; min-width:3.2em; text-align:center; font-family:var(--font-mono); font-size:.8667rem; font-weight:700; line-height:1;
+  padding:4px 8px; border-radius:999px; color:#fff; background:var(--dh-c); box-shadow:0 1px 4px rgba(0,0,0,.25); vertical-align:middle; }
+/* ── the thought bubble of the past-deductions lesson (deduction-house.js), with pictures ── */
+.dh-think{ position:relative; margin:12px 0 4px; padding-top:14px; width:fit-content; max-width:100%; }
+.dh-cloud{ display:flex; flex-wrap:wrap; gap:8px; justify-content:center; padding:9px; border-radius:26px;
+  background:var(--surface-2); border:1.5px solid var(--color-border-primary); box-shadow:0 2px 10px rgba(0,0,0,.07); }
+.dh-panel{ position:relative; flex:0 1 150px; width:150px; min-width:0; }
+.dh-pct{ position:absolute; top:6px; right:6px; font-family:var(--font-mono); font-size:.8667rem; font-weight:700; line-height:1;
+  padding:4px 8px; border-radius:999px; color:#fff; background:var(--dh-c); box-shadow:0 1px 4px rgba(0,0,0,.25); }
+.dh-cap{ display:flex; align-items:center; justify-content:center; gap:5px; margin-top:5px; font-size:.8rem; font-weight:600; color:var(--text-secondary); text-align:center; line-height:1.3; }
+.dh-bar{ height:5px; border-radius:3px; background:var(--color-border-secondary); overflow:hidden; margin:4px 10px 0; }
+.dh-bar i{ display:block; height:100%; background:var(--dh-c); }
+.dh-split .dh-cloud{ flex-wrap:nowrap; align-items:stretch; gap:6px; }
+.dh-side{ display:flex; flex-direction:column; align-items:center; gap:5px; border-radius:20px; padding:6px; min-width:0; }
+.dh-panels{ display:flex; flex-wrap:wrap; gap:6px; justify-content:center; }
+.dh-when{ font-size:.7rem; font-weight:700; letter-spacing:.06em; text-transform:uppercase; color:var(--text-muted); }
+.dh-arrow{ display:flex; flex-direction:column; align-items:center; justify-content:center; color:var(--text-muted); flex:0 0 auto; }
+.dh-arr{ font-size:1.8rem; line-height:1; }
+.dh-arrow small{ font-size:.6667rem; white-space:nowrap; }
+/* now (what I can see) is in warm light; later (the guess) in blue */
+.fb-is{ background:rgba(230,160,40,.12); }
+.fb-will{ background:rgba(60,120,220,.08); }
+.fb-pic{ display:flex; align-items:center; justify-content:center; aspect-ratio:4/3; border-radius:16px; font-size:2.3rem; line-height:1.1; text-align:center; padding:4px;
+  background:linear-gradient(160deg, var(--color-background-info, #e6f1fb), var(--surface-1)); border:1px solid var(--border); }
+.dh-now .fb-pic{ background:linear-gradient(160deg, var(--color-background-warning, #fdf3e1), var(--surface-1)); }
+@media (max-width:640px){ .dh-split .dh-cloud{ flex-direction:column; align-items:center; } .dh-arr{ transform:rotate(90deg); } }
+@media (max-width:520px){ .dh-panel{ flex-basis:130px; width:130px; } .fb-pic{ font-size:2rem; } }
+/* a picture-and-percent cue for the practice pages: never the answer words */
+.cue{ display:inline-flex; align-items:center; gap:8px; flex-wrap:wrap; font-weight:400; font-style:normal; margin:0 0 6px; padding:4px 10px; border-radius:8px;
+  border:1px solid var(--color-border-tertiary); background:var(--surface-2); color:var(--text-secondary); font-size:.9rem; }
+.cue .pic{ font-size:1.3rem; }
+.quiz-q .q-text .cue{ display:flex; width:max-content; max-width:100%; }
+.dh-now .fb-pic{ font-size:1.7rem; }
+
+.match-wrap .match-col-label{ text-align:center; }
+#picCol .match-card{ font-size:1.35rem; justify-content:center; }
+.time-chip{ text-align:center; margin:10px 0; }
+.colour-key{ display:flex; flex-wrap:wrap; gap:6px 16px; justify-content:center; font-size:.8667rem; color:var(--text-secondary); margin:0 0 8px; }
+</style>
+</head>
+<body>
+<div class="page" id="page">
+  <span class="cefr-tag cefr-a2">A2 · Pre-intermediate</span>
+  <h1>We’re Going to Be Late!</h1>
+  <p class="subtitle">Carla and Marcus are at the airport in New York. They’re going on vacation to Hawaii. But first, they need to get on the plane!</p>
+
+  <div class="sec-div">Words for this lesson</div>
+  <p class="subtitle">Match the picture and the word. Tap a picture, then tap its word.</p>
+  <div class="score-bar"><span>Matched: <strong id="mScore">0</strong> / <span id="mTotal">0</span></span><button id="mReset">↺ Reset</button></div>
+  <div class="match-grid match-wrap">
+    <div><div class="match-col-label">Picture</div><div class="match-col" id="picCol"></div></div>
+    <div><div class="match-col-label">Word</div><div class="match-col" id="wordCol"></div></div>
+  </div>
+  <div class="win-msg" id="mWin">🎉 Great! You’re ready for the airport.</div>
+  <div class="feedback" id="mFeedback"></div>
+
+  <div class="sec-div">Before you read</div>
+  <div id="preQuestions"></div>
+
+  <div class="sec-div">The people</div>
+  <div class="cast-row" id="castRow"></div>
+
+  <div class="sec-div">The conversation</div>
+  <div class="setting-chip"><span class="section-icon">✈️</span> JFK Airport, New York · 7:00 a.m.</div>
+  <p class="subtitle">💭 The clouds show what they think will happen — and how sure they are.</p>
+  <div class="colour-key"><span><span class="t-will">will</span></span><span><span class="t-gt">going to</span></span><span><span class="t-prob">how sure</span></span></div>
+  <button class="grammar-toggle-btn" id="grammarToggle">🎨 Show Grammar</button>
+  <div class="pos-legend"></div>
+  <div id="conversation"></div>
+
+  <div class="sec-div">Check your answers</div>
+  <div id="quiz"></div>
+
+  <footer>We’re Going to Be Late! — Future: will and going to · plans and predictions (A2)</footer>
+</div>
+
+<div id="theme-toggle-wrap">
+  <button id="theme-toggle" aria-label="Toggle light/dark mode" title="Toggle light/dark mode">
+    <span id="theme-icon">☀️</span>
+  </button>
+</div>
+<script src="house.js"></script>
+<script src="stick-character.js"></script>
+<script src="stick-sentence.js"></script>
+<script>
+/* Carla and Marcus are flying from New York to Hawaii for a vacation — the same people on every page of this lesson */
+StickSentence.cast({
+  carla:  { base:'woman', colour:'#FF6600', label:'Carla' },
+  marcus: { base:'man',   colour:'#3366CC', label:'Marcus' }
+});
+StickSentence.toggle();   /* stick figures hidden by default */
+
+/* The lesson's own colours stay on every page (they are the lesson, not grammar-toggle colours):
+   ⟦…⟧ will · ⟪…⟫ going to · ⦃…⦄ how sure (probably, might, I doubt …).
+   Write the markers first, so the stick-figure markup can still read the sentence, then colour them. */
+const fix = h => h.replace(/⟦([^⟧]*)⟧/g, '<span class="t-will">$1</span>')
+                  .replace(/⟪([^⟫]*)⟫/g, '<span class="t-gt">$1</span>')
+                  .replace(/⦃([^⦄]*)⦄/g, '<span class="t-prob">$1</span>');
+
+/* How sure? The colour runs red (0 %) → amber → green (100 %), as in the past-deductions thought bubbles. */
+const colourOf = pct => 'hsl(' + Math.round(pct * 1.2) + 'deg 70% 38%)';
+const pctChip = p => '<span class="pct-chip" style="--dh-c:' + colourOf(p) + '">' + p + '%</span>';
+
+/* The thought bubble from the past-deductions lesson (DeductionHouse.bubble / pastBubble): the same cloud,
+   panels, % badges and bars, with pictures for the airport and the vacation instead of the house.
+   The picture is as solid as the speaker is sure: 100 % is solid, 10 % a faint ghost.
+     futureBubble({ later: [{ pic, cap, pct }] })                 just an opinion (will): only the guesses
+     futureBubble({ now: { pic, cap }, later: [{ pic, cap, pct }] }) with evidence (going to): what the speaker
+         can see now ➜ what they think will happen
+   Under a line of the conversation it goes through HouseThink.html, like the deductions bubbles. */
+const ghost = pct => Math.max(0.15, Math.min(1, pct / 100));
+const fbPanel = p => '<div class="dh-panel fb-panel" style="--dh-c:' + colourOf(p.pct) + '">' +
+  '<div class="fb-pic"><span style="opacity:' + ghost(p.pct) + '">' + p.pic + '</span></div>' +
+  '<span class="dh-pct">' + p.pct + '%</span><div class="dh-cap">' + p.cap + '</div><div class="dh-bar"><i style="width:' + p.pct + '%"></i></div></div>';
+function futureBubble(spec, label) {
+  const later = (spec.later || []).map(fbPanel).join('');
+  const body = spec.now
+    ? '<div class="dh-think dh-split fb-think" aria-label="' + (label || 'What the speaker thinks will happen') + '"><div class="dh-cloud">' +
+        '<div class="dh-side fb-is"><span class="dh-when">👀 now</span><div class="dh-panel fb-panel dh-now"><div class="fb-pic">' + spec.now.pic + '</div><div class="dh-cap">' + spec.now.cap + '</div></div></div>' +
+        '<div class="dh-arrow" aria-hidden="true"><span class="dh-arr">⟶</span><small>so…</small></div>' +
+        '<div class="dh-side fb-will"><span class="dh-when">🔮 later</span><div class="dh-panels">' + later + '</div></div></div></div>'
+    : '<div class="dh-think fb-think" aria-label="' + (label || 'What the speaker thinks will happen') + '"><div class="dh-cloud">' +
+        '<div class="dh-side fb-will"><span class="dh-when">💭 I think…</span><div class="dh-panels">' + later + '</div></div></div></div>';
+  return HouseThink.html(body, { label: label || 'What the speaker thinks will happen' });
+}
+
+/* the learner's dictionary (right-click / long press a word): what these words mean in this lesson */
+window.LESSON_DICT = {
+  'boarding pass':   { pos:'noun', def:'the card or phone ticket that lets you get on the plane', ex:'The boarding passes are on my phone.', es:'pase de abordar, tarjeta de embarque' },
+  'check in':        { pos:'phrasal verb', def:'to show your ticket and give your big bags to the airline at the airport', ex:'We checked in our bags.', es:'documentar, facturar, hacer el check-in' },
+  'security':        { pos:'noun', def:'the place at the airport where people check you and your bags', ex:'Look at that line for security!', es:'control de seguridad' },
+  'gate':            { pos:'noun', def:'the door at the airport where you get on your plane', ex:'Our flight leaves from Gate 22.', es:'puerta de embarque' },
+  'delayed':         { pos:'adjective', def:'late: it will happen later than planned', ex:'Our flight is delayed two hours.', es:'retrasado' },
+  'departure board': { pos:'noun', def:'the big screen at the airport with the times and gates of the flights', ex:'Look at the departure board!', es:'pantalla de salidas' },
+  'boarding':        { pos:'noun', def:'the time when people get on the plane', ex:'Boarding starts at 7:30.', es:'abordaje, embarque' },
+  'board':           { pos:'verb', def:'to get on a plane, a bus or a ship', ex:'We’re going to board soon!', es:'abordar, embarcar' },
+  'carry-on':        { pos:'noun', def:'a small bag you take with you onto the plane', ex:'Your sweater is in the carry-on.', es:'equipaje de mano' },
+  'sunscreen':       { pos:'noun', def:'a cream you put on your skin so the sun doesn’t burn it', ex:'Don’t forget the sunscreen!', es:'protector solar, bloqueador' },
+  'doubt':           { pos:'verb', def:'to think something is probably not true or will probably not happen', ex:'I doubt you’ll stand up on the board.', es:'dudar' },
+  'dry season':      { pos:'noun', def:'the months of the year with very little rain', ex:'It’s the dry season in Hawaii.', es:'temporada seca' }
+};
+
+/* ── picture → word ───────────────────────────────────────────────────── */
+const WORDS = [
+  ['🎫', 'boarding pass'], ['🧳➡️👩‍💼', 'check in'], ['🔍🧳', 'security'], ['🚪✈️', 'gate'], ['⏰😩', 'delayed'], ['🖥️✈️', 'departure board'],
+  ['🎒', 'carry-on'], ['🛂', 'passport'], ['✈️', 'flight'], ['🏨', 'hotel'], ['🏄', 'surfing lessons'], ['🧴☀️', 'sunscreen']
+];
+HouseMatching.build({
+  left: 'picCol', right: 'wordCol', scoreEl: 'mScore', totalEl: 'mTotal', winEl: 'mWin', resetBtn: 'mReset', feedbackEl: 'mFeedback',
+  pairs: WORDS.map(([e, w]) => ({ id: w, left: e, right: w }))
+});
+
+/* ── the people ───────────────────────────────────────────────────────── */
+document.getElementById('castRow').innerHTML = ['{Carla|carla}', '{Marcus|marcus}'].map(StickSentence.html).join('');
+
+const SPEAKERS = {
+  Carla:  { cast: 'carla',  avatar: '👩', av: 'av-a', side: 'left' },
+  Marcus: { cast: 'marcus', avatar: '👨', av: 'av-b', side: 'right' }
+};
+/* each speaker's avatar takes the colour of their stick figure (overrides the house.css av-* colours) */
+const avStyle = s => { const c = (StickSentence.cast()[s.cast] || {}).colour;
+  return c ? 'background:' + c + '40;box-shadow:inset 0 0 0 2px ' + c : ''; };
+
+/* [who, line, thought]. {words|figures} puts stick figures (or @ pictures) over the words; [words/pos] marks the grammar colours.
+   will / going to are [aux]; the verb after them is [verb]; probably, definitely … are [adverb].
+   thought: what the speaker thinks will happen (futureBubble) — with “now” when they can see the evidence. */
+const LINES = [
+  ['Carla',  '[Okay/none], {[we/subject]|carla,marcus} [checked in/verb] [our bags/object]. [Where/wh] [are/verb] {[the boarding passes/noun]|@🎫}?'],
+  ['Marcus', '[On my phone/prep]. 📱 [But/conj] [look at/verb] [the line/object] [for security/prep]! [It’s/subject] [so long/adj]. {[We’re/subject]|carla,marcus} [⟪going to⟫/aux] [be/verb] [late/adj]!',
+    { now: { pic: '🧍🧍🧍<br>🧍🧍🧍', cap: '👀 a very long line' }, later: [{ pic: '⏰✈️💨', cap: 'we’re late', pct: 90 }] }],
+  ['Carla',  '[Relax/verb]. [Boarding/subject] [starts/verb] [at 7:30/time]. {[I/subject]|carla:me} [think/verb] {[we’ll/subject]|carla,marcus} [⦃probably⦄/adverb] [be/verb] [fine/adj].',
+    { later: [{ pic: '🙂✈️', cap: 'we’re on time', pct: 75 }] }],
+  ['Carla',  '[Oh no/none]… [look at/verb] {[the departure board/object]|@🖥️}. [Our flight/subject] [is/verb] [delayed/adj] — [two hours/time]! 😩'],
+  ['Marcus', '[Two hours/time]? [What/wh] [are/aux] {[we/subject]|carla,marcus} [⟪going to⟫/aux] [do/verb]?'],
+  ['Carla',  '[Well/none], {[I’m/subject]|carla:me} [⟪going to⟫/aux] [read/verb] {[my book/object]|@📖}. {[I/subject]|carla:me} [bought/verb] [it/object] [for this trip/prep].'],
+  ['Marcus', '[And/conj] {[I’m/subject]|marcus:me} [⟪going to⟫/aux] [call/verb] [my mom/object]. 📞 [She/subject] [worries/verb] [a lot/adverb]!'],
+  ['Carla',  '[Brr/none]… [It’s/subject] [cold/adj] [in here/adverb]. {[I’m/subject]|carla:🥶} [freezing/adj]!'],
+  ['Marcus', '[Wait/verb]. {[⟦I’ll⟧/subject]|marcus:me} [get/verb] [your sweater/object] [from/prep] {[the carry-on/noun]|@🎒}.'],
+  ['Carla',  '[Thanks/none]! 🧥 [So/none]… [do you think/none] [it/subject] [⟦will⟧/aux] [rain/verb] [in Hawaii/prep]? 🌧️'],
+  ['Marcus', '[Hmm/none]. {[I/subject]|marcus:me} [⦃don’t think⦄/neg] [it/subject] [⟦will⟧/aux] [rain/verb] [much/adverb]. [It’s/subject] [the dry season/noun]. [But/conj] [it/subject] [⦃might⦄/aux] [rain/verb] [in the mountains/prep]. ⛰️',
+    { later: [{ pic: '🏖️🌧️', cap: 'rain at the beach', pct: 25 }, { pic: '⛰️🌧️', cap: 'rain in the mountains', pct: 50 }] }],
+  ['Carla',  '{[⦃I’m sure⦄/subject]|carla:me} {[⟦we’ll⟧/subject]|carla,marcus} [love/verb] {[the hotel/object]|@🏨}. [The photos/subject] [are/verb] [amazing/adj]! 😍',
+    { later: [{ pic: '🏨😍', cap: 'we love the hotel', pct: 90 }] }],
+  ['Marcus', '[And/conj] [on the second day/time], {[we’re/subject]|carla,marcus} [⟪going to⟫/aux] [take/verb] {[surfing lessons/object]|@🏄}! {[I/subject]|marcus:me} [booked/verb] [them/object] [last week/time].'],
+  ['Carla',  '[Ha/none]! {[I/subject]|carla:me} [⦃doubt⦄/verb] {[⟦you’ll⟧/subject]|marcus} [stand up/verb] [on the board/prep]. {[⟦You’ll⟧/subject]|marcus} [⦃probably⦄/adverb] [fall/verb] [a lot/adverb]! 😂',
+    { later: [{ pic: '🏄‍♂️', cap: 'Marcus stands up', pct: 10 }, { pic: '🌊😵', cap: 'Marcus falls', pct: 75 }] }],
+  ['Marcus', '[Maybe/adverb]. [But/conj] {[⟦I’ll⟧/subject]|marcus:me} [⦃definitely⦄/adverb] [have/verb] [fun/object]! 🥳',
+    { later: [{ pic: '🥳🌺', cap: 'I have fun', pct: 100 }] }],
+  ['—', '⏳ Two hours later…'],
+  ['Carla',  '[Look/verb]! [The plane/subject] [is/verb] [at the gate/prep], [and/conj] [people/subject] [are standing/verb] [in line/prep]. {[We’re/subject]|carla,marcus} [⟪going to⟫/aux] [board/verb] [soon/time]!',
+    { now: { pic: '✈️🚪<br>🧍🧍🧍', cap: '👀 people in line at the gate' }, later: [{ pic: '🛫', cap: 'we board soon', pct: 95 }] }],
+  ['Marcus', '[Finally/adverb]! [Hawaii/noun], [here we come/none]! 🌺']
+];
+const conv = document.getElementById('conversation');
+LINES.forEach(([who, text, think]) => {
+  if (who === '—') { conv.insertAdjacentHTML('beforeend', '<div class="time-chip"><span class="setting-chip">' + text + '</span></div>'); return; }
+  const s = SPEAKERS[who], right = s.side === 'right';
+  conv.insertAdjacentHTML('beforeend',
+    '<div class="bubble-wrap' + (right ? ' right' : '') + '">' +
+      '<div class="avatar ' + s.av + '" style="' + avStyle(s) + '">' + s.avatar + '</div>' +
+      '<div class="bubble-col"><div class="bname' + (right ? ' right' : '') + '">' + who + '</div>' +
+      '<div class="bubble ' + (right ? 'right' : 'left') + '">' + fix(StickSentence.html(text)) + '</div>' +
+      (think ? futureBubble(think, who + ' thinks') : '') +
+      '</div>' +
+    '</div>');
+});
+
+const CQ_ITEMS = [
+  { q: 'Why are Carla and Marcus at the airport for two more hours?', opts: ['Their flight is delayed.', 'They’re late for security.', 'They lost their boarding passes.'], correct: 0 },
+  { q: 'What are Carla and Marcus going to do on the second day in Hawaii?', opts: ['They’re going to go to the mountains.', 'They’re going to take surfing lessons.', 'They’re going to call Marcus’s mom.'], correct: 1 },
+  { q: 'Does Marcus think it will rain a lot in Hawaii?', opts: ['Yes, he’s sure it will.', 'No, he doesn’t think so.', 'He doesn’t say.'], correct: 1 }
+];
+HouseComprehension.build({ pre: 'preQuestions', quiz: 'quiz', items: CQ_ITEMS });
+</script>
+<script>HouseGrammar.init();</script>
+</body>
+</html>

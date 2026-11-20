@@ -1,0 +1,278 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<title>I Was Doing Chores When… — Clarification</title>
+<script>
+(function(){
+  try{
+    var saved = localStorage.getItem('theme-preference');
+    var theme = (saved === 'light' || saved === 'dark')
+      ? saved
+      : ((window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches) ? 'dark' : 'light');
+    document.documentElement.setAttribute('data-theme', theme);
+    var fs = parseFloat(localStorage.getItem('font-size-preference'));
+    if (fs >= 10 && fs <= 28) document.documentElement.style.setProperty('--fs-base', fs + 'px');
+  }catch(e){ /* localStorage/matchMedia unavailable — CSS media query still applies */ }
+})();
+</script>
+<link rel="stylesheet" href="house.css">
+<style>
+.cast-row{ display:flex; flex-wrap:wrap; gap:14px 18px; justify-content:center; align-items:flex-end; margin:0 0 1rem; padding:10px; background:var(--surface-1); border:1px solid var(--border); border-radius:var(--border-radius-lg); font-size:.8667rem; }
+/* past simple ⚡ · past continuous ⏳ · linking words: always coloured (the lesson's own contrast) */
+.tense-ps{ color:#1d4ed8; font-weight:700; }
+.tense-pc{ color:#c2410c; font-weight:700; text-decoration:underline wavy 1.5px; text-underline-offset:4px; }
+[data-theme="dark"] .tense-ps{ color:#93c5fd; } [data-theme="dark"] .tense-pc{ color:#fdba74; }
+.t-link{ font-weight:800; background:var(--surface-1); border:1px solid var(--color-border-secondary); border-radius:6px; padding:0 4px; }
+.colour-key{ display:flex; flex-wrap:wrap; gap:6px 16px; justify-content:center; font-size:.8667rem; color:var(--text-secondary); margin:0 0 8px; }
+/* a picture cue for the practice pages: never the answer words */
+.cue{ display:inline-flex; align-items:center; gap:8px; flex-wrap:wrap; font-weight:400; font-style:normal; margin:0 0 6px; padding:4px 10px; border-radius:8px;
+  border:1px solid var(--color-border-tertiary); background:var(--surface-2); color:var(--text-secondary); font-size:.9rem; }
+.cue .pic{ font-size:1.3rem; }
+.quiz-q .q-text .cue{ display:flex; width:max-content; max-width:100%; }
+
+.groups{ display:grid; grid-template-columns:minmax(0,1fr); gap:10px; margin-bottom:1rem; }
+.groups > div{ border:1px solid var(--color-border-tertiary); border-radius:12px; background:var(--surface-2); padding:9px 11px; }
+.groups h3{ display:flex; align-items:center; gap:8px; margin:0 0 2px; font-size:1rem; }
+.groups h3 .pic{ font-size:1.3rem; }
+.groups .sub{ font-size:.8rem; color:var(--text-secondary); margin:0 0 6px; }
+.groups ul{ list-style:none; margin:0; padding:0; }
+.groups li{ padding:6px 0; line-height:1.6; font-size:.9333rem; }
+.groups li + li{ border-top:.5px dashed var(--color-border-secondary); }
+.links{ display:grid; grid-template-columns:auto minmax(0,1fr); gap:8px 12px; align-items:baseline; margin:0 0 1rem; padding:10px 12px;
+  border:1px solid var(--border); border-radius:var(--border-radius-lg); background:var(--surface-1); font-size:.9333rem; line-height:1.5; }
+.links small{ color:var(--text-secondary); }
+.flip{ display:grid; grid-template-columns:minmax(0,1fr) auto minmax(0,1fr); gap:8px; align-items:center; margin-bottom:1rem; }
+.flip > div{ border:1px solid var(--color-border-tertiary); border-radius:12px; background:var(--surface-2); padding:8px 11px; font-size:.9333rem; line-height:1.6; }
+.flip .eq{ font-weight:800; color:var(--text-muted); font-size:1.1rem; }
+@media (max-width:560px){ .flip{ grid-template-columns:1fr; } .flip .eq{ text-align:center; } }
+.rule-box p{ margin:0 0 6px; }
+.rule-box p:last-child{ margin-bottom:0; }
+</style>
+</head>
+<body>
+<div class="page" id="page">
+  <span class="cefr-tag cefr-a2">A2 · Pre-intermediate</span>
+  <h1>I Was Doing Chores When…</h1>
+  <p class="subtitle">Tell a story: the long action ⏳ (past continuous) and the short action ⚡ (past simple).</p>
+  <div class="colour-key"><span><span class="tense-ps">⚡ past simple</span></span><span><span class="tense-pc">⏳ past continuous</span></span><span><span class="t-link">when · while</span></span></div>
+
+  <div class="sec-div">The timeline</div>
+  <div id="timeline1"></div>
+  <div id="timeline2"></div>
+
+  <div class="sec-div">Look</div>
+  <p class="subtitle">From the conversation. Which action is long? Which is short?</p>
+  <div class="groups" id="groups"></div>
+
+  <div class="sec-div">When, while, as, just as</div>
+  <div class="links" id="links"></div>
+
+  <div class="sec-div">Same story, two ways</div>
+  <p class="subtitle">You can start with the long action or the short action. Look at the comma.</p>
+  <div id="flip"></div>
+
+  <div class="sec-div">Check the meaning</div>
+  <p class="subtitle">Read the sentence. Answer the questions.</p>
+  <div id="ccq"></div>
+
+  <div class="sec-div">Look at the form</div>
+  <p class="subtitle">What is each part of the sentence? Drag a label (or tap a label, then tap a box).</p>
+  <div class="score-bar"><span>Correct: <strong id="fcScore">0</strong> / <span id="fcTotal">0</span></span></div>
+  <div id="formClarf"></div>
+  <div class="rule-box" id="ruleBox"></div>
+
+  <div class="sec-div">Common mistakes</div>
+  <div id="mistakes"></div>
+
+  <div class="sec-div">Error hunt</div>
+  <p class="subtitle">Some sentences have a mistake. Some are correct! Tap a word — or a space between words — to fix it. Then press OK.</p>
+  <div class="score-bar"><span>Done: <strong id="errorScore">0</strong> / <span id="errorTotal">0</span></span></div>
+  <div id="errorHuntItems"></div>
+
+  <footer>Narrative tenses: past simple and past continuous with when and while — Clarification (A2)</footer>
+</div>
+
+<div id="theme-toggle-wrap">
+  <button id="theme-toggle" aria-label="Toggle light/dark mode" title="Toggle light/dark mode">
+    <span id="theme-icon">☀️</span>
+  </button>
+</div>
+<script src="house.js"></script>
+<script src="stick-character.js"></script>
+<script src="stick-sentence.js"></script>
+<script>
+/* Jenna tells her friend Tom about a surprise visit from her sister Kim — the same people on every page of this lesson */
+StickSentence.cast({
+  jenna: { base:'woman', colour:'#CC0066', label:'Jenna' },
+  tom:   { base:'man',   colour:'#009999', label:'Tom' },
+  kim:   { base:'woman', colour:'#9966FF', label:'Kim' }
+});
+StickSentence.toggle();   /* stick figures hidden by default */
+
+/* The two tenses are the lesson, so they stay coloured on every page (tense-* classes, not grammar-toggle colours):
+   ⟦…⟧ past simple (the short action ⚡) · ⟪…⟫ past continuous (the long action ⏳) · ⦃…⦄ when, while, as …
+   Write the markers first, so the stick-figure markup can still read the sentence, then colour them. */
+const fix = h => h.replace(/⟦([^⟧]*)⟧/g, '<span class="tense-ps">$1</span>')
+                  .replace(/⟪([^⟫]*)⟫/g, '<span class="tense-pc">$1</span>')
+                  .replace(/⦃([^⦄]*)⦄/g, '<span class="t-link">$1</span>');
+
+/* the learner's dictionary (right-click / long press a word): what these words mean in this lesson */
+window.LESSON_DICT = {
+  'chores':     { pos:'noun', def:'the small jobs you do at home, like cleaning and washing clothes', ex:'I was doing chores when a car pulled up.', es:'quehaceres, tareas de la casa' },
+  'pull up':    { pos:'phrasal verb', def:'(for a car) to arrive and stop', ex:'A car pulled up to the driveway.', es:'detenerse, estacionarse (un carro)' },
+  'driveway':   { pos:'noun', def:'the short road from the street to a house or garage', ex:'There was a red car in the driveway.', es:'entrada para carros' },
+  'vacuum':     { pos:'noun / verb', def:'a machine that cleans floors; to clean floors with it', ex:'I was vacuuming the living room.', es:'aspiradora; pasar la aspiradora' },
+  'bark':       { pos:'verb', def:'to make the loud short sound a dog makes', ex:'My dog was barking.', es:'ladrar' },
+  'rent':       { pos:'verb', def:'to pay money to use something for a short time', ex:'She rented a car at the airport.', es:'alquilar, rentar' },
+  'while':      { pos:'conjunction', def:'during the time that something is happening', ex:'While I was making coffee, Kim was talking.', es:'mientras' },
+  'just as':    { pos:'conjunction', def:'exactly at the same moment', ex:'I opened the door just as she was walking up to the house.', es:'justo cuando' },
+  'suddenly':   { pos:'adverb', def:'quickly, and when you don’t expect it', ex:'Suddenly, it started to rain.', es:'de repente' }
+};
+
+const S = m => fix(StickSentence.html(m));
+const li = m => '<li>' + S(m) + '</li>';
+
+/* ── timelines: the long action is a band, the short action a point inside it ── */
+HouseTimeline.build({
+  container: 'timeline1', startLabel: 'Saturday afternoon', nowLabel: 'NOW', nowNote: 'Sunday: Jenna tells Tom',
+  bands: [{ from: 0.08, to: 0.62, label: '⏳ I was doing chores' }],
+  events: [{ at: 0.36, emoji: '🚗', label: 'a car pulled up', kind: 'point' }],
+  caption: 'I was doing chores (long action, in progress) when a car pulled up (short action: it happened in the middle).'
+});
+HouseTimeline.build({
+  container: 'timeline2', startLabel: 'Saturday afternoon', nowLabel: 'NOW', nowNote: 'Sunday',
+  events: [
+    { at: 0.2, emoji: '😨', label: 'got scared', kind: 'point' },
+    { at: 0.4, emoji: '📱', label: 'picked up my phone', kind: 'point' },
+    { at: 0.6, emoji: '📞', label: 'called Mr. Lee', kind: 'point' }
+  ],
+  caption: 'One short action after another: past simple, past simple, past simple.'
+});
+
+/* ── look: four kinds of story sentence ───────────────────────────────── */
+document.getElementById('groups').innerHTML =
+  '<div><h3><span class="pic">⏳⚡</span> A long action, then a short action in the middle</h3><p class="sub">⏳ past continuous + ⚡ past simple</p><ul>' +
+    li('{I|jenna:me} ⟪was doing⟫ {chores|@🧹} ⦃when⦄ {a car|@🚗} ⟦pulled up⟧ to the driveway.') +
+    li('⦃While⦄ {I|jenna:👀} ⟪was looking⟫ out the window, a woman ⟦got out⟧ of the car.') +
+    li('{I|jenna:me} ⟦opened⟧ the door ⦃just as⦄ the woman ⟪was walking⟫ up to the house.') +
+  '</ul></div>' +
+  '<div><h3><span class="pic">🖼️⏳</span> The background of the story</h3><p class="sub">What was happening around? ⏳ past continuous</p><ul>' +
+    li('She ⟪was wearing⟫ {big sunglasses|@🕶️} and a hat.') +
+    li('{My dog|dog} ⟪was barking⟫, and {my|jenna} heart ⟪was beating⟫ fast!') +
+  '</ul></div>' +
+  '<div><h3><span class="pic">⏳⏳</span> Two long actions at the same time</h3><p class="sub">⏳ past continuous + ⏳ past continuous</p><ul>' +
+    li('⦃While⦄ {I|jenna:me} ⟪was making⟫ {coffee|@☕}, {Kim|kim} ⟪was telling⟫ me about Chicago.') +
+  '</ul></div>' +
+  '<div><h3><span class="pic">⚡⚡</span> Short actions, one after another</h3><p class="sub">⚡ past simple + ⚡ past simple</p><ul>' +
+    li('{I|jenna:me} ⟦picked up⟧ {my phone|@📱} and ⟦called⟧ my neighbor.') +
+    li('She ⟦rented⟧ {a car|@🚗} and ⟦came⟧ to see me.') +
+    li('⦃When⦄ she ⟦took off⟧ her sunglasses, {I|jenna:😄} ⟦saw⟧ it was {Kim|kim}!') +
+  '</ul></div>';
+
+/* ── the linking words ─────────────────────────────────────────────────── */
+document.getElementById('links').innerHTML = fix(
+  '<b>⦃when⦄</b><span>usually + the short action ⚡: I ⟪was cooking⟫ ⦃when⦄ the phone ⟦rang⟧.<br><small>⦃When⦄ + ⚡, ⚡ = one after the other: ⦃When⦄ Kim ⟦left⟧, I ⟦went⟧ to bed.</small></span>' +
+  '<b>⦃while⦄</b><span>+ the long action ⏳: ⦃While⦄ I ⟪was cooking⟫, the phone ⟦rang⟧.</span>' +
+  '<b>⦃as⦄</b><span>= while: ⦃As⦄ I ⟪was walking⟫ home, it ⟦started⟧ to rain.</span>' +
+  '<b>⦃just as⦄</b><span>exactly at that moment: I ⟦opened⟧ the door ⦃just as⦄ she ⟪was walking⟫ up.</span>' +
+  '<b>⦃suddenly⦄</b><span>a surprise ⚡: I ⟪was reading⟫. ⦃Suddenly⦄, the lights ⟦went⟧ out.</span>');
+
+/* ── same story, two ways ──────────────────────────────────────────────── */
+const FLIP = [
+  ['I ⟪was doing⟫ chores ⦃when⦄ a car ⟦pulled up⟧.', '⦃When⦄ a car ⟦pulled up⟧, I ⟪was doing⟫ chores.'],
+  ['A woman ⟦got out⟧ of the car ⦃while⦄ I ⟪was looking⟫ out the window.', '⦃While⦄ I ⟪was looking⟫ out the window, a woman ⟦got out⟧ of the car.']
+];
+document.getElementById('flip').innerHTML = FLIP.map(([a, b]) =>
+  '<div class="flip"><div>' + fix(a) + '</div><span class="eq">=</span><div>' + fix(b.replace(',', '<b style="color:var(--bad, #c00);font-size:1.2em">,</b>')) + '</div></div>').join('');
+
+/* ── concept checking questions ────────────────────────────────────────── */
+HouseCCQ.build({
+  container: 'ccq',
+  items: [
+    { sentence: S('{I|jenna:me} ⟪was doing⟫ {chores|@🧹} ⦃when⦄ {a car|@🚗} ⟦pulled up⟧.'),
+      questions: [
+        { q: 'Which action started first?', opts: ['doing chores', 'the car pulled up'], correct: 0,
+          why: 'Doing chores. Jenna started the chores before; the car arrived in the middle.' },
+        { q: 'Which action was longer?', opts: ['doing chores', 'the car pulled up'], correct: 0,
+          why: 'Doing chores — a long action in progress: past continuous (was doing).' },
+        { q: 'Did she finish the chores before the car arrived?', opts: ['Yes', 'No'], correct: 1,
+          why: 'No. She was in the middle of the chores. (In fact, she never finished them!)' }
+      ] },
+    { sentence: S('⦃When⦄ she ⟦took off⟧ her sunglasses, {I|jenna:😄} ⟦saw⟧ it was {Kim|kim}.'),
+      questions: [
+        { q: 'Did these happen at the same time?', opts: ['Yes', 'No, one after the other'], correct: 1,
+          why: 'One after the other: first she took off her sunglasses, then Jenna saw her face. Two short actions: past simple + past simple.' }
+      ] },
+    { sentence: S('⦃While⦄ {I|jenna:me} ⟪was making⟫ {coffee|@☕}, {Kim|kim} ⟪was telling⟫ me about Chicago.'),
+      questions: [
+        { q: 'Were the two actions happening at the same time?', opts: ['Yes', 'No'], correct: 0,
+          why: 'Yes — two long actions at the same time: past continuous + past continuous.' }
+      ] },
+    { sentence: S('She ⟪was wearing⟫ {big sunglasses|@🕶️}.'),
+      questions: [
+        { q: 'Is this the main action of the story, or the background?', opts: ['The main action', 'The background'], correct: 1,
+          why: 'The background: it describes the scene. We use the past continuous for this.' }
+      ] }
+  ]
+});
+
+/* ── form ──────────────────────────────────────────────────────────────── */
+HouseFormClarf.build({
+  container: 'formClarf', scoreEl: 'fcScore', totalEl: 'fcTotal',
+  pool: ['subject', 'aux', 'verb', 'neg', 'object', 'conj', 'prep', 'wh'],
+  items: [
+    { form: 'aff', parts: [['I', 'subject'], ['was', 'aux'], ['doing', 'verb'], ['chores', 'object'], ['when', 'conj'], ['a car', 'subject'], ['pulled up', 'verb'], ['.', null]] },
+    { form: 'aff', parts: [['While', 'conj'], ['we', 'subject'], ['were', 'aux'], ['having', 'verb'], ['coffee', 'object'], [',', null], ['it', 'subject'], ['started', 'verb'], ['to rain', 'verb'], ['.', null]] },
+    { form: 'neg', parts: [['Mr. Lee', 'subject'], ['wasn’t', 'neg'], ['working', 'verb'], ['at home', 'prep'], ['.', null]] },
+    { form: 'q',   parts: [['Was', 'aux'], ['your dog', 'subject'], ['barking', 'verb'], ['?', null]] },
+    { form: 'wh',  parts: [['What', 'wh'], ['were', 'aux'], ['you', 'subject'], ['doing', 'verb'], ['when', 'conj'], ['she', 'subject'], ['arrived', 'verb'], ['?', null]] }
+  ]
+});
+document.getElementById('ruleBox').innerHTML = fix(
+  '<p><strong>⏳ Past continuous:</strong> was / were + verb-ing. I / he / she / it ⟪was⟫ ⟪working⟫ · you / we / they ⟪were⟫ ⟪working⟫. Negative: wasn’t / weren’t ⟪working⟫. Question: ⟪Was⟫ he ⟪working⟫? What ⟪were⟫ you ⟪doing⟫?</p>' +
+  '<p><strong>⚡ Past simple:</strong> regular verbs + -ed (⟦pulled⟧, ⟦opened⟧, ⟦started⟧); irregular verbs have their own form (⟦got⟧, ⟦came⟧, ⟦took⟧, ⟦left⟧). Negative and question: didn’t / did + base verb: I ⟦didn’t know⟧. What ⟦did⟧ you ⟦do⟧?</p>' +
+  '<p><strong>-ing spelling:</strong> make → making · sit → sitting · stop → stopping · lie → lying.</p>' +
+  '<p><strong>The comma:</strong> when the sentence starts with ⦃When⦄ or ⦃While⦄, put a comma in the middle: ⦃While⦄ I was cooking<b>,</b> the phone rang.</p>' +
+  '<p><strong>Some verbs are not actions</strong> (know, like, want, have = own): no -ing. I ⟦didn’t know⟧ her — not “I wasn’t knowing her”.</p>');
+
+/* ── common mistakes ───────────────────────────────────────────────────── */
+const MISTAKES = [
+  ['I doing chores when a car pulled up.', 'I was doing chores when a car pulled up.'],
+  ['We was having coffee.', 'We were having coffee.'],
+  ['I was doing chores when a car was pulling up.', 'I was doing chores when a car pulled up.'],
+  ['While I looked out the window, a woman was getting out of the car.', 'While I was looking out the window, a woman got out of the car.'],
+  ['When I was seeing her face, I was happy.', 'When I saw her face, I was happy.'],
+  ['I wasn’t knowing the woman.', 'I didn’t know the woman.'],
+  ['What you were doing at 3:00?', 'What were you doing at 3:00?'],
+  ['While I was making coffee Kim was talking.', 'While I was making coffee, Kim was talking.']
+];
+document.getElementById('mistakes').innerHTML = MISTAKES.map(([no, yes]) =>
+  '<div class="pair-card"><div class="pair-line no"><span class="mark">✗</span>' + no + '</div>' +
+  '<div class="pair-line yes"><span class="mark">✓</span>' + yes + '</div></div>').join('');
+
+/* ── error hunt (A2: some sentences are already correct) ── */
+const EH_ITEMS = [
+  { words: ['I', 'was', 'vacuum', 'when', 'the', 'phone', 'rang', '.'],
+    error: { type: 'wrong', wordIndex: 2, options: ['vacuuming', 'vacuumed', 'vacuums'], correct: 'vacuuming' } },
+  { words: ['While', 'we', 'were', 'watching', 'a', 'movie', ',', 'the', 'lights', 'went', 'out', '.'], error: null },
+  { words: ['They', 'was', 'playing', 'soccer', 'when', 'it', 'started', 'to', 'rain', '.'],
+    error: { type: 'wrong', wordIndex: 1, options: ['were', 'are', 'did'], correct: 'were' } },
+  { words: ['She', 'was', 'cooking', 'when', 'her', 'brother', 'was', 'arriving', '.'],
+    error: { type: 'wrong', wordIndex: 7, options: ['arrived', 'arrive', 'arrives'], correct: 'arrived' } },
+  { words: ['When', 'the', 'bus', 'stopped', ',', 'we', 'got', 'off', '.'], error: null },
+  { words: ['My', 'dad', 'reading', 'the', 'newspaper', 'when', 'I', 'came', 'home', '.'],
+    error: { type: 'missing', gapIndex: 2, options: ['was', 'were', 'did'], correct: 'was' } },
+  { words: ['What', 'were', 'you', 'doing', 'at', '9:00', 'last', 'night', '?'], error: null },
+  { words: ['Did', 'you', 'sleeping', 'when', 'I', 'called', '?'],
+    error: { type: 'wrong', wordIndex: 0, options: ['Were', 'Was', 'Do'], correct: 'Were' } },
+  { words: ['As', 'I', 'was', 'walking', 'to', 'work', ',', 'I', 'saw', 'an', 'old', 'friend', '.'], error: null },
+  { words: ['While', 'I', 'was', 'taking', 'a', 'shower', ',', 'somebody', 'was', 'knocked', 'on', 'the', 'door', '.'],
+    error: { type: 'extra', wordIndex: 8 } }
+];
+HouseErrorHunt.build({ container: 'errorHuntItems', items: EH_ITEMS, scoreEl: 'errorScore', totalEl: 'errorTotal', keepCaps: ['I'] });
+</script>
+<script>HouseGrammar.init();</script>
+</body>
+</html>

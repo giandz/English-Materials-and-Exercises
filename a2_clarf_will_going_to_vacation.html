@@ -1,0 +1,325 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<title>Will or Going to? — Clarification</title>
+<script>
+(function(){
+  try{
+    var saved = localStorage.getItem('theme-preference');
+    var theme = (saved === 'light' || saved === 'dark')
+      ? saved
+      : ((window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches) ? 'dark' : 'light');
+    document.documentElement.setAttribute('data-theme', theme);
+    var fs = parseFloat(localStorage.getItem('font-size-preference'));
+    if (fs >= 10 && fs <= 28) document.documentElement.style.setProperty('--fs-base', fs + 'px');
+  }catch(e){ /* localStorage/matchMedia unavailable — CSS media query still applies */ }
+})();
+</script>
+<link rel="stylesheet" href="house.css">
+<style>
+.cast-row{ display:flex; flex-wrap:wrap; gap:14px 18px; justify-content:center; align-items:flex-end; margin:0 0 1rem; padding:10px; background:var(--surface-1); border:1px solid var(--border); border-radius:var(--border-radius-lg); font-size:.8667rem; }
+/* will · going to · how sure: always coloured (the lesson's own contrast) */
+.t-will{ color:#7c3aed; font-weight:700; }
+.t-gt{ color:#0f766e; font-weight:700; }
+[data-theme="dark"] .t-will{ color:#c4b5fd; } [data-theme="dark"] .t-gt{ color:#5eead4; }
+.t-prob{ font-weight:700; text-decoration:underline dotted 2px; text-underline-offset:3px; }
+.pct-chip{ display:inline-block; min-width:3.2em; text-align:center; font-family:var(--font-mono); font-size:.8667rem; font-weight:700; line-height:1;
+  padding:4px 8px; border-radius:999px; color:#fff; background:var(--dh-c); box-shadow:0 1px 4px rgba(0,0,0,.25); vertical-align:middle; }
+/* ── the thought bubble of the past-deductions lesson (deduction-house.js), with pictures ── */
+.dh-think{ position:relative; margin:12px 0 4px; padding-top:14px; width:fit-content; max-width:100%; }
+.dh-cloud{ display:flex; flex-wrap:wrap; gap:8px; justify-content:center; padding:9px; border-radius:26px;
+  background:var(--surface-2); border:1.5px solid var(--color-border-primary); box-shadow:0 2px 10px rgba(0,0,0,.07); }
+.dh-panel{ position:relative; flex:0 1 150px; width:150px; min-width:0; }
+.dh-pct{ position:absolute; top:6px; right:6px; font-family:var(--font-mono); font-size:.8667rem; font-weight:700; line-height:1;
+  padding:4px 8px; border-radius:999px; color:#fff; background:var(--dh-c); box-shadow:0 1px 4px rgba(0,0,0,.25); }
+.dh-cap{ display:flex; align-items:center; justify-content:center; gap:5px; margin-top:5px; font-size:.8rem; font-weight:600; color:var(--text-secondary); text-align:center; line-height:1.3; }
+.dh-bar{ height:5px; border-radius:3px; background:var(--color-border-secondary); overflow:hidden; margin:4px 10px 0; }
+.dh-bar i{ display:block; height:100%; background:var(--dh-c); }
+.dh-split .dh-cloud{ flex-wrap:nowrap; align-items:stretch; gap:6px; }
+.dh-side{ display:flex; flex-direction:column; align-items:center; gap:5px; border-radius:20px; padding:6px; min-width:0; }
+.dh-panels{ display:flex; flex-wrap:wrap; gap:6px; justify-content:center; }
+.dh-when{ font-size:.7rem; font-weight:700; letter-spacing:.06em; text-transform:uppercase; color:var(--text-muted); }
+.dh-arrow{ display:flex; flex-direction:column; align-items:center; justify-content:center; color:var(--text-muted); flex:0 0 auto; }
+.dh-arr{ font-size:1.8rem; line-height:1; }
+.dh-arrow small{ font-size:.6667rem; white-space:nowrap; }
+/* now (what I can see) is in warm light; later (the guess) in blue */
+.fb-is{ background:rgba(230,160,40,.12); }
+.fb-will{ background:rgba(60,120,220,.08); }
+.fb-pic{ display:flex; align-items:center; justify-content:center; aspect-ratio:4/3; border-radius:16px; font-size:2.3rem; line-height:1.1; text-align:center; padding:4px;
+  background:linear-gradient(160deg, var(--color-background-info, #e6f1fb), var(--surface-1)); border:1px solid var(--border); }
+.dh-now .fb-pic{ background:linear-gradient(160deg, var(--color-background-warning, #fdf3e1), var(--surface-1)); }
+@media (max-width:640px){ .dh-split .dh-cloud{ flex-direction:column; align-items:center; } .dh-arr{ transform:rotate(90deg); } }
+@media (max-width:520px){ .dh-panel{ flex-basis:130px; width:130px; } .fb-pic{ font-size:2rem; } }
+/* a picture-and-percent cue for the practice pages: never the answer words */
+.cue{ display:inline-flex; align-items:center; gap:8px; flex-wrap:wrap; font-weight:400; font-style:normal; margin:0 0 6px; padding:4px 10px; border-radius:8px;
+  border:1px solid var(--color-border-tertiary); background:var(--surface-2); color:var(--text-secondary); font-size:.9rem; }
+.cue .pic{ font-size:1.3rem; }
+.quiz-q .q-text .cue{ display:flex; width:max-content; max-width:100%; }
+.dh-now .fb-pic{ font-size:1.7rem; }
+
+.groups{ display:grid; grid-template-columns:minmax(0,1fr); gap:10px; margin-bottom:1rem; }
+.groups > div{ border:1px solid var(--color-border-tertiary); border-radius:12px; background:var(--surface-2); padding:9px 11px; }
+.groups h3{ display:flex; align-items:center; gap:8px; margin:0 0 2px; font-size:1rem; }
+.groups h3 .pic{ font-size:1.4rem; }
+.groups .sub{ font-size:.8rem; color:var(--text-secondary); margin:0 0 6px; }
+.groups ul{ list-style:none; margin:0; padding:0; }
+.groups li{ padding:6px 0; line-height:1.5; font-size:.9333rem; }
+.groups li + li{ border-top:.5px dashed var(--color-border-secondary); }
+.groups .dh-think{ margin-top:2px; }
+.vs{ display:grid; grid-template-columns:minmax(0,1fr) minmax(0,1fr); gap:10px; margin-bottom:1rem; }
+.vs > div{ border:1px solid var(--color-border-tertiary); border-radius:12px; background:var(--surface-2); padding:9px 11px; font-size:.9333rem; line-height:1.5; }
+.vs h3{ margin:0 0 4px; font-size:.9333rem; }
+@media (max-width:620px){ .vs{ grid-template-columns:1fr; } }
+.scale-list{ border:1px solid var(--border); border-radius:var(--border-radius-lg); background:var(--surface-1); padding:6px 10px; margin-bottom:.6rem; }
+.scale-row{ display:grid; grid-template-columns:auto minmax(0,1fr); gap:4px 12px; align-items:center; padding:7px 0; }
+.scale-row + .scale-row{ border-top:.5px dashed var(--color-border-secondary); }
+.scale-row .words{ font-weight:700; font-size:.9333rem; }
+.scale-row .ex{ grid-column:2; font-size:.8667rem; color:var(--text-secondary); }
+.ramp{ height:8px; border-radius:4px; margin:8px 2px 4px; background:linear-gradient(90deg, hsl(120deg 70% 38%), hsl(60deg 70% 38%), hsl(0deg 70% 38%)); }
+.ramp-l{ display:flex; justify-content:space-between; font-size:.7333rem; color:var(--text-muted); margin-bottom:1rem; }
+.rule-box p{ margin:0 0 6px; }
+.rule-box p:last-child{ margin-bottom:0; }
+</style>
+</head>
+<body>
+<div class="page" id="page">
+  <span class="cefr-tag cefr-a2">A2 · Pre-intermediate</span>
+  <h1>Will or Going to?</h1>
+  <p class="subtitle">Talk about the future: plans, decisions and predictions — and say how sure you are.</p>
+
+  <div class="sec-div">Look</div>
+  <p class="subtitle">From the conversation. Why <span class="t-will">will</span>? Why <span class="t-gt">going to</span>?</p>
+  <div class="groups" id="groups"></div>
+
+  <div class="sec-div">Predictions: what’s the difference?</div>
+  <div class="vs" id="vs"></div>
+
+  <div class="sec-div">How sure are you?</div>
+  <p class="subtitle">From 100% (sure it will happen) to 0% (sure it won’t happen).</p>
+  <div class="scale-list" id="scale"></div>
+  <div class="ramp"></div>
+  <div class="ramp-l"><span>sure it will happen</span><span>sure it won’t happen</span></div>
+
+  <div class="sec-div">Check the meaning</div>
+  <p class="subtitle">Read the sentence. Answer the questions.</p>
+  <div id="ccq"></div>
+
+  <div class="sec-div">Look at the form</div>
+  <p class="subtitle">What is each part of the sentence? Drag a label (or tap a label, then tap a box).</p>
+  <div class="score-bar"><span>Correct: <strong id="fcScore">0</strong> / <span id="fcTotal">0</span></span></div>
+  <div id="formClarf"></div>
+  <div class="rule-box" id="ruleBox"></div>
+
+  <div class="sec-div">Common mistakes</div>
+  <div id="mistakes"></div>
+
+  <div class="sec-div">Error hunt</div>
+  <p class="subtitle">Some sentences have a mistake. Some are correct! Tap a word — or a space between words — to fix it. Then press OK.</p>
+  <div class="score-bar"><span>Done: <strong id="errorScore">0</strong> / <span id="errorTotal">0</span></span></div>
+  <div id="errorHuntItems"></div>
+
+  <footer>Future: will and going to · plans and predictions — Clarification (A2)</footer>
+</div>
+
+<div id="theme-toggle-wrap">
+  <button id="theme-toggle" aria-label="Toggle light/dark mode" title="Toggle light/dark mode">
+    <span id="theme-icon">☀️</span>
+  </button>
+</div>
+<script src="house.js"></script>
+<script src="stick-character.js"></script>
+<script src="stick-sentence.js"></script>
+<script>
+/* Carla and Marcus are flying from New York to Hawaii for a vacation — the same people on every page of this lesson */
+StickSentence.cast({
+  carla:  { base:'woman', colour:'#FF6600', label:'Carla' },
+  marcus: { base:'man',   colour:'#3366CC', label:'Marcus' }
+});
+StickSentence.toggle();   /* stick figures hidden by default */
+
+/* The lesson's own colours stay on every page (they are the lesson, not grammar-toggle colours):
+   ⟦…⟧ will · ⟪…⟫ going to · ⦃…⦄ how sure (probably, might, I doubt …).
+   Write the markers first, so the stick-figure markup can still read the sentence, then colour them. */
+const fix = h => h.replace(/⟦([^⟧]*)⟧/g, '<span class="t-will">$1</span>')
+                  .replace(/⟪([^⟫]*)⟫/g, '<span class="t-gt">$1</span>')
+                  .replace(/⦃([^⦄]*)⦄/g, '<span class="t-prob">$1</span>');
+
+/* How sure? The colour runs red (0 %) → amber → green (100 %), as in the past-deductions thought bubbles. */
+const colourOf = pct => 'hsl(' + Math.round(pct * 1.2) + 'deg 70% 38%)';
+const pctChip = p => '<span class="pct-chip" style="--dh-c:' + colourOf(p) + '">' + p + '%</span>';
+
+/* The thought bubble from the past-deductions lesson (DeductionHouse.bubble / pastBubble): the same cloud,
+   panels, % badges and bars, with pictures for the airport and the vacation instead of the house.
+   The picture is as solid as the speaker is sure: 100 % is solid, 10 % a faint ghost.
+     futureBubble({ later: [{ pic, cap, pct }] })                 just an opinion (will): only the guesses
+     futureBubble({ now: { pic, cap }, later: [{ pic, cap, pct }] }) with evidence (going to): what the speaker
+         can see now ➜ what they think will happen
+   Under a line of the conversation it goes through HouseThink.html, like the deductions bubbles. */
+const ghost = pct => Math.max(0.15, Math.min(1, pct / 100));
+const fbPanel = p => '<div class="dh-panel fb-panel" style="--dh-c:' + colourOf(p.pct) + '">' +
+  '<div class="fb-pic"><span style="opacity:' + ghost(p.pct) + '">' + p.pic + '</span></div>' +
+  '<span class="dh-pct">' + p.pct + '%</span><div class="dh-cap">' + p.cap + '</div><div class="dh-bar"><i style="width:' + p.pct + '%"></i></div></div>';
+function futureBubble(spec, label) {
+  const later = (spec.later || []).map(fbPanel).join('');
+  const body = spec.now
+    ? '<div class="dh-think dh-split fb-think" aria-label="' + (label || 'What the speaker thinks will happen') + '"><div class="dh-cloud">' +
+        '<div class="dh-side fb-is"><span class="dh-when">👀 now</span><div class="dh-panel fb-panel dh-now"><div class="fb-pic">' + spec.now.pic + '</div><div class="dh-cap">' + spec.now.cap + '</div></div></div>' +
+        '<div class="dh-arrow" aria-hidden="true"><span class="dh-arr">⟶</span><small>so…</small></div>' +
+        '<div class="dh-side fb-will"><span class="dh-when">🔮 later</span><div class="dh-panels">' + later + '</div></div></div></div>'
+    : '<div class="dh-think fb-think" aria-label="' + (label || 'What the speaker thinks will happen') + '"><div class="dh-cloud">' +
+        '<div class="dh-side fb-will"><span class="dh-when">💭 I think…</span><div class="dh-panels">' + later + '</div></div></div></div>';
+  return HouseThink.html(body, { label: label || 'What the speaker thinks will happen' });
+}
+
+/* the learner's dictionary (right-click / long press a word): what these words mean in this lesson */
+window.LESSON_DICT = {
+  'boarding pass':   { pos:'noun', def:'the card or phone ticket that lets you get on the plane', ex:'The boarding passes are on my phone.', es:'pase de abordar, tarjeta de embarque' },
+  'check in':        { pos:'phrasal verb', def:'to show your ticket and give your big bags to the airline at the airport', ex:'We checked in our bags.', es:'documentar, facturar, hacer el check-in' },
+  'security':        { pos:'noun', def:'the place at the airport where people check you and your bags', ex:'Look at that line for security!', es:'control de seguridad' },
+  'gate':            { pos:'noun', def:'the door at the airport where you get on your plane', ex:'Our flight leaves from Gate 22.', es:'puerta de embarque' },
+  'delayed':         { pos:'adjective', def:'late: it will happen later than planned', ex:'Our flight is delayed two hours.', es:'retrasado' },
+  'departure board': { pos:'noun', def:'the big screen at the airport with the times and gates of the flights', ex:'Look at the departure board!', es:'pantalla de salidas' },
+  'boarding':        { pos:'noun', def:'the time when people get on the plane', ex:'Boarding starts at 7:30.', es:'abordaje, embarque' },
+  'board':           { pos:'verb', def:'to get on a plane, a bus or a ship', ex:'We’re going to board soon!', es:'abordar, embarcar' },
+  'carry-on':        { pos:'noun', def:'a small bag you take with you onto the plane', ex:'Your sweater is in the carry-on.', es:'equipaje de mano' },
+  'sunscreen':       { pos:'noun', def:'a cream you put on your skin so the sun doesn’t burn it', ex:'Don’t forget the sunscreen!', es:'protector solar, bloqueador' },
+  'doubt':           { pos:'verb', def:'to think something is probably not true or will probably not happen', ex:'I doubt you’ll stand up on the board.', es:'dudar' },
+  'dry season':      { pos:'noun', def:'the months of the year with very little rain', ex:'It’s the dry season in Hawaii.', es:'temporada seca' }
+};
+
+const S = m => fix(StickSentence.html(m));
+const li = m => '<li>' + S(m) + '</li>';
+
+/* ── look: four reasons ────────────────────────────────────────────────── */
+document.getElementById('groups').innerHTML =
+  '<div><h3><span class="pic">📅</span> <span class="t-gt">going to</span> — a plan</h3><p class="sub">I decided <b>before</b> now. Maybe I booked it or bought it.</p><ul>' +
+    li('{I’m|carla:me} ⟪going to⟫ read {my book|@📖}. I bought it for this trip.') +
+    li('{I’m|marcus:me} ⟪going to⟫ call my mom.') +
+    li('On the second day, {we’re|carla,marcus} ⟪going to⟫ take {surfing lessons|@🏄}. I booked them last week.') +
+  '</ul></div>' +
+  '<div><h3><span class="pic">💡</span> <span class="t-will">will</span> — a decision now</h3><p class="sub">I decide <b>at this moment</b> (often to help someone).</p><ul>' +
+    li('“I’m freezing!” — “Wait. {⟦I’ll⟧|marcus:me} get your sweater {from the carry-on|@🎒}.”') +
+  '</ul></div>' +
+  '<div><h3><span class="pic">👀</span> <span class="t-gt">going to</span> — I can see it now</h3><p class="sub">A prediction with evidence: something I can see <b>now</b> tells me.</p><ul>' +
+    li('Look at the line for security! {We’re|carla,marcus} ⟪going to⟫ be late!') +
+  '</ul>' + futureBubble({ now: { pic: '🧍🧍🧍<br>🧍🧍🧍', cap: '👀 a very long line' }, later: [{ pic: '⏰✈️💨', cap: 'we’re late', pct: 90 }] }, 'Marcus thinks') + '<ul>' +
+    li('People are standing in line at the gate. {We’re|carla,marcus} ⟪going to⟫ board soon!') +
+  '</ul></div>' +
+  '<div><h3><span class="pic">💭</span> <span class="t-will">will</span> — I think so</h3><p class="sub">A prediction from my opinion or what I know. Often with <span class="t-prob">I think</span>, <span class="t-prob">I’m sure</span>, <span class="t-prob">probably</span>…</p><ul>' +
+    li('{⦃I’m sure⦄|carla:me} ⟦we’ll⟧ love {the hotel|@🏨}.') +
+  '</ul>' + futureBubble({ later: [{ pic: '🏨😍', cap: 'we love the hotel', pct: 90 }] }, 'Carla thinks') + '<ul>' +
+    li('{You’ll|marcus} ⦃probably⦄ fall a lot!') +
+    li('{I|marcus:me} ⦃don’t think⦄ it ⟦will⟧ rain much.') +
+  '</ul></div>';
+
+/* ── predictions: going to (evidence) vs will (opinion) ───────────────── */
+document.getElementById('vs').innerHTML = fix(
+  '<div><h3>👀 ⟪going to⟫</h3>☁️☁️ Look at those black clouds! It’s ⟪going to⟫ rain.<br><small>I can see the clouds now.</small></div>' +
+  '<div><h3>💭 ⟦will⟧</h3>🌲 Take an umbrella to Seattle. I think it’ll rain.<br><small>That’s my opinion: it rains a lot there.</small></div>');
+
+/* ── how sure: the scale ──────────────────────────────────────────────── */
+const SCALE = [
+  [100, '⦃definitely⦄ ⟦will⟧ · ⟦will⟧ ⦃certainly⦄', 'I’ll definitely have fun!'],
+  [90, '⦃I’m sure⦄ … ⟦will⟧', 'I’m sure we’ll love the hotel.'],
+  [75, '⟦will⟧ ⦃probably⦄ · ⦃I think⦄ … ⟦will⟧ · ⦃is likely to⦄', 'You’ll probably fall a lot. · I think we’ll be fine.'],
+  [50, '⦃might⦄ · ⦃may⦄ · ⦃could⦄ · ⦃maybe⦄ … ⟦will⟧', 'It might rain in the mountains. · Maybe we’ll see a turtle.'],
+  [25, '⦃probably⦄ ⟦won’t⟧ · ⦃I don’t think⦄ … ⟦will⟧', 'I don’t think it’ll rain much.'],
+  [10, '⦃I doubt⦄ … ⟦will⟧', 'I doubt you’ll stand up on the board.'],
+  [0, '⦃definitely⦄ ⟦won’t⟧', 'It definitely won’t snow at the beach!']
+];
+document.getElementById('scale').innerHTML = SCALE.map(([p, w, ex]) =>
+  '<div class="scale-row">' + pctChip(p) + '<span class="words">' + fix(w) + '</span><span class="ex">' + ex + '</span></div>').join('');
+
+/* ── concept checking questions ────────────────────────────────────────── */
+HouseCCQ.build({
+  container: 'ccq',
+  items: [
+    { sentence: S('On the second day, {we’re|carla,marcus} ⟪going to⟫ take {surfing lessons|@🏄}.'),
+      questions: [
+        { q: 'Did they decide this today, at the airport?', opts: ['Yes', 'No, before'], correct: 1,
+          why: 'No — Marcus booked the lessons last week. It’s a plan, so we use “going to”.' },
+        { q: 'Is it a prediction or a plan?', opts: ['A prediction', 'A plan'], correct: 1,
+          why: 'A plan: they decided it and booked it.' }
+      ] },
+    { sentence: S('“I’m freezing!” — “Wait. {⟦I’ll⟧|marcus:me} get your sweater.”'),
+      questions: [
+        { q: 'When did Marcus decide to get the sweater?', opts: ['Before the trip', 'Right now'], correct: 1,
+          why: 'Right now — when Carla said “I’m freezing”. A decision now: “I’ll”.' }
+      ] },
+    { sentence: S('Look at the line! {We’re|carla,marcus} ⟪going to⟫ be late!'),
+      questions: [
+        { q: 'Can Marcus see something now that tells him?', opts: ['Yes, the long line', 'No, it’s only his opinion'], correct: 0,
+          why: 'Yes. He can see the evidence now, so he uses “going to”.' }
+      ] },
+    { sentence: S('{I|carla:me} ⦃doubt⦄ {you’ll|marcus} stand up on the board.'),
+      questions: [
+        { q: 'Does Carla think Marcus will stand up?', opts: ['Probably yes', 'Probably not'], correct: 1,
+          why: 'Probably not. “I doubt” = I don’t think it will happen (about 10%).' },
+        { q: 'Is Carla 100% sure?', opts: ['Yes', 'No'], correct: 1,
+          why: 'No. “I doubt” is not 0%. Maybe he will stand up!' }
+      ] },
+    { sentence: S('It ⦃might⦄ rain in the mountains.'),
+      questions: [
+        { q: 'How sure is Marcus?', opts: ['About 50%', 'About 100%'], correct: 0,
+          why: 'About 50%. “Might” = maybe yes, maybe no.' }
+      ] }
+  ]
+});
+
+/* ── form ──────────────────────────────────────────────────────────────── */
+HouseFormClarf.build({
+  container: 'formClarf', scoreEl: 'fcScore', totalEl: 'fcTotal',
+  pool: ['subject', 'aux', 'verb', 'neg', 'adverb', 'object', 'prep', 'time', 'wh'],
+  items: [
+    { form: 'aff', parts: [['I', 'subject'], ['will', 'aux'], ['definitely', 'adverb'], ['have', 'verb'], ['fun', 'object'], ['.', null]] },
+    { form: 'neg', parts: [['It', 'subject'], ['won’t', 'neg'], ['rain', 'verb'], ['in Hawaii', 'prep'], ['.', null]] },
+    { form: 'q',   parts: [['Will', 'aux'], ['it', 'subject'], ['rain', 'verb'], ['tomorrow', 'time'], ['?', null]] },
+    { form: 'aff', parts: [['We', 'subject'], ['are', 'aux'], ['going to', 'aux'], ['board', 'verb'], ['soon', 'time'], ['.', null]] },
+    { form: 'neg', parts: [['I', 'subject'], ['am not', 'neg'], ['going to', 'aux'], ['call', 'verb'], ['my boss', 'object'], ['.', null]] },
+    { form: 'wh',  parts: [['What', 'wh'], ['are', 'aux'], ['we', 'subject'], ['going to', 'aux'], ['do', 'verb'], ['?', null]] }
+  ]
+});
+document.getElementById('ruleBox').innerHTML = fix(
+  '<p><strong>⟦will⟧ + base verb</strong> (the same for I, you, he, she, we, they): I ⟦will⟧ go · She ⟦will⟧ go. Short forms: I’ll, you’ll, it’ll, we’ll. Negative: ⟦won’t⟧ (= will not). Question: ⟦Will⟧ it rain?</p>' +
+  '<p><strong>am / is / are + ⟪going to⟫ + base verb:</strong> I’m ⟪going to⟫ read · He’s ⟪going to⟫ read · We’re ⟪going to⟫ read. Negative: I’m not / isn’t / aren’t ⟪going to⟫. Question: Are you ⟪going to⟫ read?</p>' +
+  '<p><strong>How sure:</strong> ⦃probably⦄ and ⦃definitely⦄ go <b>after</b> will, but <b>before</b> won’t: You’ll ⦃probably⦄ fall. · It ⦃probably⦄ won’t rain. ⦃Might⦄ is like will: it ⦃might⦄ rain (no “to”, no -s).</p>' +
+  '<p><strong>I don’t think … will</strong>, not “I think … won’t”: ⦃I don’t think⦄ it ⟦will⟧ rain.</p>');
+
+/* ── common mistakes ───────────────────────────────────────────────────── */
+const MISTAKES = [
+  ['I will to call my mom.', 'I will call my mom.'],
+  ['We going to board soon.', 'We’re going to board soon.'],
+  ['It will rains tomorrow.', 'It will rain tomorrow.'],
+  ['“I’m freezing!” — “I’m going to get your sweater.”', '“I’m freezing!” — “I’ll get your sweater.” (a decision now)'],
+  ['You probably will fall.', 'You’ll probably fall.'],
+  ['It won’t probably rain.', 'It probably won’t rain.'],
+  ['It might to rain in the mountains.', 'It might rain in the mountains.'],
+  ['I doubt you won’t stand up.', 'I doubt you’ll stand up.']
+];
+document.getElementById('mistakes').innerHTML = MISTAKES.map(([no, yes]) =>
+  '<div class="pair-card"><div class="pair-line no"><span class="mark">✗</span>' + no + '</div>' +
+  '<div class="pair-line yes"><span class="mark">✓</span>' + yes + '</div></div>').join('');
+
+/* ── error hunt (A2: some sentences are already correct) ── */
+const EH_ITEMS = [
+  { words: ['I', 'will', 'to', 'pack', 'my', 'sunscreen', '.'], error: { type: 'extra', wordIndex: 2 } },
+  { words: ['We’re', 'going', 'to', 'stay', 'at', 'a', 'hotel', 'near', 'the', 'beach', '.'], error: null },
+  { words: ['She', 'going', 'to', 'take', 'surfing', 'lessons', '.'],
+    error: { type: 'missing', gapIndex: 1, options: ['is', 'will', 'does'], correct: 'is' } },
+  { words: ['It', 'will', 'rains', 'in', 'the', 'mountains', '.'],
+    error: { type: 'wrong', wordIndex: 2, options: ['rain', 'raining', 'to rain'], correct: 'rain' } },
+  { words: ['Look', 'at', 'the', 'board', '!', 'Our', 'flight', 'is', 'going', 'to', 'be', 'late', '.'], error: null },
+  { words: ['You', 'probably', 'will', 'love', 'Hawaii', '.'], error: { type: 'misplaced', wordIndex: 1, targetGapIndex: 3 } },
+  { words: ['I', 'doubt', 'it’ll', 'snow', 'at', 'the', 'beach', '.'], error: null },
+  { words: ['It', 'might', 'to', 'be', 'cold', 'on', 'the', 'plane', '.'], error: { type: 'extra', wordIndex: 2 } },
+  { words: ['Are', 'you', 'going', 'to', 'check', 'in', 'online', '?'], error: null },
+  { words: ['I', 'don’t', 'think', 'we', 'won’t', 'find', 'a', 'taxi', '.'],
+    error: { type: 'wrong', wordIndex: 4, options: ['will', 'are', 'going'], correct: 'will' } }
+];
+HouseErrorHunt.build({ container: 'errorHuntItems', items: EH_ITEMS, scoreEl: 'errorScore', totalEl: 'errorTotal', keepCaps: ['I', 'Hawaii'] });
+</script>
+<script>HouseGrammar.init();</script>
+</body>
+</html>

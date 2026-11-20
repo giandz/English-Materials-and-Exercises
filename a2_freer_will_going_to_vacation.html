@@ -1,0 +1,259 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<title>Plans, Promises and Predictions</title>
+<script>
+(function(){
+  try{
+    var saved = localStorage.getItem('theme-preference');
+    var theme = (saved === 'light' || saved === 'dark')
+      ? saved
+      : ((window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches) ? 'dark' : 'light');
+    document.documentElement.setAttribute('data-theme', theme);
+    var fs = parseFloat(localStorage.getItem('font-size-preference'));
+    if (fs >= 10 && fs <= 28) document.documentElement.style.setProperty('--fs-base', fs + 'px');
+  }catch(e){ /* localStorage/matchMedia unavailable — CSS media query still applies */ }
+})();
+</script>
+<link rel="stylesheet" href="house.css">
+<style>
+.cast-row{ display:flex; flex-wrap:wrap; gap:14px 18px; justify-content:center; align-items:flex-end; margin:0 0 1rem; padding:10px; background:var(--surface-1); border:1px solid var(--border); border-radius:var(--border-radius-lg); font-size:.8667rem; }
+/* will · going to · how sure: always coloured (the lesson's own contrast) */
+.t-will{ color:#7c3aed; font-weight:700; }
+.t-gt{ color:#0f766e; font-weight:700; }
+[data-theme="dark"] .t-will{ color:#c4b5fd; } [data-theme="dark"] .t-gt{ color:#5eead4; }
+.t-prob{ font-weight:700; text-decoration:underline dotted 2px; text-underline-offset:3px; }
+.pct-chip{ display:inline-block; min-width:3.2em; text-align:center; font-family:var(--font-mono); font-size:.8667rem; font-weight:700; line-height:1;
+  padding:4px 8px; border-radius:999px; color:#fff; background:var(--dh-c); box-shadow:0 1px 4px rgba(0,0,0,.25); vertical-align:middle; }
+/* ── the thought bubble of the past-deductions lesson (deduction-house.js), with pictures ── */
+.dh-think{ position:relative; margin:12px 0 4px; padding-top:14px; width:fit-content; max-width:100%; }
+.dh-cloud{ display:flex; flex-wrap:wrap; gap:8px; justify-content:center; padding:9px; border-radius:26px;
+  background:var(--surface-2); border:1.5px solid var(--color-border-primary); box-shadow:0 2px 10px rgba(0,0,0,.07); }
+.dh-panel{ position:relative; flex:0 1 150px; width:150px; min-width:0; }
+.dh-pct{ position:absolute; top:6px; right:6px; font-family:var(--font-mono); font-size:.8667rem; font-weight:700; line-height:1;
+  padding:4px 8px; border-radius:999px; color:#fff; background:var(--dh-c); box-shadow:0 1px 4px rgba(0,0,0,.25); }
+.dh-cap{ display:flex; align-items:center; justify-content:center; gap:5px; margin-top:5px; font-size:.8rem; font-weight:600; color:var(--text-secondary); text-align:center; line-height:1.3; }
+.dh-bar{ height:5px; border-radius:3px; background:var(--color-border-secondary); overflow:hidden; margin:4px 10px 0; }
+.dh-bar i{ display:block; height:100%; background:var(--dh-c); }
+.dh-split .dh-cloud{ flex-wrap:nowrap; align-items:stretch; gap:6px; }
+.dh-side{ display:flex; flex-direction:column; align-items:center; gap:5px; border-radius:20px; padding:6px; min-width:0; }
+.dh-panels{ display:flex; flex-wrap:wrap; gap:6px; justify-content:center; }
+.dh-when{ font-size:.7rem; font-weight:700; letter-spacing:.06em; text-transform:uppercase; color:var(--text-muted); }
+.dh-arrow{ display:flex; flex-direction:column; align-items:center; justify-content:center; color:var(--text-muted); flex:0 0 auto; }
+.dh-arr{ font-size:1.8rem; line-height:1; }
+.dh-arrow small{ font-size:.6667rem; white-space:nowrap; }
+/* now (what I can see) is in warm light; later (the guess) in blue */
+.fb-is{ background:rgba(230,160,40,.12); }
+.fb-will{ background:rgba(60,120,220,.08); }
+.fb-pic{ display:flex; align-items:center; justify-content:center; aspect-ratio:4/3; border-radius:16px; font-size:2.3rem; line-height:1.1; text-align:center; padding:4px;
+  background:linear-gradient(160deg, var(--color-background-info, #e6f1fb), var(--surface-1)); border:1px solid var(--border); }
+.dh-now .fb-pic{ background:linear-gradient(160deg, var(--color-background-warning, #fdf3e1), var(--surface-1)); }
+@media (max-width:640px){ .dh-split .dh-cloud{ flex-direction:column; align-items:center; } .dh-arr{ transform:rotate(90deg); } }
+@media (max-width:520px){ .dh-panel{ flex-basis:130px; width:130px; } .fb-pic{ font-size:2rem; } }
+/* a picture-and-percent cue for the practice pages: never the answer words */
+.cue{ display:inline-flex; align-items:center; gap:8px; flex-wrap:wrap; font-weight:400; font-style:normal; margin:0 0 6px; padding:4px 10px; border-radius:8px;
+  border:1px solid var(--color-border-tertiary); background:var(--surface-2); color:var(--text-secondary); font-size:.9rem; }
+.cue .pic{ font-size:1.3rem; }
+.quiz-q .q-text .cue{ display:flex; width:max-content; max-width:100%; }
+.dh-now .fb-pic{ font-size:1.7rem; }
+
+.q-card .big{ font-size:2.6rem; line-height:1.15; margin:2px 0; text-align:center; }
+.q-card .q-ask{ font-size:1.1rem; font-weight:700; text-align:center; margin:2px 0 4px; }
+.q-card .q-said{ font-size:1.05rem; font-style:italic; text-align:center; margin:2px 0 4px; }
+.q-card details.check{ margin-top:4px; width:100%; max-width:460px; text-align:left; }
+.q-card .check-body{ padding:8px 12px; font-size:.9rem; }
+.q-card .check-body p{ margin:0 0 5px; }
+.hs{ width:100%; max-width:420px; margin:6px auto 2px; padding:8px 12px; border:1px solid var(--color-border-tertiary); border-radius:12px; background:var(--surface-1); }
+.hs-top{ display:flex; align-items:center; gap:10px; font-size:.8rem; color:var(--text-secondary); font-weight:600; }
+.hs input[type=range]{ flex:1; accent-color:var(--hs-c, #888); }
+.hs-out{ margin-top:6px; text-align:center; font-weight:700; font-size:1rem; line-height:1.4; }
+.hs-hint{ font-size:.75rem; color:var(--text-muted); text-align:center; }
+</style>
+</head>
+<body>
+<div class="page" id="page">
+  <span class="cefr-tag cefr-a2">A2 · Pre-intermediate</span>
+  <h1>Plans, Promises and Predictions</h1>
+  <p class="subtitle">Talk about your plans. Help your partner. Say what you think will happen — and how sure you are.</p>
+
+  <div class="rule-box">
+    <p><strong>How to play (pairs, or teacher + student):</strong></p>
+    <p>1. Student A rolls 🎲 and asks the question (or says the words in the card).</p>
+    <p>2. Student B answers:<br>📅 a <b>plan</b>: “I’m <span class="t-gt">going to</span> visit my sister.”<br>💡 a <b>decision now</b>: “I<span class="t-will">’ll</span> get you some water.”<br>🔮 a <b>prediction</b>: move the slider — how sure are you? Say the sentence and say why: “It <span class="t-prob">probably</span> <span class="t-will">won’t</span> rain. It’s the dry season.”</p>
+    <p>3. A asks one more question. Press 👀 to see examples. Then change: B rolls, A answers.</p>
+  </div>
+
+  <div class="q-card" id="qCard"><span class="q-placeholder">Roll the dice to start.</span></div>
+  <button class="dice-btn" id="diceBtn" aria-label="Roll">🎲</button>
+  <div class="roll-count">Rolls: <strong id="rollCount">0</strong></div>
+
+  <div class="sec-div">Now you: your partner’s next vacation</div>
+  <div class="rule-box">
+    <p><strong>Ask your partner about their next vacation.</strong> Write the answers. “<b>Where are you going to go? Are you going to fly? Where are you going to stay? Do you think it will rain?</b>”</p>
+    <p>Then tell the class: “<b>Ana is going to go to Cancún in July. She thinks it’ll be very hot — 90%!</b>” Another partner? Press <b>➕ Add partner</b>.</p>
+  </div>
+  <div id="interview"></div>
+
+  <footer>Plans, Promises and Predictions — Future: will and going to (A2)</footer>
+</div>
+
+<div id="theme-toggle-wrap">
+  <button id="theme-toggle" aria-label="Toggle light/dark mode" title="Toggle light/dark mode">
+    <span id="theme-icon">☀️</span>
+  </button>
+</div>
+<script src="house.js"></script>
+<script src="house-interview.js"></script>
+<script>
+/* The lesson's own colours stay on every page (they are the lesson, not grammar-toggle colours):
+   ⟦…⟧ will · ⟪…⟫ going to · ⦃…⦄ how sure (probably, might, I doubt …).
+   Write the markers first, so the stick-figure markup can still read the sentence, then colour them. */
+const fix = h => h.replace(/⟦([^⟧]*)⟧/g, '<span class="t-will">$1</span>')
+                  .replace(/⟪([^⟫]*)⟫/g, '<span class="t-gt">$1</span>')
+                  .replace(/⦃([^⦄]*)⦄/g, '<span class="t-prob">$1</span>');
+
+/* How sure? The colour runs red (0 %) → amber → green (100 %), as in the past-deductions thought bubbles. */
+const colourOf = pct => 'hsl(' + Math.round(pct * 1.2) + 'deg 70% 38%)';
+const pctChip = p => '<span class="pct-chip" style="--dh-c:' + colourOf(p) + '">' + p + '%</span>';
+
+/* The thought bubble from the past-deductions lesson (DeductionHouse.bubble / pastBubble): the same cloud,
+   panels, % badges and bars, with pictures for the airport and the vacation instead of the house.
+   The picture is as solid as the speaker is sure: 100 % is solid, 10 % a faint ghost.
+     futureBubble({ later: [{ pic, cap, pct }] })                 just an opinion (will): only the guesses
+     futureBubble({ now: { pic, cap }, later: [{ pic, cap, pct }] }) with evidence (going to): what the speaker
+         can see now ➜ what they think will happen
+   Under a line of the conversation it goes through HouseThink.html, like the deductions bubbles. */
+const ghost = pct => Math.max(0.15, Math.min(1, pct / 100));
+const fbPanel = p => '<div class="dh-panel fb-panel" style="--dh-c:' + colourOf(p.pct) + '">' +
+  '<div class="fb-pic"><span style="opacity:' + ghost(p.pct) + '">' + p.pic + '</span></div>' +
+  '<span class="dh-pct">' + p.pct + '%</span><div class="dh-cap">' + p.cap + '</div><div class="dh-bar"><i style="width:' + p.pct + '%"></i></div></div>';
+function futureBubble(spec, label) {
+  const later = (spec.later || []).map(fbPanel).join('');
+  const body = spec.now
+    ? '<div class="dh-think dh-split fb-think" aria-label="' + (label || 'What the speaker thinks will happen') + '"><div class="dh-cloud">' +
+        '<div class="dh-side fb-is"><span class="dh-when">👀 now</span><div class="dh-panel fb-panel dh-now"><div class="fb-pic">' + spec.now.pic + '</div><div class="dh-cap">' + spec.now.cap + '</div></div></div>' +
+        '<div class="dh-arrow" aria-hidden="true"><span class="dh-arr">⟶</span><small>so…</small></div>' +
+        '<div class="dh-side fb-will"><span class="dh-when">🔮 later</span><div class="dh-panels">' + later + '</div></div></div></div>'
+    : '<div class="dh-think fb-think" aria-label="' + (label || 'What the speaker thinks will happen') + '"><div class="dh-cloud">' +
+        '<div class="dh-side fb-will"><span class="dh-when">💭 I think…</span><div class="dh-panels">' + later + '</div></div></div></div>';
+  return HouseThink.html(body, { label: label || 'What the speaker thinks will happen' });
+}
+
+/* the learner's dictionary (right-click / long press a word): what these words mean in this lesson */
+window.LESSON_DICT = {
+  'boarding pass':   { pos:'noun', def:'the card or phone ticket that lets you get on the plane', ex:'The boarding passes are on my phone.', es:'pase de abordar, tarjeta de embarque' },
+  'check in':        { pos:'phrasal verb', def:'to show your ticket and give your big bags to the airline at the airport', ex:'We checked in our bags.', es:'documentar, facturar, hacer el check-in' },
+  'security':        { pos:'noun', def:'the place at the airport where people check you and your bags', ex:'Look at that line for security!', es:'control de seguridad' },
+  'gate':            { pos:'noun', def:'the door at the airport where you get on your plane', ex:'Our flight leaves from Gate 22.', es:'puerta de embarque' },
+  'delayed':         { pos:'adjective', def:'late: it will happen later than planned', ex:'Our flight is delayed two hours.', es:'retrasado' },
+  'departure board': { pos:'noun', def:'the big screen at the airport with the times and gates of the flights', ex:'Look at the departure board!', es:'pantalla de salidas' },
+  'boarding':        { pos:'noun', def:'the time when people get on the plane', ex:'Boarding starts at 7:30.', es:'abordaje, embarque' },
+  'board':           { pos:'verb', def:'to get on a plane, a bus or a ship', ex:'We’re going to board soon!', es:'abordar, embarcar' },
+  'carry-on':        { pos:'noun', def:'a small bag you take with you onto the plane', ex:'Your sweater is in the carry-on.', es:'equipaje de mano' },
+  'sunscreen':       { pos:'noun', def:'a cream you put on your skin so the sun doesn’t burn it', ex:'Don’t forget the sunscreen!', es:'protector solar, bloqueador' },
+  'doubt':           { pos:'verb', def:'to think something is probably not true or will probably not happen', ex:'I doubt you’ll stand up on the board.', es:'dudar' },
+  'dry season':      { pos:'noun', def:'the months of the year with very little rain', ex:'It’s the dry season in Hawaii.', es:'temporada seca' }
+};
+
+const cap = s => s.charAt(0).toUpperCase() + s.slice(1);
+const pick = HouseRandomGen.pickFrom;
+
+/* 🔮 predictions: [picture, topic, question, subject, subject + will, the rest (base verb …)] */
+const PRED = [
+  ['🌧️', 'the weather', 'Will it rain tomorrow?', 'it', 'it’ll', 'rain tomorrow'],
+  ['✈️⏰', 'your next flight', 'Will your next flight be late?', 'it', 'it’ll', 'be late'],
+  ['🏖️', 'next summer', 'Will you go to the beach next summer?', 'I', 'I’ll', 'go to the beach next summer'],
+  ['🤖🏠', 'the future', 'Will people have robots at home in 2050?', 'people', 'people will', 'have robots at home in 2050'],
+  ['⚽🏆', 'sports', 'Will your country win the next World Cup?', 'my country', 'my country will', 'win the next World Cup'],
+  ['💰✈️', 'prices', 'Will plane tickets be cheaper next year?', 'plane tickets', 'plane tickets will', 'be cheaper next year'],
+  ['🗣️', 'English', 'Will you speak English very well in two years?', 'I', 'I’ll', 'speak English very well in two years'],
+  ['🏙️', 'your home', 'Will you live in another city in five years?', 'I', 'I’ll', 'live in another city in five years'],
+  ['📱', 'phones', 'Will we still use phones in 20 years?', 'we', 'we’ll', 'still use phones in 20 years'],
+  ['🚗⚡', 'cars', 'Will all new cars be electric in 2040?', 'all new cars', 'all new cars will', 'be electric in 2040'],
+  ['🚀🌕', 'travel', 'Will people go to the Moon on vacation?', 'people', 'people will', 'go to the Moon on vacation'],
+  ['🎂🎉', 'your next birthday', 'Will you have a party on your next birthday?', 'I', 'I’ll', 'have a party on my next birthday']
+];
+/* 📅 plans: [picture, when, question, example answer] */
+const PLAN = [
+  ['📅', 'this weekend', 'What are you going to do this weekend?', 'I’m going to visit my sister. We’re going to cook dinner.'],
+  ['🌙', 'tonight', 'What are you going to do tonight?', 'I’m going to watch a movie with my family.'],
+  ['🏖️', 'your next vacation', 'Where are you going to go on your next vacation?', 'I’m going to go to Mexico. I’m going to stay with friends.'],
+  ['🎓', 'next year', 'What are you going to learn next year?', 'I’m going to take guitar lessons.'],
+  ['🛒', 'this week', 'What are you going to buy this week?', 'I’m going to buy new shoes.'],
+  ['🎉', 'your next birthday', 'How are you going to celebrate your next birthday?', 'I’m going to have dinner with my family.'],
+  ['🧳', 'your next trip', 'What are you going to pack for your next trip?', 'I’m going to pack sunscreen and my swimsuit.'],
+  ['🏠', 'this month', 'Are you going to change anything in your home this month?', 'Yes, I’m going to paint my bedroom. / No, I’m not.']
+];
+/* 💡 decisions now: [picture, what A says, example answer] */
+const DECIDE = [
+  ['🥵', '“It’s so hot in here!”', 'I’ll open the window.'],
+  ['🧳😓', '“My suitcase is so heavy!”', 'I’ll carry it for you.'],
+  ['📵🚕', '“My phone is dead. I can’t call a taxi.”', 'Don’t worry. I’ll call one for you.'],
+  ['🥤', '“I’m so thirsty!”', 'I’ll get you some water.'],
+  ['🗺️❓', '“I don’t know where Gate 22 is.”', 'I’ll ask at the information desk.'],
+  ['😴🍳', '“I’m too tired to cook.”', 'I’ll order a pizza!']
+];
+
+/* how sure → the words (the scale from the clarification) */
+function say(pct, subj, sw, rest) {
+  if (pct >= 95) return cap(sw) + ' ⦃definitely⦄ ' + rest + '.';
+  if (pct >= 85) return '⦃I’m sure⦄ ' + sw + ' ' + rest + '.';
+  if (pct >= 65) return cap(sw) + ' ⦃probably⦄ ' + rest + '.';
+  if (pct >= 40) return cap(subj) + ' ⦃might⦄ ' + rest + '.';
+  if (pct >= 20) return cap(subj) + ' ⦃probably won’t⦄ ' + rest + '.';
+  if (pct >= 5)  return '⦃I doubt⦄ ' + sw + ' ' + rest + '.';
+  return cap(subj) + ' ⦃definitely won’t⦄ ' + rest + '.';
+}
+const willize = s => s.replace(/(’ll|\bwill\b|won’t)/g, '⟦$1⟧');
+window.howSure = function (el) {
+  const box = el.closest('.hs'), pct = +el.value, d = box.dataset;
+  box.style.setProperty('--hs-c', colourOf(pct));
+  box.querySelector('.hs-pct').innerHTML = pctChip(pct);
+  box.querySelector('.hs-out').innerHTML = fix(willize(say(pct, d.s, d.w, d.r)));
+};
+const slider = (subj, sw, rest) =>
+  '<div class="hs" data-s="' + subj + '" data-w="' + sw + '" data-r="' + rest + '" style="--hs-c:' + colourOf(50) + '">' +
+    '<div class="hs-top"><span>0%</span><input type="range" min="0" max="100" step="5" value="50" oninput="howSure(this)" aria-label="How sure are you?"><span>100%</span><span class="hs-pct">' + pctChip(50) + '</span></div>' +
+    '<div class="hs-out">' + fix(willize(say(50, subj, sw, rest))) + '</div><div class="hs-hint">…because …</div></div>';
+const check = rows => '<details class="check"><summary>👀 Examples</summary><div class="check-body">' + rows.map(r => '<p>' + r + '</p>').join('') + '</div></details>';
+
+HouseRandomGen.build({
+  pick: () => { const r = Math.random(); return r < 0.5 ? { t: 'pred', d: pick(PRED) } : r < 0.8 ? { t: 'plan', d: pick(PLAN) } : { t: 'decide', d: pick(DECIDE) }; },
+  key: it => it.t + it.d[1] + it.d[2],
+  render: ({ t, d }) => {
+    if (t === 'pred') {
+      const [pic, topic, q, subj, sw, rest] = d;
+      return '<span class="q-topic">🔮 Prediction · ' + topic + '</span><div class="big">' + pic + '</div><div class="q-ask">' + q + '</div>' +
+        '<span class="q-prompt">B: How sure are you? Move the slider. Say the sentence and say why.</span>' + slider(subj, sw, rest) +
+        check([100, 75, 50, 10].map(p => pctChip(p) + ' ' + fix(willize(say(p, subj, sw, rest)))));
+    }
+    if (t === 'plan') {
+      const [pic, when, q, ex] = d;
+      return '<span class="q-topic">📅 Plans · ' + when + '</span><div class="big">' + pic + '</div><div class="q-ask">' + q + '</div>' +
+        '<span class="q-prompt">B: say your plan. A: ask one more question: “Who are you going to …? Where …?”</span>' +
+        check([fix(ex.replace(/going to/g, '⟪going to⟫'))]);
+    }
+    const [pic, said, ex] = d;
+    return '<span class="q-topic">💡 A decision now</span><div class="big">' + pic + '</div><div class="q-said">A: ' + said + '</div>' +
+      '<span class="q-prompt">B: help your partner! Decide now and say it.</span>' + check([fix(willize(ex))]);
+  }
+});
+
+/* ── your partner’s next vacation: one card per partner (house-interview.js) ── */
+HouseInterview.build({
+  container: 'interview',
+  storageKey: 'will-going-to-vacation',
+  fields: [
+    { icon: '📍', label: 'where', placeholder: 'Cancún, my grandma’s house…' },
+    { icon: '📅', label: 'when', placeholder: 'in July, next month…' },
+    { icon: '✈️', label: 'how', placeholder: 'by plane, by car, by bus…' },
+    { icon: '🏨', label: 'where … stay', placeholder: 'a hotel, with friends…' },
+    { icon: '🎒', label: 'going to do', placeholder: 'swim, visit museums, eat tacos…' },
+    { icon: '🔮', label: 'a prediction + %', placeholder: 'rain? 25% — it probably won’t rain' }
+  ]
+});
+</script>
+</body>
+</html>
