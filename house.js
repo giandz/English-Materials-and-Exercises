@@ -1602,6 +1602,27 @@
      HouseMatching.build({ left:'nouns-col', right:'defs-col', pairs: pairs,
                            leftKey:'noun', rightKey:'def' });
 
+   Every card is as tall as the tallest card in either column, so the two
+   columns always end level and the rows line up.
+
+   PICTURES ↔ WORDS: when every card in one column is just a picture (an emoji,
+   given as the text or as the emoji with no text) and the other column is not,
+   the picture column is laid out in two staggered lanes, a zigzag:
+
+        🍎  ┃ apple            near lane = the lane next to the gutter
+          🚲┃ bike             far lane  = the lane away from it
+        🐶  ┃ dog
+          ☕┃ coffee
+
+   Each picture card is twice as tall as a word card, and its middle is always
+   level with the middle of the word card in the same row, so the column takes
+   no more room than the words do. A line from a picture in the far lane starts
+   flat and runs between the near-lane cards above and below it. Where it turns
+   toward its word it bends round the corner of the near card it turns past, on
+   an arc that shares that corner's centre (so it follows the card's rounding at
+   an even distance), and leaves the arc in a straight line, tangent to it, to the
+   word. Turn it off with stagger:false.
+
    The lines are laid over the columns' common ancestor and recomputed whenever
    anything resizes — which matters here, because the 🔎 text-size slider
    reflows the cards underneath them.
@@ -1628,6 +1649,30 @@
     var node = a;
     while (node && !node.contains(b)) node = node.parentElement;
     return node || a.parentElement;
+  }
+
+  // A card that is only a picture: one emoji (skin tone, joiners, flags, keycaps
+  // included) as its text, or an emoji with no text at all.
+  var PIC_ONLY = /^(?:\p{Extended_Pictographic}|\p{Regional_Indicator}|[0-9#*]\uFE0F?\u20E3)(?:[\uFE0F\u200D\u20E3]|\p{Emoji_Modifier}|\p{Extended_Pictographic}|\p{Regional_Indicator})*$/u;
+  function isPic(text, emoji) {
+    var t = String(text == null ? '' : text).trim();
+    return t ? PIC_ONLY.test(t) : !!emoji;
+  }
+
+  var STYLE_ID = 'house-matching-styles';
+  var CSS = ''
+    + '.match-card.match-pic{ justify-content:center; }'
+    + '.match-card.match-pic .emoji{ font-size:1.6rem; }'
+    + '.match-col.match-stagger{ display:block; position:relative; }'
+    + '.match-col.match-stagger > .match-card{ position:absolute; margin:0; padding:4px; box-sizing:border-box; }'
+    + '.match-col.match-stagger > .match-card.match-pic .emoji{ font-size:2.2rem; white-space:nowrap; }'
+    + '.match-lines polyline, .match-lines path{ fill:none; stroke-linejoin:round; stroke-linecap:round; }';
+  function injectStyles() {
+    if (document.getElementById(STYLE_ID)) return;
+    var st = document.createElement('style');
+    st.id = STYLE_ID;
+    st.textContent = CSS;
+    document.head.appendChild(st);
   }
 
   function build(opts) {
@@ -1658,6 +1703,13 @@
     });
 
     if (totalEl) totalEl.textContent = pairs.length;
+    injectStyles();
+
+    // Pictures in one column, words in the other: the picture column staggers.
+    var leftPics = pairs.length > 1 && pairs.every(function (p) { return isPic(p.left, p.leftEmoji); });
+    var rightPics = pairs.length > 1 && pairs.every(function (p) { return isPic(p.right, p.rightEmoji); });
+    var picSide = opts.stagger === false ? null
+      : (leftPics && !rightPics ? 'left' : (rightPics && !leftPics ? 'right' : null));
 
     // ── connector layer ──────────────────────────────────────────────────
     var stage = commonAncestor(leftEl, rightEl);
@@ -1676,6 +1728,55 @@
 
     var links = [];   // [{ id, a: leftCard, b: rightCard }]
 
+    // A line from a far-lane picture: flat between the near-lane cards, round the
+    // corner of the near card it turns past on an arc concentric with that
+    // card's corner rounding, then straight on to the word, tangent to the arc.
+    // Worked out in a frame where the line always runs left to right and x = 0
+    // is the picture column's gutter edge; mirrored back when pictures are on
+    // the right.
+    function farPath(pic, base, x1, y1, x2, y2) {
+      var picEl = picSide === 'left' ? leftEl : rightEl;
+      var col = picEl.getBoundingClientRect();
+      var sx = picSide === 'left' ? 1 : -1;
+      var edge = (picSide === 'left' ? col.right : col.left) - base.left;
+      // start at the picture, end at the word
+      var S = picSide === 'left' ? [x1, y1] : [x2, y2];
+      var P = picSide === 'left' ? [x2, y2] : [x1, y1];
+      var y = S[1];
+      var X = function (xm) { return edge + sx * xm; };   // mirror frame → page
+      var sX = sx * (S[0] - edge), pX = sx * (P[0] - edge), dy = P[1] - y;
+      if (Math.abs(dy) < 0.5) return 'M' + S[0] + ',' + y + ' L' + P[0] + ',' + P[1];
+
+      // the near card the line turns past: the one below when the word is lower, above when higher
+      var down = dy > 0, row = +pic.dataset.row;
+      var nears = cardsIn(picEl).filter(function (c) { return c.dataset.lane === 'near'; });
+      var nb = nears.filter(function (c) { return +c.dataset.row === row + (down ? 1 : -1); })[0]
+            || nears.filter(function (c) { return +c.dataset.row === row + (down ? -1 : 1); })[0];
+      var rc = 0, d = 8;
+      if (nb) {
+        var r = nb.getBoundingClientRect();
+        rc = parseFloat(getComputedStyle(nb).borderTopLeftRadius) || 0;
+        // distance from the line to that card's edge (the neighbour on the other side mirrors it)
+        d = down ? (r.top - base.top) - y : y - (r.bottom - base.top);
+        d = Math.abs(d);
+      }
+      var R = d + rc;                                    // arc radius: corner radius + the gap
+      var cx = -rc, cy = down ? y + R : y - R;           // the corner's own centre
+      // the tangent from the word's end back to the circle, on the side the line comes in from
+      var vx = pX - cx, vy = P[1] - cy, D = Math.hypot(vx, vy);
+      if (D <= R) return 'M' + S[0] + ',' + y + ' L' + X(cx) + ',' + y + ' L' + P[0] + ',' + P[1];
+      var phi = Math.atan2(vy, vx), a = Math.acos(R / D);
+      var start = down ? -Math.PI / 2 : Math.PI / 2;
+      var th = down ? Math.max(start, phi - a) : Math.min(start, phi + a);
+      var tx = cx + R * Math.cos(th), ty = cy + R * Math.sin(th);
+      var sweep = (down ? 1 : 0) ^ (sx < 0 ? 1 : 0);   // a mirror turns the sweep the other way
+      var f = function (n) { return Math.round(n * 100) / 100; };
+      return 'M' + f(S[0]) + ',' + f(y) +
+        ' L' + f(X(Math.max(cx, Math.min(sX, cx)))) + ',' + f(y) +
+        ' A' + f(R) + ',' + f(R) + ' 0 0 ' + sweep + ' ' + f(X(tx)) + ',' + f(ty) +
+        ' L' + f(P[0]) + ',' + f(P[1]);
+    }
+
     function drawLinks() {
       while (svg.firstChild) svg.removeChild(svg.firstChild);
       var base = stage.getBoundingClientRect();
@@ -1691,9 +1792,17 @@
         var x1 = ra.right - base.left, y1 = ra.top - base.top + ra.height / 2;
         var x2 = rb.left - base.left, y2 = rb.top - base.top + rb.height / 2;
 
-        var line = document.createElementNS(SVG_NS, 'line');
-        line.setAttribute('x1', x1); line.setAttribute('y1', y1);
-        line.setAttribute('x2', x2); line.setAttribute('y2', y2);
+        var line;
+        var farPic = picSide === 'left' && link.a.dataset.lane === 'far' ? link.a
+          : (picSide === 'right' && link.b.dataset.lane === 'far' ? link.b : null);
+        if (farPic) {
+          line = document.createElementNS(SVG_NS, 'path');
+          line.setAttribute('d', farPath(farPic, base, x1, y1, x2, y2));
+        } else {
+          line = document.createElementNS(SVG_NS, 'line');
+          line.setAttribute('x1', x1); line.setAttribute('y1', y1);
+          line.setAttribute('x2', x2); line.setAttribute('y2', y2);
+        }
         line.setAttribute('class', 'match-line');
         svg.appendChild(line);
 
@@ -1707,15 +1816,94 @@
       });
     }
 
+    // ── card heights and the staggered picture column ────────────────────
+    function cardsIn(col) {
+      return Array.prototype.filter.call(col.children, function (c) { return c.classList.contains(cardClass); });
+    }
+    function px(n) { return Math.ceil(n) + 'px'; }
+
+    function equalize() {
+      var L = cardsIn(leftEl), R = cardsIn(rightEl), all = L.concat(R);
+      // Cleared first, so the cards can shrink again when the text gets smaller.
+      // A page's own min-height still counts, because it is in the measurement.
+      all.forEach(function (c) { c.style.minHeight = ''; c.style.height = ''; });
+
+      if (!picSide) {
+        var tallest = 0;
+        all.forEach(function (c) { tallest = Math.max(tallest, c.getBoundingClientRect().height); });
+        if (tallest) all.forEach(function (c) { c.style.minHeight = px(tallest); });
+        return;
+      }
+
+      var picEl = picSide === 'left' ? leftEl : rightEl;
+      var wordEl = picSide === 'left' ? rightEl : leftEl;
+      var pics = picSide === 'left' ? L : R, words = picSide === 'left' ? R : L;
+      picEl.classList.add('match-stagger');
+      wordEl.style.paddingTop = wordEl.style.paddingBottom = '';
+
+      // Two lanes, with the column's own row gap between them.
+      var gap = parseFloat(getComputedStyle(wordEl).rowGap) || 7;
+      var colW = picEl.clientWidth, laneW = Math.max(0, (colW - gap) / 2);
+      pics.forEach(function (c) { c.style.width = laneW + 'px'; });
+      // Two pictures on one card (😌🏖️) shrink to fit the lane rather than spill out.
+      pics.forEach(function (c) {
+        var e = c.querySelector('.emoji');
+        if (!e) return;
+        e.style.fontSize = '';
+        var room = c.clientWidth - 8, need = e.getBoundingClientRect().width;
+        if (need > room && room > 0) e.style.fontSize = (parseFloat(getComputedStyle(e).fontSize) * room / need).toFixed(1) + 'px';
+      });
+
+      // h = one word row. A picture card is 2h, so a picture never needs more than that.
+      var h = 0;
+      words.forEach(function (c) { h = Math.max(h, c.getBoundingClientRect().height); });
+      pics.forEach(function (c) { h = Math.max(h, c.getBoundingClientRect().height / 2); });
+      h = Math.ceil(h);
+      if (!h || !colW) return;   // hidden for now: laid out when it shows
+      words.forEach(function (c) { c.style.minHeight = px(h); });
+      // Half a row above and below the words, so the first and last pictures
+      // (which reach half a row past their word) stay inside the column.
+      wordEl.style.paddingTop = wordEl.style.paddingBottom = px(h / 2);
+
+      // Each picture is centred on the word card in the same row, measured, not
+      // assumed: the middles stay level whatever the words and the page do.
+      var top0 = picEl.getBoundingClientRect().top, bottom = 0;
+      var nearX = picSide === 'left' ? colW - laneW : 0, farX = picSide === 'left' ? 0 : colW - laneW;
+      pics.forEach(function (c, i) {
+        var w = words[i];
+        if (!w) return;
+        var r = w.getBoundingClientRect(), cy = r.top + r.height / 2 - top0;
+        var near = i % 2 === 0;
+        c.dataset.lane = near ? 'near' : 'far';
+        c.dataset.row = i;
+        c.style.left = (near ? nearX : farX) + 'px';
+        c.style.top = (cy - h) + 'px';
+        c.style.height = c.style.minHeight = (2 * h) + 'px';
+        bottom = Math.max(bottom, cy + h);
+      });
+      picEl.style.height = px(bottom);
+    }
+
+    function layout() { equalize(); drawLinks(); }
+
     // Cards reflow when the window resizes and when the text-size slider moves,
-    // so the lines have to be recomputed rather than drawn once.
+    // so heights, positions and lines are recomputed rather than set once —
+    // batched to one pass per frame, which also stops the observer looping on
+    // the sizes it has just set.
+    var queued = false;
+    function schedule() {
+      if (queued) return;
+      queued = true;
+      (global.requestAnimationFrame || setTimeout)(function () { queued = false; layout(); });
+    }
     if (global.ResizeObserver) {
-      var ro = new ResizeObserver(function () { drawLinks(); });
+      var ro = new ResizeObserver(schedule);
       ro.observe(stage);
       ro.observe(leftEl);
       ro.observe(rightEl);
     }
-    global.addEventListener('resize', drawLinks);
+    global.addEventListener('resize', schedule);
+    if (document.fonts && document.fonts.ready) document.fonts.ready.then(schedule);
 
     // ── game state ───────────────────────────────────────────────────────
     var matched = 0, pickedLeft = null, pickedRight = null;
@@ -1730,9 +1918,15 @@
       card.className = cardClass;
       card.dataset.id = pair.id;
       card.dataset.side = side;
-      card.innerHTML = side === 'left'
-        ? cardHtml(pair.left, pair.leftEmoji)
-        : cardHtml(pair.right, pair.rightEmoji);
+      var text = side === 'left' ? pair.left : pair.right;
+      var emoji = side === 'left' ? pair.leftEmoji : pair.rightEmoji;
+      if (picSide === side) {
+        // just the picture, centred and big
+        card.classList.add('match-pic');
+        card.innerHTML = '<span class="emoji">' + (String(text || '').trim() || emoji) + '</span>';
+      } else {
+        card.innerHTML = cardHtml(text, emoji);
+      }
       card.addEventListener('click', function () { onPick(card); });
       return card;
     }
@@ -1800,13 +1994,13 @@
       // Shuffled independently, or the two columns would line up row for row.
       shuffle(pairs).forEach(function (p) { leftEl.appendChild(makeCard(p, 'left')); });
       shuffle(pairs).forEach(function (p) { rightEl.appendChild(makeCard(p, 'right')); });
-      drawLinks();
+      layout();
     }
 
     if (resetBtn) resetBtn.addEventListener('click', render);
     render();
 
-    return { render: render, redraw: drawLinks };
+    return { render: render, redraw: layout };
   }
 
   global.HouseMatching = { build: build };
