@@ -1623,6 +1623,12 @@
    an even distance), and leaves the arc in a straight line, tangent to it, to the
    word. Turn it off with stagger:false.
 
+   A matched pair can be picked out again: point at either card (or tap it on a
+   touch screen) and both cards, the line and its end dots are drawn once more on
+   top of everything, with a glow in the page's background colour around them,
+   so a pair whose line crosses many others is easy to follow. It goes away when
+   the pointer leaves the card, or with a tap anywhere else.
+
    The lines are laid over the columns' common ancestor and recomputed whenever
    anything resizes — which matters here, because the 🔎 text-size slider
    reflows the cards underneath them.
@@ -1666,7 +1672,14 @@
     + '.match-col.match-stagger{ display:block; position:relative; }'
     + '.match-col.match-stagger > .match-card{ position:absolute; margin:0; padding:4px; box-sizing:border-box; }'
     + '.match-col.match-stagger > .match-card.match-pic .emoji{ font-size:2.2rem; white-space:nowrap; }'
-    + '.match-lines polyline, .match-lines path{ fill:none; stroke-linejoin:round; stroke-linecap:round; }';
+    + '.match-lines polyline, .match-lines path{ fill:none; stroke-linejoin:round; stroke-linecap:round; }'
+    /* a matched pair, drawn again on top while it is pointed at or tapped */
+    + '.match-hl{ position:absolute; left:0; top:0; width:100%; height:100%; z-index:5; pointer-events:none;'
+    +   ' filter:drop-shadow(0 0 2px var(--color-background-primary)) drop-shadow(0 0 4px var(--color-background-primary)) drop-shadow(0 0 8px var(--color-background-primary)); }'
+    + '.match-hl[hidden]{ display:none; }'
+    + '.match-hl > .match-lines{ z-index:auto; }'
+    + '.match-hl > .match-ghost{ position:absolute; margin:0; box-sizing:border-box; transition:none; animation:none; cursor:default; }'
+    + '.match-stage .match-card.matched{ cursor:pointer; }';
   function injectStyles() {
     if (document.getElementById(STYLE_ID)) return;
     var st = document.createElement('style');
@@ -1726,7 +1739,17 @@
       stage.appendChild(svg);
     }
 
-    var links = [];   // [{ id, a: leftCard, b: rightCard }]
+    var hl = stage.querySelector(':scope > .match-hl');
+    if (!hl) {
+      hl = document.createElement('div');
+      hl.className = 'match-hl';
+      hl.setAttribute('aria-hidden', 'true');
+      hl.setAttribute('data-dict', 'off');
+      stage.appendChild(hl);
+    }
+    hl.hidden = true;
+
+    var links = [];   // [{ id, a: leftCard, b: rightCard, markup }]
 
     // A line from a far-lane picture: flat between the near-lane cards, round the
     // corner of the near card it turns past on an arc concentric with that
@@ -1805,6 +1828,7 @@
         }
         line.setAttribute('class', 'match-line');
         svg.appendChild(line);
+        var markup = line.outerHTML;
 
         [[x1, y1], [x2, y2]].forEach(function (pt) {
           var dot = document.createElementNS(SVG_NS, 'circle');
@@ -1812,9 +1836,84 @@
           dot.setAttribute('r', 4);
           dot.setAttribute('class', 'match-dot');
           svg.appendChild(dot);
+          markup += dot.outerHTML;
         });
+        link.markup = markup;
       });
+      if (shown) paint(shown);
     }
+
+    // ── a matched pair, drawn again on top ───────────────────────────────
+    var shown = null, lastType = 'mouse';
+    function linkOf(card) { return links.filter(function (l) { return l.a === card || l.b === card; })[0] || null; }
+    function matchedCard(t) {
+      var c = t && t.closest && t.closest('.' + cardClass + '.matched');
+      return c && (leftEl.contains(c) || rightEl.contains(c)) ? c : null;
+    }
+    // A copy of the card where it stands, sized and styled as it is now
+    // (its look can come from column rules the copy is no longer under).
+    var COPY = ['paddingTop', 'paddingRight', 'paddingBottom', 'paddingLeft', 'fontFamily', 'fontSize', 'fontWeight',
+      'lineHeight', 'justifyContent', 'alignItems', 'textAlign', 'gap', 'color', 'backgroundColor',
+      'borderTopLeftRadius', 'borderTopRightRadius', 'borderBottomLeftRadius', 'borderBottomRightRadius',
+      'borderTopWidth', 'borderRightWidth', 'borderBottomWidth', 'borderLeftWidth', 'borderStyle', 'borderColor'];
+    function ghost(c, base) {
+      var r = c.getBoundingClientRect(), cs = getComputedStyle(c), g = c.cloneNode(true);
+      g.removeAttribute('style');
+      Object.keys(g.dataset).forEach(function (k) { delete g.dataset[k]; });   /* not a real card to anything that looks */
+      g.classList.remove('selected', 'wrong');
+      g.classList.add('match-ghost');
+      COPY.forEach(function (p) { g.style[p] = cs[p]; });
+      g.style.left = (r.left - base.left) + 'px';
+      g.style.top = (r.top - base.top) + 'px';
+      g.style.width = r.width + 'px';
+      g.style.height = r.height + 'px';
+      var e = c.querySelector('.emoji'), ge = g.querySelector('.emoji');
+      if (e && ge) { ge.style.fontSize = getComputedStyle(e).fontSize; ge.style.whiteSpace = 'nowrap'; }
+      return g;
+    }
+    function paint(link) {
+      if (!link || !link.a.isConnected || !link.b.isConnected || !link.markup) { hide(); return; }
+      var base = stage.getBoundingClientRect();
+      hl.innerHTML = '';
+      var s = document.createElementNS(SVG_NS, 'svg');
+      s.setAttribute('class', 'match-lines');
+      s.setAttribute('viewBox', '0 0 ' + base.width + ' ' + base.height);
+      s.setAttribute('width', base.width);
+      s.setAttribute('height', base.height);
+      s.innerHTML = link.markup;
+      hl.appendChild(s);
+      hl.appendChild(ghost(link.a, base));
+      hl.appendChild(ghost(link.b, base));
+      hl.hidden = false;
+    }
+    function show(link) { if (!link) return; shown = link; paint(link); }
+    function hide() { shown = null; hl.hidden = true; hl.innerHTML = ''; }
+
+    // a mouse: while it is over either card of the pair
+    stage.addEventListener('pointerover', function (e) {
+      if (e.pointerType !== 'mouse') return;
+      var c = matchedCard(e.target);
+      if (c && linkOf(c) !== shown) show(linkOf(c));
+    });
+    stage.addEventListener('pointerout', function (e) {
+      if (e.pointerType !== 'mouse' || !shown) return;
+      var to = matchedCard(e.relatedTarget);
+      if (!to || linkOf(to) !== shown) hide();
+    });
+    // a finger or pen: a tap shows it (a second tap on the pair hides it), a tap anywhere else hides it
+    document.addEventListener('pointerdown', function (e) {
+      lastType = e.pointerType || 'mouse';
+      if (!shown || lastType === 'mouse') return;
+      var c = matchedCard(e.target);
+      if (!c || linkOf(c) !== shown) hide();
+    }, true);
+    stage.addEventListener('click', function (e) {
+      if (lastType === 'mouse') return;
+      var c = matchedCard(e.target);
+      if (!c) return;
+      var l = linkOf(c);
+      if (l === shown) hide(); else show(l);
+    });
 
     // ── card heights and the staggered picture column ────────────────────
     function cardsIn(col) {
@@ -1981,6 +2080,7 @@
     }
 
     function render() {
+      hide();
       leftEl.innerHTML = '';
       rightEl.innerHTML = '';
       links = [];
