@@ -298,6 +298,15 @@
       try { w.focus(); } catch (e) { /* the browser decides */ }
     });
     frame.src = path;
+    /* the session page goes (the teacher typed the next address, or closed the tab): say goodbye and leave the
+       room, so the others drop this connection at once and the next page can join straight away. Without this
+       they keep a dead connection for up to half a minute, and the next page cannot reach them meanwhile. */
+    global.addEventListener('pagehide', function () {
+      try { hub.send('bye', {}); } catch (e) { /* closing */ }
+      hub.leave();
+    });
+    /* back from the browser's cache (Back): that connection is closed, so the page starts again */
+    global.addEventListener('pageshow', function (e) { if (e.persisted) location.reload(); });
   }
   global.ICwhatUCMakeHub = makeHub;
   if (global.ICWHATUC_SHELL) { shell(); return; }
@@ -656,6 +665,7 @@
     sayHello();
     remember(sess);
     if (sess.cont) { delete sess.cont; session(sess); handOver(sess); toast('You are in the lesson.'); }   /* a later link of the lesson: the old tab steps out */
+    watch(sess, o && o.retry);
     kick();
     if (sess.fresh) { delete sess.fresh; session(sess); openPanel(true); }
     setTimeout(function () { if (S.room && S.sess === sess && !named().length) renderPanel(); }, 30000);
@@ -811,6 +821,27 @@
     if (unwrap('ended', said)) return;
     rail(false); setStatus('ended', said);
     openPanel(true);
+  }
+
+  /* ══ IF NOBODY ANSWERS ═══════════════════════════════════════════════════
+     A page that joins and hears nobody, where somebody should be there (a learner always
+     expects the teacher; the teacher expects the students once any have joined), joins
+     again by itself after a few seconds, twice at most. If that fails too, the page
+     reloads once, which is what a person would do; never more than once in two minutes. */
+  var DOG = +global.ICWHATUC_DOG_MS || 9000, dogTimer = 0, dogTries = 0;
+  function watch(sess, retry) {
+    clearTimeout(dogTimer);
+    if (!retry) dogTries = 0;
+    if (!(sess.role !== 'host' || Object.keys(S.nums).length)) return;
+    dogTimer = setTimeout(function () {
+      if (S.sess !== sess || !S.room || named().length) return;
+      if (++dogTries <= 2) { toast('Connecting again…'); enter(sess, { retry: true }); return; }
+      var t = 0;
+      try { t = +sessionStorage.getItem('icwhatuc-reloaded') || 0; } catch (e) { /* no storage */ }
+      if (Date.now() - t < 120000) { toast('Still nobody here. Check the internet, then reload the page.'); return; }
+      try { sessionStorage.setItem('icwhatuc-reloaded', String(Date.now())); } catch (e) { /* no storage */ }
+      try { (HUB ? global.top : global).location.reload(); } catch (e) { location.reload(); }
+    }, dogTries ? DOG + 3000 : DOG);
   }
 
   /* ══ GROUPS ══════════════════════════════════════════════════════════════
@@ -1364,6 +1395,7 @@
   }
   global.addEventListener('resize', function () { if (S.say) S.say.resized = true; });
 
+  global.addEventListener('pageshow', function (e) { if (e.persisted && session()) location.reload(); });   /* back from the cache: the connection was closed */
   global.addEventListener('pagehide', function () {
     if (!S.room) return;
     if (HUB) { HUB.detach(S.client); return; }             /* the session page keeps the connection open */
