@@ -1625,7 +1625,8 @@
 
    A matched pair can be picked out again: point at either card (or tap it on a
    touch screen) and both cards, the line and its end dots are drawn once more on
-   top of everything, with a glow in the page's background colour around them,
+   top of everything, with a solid band in the page's background colour round them
+   (wider than a line, so the lines they cross are cut),
    so a pair whose line crosses many others is easy to follow. It goes away when
    the pointer leaves the card, or with a tap anywhere else.
 
@@ -1674,11 +1675,19 @@
     + '.match-col.match-stagger > .match-card.match-pic .emoji{ font-size:2.2rem; white-space:nowrap; }'
     + '.match-lines polyline, .match-lines path{ fill:none; stroke-linejoin:round; stroke-linecap:round; }'
     /* a matched pair, drawn again on top while it is pointed at or tapped */
-    + '.match-hl{ position:absolute; left:0; top:0; width:100%; height:100%; z-index:5; pointer-events:none;'
-    +   ' filter:drop-shadow(0 0 2px var(--color-background-primary)) drop-shadow(0 0 4px var(--color-background-primary)) drop-shadow(0 0 8px var(--color-background-primary)); }'
+    /* the glow is a solid band in the page colour, 3px wide (more than the 2px of a
+       line), with a 1px soft edge: lines it crosses are cut, not just faded */
+    + '.match-hl{ position:absolute; left:0; top:0; width:100%; height:100%; z-index:5; pointer-events:none; }'
+    + '.match-hl .match-halo{ fill:none; stroke:var(--color-background-primary); stroke-width:8; stroke-linecap:round; stroke-linejoin:round; }'
+    + '.match-hl circle.match-halo{ fill:var(--color-background-primary); stroke:none; }'
+    + '.match-hl > .match-lines.match-halo-layer{ filter:drop-shadow(0 0 1px var(--color-background-primary)); }'
     + '.match-hl[hidden]{ display:none; }'
-    + '.match-hl > .match-lines{ z-index:auto; }'
-    + '.match-hl > .match-ghost{ position:absolute; margin:0; box-sizing:border-box; transition:none; animation:none; cursor:default; }'
+    /* explicit order (a card's own z-index:1 would otherwise lift the copies over the top line layer):
+       the band 1, the two cards 2, the line and every end dot 3 */
+    + '.match-hl > .match-lines{ z-index:3; }'
+    + '.match-hl > .match-lines.match-halo-layer{ z-index:1; }'
+    + '.match-hl > .match-ghost{ position:absolute; z-index:2; margin:0; box-sizing:border-box; transition:none; animation:none; cursor:default;'
+    +   ' box-shadow:0 0 0 3px var(--color-background-primary), 0 0 1px 4px var(--color-background-primary); }'
     + '.match-stage .match-card.matched{ cursor:pointer; }';
   function injectStyles() {
     if (document.getElementById(STYLE_ID)) return;
@@ -1828,7 +1837,7 @@
         }
         line.setAttribute('class', 'match-line');
         svg.appendChild(line);
-        var markup = line.outerHTML;
+        var markup = line.outerHTML, dots = '';
 
         [[x1, y1], [x2, y2]].forEach(function (pt) {
           var dot = document.createElementNS(SVG_NS, 'circle');
@@ -1837,8 +1846,10 @@
           dot.setAttribute('class', 'match-dot');
           svg.appendChild(dot);
           markup += dot.outerHTML;
+          dots += dot.outerHTML;
         });
         link.markup = markup;
+        link.dots = dots;
       });
       if (shown) paint(shown);
     }
@@ -1875,15 +1886,29 @@
       if (!link || !link.a.isConnected || !link.b.isConnected || !link.markup) { hide(); return; }
       var base = stage.getBoundingClientRect();
       hl.innerHTML = '';
-      var s = document.createElementNS(SVG_NS, 'svg');
-      s.setAttribute('class', 'match-lines');
-      s.setAttribute('viewBox', '0 0 ' + base.width + ' ' + base.height);
-      s.setAttribute('width', base.width);
-      s.setAttribute('height', base.height);
-      s.innerHTML = link.markup;
-      hl.appendChild(s);
+      function layer(cls, extra) {
+        var s = document.createElementNS(SVG_NS, 'svg');
+        s.setAttribute('class', 'match-lines' + (cls ? ' ' + cls : ''));
+        s.setAttribute('viewBox', '0 0 ' + base.width + ' ' + base.height);
+        s.setAttribute('width', base.width);
+        s.setAttribute('height', base.height);
+        s.innerHTML = (extra || '') + link.markup;
+        return s;
+      }
+      // bottom to top: the band round the line and dots, the two cards (each with
+      // its own band), then the line and dots again, so no band covers them —
+      // with every other pair's end dots too: the band cuts lines, never a dot
+      var halo = layer('match-halo-layer');
+      Array.prototype.forEach.call(halo.children, function (n) {
+        n.setAttribute('class', 'match-halo');
+        if (n.tagName.toLowerCase() === 'circle') n.setAttribute('r', (parseFloat(n.getAttribute('r')) || 4) + 3);
+      });
+      hl.appendChild(halo);
       hl.appendChild(ghost(link.a, base));
       hl.appendChild(ghost(link.b, base));
+      var others = links.filter(function (l) { return l !== link && l.a.isConnected && l.dots; })
+        .map(function (l) { return l.dots; }).join('');
+      hl.appendChild(layer('', others));
       hl.hidden = false;
     }
     function show(link) { if (!link) return; shown = link; paint(link); }
