@@ -1677,7 +1677,12 @@
     /* a matched pair, drawn again on top while it is pointed at or tapped */
     /* the glow is a solid band in the page colour, 3px wide (more than the 2px of a
        line), with a 1px soft edge: lines it crosses are cut, not just faded */
-    + '.match-hl{ position:absolute; left:0; top:0; width:100%; height:100%; z-index:5; pointer-events:none; }'
+    /* page order while a pair is picked out: lines 0 · the picked pair's own chips 0 · the highlight 1 ·
+       every other chip 2. Other chips stay above all connectors, highlighted or not, while the picked
+       pair's line and full end dots sit over its own chips, so it stands out. */
+    + '.match-hl{ position:absolute; left:0; top:0; width:100%; height:100%; z-index:1; pointer-events:none; }'
+    + '.match-stage .match-card, .match-stage .card{ z-index:2; }'
+    + '.match-stage .match-card.match-lit, .match-stage .card.match-lit{ z-index:0; }'
     + '.match-hl .match-halo{ fill:none; stroke:var(--color-background-primary); stroke-width:8; stroke-linecap:round; stroke-linejoin:round; }'
     + '.match-hl circle.match-halo{ fill:var(--color-background-primary); stroke:none; }'
     + '.match-hl > .match-lines.match-halo-layer{ filter:drop-shadow(0 0 1px var(--color-background-primary)); }'
@@ -1871,7 +1876,7 @@
       var r = c.getBoundingClientRect(), cs = getComputedStyle(c), g = c.cloneNode(true);
       g.removeAttribute('style');
       Object.keys(g.dataset).forEach(function (k) { delete g.dataset[k]; });   /* not a real card to anything that looks */
-      g.classList.remove('selected', 'wrong');
+      g.classList.remove('selected', 'wrong', 'match-lit');
       g.classList.add('match-ghost');
       COPY.forEach(function (p) { g.style[p] = cs[p]; });
       g.style.left = (r.left - base.left) + 'px';
@@ -1898,6 +1903,7 @@
       // bottom to top: the band round the line and dots, the two cards (each with
       // its own band), then the line and dots again, so no band covers them —
       // with every other pair's end dots too: the band cuts lines, never a dot
+      // (they still go under their own chips, which sit above the whole highlight)
       var halo = layer('match-halo-layer');
       Array.prototype.forEach.call(halo.children, function (n) {
         n.setAttribute('class', 'match-halo');
@@ -1911,8 +1917,9 @@
       hl.appendChild(layer('', others));
       hl.hidden = false;
     }
-    function show(link) { if (!link) return; shown = link; paint(link); }
-    function hide() { shown = null; hl.hidden = true; hl.innerHTML = ''; }
+    function lit(link, on) { if (link) [link.a, link.b].forEach(function (c) { c.classList.toggle('match-lit', on); }); }
+    function show(link) { if (!link) return; if (shown !== link) lit(shown, false); shown = link; lit(link, true); paint(link); }
+    function hide() { lit(shown, false); shown = null; hl.hidden = true; hl.innerHTML = ''; }
 
     // a mouse: while it is over either card of the pair
     stage.addEventListener('pointerover', function (e) {
