@@ -142,9 +142,8 @@ const CLIPS = BUILTIN.map(([id, label, src, keywords, short], i) => makeClip(id,
 /* the basic emotion of each Plutchik petal, for quick face changes */
 const EMOTIONS = HC.EMOTIONS.map(([group, list]) => { const e = list[1]; return {id:e[0], label:e[1], brows:e[2], eyes:e[3], mouth:e[4]}; });
 
-/* idle life: every motion has its own amount (0 = off) and they share one speed. Sway, breathing and weight shift
-   move the whole figure with a fine transform drawn over the picture, so they glide smoothly (the engine keeps joint
-   angles to whole degrees); torso, head and arms move the joints themselves. */
+/* idle life: every motion has its own amount (0 = off) and they share one speed. All of them are fine transforms drawn
+   over the picture, so they glide smoothly although the engine keeps joint angles to whole degrees. */
 const IDLE = {on:true, speed:1, sway:0.6, breathe:0.6, shift:1.5, torso:1.5, head:1.5, arms:1.2, blinks:true, blinkRate:17, doubleBlink:10};
 const IDLE_RANGE = {speed:[0.25, 3], sway:[0, 3], breathe:[0, 2], shift:[0, 8], torso:[0, 5], head:[0, 6], arms:[0, 6], blinkRate:[4, 40], doubleBlink:[0, 50]};
 /* slow, never-repeating drift: a few sine waves at unrelated frequencies (Hz at speed 1), weights summing to 1 */
@@ -315,11 +314,11 @@ function create(host, options){
     an.getFloatTimeDomainData(tbuf);
     let sum = 0; for(let i = 0; i < tbuf.length; i++) sum += tbuf[i] * tbuf[i];
     const db = 10 * Math.log10(sum / tbuf.length + 1e-12);
-    floor = db < floor ? db : Math.min(floor + 0.015, -20);   /* falls at once, rises about 1 dB a second */
-    const gate = Math.max(floor + o.sensitivity, -62), v = db - gate;
+    floor = Math.max(-100, db < floor ? db : Math.min(floor + 0.015, -20));   /* falls at once, rises about 1 dB a second */
+    const gate = floor + o.sensitivity, v = db - gate;   /* sensitivity always counts: no fixed minimum under it */
     onLevel(db, gate, floor);
     const F = features();
-    hiFloor = F.hiDb < hiFloor ? F.hiDb : Math.min(hiFloor + 0.015, -25);
+    hiFloor = Math.max(-110, F.hiDb < hiFloor ? F.hiDb : Math.min(hiFloor + 0.015, -25));
     const hiss = F.hiDb > hiFloor + o.sensitivity + 3 && F.hiShare > 0.2;   /* a fricative, even under the voice gate */
     if(recording && (v >= 0 || hiss)) recording.frames.push({shape:F.shape, db});
     if(v < 0 && !hiss){ prevVoiced = false; return {db, voiced:false, mouth:t - lastVoiced < 0.16 ? 'mbp' : 'rest'}; }
@@ -563,7 +562,7 @@ function create(host, options){
 
   /* ── one frame of the character, at display time td ── */
   let nextBlink = now() + 2, blinkEnd = 0, secondBlink = false, idleT = 0, idleLast = now();
-  const fine = {rot:0, dx:0, dy:0, sy:1};
+  const fine = {rot:0, dx:0, dy:0, sy:1, torso:0, neck:0, shoulderL:0, shoulderR:0, elbowL:0, elbowR:0};
   function compose(td, t){
     const d = cloneData(base), I = o.idle;
     /* idle life on its own clock, so a change of speed never makes the motion jump */
@@ -575,17 +574,16 @@ function create(host, options){
     fine.dx = k * I.shift * drift(it, 0.06, 2.1);
     fine.sy = 1 + k * I.breathe / 100 * breath;
     fine.dy = 0;
+    fine.torso = k * I.torso * drift(it, 0.13, 1.3);   /* turned with the upper body's parts, not the joint: see upperParts */
     /* joint motion */
-    if(k){
-      d.joints.torso = (d.joints.torso || 0) + I.torso * drift(it, 0.13, 1.3);
-      d.joints.neck = (d.joints.neck || 0) + I.head * drift(it, 0.09, 3.1);
-      d.headNod = clamp((d.headNod || 0) + I.head * 0.8 * drift(it, 0.15, 0.7), -30, 30);   /* nods are drawn to a tenth of a degree */
-      const a = I.arms * drift(it, 0.12, 5.2), b = I.arms * drift(it, 0.1, 0.9);
-      d.joints.shoulderL = (d.joints.shoulderL || 0) - a * 0.8 - I.arms * 0.6 * breath;
-      d.joints.shoulderR = (d.joints.shoulderR || 0) + b * 0.8 + I.arms * 0.6 * breath;
-      d.joints.elbowL = (d.joints.elbowL || 0) - b * 0.6;
-      d.joints.elbowR = (d.joints.elbowR || 0) + a * 0.6;
-    }
+    /* head tilt and arms: fine turns too (see upperParts); the nod is the engine's own and is drawn to a tenth of a degree */
+    const a = I.arms * drift(it, 0.12, 5.2), b = I.arms * drift(it, 0.1, 0.9);
+    fine.neck = k * I.head * drift(it, 0.09, 3.1);
+    fine.shoulderL = k * (-a * 0.8 - I.arms * 0.6 * breath);
+    fine.shoulderR = k * (b * 0.8 + I.arms * 0.6 * breath);
+    fine.elbowL = k * -b * 0.6;
+    fine.elbowR = k * a * 0.6;
+    if(k) d.headNod = clamp((d.headNod || 0) + I.head * 0.8 * drift(it, 0.15, 0.7), -30, 30);
     /* face: the emotion in force, else the character's own */
     const em = emotionAt(td);
     if(em){ d.eyebrows = em.brows; d.eyes = em.eyes; }
@@ -642,6 +640,42 @@ function create(host, options){
     charEl.innerHTML = HC.render(d).replace(/viewBox="[^"]*"/, `viewBox="${vb}" preserveAspectRatio="xMidYMid meet"`)
       .replace(/(<svg[^>]*>)/, '$1<g class="hl-fine">').replace(/<\/svg>\s*$/, '</g></svg>');
     fineEl = charEl.querySelector('.hl-fine');
+    upperParts(d);
+  }
+  /* Idle torso, head tilt and arm motion is drawn to a fraction of a degree. The engine keeps joints to whole
+     degrees, so instead of changing the joints, the drawn parts turn about the joints' own pivots. The engine tags each
+     part with its joint (data-joint), which gives the chain each part hangs from:
+       torso     everything above the waist (plus untagged parts drawn in the chest's frame: the rings under the shoulders)
+       neck      the neck, head and hair
+       shoulder  that arm: upper arm, forearm, hand and what it holds
+       elbow     that forearm and hand
+     A part gets the turns of its whole chain, outermost last (torso · shoulder · elbow · part), so a hand stays on its
+     forearm and the forearm on its upper arm. */
+  const CHAIN = {torso:['torso'], neck:['torso', 'neck'], shoulderL:['torso', 'shoulderL'], elbowL:['torso', 'shoulderL', 'elbowL'], wristL:['torso', 'shoulderL', 'elbowL'],
+    shoulderR:['torso', 'shoulderR'], elbowR:['torso', 'shoulderR', 'elbowR'], wristR:['torso', 'shoulderR', 'elbowR']};
+  const FINE_JOINTS = ['torso', 'neck', 'shoulderL', 'shoulderR', 'elbowL', 'elbowR'];
+  let upper = [], upperPiv = null, upperLast = '';
+  const pivCache = new Map();
+  function pivotsOf(d){
+    const k = JSON.stringify([d.joints, d.torsoOrientation, d.pelvisOrientation, d.height, d.weight, d.bodyType, d.back, d.flipped, d.prop, d.footwear, d.headNod, d.head]);
+    if(!pivCache.has(k)){ if(pivCache.size > 300) pivCache.clear(); pivCache.set(k, HC.pivots(d)); }
+    return pivCache.get(k);
+  }
+  function upperParts(d){
+    upper = []; upperPiv = null; upperLast = '';
+    const inner = fineEl && fineEl.querySelector('g[transform^="translate"]');
+    const P = inner && pivotsOf(d);
+    if(!P || !P.torso) return;
+    const m = inner.getAttribute('transform').match(/translate\(([-\d.e]+)[ ,]+([-\d.e]+)\)/); if(!m) return;
+    const parts = [...inner.querySelectorAll('g[transform^="matrix"]')].filter(g => !g.parentElement.closest('g[transform^="matrix"]'));
+    const chest = new Set(parts.filter(g => g.dataset.joint === 'torso').map(g => g.getAttribute('transform')));
+    for(const g of parts){
+      const j = g.dataset.joint, chain = j ? CHAIN[j] : chest.has(g.getAttribute('transform')) ? CHAIN.torso : null;
+      if(chain) upper.push({el:g, base:g.getAttribute('transform'), chain});
+    }
+    /* pivots in the parts' own frame: inside the figure's translate, and before the mirror of a back view */
+    upperPiv = {};
+    for(const j of FINE_JOINTS){ const p = P[j]; if(p) upperPiv[j] = {x:((p.x - HC.STAGE.cx) * (p.mirror ? -1 : 1)).toFixed(2), y:(p.y - +m[2]).toFixed(2)}; }
   }
   /* the whole-figure idle motion: a turn about the feet, a sideways shift, and breathing as a slight stretch upward */
   let fineEl = null;
@@ -649,6 +683,15 @@ function create(host, options){
     if(!fineEl) return;
     const x = HC.STAGE.cx, g = HC.STAGE.ground;
     fineEl.setAttribute('transform', `translate(${(x + fine.dx).toFixed(2)} ${(g + fine.dy).toFixed(2)}) rotate(${fine.rot.toFixed(3)}) scale(1 ${fine.sy.toFixed(4)}) translate(${-x} ${-g})`);
+    if(!upperPiv) return;
+    const ang = {}; for(const j of FINE_JOINTS) ang[j] = fine[j].toFixed(3);
+    const key = FINE_JOINTS.map(j => ang[j]).join(); if(key === upperLast) return;
+    upperLast = key;
+    for(const u of upper){
+      let t = '';
+      for(const j of u.chain){ const p = upperPiv[j]; if(p && ang[j] !== '0.000' && ang[j] !== '-0.000') t += `rotate(${ang[j]} ${p.x} ${p.y}) `; }
+      u.el.setAttribute('transform', t + u.base);
+    }
   }
   function frame(){
     if(dead) return;

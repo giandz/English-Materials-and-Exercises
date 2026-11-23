@@ -51,10 +51,15 @@ html, body{ height:100%; margin:0; overflow:hidden; }
 .lc-big{ font-size:.9333rem !important; font-weight:600; padding:6px 12px !important; }
 button[aria-pressed="true"]{ background:var(--color-background-info); color:var(--color-text-info); border-color:var(--color-border-info); }
 /* level meter: the bar is the voice level; the mark is where voice starts */
-.lc-meter{ position:relative; height:10px; border-radius:5px; background:var(--surface-2); border:1px solid var(--border); overflow:hidden; }
-.lc-meter i{ position:absolute; left:0; top:0; bottom:0; width:0; background:var(--good); transition:width .05s linear; }
-.lc-meter i.quiet{ background:var(--text-muted); }
-.lc-meter b{ position:absolute; top:-2px; bottom:-2px; width:2px; background:var(--bad); }
+.lc-meter{ position:relative; height:12px; border-radius:6px; background:var(--surface-2); border:1px solid var(--border); overflow:hidden; }
+/* the gap fill's colour scale, hsl(hue 100% 40%) with the hue running 120° → 0°: green when quiet, red when loud.
+   The faint copy shows the whole scale; the bright copy is cut to the level, so each part keeps its colour. */
+.lc-meter .scale, .lc-meter i{ position:absolute; inset:0; background:linear-gradient(to right, hsl(120deg 100% 40%), hsl(90deg 100% 40%), hsl(60deg 100% 40%), hsl(30deg 100% 40%), hsl(0deg 100% 40%));
+  background:linear-gradient(in hsl to right, hsl(120deg 100% 40%), hsl(0deg 100% 40%)); }
+.lc-meter .scale{ opacity:.18; }
+.lc-meter i{ clip-path:inset(0 100% 0 0); transition:clip-path .05s linear; }
+.lc-meter i.quiet{ opacity:.45; }
+.lc-meter b{ position:absolute; top:-2px; bottom:-2px; width:3px; margin-left:-1.5px; background:var(--bad); box-shadow:0 0 0 1px var(--surface-2); transition:left .08s linear; }
 .lc-swatches{ display:flex; flex-wrap:wrap; gap:5px; }
 .lc-swatches button{ width:1.9rem; height:1.9rem; padding:0; border-radius:6px; border:1px solid rgba(0,0,0,.25); min-width:0; }
 .lc-swatches button[aria-pressed="true"]{ outline:2px solid var(--text-accent); outline-offset:2px; }
@@ -94,7 +99,7 @@ body.clean.see-through, html.see-through{ background:transparent !important; }
       <summary>🎙️ Microphone</summary>
       <div class="lc-sec">
         <div class="lc-row"><button type="button" id="bMic" class="lc-big" aria-pressed="false">🎙️ Start microphone</button></div>
-        <div class="lc-meter" title="Voice level. Voice counts from the red mark."><i id="mLevel"></i><b id="mGate"></b></div>
+        <div class="lc-meter" title="Voice level. Voice counts from the red mark."><span class="scale"></span><i id="mLevel"></i><b id="mGate"></b></div>
         <div class="lc-row"><label for="sens">Sensitivity</label><input type="range" id="sens" min="3" max="24" step="1"><span id="sensV"></span></div>
         <div class="lc-row"><label for="detail">Audio mouth</label>
           <select id="detail"><option value="shapes">All shapes (vowels, F·V, L, W·Q…)</option><option value="loudness">Open / closed by loudness</option></select></div>
@@ -133,7 +138,7 @@ body.clean.see-through, html.see-through{ background:transparent !important; }
         <div id="blinkRows" class="lc-sec" style="padding:0"></div>
         <label class="lc-chk"><input type="checkbox" id="beats"> Small nods on loud syllables</label>
         <div id="beatRows" class="lc-sec" style="padding:0"></div>
-        <p class="lc-note">0 turns a motion off. Sway, breathing and weight shift glide smoothly over the whole figure; torso, head and arms move the joints. Speed scales them all.</p>
+        <p class="lc-note">0 turns a motion off. Every motion glides smoothly, in fractions of a degree. Speed scales them all.</p>
       </div>
     </details>
 
@@ -258,13 +263,17 @@ function shownCharacter(){
 }
 const bgOpts = () => ({type:S.bg.type, color:S.bg.color, fit:S.bg.fit, image:S.bg.type === 'image' ? imageData : null});
 
+/* the meter runs from −100 dB (digital silence) to −10 dB (very loud) */
+const meterPct = v => Math.max(0, Math.min(100, (v + 100) / 90 * 100));
+let lastFloor = -70;   /* the noise floor last measured; before the microphone starts, a typical quiet room */
+const showGate = () => { $('mGate').style.left = meterPct(lastFloor + S.sensitivity) + '%'; };
 const live = HouseLive.create($('stage'), {
   character:shownCharacter(), background:bgOpts(), delay:S.delay, lang:S.lang, onDevice:S.onDevice, sensitivity:S.sensitivity, mouthDetail:S.mouthDetail,
   beats:S.beats, beatStrength:S.beatStrength, idle:S.idle, captions:S.captions, prosody:S.prosody, autoGestures:S.autoGestures, mouthMode:S.mouthMode, lockCamera:S.lockCamera,
   calibration:load(CAL_STORE, {}),
-  onLevel:(db, gate) => {
-    const pct = v => Math.max(0, Math.min(100, (v + 80) / 70 * 100));
-    $('mLevel').style.width = pct(db) + '%'; $('mLevel').classList.toggle('quiet', db < gate); $('mGate').style.left = pct(gate) + '%';
+  onLevel:(db, gate, floor) => {
+    lastFloor = floor;
+    $('mLevel').style.clipPath = `inset(0 ${(100 - meterPct(db)).toFixed(1)}% 0 0)`; $('mLevel').classList.toggle('quiet', db < gate); $('mGate').style.left = meterPct(gate) + '%';
   },
   onStatus:t => { $('status').textContent = t; },
   onTranscript:t => { const p = document.createElement('p'); p.textContent = t; $('log').prepend(p); while($('log').children.length > 30) $('log').lastChild.remove(); },
@@ -368,10 +377,10 @@ async function micOn(){
   if(ok && S.recOn) live.startRecognition();
 }
 $('bMic').onclick = () => {
-  if(live.micOn){ live.stopMic(); $('bMic').setAttribute('aria-pressed', 'false'); $('bMic').textContent = '🎙️ Start microphone'; $('mLevel').style.width = '0'; }
+  if(live.micOn){ live.stopMic(); $('bMic').setAttribute('aria-pressed', 'false'); $('bMic').textContent = '🎙️ Start microphone'; $('mLevel').style.clipPath = 'inset(0 100% 0 0)'; }
   else micOn();
 };
-$('sens').oninput = () => { S.sensitivity = +$('sens').value; $('sensV').textContent = S.sensitivity + ' dB'; live.set({sensitivity:S.sensitivity}); persistSoon(); };
+$('sens').oninput = () => { S.sensitivity = +$('sens').value; $('sensV').textContent = S.sensitivity + ' dB'; live.set({sensitivity:S.sensitivity}); showGate(); persistSoon(); };
 $('detail').onchange = () => { S.mouthDetail = $('detail').value; live.set({mouthDetail:S.mouthDetail}); persist(); };
 $('beats').onchange = () => { S.beats = $('beats').checked; live.set({beats:S.beats}); syncIdle(); persist(); };
 /* recognition */
@@ -483,7 +492,7 @@ document.addEventListener('keydown', e => {
 });
 
 window.liveCharacter = live;   /* for the console */
-buildGestures(); syncAll(); syncCal();
+buildGestures(); syncAll(); syncCal(); showGate();
 if(new URLSearchParams(location.search).has('clean')) setClean(true);
 })();
 </script>
