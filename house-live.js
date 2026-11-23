@@ -20,7 +20,7 @@
      · Gestures are short clips: built in (wave, point, shrug, …) or house-animation/1 files made in the
        keyframe editor (addClip). Each clip moves only the settings it has timelines for, faded in and out
        on top of the idle pose, so clips mix with each other and with the speech.
-     · Idle life: breathing sway and random blinks.
+     · Idle life: body sway, breathing, weight shift, torso, head and arm drift, blinks — each with its own amount (idle).
 
    options (all optional; every one can be changed later)
      character      a house-character object (as saved by the poser); its pose is the resting pose
@@ -31,9 +31,13 @@
      lang           'en-US' | 'en-GB' | 'es-ES' | 'es-MX' | …   recognition language (lip-sync rules follow it)
      onDevice       true                     ask for on-device recognition where the browser has it
      mouthMode      'auto' | 'audio'          auto: text shapes when a sentence is ready in time, audio otherwise
-     mouthDetail    'shapes' | 'loudness'     audio mouth: vowel shapes from the spectrum, or open/closed by loudness
+     mouthDetail    'shapes' | 'loudness'     audio mouth: shapes from the spectrum (A·I, E, O, U, W·Q, F·V, L, C·D·G…, M·B·P), or open/closed by loudness
+     calibration    {aah:{shape, db}, …}      the speaker's own sounds, from calibrate(id); HouseLive.SOUNDS lists them
      sensitivity    dB above the noise floor where voice starts (default 9)
-     beats          true                      small head nods on loud syllables
+     beats          true                      small head nods on loud syllables (beatStrength: degrees, default 3)
+     idle           {on, speed, sway, breathe, shift, torso, head, arms, blinks, blinkRate, doubleBlink}
+                    idle life; amounts in degrees (sway, torso, head, arms), % (breathe), stage px (shift); 0 turns one off.
+                    blinkRate = blinks a minute, doubleBlink = % of blinks that come twice. HouseLive.IDLE = the defaults.
      captions       true                      caption strip at the bottom of the stage
      prosody        true                      head nods, question brows and blinks from recognised sentences
      autoGestures   true                      gestures from keywords
@@ -46,6 +50,7 @@
 
    methods
      startMic() → Promise · stopMic() · micOn
+     calibrate(id, seconds = 1.6) → Promise {ok, frames, calibration} · calibration · clearCalibration()
      startRecognition() · stopRecognition() · recognitionOn
      setCharacter(data) · setBackground(bg) · setCamera(cam) · getCamera() · shot('full'|'medium'|'closeup')
      setDelay(s) · set(options)  (any option above)
@@ -137,12 +142,20 @@ const CLIPS = BUILTIN.map(([id, label, src, keywords, short], i) => makeClip(id,
 /* the basic emotion of each Plutchik petal, for quick face changes */
 const EMOTIONS = HC.EMOTIONS.map(([group, list]) => { const e = list[1]; return {id:e[0], label:e[1], brows:e[2], eyes:e[3], mouth:e[4]}; });
 
+/* idle life: every motion has its own amount (0 = off) and they share one speed. Sway, breathing and weight shift
+   move the whole figure with a fine transform drawn over the picture, so they glide smoothly (the engine keeps joint
+   angles to whole degrees); torso, head and arms move the joints themselves. */
+const IDLE = {on:true, speed:1, sway:0.6, breathe:0.6, shift:1.5, torso:1.5, head:1.5, arms:1.2, blinks:true, blinkRate:17, doubleBlink:10};
+const IDLE_RANGE = {speed:[0.25, 3], sway:[0, 3], breathe:[0, 2], shift:[0, 8], torso:[0, 5], head:[0, 6], arms:[0, 6], blinkRate:[4, 40], doubleBlink:[0, 50]};
+/* slow, never-repeating drift: a few sine waves at unrelated frequencies (Hz at speed 1), weights summing to 1 */
+const drift = (t, f, p) => 0.6 * Math.sin(2 * Math.PI * f * t + p) + 0.3 * Math.sin(2 * Math.PI * f * 2.13 * t + p * 1.7 + 1.1) + 0.1 * Math.sin(2 * Math.PI * f * 3.71 * t + p * 2.3 + 2.4);
 /* keywords → word sequences, matched on whole words (case and punctuation ignored, accents kept: sí ≠ si) */
 const normWords = t => String(t || '').toLowerCase().replace(/[’`]/g, "'").replace(/[^\p{L}\p{N}' ]+/gu, ' ').split(/\s+/).filter(Boolean);
 
 function create(host, options){
   const o = {background:{type:'color', color:'#00B140', image:null, fit:'cover'}, camera:{x:300, y:295, zoom:1}, delay:0, lang:'en-US', onDevice:true,
-    mouthMode:'auto', mouthDetail:'shapes', sensitivity:9, beats:true, captions:true, prosody:true, autoGestures:true, lockCamera:false, fps:30, ...(options || {})};
+    mouthMode:'auto', mouthDetail:'shapes', sensitivity:9, beats:true, beatStrength:3, captions:true, prosody:true, autoGestures:true, lockCamera:false, fps:30, ...(options || {})};
+  o.idle = {...IDLE, ...((options || {}).idle || {})};
   const cb = k => (...a) => { if(typeof o[k] === 'function'){ try{ o[k](...a); }catch(e){ console.error(e); } } };
   const onLevel = cb('onLevel'), onStatus = cb('onStatus'), onTranscript = cb('onTranscript'), onCamera = cb('onCamera');
 
@@ -256,6 +269,48 @@ function create(host, options){
     stream = null; ac = null; an = null; curUtt = null; mouthNow = 'rest';
     stopRecognition(); onStatus('Microphone off.');
   }
+  /* ── the audio mouth ──
+     Each frame is measured three ways: loudness (against a noise floor), the loudness of the hiss band (2.5–9 kHz,
+     against its own floor, because F, V and Th are so quiet they often stay under the voice gate), and the spectral
+     shape: 16 bands from 150 Hz to 9 kHz, in dB, with their average taken off.
+     Without calibration, rules read the shape:
+       hiss, peaked and strong (S, Z, Sh) → C·D·G… · hiss, flat and weak (F, V, Th) → F·V
+       nasal hum (most energy under 500 Hz) → C·D·G… (N; M can't be told apart without calibration)
+       weaker voice with a low first and mid second formant → L
+       vowels by their first two formants → A·I, E, O, U; U right where a stretch of voice starts → W·Q
+     With calibration (calibrate(id) for each sound), every frame is matched against the speaker's own recordings of
+     aah, eee, ooh, ooo, fff, vvv, sss, shh, mmm, nnn and lll first; the rules only decide when nothing is close. */
+  const NB = 16, EDGES = Array.from({length:NB + 1}, (_, i) => 150 * Math.pow(9000 / 150, i / NB));
+  let hiFloor = -90, vRef = null, prevVoiced = false, onsetAt = -9, recording = null;
+  function features(){
+    an.getFloatFrequencyData(fbuf);
+    const n = fbuf.length, hz = ac.sampleRate / an.fftSize;
+    for(let i = 0; i < n; i++) pre[i + 1] = pre[i] + (isFinite(fbuf[i]) ? Math.pow(10, fbuf[i] / 10) : 0);
+    const bin = f => clamp(Math.round(f / hz), 0, n - 1), band = (a, b) => pre[bin(b) + 1] - pre[bin(a)] + 1e-14;
+    const bands = new Array(NB); let mean = 0;
+    for(let i = 0; i < NB; i++){ bands[i] = 10 * Math.log10(band(EDGES[i], EDGES[i + 1])); mean += bands[i] / NB; }
+    const shape = bands.map(b => b - mean), total = band(150, 9000);
+    /* hiss band: level, flatness (1 = noise-like, 0 = one peak) and centre of gravity */
+    let lg = 0, ar = 0, cw = 0, m = 0;
+    for(let i = bin(2000); i <= bin(9000); i++){ const p = isFinite(fbuf[i]) ? Math.pow(10, fbuf[i] / 10) : 1e-14; lg += Math.log(p + 1e-14); ar += p; cw += p * i * hz; m++; }
+    const flat = Math.exp(lg / m) / (ar / m + 1e-14), cent = cw / (ar + 1e-14);
+    const w = Math.max(2, Math.round(110 / hz));
+    const peak = (a, b) => { let best = -1, at = a; for(let i = bin(a); i <= bin(b); i++){ const s = Math.max(0, i - w), e = Math.min(n - 1, i + w), q = (pre[e + 1] - pre[s]) / (e - s + 1); if(q > best){ best = q; at = i * hz; } } return at; };
+    return {shape, hiDb:10 * Math.log10(band(2500, 9000)), hiShare:band(4000, 9000) / total, lowShare:band(150, 500) / total, flat, cent, f1:peak(250, 950), f2:peak(950, 2800)};
+  }
+  const CAL_MOUTH = {aah:'ai', eee:'e', ooh:'o', ooo:'u', fff:'fv', vvv:'fv', sss:'cdg', shh:'cdg', mmm:'mbp', nnn:'cdg', lll:'l'};
+  const FRIC = new Set(['fff', 'vvv', 'sss', 'shh']);
+  function matchCal(F, rel, hissOnly){
+    const cal = o.calibration || {}, aah = cal.aah;
+    let best = null;
+    for(const [id, tp] of Object.entries(cal)){
+      if(!CAL_MOUTH[id] || !tp || !tp.shape || (hissOnly && !FRIC.has(id))) continue;
+      let d = 0; for(let i = 0; i < NB; i++) d += (F.shape[i] - tp.shape[i]) ** 2;
+      d = Math.sqrt(d / NB) + (aah && rel !== null ? 0.2 * Math.abs(rel - (tp.db - aah.db)) : 0);
+      if(!best || d < best.d) best = {id, d};
+    }
+    return best && best.d < 7 ? CAL_MOUTH[best.id] : null;
+  }
   function classify(t){
     an.getFloatTimeDomainData(tbuf);
     let sum = 0; for(let i = 0; i < tbuf.length; i++) sum += tbuf[i] * tbuf[i];
@@ -263,21 +318,48 @@ function create(host, options){
     floor = db < floor ? db : Math.min(floor + 0.015, -20);   /* falls at once, rises about 1 dB a second */
     const gate = Math.max(floor + o.sensitivity, -62), v = db - gate;
     onLevel(db, gate, floor);
-    if(v < 0) return {db, voiced:false, mouth:t - lastVoiced < 0.16 ? 'mbp' : 'rest'};
+    const F = features();
+    hiFloor = F.hiDb < hiFloor ? F.hiDb : Math.min(hiFloor + 0.015, -25);
+    const hiss = F.hiDb > hiFloor + o.sensitivity + 3 && F.hiShare > 0.2;   /* a fricative, even under the voice gate */
+    if(recording && (v >= 0 || hiss)) recording.frames.push({shape:F.shape, db});
+    if(v < 0 && !hiss){ prevVoiced = false; return {db, voiced:false, mouth:t - lastVoiced < 0.16 ? 'mbp' : 'rest'}; }
     lastVoiced = t;
+    if(!prevVoiced) onsetAt = t;
+    prevVoiced = true;
     if(o.mouthDetail === 'loudness') return {db, voiced:true, v, mouth:v < 5 ? 'cdg' : v < 13 ? 'e' : 'ai'};
-    an.getFloatFrequencyData(fbuf);
-    const n = fbuf.length, hz = ac.sampleRate / an.fftSize;
-    for(let i = 0; i < n; i++) pre[i + 1] = pre[i] + (isFinite(fbuf[i]) ? Math.pow(10, fbuf[i] / 10) : 0);
-    const bin = f => clamp(Math.round(f / hz), 0, n - 1), band = (a, b) => pre[bin(b) + 1] - pre[bin(a)];
-    const lo = band(200, 1000), mid = band(1000, 3000), hi = band(4000, 9000);
-    if(hi / (lo + mid + hi + 1e-12) > 0.45) return {db, voiced:true, v, mouth:'cdg'};
-    if(v < 5) return {db, voiced:true, v, mouth:'cdg'};
-    const w = Math.max(2, Math.round(110 / hz));
-    const peak = (a, b) => { let best = -1, at = a; for(let i = bin(a); i <= bin(b); i++){ const s = Math.max(0, i - w), e = Math.min(n - 1, i + w), m = (pre[e + 1] - pre[s]) / (e - s + 1); if(m > best){ best = m; at = i * hz; } } return at; };
-    const f1 = peak(250, 950), f2 = peak(950, 2800);
-    const mouth = f1 > 700 ? 'ai' : f2 > 1750 ? 'e' : (f1 < 420 && f2 < 1050) ? 'u' : f2 < 1250 ? 'o' : v > 14 ? 'ai' : 'e';
+    const cal = o.calibration || {};
+    if(vRef === null && cal.aah) vRef = cal.aah.db;
+    const rel = vRef === null ? null : db - vRef;
+    let mouth = matchCal(F, rel, v < 0);
+    if(!mouth){
+      if(hiss && (v < 4 || F.hiShare > 0.45)) mouth = F.flat < 0.3 && F.cent > 3500 && (rel === null || rel > -22) ? 'cdg' : 'fv';
+      else if(v < 0) mouth = 'fv';
+      else if(F.lowShare > 0.8 && (rel === null || rel < -8)) mouth = 'cdg';
+      else if(rel !== null && rel < -6 && F.f1 < 450 && F.f2 > 1000 && F.f2 < 1600) mouth = 'l';
+      else if(v < 5) mouth = 'cdg';
+      else mouth = F.f1 > 700 ? 'ai' : F.f2 > 1750 ? 'e' : (F.f1 < 420 && F.f2 < 1050) ? 'u' : F.f2 < 1250 ? 'o' : v > 14 ? 'ai' : 'e';
+    }
+    if(mouth === 'u' && t - onsetAt < 0.12) mouth = 'wq';   /* lips rounding into a sound: W, Q */
+    if((mouth === 'ai' || mouth === 'e' || mouth === 'o') && v > 8)   /* the speaker's vowel loudness: follows peaks quickly, drops slowly */
+      vRef = vRef === null ? db : vRef + (db - vRef) * (db > vRef ? 0.2 : 0.01);
     return {db, voiced:true, v, mouth};
+  }
+  /* calibration: record one sound for a moment and keep its average shape and loudness */
+  function calibrate(id, seconds){
+    if(!CAL_MOUTH[id]) return Promise.reject(new Error('Unknown sound: ' + id));
+    if(!an) return Promise.reject(new Error('Start the microphone first.'));
+    if(recording) return Promise.reject(new Error('Already recording.'));
+    const rec = recording = {id, frames:[]};
+    return new Promise(done => setTimeout(() => {
+      recording = null;
+      const fr = rec.frames.slice(Math.floor(rec.frames.length * 0.15));   /* skip the start of the sound */
+      if(fr.length < 10){ done({ok:false, frames:fr.length}); return; }
+      const shape = new Array(NB).fill(0); for(const f of fr) for(let i = 0; i < NB; i++) shape[i] += f.shape[i] / fr.length;
+      const dbs = fr.map(f => f.db).sort((a, b) => a - b);
+      o.calibration = {...(o.calibration || {}), [id]:{shape:shape.map(x => +x.toFixed(2)), db:+dbs[dbs.length >> 1].toFixed(2)}};
+      if(id === 'aah') vRef = o.calibration.aah.db;
+      done({ok:true, frames:fr.length, calibration:o.calibration});
+    }, (seconds || 1.6) * 1000));
   }
   function analyse(t){
     const r = classify(t);
@@ -291,7 +373,7 @@ function create(host, options){
     while(utts.length > 60) utts.shift();
     /* beat nods: a syllable clearly louder than the running level */
     if(r.voiced){
-      if(o.beats && r.v > vAvg + 7 && t - lastBeat > 0.45){ lastBeat = t; beats.push({t0:t, t1:t + 0.32, value:3}); }
+      if(o.beats && r.v > vAvg + 7 && t - lastBeat > 0.45){ lastBeat = t; beats.push({t0:t, t1:t + 0.32, value:o.beatStrength}); }
       vAvg += (r.v - vAvg) * 0.08;
     } else vAvg *= 0.98;
     while(beats.length && beats[0].t1 < t - o.delay - 2) beats.shift();
@@ -480,12 +562,30 @@ function create(host, options){
   }
 
   /* ── one frame of the character, at display time td ── */
-  let nextBlink = now() + 2, blinkEnd = 0;
+  let nextBlink = now() + 2, blinkEnd = 0, secondBlink = false, idleT = 0, idleLast = now();
+  const fine = {rot:0, dx:0, dy:0, sy:1};
   function compose(td, t){
-    const d = cloneData(base);
-    /* idle: breathing sway */
-    d.joints.torso = (d.joints.torso || 0) + 1.6 * Math.sin(t * 2 * Math.PI / 4.6);
-    d.joints.neck = (d.joints.neck || 0) + 1.4 * Math.sin(t * 2 * Math.PI / 6.1 + 1.3);
+    const d = cloneData(base), I = o.idle;
+    /* idle life on its own clock, so a change of speed never makes the motion jump */
+    idleT += Math.min(0.1, t - idleLast) * (I.on ? I.speed : 0); idleLast = t;
+    const k = I.on ? 1 : 0, it = idleT;
+    /* whole-figure motion, drawn as a fine transform (see applyFine) */
+    const breath = 0.5 - 0.5 * Math.cos(2 * Math.PI * 0.24 * it + 0.35 * Math.sin(2 * Math.PI * 0.24 * it));   /* in a little faster than out */
+    fine.rot = k * I.sway * drift(it, 0.11, 0.4);
+    fine.dx = k * I.shift * drift(it, 0.06, 2.1);
+    fine.sy = 1 + k * I.breathe / 100 * breath;
+    fine.dy = 0;
+    /* joint motion */
+    if(k){
+      d.joints.torso = (d.joints.torso || 0) + I.torso * drift(it, 0.13, 1.3);
+      d.joints.neck = (d.joints.neck || 0) + I.head * drift(it, 0.09, 3.1);
+      d.headNod = clamp((d.headNod || 0) + I.head * 0.8 * drift(it, 0.15, 0.7), -30, 30);   /* nods are drawn to a tenth of a degree */
+      const a = I.arms * drift(it, 0.12, 5.2), b = I.arms * drift(it, 0.1, 0.9);
+      d.joints.shoulderL = (d.joints.shoulderL || 0) - a * 0.8 - I.arms * 0.6 * breath;
+      d.joints.shoulderR = (d.joints.shoulderR || 0) + b * 0.8 + I.arms * 0.6 * breath;
+      d.joints.elbowL = (d.joints.elbowL || 0) - b * 0.6;
+      d.joints.elbowR = (d.joints.elbowR || 0) + a * 0.6;
+    }
     /* face: the emotion in force, else the character's own */
     const em = emotionAt(td);
     if(em){ d.eyebrows = em.brows; d.eyes = em.eyes; }
@@ -517,7 +617,12 @@ function create(host, options){
     if(tilt) d.joints.neck = (d.joints.neck || 0) + tilt;
     if(brows && d.eyebrows === 'neutral') d.eyebrows = brows;
     /* blinks: every few seconds, sometimes twice */
-    if(t >= nextBlink){ blinkEnd = t + 0.13; nextBlink = t + (Math.random() < 0.1 ? 0.3 : 2.4 + Math.random() * 3.2); }
+    if(I.on && I.blinks && t >= nextBlink){
+      blinkEnd = t + 0.11 + Math.random() * 0.05;
+      const again = !secondBlink && Math.random() * 100 < I.doubleBlink;
+      nextBlink = t + (again ? 0.28 : 60 / I.blinkRate * (0.6 + Math.random() * 0.8)); secondBlink = again;
+    }
+    if(!(I.on && I.blinks)) nextBlink = Math.max(nextBlink, t + 0.5);
     if((blink || t < blinkEnd) && ['open', 'wide', 'narrow'].includes(d.eyes)) d.eyes = 'closed';
     /* mouth */
     let mouth = restMouth;
@@ -534,7 +639,16 @@ function create(host, options){
     const vb = camVB().map(v => v.toFixed(2)).join(' '), key = JSON.stringify(d) + vb;
     if(key === lastKey) return;
     lastKey = key;
-    charEl.innerHTML = HC.render(d).replace(/viewBox="[^"]*"/, `viewBox="${vb}" preserveAspectRatio="xMidYMid meet"`);
+    charEl.innerHTML = HC.render(d).replace(/viewBox="[^"]*"/, `viewBox="${vb}" preserveAspectRatio="xMidYMid meet"`)
+      .replace(/(<svg[^>]*>)/, '$1<g class="hl-fine">').replace(/<\/svg>\s*$/, '</g></svg>');
+    fineEl = charEl.querySelector('.hl-fine');
+  }
+  /* the whole-figure idle motion: a turn about the feet, a sideways shift, and breathing as a slight stretch upward */
+  let fineEl = null;
+  function applyFine(){
+    if(!fineEl) return;
+    const x = HC.STAGE.cx, g = HC.STAGE.ground;
+    fineEl.setAttribute('transform', `translate(${(x + fine.dx).toFixed(2)} ${(g + fine.dy).toFixed(2)}) rotate(${fine.rot.toFixed(3)}) scale(1 ${fine.sy.toFixed(4)}) translate(${-x} ${-g})`);
   }
   function frame(){
     if(dead) return;
@@ -545,12 +659,18 @@ function create(host, options){
     caption(td, t);
     if(t - lastDraw < 1 / clamp(o.fps, 5, 60) - 0.002) return;
     lastDraw = t;
-    try{ draw(compose(td, t)); }catch(e){ console.error(e); }
+    try{ draw(compose(td, t)); applyFine(); }catch(e){ console.error(e); }
   }
 
   function set(opts){
-    const was = {lang:o.lang, onDevice:o.onDevice};
+    const was = {lang:o.lang, onDevice:o.onDevice}, idle = o.idle;
     Object.assign(o, opts || {});
+    o.idle = {...idle};
+    if(opts && opts.idle) for(const [k, v] of Object.entries(opts.idle)){
+      if(IDLE_RANGE[k]) o.idle[k] = clamp(Number(v) || 0, IDLE_RANGE[k][0], IDLE_RANGE[k][1]);
+      else if(k === 'on' || k === 'blinks') o.idle[k] = !!v;
+    }
+    if(opts && 'beatStrength' in opts) o.beatStrength = clamp(Number(opts.beatStrength) || 0, 0, 10);
     if(opts && 'delay' in opts) o.delay = clamp(Number(opts.delay) || 0, 0, 5);
     if(opts && 'sensitivity' in opts) o.sensitivity = clamp(Number(opts.sensitivity) || 9, 2, 30);
     if(opts && opts.background) setBackground(opts.background);
@@ -580,10 +700,12 @@ function create(host, options){
   raf = requestAnimationFrame(frame);
   return {startMic, stopMic, get micOn(){ return !!stream; }, startRecognition, stopRecognition, get recognitionOn(){ return recWanted; },
     setCharacter, setBackground, setCamera, getCamera, shot, setDelay:s => set({delay:s}), set, get options(){ return {...o}; },
+    calibrate, get calibration(){ return {...(o.calibration || {})}; }, clearCalibration:() => { o.calibration = {}; vRef = null; },
     gesture:id => gesture(id), emotion:id => emotion(id), get clips(){ return clips.slice(); }, addClip, removeClip, destroy,
     /* for tests: feed a recognised sentence as if it had just been heard */
     _final:text => finalText(text, now())};
 }
 
-global.HouseLive = {create, CLIPS, EMOTIONS, makeClip};
+const SOUNDS = [['aah','“aah” (father)'],['eee','“eee” (see)'],['ooh','“oh” (go)'],['ooo','“ooo” (food)'],['fff','“fff”'],['vvv','“vvv”'],['sss','“sss”'],['shh','“shh”'],['mmm','“mmm” (lips closed)'],['nnn','“nnn”'],['lll','“lll”']];
+global.HouseLive = {create, CLIPS, EMOTIONS, IDLE, IDLE_RANGE, SOUNDS, makeClip};
 })(window);

@@ -60,6 +60,8 @@ button[aria-pressed="true"]{ background:var(--color-background-info); color:var(
 .lc-swatches button[aria-pressed="true"]{ outline:2px solid var(--text-accent); outline-offset:2px; }
 .lc-swatches input[type=color]{ width:1.9rem; height:1.9rem; padding:0; border:1px solid var(--color-border-primary); border-radius:6px; background:none; cursor:pointer; }
 .lc-grid{ display:grid; grid-template-columns:repeat(3, minmax(0, 1fr)); gap:5px; }
+.lc-grid button.done::after{ content:' ✓'; color:var(--good); }
+.lc-grid button.rec{ background:var(--bad); color:#fff; }
 .lc-grid button{ font-size:.7667rem; padding:4px 3px; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
 .lc-grid kbd, .lc-note kbd{ font-family:var(--font-mono); font-size:.6667rem; padding:0 3px; border:1px solid var(--border); border-radius:3px; background:var(--surface-2); color:var(--text-muted); margin-right:3px; }
 .lc-log{ font-size:.7667rem; color:var(--text-secondary); max-height:6.5em; overflow-y:auto; background:var(--surface-2); border:1px solid var(--border); border-radius:6px; padding:4px 6px; }
@@ -95,9 +97,13 @@ body.clean.see-through, html.see-through{ background:transparent !important; }
         <div class="lc-meter" title="Voice level. Voice counts from the red mark."><i id="mLevel"></i><b id="mGate"></b></div>
         <div class="lc-row"><label for="sens">Sensitivity</label><input type="range" id="sens" min="3" max="24" step="1"><span id="sensV"></span></div>
         <div class="lc-row"><label for="detail">Audio mouth</label>
-          <select id="detail"><option value="shapes">Vowel shapes</option><option value="loudness">Open / closed by loudness</option></select></div>
-        <label class="lc-chk"><input type="checkbox" id="beats"> Small nods on loud syllables</label>
+          <select id="detail"><option value="shapes">All shapes (vowels, F·V, L, W·Q…)</option><option value="loudness">Open / closed by loudness</option></select></div>
         <p class="lc-note">Move the red mark with Sensitivity until the bar only turns green when you speak. A headset keeps room noise out.</p>
+        <div class="lc-row"><b style="color:var(--text-primary)">🎯 Calibrate my voice</b><span id="calCount" class="lc-note" style="margin-left:auto"></span></div>
+        <p class="lc-note">Teaches the mouth your own sounds, so F·V, L, M and the vowels are told apart better. Hold each sound steadily for two seconds.</p>
+        <div class="lc-row"><button type="button" id="bCalAll">▶️ Record them all</button><button type="button" id="bCalClear">🗑️ Clear</button></div>
+        <div class="lc-grid" id="calGrid"></div>
+        <div class="lc-status" id="calMsg" aria-live="polite"></div>
       </div>
     </details>
 
@@ -115,6 +121,19 @@ body.clean.see-through, html.see-through{ background:transparent !important; }
           <select id="mouthMode"><option value="auto">Words when ready in time, else audio</option><option value="audio">Audio only</option></select></div>
         <div class="lc-status" id="status"></div>
         <div class="lc-log" id="log"></div>
+      </div>
+    </details>
+
+    <details>
+      <summary>🌬️ Idle life</summary>
+      <div class="lc-sec">
+        <div class="lc-row"><label class="lc-chk"><input type="checkbox" id="idleOn"> Idle life</label><button type="button" id="bIdleReset" style="margin-left:auto">↺ Defaults</button></div>
+        <div id="idleRows" class="lc-sec" style="padding:0"></div>
+        <label class="lc-chk"><input type="checkbox" id="blinks"> Blinks</label>
+        <div id="blinkRows" class="lc-sec" style="padding:0"></div>
+        <label class="lc-chk"><input type="checkbox" id="beats"> Small nods on loud syllables</label>
+        <div id="beatRows" class="lc-sec" style="padding:0"></div>
+        <p class="lc-note">0 turns a motion off. Sway, breathing and weight shift glide smoothly over the whole figure; torso, head and arms move the joints. Speed scales them all.</p>
       </div>
     </details>
 
@@ -214,7 +233,7 @@ body.clean.see-through, html.see-through{ background:transparent !important; }
 (function(){
 'use strict';
 const HC = HouseCharacter, $ = id => document.getElementById(id);
-const STORE = 'house-live-settings', IMG_STORE = 'house-live-image', CHAR_STORE = 'house-live-character', CLIP_STORE = 'house-live-clips';
+const CAL_STORE = 'house-live-calibration', STORE = 'house-live-settings', IMG_STORE = 'house-live-image', CHAR_STORE = 'house-live-character', CLIP_STORE = 'house-live-clips';
 const load = (k, d) => { try{ const v = JSON.parse(localStorage.getItem(k) || 'null'); return v === null ? d : v; }catch(e){ return d; } };
 const save = (k, v) => { try{ localStorage.setItem(k, JSON.stringify(v)); return true; }catch(e){ return false; } };
 
@@ -223,7 +242,8 @@ function starter(){
   return Object.assign(c, {name:'Sam', upperGarment:'tshirt', upperColor:'#CC0000', lowerGarment:'jeans', footwear:'sneakers', mouth:'smile'});
 }
 const S = Object.assign({bg:{type:'color', color:'#00B140', fit:'cover'}, camera:null, delay:1.5, lang:'en-US', onDevice:true, sensitivity:9, mouthDetail:'shapes',
-  beats:true, captions:false, prosody:true, autoGestures:true, mouthMode:'auto', recOn:true, lockCamera:false, pose:'', facing:'front', folded:false}, load(STORE, {}));
+  beats:true, beatStrength:3, idle:{...HouseLive.IDLE}, captions:false, prosody:true, autoGestures:true, mouthMode:'auto', recOn:true, lockCamera:false, pose:'', facing:'front', folded:false}, load(STORE, {}));
+S.idle = {...HouseLive.IDLE, ...(S.idle || {})};
 const persist = () => save(STORE, S);
 let pt = 0; const persistSoon = () => { clearTimeout(pt); pt = setTimeout(persist, 300); };
 let charData = load(CHAR_STORE, null) || starter();
@@ -240,7 +260,8 @@ const bgOpts = () => ({type:S.bg.type, color:S.bg.color, fit:S.bg.fit, image:S.b
 
 const live = HouseLive.create($('stage'), {
   character:shownCharacter(), background:bgOpts(), delay:S.delay, lang:S.lang, onDevice:S.onDevice, sensitivity:S.sensitivity, mouthDetail:S.mouthDetail,
-  beats:S.beats, captions:S.captions, prosody:S.prosody, autoGestures:S.autoGestures, mouthMode:S.mouthMode, lockCamera:S.lockCamera,
+  beats:S.beats, beatStrength:S.beatStrength, idle:S.idle, captions:S.captions, prosody:S.prosody, autoGestures:S.autoGestures, mouthMode:S.mouthMode, lockCamera:S.lockCamera,
+  calibration:load(CAL_STORE, {}),
   onLevel:(db, gate) => {
     const pct = v => Math.max(0, Math.min(100, (v + 80) / 70 * 100));
     $('mLevel').style.width = pct(db) + '%'; $('mLevel').classList.toggle('quiet', db < gate); $('mGate').style.left = pct(gate) + '%';
@@ -255,10 +276,67 @@ if(S.camera) live.setCamera(S.camera, true); else live.shot('medium');
 const savedClips = load(CLIP_STORE, []);
 for(const c of savedClips) live.addClip(c.id, c.anim, {label:c.label, keywords:c.keywords});
 
+/* ── voice calibration: each sound recorded for 1.6 s after a short countdown ── */
+const SOUNDS = HouseLive.SOUNDS;
+let calBusy = false;
+function syncCal(){
+  const cal = live.calibration;
+  $('calGrid').innerHTML = SOUNDS.map(([id, label]) => `<button type="button" data-cal="${id}" class="${cal[id] ? 'done' : ''}" title="Record ${label}">${label.replace(/ \(.*\)/, '')}</button>`).join('');
+  const n = SOUNDS.filter(([id]) => cal[id]).length;
+  $('calCount').textContent = n ? `${n} / ${SOUNDS.length} recorded` : 'not calibrated';
+  $('calGrid').querySelectorAll('button').forEach(b => b.disabled = calBusy);
+  $('bCalAll').disabled = calBusy;
+}
+const wait = ms => new Promise(r => setTimeout(r, ms));
+async function recordSound(id){
+  const label = SOUNDS.find(x => x[0] === id)[1];
+  if(!live.micOn){ await micOn(); if(!live.micOn) return false; }
+  for(const n of [3, 2, 1]){ $('calMsg').textContent = `Get ready to say ${label}… ${n}`; await wait(500); }
+  $('calMsg').textContent = `Now: ${label} — hold it…`;
+  const b = $('calGrid').querySelector(`[data-cal="${id}"]`); if(b) b.classList.add('rec');
+  let r; try{ r = await live.calibrate(id, 1.6); }catch(e){ $('calMsg').textContent = e.message; return false; }
+  if(r.ok){ save(CAL_STORE, r.calibration); $('calMsg').textContent = `Got ${label}.`; }
+  else $('calMsg').textContent = `Too quiet: ${label} was not heard. Say it louder or raise the sensitivity, then try again.`;
+  syncCal(); return r.ok;
+}
+$('calGrid').addEventListener('click', async e => {
+  const b = e.target.closest('[data-cal]'); if(!b || calBusy) return;
+  calBusy = true; syncCal(); await recordSound(b.dataset.cal); calBusy = false; syncCal();
+});
+$('bCalAll').onclick = async () => {
+  if(calBusy) return; calBusy = true; syncCal();
+  for(const [id] of SOUNDS){ if(!(await recordSound(id)) && !live.micOn) break; await wait(400); }
+  calBusy = false; syncCal(); $('calMsg').textContent = 'Calibration done. Redo any sound by pressing its button.';
+};
+$('bCalClear').onclick = () => { live.clearCalibration(); save(CAL_STORE, {}); syncCal(); $('calMsg').textContent = 'Calibration cleared: the built-in rules decide again.'; };
+
+/* ── idle life controls: one slider per motion ── */
+const IDLE_ROWS = [['speed','Speed','×',0.05],['sway','Body sway','°',0.05],['breathe','Breathing','%',0.05],['shift','Weight shift','px',0.1],
+  ['torso','Torso','°',0.1],['head','Head','°',0.1],['arms','Arms','°',0.1]];
+const BLINK_ROWS = [['blinkRate','Per minute','',1],['doubleBlink','Double','%',1]];
+const R = HouseLive.IDLE_RANGE;
+const sliderRow = ([k, label, unit, step]) => `<div class="lc-row"><label for="i_${k}">${label}</label><input type="range" id="i_${k}" data-k="${k}" min="${R[k][0]}" max="${R[k][1]}" step="${step}"><span id="i_${k}V" style="min-width:3.4em;text-align:right"></span></div>`;
+$('idleRows').innerHTML = IDLE_ROWS.map(sliderRow).join('');
+$('blinkRows').innerHTML = BLINK_ROWS.map(sliderRow).join('');
+$('beatRows').innerHTML = `<div class="lc-row"><label for="beatStr">Strength</label><input type="range" id="beatStr" min="0" max="10" step="0.5"><span id="beatStrV" style="min-width:3.4em;text-align:right"></span></div>`;
+const fmt = (k, v) => { const r = [...IDLE_ROWS, ...BLINK_ROWS].find(x => x[0] === k); const d = r[3] < 0.1 ? 2 : r[3] < 1 ? 1 : 0; return (+v).toFixed(d) + (r[2] ? ' ' + r[2] : ''); };
+function syncIdle(){
+  $('idleOn').checked = S.idle.on; $('blinks').checked = S.idle.blinks; $('beats').checked = S.beats;
+  for(const [k] of [...IDLE_ROWS, ...BLINK_ROWS]){ $('i_' + k).value = S.idle[k]; $('i_' + k + 'V').textContent = fmt(k, S.idle[k]); }
+  $('beatStr').value = S.beatStrength; $('beatStrV').textContent = (+S.beatStrength).toFixed(1) + ' °';
+  $('idleRows').style.opacity = S.idle.on ? '' : '.5'; $('blinkRows').style.opacity = S.idle.on && S.idle.blinks ? '' : '.5'; $('beatRows').style.opacity = S.beats ? '' : '.5';
+}
+function setIdle(ch){ Object.assign(S.idle, ch); live.set({idle:ch}); syncIdle(); persistSoon(); }
+for(const box of ['idleRows', 'blinkRows']) $(box).addEventListener('input', e => { const k = e.target.dataset.k; if(k) setIdle({[k]:+e.target.value}); });
+$('idleOn').onchange = () => setIdle({on:$('idleOn').checked});
+$('blinks').onchange = () => setIdle({blinks:$('blinks').checked});
+$('bIdleReset').onclick = () => setIdle({...HouseLive.IDLE});
+$('beatStr').oninput = () => { S.beatStrength = +$('beatStr').value; live.set({beatStrength:S.beatStrength}); syncIdle(); persistSoon(); };
+
 /* ── controls ── */
 function syncAll(){
   $('sens').value = S.sensitivity; $('sensV').textContent = S.sensitivity + ' dB';
-  $('detail').value = S.mouthDetail; $('beats').checked = S.beats;
+  $('detail').value = S.mouthDetail; syncIdle();
   $('recOn').checked = S.recOn; $('lang').value = S.lang; $('onDevice').checked = S.onDevice; $('captions').checked = S.captions;
   $('prosody').checked = S.prosody; $('autoG').checked = S.autoGestures; $('mouthMode').value = S.mouthMode;
   $('delay').value = S.delay; syncDelay();
@@ -295,7 +373,7 @@ $('bMic').onclick = () => {
 };
 $('sens').oninput = () => { S.sensitivity = +$('sens').value; $('sensV').textContent = S.sensitivity + ' dB'; live.set({sensitivity:S.sensitivity}); persistSoon(); };
 $('detail').onchange = () => { S.mouthDetail = $('detail').value; live.set({mouthDetail:S.mouthDetail}); persist(); };
-$('beats').onchange = () => { S.beats = $('beats').checked; live.set({beats:S.beats}); persist(); };
+$('beats').onchange = () => { S.beats = $('beats').checked; live.set({beats:S.beats}); syncIdle(); persist(); };
 /* recognition */
 $('recOn').onchange = () => { S.recOn = $('recOn').checked; persist(); if(S.recOn){ if(live.micOn) live.startRecognition(); } else live.stopRecognition(); };
 $('lang').onchange = () => { S.lang = $('lang').value; live.set({lang:S.lang}); persist(); };
@@ -405,7 +483,7 @@ document.addEventListener('keydown', e => {
 });
 
 window.liveCharacter = live;   /* for the console */
-buildGestures(); syncAll();
+buildGestures(); syncAll(); syncCal();
 if(new URLSearchParams(location.search).has('clean')) setClean(true);
 })();
 </script>
