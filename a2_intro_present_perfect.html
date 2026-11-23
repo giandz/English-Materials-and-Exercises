@@ -1,0 +1,154 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<title>Have You Ever Worked in a Hotel? — Present Perfect</title>
+<script>
+(function(){
+  try{
+    var saved = localStorage.getItem('theme-preference');
+    var theme = (saved === 'light' || saved === 'dark')
+      ? saved
+      : ((window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches) ? 'dark' : 'light');
+    document.documentElement.setAttribute('data-theme', theme);
+    var fs = parseFloat(localStorage.getItem('font-size-preference'));
+    if (fs >= 10 && fs <= 28) document.documentElement.style.setProperty('--fs-base', fs + 'px');
+  }catch(e){ /* localStorage/matchMedia unavailable — CSS media query still applies */ }
+})();
+</script>
+<link rel="stylesheet" href="house.css">
+<style>
+.cast-row{ display:flex; flex-wrap:wrap; gap:14px 18px; justify-content:center; align-items:flex-end; margin:0 0 1rem; padding:10px; background:var(--surface-1); border:1px solid var(--border); border-radius:var(--border-radius-lg); font-size:.8667rem; }
+.match-wrap .match-col-label{ text-align:center; }
+#picCol .match-card{ font-size:1.35rem; justify-content:center; }
+</style>
+</head>
+<body>
+<div class="page" id="page">
+  <span class="cefr-tag cefr-a2">A2 · Elementary</span>
+  <h1>Have You Ever Worked in a Hotel?</h1>
+  <p class="subtitle">Leo has a job interview at a hotel. Ms. Ruiz asks about his life and his experience.</p>
+
+  <div class="sec-div">Words for this lesson</div>
+  <p class="subtitle">Match the picture and the words. Tap a picture, then tap its words.</p>
+  <div class="score-bar"><span>Matched: <strong id="mScore">0</strong> / <span id="mTotal">0</span></span><button id="mReset">↺ Reset</button></div>
+  <div class="match-grid match-wrap">
+    <div><div class="match-col-label">Picture</div><div class="match-col" id="picCol"></div></div>
+    <div><div class="match-col-label">Words</div><div class="match-col" id="wordCol"></div></div>
+  </div>
+  <div class="win-msg" id="mWin">🎉 Great! You know the words for the conversation.</div>
+  <div class="feedback" id="mFeedback"></div>
+
+  <div class="sec-div">Before you read</div>
+  <div id="preQuestions"></div>
+
+  <div class="sec-div">The people</div>
+  <div class="cast-row" id="castRow"></div>
+
+  <div class="sec-div">The conversation</div>
+  <div class="setting-chip"><span class="section-icon">🛎️</span> A job interview — in the hotel office</div>
+  <button class="grammar-toggle-btn" id="grammarToggle">🎨 Show Grammar</button>
+  <div class="pos-legend"></div>
+  <div id="conversation"></div>
+
+  <div class="sec-div">Check your answers</div>
+  <div id="quiz"></div>
+
+  <footer>Have You Ever Worked in a Hotel? — Present perfect vs past simple (A2)</footer>
+</div>
+
+<div id="theme-toggle-wrap">
+  <button id="theme-toggle" aria-label="Toggle light/dark mode" title="Toggle light/dark mode">
+    <span id="theme-icon">☀️</span>
+  </button>
+</div>
+<script src="house.js"></script>
+<script src="stick-character.js"></script>
+<script src="stick-sentence.js"></script>
+<script>
+
+/* Leo and Ms. Ruiz — the same people on every page of this lesson */
+StickSentence.cast({
+  leo:  { base:'man',   colour:'#0066CC', label:'Leo' },
+  ruiz: { base:'woman', colour:'#996600', label:'Ms. Ruiz' }
+});
+StickSentence.toggle();   /* stick figures hidden by default */
+
+/* the learner's dictionary (right-click / long press a word): what these words mean in this lesson */
+window.LESSON_DICT = {
+  'reception desk': { pos:'noun', def:'the desk near the door of a hotel, where guests arrive and ask questions', ex:'I worked at the reception desk.', es:'recepción' },
+  'receptionist':   { pos:'noun', def:'a person who works at the reception desk', ex:'We have found our new receptionist.', es:'recepcionista' },
+  'guest':          { pos:'noun', def:'a person who stays in a hotel', ex:'Our guests come from many countries.', es:'huésped' },
+  'booking system': { pos:'noun', def:'a computer program for the rooms people want to stay in', ex:'Have you used our booking system?', es:'sistema de reservas' },
+  'passport':       { pos:'noun', def:'a small book from your country that you need to travel', ex:'A guest lost his passport.', es:'pasaporte' },
+  'course':         { pos:'noun', def:'a group of classes about one subject', ex:'Have you finished your hotel course?', es:'curso' },
+  'interview':      { pos:'noun', def:'a meeting where someone asks you questions, for example for a job', ex:'Leo has a job interview.', es:'entrevista' }
+};
+
+/* ── picture → words ──────────────────────────────────────────────────── */
+const WORDS = [
+  ['🛎️', 'reception desk'], ['🧳', 'a guest'], ['💻', 'a booking system'], ['🛂', 'a passport'], ['📞', 'answer the phone'],
+  ['🎓', 'a course'], ['🚚', 'move to a new city'], ['🤝', 'a job interview']
+];
+
+/* ── the people ───────────────────────────────────────────────────────── */
+document.getElementById('castRow').innerHTML = ['{Leo|leo}', '{Ms. Ruiz|ruiz}'].map(StickSentence.html).join('');
+
+const SPEAKERS = {
+  'Ms. Ruiz': { cast: 'ruiz', avatar: '👩‍💼', av: 'av-b', side: 'left' },
+  Leo:        { cast: 'leo',  avatar: '👨', av: 'av-a', side: 'right' }
+};
+
+/* {words|figures} puts stick figures (or @ pictures) over the words; [words/pos] marks the grammar colours.
+   have / has are [aux], past participles are [part], past simple verbs are [verb], times are [time]. */
+const LINES = [
+  ['Ms. Ruiz', '[Good morning/none], {[Leo/noun]|leo}. [Thanks for coming/none]. [Have/aux] {[you/subject]|leo} [ever/adverb] [worked/part] {[in a hotel/prep]|@🏨}?'],
+  ['Leo', '[Yes/none], {[I/subject]|leo} [have/aux]. {[I’ve/subject]|leo} [worked/part] [in two hotels/prep]. {[I/subject]|leo} [worked/verb] [at the Hotel Sol/prep] [in 2021/time].'],
+  ['Ms. Ruiz', '[What/wh] [did/aux] {[you/subject]|leo} [do/verb] [there/adverb]?'],
+  ['Leo', '{[I/subject]|leo} [worked/verb] {[at the reception desk/prep]|@🛎️}. {[I/subject]|leo:📞} [answered/verb] [the phone/object] [and/conj] [helped/verb] [the guests/object].'],
+  ['Ms. Ruiz', '[Great/adj]. [How long/wh] [have/aux] {[you/subject]|leo} [lived/part] [in this city/prep]?'],
+  ['Leo', '{[I’ve/subject]|leo} [lived/part] [here/adverb] [for three years/time]. {[I/subject]|leo} [moved/verb] [here/adverb] [in 2023/time].'],
+  ['Ms. Ruiz', '[Have/aux] {[you/subject]|leo} [ever/adverb] [used/part] {[our booking system/object]|@💻}?'],
+  ['Leo', '[No/none], {[I/subject]|leo} [haven’t/neg] [used/part] [it/object], [but/conj] {[I’ve/subject]|leo} [used/part] [two other systems/object]. {[I/subject]|leo:😊} [learn/verb] [fast/adverb]!'],
+  ['Ms. Ruiz', '[Good/adj]. [Our guests/subject] [come/verb] [from many countries/prep]. [What languages/wh] [have/aux] {[you/subject]|leo} [studied/part]?'],
+  ['Leo', '{[I’ve/subject]|leo} [studied/part] [English and Italian/object]. {[I/subject]|leo} [haven’t/neg] [studied/part] [French/object] [yet/time], [but/conj] {[I’d/subject]|leo} [like/verb] [to/none].'],
+  ['Ms. Ruiz', '[Have/aux] {[you/subject]|leo} [ever/adverb] [had/part] [a difficult guest/object]?'],
+  ['Leo', '[Yes/none], {[I/subject]|leo} [have/aux]! [Last year/time], {[a guest/subject]|man} [lost/verb] {[his passport/object]|@🛂}. {[He/subject]|man} [was/verb] [very angry/adj]. {[I/subject]|leo} [called/verb] [the police/object], [and/conj] {[we/subject]|leo,man} [found/verb] [it/object] [in his car/prep]!'],
+  ['Ms. Ruiz', '[Ha/none]! [Well done/none]. [Have/aux] {[you/subject]|leo} [finished/part] {[your hotel course/object]|@🎓}?'],
+  ['Leo', '[Not yet/time]. {[I’ve/subject]|leo} [done/part] [three parts/object]. [There’s one more part/none] [in December/time].'],
+  ['Ms. Ruiz', '[Perfect/adj]. {[I/subject]|ruiz} [think/verb] {[we’ve/subject]|ruiz} [found/part] [our new receptionist/object]!'],
+  ['Leo', '[Really/none]? [Thank you/none]!']
+];
+
+/* the same three questions before reading (no options) and after (three options) */
+const CQ_ITEMS = [
+  { q: 'How long has Leo lived in the city?', opts: ['For three years', 'Since 2021', 'For two years'], correct: 0 },
+  { q: 'Has Leo used the hotel’s booking system?', opts: ['Yes, at the Hotel Sol', 'No, but he has used two other systems', 'Yes, last year'], correct: 1 },
+  { q: 'What happened last year?', opts: ['Leo lost his passport', 'A guest lost his passport', 'A guest moved to the city'], correct: 1 }
+];
+
+/* ── the conversation ─────────────────────────────────────────────────── */
+/* each speaker's avatar takes the colour of their stick figure (overrides the house.css av-* colours) */
+const avStyle = s => { const c = (StickSentence.cast()[s.cast] || {}).colour;
+  return c ? 'background:' + c + '40;box-shadow:inset 0 0 0 2px ' + c : ''; };
+const conv = document.getElementById('conversation');
+LINES.forEach(([who, text]) => {
+  const s = SPEAKERS[who], right = s.side === 'right';
+  conv.insertAdjacentHTML('beforeend',
+    '<div class="bubble-wrap' + (right ? ' right' : '') + '">' +
+      '<div class="avatar ' + s.av + '" style="' + avStyle(s) + '">' + s.avatar + '</div>' +
+      '<div class="bubble-col"><div class="bname' + (right ? ' right' : '') + '">' + who + '</div>' +
+      '<div class="bubble ' + (right ? 'right' : 'left') + '">' + StickSentence.html(text) + '</div></div>' +
+    '</div>');
+});
+
+HouseMatching.build({
+  left: 'picCol', right: 'wordCol', scoreEl: 'mScore', totalEl: 'mTotal', winEl: 'mWin', resetBtn: 'mReset', feedbackEl: 'mFeedback',
+  pairs: WORDS.map(([e, w]) => ({ id: w, left: e, right: w }))
+});
+HouseComprehension.build({ pre: 'preQuestions', quiz: 'quiz', items: CQ_ITEMS });
+</script>
+<script>HouseGrammar.init();</script>
+</body>
+</html>

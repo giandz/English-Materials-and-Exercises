@@ -1,0 +1,160 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<title>Too Hot, Very Nice — Adverbs of Degree</title>
+<script>
+(function(){
+  try{
+    var saved = localStorage.getItem('theme-preference');
+    var theme = (saved === 'light' || saved === 'dark')
+      ? saved
+      : ((window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches) ? 'dark' : 'light');
+    document.documentElement.setAttribute('data-theme', theme);
+    var fs = parseFloat(localStorage.getItem('font-size-preference'));
+    if (fs >= 10 && fs <= 28) document.documentElement.style.setProperty('--fs-base', fs + 'px');
+  }catch(e){ /* localStorage/matchMedia unavailable — CSS media query still applies */ }
+})();
+</script>
+<link rel="stylesheet" href="house.css">
+<style>
+/* the prompt on the card: a big picture, then the words */
+.cue-main{ font-size:1.25rem; font-weight:700; margin:4px 0 6px; text-align:center; }
+.cue-main .big{ display:block; font-size:2.6rem; line-height:1.1; margin-bottom:4px; }
+.cue-sub{ font-size:.95rem; color:var(--text-secondary); text-align:center; margin:0 0 4px; }
+.chip{ display:inline-block; padding:2px 10px; margin:2px; border-radius:999px; border:1px solid var(--color-border-tertiary); background:var(--surface-2); font-size:1rem; font-weight:700; }
+.chip-wh{ color:var(--pos-wh); border-color:var(--pos-wh); }
+/* two sides: what usually happens · what is different */
+.duo{ display:flex; align-items:stretch; justify-content:center; gap:10px; flex-wrap:wrap; margin:4px 0 6px; }
+.duo .side{ display:flex; flex-direction:column; align-items:center; gap:2px; min-width:9em; padding:6px 10px; border-radius:10px; border:1px solid var(--color-border-tertiary); background:var(--surface-2); font-weight:700; font-size:1rem; }
+.duo .side .when{ font-size:.8667rem; font-weight:600; color:var(--text-secondary); }
+.duo .side .big{ font-size:2.2rem; line-height:1.1; }
+.who{ font-size:1.1rem; font-weight:700; text-align:center; margin:2px 0 4px; }
+/* only Student A looks */
+.q-card details.secret{ margin:4px 0 6px; width:100%; max-width:460px; text-align:center; }
+.q-card details.secret summary{ font-weight:700; }
+.q-card .secret-body{ padding:8px 12px; }
+.q-card details.check{ margin-top:4px; width:100%; max-width:460px; text-align:left; }
+.q-card .check-body{ padding:8px 12px; font-size:.9rem; }
+.q-card .check-body p{ margin:0 0 4px; }
+</style>
+</head>
+<body>
+<div class="page" id="page">
+  <span class="cefr-tag cefr-a2">A2 · Elementary</span>
+  <h1>Too Hot, Very Nice</h1>
+  <p class="subtitle">How strong is it? And is it a problem?</p>
+
+  <div class="rule-box">
+    <p><strong>How to play (pairs, or teacher + student):</strong></p>
+    <p>1. Student A rolls 🎲. There are two kinds of card:</p>
+    <p>💬 <b>Describe:</b> choose a word from the scale and give your opinion. “<b>My city is quite expensive.</b>” B agrees or not: “<b>Really? I think it’s extremely expensive!</b>”</p>
+    <p>🤔 <b>Problem:</b> say why. Use <b>too</b> or <b>not … enough</b>. “<b>I can’t drink it. It’s too hot.</b>”</p>
+    <p>2. Press 👀 to see examples. Then change: B rolls, A answers.</p>
+  </div>
+
+  <div class="q-card" id="qCard"><span class="q-placeholder">Roll the dice to start.</span></div>
+  <button class="dice-btn" id="diceBtn" aria-label="Roll">🎲</button>
+  <div class="roll-count">Rolls: <strong id="rollCount">0</strong></div>
+
+  <div class="sec-div">Now you</div>
+  <div class="rule-box">
+    <p><strong>Ask your partner about their city and home.</strong> “<b>What’s your city like? Is it expensive? What’s your home like? Is there a problem with it?</b>” Write the answers.</p>
+    <p>Then say: “<b>Ana’s city is extremely lively, but it’s a bit dangerous. Her apartment isn’t big enough.</b>” Another partner? Press <b>➕ Add partner</b>.</p>
+  </div>
+  <div id="interview"></div>
+
+  <footer>Too Hot, Very Nice — Adverbs of degree: too, extremely, very, quite, fairly, a bit, not … enough (A2)</footer>
+</div>
+
+<div id="theme-toggle-wrap">
+  <button id="theme-toggle" aria-label="Toggle light/dark mode" title="Toggle light/dark mode">
+    <span id="theme-icon">☀️</span>
+  </button>
+</div>
+<script src="house.js"></script>
+<script src="house-interview.js"></script>
+<script>
+const pick = HouseRandomGen.pickFrom;
+const cap = s => s.charAt(0).toUpperCase() + s.slice(1);
+/* one card: a topic line, the cue (hidden from B when it is a secret), what to do, and the 👀 examples */
+const card = o =>
+  '<span class="q-topic">' + o.topic + '</span>' +
+  (o.secret ? '<details class="secret"><summary>' + o.secret + '</summary><div class="secret-body">' : '') +
+  (o.body || '') +
+  (o.pic ? '<div class="cue-main"><span class="big">' + o.pic + '</span>' + (o.cue || '') + '</div>' : (o.cue ? '<div class="cue-main">' + o.cue + '</div>' : '')) +
+  (o.sub ? '<div class="cue-sub">' + o.sub + '</div>' : '') +
+  (o.secret ? '</div></details>' : '') +
+  (o.prompt ? '<span class="q-prompt">' + o.prompt + '</span>' : '') +
+  (o.check ? '<details class="check"><summary>' + (o.checkLabel || '👀 Examples') + '</summary><div class="check-body">' +
+    o.check.map(l => '<p>' + l + '</p>').join('') + '</div></details>' : '');
+const SCALE = '<div class="cue-sub">extremely · very · quite · fairly · a bit · not very</div>';
+/* describe: [picture, topic, is / are, adjectives] */
+const TOPICS = [
+  ['🏙️', 'your city', 'is', ['expensive', 'lively', 'safe', 'noisy', 'modern', 'beautiful']],
+  ['💼', 'your job (or your studies)', 'is', ['interesting', 'difficult', 'stressful', 'easy']],
+  ['🏠', 'your home', 'is', ['big', 'quiet', 'comfortable', 'old', 'bright']],
+  ['🇬🇧', 'English', 'is', ['easy', 'difficult', 'useful', 'interesting']],
+  ['🌦️', 'the weather today', 'is', ['hot', 'cold', 'windy', 'nice']],
+  ['📱', 'your phone', 'is', ['old', 'fast', 'expensive', 'good']],
+  ['🍲', 'your favorite food', 'is', ['spicy', 'healthy', 'sweet', 'easy to make']],
+  ['🏘️', 'your neighborhood', 'is', ['safe', 'quiet', 'friendly', 'clean']],
+  ['🚌', 'the buses in your city', 'are', ['cheap', 'crowded', 'fast', 'comfortable']],
+  ['🧑‍🤝‍🧑', 'your friends', 'are', ['funny', 'busy', 'friendly', 'noisy']],
+  ['🎬', 'the last movie you saw', 'was', ['good', 'long', 'scary', 'boring']]
+];
+/* problem: [picture, the situation, with too, with not … enough] */
+const PROBLEMS = [
+  ['☕', 'You can’t drink your coffee.', 'It’s too hot.', 'It isn’t cool enough.'],
+  ['👟', 'You can’t buy the shoes. They’re $500!', 'They’re too expensive.', 'I don’t have enough money.'],
+  ['👖', 'You can’t wear the jeans.', 'They’re too small.', 'They aren’t big enough.'],
+  ['🛏️', 'You can’t sleep. There’s a party next door.', 'It’s too noisy.', 'It isn’t quiet enough.'],
+  ['🧒', 'Your 12-year-old son can’t drive.', 'He’s too young.', 'He isn’t old enough.'],
+  ['📦', 'You can’t carry the box.', 'It’s too heavy.', 'I’m not strong enough.'],
+  ['🏀', 'You can’t touch the basketball hoop.', 'It’s too high.', 'I’m not tall enough.'],
+  ['🚌', 'You missed the bus.', 'I was too slow.', 'I wasn’t fast enough.'],
+  ['🍲', 'Nobody wants your soup.', 'It’s too salty.', 'It isn’t good enough.'],
+  ['🧥', 'You’re cold in your jacket.', 'It’s too thin.', 'It isn’t warm enough.'],
+  ['🎟️', 'There are no tickets for the concert.', 'We were too late.', 'We weren’t early enough.'],
+  ['🪑', 'Five people can’t sit at your table.', 'It’s too small.', 'It isn’t big enough.'],
+  ['📖', 'You stopped reading the book.', 'It was too boring.', 'It wasn’t interesting enough.'],
+  ['🏖️', 'You can’t go to the beach for the day.', 'It’s too far.', 'It isn’t close enough.']
+];
+
+HouseRandomGen.build({
+  pick: () => Math.random() < 0.5
+    ? (t => ({ kind: 'd', t, adj: pick(t[3]), text: t[1] }))(pick(TOPICS))
+    : (p => ({ kind: 'p', p, text: p[1] }))(pick(PROBLEMS)),
+  key: it => it.text,
+  render: it => it.kind === 'd'
+    ? card({
+        topic: '💬 Describe', pic: it.t[0], cue: it.t[1] + ' + ' + it.adj, sub: SCALE,
+        prompt: 'A: give your opinion. B: agree or not — and say why.',
+        check: ['“' + cap(it.t[1].replace(/\byour\b/g, 'my').replace('the last movie you saw', 'the last movie I saw')) + ' ' + it.t[2] + ' <b>quite</b> ' + it.adj + '.”',
+                '“… ' + it.t[2] + ' <b>extremely</b> ' + it.adj + '.” · “… ' + it.t[2] + ' <b>not very</b> ' + it.adj + '.”',
+                '<span class="text-secondary">extremely › very › quite › fairly › a bit › not very</span>']
+      })
+    : card({
+        topic: '🤔 Problem — why?', pic: it.p[0], cue: it.p[1],
+        prompt: 'A: say why. Use too or not … enough.',
+        check: ['🟥 “' + it.p[2] + '”', '⬜ “' + it.p[3] + '”',
+                '<span class="text-secondary"><b>too</b> + adjective = more than OK — a problem · <b>not</b> + adjective + <b>enough</b> = less than OK</span>']
+      })
+});
+
+HouseInterview.build({
+  container: 'interview',
+  storageKey: 'a2-adverbs-of-intensity',
+  fields: [
+    { icon: '🏙️', label: 'city is', placeholder: 'extremely lively…' },
+    { icon: '💰', label: 'prices are', placeholder: 'quite high…' },
+    { icon: '🏠', label: 'home is', placeholder: 'fairly big…' },
+    { icon: '🌡️', label: 'weather is', placeholder: 'very hot…' },
+    { icon: '🟥', label: 'too …', placeholder: 'the street is too noisy…' },
+    { icon: '⬜', label: 'not … enough', placeholder: 'not big enough…' }
+  ]
+});
+</script>
+</body>
+</html>

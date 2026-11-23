@@ -1,0 +1,155 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<title>Question Generator — Wh-Questions with Do</title>
+<script>
+(function(){
+  try{
+    var saved = localStorage.getItem('theme-preference');
+    var theme = (saved === 'light' || saved === 'dark')
+      ? saved
+      : ((window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches) ? 'dark' : 'light');
+    document.documentElement.setAttribute('data-theme', theme);
+    var fs = parseFloat(localStorage.getItem('font-size-preference'));
+    if (fs >= 10 && fs <= 28) document.documentElement.style.setProperty('--fs-base', fs + 'px');
+  }catch(e){ /* localStorage/matchMedia unavailable — CSS media query still applies */ }
+})();
+</script>
+<link rel="stylesheet" href="house.css">
+<style>
+/* the prompt on the card: a big picture, then the words */
+.cue-main{ font-size:1.25rem; font-weight:700; margin:4px 0 6px; text-align:center; }
+.cue-main .big{ display:block; font-size:2.6rem; line-height:1.1; margin-bottom:4px; }
+.cue-sub{ font-size:.95rem; color:var(--text-secondary); text-align:center; margin:0 0 4px; }
+.chip{ display:inline-block; padding:2px 10px; margin:2px; border-radius:999px; border:1px solid var(--color-border-tertiary); background:var(--surface-2); font-size:1rem; font-weight:700; }
+.chip-wh{ color:var(--pos-wh); border-color:var(--pos-wh); }
+/* two sides: what usually happens · what is different */
+.duo{ display:flex; align-items:stretch; justify-content:center; gap:10px; flex-wrap:wrap; margin:4px 0 6px; }
+.duo .side{ display:flex; flex-direction:column; align-items:center; gap:2px; min-width:9em; padding:6px 10px; border-radius:10px; border:1px solid var(--color-border-tertiary); background:var(--surface-2); font-weight:700; font-size:1rem; }
+.duo .side .when{ font-size:.8667rem; font-weight:600; color:var(--text-secondary); }
+.duo .side .big{ font-size:2.2rem; line-height:1.1; }
+.who{ font-size:1.1rem; font-weight:700; text-align:center; margin:2px 0 4px; }
+/* only Student A looks */
+.q-card details.secret{ margin:4px 0 6px; width:100%; max-width:460px; text-align:center; }
+.q-card details.secret summary{ font-weight:700; }
+.q-card .secret-body{ padding:8px 12px; }
+.q-card details.check{ margin-top:4px; width:100%; max-width:460px; text-align:left; }
+.q-card .check-body{ padding:8px 12px; font-size:.9rem; }
+.q-card .check-body p{ margin:0 0 4px; }
+</style>
+</head>
+<body>
+<div class="page" id="page">
+  <span class="cefr-tag cefr-a1">A1 · Beginner</span>
+  <h1>Question Generator</h1>
+  <p class="subtitle">Make the question with do or does. Then answer!</p>
+
+  <div class="rule-box">
+    <p><strong>How to play (pairs, or teacher + student):</strong></p>
+    <p>1. Student A rolls 🎲. Make a question with the words: <span class="chip chip-wh">Where</span> + <b>your mom</b> + <b>work</b> → “<b>Where does your mom work?</b>”</p>
+    <p>2. Student B answers. It’s true! “<b>She works in a hospital.</b>”</p>
+    <p>3. Press 👀 to check. Then change: B rolls, A answers.</p>
+  </div>
+
+  <div class="q-card" id="qCard"><span class="q-placeholder">Roll the dice to start.</span></div>
+  <button class="dice-btn" id="diceBtn" aria-label="Roll">🎲</button>
+  <div class="roll-count">Rolls: <strong id="rollCount">0</strong></div>
+
+  <div class="sec-div">Now you</div>
+  <div class="rule-box">
+    <p><strong>Ask your partner.</strong> “<b>Where do you live? Who do you live with? Where do you work? What time do you get up? What music do you listen to?</b>” Write the answers.</p>
+    <p>Then say: “<b>Ana lives in Valencia. She lives with her sister.</b>” Another partner? Press <b>➕ Add partner</b>.</p>
+  </div>
+  <div id="interview"></div>
+
+  <footer>Question Generator — Wh-questions with do / does (A1)</footer>
+</div>
+
+<div id="theme-toggle-wrap">
+  <button id="theme-toggle" aria-label="Toggle light/dark mode" title="Toggle light/dark mode">
+    <span id="theme-icon">☀️</span>
+  </button>
+</div>
+<script src="house.js"></script>
+<script src="house-interview.js"></script>
+<script>
+const pick = HouseRandomGen.pickFrom;
+const cap = s => s.charAt(0).toUpperCase() + s.slice(1);
+/* one card: a topic line, the cue (hidden from B when it is a secret), what to do, and the 👀 examples */
+const card = o =>
+  '<span class="q-topic">' + o.topic + '</span>' +
+  (o.secret ? '<details class="secret"><summary>' + o.secret + '</summary><div class="secret-body">' : '') +
+  (o.body || '') +
+  (o.pic ? '<div class="cue-main"><span class="big">' + o.pic + '</span>' + (o.cue || '') + '</div>' : (o.cue ? '<div class="cue-main">' + o.cue + '</div>' : '')) +
+  (o.sub ? '<div class="cue-sub">' + o.sub + '</div>' : '') +
+  (o.secret ? '</div></details>' : '') +
+  (o.prompt ? '<span class="q-prompt">' + o.prompt + '</span>' : '') +
+  (o.check ? '<details class="check"><summary>' + (o.checkLabel || '👀 Examples') + '</summary><div class="check-body">' +
+    o.check.map(l => '<p>' + l + '</p>').join('') + '</div></details>' : '');
+/* question words: [picture, the words on the card] */
+const WH = {
+  where: ['📍', 'Where'], when: ['🗓️', 'When'], time: ['⏰', 'What time'], with: ['🧑‍🤝‍🧑', 'Who … with?'],
+  often: ['🔁', 'How often'], how: ['🚌', 'How'], what: ['❓', 'What']
+};
+/* [picture, base verb, the rest, the question words it takes; "what" has its own question: {do} {s} are filled in] */
+const ACTS = [
+  ['🥪', 'eat', 'lunch', ['where', 'time', 'with'], 'What {do} {s} eat for lunch?'],
+  ['💼', 'work', '', ['where', 'when', 'with']],
+  ['🏠', 'live', '', ['where', 'with']],
+  ['📚', 'study', 'English', ['where', 'when', 'with', 'often']],
+  ['⚽', 'play', 'sports', ['where', 'when', 'with', 'often'], 'What sports {do} {s} play?'],
+  ['🎧', 'listen to', 'music', ['where', 'when', 'often'], 'What music {do} {s} listen to?'],
+  ['🛍️', 'go', 'shopping', ['where', 'when', 'with', 'often'], 'What {do} {s} buy?'],
+  ['🎬', 'watch', 'movies', ['where', 'when', 'with', 'often'], 'What movies {do} {s} watch?'],
+  ['☕', 'drink', 'coffee', ['where', 'time', 'often', 'with'], 'What {do} {s} drink in the morning?'],
+  ['⏰', 'get up', '', ['time', 'when']],
+  ['🏋️', 'exercise', '', ['where', 'when', 'often', 'with', 'time']],
+  ['🍳', 'cook', '', ['when', 'often', 'with'], 'What {do} {s} cook?'],
+  ['🚌', 'go', 'to work', ['time', 'how', 'with']],
+  ['🎉', 'go', 'on weekends', ['where', 'with'], 'What {do} {s} do on weekends?'],
+  ['📞', 'call', 'friends', ['when', 'often', 'time']],
+  ['🛏️', 'go', 'to bed', ['time', 'when']]
+];
+/* [picture, who, do / does, he / she / they for the answer] */
+const WHO = [['🫵', 'you', 'do', 'I'], ['🫵', 'you', 'do', 'I'], ['👩', 'your mom', 'does', 'she'], ['🧑', 'your best friend', 'does', 'he'],
+  ['🧑‍🤝‍🧑', 'your friends', 'do', 'they'], ['👩‍🏫', 'your teacher', 'does', 'she'], ['👵👴', 'your parents', 'do', 'they'], ['👨', 'your dad', 'does', 'he']];
+const sp = s => (s ? ' ' + s : '');
+
+HouseRandomGen.build({
+  pick: () => {
+    const a = pick(ACTS), keys = a[3].concat(a[4] ? ['what'] : []), k = pick(keys), w = pick(WHO);
+    return { a, k, w, text: k + a[1] + a[2] + w[1] };
+  },
+  key: it => it.text,
+  render: ({ a: [pic, base, rest, , whatQ], k, w: [wp, who, d] }) => {
+    const [wpic, wtext] = WH[k];
+    const q = k === 'what' ? whatQ.replace('{do}', d).replace('{s}', who)
+      : k === 'with' ? 'Who ' + d + ' ' + who + ' ' + base + sp(rest) + ' with?'
+      : wtext + ' ' + d + ' ' + who + ' ' + base + sp(rest) + '?';
+    return card({
+      topic: '❓ Make the question', pic: wpic + ' ' + wp + ' ' + pic,
+      cue: '<span class="chip chip-wh">' + wtext + '</span> + ' + who + ' + ' + base + sp(rest),
+      prompt: 'A: make the question. B: answer — the truth!',
+      checkLabel: '👀 Check',
+      check: ['❓ “' + cap(q) + '”', '<span class="text-secondary">' + (d === 'does' ? 'he / she → <b>does</b> + verb (no -s!)' : 'I / you / we / they → <b>do</b> + verb') + '</span>']
+    });
+  }
+});
+
+HouseInterview.build({
+  container: 'interview',
+  storageKey: 'a1-wh-questions-with-do',
+  fields: [
+    { icon: '🏠', label: 'lives in', placeholder: 'Valencia…' },
+    { icon: '👨‍👩‍👧', label: 'lives with', placeholder: 'her sister…' },
+    { icon: '💼', label: 'works / studies in', placeholder: 'a hospital…' },
+    { icon: '⏰', label: 'gets up at', placeholder: 'six thirty…' },
+    { icon: '🎧', label: 'listens to', placeholder: 'salsa, pop…' },
+    { icon: '⚽', label: 'plays', placeholder: 'tennis, chess…' }
+  ]
+});
+</script>
+</body>
+</html>

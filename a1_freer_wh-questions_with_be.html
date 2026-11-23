@@ -1,0 +1,148 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<title>Ask Me! — Wh-Questions with Be</title>
+<script>
+(function(){
+  try{
+    var saved = localStorage.getItem('theme-preference');
+    var theme = (saved === 'light' || saved === 'dark')
+      ? saved
+      : ((window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches) ? 'dark' : 'light');
+    document.documentElement.setAttribute('data-theme', theme);
+    var fs = parseFloat(localStorage.getItem('font-size-preference'));
+    if (fs >= 10 && fs <= 28) document.documentElement.style.setProperty('--fs-base', fs + 'px');
+  }catch(e){ /* localStorage/matchMedia unavailable — CSS media query still applies */ }
+})();
+</script>
+<link rel="stylesheet" href="house.css">
+<style>
+/* the prompt on the card: a big picture, then the words */
+.cue-main{ font-size:1.25rem; font-weight:700; margin:4px 0 6px; text-align:center; }
+.cue-main .big{ display:block; font-size:2.6rem; line-height:1.1; margin-bottom:4px; }
+.cue-sub{ font-size:.95rem; color:var(--text-secondary); text-align:center; margin:0 0 4px; }
+.chip{ display:inline-block; padding:2px 10px; margin:2px; border-radius:999px; border:1px solid var(--color-border-tertiary); background:var(--surface-2); font-size:1rem; font-weight:700; }
+.chip-wh{ color:var(--pos-wh); border-color:var(--pos-wh); }
+/* two sides: what usually happens · what is different */
+.duo{ display:flex; align-items:stretch; justify-content:center; gap:10px; flex-wrap:wrap; margin:4px 0 6px; }
+.duo .side{ display:flex; flex-direction:column; align-items:center; gap:2px; min-width:9em; padding:6px 10px; border-radius:10px; border:1px solid var(--color-border-tertiary); background:var(--surface-2); font-weight:700; font-size:1rem; }
+.duo .side .when{ font-size:.8667rem; font-weight:600; color:var(--text-secondary); }
+.duo .side .big{ font-size:2.2rem; line-height:1.1; }
+.who{ font-size:1.1rem; font-weight:700; text-align:center; margin:2px 0 4px; }
+/* only Student A looks */
+.q-card details.secret{ margin:4px 0 6px; width:100%; max-width:460px; text-align:center; }
+.q-card details.secret summary{ font-weight:700; }
+.q-card .secret-body{ padding:8px 12px; }
+.q-card details.check{ margin-top:4px; width:100%; max-width:460px; text-align:left; }
+.q-card .check-body{ padding:8px 12px; font-size:.9rem; }
+.q-card .check-body p{ margin:0 0 4px; }
+</style>
+</head>
+<body>
+<div class="page" id="page">
+  <span class="cefr-tag cefr-a1">A1 · Beginner</span>
+  <h1>Ask Me!</h1>
+  <p class="subtitle">Make the question. Then answer about you!</p>
+
+  <div class="rule-box">
+    <p><strong>How to play (pairs, or teacher + student):</strong></p>
+    <p>1. Student A rolls 🎲. Make a question with the words: <span class="chip chip-wh">What … like?</span> + <b>your city</b> → “<b>What’s your city like?</b>”</p>
+    <p>2. Student B answers. It’s true! “<b>It’s big and noisy.</b>”</p>
+    <p>3. Press 👀 to check. Then change: B rolls, A answers.</p>
+  </div>
+
+  <div class="q-card" id="qCard"><span class="q-placeholder">Roll the dice to start.</span></div>
+  <button class="dice-btn" id="diceBtn" aria-label="Roll">🎲</button>
+  <div class="roll-count">Rolls: <strong id="rollCount">0</strong></div>
+
+  <div class="sec-div">Now you</div>
+  <div class="rule-box">
+    <p><strong>Get to know your partner.</strong> “<b>What’s your name? Where are you from? When is your birthday? Who is your best friend? What is he like?</b>” Write the answers.</p>
+    <p>Then say: “<b>Ana is from Lima. Her best friend is Luis. He is funny.</b>” Another partner? Press <b>➕ Add partner</b>.</p>
+  </div>
+  <div id="interview"></div>
+
+  <footer>Ask Me! — Wh-questions with be (A1)</footer>
+</div>
+
+<div id="theme-toggle-wrap">
+  <button id="theme-toggle" aria-label="Toggle light/dark mode" title="Toggle light/dark mode">
+    <span id="theme-icon">☀️</span>
+  </button>
+</div>
+<script src="house.js"></script>
+<script src="house-interview.js"></script>
+<script>
+const pick = HouseRandomGen.pickFrom;
+const cap = s => s.charAt(0).toUpperCase() + s.slice(1);
+/* one card: a topic line, the cue (hidden from B when it is a secret), what to do, and the 👀 examples */
+const card = o =>
+  '<span class="q-topic">' + o.topic + '</span>' +
+  (o.secret ? '<details class="secret"><summary>' + o.secret + '</summary><div class="secret-body">' : '') +
+  (o.body || '') +
+  (o.pic ? '<div class="cue-main"><span class="big">' + o.pic + '</span>' + (o.cue || '') + '</div>' : (o.cue ? '<div class="cue-main">' + o.cue + '</div>' : '')) +
+  (o.sub ? '<div class="cue-sub">' + o.sub + '</div>' : '') +
+  (o.secret ? '</div></details>' : '') +
+  (o.prompt ? '<span class="q-prompt">' + o.prompt + '</span>' : '') +
+  (o.check ? '<details class="check"><summary>' + (o.checkLabel || '👀 Examples') + '</summary><div class="check-body">' +
+    o.check.map(l => '<p>' + l + '</p>').join('') + '</div></details>' : '');
+/* [question word, picture, topic, the question, an example answer] */
+const QS = [
+  ['What', '📛', 'your name', 'What’s your name?', 'My name is Sara. / I’m Sara.'],
+  ['Where … from?', '🌍', 'you', 'Where are you from?', 'I’m from Venezuela.'],
+  ['How old', '🎂', 'you', 'How old are you?', 'I’m 30.'],
+  ['How', '😊', 'you / today', 'How are you today?', 'I’m fine, thanks. / I’m tired.'],
+  ['What … like?', '🧑', 'your best friend', 'What’s your best friend like?', 'She’s funny and kind.'],
+  ['Who', '🧑', 'your best friend', 'Who is your best friend?', 'My best friend is Luis.'],
+  ['Where', '📍', 'your best friend / now', 'Where is your best friend now?', 'He’s at work.'],
+  ['What … like?', '🏙️', 'your city', 'What’s your city like?', 'It’s big and noisy.'],
+  ['What', '🍕', 'your favorite food', 'What’s your favorite food?', 'It’s pizza.'],
+  ['What', '💼', 'your job', 'What’s your job?', 'I’m a nurse.'],
+  ['When', '🎂', 'your birthday', 'When is your birthday?', 'It’s in May.'],
+  ['Where', '🏠', 'your house', 'Where is your house?', 'It’s near the park.'],
+  ['How old', '👩', 'your mom', 'How old is your mom?', 'She’s 60.'],
+  ['What … like?', '🧑‍🏫', 'your teacher', 'What’s your teacher like?', 'He’s patient and friendly.'],
+  ['Who', '🎤', 'your favorite singer', 'Who is your favorite singer?', 'My favorite singer is …'],
+  ['What', '🎨', 'your favorite color', 'What’s your favorite color?', 'It’s blue.'],
+  ['Where', '🔑', 'your keys', 'Where are your keys?', 'They’re in my bag.'],
+  ['How', '👨‍👩‍👧', 'your family', 'How is your family?', 'They’re fine, thanks.'],
+  ['What … like?', '🌦️', 'the weather / today', 'What’s the weather like today?', 'It’s sunny and hot.'],
+  ['What time', '🕐', 'it / now', 'What time is it?', 'It’s ten o’clock.'],
+  ['What', '📅', 'your favorite day', 'What’s your favorite day of the week?', 'It’s Friday!'],
+  ['When', '📚', 'your English class', 'When is your English class?', 'It’s on Monday.'],
+  ['What … like?', '🐾', 'your pet', 'What’s your pet like?', 'It’s small and friendly.'],
+  ['Where … from?', '👵👴', 'your parents', 'Where are your parents from?', 'They’re from Maracaibo.'],
+  ['Who', '🏡', 'your neighbors', 'Who are your neighbors?', 'They’re a young family.'],
+  ['How old', '🏠', 'your house', 'How old is your house?', 'It’s 20 years old.'],
+  ['What', '🎬', 'your favorite movie', 'What’s your favorite movie?', 'It’s …'],
+  ['Where', '📱', 'your phone / now', 'Where is your phone now?', 'It’s on the table.']
+];
+
+HouseRandomGen.build({
+  items: QS.map(([wh, pic, topic, q, a]) => ({ wh, pic, topic, q, a, text: q })),
+  render: it => card({
+    topic: '❓ Make the question', pic: it.pic,
+    cue: '<span class="chip chip-wh">' + it.wh + '</span> + ' + it.topic,
+    prompt: 'A: make the question. B: answer — the truth!',
+    checkLabel: '👀 Check',
+    check: ['❓ “' + it.q + '”', '💬 “' + it.a + '”']
+  })
+});
+
+HouseInterview.build({
+  container: 'interview',
+  storageKey: 'a1-wh-questions-with-be',
+  fields: [
+    { icon: '📛', label: 'name', placeholder: 'Ana' },
+    { icon: '🌍', label: 'from', placeholder: 'Lima…' },
+    { icon: '🎂', label: 'birthday', placeholder: 'in May…' },
+    { icon: '🧑', label: 'best friend', placeholder: 'Luis' },
+    { icon: '😊', label: 'best friend is like', placeholder: 'funny, kind…' },
+    { icon: '🍕', label: 'favorite food', placeholder: 'pizza…' }
+  ]
+});
+</script>
+</body>
+</html>

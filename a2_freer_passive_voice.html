@@ -1,0 +1,146 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<title>Who, Where, When? — Passive Voice Quiz</title>
+<script>
+(function(){
+  try{
+    var saved = localStorage.getItem('theme-preference');
+    var theme = (saved === 'light' || saved === 'dark')
+      ? saved
+      : ((window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches) ? 'dark' : 'light');
+    document.documentElement.setAttribute('data-theme', theme);
+    var fs = parseFloat(localStorage.getItem('font-size-preference'));
+    if (fs >= 10 && fs <= 28) document.documentElement.style.setProperty('--fs-base', fs + 'px');
+  }catch(e){ /* localStorage/matchMedia unavailable — CSS media query still applies */ }
+})();
+</script>
+<link rel="stylesheet" href="house.css">
+<style>
+/* the prompt on the card: a big picture, then the words */
+.cue-main{ font-size:1.25rem; font-weight:700; margin:4px 0 6px; text-align:center; }
+.cue-main .big{ display:block; font-size:2.6rem; line-height:1.1; margin-bottom:4px; }
+.cue-sub{ font-size:.95rem; color:var(--text-secondary); text-align:center; margin:0 0 4px; }
+.chip{ display:inline-block; padding:2px 10px; margin:2px; border-radius:999px; border:1px solid var(--color-border-tertiary); background:var(--surface-2); font-size:1rem; font-weight:700; }
+.chip-wh{ color:var(--pos-wh); border-color:var(--pos-wh); }
+/* two sides: what usually happens · what is different */
+.duo{ display:flex; align-items:stretch; justify-content:center; gap:10px; flex-wrap:wrap; margin:4px 0 6px; }
+.duo .side{ display:flex; flex-direction:column; align-items:center; gap:2px; min-width:9em; padding:6px 10px; border-radius:10px; border:1px solid var(--color-border-tertiary); background:var(--surface-2); font-weight:700; font-size:1rem; }
+.duo .side .when{ font-size:.8667rem; font-weight:600; color:var(--text-secondary); }
+.duo .side .big{ font-size:2.2rem; line-height:1.1; }
+.who{ font-size:1.1rem; font-weight:700; text-align:center; margin:2px 0 4px; }
+/* only Student A looks */
+.q-card details.secret{ margin:4px 0 6px; width:100%; max-width:460px; text-align:center; }
+.q-card details.secret summary{ font-weight:700; }
+.q-card .secret-body{ padding:8px 12px; }
+.q-card details.check{ margin-top:4px; width:100%; max-width:460px; text-align:left; }
+.q-card .check-body{ padding:8px 12px; font-size:.9rem; }
+.q-card .check-body p{ margin:0 0 4px; }
+</style>
+</head>
+<body>
+<div class="page" id="page">
+  <span class="cefr-tag cefr-a2">A2 · Elementary</span>
+  <h1>Who, Where, When?</h1>
+  <p class="subtitle">A quiz about the world. Ask and answer with the passive.</p>
+
+  <div class="rule-box">
+    <p><strong>How to play (pairs, or teacher + student):</strong></p>
+    <p>1. Student A rolls 🎲 and reads the question to B: “<b>What language is spoken in Brazil?</b>”</p>
+    <p>2. Student B answers with the passive: “<b>Portuguese is spoken in Brazil.</b>” Not sure? A reads the three options.</p>
+    <p>3. Press 👀 to check. Then change: B rolls and asks. Who gets more right?</p>
+  </div>
+
+  <div class="q-card" id="qCard"><span class="q-placeholder">Roll the dice to start.</span></div>
+  <button class="dice-btn" id="diceBtn" aria-label="Roll">🎲</button>
+  <div class="roll-count">Rolls: <strong id="rollCount">0</strong></div>
+
+  <div class="sec-div">Now you</div>
+  <div class="rule-box">
+    <p><strong>Ask your partner about their country.</strong> “<b>What languages are spoken there? What food is grown there? What is made there? What is eaten at Christmas?</b>” Write the answers.</p>
+    <p>Then say: “<b>In Ana’s country, coffee is grown in the mountains, and hallacas are eaten at Christmas.</b>” Another partner? Press <b>➕ Add partner</b>.</p>
+  </div>
+  <div id="interview"></div>
+
+  <footer>Who, Where, When? — Passive voice: is / are / was / were + past participle (A2)</footer>
+</div>
+
+<div id="theme-toggle-wrap">
+  <button id="theme-toggle" aria-label="Toggle light/dark mode" title="Toggle light/dark mode">
+    <span id="theme-icon">☀️</span>
+  </button>
+</div>
+<script src="house.js"></script>
+<script src="house-interview.js"></script>
+<script>
+const pick = HouseRandomGen.pickFrom;
+const cap = s => s.charAt(0).toUpperCase() + s.slice(1);
+/* one card: a topic line, the cue (hidden from B when it is a secret), what to do, and the 👀 examples */
+const card = o =>
+  '<span class="q-topic">' + o.topic + '</span>' +
+  (o.secret ? '<details class="secret"><summary>' + o.secret + '</summary><div class="secret-body">' : '') +
+  (o.body || '') +
+  (o.pic ? '<div class="cue-main"><span class="big">' + o.pic + '</span>' + (o.cue || '') + '</div>' : (o.cue ? '<div class="cue-main">' + o.cue + '</div>' : '')) +
+  (o.sub ? '<div class="cue-sub">' + o.sub + '</div>' : '') +
+  (o.secret ? '</div></details>' : '') +
+  (o.prompt ? '<span class="q-prompt">' + o.prompt + '</span>' : '') +
+  (o.check ? '<details class="check"><summary>' + (o.checkLabel || '👀 Examples') + '</summary><div class="check-body">' +
+    o.check.map(l => '<p>' + l + '</p>').join('') + '</div></details>' : '');
+/* [picture, the question, the right answer, two wrong answers, the answer as a passive sentence] */
+const QUIZ = [
+  ['🇧🇷', 'What language is spoken in Brazil?', 'Portuguese', ['Spanish', 'Brazilian'], 'Portuguese is spoken in Brazil.'],
+  ['🇨🇦', 'What languages are spoken in Canada?', 'English and French', ['English and Spanish', 'only English'], 'English and French are spoken in Canada.'],
+  ['📞', 'When was the telephone invented?', 'in the 1870s', ['in the 1770s', 'in the 1920s'], 'The telephone was invented in the 1870s (1876).'],
+  ['📖', 'Who was <i>Don Quixote</i> written by?', 'Miguel de Cervantes', ['Gabriel García Márquez', 'William Shakespeare'], '<i>Don Quixote</i> was written by Miguel de Cervantes.'],
+  ['🖼️', 'Who was the <i>Mona Lisa</i> painted by?', 'Leonardo da Vinci', ['Pablo Picasso', 'Vincent van Gogh'], 'The <i>Mona Lisa</i> was painted by Leonardo da Vinci.'],
+  ['🐼', 'Where are pandas found in the wild?', 'in China', ['in Brazil', 'in Australia'], 'Wild pandas are found in China.'],
+  ['🍫', 'What is chocolate made from?', 'cacao beans', ['coffee beans', 'sugar cane'], 'Chocolate is made from cacao beans.'],
+  ['🧀', 'What is cheese made from?', 'milk', ['eggs', 'butter'], 'Cheese is made from milk.'],
+  ['🪟', 'What is glass made from?', 'sand', ['plastic', 'water'], 'Glass is made from sand.'],
+  ['📄', 'What is paper made from?', 'wood', ['cotton', 'stone'], 'Paper is made from wood.'],
+  ['🦘', 'Where are kangaroos found?', 'in Australia', ['in Africa', 'in India'], 'Kangaroos are found in Australia.'],
+  ['🍕', 'Where was pizza invented?', 'in Italy', ['in the USA', 'in France'], 'Pizza was invented in Italy (in Naples).'],
+  ['🫓', 'What are arepas made from?', 'corn flour', ['rice', 'potatoes'], 'Arepas are made from corn flour.'],
+  ['🌙', 'When was the Moon first visited by people?', 'in 1969', ['in 1959', 'in 1989'], 'The Moon was first visited by people in 1969.'],
+  ['⚽', 'Where was the first World Cup played?', 'in Uruguay', ['in Brazil', 'in England'], 'The first World Cup was played in Uruguay, in 1930.'],
+  ['🗼', 'Where was the Eiffel Tower built?', 'in Paris', ['in London', 'in Rome'], 'The Eiffel Tower was built in Paris.'],
+  ['🚢', 'When was the Panama Canal opened?', 'in 1914', ['in 1814', 'in 1964'], 'The Panama Canal was opened in 1914.'],
+  ['🍵', 'Where is most of the world’s tea grown?', 'in China and India', ['in Canada and Russia', 'in Spain and Italy'], 'Most of the world’s tea is grown in China and India.'],
+  ['🌳', 'Where is most of the Amazon rainforest found?', 'in Brazil', ['in Mexico', 'in Argentina'], 'Most of the Amazon rainforest is found in Brazil.'],
+  ['📱', 'When was the first iPhone sold?', 'in 2007', ['in 1997', 'in 2015'], 'The first iPhone was sold in 2007.'],
+  ['🏛️', 'Where were the first Olympic Games held?', 'in Greece', ['in Italy', 'in Egypt'], 'The first Olympic Games were held in Greece.'],
+  ['🗣️', 'About how many languages are spoken in the world?', 'about 7,000', ['about 700', 'about 70,000'], 'About 7,000 languages are spoken in the world.'],
+  ['🌮', 'Where were tacos invented?', 'in Mexico', ['in Spain', 'in Peru'], 'Tacos were invented in Mexico.'],
+  ['🎵', 'Where was salsa music created?', 'in New York, by Latin American musicians', ['in Spain', 'in Argentina'], 'Salsa music was created in New York by Caribbean and Latin American musicians.']
+];
+const shuffle = a => { a = a.slice(); for (let i = a.length - 1; i > 0; i--) { const j = Math.floor(Math.random() * (i + 1)); [a[i], a[j]] = [a[j], a[i]]; } return a; };
+
+HouseRandomGen.build({
+  items: QUIZ.map(([pic, q, right, wrong, full]) => ({ pic, q, right, wrong, full, text: q })),
+  render: it => card({
+    topic: '🌍 Quiz', pic: it.pic, cue: it.q,
+    sub: '<details class="check"><summary>💡 Options</summary><div class="check-body"><p>' +
+      shuffle([it.right].concat(it.wrong)).map(o => '<span class="chip">' + o + '</span>').join(' ') + '</p></div></details>',
+    prompt: 'A: ask the question. B: answer with the passive.',
+    checkLabel: '👀 Answer',
+    check: ['✅ ' + it.full, '<span class="text-secondary">is / are / was / were + past participle (spoken, made, written, invented…)</span>']
+  })
+});
+
+HouseInterview.build({
+  container: 'interview',
+  storageKey: 'a2-passive-voice',
+  fields: [
+    { icon: '🗣️', label: 'languages spoken', placeholder: 'Spanish, Wayuunaiki…' },
+    { icon: '🌱', label: 'food grown', placeholder: 'coffee, cacao…' },
+    { icon: '🏭', label: 'things made', placeholder: 'chocolate, rum…' },
+    { icon: '🎄', label: 'eaten at Christmas', placeholder: 'hallacas…' },
+    { icon: '🏛️', label: 'a famous place (built when?)', placeholder: 'built in 1910…' },
+    { icon: '⚽', label: 'sport played most', placeholder: 'baseball…' }
+  ]
+});
+</script>
+</body>
+</html>

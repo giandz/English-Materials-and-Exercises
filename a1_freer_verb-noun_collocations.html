@@ -1,0 +1,136 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<title>Which Verb? — Verb–Noun Collocations</title>
+<script>
+(function(){
+  try{
+    var saved = localStorage.getItem('theme-preference');
+    var theme = (saved === 'light' || saved === 'dark')
+      ? saved
+      : ((window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches) ? 'dark' : 'light');
+    document.documentElement.setAttribute('data-theme', theme);
+    var fs = parseFloat(localStorage.getItem('font-size-preference'));
+    if (fs >= 10 && fs <= 28) document.documentElement.style.setProperty('--fs-base', fs + 'px');
+  }catch(e){ /* localStorage/matchMedia unavailable — CSS media query still applies */ }
+})();
+</script>
+<link rel="stylesheet" href="house.css">
+<style>
+/* the prompt on the card: a big picture, then the words */
+.cue-main{ font-size:1.25rem; font-weight:700; margin:4px 0 6px; text-align:center; }
+.cue-main .big{ display:block; font-size:2.6rem; line-height:1.1; margin-bottom:4px; }
+.cue-sub{ font-size:.95rem; color:var(--text-secondary); text-align:center; margin:0 0 4px; }
+.chip{ display:inline-block; padding:2px 10px; margin:2px; border-radius:999px; border:1px solid var(--color-border-tertiary); background:var(--surface-2); font-size:1rem; font-weight:700; }
+.chip-wh{ color:var(--pos-wh); border-color:var(--pos-wh); }
+/* two sides: what usually happens · what is different */
+.duo{ display:flex; align-items:stretch; justify-content:center; gap:10px; flex-wrap:wrap; margin:4px 0 6px; }
+.duo .side{ display:flex; flex-direction:column; align-items:center; gap:2px; min-width:9em; padding:6px 10px; border-radius:10px; border:1px solid var(--color-border-tertiary); background:var(--surface-2); font-weight:700; font-size:1rem; }
+.duo .side .when{ font-size:.8667rem; font-weight:600; color:var(--text-secondary); }
+.duo .side .big{ font-size:2.2rem; line-height:1.1; }
+.who{ font-size:1.1rem; font-weight:700; text-align:center; margin:2px 0 4px; }
+/* only Student A looks */
+.q-card details.secret{ margin:4px 0 6px; width:100%; max-width:460px; text-align:center; }
+.q-card details.secret summary{ font-weight:700; }
+.q-card .secret-body{ padding:8px 12px; }
+.q-card details.check{ margin-top:4px; width:100%; max-width:460px; text-align:left; }
+.q-card .check-body{ padding:8px 12px; font-size:.9rem; }
+.q-card .check-body p{ margin:0 0 4px; }
+</style>
+</head>
+<body>
+<div class="page" id="page">
+  <span class="cefr-tag cefr-a1">A1 · Beginner</span>
+  <h1>Which Verb?</h1>
+  <p class="subtitle">Find the right verb. Then ask your partner a question.</p>
+
+  <div class="rule-box">
+    <p><strong>How to play (pairs, or teacher + student):</strong></p>
+    <p>1. Student A rolls 🎲. Choose the right verb and ask: “<b>How often do you take a photo?</b>”</p>
+    <p>2. Student B answers. It’s true! “<b>I take photos every day!</b>”</p>
+    <p>3. Press 👀 to check the verb. Then change: B rolls, A answers.</p>
+  </div>
+
+  <div class="q-card" id="qCard"><span class="q-placeholder">Roll the dice to start.</span></div>
+  <button class="dice-btn" id="diceBtn" aria-label="Roll">🎲</button>
+  <div class="roll-count">Rolls: <strong id="rollCount">0</strong></div>
+
+  <div class="sec-div">Now you</div>
+  <div class="rule-box">
+    <p><strong>Ask your partner about their day.</strong> “<b>What do you do in the morning? What do you do on weekends?</b>” Write a verb + a noun: <b>make coffee, take a shower</b>…</p>
+    <p>Then say: “<b>Ana makes coffee and takes a shower in the morning.</b>” Another partner? Press <b>➕ Add partner</b>.</p>
+  </div>
+  <div id="interview"></div>
+
+  <footer>Which Verb? — Verb–noun collocations (A1)</footer>
+</div>
+
+<div id="theme-toggle-wrap">
+  <button id="theme-toggle" aria-label="Toggle light/dark mode" title="Toggle light/dark mode">
+    <span id="theme-icon">☀️</span>
+  </button>
+</div>
+<script src="house.js"></script>
+<script src="house-interview.js"></script>
+<script>
+const pick = HouseRandomGen.pickFrom;
+const cap = s => s.charAt(0).toUpperCase() + s.slice(1);
+/* one card: a topic line, the cue (hidden from B when it is a secret), what to do, and the 👀 examples */
+const card = o =>
+  '<span class="q-topic">' + o.topic + '</span>' +
+  (o.secret ? '<details class="secret"><summary>' + o.secret + '</summary><div class="secret-body">' : '') +
+  (o.body || '') +
+  (o.pic ? '<div class="cue-main"><span class="big">' + o.pic + '</span>' + (o.cue || '') + '</div>' : (o.cue ? '<div class="cue-main">' + o.cue + '</div>' : '')) +
+  (o.sub ? '<div class="cue-sub">' + o.sub + '</div>' : '') +
+  (o.secret ? '</div></details>' : '') +
+  (o.prompt ? '<span class="q-prompt">' + o.prompt + '</span>' : '') +
+  (o.check ? '<details class="check"><summary>' + (o.checkLabel || '👀 Examples') + '</summary><div class="check-body">' +
+    o.check.map(l => '<p>' + l + '</p>').join('') + '</div></details>' : '');
+/* [picture, noun, every verb that goes with it] */
+const NOUNS = [
+  ['📸', 'a photo', ['take']], ['🚿', 'a shower', ['take', 'have']], ['🛁', 'a bath', ['take', 'have']], ['☕', 'a break', ['take', 'have']],
+  ['🎉', 'a party', ['have']], ['📚', 'homework', ['do']], ['🛏️', 'the bed', ['make']], ['❌', 'a mistake', ['make']],
+  ['🎸', 'the guitar', ['play']], ['🏀', 'basketball', ['play', 'watch']], ['📺', 'TV', ['watch']], ['🎧', 'music', ['listen to', 'play', 'make']],
+  ['📰', 'the news', ['read', 'watch']], ['📧', 'an email', ['send', 'write', 'read']], ['🧢', 'a hat', ['wear', 'buy']],
+  ['🧹', 'the house', ['clean']], ['🚴', 'a bike', ['ride']], ['🪥', 'your teeth', ['brush']], ['🎤', 'a song', ['sing', 'write']],
+  ['💧', 'water', ['drink', 'buy']], ['🍳', 'breakfast', ['have', 'eat', 'make', 'cook']], ['🍝', 'pasta', ['cook', 'eat', 'make', 'buy']],
+  ['🍵', 'tea', ['drink', 'make', 'have', 'buy']], ['🚪', 'the door', ['open', 'close']], ['🍽️', 'the dishes', ['wash', 'do']],
+  ['🏋️', 'exercise', ['do']], ['🛒', 'the shopping', ['do']], ['🚗', 'the car', ['wash', 'drive', 'clean']], ['📖', 'a book', ['read', 'write', 'buy']],
+  ['📝', 'notes', ['take', 'write']], ['👕', 'clothes', ['buy', 'wear', 'wash']], ['🎬', 'a movie', ['watch', 'make']], ['🪟', 'the window', ['open', 'close', 'clean']],
+  ['😌', 'a rest', ['have', 'take']], ['🥪', 'lunch', ['have', 'eat', 'make']]
+];
+const POOL = ['make', 'do', 'take', 'have', 'play', 'watch', 'read', 'eat', 'drink', 'cook', 'write', 'listen to', 'ride', 'wear', 'clean', 'wash', 'send', 'brush', 'sing', 'drive', 'open', 'close', 'buy'];
+const shuffle = a => { a = a.slice(); for (let i = a.length - 1; i > 0; i--) { const j = Math.floor(Math.random() * (i + 1)); [a[i], a[j]] = [a[j], a[i]]; } return a; };
+
+HouseRandomGen.build({
+  pick: () => {
+    const n = pick(NOUNS), right = pick(n[2]), wrong = shuffle(POOL.filter(v => n[2].indexOf(v) === -1)).slice(0, 2);
+    return { n, right, opts: shuffle([right].concat(wrong)), text: n[1] };
+  },
+  key: it => it.text,
+  render: ({ n: [pic, noun, ok], right, opts }) => card({
+    topic: '🔗 Which verb?', pic, cue: '___ ' + noun,
+    sub: opts.map(v => '<span class="chip">' + v + '</span>').join(' '),
+    prompt: 'A: choose the verb and ask “How often do you…?” B: answer — the truth!',
+    checkLabel: '👀 Check',
+    check: ['✅ <b>' + right + '</b> ' + noun + (ok.length > 1 ? ' <span class="text-secondary">(also: ' + ok.filter(v => v !== right).join(', ') + ' ' + noun + ')</span>' : ''),
+            '❓ “How often do you <b>' + right + '</b> ' + noun + '?”']
+  })
+});
+
+HouseInterview.build({
+  container: 'interview',
+  storageKey: 'a1-verb-noun-collocations',
+  fields: [
+    { icon: '☀️', label: 'in the morning', placeholder: 'make coffee, take a shower…' },
+    { icon: '🌙', label: 'in the evening', placeholder: 'cook dinner, watch TV…' },
+    { icon: '🎉', label: 'on weekends', placeholder: 'play soccer, have a party…' },
+    { icon: '🏠', label: 'at home', placeholder: 'do the dishes, clean the house…' },
+    { icon: '❤️', label: 'loves to', placeholder: 'listen to music…' }
+  ]
+});
+</script>
+</body>
+</html>

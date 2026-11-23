@@ -1,0 +1,137 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<title>/s/, /z/ or /ɪz/? — S Endings</title>
+<script>
+(function(){
+  try{
+    var saved = localStorage.getItem('theme-preference');
+    var theme = (saved === 'light' || saved === 'dark')
+      ? saved
+      : ((window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches) ? 'dark' : 'light');
+    document.documentElement.setAttribute('data-theme', theme);
+    var fs = parseFloat(localStorage.getItem('font-size-preference'));
+    if (fs >= 10 && fs <= 28) document.documentElement.style.setProperty('--fs-base', fs + 'px');
+  }catch(e){ /* localStorage/matchMedia unavailable — CSS media query still applies */ }
+})();
+</script>
+<link rel="stylesheet" href="house.css">
+<style>
+/* the prompt on the card: a big picture, then the words */
+.cue-main{ font-size:1.25rem; font-weight:700; margin:4px 0 6px; text-align:center; }
+.cue-main .big{ display:block; font-size:2.6rem; line-height:1.1; margin-bottom:4px; }
+.cue-sub{ font-size:.95rem; color:var(--text-secondary); text-align:center; margin:0 0 4px; }
+.chip{ display:inline-block; padding:2px 10px; margin:2px; border-radius:999px; border:1px solid var(--color-border-tertiary); background:var(--surface-2); font-size:1rem; font-weight:700; }
+.chip-wh{ color:var(--pos-wh); border-color:var(--pos-wh); }
+/* two sides: what usually happens · what is different */
+.duo{ display:flex; align-items:stretch; justify-content:center; gap:10px; flex-wrap:wrap; margin:4px 0 6px; }
+.duo .side{ display:flex; flex-direction:column; align-items:center; gap:2px; min-width:9em; padding:6px 10px; border-radius:10px; border:1px solid var(--color-border-tertiary); background:var(--surface-2); font-weight:700; font-size:1rem; }
+.duo .side .when{ font-size:.8667rem; font-weight:600; color:var(--text-secondary); }
+.duo .side .big{ font-size:2.2rem; line-height:1.1; }
+.who{ font-size:1.1rem; font-weight:700; text-align:center; margin:2px 0 4px; }
+/* only Student A looks */
+.q-card details.secret{ margin:4px 0 6px; width:100%; max-width:460px; text-align:center; }
+.q-card details.secret summary{ font-weight:700; }
+.q-card .secret-body{ padding:8px 12px; }
+.q-card details.check{ margin-top:4px; width:100%; max-width:460px; text-align:left; }
+.q-card .check-body{ padding:8px 12px; font-size:.9rem; }
+.q-card .check-body p{ margin:0 0 4px; }
+</style>
+</head>
+<body>
+<div class="page" id="page">
+  <span class="cefr-tag cefr-a1">A1 · Beginner</span>
+  <h1>/s/, /z/ or /ɪz/?</h1>
+  <p class="subtitle">Say the sentence. Listen to the end of the verb. Which sound is it?</p>
+
+  <div class="rule-box">
+    <p><strong>How to play (pairs, or teacher + student):</strong></p>
+    <p>1. Student A rolls 🎲. Say the sentence with <b>-s</b>: “<b>My dad watches TV.</b>”</p>
+    <p>2. Student B listens and says the sound: “<b>/ɪz/!</b>”</p>
+    <p>3. Press 👀 to check. Then change: B rolls, A listens.</p>
+  </div>
+
+  <div class="q-card" id="qCard"><span class="q-placeholder">Roll the dice to start.</span></div>
+  <button class="dice-btn" id="diceBtn" aria-label="Roll">🎲</button>
+  <div class="roll-count">Rolls: <strong id="rollCount">0</strong></div>
+
+  <div class="sec-div">Now you</div>
+  <div class="rule-box">
+    <p><strong>Ask your partner about their family.</strong> “<b>What does your mom do every day?</b>” Write the verbs with <b>-s</b>: <b>works, watches, plays</b>…</p>
+    <p>Then read your sentences: “<b>Ana’s mom cooks.</b>” Your partner says the sound: /s/, /z/ or /ɪz/. Another partner? Press <b>➕ Add partner</b>.</p>
+  </div>
+  <div id="interview"></div>
+
+  <footer>/s/, /z/ or /ɪz/? — Third person -s pronunciation (A1)</footer>
+</div>
+
+<div id="theme-toggle-wrap">
+  <button id="theme-toggle" aria-label="Toggle light/dark mode" title="Toggle light/dark mode">
+    <span id="theme-icon">☀️</span>
+  </button>
+</div>
+<script src="house.js"></script>
+<script src="house-interview.js"></script>
+<script>
+const pick = HouseRandomGen.pickFrom;
+const cap = s => s.charAt(0).toUpperCase() + s.slice(1);
+/* one card: a topic line, the cue (hidden from B when it is a secret), what to do, and the 👀 examples */
+const card = o =>
+  '<span class="q-topic">' + o.topic + '</span>' +
+  (o.secret ? '<details class="secret"><summary>' + o.secret + '</summary><div class="secret-body">' : '') +
+  (o.body || '') +
+  (o.pic ? '<div class="cue-main"><span class="big">' + o.pic + '</span>' + (o.cue || '') + '</div>' : (o.cue ? '<div class="cue-main">' + o.cue + '</div>' : '')) +
+  (o.sub ? '<div class="cue-sub">' + o.sub + '</div>' : '') +
+  (o.secret ? '</div></details>' : '') +
+  (o.prompt ? '<span class="q-prompt">' + o.prompt + '</span>' : '') +
+  (o.check ? '<details class="check"><summary>' + (o.checkLabel || '👀 Examples') + '</summary><div class="check-body">' +
+    o.check.map(l => '<p>' + l + '</p>').join('') + '</div></details>' : '');
+/* [picture, verb with -s, the rest, sound] */
+const VERBS = [
+  ['💼', 'works', 'in an office', 's'], ['🍳', 'eats', 'breakfast at eight', 's'], ['☕', 'drinks', 'coffee', 's'], ['🚶', 'walks', 'to work', 's'],
+  ['🗣️', 'talks', 'on the phone', 's'], ['😴', 'sleeps', 'a lot', 's'], ['🍝', 'cooks', 'dinner', 's'], ['⏰', 'gets up', 'early', 's'],
+  ['🚌', 'takes', 'the bus', 's'], ['✍️', 'writes', 'emails', 's'], ['🛍️', 'shops', 'on Saturdays', 's'], ['🧁', 'bakes', 'cakes', 's'],
+  ['⚽', 'plays', 'soccer', 'z'], ['🛒', 'goes', 'shopping', 'z'], ['📖', 'reads', 'books', 'z'], ['🎤', 'sings', 'in the shower', 'z'],
+  ['🚗', 'drives', 'a red car', 'z'], ['🏃', 'runs', 'in the park', 'z'], ['🎧', 'listens', 'to music', 'z'], ['📚', 'studies', 'English', 'z'],
+  ['🧹', 'cleans', 'the house', 'z'], ['📞', 'calls', 'me every day', 'z'], ['🏊', 'swims', 'on Sundays', 'z'], ['❤️', 'loves', 'pizza', 'z'],
+  ['📺', 'watches', 'TV', 'iz'], ['🍽️', 'washes', 'the dishes', 'iz'], ['💃', 'dances', 'salsa', 'iz'], ['🔧', 'fixes', 'cars', 'iz'],
+  ['🚪', 'closes', 'the door', 'iz'], ['💻', 'uses', 'a computer', 'iz'], ['🛋️', 'relaxes', 'on the sofa', 'iz'],
+  ['🪥', 'brushes', 'his teeth', 'iz'], ['🧑‍🏫', 'teaches', 'math', 'iz'], ['👔', 'changes', 'his clothes', 'iz']
+];
+const WHO = [['👩', 'My mom'], ['👨', 'My dad'], ['🧑‍🏫', 'My teacher'], ['🧑', 'My best friend'], ['🧔', 'Tom'], ['👩‍🦰', 'Ana'],
+  ['👦', 'My brother'], ['👧', 'My sister'], ['👴', 'My grandpa'], ['🧑‍💼', 'My boss']];
+const WHY = { s: 'after /p/ /t/ /k/ /f/ — no voice', z: 'after a voice sound (a vowel or /b/ /d/ /g/ /l/ /m/ /n/ /v/…)', iz: 'after /s/ /z/ /ʃ/ /tʃ/ /dʒ/ — one more syllable' };
+const IPA = { s: '/s/', z: '/z/', iz: '/ɪz/' };
+const SHE = ['👩', '👧', '👩‍🦰'];
+
+HouseRandomGen.build({
+  pick: () => { const v = pick(VERBS), w = pick(WHO); return { v, w, text: v[1] + w[1] }; },
+  key: it => it.text,
+  render: ({ v: [pic, verb, rest, snd], w: [wp, who] }) => {
+    const r = SHE.indexOf(wp) !== -1 ? rest.replace(/\bhis\b/, 'her') : rest;
+    return card({
+      topic: '👂 Listen to the -s', pic: wp + ' ' + pic, cue: who + ' <b>' + verb + '</b> ' + r + '.',
+      sub: '/s/, /z/ or /ɪz/?',
+      prompt: 'A: say the sentence. B: which sound is it?',
+      checkLabel: '👀 Check',
+      check: ['🔊 <b>' + verb + '</b> = <b>' + IPA[snd] + '</b>', '<span class="text-secondary">' + WHY[snd] + '</span>']
+    });
+  }
+});
+
+HouseInterview.build({
+  container: 'interview',
+  storageKey: 'a1-s-endings-pronunciation',
+  fields: [
+    { icon: '👩', label: 'mom', placeholder: 'works, cooks…' },
+    { icon: '👨', label: 'dad', placeholder: 'drives, watches TV…' },
+    { icon: '🧑', label: 'best friend', placeholder: 'plays soccer…' },
+    { icon: '🐾', label: 'pet', placeholder: 'sleeps, runs…' },
+    { icon: '🧑‍🏫', label: 'boss or teacher', placeholder: 'teaches, talks…' }
+  ]
+});
+</script>
+</body>
+</html>

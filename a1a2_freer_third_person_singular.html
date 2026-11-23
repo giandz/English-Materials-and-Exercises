@@ -1,0 +1,136 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<title>Meet Mr. Smith — Third Person Singular</title>
+<script>
+(function(){
+  try{
+    var saved = localStorage.getItem('theme-preference');
+    var theme = (saved === 'light' || saved === 'dark')
+      ? saved
+      : ((window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches) ? 'dark' : 'light');
+    document.documentElement.setAttribute('data-theme', theme);
+    var fs = parseFloat(localStorage.getItem('font-size-preference'));
+    if (fs >= 10 && fs <= 28) document.documentElement.style.setProperty('--fs-base', fs + 'px');
+  }catch(e){ /* localStorage/matchMedia unavailable — CSS media query still applies */ }
+})();
+</script>
+<link rel="stylesheet" href="house.css">
+<style>
+/* the prompt on the card: a big picture, then the words */
+.cue-main{ font-size:1.25rem; font-weight:700; margin:4px 0 6px; text-align:center; }
+.cue-main .big{ display:block; font-size:2.6rem; line-height:1.1; margin-bottom:4px; }
+.cue-sub{ font-size:.95rem; color:var(--text-secondary); text-align:center; margin:0 0 4px; }
+.chip{ display:inline-block; padding:2px 10px; margin:2px; border-radius:999px; border:1px solid var(--color-border-tertiary); background:var(--surface-2); font-size:1rem; font-weight:700; }
+.chip-wh{ color:var(--pos-wh); border-color:var(--pos-wh); }
+/* two sides: what usually happens · what is different */
+.duo{ display:flex; align-items:stretch; justify-content:center; gap:10px; flex-wrap:wrap; margin:4px 0 6px; }
+.duo .side{ display:flex; flex-direction:column; align-items:center; gap:2px; min-width:9em; padding:6px 10px; border-radius:10px; border:1px solid var(--color-border-tertiary); background:var(--surface-2); font-weight:700; font-size:1rem; }
+.duo .side .when{ font-size:.8667rem; font-weight:600; color:var(--text-secondary); }
+.duo .side .big{ font-size:2.2rem; line-height:1.1; }
+.who{ font-size:1.1rem; font-weight:700; text-align:center; margin:2px 0 4px; }
+/* only Student A looks */
+.q-card details.secret{ margin:4px 0 6px; width:100%; max-width:460px; text-align:center; }
+.q-card details.secret summary{ font-weight:700; }
+.q-card .secret-body{ padding:8px 12px; }
+.q-card details.check{ margin-top:4px; width:100%; max-width:460px; text-align:left; }
+.q-card .check-body{ padding:8px 12px; font-size:.9rem; }
+.q-card .check-body p{ margin:0 0 4px; }
+</style>
+</head>
+<body>
+<div class="page" id="page">
+  <span class="cefr-tag cefr-a1a2">A1/A2 · Elementary</span>
+  <h1>Meet Mr. Smith</h1>
+  <p class="subtitle">Choose the title. Then talk about the person.</p>
+
+  <div class="rule-box">
+    <p><strong>How to play (pairs, or teacher + student):</strong></p>
+    <p>1. Student A rolls 🎲. Choose the title — <b>Mr., Ms., Mrs., Miss</b> or <b>Dr.</b> — and say a sentence: “<b>Dr. Chen gets up at five.</b>”</p>
+    <p>2. Student B asks one more question: “<b>Does she drink coffee?</b>” A answers — any answer! “<b>Yes, she does. She drinks three cups!</b>”</p>
+    <p>3. Press 👀 to check. Then change: B rolls, A asks.</p>
+  </div>
+
+  <div class="q-card" id="qCard"><span class="q-placeholder">Roll the dice to start.</span></div>
+  <button class="dice-btn" id="diceBtn" aria-label="Roll">🎲</button>
+  <div class="roll-count">Rolls: <strong id="rollCount">0</strong></div>
+
+  <div class="sec-div">Now you</div>
+  <div class="rule-box">
+    <p><strong>Ask your partner about a person they know</strong> — a neighbor, a teacher, a boss. “<b>Who is she? What does she do? Where does she live? What does she like?</b>” Write the answers.</p>
+    <p>Then say: “<b>Ana’s neighbor is Mrs. Pérez. She works in a bank. She doesn’t like dogs.</b>” Another partner? Press <b>➕ Add partner</b>.</p>
+  </div>
+  <div id="interview"></div>
+
+  <footer>Meet Mr. Smith — Titles and third person singular -s (A1–A2)</footer>
+</div>
+
+<div id="theme-toggle-wrap">
+  <button id="theme-toggle" aria-label="Toggle light/dark mode" title="Toggle light/dark mode">
+    <span id="theme-icon">☀️</span>
+  </button>
+</div>
+<script src="house.js"></script>
+<script src="house-interview.js"></script>
+<script>
+const pick = HouseRandomGen.pickFrom;
+const cap = s => s.charAt(0).toUpperCase() + s.slice(1);
+/* one card: a topic line, the cue (hidden from B when it is a secret), what to do, and the 👀 examples */
+const card = o =>
+  '<span class="q-topic">' + o.topic + '</span>' +
+  (o.secret ? '<details class="secret"><summary>' + o.secret + '</summary><div class="secret-body">' : '') +
+  (o.body || '') +
+  (o.pic ? '<div class="cue-main"><span class="big">' + o.pic + '</span>' + (o.cue || '') + '</div>' : (o.cue ? '<div class="cue-main">' + o.cue + '</div>' : '')) +
+  (o.sub ? '<div class="cue-sub">' + o.sub + '</div>' : '') +
+  (o.secret ? '</div></details>' : '') +
+  (o.prompt ? '<span class="q-prompt">' + o.prompt + '</span>' : '') +
+  (o.check ? '<details class="check"><summary>' + (o.checkLabel || '👀 Examples') + '</summary><div class="check-body">' +
+    o.check.map(l => '<p>' + l + '</p>').join('') + '</div></details>' : '');
+/* [picture, name, who it is, the title, he / she] */
+const PEOPLE = [
+  ['👨', 'Smith', 'a man', 'Mr.', 'he'], ['👩', 'Baker', 'a woman', 'Ms.', 'she'], ['👩‍🦳', 'Lopez', 'a married woman', 'Mrs.', 'she', 'Ms.'],
+  ['👧', 'Turner', 'a young woman', 'Miss', 'she', 'Ms.'], ['👩‍⚕️', 'Chen', 'a doctor', 'Dr.', 'she'], ['👨‍⚕️', 'Patel', 'a doctor', 'Dr.', 'he'],
+  ['👴', 'Brown', 'a man', 'Mr.', 'he'], ['🧔', 'García', 'a man', 'Mr.', 'he'], ['👩‍💼', 'Kim', 'a woman', 'Ms.', 'she'],
+  ['👵', 'Rossi', 'a married woman', 'Mrs.', 'she', 'Ms.']
+];
+/* [picture, base, verb-s, the rest] */
+const DO = [
+  ['⏰', 'get up', 'gets up', 'at five'], ['☕', 'drink', 'drinks', 'three coffees a day'], ['🚲', 'ride', 'rides', 'a bike to work'],
+  ['🐕', 'walk', 'walks', 'the dog every evening'], ['📺', 'watch', 'watches', 'the news'], ['🍳', 'cook', 'cooks', 'for the whole family'],
+  ['🎹', 'play', 'plays', 'the piano'], ['🧹', 'clean', 'cleans', 'the house on Saturdays'], ['📚', 'study', 'studies', 'French'],
+  ['🏊', 'swim', 'swims', 'every morning'], ['🎧', 'listen', 'listens', 'to jazz'], ['🛍️', 'go', 'goes', 'shopping on Sundays'],
+  ['🧑‍🏫', 'teach', 'teaches', 'math'], ['🔧', 'fix', 'fixes', 'old cars'], ['🐈', 'have', 'has', 'three cats'], ['🧘', 'do', 'does', 'yoga']
+];
+
+HouseRandomGen.build({
+  pick: () => { const p = pick(PEOPLE), d = pick(DO); return { p, d, text: p[1] + d[1] }; },
+  key: it => it.text,
+  render: ({ p: [pp, name, who, title, pr, alt], d: [dp, base, vs, rest] }) => card({
+    topic: '👋 Title + verb-s', pic: pp + ' ' + dp,
+    cue: '___ ' + name + ' + ' + base + ' ' + rest, sub: '(' + who + ')',
+    prompt: 'A: choose the title and say the sentence. B: ask “Does ' + pr + '…?”',
+    checkLabel: '👀 Check',
+    check: ['👋 <b>' + title + '</b> ' + name + (alt ? ' <span class="text-secondary">(or ' + alt + ' ' + name + ')</span>' : ''),
+            '✅ “' + title + ' ' + name + ' <b>' + vs + '</b> ' + rest + '.”',
+            '❌ “' + cap(pr) + ' <b>doesn’t ' + base + '</b> ' + rest + '.”',
+            '❓ “<b>Does</b> ' + pr + ' ' + base + ' ' + rest + '?”']
+  })
+});
+
+HouseInterview.build({
+  container: 'interview',
+  storageKey: 'a1a2-third-person-singular',
+  fields: [
+    { icon: '👋', label: 'who', placeholder: 'Mrs. Pérez, my neighbor…' },
+    { icon: '💼', label: 'job', placeholder: 'works in a bank…' },
+    { icon: '🏠', label: 'lives in', placeholder: 'a big house…' },
+    { icon: '⏰', label: 'every morning', placeholder: 'walks her dog…' },
+    { icon: '❤️', label: 'likes', placeholder: 'gardening…' },
+    { icon: '🚫', label: 'doesn’t like', placeholder: 'loud music…' }
+  ]
+});
+</script>
+</body>
+</html>

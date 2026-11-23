@@ -1,0 +1,242 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<title>Compound Nouns — Clarification</title>
+<script>
+(function(){
+  try{
+    var saved = localStorage.getItem('theme-preference');
+    var theme = (saved === 'light' || saved === 'dark')
+      ? saved
+      : ((window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches) ? 'dark' : 'light');
+    document.documentElement.setAttribute('data-theme', theme);
+    var fs = parseFloat(localStorage.getItem('font-size-preference'));
+    if (fs >= 10 && fs <= 28) document.documentElement.style.setProperty('--fs-base', fs + 'px');
+  }catch(e){ /* localStorage/matchMedia unavailable — CSS media query still applies */ }
+})();
+</script>
+<link rel="stylesheet" href="house.css">
+<style>
+/* the compound noun is the lesson, so it stays coloured: the first word says what kind, the second word is the thing */
+.kind{ color:var(--pos-adj); font-weight:700; }
+.thing{ color:var(--pos-noun); font-weight:700; }
+.stress{ text-decoration:underline 2px; text-underline-offset:3px; }
+.say-btn{ font-size:.8667rem; padding:3px 10px; margin:2px; }
+
+.gs ul{ list-style:none; margin:0 0 1rem; padding:0; border:1px solid var(--color-border-tertiary); border-radius:12px; background:var(--surface-2); }
+.gs li{ padding:7px 12px; line-height:1.5; font-size:.9333rem; }
+.gs li + li{ border-top:.5px dashed var(--color-border-secondary); }
+.gs .who{ font-weight:600; color:var(--text-secondary); }
+
+.equation{ display:flex; flex-wrap:wrap; justify-content:center; align-items:center; gap:8px; margin:0 0 1rem; padding:12px; border:1px solid var(--color-border-tertiary); border-radius:12px; background:var(--surface-2); font-size:1.1rem; font-weight:700; }
+.equation .pic{ font-size:2rem; }
+.equation .op{ color:var(--text-muted); font-family:var(--font-mono); }
+
+.cards{ display:grid; grid-template-columns:repeat(auto-fill, minmax(190px, 1fr)); gap:8px; margin-bottom:1rem; }
+.cards > div{ border:1px solid var(--color-border-tertiary); border-radius:12px; background:var(--surface-2); padding:9px 11px; }
+.cards h4{ margin:0 0 3px; font-size:.95rem; }
+.cards .rule{ font-size:.8rem; color:var(--text-secondary); margin-bottom:5px; }
+.cards .ex{ font-size:.9333rem; line-height:1.7; }
+.rule-box p{ margin:0 0 6px; }
+.rule-box p:last-child{ margin-bottom:0; }
+</style>
+</head>
+<body>
+<div class="page" id="page">
+  <span class="cefr-tag cefr-a1">A1 · Beginner</span>
+  <h1>Compound Nouns: bus stop, coffee shop</h1>
+  <p class="subtitle">Two nouns together make one thing.</p>
+
+  <div class="sec-div">Look</div>
+  <p class="subtitle">From the conversation. Look at the coloured words.</p>
+  <div class="gs" id="gs"></div>
+
+  <div class="sec-div">Two words, one thing</div>
+  <div class="equation" id="equation"></div>
+  <div class="rule-box">
+    <p><strong>The second word is the thing.</strong> A <span class="kind">coffee</span> <span class="thing">shop</span> is a <b>shop</b>.</p>
+    <p><strong>The first word says what kind.</strong> What kind of shop? A <span class="kind">coffee</span> shop.</p>
+  </div>
+
+  <div class="sec-div">Check the meaning</div>
+  <p class="subtitle">Read. Answer the questions.</p>
+  <div id="ccq"></div>
+
+  <div class="sec-div">What kind?</div>
+  <p class="subtitle">The same thing — different kinds.</p>
+  <div class="cards" id="kinds"></div>
+
+  <div class="sec-div">Say it</div>
+  <p class="subtitle">Say the <b>first</b> word stronger. Tap 🔊 to listen.</p>
+  <div class="cards" id="stress"></div>
+
+  <div class="sec-div">Look at the form</div>
+  <p class="subtitle">What is each word? Drag a label (or tap a label, then tap a box).</p>
+  <div class="score-bar"><span>Correct: <strong id="fcScore">0</strong> / <span id="fcTotal">0</span></span></div>
+  <div id="formClarf"></div>
+  <div class="rule-box" id="ruleBox"></div>
+
+  <div class="sec-div">Spelling</div>
+  <div class="cards" id="spelling"></div>
+
+  <div class="sec-div">Common mistakes</div>
+  <div id="mistakes"></div>
+
+  <div class="sec-div">Error hunt</div>
+  <p class="subtitle">Every sentence has one mistake. Tap a word — or a space between words — to fix it. Then press OK.</p>
+  <div class="score-bar"><span>Done: <strong id="errorScore">0</strong> / <span id="errorTotal">0</span></span></div>
+  <div id="errorHuntItems"></div>
+
+  <footer>Compound nouns — Clarification (A1)</footer>
+</div>
+
+<div id="theme-toggle-wrap">
+  <button id="theme-toggle" aria-label="Toggle light/dark mode" title="Toggle light/dark mode">
+    <span id="theme-icon">☀️</span>
+  </button>
+</div>
+<script src="house.js"></script>
+<script>
+/* say a word with the browser's voice (the learner's dictionary in house.js does the speaking) */
+const say = (w, shown) => '<button class="say-btn" type="button" onclick="HouseDict.say(\'' + w + '\')" aria-label="Listen: ' + w + '">🔊 ' + (shown || w) + '</button>';
+
+/* the learner's dictionary (right-click / long press a word): what these words mean in this lesson */
+window.LESSON_DICT = {
+  'bus stop':      { pos:'noun', def:'the place in the street where you wait for the bus', ex:'I wait at the bus stop.', es:'parada de autobús' },
+  'train station': { pos:'noun', def:'the building where you get on and off trains', ex:'The train station is busy.', es:'estación de tren' },
+  'alarm clock':   { pos:'noun', def:'a clock that makes a noise to wake you up', ex:'My alarm clock rings at six.', es:'despertador' },
+  'school bag':    { pos:'noun', def:'the bag you carry to school', ex:'My school bag is heavy.', es:'mochila (de la escuela)' },
+  'coffee shop':   { pos:'noun', def:'a small place where you buy and drink coffee', ex:'Let’s meet at the coffee shop.', es:'cafetería' },
+  'lunch box':     { pos:'noun', def:'a box with your food for lunch', ex:'My lunch box has a sandwich in it.', es:'lonchera' },
+  'living room':   { pos:'noun', def:'the main room in a house, where you sit and relax', ex:'We watch TV in the living room.', es:'sala' },
+  'bus driver':    { pos:'noun', def:'the person who drives the bus', ex:'The bus driver is friendly.', es:'chofer de autobús' },
+  'post office':   { pos:'noun', def:'the place where you send letters and parcels', ex:'I go to the post office on Mondays.', es:'oficina de correos' },
+  'compound noun': { pos:'noun', def:'two nouns together that make one thing', ex:'“Bus stop” is a compound noun.', es:'sustantivo compuesto' }
+};
+
+/* first word (what kind) + second word (the thing) */
+const C = (kind, thing) => '<span class="kind">' + kind + '</span> <span class="thing">' + thing + '</span>';
+
+/* ── look ──────────────────────────────────────────────────────────────── */
+document.getElementById('gs').innerHTML = '<ul>' + [
+  ['👧 Ana', 'Are you going to the ' + C('train', 'station') + '?'],
+  ['👧 Ana', 'This ' + C('bus', 'stop') + ' is very busy today.'],
+  ['👦 Ben', 'My ' + C('alarm', 'clock') + ' rings at six thirty.'],
+  ['👦 Ben', 'Do you have a ' + C('school', 'bag') + '?'],
+  ['👧 Ana', 'Let’s meet at the ' + C('coffee', 'shop') + '.'],
+  ['👦 Ben', 'I want a ' + C('pepperoni', 'pizza') + '!']
+].map(([who, line]) => '<li><span class="who">' + who + ':</span> ' + line + '</li>').join('') + '</ul>';
+
+document.getElementById('equation').innerHTML =
+  '<span class="pic">🚌</span><span class="kind">bus</span><span class="op">+</span>' +
+  '<span class="pic">🛑</span><span class="thing">stop</span><span class="op">=</span>' +
+  '<span class="pic">🚏</span>' + C('bus', 'stop');
+
+/* ── concept checking questions ────────────────────────────────────────── */
+HouseCCQ.build({
+  container: 'ccq',
+  items: [
+    { sentence: 'Let’s meet at the ' + C('coffee', 'shop') + '.',
+      questions: [
+        { q: 'Is it a shop?', opts: ['Yes', 'No'], correct: 0,
+          why: 'Yes. The second word is the thing: a <b>shop</b>.' },
+        { q: 'Is it a kind of coffee?', opts: ['Yes', 'No'], correct: 1,
+          why: 'No. <b>coffee</b> says what kind of shop: a shop for coffee.' }
+      ] },
+    { sentence: 'The ' + C('bus', 'driver') + ' is very friendly.',
+      questions: [
+        { q: 'Is it a person?', opts: ['Yes', 'No'], correct: 0,
+          why: 'Yes. A <b>driver</b> is a person.' },
+        { q: 'What does he drive?', opts: ['A bus', 'A car'], correct: 0,
+          why: 'A bus! What kind of driver? A <b>bus</b> driver.' }
+      ] },
+    { sentence: 'My dog sleeps in his ' + C('dog', 'house') + '.',
+      questions: [
+        { q: 'Is it a house for people?', opts: ['Yes', 'No'], correct: 1,
+          why: 'No. It is a small <b>house</b> for a <b>dog</b>.' }
+      ] }
+  ]
+});
+
+/* ── what kind? the same second word, different first words ────────────── */
+const KINDS = [
+  ['🏪 … shop', ['☕ ' + C('coffee', 'shop'), '👟 ' + C('shoe', 'shop'), '💐 ' + C('flower', 'shop')]],
+  ['🚉 … station', ['🚆 ' + C('train', 'station'), '🚌 ' + C('bus', 'station'), '⛽ ' + C('gas', 'station')]],
+  ['🛋️ … room', ['📺 ' + C('living', 'room'), '🍽️ ' + C('dining', 'room'), '🪑 ' + C('waiting', 'room')]],
+  ['👜 … bag', ['🎒 ' + C('school', 'bag'), '🛍️ ' + C('shopping', 'bag'), '🧳 ' + C('travel', 'bag')]],
+  ['🧑 … driver', ['🚌 ' + C('bus', 'driver'), '🚕 ' + C('taxi', 'driver'), '🚚 ' + C('truck', 'driver')]],
+  ['📦 … box', ['🍱 ' + C('lunch', 'box'), '👟 ' + C('shoe', 'box'), '🎁 ' + C('gift', 'box')]]
+];
+document.getElementById('kinds').innerHTML = KINDS.map(([h, ex]) =>
+  '<div><h4>' + h + '</h4><div class="ex">' + ex.join('<br>') + '</div></div>').join('');
+
+/* ── stress: the first word is stronger ────────────────────────────────── */
+const ST = (a, b) => say(a + ' ' + b, '<span class="stress">' + a.toUpperCase() + '</span> ' + b);
+document.getElementById('stress').innerHTML = [
+  ['🚌 places', [ST('bus', 'stop'), ST('coffee', 'shop'), ST('post', 'office')]],
+  ['🏠 at home', [ST('living', 'room'), ST('alarm', 'clock'), ST('dinner', 'table')]],
+  ['🎒 things', [ST('school', 'bag'), ST('lunch', 'box'), ST('phone', 'call')]]
+].map(([h, ex]) => '<div><h4>' + h + '</h4><div class="rule">BIG + small</div><div class="ex">' + ex.join('') + '</div></div>').join('');
+
+/* ── form ──────────────────────────────────────────────────────────────── */
+HouseFormClarf.build({
+  container: 'formClarf', scoreEl: 'fcScore', totalEl: 'fcTotal',
+  pool: ['wh', 'subject', 'verb', 'det', 'adj', 'noun', 'prep'],
+  items: [
+    { form: 'aff', parts: [['This', 'subject'], ['is', 'verb'], ['a', 'det'], ['bus', 'noun'], ['stop', 'noun'], ['.', null]] },
+    { form: 'aff', parts: [['I', 'subject'], ['have', 'verb'], ['a', 'det'], ['big', 'adj'], ['school', 'noun'], ['bag', 'noun'], ['.', null]] },
+    { form: 'aff', parts: [['I', 'subject'], ['see', 'verb'], ['two', 'det'], ['bus', 'noun'], ['stops', 'noun'], ['.', null]] },
+    { form: 'wh',  parts: [['Where', 'wh'], ['is', 'verb'], ['the', 'det'], ['coffee', 'noun'], ['shop', 'noun'], ['?', null]] }
+  ]
+});
+document.getElementById('ruleBox').innerHTML =
+  '<p><strong>noun + noun:</strong> ' + C('bus', 'stop') + ', ' + C('coffee', 'shop') + '. Not “stop bus”, not “stop of bus”.</p>' +
+  '<p><strong>An adjective goes first:</strong> a <b>big</b> ' + C('school', 'bag') + ' (not “a school big bag”).</p>' +
+  '<p><strong>Two or more:</strong> only the second word gets <b>-s</b>: two ' + C('bus', 'stops') + ', three ' + C('shoe', 'shops') + '.</p>';
+
+/* ── spelling ──────────────────────────────────────────────────────────── */
+document.getElementById('spelling').innerHTML = [
+  ['✌️ two words', 'most compound nouns', C('bus', 'stop') + '<br>' + C('living', 'room') + '<br>' + C('alarm', 'clock')],
+  ['☝️ one word', 'some short, common ones', '<span class="kind">bed</span><span class="thing">room</span><br><span class="kind">bath</span><span class="thing">room</span><br><span class="kind">foot</span><span class="thing">ball</span>'],
+  ['📖 not sure?', 'look in the dictionary', 'right-click a word<br>(or press and hold it)']
+].map(([h, r, ex]) => '<div><h4>' + h + '</h4><div class="rule">' + r + '</div><div class="ex">' + ex + '</div></div>').join('');
+
+/* ── common mistakes ───────────────────────────────────────────────────── */
+const MISTAKES = [
+  ['I wait at the stop bus.', 'I wait at the bus stop.'],
+  ['Where is the stop of bus?', 'Where is the bus stop?'],
+  ['There are two buses stops.', 'There are two bus stops.'],
+  ['She works in a shoes shop.', 'She works in a shoe shop.'],
+  ['I have a school big bag.', 'I have a big school bag.'],
+  ['We watch TV in the room living.', 'We watch TV in the living room.']
+];
+document.getElementById('mistakes').innerHTML = MISTAKES.map(([no, yes]) =>
+  '<div class="pair-card"><div class="pair-line no"><span class="mark">✗</span>' + no + '</div>' +
+  '<div class="pair-line yes"><span class="mark">✓</span>' + yes + '</div></div>').join('');
+
+/* ── error hunt (A1: every sentence has one mistake) ───────────────────── */
+const EH_ITEMS = [
+  { words: ['I', 'wait', 'at', 'the', 'stop', 'bus', '.'],
+    error: { type: 'misplaced', wordIndex: 5, targetGapIndex: 4 } },
+  { words: ['My', 'alarm', 'clocks', 'rings', 'at', 'six', '.'],
+    error: { type: 'wrong', wordIndex: 2, options: ['clock', 'clocking', 'clock’s'], correct: 'clock' } },
+  { words: ['Is', 'there', 'a', 'coffee', 'of', 'shop', 'near', 'here', '?'],
+    error: { type: 'extra', wordIndex: 4 } },
+  { words: ['She', 'works', 'in', 'a', 'shoes', 'shop', '.'],
+    error: { type: 'wrong', wordIndex: 4, options: ['shoe', 'shoeing', 'shoe’s'], correct: 'shoe' } },
+  { words: ['The', 'driver', 'bus', 'is', 'very', 'friendly', '.'],
+    error: { type: 'misplaced', wordIndex: 2, targetGapIndex: 1 } },
+  { words: ['There', 'are', 'three', 'buses', 'stops', 'on', 'my', 'street', '.'],
+    error: { type: 'wrong', wordIndex: 3, options: ['bus', 'busy', 'buss'], correct: 'bus' } },
+  { words: ['I', 'need', 'a', 'new', 'phones', 'case', '.'],
+    error: { type: 'wrong', wordIndex: 4, options: ['phone', 'phoning', 'phoned'], correct: 'phone' } },
+  { words: ['I', 'have', 'a', 'school', 'big', 'bag', '.'],
+    error: { type: 'misplaced', wordIndex: 4, targetGapIndex: 3 } }
+];
+HouseErrorHunt.build({ container: 'errorHuntItems', items: EH_ITEMS, scoreEl: 'errorScore', totalEl: 'errorTotal' });
+</script>
+<script>HouseGrammar.init();</script>
+</body>
+</html>

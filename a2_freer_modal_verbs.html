@@ -1,0 +1,158 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<title>What Would You Say? — Modal Verbs</title>
+<script>
+(function(){
+  try{
+    var saved = localStorage.getItem('theme-preference');
+    var theme = (saved === 'light' || saved === 'dark')
+      ? saved
+      : ((window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches) ? 'dark' : 'light');
+    document.documentElement.setAttribute('data-theme', theme);
+    var fs = parseFloat(localStorage.getItem('font-size-preference'));
+    if (fs >= 10 && fs <= 28) document.documentElement.style.setProperty('--fs-base', fs + 'px');
+  }catch(e){ /* localStorage/matchMedia unavailable — CSS media query still applies */ }
+})();
+</script>
+<link rel="stylesheet" href="house.css">
+<style>
+/* the prompt on the card: a big picture, then the words */
+.cue-main{ font-size:1.25rem; font-weight:700; margin:4px 0 6px; text-align:center; }
+.cue-main .big{ display:block; font-size:2.6rem; line-height:1.1; margin-bottom:4px; }
+.cue-sub{ font-size:.95rem; color:var(--text-secondary); text-align:center; margin:0 0 4px; }
+.chip{ display:inline-block; padding:2px 10px; margin:2px; border-radius:999px; border:1px solid var(--color-border-tertiary); background:var(--surface-2); font-size:1rem; font-weight:700; }
+.chip-wh{ color:var(--pos-wh); border-color:var(--pos-wh); }
+/* two sides: what usually happens · what is different */
+.duo{ display:flex; align-items:stretch; justify-content:center; gap:10px; flex-wrap:wrap; margin:4px 0 6px; }
+.duo .side{ display:flex; flex-direction:column; align-items:center; gap:2px; min-width:9em; padding:6px 10px; border-radius:10px; border:1px solid var(--color-border-tertiary); background:var(--surface-2); font-weight:700; font-size:1rem; }
+.duo .side .when{ font-size:.8667rem; font-weight:600; color:var(--text-secondary); }
+.duo .side .big{ font-size:2.2rem; line-height:1.1; }
+.who{ font-size:1.1rem; font-weight:700; text-align:center; margin:2px 0 4px; }
+/* only Student A looks */
+.q-card details.secret{ margin:4px 0 6px; width:100%; max-width:460px; text-align:center; }
+.q-card details.secret summary{ font-weight:700; }
+.q-card .secret-body{ padding:8px 12px; }
+.q-card details.check{ margin-top:4px; width:100%; max-width:460px; text-align:left; }
+.q-card .check-body{ padding:8px 12px; font-size:.9rem; }
+.q-card .check-body p{ margin:0 0 4px; }
+</style>
+</head>
+<body>
+<div class="page" id="page">
+  <span class="cefr-tag cefr-a2">A2 · Elementary</span>
+  <h1>What Would You Say?</h1>
+  <p class="subtitle">Read the situation. Say the right thing with a modal verb.</p>
+
+  <div class="rule-box">
+    <p><strong>How to play (pairs, or teacher + student):</strong></p>
+    <p>1. Student A rolls 🎲. Read the situation and the job (advice, a polite request, permission…). Say it with a modal verb: “<b>You should take a pill.</b>”</p>
+    <p>2. Student B answers or reacts: “<b>Good idea, thanks!</b>” / “<b>Sure, no problem.</b>”</p>
+    <p>3. Press 👀 to see examples. Then change: B rolls, A reacts.</p>
+  </div>
+
+  <div class="q-card" id="qCard"><span class="q-placeholder">Roll the dice to start.</span></div>
+  <button class="dice-btn" id="diceBtn" aria-label="Roll">🎲</button>
+  <div class="roll-count">Rolls: <strong id="rollCount">0</strong></div>
+
+  <div class="sec-div">Now you</div>
+  <div class="rule-box">
+    <p><strong>Ask your partner.</strong> “<b>What languages can you speak? What could you do when you were a child? What can’t you do? What should a new student in your city do? What might you do this weekend?</b>” Write the answers.</p>
+    <p>Then say: “<b>Ana can speak three languages. She couldn’t swim when she was a child.</b>” Another partner? Press <b>➕ Add partner</b>.</p>
+  </div>
+  <div id="interview"></div>
+
+  <footer>What Would You Say? — Modal verbs: can, could, should, may, might, would (A2)</footer>
+</div>
+
+<div id="theme-toggle-wrap">
+  <button id="theme-toggle" aria-label="Toggle light/dark mode" title="Toggle light/dark mode">
+    <span id="theme-icon">☀️</span>
+  </button>
+</div>
+<script src="house.js"></script>
+<script src="house-interview.js"></script>
+<script>
+const pick = HouseRandomGen.pickFrom;
+const cap = s => s.charAt(0).toUpperCase() + s.slice(1);
+/* one card: a topic line, the cue (hidden from B when it is a secret), what to do, and the 👀 examples */
+const card = o =>
+  '<span class="q-topic">' + o.topic + '</span>' +
+  (o.secret ? '<details class="secret"><summary>' + o.secret + '</summary><div class="secret-body">' : '') +
+  (o.body || '') +
+  (o.pic ? '<div class="cue-main"><span class="big">' + o.pic + '</span>' + (o.cue || '') + '</div>' : (o.cue ? '<div class="cue-main">' + o.cue + '</div>' : '')) +
+  (o.sub ? '<div class="cue-sub">' + o.sub + '</div>' : '') +
+  (o.secret ? '</div></details>' : '') +
+  (o.prompt ? '<span class="q-prompt">' + o.prompt + '</span>' : '') +
+  (o.check ? '<details class="check"><summary>' + (o.checkLabel || '👀 Examples') + '</summary><div class="check-body">' +
+    o.check.map(l => '<p>' + l + '</p>').join('') + '</div></details>' : '');
+/* jobs: [picture, name, the modals to use] */
+const JOBS = {
+  advice: ['💡', 'Give advice', 'should / shouldn’t'],
+  request: ['🙏', 'Ask politely', 'Could you…? / Would you…?'],
+  permission: ['✋', 'Ask for permission', 'Can I…? / May I…?'],
+  possible: ['🤔', 'Say what is possible', 'might / may / could'],
+  ability: ['💪', 'Talk about ability', 'can / can’t · could / couldn’t'],
+  offer: ['☕', 'Offer or invite', 'Would you like…?']
+};
+/* [job, picture, the situation, example answers] */
+const SITS = [
+  ['advice', '🤒', 'Your friend has a headache.', ['You should take a pill.', 'You shouldn’t look at your phone.']],
+  ['advice', '😴', 'Your friend is always tired.', ['You should go to bed earlier.', 'You shouldn’t drink coffee at night.']],
+  ['advice', '💸', 'Your brother spends too much money.', ['You should make a budget.', 'You shouldn’t buy things online at night!']],
+  ['advice', '📚', 'Your friend has an exam tomorrow.', ['You should study tonight.', 'You shouldn’t go to the party.']],
+  ['advice', '🏋️', 'Your friend wants to get fit.', ['You should walk every day.', 'You shouldn’t eat so much fast food.']],
+  ['advice', '🗣️', 'Your friend wants to speak better English.', ['You should watch movies in English.', 'You shouldn’t be afraid of mistakes.']],
+  ['advice', '🧳', 'A friend is going to visit your city.', ['You should visit the old town.', 'You shouldn’t take a taxi at night alone.']],
+  ['request', '🪟', 'It’s very hot in the room. Someone is near the window.', ['Could you open the window, please?']],
+  ['request', '🧂', 'At dinner, you want the salt.', ['Could you pass the salt, please?']],
+  ['request', '🗺️', 'You are lost in a new city.', ['Excuse me, could you tell me where the station is?']],
+  ['request', '📸', 'You want a photo of you and your friend.', ['Would you take a photo of us, please?']],
+  ['request', '🔊', 'Your neighbor’s music is very loud.', ['Could you turn the music down, please?']],
+  ['request', '🧳', 'Your bag is very heavy.', ['Could you help me with my bag, please?']],
+  ['permission', '🚻', 'You’re in class. You need the bathroom.', ['May I go to the bathroom, please?']],
+  ['permission', '🔋', 'Your phone is dead. Your friend has a charger.', ['Can I use your charger?']],
+  ['permission', '🪑', 'In a café, there’s a free chair next to a stranger.', ['Excuse me, can I sit here?']],
+  ['permission', '🍪', 'Your friend has a box of cookies.', ['Can I have one?']],
+  ['permission', '🏠', 'You want to leave work early today.', ['May I leave early today?']],
+  ['possible', '☁️', 'The sky is very grey.', ['It might rain later.', 'It may be a storm.']],
+  ['possible', '🔑', 'You can’t find your keys.', ['They might be in the car.', 'They could be in my other bag.']],
+  ['possible', '📞', 'Your friend doesn’t answer the phone.', ['She might be asleep.', 'She may be at work.']],
+  ['possible', '🎉', 'You don’t know your plans for Saturday.', ['I might go to the beach.', 'I may visit my parents.']],
+  ['possible', '🚌', 'The bus is 30 minutes late.', ['There might be a lot of traffic.', 'It could be broken.']],
+  ['ability', '🏊', 'Swimming — now, and when you were five.', ['I can swim now, but I couldn’t swim when I was five.']],
+  ['ability', '🚲', 'Riding a bike — now, and when you were a child.', ['I could ride a bike when I was six.', 'I can’t ride a bike.']],
+  ['ability', '🗣️', 'Languages you speak.', ['I can speak Spanish and a little English.', 'I can’t speak French.']],
+  ['ability', '🍳', 'Cooking.', ['I can cook rice, but I can’t make bread.']],
+  ['ability', '🎸', 'Music.', ['I could play the guitar when I was a teenager.', 'I can’t sing!']],
+  ['offer', '☕', 'A guest arrives at your house.', ['Would you like a coffee?', 'Would you like to sit down?']],
+  ['offer', '🍰', 'There’s cake at your party.', ['Would you like some cake?']],
+  ['offer', '🎬', 'You want to go to the movies with a friend.', ['Would you like to see a movie on Friday?']]
+];
+
+HouseRandomGen.build({
+  items: SITS.map(([job, pic, sit, ex]) => ({ job, pic, sit, ex, text: sit + job })),
+  render: it => { const [jp, jn, mods] = JOBS[it.job]; return card({
+    topic: jp + ' ' + jn, pic: it.pic, cue: it.sit, sub: '<span class="chip chip-wh">' + mods + '</span>',
+    prompt: 'A: say it with a modal verb. B: answer or react.',
+    check: it.ex.map(e => '“' + e + '”').concat(['<span class="text-secondary">modal + base verb: no -s, no -ed, no “to”</span>'])
+  }); }
+});
+
+HouseInterview.build({
+  container: 'interview',
+  storageKey: 'a2-modal-verbs',
+  fields: [
+    { icon: '🗣️', label: 'can speak', placeholder: 'Spanish, a little English…' },
+    { icon: '🧒', label: 'could do as a child', placeholder: 'swim, ride a bike…' },
+    { icon: '🚫', label: 'can’t do', placeholder: 'drive, dance…' },
+    { icon: '💡', label: 'a new student should…', placeholder: 'visit the beach…' },
+    { icon: '🎉', label: 'might do this weekend', placeholder: 'go to a party…' },
+    { icon: '✨', label: 'would like to…', placeholder: 'travel to Japan…' }
+  ]
+});
+</script>
+</body>
+</html>

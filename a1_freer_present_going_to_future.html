@@ -1,0 +1,161 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<title>Not This Time! — Simple Present vs Going To</title>
+<script>
+(function(){
+  try{
+    var saved = localStorage.getItem('theme-preference');
+    var theme = (saved === 'light' || saved === 'dark')
+      ? saved
+      : ((window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches) ? 'dark' : 'light');
+    document.documentElement.setAttribute('data-theme', theme);
+    var fs = parseFloat(localStorage.getItem('font-size-preference'));
+    if (fs >= 10 && fs <= 28) document.documentElement.style.setProperty('--fs-base', fs + 'px');
+  }catch(e){ /* localStorage/matchMedia unavailable — CSS media query still applies */ }
+})();
+</script>
+<link rel="stylesheet" href="house.css">
+<style>
+/* the prompt on the card: a big picture, then the words */
+.cue-main{ font-size:1.25rem; font-weight:700; margin:4px 0 6px; text-align:center; }
+.cue-main .big{ display:block; font-size:2.6rem; line-height:1.1; margin-bottom:4px; }
+.cue-sub{ font-size:.95rem; color:var(--text-secondary); text-align:center; margin:0 0 4px; }
+.chip{ display:inline-block; padding:2px 10px; margin:2px; border-radius:999px; border:1px solid var(--color-border-tertiary); background:var(--surface-2); font-size:1rem; font-weight:700; }
+.chip-wh{ color:var(--pos-wh); border-color:var(--pos-wh); }
+/* two sides: what usually happens · what is different */
+.duo{ display:flex; align-items:stretch; justify-content:center; gap:10px; flex-wrap:wrap; margin:4px 0 6px; }
+.duo .side{ display:flex; flex-direction:column; align-items:center; gap:2px; min-width:9em; padding:6px 10px; border-radius:10px; border:1px solid var(--color-border-tertiary); background:var(--surface-2); font-weight:700; font-size:1rem; }
+.duo .side .when{ font-size:.8667rem; font-weight:600; color:var(--text-secondary); }
+.duo .side .big{ font-size:2.2rem; line-height:1.1; }
+.who{ font-size:1.1rem; font-weight:700; text-align:center; margin:2px 0 4px; }
+/* only Student A looks */
+.q-card details.secret{ margin:4px 0 6px; width:100%; max-width:460px; text-align:center; }
+.q-card details.secret summary{ font-weight:700; }
+.q-card .secret-body{ padding:8px 12px; }
+.q-card details.check{ margin-top:4px; width:100%; max-width:460px; text-align:left; }
+.q-card .check-body{ padding:8px 12px; font-size:.9rem; }
+.q-card .check-body p{ margin:0 0 4px; }
+</style>
+</head>
+<body>
+<div class="page" id="page">
+  <span class="cefr-tag cefr-a1">A1 · Beginner</span>
+  <h1>Not This Time!</h1>
+  <p class="subtitle">You usually do the same thing — but your plan is different this time!</p>
+
+  <div class="rule-box">
+    <p><strong>How to play (pairs, or teacher + student):</strong></p>
+    <p>1. Student A rolls 🎲. Say the sentence: “<b>I usually clean my room on Saturdays, but this Saturday I’m going to go to the beach.</b>”</p>
+    <p>2. Student B asks one question about the plan: “<b>Who are you going to go with?</b>”</p>
+    <p>3. Press 👀 to check. Then change: B rolls, A asks.</p>
+  </div>
+
+  <div class="q-card" id="qCard"><span class="q-placeholder">Roll the dice to start.</span></div>
+  <button class="dice-btn" id="diceBtn" aria-label="Roll">🎲</button>
+  <div class="roll-count">Rolls: <strong id="rollCount">0</strong></div>
+
+  <div class="sec-div">Now you</div>
+  <div class="rule-box">
+    <p><strong>Ask your partner about the weekend.</strong> “<b>What do you usually do on Saturdays? What are you going to do this Saturday?</b>” Write the answers.</p>
+    <p>Then say: “<b>Ana usually works on Saturdays, but this Saturday she’s going to relax.</b>” Another partner? Press <b>➕ Add partner</b>.</p>
+  </div>
+  <div id="interview"></div>
+
+  <footer>Not This Time! — Simple present (habits) vs going to (plans) (A1)</footer>
+</div>
+
+<div id="theme-toggle-wrap">
+  <button id="theme-toggle" aria-label="Toggle light/dark mode" title="Toggle light/dark mode">
+    <span id="theme-icon">☀️</span>
+  </button>
+</div>
+<script src="house.js"></script>
+<script src="house-interview.js"></script>
+<script>
+const pick = HouseRandomGen.pickFrom;
+const cap = s => s.charAt(0).toUpperCase() + s.slice(1);
+/* one card: a topic line, the cue (hidden from B when it is a secret), what to do, and the 👀 examples */
+const card = o =>
+  '<span class="q-topic">' + o.topic + '</span>' +
+  (o.secret ? '<details class="secret"><summary>' + o.secret + '</summary><div class="secret-body">' : '') +
+  (o.body || '') +
+  (o.pic ? '<div class="cue-main"><span class="big">' + o.pic + '</span>' + (o.cue || '') + '</div>' : (o.cue ? '<div class="cue-main">' + o.cue + '</div>' : '')) +
+  (o.sub ? '<div class="cue-sub">' + o.sub + '</div>' : '') +
+  (o.secret ? '</div></details>' : '') +
+  (o.prompt ? '<span class="q-prompt">' + o.prompt + '</span>' : '') +
+  (o.check ? '<details class="check"><summary>' + (o.checkLabel || '👀 Examples') + '</summary><div class="check-body">' +
+    o.check.map(l => '<p>' + l + '</p>').join('') + '</div></details>' : '');
+/* [picture, base, he/she form, -ing, past, the rest] */
+const VERBS = [
+  ['🧹', 'clean', 'cleans', 'cleaning', 'cleaned', 'my room'], ['🛋️', 'relax', 'relaxes', 'relaxing', 'relaxed', 'at home'],
+  ['🏋️', 'go', 'goes', 'going', 'went', 'to the gym'], ['👵', 'visit', 'visits', 'visiting', 'visited', 'my grandma'],
+  ['⚽', 'play', 'plays', 'playing', 'played', 'soccer'], ['🎬', 'watch', 'watches', 'watching', 'watched', 'a movie'],
+  ['🍝', 'cook', 'cooks', 'cooking', 'cooked', 'pasta'], ['🏖️', 'go', 'goes', 'going', 'went', 'to the beach'],
+  ['😴', 'sleep', 'sleeps', 'sleeping', 'slept', 'late'], ['🛍️', 'go', 'goes', 'going', 'went', 'shopping'],
+  ['📚', 'study', 'studies', 'studying', 'studied', 'English'], ['🍻', 'meet', 'meets', 'meeting', 'met', 'my friends'],
+  ['💃', 'go', 'goes', 'going', 'went', 'dancing'], ['🚲', 'ride', 'rides', 'riding', 'rode', 'my bike'],
+  ['🍽️', 'eat', 'eats', 'eating', 'ate', 'at a restaurant'], ['📖', 'read', 'reads', 'reading', 'read', 'a book'],
+  ['🎉', 'have', 'has', 'having', 'had', 'a party'], ['👟', 'buy', 'buys', 'buying', 'bought', 'new clothes'],
+  ['📸', 'take', 'takes', 'taking', 'took', 'photos'], ['🏔️', 'drive', 'drives', 'driving', 'drove', 'to the mountains'],
+  ['🏠', 'stay', 'stays', 'staying', 'stayed', 'at home'], ['💻', 'work', 'works', 'working', 'worked', 'late']
+].map(([pic, base, s, ing, past, rest]) => ({ pic, base, s, ing, past, rest }));
+/* [picture, who, he / she / they, his / her / their, kind: i = I · s = he or she · p = they] */
+const PEOPLE = [
+  ['🙋', 'I', 'I', 'my', 'i'], ['🙋', 'I', 'I', 'my', 'i'], ['👩', 'my mom', 'she', 'her', 's'], ['👨', 'my dad', 'he', 'his', 's'],
+  ['🧑', 'Tom', 'he', 'his', 's'], ['👩‍🦱', 'Ana', 'she', 'her', 's'], ['🧑‍🤝‍🧑', 'my friends', 'they', 'their', 'p'],
+  ['👵👴', 'my grandparents', 'they', 'their', 'p'], ['👧', 'my sister', 'she', 'her', 's']
+].map(([pic, who, pron, poss, kind]) => ({ pic, who, pron, poss, kind }));
+
+const twoVerbs = () => { const a = pick(VERBS); let b; do { b = pick(VERBS); } while (b.base + b.rest === a.base + a.rest); return [a, b]; };
+const restOf = (v, p) => v.rest.replace(/\bmy\b/g, p.poss);
+const restQ = (v, p) => v.rest.replace(/\bmy\b/g, p.kind === 'i' ? 'your' : p.poss);
+const pres = (v, p) => (p.kind === 's' ? v.s : v.base);
+const be = p => ({ i: 'am', s: 'is', p: 'are' })[p.kind];
+const beQ = p => ({ i: 'are', s: 'is', p: 'are' })[p.kind];
+const doQ = p => (p.kind === 's' ? 'does' : 'do');
+const pronQ = p => (p.kind === 'i' ? 'you' : p.pron);
+const whoQ = p => (p.kind === 'i' ? 'you' : p.who.replace(/^my /, 'your '));
+const contr = p => ({ i: 'I’m', s: p.pron + '’s', p: p.pron + '’re' })[p.kind];
+const S = p => cap(p.who);
+const side = (when, v, p) => '<span class="side"><span class="when">' + when + '</span><span class="big">' + v.pic + '</span>' + v.base + ' ' + restOf(v, p) + '</span>';
+const duo = (p, w1, v1, w2, v2) => '<div class="who">' + p.pic + ' ' + S(p) + '</div><div class="duo">' + side(w1, v1, p) + side(w2, v2, p) + '</div>';
+
+/* [usual time, the next one] */
+const TIMES = [['on Saturdays', 'this Saturday'], ['on Sundays', 'this Sunday'], ['in the evening', 'this evening'],
+  ['in the summer', 'next summer'], ['on Fridays', 'next Friday'], ['on weekends', 'next weekend'], ['on my birthday', 'on my next birthday']];
+
+HouseRandomGen.build({
+  pick: () => { const p = pick(PEOPLE), [v1, v2] = twoVerbs(), t = pick(TIMES); return { p, v1, v2, t, text: p.who + v1.base + v2.base + t[0] }; },
+  key: it => it.text,
+  render: ({ p, v1, v2, t }) => {
+    const t1 = t[0].replace(/\bmy\b/, p.poss), t2 = t[1].replace(/\bmy\b/, p.poss);
+    const q1 = t[0].replace(/\bmy\b/, p.kind === 'i' ? 'your' : p.poss), q2 = t[1].replace(/\bmy\b/, p.kind === 'i' ? 'your' : p.poss);
+    return card({
+      topic: '📅 Usually… but ' + t2 + '!',
+      body: duo(p, '🗓️ ' + t1, v1, '🎯 ' + t2, v2),
+      prompt: 'A: say the sentence. B: ask one question about the plan.',
+      checkLabel: '👀 Check',
+      check: ['✅ “' + S(p) + ' usually <b>' + pres(v1, p) + '</b> ' + restOf(v1, p) + ' ' + t1 + ', but ' + t2 + ' <b>' + contr(p) + ' going to ' + v2.base + '</b> ' + restOf(v2, p) + '.”',
+              '❓ “What ' + doQ(p) + ' ' + whoQ(p) + ' usually do ' + q1 + '?” · “What ' + beQ(p) + ' ' + pronQ(p) + ' going to do ' + q2 + '?”',
+              '<span class="text-secondary">habits → <b>present simple</b> · plans → <b>am / is / are going to + verb</b></span>']
+    });
+  }
+});
+
+HouseInterview.build({
+  container: 'interview',
+  storageKey: 'a1-present-going-to-future',
+  fields: [
+    { icon: '🗓️', label: 'usually does on Saturdays', placeholder: 'works, cleans…' },
+    { icon: '🎯', label: 'is going to do this Saturday', placeholder: 'visit friends…' },
+    { icon: '☀️', label: 'usually does on Sundays', placeholder: 'relaxes, cooks…' },
+    { icon: '🎯', label: 'is going to do this Sunday', placeholder: 'go to the park…' },
+    { icon: '🍽️', label: 'is going to eat tonight', placeholder: 'pizza, chicken…' }
+  ]
+});
+</script>
+</body>
+</html>

@@ -1,0 +1,148 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<title>Who or What Is It? — Subject Pronouns</title>
+<script>
+(function(){
+  try{
+    var saved = localStorage.getItem('theme-preference');
+    var theme = (saved === 'light' || saved === 'dark')
+      ? saved
+      : ((window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches) ? 'dark' : 'light');
+    document.documentElement.setAttribute('data-theme', theme);
+    var fs = parseFloat(localStorage.getItem('font-size-preference'));
+    if (fs >= 10 && fs <= 28) document.documentElement.style.setProperty('--fs-base', fs + 'px');
+  }catch(e){ /* localStorage/matchMedia unavailable — CSS media query still applies */ }
+})();
+</script>
+<link rel="stylesheet" href="house.css">
+<style>
+/* the prompt on the card: a big picture, then the words */
+.cue-main{ font-size:1.25rem; font-weight:700; margin:4px 0 6px; text-align:center; }
+.cue-main .big{ display:block; font-size:2.6rem; line-height:1.1; margin-bottom:4px; }
+.cue-sub{ font-size:.95rem; color:var(--text-secondary); text-align:center; margin:0 0 4px; }
+.chip{ display:inline-block; padding:2px 10px; margin:2px; border-radius:999px; border:1px solid var(--color-border-tertiary); background:var(--surface-2); font-size:1rem; font-weight:700; }
+.chip-wh{ color:var(--pos-wh); border-color:var(--pos-wh); }
+/* two sides: what usually happens · what is different */
+.duo{ display:flex; align-items:stretch; justify-content:center; gap:10px; flex-wrap:wrap; margin:4px 0 6px; }
+.duo .side{ display:flex; flex-direction:column; align-items:center; gap:2px; min-width:9em; padding:6px 10px; border-radius:10px; border:1px solid var(--color-border-tertiary); background:var(--surface-2); font-weight:700; font-size:1rem; }
+.duo .side .when{ font-size:.8667rem; font-weight:600; color:var(--text-secondary); }
+.duo .side .big{ font-size:2.2rem; line-height:1.1; }
+.who{ font-size:1.1rem; font-weight:700; text-align:center; margin:2px 0 4px; }
+/* only Student A looks */
+.q-card details.secret{ margin:4px 0 6px; width:100%; max-width:460px; text-align:center; }
+.q-card details.secret summary{ font-weight:700; }
+.q-card .secret-body{ padding:8px 12px; }
+.q-card details.check{ margin-top:4px; width:100%; max-width:460px; text-align:left; }
+.q-card .check-body{ padding:8px 12px; font-size:.9rem; }
+.q-card .check-body p{ margin:0 0 4px; }
+</style>
+</head>
+<body>
+<div class="page" id="page">
+  <span class="cefr-tag cefr-a1">A1 · Beginner</span>
+  <h1>Who or What Is It?</h1>
+  <p class="subtitle">Describe it with he, she, it or they. Can your partner guess?</p>
+
+  <div class="rule-box">
+    <p><strong>How to play (pairs, or teacher + student):</strong></p>
+    <p>1. Student A rolls 🎲 and opens 🤫. Only A looks! Say three sentences. Use <b>he, she, it</b> or <b>they</b> — don’t say the word! “<b>It is big. It is grey. It lives in Africa.</b>”</p>
+    <p>2. Student B guesses: “<b>Is it an elephant?</b>” A: “<b>Yes, it is!</b>” / “<b>No, it isn’t.</b>”</p>
+    <p>3. Press 👀 for help. Then change: B rolls, A guesses.</p>
+  </div>
+
+  <div class="q-card" id="qCard"><span class="q-placeholder">Roll the dice to start.</span></div>
+  <button class="dice-btn" id="diceBtn" aria-label="Roll">🎲</button>
+  <div class="roll-count">Rolls: <strong id="rollCount">0</strong></div>
+
+  <div class="sec-div">Now you</div>
+  <div class="rule-box">
+    <p><strong>Ask your partner about the people and things in their life.</strong> “<b>Who is your best friend? What is he like?</b>” Write a name and a sentence.</p>
+    <p>Then say: “<b>Ana’s best friend is Luis. He is funny.</b>” Another partner? Press <b>➕ Add partner</b>.</p>
+  </div>
+  <div id="interview"></div>
+
+  <footer>Who or What Is It? — Subject pronouns: I, you, he, she, it, we, they (A1)</footer>
+</div>
+
+<div id="theme-toggle-wrap">
+  <button id="theme-toggle" aria-label="Toggle light/dark mode" title="Toggle light/dark mode">
+    <span id="theme-icon">☀️</span>
+  </button>
+</div>
+<script src="house.js"></script>
+<script src="house-interview.js"></script>
+<script>
+const pick = HouseRandomGen.pickFrom;
+const cap = s => s.charAt(0).toUpperCase() + s.slice(1);
+/* one card: a topic line, the cue (hidden from B when it is a secret), what to do, and the 👀 examples */
+const card = o =>
+  '<span class="q-topic">' + o.topic + '</span>' +
+  (o.secret ? '<details class="secret"><summary>' + o.secret + '</summary><div class="secret-body">' : '') +
+  (o.body || '') +
+  (o.pic ? '<div class="cue-main"><span class="big">' + o.pic + '</span>' + (o.cue || '') + '</div>' : (o.cue ? '<div class="cue-main">' + o.cue + '</div>' : '')) +
+  (o.sub ? '<div class="cue-sub">' + o.sub + '</div>' : '') +
+  (o.secret ? '</div></details>' : '') +
+  (o.prompt ? '<span class="q-prompt">' + o.prompt + '</span>' : '') +
+  (o.check ? '<details class="check"><summary>' + (o.checkLabel || '👀 Examples') + '</summary><div class="check-body">' +
+    o.check.map(l => '<p>' + l + '</p>').join('') + '</div></details>' : '');
+/* [picture, the word, pronoun, three clues] */
+const ITEMS = [
+  ['🐘', 'an elephant', 'it', ['It is big.', 'It is grey.', 'It lives in Africa and Asia.']],
+  ['👩‍⚕️', 'a doctor', 'she', ['She works in a hospital.', 'She helps sick people.', 'She wears a white coat.']],
+  ['👨‍🍳', 'a chef', 'he', ['He works in a restaurant.', 'He cooks food.', 'He wears a white hat.']],
+  ['🐈🐈', 'cats', 'they', ['They are small animals.', 'They like milk.', 'They say “meow”.']],
+  ['☀️', 'the sun', 'it', ['It is hot.', 'It is in the sky.', 'It is yellow.']],
+  ['👨‍🏫', 'a teacher', 'he', ['He works in a school.', 'He helps students.', 'He gives homework.']],
+  ['👩‍🌾', 'a farmer', 'she', ['She works outside.', 'She has animals.', 'She grows food.']],
+  ['👨‍✈️', 'a pilot', 'he', ['He works in the sky.', 'He flies planes.', 'He travels a lot.']],
+  ['👩‍🎤', 'a singer', 'she', ['She has a beautiful voice.', 'She sings songs.', 'She works at night.']],
+  ['🐕', 'a dog', 'it', ['It is an animal.', 'It is a friend.', 'It says “woof”.']],
+  ['🚗', 'a car', 'it', ['It has four wheels.', 'It is fast.', 'It needs gas.']],
+  ['📱', 'a phone', 'it', ['It is small.', 'It is in my bag.', 'I call people with it.']],
+  ['🦒', 'a giraffe', 'it', ['It is an animal.', 'It is very tall.', 'It eats leaves.']],
+  ['🐝🐝', 'bees', 'they', ['They are very small.', 'They are yellow and black.', 'They make honey.']],
+  ['🍕', 'pizza', 'it', ['It is food.', 'It is from Italy.', 'It has cheese.']],
+  ['🌳🌳', 'trees', 'they', ['They are green.', 'They are tall.', 'They are in the park.']],
+  ['👨‍🔧', 'a mechanic', 'he', ['He works in a garage.', 'He fixes cars.', 'His hands are dirty.']],
+  ['👩‍💻', 'a programmer', 'she', ['She works with computers.', 'She writes code.', 'She sits all day.']],
+  ['👟👟', 'shoes', 'they', ['They are on my feet.', 'They are black.', 'I wear them every day.']],
+  ['👶', 'a baby', 'she', ['She is very small.', 'She cries a lot.', 'She drinks milk.']],
+  ['🌧️', 'rain', 'it', ['It is water.', 'It comes from the sky.', 'It is wet.']],
+  ['👮‍♀️', 'a police officer', 'she', ['She works in the street.', 'She helps people.', 'She wears a uniform.']],
+  ['🐟🐟', 'fish', 'they', ['They live in water.', 'They swim.', 'They can’t walk.']],
+  ['👓', 'glasses', 'they', ['They are on my face.', 'They help me see.', 'I wear them to read.']]
+];
+const Q = { he: 'Is he', she: 'Is she', it: 'Is it', they: 'Are they' };
+const YES = { he: 'Yes, he is!', she: 'Yes, she is!', it: 'Yes, it is!', they: 'Yes, they are!' };
+const NO = { he: 'No, he isn’t.', she: 'No, she isn’t.', it: 'No, it isn’t.', they: 'No, they aren’t.' };
+
+HouseRandomGen.build({
+  pick: () => { const it = pick(ITEMS); return { it, text: it[1] }; },
+  key: x => x.text,
+  render: ({ it: [pic, word, pr, clues] }) => card({
+    topic: '🕵️ Guess it!', secret: '🤫 Student A: tap to look (B: don’t look!)',
+    pic, cue: word + ' → <b>' + cap(pr) + '</b>', sub: 'For example: ' + clues.join(' '),
+    prompt: 'A: three sentences with ' + pr + '. B: guess!',
+    checkLabel: '👀 Help',
+    check: ['❓ “<b>' + Q[pr] + '</b> ' + word + '?”', '✅ “' + YES[pr] + '” · ❌ “' + NO[pr] + '”',
+            '<span class="text-secondary">a man → he · a woman → she · a thing or an animal → it · two or more → they</span>']
+  })
+});
+
+HouseInterview.build({
+  container: 'interview',
+  storageKey: 'a1-subject-pronouns',
+  fields: [
+    { icon: '🧑', label: 'best friend', placeholder: 'Luis — he is funny.' },
+    { icon: '👨‍👩‍👧', label: 'family', placeholder: 'my parents — they are…' },
+    { icon: '🐾', label: 'pet', placeholder: 'Max — it is small.' },
+    { icon: '🧑‍🏫', label: 'favorite teacher', placeholder: 'Ms. Ruiz — she is kind.' },
+    { icon: '🍕', label: 'favorite food', placeholder: 'pizza — it is delicious.' }
+  ]
+});
+</script>
+</body>
+</html>
