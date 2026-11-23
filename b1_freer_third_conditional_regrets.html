@@ -1,0 +1,139 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<title>Regret Rewind — Third Conditional</title>
+<script>
+(function(){
+  try{
+    var saved = localStorage.getItem('theme-preference');
+    var theme = (saved === 'light' || saved === 'dark')
+      ? saved
+      : ((window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches) ? 'dark' : 'light');
+    document.documentElement.setAttribute('data-theme', theme);
+    var fs = parseFloat(localStorage.getItem('font-size-preference'));
+    if (fs >= 10 && fs <= 28) document.documentElement.style.setProperty('--fs-base', fs + 'px');
+  }catch(e){ /* localStorage/matchMedia unavailable — CSS media query still applies */ }
+})();
+</script>
+<link rel="stylesheet" href="house.css">
+<style>
+/* the prompt on the card: a big picture, then the words */
+.cue-main{ font-size:1.25rem; font-weight:700; margin:4px 0 6px; text-align:center; }
+.cue-main .big{ display:block; font-size:2.6rem; line-height:1.1; margin-bottom:4px; }
+.cue-sub{ font-size:.95rem; color:var(--text-secondary); text-align:center; margin:0 0 4px; }
+.chip{ display:inline-block; padding:2px 10px; margin:2px; border-radius:999px; border:1px solid var(--color-border-tertiary); background:var(--surface-2); font-size:1rem; font-weight:700; }
+.chip-wh{ color:var(--pos-wh); border-color:var(--pos-wh); }
+/* two sides: what usually happens · what is different */
+.duo{ display:flex; align-items:stretch; justify-content:center; gap:10px; flex-wrap:wrap; margin:4px 0 6px; }
+.duo .side{ display:flex; flex-direction:column; align-items:center; gap:2px; min-width:9em; padding:6px 10px; border-radius:10px; border:1px solid var(--color-border-tertiary); background:var(--surface-2); font-weight:700; font-size:1rem; }
+.duo .side .when{ font-size:.8667rem; font-weight:600; color:var(--text-secondary); }
+.duo .side .big{ font-size:2.2rem; line-height:1.1; }
+.who{ font-size:1.1rem; font-weight:700; text-align:center; margin:2px 0 4px; }
+/* only Student A looks */
+.q-card details.secret{ margin:4px 0 6px; width:100%; max-width:460px; text-align:center; }
+.q-card details.secret summary{ font-weight:700; }
+.q-card .secret-body{ padding:8px 12px; }
+.q-card details.check{ margin-top:4px; width:100%; max-width:460px; text-align:left; }
+.q-card .check-body{ padding:8px 12px; font-size:.9rem; }
+.q-card .check-body p{ margin:0 0 4px; }
+</style>
+</head>
+<body>
+<div class="page" id="page">
+  <span class="cefr-tag cefr-b1">B1 · Intermediate</span>
+  <h1>Regret Rewind</h1>
+  <p class="subtitle">Something went wrong. Rewind the past — then blame someone, or make them feel better!</p>
+
+  <div class="rule-box">
+    <p><strong>How to play (pairs, or teacher + student):</strong></p>
+    <p>1. Student A rolls 🎲. Read what happened (📍) and say your regret: “<b>If I had set an alarm, I would have caught the flight.</b>”</p>
+    <p>2. Student B chooses: 😠 <b>criticize</b> — “<b>Well, if you hadn’t stayed up so late…</b>” — or 🤗 <b>comfort</b> — “<b>Don’t worry. If you had caught it, you might have sat next to a crying baby!</b>”</p>
+    <p>3. Press 👀 to see the forms. Then change: B rolls, A answers.</p>
+  </div>
+
+  <div class="q-card" id="qCard"><span class="q-placeholder">Roll the dice to start.</span></div>
+  <button class="dice-btn" id="diceBtn" aria-label="Roll">🎲</button>
+  <div class="roll-count">Rolls: <strong id="rollCount">0</strong></div>
+
+  <div class="sec-div">Now you</div>
+  <div class="rule-box">
+    <p><strong>Interview your partner about their past.</strong> “<b>What would your life be like if you hadn’t learned English? What’s a small regret you have? What was a lucky moment?</b>” Write the answers.</p>
+    <p>Then report: “<b>If Ana hadn’t gone to that party, she wouldn’t have met her husband.</b>” Another partner? Press <b>➕ Add partner</b>.</p>
+  </div>
+  <div id="interview"></div>
+
+  <footer>Regret Rewind — Third conditional: regrets and criticism (B1)</footer>
+</div>
+
+<div id="theme-toggle-wrap">
+  <button id="theme-toggle" aria-label="Toggle light/dark mode" title="Toggle light/dark mode">
+    <span id="theme-icon">☀️</span>
+  </button>
+</div>
+<script src="house.js"></script>
+<script src="house-interview.js"></script>
+<script src="house-flow.js"></script>
+<script>
+const pick = HouseRandomGen.pickFrom;
+const cap = s => s.charAt(0).toUpperCase() + s.slice(1);
+/* one card: a topic line, the cue (hidden from B when it is a secret), what to do, and the 👀 examples */
+const card = o =>
+  '<span class="q-topic">' + o.topic + '</span>' +
+  (o.secret ? '<details class="secret"><summary>' + o.secret + '</summary><div class="secret-body">' : '') +
+  (o.body || '') +
+  (o.pic ? '<div class="cue-main"><span class="big">' + o.pic + '</span>' + (o.cue || '') + '</div>' : (o.cue ? '<div class="cue-main">' + o.cue + '</div>' : '')) +
+  (o.sub ? '<div class="cue-sub">' + o.sub + '</div>' : '') +
+  (o.secret ? '</div></details>' : '') +
+  (o.prompt ? '<span class="q-prompt">' + o.prompt + '</span>' : '') +
+  (o.check ? '<details class="check"><summary>' + (o.checkLabel || '👀 Examples') + '</summary><div class="check-body">' +
+    o.check.map(l => '<p>' + l + '</p>').join('') + '</div></details>' : '');
+const N = (text, icon) => ({ text, icon });
+/* [what happened, the cause, picture, the imagined result, picture, the real result, picture, which branch really happened] */
+const STORIES = [
+  ['You missed your flight.', 'I set an alarm', '⏰', 'catch the flight', '✈️', 'miss the flight', '😩', 'no'],
+  ['You failed your driving test.', 'I practice more', '🚗', 'pass the test', '✅', 'fail the test', '❌', 'no'],
+  ['You lost your phone on the bus.', 'I put it in my bag', '👜', 'still have my phone', '📱', 'lose it', '😱', 'no'],
+  ['Your birthday cake was a disaster.', 'I follow the recipe', '📖', 'make a great cake', '🎂', 'make a disaster', '💥', 'no'],
+  ['You got sunburned at the beach.', 'I use sunscreen', '🧴', 'enjoy the day', '😎', 'get sunburned', '🦞', 'no'],
+  ['You were late for a job interview.', 'I check the traffic', '🚦', 'arrive on time', '⏰', 'arrive late', '🏃', 'no'],
+  ['You ate too much and felt sick.', 'I eat so much', '🍰', 'feel sick', '🤢', 'feel fine', '🙂', 'yes'],
+  ['You argued with your best friend.', 'I say sorry', '🙏', 'stay friends', '🤝', 'argue for a week', '😠', 'no'],
+  ['You forgot your mom’s birthday.', 'I write it in my calendar', '📅', 'call her', '📞', 'forget', '😬', 'no'],
+  ['Your team lost the final.', 'we train harder', '⚽', 'win the cup', '🏆', 'lose the final', '😞', 'no'],
+  ['You bought a jacket you never wear.', 'I think about it first', '🤔', 'save the money', '💰', 'waste $200', '🧥', 'no'],
+  ['You stayed up late and slept through a meeting.', 'I go to bed early', '🛏️', 'be at the meeting', '💼', 'sleep through it', '😴', 'no'],
+  ['You took the wrong bus and got lost.', 'I check the number', '🚌', 'arrive easily', '🗺️', 'get lost', '😵', 'no'],
+  ['You watched a terrible movie at the cinema.', 'I read the reviews', '⭐', 'choose a better movie', '🎬', 'waste the evening', '🥱', 'no']
+];
+
+HouseRandomGen.build({
+  items: STORIES.map(s => ({ s, text: s[0] })),
+  render: ({ s: [what, cause, ci, imag, ii, real, ri, rb] }) => {
+    const flow = rb === 'no'
+      ? { cause: N(cause, ci), yes: N(imag, ii), no: N(real, ri), real: 'no', say: 'yes' }
+      : { cause: N(cause, ci), yes: N(imag, ii), no: N(real, ri), real: 'yes', say: 'no' };
+    return card({
+      topic: '⏪ Regret rewind', body: '<div class="cue-main">📍 ' + what + '</div>' + HouseFlow.svg(flow),
+      prompt: 'A: say your regret. B: criticize 😠 or comfort 🤗.',
+      check: ['😔 “If I had / hadn’t + past participle, I would have …”', '😠 “If you hadn’t …, you wouldn’t have …”',
+              '🤗 “Don’t worry. If you had …, you might have …”', '<span class="text-secondary">📍 = what really happened · the highlighted path = the past you imagine</span>']
+    });
+  }
+});
+
+HouseInterview.build({
+  container: 'interview',
+  storageKey: 'b1-third-conditional-regrets',
+  fields: [
+    { icon: '🗣️', label: 'if she hadn’t learned English', placeholder: 'wouldn’t have got her job…' },
+    { icon: '🏙️', label: 'if she had grown up somewhere else', placeholder: 'would have learned to surf…' },
+    { icon: '😅', label: 'a small regret', placeholder: 'If I had saved more…' },
+    { icon: '🍀', label: 'a lucky moment', placeholder: 'If I hadn’t missed the bus, I wouldn’t have met…' },
+    { icon: '🙌', label: 'her best decision', placeholder: 'If I hadn’t moved…' }
+  ]
+});
+</script>
+</body>
+</html>

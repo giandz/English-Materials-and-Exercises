@@ -1,0 +1,110 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<title>Second Conditional — Practice</title>
+<script>
+(function(){
+  try{
+    var saved = localStorage.getItem('theme-preference');
+    var theme = (saved === 'light' || saved === 'dark')
+      ? saved
+      : ((window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches) ? 'dark' : 'light');
+    document.documentElement.setAttribute('data-theme', theme);
+    var fs = parseFloat(localStorage.getItem('font-size-preference'));
+    if (fs >= 10 && fs <= 28) document.documentElement.style.setProperty('--fs-base', fs + 'px');
+  }catch(e){ /* localStorage/matchMedia unavailable — CSS media query still applies */ }
+})();
+</script>
+<link rel="stylesheet" href="house.css">
+<style>
+
+</style>
+</head>
+<body>
+<div class="page" id="page">
+  <span class="cefr-tag cefr-b1">B1 · Intermediate</span>
+  <h1>Second Conditional — Practice</h1>
+  <p class="subtitle">Dreams, imagination and advice: if + past simple, would + verb.</p>
+
+  <div class="sec-div">Practice 1 — Follow the path</div>
+  <p class="subtitle">Read the sentence. Tap the result it talks about.</p>
+  <div class="score-bar"><span>Correct: <strong id="fqScore">0</strong> / <span id="fqTotal">0</span></span></div>
+  <div id="flowQuiz"></div>
+
+  <div class="sec-div">Practice 2 — Word order</div>
+  <p class="subtitle">Tap the words to build the sentence. Tap a word again to take it back, or drag to change the order.</p>
+  <button class="grammar-toggle-btn" id="grammarToggle">🎨 Show Grammar</button>
+  <div class="pos-legend"></div>
+  <div class="score-bar"><span>Correct: <strong id="woScore">0</strong> / <span id="woTotal">0</span></span></div>
+  <div id="woItems"></div>
+
+  <div class="sec-div">Practice 3 — Complete the sentences</div>
+  <p class="subtitle">Write the missing words. The bar turns green 🔴→🟢 when you are right.</p>
+  <div id="gfItems"></div>
+
+  <footer>Second conditional — Controlled practice (B1)</footer>
+</div>
+
+<div id="theme-toggle-wrap">
+  <button id="theme-toggle" aria-label="Toggle light/dark mode" title="Toggle light/dark mode">
+    <span id="theme-icon">☀️</span>
+  </button>
+</div>
+<script src="house.js"></script>
+<script src="house-flow.js"></script>
+<script>
+/* a node (p = how sure, 0–1), and a flow: cause → ✔️ / ❌ → results; say = the path the speaker talks about;
+   real = the branch that is really true now (📍) — the other one is imagined */
+const N = (text, icon, p, when) => ({ text, icon, p, when });
+const FL = (cause, yes, no, say, more) => Object.assign({ cause, yes, no, say }, more || {});
+const SURE = [['would', 1], ['would probably', .8], ['might / could', .5], ['probably wouldn’t', .2], ['wouldn’t', 0]];
+const sureRow = () => '<div class="pct-row">' + SURE.map(([w, p]) => '<span style="border-color:hsl(' + HouseFlow.hue(p) + ',70%,42%);color:hsl(' + HouseFlow.hue(p) + ',70%,35%)">' + w + ' · ' + Math.round(p * 100) + '%</span>').join('') + '</div>';
+
+const FLOW_QUIZ = [
+  { sentence: 'If I had a car, I’d drive to work.',
+    flow: FL(N('I have a car', '🚗'), N('drive to work', '🛣️', 1), N('take the bus', '🚌'), null, { real: 'no' }), answer: { branch: 'yes' } },
+  { sentence: 'If I didn’t have to work, I’d sleep until noon.',
+    flow: FL(N('I have to work', '💼'), N('get up at six', '⏰'), N('sleep until noon', '😴', 1), null, { real: 'yes' }), answer: { branch: 'no' },
+    why: '<b>didn’t have to</b> = the ❌ path — and it’s imaginary: 📍 she really has to work.' },
+  { sentence: 'If she spoke French, she might get the job in Paris.',
+    flow: FL(N('she speaks French', '🇫🇷'), [N('get the job in Paris', '🗼', 1), N('get the job in Paris', '🗼', .5)], N('stay in her job here', '🏢'), null, { real: 'no' }), answer: { branch: 'yes', item: 1 },
+    why: '<b>might</b> = about 50%.' },
+  { sentence: 'If we lived by the sea, we would probably go surfing every day.',
+    flow: FL(N('we live by the sea', '🌊'), [N('go surfing every day', '🏄', .5), N('go surfing every day', '🏄', .8)], N('go to the gym', '🏋️'), null, { real: 'no' }), answer: { branch: 'yes', item: 1 },
+    why: '<b>would probably</b> = about 80%.' },
+  { sentence: 'If he weren’t so shy, he would talk to her.',
+    flow: FL(N('he is shy', '😳'), N('talk to her', '💬', 0), N('talk to her', '💬', 1), null, { real: 'yes' }), answer: { branch: 'no' },
+    why: '<b>weren’t</b> = the ❌ path. 📍 Really, he is shy — so he doesn’t talk to her.' },
+  { sentence: 'If I were you, I’d apologize.',
+    flow: FL(N('I’m in your place', '🔄'), [N('apologize', '🙏', 1), N('apologize', '🙏', .2)], N('it’s your decision', '🤷'), null, { real: 'no' }), answer: { branch: 'yes', item: 0 },
+    why: 'Strong advice: <b>I’d</b> = 100%.' }
+];
+const WO_ITEMS = [
+  { context: '🎟️ A dream', text: 'If / I / won / the lottery, / I / would / buy / a house.', pos: ['conj', 'subject', 'verb', 'object', 'subject', 'aux', 'verb', 'object'] },
+  { context: '💡 Advice', text: 'If / I / were / you, / I / would / call / her.', pos: ['conj', 'subject', 'verb', 'complement', 'subject', 'aux', 'verb', 'object'] },
+  { context: '🦸 Imagine…', text: 'What / would / you / do / if / you / could / fly?', pos: ['wh', 'aux', 'subject', 'verb', 'conj', 'subject', 'aux', 'verb'] },
+  { context: '🗾 Japan', text: 'She / might / feel / lonely / if / she / moved / to Japan.', pos: ['subject', 'aux', 'verb', 'adj', 'conj', 'subject', 'verb', 'prep'] },
+  { context: '💼 Work', text: 'If / my boss / were / nicer, / I / wouldn’t / leave.', pos: ['conj', 'subject', 'verb', 'adj', 'subject', 'neg', 'verb'] },
+  { context: '💰 Money', text: 'We / could / travel / more / if / we / had / more money.', pos: ['subject', 'aux', 'verb', 'adverb', 'conj', 'subject', 'verb', 'object'] }
+];
+const GF_LABELS = { pos: 'a dream', neg: 'negative', q: 'question', cel: 'advice', maybe: 'maybe — 50%' };
+const GF_ITEMS = [
+  { category: 'pos', direct: 'A big dream about money.', template: 'If I {0} the lottery, I {1} buy a house by the sea.', hints: [{ accepted: ['won'] }, { accepted: ['would'] }] },
+  { category: 'cel', direct: 'Give advice. You are not your friend!', template: 'If I {0} you, I {1} talk to your boss.', hints: [{ accepted: ['were', 'was'] }, { accepted: ['would'] }] },
+  { category: 'neg', direct: 'His boss is not kind.', template: 'If my boss {0} nicer, I {1} leave my job.', hints: [{ accepted: ['were', 'was'] }, { accepted: ['wouldn’t', "wouldn't", 'would not'] }] },
+  { category: 'q', direct: 'Ask about a super power.', template: 'What {0} you do if you {1} fly?', hints: [{ accepted: ['would'] }, { accepted: ['could'] }] },
+  { category: 'maybe', direct: 'Living in Japan — not sure.', template: 'If I moved to Japan, I {0} feel lonely.', hints: [{ accepted: ['might', 'could'] }] },
+  { category: 'pos', direct: 'Free time — a dream.', template: 'If I {0} more free time, I would {1} to fly a plane.', hints: [{ accepted: ['had'] }, { accepted: ['learn'] }] },
+  { category: 'neg', direct: 'Daniel is very busy.', template: 'If I {0} so busy, I would visit you more often.', hints: [{ accepted: ['weren’t', "weren't", 'wasn’t', "wasn't", 'were not', 'was not'] }] },
+  { category: 'cel', direct: 'Advice for a friend who is very tired.', template: 'If I were you, I {0} {1} a vacation.', hints: [{ accepted: ['would'] }, { accepted: ['take', 'have'] }] }
+];
+
+HouseFlow.quiz({ container: 'flowQuiz', items: FLOW_QUIZ, scoreEl: 'fqScore', totalEl: 'fqTotal' });
+HouseWordOrder.build({ container: 'woItems', items: WO_ITEMS, scoreEl: 'woScore', totalEl: 'woTotal' });
+HouseGapFill.build({ container: 'gfItems', items: GF_ITEMS, labels: GF_LABELS });
+</script>
+<script>HouseGrammar.init();</script>
+</body>
+</html>

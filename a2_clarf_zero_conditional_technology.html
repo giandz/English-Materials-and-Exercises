@@ -1,0 +1,158 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<title>Zero Conditional — Clarification</title>
+<script>
+(function(){
+  try{
+    var saved = localStorage.getItem('theme-preference');
+    var theme = (saved === 'light' || saved === 'dark')
+      ? saved
+      : ((window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches) ? 'dark' : 'light');
+    document.documentElement.setAttribute('data-theme', theme);
+    var fs = parseFloat(localStorage.getItem('font-size-preference'));
+    if (fs >= 10 && fs <= 28) document.documentElement.style.setProperty('--fs-base', fs + 'px');
+  }catch(e){ /* localStorage/matchMedia unavailable — CSS media query still applies */ }
+})();
+</script>
+<link rel="stylesheet" href="house.css">
+<style>
+.flow-card{ border:1px solid var(--color-border-tertiary); border-radius:var(--border-radius-lg); background:var(--surface-2); padding:10px 12px; margin-bottom:10px; }
+.flow-card .sent{ font-size:1rem; font-weight:600; margin-bottom:6px; }
+.flow-card .note{ font-size:.8333rem; color:var(--text-secondary); margin-top:4px; }
+.if-part{ color:hsl(217, 70%, 42%); font-weight:700; }
+.res-part{ color:hsl(120, 60%, 32%); font-weight:700; }
+.res-no{ color:hsl(0, 65%, 42%); font-weight:700; }
+[data-theme="dark"] .res-no{ color:hsl(0, 75%, 70%); }
+[data-theme="dark"] .if-part{ color:hsl(217, 80%, 70%); }
+[data-theme="dark"] .res-part{ color:hsl(120, 55%, 65%); }
+.form-table{ width:100%; border-collapse:collapse; margin:0 0 1rem; font-size:.9333rem; }
+.form-table th, .form-table td{ border:1px solid var(--color-border-tertiary); padding:7px 9px; text-align:left; vertical-align:top; }
+.form-table th{ background:var(--surface-1); font-size:.8rem; text-transform:uppercase; letter-spacing:.04em; color:var(--text-secondary); }
+.pct-row{ display:flex; flex-wrap:wrap; gap:6px; margin:0 0 1rem; }
+.pct-row span{ padding:3px 10px; border-radius:999px; font-weight:700; font-size:.8667rem; border:2px solid; }
+.rule-box p{ margin:0 0 6px; }
+.rule-box p:last-child{ margin-bottom:0; }
+</style>
+</head>
+<body>
+<div class="page" id="page">
+  <span class="cefr-tag cefr-a2">A2 · Elementary</span>
+  <h1>Zero Conditional: If you press it, it turns on</h1>
+  <p class="subtitle">Facts, science and how things work — every time.</p>
+
+  <div class="sec-div">Look</div>
+  <p class="subtitle">From the conversation. Blue is the <b>if</b>-part. Then follow the path: ✔️ it happens, ❌ it doesn’t.</p>
+  <div id="flowLegend"></div>
+  <div id="look"></div>
+
+  <div class="sec-div">Meaning</div>
+  <div class="rule-box" id="meaning"></div>
+
+  <div class="sec-div">Check the meaning</div>
+  <p class="subtitle">Answer the questions about each sentence.</p>
+  <div id="ccq"></div>
+
+  <div class="sec-div">Look at the form</div>
+  <p class="subtitle">What is each part? Drag a label (or tap a label, then tap a box).</p>
+  <div class="score-bar"><span>Correct: <strong id="fcScore">0</strong> / <span id="fcTotal">0</span></span></div>
+  <div id="formClarf"></div>
+  <div id="formRule"></div>
+
+  <div class="sec-div">Common mistakes</div>
+  <div id="mistakes"></div>
+
+  <div class="sec-div">Error hunt</div>
+  <p class="subtitle">Some sentences have one mistake. Some are correct! Tap a word — or a space between words — to fix it. Then press OK.</p>
+  <div class="score-bar"><span>Done: <strong id="errorScore">0</strong> / <span id="errorTotal">0</span></span></div>
+  <div id="errorHuntItems"></div>
+
+  <footer>Zero conditional — Clarification (A2)</footer>
+</div>
+
+<div id="theme-toggle-wrap">
+  <button id="theme-toggle" aria-label="Toggle light/dark mode" title="Toggle light/dark mode">
+    <span id="theme-icon">☀️</span>
+  </button>
+</div>
+<script src="house.js"></script>
+<script src="house-flow.js"></script>
+<script>
+/* a node, and a flow: cause → ✔️ / ❌ → results; say = the path the speaker talks about */
+const N = (text, icon, p, when) => ({ text, icon, p, when });
+const FL = (cause, yes, no, say, more) => Object.assign({ cause, yes, no, say }, more || {});
+
+const LEGEND = { percent: false };
+const LOOK = [
+  ['<span class="if-part">If you press this button,</span> <span class="res-part">the screen comes on.</span>',
+    FL(N('you press the button', '🔘'), N('the screen comes on', '📱'), N('it stays black', '⬛'), 'yes'),
+    'You press ✔️ → the screen comes on. Every time.'],
+  ['<span class="if-part">If the door is open,</span> <span class="res-no">the microwave doesn’t start.</span>',
+    FL(N('you close the door', '🚪'), N('it starts', '🍿'), N('it doesn’t start', '🚫'), 'no'),
+    'The door isn’t closed ❌ → it doesn’t start. The red path is the “no” path.'],
+  ['<span class="if-part">If you heat ice,</span> <span class="res-part">it melts.</span>',
+    FL(N('you heat ice', '🔥'), N('it melts', '💧'), N('it stays solid', '🧊'), 'yes'),
+    'Science facts work the same way: always true, 100%.']
+];
+const MEANING = '<p><strong>The zero conditional is for things that are always true:</strong> facts, science, and how machines and apps work.</p>' +
+  '<p>The result happens <b>every time</b> the if-part happens — 100%. So we can also say <b>when</b>: <i>When you press this button, the screen comes on.</i></p>' +
+  '<p>It is <b>not</b> for one plan in the future (<i>If it rains tomorrow, I’ll stay home</i> — that is the first conditional).</p>';
+const CCQ = [
+  { sentence: 'If you heat water to 100°C, it boils.', questions: [
+    { q: 'Does this happen every time?', opts: ['Yes', 'No'], correct: 0, why: 'Yes. It is a fact. It happens every time.' },
+    { q: 'Is it about one day in the future?', opts: ['Yes', 'No'], correct: 1, why: 'No. It is about always — any day, any water.' } ] },
+  { sentence: 'If you don’t charge your phone, the battery dies.', questions: [
+    { q: 'Is it the ✔️ path or the ❌ path?', opts: ['✔️', '❌'], correct: 1, why: '❌ — you <b>don’t</b> charge it: the if-part doesn’t happen.' },
+    { q: 'Can we say “When you don’t charge your phone…”?', opts: ['Yes', 'No'], correct: 0, why: 'Yes. In the zero conditional, <b>if</b> and <b>when</b> mean almost the same.' } ] }
+];
+const FORM_POOL = ['conj', 'wh', 'subject', 'verb', 'neg', 'object', 'adj'];
+const FORM = [
+  { form: 'aff', parts: [['If', 'conj'], ['you', 'subject'], ['press', 'verb'], ['this button', 'object'], [',', null], ['the screen', 'subject'], ['comes on', 'verb'], ['.', null]] },
+  { form: 'neg', parts: [['If', 'conj'], ['the door', 'subject'], ['is', 'verb'], ['open', 'adj'], [',', null], ['the microwave', 'subject'], ['doesn’t', 'neg'], ['start', 'verb'], ['.', null]] },
+  { form: 'aff', parts: [['Ice', 'subject'], ['melts', 'verb'], ['if', 'conj'], ['you', 'subject'], ['heat', 'verb'], ['it', 'object'], ['.', null]] },
+  { form: 'wh', parts: [['What', 'wh'], ['happens', 'verb'], ['if', 'conj'], ['I', 'subject'], ['press', 'verb'], ['this', 'object'], ['?', null]] }
+];
+const FORM_RULE = '<table class="form-table"><tr><th>if-part (the cause)</th><th>result</th></tr>' +
+  '<tr><td><span class="if-part">If</span> + present simple</td><td>present simple</td></tr>' +
+  '<tr><td><span class="if-part">If you press it,</span></td><td><span class="res-part">it turns on.</span></td></tr></table>' +
+  '<div class="rule-box"><p><strong>Two orders:</strong> <i>If you press it<b>,</b> it turns on.</i> = <i>It turns on if you press it.</i> When <b>if</b> comes first, use a comma.</p>' +
+  '<p><strong>No will:</strong> both parts are present simple. Don’t forget the <b>-s</b>: it turn<b>s</b>, it melt<b>s</b>, it doe<b>sn’t</b> start.</p></div>';
+const MISTAKES = [
+  ['If you will press it, the TV turns off.', 'If you press it, the TV turns off.'],
+  ['If you heat ice, it melt.', 'If you heat ice, it melts.'],
+  ['If you don’t charge it the battery dies.', 'If you don’t charge it, the battery dies.'],
+  ['The battery dies, if you don’t charge it.', 'The battery dies if you don’t charge it.'],
+  ['If the door is open, the microwave don’t start.', 'If the door is open, the microwave doesn’t start.']
+];
+const EH_ITEMS = [
+  { words: ['If', 'you', 'will', 'press', 'the', 'button', ',', 'the', 'TV', 'turns', 'off', '.'], error: { type: 'extra', wordIndex: 2 } },
+  { words: ['Water', 'boils', 'if', 'you', 'heat', 'it', 'to', '100°C', '.'], error: null },
+  { words: ['If', 'you', 'don’t', 'charge', 'your', 'phone', ',', 'the', 'battery', 'die', '.'],
+    error: { type: 'wrong', wordIndex: 9, options: ['dies', 'died', 'dying'], correct: 'dies' } },
+  { words: ['If', 'the', 'door', 'is', 'open', ',', 'the', 'microwave', 'doesn’t', 'start', '.'], error: null },
+  { words: ['If', 'you', 'open', 'the', 'door', ',', 'it', 'stop', 'beeping', '.'],
+    error: { type: 'wrong', wordIndex: 7, options: ['stops', 'stopped', 'stopping'], correct: 'stops' } },
+  { words: ['If', 'you', 'use', 'the', 'phone', 'while', 'it', 'charging', ',', 'it', 'gets', 'hot', '.'],
+    error: { type: 'missing', gapIndex: 7, options: ['is', 'are', 'does'], correct: 'is' } },
+  { words: ['What', 'happens', 'if', 'I', 'pressing', 'this', 'button', '?'],
+    error: { type: 'wrong', wordIndex: 4, options: ['press', 'pressed', 'presses'], correct: 'press' } },
+  { words: ['The', 'light', 'turns', 'on', 'if', 'you', 'clap', 'your', 'hands', '.'], error: null }
+];
+
+document.getElementById('flowLegend').innerHTML = HouseFlow.legend(LEGEND);
+document.getElementById('look').innerHTML = LOOK.map(([sent, flow, note]) =>
+  '<div class="flow-card"><div class="sent">' + sent + '</div>' + HouseFlow.svg(flow) + (note ? '<div class="note">' + note + '</div>' : '') + '</div>').join('');
+document.getElementById('meaning').innerHTML = MEANING;
+HouseCCQ.build({ container: 'ccq', items: CCQ });
+HouseFormClarf.build({ container: 'formClarf', scoreEl: 'fcScore', totalEl: 'fcTotal', pool: FORM_POOL, items: FORM });
+document.getElementById('formRule').innerHTML = FORM_RULE;
+document.getElementById('mistakes').innerHTML = MISTAKES.map(([no, yes]) =>
+  '<div class="pair-card"><div class="pair-line no"><span class="mark">✗</span>' + no + '</div>' +
+  '<div class="pair-line yes"><span class="mark">✓</span>' + yes + '</div></div>').join('');
+HouseErrorHunt.build({ container: 'errorHuntItems', items: EH_ITEMS, scoreEl: 'errorScore', totalEl: 'errorTotal' });
+</script>
+<script>HouseGrammar.init();</script>
+</body>
+</html>

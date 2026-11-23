@@ -1,0 +1,109 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<title>First Conditional — Practice</title>
+<script>
+(function(){
+  try{
+    var saved = localStorage.getItem('theme-preference');
+    var theme = (saved === 'light' || saved === 'dark')
+      ? saved
+      : ((window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches) ? 'dark' : 'light');
+    document.documentElement.setAttribute('data-theme', theme);
+    var fs = parseFloat(localStorage.getItem('font-size-preference'));
+    if (fs >= 10 && fs <= 28) document.documentElement.style.setProperty('--fs-base', fs + 'px');
+  }catch(e){ /* localStorage/matchMedia unavailable — CSS media query still applies */ }
+})();
+</script>
+<link rel="stylesheet" href="house.css">
+<style>
+
+</style>
+</head>
+<body>
+<div class="page" id="page">
+  <span class="cefr-tag cefr-a2">A2 · Elementary</span>
+  <h1>First Conditional — Practice</h1>
+  <p class="subtitle">Plans, possibilities and how sure you are: will, probably, might, won’t.</p>
+
+  <div class="sec-div">Practice 1 — Follow the path</div>
+  <p class="subtitle">Read the sentence. Tap the result it talks about.</p>
+  <div class="score-bar"><span>Correct: <strong id="fqScore">0</strong> / <span id="fqTotal">0</span></span></div>
+  <div id="flowQuiz"></div>
+
+  <div class="sec-div">Practice 2 — Word order</div>
+  <p class="subtitle">Tap the words to build the sentence. Tap a word again to take it back, or drag to change the order.</p>
+  <button class="grammar-toggle-btn" id="grammarToggle">🎨 Show Grammar</button>
+  <div class="pos-legend"></div>
+  <div class="score-bar"><span>Correct: <strong id="woScore">0</strong> / <span id="woTotal">0</span></span></div>
+  <div id="woItems"></div>
+
+  <div class="sec-div">Practice 3 — Complete the sentences</div>
+  <p class="subtitle">Write the missing words. The small label tells you how sure the person is. The bar turns green 🔴→🟢 when you are right.</p>
+  <div id="gfItems"></div>
+
+  <footer>First conditional — Controlled practice (A2)</footer>
+</div>
+
+<div id="theme-toggle-wrap">
+  <button id="theme-toggle" aria-label="Toggle light/dark mode" title="Toggle light/dark mode">
+    <span id="theme-icon">☀️</span>
+  </button>
+</div>
+<script src="house.js"></script>
+<script src="house-flow.js"></script>
+<script>
+/* a node (p = how sure, 0–1), and a flow: cause → ✔️ / ❌ → results; say = the path the speaker talks about */
+const N = (text, icon, p, when) => ({ text, icon, p, when });
+const FL = (cause, yes, no, say, more) => Object.assign({ cause, yes, no, say }, more || {});
+/* how sure each word is: the same scale on every page of this lesson */
+const SURE = [['will', 1], ['will probably', .8], ['may / might / could', .5], ['probably won’t', .2], ['won’t', 0]];
+const sureRow = () => '<div class="pct-row">' + SURE.map(([w, p]) => '<span style="border-color:hsl(' + HouseFlow.hue(p) + ',70%,42%);color:hsl(' + HouseFlow.hue(p) + ',70%,35%)">' + w + ' · ' + Math.round(p * 100) + '%</span>').join('') + '</div>';
+
+const FLOW_QUIZ = [
+  { sentence: 'If it rains tomorrow, we’ll stay at home.',
+    flow: FL(N('it rains tomorrow', '🌧️'), N('stay at home', '🏠', 1), N('go to the park', '🌳', 1)), answer: { branch: 'yes' } },
+  { sentence: 'If I don’t get the job, I might go back to school.',
+    flow: FL(N('I get the job', '💼'), N('start in May', '📅', 1), [N('go back to school', '🏫', .5), N('look for another job', '🔎', .8)]), answer: { branch: 'no', item: 0 } },
+  { sentence: 'If the tickets are cheap, we’ll probably go to the concert.',
+    flow: FL(N('the tickets are cheap', '🎟️'), [N('go to the concert', '🎸', 1), N('go to the concert', '🎸', .8)], N('watch it online', '💻', .5)), answer: { branch: 'yes', item: 1 },
+    why: '<b>will probably</b> = about 80%.' },
+  { sentence: 'If you don’t hurry, you won’t catch the bus.',
+    flow: FL(N('you hurry', '🏃'), N('catch the bus', '🚌', 1), [N('catch the bus', '🚌', .5), N('catch the bus', '🚌', 0)]), answer: { branch: 'no', item: 1 },
+    why: '<b>won’t</b> = 0%.' },
+  { sentence: 'If she saves enough money, she may buy a car next year.',
+    flow: FL(N('she saves enough money', '💰'), [N('buy a car', '🚗', 1), N('buy a car', '🚗', .5)], N('take the bus', '🚌', 1)), answer: { branch: 'yes', item: 1 },
+    why: '<b>may</b> = about 50%.' },
+  { sentence: 'If he doesn’t call me, I probably won’t go to the party.',
+    flow: FL(N('he calls me', '📞'), N('go to the party', '🎉', 1), [N('go to the party', '🎉', .2), N('go to the party', '🎉', .8)]), answer: { branch: 'no', item: 0 },
+    why: '<b>probably won’t</b> = about 20%.' }
+];
+const WO_ITEMS = [
+  { context: '🌧️ The weekend', text: 'If / it / rains, / we / will / stay / at home.', pos: ['conj', 'subject', 'verb', 'subject', 'aux', 'verb', 'prep'] },
+  { context: '🎬 Maybe…', text: 'I / might / go / to the cinema / if / I / have / time.', pos: ['subject', 'aux', 'verb', 'prep', 'conj', 'subject', 'verb', 'object'] },
+  { context: '📝 Exams', text: 'If / I / don’t / pass, / I / will / probably / work / in a shop.', pos: ['conj', 'subject', 'neg', 'verb', 'subject', 'aux', 'adverb', 'verb', 'prep'] },
+  { context: '❓ Ask a friend', text: 'What / will / you / do / if / it / rains?', pos: ['wh', 'aux', 'subject', 'verb', 'conj', 'subject', 'verb'] },
+  { context: '💼 The job', text: 'She / won’t / take / the job / if / they / don’t / pay / more.', pos: ['subject', 'neg', 'verb', 'object', 'conj', 'subject', 'neg', 'verb', 'adverb'] },
+  { context: '☕ After class', text: 'If / we / finish / early, / we / could / go / for a coffee.', pos: ['conj', 'subject', 'verb', 'adverb', 'subject', 'aux', 'verb', 'prep'] }
+];
+const GF_LABELS = { pos: '100% sure', neg: 'a sure “no”', cel: 'maybe — 50%', q: 'question', sure80: 'almost sure — 80%', no20: 'almost sure “no” — 20%' };
+const GF_ITEMS = [
+  { category: 'pos', direct: 'A sure plan for Saturday.', template: 'If the weather {0} nice, I {1} go to the beach.', hints: [{ accepted: ['is'] }, { accepted: ['will'] }] },
+  { category: 'cel', direct: 'Not sure. Use a modal verb.', template: 'If it rains, we {0} go to the cinema.', hints: [{ accepted: ['might', 'may', 'could'] }] },
+  { category: 'neg', direct: 'Exams: a sure “no”.', template: 'If I {0} pass, I {1} go to university.', hints: [{ accepted: ['don’t', "don't", 'do not'] }, { accepted: ['won’t', "won't", 'will not'] }] },
+  { category: 'sure80', direct: 'Almost sure. One word between “will” and the verb.', template: 'If I don’t pass, I will {0} work in my uncle’s shop.', hints: [{ accepted: ['probably'] }] },
+  { category: 'q', direct: 'Ask about the weather tomorrow.', template: 'What {0} you do if it {1} tomorrow?', hints: [{ accepted: ['will'] }, { accepted: ['rains', 'snows'] }] },
+  { category: 'cel', direct: 'A job offer — maybe.', template: 'If they offer me more money, I {0} take the job.', hints: [{ accepted: ['might', 'may', 'could'] }] },
+  { category: 'pos', direct: 'A promise to a friend.', template: 'If you {0} the job, we {1} celebrate!', hints: [{ accepted: ['get'] }, { accepted: ['will'] }] },
+  { category: 'no20', direct: 'The party: almost sure “no”.', template: 'If he doesn’t call, I {0} {1} go to the party.', hints: [{ accepted: ['probably'] }, { accepted: ['won’t', "won't"] }] }
+];
+
+HouseFlow.quiz({ container: 'flowQuiz', items: FLOW_QUIZ, scoreEl: 'fqScore', totalEl: 'fqTotal' });
+HouseWordOrder.build({ container: 'woItems', items: WO_ITEMS, scoreEl: 'woScore', totalEl: 'woTotal' });
+HouseGapFill.build({ container: 'gfItems', items: GF_ITEMS, labels: GF_LABELS });
+</script>
+<script>HouseGrammar.init();</script>
+</body>
+</html>

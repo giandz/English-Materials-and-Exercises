@@ -1,0 +1,145 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<title>The Dream Machine — Second Conditional</title>
+<script>
+(function(){
+  try{
+    var saved = localStorage.getItem('theme-preference');
+    var theme = (saved === 'light' || saved === 'dark')
+      ? saved
+      : ((window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches) ? 'dark' : 'light');
+    document.documentElement.setAttribute('data-theme', theme);
+    var fs = parseFloat(localStorage.getItem('font-size-preference'));
+    if (fs >= 10 && fs <= 28) document.documentElement.style.setProperty('--fs-base', fs + 'px');
+  }catch(e){ /* localStorage/matchMedia unavailable — CSS media query still applies */ }
+})();
+</script>
+<link rel="stylesheet" href="house.css">
+<style>
+/* the prompt on the card: a big picture, then the words */
+.cue-main{ font-size:1.25rem; font-weight:700; margin:4px 0 6px; text-align:center; }
+.cue-main .big{ display:block; font-size:2.6rem; line-height:1.1; margin-bottom:4px; }
+.cue-sub{ font-size:.95rem; color:var(--text-secondary); text-align:center; margin:0 0 4px; }
+.chip{ display:inline-block; padding:2px 10px; margin:2px; border-radius:999px; border:1px solid var(--color-border-tertiary); background:var(--surface-2); font-size:1rem; font-weight:700; }
+.chip-wh{ color:var(--pos-wh); border-color:var(--pos-wh); }
+/* two sides: what usually happens · what is different */
+.duo{ display:flex; align-items:stretch; justify-content:center; gap:10px; flex-wrap:wrap; margin:4px 0 6px; }
+.duo .side{ display:flex; flex-direction:column; align-items:center; gap:2px; min-width:9em; padding:6px 10px; border-radius:10px; border:1px solid var(--color-border-tertiary); background:var(--surface-2); font-weight:700; font-size:1rem; }
+.duo .side .when{ font-size:.8667rem; font-weight:600; color:var(--text-secondary); }
+.duo .side .big{ font-size:2.2rem; line-height:1.1; }
+.who{ font-size:1.1rem; font-weight:700; text-align:center; margin:2px 0 4px; }
+/* only Student A looks */
+.q-card details.secret{ margin:4px 0 6px; width:100%; max-width:460px; text-align:center; }
+.q-card details.secret summary{ font-weight:700; }
+.q-card .secret-body{ padding:8px 12px; }
+.q-card details.check{ margin-top:4px; width:100%; max-width:460px; text-align:left; }
+.q-card .check-body{ padding:8px 12px; font-size:.9rem; }
+.q-card .check-body p{ margin:0 0 4px; }
+</style>
+</head>
+<body>
+<div class="page" id="page">
+  <span class="cefr-tag cefr-b1">B1 · Intermediate</span>
+  <h1>The Dream Machine</h1>
+  <p class="subtitle">Imagine, dream — and give advice.</p>
+
+  <div class="rule-box">
+    <p><strong>How to play (pairs, or teacher + student):</strong></p>
+    <p>1. Student A rolls 🎲. There are two kinds of card:</p>
+    <p>💭 <b>Dream:</b> answer the question with two or three ideas. “<b>If I could fly, I’d visit my family every weekend. I might fly to Japan, too!</b>” B asks one more question: “<b>Would you take your dog?</b>”</p>
+    <p>💡 <b>Advice:</b> B reads the problem as if it were their own. A gives advice: “<b>If I were you, I’d talk to your neighbor.</b>” B answers: “<b>Good idea!</b>” or “<b>Hmm, I don’t think that would work, because…</b>”</p>
+    <p>2. Press 👀 to see examples. Then change: B rolls, A answers.</p>
+  </div>
+
+  <div class="q-card" id="qCard"><span class="q-placeholder">Roll the dice to start.</span></div>
+  <button class="dice-btn" id="diceBtn" aria-label="Roll">🎲</button>
+  <div class="roll-count">Rolls: <strong id="rollCount">0</strong></div>
+
+  <div class="sec-div">Now you</div>
+  <div class="rule-box">
+    <p><strong>Interview your partner about their dreams.</strong> “<b>What would you do if you won the lottery? Where would you live if you could live anywhere? What’s your advice for me?</b>” Write the answers.</p>
+    <p>Then report: “<b>If Ana won the lottery, she’d open a bakery. She said that if she were me, she’d study English every day.</b>” Another partner? Press <b>➕ Add partner</b>.</p>
+  </div>
+  <div id="interview"></div>
+
+  <footer>The Dream Machine — Second conditional and “If I were you” (B1)</footer>
+</div>
+
+<div id="theme-toggle-wrap">
+  <button id="theme-toggle" aria-label="Toggle light/dark mode" title="Toggle light/dark mode">
+    <span id="theme-icon">☀️</span>
+  </button>
+</div>
+<script src="house.js"></script>
+<script src="house-interview.js"></script>
+<script src="house-flow.js"></script>
+<script>
+const pick = HouseRandomGen.pickFrom;
+const cap = s => s.charAt(0).toUpperCase() + s.slice(1);
+/* one card: a topic line, the cue (hidden from B when it is a secret), what to do, and the 👀 examples */
+const card = o =>
+  '<span class="q-topic">' + o.topic + '</span>' +
+  (o.secret ? '<details class="secret"><summary>' + o.secret + '</summary><div class="secret-body">' : '') +
+  (o.body || '') +
+  (o.pic ? '<div class="cue-main"><span class="big">' + o.pic + '</span>' + (o.cue || '') + '</div>' : (o.cue ? '<div class="cue-main">' + o.cue + '</div>' : '')) +
+  (o.sub ? '<div class="cue-sub">' + o.sub + '</div>' : '') +
+  (o.secret ? '</div></details>' : '') +
+  (o.prompt ? '<span class="q-prompt">' + o.prompt + '</span>' : '') +
+  (o.check ? '<details class="check"><summary>' + (o.checkLabel || '👀 Examples') + '</summary><div class="check-body">' +
+    o.check.map(l => '<p>' + l + '</p>').join('') + '</div></details>' : '');
+const N = (text, icon, p) => ({ text, icon, p });
+/* [the question part, the same as a real-world cause, picture, what's really true] */
+const DREAMS = [
+  ['could fly', 'I can fly', '🦸', 'take the bus'], ['won a million dollars', 'I win a million dollars', '💵', 'go to work tomorrow'],
+  ['could speak every language', 'I speak every language', '🗣️', 'study English'], ['were the boss of your company', 'I’m the boss', '👔', 'do what my boss says'],
+  ['could live in any city', 'I can live in any city', '🌆', 'live here'], ['had a time machine', 'I have a time machine', '⏳', 'stay in the present'],
+  ['were invisible for a day', 'I’m invisible for a day', '👻', 'everyone sees me'], ['could meet anyone in the world', 'I can meet anyone', '🌟', 'meet my usual friends'],
+  ['didn’t have to work', 'I don’t have to work', '🏖️', 'go to work'], ['were ten years younger', 'I’m ten years younger', '🧒', 'act my age'],
+  ['had a robot at home', 'I have a robot at home', '🤖', 'do the housework myself'], ['could change one thing in your city', 'I can change my city', '🏙️', 'complain about it'],
+  ['were a famous singer', 'I’m a famous singer', '🎤', 'sing in the shower'], ['owned a restaurant', 'I own a restaurant', '🍽️', 'cook at home'],
+  ['could have any animal as a pet', 'I can have any pet', '🐯', 'have a normal pet (or none)']
+];
+const PROBLEMS = [
+  ['🐕', 'My neighbor’s dog barks all night.'], ['😴', 'I always feel tired at work.'], ['🗣️', 'My English teacher speaks too fast.'],
+  ['🛍️', 'I spend too much money on clothes.'], ['🎂', 'My best friend forgot my birthday.'], ['🎸', 'I want to learn the guitar, but I’m too busy.'],
+  ['🔋', 'My phone is always out of battery.'], ['😬', 'I’m nervous about a job interview.'], ['🍽️', 'My roommate never washes the dishes.'],
+  ['🌙', 'I can’t sleep at night.'], ['📱', 'I spend five hours a day on my phone.'], ['🏋️', 'I want to get fit, but I hate the gym.']
+];
+
+HouseRandomGen.build({
+  pick: () => Math.random() < 0.55
+    ? (d => ({ kind: 'd', d, text: d[0] }))(pick(DREAMS))
+    : (p => ({ kind: 'p', p, text: p[1] }))(pick(PROBLEMS)),
+  key: it => it.text,
+  render: it => it.kind === 'd'
+    ? card({
+        topic: '💭 Dream',
+        body: '<div class="cue-main">What would you do if you ' + it.d[0] + '?</div>' +
+          HouseFlow.svg({ cause: N(it.d[1], it.d[2]), yes: N('… ?', '', 1), no: N(it.d[3], ''), say: 'yes', real: 'no' }),
+        prompt: 'A: two or three ideas. B: ask one more question.',
+        check: ['“If I ' + it.d[0].replace(/\byour\b/g, 'my') + ', I’d … ”', '“I might … · I probably wouldn’t …”', '<span class="text-secondary">if + past simple, would / might / could + verb · 📍 = what’s really true</span>']
+      })
+    : card({
+        topic: '💡 Give advice', pic: it.p[0], cue: '“' + it.p[1] + '”',
+        prompt: 'B: say the problem. A: give advice. B: good idea — or not?',
+        check: ['“If I were you, I’d …”', '“If I were you, I wouldn’t …”', '<span class="text-secondary">If I were you + would / wouldn’t + verb</span>']
+      })
+});
+
+HouseInterview.build({
+  container: 'interview',
+  storageKey: 'b1-second-conditional-dreams',
+  fields: [
+    { icon: '🎟️', label: 'if she won the lottery', placeholder: 'would open a bakery…' },
+    { icon: '🌍', label: 'if she could live anywhere', placeholder: 'would live in Lisbon…' },
+    { icon: '🦸', label: 'if she had a super power', placeholder: 'would be invisible…' },
+    { icon: '⏰', label: 'if she had more free time', placeholder: 'might learn to paint…' },
+    { icon: '💡', label: 'her advice for me', placeholder: 'If I were you, I’d…' }
+  ]
+});
+</script>
+</body>
+</html>

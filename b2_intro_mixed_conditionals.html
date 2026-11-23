@@ -1,0 +1,154 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<title>Twenty Years Later — Mixed Conditionals</title>
+<script>
+(function(){
+  try{
+    var saved = localStorage.getItem('theme-preference');
+    var theme = (saved === 'light' || saved === 'dark')
+      ? saved
+      : ((window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches) ? 'dark' : 'light');
+    document.documentElement.setAttribute('data-theme', theme);
+    var fs = parseFloat(localStorage.getItem('font-size-preference'));
+    if (fs >= 10 && fs <= 28) document.documentElement.style.setProperty('--fs-base', fs + 'px');
+  }catch(e){ /* localStorage/matchMedia unavailable — CSS media query still applies */ }
+})();
+</script>
+<link rel="stylesheet" href="house.css">
+<style>
+.cast-row{ display:flex; flex-wrap:wrap; gap:14px 18px; justify-content:center; align-items:flex-end; margin:0 0 1rem; padding:10px; background:var(--surface-1); border:1px solid var(--border); border-radius:var(--border-radius-lg); font-size:.8667rem; }
+.match-wrap .match-col-label{ text-align:center; }
+#picCol .match-card{ font-size:1.35rem; justify-content:center; }
+</style>
+</head>
+<body>
+<div class="page" id="page">
+  <span class="cefr-tag cefr-b2">B2 · Upper Intermediate</span>
+  <h1>Twenty Years Later</h1>
+  <p class="subtitle">Carmen and Javier meet at their school reunion, twenty years after they finished school. How did their choices change their lives?</p>
+
+  <div class="sec-div">Words for this lesson</div>
+  <p class="subtitle">Match the picture and the words. Tap a picture, then tap its words.</p>
+  <div class="score-bar"><span>Matched: <strong id="mScore">0</strong> / <span id="mTotal">0</span></span><button id="mReset">↺ Reset</button></div>
+  <div class="match-grid match-wrap">
+    <div><div class="match-col-label">Picture</div><div class="match-col" id="picCol"></div></div>
+    <div><div class="match-col-label">Words</div><div class="match-col" id="wordCol"></div></div>
+  </div>
+  <div class="win-msg" id="mWin">🎉 Great! You know the words for the conversation.</div>
+  <div class="feedback" id="mFeedback"></div>
+
+  <div class="sec-div">Before you read</div>
+  <div id="preQuestions"></div>
+
+  <div class="sec-div">The people</div>
+  <div class="cast-row" id="castRow"></div>
+
+  <div class="sec-div">The conversation</div>
+  <div class="setting-chip"><span class="section-icon">🎉</span> Saturday evening — the school reunion</div>
+  <p class="subtitle">The thought bubbles show the life they imagine. Each box has a time — PAST, NOW or ALWAYS. The 📍 marks what is really true. The % shows how sure they are.</p>
+  <div id="flowLegend"></div>
+  <button class="grammar-toggle-btn" id="grammarToggle">🎨 Show Grammar</button>
+  <div class="pos-legend"></div>
+  <div id="conversation"></div>
+
+  <div class="sec-div">Check your answers</div>
+  <div id="quiz"></div>
+
+  <footer>Twenty Years Later — Mixed conditionals: past → now, always → past (B2)</footer>
+</div>
+
+<div id="theme-toggle-wrap">
+  <button id="theme-toggle" aria-label="Toggle light/dark mode" title="Toggle light/dark mode">
+    <span id="theme-icon">☀️</span>
+  </button>
+</div>
+<script src="house.js"></script>
+<script src="house-flow.js"></script>
+<script src="stick-character.js"></script>
+<script src="stick-sentence.js"></script>
+<script>
+/* a node (p = how sure, 0–1; when = its time: past / now / always), and a flow: cause → ✔️ / ❌ → results;
+   say = the path the speaker talks about; real = the branch that is really true (📍) */
+const N = (text, icon, p, when) => ({ text, icon, p, when });
+const FL = (cause, yes, no, say, more) => Object.assign({ cause, yes, no, say }, more || {});
+
+const LEGEND = { real: true };
+StickSentence.cast({
+  carmen: { base:'woman', colour:'#9933CC', label:'Carmen' },
+  javier: { base:'man',   colour:'#CC6600', label:'Javier' }
+});
+StickSentence.toggle();
+
+window.LESSON_DICT = {
+  'reunion':  { pos:'noun', def:'a party where people who were at school or work together meet again after many years', ex:'I didn’t come to the reunion last year.', es:'reencuentro' },
+  'accept':   { pos:'verb', def:'to say yes to something you are offered', ex:'If I had accepted that job, I’d speak perfect English.', es:'aceptar' },
+  'romantic': { pos:'adjective', def:'often thinking about love, and following your heart', ex:'If I weren’t so romantic, I would have gone.', es:'romántico/a' },
+  'knives':   { pos:'noun', def:'(plural of knife) sharp tools for cutting food', ex:'If I had brought my knives, I’d be cooking right now.', es:'cuchillos' }
+};
+
+const WORDS = [['👨‍🍳', 'a chef'], ['🍳', 'a cooking course'], ['⚖️', 'a lawyer'], ['🇬🇧', 'a job abroad'], ['💑', 'fall in love'],
+  ['❤️', 'romantic'], ['📅', 'busy'], ['🎉', 'a reunion'], ['🔪', 'knives'], ['👨‍👩‍👧‍👦', 'kids']];
+
+document.getElementById('castRow').innerHTML = ['{Carmen|carmen}', '{Javier|javier}'].map(StickSentence.html).join('');
+const SPEAKERS = {
+  Carmen: { cast: 'carmen', avatar: '👩‍🦱', av: 'av-b', side: 'left' },
+  Javier: { cast: 'javier', avatar: '🧔', av: 'av-a', side: 'right' }
+};
+
+const LINES = [
+  ['Carmen', '[Javier/noun]! [Twenty years/time]! [What/wh] [are/aux] [you/subject] [doing/verb] [these days/time]?'],
+  ['Javier', '[I’m/subject] [a chef/complement] [in Madrid/prep]. [If/conj] [I/subject] [hadn’t/neg] [taken/part] [that cooking course/object] [in 2006/time], [I’d/subject] [be/aux] [working/verb] [in an office/prep] [now/time].',
+    FL(N('take the cooking course', '🍳', null, 'past'), N('be a chef', '👨‍🍳', null, 'now'), N('be working in an office', '🏢', 1, 'now'), 'no', { real: 'yes' })],
+  ['Carmen', '[Amazing/adj]! [I/subject] [always/adverb] [thought/verb] [you’d/subject] [be/verb] [a lawyer/complement].'],
+  ['Javier', '[So did my parents/none]! [What about/none] [you/subject]? [You/subject] [were going to move/verb] [to London/prep].'],
+  ['Carmen', '[I know/none]. [If/conj] [I/subject] [had/aux] [accepted/part] [that job in London/object], [I’d/subject] [speak/verb] [perfect English/object] [now/time]!',
+    FL(N('accept the job in London', '🇬🇧', null, 'past'), N('speak perfect English', '🗣️', 1, 'now'), N('speak English with an accent', '🙂', null, 'now'), 'yes', { real: 'no' })],
+  ['Javier', '[Why/wh] [didn’t/neg] [you/subject] [go/verb]?'],
+  ['Carmen', '[I/subject] [met/verb] [Luis/noun]. [And/conj] [honestly/adverb], [if/conj] [I/subject] [weren’t/neg] [so romantic/adj], [I/subject] [would/aux] [have/aux] [gone/part]!',
+    FL(N('I’m a romantic person', '❤️', null, 'always'), N('stay for Luis', '💑', null, 'past'), N('go to London', '✈️', 1, 'past'), 'no', { real: 'yes' })],
+  ['Javier', '[Ha/none]! [And/conj] [are/verb] [you/subject] [happy/adj]?'],
+  ['Carmen', '[Very/adverb]. [If/conj] [I/subject] [hadn’t/neg] [stayed/part], [I/subject] [wouldn’t/neg] [have/verb] [my three wonderful kids/object] [now/time].',
+    FL(N('stay in Caracas', '🏠', null, 'past'), N('have three kids', '👨‍👩‍👧‍👦', null, 'now'), N('have three kids', '👨‍👩‍👧‍👦', 0, 'now'), 'no', { real: 'yes' })],
+  ['Javier', '[That’s the best reason/none]. [Me/subject]? [If/conj] [I/subject] [weren’t/neg] [always/adverb] [so busy/adj], [I/subject] [would/aux] [have/aux] [come/part] [to the reunion/prep] [last year/time] [too/adverb].',
+    FL(N('I’m always busy', '📅', null, 'always'), N('miss last year’s reunion', '😕', null, 'past'), N('come to last year’s reunion', '🎉', 1, 'past'), 'no', { real: 'yes' })],
+  ['Carmen', '[If/conj] [you/subject] [had/aux] [come/part], [you/subject] [might/aux] [have/aux] [met/part] [my husband/object]. [He’s/subject] [a big fan of Spanish food/complement]!',
+    FL(N('Javier comes last year', '🎉', null, 'past'), N('meet my husband', '🤝', .5, 'past'), N('not meet him', '🙂', null, 'past'), 'yes', { real: 'no' })],
+  ['Javier', '[Then/adverb] [I’ll/subject] [cook/verb] [for him/prep] [tonight/time]! [If/conj] [I/subject] [had/aux] [brought/part] [my knives/object], [I’d/subject] [be/aux] [cooking/verb] [right now/time].',
+    FL(N('bring my knives', '🔪', null, 'past'), N('be cooking right now', '👨‍🍳', 1, 'now'), N('be chatting with Carmen', '💬', null, 'now'), 'yes', { real: 'no' })],
+  ['Carmen', '[Ha/none]! [Then/adverb] [I’m/subject] [glad/adj] [you/subject] [forgot/verb] [them/object].']
+];
+
+const CQ_ITEMS = [
+  { q: 'Why is Javier a chef now?', opts: ['He took a cooking course in 2006', 'His parents were chefs', 'He moved to London'], correct: 0 },
+  { q: 'Why didn’t Carmen go to London?', opts: ['She met Luis', 'She didn’t get the job', 'She didn’t speak English'], correct: 0 },
+  { q: 'Why didn’t Javier come to the reunion last year?', opts: ['He’s always very busy', 'He was in London', 'He forgot his knives'], correct: 0 }
+];
+
+/* ── the conversation: a line can carry a flowchart in a thought bubble ─── */
+const avStyle = s => { const c = (StickSentence.cast()[s.cast] || {}).colour;
+  return c ? 'background:' + c + '40;box-shadow:inset 0 0 0 2px ' + c : ''; };
+const conv = document.getElementById('conversation');
+LINES.forEach(([who, text, flow]) => {
+  const s = SPEAKERS[who], right = s.side === 'right';
+  conv.insertAdjacentHTML('beforeend',
+    '<div class="bubble-wrap' + (right ? ' right' : '') + '">' +
+      '<div class="avatar ' + s.av + '" style="' + avStyle(s) + '">' + s.avatar + '</div>' +
+      '<div class="bubble-col"><div class="bname' + (right ? ' right' : '') + '">' + who + '</div>' +
+      '<div class="bubble ' + (right ? 'right' : 'left') + '">' + StickSentence.html(text) + '</div>' +
+      (flow ? HouseFlow.html(flow, { label: who + ' thinks' }) : '') + '</div>' +
+    '</div>');
+});
+document.getElementById('flowLegend').innerHTML = HouseFlow.legend(LEGEND);
+
+HouseMatching.build({
+  left: 'picCol', right: 'wordCol', scoreEl: 'mScore', totalEl: 'mTotal', winEl: 'mWin', resetBtn: 'mReset', feedbackEl: 'mFeedback',
+  pairs: WORDS.map(([e, w]) => ({ id: w, left: e, right: w }))
+});
+HouseComprehension.build({ pre: 'preQuestions', quiz: 'quiz', items: CQ_ITEMS });
+</script>
+<script>HouseGrammar.init();</script>
+</body>
+</html>

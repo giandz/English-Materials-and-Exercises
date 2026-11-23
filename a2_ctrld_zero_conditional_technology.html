@@ -1,0 +1,104 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<title>Zero Conditional — Practice</title>
+<script>
+(function(){
+  try{
+    var saved = localStorage.getItem('theme-preference');
+    var theme = (saved === 'light' || saved === 'dark')
+      ? saved
+      : ((window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches) ? 'dark' : 'light');
+    document.documentElement.setAttribute('data-theme', theme);
+    var fs = parseFloat(localStorage.getItem('font-size-preference'));
+    if (fs >= 10 && fs <= 28) document.documentElement.style.setProperty('--fs-base', fs + 'px');
+  }catch(e){ /* localStorage/matchMedia unavailable — CSS media query still applies */ }
+})();
+</script>
+<link rel="stylesheet" href="house.css">
+<style>
+
+</style>
+</head>
+<body>
+<div class="page" id="page">
+  <span class="cefr-tag cefr-a2">A2 · Elementary</span>
+  <h1>Zero Conditional — Practice</h1>
+  <p class="subtitle">How machines and apps work: if + present, present.</p>
+
+  <div class="sec-div">Practice 1 — Follow the path</div>
+  <p class="subtitle">Read the sentence. Tap the result it talks about.</p>
+  <div class="score-bar"><span>Correct: <strong id="fqScore">0</strong> / <span id="fqTotal">0</span></span></div>
+  <div id="flowQuiz"></div>
+
+  <div class="sec-div">Practice 2 — Word order</div>
+  <p class="subtitle">Tap the words to build the sentence. Tap a word again to take it back, or drag to change the order.</p>
+  <button class="grammar-toggle-btn" id="grammarToggle">🎨 Show Grammar</button>
+  <div class="pos-legend"></div>
+  <div class="score-bar"><span>Correct: <strong id="woScore">0</strong> / <span id="woTotal">0</span></span></div>
+  <div id="woItems"></div>
+
+  <div class="sec-div">Practice 3 — Complete the sentences</div>
+  <p class="subtitle">Write the missing words. The bar turns green 🔴→🟢 when you are right.</p>
+  <div id="gfItems"></div>
+
+  <footer>Zero conditional — Controlled practice (A2)</footer>
+</div>
+
+<div id="theme-toggle-wrap">
+  <button id="theme-toggle" aria-label="Toggle light/dark mode" title="Toggle light/dark mode">
+    <span id="theme-icon">☀️</span>
+  </button>
+</div>
+<script src="house.js"></script>
+<script src="house-flow.js"></script>
+<script>
+/* a node, and a flow: cause → ✔️ / ❌ → results; say = the path the speaker talks about */
+const N = (text, icon, p, when) => ({ text, icon, p, when });
+const FL = (cause, yes, no, say, more) => Object.assign({ cause, yes, no, say }, more || {});
+
+const FLOW_QUIZ = [
+  { sentence: 'If you don’t charge your phone, the battery dies.',
+    flow: FL(N('you charge your phone', '🔌'), N('the battery is full', '🔋'), N('the battery dies', '🪫')), answer: { branch: 'no' } },
+  { sentence: 'If you press the power button, the computer turns on.',
+    flow: FL(N('you press the power button', '🔘'), N('the computer turns on', '💻'), N('it stays off', '⬛')), answer: { branch: 'yes' } },
+  { sentence: 'If the printer has no paper, it doesn’t print.',
+    flow: FL(N('the printer has paper', '📄'), N('it prints', '🖨️'), N('it doesn’t print', '🚫')), answer: { branch: 'no' } },
+  { sentence: 'If you put metal in the microwave, it makes sparks.',
+    flow: FL(N('you put metal in the microwave', '🥄'), N('it makes sparks', '⚡'), N('it heats the food', '🍲')), answer: { branch: 'yes' } },
+  { sentence: 'If you don’t save your work, you lose it.',
+    flow: FL(N('you save your work', '💾'), N('you keep it', '📁'), N('you lose it', '😱')), answer: { branch: 'no' } },
+  { sentence: 'If the Wi-Fi is on, the phone connects automatically.',
+    flow: FL(N('the Wi-Fi is on', '📶'), N('the phone connects', '🔗'), N('it uses mobile data', '📱')), answer: { branch: 'yes' } },
+  { sentence: 'The fridge beeps if you leave the door open.',
+    flow: FL(N('you leave the door open', '🚪'), N('the fridge beeps', '🔔'), N('it is quiet', '🤫')), answer: { branch: 'yes' } }
+];
+const WO_ITEMS = [
+  { context: '🔥 Science', text: 'If / you / heat / ice, / it / melts.', pos: ['conj', 'subject', 'verb', 'object', 'subject', 'verb'] },
+  { context: '🔋 Your phone', text: 'The battery / dies / if / you / don’t / charge / it.', pos: ['subject', 'verb', 'conj', 'subject', 'neg', 'verb', 'object'] },
+  { context: '🍿 The microwave', text: 'If / the door / is / open, / the microwave / doesn’t / start.', pos: ['conj', 'subject', 'verb', 'adj', 'subject', 'neg', 'verb'] },
+  { context: '📺 The remote control', text: 'What / happens / if / I / press / this button?', pos: ['wh', 'verb', 'conj', 'subject', 'verb', 'object'] },
+  { context: '🌡️ Charging', text: 'If / you / use / the phone / while it’s charging, / it / gets / hot.', pos: ['conj', 'subject', 'verb', 'object', 'time', 'subject', 'verb', 'adj'] },
+  { context: '🧊 The fridge', text: 'The light / comes on / when / you / open / the fridge.', pos: ['subject', 'verb', 'conj', 'subject', 'verb', 'object'] }
+];
+const GF_LABELS = { pos: '✔️ it happens', neg: '❌ it doesn’t', q: 'question' };
+const GF_ITEMS = [
+  { category: 'pos', direct: 'A science fact about water.', template: 'If you {0} water to 100°C, it {1}.', hints: [{ accepted: ['heat'] }, { accepted: ['boils'] }] },
+  { category: 'pos', direct: 'Starting your phone.', template: 'If you {0} the power button, the phone {1} on.', hints: [{ accepted: ['press', 'hold'] }, { accepted: ['turns', 'comes'] }] },
+  { category: 'neg', direct: 'No electricity for your phone.', template: 'If you {0} charge your phone, the battery {1}.', hints: [{ accepted: ['don’t', "don't", 'do not'] }, { accepted: ['dies'] }] },
+  { category: 'neg', direct: 'The printer is empty.', template: 'If the printer {0} no paper, it {1} print.', hints: [{ accepted: ['has'] }, { accepted: ['doesn’t', "doesn't", 'does not'] }] },
+  { category: 'pos', direct: 'Something dangerous in the kitchen.', template: 'If you {0} metal in the microwave, it {1} sparks.', hints: [{ accepted: ['put'] }, { accepted: ['makes'] }] },
+  { category: 'neg', direct: 'You forget to keep your work.', template: 'If you {0} save your work, you {1} it.', hints: [{ accepted: ['don’t', "don't", 'do not'] }, { accepted: ['lose'] }] },
+  { category: 'q', direct: 'Ask about the red button on the remote control.', template: 'What {0} if I {1} the red button?', hints: [{ accepted: ['happens'] }, { accepted: ['press', 'push'] }] },
+  { category: 'pos', direct: 'The fridge makes a sound.', template: 'The fridge {0} if you {1} the door open.', hints: [{ accepted: ['beeps'] }, { accepted: ['leave'] }] }
+];
+
+HouseFlow.quiz({ container: 'flowQuiz', items: FLOW_QUIZ, scoreEl: 'fqScore', totalEl: 'fqTotal' });
+HouseWordOrder.build({ container: 'woItems', items: WO_ITEMS, scoreEl: 'woScore', totalEl: 'woTotal' });
+HouseGapFill.build({ container: 'gfItems', items: GF_ITEMS, labels: GF_LABELS });
+</script>
+<script>HouseGrammar.init();</script>
+</body>
+</html>

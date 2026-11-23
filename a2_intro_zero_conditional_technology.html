@@ -1,0 +1,158 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<title>How Does It Work? — Zero Conditional</title>
+<script>
+(function(){
+  try{
+    var saved = localStorage.getItem('theme-preference');
+    var theme = (saved === 'light' || saved === 'dark')
+      ? saved
+      : ((window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches) ? 'dark' : 'light');
+    document.documentElement.setAttribute('data-theme', theme);
+    var fs = parseFloat(localStorage.getItem('font-size-preference'));
+    if (fs >= 10 && fs <= 28) document.documentElement.style.setProperty('--fs-base', fs + 'px');
+  }catch(e){ /* localStorage/matchMedia unavailable — CSS media query still applies */ }
+})();
+</script>
+<link rel="stylesheet" href="house.css">
+<style>
+.cast-row{ display:flex; flex-wrap:wrap; gap:14px 18px; justify-content:center; align-items:flex-end; margin:0 0 1rem; padding:10px; background:var(--surface-1); border:1px solid var(--border); border-radius:var(--border-radius-lg); font-size:.8667rem; }
+.match-wrap .match-col-label{ text-align:center; }
+#picCol .match-card{ font-size:1.35rem; justify-content:center; }
+</style>
+</head>
+<body>
+<div class="page" id="page">
+  <span class="cefr-tag cefr-a2">A2 · Elementary</span>
+  <h1>How Does It Work?</h1>
+  <p class="subtitle">Grandma Rosa has a new phone and a new kitchen. Her grandson Leo explains how everything works.</p>
+
+  <div class="sec-div">Words for this lesson</div>
+  <p class="subtitle">Match the picture and the words. Tap a picture, then tap its words.</p>
+  <div class="score-bar"><span>Matched: <strong id="mScore">0</strong> / <span id="mTotal">0</span></span><button id="mReset">↺ Reset</button></div>
+  <div class="match-grid match-wrap">
+    <div><div class="match-col-label">Picture</div><div class="match-col" id="picCol"></div></div>
+    <div><div class="match-col-label">Words</div><div class="match-col" id="wordCol"></div></div>
+  </div>
+  <div class="win-msg" id="mWin">🎉 Great! You know the words for the conversation.</div>
+  <div class="feedback" id="mFeedback"></div>
+
+  <div class="sec-div">Before you read</div>
+  <div id="preQuestions"></div>
+
+  <div class="sec-div">The people</div>
+  <div class="cast-row" id="castRow"></div>
+
+  <div class="sec-div">The conversation</div>
+  <div class="setting-chip"><span class="section-icon">🏠</span> Saturday afternoon — in Grandma Rosa’s kitchen</div>
+  <p class="subtitle">Leo’s thought bubbles show how each machine works. Blue is the <b>if</b>-part. Green: it happens ✔️. Red: it doesn’t ❌.</p>
+  <div id="flowLegend"></div>
+  <button class="grammar-toggle-btn" id="grammarToggle">🎨 Show Grammar</button>
+  <div class="pos-legend"></div>
+  <div id="conversation"></div>
+
+  <div class="sec-div">Check your answers</div>
+  <div id="quiz"></div>
+
+  <footer>How Does It Work? — Zero conditional: if + present, present (A2)</footer>
+</div>
+
+<div id="theme-toggle-wrap">
+  <button id="theme-toggle" aria-label="Toggle light/dark mode" title="Toggle light/dark mode">
+    <span id="theme-icon">☀️</span>
+  </button>
+</div>
+<script src="house.js"></script>
+<script src="house-flow.js"></script>
+<script src="stick-character.js"></script>
+<script src="stick-sentence.js"></script>
+<script>
+/* a node, and a flow: cause → ✔️ / ❌ → results; say = the path the speaker talks about */
+const N = (text, icon, p, when) => ({ text, icon, p, when });
+const FL = (cause, yes, no, say, more) => Object.assign({ cause, yes, no, say }, more || {});
+
+const LEGEND = { percent: false };
+StickSentence.cast({
+  rosa: { base:'woman', colour:'#996600', label:'Grandma Rosa' },
+  leo:  { base:'man',   colour:'#0066CC', label:'Leo' }
+});
+StickSentence.toggle();   /* stick figures hidden by default */
+
+window.LESSON_DICT = {
+  'charge':  { pos:'verb', def:'to put electricity into a battery', ex:'I charge my phone every night.', es:'cargar' },
+  'screen':  { pos:'noun', def:'the flat glass part of a phone, TV or computer where you see pictures', ex:'The screen goes black.', es:'pantalla' },
+  'beep':    { pos:'verb', def:'to make a short, high sound, like a machine', ex:'The washing machine beeps.', es:'pitar' },
+  'turn off':{ pos:'phrasal verb', def:'to stop a machine working', ex:'The TV turns off.', es:'apagar(se)' },
+  'come on': { pos:'phrasal verb', def:'(of a light or screen) to start working', ex:'The screen comes on.', es:'encenderse' }
+};
+
+const WORDS = [['🔌', 'charge'], ['📱', 'screen'], ['🔘', 'button'], ['🎛️', 'remote control'], ['🍿', 'microwave'],
+  ['🧺', 'washing machine'], ['🔔', 'beep'], ['🔋', 'battery'], ['💡', 'turn on'], ['🌡️', 'get hot']];
+
+document.getElementById('castRow').innerHTML = ['{Grandma Rosa|rosa}', '{Leo|leo}'].map(StickSentence.html).join('');
+const SPEAKERS = {
+  Rosa: { cast: 'rosa', avatar: '👵', av: 'av-b', side: 'left' },
+  Leo:  { cast: 'leo',  avatar: '👨', av: 'av-a', side: 'right' }
+};
+
+/* [who, the line ([words/pos] = grammar colours), the flowchart in the speaker's thought bubble] */
+const LINES = [
+  ['Rosa', '[Leo/noun], [can/aux] [you/subject] [help/verb] [me/object]? [My new phone/subject] [is/verb] [very strange/adj].'],
+  ['Leo', '[Sure/none], [Grandma/noun]. [What’s the problem/none]?'],
+  ['Rosa', '[Sometimes/adverb] [the screen/subject] [goes/verb] [black/adj].'],
+  ['Leo', '[That’s normal/none]. [If/conj] [you/subject] [don’t/neg] [touch/verb] [the screen/object] [for 30 seconds/time], [it/subject] [turns off/verb].',
+    FL(N('you touch the screen', '👆'), N('it stays on', '💡'), N('it turns off', '⬛'), 'no')],
+  ['Rosa', '[And/conj] [how/wh] [do/aux] [I/subject] [turn it on/verb] [again/adverb]?'],
+  ['Leo', '[If/conj] [you/subject] [press/verb] [this button/object], [the screen/subject] [comes on/verb].',
+    FL(N('you press the button', '🔘'), N('the screen comes on', '📱'), N('it stays black', '⬛'), 'yes')],
+  ['Rosa', '[Oh/none]! [And/conj] [why/wh] [is/verb] [it/subject] [so hot/adj] [now/time]?'],
+  ['Leo', '[If/conj] [you/subject] [use/verb] [it/object] [while it’s charging/time], [it/subject] [gets/verb] [hot/adj]. [That’s OK/none].',
+    FL(N('you use it while it’s charging', '🔌'), N('it gets hot', '🌡️'), N('it stays cool', '❄️'), 'yes')],
+  ['Rosa', '[What about/none] [the microwave/noun]? [It/subject] [doesn’t/neg] [start/verb]!'],
+  ['Leo', '[If/conj] [the door/subject] [is/verb] [open/adj], [the microwave/subject] [doesn’t/neg] [start/verb]. [Close/verb] [the door/object].',
+    FL(N('you close the door', '🚪'), N('it starts', '🍿'), N('it doesn’t start', '🚫'), 'no')],
+  ['Rosa', '[Ah/none], [now/time] [it/subject] [works/verb]! [And/conj] [the washing machine/subject] [beeps/verb] [all the time/time].'],
+  ['Leo', '[It/subject] [beeps/verb] [when/conj] [the clothes/subject] [are/verb] [ready/adj]. [If/conj] [you/subject] [open/verb] [the door/object], [it/subject] [stops/verb] [beeping/object].',
+    FL(N('you open the door', '🧺'), N('it stops beeping', '🔇'), N('it keeps beeping', '🔔'), 'yes')],
+  ['Rosa', '[You/subject] [know/verb] [everything/object]! [What/wh] [happens/verb] [if/conj] [I/subject] [press/verb] [this red button/object]?'],
+  ['Leo', '[If/conj] [you/subject] [press/verb] [it/object], [the TV/subject] [turns off/verb]. [Don’t worry/none] — [nothing/subject] [breaks/verb]!',
+    FL(N('you press the red button', '🔴'), N('the TV turns off', '📺'), N('the TV stays on', '📺'), 'yes')],
+  ['Rosa', '[Wonderful/adj]. [If/conj] [I/subject] [have/verb] [a problem/object], [I/subject] [call/verb] [you/object]!',
+    FL(N('I have a problem', '😟'), N('I call Leo', '📞'), N('I watch TV', '📺'), 'yes')],
+  ['Leo', '[Ha/none]! [And/conj] [if/conj] [you/subject] [call/verb] [me/object], [I/subject] [always/adverb] [answer/verb], [Grandma/noun].']
+];
+
+const CQ_ITEMS = [
+  { q: 'What happens if Rosa doesn’t touch the screen for 30 seconds?', opts: ['It turns off', 'It gets hot', 'It beeps'], correct: 0 },
+  { q: 'Why doesn’t the microwave start?', opts: ['The door is open', 'It is too hot', 'It isn’t charging'], correct: 0 },
+  { q: 'When does the washing machine stop beeping?', opts: ['When Rosa opens the door', 'When the TV turns off', 'After 30 seconds'], correct: 0 }
+];
+
+/* ── the conversation: a line can carry a flowchart in a thought bubble ─── */
+const avStyle = s => { const c = (StickSentence.cast()[s.cast] || {}).colour;
+  return c ? 'background:' + c + '40;box-shadow:inset 0 0 0 2px ' + c : ''; };
+const conv = document.getElementById('conversation');
+LINES.forEach(([who, text, flow]) => {
+  const s = SPEAKERS[who], right = s.side === 'right';
+  conv.insertAdjacentHTML('beforeend',
+    '<div class="bubble-wrap' + (right ? ' right' : '') + '">' +
+      '<div class="avatar ' + s.av + '" style="' + avStyle(s) + '">' + s.avatar + '</div>' +
+      '<div class="bubble-col"><div class="bname' + (right ? ' right' : '') + '">' + who + '</div>' +
+      '<div class="bubble ' + (right ? 'right' : 'left') + '">' + StickSentence.html(text) + '</div>' +
+      (flow ? HouseFlow.html(flow, { label: who + ' thinks' }) : '') + '</div>' +
+    '</div>');
+});
+document.getElementById('flowLegend').innerHTML = HouseFlow.legend(LEGEND);
+
+HouseMatching.build({
+  left: 'picCol', right: 'wordCol', scoreEl: 'mScore', totalEl: 'mTotal', winEl: 'mWin', resetBtn: 'mReset', feedbackEl: 'mFeedback',
+  pairs: WORDS.map(([e, w]) => ({ id: w, left: e, right: w }))
+});
+HouseComprehension.build({ pre: 'preQuestions', quiz: 'quiz', items: CQ_ITEMS });
+</script>
+<script>HouseGrammar.init();</script>
+</body>
+</html>

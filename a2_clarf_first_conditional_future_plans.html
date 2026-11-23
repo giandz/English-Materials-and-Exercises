@@ -1,0 +1,158 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<title>First Conditional — Clarification</title>
+<script>
+(function(){
+  try{
+    var saved = localStorage.getItem('theme-preference');
+    var theme = (saved === 'light' || saved === 'dark')
+      ? saved
+      : ((window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches) ? 'dark' : 'light');
+    document.documentElement.setAttribute('data-theme', theme);
+    var fs = parseFloat(localStorage.getItem('font-size-preference'));
+    if (fs >= 10 && fs <= 28) document.documentElement.style.setProperty('--fs-base', fs + 'px');
+  }catch(e){ /* localStorage/matchMedia unavailable — CSS media query still applies */ }
+})();
+</script>
+<link rel="stylesheet" href="house.css">
+<style>
+.flow-card{ border:1px solid var(--color-border-tertiary); border-radius:var(--border-radius-lg); background:var(--surface-2); padding:10px 12px; margin-bottom:10px; }
+.flow-card .sent{ font-size:1rem; font-weight:600; margin-bottom:6px; }
+.flow-card .note{ font-size:.8333rem; color:var(--text-secondary); margin-top:4px; }
+.if-part{ color:hsl(217, 70%, 42%); font-weight:700; }
+.res-part{ color:hsl(120, 60%, 32%); font-weight:700; }
+.res-no{ color:hsl(0, 65%, 42%); font-weight:700; }
+[data-theme="dark"] .res-no{ color:hsl(0, 75%, 70%); }
+[data-theme="dark"] .if-part{ color:hsl(217, 80%, 70%); }
+[data-theme="dark"] .res-part{ color:hsl(120, 55%, 65%); }
+.form-table{ width:100%; border-collapse:collapse; margin:0 0 1rem; font-size:.9333rem; }
+.form-table th, .form-table td{ border:1px solid var(--color-border-tertiary); padding:7px 9px; text-align:left; vertical-align:top; }
+.form-table th{ background:var(--surface-1); font-size:.8rem; text-transform:uppercase; letter-spacing:.04em; color:var(--text-secondary); }
+.pct-row{ display:flex; flex-wrap:wrap; gap:6px; margin:0 0 1rem; }
+.pct-row span{ padding:3px 10px; border-radius:999px; font-weight:700; font-size:.8667rem; border:2px solid; }
+.rule-box p{ margin:0 0 6px; }
+.rule-box p:last-child{ margin-bottom:0; }
+</style>
+</head>
+<body>
+<div class="page" id="page">
+  <span class="cefr-tag cefr-a2">A2 · Elementary</span>
+  <h1>First Conditional: If it rains, we’ll stay home</h1>
+  <p class="subtitle">Real plans and possible futures — and how sure you are.</p>
+
+  <div class="sec-div">Look</div>
+  <p class="subtitle">From the conversation. Blue is the <b>if</b>-part. Then follow the path: ✔️ it happens, ❌ it doesn’t.</p>
+  <div id="flowLegend"></div>
+  <div id="look"></div>
+
+  <div class="sec-div">Meaning</div>
+  <div class="rule-box" id="meaning"></div>
+
+  <div class="sec-div">Check the meaning</div>
+  <p class="subtitle">Answer the questions about each sentence.</p>
+  <div id="ccq"></div>
+
+  <div class="sec-div">Look at the form</div>
+  <p class="subtitle">What is each part? Drag a label (or tap a label, then tap a box).</p>
+  <div class="score-bar"><span>Correct: <strong id="fcScore">0</strong> / <span id="fcTotal">0</span></span></div>
+  <div id="formClarf"></div>
+  <div id="formRule"></div>
+
+  <div class="sec-div">Common mistakes</div>
+  <div id="mistakes"></div>
+
+  <div class="sec-div">Error hunt</div>
+  <p class="subtitle">Some sentences have one mistake. Some are correct! Tap a word — or a space between words — to fix it. Then press OK.</p>
+  <div class="score-bar"><span>Done: <strong id="errorScore">0</strong> / <span id="errorTotal">0</span></span></div>
+  <div id="errorHuntItems"></div>
+
+  <footer>First conditional — Clarification (A2)</footer>
+</div>
+
+<div id="theme-toggle-wrap">
+  <button id="theme-toggle" aria-label="Toggle light/dark mode" title="Toggle light/dark mode">
+    <span id="theme-icon">☀️</span>
+  </button>
+</div>
+<script src="house.js"></script>
+<script src="house-flow.js"></script>
+<script>
+/* a node (p = how sure, 0–1), and a flow: cause → ✔️ / ❌ → results; say = the path the speaker talks about */
+const N = (text, icon, p, when) => ({ text, icon, p, when });
+const FL = (cause, yes, no, say, more) => Object.assign({ cause, yes, no, say }, more || {});
+/* how sure each word is: the same scale on every page of this lesson */
+const SURE = [['will', 1], ['will probably', .8], ['may / might / could', .5], ['probably won’t', .2], ['won’t', 0]];
+const sureRow = () => '<div class="pct-row">' + SURE.map(([w, p]) => '<span style="border-color:hsl(' + HouseFlow.hue(p) + ',70%,42%);color:hsl(' + HouseFlow.hue(p) + ',70%,35%)">' + w + ' · ' + Math.round(p * 100) + '%</span>').join('') + '</div>';
+
+const LEGEND = {};
+const LOOK = [
+  ['<span class="if-part">If the weather is nice,</span> <span class="res-part">I’ll go to the beach.</span>',
+    FL(N('the weather is nice', '☀️'), N('go to the beach', '🏖️', 1), N('go to the cinema', '🎬', .5), 'yes'),
+    '<b>will</b> = 100% sure: green.'],
+  ['<span class="if-part">If it rains,</span> we <b>might</b> go to the cinema.',
+    FL(N('it rains', '🌧️'), N('go to the cinema', '🎬', .5), N('go to the beach', '🏖️', 1), 'yes'),
+    '<b>might</b> = about 50%: yellow. Not sure!'],
+  ['<span class="if-part">If I don’t pass,</span> I’ll <b>probably</b> work in my uncle’s shop.',
+    FL(N('I pass my exams', '📝'), N('go to university', '🎓', 1), N('work in my uncle’s shop', '🏪', .8), 'no'),
+    'The ❌ path (<b>don’t</b> pass). <b>will probably</b> = about 80%.']
+];
+const MEANING = '<p><strong>The first conditional is for real, possible situations in the future.</strong> Maybe it rains on Saturday, maybe it doesn’t — and we have a plan for each path.</p>' +
+  '<p>The <b>if</b>-part is in the <b>present simple</b>, but it talks about the future: <i>If it rains <u>tomorrow</u></i>.</p>' +
+  '<p>The result says <b>how sure</b> you are:</p>' + sureRow();
+const CCQ = [
+  { sentence: 'If it rains tomorrow, we’ll stay at home.', questions: [
+    { q: 'Is it about the future?', opts: ['Yes', 'No'], correct: 0, why: 'Yes — tomorrow. The present simple <i>rains</i> talks about the future here.' },
+    { q: 'Do we know it will rain?', opts: ['Yes', 'No'], correct: 1, why: 'No. It’s possible. That’s why we say <b>if</b>.' } ] },
+  { sentence: 'If they offer me more money, I might take the job.', questions: [
+    { q: 'How sure is she?', opts: ['100%', 'About 50%'], correct: 1, why: '<b>might</b> = maybe, about 50%. With <b>will</b> she’d be sure.' },
+    { q: 'Is it a real possibility?', opts: ['Yes', 'No'], correct: 0, why: 'Yes. They can really offer her more money. It’s not a dream.' } ] }
+];
+const FORM_POOL = ['conj', 'wh', 'subject', 'aux', 'verb', 'neg', 'adverb', 'adj', 'prep'];
+const FORM = [
+  { form: 'aff', parts: [['If', 'conj'], ['the weather', 'subject'], ['is', 'verb'], ['nice', 'adj'], [',', null], ['I', 'subject'], ['will', 'aux'], ['go', 'verb'], ['to the beach', 'prep'], ['.', null]] },
+  { form: 'aff', parts: [['If', 'conj'], ['it', 'subject'], ['rains', 'verb'], [',', null], ['we', 'subject'], ['might', 'aux'], ['go', 'verb'], ['to the cinema', 'prep'], ['.', null]] },
+  { form: 'neg', parts: [['If', 'conj'], ['I', 'subject'], ['don’t', 'neg'], ['pass', 'verb'], [',', null], ['I', 'subject'], ['won’t', 'neg'], ['go', 'verb'], ['to university', 'prep'], ['.', null]] },
+  { form: 'wh', parts: [['What', 'wh'], ['will', 'aux'], ['you', 'subject'], ['do', 'verb'], ['if', 'conj'], ['it', 'subject'], ['rains', 'verb'], ['?', null]] }
+];
+const FORM_RULE = '<table class="form-table"><tr><th>if-part</th><th>result</th></tr>' +
+  '<tr><td><span class="if-part">If</span> + present simple</td><td>will / won’t / might / may / could + verb</td></tr>' +
+  '<tr><td><span class="if-part">If it rains,</span></td><td><span class="res-part">we’ll stay at home.</span></td></tr></table>' +
+  '<div class="rule-box"><p><strong>No will in the if-part:</strong> <i>If it <s>will rain</s> rains…</i></p>' +
+  '<p><strong>After will, might, may, could:</strong> the verb without “to”: <i>I might <s>to</s> take it.</i></p>' +
+  '<p><strong>Comma:</strong> only when <b>if</b> comes first: <i>If you get the job, we’ll celebrate.</i> / <i>We’ll celebrate if you get the job.</i></p></div>';
+const MISTAKES = [
+  ['If it will rain, we’ll stay at home.', 'If it rains, we’ll stay at home.'],
+  ['If I pass my exams, I go to university.', 'If I pass my exams, I’ll go to university.'],
+  ['If they offer me more money, I might to take it.', 'If they offer me more money, I might take it.'],
+  ['If I won’t pass, I’ll work in a shop.', 'If I don’t pass, I’ll work in a shop.'],
+  ['We’ll celebrate, if you get the job.', 'We’ll celebrate if you get the job.']
+];
+const EH_ITEMS = [
+  { words: ['If', 'you', 'will', 'come', ',', 'we', 'will', 'have', 'a', 'party', '.'], error: { type: 'extra', wordIndex: 2 } },
+  { words: ['If', 'I', 'pass', 'my', 'exams', ',', 'I', 'will', 'go', 'to', 'university', '.'], error: null },
+  { words: ['If', 'they', 'offer', 'me', 'more', 'money', ',', 'I', 'might', 'to', 'take', 'the', 'job', '.'], error: { type: 'extra', wordIndex: 9 } },
+  { words: ['If', 'I', 'don’t', 'pass', ',', 'I', 'will', 'probably', 'work', 'in', 'a', 'shop', '.'], error: null },
+  { words: ['We', 'will', 'celebrate', 'if', 'you', 'will', 'get', 'the', 'job', '.'], error: { type: 'extra', wordIndex: 5 } },
+  { words: ['If', 'the', 'weather', 'is', 'nice', ',', 'we', 'go', 'will', 'to', 'the', 'beach', '.'], error: { type: 'misplaced', wordIndex: 8, targetGapIndex: 7 } },
+  { words: ['If', 'she', 'studies', 'every', 'day', ',', 'she', 'pass', 'the', 'test', '.'], error: { type: 'missing', gapIndex: 7, options: ['will', 'is', 'does'], correct: 'will' } },
+  { words: ['What', 'will', 'you', 'do', 'if', 'it', 'rains', 'tomorrow', '?'], error: null }
+];
+
+document.getElementById('flowLegend').innerHTML = HouseFlow.legend(LEGEND);
+document.getElementById('look').innerHTML = LOOK.map(([sent, flow, note]) =>
+  '<div class="flow-card"><div class="sent">' + sent + '</div>' + HouseFlow.svg(flow) + (note ? '<div class="note">' + note + '</div>' : '') + '</div>').join('');
+document.getElementById('meaning').innerHTML = MEANING;
+HouseCCQ.build({ container: 'ccq', items: CCQ });
+HouseFormClarf.build({ container: 'formClarf', scoreEl: 'fcScore', totalEl: 'fcTotal', pool: FORM_POOL, items: FORM });
+document.getElementById('formRule').innerHTML = FORM_RULE;
+document.getElementById('mistakes').innerHTML = MISTAKES.map(([no, yes]) =>
+  '<div class="pair-card"><div class="pair-line no"><span class="mark">✗</span>' + no + '</div>' +
+  '<div class="pair-line yes"><span class="mark">✓</span>' + yes + '</div></div>').join('');
+HouseErrorHunt.build({ container: 'errorHuntItems', items: EH_ITEMS, scoreEl: 'errorScore', totalEl: 'errorTotal' });
+</script>
+<script>HouseGrammar.init();</script>
+</body>
+</html>

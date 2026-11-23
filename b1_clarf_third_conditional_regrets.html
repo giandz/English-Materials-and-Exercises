@@ -1,0 +1,160 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<title>Third Conditional — Clarification</title>
+<script>
+(function(){
+  try{
+    var saved = localStorage.getItem('theme-preference');
+    var theme = (saved === 'light' || saved === 'dark')
+      ? saved
+      : ((window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches) ? 'dark' : 'light');
+    document.documentElement.setAttribute('data-theme', theme);
+    var fs = parseFloat(localStorage.getItem('font-size-preference'));
+    if (fs >= 10 && fs <= 28) document.documentElement.style.setProperty('--fs-base', fs + 'px');
+  }catch(e){ /* localStorage/matchMedia unavailable — CSS media query still applies */ }
+})();
+</script>
+<link rel="stylesheet" href="house.css">
+<style>
+.flow-card{ border:1px solid var(--color-border-tertiary); border-radius:var(--border-radius-lg); background:var(--surface-2); padding:10px 12px; margin-bottom:10px; }
+.flow-card .sent{ font-size:1rem; font-weight:600; margin-bottom:6px; }
+.flow-card .note{ font-size:.8333rem; color:var(--text-secondary); margin-top:4px; }
+.if-part{ color:hsl(217, 70%, 42%); font-weight:700; }
+.res-part{ color:hsl(120, 60%, 32%); font-weight:700; }
+.res-no{ color:hsl(0, 65%, 42%); font-weight:700; }
+[data-theme="dark"] .res-no{ color:hsl(0, 75%, 70%); }
+[data-theme="dark"] .if-part{ color:hsl(217, 80%, 70%); }
+[data-theme="dark"] .res-part{ color:hsl(120, 55%, 65%); }
+.form-table{ width:100%; border-collapse:collapse; margin:0 0 1rem; font-size:.9333rem; }
+.form-table th, .form-table td{ border:1px solid var(--color-border-tertiary); padding:7px 9px; text-align:left; vertical-align:top; }
+.form-table th{ background:var(--surface-1); font-size:.8rem; text-transform:uppercase; letter-spacing:.04em; color:var(--text-secondary); }
+.pct-row{ display:flex; flex-wrap:wrap; gap:6px; margin:0 0 1rem; }
+.pct-row span{ padding:3px 10px; border-radius:999px; font-weight:700; font-size:.8667rem; border:2px solid; }
+.rule-box p{ margin:0 0 6px; }
+.rule-box p:last-child{ margin-bottom:0; }
+</style>
+</head>
+<body>
+<div class="page" id="page">
+  <span class="cefr-tag cefr-b1">B1 · Intermediate</span>
+  <h1>Third Conditional: If we had left earlier…</h1>
+  <p class="subtitle">Imagining a different past: regrets and criticism.</p>
+
+  <div class="sec-div">Look</div>
+  <p class="subtitle">From the conversation. Blue is the <b>if</b>-part. Then follow the path: ✔️ it happens, ❌ it doesn’t.</p>
+  <div id="flowLegend"></div>
+  <div id="look"></div>
+
+  <div class="sec-div">Meaning</div>
+  <div class="rule-box" id="meaning"></div>
+
+  <div class="sec-div">Check the meaning</div>
+  <p class="subtitle">Answer the questions about each sentence.</p>
+  <div id="ccq"></div>
+
+  <div class="sec-div">Look at the form</div>
+  <p class="subtitle">What is each part? Drag a label (or tap a label, then tap a box).</p>
+  <div class="score-bar"><span>Correct: <strong id="fcScore">0</strong> / <span id="fcTotal">0</span></span></div>
+  <div id="formClarf"></div>
+  <div id="formRule"></div>
+
+  <div class="sec-div">Common mistakes</div>
+  <div id="mistakes"></div>
+
+  <div class="sec-div">Error hunt</div>
+  <p class="subtitle">Some sentences have one mistake. Some are correct! Tap a word — or a space between words — to fix it. Then press OK.</p>
+  <div class="score-bar"><span>Done: <strong id="errorScore">0</strong> / <span id="errorTotal">0</span></span></div>
+  <div id="errorHuntItems"></div>
+
+  <footer>Third conditional — Clarification (B1)</footer>
+</div>
+
+<div id="theme-toggle-wrap">
+  <button id="theme-toggle" aria-label="Toggle light/dark mode" title="Toggle light/dark mode">
+    <span id="theme-icon">☀️</span>
+  </button>
+</div>
+<script src="house.js"></script>
+<script src="house-flow.js"></script>
+<script>
+/* a node (p = how sure, 0–1), and a flow: cause → ✔️ / ❌ → results; say = the path the speaker talks about;
+   real = the branch that really happened (📍) — the other one is the imagined past */
+const N = (text, icon, p, when) => ({ text, icon, p, when });
+const FL = (cause, yes, no, say, more) => Object.assign({ cause, yes, no, say }, more || {});
+const SURE = [['would have', 1], ['would probably have', .8], ['might / could have', .5], ['probably wouldn’t have', .2], ['wouldn’t have', 0]];
+const sureRow = () => '<div class="pct-row">' + SURE.map(([w, p]) => '<span style="border-color:hsl(' + HouseFlow.hue(p) + ',70%,42%);color:hsl(' + HouseFlow.hue(p) + ',70%,35%)">' + w + ' · ' + Math.round(p * 100) + '%</span>').join('') + '</div>';
+
+const LEGEND = { real: true };
+const LOOK = [
+  ['<span class="if-part">If we had left earlier,</span> <span class="res-part">we would have caught the train.</span>',
+    FL(N('we leave earlier', '⏰'), N('catch the train', '🚆', 1), N('miss the train', '😩'), 'yes', { real: 'no' }),
+    '📍 What really happened: they left late and missed the train. The green path is a <b>regret</b>.'],
+  ['<span class="if-part">If you hadn’t spent an hour in the shower,</span> <span class="res-part">we would have left on time!</span>',
+    FL(N('Tom spends an hour in the shower', '🚿'), N('we leave late', '⏳'), N('we leave on time', '✅', 1), 'no', { real: 'yes' }),
+    'The ❌ path (<b>hadn’t</b>). 📍 He really did spend an hour in the shower. This is <b>criticism</b>.'],
+  ['<span class="if-part">If the train hadn’t been late,</span> we <b>might have</b> arrived for the second half.',
+    FL(N('the train is late', '🚆'), N('arrive after the end', '😞'), N('arrive for the second half', '🎸', .5), 'no', { real: 'yes' }),
+    '<b>might have</b> = about 50%. They aren’t sure.']
+];
+const MEANING = '<p><strong>The third conditional imagines a different past.</strong> The past is finished — we can’t change it. We only imagine the other path.</p>' +
+  '<p>We often use it for <b>regrets</b> (<i>If I had known, I would have bought them online</i>) and for <b>criticism</b> (<i>If you hadn’t spent an hour in the shower, we would have left on time!</i>). It’s close to <b>should have</b>: <i>I should have bought them online.</i></p>' +
+  '<p>The result says how sure you are about that other past:</p>' + sureRow();
+const CCQ = [
+  { sentence: 'If we had left earlier, we would have caught the train.', questions: [
+    { q: 'Did they leave early?', opts: ['Yes', 'No'], correct: 1, why: 'No. <b>had left</b> imagines the opposite of what happened.' },
+    { q: 'Did they catch the train?', opts: ['Yes', 'No'], correct: 1, why: 'No — they missed it. 📍' },
+    { q: 'Is it about the past?', opts: ['Yes', 'No'], correct: 0, why: 'Yes. It’s finished, so it’s only imagination now.' } ] },
+  { sentence: 'If you hadn’t spent an hour in the shower, we would have left on time.', questions: [
+    { q: 'Did Tom spend an hour in the shower?', opts: ['Yes', 'No'], correct: 0, why: 'Yes. <b>hadn’t spent</b> imagines the opposite.' },
+    { q: 'Is Ana happy with Tom?', opts: ['Yes', 'No'], correct: 1, why: 'No — it’s criticism: she thinks it’s his fault.' } ] }
+];
+const FORM_POOL = ['conj', 'wh', 'subject', 'aux', 'part', 'neg', 'object', 'adverb', 'prep', 'time'];
+const FORM = [
+  { form: 'aff', parts: [['If', 'conj'], ['we', 'subject'], ['had', 'aux'], ['left', 'part'], ['earlier', 'adverb'], [',', null], ['we', 'subject'], ['would', 'aux'], ['have', 'aux'], ['caught', 'part'], ['the train', 'object'], ['.', null]] },
+  { form: 'neg', parts: [['If', 'conj'], ['you', 'subject'], ['hadn’t', 'neg'], ['spent', 'part'], ['an hour', 'time'], ['in the shower', 'prep'], [',', null], ['we', 'subject'], ['would', 'aux'], ['have', 'aux'], ['left', 'part'], ['on time', 'time'], ['.', null]] },
+  { form: 'aff', parts: [['If', 'conj'], ['we', 'subject'], ['had', 'aux'], ['gone', 'part'], [',', null], ['I', 'subject'], ['might', 'aux'], ['have', 'aux'], ['cried', 'part'], ['.', null]] },
+  { form: 'wh', parts: [['What', 'wh'], ['would', 'aux'], ['you', 'subject'], ['have', 'aux'], ['done', 'part'], ['if', 'conj'], ['you', 'subject'], ['had', 'aux'], ['missed', 'part'], ['the train', 'object'], ['?', null]] }
+];
+const FORM_RULE = '<table class="form-table"><tr><th>if-part</th><th>result</th></tr>' +
+  '<tr><td><span class="if-part">If</span> + had / hadn’t + past participle</td><td>would / wouldn’t / might / could + have + past participle</td></tr>' +
+  '<tr><td><span class="if-part">If we had left earlier,</span></td><td><span class="res-part">we would have caught the train.</span></td></tr></table>' +
+  '<div class="rule-box"><p><strong>Careful with ’d:</strong> in the if-part ’d = <b>had</b>, in the result ’d = <b>would</b>: <i>If I’d (had) known, I’d (would) have come.</i></p>' +
+  '<p><strong>No would in the if-part:</strong> <i>If I <s>would have known</s> had known…</i></p>' +
+  '<p><strong>Always the past participle:</strong> had <b>known</b>, would have <b>come</b> — not <s>knew</s>, <s>came</s>.</p></div>';
+const MISTAKES = [
+  ['If I would have known, I would have come.', 'If I had known, I would have come.'],
+  ['If we left earlier, we would have caught the train.', 'If we had left earlier, we would have caught the train.'],
+  ['If you had told me, I would came.', 'If you had told me, I would have come.'],
+  ['If she had studied, she would passed.', 'If she had studied, she would have passed.'],
+  ['If I had knew, I would have helped.', 'If I had known, I would have helped.']
+];
+const EH_ITEMS = [
+  { words: ['If', 'I', 'knew', ',', 'I', 'would', 'have', 'come', '.'], error: { type: 'wrong', wordIndex: 2, options: ['had known', 'have known', 'would know'], correct: 'had known' } },
+  { words: ['If', 'we', 'had', 'left', 'earlier', ',', 'we', 'would', 'have', 'caught', 'the', 'train', '.'], error: null },
+  { words: ['If', 'you', 'had', 'told', 'me', ',', 'I', 'would', 'have', 'came', '.'], error: { type: 'wrong', wordIndex: 9, options: ['come', 'coming', 'comes'], correct: 'come' } },
+  { words: ['If', 'she', 'had', 'studied', ',', 'she', 'would', 'passed', '.'], error: { type: 'missing', gapIndex: 7, options: ['have', 'had', 'has'], correct: 'have' } },
+  { words: ['If', 'I', 'had', 'knew', ',', 'I', 'would', 'have', 'helped', '.'], error: { type: 'wrong', wordIndex: 3, options: ['known', 'know', 'knowing'], correct: 'known' } },
+  { words: ['If', 'the', 'train', 'hadn’t', 'been', 'late', ',', 'we', 'might', 'have', 'arrived', 'in', 'time', '.'], error: null },
+  { words: ['If', 'you', 'hadn’t', 'spent', 'an', 'hour', 'in', 'the', 'shower', ',', 'we', 'would', 'have', 'leave', 'on', 'time', '.'],
+    error: { type: 'wrong', wordIndex: 13, options: ['left', 'leaving', 'leaves'], correct: 'left' } },
+  { words: ['What', 'would', 'you', 'have', 'done', 'if', 'you', 'had', 'missed', 'the', 'train', '?'], error: null }
+];
+
+document.getElementById('flowLegend').innerHTML = HouseFlow.legend(LEGEND);
+document.getElementById('look').innerHTML = LOOK.map(([sent, flow, note]) =>
+  '<div class="flow-card"><div class="sent">' + sent + '</div>' + HouseFlow.svg(flow) + (note ? '<div class="note">' + note + '</div>' : '') + '</div>').join('');
+document.getElementById('meaning').innerHTML = MEANING;
+HouseCCQ.build({ container: 'ccq', items: CCQ });
+HouseFormClarf.build({ container: 'formClarf', scoreEl: 'fcScore', totalEl: 'fcTotal', pool: FORM_POOL, items: FORM });
+document.getElementById('formRule').innerHTML = FORM_RULE;
+document.getElementById('mistakes').innerHTML = MISTAKES.map(([no, yes]) =>
+  '<div class="pair-card"><div class="pair-line no"><span class="mark">✗</span>' + no + '</div>' +
+  '<div class="pair-line yes"><span class="mark">✓</span>' + yes + '</div></div>').join('');
+HouseErrorHunt.build({ container: 'errorHuntItems', items: EH_ITEMS, scoreEl: 'errorScore', totalEl: 'errorTotal' });
+</script>
+<script>HouseGrammar.init();</script>
+</body>
+</html>

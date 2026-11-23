@@ -1,0 +1,109 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<title>Third Conditional — Practice</title>
+<script>
+(function(){
+  try{
+    var saved = localStorage.getItem('theme-preference');
+    var theme = (saved === 'light' || saved === 'dark')
+      ? saved
+      : ((window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches) ? 'dark' : 'light');
+    document.documentElement.setAttribute('data-theme', theme);
+    var fs = parseFloat(localStorage.getItem('font-size-preference'));
+    if (fs >= 10 && fs <= 28) document.documentElement.style.setProperty('--fs-base', fs + 'px');
+  }catch(e){ /* localStorage/matchMedia unavailable — CSS media query still applies */ }
+})();
+</script>
+<link rel="stylesheet" href="house.css">
+<style>
+
+</style>
+</head>
+<body>
+<div class="page" id="page">
+  <span class="cefr-tag cefr-b1">B1 · Intermediate</span>
+  <h1>Third Conditional — Practice</h1>
+  <p class="subtitle">Regrets and criticism: if + had + past participle, would have + past participle.</p>
+
+  <div class="sec-div">Practice 1 — Follow the path</div>
+  <p class="subtitle">Read the sentence. Tap the result it talks about.</p>
+  <div class="score-bar"><span>Correct: <strong id="fqScore">0</strong> / <span id="fqTotal">0</span></span></div>
+  <div id="flowQuiz"></div>
+
+  <div class="sec-div">Practice 2 — Word order</div>
+  <p class="subtitle">Tap the words to build the sentence. Tap a word again to take it back, or drag to change the order.</p>
+  <button class="grammar-toggle-btn" id="grammarToggle">🎨 Show Grammar</button>
+  <div class="pos-legend"></div>
+  <div class="score-bar"><span>Correct: <strong id="woScore">0</strong> / <span id="woTotal">0</span></span></div>
+  <div id="woItems"></div>
+
+  <div class="sec-div">Practice 3 — Complete the sentences</div>
+  <p class="subtitle">Write the missing words. The bar turns green 🔴→🟢 when you are right.</p>
+  <div id="gfItems"></div>
+
+  <footer>Third conditional — Controlled practice (B1)</footer>
+</div>
+
+<div id="theme-toggle-wrap">
+  <button id="theme-toggle" aria-label="Toggle light/dark mode" title="Toggle light/dark mode">
+    <span id="theme-icon">☀️</span>
+  </button>
+</div>
+<script src="house.js"></script>
+<script src="house-flow.js"></script>
+<script>
+/* a node (p = how sure, 0–1), and a flow: cause → ✔️ / ❌ → results; say = the path the speaker talks about;
+   real = the branch that really happened (📍) — the other one is the imagined past */
+const N = (text, icon, p, when) => ({ text, icon, p, when });
+const FL = (cause, yes, no, say, more) => Object.assign({ cause, yes, no, say }, more || {});
+const SURE = [['would have', 1], ['would probably have', .8], ['might / could have', .5], ['probably wouldn’t have', .2], ['wouldn’t have', 0]];
+const sureRow = () => '<div class="pct-row">' + SURE.map(([w, p]) => '<span style="border-color:hsl(' + HouseFlow.hue(p) + ',70%,42%);color:hsl(' + HouseFlow.hue(p) + ',70%,35%)">' + w + ' · ' + Math.round(p * 100) + '%</span>').join('') + '</div>';
+
+const FLOW_QUIZ = [
+  { sentence: 'If I had set an alarm, I wouldn’t have missed the flight.',
+    flow: FL(N('I set an alarm', '⏰'), [N('miss the flight', '✈️', 0), N('miss the flight', '✈️', 1)], N('miss the flight', '😩'), null, { real: 'no' }), answer: { branch: 'yes', item: 0 },
+    why: '<b>wouldn’t have</b> = 0%. 📍 Really: no alarm, and she missed it.' },
+  { sentence: 'If she hadn’t eaten the old fish, she wouldn’t have been sick.',
+    flow: FL(N('she eats the old fish', '🐟'), N('be sick', '🤢'), N('be sick', '🤢', 0), null, { real: 'yes' }), answer: { branch: 'no' },
+    why: '<b>hadn’t eaten</b> = the ❌ path. 📍 Really, she ate it and was sick.' },
+  { sentence: 'If you had told me about the party, I might have come.',
+    flow: FL(N('you tell me about the party', '🎉'), [N('come', '🚶', .5), N('come', '🚶', 1)], N('stay at home', '🏠'), null, { real: 'no' }), answer: { branch: 'yes', item: 0 },
+    why: '<b>might have</b> = about 50%.' },
+  { sentence: 'If we hadn’t taken a taxi, we would have been late.',
+    flow: FL(N('we take a taxi', '🚕'), N('arrive on time', '⏰'), [N('be late', '🐢', 1), N('be late', '🐢', .5)], null, { real: 'yes' }), answer: { branch: 'no', item: 0 } },
+  { sentence: 'If he had studied harder, he would probably have passed.',
+    flow: FL(N('he studies harder', '📚'), [N('pass', '✅', .8), N('pass', '✅', 1)], N('fail', '❌'), null, { real: 'no' }), answer: { branch: 'yes', item: 0 },
+    why: '<b>would probably have</b> = about 80%.' },
+  { sentence: 'If I hadn’t met you, I wouldn’t have learned to dance.',
+    flow: FL(N('I meet you', '🤝'), N('learn to dance', '💃'), N('learn to dance', '💃', 0), null, { real: 'yes' }), answer: { branch: 'no' } }
+];
+const WO_ITEMS = [
+  { context: '🚆 A regret', text: 'If / we / had / left / earlier, / we / would / have / caught / the train.', pos: ['conj', 'subject', 'aux', 'part', 'adverb', 'subject', 'aux', 'aux', 'part', 'object'] },
+  { context: '💡 Too late!', text: 'If / I / had / known, / I / would / have / helped / you.', pos: ['conj', 'subject', 'aux', 'part', 'subject', 'aux', 'aux', 'part', 'object'] },
+  { context: '🐟 Bad fish', text: 'She / wouldn’t / have / been / sick / if / she / hadn’t / eaten / the fish.', pos: ['subject', 'neg', 'aux', 'part', 'adj', 'conj', 'subject', 'neg', 'part', 'object'] },
+  { context: '❓ Imagine…', text: 'What / would / you / have / done / if / you / had / missed / the train?', pos: ['wh', 'aux', 'subject', 'aux', 'part', 'conj', 'subject', 'aux', 'part', 'object'] },
+  { context: '📞 The party', text: 'If / you / had / called, / I / might / have / come.', pos: ['conj', 'subject', 'aux', 'part', 'subject', 'aux', 'aux', 'part'] },
+  { context: '⚽ The final', text: 'We / could / have / won / if / we / had / played / better.', pos: ['subject', 'aux', 'aux', 'part', 'conj', 'subject', 'aux', 'part', 'adverb'] }
+];
+const GF_LABELS = { pos: 'regret', neg: 'criticism', q: 'question', maybe: 'maybe — 50%', sure80: 'almost sure — 80%' };
+const GF_ITEMS = [
+  { category: 'pos', direct: 'A regret about the time they started the trip.', template: 'If we {0} {1} earlier, we would have caught the train.', hints: [{ accepted: ['had'] }, { accepted: ['left', 'gone'] }] },
+  { category: 'neg', direct: 'Criticism: Tom was in the bathroom for an hour.', template: 'If you {0} spent an hour in the shower, we would {1} left on time!', hints: [{ accepted: ['hadn’t', "hadn't", 'had not'] }, { accepted: ['have'] }] },
+  { category: 'pos', direct: 'A regret about the tickets.', template: 'If I had {0} about the queue, I would have {1} the tickets online.', hints: [{ accepted: ['known'] }, { accepted: ['bought'] }] },
+  { category: 'maybe', direct: 'The train was late. Not sure what would have happened.', template: 'If the train hadn’t been late, we {0} have arrived for the second half.', hints: [{ accepted: ['might', 'could'] }] },
+  { category: 'q', direct: 'Ask about another past.', template: 'What {0} you have done if you {1} missed the train?', hints: [{ accepted: ['would'] }, { accepted: ['had'] }] },
+  { category: 'neg', direct: 'Criticism: she ignored my advice.', template: 'If you {0} {1} to me, this wouldn’t have happened!', hints: [{ accepted: ['had'] }, { accepted: ['listened'] }] },
+  { category: 'pos', direct: 'A regret: no alarm clock.', template: 'If I {0} set an alarm, I {1} have missed the flight.', hints: [{ accepted: ['had'] }, { accepted: ['wouldn’t', "wouldn't", 'would not'] }] },
+  { category: 'sure80', direct: 'He didn’t study enough. Almost sure.', template: 'If he had studied harder, he would {0} have passed.', hints: [{ accepted: ['probably'] }] }
+];
+
+HouseFlow.quiz({ container: 'flowQuiz', items: FLOW_QUIZ, scoreEl: 'fqScore', totalEl: 'fqTotal' });
+HouseWordOrder.build({ container: 'woItems', items: WO_ITEMS, scoreEl: 'woScore', totalEl: 'woTotal' });
+HouseGapFill.build({ container: 'gfItems', items: GF_ITEMS, labels: GF_LABELS });
+</script>
+<script>HouseGrammar.init();</script>
+</body>
+</html>

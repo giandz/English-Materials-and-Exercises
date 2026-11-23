@@ -1,0 +1,157 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<title>What Will You Do If…? — First Conditional</title>
+<script>
+(function(){
+  try{
+    var saved = localStorage.getItem('theme-preference');
+    var theme = (saved === 'light' || saved === 'dark')
+      ? saved
+      : ((window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches) ? 'dark' : 'light');
+    document.documentElement.setAttribute('data-theme', theme);
+    var fs = parseFloat(localStorage.getItem('font-size-preference'));
+    if (fs >= 10 && fs <= 28) document.documentElement.style.setProperty('--fs-base', fs + 'px');
+  }catch(e){ /* localStorage/matchMedia unavailable — CSS media query still applies */ }
+})();
+</script>
+<link rel="stylesheet" href="house.css">
+<style>
+.cast-row{ display:flex; flex-wrap:wrap; gap:14px 18px; justify-content:center; align-items:flex-end; margin:0 0 1rem; padding:10px; background:var(--surface-1); border:1px solid var(--border); border-radius:var(--border-radius-lg); font-size:.8667rem; }
+.match-wrap .match-col-label{ text-align:center; }
+#picCol .match-card{ font-size:1.35rem; justify-content:center; }
+</style>
+</head>
+<body>
+<div class="page" id="page">
+  <span class="cefr-tag cefr-a2">A2 · Elementary</span>
+  <h1>What Will You Do If…?</h1>
+  <p class="subtitle">Mia and Leo talk about their plans for the weekend — and for next year.</p>
+
+  <div class="sec-div">Words for this lesson</div>
+  <p class="subtitle">Match the picture and the words. Tap a picture, then tap its words.</p>
+  <div class="score-bar"><span>Matched: <strong id="mScore">0</strong> / <span id="mTotal">0</span></span><button id="mReset">↺ Reset</button></div>
+  <div class="match-grid match-wrap">
+    <div><div class="match-col-label">Picture</div><div class="match-col" id="picCol"></div></div>
+    <div><div class="match-col-label">Words</div><div class="match-col" id="wordCol"></div></div>
+  </div>
+  <div class="win-msg" id="mWin">🎉 Great! You know the words for the conversation.</div>
+  <div class="feedback" id="mFeedback"></div>
+
+  <div class="sec-div">Before you read</div>
+  <div id="preQuestions"></div>
+
+  <div class="sec-div">The people</div>
+  <div class="cast-row" id="castRow"></div>
+
+  <div class="sec-div">The conversation</div>
+  <div class="setting-chip"><span class="section-icon">☕</span> Friday afternoon — at a café</div>
+  <p class="subtitle">The thought bubbles show the plans. Blue is the <b>if</b>-part. The % shows how sure the speaker is: 100% green → 0% red.</p>
+  <div id="flowLegend"></div>
+  <button class="grammar-toggle-btn" id="grammarToggle">🎨 Show Grammar</button>
+  <div class="pos-legend"></div>
+  <div id="conversation"></div>
+
+  <div class="sec-div">Check your answers</div>
+  <div id="quiz"></div>
+
+  <footer>What Will You Do If…? — First conditional: if + present, will / might + verb (A2)</footer>
+</div>
+
+<div id="theme-toggle-wrap">
+  <button id="theme-toggle" aria-label="Toggle light/dark mode" title="Toggle light/dark mode">
+    <span id="theme-icon">☀️</span>
+  </button>
+</div>
+<script src="house.js"></script>
+<script src="house-flow.js"></script>
+<script src="stick-character.js"></script>
+<script src="stick-sentence.js"></script>
+<script>
+/* a node (p = how sure, 0–1), and a flow: cause → ✔️ / ❌ → results; say = the path the speaker talks about */
+const N = (text, icon, p, when) => ({ text, icon, p, when });
+const FL = (cause, yes, no, say, more) => Object.assign({ cause, yes, no, say }, more || {});
+/* how sure each word is: the same scale on every page of this lesson */
+const SURE = [['will', 1], ['will probably', .8], ['may / might / could', .5], ['probably won’t', .2], ['won’t', 0]];
+const sureRow = () => '<div class="pct-row">' + SURE.map(([w, p]) => '<span style="border-color:hsl(' + HouseFlow.hue(p) + ',70%,42%);color:hsl(' + HouseFlow.hue(p) + ',70%,35%)">' + w + ' · ' + Math.round(p * 100) + '%</span>').join('') + '</div>';
+
+const LEGEND = {};
+StickSentence.cast({
+  mia: { base:'woman', colour:'#FF66CC', label:'Mia' },
+  leo: { base:'man',   colour:'#0066CC', label:'Leo' }
+});
+StickSentence.toggle();
+
+window.LESSON_DICT = {
+  'pass':      { pos:'verb', def:'to get a good enough result in an exam', ex:'If I pass my exams, I’ll go to university.', es:'aprobar' },
+  'offer':     { pos:'verb', def:'to say that you will give someone something, for example a job or money', ex:'If they offer me more money, I’ll take the job.', es:'ofrecer' },
+  'celebrate': { pos:'verb', def:'to do something fun because something good happened', ex:'If you get the job, we’ll celebrate!', es:'celebrar' },
+  'deal':      { pos:'exclamation', def:'OK, I agree', ex:'Deal! I’ll buy the pizza.', es:'¡trato hecho!' }
+};
+
+const WORDS = [['☀️', 'nice weather'], ['🌧️', 'rain'], ['🎬', 'the cinema'], ['🎓', 'university'], ['📝', 'pass an exam'],
+  ['💼', 'a job offer'], ['💰', 'more money'], ['🏦', 'a bank'], ['🎉', 'celebrate'], ['🏪', 'a shop']];
+
+document.getElementById('castRow').innerHTML = ['{Mia|mia}', '{Leo|leo}'].map(StickSentence.html).join('');
+const SPEAKERS = {
+  Mia: { cast: 'mia', avatar: '👩', av: 'av-b', side: 'left' },
+  Leo: { cast: 'leo', avatar: '👨', av: 'av-a', side: 'right' }
+};
+
+const EXAMS = (say) => FL(N('I pass my exams', '📝'), N('go to university', '🎓', 1), N('work in my uncle’s shop', '🏪', .8), say);
+const JOB = (say) => FL(N('they offer me more money', '💰'), N('take the job', '💼', 1), [N('take the job', '💼', 0), N('look for a job in a bank', '🏦', .5)], say);
+const LINES = [
+  ['Mia', '[What/wh] [are/aux] [you/subject] [going to do/verb] [this weekend/time], [Leo/noun]?'],
+  ['Leo', '[If/conj] [the weather/subject] [is/verb] [nice/adj], [I’ll/subject] [go/verb] [to the beach/prep] [with my cousins/prep].',
+    FL(N('the weather is nice', '☀️'), N('go to the beach', '🏖️', 1), [N('go to the cinema', '🎬', .5), N('stay at home', '🏠', .5)], 'yes')],
+  ['Mia', '[And/conj] [if/conj] [it/subject] [rains/verb]?'],
+  ['Leo', '[If/conj] [it/subject] [rains/verb], [we/subject] [might/aux] [go/verb] [to the cinema/prep]. [Or/conj] [we/subject] [may/aux] [just/adverb] [stay/verb] [at home/prep].',
+    FL(N('the weather is nice', '☀️'), N('go to the beach', '🏖️', 1), [N('go to the cinema', '🎬', .5), N('stay at home', '🏠', .5)], { branch: 'no', item: [0, 1] })],
+  ['Mia', '[Sounds fun/none]. [What about/none] [next year/time]? [Are/aux] [you/subject] [going to study/verb]?'],
+  ['Leo', '[If/conj] [I/subject] [pass/verb] [my exams/object], [I’ll/subject] [go/verb] [to university/prep] [in Caracas/prep].', EXAMS('yes')],
+  ['Mia', '[And/conj] [if/conj] [you/subject] [don’t/neg] [pass/verb]?'],
+  ['Leo', '[If/conj] [I/subject] [don’t/neg] [pass/verb], [I’ll/subject] [probably/adverb] [work/verb] [in my uncle’s shop/prep] [for a year/time].', EXAMS('no')],
+  ['Mia', '[You’ll/subject] [pass/verb] [if/conj] [you/subject] [study/verb] [every day/time]!'],
+  ['Leo', '[Ha/none]! [What about/none] [you/subject]? [Are/aux] [you/subject] [going to take/verb] [that job at the hotel/object]?'],
+  ['Mia', '[Maybe/adverb]. [If/conj] [they/subject] [offer/verb] [me/object] [more money/object], [I’ll/subject] [take/verb] [it/object].', JOB('yes')],
+  ['Leo', '[And/conj] [if/conj] [they/subject] [don’t/neg]?'],
+  ['Mia', '[If/conj] [they/subject] [don’t/neg], [I/subject] [won’t/neg] [take/verb] [it/object]. [I/subject] [might/aux] [look for/verb] [a job in a bank/object].',
+    JOB({ branch: 'no', item: [0, 1] })],
+  ['Leo', '[Good plan/none]. [If/conj] [you/subject] [get/verb] [the job/object], [we’ll/subject] [celebrate/verb]!',
+    FL(N('Mia gets the job', '💼'), N('we celebrate', '🎉', 1), N('we stay at home', '🏠', .5), 'yes')],
+  ['Mia', '[Deal/none]! [And/conj] [if/conj] [I/subject] [get/verb] [it/object], [I’ll/subject] [buy/verb] [the pizza/object]!']
+];
+
+const CQ_ITEMS = [
+  { q: 'What will Leo do if the weather is nice?', opts: ['Go to the beach', 'Go to the cinema', 'Stay at home'], correct: 0 },
+  { q: 'What will Leo probably do if he doesn’t pass his exams?', opts: ['Work in his uncle’s shop', 'Go to university', 'Take a job in a hotel'], correct: 0 },
+  { q: 'When will Mia take the hotel job?', opts: ['If they offer her more money', 'If she passes her exams', 'If it rains'], correct: 0 }
+];
+
+/* ── the conversation: a line can carry a flowchart in a thought bubble ─── */
+const avStyle = s => { const c = (StickSentence.cast()[s.cast] || {}).colour;
+  return c ? 'background:' + c + '40;box-shadow:inset 0 0 0 2px ' + c : ''; };
+const conv = document.getElementById('conversation');
+LINES.forEach(([who, text, flow]) => {
+  const s = SPEAKERS[who], right = s.side === 'right';
+  conv.insertAdjacentHTML('beforeend',
+    '<div class="bubble-wrap' + (right ? ' right' : '') + '">' +
+      '<div class="avatar ' + s.av + '" style="' + avStyle(s) + '">' + s.avatar + '</div>' +
+      '<div class="bubble-col"><div class="bname' + (right ? ' right' : '') + '">' + who + '</div>' +
+      '<div class="bubble ' + (right ? 'right' : 'left') + '">' + StickSentence.html(text) + '</div>' +
+      (flow ? HouseFlow.html(flow, { label: who + ' thinks' }) : '') + '</div>' +
+    '</div>');
+});
+document.getElementById('flowLegend').innerHTML = HouseFlow.legend(LEGEND);
+
+HouseMatching.build({
+  left: 'picCol', right: 'wordCol', scoreEl: 'mScore', totalEl: 'mTotal', winEl: 'mWin', resetBtn: 'mReset', feedbackEl: 'mFeedback',
+  pairs: WORDS.map(([e, w]) => ({ id: w, left: e, right: w }))
+});
+HouseComprehension.build({ pre: 'preQuestions', quiz: 'quiz', items: CQ_ITEMS });
+</script>
+<script>HouseGrammar.init();</script>
+</body>
+</html>

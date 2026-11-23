@@ -1,0 +1,109 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<title>Mixed Conditionals — Practice</title>
+<script>
+(function(){
+  try{
+    var saved = localStorage.getItem('theme-preference');
+    var theme = (saved === 'light' || saved === 'dark')
+      ? saved
+      : ((window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches) ? 'dark' : 'light');
+    document.documentElement.setAttribute('data-theme', theme);
+    var fs = parseFloat(localStorage.getItem('font-size-preference'));
+    if (fs >= 10 && fs <= 28) document.documentElement.style.setProperty('--fs-base', fs + 'px');
+  }catch(e){ /* localStorage/matchMedia unavailable — CSS media query still applies */ }
+})();
+</script>
+<link rel="stylesheet" href="house.css">
+<style>
+
+</style>
+</head>
+<body>
+<div class="page" id="page">
+  <span class="cefr-tag cefr-b2">B2 · Upper Intermediate</span>
+  <h1>Mixed Conditionals — Practice</h1>
+  <p class="subtitle">Past → now, always → past. Check the time on every box.</p>
+
+  <div class="sec-div">Practice 1 — Follow the path</div>
+  <p class="subtitle">Read the sentence. Tap the result it talks about.</p>
+  <div class="score-bar"><span>Correct: <strong id="fqScore">0</strong> / <span id="fqTotal">0</span></span></div>
+  <div id="flowQuiz"></div>
+
+  <div class="sec-div">Practice 2 — Word order</div>
+  <p class="subtitle">Tap the words to build the sentence. Tap a word again to take it back, or drag to change the order.</p>
+  <button class="grammar-toggle-btn" id="grammarToggle">🎨 Show Grammar</button>
+  <div class="pos-legend"></div>
+  <div class="score-bar"><span>Correct: <strong id="woScore">0</strong> / <span id="woTotal">0</span></span></div>
+  <div id="woItems"></div>
+
+  <div class="sec-div">Practice 3 — Complete the sentences</div>
+  <p class="subtitle">Write the missing words. The small label tells you the times. The bar turns green 🔴→🟢 when you are right.</p>
+  <div id="gfItems"></div>
+
+  <footer>Mixed conditionals — Controlled practice (B2)</footer>
+</div>
+
+<div id="theme-toggle-wrap">
+  <button id="theme-toggle" aria-label="Toggle light/dark mode" title="Toggle light/dark mode">
+    <span id="theme-icon">☀️</span>
+  </button>
+</div>
+<script src="house.js"></script>
+<script src="house-flow.js"></script>
+<script>
+/* a node (p = how sure, 0–1; when = its time: past / now / always), and a flow: cause → ✔️ / ❌ → results;
+   say = the path the speaker talks about; real = the branch that is really true (📍) */
+const N = (text, icon, p, when) => ({ text, icon, p, when });
+const FL = (cause, yes, no, say, more) => Object.assign({ cause, yes, no, say }, more || {});
+
+const FLOW_QUIZ = [
+  { sentence: 'If I had saved money, I would have a car now.',
+    flow: FL(N('save money', '💰', null, 'past'), [N('have a car', '🚗', 1, 'now'), N('have a car', '🚗', 1, 'past')], N('take the bus', '🚌', null, 'now'), null, { real: 'no' }),
+    answer: { branch: 'yes', item: 0 }, why: 'PAST → <b>NOW</b>: would + verb.' },
+  { sentence: 'If she weren’t so shy, she would have spoken at the meeting.',
+    flow: FL(N('she’s shy', '😳', null, 'always'), N('stay quiet', '🤐', null, 'past'), [N('speak at the meeting', '🗣️', 1, 'now'), N('speak at the meeting', '🗣️', 1, 'past')], null, { real: 'yes' }),
+    answer: { branch: 'no', item: 1 }, why: 'ALWAYS → <b>PAST</b>: would have + past participle.' },
+  { sentence: 'If they hadn’t moved to Canada, they wouldn’t speak French now.',
+    flow: FL(N('move to Canada', '🇨🇦', null, 'past'), N('speak French', '🗣️', null, 'now'), N('speak French', '🗣️', 0, 'now'), null, { real: 'yes' }),
+    answer: { branch: 'no' }, why: '<b>hadn’t moved</b> = the ❌ path. <b>wouldn’t</b> = 0%.' },
+  { sentence: 'If he were taller, he might have become a basketball player.',
+    flow: FL(N('he’s tall', '📏', null, 'always'), [N('become a basketball player', '🏀', .5, 'past'), N('become a basketball player', '🏀', 1, 'past')], N('become a teacher', '🧑‍🏫', null, 'past'), null, { real: 'no' }),
+    answer: { branch: 'yes', item: 0 }, why: '<b>might have</b> = about 50%.' },
+  { sentence: 'If I had gone to bed earlier, I wouldn’t be so tired now.',
+    flow: FL(N('go to bed earlier', '🛏️', null, 'past'), [N('be so tired', '🥱', 0, 'now'), N('be so tired', '🥱', 0, 'past')], N('be so tired', '🥱', null, 'now'), null, { real: 'no' }),
+    answer: { branch: 'yes', item: 0 }, why: 'PAST → <b>NOW</b>, and <b>wouldn’t</b> = 0%.' },
+  { sentence: 'If you spoke Japanese, you would have understood the film.',
+    flow: FL(N('you speak Japanese', '🗾', null, 'always'), N('understand the film', '🎬', 1, 'past'), N('need subtitles', '💬', null, 'past'), null, { real: 'no' }),
+    answer: { branch: 'yes' } }
+];
+const WO_ITEMS = [
+  { context: '👨‍🍳 PAST → NOW', text: 'If / I / hadn’t / taken / the course, / I / wouldn’t / be / a chef / now.', pos: ['conj', 'subject', 'neg', 'part', 'object', 'subject', 'neg', 'verb', 'complement', 'time'] },
+  { context: '❤️ ALWAYS → PAST', text: 'If / she / weren’t / so romantic, / she / would / have / gone / to London.', pos: ['conj', 'subject', 'neg', 'adj', 'subject', 'aux', 'aux', 'part', 'prep'] },
+  { context: '🗣️ PAST → NOW', text: 'I / would / speak / perfect English / now / if / I / had / taken / that job.', pos: ['subject', 'aux', 'verb', 'object', 'time', 'conj', 'subject', 'aux', 'part', 'object'] },
+  { context: '📅 ALWAYS → PAST', text: 'If / he / weren’t / so busy, / he / would / have / come / last year.', pos: ['conj', 'subject', 'neg', 'adj', 'subject', 'aux', 'aux', 'part', 'time'] },
+  { context: '🔪 PAST → NOW', text: 'If / I / had / brought / my knives, / I / would / be / cooking / now.', pos: ['conj', 'subject', 'aux', 'part', 'object', 'subject', 'aux', 'aux', 'verb', 'time'] },
+  { context: '🗾 ALWAYS → PAST', text: 'If / you / spoke / Japanese, / you / would / have / enjoyed / the film.', pos: ['conj', 'subject', 'verb', 'object', 'subject', 'aux', 'aux', 'part', 'object'] }
+];
+const GF_LABELS = { pastnow: 'past → now', nowpast: 'always → past', q: 'question' };
+const GF_ITEMS = [
+  { category: 'pastnow', direct: 'He did a cooking course in 2006. Today he is a chef.', template: 'If I {0} taken that course, I {1} be a chef now.', hints: [{ accepted: ['hadn’t', "hadn't", 'had not'] }, { accepted: ['wouldn’t', "wouldn't", 'would not'] }] },
+  { category: 'pastnow', direct: 'She said no to London years ago.', template: 'If I had {0} the job, I {1} speak perfect English now.', hints: [{ accepted: ['accepted', 'taken'] }, { accepted: ['would', 'might', 'could'] }] },
+  { category: 'nowpast', direct: 'She is a romantic person. She stayed.', template: 'If I {0} so romantic, I would {1} gone to London.', hints: [{ accepted: ['weren’t', "weren't", 'wasn’t', "wasn't", 'were not', 'was not'] }, { accepted: ['have'] }] },
+  { category: 'nowpast', direct: 'He is always busy. He missed the reunion.', template: 'If he weren’t so busy, he {0} {1} come last year.', hints: [{ accepted: ['would', 'might', 'could'] }, { accepted: ['have'] }] },
+  { category: 'pastnow', direct: 'He forgot his kitchen tools today.', template: 'If I {0} {1} my knives, I’d be cooking right now.', hints: [{ accepted: ['had'] }, { accepted: ['brought'] }] },
+  { category: 'nowpast', direct: 'You don’t know the language, so yesterday’s film was hard.', template: 'If you {0} Japanese, you would have {1} the film.', hints: [{ accepted: ['spoke', 'understood', 'knew'] }, { accepted: ['understood', 'enjoyed'] }] },
+  { category: 'q', direct: 'Ask about a different life now.', template: 'Where {0} you be living now if you {1} moved abroad at 18?', hints: [{ accepted: ['would'] }, { accepted: ['had'] }] },
+  { category: 'pastnow', direct: 'He didn’t study medicine. Maybe — 50%.', template: 'If I had studied medicine, I {0} be a doctor now.', hints: [{ accepted: ['might', 'could'] }] }
+];
+
+HouseFlow.quiz({ container: 'flowQuiz', items: FLOW_QUIZ, scoreEl: 'fqScore', totalEl: 'fqTotal' });
+HouseWordOrder.build({ container: 'woItems', items: WO_ITEMS, scoreEl: 'woScore', totalEl: 'woTotal' });
+HouseGapFill.build({ container: 'gfItems', items: GF_ITEMS, labels: GF_LABELS });
+</script>
+<script>HouseGrammar.init();</script>
+</body>
+</html>
