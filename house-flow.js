@@ -200,8 +200,11 @@
     var yesOn = !!say && say.branch === 'yes', noOn = !!say && say.branch === 'no';
     var yesItem = yesOn ? yes[say.items[0]] : null, noItem = noOn ? no[say.items[0]] : null;
     var yH = hue(yesItem && yesItem.p, 'yes'), nH = hue(noItem && noItem.p, 'no');
-    nodes += '<polygon class="hf-dia' + (yesOn ? ' hf-on' : '') + '" style="--hf-h:' + yH + '" points="' + dX + ',' + cy + ' ' + dC + ',' + (cy - D) + ' ' + (dX + 2 * D) + ',' + cy + '"/>';
-    nodes += '<polygon class="hf-dia' + (noOn ? ' hf-on' : '') + '" style="--hf-h:' + nH + '" points="' + dX + ',' + cy + ' ' + dC + ',' + (cy + D) + ' ' + (dX + 2 * D) + ',' + cy + '"/>';
+    /* the two halves share their middle edge: the highlighted half is drawn last, so its
+       outline is never covered by the plain grey edge of the other half */
+    var yesHalf = '<polygon class="hf-dia' + (yesOn ? ' hf-on' : '') + '" style="--hf-h:' + yH + '" points="' + dX + ',' + cy + ' ' + dC + ',' + (cy - D) + ' ' + (dX + 2 * D) + ',' + cy + '"/>';
+    var noHalf = '<polygon class="hf-dia' + (noOn ? ' hf-on' : '') + '" style="--hf-h:' + nH + '" points="' + dX + ',' + cy + ' ' + dC + ',' + (cy + D) + ' ' + (dX + 2 * D) + ',' + cy + '"/>';
+    nodes += yesOn ? noHalf + yesHalf : yesHalf + noHalf;
     nodes += '<text class="hf-mark" x="' + dC + '" y="' + (cy - D / 2 + 9) + '" text-anchor="middle">✔️</text>';
     nodes += '<text class="hf-mark" x="' + dC + '" y="' + (cy + D / 2 + 1) + '" text-anchor="middle">❌</text>';
 
