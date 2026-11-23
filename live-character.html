@@ -1,0 +1,413 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Live Character</title>
+<script>
+(function(){
+  try{
+    var saved = localStorage.getItem('theme-preference');
+    var theme = (saved === 'light' || saved === 'dark')
+      ? saved
+      : ((window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches) ? 'dark' : 'light');
+    document.documentElement.setAttribute('data-theme', theme);
+    var fs = parseFloat(localStorage.getItem('font-size-preference'));
+    if (fs >= 10 && fs <= 28) document.documentElement.style.setProperty('--fs-base', fs + 'px');
+  }catch(e){}
+})();
+</script>
+<link rel="stylesheet" href="house.css">
+<style>
+/* ── page-specific: the live character ───────────────────────────────── */
+html, body{ height:100%; margin:0; overflow:hidden; }
+#stage{ position:fixed; inset:0; z-index:0; }
+/* the control panel floats on the left, over the stage; ⚙️ folds it away */
+.lc-panel{ position:fixed; z-index:20; left:10px; top:10px; bottom:10px; width:21rem; max-width:calc(100vw - 20px); box-sizing:border-box;
+  display:flex; flex-direction:column; background:var(--surface-2); border:1px solid var(--border); border-radius:var(--radius);
+  box-shadow:0 8px 28px rgba(0,0,0,.22); color:var(--text-primary); }
+.lc-panel.folded{ bottom:auto; width:auto; }
+.lc-panel.folded .lc-body{ display:none; }
+.lc-head{ display:flex; align-items:center; gap:6px; padding:8px 10px; border-bottom:1px solid var(--border); }
+.lc-panel.folded .lc-head{ border-bottom:0; }
+.lc-head h1{ font-size:1rem; margin:0; flex:1 1 auto; white-space:nowrap; }
+.lc-head button{ padding:3px 8px; font-size:.8667rem; }
+.lc-body{ overflow-y:auto; overscroll-behavior:contain; padding:8px 10px 12px; }
+.lc-body details{ margin:0 0 8px; background:var(--surface-1); }
+.lc-body summary{ font-size:.8667rem; }
+.lc-sec{ padding:6px 10px 10px; display:flex; flex-direction:column; gap:7px; }
+.lc-row{ display:flex; align-items:center; gap:6px; flex-wrap:wrap; font-size:.8rem; color:var(--text-secondary); }
+.lc-row > label:first-child{ min-width:5.6em; }
+.lc-row input[type=range]{ flex:1 1 6rem; accent-color:var(--text-accent); margin:0; }
+.lc-row input[type=number]{ width:4.6em; font-family:var(--font-mono); font-size:.8rem; padding:2px 4px; border:1px solid var(--color-border-secondary);
+  border-radius:6px; background:var(--color-background-primary); color:var(--text-primary); }
+.lc-row select, .lc-row input[type=text]{ flex:1 1 8rem; min-width:0; font-family:inherit; font-size:.8rem; padding:3px 6px; border:1px solid var(--color-border-secondary);
+  border-radius:var(--border-radius-md); background:var(--color-background-primary); color:var(--text-primary); }
+.lc-row button{ font-size:.8rem; padding:3px 9px; }
+.lc-chk{ display:flex; align-items:center; gap:6px; font-size:.8rem; color:var(--text-secondary); cursor:pointer; }
+.lc-chk input{ accent-color:var(--text-accent); margin:0; }
+.lc-note{ font-size:.7333rem; color:var(--text-muted); line-height:1.45; margin:0; }
+.lc-status{ font-size:.7667rem; color:var(--text-secondary); min-height:1.2em; }
+.lc-big{ font-size:.9333rem !important; font-weight:600; padding:6px 12px !important; }
+button[aria-pressed="true"]{ background:var(--color-background-info); color:var(--color-text-info); border-color:var(--color-border-info); }
+/* level meter: the bar is the voice level; the mark is where voice starts */
+.lc-meter{ position:relative; height:10px; border-radius:5px; background:var(--surface-2); border:1px solid var(--border); overflow:hidden; }
+.lc-meter i{ position:absolute; left:0; top:0; bottom:0; width:0; background:var(--good); transition:width .05s linear; }
+.lc-meter i.quiet{ background:var(--text-muted); }
+.lc-meter b{ position:absolute; top:-2px; bottom:-2px; width:2px; background:var(--bad); }
+.lc-swatches{ display:flex; flex-wrap:wrap; gap:5px; }
+.lc-swatches button{ width:1.9rem; height:1.9rem; padding:0; border-radius:6px; border:1px solid rgba(0,0,0,.25); min-width:0; }
+.lc-swatches button[aria-pressed="true"]{ outline:2px solid var(--text-accent); outline-offset:2px; }
+.lc-swatches input[type=color]{ width:1.9rem; height:1.9rem; padding:0; border:1px solid var(--color-border-primary); border-radius:6px; background:none; cursor:pointer; }
+.lc-grid{ display:grid; grid-template-columns:repeat(3, minmax(0, 1fr)); gap:5px; }
+.lc-grid button{ font-size:.7667rem; padding:4px 3px; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
+.lc-grid kbd, .lc-note kbd{ font-family:var(--font-mono); font-size:.6667rem; padding:0 3px; border:1px solid var(--border); border-radius:3px; background:var(--surface-2); color:var(--text-muted); margin-right:3px; }
+.lc-log{ font-size:.7667rem; color:var(--text-secondary); max-height:6.5em; overflow-y:auto; background:var(--surface-2); border:1px solid var(--border); border-radius:6px; padding:4px 6px; }
+.lc-log:empty::before{ content:'Recognised sentences appear here.'; color:var(--text-muted); }
+.lc-log p{ margin:0 0 2px; }
+.lc-clip{ display:flex; align-items:center; gap:4px; font-size:.7667rem; }
+.lc-clip span{ flex:1 1 auto; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
+.lc-clip button{ font-size:.7rem; padding:1px 6px; }
+.lc-hint{ position:fixed; z-index:30; left:50%; top:14px; transform:translateX(-50%); padding:6px 14px; border-radius:20px; font-size:.8rem;
+  background:rgba(0,0,0,.72); color:#fff; pointer-events:none; opacity:0; transition:opacity .4s; }
+.lc-hint.on{ opacity:1; }
+/* recording view: only the stage; the pointer hides when it rests */
+body.clean > *:not(#stage):not(.lc-hint){ display:none !important; }
+body.clean.idle, body.clean.idle *{ cursor:none !important; }
+body.clean.see-through, html.see-through{ background:transparent !important; }
+</style>
+</head>
+<body>
+<div id="stage" aria-label="Live character"></div>
+
+<aside class="lc-panel" id="panel">
+  <div class="lc-head">
+    <h1>🎙️ Live Character</h1>
+    <button type="button" id="bClean" title="Recording view: hide every control (H). Press H or Esc to bring them back.">🎬 Record view</button>
+    <button type="button" id="bFold" title="Fold the panel" aria-label="Fold the panel" aria-expanded="true">⚙️</button>
+  </div>
+  <div class="lc-body">
+
+    <details open>
+      <summary>🎙️ Microphone</summary>
+      <div class="lc-sec">
+        <div class="lc-row"><button type="button" id="bMic" class="lc-big" aria-pressed="false">🎙️ Start microphone</button></div>
+        <div class="lc-meter" title="Voice level. Voice counts from the red mark."><i id="mLevel"></i><b id="mGate"></b></div>
+        <div class="lc-row"><label for="sens">Sensitivity</label><input type="range" id="sens" min="3" max="24" step="1"><span id="sensV"></span></div>
+        <div class="lc-row"><label for="detail">Audio mouth</label>
+          <select id="detail"><option value="shapes">Vowel shapes</option><option value="loudness">Open / closed by loudness</option></select></div>
+        <label class="lc-chk"><input type="checkbox" id="beats"> Small nods on loud syllables</label>
+        <p class="lc-note">Move the red mark with Sensitivity until the bar only turns green when you speak. A headset keeps room noise out.</p>
+      </div>
+    </details>
+
+    <details open>
+      <summary>🗣️ Speech recognition</summary>
+      <div class="lc-sec">
+        <label class="lc-chk"><input type="checkbox" id="recOn"> Recognise what I say</label>
+        <div class="lc-row"><label for="lang">Language</label>
+          <select id="lang"><option value="en-US">English (US)</option><option value="en-GB">English (UK)</option><option value="es-ES">Español (España)</option><option value="es-MX">Español (México)</option><option value="es-US">Español (EE. UU.)</option></select></div>
+        <label class="lc-chk"><input type="checkbox" id="onDevice"> On-device (private, works offline)</label>
+        <label class="lc-chk"><input type="checkbox" id="captions"> Captions on the stage</label>
+        <label class="lc-chk"><input type="checkbox" id="prosody"> Head and brows follow each sentence</label>
+        <label class="lc-chk"><input type="checkbox" id="autoG"> Gestures on keywords (hello → wave)</label>
+        <div class="lc-row"><label for="mouthMode">Mouth from</label>
+          <select id="mouthMode"><option value="auto">Words when ready in time, else audio</option><option value="audio">Audio only</option></select></div>
+        <div class="lc-status" id="status"></div>
+        <div class="lc-log" id="log"></div>
+      </div>
+    </details>
+
+    <details open>
+      <summary>⏱️ Delay</summary>
+      <div class="lc-sec">
+        <div class="lc-row"><label for="delay">Behind voice</label><input type="range" id="delay" min="0" max="4" step="0.1"><span id="delayV"></span></div>
+        <p class="lc-note" id="delayNote"></p>
+      </div>
+    </details>
+
+    <details>
+      <summary>🖼️ Background</summary>
+      <div class="lc-sec">
+        <div class="lc-row"><label for="bgType">Type</label>
+          <select id="bgType"><option value="color">Solid colour</option><option value="image">Image</option><option value="transparent">Transparent (OBS browser source)</option></select></div>
+        <div id="bgColorRow" class="lc-swatches" role="group" aria-label="Background colour">
+          <button type="button" data-c="#00B140" style="background:#00B140" title="Chroma green #00B140"></button>
+          <button type="button" data-c="#00FF00" style="background:#00FF00" title="Pure green #00FF00"></button>
+          <button type="button" data-c="#0047BB" style="background:#0047BB" title="Chroma blue #0047BB"></button>
+          <button type="button" data-c="#FF00FF" style="background:#FF00FF" title="Magenta #FF00FF"></button>
+          <button type="button" data-c="#000000" style="background:#000000" title="Black"></button>
+          <button type="button" data-c="#FFFFFF" style="background:#FFFFFF" title="White"></button>
+          <input type="color" id="bgColor" title="Any colour" aria-label="Any colour">
+        </div>
+        <div id="bgImageRow" class="lc-sec" style="padding:0">
+          <div class="lc-row"><button type="button" id="bImg">🖼️ Choose image…</button><span id="imgName" class="lc-note"></span></div>
+          <div class="lc-row"><label for="fit">Fit</label>
+            <select id="fit"><option value="cover">Fill (crop the edges)</option><option value="contain">Whole image</option><option value="stretch">Stretch</option></select></div>
+        </div>
+        <p class="lc-note">For chroma key, pick a green or blue the character does not wear. Transparent works in an OBS browser source.</p>
+        <input type="file" id="fileImg" accept="image/*" hidden>
+      </div>
+    </details>
+
+    <details open>
+      <summary>🎥 Camera</summary>
+      <div class="lc-sec">
+        <div class="lc-grid"><button type="button" data-shot="full">Full</button><button type="button" data-shot="medium">Waist up</button><button type="button" data-shot="closeup">Close-up</button></div>
+        <div class="lc-row"><label for="zoom">Zoom</label><input type="range" id="zoom" min="0.3" max="8" step="0.01"><input type="number" id="zoomN" min="0.2" max="12" step="0.05" aria-label="Zoom"></div>
+        <div class="lc-row"><label for="camX">Centre</label>x <input type="number" id="camX" step="1" aria-label="Centre x"> y <input type="number" id="camY" step="1" aria-label="Centre y"></div>
+        <div class="lc-row"><button type="button" id="bCamReset">⤢ Reset</button><label class="lc-chk"><input type="checkbox" id="lockCam"> Lock</label></div>
+        <p class="lc-note">On the stage: drag to move the character, mouse wheel to zoom at the pointer.</p>
+      </div>
+    </details>
+
+    <details open>
+      <summary>👋 Gestures and faces</summary>
+      <div class="lc-sec">
+        <div class="lc-grid" id="gGrid"></div>
+        <div class="lc-grid" id="eGrid"></div>
+        <p class="lc-note"><kbd>1</kbd>–<kbd>9</kbd> gestures · <kbd>Shift</kbd>+<kbd>1</kbd>–<kbd>8</kbd> faces · <kbd>0</kbd> own face. They play in step with the delayed voice.</p>
+        <div class="lc-row"><label for="clipKw">Keywords</label><input type="text" id="clipKw" placeholder="for the next clip: thanks, thank you"></div>
+        <div class="lc-row"><button type="button" id="bClip">➕ Load gesture clip…</button></div>
+        <div id="clipList"></div>
+        <p class="lc-note">A clip is an animation saved from Character Keyframes. Only the settings it has timelines for move (the mouth stays with the speech).</p>
+        <input type="file" id="fileClip" accept=".json,application/json" hidden>
+      </div>
+    </details>
+
+    <details>
+      <summary>🧍 Character</summary>
+      <div class="lc-sec">
+        <div class="lc-row"><button type="button" id="bChar">📂 Load character…</button><button type="button" id="bCharDef">Default</button></div>
+        <div class="lc-row"><label for="pose">Resting pose</label>
+          <select id="pose"><option value="">The character’s own</option><option value="standing">Standing</option><option value="hips">Hands on hips</option><option value="profile">Standing in profile</option></select></div>
+        <div class="lc-row"><label for="facing">Facing</label>
+          <select id="facing"><option value="front">Front</option><option value="left">Left</option><option value="right">Right</option></select></div>
+        <p class="lc-note">A character file saved from the poser (or an animation file: its character is used).</p>
+        <input type="file" id="fileChar" accept=".json,application/json" hidden>
+      </div>
+    </details>
+
+    <details>
+      <summary>🎬 Recording with OBS</summary>
+      <div class="lc-sec">
+        <p class="lc-note">1. Set the delay (1.5 s suits most sentences). 2. Open this page in Chrome or Edge and press <kbd>H</kbd> for the recording view. 3. In OBS add a Window Capture of this window, then a Chroma Key filter on it (or use a Transparent background in a Browser source). 4. In OBS’s Advanced Audio Properties give your microphone a Sync Offset equal to the delay. Browser sources in OBS usually can’t open the microphone, so Window Capture is the safer route.</p>
+      </div>
+    </details>
+  </div>
+</aside>
+<div class="lc-hint" id="hint"></div>
+
+<div id="theme-toggle-wrap">
+  <button id="theme-toggle" aria-label="Toggle light/dark mode" title="Toggle light/dark mode">
+    <span id="theme-icon">☀️</span>
+  </button>
+</div>
+<script src="house.js"></script>
+<script src="house-character.js"></script>
+<script src="house-live.js"></script>
+<script>
+/* ══════════════════════════════════════════════════════════════════════════
+   Live Character — the page around HouseLive: settings (kept in localStorage), the recording view,
+   and hotkeys. ?clean in the address opens straight in the recording view.
+   ══════════════════════════════════════════════════════════════════════════ */
+(function(){
+'use strict';
+const HC = HouseCharacter, $ = id => document.getElementById(id);
+const STORE = 'house-live-settings', IMG_STORE = 'house-live-image', CHAR_STORE = 'house-live-character', CLIP_STORE = 'house-live-clips';
+const load = (k, d) => { try{ const v = JSON.parse(localStorage.getItem(k) || 'null'); return v === null ? d : v; }catch(e){ return d; } };
+const save = (k, v) => { try{ localStorage.setItem(k, JSON.stringify(v)); return true; }catch(e){ return false; } };
+
+function starter(){
+  const c = HC.applyPose(HC.defaults(), 'standing');
+  return Object.assign(c, {name:'Sam', upperGarment:'tshirt', upperColor:'#CC0000', lowerGarment:'jeans', footwear:'sneakers', mouth:'smile'});
+}
+const S = Object.assign({bg:{type:'color', color:'#00B140', fit:'cover'}, camera:null, delay:1.5, lang:'en-US', onDevice:true, sensitivity:9, mouthDetail:'shapes',
+  beats:true, captions:false, prosody:true, autoGestures:true, mouthMode:'auto', recOn:true, lockCamera:false, pose:'', facing:'front', folded:false}, load(STORE, {}));
+const persist = () => save(STORE, S);
+let pt = 0; const persistSoon = () => { clearTimeout(pt); pt = setTimeout(persist, 300); };
+let charData = load(CHAR_STORE, null) || starter();
+let imageData = null; try{ imageData = localStorage.getItem(IMG_STORE); }catch(e){}
+
+/* the character as drawn: its own look, with the resting pose and facing chosen here */
+function shownCharacter(){
+  let c = HC.normalize(charData);
+  if(S.pose) c = HC.applyPose(c, S.pose);
+  if(S.facing && S.pose !== 'profile') c.head = S.facing;
+  return c;
+}
+const bgOpts = () => ({type:S.bg.type, color:S.bg.color, fit:S.bg.fit, image:S.bg.type === 'image' ? imageData : null});
+
+const live = HouseLive.create($('stage'), {
+  character:shownCharacter(), background:bgOpts(), delay:S.delay, lang:S.lang, onDevice:S.onDevice, sensitivity:S.sensitivity, mouthDetail:S.mouthDetail,
+  beats:S.beats, captions:S.captions, prosody:S.prosody, autoGestures:S.autoGestures, mouthMode:S.mouthMode, lockCamera:S.lockCamera,
+  onLevel:(db, gate) => {
+    const pct = v => Math.max(0, Math.min(100, (v + 80) / 70 * 100));
+    $('mLevel').style.width = pct(db) + '%'; $('mLevel').classList.toggle('quiet', db < gate); $('mGate').style.left = pct(gate) + '%';
+  },
+  onStatus:t => { $('status').textContent = t; },
+  onTranscript:t => { const p = document.createElement('p'); p.textContent = t; $('log').prepend(p); while($('log').children.length > 30) $('log').lastChild.remove(); },
+  onCamera:c => { S.camera = c; syncCam(); persistSoon(); }
+});
+if(S.camera) live.setCamera(S.camera, true); else live.shot('medium');
+
+/* ── loaded gesture clips ── */
+const savedClips = load(CLIP_STORE, []);
+for(const c of savedClips) live.addClip(c.id, c.anim, {label:c.label, keywords:c.keywords});
+
+/* ── controls ── */
+function syncAll(){
+  $('sens').value = S.sensitivity; $('sensV').textContent = S.sensitivity + ' dB';
+  $('detail').value = S.mouthDetail; $('beats').checked = S.beats;
+  $('recOn').checked = S.recOn; $('lang').value = S.lang; $('onDevice').checked = S.onDevice; $('captions').checked = S.captions;
+  $('prosody').checked = S.prosody; $('autoG').checked = S.autoGestures; $('mouthMode').value = S.mouthMode;
+  $('delay').value = S.delay; syncDelay();
+  $('bgType').value = S.bg.type; $('bgColor').value = S.bg.color || '#00B140'; $('fit').value = S.bg.fit || 'cover';
+  $('bgColorRow').hidden = S.bg.type !== 'color'; $('bgImageRow').hidden = S.bg.type !== 'image';
+  for(const b of $('bgColorRow').querySelectorAll('button')) b.setAttribute('aria-pressed', String((S.bg.color || '').toUpperCase() === b.dataset.c));
+  $('imgName').textContent = imageData ? 'Image loaded' : 'No image yet';
+  $('lockCam').checked = S.lockCamera; $('pose').value = S.pose; $('facing').value = S.facing;
+  document.documentElement.classList.toggle('see-through', S.bg.type === 'transparent');
+  syncCam(); syncFold();
+}
+function syncDelay(){
+  $('delayV').textContent = S.delay.toFixed(1) + ' s';
+  $('delayNote').innerHTML = S.delay >= 0.6
+    ? `The character runs ${S.delay.toFixed(1)} s behind your voice, so recognised words can shape the mouth and place gestures and captions on their words. In OBS, give the microphone a Sync Offset of <b>${Math.round(S.delay * 1000)} ms</b>.`
+    : 'No delay: the mouth follows the audio straight away; word gestures and captions come a moment late. Good for a live preview; for recording, 1.5 s works better.';
+}
+function syncCam(){
+  const c = live.getCamera(), f = document.activeElement;
+  if(f !== $('zoom')) $('zoom').value = c.zoom; if(f !== $('zoomN')) $('zoomN').value = c.zoom.toFixed(2);
+  if(f !== $('camX')) $('camX').value = Math.round(c.x); if(f !== $('camY')) $('camY').value = Math.round(c.y);
+}
+function syncFold(){ $('panel').classList.toggle('folded', S.folded); $('bFold').setAttribute('aria-expanded', String(!S.folded)); $('bFold').title = S.folded ? 'Open the panel' : 'Fold the panel'; }
+
+/* microphone */
+async function micOn(){
+  const ok = await live.startMic();
+  $('bMic').setAttribute('aria-pressed', String(ok)); $('bMic').textContent = ok ? '⏹️ Stop microphone' : '🎙️ Start microphone';
+  if(ok && S.recOn) live.startRecognition();
+}
+$('bMic').onclick = () => {
+  if(live.micOn){ live.stopMic(); $('bMic').setAttribute('aria-pressed', 'false'); $('bMic').textContent = '🎙️ Start microphone'; $('mLevel').style.width = '0'; }
+  else micOn();
+};
+$('sens').oninput = () => { S.sensitivity = +$('sens').value; $('sensV').textContent = S.sensitivity + ' dB'; live.set({sensitivity:S.sensitivity}); persistSoon(); };
+$('detail').onchange = () => { S.mouthDetail = $('detail').value; live.set({mouthDetail:S.mouthDetail}); persist(); };
+$('beats').onchange = () => { S.beats = $('beats').checked; live.set({beats:S.beats}); persist(); };
+/* recognition */
+$('recOn').onchange = () => { S.recOn = $('recOn').checked; persist(); if(S.recOn){ if(live.micOn) live.startRecognition(); } else live.stopRecognition(); };
+$('lang').onchange = () => { S.lang = $('lang').value; live.set({lang:S.lang}); persist(); };
+$('onDevice').onchange = () => { S.onDevice = $('onDevice').checked; live.set({onDevice:S.onDevice}); persist(); };
+$('captions').onchange = () => { S.captions = $('captions').checked; live.set({captions:S.captions}); persist(); };
+$('prosody').onchange = () => { S.prosody = $('prosody').checked; live.set({prosody:S.prosody}); persist(); };
+$('autoG').onchange = () => { S.autoGestures = $('autoG').checked; live.set({autoGestures:S.autoGestures}); persist(); };
+$('mouthMode').onchange = () => { S.mouthMode = $('mouthMode').value; live.set({mouthMode:S.mouthMode}); persist(); };
+$('delay').oninput = () => { S.delay = Math.round(+$('delay').value * 10) / 10; live.setDelay(S.delay); syncDelay(); persistSoon(); };
+/* background */
+$('bgType').onchange = () => { S.bg.type = $('bgType').value; live.setBackground(bgOpts()); persist(); syncAll(); if(S.bg.type === 'image' && !imageData) $('fileImg').click(); };
+$('bgColorRow').addEventListener('click', e => { const b = e.target.closest('button'); if(!b) return; S.bg.color = b.dataset.c; live.setBackground(bgOpts()); persist(); syncAll(); });
+$('bgColor').oninput = () => { S.bg.color = $('bgColor').value.toUpperCase(); live.setBackground(bgOpts()); persistSoon(); syncAll(); };
+$('fit').onchange = () => { S.bg.fit = $('fit').value; live.setBackground(bgOpts()); persist(); };
+$('bImg').onclick = () => $('fileImg').click();
+$('fileImg').onchange = () => {
+  const f = $('fileImg').files[0]; if(!f) return;
+  const r = new FileReader();
+  r.onload = () => {
+    imageData = r.result; S.bg.type = 'image';
+    let kept = true; try{ localStorage.setItem(IMG_STORE, imageData); }catch(e){ kept = false; }
+    live.setBackground(bgOpts()); persist(); syncAll();
+    $('imgName').textContent = f.name + (kept ? '' : ' (too big to remember next time)');
+  };
+  r.readAsDataURL(f); $('fileImg').value = '';
+};
+/* camera */
+document.querySelectorAll('[data-shot]').forEach(b => b.onclick = () => live.shot(b.dataset.shot));
+$('zoom').oninput = () => live.setCamera({zoom:+$('zoom').value});
+$('zoomN').onchange = () => live.setCamera({zoom:+$('zoomN').value});
+$('camX').onchange = () => live.setCamera({x:+$('camX').value});
+$('camY').onchange = () => live.setCamera({y:+$('camY').value});
+$('bCamReset').onclick = () => live.setCamera({x:300, y:295, zoom:1});
+$('lockCam').onchange = () => { S.lockCamera = $('lockCam').checked; live.set({lockCamera:S.lockCamera}); persist(); };
+/* character */
+function applyCharacter(){ live.setCharacter(shownCharacter()); }
+$('pose').onchange = () => { S.pose = $('pose').value; applyCharacter(); persist(); };
+$('facing').onchange = () => { S.facing = $('facing').value; applyCharacter(); persist(); };
+$('bChar').onclick = () => $('fileChar').click();
+$('bCharDef').onclick = () => { charData = starter(); try{ localStorage.removeItem(CHAR_STORE); }catch(e){} applyCharacter(); hint('Default character.'); };
+$('fileChar').onchange = () => readJSON($('fileChar'), j => {
+  charData = HC.normalize(j.character || j); save(CHAR_STORE, charData); applyCharacter();
+  hint(`Loaded ${charData.name || 'the character'}.`);
+});
+function readJSON(input, cb){
+  const f = input.files && input.files[0]; if(!f) return;
+  const r = new FileReader();
+  r.onload = () => { try{ cb(JSON.parse(r.result), f); }catch(e){ hint('That file is not a valid JSON file.'); } input.value = ''; };
+  r.readAsText(f);
+}
+/* gestures and faces */
+const EMO = HouseLive.EMOTIONS;
+function buildGestures(){
+  $('gGrid').innerHTML = live.clips.map(c => `<button type="button" data-g="${c.id}" title="${c.label}${c.key ? ' (' + c.key + ')' : ''}">${c.key ? `<kbd>${c.key}</kbd>` : ''}${c.label}</button>`).join('');
+  $('eGrid').innerHTML = EMO.map((e, i) => `<button type="button" data-e="${e.id}" title="${e.label} (Shift + ${i + 1})">${e.label}</button>`).join('')
+    + `<button type="button" data-e="neutral" title="The character’s own face (0)"><kbd>0</kbd>Own face</button>`;
+  const user = live.clips.filter(c => !c.builtin);
+  $('clipList').innerHTML = user.map(c => `<div class="lc-clip"><span title="${Object.values(c.keywords || {}).flat().join(', ')}">🎞️ ${c.label}</span><button type="button" data-rm="${c.id}" title="Remove this clip">✕</button></div>`).join('');
+}
+$('gGrid').addEventListener('click', e => { const b = e.target.closest('[data-g]'); if(b) live.gesture(b.dataset.g); });
+$('eGrid').addEventListener('click', e => { const b = e.target.closest('[data-e]'); if(b) live.emotion(b.dataset.e); });
+$('clipList').addEventListener('click', e => {
+  const b = e.target.closest('[data-rm]'); if(!b) return;
+  live.removeClip(b.dataset.rm); save(CLIP_STORE, load(CLIP_STORE, []).filter(c => c.id !== b.dataset.rm)); buildGestures();
+});
+$('bClip').onclick = () => $('fileClip').click();
+$('fileClip').onchange = () => readJSON($('fileClip'), (j, f) => {
+  const label = f.name.replace(/\.json$/i, '').replace(/[-_]+/g, ' ').replace(/\banimation\b/i, '').trim() || 'Clip';
+  const id = 'clip-' + label.toLowerCase().replace(/[^a-z0-9]+/g, '-') + '-' + Date.now().toString(36);
+  const kw = $('clipKw').value.split(',').map(s => s.trim()).filter(Boolean);
+  const keywords = {en:kw, es:kw};
+  const c = live.addClip(id, j, {label, keywords});
+  if(!c){ hint('That file has no movement a gesture can use (joints, head, brows, eyes or hands).'); return; }
+  const list = load(CLIP_STORE, []); list.push({id, label, keywords, anim:j});
+  if(!save(CLIP_STORE, list)) hint('Clip added, but it is too big to remember next time.'); else hint(`Clip “${label}” added.`);
+  $('clipKw').value = ''; buildGestures();
+});
+
+/* ── recording view ── */
+let idleT = 0;
+function setClean(on){
+  document.body.classList.toggle('clean', on);
+  document.body.classList.toggle('see-through', on && S.bg.type === 'transparent');
+  if(on) hint('Recording view: press H or Esc to show the controls.');
+}
+$('bClean').onclick = () => setClean(true);
+$('bFold').onclick = () => { S.folded = !S.folded; syncFold(); persist(); };
+document.addEventListener('pointermove', () => {
+  document.body.classList.remove('idle'); clearTimeout(idleT);
+  idleT = setTimeout(() => document.body.classList.add('idle'), 2000);
+});
+let hintT = 0;
+function hint(t){ $('hint').textContent = t; $('hint').classList.add('on'); clearTimeout(hintT); hintT = setTimeout(() => $('hint').classList.remove('on'), 2600); }
+
+/* ── hotkeys ── */
+document.addEventListener('keydown', e => {
+  const tag = e.target && e.target.tagName;
+  if(tag === 'INPUT' && e.target.type !== 'checkbox' && e.target.type !== 'range' || tag === 'TEXTAREA' || tag === 'SELECT' || e.ctrlKey || e.metaKey || e.altKey) return;
+  const clean = document.body.classList.contains('clean');
+  if(e.key === 'h' || e.key === 'H'){ e.preventDefault(); setClean(!clean); return; }
+  if(e.key === 'Escape' && clean){ setClean(false); return; }
+  const m = e.code.match(/^(?:Digit|Numpad)(\d)$/); if(!m) return;
+  const n = +m[1];
+  if(n === 0){ e.preventDefault(); live.emotion('neutral'); return; }
+  if(e.shiftKey){ const em = EMO[n - 1]; if(em){ e.preventDefault(); live.emotion(em.id); } return; }
+  const c = live.clips.find(x => x.key === String(n)); if(c){ e.preventDefault(); live.gesture(c.id); }
+});
+
+window.liveCharacter = live;   /* for the console */
+buildGestures(); syncAll();
+if(new URLSearchParams(location.search).has('clean')) setClean(true);
+})();
+</script>
+</body>
+</html>
