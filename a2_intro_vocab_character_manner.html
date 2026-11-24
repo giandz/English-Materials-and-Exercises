@@ -1,0 +1,134 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<title>A New Roommate — Character and Manner</title>
+<script>
+(function(){
+  try{
+    var saved = localStorage.getItem('theme-preference');
+    var theme = (saved === 'light' || saved === 'dark')
+      ? saved
+      : ((window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches) ? 'dark' : 'light');
+    document.documentElement.setAttribute('data-theme', theme);
+    var fs = parseFloat(localStorage.getItem('font-size-preference'));
+    if (fs >= 10 && fs <= 28) document.documentElement.style.setProperty('--fs-base', fs + 'px');
+  }catch(e){ /* localStorage/matchMedia unavailable — CSS media query still applies */ }
+})();
+</script>
+<link rel="stylesheet" href="house.css">
+<style>
+.cast-row{ display:flex; flex-wrap:wrap; gap:14px 18px; justify-content:center; align-items:flex-end; margin:0 0 1rem; padding:10px; background:var(--surface-1); border:1px solid var(--border); border-radius:var(--border-radius-lg); font-size:.8667rem; }
+.match-wrap .match-col-label{ text-align:center; }
+#picCol .match-card{ font-size:1.35rem; justify-content:center; }
+</style>
+</head>
+<body>
+<div class="page" id="page">
+  <span class="cefr-tag cefr-a2">A2 · Elementary</span>
+  <h1>A New Roommate</h1>
+  <p class="subtitle">Sam and Priya have a free room in their apartment. Today they met three people who want it.</p>
+
+  <div class="sec-div">Words for this lesson</div>
+  <p class="subtitle">Match the picture and the words. Tap a picture, then tap its words.</p>
+  <div class="score-bar"><span>Matched: <strong id="mScore">0</strong> / <span id="mTotal">0</span></span><button id="mReset">↺ Reset</button></div>
+  <div class="match-grid match-wrap">
+    <div><div class="match-col-label">Picture</div><div class="match-col" id="picCol"></div></div>
+    <div><div class="match-col-label">Words</div><div class="match-col" id="wordCol"></div></div>
+  </div>
+  <div class="win-msg" id="mWin">🎉 Great! You know the words for the conversation.</div>
+  <div class="feedback" id="mFeedback"></div>
+
+  <div class="sec-div">Before you read</div>
+  <div id="preQuestions"></div>
+
+  <div class="sec-div">The people</div>
+  <div class="cast-row" id="castRow"></div>
+
+  <div class="sec-div">The conversation</div>
+  <div class="setting-chip"><span class="section-icon">🛋️</span> Saturday evening — in the living room, after the interviews</div>
+  <button class="grammar-toggle-btn" id="grammarToggle">🎨 Show Grammar</button>
+  <div class="pos-legend"></div>
+  <div id="conversation"></div>
+
+  <div class="sec-div">Check your answers</div>
+  <div id="quiz"></div>
+
+  <footer>A New Roommate — Vocabulary: character and manner (A2)</footer>
+</div>
+
+<div id="theme-toggle-wrap">
+  <button id="theme-toggle" aria-label="Toggle light/dark mode" title="Toggle light/dark mode">
+    <span id="theme-icon">☀️</span>
+  </button>
+</div>
+<script src="house.js"></script>
+<script src="stick-character.js"></script>
+<script src="stick-sentence.js"></script>
+<script>
+StickSentence.cast({
+  priya: { base:'woman', colour:'#CC3399', label:'Priya' },
+  sam:   { base:'man',   colour:'#0099CC', label:'Sam' }
+});
+StickSentence.toggle();
+window.LESSON_DICT = {
+  'roommate': { pos:'noun', def:'a person who lives in the same apartment or room as you', ex:'We need a new roommate.', es:'compañero/a de piso' },
+  'messy':    { pos:'adjective', def:'not tidy; with things everywhere', ex:'Honestly, I’m a little messy.', es:'desordenado/a' },
+  'honest':   { pos:'adjective', def:'always telling the truth', ex:'She was honest about everything.', es:'honesto/a, sincero/a' },
+  'in the middle of': { pos:'phrase', def:'during something, before it finishes', ex:'He answered his phone in the middle of our questions.', es:'en medio de' },
+  'deal':     { pos:'exclamation', def:'(informal) OK, I agree', ex:'Let’s call Tom first. — Deal!', es:'¡trato hecho!' }
+};
+const WORDS = [['😊', 'friendly'], ['🙏', 'polite'], ['😠', 'rude'], ['🙈', 'shy'], ['🛋️', 'lazy'],
+  ['💪', 'hard-working'], ['🎁', 'generous'], ['😂', 'funny'], ['🧘', 'patient'], ['🤗', 'kind']];
+document.getElementById('castRow').innerHTML = ['{Priya|priya}', '{Sam|sam}'].map(StickSentence.html).join('');
+const SPEAKERS = {
+  Priya: { cast: 'priya', avatar: '👩🏽', av: 'av-b', side: 'left' },
+  Sam:   { cast: 'sam',   avatar: '👨', av: 'av-a', side: 'right' }
+};
+const LINES = [
+  ['Priya', '[So/conj], [we/subject] [met/verb] [three people/object] [today/time]. [What/wh] [did/aux] [you/subject] [think/verb] [of Tom/prep]?'],
+  ['Sam', '[I/subject] [liked/verb] [him/object]. [He/subject] [was/verb] [very/adverb] [friendly/adj] [and/conj] [polite/adj]. [He/subject] [spoke/verb] [politely/adverb] [and/conj] [listened/verb] [patiently/adverb] [to all our questions/prep].'],
+  ['Priya', '[Yes/none], [he’s/subject] [really/adverb] [kind/adj]. [He’s/subject] [good at/adj] [cooking/object], [too/adverb]!'],
+  ['Sam', '[And/conj] [Jess/noun]? [She/subject] [was/verb] [quite/adverb] [quiet/adj].'],
+  ['Priya', '[She’s/subject] [a bit/adverb] [shy/adj], [I think/none]. [She/subject] [answered/verb] [quietly/adverb], [but/conj] [she/subject] [was/verb] [honest/adj] [about everything/prep].'],
+  ['Sam', '[True/adj]. [She/subject] [said/verb], [“Honestly/adverb], [I’m/subject] [a little/adverb] [messy/adj].” [I/subject] [like/verb] [that/object].'],
+  ['Priya', '[Hmm/none]… [I’m/subject] [not sure/adj]. [And/conj] [Ryan/noun]?'],
+  ['Sam', '[Ryan/subject] [was/verb] [rude/adj]. [He/subject] [answered/verb] [his phone/object] [in the middle of our questions/prep]!'],
+  ['Priya', '[And/conj] [he/subject] [spoke/verb] [to us/prep] [rudely/adverb]. [He/subject] [also/adverb] [said/verb] [he’s/subject] [afraid of/adj] [cats/object].'],
+  ['Sam', '[Oh no/none]! [Our cat Pepper/subject] [is/verb] [very/adverb] [friendly/adj].'],
+  ['Priya', '[And/conj] [he’s/subject] [lazy/adj] — [he/subject] [said/verb], [“I/subject] [never/adverb] [clean/verb]. [I’m/subject] [too/adverb] [busy/adj].”'],
+  ['Sam', '[So/conj] [not Ryan/none]. [Tom/subject] [is/verb] [hard-working/adj] [and/conj] [generous/adj] — [he/subject] [brought/verb] [us/object] [cookies/object]!'],
+  ['Priya', '[Jess/subject] [was/verb] [funny/adj], [too/adverb]. [She/subject] [made/verb] [me/object] [laugh/verb].'],
+  ['Sam', '[OK/none]. [Let’s/aux] [call/verb] [Tom/object] [first/adverb]. [If/conj] [he/subject] [says/verb] [no/object], [we/subject] [can/aux] [call/verb] [Jess/object].'],
+  ['Priya', '[Deal/none]!']
+];
+const CQ_ITEMS = [
+  { q: 'Who brought cookies?', opts: ['Tom', 'Jess', 'Ryan'], correct: 0 },
+  { q: 'Why don’t they want Ryan?', opts: ['He was rude and lazy', 'He was shy and quiet', 'He was messy and funny'], correct: 0 },
+  { q: 'Who are they going to call first?', opts: ['Tom', 'Jess', 'Pepper'], correct: 0 }
+];
+
+/* ── the conversation ─────────────────────────────────────────────────── */
+const avStyle = s => { const c = (StickSentence.cast()[s.cast] || {}).colour;
+  return c ? 'background:' + c + '40;box-shadow:inset 0 0 0 2px ' + c : ''; };
+const conv = document.getElementById('conversation');
+LINES.forEach(([who, text]) => {
+  const s = SPEAKERS[who], right = s.side === 'right';
+  conv.insertAdjacentHTML('beforeend',
+    '<div class="bubble-wrap' + (right ? ' right' : '') + '">' +
+      '<div class="avatar ' + s.av + '" style="' + avStyle(s) + '">' + s.avatar + '</div>' +
+      '<div class="bubble-col"><div class="bname' + (right ? ' right' : '') + '">' + who + '</div>' +
+      '<div class="bubble ' + (right ? 'right' : 'left') + '">' + StickSentence.html(text) + '</div></div>' +
+    '</div>');
+});
+
+HouseMatching.build({
+  left: 'picCol', right: 'wordCol', scoreEl: 'mScore', totalEl: 'mTotal', winEl: 'mWin', resetBtn: 'mReset', feedbackEl: 'mFeedback',
+  pairs: WORDS.map(([e, w]) => ({ id: w, left: e, right: w }))
+});
+HouseComprehension.build({ pre: 'preQuestions', quiz: 'quiz', items: CQ_ITEMS });
+</script>
+<script>HouseGrammar.init();</script>
+</body>
+</html>

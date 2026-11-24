@@ -1,0 +1,204 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<title>Character and Manner — Clarification</title>
+<script>
+(function(){
+  try{
+    var saved = localStorage.getItem('theme-preference');
+    var theme = (saved === 'light' || saved === 'dark')
+      ? saved
+      : ((window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches) ? 'dark' : 'light');
+    document.documentElement.setAttribute('data-theme', theme);
+    var fs = parseFloat(localStorage.getItem('font-size-preference'));
+    if (fs >= 10 && fs <= 28) document.documentElement.style.setProperty('--fs-base', fs + 'px');
+  }catch(e){ /* localStorage/matchMedia unavailable — CSS media query still applies */ }
+})();
+</script>
+<link rel="stylesheet" href="house.css">
+<style>
+.flow-card{ border:1px solid var(--color-border-tertiary); border-radius:var(--border-radius-lg); background:var(--surface-2); padding:10px 12px; margin-bottom:10px; }
+.flow-card .sent{ font-size:1rem; font-weight:600; margin-bottom:6px; }
+.flow-card .note{ font-size:.8333rem; color:var(--text-secondary); margin-top:4px; }
+.if-part{ color:hsl(217, 70%, 42%); font-weight:700; }
+.res-part{ color:hsl(120, 60%, 32%); font-weight:700; }
+.res-no{ color:hsl(0, 65%, 42%); font-weight:700; }
+[data-theme="dark"] .res-no{ color:hsl(0, 75%, 70%); }
+[data-theme="dark"] .if-part{ color:hsl(217, 80%, 70%); }
+[data-theme="dark"] .res-part{ color:hsl(120, 55%, 65%); }
+.form-table{ width:100%; border-collapse:collapse; margin:0 0 1rem; font-size:.9333rem; }
+.form-table th, .form-table td{ border:1px solid var(--color-border-tertiary); padding:7px 9px; text-align:left; vertical-align:top; }
+.form-table th{ background:var(--surface-1); font-size:.8rem; text-transform:uppercase; letter-spacing:.04em; color:var(--text-secondary); }
+.pct-row{ display:flex; flex-wrap:wrap; gap:6px; margin:0 0 1rem; }
+.pct-row span{ padding:3px 10px; border-radius:999px; font-weight:700; font-size:.8667rem; border:2px solid; }
+.rule-box p{ margin:0 0 6px; }
+.rule-box p:last-child{ margin-bottom:0; }
+.big-pic{ font-size:1.6rem; letter-spacing:.1em; margin:2px 0 4px; }
+.hl{ font-weight:700; color:var(--text-accent); }
+</style>
+</head>
+<body>
+<div class="page" id="page">
+  <span class="cefr-tag cefr-a2">A2 · Elementary</span>
+  <h1>Character and Manner</h1>
+  <p class="subtitle">Words for what people are like — and how they do things.</p>
+
+  <div class="sec-div">Look</div>
+  <p class="subtitle">From the conversation. Look at the highlighted words.</p>
+  <div id="look"></div>
+
+  <div class="sec-div">Meaning 1 — Mystery words</div>
+  <p class="subtitle">The same word is behind every ❓. Guess it! The first clue gives ⭐⭐⭐ — every new clue or wrong guess costs a star.</p>
+  <div class="score-bar"><span>Stars: <strong id="myScore">0</strong> / <span id="myTotal">0</span> ⭐</span></div>
+  <div id="mystery"></div>
+
+  <div class="sec-div">Meaning 2 — Word scales</div>
+  <p class="subtitle">Put the words in order. Drag a word to its place, or tap a word and then tap a place.</p>
+  <div class="score-bar"><span>Done: <strong id="scScore">0</strong> / <span id="scTotal">0</span></span></div>
+  <div id="scales"></div>
+  <div class="rule-box" id="meaning"></div>
+
+  <div class="sec-div">Check the meaning</div>
+  <p class="subtitle">Answer the questions about each sentence.</p>
+  <div id="ccq"></div>
+
+  <div class="sec-div">Form — Word families</div>
+  <p class="subtitle">Write the missing words. The bar goes green 🔴→🟢 when you are right. Then use one word in the sentence.</p>
+  <div class="score-bar"><span>Done: <strong id="wfScore">0</strong> / <span id="wfTotal">0</span></span></div>
+  <div id="families"></div>
+  <div class="rule-box" id="formRule"></div>
+
+  <div class="sec-div">Use — Words that go together</div>
+  <p class="subtitle">Which words go with the word in the box? Tap all the right ones.</p>
+  <div class="score-bar"><span>Done: <strong id="coScore">0</strong> / <span id="coTotal">0</span></span></div>
+  <div id="forks"></div>
+
+  <div class="sec-div">Common mistakes</div>
+  <div id="mistakes"></div>
+
+  <div class="sec-div">Error hunt</div>
+  <p class="subtitle">Some sentences have one mistake. Some are correct! Tap a word — or a space between words — to fix it. Then press OK.</p>
+  <div class="score-bar"><span>Done: <strong id="errorScore">0</strong> / <span id="errorTotal">0</span></span></div>
+  <div id="errorHuntItems"></div>
+
+  <footer>Character and manner — Vocabulary clarification (A2)</footer>
+</div>
+
+<div id="theme-toggle-wrap">
+  <button id="theme-toggle" aria-label="Toggle light/dark mode" title="Toggle light/dark mode">
+    <span id="theme-icon">☀️</span>
+  </button>
+</div>
+<script src="house.js"></script>
+<script src="house-vocab.js"></script>
+<script>
+const LOOK = [
+  ['He spoke <span class="hl">politely</span> and listened <span class="hl">patiently</span>.', '<div class="big-pic">🗣️🙏 · 👂🧘</div>',
+    'He is <b>polite</b> (what he is like) → he speaks <b>politely</b> (how he does it).'],
+  ['She’s <span class="hl">a bit</span> shy.', '<div class="big-pic">🙈</div>', '<b>a bit</b> = a little. She isn’t very shy.'],
+  ['He’s <span class="hl">good at</span> cooking. He’s <span class="hl">afraid of</span> cats.', '<div class="big-pic">👨‍🍳 · 😨🐈</div>',
+    'Many adjectives go with a preposition: good <b>at</b>, afraid <b>of</b>, kind <b>to</b>.']
+];
+const MYSTERY = [
+  { answer: 'shy', pic: '🙈', clues: [
+    'My little brother is very ❓ — he doesn’t talk to new people.',
+    'Her face goes red when the teacher asks her a question. She’s ❓.',
+    'At parties, ❓ people often stand in a corner and don’t talk much.' ] },
+  { answer: 'generous', pic: '🎁', options: ['generous', 'lazy', 'rude', 'honest'], clues: [
+    'My grandma is very ❓. She always buys presents for everyone.',
+    'He paid for everybody’s dinner. How ❓!',
+    'A ❓ person likes to give and to share.' ] },
+  { answer: 'lazy', pic: '🛋️', clues: [
+    'Get up! Don’t be so ❓!',
+    'My cat is ❓ — she sleeps 18 hours a day.',
+    'He’s ❓: he never helps with the housework and he never does his homework.' ] },
+  { answer: 'honest', pic: '💯', options: ['honest', 'funny', 'polite', 'patient'], clues: [
+    'I like her because she’s ❓ — she always says what she really thinks.',
+    'He found a wallet in the street and took it to the police. He’s very ❓.',
+    'An ❓ person never tells lies.' ] }
+];
+const SCALES = [
+  { title: 'How shy is she?', low: { label: 'not shy', icon: '😀' }, high: { label: 'very, very shy', icon: '🙈' },
+    words: ['not shy at all', 'a bit shy', 'quite shy', 'very shy', 'extremely shy'], hues: [200, 290],
+    note: 'not … at all → a bit → quite → very → extremely' },
+  { title: 'How angry is he?', low: { label: 'not angry', icon: '😌' }, high: { label: 'very, very angry', icon: '🤬' },
+    words: ['calm', 'annoyed', 'angry', 'furious'], hues: [120, 0], note: 'calm → annoyed → angry → furious' },
+  { title: 'How hard does she work?', low: { label: 'never', icon: '🛋️' }, high: { label: 'all the time', icon: '💼' },
+    words: ['lazy', 'relaxed', 'hard-working', 'workaholic'], hues: [30, 210], note: 'lazy → relaxed → hard-working → workaholic (works too much!)' }
+];
+const MEANING = '<p><strong>😊 Positive:</strong> friendly, polite, kind, patient, honest, generous, funny, hard-working.</p>' +
+  '<p><strong>😠 Negative:</strong> rude, lazy, impatient, unfriendly, messy.</p>' +
+  '<p><strong>a bit</strong> is usually for negative words: <i>a bit lazy, a bit shy, a bit rude</i> — not <s>a bit kind</s>. For positive words, say <i>quite / very kind</i>.</p>';
+const CCQ = [
+  { sentence: 'Ryan answered his phone rudely.', questions: [
+    { q: 'Was Ryan polite?', opts: ['Yes', 'No'], correct: 1, why: 'No. <b>rudely</b> is the opposite of <b>politely</b>.' } ] },
+  { sentence: 'Jess is a bit shy.', questions: [
+    { q: 'Is she very shy?', opts: ['Yes', 'No'], correct: 1, why: 'No — <b>a bit</b> = only a little.' },
+    { q: 'Is it easy for her to talk to new people?', opts: ['Yes', 'No'], correct: 1, why: 'No, not very easy. That’s what shy means.' } ] },
+  { sentence: 'Tom is generous.', questions: [
+    { q: 'Does he like to give things to people?', opts: ['Yes', 'No'], correct: 0, why: 'Yes — like the cookies he brought.' } ] },
+  { sentence: 'He’s afraid of cats.', questions: [
+    { q: 'Does he like cats?', opts: ['Yes', 'No'], correct: 1, why: 'No. <b>afraid of</b> = scared of.' } ] }
+];
+const FAMILY_COLUMNS = ['noun', 'adj', 'adverb', 'opposite'];
+const FAMILIES = [
+  { forms: { noun: 'politeness', adj: 'polite', adverb: 'politely', opposite: 'impolite/rude' }, given: 'adj',
+    use: { template: 'Please speak {0} to the customers.', accepted: ['politely'] } },
+  { forms: { noun: 'kindness', adj: 'kind', adverb: 'kindly', opposite: 'unkind' }, given: 'adj' },
+  { forms: { noun: 'patience', adj: 'patient', adverb: 'patiently', opposite: 'impatient' }, given: 'adj',
+    use: { template: 'Wait {0} — the doctor is coming.', accepted: ['patiently'] } },
+  { forms: { noun: 'honesty', adj: 'honest', adverb: 'honestly', opposite: 'dishonest' }, given: 'adj',
+    use: { template: '{0}, I don’t like his new haircut.', accepted: ['Honestly', 'honestly'] } },
+  { forms: { noun: 'friendliness', adj: 'friendly', adverb: null, opposite: 'unfriendly' }, given: 'adj' }
+];
+const FORM_RULE = '<p><strong>Adjective → adverb:</strong> + <b>ly</b> (polite → politely) · y → <b>ily</b> (lazy → lazily). <b>friendly</b> has no adverb: say <i>in a friendly way</i>.</p>' +
+  '<p><strong>Opposites:</strong> <b>un-</b> (unkind, unfriendly) · <b>im-</b> (impolite, impatient) · <b>dis-</b> (dishonest).</p>' +
+  '<p><strong>Nouns:</strong> <b>-ness</b> (kindness, politeness) · <b>-ce</b> (patience) · <b>-y</b> (honesty).</p>';
+const FORKS = [
+  { word: 'kind', icon: '🤗', side: 'after', options: [
+    { text: 'to', ok: true }, { text: 'with', ok: false, why: 'We say kind <b>to</b> someone: <i>She’s kind to everyone.</i>' }, { text: 'for', ok: false, why: 'We say kind <b>to</b> someone.' } ] },
+  { word: 'good', icon: '👨‍🍳', side: 'after', options: [
+    { text: 'at', ok: true }, { text: 'in', ok: false, why: 'good <b>at</b> cooking (not <i>good in</i>).' }, { text: 'on', ok: false, why: 'good <b>at</b> something.' } ] },
+  { word: 'afraid', icon: '😨', side: 'after', options: [
+    { text: 'of', ok: true }, { text: 'from', ok: false, why: 'afraid <b>of</b> cats (not <i>from</i>).' }, { text: 'to', ok: false, why: 'afraid <b>of</b> something.' } ] },
+  { word: 'speak', icon: '🗣️', side: 'after', options: [
+    { text: 'politely', ok: true }, { text: 'quietly', ok: true },
+    { text: 'polite', ok: false, why: 'After a verb, use an adverb: speak <b>politely</b>.' }, { text: 'quiet', ok: false, why: 'After a verb, use an adverb: speak <b>quietly</b>.' } ] }
+];
+const MISTAKES = [
+  ['He’s very sympathetic — everybody likes him. <span class="text-tertiary">(simpático)</span>', 'He’s very nice / friendly — everybody likes him.'],
+  ['She’s very educated: she always says “thank you”. <span class="text-tertiary">(educada)</span>', 'She’s very polite: she always says “thank you”.'],
+  ['He spoke very polite.', 'He spoke very politely.'],
+  ['I’m afraid from big dogs.', 'I’m afraid of big dogs.'],
+  ['My sister is good in maths.', 'My sister is good at maths.']
+];
+const EH_ITEMS = [
+  { words: ['He’s', 'very', 'sympathetic', '—', 'everybody', 'likes', 'him', '.'], error: { type: 'wrong', wordIndex: 2, options: ['nice', 'sympathy', 'pity'], correct: 'nice' } },
+  { words: ['She', 'answered', 'the', 'question', 'polite', '.'], error: { type: 'wrong', wordIndex: 4, options: ['politely', 'politeness', 'impolite'], correct: 'politely' } },
+  { words: ['My', 'sister', 'is', 'good', 'in', 'maths', '.'], error: { type: 'wrong', wordIndex: 4, options: ['at', 'on', 'for'], correct: 'at' } },
+  { words: ['Jess', 'is', 'a', 'bit', 'shy', '.'], error: null },
+  { words: ['I’m', 'afraid', 'from', 'big', 'dogs', '.'], error: { type: 'wrong', wordIndex: 2, options: ['of', 'to', 'for'], correct: 'of' } },
+  { words: ['Be', 'patience', '—', 'the', 'bus', 'is', 'coming', '.'], error: { type: 'wrong', wordIndex: 1, options: ['patient', 'patiently', 'patients'], correct: 'patient' } },
+  { words: ['Tom', 'listened', 'patiently', 'to', 'everyone', '.'], error: null },
+  { words: ['She’s', 'very', 'educated', ':', 'she', 'always', 'says', '“please”', '.'], error: { type: 'wrong', wordIndex: 2, options: ['polite', 'education', 'educate'], correct: 'polite' } }
+];
+
+/* LOOK: [the sentence, a picture (HTML), a note] */
+document.getElementById('look').innerHTML = LOOK.map(([sent, vis, note]) =>
+  '<div class="flow-card"><div class="sent">' + sent + '</div>' + (vis || '') + (note ? '<div class="note">' + note + '</div>' : '') + '</div>').join('');
+HouseMystery.build({ container: 'mystery', items: MYSTERY, scoreEl: 'myScore', totalEl: 'myTotal' });
+HouseScale.build({ container: 'scales', items: SCALES, scoreEl: 'scScore', totalEl: 'scTotal' });
+document.getElementById('meaning').innerHTML = MEANING;
+HouseCCQ.build({ container: 'ccq', items: CCQ });
+HouseWordFamily.build({ container: 'families', columns: FAMILY_COLUMNS, items: FAMILIES, scoreEl: 'wfScore', totalEl: 'wfTotal' });
+document.getElementById('formRule').innerHTML = FORM_RULE;
+HouseCollocate.build({ container: 'forks', items: FORKS, scoreEl: 'coScore', totalEl: 'coTotal' });
+document.getElementById('mistakes').innerHTML = MISTAKES.map(([no, yes]) =>
+  '<div class="pair-card"><div class="pair-line no"><span class="mark">✗</span>' + no + '</div>' +
+  '<div class="pair-line yes"><span class="mark">✓</span>' + yes + '</div></div>').join('');
+HouseErrorHunt.build({ container: 'errorHuntItems', items: EH_ITEMS, scoreEl: 'errorScore', totalEl: 'errorTotal' });
+</script>
+</body>
+</html>

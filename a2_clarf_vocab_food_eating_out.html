@@ -1,0 +1,207 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<title>Food and Eating Out — Clarification</title>
+<script>
+(function(){
+  try{
+    var saved = localStorage.getItem('theme-preference');
+    var theme = (saved === 'light' || saved === 'dark')
+      ? saved
+      : ((window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches) ? 'dark' : 'light');
+    document.documentElement.setAttribute('data-theme', theme);
+    var fs = parseFloat(localStorage.getItem('font-size-preference'));
+    if (fs >= 10 && fs <= 28) document.documentElement.style.setProperty('--fs-base', fs + 'px');
+  }catch(e){ /* localStorage/matchMedia unavailable — CSS media query still applies */ }
+})();
+</script>
+<link rel="stylesheet" href="house.css">
+<style>
+.flow-card{ border:1px solid var(--color-border-tertiary); border-radius:var(--border-radius-lg); background:var(--surface-2); padding:10px 12px; margin-bottom:10px; }
+.flow-card .sent{ font-size:1rem; font-weight:600; margin-bottom:6px; }
+.flow-card .note{ font-size:.8333rem; color:var(--text-secondary); margin-top:4px; }
+.if-part{ color:hsl(217, 70%, 42%); font-weight:700; }
+.res-part{ color:hsl(120, 60%, 32%); font-weight:700; }
+.res-no{ color:hsl(0, 65%, 42%); font-weight:700; }
+[data-theme="dark"] .res-no{ color:hsl(0, 75%, 70%); }
+[data-theme="dark"] .if-part{ color:hsl(217, 80%, 70%); }
+[data-theme="dark"] .res-part{ color:hsl(120, 55%, 65%); }
+.form-table{ width:100%; border-collapse:collapse; margin:0 0 1rem; font-size:.9333rem; }
+.form-table th, .form-table td{ border:1px solid var(--color-border-tertiary); padding:7px 9px; text-align:left; vertical-align:top; }
+.form-table th{ background:var(--surface-1); font-size:.8rem; text-transform:uppercase; letter-spacing:.04em; color:var(--text-secondary); }
+.pct-row{ display:flex; flex-wrap:wrap; gap:6px; margin:0 0 1rem; }
+.pct-row span{ padding:3px 10px; border-radius:999px; font-weight:700; font-size:.8667rem; border:2px solid; }
+.rule-box p{ margin:0 0 6px; }
+.rule-box p:last-child{ margin-bottom:0; }
+.big-pic{ font-size:1.6rem; letter-spacing:.1em; margin:2px 0 4px; }
+.hl{ font-weight:700; color:var(--text-accent); }
+</style>
+</head>
+<body>
+<div class="page" id="page">
+  <span class="cefr-tag cefr-a2">A2 · Elementary</span>
+  <h1>Food and Eating Out</h1>
+  <p class="subtitle">The words you need in a restaurant — from the menu to the tip.</p>
+
+  <div class="sec-div">Look</div>
+  <p class="subtitle">From the conversation. Look at the highlighted words.</p>
+  <div id="look"></div>
+
+  <div class="sec-div">Meaning 1 — Mystery words</div>
+  <p class="subtitle">The same word is behind every ❓. Guess it! The first clue gives ⭐⭐⭐ — every new clue or wrong guess costs a star.</p>
+  <div class="score-bar"><span>Stars: <strong id="myScore">0</strong> / <span id="myTotal">0</span> ⭐</span></div>
+  <div id="mystery"></div>
+
+  <div class="sec-div">Meaning 2 — Word scales</div>
+  <p class="subtitle">Put the words in order. Drag a word to its place, or tap a word and then tap a place.</p>
+  <div class="score-bar"><span>Done: <strong id="scScore">0</strong> / <span id="scTotal">0</span></span></div>
+  <div id="scales"></div>
+  <div class="rule-box" id="meaning"></div>
+
+  <div class="sec-div">Check the meaning</div>
+  <p class="subtitle">Answer the questions about each sentence.</p>
+  <div id="ccq"></div>
+
+  <div class="sec-div">Form — Word families</div>
+  <p class="subtitle">Write the missing words. The bar goes green 🔴→🟢 when you are right. Then use one word in the sentence.</p>
+  <div class="score-bar"><span>Done: <strong id="wfScore">0</strong> / <span id="wfTotal">0</span></span></div>
+  <div id="families"></div>
+  <div class="rule-box" id="formRule"></div>
+
+  <div class="sec-div">Use — Words that go together</div>
+  <p class="subtitle">Which words go with the word in the box? Tap all the right ones.</p>
+  <div class="score-bar"><span>Done: <strong id="coScore">0</strong> / <span id="coTotal">0</span></span></div>
+  <div id="forks"></div>
+
+  <div class="sec-div">Common mistakes</div>
+  <div id="mistakes"></div>
+
+  <div class="sec-div">Error hunt</div>
+  <p class="subtitle">Some sentences have one mistake. Some are correct! Tap a word — or a space between words — to fix it. Then press OK.</p>
+  <div class="score-bar"><span>Done: <strong id="errorScore">0</strong> / <span id="errorTotal">0</span></span></div>
+  <div id="errorHuntItems"></div>
+
+  <footer>Food and eating out — Vocabulary clarification (A2)</footer>
+</div>
+
+<div id="theme-toggle-wrap">
+  <button id="theme-toggle" aria-label="Toggle light/dark mode" title="Toggle light/dark mode">
+    <span id="theme-icon">☀️</span>
+  </button>
+</div>
+<script src="house.js"></script>
+<script src="house-vocab.js"></script>
+<script>
+const LOOK = [
+  ['For a <span class="hl">starter</span>, the soup … for the <span class="hl">main course</span>, the pasta … for <span class="hl">dessert</span>, the cake.',
+    '<div class="big-pic">🥣 → 🍝 → 🍰</div>', 'The three parts of a meal, in order.'],
+  ['It’s <span class="hl">mild</span> — a little spicy, but not hot.', '<div class="big-pic">🌶️</div>', '<b>mild</b> = not very spicy.'],
+  ['Can we have <span class="hl">the check</span>, please? … Let’s <span class="hl">leave a tip</span>.', '<div class="big-pic">🧾 · 💵</div>',
+    'US: <b>the check</b> · UK: <b>the bill</b>. A <b>tip</b> = extra money for the waiter.']
+];
+const MYSTERY = [
+  { answer: ['menu', 'the menu'], pic: '📋', clues: [
+    'Excuse me, can I see the ❓, please?',
+    'This restaurant’s ❓ has pictures of all the food.',
+    'Read the ❓ and choose what you want to eat.' ] },
+  { answer: 'tip', pic: '💵', options: ['tip', 'check', 'menu', 'table'], clues: [
+    'The waiter was really nice, so we left a big ❓.',
+    'In the US, a ❓ is usually 15–20% of the check.',
+    'A ❓ is extra money for the waiter, to say thank you.' ] },
+  { answer: 'starving', pic: '🤤', options: ['starving', 'full', 'thirsty', 'sleepy'], clues: [
+    'I didn’t have breakfast or lunch. I’m ❓!',
+    'When is the food coming? I’m ❓!',
+    '❓ = very, very hungry.' ] },
+  { answer: 'dessert', pic: '🍰', clues: [
+    'For ❓, I’ll have the chocolate cake.',
+    'Ice cream is my favorite ❓.',
+    'We eat ❓ after the main course.' ],
+    note: 'Spelling! <b>dessert</b> (ss) 🍰 = sweet food · <b>desert</b> (s) 🏜️ = sand and sun.' }
+];
+const SCALES = [
+  { title: 'How spicy is it?', low: { label: 'not spicy', icon: '🥛' }, high: { label: 'very, very spicy', icon: '🔥' },
+    words: ['mild', 'medium', 'hot', 'extra hot'], hues: [120, 0], note: 'mild → medium → hot → extra hot' },
+  { title: 'How do you like your steak?', low: { label: 'red inside', icon: '🩸' }, high: { label: 'brown inside', icon: '🟫' },
+    words: ['rare', 'medium-rare', 'medium', 'well-done'], hues: [0, 30], note: 'rare → medium-rare → medium → well-done' },
+  { title: 'How good is the food?', low: { label: 'very bad', icon: '🤢' }, high: { label: 'very good', icon: '😋' },
+    words: ['disgusting', 'not very good', 'OK', 'tasty', 'delicious'], note: 'disgusting → not very good → OK → tasty → delicious' }
+];
+const MEANING = '<p><strong>Tastes:</strong> sweet 🍰 · salty 🥨 · sour 🍋 · bitter ☕ · spicy 🌶️</p>' +
+  '<p><strong>delicious</strong> already means “very, very good”. Say <i>really delicious</i> or <i>absolutely delicious</i> — not <s>very delicious</s>.</p>' +
+  '<p><strong>hungry → starving</strong> · <strong>full</strong> = I can’t eat any more.</p>';
+const CCQ = [
+  { sentence: 'I’m full.', questions: [
+    { q: 'Do I want more food?', opts: ['Yes', 'No'], correct: 1, why: 'No. <b>full</b> = I can’t eat any more.' } ] },
+  { sentence: 'The soup is mild.', questions: [
+    { q: 'Is it very spicy?', opts: ['Yes', 'No'], correct: 1, why: 'No — only a little spicy, or not spicy at all.' } ] },
+  { sentence: 'We left a tip.', questions: [
+    { q: 'Did we give extra money to the waiter?', opts: ['Yes', 'No'], correct: 0, why: 'Yes. A tip is extra, after you pay the check.' } ] },
+  { sentence: 'I’m starving.', questions: [
+    { q: 'Am I a little hungry?', opts: ['Yes', 'No'], correct: 1, why: 'No — very, very hungry.' } ] }
+];
+const FAMILY_COLUMNS = ['noun', 'verb', 'adj', 'person'];
+const FAMILIES = [
+  { forms: { noun: 'cooking', verb: 'cook', adj: 'cooked', person: 'cook/chef' }, given: 'verb',
+    use: { template: 'My dad is a great {0} — his pasta is amazing.', accepted: ['cook', 'chef'] } },
+  { forms: { noun: 'taste', verb: 'taste', adj: 'tasty', person: null }, given: 'noun',
+    use: { template: 'This soup is really {0}!', accepted: ['tasty'] } },
+  { forms: { noun: 'service', verb: 'serve', adj: null, person: 'server/waiter' }, given: 'verb',
+    use: { template: 'The {0} here is excellent — the waiters are so friendly.', accepted: ['service'] } },
+  { forms: { noun: 'baking', verb: 'bake', adj: 'baked', person: 'baker' }, given: 'verb',
+    use: { template: 'My aunt is a {0} — she makes bread every morning.', accepted: ['baker'] } }
+];
+const FORM_RULE = '<p><strong>People:</strong> a person who cooks is a <b>cook</b> or a <b>chef</b>. ⚠️ A <b>cooker</b> is a machine (a stove)! Other people: bak<b>er</b>, serv<b>er</b>, wait<b>er</b>.</p>' +
+  '<p><strong>Adjectives with -y:</strong> taste → tast<b>y</b> · salt → salt<b>y</b> · spice → spic<b>y</b>.</p>';
+const FORKS = [
+  { word: 'a table', icon: '🍽️', side: 'before', options: [
+    { text: 'book', ok: true }, { text: 'reserve', ok: true },
+    { text: 'make', ok: false, why: 'We <b>book</b> a table — but we <b>make</b> a reservation.' }, { text: 'take', ok: false, why: 'We <b>book</b> or <b>reserve</b> a table.' } ] },
+  { word: 'coffee', icon: '☕', side: 'before', options: [
+    { text: 'strong', ok: true }, { text: 'black', ok: true },
+    { text: 'heavy', ok: false, why: 'We say <b>strong</b> coffee (not <i>heavy</i>).' }, { text: 'hard', ok: false, why: 'Coffee with a lot of flavor is <b>strong</b>.' } ] },
+  { word: 'the check', icon: '🧾', side: 'before', options: [
+    { text: 'pay', ok: true }, { text: 'ask for', ok: true },
+    { text: 'make', ok: false, why: 'We <b>ask for</b> the check, then we <b>pay</b> it.' }, { text: 'do', ok: false, why: 'We <b>pay</b> the check.' } ] },
+  { word: 'a tip', icon: '💵', side: 'before', options: [
+    { text: 'leave', ok: true }, { text: 'give', ok: true }, { text: 'make', ok: false, why: 'We <b>leave</b> or <b>give</b> a tip.' } ] },
+  { word: 'dinner', icon: '🍲', side: 'before', options: [
+    { text: 'have', ok: true }, { text: 'cook', ok: true },
+    { text: 'take', ok: false, why: 'We <b>have</b> dinner (not <i>take</i> — like Spanish “tomar”).' } ] }
+];
+const MISTAKES = [
+  ['This soup is very rich! <span class="text-tertiary">(rico)</span>', 'This soup is delicious! / This soup is really tasty!'],
+  ['Can we have the account, please? <span class="text-tertiary">(la cuenta)</span>', 'Can we have the check, please? (UK: the bill)'],
+  ['My dad is a great cooker.', 'My dad is a great cook.'],
+  ['I’m going to take a coffee.', 'I’m going to have a coffee.'],
+  ['For desert, I’ll have the cake.', 'For dessert, I’ll have the cake.']
+];
+const EH_ITEMS = [
+  { words: ['This', 'soup', 'is', 'very', 'rich', '!'], error: { type: 'wrong', wordIndex: 4, options: ['tasty', 'richness', 'rice'], correct: 'tasty' } },
+  { words: ['Can', 'we', 'have', 'the', 'account', ',', 'please', '?'], error: { type: 'wrong', wordIndex: 4, options: ['check', 'count', 'accounting'], correct: 'check' } },
+  { words: ['I’d', 'like', 'a', 'coffee', ',', 'please', '.'], error: null },
+  { words: ['My', 'dad', 'is', 'a', 'great', 'cooker', '.'], error: { type: 'wrong', wordIndex: 5, options: ['cook', 'cooking', 'cooked'], correct: 'cook' } },
+  { words: ['We', 'left', 'a', 'tip', 'for', 'the', 'waiter', '.'], error: null },
+  { words: ['For', 'desert', ',', 'I’ll', 'have', 'the', 'cake', '.'], error: { type: 'wrong', wordIndex: 1, options: ['dessert', 'deserted', 'deserts'], correct: 'dessert' } },
+  { words: ['I’m', 'going', 'to', 'take', 'a', 'coffee', '.'], error: { type: 'wrong', wordIndex: 3, options: ['have', 'make', 'do'], correct: 'have' } },
+  { words: ['I’m', 'starving', '—', 'let’s', 'order', '!'], error: null }
+];
+
+/* LOOK: [the sentence, a picture (HTML), a note] */
+document.getElementById('look').innerHTML = LOOK.map(([sent, vis, note]) =>
+  '<div class="flow-card"><div class="sent">' + sent + '</div>' + (vis || '') + (note ? '<div class="note">' + note + '</div>' : '') + '</div>').join('');
+HouseMystery.build({ container: 'mystery', items: MYSTERY, scoreEl: 'myScore', totalEl: 'myTotal' });
+HouseScale.build({ container: 'scales', items: SCALES, scoreEl: 'scScore', totalEl: 'scTotal' });
+document.getElementById('meaning').innerHTML = MEANING;
+HouseCCQ.build({ container: 'ccq', items: CCQ });
+HouseWordFamily.build({ container: 'families', columns: FAMILY_COLUMNS, items: FAMILIES, scoreEl: 'wfScore', totalEl: 'wfTotal' });
+document.getElementById('formRule').innerHTML = FORM_RULE;
+HouseCollocate.build({ container: 'forks', items: FORKS, scoreEl: 'coScore', totalEl: 'coTotal' });
+document.getElementById('mistakes').innerHTML = MISTAKES.map(([no, yes]) =>
+  '<div class="pair-card"><div class="pair-line no"><span class="mark">✗</span>' + no + '</div>' +
+  '<div class="pair-line yes"><span class="mark">✓</span>' + yes + '</div></div>').join('');
+HouseErrorHunt.build({ container: 'errorHuntItems', items: EH_ITEMS, scoreEl: 'errorScore', totalEl: 'errorTotal' });
+</script>
+</body>
+</html>

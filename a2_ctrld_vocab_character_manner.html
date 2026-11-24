@@ -1,0 +1,97 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<title>Character and Manner — Practice</title>
+<script>
+(function(){
+  try{
+    var saved = localStorage.getItem('theme-preference');
+    var theme = (saved === 'light' || saved === 'dark')
+      ? saved
+      : ((window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches) ? 'dark' : 'light');
+    document.documentElement.setAttribute('data-theme', theme);
+    var fs = parseFloat(localStorage.getItem('font-size-preference'));
+    if (fs >= 10 && fs <= 28) document.documentElement.style.setProperty('--fs-base', fs + 'px');
+  }catch(e){ /* localStorage/matchMedia unavailable — CSS media query still applies */ }
+})();
+</script>
+<link rel="stylesheet" href="house.css">
+<style>
+
+</style>
+</head>
+<body>
+<div class="page" id="page">
+  <span class="cefr-tag cefr-a2">A2 · Elementary</span>
+  <h1>Character and Manner — Practice</h1>
+  <p class="subtitle">What are people like — and how do they do things?</p>
+
+  <div class="sec-div">Practice 1 — Match the halves</div>
+  <p class="subtitle">Tap a word, then tap what it means.</p>
+  <div class="score-bar"><span>Matched: <strong id="mScore">0</strong> / <span id="mTotal">0</span></span><button id="mReset">↺ Reset</button></div>
+  <div class="match-grid">
+    <div><div class="match-col-label">Word</div><div class="match-col" id="leftCol"></div></div>
+    <div><div class="match-col-label">Meaning</div><div class="match-col" id="rightCol"></div></div>
+  </div>
+  <div class="win-msg" id="mWin">🎉 All matched!</div>
+  <div class="feedback" id="mFeedback"></div>
+
+  <div class="sec-div">Practice 2 — Word order</div>
+  <p class="subtitle">Tap the words to build the sentence. Tap a word again to take it back, or drag to change the order.</p>
+  <button class="grammar-toggle-btn" id="grammarToggle">🎨 Show Grammar</button>
+  <div class="pos-legend"></div>
+  <div class="score-bar"><span>Correct: <strong id="woScore">0</strong> / <span id="woTotal">0</span></span></div>
+  <div id="woItems"></div>
+
+  <div class="sec-div">Practice 3 — Complete the sentences</div>
+  <p class="subtitle">Write the missing word. The bar turns green 🔴→🟢 when you are right.</p>
+  <div id="gfItems"></div>
+
+  <footer>Character and manner — Vocabulary practice (A2)</footer>
+</div>
+
+<div id="theme-toggle-wrap">
+  <button id="theme-toggle" aria-label="Toggle light/dark mode" title="Toggle light/dark mode">
+    <span id="theme-icon">☀️</span>
+  </button>
+</div>
+<script src="house.js"></script>
+<script>
+const HALVES = [
+  ['generous', 'likes to give and share'], ['honest', 'always tells the truth'], ['patient', 'can wait and doesn’t get angry'],
+  ['lazy', 'doesn’t like to work'], ['shy', 'is nervous with new people'], ['rude', 'isn’t polite'],
+  ['hard-working', 'works a lot'], ['funny', 'makes people laugh']
+];
+const WO_ITEMS = [
+  { context: '🙏 Tom', text: 'He / spoke / to us / very / politely.', pos: ['subject', 'verb', 'prep', 'adverb', 'adverb'] },
+  { context: '🙈 Jess', text: 'She’s / a bit / shy / with / new people.', pos: ['subject', 'adverb', 'adj', 'prep', 'object'] },
+  { context: '👨‍🍳 A talent', text: 'My brother / is / good at / cooking.', pos: ['subject', 'verb', 'adj', 'object'] },
+  { context: '🕷️ A question', text: 'Are / you / afraid of / spiders?', pos: ['verb', 'subject', 'adj', 'object'] },
+  { context: '⏳ At the bank', text: 'Please / wait / patiently / for / your turn.', pos: ['adverb', 'verb', 'adverb', 'prep', 'object'] },
+  { context: '💇 The truth', text: 'Honestly, / I / don’t / like / his new haircut.', pos: ['adverb', 'subject', 'neg', 'verb', 'object'] }
+];
+const GF_LABELS = { adj: 'what are they like?', adv: 'how?', prep: 'preposition', opp: 'opposite' };
+const GF_ITEMS = [
+  { category: 'adj', direct: 'She always tells the truth.', template: 'She’s very {0}.', hints: [{ accepted: ['honest'] }] },
+  { category: 'adj', direct: 'He never helps at home.', template: 'My roommate is so {0}!', hints: [{ accepted: ['lazy'] }] },
+  { category: 'adv', direct: 'In a polite way.', template: 'He answered {0}.', hints: [{ accepted: ['politely'] }] },
+  { category: 'prep', direct: 'Tennis is easy for him.', template: 'He’s good {0} tennis.', hints: [{ accepted: ['at'] }] },
+  { category: 'prep', direct: 'The dark scares her.', template: 'She’s afraid {0} the dark.', hints: [{ accepted: ['of'] }] },
+  { category: 'prep', direct: 'Be nice — don’t hurt them.', template: 'Please be kind {0} animals.', hints: [{ accepted: ['to'] }] },
+  { category: 'opp', direct: 'The opposite of kind.', template: 'It was very {0} of you to laugh at him.', hints: [{ accepted: ['unkind', 'mean', 'rude'] }] },
+  { category: 'opp', direct: 'The opposite of patient.', template: 'Don’t be so {0}! The bus is coming.', hints: [{ accepted: ['impatient'] }] },
+  { category: 'adv', direct: 'To tell the truth…', template: '{0}, I don’t like this song.', hints: [{ accepted: ['Honestly', 'honestly'] }] }
+];
+
+HouseMatching.build({
+  left: 'leftCol', right: 'rightCol', scoreEl: 'mScore', totalEl: 'mTotal', winEl: 'mWin', resetBtn: 'mReset', feedbackEl: 'mFeedback',
+  pairs: HALVES.map(([a, b], i) => ({ id: 'h' + i, left: a, right: b }))
+});
+HouseWordOrder.build({ container: 'woItems', items: WO_ITEMS, scoreEl: 'woScore', totalEl: 'woTotal' });
+HouseGapFill.build({ container: 'gfItems', items: GF_ITEMS, labels: GF_LABELS });
+</script>
+<script>HouseGrammar.init();</script>
+</body>
+</html>

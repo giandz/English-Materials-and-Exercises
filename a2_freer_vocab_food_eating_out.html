@@ -1,0 +1,127 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<title>The Busy Restaurant — Food and Eating Out</title>
+<script>
+(function(){
+  try{
+    var saved = localStorage.getItem('theme-preference');
+    var theme = (saved === 'light' || saved === 'dark')
+      ? saved
+      : ((window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches) ? 'dark' : 'light');
+    document.documentElement.setAttribute('data-theme', theme);
+    var fs = parseFloat(localStorage.getItem('font-size-preference'));
+    if (fs >= 10 && fs <= 28) document.documentElement.style.setProperty('--fs-base', fs + 'px');
+  }catch(e){ /* localStorage/matchMedia unavailable — CSS media query still applies */ }
+})();
+</script>
+<link rel="stylesheet" href="house.css">
+<style>
+/* the prompt on the card: a big picture, then the words */
+.cue-main{ font-size:1.25rem; font-weight:700; margin:4px 0 6px; text-align:center; }
+.cue-main .big{ display:block; font-size:2.6rem; line-height:1.1; margin-bottom:4px; }
+.cue-sub{ font-size:.95rem; color:var(--text-secondary); text-align:center; margin:0 0 4px; }
+.chip{ display:inline-block; padding:2px 10px; margin:2px; border-radius:999px; border:1px solid var(--color-border-tertiary); background:var(--surface-2); font-size:1rem; font-weight:700; }
+.chip-wh{ color:var(--pos-wh); border-color:var(--pos-wh); }
+/* two sides: what usually happens · what is different */
+.duo{ display:flex; align-items:stretch; justify-content:center; gap:10px; flex-wrap:wrap; margin:4px 0 6px; }
+.duo .side{ display:flex; flex-direction:column; align-items:center; gap:2px; min-width:9em; padding:6px 10px; border-radius:10px; border:1px solid var(--color-border-tertiary); background:var(--surface-2); font-weight:700; font-size:1rem; }
+.duo .side .when{ font-size:.8667rem; font-weight:600; color:var(--text-secondary); }
+.duo .side .big{ font-size:2.2rem; line-height:1.1; }
+.who{ font-size:1.1rem; font-weight:700; text-align:center; margin:2px 0 4px; }
+/* only Student A looks */
+.q-card details.secret{ margin:4px 0 6px; width:100%; max-width:460px; text-align:center; }
+.q-card details.secret summary{ font-weight:700; }
+.q-card .secret-body{ padding:8px 12px; }
+.q-card details.check{ margin-top:4px; width:100%; max-width:460px; text-align:left; }
+.q-card .check-body{ padding:8px 12px; font-size:.9rem; }
+.q-card .check-body p{ margin:0 0 4px; }
+</style>
+</head>
+<body>
+<div class="page" id="page">
+  <span class="cefr-tag cefr-a2">A2 · Elementary</span>
+  <h1>The Busy Restaurant</h1>
+  <p class="subtitle">Be the waiter and the customer — and talk about the food you love.</p>
+
+  <div class="rule-box">
+    <p><strong>How to play (pairs, or teacher + student):</strong></p>
+    <p>1. Student A rolls 🎲. There are two kinds of card:</p>
+    <p>🍽️ <b>Role-play:</b> A is the <b>waiter</b>, B is the <b>customer</b>. Use the restaurant and the customer card: book, order, ask about the food, pay and leave a tip.</p>
+    <p>😋 <b>Describe a dish:</b> A describes a dish from that place — sweet? salty? spicy? a starter or a main course? B guesses or asks questions.</p>
+    <p>2. Press 👀 for useful phrases. Then change roles.</p>
+  </div>
+
+  <div class="q-card" id="qCard"><span class="q-placeholder">Roll the dice to start.</span></div>
+  <button class="dice-btn" id="diceBtn" aria-label="Roll">🎲</button>
+  <div class="roll-count">Rolls: <strong id="rollCount">0</strong></div>
+
+  <div class="sec-div">Now you</div>
+  <div class="rule-box">
+    <p><strong>Ask your partner about food and restaurants.</strong> “<b>What’s your favorite restaurant? What dish from your country do you love? How do you like your coffee?</b>” Write the answers.</p>
+    <p>Then say: “<b>Ana loves a small taco place downtown. She always has a strong black coffee!</b>” Another partner? Press <b>➕ Add partner</b>.</p>
+  </div>
+  <div id="interview"></div>
+
+  <footer>The Busy Restaurant — Food and eating out (A2)</footer>
+</div>
+
+<div id="theme-toggle-wrap">
+  <button id="theme-toggle" aria-label="Toggle light/dark mode" title="Toggle light/dark mode">
+    <span id="theme-icon">☀️</span>
+  </button>
+</div>
+<script src="house.js"></script>
+<script src="house-interview.js"></script>
+<script>
+const pick = HouseRandomGen.pickFrom;
+const cap = s => s.charAt(0).toUpperCase() + s.slice(1);
+/* one card: a topic line, the cue (hidden from B when it is a secret), what to do, and the 👀 examples */
+const card = o =>
+  '<span class="q-topic">' + o.topic + '</span>' +
+  (o.secret ? '<details class="secret"><summary>' + o.secret + '</summary><div class="secret-body">' : '') +
+  (o.body || '') +
+  (o.pic ? '<div class="cue-main"><span class="big">' + o.pic + '</span>' + (o.cue || '') + '</div>' : (o.cue ? '<div class="cue-main">' + o.cue + '</div>' : '')) +
+  (o.sub ? '<div class="cue-sub">' + o.sub + '</div>' : '') +
+  (o.secret ? '</div></details>' : '') +
+  (o.prompt ? '<span class="q-prompt">' + o.prompt + '</span>' : '') +
+  (o.check ? '<details class="check"><summary>' + (o.checkLabel || '👀 Examples') + '</summary><div class="check-body">' +
+    o.check.map(l => '<p>' + l + '</p>').join('') + '</div></details>' : '');
+const PLACES = [['🍕', 'a pizzeria'], ['🍣', 'a sushi bar'], ['🌮', 'a taco truck'], ['🥩', 'a steakhouse'], ['🍔', 'a burger place'],
+  ['🫓', 'an arepa restaurant'], ['🍜', 'a noodle bar'], ['🥐', 'a French café'], ['🍛', 'an Indian restaurant'], ['🥗', 'a vegetarian café']];
+/* [picture, the customer] */
+const CUSTOMERS = [
+  ['🥦', 'You’re vegetarian.'], ['⏱️', 'You’re in a hurry — you have only 30 minutes.'], ['🎂', 'It’s your friend’s birthday.'],
+  ['🌶️', 'You don’t like spicy food.'], ['🤤', 'You’re starving!'], ['💸', 'You don’t have much money.'],
+  ['👨‍👩‍👧', 'You have a table for four: two adults and two children.'], ['😖', 'Your food is cold. Tell the waiter politely.'],
+  ['🍰', 'You only want dessert and coffee.'], ['❓', 'You don’t understand the menu. Ask questions.']
+];
+HouseRandomGen.build({
+  pick: () => Math.random() < 0.6
+    ? (() => { const p = pick(PLACES), c = pick(CUSTOMERS); return { kind: 'r', p, c, text: p[1] + c[1] }; })()
+    : (p => ({ kind: 'd', p, text: 'd' + p[1] }))(pick(PLACES)),
+  key: it => it.text,
+  render: it => it.kind === 'r'
+    ? card({ topic: '🍽️ Role-play', pic: it.p[0] + ' ' + it.c[0], cue: 'At ' + it.p[1], sub: '🙋 Customer: ' + it.c[1],
+        prompt: 'A = waiter · B = customer. Book, order, pay and leave a tip.',
+        checkLabel: '👀 Useful phrases', check: ['🤵 “Do you have a reservation? · Are you ready to order? · How would you like it? · How is everything?”',
+          '🙋 “A table for two, please. · For a starter, I’d like… · Is it spicy? · Can we have the check, please?”'] })
+    : card({ topic: '😋 Describe a dish', pic: it.p[0], cue: 'Describe a dish from ' + it.p[1],
+        prompt: 'A: describe it — don’t say its name! B: guess.',
+        checkLabel: '👀 Help', check: ['“It’s a starter / a main course / a dessert. It’s sweet / salty / spicy / mild. It has… in it.”', '<span class="text-secondary">tasty · delicious · sour · bitter · well-done · rare</span>'] })
+});
+HouseInterview.build({
+  container: 'interview', storageKey: 'a2-vocab-food-eating-out',
+  fields: [
+    { icon: '🍽️', label: 'her favorite restaurant', placeholder: 'a small taco place downtown…' },
+    { icon: '🫓', label: 'a dish from her country she loves', placeholder: 'arepas with cheese…' },
+    { icon: '☕', label: 'how she likes her coffee (or tea)', placeholder: 'strong and black…' },
+    { icon: '🌶️', label: 'spicy food: mild, hot or extra hot?', placeholder: 'mild, please!…' },
+    { icon: '🍰', label: 'her favorite dessert', placeholder: 'tres leches cake…' }
+  ]
+});
+</script>
+</body>
+</html>

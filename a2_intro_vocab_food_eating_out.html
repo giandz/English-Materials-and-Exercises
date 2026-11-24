@@ -1,0 +1,142 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<title>A Table for Two — Food and Eating Out</title>
+<script>
+(function(){
+  try{
+    var saved = localStorage.getItem('theme-preference');
+    var theme = (saved === 'light' || saved === 'dark')
+      ? saved
+      : ((window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches) ? 'dark' : 'light');
+    document.documentElement.setAttribute('data-theme', theme);
+    var fs = parseFloat(localStorage.getItem('font-size-preference'));
+    if (fs >= 10 && fs <= 28) document.documentElement.style.setProperty('--fs-base', fs + 'px');
+  }catch(e){ /* localStorage/matchMedia unavailable — CSS media query still applies */ }
+})();
+</script>
+<link rel="stylesheet" href="house.css">
+<style>
+.cast-row{ display:flex; flex-wrap:wrap; gap:14px 18px; justify-content:center; align-items:flex-end; margin:0 0 1rem; padding:10px; background:var(--surface-1); border:1px solid var(--border); border-radius:var(--border-radius-lg); font-size:.8667rem; }
+.match-wrap .match-col-label{ text-align:center; }
+#picCol .match-card{ font-size:1.35rem; justify-content:center; }
+</style>
+</head>
+<body>
+<div class="page" id="page">
+  <span class="cefr-tag cefr-a2">A2 · Elementary</span>
+  <h1>A Table for Two</h1>
+  <p class="subtitle">Ana and Marco are having dinner at a new restaurant. The waiter takes their order.</p>
+
+  <div class="sec-div">Words for this lesson</div>
+  <p class="subtitle">Match the picture and the words. Tap a picture, then tap its words.</p>
+  <div class="score-bar"><span>Matched: <strong id="mScore">0</strong> / <span id="mTotal">0</span></span><button id="mReset">↺ Reset</button></div>
+  <div class="match-grid match-wrap">
+    <div><div class="match-col-label">Picture</div><div class="match-col" id="picCol"></div></div>
+    <div><div class="match-col-label">Words</div><div class="match-col" id="wordCol"></div></div>
+  </div>
+  <div class="win-msg" id="mWin">🎉 Great! You know the words for the conversation.</div>
+  <div class="feedback" id="mFeedback"></div>
+
+  <div class="sec-div">Before you read</div>
+  <div id="preQuestions"></div>
+
+  <div class="sec-div">The people</div>
+  <div class="cast-row" id="castRow"></div>
+
+  <div class="sec-div">The conversation</div>
+  <div class="setting-chip"><span class="section-icon">🍽️</span> Friday night — a busy restaurant downtown</div>
+  <button class="grammar-toggle-btn" id="grammarToggle">🎨 Show Grammar</button>
+  <div class="pos-legend"></div>
+  <div id="conversation"></div>
+
+  <div class="sec-div">Check your answers</div>
+  <div id="quiz"></div>
+
+  <footer>A Table for Two — Vocabulary: food and eating out (A2)</footer>
+</div>
+
+<div id="theme-toggle-wrap">
+  <button id="theme-toggle" aria-label="Toggle light/dark mode" title="Toggle light/dark mode">
+    <span id="theme-icon">☀️</span>
+  </button>
+</div>
+<script src="house.js"></script>
+<script src="stick-character.js"></script>
+<script src="stick-sentence.js"></script>
+<script>
+StickSentence.cast({
+  ana:    { base:'woman', colour:'#CC3333', label:'Ana' },
+  marco:  { base:'man',   colour:'#336699', label:'Marco' },
+  waiter: { base:'man',   colour:'#666666', label:'Waiter' }
+});
+StickSentence.toggle();
+window.LESSON_DICT = {
+  'reservation': { pos:'noun', def:'when you ask a restaurant or hotel to keep a table or a room for you', ex:'Do you have a reservation?', es:'reserva' },
+  'book':        { pos:'verb', def:'to ask for a table, a room or a ticket for a later time', ex:'We booked a table for two.', es:'reservar' },
+  'starving':    { pos:'adjective', def:'(informal) very, very hungry', ex:'Let’s order — I’m starving!', es:'muerto/a de hambre' },
+  'mild':        { pos:'adjective', def:'(food) not very spicy', ex:'The soup is mild.', es:'suave' },
+  'well-done':   { pos:'adjective', def:'(meat) cooked for a long time, brown inside', ex:'Rare, medium or well-done?', es:'bien cocido/a' },
+  'check':       { pos:'noun', def:'(US) the paper that says how much you have to pay in a restaurant; UK: the bill', ex:'Can we have the check, please?', es:'la cuenta' },
+  'tip':         { pos:'noun', def:'extra money you give to a waiter, a driver, etc. to say thank you', ex:'Let’s leave a good tip.', es:'propina' },
+  'service':     { pos:'noun', def:'the work the waiters do for you in a restaurant', ex:'The service was excellent.', es:'servicio' }
+};
+const WORDS = [['📋', 'a menu'], ['🤵', 'a waiter'], ['🥣', 'a starter'], ['🍝', 'a main course'], ['🍰', 'dessert'],
+  ['🧾', 'the check'], ['💵', 'a tip'], ['🌶️', 'spicy'], ['🥦', 'vegetarian'], ['🥩', 'a steak']];
+document.getElementById('castRow').innerHTML = ['{Ana|ana}', '{Marco|marco}', '{Waiter|waiter}'].map(StickSentence.html).join('');
+const SPEAKERS = {
+  Waiter: { cast: 'waiter', avatar: '🤵', av: 'av-c', side: 'left' },
+  Marco:  { cast: 'marco', avatar: '👨🏻', av: 'av-a', side: 'left' },
+  Ana:    { cast: 'ana', avatar: '👩🏻', av: 'av-b', side: 'right' }
+};
+const LINES = [
+  ['Waiter', '[Good evening/none]! [Do/aux] [you/subject] [have/verb] [a reservation/object]?'],
+  ['Marco', '[Yes/none], [we/subject] [booked/verb] [a table/object] [for two/prep]. [The name/subject] [is/verb] [Marco Silva/complement].'],
+  ['Waiter', '[This way/none], [please/adverb]. [Here’s/verb] [the menu/subject]. [Can/aux] [I/subject] [get/verb] [you/object] [something to drink/object]?'],
+  ['Ana', '[Just water/object] [for me/prep], [please/adverb]. [And/conj] [a strong coffee/object] [for him/prep] — [he’s/subject] [always/adverb] [tired/adj]!'],
+  ['Marco', '[Ha/none]! [Are/verb] [you/subject] [ready/adj] [to order/verb], [Ana/noun]? [I’m/subject] [starving/adj].'],
+  ['Ana', '[Almost/adverb]. [For a starter/prep], [I’d/subject] [like/verb] [the soup/object]. [Is/verb] [it/subject] [spicy/adj]?'],
+  ['Waiter', '[It’s/subject] [mild/adj] — [a little/adverb] [spicy/adj], [but/conj] [not hot/adj].'],
+  ['Ana', '[Perfect/adj]. [And/conj] [for the main course/prep], [the vegetable pasta/object]. [I’m/subject] [vegetarian/adj].'],
+  ['Marco', '[I’ll/subject] [have/verb] [the steak/object], [please/adverb].'],
+  ['Waiter', '[How/wh] [would/aux] [you/subject] [like/verb] [it/object]? [Rare/adj], [medium/adj] [or/conj] [well-done/adj]?'],
+  ['Marco', '[Medium/adj], [please/adverb].'],
+  ['Waiter', '[How/wh] [is/verb] [everything/subject]?'],
+  ['Ana', '[Delicious/adj]! [The pasta/subject] [is/verb] [really/adverb] [tasty/adj].'],
+  ['Marco', '[The steak/subject] [is/verb] [great/adj]. [But/conj] [I’m/subject] [full/adj] [now/time] — [no dessert/none] [for me/prep].'],
+  ['Ana', '[Not me/none]! [I’ll/subject] [have/verb] [the chocolate cake/object] [for dessert/prep].'],
+  ['Marco', '[Excuse me/none], [can/aux] [we/subject] [have/verb] [the check/object], [please/adverb]?'],
+  ['Waiter', '[Of course/none].'],
+  ['Ana', '[The service/subject] [was/verb] [excellent/adj]. [Let’s/aux] [leave/verb] [a good tip/object].']
+];
+const CQ_ITEMS = [
+  { q: 'What does Ana drink?', opts: ['Water', 'A strong coffee', 'Orange juice'], correct: 0 },
+  { q: 'How does Marco want his steak?', opts: ['Medium', 'Rare', 'Well-done'], correct: 0 },
+  { q: 'Why doesn’t Marco have dessert?', opts: ['He’s full', 'He’s vegetarian', 'It’s too spicy'], correct: 0 }
+];
+
+/* ── the conversation ─────────────────────────────────────────────────── */
+const avStyle = s => { const c = (StickSentence.cast()[s.cast] || {}).colour;
+  return c ? 'background:' + c + '40;box-shadow:inset 0 0 0 2px ' + c : ''; };
+const conv = document.getElementById('conversation');
+LINES.forEach(([who, text]) => {
+  const s = SPEAKERS[who], right = s.side === 'right';
+  conv.insertAdjacentHTML('beforeend',
+    '<div class="bubble-wrap' + (right ? ' right' : '') + '">' +
+      '<div class="avatar ' + s.av + '" style="' + avStyle(s) + '">' + s.avatar + '</div>' +
+      '<div class="bubble-col"><div class="bname' + (right ? ' right' : '') + '">' + who + '</div>' +
+      '<div class="bubble ' + (right ? 'right' : 'left') + '">' + StickSentence.html(text) + '</div></div>' +
+    '</div>');
+});
+
+HouseMatching.build({
+  left: 'picCol', right: 'wordCol', scoreEl: 'mScore', totalEl: 'mTotal', winEl: 'mWin', resetBtn: 'mReset', feedbackEl: 'mFeedback',
+  pairs: WORDS.map(([e, w]) => ({ id: w, left: e, right: w }))
+});
+HouseComprehension.build({ pre: 'preQuestions', quiz: 'quiz', items: CQ_ITEMS });
+</script>
+<script>HouseGrammar.init();</script>
+</body>
+</html>
