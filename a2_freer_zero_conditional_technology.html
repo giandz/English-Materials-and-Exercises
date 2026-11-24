@@ -44,13 +44,14 @@
 <div class="page" id="page">
   <span class="cefr-tag cefr-a2">A2 · Elementary</span>
   <h1>Tech Help Desk</h1>
-  <p class="subtitle">You work at the help desk. Explain how things work — both paths!</p>
+  <p class="subtitle">A customer has a problem. The tech support answers with a flowchart only — you say it in English!</p>
 
   <div class="rule-box">
     <p><strong>How to play (pairs, or teacher + student):</strong></p>
-    <p>1. Student A rolls 🎲 and explains both paths of the flowchart: “<b>If you press Ctrl + S, the file saves. If you don’t press Ctrl + S, you can lose your work.</b>”</p>
-    <p>2. Student B is the customer. B asks one more question: “<b>And what happens if…?</b>” A answers.</p>
-    <p>3. Press 👀 to see example sentences. Then change: B rolls, A is the customer.</p>
+    <p>1. Roll 🎲. Student B is the <b>customer</b> 🙋: read the problem in the speech bubble.</p>
+    <p>2. Student A is <b>tech support</b> 🧑‍🔧. Tech support only “speaks” in flowcharts! Say the flowchart in English — both paths: “<b>If you restart it, it works again. If you don’t restart it, it stays frozen.</b>”</p>
+    <p>3. B answers: “<b>OK, thanks!</b>” or asks one more question: “<b>And what happens if…?</b>”</p>
+    <p>4. Press 👀 to check your sentences. Then change: B is tech support, A is the customer.</p>
   </div>
 
   <div class="q-card" id="qCard"><span class="q-placeholder">Roll the dice to start.</span></div>
@@ -74,6 +75,18 @@
 </div>
 <script src="house.js"></script>
 <script src="house-interview.js"></script>
+<style>
+.desk-chat{ display:flex; flex-direction:column; gap:10px; margin:.25rem 0 .5rem; text-align:left; }
+.desk-row{ display:flex; align-items:flex-end; gap:8px; }
+.desk-tech{ justify-content:flex-end; }
+.desk-av{ font-size:1.8rem; line-height:1; flex:0 0 auto; }
+.desk-bub{ position:relative; background:var(--surface-1); border:1px solid var(--border); border-radius:var(--border-radius-lg); padding:8px 12px; max-width:85%; font-size:1.05rem; }
+.desk-row:not(.desk-tech) .desk-bub{ border-bottom-left-radius:4px; }
+.desk-tech .desk-bub{ border-bottom-right-radius:4px; }
+.desk-flow{ background:var(--surface-2); flex:1 1 auto; max-width:calc(100% - 2.6rem); padding:6px 8px; }
+.desk-flow svg{ display:block; width:100%; height:auto; }
+.desk-who{ display:block; font-size:.75rem; font-weight:600; text-transform:uppercase; letter-spacing:.04em; opacity:.65; margin-bottom:2px; }
+</style>
 <script src="house-flow.js"></script>
 <script>
 const pick = HouseRandomGen.pickFrom;
@@ -90,32 +103,46 @@ const card = o =>
   (o.check ? '<details class="check"><summary>' + (o.checkLabel || '👀 Examples') + '</summary><div class="check-body">' +
     o.check.map(l => '<p>' + l + '</p>').join('') + '</div></details>' : '');
 const N = (text, icon) => ({ text, icon });
-/* [device, cause, icon, ✔️ result, icon, ❌ result, icon, the if-part for ❌] */
-const DESK = [
-  ['💻', 'you press Ctrl + S', '⌨️', 'the file saves', '💾', 'you can lose your work', '😱', 'you don’t press Ctrl + S'],
-  ['🔋', 'the battery is under 20%', '🪫', 'the phone goes into low-power mode', '🐢', 'it works normally', '📱', 'the battery isn’t under 20%'],
-  ['🧊', 'you leave the freezer open', '🚪', 'the ice melts', '💧', 'the food stays frozen', '🧊', 'you don’t leave it open'],
-  ['☕', 'you press the big button', '🔘', 'the machine makes coffee', '☕', 'nothing happens', '🤷', 'you don’t press it'],
-  ['🖨️', 'the printer has ink', '🖋️', 'it prints', '📄', 'the page is white', '⬜', 'the printer has no ink'],
-  ['📶', 'you turn on airplane mode', '✈️', 'the phone disconnects', '📵', 'you get messages', '💬', 'you don’t turn it on'],
-  ['📺', 'you press “mute”', '🔇', 'the TV is silent', '🤫', 'you hear the TV', '🔊', 'you don’t press it'],
-  ['❄️', 'you turn on the AC', '🌬️', 'the room gets cold', '🥶', 'the room stays hot', '🥵', 'you don’t turn it on'],
-  ['🔒', 'you type the wrong password three times', '🔑', 'the phone locks', '🔒', 'the phone opens', '🔓', 'you type the right password'],
-  ['🧺', 'the washing machine finishes', '✅', 'it beeps', '🔔', 'it keeps washing', '🔄', 'it doesn’t finish'],
-  ['💡', 'you clap your hands', '👏', 'the smart light turns on', '💡', 'the room stays dark', '🌑', 'you don’t clap'],
-  ['🎧', 'you take out one earbud', '👂', 'the music stops', '⏸️', 'the music keeps playing', '🎶', 'you keep both earbuds in'],
-  ['🚗', 'you wear your seatbelt', '✅', 'the car is quiet', '🤫', 'the car beeps', '🔔', 'you don’t wear your seatbelt'],
-  ['🍞', 'the toast is ready', '⏲️', 'the toaster pops up', '⬆️', 'the bread stays inside', '🍞', 'the toast isn’t ready'],
-  ['📷', 'you tap the screen', '👆', 'the camera focuses', '🎯', 'the photo is blurry', '🌫️', 'you don’t tap it'],
-  ['🔌', 'you unplug the fridge', '🔌', 'it stops working', '⛔', 'it keeps the food cold', '❄️', 'you don’t unplug it']
+/* what the customer says — {d} = the device, {p} = the problem (-ing) */
+const CUSTOMER = [
+  'Hi, I’m having problems with my {d}. It’s {p}.',
+  'Hello? My {d} keeps {p}. Can you help me?',
+  'Excuse me — my {d} is {p} again!',
+  'Help! My {d} started {p} this morning.',
+  'Hi. I think my {d} is broken. It’s {p} all the time.',
+  'Good morning. Every time I use my {d}, it starts {p}.',
+  'Sorry to bother you, but my {d} is {p}. What can I do?'
 ];
-
+/* [icon, device, problem (-ing), the fix, icon, ✔️ result, icon, ❌ result, icon, the if-part for ❌] */
+const DESK = [
+  ['💻', 'laptop', 'freezing', 'you restart it', '🔄', 'it works again', '✅', 'it stays frozen', '🧊', 'you don’t restart it'],
+  ['📱', 'phone', 'overheating', 'you close the apps', '❎', 'it cools down', '❄️', 'it gets hotter', '🔥', 'you don’t close the apps'],
+  ['🖨️', 'printer', 'making a strange noise', 'you take out the stuck paper', '📄', 'the noise stops', '🤫', 'it keeps making the noise', '🔊', 'you don’t take out the paper'],
+  ['📶', 'router', 'blinking red', 'you turn it off and on', '🔌', 'the light goes green', '🟢', 'the internet doesn’t work', '🚫', 'you don’t turn it off and on'],
+  ['📺', 'TV', 'turning off by itself', 'you turn off the sleep timer', '⏲️', 'it stays on', '📺', 'it turns off every hour', '😴', 'you don’t turn off the timer'],
+  ['🧺', 'washing machine', 'shaking a lot', 'you put the clothes in evenly', '👕', 'it washes quietly', '🤫', 'it moves across the floor', '🫨', 'you don’t put them in evenly'],
+  ['🧊', 'fridge', 'beeping', 'you close the door properly', '🚪', 'it stops beeping', '🔕', 'it beeps all night', '🔔', 'you don’t close the door properly'],
+  ['🎧', 'headset', 'crackling', 'you charge it', '🔋', 'the sound is clear', '🎶', 'the sound cuts out', '🔇', 'you don’t charge it'],
+  ['📲', 'tablet', 'running slowly', 'you delete old videos', '🗑️', 'it runs faster', '⚡', 'it gets slower', '🐢', 'you don’t delete them'],
+  ['☕', 'coffee maker', 'leaking', 'you clean the filter', '🧽', 'it stops leaking', '✅', 'water goes everywhere', '💧', 'you don’t clean the filter'],
+  ['🔋', 'phone', 'losing battery really fast', 'you turn down the brightness', '🔅', 'the battery lasts longer', '🔋', 'the battery dies by lunch', '🪫', 'you don’t turn down the brightness'],
+  ['🖥️', 'computer', 'showing error messages', 'you update the software', '⬆️', 'the errors go away', '✅', 'the errors keep coming', '⚠️', 'you don’t update it'],
+  ['🔊', 'smart speaker', 'ignoring me', 'you speak more clearly', '🗣️', 'it understands you', '👂', 'it plays the wrong song', '🎵', 'you don’t speak clearly'],
+  ['🤖', 'robot vacuum', 'going around in circles', 'you clean the sensors', '🧽', 'it cleans the whole room', '🧹', 'it gets stuck', '🌀', 'you don’t clean the sensors'],
+  ['🖱️', 'mouse', 'jumping around the screen', 'you use a mouse pad', '🟦', 'it moves smoothly', '✅', 'it jumps around', '🦘', 'you don’t use a mouse pad'],
+  ['🚗', 'car', 'beeping', 'you put on your seatbelt', '✅', 'the car is quiet', '🤫', 'it keeps beeping', '🔔', 'you don’t put on your seatbelt']
+];
+const fill = (t, d, p) => t.replace('{d}', d).replace('{p}', p);
 HouseRandomGen.build({
-  items: DESK.map(d => ({ d, text: d[1] })),
-  render: ({ d: [dev, c, ci, y, yi, n, ni, negIf] }) => card({
-    topic: '🛠️ Tech help desk · ' + dev,
-    body: HouseFlow.svg({ cause: N(c, ci), yes: N(y, yi), no: N(n, ni) }),
-    prompt: 'A: explain both paths. B: ask one more question.',
+  pick: () => { const d = pick(DESK), c = pick(CUSTOMER); return { d, c, text: d[1] + d[2] + c }; },
+  key: it => it.d[1] + it.d[2],
+  render: ({ d: [ic, dev, prob, c, ci, y, yi, n, ni, negIf], c: line }) => card({
+    topic: '🛠️ Tech help desk · ' + ic,
+    body: '<div class="desk-chat">' +
+      '<div class="desk-row"><span class="desk-av" title="Customer">🙋</span><div class="desk-bub"><span class="desk-who">Customer</span>' + fill(line, dev, prob) + '</div></div>' +
+      '<div class="desk-row desk-tech"><div class="desk-bub desk-flow"><span class="desk-who">Tech support</span>' +
+        HouseFlow.svg({ cause: N(c, ci), yes: N(y, yi), no: N(n, ni) }) + '</div><span class="desk-av" title="Tech support">🧑‍🔧</span></div></div>',
+    prompt: 'B: read the problem. A: say the flowchart in English — both paths!',
     check: ['✔️ “If ' + c + ', ' + y + '.”', '❌ “If ' + negIf + ', ' + n + '.”', '<span class="text-secondary">if + present simple, present simple</span>']
   })
 });
