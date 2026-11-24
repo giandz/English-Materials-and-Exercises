@@ -1,0 +1,101 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<title>Parts of a Device — Explore and Practice</title>
+<script>
+(function(){
+  try{
+    var saved = localStorage.getItem('theme-preference');
+    var theme = (saved === 'light' || saved === 'dark')
+      ? saved
+      : ((window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches) ? 'dark' : 'light');
+    document.documentElement.setAttribute('data-theme', theme);
+    var fs = parseFloat(localStorage.getItem('font-size-preference'));
+    if (fs >= 10 && fs <= 28) document.documentElement.style.setProperty('--fs-base', fs + 'px');
+  }catch(e){ /* localStorage/matchMedia unavailable — CSS media query still applies */ }
+})();
+</script>
+<link rel="stylesheet" href="house.css">
+<style>
+.match-card > span:last-child{ flex:1 1 auto; min-width:0; }
+.item-context .h3d-mini, .direct .h3d-mini{ max-width:220px; margin:2px 0 6px; font-style:normal; }
+.direct{ font-style:normal; }
+.words-table{ width:100%; border-collapse:collapse; font-size:.8667rem; }
+.words-table th{ text-align:left; font-size:.7333rem; font-weight:600; text-transform:uppercase; letter-spacing:.05em; color:var(--text-muted); padding:4px 6px; border-bottom:.5px solid var(--border); }
+.words-table td{ padding:5px 6px; border-bottom:.5px solid var(--border); vertical-align:top; }
+.words-table td:first-child{ font-weight:600; color:var(--pos-noun); white-space:nowrap; }
+.words-table td:last-child{ color:var(--pos-verb); }
+</style>
+</head>
+<body>
+<div class="page" id="page">
+  <span class="cefr-tag cefr-a1a2">A1/A2 · Vocabulary</span>
+  <h1>Parts of a Device</h1>
+  <p class="subtitle">Buttons, knobs, switches, lids… What are the parts called — and what can you do with them?</p>
+
+  <div class="sec-div">Explore</div>
+  <p class="subtitle">Choose a machine. Turn it round, move it and zoom. Point at a part — or tap it — to see its name and what you can do. Press ▶ to see it move!</p>
+  <div id="viewer"></div>
+  <details>
+    <summary>📋 All the parts and actions <span>▾</span></summary>
+    <div style="padding:6px 10px 10px"><table class="words-table"><tr><th>Part</th><th>You can…</th></tr><tr><td>button</td><td>press · push</td></tr><tr><td>knob</td><td>turn</td></tr><tr><td>switch</td><td>switch on · switch off</td></tr><tr><td>lid</td><td>open · close · lift</td></tr><tr><td>door</td><td>open · close</td></tr><tr><td>handle</td><td>pull · hold · pick up</td></tr><tr><td>lever</td><td>push down</td></tr><tr><td>screen</td><td>tap · swipe</td></tr><tr><td>touchpad</td><td>tap · swipe</td></tr><tr><td>keyboard</td><td>type · press the keys</td></tr><tr><td>spout</td><td>pour</td></tr><tr><td>slot</td><td>put the bread in</td></tr><tr><td>shade</td><td>move</td></tr><tr><td>light bulb</td><td>change</td></tr><tr><td>power cord · plug · socket</td><td>plug in · unplug</td></tr></table></div>
+  </details>
+
+  <div class="sec-div">Practice 1 — Name the parts</div>
+  <p class="subtitle">Look at the blue part. Tap the picture, then tap its name.</p>
+  <div class="score-bar"><span>Matched: <strong id="pScore">0</strong> / <span id="pTotal">0</span></span><button id="pReset">↺ Reset</button></div>
+  <div class="match-grid">
+    <div><div class="match-col-label">Part</div><div class="match-col" id="pLeft"></div></div>
+    <div><div class="match-col-label">Name</div><div class="match-col" id="pRight"></div></div>
+  </div>
+  <div class="win-msg" id="pWin">🎉 You know the parts!</div>
+  <div class="feedback" id="pFeedback"></div>
+
+  <div class="sec-div">Practice 2 — Watch and match</div>
+  <p class="subtitle">Watch. What is happening? Tap the picture, then tap the words.</p>
+  <div class="score-bar"><span>Matched: <strong id="aScore">0</strong> / <span id="aTotal">0</span></span><button id="aReset">↺ Reset</button></div>
+  <div class="match-grid">
+    <div><div class="match-col-label">Watch</div><div class="match-col" id="aLeft"></div></div>
+    <div><div class="match-col-label">Action</div><div class="match-col" id="aRight"></div></div>
+  </div>
+  <div class="win-msg" id="aWin">🎉 All matched!</div>
+  <div class="feedback" id="aFeedback"></div>
+
+  <div class="sec-div">Practice 3 — Word order</div>
+  <p class="subtitle">Watch, then make the sentence. Tap the words. Tap a word again to take it back, or drag to change the order.</p>
+  <button class="grammar-toggle-btn" id="grammarToggle">🎨 Show Grammar</button>
+  <div class="pos-legend"></div>
+  <div class="score-bar"><span>Correct: <strong id="woScore">0</strong> / <span id="woTotal">0</span></span></div>
+  <div id="woItems"></div>
+
+  <div class="sec-div">Practice 4 — Complete the sentences</div>
+  <p class="subtitle">Watch, then write the missing word. The bar turns green 🔴→🟢 when you are right.</p>
+  <div id="gfItems"></div>
+
+  <footer>Parts of a Device — buttons, knobs, switches, lids and more (A1/A2)</footer>
+</div>
+
+<div id="theme-toggle-wrap">
+  <button id="theme-toggle" aria-label="Toggle light/dark mode" title="Toggle light/dark mode">
+    <span id="theme-icon">☀️</span>
+  </button>
+</div>
+<script src="house.js"></script>
+<script src="house-3d.js"></script>
+<script>
+const PART_PAIRS = [{"id": "p0", "left": "<span class=\"h3d-mini\" data-model=\"microwave\" data-part=\"knob\" data-height=\"96\"></span>", "right": "knob"}, {"id": "p1", "left": "<span class=\"h3d-mini\" data-model=\"laptop\" data-part=\"screen\" data-height=\"96\"></span>", "right": "screen"}, {"id": "p2", "left": "<span class=\"h3d-mini\" data-model=\"microwave\" data-part=\"button\" data-height=\"96\"></span>", "right": "button"}, {"id": "p3", "left": "<span class=\"h3d-mini\" data-model=\"lamp\" data-part=\"switch\" data-height=\"96\"></span>", "right": "switch"}, {"id": "p4", "left": "<span class=\"h3d-mini\" data-model=\"kettle\" data-part=\"handle\" data-height=\"96\"></span>", "right": "handle"}, {"id": "p5", "left": "<span class=\"h3d-mini\" data-model=\"washer\" data-part=\"lid\" data-height=\"96\"></span>", "right": "lid"}, {"id": "p6", "left": "<span class=\"h3d-mini\" data-model=\"toaster\" data-part=\"lever\" data-height=\"96\"></span>", "right": "lever"}, {"id": "p7", "left": "<span class=\"h3d-mini\" data-model=\"laptop\" data-part=\"cord\" data-height=\"96\"></span>", "right": "power cord"}];
+const ACT_PAIRS = [{"id": "a0", "left": "<span class=\"h3d-mini\" data-model=\"kettle\" data-part=\"lid\" data-act=\"open\" data-height=\"96\"></span>", "right": "open the lid"}, {"id": "a1", "left": "<span class=\"h3d-mini\" data-model=\"microwave\" data-part=\"knob\" data-act=\"turn\" data-height=\"96\"></span>", "right": "turn the knob"}, {"id": "a2", "left": "<span class=\"h3d-mini\" data-model=\"toaster\" data-part=\"button\" data-act=\"press\" data-height=\"96\"></span>", "right": "press the button"}, {"id": "a3", "left": "<span class=\"h3d-mini\" data-model=\"lamp\" data-part=\"switch\" data-act=\"switch on\" data-height=\"96\"></span>", "right": "switch on the lamp"}, {"id": "a4", "left": "<span class=\"h3d-mini\" data-model=\"microwave\" data-part=\"handle\" data-act=\"pull\" data-height=\"96\"></span>", "right": "pull the handle"}, {"id": "a5", "left": "<span class=\"h3d-mini\" data-model=\"toaster\" data-part=\"lever\" data-act=\"push down\" data-height=\"96\"></span>", "right": "push down the lever"}, {"id": "a6", "left": "<span class=\"h3d-mini\" data-model=\"laptop\" data-part=\"screen\" data-act=\"swipe\" data-height=\"96\"></span>", "right": "swipe the screen"}, {"id": "a7", "left": "<span class=\"h3d-mini\" data-model=\"microwave\" data-part=\"plug\" data-act=\"plug in\" data-height=\"96\"></span>", "right": "plug in the power cord"}];
+const WO_ITEMS = [{"context": "<span class=\"h3d-mini\" data-model=\"kettle\" data-part=\"lid\" data-act=\"open\" data-height=\"90\"></span>", "text": "Open / the lid / and / put / water / in.", "pos": ["verb", "object", "conj", "verb", "object", "adverb"]}, {"context": "<span class=\"h3d-mini\" data-model=\"microwave\" data-part=\"knob\" data-act=\"turn\" data-height=\"90\"></span>", "text": "Turn / the knob / to choose / the time.", "pos": ["verb", "object", "verb", "object"]}, {"context": "<span class=\"h3d-mini\" data-model=\"toaster\" data-part=\"lever\" data-act=\"push down\" data-height=\"90\"></span>", "text": "Push / the lever / down / to make / toast.", "pos": ["verb", "object", "adverb", "verb", "object"]}, {"context": "<span class=\"h3d-mini\" data-model=\"laptop\" data-part=\"screen\" data-act=\"swipe\" data-height=\"90\"></span>", "text": "Swipe / the screen / to see / more photos.", "pos": ["verb", "object", "verb", "object"]}, {"context": "<span class=\"h3d-mini\" data-model=\"kettle\" data-part=\"spout\" data-act=\"pour\" data-height=\"90\"></span>", "text": "Pour / the water / out of / the spout.", "pos": ["verb", "object", "prep", "object"]}, {"context": "<span class=\"h3d-mini\" data-model=\"laptop\" data-part=\"lid\" data-act=\"close\" data-height=\"90\"></span>", "text": "Close / the lid / when / you / finish.", "pos": ["verb", "object", "conj", "subject", "verb"]}];
+const GF_ITEMS = [{"category": "part", "direct": "<span class=\"h3d-mini\" data-model=\"microwave\" data-part=\"knob\" data-act=\"turn\" data-height=\"90\"></span>Which part is moving?", "template": "Turn the {0} to choose the time.", "hints": [{"accepted": ["knob"]}]}, {"category": "part", "direct": "<span class=\"h3d-mini\" data-model=\"lamp\" data-part=\"switch\" data-act=\"switch on\" data-height=\"90\"></span>Which part does she press?", "template": "Press the {0} to turn on the lamp.", "hints": [{"accepted": ["switch"]}]}, {"category": "act", "direct": "<span class=\"h3d-mini\" data-model=\"toaster\" data-part=\"lever\" data-act=\"push down\" data-height=\"90\"></span>What is happening?", "template": "{0} the lever down.", "hints": [{"accepted": ["Push", "push"]}]}, {"category": "act", "direct": "<span class=\"h3d-mini\" data-model=\"kettle\" data-part=\"lid\" data-act=\"open\" data-height=\"90\"></span>What is happening?", "template": "{0} the lid.", "hints": [{"accepted": ["Open", "open", "Lift", "lift"]}]}, {"category": "act", "direct": "<span class=\"h3d-mini\" data-model=\"laptop\" data-part=\"touchpad\" data-act=\"tap\" data-height=\"90\"></span>What does the finger do?", "template": "{0} the touchpad.", "hints": [{"accepted": ["Tap", "tap"]}]}, {"category": "part", "direct": "<span class=\"h3d-mini\" data-model=\"microwave\" data-part=\"handle\" data-act=\"pull\" data-height=\"90\"></span>Which part does he pull?", "template": "Pull the {0} to open the door.", "hints": [{"accepted": ["handle"]}]}, {"category": "act", "direct": "<span class=\"h3d-mini\" data-model=\"washer\" data-part=\"button\" data-act=\"press\" data-height=\"90\"></span>What is happening?", "template": "{0} the button to start.", "hints": [{"accepted": ["Press", "press", "Push", "push"]}]}, {"category": "act", "direct": "<span class=\"h3d-mini\" data-model=\"laptop\" data-part=\"cord\" data-act=\"plug in\" data-height=\"90\"></span>What is happening?", "template": "{0} in the power cord.", "hints": [{"accepted": ["Plug", "plug"]}]}, {"category": "part", "direct": "<span class=\"h3d-mini\" data-model=\"kettle\" data-part=\"spout\" data-act=\"pour\" data-height=\"90\"></span>Where does the water come out?", "template": "Pour the water from the {0}.", "hints": [{"accepted": ["spout"]}]}];
+const GF_LABELS = { part: 'which part?', act: 'what do you do?' };
+House3D.viewer({ container: 'viewer', models: ['microwave', 'toaster', 'kettle', 'laptop', 'washer', 'lamp'], start: 'microwave' });
+HouseMatching.build({ left: 'pLeft', right: 'pRight', pairs: PART_PAIRS, scoreEl: 'pScore', totalEl: 'pTotal', winEl: 'pWin', resetBtn: 'pReset', feedbackEl: 'pFeedback' });
+HouseMatching.build({ left: 'aLeft', right: 'aRight', pairs: ACT_PAIRS, scoreEl: 'aScore', totalEl: 'aTotal', winEl: 'aWin', resetBtn: 'aReset', feedbackEl: 'aFeedback' });
+HouseWordOrder.build({ container: 'woItems', items: WO_ITEMS, scoreEl: 'woScore', totalEl: 'woTotal' });
+HouseGapFill.build({ container: 'gfItems', items: GF_ITEMS, labels: GF_LABELS });
+</script>
+<script>HouseGrammar.init();</script>
+</body>
+</html>
