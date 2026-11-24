@@ -1,0 +1,157 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<title>Indirect Questions — Clarification</title>
+<script>
+(function(){
+  try{
+    var saved = localStorage.getItem('theme-preference');
+    var theme = (saved === 'light' || saved === 'dark')
+      ? saved
+      : ((window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches) ? 'dark' : 'light');
+    document.documentElement.setAttribute('data-theme', theme);
+    var fs = parseFloat(localStorage.getItem('font-size-preference'));
+    if (fs >= 10 && fs <= 28) document.documentElement.style.setProperty('--fs-base', fs + 'px');
+  }catch(e){ /* localStorage/matchMedia unavailable — CSS media query still applies */ }
+})();
+</script>
+<link rel="stylesheet" href="house.css">
+<style>
+.flow-card{ border:1px solid var(--color-border-tertiary); border-radius:var(--border-radius-lg); background:var(--surface-2); padding:10px 12px; margin-bottom:10px; }
+.flow-card .sent{ font-size:1rem; font-weight:600; margin-bottom:6px; }
+.flow-card .note{ font-size:.8333rem; color:var(--text-secondary); margin-top:4px; }
+.if-part{ color:hsl(217, 70%, 42%); font-weight:700; }
+.res-part{ color:hsl(120, 60%, 32%); font-weight:700; }
+.res-no{ color:hsl(0, 65%, 42%); font-weight:700; }
+[data-theme="dark"] .res-no{ color:hsl(0, 75%, 70%); }
+[data-theme="dark"] .if-part{ color:hsl(217, 80%, 70%); }
+[data-theme="dark"] .res-part{ color:hsl(120, 55%, 65%); }
+.form-table{ width:100%; border-collapse:collapse; margin:0 0 1rem; font-size:.9333rem; }
+.form-table th, .form-table td{ border:1px solid var(--color-border-tertiary); padding:7px 9px; text-align:left; vertical-align:top; }
+.form-table th{ background:var(--surface-1); font-size:.8rem; text-transform:uppercase; letter-spacing:.04em; color:var(--text-secondary); }
+.pct-row{ display:flex; flex-wrap:wrap; gap:6px; margin:0 0 1rem; }
+.pct-row span{ padding:3px 10px; border-radius:999px; font-weight:700; font-size:.8667rem; border:2px solid; }
+.rule-box p{ margin:0 0 6px; }
+.rule-box p:last-child{ margin-bottom:0; }
+.big-pic{ font-size:1.6rem; letter-spacing:.1em; margin:2px 0 4px; }
+.prep-grid{ display:grid; grid-template-columns:repeat(auto-fill, minmax(200px, 1fr)); gap:8px; margin:0 0 1rem; }
+.prep-grid > div{ border:1px solid var(--color-border-tertiary); border-radius:var(--border-radius-lg); background:var(--surface-2); padding:9px 11px; }
+.prep-grid h4{ margin:0 0 3px; font-size:1.05rem; }
+.prep-grid .rule{ font-size:.8rem; color:var(--text-secondary); margin-bottom:5px; }
+.prep-grid .ex{ font-size:.9rem; line-height:1.6; }
+.hl{ font-weight:700; color:var(--text-accent); }
+</style>
+</head>
+<body>
+<div class="page" id="page">
+  <span class="cefr-tag cefr-b1">B1 · Intermediate</span>
+  <h1>Indirect Questions: Could you tell me where…?</h1>
+  <p class="subtitle">Polite questions for offices, strangers and interviews.</p>
+
+  <div class="sec-div">Look</div>
+  <p class="subtitle">From the conversation. The direct question, then the polite one Marta asked.</p>
+  <div id="look"></div>
+
+  <div class="sec-div">Meaning</div>
+  <div class="rule-box" id="meaning"></div>
+
+  <div class="sec-div">Check the meaning</div>
+  <p class="subtitle">Answer the questions about each sentence.</p>
+  <div id="ccq"></div>
+
+  <div class="sec-div">Look at the form</div>
+  <p class="subtitle">What is each part? Drag a label (or tap a label, then tap a box).</p>
+  <div class="score-bar"><span>Correct: <strong id="fcScore">0</strong> / <span id="fcTotal">0</span></span></div>
+  <div id="formClarf"></div>
+  <div id="formRule"></div>
+
+  <div class="sec-div">Common mistakes</div>
+  <div id="mistakes"></div>
+
+  <div class="sec-div">Error hunt</div>
+  <p class="subtitle">Some sentences have one mistake. Some are correct! Tap a word — or a space between words — to fix it. Then press OK.</p>
+  <div class="score-bar"><span>Done: <strong id="errorScore">0</strong> / <span id="errorTotal">0</span></span></div>
+  <div id="errorHuntItems"></div>
+
+  <footer>Indirect questions — Clarification (B1)</footer>
+</div>
+
+<div id="theme-toggle-wrap">
+  <button id="theme-toggle" aria-label="Toggle light/dark mode" title="Toggle light/dark mode">
+    <span id="theme-icon">☀️</span>
+  </button>
+</div>
+<script src="house.js"></script>
+<script>
+const LOOK = [
+  ['Could you tell me where <span class="hl">the passport office is</span>?', '<div class="note">Direct: <i>Where <b>is</b> the passport office?</i></div>', 'After the polite start, the order is <b>subject + verb</b>.'],
+  ['Do you know <span class="hl">if</span> it’s open on Saturdays?', '<div class="note">Direct: <i><b>Is</b> it open on Saturdays?</i></div>', 'A yes/no question → <b>if</b> or <b>whether</b>.'],
+  ['Do you happen to know how long <span class="hl">it takes</span>?', '<div class="note">Direct: <i>How long <b>does</b> it take?</i></div>', 'No <b>do / does / did</b>: <i>it takes</i>.']
+];
+const MEANING = '<p><strong>Indirect questions are more polite.</strong> We use them with people we don’t know, at offices and stores, and in interviews.</p>' +
+  '<div class="prep-grid">' +
+  '<div><h4>🙋 polite starts</h4><div class="rule">questions</div><div class="ex">Could you tell me…?<br>Do you know…?<br>Do you happen to know…?<br>Can you explain…?</div></div>' +
+  '<div><h4>💬 polite starts</h4><div class="rule">statements — no “?”</div><div class="ex">I was wondering…<br>I’d like to know…<br>I’m not sure…</div></div>' +
+  '<div><h4>🔄 what changes</h4><div class="rule">after the start</div><div class="ex">subject + verb (normal order)<br>no do / does / did<br>yes/no → if / whether</div></div></div>';
+const CCQ = [
+  { sentence: 'Could you tell me where the station is?', questions: [
+    { q: 'Is it more polite than “Where is the station?”', opts: ['Yes', 'No'], correct: 0, why: 'Yes. The polite start makes it softer.' },
+    { q: 'After “tell me where”, is the order like a question?', opts: ['Yes', 'No'], correct: 1, why: 'No: <i>the station <b>is</b></i> — subject + verb.' } ] },
+  { sentence: 'I was wondering whether I need an appointment.', questions: [
+    { q: 'Is it a yes/no question?', opts: ['Yes', 'No'], correct: 0, why: 'Yes. Direct: <i>Do I need an appointment?</i> → <b>whether / if</b>.' },
+    { q: 'Does it need a question mark?', opts: ['Yes', 'No'], correct: 1, why: 'No. “I was wondering…” is a statement.' } ] }
+];
+const FORM_POOL = ['aux', 'subject', 'verb', 'object', 'wh', 'conj', 'adj', 'time'];
+const FORM = [
+  { form: 'q', parts: [['Could', 'aux'], ['you', 'subject'], ['tell', 'verb'], ['me', 'object'], ['where', 'wh'], ['the office', 'subject'], ['is', 'verb'], ['?', null]] },
+  { form: 'q', parts: [['Do', 'aux'], ['you', 'subject'], ['know', 'verb'], ['if', 'conj'], ['it', 'subject'], ['is', 'verb'], ['open', 'adj'], ['on Saturdays', 'time'], ['?', null]] },
+  { form: 'q', parts: [['Do', 'aux'], ['you', 'subject'], ['know', 'verb'], ['how long', 'wh'], ['it', 'subject'], ['takes', 'verb'], ['?', null]] },
+  { form: 'aff', parts: [['I', 'subject'], ['was wondering', 'verb'], ['whether', 'conj'], ['I', 'subject'], ['need', 'verb'], ['an appointment', 'object'], ['.', null]] }
+];
+const FORM_RULE = '<table class="form-table"><tr><th>direct</th><th>indirect</th></tr>' +
+  '<tr><td>Where <b>is</b> the office?</td><td>Could you tell me where the office <b>is</b>?</td></tr>' +
+  '<tr><td>What time <b>does</b> it <b>open</b>?</td><td>Do you know what time it <b>opens</b>?</td></tr>' +
+  '<tr><td>Where <b>did</b> she <b>go</b>?</td><td>Do you know where she <b>went</b>?</td></tr>' +
+  '<tr><td><b>Is</b> it open today?</td><td>Do you know <b>if</b> it’s open today?</td></tr></table>';
+const MISTAKES = [
+  ['Could you tell me where is the office?', 'Could you tell me where the office is?'],
+  ['Do you know what time does it open?', 'Do you know what time it opens?'],
+  ['Can you tell me is it open?', 'Can you tell me if it’s open?'],
+  ['I was wondering if I need an appointment?', 'I was wondering if I need an appointment.'],
+  ['Do you know where did she go?', 'Do you know where she went?']
+];
+const EH_ITEMS = [
+  { words: ['Could', 'you', 'tell', 'me', 'where', 'is', 'the', 'office', '?'], error: { type: 'misplaced', wordIndex: 5, targetGapIndex: 8 } },
+  { words: ['Do', 'you', 'know', 'if', 'it', 'is', 'open', 'today', '?'], error: null },
+  { words: ['Do', 'you', 'know', 'what', 'time', 'it', 'open', '?'], error: { type: 'wrong', wordIndex: 6, options: ['opens', 'does open', 'opening'], correct: 'opens' } },
+  { words: ['Can', 'you', 'tell', 'me', 'it', 'is', 'open', '?'], error: { type: 'missing', gapIndex: 4, options: ['if', 'does', 'is'], correct: 'if' } },
+  { words: ['I', 'was', 'wondering', 'whether', 'I', 'need', 'an', 'appointment', '.'], error: null },
+  { words: ['Do', 'you', 'know', 'where', 'she', 'did go', '?'], error: { type: 'wrong', wordIndex: 5, options: ['went', 'go', 'goes'], correct: 'went' } },
+  { words: ['Could', 'you', 'explain', 'how', 'it', 'work', '?'], error: { type: 'wrong', wordIndex: 5, options: ['works', 'does work', 'working'], correct: 'works' } },
+  { words: ['Do', 'you', 'happen', 'to', 'know', 'how', 'much', 'it', 'costs', '?'], error: null }
+];
+
+/* LOOK: [the sentence, a picture (HTML) or { timeline: HouseTimeline options }, a note] */
+const look = document.getElementById('look');
+LOOK.forEach(([sent, vis, note], i) => {
+  const card = document.createElement('div');
+  card.className = 'flow-card';
+  card.innerHTML = '<div class="sent">' + sent + '</div>' +
+    (vis && vis.timeline ? '<div id="lookTl' + i + '"></div>' : (vis || '')) + (note ? '<div class="note">' + note + '</div>' : '');
+  look.appendChild(card);
+  if (vis && vis.timeline) HouseTimeline.build(Object.assign({ container: 'lookTl' + i }, vis.timeline));
+});
+document.getElementById('meaning').innerHTML = MEANING;
+HouseCCQ.build({ container: 'ccq', items: CCQ });
+HouseFormClarf.build({ container: 'formClarf', scoreEl: 'fcScore', totalEl: 'fcTotal', pool: FORM_POOL, items: FORM });
+document.getElementById('formRule').innerHTML = FORM_RULE;
+document.getElementById('mistakes').innerHTML = MISTAKES.map(([no, yes]) =>
+  '<div class="pair-card"><div class="pair-line no"><span class="mark">✗</span>' + no + '</div>' +
+  '<div class="pair-line yes"><span class="mark">✓</span>' + yes + '</div></div>').join('');
+HouseErrorHunt.build({ container: 'errorHuntItems', items: EH_ITEMS, scoreEl: 'errorScore', totalEl: 'errorTotal' });
+</script>
+<script>HouseGrammar.init();</script>
+</body>
+</html>

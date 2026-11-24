@@ -1,0 +1,96 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<title>have / have got — Practice</title>
+<script>
+(function(){
+  try{
+    var saved = localStorage.getItem('theme-preference');
+    var theme = (saved === 'light' || saved === 'dark')
+      ? saved
+      : ((window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches) ? 'dark' : 'light');
+    document.documentElement.setAttribute('data-theme', theme);
+    var fs = parseFloat(localStorage.getItem('font-size-preference'));
+    if (fs >= 10 && fs <= 28) document.documentElement.style.setProperty('--fs-base', fs + 'px');
+  }catch(e){ /* localStorage/matchMedia unavailable — CSS media query still applies */ }
+})();
+</script>
+<link rel="stylesheet" href="house.css">
+<style>
+
+</style>
+</head>
+<body>
+<div class="page" id="page">
+  <span class="cefr-tag cefr-a1">A1 · Beginner</span>
+  <h1>have and have got — Practice</h1>
+  <p class="subtitle">Family, pets and things.</p>
+
+  <div class="sec-div">Practice 1 — Match the halves</div>
+  <p class="subtitle">Tap a question, then tap its answer. Look at the short answers!</p>
+  <div class="score-bar"><span>Matched: <strong id="mScore">0</strong> / <span id="mTotal">0</span></span><button id="mReset">↺ Reset</button></div>
+  <div class="match-grid">
+    <div><div class="match-col-label">Question</div><div class="match-col" id="leftCol"></div></div>
+    <div><div class="match-col-label">Answer</div><div class="match-col" id="rightCol"></div></div>
+  </div>
+  <div class="win-msg" id="mWin">🎉 All matched!</div>
+  <div class="feedback" id="mFeedback"></div>
+
+  <div class="sec-div">Practice 2 — Word order</div>
+  <p class="subtitle">Tap the words to build the sentence. Tap a word again to take it back, or drag to change the order.</p>
+  <button class="grammar-toggle-btn" id="grammarToggle">🎨 Show Grammar</button>
+  <div class="pos-legend"></div>
+  <div class="score-bar"><span>Correct: <strong id="woScore">0</strong> / <span id="woTotal">0</span></span></div>
+  <div id="woItems"></div>
+
+  <div class="sec-div">Practice 3 — Complete the sentences</div>
+  <p class="subtitle">Write the missing word. The bar turns green 🔴→🟢 when you are right.</p>
+  <div id="gfItems"></div>
+
+  <footer>have and have got — Controlled practice (A1)</footer>
+</div>
+
+<div id="theme-toggle-wrap">
+  <button id="theme-toggle" aria-label="Toggle light/dark mode" title="Toggle light/dark mode">
+    <span id="theme-icon">☀️</span>
+  </button>
+</div>
+<script src="house.js"></script>
+<script>
+const HALVES = [
+  ['Have you got a car?', 'Yes, I have. It’s red.'], ['Do you have a pet?', 'Yes, I do. I have a cat.'],
+  ['Has your sister got children?', 'No, she hasn’t.'], ['Does Tom have a bike?', 'No, he doesn’t. He has a car.'],
+  ['What color eyes have you got?', 'I’ve got brown eyes.'], ['How many brothers do you have?', 'I have two brothers.']
+];
+const WO_ITEMS = [
+  { context: '👨‍👩‍👧 Family', text: 'I / have / two / children.', pos: ['subject', 'verb', 'det', 'object'] },
+  { context: '🐈 A pet', text: 'She / has / got / a / white / cat.', pos: ['subject', 'aux', 'verb', 'det', 'adj', 'object'] },
+  { context: '🚗 A question', text: 'Do / you / have / a / car?', pos: ['aux', 'subject', 'verb', 'det', 'object'] },
+  { context: '🚲 No bike', text: 'He / hasn’t / got / a / bike.', pos: ['subject', 'neg', 'verb', 'det', 'object'] },
+  { context: '🐕 Another question', text: 'Has / your son / got / a / dog?', pos: ['aux', 'subject', 'verb', 'det', 'object'] },
+  { context: '📱 No phone', text: 'My daughter / doesn’t / have / a / phone.', pos: ['subject', 'neg', 'verb', 'det', 'object'] }
+];
+const GF_LABELS = { pos: '✅', neg: '❌', q: '❓' };
+const GF_ITEMS = [
+  { category: 'pos', direct: 'Family — one word.', template: 'I {0} two children.', hints: [{ accepted: ['have'] }] },
+  { category: 'pos', direct: 'Her pet — one word.', template: 'She {0} a cat.', hints: [{ accepted: ['has'] }] },
+  { category: 'pos', direct: 'Describing an animal: “got” is already here.', template: 'My dog {0} got big brown eyes.', hints: [{ accepted: ['has'] }] },
+  { category: 'q', direct: 'A question about a car. Start with a helping verb.', template: '{0} you have a car?', hints: [{ accepted: ['Do', 'do'] }] },
+  { category: 'neg', direct: 'Negative: “got” is already here.', template: 'I {0} got a car.', hints: [{ accepted: ['haven’t', "haven't", 'have not'] }] },
+  { category: 'q', direct: 'A question with “got”.', template: '{0} your son got a bike?', hints: [{ accepted: ['Has', 'has'] }] },
+  { category: 'neg', direct: 'Negative: Tom and children.', template: 'Tom {0} have kids.', hints: [{ accepted: ['doesn’t', "doesn't", 'does not'] }] },
+  { category: 'pos', direct: 'A short answer.', template: 'Do you have a dog? — Yes, I {0}.', hints: [{ accepted: ['do'] }] }
+];
+
+HouseMatching.build({
+  left: 'leftCol', right: 'rightCol', scoreEl: 'mScore', totalEl: 'mTotal', winEl: 'mWin', resetBtn: 'mReset', feedbackEl: 'mFeedback',
+  pairs: HALVES.map(([a, b], i) => ({ id: 'h' + i, left: a, right: b }))
+});
+HouseWordOrder.build({ container: 'woItems', items: WO_ITEMS, scoreEl: 'woScore', totalEl: 'woTotal' });
+HouseGapFill.build({ container: 'gfItems', items: GF_ITEMS, labels: GF_LABELS });
+</script>
+<script>HouseGrammar.init();</script>
+</body>
+</html>

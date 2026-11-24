@@ -1,0 +1,107 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<title>wish / if only — Practice</title>
+<script>
+(function(){
+  try{
+    var saved = localStorage.getItem('theme-preference');
+    var theme = (saved === 'light' || saved === 'dark')
+      ? saved
+      : ((window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches) ? 'dark' : 'light');
+    document.documentElement.setAttribute('data-theme', theme);
+    var fs = parseFloat(localStorage.getItem('font-size-preference'));
+    if (fs >= 10 && fs <= 28) document.documentElement.style.setProperty('--fs-base', fs + 'px');
+  }catch(e){ /* localStorage/matchMedia unavailable — CSS media query still applies */ }
+})();
+</script>
+<link rel="stylesheet" href="house.css">
+<style>
+
+</style>
+</head>
+<body>
+<div class="page" id="page">
+  <span class="cefr-tag cefr-b1">B1 · Intermediate</span>
+  <h1>wish / if only — Practice</h1>
+  <p class="subtitle">Which path does the wish point to?</p>
+
+  <div class="sec-div">Practice 1 — Follow the path</div>
+  <p class="subtitle">Read the sentence. Tap the result it talks about.</p>
+  <div class="score-bar"><span>Correct: <strong id="fqScore">0</strong> / <span id="fqTotal">0</span></span></div>
+  <div id="flowQuiz"></div>
+
+  <div class="sec-div">Practice 2 — Word order</div>
+  <p class="subtitle">Tap the words to build the sentence. Tap a word again to take it back, or drag to change the order.</p>
+  <button class="grammar-toggle-btn" id="grammarToggle">🎨 Show Grammar</button>
+  <div class="pos-legend"></div>
+  <div class="score-bar"><span>Correct: <strong id="woScore">0</strong> / <span id="woTotal">0</span></span></div>
+  <div id="woItems"></div>
+
+  <div class="sec-div">Practice 3 — Complete the sentences</div>
+  <p class="subtitle">Write the missing words. The bar turns green 🔴→🟢 when you are right.</p>
+  <div id="gfItems"></div>
+
+  <footer>wish / if only — Controlled practice (B1)</footer>
+</div>
+
+<div id="theme-toggle-wrap">
+  <button id="theme-toggle" aria-label="Toggle light/dark mode" title="Toggle light/dark mode">
+    <span id="theme-icon">☀️</span>
+  </button>
+</div>
+<script src="house.js"></script>
+<script src="house-flow.js"></script>
+<script>
+/* a node and a flow: cause → ✔️ / ❌ → results; say = the path the speaker wants;
+   real = the branch that is really true (📍) — a wish is always about the OTHER path */
+const N = (text, icon, p, when) => ({ text, icon, p, when });
+const FL = (cause, yes, no, say, more) => Object.assign({ cause, yes, no, say }, more || {});
+
+const FLOW_QUIZ = [
+  { sentence: 'I wish it were Friday.',
+    flow: FL(N('it’s Friday', '🎉'), N('relax all weekend', '🛋️', 1), N('work all week', '💼'), null, { real: 'no' }), answer: { branch: 'yes' } },
+  { sentence: 'I wish I didn’t have to work today.',
+    flow: FL(N('I have to work today', '💼'), N('go to the office', '🏢'), N('stay in bed', '🛌'), null, { real: 'yes' }), answer: { branch: 'no' },
+    why: '<b>didn’t have to</b> = the ❌ path. 📍 She really has to work.' },
+  { sentence: 'I wish I hadn’t eaten so much cake.',
+    flow: FL(N('I eat so much cake', '🍰', null, 'yesterday'), N('feel sick', '🤢'), N('feel fine', '😊'), null, { real: 'yes' }), answer: { branch: 'no' },
+    why: '<b>hadn’t eaten</b> = the ❌ path. 📍 He ate it — a regret.' },
+  { sentence: 'If only I had finished the report on Friday!',
+    flow: FL(N('I finish the report', '📄', null, 'on Friday'), N('relax now', '😌', 1), N('panic now', '😱'), null, { real: 'no' }), answer: { branch: 'yes' },
+    why: '<b>had finished</b> = the ✔️ path. 📍 He didn’t finish it.' },
+  { sentence: 'I wish Mark would turn the music down.',
+    flow: FL(N('Mark turns the music down', '🔉'), N('we can concentrate', '🧠', 1), N('we get a headache', '🤕'), null, { real: 'no' }), answer: { branch: 'yes' } },
+  { sentence: 'I wish I weren’t so tired.',
+    flow: FL(N('I’m so tired', '🥱'), N('sleep at my desk', '😴'), N('work well', '💪'), null, { real: 'yes' }), answer: { branch: 'no' },
+    why: '<b>weren’t</b> = the ❌ path. 📍 She is really tired.' }
+];
+const WO_ITEMS = [
+  { context: '📅 Monday', text: 'I / wish / it / were / Friday.', pos: ['subject', 'verb', 'subject', 'verb', 'complement'] },
+  { context: '🚌 The commute', text: 'If only / I / had / a car!', pos: ['conj', 'subject', 'verb', 'object'] },
+  { context: '🍰 Too much cake', text: 'I / wish / I / hadn’t / eaten / so much.', pos: ['subject', 'verb', 'subject', 'neg', 'part', 'object'] },
+  { context: '🔊 Mark', text: 'I / wish / he / would / turn / it / down.', pos: ['subject', 'verb', 'subject', 'aux', 'verb', 'object', 'part'] },
+  { context: '📖 On the bus', text: 'She / wishes / she / could / read / on the bus.', pos: ['subject', 'verb', 'subject', 'aux', 'verb', 'prep'] },
+  { context: '📄 The report', text: 'He / wishes / he / had / finished / the report.', pos: ['subject', 'verb', 'subject', 'aux', 'part', 'object'] }
+];
+const GF_LABELS = { now: 'now', past: 'regret', habit: 'annoying habit', can: 'ability' };
+const GF_ITEMS = [
+  { category: 'now', direct: '📍 I don’t have a car.', template: 'I wish I {0} a car.', hints: [{ accepted: ['had'] }] },
+  { category: 'now', direct: '📍 I live far from the office.', template: 'I wish I {0} closer.', hints: [{ accepted: ['lived'] }] },
+  { category: 'can', direct: '📍 I can’t read on the bus — I get sick.', template: 'I wish I {0} read on the bus.', hints: [{ accepted: ['could'] }] },
+  { category: 'past', direct: '📍 Yesterday I ate a lot of cake.', template: 'I wish I {0} {1} so much cake.', hints: [{ accepted: ['hadn’t', "hadn't", 'had not'] }, { accepted: ['eaten'] }] },
+  { category: 'past', direct: '📍 I didn’t finish the report on Friday.', template: 'If only I {0} {1} the report!', hints: [{ accepted: ['had'] }, { accepted: ['finished', 'done'] }] },
+  { category: 'habit', direct: '📍 Mark plays loud music every morning. 😤', template: 'I wish Mark {0} turn it down.', hints: [{ accepted: ['would'] }] },
+  { category: 'now', direct: '📍 It’s Monday. 😩', template: 'I wish it {0} Friday.', hints: [{ accepted: ['were', 'was'] }] },
+  { category: 'habit', direct: '📍 My roommate always leaves dirty dishes. 😤', template: 'I wish she {0} {1} her dirty dishes in the sink.', hints: [{ accepted: ['wouldn’t', "wouldn't", 'would not'] }, { accepted: ['leave'] }] }
+];
+
+HouseFlow.quiz({ container: 'flowQuiz', items: FLOW_QUIZ, scoreEl: 'fqScore', totalEl: 'fqTotal' });
+HouseWordOrder.build({ container: 'woItems', items: WO_ITEMS, scoreEl: 'woScore', totalEl: 'woTotal' });
+HouseGapFill.build({ container: 'gfItems', items: GF_ITEMS, labels: GF_LABELS });
+</script>
+<script>HouseGrammar.init();</script>
+</body>
+</html>

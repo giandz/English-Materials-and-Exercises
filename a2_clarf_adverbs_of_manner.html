@@ -1,0 +1,157 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<title>Adverbs of Manner — Clarification</title>
+<script>
+(function(){
+  try{
+    var saved = localStorage.getItem('theme-preference');
+    var theme = (saved === 'light' || saved === 'dark')
+      ? saved
+      : ((window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches) ? 'dark' : 'light');
+    document.documentElement.setAttribute('data-theme', theme);
+    var fs = parseFloat(localStorage.getItem('font-size-preference'));
+    if (fs >= 10 && fs <= 28) document.documentElement.style.setProperty('--fs-base', fs + 'px');
+  }catch(e){ /* localStorage/matchMedia unavailable — CSS media query still applies */ }
+})();
+</script>
+<link rel="stylesheet" href="house.css">
+<style>
+.flow-card{ border:1px solid var(--color-border-tertiary); border-radius:var(--border-radius-lg); background:var(--surface-2); padding:10px 12px; margin-bottom:10px; }
+.flow-card .sent{ font-size:1rem; font-weight:600; margin-bottom:6px; }
+.flow-card .note{ font-size:.8333rem; color:var(--text-secondary); margin-top:4px; }
+.if-part{ color:hsl(217, 70%, 42%); font-weight:700; }
+.res-part{ color:hsl(120, 60%, 32%); font-weight:700; }
+.res-no{ color:hsl(0, 65%, 42%); font-weight:700; }
+[data-theme="dark"] .res-no{ color:hsl(0, 75%, 70%); }
+[data-theme="dark"] .if-part{ color:hsl(217, 80%, 70%); }
+[data-theme="dark"] .res-part{ color:hsl(120, 55%, 65%); }
+.form-table{ width:100%; border-collapse:collapse; margin:0 0 1rem; font-size:.9333rem; }
+.form-table th, .form-table td{ border:1px solid var(--color-border-tertiary); padding:7px 9px; text-align:left; vertical-align:top; }
+.form-table th{ background:var(--surface-1); font-size:.8rem; text-transform:uppercase; letter-spacing:.04em; color:var(--text-secondary); }
+.pct-row{ display:flex; flex-wrap:wrap; gap:6px; margin:0 0 1rem; }
+.pct-row span{ padding:3px 10px; border-radius:999px; font-weight:700; font-size:.8667rem; border:2px solid; }
+.rule-box p{ margin:0 0 6px; }
+.rule-box p:last-child{ margin-bottom:0; }
+.big-pic{ font-size:1.6rem; letter-spacing:.1em; margin:2px 0 4px; }
+.prep-grid{ display:grid; grid-template-columns:repeat(auto-fill, minmax(200px, 1fr)); gap:8px; margin:0 0 1rem; }
+.prep-grid > div{ border:1px solid var(--color-border-tertiary); border-radius:var(--border-radius-lg); background:var(--surface-2); padding:9px 11px; }
+.prep-grid h4{ margin:0 0 3px; font-size:1.05rem; }
+.prep-grid .rule{ font-size:.8rem; color:var(--text-secondary); margin-bottom:5px; }
+.prep-grid .ex{ font-size:.9rem; line-height:1.6; }
+.hl{ font-weight:700; color:var(--text-accent); }
+</style>
+</head>
+<body>
+<div class="page" id="page">
+  <span class="cefr-tag cefr-a2">A2 · Elementary</span>
+  <h1>Adverbs of Manner: slowly, well, fast</h1>
+  <p class="subtitle">How do people do things?</p>
+
+  <div class="sec-div">Look</div>
+  <p class="subtitle">From the conversation. Look at the highlighted words.</p>
+  <div id="look"></div>
+
+  <div class="sec-div">Meaning</div>
+  <div class="rule-box" id="meaning"></div>
+
+  <div class="sec-div">Check the meaning</div>
+  <p class="subtitle">Answer the questions about each sentence.</p>
+  <div id="ccq"></div>
+
+  <div class="sec-div">Look at the form</div>
+  <p class="subtitle">What is each part? Drag a label (or tap a label, then tap a box).</p>
+  <div class="score-bar"><span>Correct: <strong id="fcScore">0</strong> / <span id="fcTotal">0</span></span></div>
+  <div id="formClarf"></div>
+  <div id="formRule"></div>
+
+  <div class="sec-div">Common mistakes</div>
+  <div id="mistakes"></div>
+
+  <div class="sec-div">Error hunt</div>
+  <p class="subtitle">Some sentences have one mistake. Some are correct! Tap a word — or a space between words — to fix it. Then press OK.</p>
+  <div class="score-bar"><span>Done: <strong id="errorScore">0</strong> / <span id="errorTotal">0</span></span></div>
+  <div id="errorHuntItems"></div>
+
+  <footer>Adverbs of manner — Clarification (A2)</footer>
+</div>
+
+<div id="theme-toggle-wrap">
+  <button id="theme-toggle" aria-label="Toggle light/dark mode" title="Toggle light/dark mode">
+    <span id="theme-icon">☀️</span>
+  </button>
+</div>
+<script src="house.js"></script>
+<script>
+const LOOK = [
+  ['They dance <span class="hl">beautifully</span>.', '<div class="big-pic">💃✨</div>', 'How do they dance? → adjective + <b>-ly</b>.'],
+  ['He dances <span class="hl">badly</span>.', '<div class="big-pic">🕺😬</div>', 'bad → bad<b>ly</b>.'],
+  ['She speaks English <span class="hl">well</span> — and so <span class="hl">fast</span>!', '<div class="big-pic">🎤⚡</div>', 'Special ones: good → <b>well</b>, fast → <b>fast</b>.']
+];
+const MEANING = '<p><strong>Adverbs of manner say how</strong> someone does something. Adjectives describe a noun; adverbs describe a verb: <i>She’s a <b>good</b> dancer. She dances <b>well</b>.</i></p>' +
+  '<div class="prep-grid">' +
+  '<div><h4>+ -ly</h4><div class="rule">most adverbs</div><div class="ex">slow → slow<b>ly</b> · quiet → quiet<b>ly</b><br>careful → careful<b>ly</b><br>happy → happ<b>ily</b> · easy → eas<b>ily</b><br>gentle → gent<b>ly</b></div></div>' +
+  '<div><h4>special</h4><div class="rule">same word, or a new word</div><div class="ex">good → <b>well</b><br>fast → <b>fast</b> · hard → <b>hard</b><br>late → <b>late</b> · early → <b>early</b></div></div>' +
+  '<div><h4>⚠️ look, feel, be</h4><div class="rule">+ adjective, not adverb</div><div class="ex">You look <b>sad</b>.<br>I feel <b>happy</b>.<br>The music is <b>loud</b>.</div></div></div>' +
+  '<p><strong>Careful:</strong> <b>hardly</b> means “almost not”: <i>I hardly sleep</i> ≠ <i>I work hard</i>.</p>';
+const CCQ = [
+  { sentence: 'She dances beautifully.', questions: [
+    { q: 'Does “beautifully” describe how she dances?', opts: ['Yes', 'No'], correct: 0, why: 'Yes — it tells us <b>how</b>: the verb.' } ] },
+  { sentence: 'You look sad.', questions: [
+    { q: 'Can we say “You look sadly”?', opts: ['Yes', 'No'], correct: 1, why: 'No. After <b>look, feel, be</b>, use an adjective: it describes <b>you</b>.' } ] },
+  { sentence: 'He works hard.', questions: [
+    { q: 'Does he work a lot?', opts: ['Yes', 'No'], correct: 0, why: 'Yes. <b>hard</b> = with a lot of effort. (<b>hardly</b> = almost not!)' } ] }
+];
+const FORM_POOL = ['subject', 'verb', 'object', 'adverb', 'complement', 'adj'];
+const FORM = [
+  { form: 'aff', parts: [['They', 'subject'], ['dance', 'verb'], ['beautifully', 'adverb'], ['.', null]] },
+  { form: 'aff', parts: [['She', 'subject'], ['speaks', 'verb'], ['English', 'object'], ['well', 'adverb'], ['.', null]] },
+  { form: 'aff', parts: [['He', 'subject'], ['is', 'verb'], ['a bad dancer', 'complement'], ['.', null]] },
+  { form: 'aff', parts: [['You', 'subject'], ['look', 'verb'], ['tired', 'adj'], ['.', null]] }
+];
+const FORM_RULE = '<table class="form-table"><tr><th>word order</th><th>example</th></tr>' +
+  '<tr><td>verb + adverb</td><td>They dance <b>beautifully</b>.</td></tr>' +
+  '<tr><td>verb + object + adverb</td><td>She speaks <b>English</b> <b>well</b>. (not <s>speaks well English</s>)</td></tr>' +
+  '<tr><td>very / really / so + adverb</td><td>He moves <b>very slowly</b>.</td></tr></table>';
+const MISTAKES = [
+  ['She dances beautiful.', 'She dances beautifully.'],
+  ['He sings good.', 'He sings well.'],
+  ['She speaks very well English.', 'She speaks English very well.'],
+  ['He runs fastly.', 'He runs fast.'],
+  ['You look sadly today.', 'You look sad today.']
+];
+const EH_ITEMS = [
+  { words: ['She', 'dances', 'beautiful', '.'], error: { type: 'wrong', wordIndex: 2, options: ['beautifully', 'beauty', 'beautifuly'], correct: 'beautifully' } },
+  { words: ['He', 'sings', 'good', '.'], error: { type: 'wrong', wordIndex: 2, options: ['well', 'goodly', 'gooder'], correct: 'well' } },
+  { words: ['They', 'are', 'talking', 'quietly', '.'], error: null },
+  { words: ['She', 'speaks', 'very', 'well', 'English', '.'], error: { type: 'misplaced', wordIndex: 4, targetGapIndex: 2 } },
+  { words: ['He', 'runs', 'fastly', '.'], error: { type: 'wrong', wordIndex: 2, options: ['fast', 'faster', 'fasted'], correct: 'fast' } },
+  { words: ['You', 'look', 'sadly', 'today', '.'], error: { type: 'wrong', wordIndex: 2, options: ['sad', 'sadness', 'sadder'], correct: 'sad' } },
+  { words: ['Listen', 'carefully', 'to', 'the', 'music', '.'], error: null },
+  { words: ['He', 'works', 'hardly', 'every', 'day', '.'], error: { type: 'wrong', wordIndex: 2, options: ['hard', 'harder', 'hardest'], correct: 'hard' } }
+];
+
+/* LOOK: [the sentence, a picture (HTML) or { timeline: HouseTimeline options }, a note] */
+const look = document.getElementById('look');
+LOOK.forEach(([sent, vis, note], i) => {
+  const card = document.createElement('div');
+  card.className = 'flow-card';
+  card.innerHTML = '<div class="sent">' + sent + '</div>' +
+    (vis && vis.timeline ? '<div id="lookTl' + i + '"></div>' : (vis || '')) + (note ? '<div class="note">' + note + '</div>' : '');
+  look.appendChild(card);
+  if (vis && vis.timeline) HouseTimeline.build(Object.assign({ container: 'lookTl' + i }, vis.timeline));
+});
+document.getElementById('meaning').innerHTML = MEANING;
+HouseCCQ.build({ container: 'ccq', items: CCQ });
+HouseFormClarf.build({ container: 'formClarf', scoreEl: 'fcScore', totalEl: 'fcTotal', pool: FORM_POOL, items: FORM });
+document.getElementById('formRule').innerHTML = FORM_RULE;
+document.getElementById('mistakes').innerHTML = MISTAKES.map(([no, yes]) =>
+  '<div class="pair-card"><div class="pair-line no"><span class="mark">✗</span>' + no + '</div>' +
+  '<div class="pair-line yes"><span class="mark">✓</span>' + yes + '</div></div>').join('');
+HouseErrorHunt.build({ container: 'errorHuntItems', items: EH_ITEMS, scoreEl: 'errorScore', totalEl: 'errorTotal' });
+</script>
+<script>HouseGrammar.init();</script>
+</body>
+</html>

@@ -1,0 +1,119 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<title>Love It, Hate It, Want It — Verb + -ing / to</title>
+<script>
+(function(){
+  try{
+    var saved = localStorage.getItem('theme-preference');
+    var theme = (saved === 'light' || saved === 'dark')
+      ? saved
+      : ((window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches) ? 'dark' : 'light');
+    document.documentElement.setAttribute('data-theme', theme);
+    var fs = parseFloat(localStorage.getItem('font-size-preference'));
+    if (fs >= 10 && fs <= 28) document.documentElement.style.setProperty('--fs-base', fs + 'px');
+  }catch(e){ /* localStorage/matchMedia unavailable — CSS media query still applies */ }
+})();
+</script>
+<link rel="stylesheet" href="house.css">
+<style>
+/* the prompt on the card: a big picture, then the words */
+.cue-main{ font-size:1.25rem; font-weight:700; margin:4px 0 6px; text-align:center; }
+.cue-main .big{ display:block; font-size:2.6rem; line-height:1.1; margin-bottom:4px; }
+.cue-sub{ font-size:.95rem; color:var(--text-secondary); text-align:center; margin:0 0 4px; }
+.chip{ display:inline-block; padding:2px 10px; margin:2px; border-radius:999px; border:1px solid var(--color-border-tertiary); background:var(--surface-2); font-size:1rem; font-weight:700; }
+.chip-wh{ color:var(--pos-wh); border-color:var(--pos-wh); }
+/* two sides: what usually happens · what is different */
+.duo{ display:flex; align-items:stretch; justify-content:center; gap:10px; flex-wrap:wrap; margin:4px 0 6px; }
+.duo .side{ display:flex; flex-direction:column; align-items:center; gap:2px; min-width:9em; padding:6px 10px; border-radius:10px; border:1px solid var(--color-border-tertiary); background:var(--surface-2); font-weight:700; font-size:1rem; }
+.duo .side .when{ font-size:.8667rem; font-weight:600; color:var(--text-secondary); }
+.duo .side .big{ font-size:2.2rem; line-height:1.1; }
+.who{ font-size:1.1rem; font-weight:700; text-align:center; margin:2px 0 4px; }
+/* only Student A looks */
+.q-card details.secret{ margin:4px 0 6px; width:100%; max-width:460px; text-align:center; }
+.q-card details.secret summary{ font-weight:700; }
+.q-card .secret-body{ padding:8px 12px; }
+.q-card details.check{ margin-top:4px; width:100%; max-width:460px; text-align:left; }
+.q-card .check-body{ padding:8px 12px; font-size:.9rem; }
+.q-card .check-body p{ margin:0 0 4px; }
+</style>
+</head>
+<body>
+<div class="page" id="page">
+  <span class="cefr-tag cefr-a2">A2 · Elementary</span>
+  <h1>Love It, Hate It, Want It</h1>
+  <p class="subtitle">Talk about your hobbies, your feelings and your plans.</p>
+
+  <div class="rule-box">
+    <p><strong>How to play (pairs, or teacher + student):</strong></p>
+    <p>1. Student A rolls 🎲 and finishes the sentence about the topic on the card. It’s true! “<b>About food: I can’t stand eating fish.</b>”</p>
+    <p>2. Student B asks one more question: “<b>Why not? Did you try sushi?</b>”</p>
+    <p>3. Press 👀 to check the pattern. Then change: B rolls, A asks.</p>
+  </div>
+
+  <div class="q-card" id="qCard"><span class="q-placeholder">Roll the dice to start.</span></div>
+  <button class="dice-btn" id="diceBtn" aria-label="Roll">🎲</button>
+  <div class="roll-count">Rolls: <strong id="rollCount">0</strong></div>
+
+  <div class="sec-div">Now you</div>
+  <div class="rule-box">
+    <p><strong>Ask your partner about their hobbies and plans.</strong> “<b>What do you enjoy doing? What can’t you stand? What do you want to do this year?</b>” Write the answers.</p>
+    <p>Then say: “<b>Ana enjoys dancing salsa. She wants to learn French this year.</b>” Another partner? Press <b>➕ Add partner</b>.</p>
+  </div>
+  <div id="interview"></div>
+
+  <footer>Love It, Hate It, Want It — Verb + -ing or to + verb (A2)</footer>
+</div>
+
+<div id="theme-toggle-wrap">
+  <button id="theme-toggle" aria-label="Toggle light/dark mode" title="Toggle light/dark mode">
+    <span id="theme-icon">☀️</span>
+  </button>
+</div>
+<script src="house.js"></script>
+<script src="house-interview.js"></script>
+<script>
+const pick = HouseRandomGen.pickFrom;
+const cap = s => s.charAt(0).toUpperCase() + s.slice(1);
+/* one card: a topic line, the cue (hidden from B when it is a secret), what to do, and the 👀 examples */
+const card = o =>
+  '<span class="q-topic">' + o.topic + '</span>' +
+  (o.secret ? '<details class="secret"><summary>' + o.secret + '</summary><div class="secret-body">' : '') +
+  (o.body || '') +
+  (o.pic ? '<div class="cue-main"><span class="big">' + o.pic + '</span>' + (o.cue || '') + '</div>' : (o.cue ? '<div class="cue-main">' + o.cue + '</div>' : '')) +
+  (o.sub ? '<div class="cue-sub">' + o.sub + '</div>' : '') +
+  (o.secret ? '</div></details>' : '') +
+  (o.prompt ? '<span class="q-prompt">' + o.prompt + '</span>' : '') +
+  (o.check ? '<details class="check"><summary>' + (o.checkLabel || '👀 Examples') + '</summary><div class="check-body">' +
+    o.check.map(l => '<p>' + l + '</p>').join('') + '</div></details>' : '');
+/* [the verb as it starts the sentence, -ing or to] */
+const VERBS = [['I enjoy', 'ing'], ['I can’t stand', 'ing'], ['I don’t mind', 'ing'], ['I hate', 'both'], ['I love', 'both'], ['I want', 'to'],
+  ['I’d like', 'to'], ['This year I’ve decided', 'to'], ['One day I hope', 'to'], ['I need', 'to'], ['I’m learning', 'to'], ['I never finish', 'ing'],
+  ['I keep', 'ing'], ['I try to avoid', 'ing'], ['I miss', 'ing'], ['I promised my family', 'to'], ['When I was a child, I started', 'both'], ['I’d love', 'to']];
+const TOPICS = [['🍲', 'food'], ['🏖️', 'weekends'], ['💼', 'work'], ['✈️', 'travel'], ['⚽', 'sports'], ['🎵', 'music'], ['🧹', 'housework'],
+  ['📱', 'technology'], ['🇬🇧', 'English'], ['👨‍👩‍👧', 'family'], ['🎉', 'parties'], ['🌳', 'nature']];
+const RULE = { ing: '+ <b>-ing</b>: “… cooking”', to: '+ <b>to</b> + verb: “… to cook”', both: '+ <b>-ing</b> or <b>to</b> + verb — both OK' };
+HouseRandomGen.build({
+  pick: () => { const v = pick(VERBS), t = pick(TOPICS); return { v, t, text: v[0] + t[1] }; },
+  key: it => it.text,
+  render: ({ v: [start, k], t: [pic, topic] }) => card({
+    topic: '💬 About ' + topic, pic, cue: '“' + start + ' …”',
+    prompt: 'A: finish the sentence — the truth! B: ask one more question.',
+    checkLabel: '👀 Check', check: [start + ' ' + RULE[k]]
+  })
+});
+HouseInterview.build({
+  container: 'interview', storageKey: 'a2-verb-patterns-hobbies',
+  fields: [
+    { icon: '😍', label: 'enjoys…', placeholder: 'dancing salsa…' },
+    { icon: '😖', label: 'can’t stand…', placeholder: 'waiting in lines…' },
+    { icon: '🙂', label: 'doesn’t mind…', placeholder: 'getting up early…' },
+    { icon: '🎯', label: 'wants to… this year', placeholder: 'learn French…' },
+    { icon: '🌍', label: 'would love to… one day', placeholder: 'visit Japan…' }
+  ]
+});
+</script>
+</body>
+</html>

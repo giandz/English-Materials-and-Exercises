@@ -1,0 +1,121 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<title>A New Life — be / get used to</title>
+<script>
+(function(){
+  try{
+    var saved = localStorage.getItem('theme-preference');
+    var theme = (saved === 'light' || saved === 'dark')
+      ? saved
+      : ((window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches) ? 'dark' : 'light');
+    document.documentElement.setAttribute('data-theme', theme);
+    var fs = parseFloat(localStorage.getItem('font-size-preference'));
+    if (fs >= 10 && fs <= 28) document.documentElement.style.setProperty('--fs-base', fs + 'px');
+  }catch(e){ /* localStorage/matchMedia unavailable — CSS media query still applies */ }
+})();
+</script>
+<link rel="stylesheet" href="house.css">
+<style>
+/* the prompt on the card: a big picture, then the words */
+.cue-main{ font-size:1.25rem; font-weight:700; margin:4px 0 6px; text-align:center; }
+.cue-main .big{ display:block; font-size:2.6rem; line-height:1.1; margin-bottom:4px; }
+.cue-sub{ font-size:.95rem; color:var(--text-secondary); text-align:center; margin:0 0 4px; }
+.chip{ display:inline-block; padding:2px 10px; margin:2px; border-radius:999px; border:1px solid var(--color-border-tertiary); background:var(--surface-2); font-size:1rem; font-weight:700; }
+.chip-wh{ color:var(--pos-wh); border-color:var(--pos-wh); }
+/* two sides: what usually happens · what is different */
+.duo{ display:flex; align-items:stretch; justify-content:center; gap:10px; flex-wrap:wrap; margin:4px 0 6px; }
+.duo .side{ display:flex; flex-direction:column; align-items:center; gap:2px; min-width:9em; padding:6px 10px; border-radius:10px; border:1px solid var(--color-border-tertiary); background:var(--surface-2); font-weight:700; font-size:1rem; }
+.duo .side .when{ font-size:.8667rem; font-weight:600; color:var(--text-secondary); }
+.duo .side .big{ font-size:2.2rem; line-height:1.1; }
+.who{ font-size:1.1rem; font-weight:700; text-align:center; margin:2px 0 4px; }
+/* only Student A looks */
+.q-card details.secret{ margin:4px 0 6px; width:100%; max-width:460px; text-align:center; }
+.q-card details.secret summary{ font-weight:700; }
+.q-card .secret-body{ padding:8px 12px; }
+.q-card details.check{ margin-top:4px; width:100%; max-width:460px; text-align:left; }
+.q-card .check-body{ padding:8px 12px; font-size:.9rem; }
+.q-card .check-body p{ margin:0 0 4px; }
+</style>
+</head>
+<body>
+<div class="page" id="page">
+  <span class="cefr-tag cefr-b1">B1 · Intermediate</span>
+  <h1>A New Life</h1>
+  <p class="subtitle">Big changes! What would be hard to get used to — and what are you already used to?</p>
+
+  <div class="rule-box">
+    <p><strong>How to play (pairs, or teacher + student):</strong></p>
+    <p>1. Student A rolls 🎲. There are two kinds of card:</p>
+    <p>🔄 <b>A big change:</b> imagine it. Say two things you’d have to get used to and one thing you’re already used to: “<b>I’d have to get used to sleeping in the day. But I’m used to working late!</b>”</p>
+    <p>⏪ <b>Then and now:</b> compare your life before and now: “<b>I used to walk to school. Now I’m used to driving everywhere.</b>”</p>
+    <p>2. Student B asks one more question. Press 👀 for help. Then change.</p>
+  </div>
+
+  <div class="q-card" id="qCard"><span class="q-placeholder">Roll the dice to start.</span></div>
+  <button class="dice-btn" id="diceBtn" aria-label="Roll">🎲</button>
+  <div class="roll-count">Rolls: <strong id="rollCount">0</strong></div>
+
+  <div class="sec-div">Now you</div>
+  <div class="rule-box">
+    <p><strong>Interview your partner about changes in their life.</strong> “<b>What are you used to? What aren’t you used to? What are you getting used to? What did you use to do as a child?</b>” Write the answers.</p>
+    <p>Then say: “<b>Ana is used to getting up early, but she isn’t used to the cold. As a child, she used to live by the sea.</b>” Another partner? Press <b>➕ Add partner</b>.</p>
+  </div>
+  <div id="interview"></div>
+
+  <footer>A New Life — be used to, get used to, used to (B1)</footer>
+</div>
+
+<div id="theme-toggle-wrap">
+  <button id="theme-toggle" aria-label="Toggle light/dark mode" title="Toggle light/dark mode">
+    <span id="theme-icon">☀️</span>
+  </button>
+</div>
+<script src="house.js"></script>
+<script src="house-interview.js"></script>
+<script>
+const pick = HouseRandomGen.pickFrom;
+const cap = s => s.charAt(0).toUpperCase() + s.slice(1);
+/* one card: a topic line, the cue (hidden from B when it is a secret), what to do, and the 👀 examples */
+const card = o =>
+  '<span class="q-topic">' + o.topic + '</span>' +
+  (o.secret ? '<details class="secret"><summary>' + o.secret + '</summary><div class="secret-body">' : '') +
+  (o.body || '') +
+  (o.pic ? '<div class="cue-main"><span class="big">' + o.pic + '</span>' + (o.cue || '') + '</div>' : (o.cue ? '<div class="cue-main">' + o.cue + '</div>' : '')) +
+  (o.sub ? '<div class="cue-sub">' + o.sub + '</div>' : '') +
+  (o.secret ? '</div></details>' : '') +
+  (o.prompt ? '<span class="q-prompt">' + o.prompt + '</span>' : '') +
+  (o.check ? '<details class="check"><summary>' + (o.checkLabel || '👀 Examples') + '</summary><div class="check-body">' +
+    o.check.map(l => '<p>' + l + '</p>').join('') + '</div></details>' : '');
+const CHANGES = [
+  ['🇨🇦', 'You move to a very cold country.'], ['🌙', 'You start a job with night shifts.'], ['👶', 'You have a baby.'], ['🏙️', 'You move from a village to a huge city.'],
+  ['🇬🇧', 'You move to a country where people drive on the left.'], ['🏡', 'You start working from home every day.'], ['🥗', 'You become vegetarian.'],
+  ['🐕', 'You get a puppy.'], ['🎓', 'You go back to school at 40.'], ['🌍', 'You move to a country where you don’t speak the language.'], ['🧳', 'You live alone for the first time.']
+];
+const THEN = [
+  ['🏫', 'school'], ['🏠', 'your home'], ['🍽️', 'food'], ['📱', 'technology'], ['🚌', 'transport'], ['🎉', 'weekends'], ['👨‍👩‍👧', 'family life'], ['💼', 'work']
+];
+HouseRandomGen.build({
+  pick: () => Math.random() < 0.6 ? (c => ({ kind: 'c', c, text: c[1] }))(pick(CHANGES)) : (t => ({ kind: 't', t, text: t[1] }))(pick(THEN)),
+  key: it => it.text,
+  render: it => it.kind === 'c'
+    ? card({ topic: '🔄 A big change', pic: it.c[0], cue: it.c[1], prompt: 'A: two things to get used to + one thing you’re already used to. B: ask one more question.',
+        checkLabel: '👀 Help', check: ['“I’d have to get used to …ing / + noun.”', '“I’m already used to …ing.”', '“I could never get used to …!”'] })
+    : card({ topic: '⏪ Then and now', pic: it.t[0], cue: 'Then and now: ' + it.t[1], prompt: 'A: compare your life before and now. B: ask one more question.',
+        checkLabel: '👀 Help', check: ['“I used to + verb …” (before)', '“Now I’m used to …ing.”', '“I’m still getting used to …”'] })
+});
+HouseInterview.build({
+  container: 'interview', storageKey: 'b1-be-get-used-to',
+  fields: [
+    { icon: '😌', label: 'is used to…', placeholder: 'getting up early…' },
+    { icon: '😖', label: 'isn’t used to…', placeholder: 'the cold…' },
+    { icon: '🔄', label: 'is getting used to…', placeholder: 'her new job…' },
+    { icon: '⏪', label: 'used to… as a child', placeholder: 'live by the sea…' },
+    { icon: '🚫', label: 'could never get used to…', placeholder: 'eating dinner at six…' }
+  ]
+});
+</script>
+</body>
+</html>

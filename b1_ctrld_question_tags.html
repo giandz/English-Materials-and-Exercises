@@ -1,0 +1,95 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<title>Question Tags — Practice</title>
+<script>
+(function(){
+  try{
+    var saved = localStorage.getItem('theme-preference');
+    var theme = (saved === 'light' || saved === 'dark')
+      ? saved
+      : ((window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches) ? 'dark' : 'light');
+    document.documentElement.setAttribute('data-theme', theme);
+    var fs = parseFloat(localStorage.getItem('font-size-preference'));
+    if (fs >= 10 && fs <= 28) document.documentElement.style.setProperty('--fs-base', fs + 'px');
+  }catch(e){ /* localStorage/matchMedia unavailable — CSS media query still applies */ }
+})();
+</script>
+<link rel="stylesheet" href="house.css">
+<style>
+
+</style>
+</head>
+<body>
+<div class="page" id="page">
+  <span class="cefr-tag cefr-b1">B1 · Intermediate</span>
+  <h1>Question Tags — Practice</h1>
+  <p class="subtitle">The right tag for every sentence.</p>
+
+  <div class="sec-div">Practice 1 — Match the halves</div>
+  <p class="subtitle">Tap the start of a sentence, then tap its tag.</p>
+  <div class="score-bar"><span>Matched: <strong id="mScore">0</strong> / <span id="mTotal">0</span></span><button id="mReset">↺ Reset</button></div>
+  <div class="match-grid">
+    <div><div class="match-col-label">Sentence</div><div class="match-col" id="leftCol"></div></div>
+    <div><div class="match-col-label">Tag</div><div class="match-col" id="rightCol"></div></div>
+  </div>
+  <div class="win-msg" id="mWin">🎉 All matched!</div>
+  <div class="feedback" id="mFeedback"></div>
+
+  <div class="sec-div">Practice 2 — Word order</div>
+  <p class="subtitle">Tap the words to build the sentence. Tap a word again to take it back, or drag to change the order.</p>
+  <button class="grammar-toggle-btn" id="grammarToggle">🎨 Show Grammar</button>
+  <div class="pos-legend"></div>
+  <div class="score-bar"><span>Correct: <strong id="woScore">0</strong> / <span id="woTotal">0</span></span></div>
+  <div id="woItems"></div>
+
+  <div class="sec-div">Practice 3 — Complete the sentences</div>
+  <p class="subtitle">Write the missing words. The bar turns green 🔴→🟢 when you are right.</p>
+  <div id="gfItems"></div>
+
+  <footer>Question tags — Controlled practice (B1)</footer>
+</div>
+
+<div id="theme-toggle-wrap">
+  <button id="theme-toggle" aria-label="Toggle light/dark mode" title="Toggle light/dark mode">
+    <span id="theme-icon">☀️</span>
+  </button>
+</div>
+<script src="house.js"></script>
+<script>
+const HALVES = [
+  ['It’s a lovely day,', 'isn’t it?'], ['You’re Raj,', 'aren’t you?'], ['You live next door,', 'don’t you?'], ['We met last summer,', 'didn’t we?'],
+  ['You can’t swim,', 'can you?'], ['She’s been here before,', 'hasn’t she?'], ['I’m right,', 'aren’t I?'], ['Let’s eat,', 'shall we?']
+];
+const WO_ITEMS = [
+  { context: '🌞 The weather', text: 'It’s / a lovely day, / isn’t / it?', pos: ['subject', 'complement', 'neg', 'subject'] },
+  { context: '🏘️ Neighbors', text: 'You / live / next door, / don’t / you?', pos: ['subject', 'verb', 'prep', 'neg', 'subject'] },
+  { context: '🏊 Last summer', text: 'We / met / at the pool, / didn’t / we?', pos: ['subject', 'verb', 'prep', 'neg', 'subject'] },
+  { context: '🥗 Food', text: 'You / aren’t / vegetarian, / are / you?', pos: ['subject', 'neg', 'adj', 'aux', 'subject'] },
+  { context: '🧑‍🏫 Her daughter', text: 'Your daughter / is / a teacher, / isn’t / she?', pos: ['subject', 'verb', 'complement', 'neg', 'subject'] },
+  { context: '🍔 Lunch', text: 'Let’s / grab / a burger, / shall / we?', pos: ['aux', 'verb', 'object', 'aux', 'subject'] }
+];
+const GF_LABELS = { be: 'be', do: 'do / does / did', mod: 'can / have', sp: 'special' };
+const GF_ITEMS = [
+  { category: 'be', direct: 'Positive sentence with “is”.', template: 'It’s a lovely day, {0} it?', hints: [{ accepted: ['isn’t', "isn't"] }] },
+  { category: 'do', direct: 'Present simple, no auxiliary.', template: 'You live next door, {0} you?', hints: [{ accepted: ['don’t', "don't"] }] },
+  { category: 'do', direct: 'Past simple, positive.', template: 'We met last summer, {0} we?', hints: [{ accepted: ['didn’t', "didn't"] }] },
+  { category: 'do', direct: 'Present simple, third person: Raj.', template: 'Raj works at the hospital, {0} {1}?', hints: [{ accepted: ['doesn’t', "doesn't"] }, { accepted: ['he'] }] },
+  { category: 'mod', direct: 'Negative sentence → positive tag.', template: 'You can’t swim, {0} you?', hints: [{ accepted: ['can'] }] },
+  { category: 'mod', direct: 'Present perfect, positive.', template: 'She’s been here before, {0} she?', hints: [{ accepted: ['hasn’t', "hasn't"] }] },
+  { category: 'sp', direct: 'Negative sentence with I’m not → positive tag.', template: 'I’m not late, {0} I?', hints: [{ accepted: ['am'] }] },
+  { category: 'sp', direct: 'A suggestion for us.', template: 'Let’s grab a burger, {0} we?', hints: [{ accepted: ['shall'] }] }
+];
+
+HouseMatching.build({
+  left: 'leftCol', right: 'rightCol', scoreEl: 'mScore', totalEl: 'mTotal', winEl: 'mWin', resetBtn: 'mReset', feedbackEl: 'mFeedback',
+  pairs: HALVES.map(([a, b], i) => ({ id: 'h' + i, left: a, right: b }))
+});
+HouseWordOrder.build({ container: 'woItems', items: WO_ITEMS, scoreEl: 'woScore', totalEl: 'woTotal' });
+HouseGapFill.build({ container: 'gfItems', items: GF_ITEMS, labels: GF_LABELS });
+</script>
+<script>HouseGrammar.init();</script>
+</body>
+</html>

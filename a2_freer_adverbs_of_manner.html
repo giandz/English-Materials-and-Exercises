@@ -1,0 +1,116 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<title>Do It Like This! — Adverbs of Manner</title>
+<script>
+(function(){
+  try{
+    var saved = localStorage.getItem('theme-preference');
+    var theme = (saved === 'light' || saved === 'dark')
+      ? saved
+      : ((window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches) ? 'dark' : 'light');
+    document.documentElement.setAttribute('data-theme', theme);
+    var fs = parseFloat(localStorage.getItem('font-size-preference'));
+    if (fs >= 10 && fs <= 28) document.documentElement.style.setProperty('--fs-base', fs + 'px');
+  }catch(e){ /* localStorage/matchMedia unavailable — CSS media query still applies */ }
+})();
+</script>
+<link rel="stylesheet" href="house.css">
+<style>
+/* the prompt on the card: a big picture, then the words */
+.cue-main{ font-size:1.25rem; font-weight:700; margin:4px 0 6px; text-align:center; }
+.cue-main .big{ display:block; font-size:2.6rem; line-height:1.1; margin-bottom:4px; }
+.cue-sub{ font-size:.95rem; color:var(--text-secondary); text-align:center; margin:0 0 4px; }
+.chip{ display:inline-block; padding:2px 10px; margin:2px; border-radius:999px; border:1px solid var(--color-border-tertiary); background:var(--surface-2); font-size:1rem; font-weight:700; }
+.chip-wh{ color:var(--pos-wh); border-color:var(--pos-wh); }
+/* two sides: what usually happens · what is different */
+.duo{ display:flex; align-items:stretch; justify-content:center; gap:10px; flex-wrap:wrap; margin:4px 0 6px; }
+.duo .side{ display:flex; flex-direction:column; align-items:center; gap:2px; min-width:9em; padding:6px 10px; border-radius:10px; border:1px solid var(--color-border-tertiary); background:var(--surface-2); font-weight:700; font-size:1rem; }
+.duo .side .when{ font-size:.8667rem; font-weight:600; color:var(--text-secondary); }
+.duo .side .big{ font-size:2.2rem; line-height:1.1; }
+.who{ font-size:1.1rem; font-weight:700; text-align:center; margin:2px 0 4px; }
+/* only Student A looks */
+.q-card details.secret{ margin:4px 0 6px; width:100%; max-width:460px; text-align:center; }
+.q-card details.secret summary{ font-weight:700; }
+.q-card .secret-body{ padding:8px 12px; }
+.q-card details.check{ margin-top:4px; width:100%; max-width:460px; text-align:left; }
+.q-card .check-body{ padding:8px 12px; font-size:.9rem; }
+.q-card .check-body p{ margin:0 0 4px; }
+</style>
+</head>
+<body>
+<div class="page" id="page">
+  <span class="cefr-tag cefr-a2">A2 · Elementary</span>
+  <h1>Do It Like This!</h1>
+  <p class="subtitle">Act it out — in a special way. Can your partner guess what and how?</p>
+
+  <div class="rule-box">
+    <p><strong>How to play (pairs, or teacher + student):</strong></p>
+    <p>1. Student A rolls 🎲 and opens 🤫. Only A looks! Act out the action <b>in that way</b> — no words.</p>
+    <p>2. Student B guesses: “<b>You’re eating… angrily!</b>” A: “<b>Yes!</b>” / “<b>No — slowly!</b>”</p>
+    <p>3. Then change: B rolls, A guesses. Score a point for the action and a point for the adverb!</p>
+  </div>
+
+  <div class="q-card" id="qCard"><span class="q-placeholder">Roll the dice to start.</span></div>
+  <button class="dice-btn" id="diceBtn" aria-label="Roll">🎲</button>
+  <div class="roll-count">Rolls: <strong id="rollCount">0</strong></div>
+
+  <div class="sec-div">Now you</div>
+  <div class="rule-box">
+    <p><strong>Ask your partner how they do things.</strong> “<b>How well do you speak English? How do you drive? How do you dance?</b>” Write the answers.</p>
+    <p>Then say: “<b>Ana cooks really well, but she drives quite fast!</b>” Another partner? Press <b>➕ Add partner</b>.</p>
+  </div>
+  <div id="interview"></div>
+
+  <footer>Do It Like This! — Adverbs of manner (A2)</footer>
+</div>
+
+<div id="theme-toggle-wrap">
+  <button id="theme-toggle" aria-label="Toggle light/dark mode" title="Toggle light/dark mode">
+    <span id="theme-icon">☀️</span>
+  </button>
+</div>
+<script src="house.js"></script>
+<script src="house-interview.js"></script>
+<script>
+const pick = HouseRandomGen.pickFrom;
+const cap = s => s.charAt(0).toUpperCase() + s.slice(1);
+/* one card: a topic line, the cue (hidden from B when it is a secret), what to do, and the 👀 examples */
+const card = o =>
+  '<span class="q-topic">' + o.topic + '</span>' +
+  (o.secret ? '<details class="secret"><summary>' + o.secret + '</summary><div class="secret-body">' : '') +
+  (o.body || '') +
+  (o.pic ? '<div class="cue-main"><span class="big">' + o.pic + '</span>' + (o.cue || '') + '</div>' : (o.cue ? '<div class="cue-main">' + o.cue + '</div>' : '')) +
+  (o.sub ? '<div class="cue-sub">' + o.sub + '</div>' : '') +
+  (o.secret ? '</div></details>' : '') +
+  (o.prompt ? '<span class="q-prompt">' + o.prompt + '</span>' : '') +
+  (o.check ? '<details class="check"><summary>' + (o.checkLabel || '👀 Examples') + '</summary><div class="check-body">' +
+    o.check.map(l => '<p>' + l + '</p>').join('') + '</div></details>' : '');
+const ACTS = [['🍝', 'eating spaghetti'], ['🚶', 'walking'], ['📖', 'reading a book'], ['☕', 'drinking coffee'], ['💃', 'dancing'], ['🪥', 'brushing your teeth'],
+  ['🚗', 'driving'], ['✍️', 'writing a letter'], ['🧹', 'cleaning the floor'], ['📱', 'texting'], ['🎤', 'singing'], ['🍳', 'cooking']];
+const HOW = ['slowly', 'quickly', 'angrily', 'happily', 'sadly', 'nervously', 'carefully', 'quietly', 'loudly', 'lazily', 'elegantly', 'badly'];
+HouseRandomGen.build({
+  pick: () => { const a = pick(ACTS), h = pick(HOW); return { a, h, text: a[1] + h }; },
+  key: it => it.text,
+  render: ({ a: [pic, act], h }) => card({
+    topic: '🎭 Act it out!', secret: '🤫 Student A: tap to look (B: don’t look!)',
+    pic, cue: act + ' <b>' + h + '</b>',
+    prompt: 'B: guess the action and the adverb.',
+    checkLabel: '👀 Help', check: ['“You’re …ing … ' + '-ly!”', '<span class="text-secondary">angry → angrily · lazy → lazily · nervous → nervously</span>']
+  })
+});
+HouseInterview.build({
+  container: 'interview', storageKey: 'a2-adverbs-of-manner',
+  fields: [
+    { icon: '🗣️', label: 'speaks English…', placeholder: 'quite well…' },
+    { icon: '🚗', label: 'drives…', placeholder: 'carefully…' },
+    { icon: '🍳', label: 'cooks…', placeholder: 'really well…' },
+    { icon: '💃', label: 'dances…', placeholder: 'badly but happily…' },
+    { icon: '⏰', label: 'gets up…', placeholder: 'slowly…' }
+  ]
+});
+</script>
+</body>
+</html>

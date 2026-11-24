@@ -1,0 +1,93 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<title>Adverbs of Manner — Practice</title>
+<script>
+(function(){
+  try{
+    var saved = localStorage.getItem('theme-preference');
+    var theme = (saved === 'light' || saved === 'dark')
+      ? saved
+      : ((window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches) ? 'dark' : 'light');
+    document.documentElement.setAttribute('data-theme', theme);
+    var fs = parseFloat(localStorage.getItem('font-size-preference'));
+    if (fs >= 10 && fs <= 28) document.documentElement.style.setProperty('--fs-base', fs + 'px');
+  }catch(e){ /* localStorage/matchMedia unavailable — CSS media query still applies */ }
+})();
+</script>
+<link rel="stylesheet" href="house.css">
+<style>
+
+</style>
+</head>
+<body>
+<div class="page" id="page">
+  <span class="cefr-tag cefr-a2">A2 · Elementary</span>
+  <h1>Adverbs of Manner — Practice</h1>
+  <p class="subtitle">How do they do it?</p>
+
+  <div class="sec-div">Practice 1 — Match the halves</div>
+  <p class="subtitle">Tap an adjective, then tap its adverb.</p>
+  <div class="score-bar"><span>Matched: <strong id="mScore">0</strong> / <span id="mTotal">0</span></span><button id="mReset">↺ Reset</button></div>
+  <div class="match-grid">
+    <div><div class="match-col-label">Adjective</div><div class="match-col" id="leftCol"></div></div>
+    <div><div class="match-col-label">Adverb</div><div class="match-col" id="rightCol"></div></div>
+  </div>
+  <div class="win-msg" id="mWin">🎉 All matched!</div>
+  <div class="feedback" id="mFeedback"></div>
+
+  <div class="sec-div">Practice 2 — Word order</div>
+  <p class="subtitle">Tap the words to build the sentence. Tap a word again to take it back, or drag to change the order.</p>
+  <button class="grammar-toggle-btn" id="grammarToggle">🎨 Show Grammar</button>
+  <div class="pos-legend"></div>
+  <div class="score-bar"><span>Correct: <strong id="woScore">0</strong> / <span id="woTotal">0</span></span></div>
+  <div id="woItems"></div>
+
+  <div class="sec-div">Practice 3 — Complete the sentences</div>
+  <p class="subtitle">Write the missing word. The bar turns green 🔴→🟢 when you are right.</p>
+  <div id="gfItems"></div>
+
+  <footer>Adverbs of manner — Controlled practice (A2)</footer>
+</div>
+
+<div id="theme-toggle-wrap">
+  <button id="theme-toggle" aria-label="Toggle light/dark mode" title="Toggle light/dark mode">
+    <span id="theme-icon">☀️</span>
+  </button>
+</div>
+<script src="house.js"></script>
+<script>
+const HALVES = [['slow', 'slowly'], ['happy', 'happily'], ['careful', 'carefully'], ['good', 'well'],
+  ['fast', 'fast'], ['easy', 'easily'], ['loud', 'loudly'], ['gentle', 'gently']];
+const WO_ITEMS = [
+  { context: '💃 The dancers', text: 'They / dance / beautifully.', pos: ['subject', 'verb', 'adverb'] },
+  { context: '🎤 The winner', text: 'She / speaks / English / very well.', pos: ['subject', 'verb', 'object', 'adverb'] },
+  { context: '🏫 A sign', text: 'Please / drive / slowly / near / the school.', pos: ['adverb', 'verb', 'adverb', 'prep', 'object'] },
+  { context: '🚗 Grandpa', text: 'He / is / a / careful / driver.', pos: ['subject', 'verb', 'det', 'adj', 'complement'] },
+  { context: '🎵 The test', text: 'Listen / carefully / to / the music.', pos: ['verb', 'adverb', 'prep', 'object'] },
+  { context: '👏 The end', text: 'The audience / is / clapping / loudly.', pos: ['subject', 'aux', 'verb', 'adverb'] }
+];
+const GF_LABELS = { adv: 'how? (adverb)', adj: 'adjective', irr: 'special adverb' };
+const GF_ITEMS = [
+  { category: 'adv', direct: 'Not fast: like a turtle 🐢.', template: 'He moves very {0}.', hints: [{ accepted: ['slowly'] }] },
+  { category: 'irr', direct: 'Great dancing — the adverb of “good”.', template: 'Sofia dances really {0}.', hints: [{ accepted: ['well'] }] },
+  { category: 'adv', direct: 'With a big smile 😄.', template: 'She’s smiling {0}.', hints: [{ accepted: ['happily'] }] },
+  { category: 'adj', direct: 'After “look”: describe the person 😢.', template: 'You look {0}. What’s wrong?', hints: [{ accepted: ['sad', 'tired', 'worried', 'unhappy'] }] },
+  { category: 'irr', direct: 'Same word as the adjective: speed ⚡.', template: 'She speaks so {0}!', hints: [{ accepted: ['fast', 'quickly'] }] },
+  { category: 'adv', direct: 'With attention — no mistakes.', template: 'Please listen {0}.', hints: [{ accepted: ['carefully'] }] },
+  { category: 'irr', direct: 'He tries a lot — with effort 💪.', template: 'He’s trying {0}.', hints: [{ accepted: ['hard'] }] },
+  { category: 'adv', direct: 'Not quietly 🔊.', template: 'The band is playing {0}.', hints: [{ accepted: ['loudly'] }] }
+];
+
+HouseMatching.build({
+  left: 'leftCol', right: 'rightCol', scoreEl: 'mScore', totalEl: 'mTotal', winEl: 'mWin', resetBtn: 'mReset', feedbackEl: 'mFeedback',
+  pairs: HALVES.map(([a, b], i) => ({ id: 'h' + i, left: a, right: b }))
+});
+HouseWordOrder.build({ container: 'woItems', items: WO_ITEMS, scoreEl: 'woScore', totalEl: 'woTotal' });
+HouseGapFill.build({ container: 'gfItems', items: GF_ITEMS, labels: GF_LABELS });
+</script>
+<script>HouseGrammar.init();</script>
+</body>
+</html>

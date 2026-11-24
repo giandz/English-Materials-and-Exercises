@@ -1,0 +1,128 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<title>I Think I Know You — Question Tags</title>
+<script>
+(function(){
+  try{
+    var saved = localStorage.getItem('theme-preference');
+    var theme = (saved === 'light' || saved === 'dark')
+      ? saved
+      : ((window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches) ? 'dark' : 'light');
+    document.documentElement.setAttribute('data-theme', theme);
+    var fs = parseFloat(localStorage.getItem('font-size-preference'));
+    if (fs >= 10 && fs <= 28) document.documentElement.style.setProperty('--fs-base', fs + 'px');
+  }catch(e){ /* localStorage/matchMedia unavailable — CSS media query still applies */ }
+})();
+</script>
+<link rel="stylesheet" href="house.css">
+<style>
+/* the prompt on the card: a big picture, then the words */
+.cue-main{ font-size:1.25rem; font-weight:700; margin:4px 0 6px; text-align:center; }
+.cue-main .big{ display:block; font-size:2.6rem; line-height:1.1; margin-bottom:4px; }
+.cue-sub{ font-size:.95rem; color:var(--text-secondary); text-align:center; margin:0 0 4px; }
+.chip{ display:inline-block; padding:2px 10px; margin:2px; border-radius:999px; border:1px solid var(--color-border-tertiary); background:var(--surface-2); font-size:1rem; font-weight:700; }
+.chip-wh{ color:var(--pos-wh); border-color:var(--pos-wh); }
+/* two sides: what usually happens · what is different */
+.duo{ display:flex; align-items:stretch; justify-content:center; gap:10px; flex-wrap:wrap; margin:4px 0 6px; }
+.duo .side{ display:flex; flex-direction:column; align-items:center; gap:2px; min-width:9em; padding:6px 10px; border-radius:10px; border:1px solid var(--color-border-tertiary); background:var(--surface-2); font-weight:700; font-size:1rem; }
+.duo .side .when{ font-size:.8667rem; font-weight:600; color:var(--text-secondary); }
+.duo .side .big{ font-size:2.2rem; line-height:1.1; }
+.who{ font-size:1.1rem; font-weight:700; text-align:center; margin:2px 0 4px; }
+/* only Student A looks */
+.q-card details.secret{ margin:4px 0 6px; width:100%; max-width:460px; text-align:center; }
+.q-card details.secret summary{ font-weight:700; }
+.q-card .secret-body{ padding:8px 12px; }
+.q-card details.check{ margin-top:4px; width:100%; max-width:460px; text-align:left; }
+.q-card .check-body{ padding:8px 12px; font-size:.9rem; }
+.q-card .check-body p{ margin:0 0 4px; }
+</style>
+</head>
+<body>
+<div class="page" id="page">
+  <span class="cefr-tag cefr-b1">B1 · Intermediate</span>
+  <h1>I Think I Know You…</h1>
+  <p class="subtitle">Guess things about your partner — and check with a question tag.</p>
+
+  <div class="rule-box">
+    <p><strong>How to play (pairs, or teacher + student):</strong></p>
+    <p>1. Student A rolls 🎲. Finish the sentence with a guess about Student B, and add the tag: “<b>You like spicy food, don’t you?</b>”</p>
+    <p>2. Sure? Use a <b>↘ falling</b> voice. Not sure? Use a <b>↗ rising</b> voice.</p>
+    <p>3. B answers: “<b>Yes, I do!</b>” / “<b>No, I don’t, actually.</b>” A gets a point for every correct guess. Press 👀 to check the tag.</p>
+    <p>4. Then change: B rolls, A answers.</p>
+  </div>
+
+  <div class="q-card" id="qCard"><span class="q-placeholder">Roll the dice to start.</span></div>
+  <button class="dice-btn" id="diceBtn" aria-label="Roll">🎲</button>
+  <div class="roll-count">Rolls: <strong id="rollCount">0</strong></div>
+
+  <div class="sec-div">Now you</div>
+  <div class="rule-box">
+    <p><strong>Guess first, then check!</strong> Write your guess, then ask with a tag: “<b>You were born in Caracas, weren’t you?</b>” Correct the answer if your guess was wrong.</p>
+    <p>Then say: “<b>I thought Ana didn’t like coffee, but she loves it!</b>” Another partner? Press <b>➕ Add partner</b>.</p>
+  </div>
+  <div id="interview"></div>
+
+  <footer>I Think I Know You… — Question tags (B1)</footer>
+</div>
+
+<div id="theme-toggle-wrap">
+  <button id="theme-toggle" aria-label="Toggle light/dark mode" title="Toggle light/dark mode">
+    <span id="theme-icon">☀️</span>
+  </button>
+</div>
+<script src="house.js"></script>
+<script src="house-interview.js"></script>
+<script>
+const pick = HouseRandomGen.pickFrom;
+const cap = s => s.charAt(0).toUpperCase() + s.slice(1);
+/* one card: a topic line, the cue (hidden from B when it is a secret), what to do, and the 👀 examples */
+const card = o =>
+  '<span class="q-topic">' + o.topic + '</span>' +
+  (o.secret ? '<details class="secret"><summary>' + o.secret + '</summary><div class="secret-body">' : '') +
+  (o.body || '') +
+  (o.pic ? '<div class="cue-main"><span class="big">' + o.pic + '</span>' + (o.cue || '') + '</div>' : (o.cue ? '<div class="cue-main">' + o.cue + '</div>' : '')) +
+  (o.sub ? '<div class="cue-sub">' + o.sub + '</div>' : '') +
+  (o.secret ? '</div></details>' : '') +
+  (o.prompt ? '<span class="q-prompt">' + o.prompt + '</span>' : '') +
+  (o.check ? '<details class="check"><summary>' + (o.checkLabel || '👀 Examples') + '</summary><div class="check-body">' +
+    o.check.map(l => '<p>' + l + '</p>').join('') + '</div></details>' : '');
+/* [picture, sentence start (with a guess to finish), tag] */
+const DATA = [
+  ['🌶️', 'You like spicy food', 'don’t you?'], ['☕', 'You don’t drink coffee', 'do you?'], ['🏙️', 'You were born in a big city', 'weren’t you?'],
+  ['🏊', 'You can swim', 'can’t you?'], ['🎸', 'You can’t play the guitar', 'can you?'], ['✈️', 'You’ve been to another country', 'haven’t you?'],
+  ['👨‍👩‍👧', 'You have a big family', 'don’t you?'], ['🐶', 'You aren’t afraid of dogs', 'are you?'], ['🌅', 'You got up early today', 'didn’t you?'],
+  ['📺', 'You watched TV last night', 'didn’t you?'], ['🍕', 'You’re hungry right now', 'aren’t you?'], ['🎤', 'You don’t like karaoke', 'do you?'],
+  ['🚗', 'You can drive', 'can’t you?'], ['📱', 'You’ve never lost your phone', 'have you?'], ['💃', 'You’re a good dancer', 'aren’t you?'],
+  ['🧑‍🍳', 'Your mom is a great cook', 'isn’t she?'], ['🌧️', 'You didn’t go out last weekend', 'did you?'], ['📚', 'You’re going to study tonight', 'aren’t you?']
+];
+const SHORT = tag => {
+  const [a, p] = tag.replace('?', '').split(' '), s = p === 'you' ? 'I' : p;
+  let base = { 'don’t': 'do', 'didn’t': 'did', 'weren’t': 'were', 'can’t': 'can', 'haven’t': 'have', 'aren’t': 'are', 'isn’t': 'is' }[a] || a;
+  if (s === 'I') base = { are: 'am', were: 'was' }[base] || base;
+  const neg = base === 'am' ? 'I’m not' : s + ' ' + (base === 'can' ? 'can’t' : base + 'n’t');
+  return 'Yes, ' + s + ' ' + base + '. / No, ' + neg + '.';
+};
+HouseRandomGen.build({
+  items: DATA.map(([pic, s, tag]) => ({ pic, s, tag, text: s })),
+  render: it => card({
+    topic: '🔮 My guess', pic: it.pic, cue: it.s + ', ___?',
+    prompt: 'A: say it with the tag — ↘ sure or ↗ not sure? B: answer with a short answer.',
+    checkLabel: '👀 The tag', check: ['“' + it.s + ', <b>' + it.tag + '</b>”', '<span class="text-secondary">Short answer: ' + SHORT(it.tag) + '</span>']
+  })
+});
+HouseInterview.build({
+  container: 'interview', storageKey: 'b1-question-tags',
+  fields: [
+    { icon: '🏙️', label: 'where she was born (guess → answer)', placeholder: 'Caracas → Maracaibo…' },
+    { icon: '🍽️', label: 'her favorite food (guess → answer)', placeholder: 'pizza → sushi…' },
+    { icon: '🗣️', label: 'languages she speaks (guess → answer)', placeholder: '…' },
+    { icon: '🎉', label: 'what she did last weekend (guess → answer)', placeholder: '…' },
+    { icon: '✈️', label: 'a country she has visited (guess → answer)', placeholder: '…' }
+  ]
+});
+</script>
+</body>
+</html>

@@ -1,0 +1,127 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<title>The Wishing Well — wish / if only</title>
+<script>
+(function(){
+  try{
+    var saved = localStorage.getItem('theme-preference');
+    var theme = (saved === 'light' || saved === 'dark')
+      ? saved
+      : ((window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches) ? 'dark' : 'light');
+    document.documentElement.setAttribute('data-theme', theme);
+    var fs = parseFloat(localStorage.getItem('font-size-preference'));
+    if (fs >= 10 && fs <= 28) document.documentElement.style.setProperty('--fs-base', fs + 'px');
+  }catch(e){ /* localStorage/matchMedia unavailable — CSS media query still applies */ }
+})();
+</script>
+<link rel="stylesheet" href="house.css">
+<style>
+/* the prompt on the card: a big picture, then the words */
+.cue-main{ font-size:1.25rem; font-weight:700; margin:4px 0 6px; text-align:center; }
+.cue-main .big{ display:block; font-size:2.6rem; line-height:1.1; margin-bottom:4px; }
+.cue-sub{ font-size:.95rem; color:var(--text-secondary); text-align:center; margin:0 0 4px; }
+.chip{ display:inline-block; padding:2px 10px; margin:2px; border-radius:999px; border:1px solid var(--color-border-tertiary); background:var(--surface-2); font-size:1rem; font-weight:700; }
+.chip-wh{ color:var(--pos-wh); border-color:var(--pos-wh); }
+/* two sides: what usually happens · what is different */
+.duo{ display:flex; align-items:stretch; justify-content:center; gap:10px; flex-wrap:wrap; margin:4px 0 6px; }
+.duo .side{ display:flex; flex-direction:column; align-items:center; gap:2px; min-width:9em; padding:6px 10px; border-radius:10px; border:1px solid var(--color-border-tertiary); background:var(--surface-2); font-weight:700; font-size:1rem; }
+.duo .side .when{ font-size:.8667rem; font-weight:600; color:var(--text-secondary); }
+.duo .side .big{ font-size:2.2rem; line-height:1.1; }
+.who{ font-size:1.1rem; font-weight:700; text-align:center; margin:2px 0 4px; }
+/* only Student A looks */
+.q-card details.secret{ margin:4px 0 6px; width:100%; max-width:460px; text-align:center; }
+.q-card details.secret summary{ font-weight:700; }
+.q-card .secret-body{ padding:8px 12px; }
+.q-card details.check{ margin-top:4px; width:100%; max-width:460px; text-align:left; }
+.q-card .check-body{ padding:8px 12px; font-size:.9rem; }
+.q-card .check-body p{ margin:0 0 4px; }
+</style>
+</head>
+<body>
+<div class="page" id="page">
+  <span class="cefr-tag cefr-b1">B1 · Intermediate</span>
+  <h1>The Wishing Well</h1>
+  <p class="subtitle">Throw a coin 🪙 — and make a wish about your life.</p>
+
+  <div class="rule-box">
+    <p><strong>How to play (pairs, or teacher + student):</strong></p>
+    <p>1. Student A rolls 🎲 and reads the situation (📍 = what’s really true). There are three kinds of card:</p>
+    <p>🌙 <b>Now:</b> “<b>I wish I had…</b>” · ⏪ <b>Regret:</b> “<b>I wish I hadn’t…</b>” · 😤 <b>Annoying habit:</b> “<b>I wish he would…</b>”</p>
+    <p>2. Make the wish and say why. Student B asks one question: “<b>What would you do if you had one?</b>” / “<b>Why did you do it?</b>”</p>
+    <p>3. Press 👀 for an example. Then change: B rolls, A asks.</p>
+  </div>
+
+  <div class="q-card" id="qCard"><span class="q-placeholder">Roll the dice to start.</span></div>
+  <button class="dice-btn" id="diceBtn" aria-label="Roll">🎲</button>
+  <div class="roll-count">Rolls: <strong id="rollCount">0</strong></div>
+
+  <div class="sec-div">Now you</div>
+  <div class="rule-box">
+    <p><strong>Ask your partner about their wishes.</strong> “<b>What do you wish you had? Is there anything you wish you had done differently? What do you wish people would stop doing?</b>” Write the answers.</p>
+    <p>Then say: “<b>Ana wishes she lived near the beach. She wishes she had learned to swim as a child.</b>” Another partner? Press <b>➕ Add partner</b>.</p>
+  </div>
+  <div id="interview"></div>
+
+  <footer>The Wishing Well — wish / if only (B1)</footer>
+</div>
+
+<div id="theme-toggle-wrap">
+  <button id="theme-toggle" aria-label="Toggle light/dark mode" title="Toggle light/dark mode">
+    <span id="theme-icon">☀️</span>
+  </button>
+</div>
+<script src="house.js"></script>
+<script src="house-interview.js"></script>
+<script>
+const pick = HouseRandomGen.pickFrom;
+const cap = s => s.charAt(0).toUpperCase() + s.slice(1);
+/* one card: a topic line, the cue (hidden from B when it is a secret), what to do, and the 👀 examples */
+const card = o =>
+  '<span class="q-topic">' + o.topic + '</span>' +
+  (o.secret ? '<details class="secret"><summary>' + o.secret + '</summary><div class="secret-body">' : '') +
+  (o.body || '') +
+  (o.pic ? '<div class="cue-main"><span class="big">' + o.pic + '</span>' + (o.cue || '') + '</div>' : (o.cue ? '<div class="cue-main">' + o.cue + '</div>' : '')) +
+  (o.sub ? '<div class="cue-sub">' + o.sub + '</div>' : '') +
+  (o.secret ? '</div></details>' : '') +
+  (o.prompt ? '<span class="q-prompt">' + o.prompt + '</span>' : '') +
+  (o.check ? '<details class="check"><summary>' + (o.checkLabel || '👀 Examples') + '</summary><div class="check-body">' +
+    o.check.map(l => '<p>' + l + '</p>').join('') + '</div></details>' : '');
+/* [kind, picture, 📍 situation, example wish] */
+const CARDS = [
+  ['now', '🏠', 'Your apartment is very small.', 'I wish my apartment were bigger.'], ['now', '🌧️', 'It’s raining and you want to go to the beach.', 'I wish it weren’t raining.'],
+  ['now', '🎸', 'You can’t play any instruments.', 'I wish I could play the guitar.'], ['now', '💸', 'You don’t have much money this month.', 'If only I had more money!'],
+  ['now', '⏰', 'You never have free time.', 'I wish I had more free time.'], ['now', '🗣️', 'You don’t speak Chinese.', 'I wish I spoke Chinese.'],
+  ['now', '🐶', 'You can’t have a dog in your building.', 'I wish I could have a dog.'], ['now', '🏔️', 'You live in a flat, boring city.', 'I wish I lived near the mountains.'],
+  ['past', '📱', 'You told a friend’s secret. Now she’s angry.', 'I wish I hadn’t told her secret.'], ['past', '🎓', 'You didn’t study for the test.', 'I wish I had studied.'],
+  ['past', '✈️', 'You missed your flight because you woke up late.', 'If only I had set an alarm!'], ['past', '💇', 'You got a terrible haircut.', 'I wish I hadn’t gone to that hairdresser.'],
+  ['past', '🎹', 'You stopped piano lessons when you were ten.', 'I wish I hadn’t stopped.'], ['past', '🛍️', 'You spent all your money on shoes.', 'I wish I hadn’t bought so many shoes.'],
+  ['habit', '📢', 'Your neighbor sings loudly at 6 a.m.', 'I wish he would sing later!'], ['habit', '📞', 'Your colleague talks on the phone all day.', 'I wish she would talk more quietly.'],
+  ['habit', '🧦', 'Your roommate leaves socks everywhere.', 'I wish he wouldn’t leave his socks everywhere.'], ['habit', '🚗', 'Drivers in your city never stop for people.', 'I wish drivers would stop at crossings.'],
+  ['habit', '🙄', 'Your friend is always late.', 'I wish she would arrive on time.'], ['habit', '📺', 'Your family watches TV during dinner.', 'I wish they would turn off the TV.']
+];
+const KIND = { now: '🌙 Now', past: '⏪ Regret', habit: '😤 Annoying habit' };
+const FORMS = { now: 'wish + past simple / could', past: 'wish + had (not) + past participle', habit: 'wish + someone + would (not) + verb' };
+HouseRandomGen.build({
+  items: CARDS.map(([kind, pic, sit, ex]) => ({ kind, pic, sit, ex, text: sit })),
+  render: it => card({
+    topic: KIND[it.kind], pic: it.pic, cue: '📍 ' + it.sit,
+    prompt: 'A: make a wish and say why. B: ask one question.',
+    checkLabel: '👀 Example', check: ['“' + it.ex + '”', '<span class="text-secondary">' + FORMS[it.kind] + '</span>']
+  })
+});
+HouseInterview.build({
+  container: 'interview', storageKey: 'b1-wish-if-only',
+  fields: [
+    { icon: '🎁', label: 'wishes she had', placeholder: 'a bigger kitchen…' },
+    { icon: '🌍', label: 'wishes she lived', placeholder: 'near the beach…' },
+    { icon: '💪', label: 'wishes she could', placeholder: 'speak Italian…' },
+    { icon: '⏪', label: 'wishes she had done (or hadn’t)', placeholder: 'had learned to swim…' },
+    { icon: '😤', label: 'wishes people would (not)…', placeholder: 'wouldn’t talk in the cinema…' }
+  ]
+});
+</script>
+</body>
+</html>

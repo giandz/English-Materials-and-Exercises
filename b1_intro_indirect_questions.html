@@ -1,0 +1,133 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<title>Could You Tell Me Where…? — Indirect Questions</title>
+<script>
+(function(){
+  try{
+    var saved = localStorage.getItem('theme-preference');
+    var theme = (saved === 'light' || saved === 'dark')
+      ? saved
+      : ((window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches) ? 'dark' : 'light');
+    document.documentElement.setAttribute('data-theme', theme);
+    var fs = parseFloat(localStorage.getItem('font-size-preference'));
+    if (fs >= 10 && fs <= 28) document.documentElement.style.setProperty('--fs-base', fs + 'px');
+  }catch(e){ /* localStorage/matchMedia unavailable — CSS media query still applies */ }
+})();
+</script>
+<link rel="stylesheet" href="house.css">
+<style>
+.cast-row{ display:flex; flex-wrap:wrap; gap:14px 18px; justify-content:center; align-items:flex-end; margin:0 0 1rem; padding:10px; background:var(--surface-1); border:1px solid var(--border); border-radius:var(--border-radius-lg); font-size:.8667rem; }
+.match-wrap .match-col-label{ text-align:center; }
+#picCol .match-card{ font-size:1.35rem; justify-content:center; }
+</style>
+</head>
+<body>
+<div class="page" id="page">
+  <span class="cefr-tag cefr-b1">B1 · Intermediate</span>
+  <h1>Could You Tell Me Where…?</h1>
+  <p class="subtitle">Marta needs a new passport. At city hall, she asks Mr. Davis at the information desk for help.</p>
+
+  <div class="sec-div">Words for this lesson</div>
+  <p class="subtitle">Match the picture and the words. Tap a picture, then tap its words.</p>
+  <div class="score-bar"><span>Matched: <strong id="mScore">0</strong> / <span id="mTotal">0</span></span><button id="mReset">↺ Reset</button></div>
+  <div class="match-grid match-wrap">
+    <div><div class="match-col-label">Picture</div><div class="match-col" id="picCol"></div></div>
+    <div><div class="match-col-label">Words</div><div class="match-col" id="wordCol"></div></div>
+  </div>
+  <div class="win-msg" id="mWin">🎉 Great! You know the words for the conversation.</div>
+  <div class="feedback" id="mFeedback"></div>
+
+  <div class="sec-div">Before you read</div>
+  <div id="preQuestions"></div>
+
+  <div class="sec-div">The people</div>
+  <div class="cast-row" id="castRow"></div>
+
+  <div class="sec-div">The conversation</div>
+  <div class="setting-chip"><span class="section-icon">🏛️</span> Monday morning — the information desk at city hall</div>
+  <button class="grammar-toggle-btn" id="grammarToggle">🎨 Show Grammar</button>
+  <div class="pos-legend"></div>
+  <div id="conversation"></div>
+
+  <div class="sec-div">Check your answers</div>
+  <div id="quiz"></div>
+
+  <footer>Could You Tell Me Where…? — Indirect questions (B1)</footer>
+</div>
+
+<div id="theme-toggle-wrap">
+  <button id="theme-toggle" aria-label="Toggle light/dark mode" title="Toggle light/dark mode">
+    <span id="theme-icon">☀️</span>
+  </button>
+</div>
+<script src="house.js"></script>
+<script src="stick-character.js"></script>
+<script src="stick-sentence.js"></script>
+<script>
+StickSentence.cast({
+  marta: { base:'woman', colour:'#CC6699', label:'Marta' },
+  davis: { base:'man',   colour:'#336699', label:'Mr. Davis' }
+});
+StickSentence.toggle();
+window.LESSON_DICT = {
+  'city hall':  { pos:'noun', def:'the building where a city’s government works', ex:'Marta goes to city hall.', es:'alcaldía, ayuntamiento' },
+  'I’m afraid': { pos:'phrase', def:'a polite way to say “I’m sorry, but…” before bad news', ex:'I’m afraid it isn’t open on Saturdays.', es:'me temo que' },
+  'wonder':     { pos:'verb', def:'to ask yourself something; “I was wondering…” is a polite way to ask', ex:'I was wondering whether I need an appointment.', es:'preguntarse' },
+  'happen to':  { pos:'phrase', def:'by chance; “Do you happen to know…?” is a very polite question', ex:'Do you happen to know how long it takes?', es:'por casualidad' },
+  'upstairs':   { pos:'adverb', def:'on a higher floor of a building', ex:'You should ask upstairs.', es:'arriba' }
+};
+const WORDS = [['🛂', 'a passport office'], ['🏛️', 'city hall'], ['🛗', 'an elevator'], ['🚪', 'the main exit'], ['📅', 'an appointment'],
+  ['🌐', 'a website'], ['🖱️', 'click'], ['💳', 'pay'], ['🅿️', 'parking'], ['🙋', 'an information desk']];
+document.getElementById('castRow').innerHTML = ['{Marta|marta}', '{Mr. Davis|davis}'].map(StickSentence.html).join('');
+const SPEAKERS = {
+  Marta:       { cast: 'marta', avatar: '👩', av: 'av-b', side: 'left' },
+  'Mr. Davis': { cast: 'davis', avatar: '👨‍💼', av: 'av-a', side: 'right' }
+};
+const LINES = [
+  ['Marta', '[Excuse me/none], [could/aux] [you/subject] [tell/verb] [me/object] [where/wh] [the passport office/subject] [is/verb]?'],
+  ['Mr. Davis', '[Of course/none]. [It’s/subject] [on the second floor/prep], [next to the elevator/prep].'],
+  ['Marta', '[Thank you/none]. [And/conj] [do/aux] [you/subject] [know/verb] [if/conj] [it’s/subject] [open/adj] [on Saturdays/time]?'],
+  ['Mr. Davis', '[I’m afraid/none] [it/subject] [isn’t/neg]. [It’s/subject] [only/adverb] [open/adj] [from Monday to Friday/time].'],
+  ['Marta', '[OK/none]. [I/subject] [was wondering/verb] [whether/conj] [I/subject] [need/verb] [an appointment/object].'],
+  ['Mr. Davis', '[Yes/none], [you/subject] [do/aux]. [Do/aux] [you/subject] [know/verb] [how/wh] [to make/verb] [one/object] [online/adverb]?'],
+  ['Marta', '[Not really/none]. [Could/aux] [you/subject] [explain/verb] [how/wh] [it/subject] [works/verb]?'],
+  ['Mr. Davis', '[Sure/none]. [Go/verb] [to the city website/prep] [and/conj] [click/verb] [“Appointments”/object]. [Then/adverb] [choose/verb] [the day/object].'],
+  ['Marta', '[Great/adj]. [Do/aux] [you/subject] [happen to/adverb] [know/verb] [how long/wh] [it/subject] [takes/verb] [to get a passport/object]?'],
+  ['Mr. Davis', '[Usually/adverb] [about six weeks/time]. [But/conj] [I’m not sure/none] [how much/wh] [it/subject] [costs/verb] [now/time] — [you/subject] [should/aux] [ask/verb] [upstairs/adverb].'],
+  ['Marta', '[No problem/none]. [One more thing/none]: [can/aux] [you/subject] [tell/verb] [me/object] [where/wh] [I/subject] [can/aux] [pay/verb] [for parking/prep]?'],
+  ['Mr. Davis', '[There’s a machine/none] [next to the main exit/prep].'],
+  ['Marta', '[Thank you so much/none]. [You’ve/subject] [been/verb] [very helpful/adj]!'],
+  ['Mr. Davis', '[You’re welcome/none]. [Have a nice day/none]!']
+];
+const CQ_ITEMS = [
+  { q: 'Where is the passport office?', opts: ['On the second floor, next to the elevator', 'Next to the main exit', 'Upstairs, on the third floor'], correct: 0 },
+  { q: 'Is the passport office open on Saturdays?', opts: ['No, only from Monday to Friday', 'Yes, in the morning', 'Only with an appointment'], correct: 0 },
+  { q: 'How long does it usually take to get a passport?', opts: ['About six weeks', 'About six days', 'Mr. Davis doesn’t know'], correct: 0 }
+];
+
+/* ── the conversation ─────────────────────────────────────────────────── */
+const avStyle = s => { const c = (StickSentence.cast()[s.cast] || {}).colour;
+  return c ? 'background:' + c + '40;box-shadow:inset 0 0 0 2px ' + c : ''; };
+const conv = document.getElementById('conversation');
+LINES.forEach(([who, text]) => {
+  const s = SPEAKERS[who], right = s.side === 'right';
+  conv.insertAdjacentHTML('beforeend',
+    '<div class="bubble-wrap' + (right ? ' right' : '') + '">' +
+      '<div class="avatar ' + s.av + '" style="' + avStyle(s) + '">' + s.avatar + '</div>' +
+      '<div class="bubble-col"><div class="bname' + (right ? ' right' : '') + '">' + who + '</div>' +
+      '<div class="bubble ' + (right ? 'right' : 'left') + '">' + StickSentence.html(text) + '</div></div>' +
+    '</div>');
+});
+
+HouseMatching.build({
+  left: 'picCol', right: 'wordCol', scoreEl: 'mScore', totalEl: 'mTotal', winEl: 'mWin', resetBtn: 'mReset', feedbackEl: 'mFeedback',
+  pairs: WORDS.map(([e, w]) => ({ id: w, left: e, right: w }))
+});
+HouseComprehension.build({ pre: 'preQuestions', quiz: 'quiz', items: CQ_ITEMS });
+</script>
+<script>HouseGrammar.init();</script>
+</body>
+</html>

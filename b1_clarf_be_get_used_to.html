@@ -1,0 +1,163 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<title>be / get used to — Clarification</title>
+<script>
+(function(){
+  try{
+    var saved = localStorage.getItem('theme-preference');
+    var theme = (saved === 'light' || saved === 'dark')
+      ? saved
+      : ((window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches) ? 'dark' : 'light');
+    document.documentElement.setAttribute('data-theme', theme);
+    var fs = parseFloat(localStorage.getItem('font-size-preference'));
+    if (fs >= 10 && fs <= 28) document.documentElement.style.setProperty('--fs-base', fs + 'px');
+  }catch(e){ /* localStorage/matchMedia unavailable — CSS media query still applies */ }
+})();
+</script>
+<link rel="stylesheet" href="house.css">
+<style>
+.flow-card{ border:1px solid var(--color-border-tertiary); border-radius:var(--border-radius-lg); background:var(--surface-2); padding:10px 12px; margin-bottom:10px; }
+.flow-card .sent{ font-size:1rem; font-weight:600; margin-bottom:6px; }
+.flow-card .note{ font-size:.8333rem; color:var(--text-secondary); margin-top:4px; }
+.if-part{ color:hsl(217, 70%, 42%); font-weight:700; }
+.res-part{ color:hsl(120, 60%, 32%); font-weight:700; }
+.res-no{ color:hsl(0, 65%, 42%); font-weight:700; }
+[data-theme="dark"] .res-no{ color:hsl(0, 75%, 70%); }
+[data-theme="dark"] .if-part{ color:hsl(217, 80%, 70%); }
+[data-theme="dark"] .res-part{ color:hsl(120, 55%, 65%); }
+.form-table{ width:100%; border-collapse:collapse; margin:0 0 1rem; font-size:.9333rem; }
+.form-table th, .form-table td{ border:1px solid var(--color-border-tertiary); padding:7px 9px; text-align:left; vertical-align:top; }
+.form-table th{ background:var(--surface-1); font-size:.8rem; text-transform:uppercase; letter-spacing:.04em; color:var(--text-secondary); }
+.pct-row{ display:flex; flex-wrap:wrap; gap:6px; margin:0 0 1rem; }
+.pct-row span{ padding:3px 10px; border-radius:999px; font-weight:700; font-size:.8667rem; border:2px solid; }
+.rule-box p{ margin:0 0 6px; }
+.rule-box p:last-child{ margin-bottom:0; }
+.big-pic{ font-size:1.6rem; letter-spacing:.1em; margin:2px 0 4px; }
+.prep-grid{ display:grid; grid-template-columns:repeat(auto-fill, minmax(200px, 1fr)); gap:8px; margin:0 0 1rem; }
+.prep-grid > div{ border:1px solid var(--color-border-tertiary); border-radius:var(--border-radius-lg); background:var(--surface-2); padding:9px 11px; }
+.prep-grid h4{ margin:0 0 3px; font-size:1.05rem; }
+.prep-grid .rule{ font-size:.8rem; color:var(--text-secondary); margin-bottom:5px; }
+.prep-grid .ex{ font-size:.9rem; line-height:1.6; }
+.hl{ font-weight:700; color:var(--text-accent); }
+</style>
+</head>
+<body>
+<div class="page" id="page">
+  <span class="cefr-tag cefr-b1">B1 · Intermediate</span>
+  <h1>be used to, get used to, used to</h1>
+  <p class="subtitle">Normal now, becoming normal — or a past habit?</p>
+
+  <div class="sec-div">Look</div>
+  <p class="subtitle">From the conversation. Look at the highlighted words.</p>
+  <div id="look"></div>
+
+  <div class="sec-div">Meaning</div>
+  <div class="rule-box" id="meaning"></div>
+
+  <div class="sec-div">Check the meaning</div>
+  <p class="subtitle">Answer the questions about each sentence.</p>
+  <div id="ccq"></div>
+
+  <div class="sec-div">Look at the form</div>
+  <p class="subtitle">What is each part? Drag a label (or tap a label, then tap a box).</p>
+  <div class="score-bar"><span>Correct: <strong id="fcScore">0</strong> / <span id="fcTotal">0</span></span></div>
+  <div id="formClarf"></div>
+  <div id="formRule"></div>
+
+  <div class="sec-div">Common mistakes</div>
+  <div id="mistakes"></div>
+
+  <div class="sec-div">Error hunt</div>
+  <p class="subtitle">Some sentences have one mistake. Some are correct! Tap a word — or a space between words — to fix it. Then press OK.</p>
+  <div class="score-bar"><span>Done: <strong id="errorScore">0</strong> / <span id="errorTotal">0</span></span></div>
+  <div id="errorHuntItems"></div>
+
+  <footer>be used to, get used to, used to — Clarification (B1)</footer>
+</div>
+
+<div id="theme-toggle-wrap">
+  <button id="theme-toggle" aria-label="Toggle light/dark mode" title="Toggle light/dark mode">
+    <span id="theme-icon">☀️</span>
+  </button>
+</div>
+<script src="house.js"></script>
+<script>
+const STEPS = { timeline: { steps: [
+  { emoji: '😖', word: 'not used to', example: 'I’m not used to the cold.' },
+  { emoji: '🔄', word: 'getting used to', example: 'I’m getting used to the food.' },
+  { emoji: '😌', word: 'used to', example: 'I’m used to the subway now.' } ],
+  caption: 'Something strange slowly becomes normal.' } };
+const LOOK = [
+  ['I’m <span class="hl">not used to</span> this weather.', '<div class="big-pic">😖🥶</div>', '<b>be used to</b>: it is (not) normal for me.'],
+  ['I’m <span class="hl">getting used to</span> the food.', STEPS, '<b>get used to</b>: it is becoming normal. A process.'],
+  ['I <span class="hl">used to</span> wear sandals every day.', '<div class="big-pic">⏪🩴</div>', '<b>used to</b> + verb: a past habit. Not now! A different meaning.']
+];
+const MEANING = '<div class="prep-grid">' +
+  '<div><h4>😌 be used to</h4><div class="rule">normal, familiar for me</div><div class="ex">I’m used to <b>the subway</b>.<br>She isn’t used to <b>speaking</b> English all day.</div></div>' +
+  '<div><h4>🔄 get used to</h4><div class="rule">becoming normal — a change</div><div class="ex">I’m getting used to <b>the food</b>.<br>You’ll get used to <b>eating</b> early.</div></div>' +
+  '<div><h4>⏪ used to + verb</h4><div class="rule">a past habit or state — not now</div><div class="ex">I used to <b>drive</b> everywhere.<br>We didn’t use to <b>have</b> a car.</div></div></div>' +
+  '<p><strong>The key form:</strong> after <b>be / get used to</b> comes a noun or <b>-ing</b> — <i>I’m used to <b>speaking</b></i>, not <i><s>used to speak</s></i>.</p>';
+const CCQ = [
+  { sentence: 'I’m used to taking the subway now.', questions: [
+    { q: 'Is taking the subway strange for her now?', opts: ['Yes', 'No'], correct: 1, why: 'No — it’s normal now.' } ] },
+  { sentence: 'I used to drive everywhere.', questions: [
+    { q: 'Does she drive everywhere now?', opts: ['Yes', 'No'], correct: 1, why: 'No. <b>used to + verb</b> = a past habit.' },
+    { q: 'Is it about the past?', opts: ['Yes', 'No'], correct: 0, why: 'Yes — in Venezuela, before she moved.' } ] },
+  { sentence: 'I’m getting used to the food.', questions: [
+    { q: 'Is the change finished?', opts: ['Yes', 'No'], correct: 1, why: 'No — it’s happening now, little by little.' } ] }
+];
+const FORM_POOL = ['subject', 'aux', 'verb', 'neg', 'adj', 'object', 'time'];
+const FORM = [
+  { form: 'neg', parts: [['I', 'subject'], ['am', 'verb'], ['not', 'neg'], ['used to', 'adj'], ['this weather', 'object'], ['.', null]] },
+  { form: 'aff', parts: [['I', 'subject'], ['am', 'aux'], ['getting', 'verb'], ['used to', 'adj'], ['the food', 'object'], ['.', null]] },
+  { form: 'aff', parts: [['She', 'subject'], ['is', 'verb'], ['used to', 'adj'], ['speaking', 'verb'], ['English', 'object'], ['.', null]] },
+  { form: 'aff', parts: [['I', 'subject'], ['used to', 'aux'], ['wear', 'verb'], ['sandals', 'object'], ['every day', 'time'], ['.', null]] }
+];
+const FORM_RULE = '<table class="form-table"><tr><th>meaning</th><th>form</th><th>example</th></tr>' +
+  '<tr><td>😌 normal</td><td>be used to + noun / -ing</td><td>I’m used to the cold.</td></tr>' +
+  '<tr><td>🔄 becoming normal</td><td>get used to + noun / -ing (any tense)</td><td>I’m getting / I got / I’ll get used to it.</td></tr>' +
+  '<tr><td>⏪ past habit</td><td>used to + base verb</td><td>I used to wear sandals.</td></tr></table>' +
+  '<div class="rule-box"><p><strong>Questions and negatives of the past habit:</strong> <i>Did you <b>use</b> to…? · I didn’t <b>use</b> to…</i> (no -d after did).</p></div>';
+const MISTAKES = [
+  ['I’m used to speak English all day.', 'I’m used to speaking English all day.'],
+  ['I am use to the cold.', 'I am used to the cold.'],
+  ['I used to taking the bus in Venezuela.', 'I used to take the bus in Venezuela.'],
+  ['I’m getting use to it.', 'I’m getting used to it.'],
+  ['Did you used to live by the sea?', 'Did you use to live by the sea?']
+];
+const EH_ITEMS = [
+  { words: ['I’m', 'used', 'to', 'speak', 'English', 'all', 'day', '.'], error: { type: 'wrong', wordIndex: 3, options: ['speaking', 'spoke', 'speaks'], correct: 'speaking' } },
+  { words: ['She', 'isn’t', 'used', 'to', 'the', 'cold', 'weather', '.'], error: null },
+  { words: ['I', 'am', 'use', 'to', 'the', 'food', 'now', '.'], error: { type: 'wrong', wordIndex: 2, options: ['used', 'using', 'uses'], correct: 'used' } },
+  { words: ['I', 'used', 'to', 'driving', 'everywhere', 'in', 'Venezuela', '.'], error: { type: 'wrong', wordIndex: 3, options: ['drive', 'drove', 'drives'], correct: 'drive' } },
+  { words: ['We’re', 'getting', 'used', 'to', 'eating', 'dinner', 'at', 'six', '.'], error: null },
+  { words: ['Did', 'you', 'used', 'to', 'live', 'by', 'the', 'sea', '?'], error: { type: 'wrong', wordIndex: 2, options: ['use', 'using', 'uses'], correct: 'use' } },
+  { words: ['He', 'can’t', 'get', 'used', 'to', 'work', 'at', 'night', '.'], error: { type: 'wrong', wordIndex: 5, options: ['working', 'worked', 'works'], correct: 'working' } },
+  { words: ['I', 'used', 'to', 'wear', 'sandals', 'every', 'day', '.'], error: null }
+];
+
+/* LOOK: [the sentence, a picture (HTML) or { timeline: HouseTimeline options }, a note] */
+const look = document.getElementById('look');
+LOOK.forEach(([sent, vis, note], i) => {
+  const card = document.createElement('div');
+  card.className = 'flow-card';
+  card.innerHTML = '<div class="sent">' + sent + '</div>' +
+    (vis && vis.timeline ? '<div id="lookTl' + i + '"></div>' : (vis || '')) + (note ? '<div class="note">' + note + '</div>' : '');
+  look.appendChild(card);
+  if (vis && vis.timeline) HouseTimeline.build(Object.assign({ container: 'lookTl' + i }, vis.timeline));
+});
+document.getElementById('meaning').innerHTML = MEANING;
+HouseCCQ.build({ container: 'ccq', items: CCQ });
+HouseFormClarf.build({ container: 'formClarf', scoreEl: 'fcScore', totalEl: 'fcTotal', pool: FORM_POOL, items: FORM });
+document.getElementById('formRule').innerHTML = FORM_RULE;
+document.getElementById('mistakes').innerHTML = MISTAKES.map(([no, yes]) =>
+  '<div class="pair-card"><div class="pair-line no"><span class="mark">✗</span>' + no + '</div>' +
+  '<div class="pair-line yes"><span class="mark">✓</span>' + yes + '</div></div>').join('');
+HouseErrorHunt.build({ container: 'errorHuntItems', items: EH_ITEMS, scoreEl: 'errorScore', totalEl: 'errorTotal' });
+</script>
+<script>HouseGrammar.init();</script>
+</body>
+</html>

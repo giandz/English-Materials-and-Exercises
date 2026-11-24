@@ -1,0 +1,158 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<title>Contrast Linkers — Clarification</title>
+<script>
+(function(){
+  try{
+    var saved = localStorage.getItem('theme-preference');
+    var theme = (saved === 'light' || saved === 'dark')
+      ? saved
+      : ((window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches) ? 'dark' : 'light');
+    document.documentElement.setAttribute('data-theme', theme);
+    var fs = parseFloat(localStorage.getItem('font-size-preference'));
+    if (fs >= 10 && fs <= 28) document.documentElement.style.setProperty('--fs-base', fs + 'px');
+  }catch(e){ /* localStorage/matchMedia unavailable — CSS media query still applies */ }
+})();
+</script>
+<link rel="stylesheet" href="house.css">
+<style>
+.flow-card{ border:1px solid var(--color-border-tertiary); border-radius:var(--border-radius-lg); background:var(--surface-2); padding:10px 12px; margin-bottom:10px; }
+.flow-card .sent{ font-size:1rem; font-weight:600; margin-bottom:6px; }
+.flow-card .note{ font-size:.8333rem; color:var(--text-secondary); margin-top:4px; }
+.if-part{ color:hsl(217, 70%, 42%); font-weight:700; }
+.res-part{ color:hsl(120, 60%, 32%); font-weight:700; }
+.res-no{ color:hsl(0, 65%, 42%); font-weight:700; }
+[data-theme="dark"] .res-no{ color:hsl(0, 75%, 70%); }
+[data-theme="dark"] .if-part{ color:hsl(217, 80%, 70%); }
+[data-theme="dark"] .res-part{ color:hsl(120, 55%, 65%); }
+.form-table{ width:100%; border-collapse:collapse; margin:0 0 1rem; font-size:.9333rem; }
+.form-table th, .form-table td{ border:1px solid var(--color-border-tertiary); padding:7px 9px; text-align:left; vertical-align:top; }
+.form-table th{ background:var(--surface-1); font-size:.8rem; text-transform:uppercase; letter-spacing:.04em; color:var(--text-secondary); }
+.pct-row{ display:flex; flex-wrap:wrap; gap:6px; margin:0 0 1rem; }
+.pct-row span{ padding:3px 10px; border-radius:999px; font-weight:700; font-size:.8667rem; border:2px solid; }
+.rule-box p{ margin:0 0 6px; }
+.rule-box p:last-child{ margin-bottom:0; }
+.big-pic{ font-size:1.6rem; letter-spacing:.1em; margin:2px 0 4px; }
+.prep-grid{ display:grid; grid-template-columns:repeat(auto-fill, minmax(200px, 1fr)); gap:8px; margin:0 0 1rem; }
+.prep-grid > div{ border:1px solid var(--color-border-tertiary); border-radius:var(--border-radius-lg); background:var(--surface-2); padding:9px 11px; }
+.prep-grid h4{ margin:0 0 3px; font-size:1.05rem; }
+.prep-grid .rule{ font-size:.8rem; color:var(--text-secondary); margin-bottom:5px; }
+.prep-grid .ex{ font-size:.9rem; line-height:1.6; }
+.hl{ font-weight:700; color:var(--text-accent); }
+</style>
+</head>
+<body>
+<div class="page" id="page">
+  <span class="cefr-tag cefr-b1">B1 · Intermediate</span>
+  <h1>although, however, despite</h1>
+  <p class="subtitle">Two ideas that don’t go together — and the words that join them.</p>
+
+  <div class="sec-div">Look</div>
+  <p class="subtitle">From the conversation. Look at the highlighted words.</p>
+  <div id="look"></div>
+
+  <div class="sec-div">Meaning</div>
+  <div class="rule-box" id="meaning"></div>
+
+  <div class="sec-div">Check the meaning</div>
+  <p class="subtitle">Answer the questions about each sentence.</p>
+  <div id="ccq"></div>
+
+  <div class="sec-div">Look at the form</div>
+  <p class="subtitle">What is each part? Drag a label (or tap a label, then tap a box).</p>
+  <div class="score-bar"><span>Correct: <strong id="fcScore">0</strong> / <span id="fcTotal">0</span></span></div>
+  <div id="formClarf"></div>
+  <div id="formRule"></div>
+
+  <div class="sec-div">Common mistakes</div>
+  <div id="mistakes"></div>
+
+  <div class="sec-div">Error hunt</div>
+  <p class="subtitle">Some sentences have one mistake. Some are correct! Tap a word — or a space between words — to fix it. Then press OK.</p>
+  <div class="score-bar"><span>Done: <strong id="errorScore">0</strong> / <span id="errorTotal">0</span></span></div>
+  <div id="errorHuntItems"></div>
+
+  <footer>Contrast linkers — Clarification (B1)</footer>
+</div>
+
+<div id="theme-toggle-wrap">
+  <button id="theme-toggle" aria-label="Toggle light/dark mode" title="Toggle light/dark mode">
+    <span id="theme-icon">☀️</span>
+  </button>
+</div>
+<script src="house.js"></script>
+<script>
+const LOOK = [
+  ['<span class="hl">Although</span> the salary is much better, the hours are really long.', '<div class="big-pic">💵👍 ↔ ⏰👎</div>', '<b>although</b> + subject + verb.'],
+  ['The salary is great. <span class="hl">However</span>, the rent is very expensive.', '<div class="big-pic">💵. ↔ 🏢💸</div>', '<b>However</b> starts a new sentence — and takes a comma.'],
+  ['<span class="hl">Despite</span> feeling nervous, I want to try.', '<div class="big-pic">😨 ↔ 🚀</div>', '<b>despite</b> + noun or -ing (not subject + verb).']
+];
+const MEANING = '<p><strong>All these words join two ideas that contrast</strong> — the second idea is surprising after the first.</p>' +
+  '<table class="form-table"><tr><th>linker</th><th>+ …</th><th>example</th></tr>' +
+  '<tr><td><b>although / even though</b></td><td>subject + verb</td><td><b>Although</b> it’s hot, I love Miami.<br>I love Miami <b>even though</b> it’s hot.</td></tr>' +
+  '<tr><td><b>despite / in spite of</b></td><td>noun / -ing</td><td><b>Despite</b> the heat, I love Miami.<br><b>In spite of</b> feeling nervous, she said yes.</td></tr>' +
+  '<tr><td><b>However,</b></td><td>a new sentence</td><td>It’s hot. <b>However,</b> I love Miami.</td></tr></table>' +
+  '<p><b>even though</b> is stronger than <b>although</b>. <b>However</b> is a little more formal than <b>but</b>.</p>';
+const CCQ = [
+  { sentence: 'Although the salary is better, the hours are long.', questions: [
+    { q: 'Is the salary good?', opts: ['Yes', 'No'], correct: 0, why: 'Yes — that’s the first idea.' },
+    { q: 'Are both ideas positive?', opts: ['Yes', 'No'], correct: 1, why: 'No. They contrast: one good, one bad.' } ] },
+  { sentence: 'Despite the rain, we went to the beach.', questions: [
+    { q: 'Did it rain?', opts: ['Yes', 'No'], correct: 0, why: 'Yes.' },
+    { q: 'Is it surprising that they went to the beach?', opts: ['Yes', 'No'], correct: 0, why: 'Yes — that’s the contrast.' } ] },
+  { sentence: 'Despite she was tired, she went to work.', questions: [
+    { q: 'Is this sentence correct?', opts: ['Yes', 'No'], correct: 1, why: 'No. <b>despite</b> + noun / -ing: <i>Despite being tired…</i> or <i>Although she was tired…</i>' } ] }
+];
+const FORM_POOL = ['conj', 'prep', 'subject', 'verb', 'neg', 'adj', 'object', 'complement'];
+const FORM = [
+  { form: 'aff', parts: [['Although', 'conj'], ['the salary', 'subject'], ['is', 'verb'], ['better', 'adj'], [',', null], ['the hours', 'subject'], ['are', 'verb'], ['long', 'adj'], ['.', null]] },
+  { form: 'aff', parts: [['Despite', 'prep'], ['the rent', 'object'], [',', null], ['she', 'subject'], ['wants', 'verb'], ['the job', 'object'], ['.', null]] },
+  { form: 'aff', parts: [['In spite of', 'prep'], ['feeling nervous', 'object'], [',', null], ['she', 'subject'], ['said', 'verb'], ['yes', 'complement'], ['.', null]] },
+  { form: 'neg', parts: [['However', 'conj'], [',', null], ['she', 'subject'], ['doesn’t', 'neg'], ['want', 'verb'], ['to leave', 'object'], ['.', null]] }
+];
+const FORM_RULE = '<div class="rule-box"><p><strong>despite = in spite of</strong> — never <i><s>despite of</s></i>, never <i><s>in spite the…</s></i>.</p>' +
+  '<p><strong>although + subject + verb</strong>: don’t add <i>but</i> — <i><s>Although it’s far, but I want to go</s></i>.</p>' +
+  '<p><strong>despite + subject + verb?</strong> Add <b>the fact that</b>: <i>Despite <b>the fact that</b> she was tired…</i></p></div>';
+const MISTAKES = [
+  ['Despite of the money, I’m not sure.', 'Despite the money, I’m not sure.'],
+  ['In spite the long hours, it’s a great job.', 'In spite of the long hours, it’s a great job.'],
+  ['Although the long hours, she loves her job.', 'Despite the long hours, she loves her job.'],
+  ['Despite she was tired, she went to work.', 'Although she was tired, she went to work.'],
+  ['Although it’s far, but she wants to go.', 'Although it’s far, she wants to go.']
+];
+const EH_ITEMS = [
+  { words: ['Despite', 'of', 'the', 'money', ',', 'I’m', 'not', 'sure', '.'], error: { type: 'extra', wordIndex: 1 } },
+  { words: ['In', 'spite', 'the', 'long', 'hours', ',', 'it’s', 'a', 'great', 'job', '.'], error: { type: 'missing', gapIndex: 2, options: ['of', 'to', 'for'], correct: 'of' } },
+  { words: ['Although', 'the', 'long', 'hours', ',', 'she', 'loves', 'her', 'job', '.'], error: { type: 'wrong', wordIndex: 0, options: ['Despite', 'However', 'But'], correct: 'Despite' } },
+  { words: ['The', 'salary', 'is', 'great', '.', 'However', ',', 'the', 'hours', 'are', 'long', '.'], error: null },
+  { words: ['Despite', 'she', 'was', 'tired', ',', 'she', 'went', 'to', 'work', '.'], error: { type: 'wrong', wordIndex: 0, options: ['Although', 'However', 'In spite'], correct: 'Although' } },
+  { words: ['Despite', 'feel', 'nervous', ',', 'she', 'said', 'yes', '.'], error: { type: 'wrong', wordIndex: 1, options: ['feeling', 'to feel', 'felt'], correct: 'feeling' } },
+  { words: ['She', 'took', 'the', 'job', 'even', 'though', 'she', 'was', 'scared', '.'], error: null },
+  { words: ['Although', 'it’s', 'far', ',', 'but', 'she', 'wants', 'to', 'go', '.'], error: { type: 'extra', wordIndex: 4 } }
+];
+
+/* LOOK: [the sentence, a picture (HTML) or { timeline: HouseTimeline options }, a note] */
+const look = document.getElementById('look');
+LOOK.forEach(([sent, vis, note], i) => {
+  const card = document.createElement('div');
+  card.className = 'flow-card';
+  card.innerHTML = '<div class="sent">' + sent + '</div>' +
+    (vis && vis.timeline ? '<div id="lookTl' + i + '"></div>' : (vis || '')) + (note ? '<div class="note">' + note + '</div>' : '');
+  look.appendChild(card);
+  if (vis && vis.timeline) HouseTimeline.build(Object.assign({ container: 'lookTl' + i }, vis.timeline));
+});
+document.getElementById('meaning').innerHTML = MEANING;
+HouseCCQ.build({ container: 'ccq', items: CCQ });
+HouseFormClarf.build({ container: 'formClarf', scoreEl: 'fcScore', totalEl: 'fcTotal', pool: FORM_POOL, items: FORM });
+document.getElementById('formRule').innerHTML = FORM_RULE;
+document.getElementById('mistakes').innerHTML = MISTAKES.map(([no, yes]) =>
+  '<div class="pair-card"><div class="pair-line no"><span class="mark">✗</span>' + no + '</div>' +
+  '<div class="pair-line yes"><span class="mark">✓</span>' + yes + '</div></div>').join('');
+HouseErrorHunt.build({ container: 'errorHuntItems', items: EH_ITEMS, scoreEl: 'errorScore', totalEl: 'errorTotal' });
+</script>
+<script>HouseGrammar.init();</script>
+</body>
+</html>

@@ -1,0 +1,95 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<title>a, an, the + plurals — Practice</title>
+<script>
+(function(){
+  try{
+    var saved = localStorage.getItem('theme-preference');
+    var theme = (saved === 'light' || saved === 'dark')
+      ? saved
+      : ((window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches) ? 'dark' : 'light');
+    document.documentElement.setAttribute('data-theme', theme);
+    var fs = parseFloat(localStorage.getItem('font-size-preference'));
+    if (fs >= 10 && fs <= 28) document.documentElement.style.setProperty('--fs-base', fs + 'px');
+  }catch(e){ /* localStorage/matchMedia unavailable — CSS media query still applies */ }
+})();
+</script>
+<link rel="stylesheet" href="house.css">
+<style>
+
+</style>
+</head>
+<body>
+<div class="page" id="page">
+  <span class="cefr-tag cefr-a1">A1 · Beginner</span>
+  <h1>a, an, the + plurals — Practice</h1>
+  <p class="subtitle">One, more than one — and the one we know.</p>
+
+  <div class="sec-div">Practice 1 — Match the halves</div>
+  <p class="subtitle">Tap one thing, then tap more than one.</p>
+  <div class="score-bar"><span>Matched: <strong id="mScore">0</strong> / <span id="mTotal">0</span></span><button id="mReset">↺ Reset</button></div>
+  <div class="match-grid">
+    <div><div class="match-col-label">One</div><div class="match-col" id="leftCol"></div></div>
+    <div><div class="match-col-label">More than one</div><div class="match-col" id="rightCol"></div></div>
+  </div>
+  <div class="win-msg" id="mWin">🎉 All matched!</div>
+  <div class="feedback" id="mFeedback"></div>
+
+  <div class="sec-div">Practice 2 — Word order</div>
+  <p class="subtitle">Tap the words to build the sentence. Tap a word again to take it back, or drag to change the order.</p>
+  <button class="grammar-toggle-btn" id="grammarToggle">🎨 Show Grammar</button>
+  <div class="pos-legend"></div>
+  <div class="score-bar"><span>Correct: <strong id="woScore">0</strong> / <span id="woTotal">0</span></span></div>
+  <div id="woItems"></div>
+
+  <div class="sec-div">Practice 3 — Complete the sentences</div>
+  <p class="subtitle">Write the missing word. The bar turns green 🔴→🟢 when you are right.</p>
+  <div id="gfItems"></div>
+
+  <footer>a, an, the and plurals — Controlled practice (A1)</footer>
+</div>
+
+<div id="theme-toggle-wrap">
+  <button id="theme-toggle" aria-label="Toggle light/dark mode" title="Toggle light/dark mode">
+    <span id="theme-icon">☀️</span>
+  </button>
+</div>
+<script src="house.js"></script>
+<script>
+const HALVES = [
+  ['a box', 'two boxes'], ['a baby', 'three babies'], ['a child', 'two children'], ['a man', 'five men'],
+  ['a woman', 'two women'], ['a person', 'ten people'], ['a foot', 'two feet'], ['a tooth', '32 teeth']
+];
+const WO_ITEMS = [
+  { context: '☂️ Rain or sun', text: 'We / need / an / umbrella.', pos: ['subject', 'verb', 'det', 'noun'] },
+  { context: '🔑 Where are they?', text: 'The keys / are / on / the table.', pos: ['subject', 'verb', 'prep', 'object'] },
+  { context: '⚽ A toy', text: 'I / have / an / old / ball.', pos: ['subject', 'verb', 'det', 'adj', 'noun'] },
+  { context: '🚗 The car', text: 'There are / three / children / in / the car.', pos: ['none', 'det', 'noun', 'prep', 'object'] },
+  { context: '🏠 The garage', text: 'Can / you / get / the umbrella / from / the garage?', pos: ['aux', 'subject', 'verb', 'object', 'prep', 'object'] },
+  { context: '🍊 Fruit', text: 'She / wants / two / oranges.', pos: ['subject', 'verb', 'det', 'noun'] }
+];
+const GF_LABELS = { art: 'a / an / the', pl: 'more than one' };
+const GF_ITEMS = [
+  { category: 'art', direct: 'One — the next word starts with a vowel sound.', template: 'We need {0} umbrella.', hints: [{ accepted: ['an'] }] },
+  { category: 'art', direct: 'One — for drying after swimming.', template: 'I need {0} towel.', hints: [{ accepted: ['a'] }] },
+  { category: 'art', direct: 'We know which one: our garage.', template: 'The umbrella is in {0} garage.', hints: [{ accepted: ['the'] }] },
+  { category: 'pl', direct: 'Two of these: 🍊.', template: 'Two {0}, please.', hints: [{ accepted: ['oranges'] }] },
+  { category: 'pl', direct: 'More than one child.', template: 'The {0} next door are coming.', hints: [{ accepted: ['children'] }] },
+  { category: 'pl', direct: 'Three little ones: 👶👶👶.', template: 'Three {0} are sleeping.', hints: [{ accepted: ['babies'] }] },
+  { category: 'pl', direct: 'Two of these: 📦📦.', template: 'We need two {0} of juice.', hints: [{ accepted: ['boxes'] }] },
+  { category: 'art', direct: 'Sixty minutes — the “h” is silent.', template: 'I’ll be back in {0} hour.', hints: [{ accepted: ['an'] }] }
+];
+
+HouseMatching.build({
+  left: 'leftCol', right: 'rightCol', scoreEl: 'mScore', totalEl: 'mTotal', winEl: 'mWin', resetBtn: 'mReset', feedbackEl: 'mFeedback',
+  pairs: HALVES.map(([a, b], i) => ({ id: 'h' + i, left: a, right: b }))
+});
+HouseWordOrder.build({ container: 'woItems', items: WO_ITEMS, scoreEl: 'woScore', totalEl: 'woTotal' });
+HouseGapFill.build({ container: 'gfItems', items: GF_ITEMS, labels: GF_LABELS });
+</script>
+<script>HouseGrammar.init();</script>
+</body>
+</html>

@@ -1,0 +1,96 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<title>must / have to — Practice</title>
+<script>
+(function(){
+  try{
+    var saved = localStorage.getItem('theme-preference');
+    var theme = (saved === 'light' || saved === 'dark')
+      ? saved
+      : ((window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches) ? 'dark' : 'light');
+    document.documentElement.setAttribute('data-theme', theme);
+    var fs = parseFloat(localStorage.getItem('font-size-preference'));
+    if (fs >= 10 && fs <= 28) document.documentElement.style.setProperty('--fs-base', fs + 'px');
+  }catch(e){ /* localStorage/matchMedia unavailable — CSS media query still applies */ }
+})();
+</script>
+<link rel="stylesheet" href="house.css">
+<style>
+
+</style>
+</head>
+<body>
+<div class="page" id="page">
+  <span class="cefr-tag cefr-a2">A2 · Elementary</span>
+  <h1>must, have to, mustn’t, don’t have to — Practice</h1>
+  <p class="subtitle">Rules, signs and laws.</p>
+
+  <div class="sec-div">Practice 1 — Match the halves</div>
+  <p class="subtitle">Tap a sign, then tap its rule.</p>
+  <div class="score-bar"><span>Matched: <strong id="mScore">0</strong> / <span id="mTotal">0</span></span><button id="mReset">↺ Reset</button></div>
+  <div class="match-grid">
+    <div><div class="match-col-label">Sign</div><div class="match-col" id="leftCol"></div></div>
+    <div><div class="match-col-label">Rule</div><div class="match-col" id="rightCol"></div></div>
+  </div>
+  <div class="win-msg" id="mWin">🎉 All matched!</div>
+  <div class="feedback" id="mFeedback"></div>
+
+  <div class="sec-div">Practice 2 — Word order</div>
+  <p class="subtitle">Tap the words to build the sentence. Tap a word again to take it back, or drag to change the order.</p>
+  <button class="grammar-toggle-btn" id="grammarToggle">🎨 Show Grammar</button>
+  <div class="pos-legend"></div>
+  <div class="score-bar"><span>Correct: <strong id="woScore">0</strong> / <span id="woTotal">0</span></span></div>
+  <div id="woItems"></div>
+
+  <div class="sec-div">Practice 3 — Complete the sentences</div>
+  <p class="subtitle">Write the missing words. The bar turns green 🔴→🟢 when you are right.</p>
+  <div id="gfItems"></div>
+
+  <footer>must, have to, mustn’t, don’t have to — Controlled practice (A2)</footer>
+</div>
+
+<div id="theme-toggle-wrap">
+  <button id="theme-toggle" aria-label="Toggle light/dark mode" title="Toggle light/dark mode">
+    <span id="theme-icon">☀️</span>
+  </button>
+</div>
+<script src="house.js"></script>
+<script>
+const HALVES = [
+  ['🚭', 'You mustn’t smoke here.'], ['🔇', 'You mustn’t make noise here.'], ['📵', 'You mustn’t use your phone here.'],
+  ['🛑', 'You have to stop here.'], ['⛑️', 'You have to wear a helmet.'], ['🆓', 'You don’t have to pay.'],
+  ['🎟️', 'You have to show your ticket.'], ['🧼', 'You have to wash your hands.']
+];
+const WO_ITEMS = [
+  { context: '📝 The first step', text: 'You / have to / take / a / written / test.', pos: ['subject', 'aux', 'verb', 'det', 'adj', 'object'] },
+  { context: '📱 Not allowed', text: 'You / mustn’t / use / your phone / while / you / drive.', pos: ['subject', 'neg', 'verb', 'object', 'conj', 'subject', 'verb'] },
+  { context: '🚗 Not necessary', text: 'The car / doesn’t / have to / be / new.', pos: ['subject', 'neg', 'aux', 'verb', 'adj'] },
+  { context: '❓ A question', text: 'Do / I / have to / speak / perfect English?', pos: ['aux', 'subject', 'aux', 'verb', 'object'] },
+  { context: '⏪ Yesterday', text: 'She / had to / study / every night.', pos: ['subject', 'aux', 'verb', 'time'] },
+  { context: '🛑 A law', text: 'Drivers / must / stop / at / a stop sign.', pos: ['subject', 'aux', 'verb', 'prep', 'object'] }
+];
+const GF_LABELS = { nec: 'necessary ✅', no: 'not allowed 🚫', ok: 'not necessary 🆗', past: 'past', q: 'question' };
+const GF_ITEMS = [
+  { category: 'nec', direct: 'A rule for drivers and passengers.', template: 'You {0} wear a seatbelt.', hints: [{ accepted: ['must'] }] },
+  { category: 'no', direct: 'Phones in the car.', template: 'You {0} use your phone while you drive.', hints: [{ accepted: ['mustn’t', "mustn't", 'must not'] }] },
+  { category: 'ok', direct: 'The test car: old or new — your choice.', template: 'It {0} {1} to be new.', hints: [{ accepted: ['doesn’t', "doesn't", 'does not'] }, { accepted: ['have'] }] },
+  { category: 'q', direct: 'Ask about the test. Start with a helping verb.', template: '{0} I have to study for it?', hints: [{ accepted: ['Do', 'do'] }] },
+  { category: 'past', direct: 'Yesterday — it was necessary.', template: 'Yesterday I {0} {1} study for four hours.', hints: [{ accepted: ['had'] }, { accepted: ['to'] }] },
+  { category: 'nec', direct: 'He / she form.', template: 'She {0} to take a driving test.', hints: [{ accepted: ['has'] }] },
+  { category: 'ok', direct: 'The museum is free on Sundays.', template: 'On Sundays you {0} have to pay.', hints: [{ accepted: ['don’t', "don't", 'do not'] }] },
+  { category: 'no', direct: 'The hospital sign: 🚭.', template: 'You {0} smoke here.', hints: [{ accepted: ['mustn’t', "mustn't", 'must not'] }] }
+];
+
+HouseMatching.build({
+  left: 'leftCol', right: 'rightCol', scoreEl: 'mScore', totalEl: 'mTotal', winEl: 'mWin', resetBtn: 'mReset', feedbackEl: 'mFeedback',
+  pairs: HALVES.map(([a, b], i) => ({ id: 'h' + i, left: a, right: b }))
+});
+HouseWordOrder.build({ container: 'woItems', items: WO_ITEMS, scoreEl: 'woScore', totalEl: 'woTotal' });
+HouseGapFill.build({ container: 'gfItems', items: GF_ITEMS, labels: GF_LABELS });
+</script>
+<script>HouseGrammar.init();</script>
+</body>
+</html>

@@ -1,0 +1,131 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<title>Have You Got a Big Family? — have / have got</title>
+<script>
+(function(){
+  try{
+    var saved = localStorage.getItem('theme-preference');
+    var theme = (saved === 'light' || saved === 'dark')
+      ? saved
+      : ((window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches) ? 'dark' : 'light');
+    document.documentElement.setAttribute('data-theme', theme);
+    var fs = parseFloat(localStorage.getItem('font-size-preference'));
+    if (fs >= 10 && fs <= 28) document.documentElement.style.setProperty('--fs-base', fs + 'px');
+  }catch(e){ /* localStorage/matchMedia unavailable — CSS media query still applies */ }
+})();
+</script>
+<link rel="stylesheet" href="house.css">
+<style>
+.cast-row{ display:flex; flex-wrap:wrap; gap:14px 18px; justify-content:center; align-items:flex-end; margin:0 0 1rem; padding:10px; background:var(--surface-1); border:1px solid var(--border); border-radius:var(--border-radius-lg); font-size:.8667rem; }
+.match-wrap .match-col-label{ text-align:center; }
+#picCol .match-card{ font-size:1.35rem; justify-content:center; }
+</style>
+</head>
+<body>
+<div class="page" id="page">
+  <span class="cefr-tag cefr-a1">A1 · Beginner</span>
+  <h1>Have You Got a Big Family?</h1>
+  <p class="subtitle">Lucía is moving into a new apartment. She meets her neighbor, Tom.</p>
+
+  <div class="sec-div">Words for this lesson</div>
+  <p class="subtitle">Match the picture and the words. Tap a picture, then tap its words.</p>
+  <div class="score-bar"><span>Matched: <strong id="mScore">0</strong> / <span id="mTotal">0</span></span><button id="mReset">↺ Reset</button></div>
+  <div class="match-grid match-wrap">
+    <div><div class="match-col-label">Picture</div><div class="match-col" id="picCol"></div></div>
+    <div><div class="match-col-label">Words</div><div class="match-col" id="wordCol"></div></div>
+  </div>
+  <div class="win-msg" id="mWin">🎉 Great! You know the words for the conversation.</div>
+  <div class="feedback" id="mFeedback"></div>
+
+  <div class="sec-div">Before you read</div>
+  <div id="preQuestions"></div>
+
+  <div class="sec-div">The people</div>
+  <div class="cast-row" id="castRow"></div>
+
+  <div class="sec-div">The conversation</div>
+  <div class="setting-chip"><span class="section-icon">🏢</span> Moving day — in the hallway of the building</div>
+  <button class="grammar-toggle-btn" id="grammarToggle">🎨 Show Grammar</button>
+  <div class="pos-legend"></div>
+  <div id="conversation"></div>
+
+  <div class="sec-div">Check your answers</div>
+  <div id="quiz"></div>
+
+  <footer>Have You Got a Big Family? — have and have got (A1)</footer>
+</div>
+
+<div id="theme-toggle-wrap">
+  <button id="theme-toggle" aria-label="Toggle light/dark mode" title="Toggle light/dark mode">
+    <span id="theme-icon">☀️</span>
+  </button>
+</div>
+<script src="house.js"></script>
+<script src="stick-character.js"></script>
+<script src="stick-sentence.js"></script>
+<script>
+StickSentence.cast({
+  lucia: { base:'woman', colour:'#FF6633', label:'Lucía' },
+  tom:   { base:'man',   colour:'#3366CC', label:'Tom' }
+});
+StickSentence.toggle();
+window.LESSON_DICT = {
+  'neighbor':  { pos:'noun', def:'a person who lives next to you or near you', ex:'Tom is Lucía’s neighbor.', es:'vecino/a' },
+  'next door': { pos:'adverb', def:'in the house or apartment next to yours', ex:'I live next door.', es:'al lado' },
+  'kind':      { pos:'adjective', def:'nice and helpful to other people', ex:'You’re very kind.', es:'amable' }
+};
+const WORDS = [['📦', 'boxes'], ['👦👧', 'children'], ['🐕', 'a dog'], ['🐈', 'a cat'], ['👀', 'eyes'],
+  ['🚗', 'a car'], ['🚲', 'a bike'], ['🏢', 'a building'], ['🛒', 'a supermarket'], ['🌳', 'a park']];
+document.getElementById('castRow').innerHTML = ['{Lucía|lucia}', '{Tom|tom}'].map(StickSentence.html).join('');
+const SPEAKERS = {
+  Tom:   { cast: 'tom', avatar: '👨', av: 'av-a', side: 'left' },
+  Lucía: { cast: 'lucia', avatar: '👩', av: 'av-b', side: 'right' }
+};
+const LINES = [
+  ['Tom', '[Hi/none]! [I’m Tom/none]. [I/subject] [live/verb] [next door/adverb]. [Welcome/none]!'],
+  ['Lucía', '[Thank you/none]! [I’m Lucía/none]. [I/subject] [have/verb] [a lot of boxes/object], [sorry/none]!'],
+  ['Tom', '[No problem/none]! [Have/aux] [you/subject] [got/verb] [a big family/object]?'],
+  ['Lucía', '[Not very big/none]. [I’ve/subject] [got/verb] [two children/object] — [a boy and a girl/object]. [And/conj] [you/subject]? [Do/aux] [you/subject] [have/verb] [kids/object]?'],
+  ['Tom', '[No/none], [I/subject] [don’t/neg]. [But/conj] [I/subject] [have/verb] [a dog/object]. [His name/subject] [is/verb] [Max/noun]. [He’s/subject] [got/verb] [big brown eyes/object].'],
+  ['Lucía', '[Oh/none], [I/subject] [love/verb] [dogs/object]! [My daughter/subject] [has/verb] [a white cat/object] [with green eyes/prep].'],
+  ['Tom', '[Uh-oh/none]! [Max/subject] [doesn’t/neg] [like/verb] [cats/object]!'],
+  ['Lucía', '[Ha/none]! [Do/aux] [you/subject] [have/verb] [a car/object]?'],
+  ['Tom', '[Yes/none], [I/subject] [do/aux]. [I’ve/subject] [got/verb] [an old red car/object]. [Why/wh]?'],
+  ['Lucía', '[The supermarket/subject] [is/verb] [far/adj], [and/conj] [I/subject] [haven’t/neg] [got/verb] [a car/object].'],
+  ['Tom', '[I/subject] [go/verb] [to the supermarket/prep] [on Saturdays/time]. [Come/verb] [with me/prep]!'],
+  ['Lucía', '[Thank you/none]! [You’re/subject] [very kind/adj], [Tom/noun].'],
+  ['Tom', '[Has/aux] [your son/subject] [got/verb] [a bike/object]? [There’s a nice park here/none].'],
+  ['Lucía', '[Yes/none], [he/subject] [has/aux]. [He’s/subject] [got/verb] [a new blue bike/object].']
+];
+const CQ_ITEMS = [
+  { q: 'How many children does Lucía have?', opts: ['Two', 'One', 'Three'], correct: 0 },
+  { q: 'What has Tom got?', opts: ['A dog and an old red car', 'A cat and a bike', 'Two children'], correct: 0 },
+  { q: 'Why does Lucía need help with shopping?', opts: ['She hasn’t got a car', 'She has a lot of boxes', 'Her son has a bike'], correct: 0 }
+];
+
+/* ── the conversation ─────────────────────────────────────────────────── */
+const avStyle = s => { const c = (StickSentence.cast()[s.cast] || {}).colour;
+  return c ? 'background:' + c + '40;box-shadow:inset 0 0 0 2px ' + c : ''; };
+const conv = document.getElementById('conversation');
+LINES.forEach(([who, text]) => {
+  const s = SPEAKERS[who], right = s.side === 'right';
+  conv.insertAdjacentHTML('beforeend',
+    '<div class="bubble-wrap' + (right ? ' right' : '') + '">' +
+      '<div class="avatar ' + s.av + '" style="' + avStyle(s) + '">' + s.avatar + '</div>' +
+      '<div class="bubble-col"><div class="bname' + (right ? ' right' : '') + '">' + who + '</div>' +
+      '<div class="bubble ' + (right ? 'right' : 'left') + '">' + StickSentence.html(text) + '</div></div>' +
+    '</div>');
+});
+
+HouseMatching.build({
+  left: 'picCol', right: 'wordCol', scoreEl: 'mScore', totalEl: 'mTotal', winEl: 'mWin', resetBtn: 'mReset', feedbackEl: 'mFeedback',
+  pairs: WORDS.map(([e, w]) => ({ id: w, left: e, right: w }))
+});
+HouseComprehension.build({ pre: 'preQuestions', quiz: 'quiz', items: CQ_ITEMS });
+</script>
+<script>HouseGrammar.init();</script>
+</body>
+</html>

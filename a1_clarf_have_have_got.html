@@ -1,0 +1,155 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<title>have / have got — Clarification</title>
+<script>
+(function(){
+  try{
+    var saved = localStorage.getItem('theme-preference');
+    var theme = (saved === 'light' || saved === 'dark')
+      ? saved
+      : ((window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches) ? 'dark' : 'light');
+    document.documentElement.setAttribute('data-theme', theme);
+    var fs = parseFloat(localStorage.getItem('font-size-preference'));
+    if (fs >= 10 && fs <= 28) document.documentElement.style.setProperty('--fs-base', fs + 'px');
+  }catch(e){ /* localStorage/matchMedia unavailable — CSS media query still applies */ }
+})();
+</script>
+<link rel="stylesheet" href="house.css">
+<style>
+.flow-card{ border:1px solid var(--color-border-tertiary); border-radius:var(--border-radius-lg); background:var(--surface-2); padding:10px 12px; margin-bottom:10px; }
+.flow-card .sent{ font-size:1rem; font-weight:600; margin-bottom:6px; }
+.flow-card .note{ font-size:.8333rem; color:var(--text-secondary); margin-top:4px; }
+.if-part{ color:hsl(217, 70%, 42%); font-weight:700; }
+.res-part{ color:hsl(120, 60%, 32%); font-weight:700; }
+.res-no{ color:hsl(0, 65%, 42%); font-weight:700; }
+[data-theme="dark"] .res-no{ color:hsl(0, 75%, 70%); }
+[data-theme="dark"] .if-part{ color:hsl(217, 80%, 70%); }
+[data-theme="dark"] .res-part{ color:hsl(120, 55%, 65%); }
+.form-table{ width:100%; border-collapse:collapse; margin:0 0 1rem; font-size:.9333rem; }
+.form-table th, .form-table td{ border:1px solid var(--color-border-tertiary); padding:7px 9px; text-align:left; vertical-align:top; }
+.form-table th{ background:var(--surface-1); font-size:.8rem; text-transform:uppercase; letter-spacing:.04em; color:var(--text-secondary); }
+.pct-row{ display:flex; flex-wrap:wrap; gap:6px; margin:0 0 1rem; }
+.pct-row span{ padding:3px 10px; border-radius:999px; font-weight:700; font-size:.8667rem; border:2px solid; }
+.rule-box p{ margin:0 0 6px; }
+.rule-box p:last-child{ margin-bottom:0; }
+.big-pic{ font-size:1.6rem; letter-spacing:.1em; margin:2px 0 4px; }
+.prep-grid{ display:grid; grid-template-columns:repeat(auto-fill, minmax(200px, 1fr)); gap:8px; margin:0 0 1rem; }
+.prep-grid > div{ border:1px solid var(--color-border-tertiary); border-radius:var(--border-radius-lg); background:var(--surface-2); padding:9px 11px; }
+.prep-grid h4{ margin:0 0 3px; font-size:1.05rem; }
+.prep-grid .rule{ font-size:.8rem; color:var(--text-secondary); margin-bottom:5px; }
+.prep-grid .ex{ font-size:.9rem; line-height:1.6; }
+.hl{ font-weight:700; color:var(--text-accent); }
+</style>
+</head>
+<body>
+<div class="page" id="page">
+  <span class="cefr-tag cefr-a1">A1 · Beginner</span>
+  <h1>have and have got</h1>
+  <p class="subtitle">Two ways to say the same thing: family, things, how people look.</p>
+
+  <div class="sec-div">Look</div>
+  <p class="subtitle">From the conversation. Look at the highlighted words.</p>
+  <div id="look"></div>
+
+  <div class="sec-div">Meaning</div>
+  <div class="rule-box" id="meaning"></div>
+
+  <div class="sec-div">Check the meaning</div>
+  <p class="subtitle">Answer the questions about each sentence.</p>
+  <div id="ccq"></div>
+
+  <div class="sec-div">Look at the form</div>
+  <p class="subtitle">What is each part? Drag a label (or tap a label, then tap a box).</p>
+  <div class="score-bar"><span>Correct: <strong id="fcScore">0</strong> / <span id="fcTotal">0</span></span></div>
+  <div id="formClarf"></div>
+  <div id="formRule"></div>
+
+  <div class="sec-div">Common mistakes</div>
+  <div id="mistakes"></div>
+
+  <div class="sec-div">Error hunt</div>
+  <p class="subtitle">Every sentence has one mistake. Tap a word — or a space between words — to fix it. Then press OK.</p>
+  <div class="score-bar"><span>Done: <strong id="errorScore">0</strong> / <span id="errorTotal">0</span></span></div>
+  <div id="errorHuntItems"></div>
+
+  <footer>have and have got — Clarification (A1)</footer>
+</div>
+
+<div id="theme-toggle-wrap">
+  <button id="theme-toggle" aria-label="Toggle light/dark mode" title="Toggle light/dark mode">
+    <span id="theme-icon">☀️</span>
+  </button>
+</div>
+<script src="house.js"></script>
+<script>
+const LOOK = [
+  ['I’<span class="hl">ve got</span> two children.', '<div class="big-pic">👦👧</div>', '= I <b>have</b> two children. Family.'],
+  ['<span class="hl">Do</span> you <span class="hl">have</span> kids? — No, I <span class="hl">don’t</span>.', '<div class="big-pic">❓</div>', 'A question with <b>have</b>: use <b>do</b>.'],
+  ['He’<span class="hl">s got</span> big brown eyes.', '<div class="big-pic">🐕👀</div>', '= He <b>has</b> big brown eyes. How people and animals look.']
+];
+const MEANING = '<p><strong>have</strong> and <strong>have got</strong> mean the same: things you own, family, pets, how people look, illnesses (<i>I’ve got a cold</i>).</p>' +
+  '<p><b>have</b> is common everywhere. <b>have got</b> is very common in British English — in American English, people say <b>have</b> more.</p>' +
+  '<p><strong>Actions:</strong> only <b>have</b>: <i>I have breakfast at seven</i> (not <s>I’ve got breakfast</s>).</p>';
+const CCQ = [
+  { sentence: 'I’ve got two children.', questions: [
+    { q: 'Is it the same as “I have two children”?', opts: ['Yes', 'No'], correct: 0, why: 'Yes. Same meaning.' },
+    { q: 'Is “got” about the past here?', opts: ['Yes', 'No'], correct: 1, why: 'No. <b>have got</b> is present: now.' } ] },
+  { sentence: 'She has breakfast at seven.', questions: [
+    { q: 'Can we say “She’s got breakfast at seven”?', opts: ['Yes', 'No'], correct: 1, why: 'No. Breakfast here is an action: only <b>have</b>.' } ] }
+];
+const FORM_POOL = ['subject', 'aux', 'verb', 'neg', 'object'];
+const FORM = [
+  { form: 'aff', parts: [['He', 'subject'], ['has', 'verb'], ['a dog', 'object'], ['.', null]] },
+  { form: 'aff', parts: [['She', 'subject'], ['has', 'aux'], ['got', 'verb'], ['a cat', 'object'], ['.', null]] },
+  { form: 'neg', parts: [['I', 'subject'], ['haven’t', 'neg'], ['got', 'verb'], ['a car', 'object'], ['.', null]] },
+  { form: 'q', parts: [['Do', 'aux'], ['you', 'subject'], ['have', 'verb'], ['kids', 'object'], ['?', null]] },
+  { form: 'q', parts: [['Has', 'aux'], ['your son', 'subject'], ['got', 'verb'], ['a bike', 'object'], ['?', null]] }
+];
+const FORM_RULE = '<table class="form-table"><tr><th></th><th>have</th><th>have got</th></tr>' +
+  '<tr><td>✅</td><td>I / you / we / they <b>have</b><br>he / she / it <b>has</b></td><td>I’<b>ve got</b> · she’<b>s got</b></td></tr>' +
+  '<tr><td>❌</td><td>I <b>don’t have</b> · she <b>doesn’t have</b></td><td>I <b>haven’t got</b> · she <b>hasn’t got</b></td></tr>' +
+  '<tr><td>❓</td><td><b>Do</b> you <b>have</b>…? — Yes, I <b>do</b>.<br><b>Does</b> she <b>have</b>…? — No, she <b>doesn’t</b>.</td><td><b>Have</b> you <b>got</b>…? — Yes, I <b>have</b>.<br><b>Has</b> she <b>got</b>…? — No, she <b>hasn’t</b>.</td></tr></table>' +
+  '<div class="rule-box"><p><strong>Don’t mix them:</strong> <i><s>Do you have got</s></i> ✗ · <i>Do you have…?</i> ✓ · <i>Have you got…?</i> ✓</p></div>';
+const MISTAKES = [
+  ['She have a cat.', 'She has a cat.'],
+  ['I don’t have got a car.', 'I don’t have a car. / I haven’t got a car.'],
+  ['Do you have got kids?', 'Do you have kids? / Have you got kids?'],
+  ['He has got breakfast at seven.', 'He has breakfast at seven.'],
+  ['Does she has a bike?', 'Does she have a bike?']
+];
+const EH_ITEMS = [
+  { words: ['She', 'have', 'a', 'white', 'cat', '.'], error: { type: 'wrong', wordIndex: 1, options: ['has', 'haves', 'having'], correct: 'has' } },
+  { words: ['I', 'don’t', 'have', 'got', 'a', 'car', '.'], error: { type: 'extra', wordIndex: 3 } },
+  { words: ['Do', 'you', 'have', 'got', 'kids', '?'], error: { type: 'extra', wordIndex: 3 } },
+  { words: ['He', 'has', 'got', 'breakfast', 'at', 'seven', '.'], error: { type: 'extra', wordIndex: 2 } },
+  { words: ['My', 'dog', 'has', 'got', 'big', 'eyes', 'brown', '.'], error: { type: 'misplaced', wordIndex: 6, targetGapIndex: 5 } },
+  { words: ['Has', 'your', 'son', 'got', 'a', 'bike', '?', 'Yes', ',', 'he', 'does', '.'], error: { type: 'wrong', wordIndex: 10, options: ['has', 'is', 'do'], correct: 'has' } },
+  { words: ['They', 'hasn’t', 'got', 'a', 'garden', '.'], error: { type: 'wrong', wordIndex: 1, options: ['haven’t', 'don’t', 'aren’t'], correct: 'haven’t' } },
+  { words: ['Does', 'she', 'has', 'a', 'bike', '?'], error: { type: 'wrong', wordIndex: 2, options: ['have', 'having', 'had'], correct: 'have' } }
+];
+
+/* LOOK: [the sentence, a picture (HTML) or { timeline: HouseTimeline options }, a note] */
+const look = document.getElementById('look');
+LOOK.forEach(([sent, vis, note], i) => {
+  const card = document.createElement('div');
+  card.className = 'flow-card';
+  card.innerHTML = '<div class="sent">' + sent + '</div>' +
+    (vis && vis.timeline ? '<div id="lookTl' + i + '"></div>' : (vis || '')) + (note ? '<div class="note">' + note + '</div>' : '');
+  look.appendChild(card);
+  if (vis && vis.timeline) HouseTimeline.build(Object.assign({ container: 'lookTl' + i }, vis.timeline));
+});
+document.getElementById('meaning').innerHTML = MEANING;
+HouseCCQ.build({ container: 'ccq', items: CCQ });
+HouseFormClarf.build({ container: 'formClarf', scoreEl: 'fcScore', totalEl: 'fcTotal', pool: FORM_POOL, items: FORM });
+document.getElementById('formRule').innerHTML = FORM_RULE;
+document.getElementById('mistakes').innerHTML = MISTAKES.map(([no, yes]) =>
+  '<div class="pair-card"><div class="pair-line no"><span class="mark">✗</span>' + no + '</div>' +
+  '<div class="pair-line yes"><span class="mark">✓</span>' + yes + '</div></div>').join('');
+HouseErrorHunt.build({ container: 'errorHuntItems', items: EH_ITEMS, scoreEl: 'errorScore', totalEl: 'errorTotal' });
+</script>
+<script>HouseGrammar.init();</script>
+</body>
+</html>

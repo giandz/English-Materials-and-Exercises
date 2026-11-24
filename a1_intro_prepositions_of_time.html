@@ -1,0 +1,132 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<title>Can You Come on Monday? — in, on, at</title>
+<script>
+(function(){
+  try{
+    var saved = localStorage.getItem('theme-preference');
+    var theme = (saved === 'light' || saved === 'dark')
+      ? saved
+      : ((window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches) ? 'dark' : 'light');
+    document.documentElement.setAttribute('data-theme', theme);
+    var fs = parseFloat(localStorage.getItem('font-size-preference'));
+    if (fs >= 10 && fs <= 28) document.documentElement.style.setProperty('--fs-base', fs + 'px');
+  }catch(e){ /* localStorage/matchMedia unavailable — CSS media query still applies */ }
+})();
+</script>
+<link rel="stylesheet" href="house.css">
+<style>
+.cast-row{ display:flex; flex-wrap:wrap; gap:14px 18px; justify-content:center; align-items:flex-end; margin:0 0 1rem; padding:10px; background:var(--surface-1); border:1px solid var(--border); border-radius:var(--border-radius-lg); font-size:.8667rem; }
+.match-wrap .match-col-label{ text-align:center; }
+#picCol .match-card{ font-size:1.35rem; justify-content:center; }
+</style>
+</head>
+<body>
+<div class="page" id="page">
+  <span class="cefr-tag cefr-a1">A1 · Beginner</span>
+  <h1>Can You Come on Monday?</h1>
+  <p class="subtitle">Carlos has a toothache. He calls the dentist to make an appointment.</p>
+
+  <div class="sec-div">Words for this lesson</div>
+  <p class="subtitle">Match the picture and the words. Tap a picture, then tap its words.</p>
+  <div class="score-bar"><span>Matched: <strong id="mScore">0</strong> / <span id="mTotal">0</span></span><button id="mReset">↺ Reset</button></div>
+  <div class="match-grid match-wrap">
+    <div><div class="match-col-label">Picture</div><div class="match-col" id="picCol"></div></div>
+    <div><div class="match-col-label">Words</div><div class="match-col" id="wordCol"></div></div>
+  </div>
+  <div class="win-msg" id="mWin">🎉 Great! You know the words for the conversation.</div>
+  <div class="feedback" id="mFeedback"></div>
+
+  <div class="sec-div">Before you read</div>
+  <div id="preQuestions"></div>
+
+  <div class="sec-div">The people</div>
+  <div class="cast-row" id="castRow"></div>
+
+  <div class="sec-div">The conversation</div>
+  <div class="setting-chip"><span class="section-icon">📞</span> A phone call to Smile Dental Clinic</div>
+  <button class="grammar-toggle-btn" id="grammarToggle">🎨 Show Grammar</button>
+  <div class="pos-legend"></div>
+  <div id="conversation"></div>
+
+  <div class="sec-div">Check your answers</div>
+  <div id="quiz"></div>
+
+  <footer>Can You Come on Monday? — Prepositions of time: in, on, at (A1)</footer>
+</div>
+
+<div id="theme-toggle-wrap">
+  <button id="theme-toggle" aria-label="Toggle light/dark mode" title="Toggle light/dark mode">
+    <span id="theme-icon">☀️</span>
+  </button>
+</div>
+<script src="house.js"></script>
+<script src="stick-character.js"></script>
+<script src="stick-sentence.js"></script>
+<script>
+StickSentence.cast({
+  carlos: { base:'man',   colour:'#0099CC', label:'Carlos' },
+  lee:    { base:'woman', colour:'#CC3399', label:'Ms. Lee' }
+});
+StickSentence.toggle();
+window.LESSON_DICT = {
+  'appointment': { pos:'noun', def:'a time to see a doctor, dentist or other person', ex:'I have an appointment on Wednesday.', es:'cita' },
+  'patient':     { pos:'noun', def:'a person who sees a doctor or dentist', ex:'Are you a new patient?', es:'paciente' },
+  'toothache':   { pos:'noun', def:'a pain in your tooth', ex:'Carlos has a toothache.', es:'dolor de muelas' },
+  'closed':      { pos:'adjective', def:'not open', ex:'The clinic is closed on Tuesdays.', es:'cerrado' }
+};
+const WORDS = [['📅', 'a calendar'], ['🦷', 'a tooth'], ['🗓️', 'an appointment'], ['🌅', 'the morning'], ['🌇', 'the afternoon'],
+  ['🌙', 'night'], ['🎄', 'Christmas'], ['🎂', 'a birthday'], ['🏖️', 'a vacation'], ['🕘', 'nine o’clock']];
+document.getElementById('castRow').innerHTML = ['{Carlos|carlos}', '{Ms. Lee|lee}'].map(StickSentence.html).join('');
+const SPEAKERS = {
+  'Ms. Lee': { cast: 'lee', avatar: '👩‍💼', av: 'av-b', side: 'left' },
+  Carlos:    { cast: 'carlos', avatar: '👨', av: 'av-a', side: 'right' }
+};
+const LINES = [
+  ['Ms. Lee', '[Good morning/none], [Smile Dental Clinic/noun]. [How/wh] [can/aux] [I/subject] [help/verb] [you/object]?'],
+  ['Carlos', '[Hi/none]! [I’d like/verb] [an appointment/object], [please/none]. [My tooth/subject] [hurts/verb].'],
+  ['Ms. Lee', '[OK/none]. [Can/aux] [you/subject] [come/verb] [on/prep] [Monday/time]?'],
+  ['Carlos', '[No/none], [sorry/none]. [I/subject] [work/verb] [on/prep] [Mondays/time]. [What about/none] [Tuesday/time]?'],
+  ['Ms. Lee', '[We/subject] [are/verb] [closed/adj] [on/prep] [Tuesdays/time]. [Is/verb] [Wednesday/time] [OK/adj]? [We/subject] [have/verb] [a free time/object] [at/prep] [nine o’clock/time] [in/prep] [the morning/time].'],
+  ['Carlos', '[At/prep] [nine/time]? [Hmm/none]… [I/subject] [start/verb] [work/object] [at/prep] [eight thirty/time]. [Do/aux] [you/subject] [have/verb] [a time/object] [in/prep] [the afternoon/time]?'],
+  ['Ms. Lee', '[Yes/none], [at/prep] [four fifteen/time].'],
+  ['Carlos', '[Perfect/adj]! [On/prep] [Wednesday/time] [at/prep] [four fifteen/time].'],
+  ['Ms. Lee', '[Are/verb] [you/subject] [a new patient/complement]? [When/wh] [is/verb] [your birthday/subject]?'],
+  ['Carlos', '[It’s/subject] [on/prep] [May 12th/time]. [I/subject] [was born/verb] [in/prep] [1990/time].'],
+  ['Ms. Lee', '[Thank you/none]. [Remember/verb]: [the clinic/subject] [is/verb] [closed/adj] [in/prep] [August/time] [and/conj] [at/prep] [Christmas/time].'],
+  ['Carlos', '[OK/none]. [Oh/none] — [I’m/subject] [going/verb] [on vacation/prep] [in/prep] [July/time]. [Is/verb] [that/subject] [a problem/complement]?'],
+  ['Ms. Lee', '[No problem/none]. [See/verb] [you/object] [on/prep] [Wednesday afternoon/time]!'],
+  ['Carlos', '[Thank you/none]. [Bye/none]!']
+];
+const CQ_ITEMS = [
+  { q: 'When is Carlos’s appointment?', opts: ['On Wednesday at four fifteen', 'On Monday at nine', 'On Tuesday afternoon'], correct: 0 },
+  { q: 'When is Carlos’s birthday?', opts: ['On May 12th', 'In August', 'At Christmas'], correct: 0 },
+  { q: 'When is the clinic closed?', opts: ['In August and at Christmas', 'On Mondays', 'In July'], correct: 0 }
+];
+
+/* ── the conversation ─────────────────────────────────────────────────── */
+const avStyle = s => { const c = (StickSentence.cast()[s.cast] || {}).colour;
+  return c ? 'background:' + c + '40;box-shadow:inset 0 0 0 2px ' + c : ''; };
+const conv = document.getElementById('conversation');
+LINES.forEach(([who, text]) => {
+  const s = SPEAKERS[who], right = s.side === 'right';
+  conv.insertAdjacentHTML('beforeend',
+    '<div class="bubble-wrap' + (right ? ' right' : '') + '">' +
+      '<div class="avatar ' + s.av + '" style="' + avStyle(s) + '">' + s.avatar + '</div>' +
+      '<div class="bubble-col"><div class="bname' + (right ? ' right' : '') + '">' + who + '</div>' +
+      '<div class="bubble ' + (right ? 'right' : 'left') + '">' + StickSentence.html(text) + '</div></div>' +
+    '</div>');
+});
+
+HouseMatching.build({
+  left: 'picCol', right: 'wordCol', scoreEl: 'mScore', totalEl: 'mTotal', winEl: 'mWin', resetBtn: 'mReset', feedbackEl: 'mFeedback',
+  pairs: WORDS.map(([e, w]) => ({ id: w, left: e, right: w }))
+});
+HouseComprehension.build({ pre: 'preQuestions', quiz: 'quiz', items: CQ_ITEMS });
+</script>
+<script>HouseGrammar.init();</script>
+</body>
+</html>

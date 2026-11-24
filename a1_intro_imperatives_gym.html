@@ -1,0 +1,132 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<title>Welcome to the Gym! — Imperatives</title>
+<script>
+(function(){
+  try{
+    var saved = localStorage.getItem('theme-preference');
+    var theme = (saved === 'light' || saved === 'dark')
+      ? saved
+      : ((window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches) ? 'dark' : 'light');
+    document.documentElement.setAttribute('data-theme', theme);
+    var fs = parseFloat(localStorage.getItem('font-size-preference'));
+    if (fs >= 10 && fs <= 28) document.documentElement.style.setProperty('--fs-base', fs + 'px');
+  }catch(e){ /* localStorage/matchMedia unavailable — CSS media query still applies */ }
+})();
+</script>
+<link rel="stylesheet" href="house.css">
+<style>
+.cast-row{ display:flex; flex-wrap:wrap; gap:14px 18px; justify-content:center; align-items:flex-end; margin:0 0 1rem; padding:10px; background:var(--surface-1); border:1px solid var(--border); border-radius:var(--border-radius-lg); font-size:.8667rem; }
+.match-wrap .match-col-label{ text-align:center; }
+#picCol .match-card{ font-size:1.35rem; justify-content:center; }
+</style>
+</head>
+<body>
+<div class="page" id="page">
+  <span class="cefr-tag cefr-a1">A1 · Beginner</span>
+  <h1>Welcome to the Gym!</h1>
+  <p class="subtitle">It’s Ben’s first day at the gym. Ana works there. She explains the rules.</p>
+
+  <div class="sec-div">Words for this lesson</div>
+  <p class="subtitle">Match the picture and the words. Tap a picture, then tap its words.</p>
+  <div class="score-bar"><span>Matched: <strong id="mScore">0</strong> / <span id="mTotal">0</span></span><button id="mReset">↺ Reset</button></div>
+  <div class="match-grid match-wrap">
+    <div><div class="match-col-label">Picture</div><div class="match-col" id="picCol"></div></div>
+    <div><div class="match-col-label">Words</div><div class="match-col" id="wordCol"></div></div>
+  </div>
+  <div class="win-msg" id="mWin">🎉 Great! You know the words for the conversation.</div>
+  <div class="feedback" id="mFeedback"></div>
+
+  <div class="sec-div">Before you read</div>
+  <div id="preQuestions"></div>
+
+  <div class="sec-div">The people</div>
+  <div class="cast-row" id="castRow"></div>
+
+  <div class="sec-div">The conversation</div>
+  <div class="setting-chip"><span class="section-icon">🏋️</span> Monday evening — at the gym</div>
+  <button class="grammar-toggle-btn" id="grammarToggle">🎨 Show Grammar</button>
+  <div class="pos-legend"></div>
+  <div id="conversation"></div>
+
+  <div class="sec-div">Check your answers</div>
+  <div id="quiz"></div>
+
+  <footer>Welcome to the Gym! — Imperatives: do / don’t (A1)</footer>
+</div>
+
+<div id="theme-toggle-wrap">
+  <button id="theme-toggle" aria-label="Toggle light/dark mode" title="Toggle light/dark mode">
+    <span id="theme-icon">☀️</span>
+  </button>
+</div>
+<script src="house.js"></script>
+<script src="stick-character.js"></script>
+<script src="stick-sentence.js"></script>
+<script>
+StickSentence.cast({
+  ana: { base:'woman', colour:'#FF3366', label:'Ana' },
+  ben: { base:'man',   colour:'#3366FF', label:'Ben' }
+});
+StickSentence.toggle();
+window.LESSON_DICT = {
+  'locker':  { pos:'noun', def:'a small cupboard with a key, where you put your things', ex:'Put your bag in a locker.', es:'casillero' },
+  'machine': { pos:'noun', def:'a thing with parts that move and do work', ex:'Clean the machines after you use them.', es:'máquina' },
+  'wet':     { pos:'adjective', def:'with water on it; not dry', ex:'The floor is wet!', es:'mojado' },
+  'swimming cap': { pos:'noun', def:'a hat you wear in the pool', ex:'Wear a swimming cap.', es:'gorro de natación' }
+};
+const WORDS = [['🏋️', 'a gym'], ['🔐', 'a locker'], ['🔑', 'a key'], ['🚴', 'an exercise bike'], ['🏊', 'a pool'],
+  ['🚿', 'a shower'], ['🧢', 'a cap'], ['💧', 'water'], ['🧽', 'clean'], ['🏃', 'run']];
+document.getElementById('castRow').innerHTML = ['{Ana|ana}', '{Ben|ben}'].map(StickSentence.html).join('');
+const SPEAKERS = {
+  Ana: { cast: 'ana', avatar: '👩', av: 'av-b', side: 'left' },
+  Ben: { cast: 'ben', avatar: '👨', av: 'av-a', side: 'right' }
+};
+const LINES = [
+  ['Ana', '[Welcome/none]! [Come/verb] [in/adverb]. [Please/adverb] [write/verb] [your name/object] [here/adverb].'],
+  ['Ben', '[OK/none]. [Where/wh] [do/aux] [I/subject] [put/verb] [my bag/object]?'],
+  ['Ana', '[Put/verb] [it/object] [in a locker/prep]. [Take/verb] [a key/object] — [and/conj] [don’t/neg] [lose/verb] [it/object]!'],
+  ['Ben', '[Thanks/none]. [What/wh] [do/aux] [I/subject] [do/verb] [first/adverb]?'],
+  ['Ana', '[Start/verb] [on the bike/prep]. [Go/verb] [slowly/adverb] [for ten minutes/time].'],
+  ['Ben', '[Can/aux] [I/subject] [use/verb] [my phone/object]?'],
+  ['Ana', '[Yes/none], [but/conj] [don’t/neg] [talk/verb] [on the phone/prep] [in the gym/prep], [please/adverb]. [Listen/verb] [to music/prep] — [that’s OK/none].'],
+  ['Ben', '[And/conj] [the pool/noun]?'],
+  ['Ana', '[Take/verb] [a shower/object] [first/adverb]. [Wear/verb] [a swimming cap/object]. [And/conj] [don’t/neg] [run/verb] — [the floor/subject] [is/verb] [wet/adj]!'],
+  ['Ben', '[Got it/none]. [Anything else/none]?'],
+  ['Ana', '[Drink/verb] [a lot of water/object]. [And/conj] [always/adverb] [clean/verb] [the machines/object] [after you use them/time].'],
+  ['Ben', '[Sure/none]. [Oh/none] — [what time/wh] [do/aux] [you/subject] [close/verb]?'],
+  ['Ana', '[At ten/time]. [Come/verb] [back/adverb] [tomorrow/time] [and/conj] [bring/verb] [a towel/object]!'],
+  ['Ben', '[Thank you/none]! [See you tomorrow/none].']
+];
+const CQ_ITEMS = [
+  { q: 'Where does Ben put his bag?', opts: ['In a locker', 'On the bike', 'Next to the pool'], correct: 0 },
+  { q: 'What do you have to do before the pool?', opts: ['Take a shower', 'Drink water', 'Clean the machines'], correct: 0 },
+  { q: 'What does Ana say about the phone?', opts: ['Don’t talk on the phone in the gym', 'Don’t bring a phone', 'Use it on the bike'], correct: 0 }
+];
+
+/* ── the conversation ─────────────────────────────────────────────────── */
+const avStyle = s => { const c = (StickSentence.cast()[s.cast] || {}).colour;
+  return c ? 'background:' + c + '40;box-shadow:inset 0 0 0 2px ' + c : ''; };
+const conv = document.getElementById('conversation');
+LINES.forEach(([who, text]) => {
+  const s = SPEAKERS[who], right = s.side === 'right';
+  conv.insertAdjacentHTML('beforeend',
+    '<div class="bubble-wrap' + (right ? ' right' : '') + '">' +
+      '<div class="avatar ' + s.av + '" style="' + avStyle(s) + '">' + s.avatar + '</div>' +
+      '<div class="bubble-col"><div class="bname' + (right ? ' right' : '') + '">' + who + '</div>' +
+      '<div class="bubble ' + (right ? 'right' : 'left') + '">' + StickSentence.html(text) + '</div></div>' +
+    '</div>');
+});
+
+HouseMatching.build({
+  left: 'picCol', right: 'wordCol', scoreEl: 'mScore', totalEl: 'mTotal', winEl: 'mWin', resetBtn: 'mReset', feedbackEl: 'mFeedback',
+  pairs: WORDS.map(([e, w]) => ({ id: w, left: e, right: w }))
+});
+HouseComprehension.build({ pre: 'preQuestions', quiz: 'quiz', items: CQ_ITEMS });
+</script>
+<script>HouseGrammar.init();</script>
+</body>
+</html>

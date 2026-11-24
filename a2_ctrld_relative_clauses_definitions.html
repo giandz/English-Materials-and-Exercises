@@ -1,0 +1,96 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<title>Relative Clauses — Practice</title>
+<script>
+(function(){
+  try{
+    var saved = localStorage.getItem('theme-preference');
+    var theme = (saved === 'light' || saved === 'dark')
+      ? saved
+      : ((window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches) ? 'dark' : 'light');
+    document.documentElement.setAttribute('data-theme', theme);
+    var fs = parseFloat(localStorage.getItem('font-size-preference'));
+    if (fs >= 10 && fs <= 28) document.documentElement.style.setProperty('--fs-base', fs + 'px');
+  }catch(e){ /* localStorage/matchMedia unavailable — CSS media query still applies */ }
+})();
+</script>
+<link rel="stylesheet" href="house.css">
+<style>
+
+</style>
+</head>
+<body>
+<div class="page" id="page">
+  <span class="cefr-tag cefr-a2">A2 · Elementary</span>
+  <h1>who, which, that, where — Practice</h1>
+  <p class="subtitle">People, things and places.</p>
+
+  <div class="sec-div">Practice 1 — Match the halves</div>
+  <p class="subtitle">Tap a word, then tap its definition.</p>
+  <div class="score-bar"><span>Matched: <strong id="mScore">0</strong> / <span id="mTotal">0</span></span><button id="mReset">↺ Reset</button></div>
+  <div class="match-grid">
+    <div><div class="match-col-label">Word</div><div class="match-col" id="leftCol"></div></div>
+    <div><div class="match-col-label">Definition</div><div class="match-col" id="rightCol"></div></div>
+  </div>
+  <div class="win-msg" id="mWin">🎉 All matched!</div>
+  <div class="feedback" id="mFeedback"></div>
+
+  <div class="sec-div">Practice 2 — Word order</div>
+  <p class="subtitle">Tap the words to build the sentence. Tap a word again to take it back, or drag to change the order.</p>
+  <button class="grammar-toggle-btn" id="grammarToggle">🎨 Show Grammar</button>
+  <div class="pos-legend"></div>
+  <div class="score-bar"><span>Correct: <strong id="woScore">0</strong> / <span id="woTotal">0</span></span></div>
+  <div id="woItems"></div>
+
+  <div class="sec-div">Practice 3 — Complete the sentences</div>
+  <p class="subtitle">Write the missing words. The bar turns green 🔴→🟢 when you are right.</p>
+  <div id="gfItems"></div>
+
+  <footer>Defining relative clauses — Controlled practice (A2)</footer>
+</div>
+
+<div id="theme-toggle-wrap">
+  <button id="theme-toggle" aria-label="Toggle light/dark mode" title="Toggle light/dark mode">
+    <span id="theme-icon">☀️</span>
+  </button>
+</div>
+<script src="house.js"></script>
+<script>
+const HALVES = [
+  ['A pilot is…', 'a person who flies planes.'], ['A library is…', 'a place where you can borrow books.'], ['A fridge is…', 'a machine which keeps food cold.'],
+  ['A chef is…', 'a person who cooks in a restaurant.'], ['An umbrella is…', 'a thing that keeps you dry in the rain.'], ['A gym is…', 'a place where people exercise.'],
+  ['A bee is…', 'an insect that makes honey.'], ['A dentist is…', 'a person who looks after your teeth.']
+];
+const WO_ITEMS = [
+  { context: '👩‍⚕️ A job', text: 'A nurse / is / a person / who / helps / doctors.', pos: ['subject', 'verb', 'complement', 'wh', 'verb', 'object'] },
+  { context: '☕ A special place', text: 'This / is / the café / where / I / met / my wife.', pos: ['subject', 'verb', 'complement', 'wh', 'subject', 'verb', 'object'] },
+  { context: '📱 My phone', text: 'I / have / a phone / that / takes / great photos.', pos: ['subject', 'verb', 'object', 'wh', 'verb', 'object'] },
+  { context: '🏡 The neighbor', text: 'Do / you / know / the man / who / lives / next door?', pos: ['aux', 'subject', 'verb', 'object', 'wh', 'verb', 'adverb'] },
+  { context: '📖 A book', text: 'The book / which / I / am reading / is / very good.', pos: ['subject', 'wh', 'subject', 'verb', 'verb', 'adj'] },
+  { context: '🏙️ A city', text: 'Lima / is / the city / where / my parents / were born.', pos: ['subject', 'verb', 'complement', 'wh', 'subject', 'verb'] }
+];
+const GF_LABELS = { p: 'person', t: 'thing', pl: 'place' };
+const GF_ITEMS = [
+  { category: 'p', direct: 'A job.', template: 'A teacher is a person {0} helps students learn.', hints: [{ accepted: ['who', 'that'] }] },
+  { category: 't', direct: 'A kitchen machine.', template: 'A toaster is a machine {0} makes toast.', hints: [{ accepted: ['which', 'that'] }] },
+  { category: 'pl', direct: 'Planes go up and come down here.', template: 'An airport is a place {0} planes land.', hints: [{ accepted: ['where'] }] },
+  { category: 'p', direct: 'A person in your street.', template: 'My neighbor is the man {0} lives next door.', hints: [{ accepted: ['who', 'that'] }] },
+  { category: 't', direct: 'An animal from Antarctica.', template: 'A penguin is a bird {0} can’t fly.', hints: [{ accepted: ['which', 'that'] }] },
+  { category: 'pl', direct: 'A place to sleep on vacation.', template: 'This is the hotel {0} we stayed last summer.', hints: [{ accepted: ['where'] }] },
+  { category: 't', direct: 'A present from mom.', template: 'I lost the phone {0} my mom gave me.', hints: [{ accepted: ['that', 'which'] }] },
+  { category: 'p', direct: 'A famous person.', template: 'She’s the singer {0} won the prize.', hints: [{ accepted: ['who', 'that'] }] }
+];
+
+HouseMatching.build({
+  left: 'leftCol', right: 'rightCol', scoreEl: 'mScore', totalEl: 'mTotal', winEl: 'mWin', resetBtn: 'mReset', feedbackEl: 'mFeedback',
+  pairs: HALVES.map(([a, b], i) => ({ id: 'h' + i, left: a, right: b }))
+});
+HouseWordOrder.build({ container: 'woItems', items: WO_ITEMS, scoreEl: 'woScore', totalEl: 'woTotal' });
+HouseGapFill.build({ container: 'gfItems', items: GF_ITEMS, labels: GF_LABELS });
+</script>
+<script>HouseGrammar.init();</script>
+</body>
+</html>

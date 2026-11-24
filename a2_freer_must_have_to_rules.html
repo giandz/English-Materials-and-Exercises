@@ -1,0 +1,126 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<title>Rules Everywhere — must / have to</title>
+<script>
+(function(){
+  try{
+    var saved = localStorage.getItem('theme-preference');
+    var theme = (saved === 'light' || saved === 'dark')
+      ? saved
+      : ((window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches) ? 'dark' : 'light');
+    document.documentElement.setAttribute('data-theme', theme);
+    var fs = parseFloat(localStorage.getItem('font-size-preference'));
+    if (fs >= 10 && fs <= 28) document.documentElement.style.setProperty('--fs-base', fs + 'px');
+  }catch(e){ /* localStorage/matchMedia unavailable — CSS media query still applies */ }
+})();
+</script>
+<link rel="stylesheet" href="house.css">
+<style>
+/* the prompt on the card: a big picture, then the words */
+.cue-main{ font-size:1.25rem; font-weight:700; margin:4px 0 6px; text-align:center; }
+.cue-main .big{ display:block; font-size:2.6rem; line-height:1.1; margin-bottom:4px; }
+.cue-sub{ font-size:.95rem; color:var(--text-secondary); text-align:center; margin:0 0 4px; }
+.chip{ display:inline-block; padding:2px 10px; margin:2px; border-radius:999px; border:1px solid var(--color-border-tertiary); background:var(--surface-2); font-size:1rem; font-weight:700; }
+.chip-wh{ color:var(--pos-wh); border-color:var(--pos-wh); }
+/* two sides: what usually happens · what is different */
+.duo{ display:flex; align-items:stretch; justify-content:center; gap:10px; flex-wrap:wrap; margin:4px 0 6px; }
+.duo .side{ display:flex; flex-direction:column; align-items:center; gap:2px; min-width:9em; padding:6px 10px; border-radius:10px; border:1px solid var(--color-border-tertiary); background:var(--surface-2); font-weight:700; font-size:1rem; }
+.duo .side .when{ font-size:.8667rem; font-weight:600; color:var(--text-secondary); }
+.duo .side .big{ font-size:2.2rem; line-height:1.1; }
+.who{ font-size:1.1rem; font-weight:700; text-align:center; margin:2px 0 4px; }
+/* only Student A looks */
+.q-card details.secret{ margin:4px 0 6px; width:100%; max-width:460px; text-align:center; }
+.q-card details.secret summary{ font-weight:700; }
+.q-card .secret-body{ padding:8px 12px; }
+.q-card details.check{ margin-top:4px; width:100%; max-width:460px; text-align:left; }
+.q-card .check-body{ padding:8px 12px; font-size:.9rem; }
+.q-card .check-body p{ margin:0 0 4px; }
+</style>
+</head>
+<body>
+<div class="page" id="page">
+  <span class="cefr-tag cefr-a2">A2 · Elementary</span>
+  <h1>Rules Everywhere</h1>
+  <p class="subtitle">Signs, laws and life: what’s necessary, what’s not allowed, and what’s your choice?</p>
+
+  <div class="rule-box">
+    <p><strong>How to play (pairs, or teacher + student):</strong></p>
+    <p>1. Student A rolls 🎲. There are two kinds of card:</p>
+    <p>🪧 <b>Sign:</b> say the rule: “<b>You mustn’t take photos here.</b>” B says where you can see the sign.</p>
+    <p>🌍 <b>Your life:</b> answer the question and compare: “<b>In Venezuela, you don’t have to vote… In my job, I have to wear a uniform.</b>” B asks one more question.</p>
+    <p>2. Press 👀 to see examples. Then change: B rolls, A answers.</p>
+  </div>
+
+  <div class="q-card" id="qCard"><span class="q-placeholder">Roll the dice to start.</span></div>
+  <button class="dice-btn" id="diceBtn" aria-label="Roll">🎲</button>
+  <div class="roll-count">Rolls: <strong id="rollCount">0</strong></div>
+
+  <div class="sec-div">Now you</div>
+  <div class="rule-box">
+    <p><strong>Ask your partner about the rules in their life.</strong> “<b>What do you have to do at work? What mustn’t you do? What don’t you have to do on weekends?</b>” Write the answers.</p>
+    <p>Then say: “<b>Ana has to start work at seven. She mustn’t wear jeans. She doesn’t have to work on Sundays.</b>” Another partner? Press <b>➕ Add partner</b>.</p>
+  </div>
+  <div id="interview"></div>
+
+  <footer>Rules Everywhere — must, have to, mustn’t, don’t have to (A2)</footer>
+</div>
+
+<div id="theme-toggle-wrap">
+  <button id="theme-toggle" aria-label="Toggle light/dark mode" title="Toggle light/dark mode">
+    <span id="theme-icon">☀️</span>
+  </button>
+</div>
+<script src="house.js"></script>
+<script src="house-interview.js"></script>
+<script>
+const pick = HouseRandomGen.pickFrom;
+const cap = s => s.charAt(0).toUpperCase() + s.slice(1);
+/* one card: a topic line, the cue (hidden from B when it is a secret), what to do, and the 👀 examples */
+const card = o =>
+  '<span class="q-topic">' + o.topic + '</span>' +
+  (o.secret ? '<details class="secret"><summary>' + o.secret + '</summary><div class="secret-body">' : '') +
+  (o.body || '') +
+  (o.pic ? '<div class="cue-main"><span class="big">' + o.pic + '</span>' + (o.cue || '') + '</div>' : (o.cue ? '<div class="cue-main">' + o.cue + '</div>' : '')) +
+  (o.sub ? '<div class="cue-sub">' + o.sub + '</div>' : '') +
+  (o.secret ? '</div></details>' : '') +
+  (o.prompt ? '<span class="q-prompt">' + o.prompt + '</span>' : '') +
+  (o.check ? '<details class="check"><summary>' + (o.checkLabel || '👀 Examples') + '</summary><div class="check-body">' +
+    o.check.map(l => '<p>' + l + '</p>').join('') + '</div></details>' : '');
+/* signs: [picture, the rule] */
+const SIGNS = [
+  ['📷🚫', 'You mustn’t take photos.'], ['🐕🚫', 'You mustn’t bring dogs.'], ['🍔🚫', 'You mustn’t eat or drink.'], ['🏊⛑️', 'You have to wear a swimming cap.'],
+  ['🔞', 'You have to be over 18.'], ['🅿️🆓', 'You don’t have to pay for parking.'], ['🚸', 'You have to drive slowly.'], ['😷', 'You have to wear a mask.'],
+  ['🎫', 'You have to buy a ticket first.'], ['🤫', 'You mustn’t talk loudly.'], ['🚲🚫', 'You mustn’t ride bikes here.'], ['👟🚫', 'You have to take your shoes off.']
+];
+/* your life: questions */
+const LIFE = [
+  ['🪪', 'Do you have to carry ID in your country?'], ['🗳️', 'Do people have to vote in your country?'], ['👔', 'Do you have to wear a uniform at work or school?'],
+  ['⏰', 'What time do you have to get up on weekdays?'], ['🏠', 'What do you have to do at home every week?'], ['💼', 'What mustn’t you do at your job?'],
+  ['🛋️', 'What don’t you have to do on weekends?'], ['🎒', 'What did you have to do at school when you were a child?'], ['🧳', 'What do you have to do before you travel?'],
+  ['🍽️', 'Are there any rules at the dinner table in your family?']
+];
+HouseRandomGen.build({
+  pick: () => Math.random() < 0.5 ? (s => ({ kind: 's', s, text: s[1] }))(pick(SIGNS)) : (l => ({ kind: 'l', l, text: l[1] }))(pick(LIFE)),
+  key: it => it.text,
+  render: it => it.kind === 's'
+    ? card({ topic: '🪧 Read the sign', pic: it.s[0], prompt: 'A: say the rule. B: where can you see this sign?',
+        checkLabel: '👀 The rule', check: ['“' + it.s[1] + '”', '<span class="text-secondary">✅ have to / must · 🚫 mustn’t · 🆗 don’t have to</span>'] })
+    : card({ topic: '🌍 Your life', pic: it.l[0], cue: it.l[1], prompt: 'A: answer and give an example. B: ask one more question.',
+        check: ['“I have to …” · “I don’t have to …” · “We mustn’t …”', '<span class="text-secondary">past: “I had to …”</span>'] })
+});
+HouseInterview.build({
+  container: 'interview', storageKey: 'a2-must-have-to-rules',
+  fields: [
+    { icon: '💼', label: 'at work, has to…', placeholder: 'start at seven…' },
+    { icon: '🚫', label: 'at work, mustn’t…', placeholder: 'wear jeans…' },
+    { icon: '🏠', label: 'at home, has to…', placeholder: 'cook dinner…' },
+    { icon: '🆗', label: 'doesn’t have to…', placeholder: 'work on Sundays…' },
+    { icon: '🎒', label: 'as a child, had to…', placeholder: 'wear a uniform…' }
+  ]
+});
+</script>
+</body>
+</html>

@@ -1,0 +1,97 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<title>Contrast Linkers — Practice</title>
+<script>
+(function(){
+  try{
+    var saved = localStorage.getItem('theme-preference');
+    var theme = (saved === 'light' || saved === 'dark')
+      ? saved
+      : ((window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches) ? 'dark' : 'light');
+    document.documentElement.setAttribute('data-theme', theme);
+    var fs = parseFloat(localStorage.getItem('font-size-preference'));
+    if (fs >= 10 && fs <= 28) document.documentElement.style.setProperty('--fs-base', fs + 'px');
+  }catch(e){ /* localStorage/matchMedia unavailable — CSS media query still applies */ }
+})();
+</script>
+<link rel="stylesheet" href="house.css">
+<style>
+
+</style>
+</head>
+<body>
+<div class="page" id="page">
+  <span class="cefr-tag cefr-b1">B1 · Intermediate</span>
+  <h1>Contrast Linkers — Practice</h1>
+  <p class="subtitle">although, however, despite, even though, in spite of.</p>
+
+  <div class="sec-div">Practice 1 — Match the halves</div>
+  <p class="subtitle">Tap the start of a sentence, then tap its surprising end.</p>
+  <div class="score-bar"><span>Matched: <strong id="mScore">0</strong> / <span id="mTotal">0</span></span><button id="mReset">↺ Reset</button></div>
+  <div class="match-grid">
+    <div><div class="match-col-label">Start</div><div class="match-col" id="leftCol"></div></div>
+    <div><div class="match-col-label">End</div><div class="match-col" id="rightCol"></div></div>
+  </div>
+  <div class="win-msg" id="mWin">🎉 All matched!</div>
+  <div class="feedback" id="mFeedback"></div>
+
+  <div class="sec-div">Practice 2 — Word order</div>
+  <p class="subtitle">Tap the words to build the sentence. Tap a word again to take it back, or drag to change the order.</p>
+  <button class="grammar-toggle-btn" id="grammarToggle">🎨 Show Grammar</button>
+  <div class="pos-legend"></div>
+  <div class="score-bar"><span>Correct: <strong id="woScore">0</strong> / <span id="woTotal">0</span></span></div>
+  <div id="woItems"></div>
+
+  <div class="sec-div">Practice 3 — Complete the sentences</div>
+  <p class="subtitle">Write the missing words. The bar turns green 🔴→🟢 when you are right.</p>
+  <div id="gfItems"></div>
+
+  <footer>Contrast linkers — Controlled practice (B1)</footer>
+</div>
+
+<div id="theme-toggle-wrap">
+  <button id="theme-toggle" aria-label="Toggle light/dark mode" title="Toggle light/dark mode">
+    <span id="theme-icon">☀️</span>
+  </button>
+</div>
+<script src="house.js"></script>
+<script>
+const HALVES = [
+  ['Although the job pays well,', 'the hours are very long.'], ['Despite the rain,', 'we had a picnic in the park.'],
+  ['I love my city. However,', 'I need a change.'], ['Even though she was exhausted,', 'she finished the report.'],
+  ['In spite of the traffic,', 'he arrived at the airport on time.'], ['He didn’t get the job', 'although he had a great interview.'],
+  ['She went to work', 'despite feeling sick.'], ['The apartment is small. However,', 'it’s in a great area.']
+];
+const WO_ITEMS = [
+  { context: '💼 The offer', text: 'Although / the salary / is / better, / the hours / are / long.', pos: ['conj', 'subject', 'verb', 'adj', 'subject', 'verb', 'adj'] },
+  { context: '🌧️ The weekend', text: 'Despite / the rain, / we / went / to the beach.', pos: ['prep', 'object', 'subject', 'verb', 'prep'] },
+  { context: '😨 Nervous', text: 'In spite of / feeling nervous, / she / said / yes.', pos: ['prep', 'object', 'subject', 'verb', 'complement'] },
+  { context: '🏢 The rent', text: 'Miami / is / beautiful. / However, / the rent / is / expensive.', pos: ['subject', 'verb', 'adj', 'conj', 'subject', 'verb', 'adj'] },
+  { context: '👨‍👩‍👧 Family', text: 'She / wants / to go / even though / she / will / miss / her family.', pos: ['subject', 'verb', 'object', 'conj', 'subject', 'aux', 'verb', 'object'] },
+  { context: '🥵 The weather', text: 'I / love / the city / despite / the heat.', pos: ['subject', 'verb', 'object', 'prep', 'object'] }
+];
+const GF_LABELS = { al: '+ subject + verb', de: '+ noun / -ing', how: 'new sentence' };
+const GF_ITEMS = [
+  { category: 'al', direct: 'Joins two clauses (subject + verb). Starts with “al…”.', template: '{0} the salary is better, the hours are long.', hints: [{ accepted: ['Although', 'although'] }] },
+  { category: 'de', direct: 'One word before a noun: “the rain”.', template: '{0} the rain, we went to the beach.', hints: [{ accepted: ['Despite', 'despite'] }] },
+  { category: 'de', direct: 'Complete the three-word linker.', template: 'In spite {0} the traffic, he arrived on time.', hints: [{ accepted: ['of'] }] },
+  { category: 'how', direct: 'A new sentence, then a comma.', template: 'Miami is beautiful. {0}, the rent is expensive.', hints: [{ accepted: ['However', 'however'] }] },
+  { category: 'de', direct: 'After “despite”, use the -ing form of “feel”.', template: 'Despite {0} nervous, she said yes.', hints: [{ accepted: ['feeling'] }] },
+  { category: 'al', direct: 'Stronger than “although” — two words.', template: 'She took the job {0} {1} she was scared.', hints: [{ accepted: ['even'] }, { accepted: ['though'] }] },
+  { category: 'de', direct: '“despite” + subject + verb? Add three words.', template: 'Despite {0} {1} {2} she was tired, she went out.', hints: [{ accepted: ['the'] }, { accepted: ['fact'] }, { accepted: ['that'] }] },
+  { category: 'al', direct: 'No “but” here — just the second clause.', template: 'Although it’s far, she {0} to go.', hints: [{ accepted: ['wants'] }] }
+];
+
+HouseMatching.build({
+  left: 'leftCol', right: 'rightCol', scoreEl: 'mScore', totalEl: 'mTotal', winEl: 'mWin', resetBtn: 'mReset', feedbackEl: 'mFeedback',
+  pairs: HALVES.map(([a, b], i) => ({ id: 'h' + i, left: a, right: b }))
+});
+HouseWordOrder.build({ container: 'woItems', items: WO_ITEMS, scoreEl: 'woScore', totalEl: 'woTotal' });
+HouseGapFill.build({ container: 'gfItems', items: GF_ITEMS, labels: GF_LABELS });
+</script>
+<script>HouseGrammar.init();</script>
+</body>
+</html>

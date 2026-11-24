@@ -1,0 +1,135 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<title>Rules of the Road — must / have to</title>
+<script>
+(function(){
+  try{
+    var saved = localStorage.getItem('theme-preference');
+    var theme = (saved === 'light' || saved === 'dark')
+      ? saved
+      : ((window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches) ? 'dark' : 'light');
+    document.documentElement.setAttribute('data-theme', theme);
+    var fs = parseFloat(localStorage.getItem('font-size-preference'));
+    if (fs >= 10 && fs <= 28) document.documentElement.style.setProperty('--fs-base', fs + 'px');
+  }catch(e){ /* localStorage/matchMedia unavailable — CSS media query still applies */ }
+})();
+</script>
+<link rel="stylesheet" href="house.css">
+<style>
+.cast-row{ display:flex; flex-wrap:wrap; gap:14px 18px; justify-content:center; align-items:flex-end; margin:0 0 1rem; padding:10px; background:var(--surface-1); border:1px solid var(--border); border-radius:var(--border-radius-lg); font-size:.8667rem; }
+.match-wrap .match-col-label{ text-align:center; }
+#picCol .match-card{ font-size:1.35rem; justify-content:center; }
+</style>
+</head>
+<body>
+<div class="page" id="page">
+  <span class="cefr-tag cefr-a2">A2 · Elementary</span>
+  <h1>Rules of the Road</h1>
+  <p class="subtitle">Luis wants to get a driver’s license in his new city. His neighbor Karen explains what he has to do.</p>
+
+  <div class="sec-div">Words for this lesson</div>
+  <p class="subtitle">Match the picture and the words. Tap a picture, then tap its words.</p>
+  <div class="score-bar"><span>Matched: <strong id="mScore">0</strong> / <span id="mTotal">0</span></span><button id="mReset">↺ Reset</button></div>
+  <div class="match-grid match-wrap">
+    <div><div class="match-col-label">Picture</div><div class="match-col" id="picCol"></div></div>
+    <div><div class="match-col-label">Words</div><div class="match-col" id="wordCol"></div></div>
+  </div>
+  <div class="win-msg" id="mWin">🎉 Great! You know the words for the conversation.</div>
+  <div class="feedback" id="mFeedback"></div>
+
+  <div class="sec-div">Before you read</div>
+  <div id="preQuestions"></div>
+
+  <div class="sec-div">The people</div>
+  <div class="cast-row" id="castRow"></div>
+
+  <div class="sec-div">The conversation</div>
+  <div class="setting-chip"><span class="section-icon">🚗</span> Sunday afternoon — in Karen’s yard, next to her old car</div>
+  <button class="grammar-toggle-btn" id="grammarToggle">🎨 Show Grammar</button>
+  <div class="pos-legend"></div>
+  <div id="conversation"></div>
+
+  <div class="sec-div">Check your answers</div>
+  <div id="quiz"></div>
+
+  <footer>Rules of the Road — must, have to, mustn’t, don’t have to (A2)</footer>
+</div>
+
+<div id="theme-toggle-wrap">
+  <button id="theme-toggle" aria-label="Toggle light/dark mode" title="Toggle light/dark mode">
+    <span id="theme-icon">☀️</span>
+  </button>
+</div>
+<script src="house.js"></script>
+<script src="stick-character.js"></script>
+<script src="stick-sentence.js"></script>
+<script>
+StickSentence.cast({
+  luis:  { base:'man',   colour:'#009966', label:'Luis' },
+  karen: { base:'woman', colour:'#CC6600', label:'Karen' }
+});
+StickSentence.toggle();
+window.LESSON_DICT = {
+  'driver’s license': { pos:'noun', def:'a card that says you can drive a car', ex:'I want to get a driver’s license.', es:'licencia de conducir' },
+  'written test':     { pos:'noun', def:'a test where you answer questions on paper or on a computer', ex:'First, you have to take a written test.', es:'examen escrito' },
+  'examiner':         { pos:'noun', def:'a person who watches you and decides if you pass a test', ex:'You take the driving test with an examiner.', es:'examinador/a' },
+  'seatbelt':         { pos:'noun', def:'a belt in a car that keeps you safe in your seat', ex:'You must wear a seatbelt.', es:'cinturón de seguridad' },
+  'completely':       { pos:'adverb', def:'100%; totally', ex:'You have to stop completely.', es:'completamente' }
+};
+const WORDS = [['🪪', 'a driver’s license'], ['📝', 'a written test'], ['🚗', 'a driving test'], ['📋', 'an examiner'], ['🛑', 'a stop sign'],
+  ['🚦', 'a red light'], ['🔒', 'a seatbelt'], ['⚠️', 'road signs'], ['📘', 'a rule book'], ['🏁', 'practice']];
+document.getElementById('castRow').innerHTML = ['{Luis|luis}', '{Karen|karen}'].map(StickSentence.html).join('');
+const SPEAKERS = {
+  Luis:  { cast: 'luis', avatar: '👨', av: 'av-a', side: 'left' },
+  Karen: { cast: 'karen', avatar: '👩‍🦰', av: 'av-b', side: 'right' }
+};
+const LINES = [
+  ['Luis', '[Karen/noun], [I/subject] [want/verb] [to get/verb] [a driver’s license/object] [here/adverb]. [What/wh] [do/aux] [I/subject] [have to/aux] [do/verb]?'],
+  ['Karen', '[First/adverb], [you/subject] [have to/aux] [take/verb] [a written test/object] [about the rules/prep].'],
+  ['Luis', '[Do/aux] [I/subject] [have to/aux] [study/verb] [for it/prep]?'],
+  ['Karen', '[Yes/none], [you/subject] [do/aux]! [There’s a little book/none]. [You/subject] [must/aux] [know/verb] [all the signs/object].'],
+  ['Luis', '[OK/none]. [And then/none]?'],
+  ['Karen', '[Then/adverb] [you/subject] [have to/aux] [take/verb] [a driving test/object] [with an examiner/prep].'],
+  ['Luis', '[Do/aux] [I/subject] [have to/aux] [bring/verb] [my own car/object]?'],
+  ['Karen', '[Yes/none], [you/subject] [have to/aux] [bring/verb] [a car/object], [but/conj] [it/subject] [doesn’t/neg] [have to/aux] [be/verb] [new/adj]! [My car/subject] [was/verb] [very old/adj].'],
+  ['Luis', '[Ha/none]! [What/wh] [are/verb] [the important rules/subject]?'],
+  ['Karen', '[You/subject] [must/aux] [wear/verb] [a seatbelt/object] — [always/adverb]. [And/conj] [you/subject] [mustn’t/neg] [use/verb] [your phone/object] [while you’re driving/time].'],
+  ['Luis', '[Not even/none] [at a red light/prep]?'],
+  ['Karen', '[No/none]! [You/subject] [mustn’t/neg] [touch/verb] [it/object]. [And/conj] [you/subject] [have to/aux] [stop/verb] [completely/adverb] [at a stop sign/prep].'],
+  ['Luis', '[Do/aux] [I/subject] [have to/aux] [speak/verb] [perfect English/object] [for the test/prep]?'],
+  ['Karen', '[No/none], [you/subject] [don’t/neg] [have to/aux]. [In some places/prep], [you/subject] [can/aux] [take/verb] [the written test/object] [in Spanish/prep].'],
+  ['Luis', '[Great/adj]! [I/subject] [don’t/neg] [have to/aux] [worry/verb], [then/adverb].'],
+  ['Karen', '[Well/none]… [you/subject] [have to/aux] [practice/verb] [a lot/adverb]. [I/subject] [can/aux] [help/verb] [you/object] [on Saturdays/time]!']
+];
+const CQ_ITEMS = [
+  { q: 'What does Luis have to take first?', opts: ['A written test', 'A driving test', 'An English test'], correct: 0 },
+  { q: 'What mustn’t you do while you’re driving?', opts: ['Use your phone', 'Wear a seatbelt', 'Stop at a stop sign'], correct: 0 },
+  { q: 'Does the car for the test have to be new?', opts: ['No, it doesn’t', 'Yes, it does', 'Luis doesn’t need a car'], correct: 0 }
+];
+
+/* ── the conversation ─────────────────────────────────────────────────── */
+const avStyle = s => { const c = (StickSentence.cast()[s.cast] || {}).colour;
+  return c ? 'background:' + c + '40;box-shadow:inset 0 0 0 2px ' + c : ''; };
+const conv = document.getElementById('conversation');
+LINES.forEach(([who, text]) => {
+  const s = SPEAKERS[who], right = s.side === 'right';
+  conv.insertAdjacentHTML('beforeend',
+    '<div class="bubble-wrap' + (right ? ' right' : '') + '">' +
+      '<div class="avatar ' + s.av + '" style="' + avStyle(s) + '">' + s.avatar + '</div>' +
+      '<div class="bubble-col"><div class="bname' + (right ? ' right' : '') + '">' + who + '</div>' +
+      '<div class="bubble ' + (right ? 'right' : 'left') + '">' + StickSentence.html(text) + '</div></div>' +
+    '</div>');
+});
+
+HouseMatching.build({
+  left: 'picCol', right: 'wordCol', scoreEl: 'mScore', totalEl: 'mTotal', winEl: 'mWin', resetBtn: 'mReset', feedbackEl: 'mFeedback',
+  pairs: WORDS.map(([e, w]) => ({ id: w, left: e, right: w }))
+});
+HouseComprehension.build({ pre: 'preQuestions', quiz: 'quiz', items: CQ_ITEMS });
+</script>
+<script>HouseGrammar.init();</script>
+</body>
+</html>

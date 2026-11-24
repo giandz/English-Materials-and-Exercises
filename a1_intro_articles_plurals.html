@@ -1,0 +1,132 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<title>A Bag for the Beach — a, an, the + plurals</title>
+<script>
+(function(){
+  try{
+    var saved = localStorage.getItem('theme-preference');
+    var theme = (saved === 'light' || saved === 'dark')
+      ? saved
+      : ((window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches) ? 'dark' : 'light');
+    document.documentElement.setAttribute('data-theme', theme);
+    var fs = parseFloat(localStorage.getItem('font-size-preference'));
+    if (fs >= 10 && fs <= 28) document.documentElement.style.setProperty('--fs-base', fs + 'px');
+  }catch(e){ /* localStorage/matchMedia unavailable — CSS media query still applies */ }
+})();
+</script>
+<link rel="stylesheet" href="house.css">
+<style>
+.cast-row{ display:flex; flex-wrap:wrap; gap:14px 18px; justify-content:center; align-items:flex-end; margin:0 0 1rem; padding:10px; background:var(--surface-1); border:1px solid var(--border); border-radius:var(--border-radius-lg); font-size:.8667rem; }
+.match-wrap .match-col-label{ text-align:center; }
+#picCol .match-card{ font-size:1.35rem; justify-content:center; }
+</style>
+</head>
+<body>
+<div class="page" id="page">
+  <span class="cefr-tag cefr-a1">A1 · Beginner</span>
+  <h1>A Bag for the Beach</h1>
+  <p class="subtitle">Rosa and her son Diego are going to the beach. They pack a bag.</p>
+
+  <div class="sec-div">Words for this lesson</div>
+  <p class="subtitle">Match the picture and the words. Tap a picture, then tap its words.</p>
+  <div class="score-bar"><span>Matched: <strong id="mScore">0</strong> / <span id="mTotal">0</span></span><button id="mReset">↺ Reset</button></div>
+  <div class="match-grid match-wrap">
+    <div><div class="match-col-label">Picture</div><div class="match-col" id="picCol"></div></div>
+    <div><div class="match-col-label">Words</div><div class="match-col" id="wordCol"></div></div>
+  </div>
+  <div class="win-msg" id="mWin">🎉 Great! You know the words for the conversation.</div>
+  <div class="feedback" id="mFeedback"></div>
+
+  <div class="sec-div">Before you read</div>
+  <div id="preQuestions"></div>
+
+  <div class="sec-div">The people</div>
+  <div class="cast-row" id="castRow"></div>
+
+  <div class="sec-div">The conversation</div>
+  <div class="setting-chip"><span class="section-icon">🏠</span> Saturday morning — in the kitchen</div>
+  <button class="grammar-toggle-btn" id="grammarToggle">🎨 Show Grammar</button>
+  <div class="pos-legend"></div>
+  <div id="conversation"></div>
+
+  <div class="sec-div">Check your answers</div>
+  <div id="quiz"></div>
+
+  <footer>A Bag for the Beach — a, an, the and plurals (A1)</footer>
+</div>
+
+<div id="theme-toggle-wrap">
+  <button id="theme-toggle" aria-label="Toggle light/dark mode" title="Toggle light/dark mode">
+    <span id="theme-icon">☀️</span>
+  </button>
+</div>
+<script src="house.js"></script>
+<script src="stick-character.js"></script>
+<script src="stick-sentence.js"></script>
+<script>
+StickSentence.cast({
+  rosa:  { base:'woman', colour:'#CC3366', label:'Rosa' },
+  diego: { base:'man',   colour:'#3399FF', label:'Diego' }
+});
+StickSentence.toggle();
+window.LESSON_DICT = {
+  'pack':    { pos:'verb', def:'to put things in a bag or a suitcase for a trip', ex:'Let’s pack a bag.', es:'empacar' },
+  'garage':  { pos:'noun', def:'a building or room for a car', ex:'The umbrella is in the garage.', es:'garaje' },
+  'next door': { pos:'adverb', def:'in the house or apartment next to yours', ex:'The children next door are coming too.', es:'de al lado' }
+};
+const WORDS = [['🎒', 'a bag'], ['☂️', 'an umbrella'], ['🥪', 'sandwiches'], ['🍎', 'apples'], ['🍊', 'oranges'],
+  ['🕶️', 'sunglasses'], ['🔑', 'keys'], ['🧃', 'juice boxes'], ['👶', 'a baby'], ['⚽', 'a ball']];
+document.getElementById('castRow').innerHTML = ['{Rosa|rosa}', '{Diego|diego}'].map(StickSentence.html).join('');
+const SPEAKERS = {
+  Rosa:  { cast: 'rosa', avatar: '👩', av: 'av-b', side: 'left' },
+  Diego: { cast: 'diego', avatar: '👦', av: 'av-a', side: 'right' }
+};
+const LINES = [
+  ['Rosa', '[Diego/noun], [we’re/subject] [going/verb] [to the beach/prep]! [Let’s/aux] [pack/verb] [a/det] [bag/noun].'],
+  ['Diego', '[OK/none]! [We/subject] [need/verb] [a/det] [towel/noun] [and/conj] [an/det] [umbrella/noun].'],
+  ['Rosa', '[Yes/none]. [The/det] [umbrella/noun] [is/verb] [in the garage/prep]. [Can/aux] [you/subject] [get/verb] [it/object]?'],
+  ['Diego', '[Sure/none]. [Do/aux] [we/subject] [need/verb] [sandwiches/noun]?'],
+  ['Rosa', '[Yes/none], [four/det] [sandwiches/noun] [and/conj] [three/det] [apples/noun]. [And/conj] [a/det] [bottle/noun] [of water/prep].'],
+  ['Diego', '[What about/none] [an/det] [orange/noun] [for me/prep]?'],
+  ['Rosa', '[OK/none], [two/det] [oranges/noun] — [one for you/none] [and/conj] [one for your sister/none].'],
+  ['Diego', '[Where/wh] [are/verb] [the/det] [sunglasses/noun]?'],
+  ['Rosa', '[The/det] [sunglasses/noun] [are/verb] [on the table/prep], [next to the keys/prep].'],
+  ['Diego', '[Mom/noun], [the/det] [children/noun] [next door/adverb] [are/aux] [coming/verb] [too/adverb]! [Can/aux] [they/subject] [come/verb] [in our car/prep]?'],
+  ['Rosa', '[How many/wh] [children/noun]?'],
+  ['Diego', '[Two/det] [boys/noun] [and/conj] [a/det] [baby/noun].'],
+  ['Rosa', '[OK/none], [but/conj] [we/subject] [need/verb] [two more/det] [boxes/noun] [of juice/prep] [and/conj] [a/det] [hat/noun] [for the baby/prep].'],
+  ['Diego', '[And/conj] [the/det] [baby/noun] [needs/verb] [toys/noun]! [I/subject] [have/verb] [an/det] [old/adj] [ball/noun].'],
+  ['Rosa', '[Perfect/adj]. [Let’s/aux] [go/verb]!']
+];
+const CQ_ITEMS = [
+  { q: 'Where is the umbrella?', opts: ['In the garage', 'On the table', 'In the car'], correct: 0 },
+  { q: 'How many sandwiches do they need?', opts: ['Four', 'Three', 'Two'], correct: 0 },
+  { q: 'Who is coming to the beach with them?', opts: ['The children next door', 'Diego’s friends from school', 'Their grandma'], correct: 0 }
+];
+
+/* ── the conversation ─────────────────────────────────────────────────── */
+const avStyle = s => { const c = (StickSentence.cast()[s.cast] || {}).colour;
+  return c ? 'background:' + c + '40;box-shadow:inset 0 0 0 2px ' + c : ''; };
+const conv = document.getElementById('conversation');
+LINES.forEach(([who, text]) => {
+  const s = SPEAKERS[who], right = s.side === 'right';
+  conv.insertAdjacentHTML('beforeend',
+    '<div class="bubble-wrap' + (right ? ' right' : '') + '">' +
+      '<div class="avatar ' + s.av + '" style="' + avStyle(s) + '">' + s.avatar + '</div>' +
+      '<div class="bubble-col"><div class="bname' + (right ? ' right' : '') + '">' + who + '</div>' +
+      '<div class="bubble ' + (right ? 'right' : 'left') + '">' + StickSentence.html(text) + '</div></div>' +
+    '</div>');
+});
+
+HouseMatching.build({
+  left: 'picCol', right: 'wordCol', scoreEl: 'mScore', totalEl: 'mTotal', winEl: 'mWin', resetBtn: 'mReset', feedbackEl: 'mFeedback',
+  pairs: WORDS.map(([e, w]) => ({ id: w, left: e, right: w }))
+});
+HouseComprehension.build({ pre: 'preQuestions', quiz: 'quiz', items: CQ_ITEMS });
+</script>
+<script>HouseGrammar.init();</script>
+</body>
+</html>

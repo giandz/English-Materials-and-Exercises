@@ -1,0 +1,157 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<title>Verb + -ing / to — Clarification</title>
+<script>
+(function(){
+  try{
+    var saved = localStorage.getItem('theme-preference');
+    var theme = (saved === 'light' || saved === 'dark')
+      ? saved
+      : ((window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches) ? 'dark' : 'light');
+    document.documentElement.setAttribute('data-theme', theme);
+    var fs = parseFloat(localStorage.getItem('font-size-preference'));
+    if (fs >= 10 && fs <= 28) document.documentElement.style.setProperty('--fs-base', fs + 'px');
+  }catch(e){ /* localStorage/matchMedia unavailable — CSS media query still applies */ }
+})();
+</script>
+<link rel="stylesheet" href="house.css">
+<style>
+.flow-card{ border:1px solid var(--color-border-tertiary); border-radius:var(--border-radius-lg); background:var(--surface-2); padding:10px 12px; margin-bottom:10px; }
+.flow-card .sent{ font-size:1rem; font-weight:600; margin-bottom:6px; }
+.flow-card .note{ font-size:.8333rem; color:var(--text-secondary); margin-top:4px; }
+.if-part{ color:hsl(217, 70%, 42%); font-weight:700; }
+.res-part{ color:hsl(120, 60%, 32%); font-weight:700; }
+.res-no{ color:hsl(0, 65%, 42%); font-weight:700; }
+[data-theme="dark"] .res-no{ color:hsl(0, 75%, 70%); }
+[data-theme="dark"] .if-part{ color:hsl(217, 80%, 70%); }
+[data-theme="dark"] .res-part{ color:hsl(120, 55%, 65%); }
+.form-table{ width:100%; border-collapse:collapse; margin:0 0 1rem; font-size:.9333rem; }
+.form-table th, .form-table td{ border:1px solid var(--color-border-tertiary); padding:7px 9px; text-align:left; vertical-align:top; }
+.form-table th{ background:var(--surface-1); font-size:.8rem; text-transform:uppercase; letter-spacing:.04em; color:var(--text-secondary); }
+.pct-row{ display:flex; flex-wrap:wrap; gap:6px; margin:0 0 1rem; }
+.pct-row span{ padding:3px 10px; border-radius:999px; font-weight:700; font-size:.8667rem; border:2px solid; }
+.rule-box p{ margin:0 0 6px; }
+.rule-box p:last-child{ margin-bottom:0; }
+.big-pic{ font-size:1.6rem; letter-spacing:.1em; margin:2px 0 4px; }
+.prep-grid{ display:grid; grid-template-columns:repeat(auto-fill, minmax(200px, 1fr)); gap:8px; margin:0 0 1rem; }
+.prep-grid > div{ border:1px solid var(--color-border-tertiary); border-radius:var(--border-radius-lg); background:var(--surface-2); padding:9px 11px; }
+.prep-grid h4{ margin:0 0 3px; font-size:1.05rem; }
+.prep-grid .rule{ font-size:.8rem; color:var(--text-secondary); margin-bottom:5px; }
+.prep-grid .ex{ font-size:.9rem; line-height:1.6; }
+.hl{ font-weight:700; color:var(--text-accent); }
+</style>
+</head>
+<body>
+<div class="page" id="page">
+  <span class="cefr-tag cefr-a2">A2 · Elementary</span>
+  <h1>enjoy painting, want to learn</h1>
+  <p class="subtitle">After some verbs: -ing. After others: to + verb.</p>
+
+  <div class="sec-div">Look</div>
+  <p class="subtitle">From the conversation. Look at the highlighted words.</p>
+  <div id="look"></div>
+
+  <div class="sec-div">Meaning</div>
+  <div class="rule-box" id="meaning"></div>
+
+  <div class="sec-div">Check the meaning</div>
+  <p class="subtitle">Answer the questions about each sentence.</p>
+  <div id="ccq"></div>
+
+  <div class="sec-div">Look at the form</div>
+  <p class="subtitle">What is each part? Drag a label (or tap a label, then tap a box).</p>
+  <div class="score-bar"><span>Correct: <strong id="fcScore">0</strong> / <span id="fcTotal">0</span></span></div>
+  <div id="formClarf"></div>
+  <div id="formRule"></div>
+
+  <div class="sec-div">Common mistakes</div>
+  <div id="mistakes"></div>
+
+  <div class="sec-div">Error hunt</div>
+  <p class="subtitle">Some sentences have one mistake. Some are correct! Tap a word — or a space between words — to fix it. Then press OK.</p>
+  <div class="score-bar"><span>Done: <strong id="errorScore">0</strong> / <span id="errorTotal">0</span></span></div>
+  <div id="errorHuntItems"></div>
+
+  <footer>Verb + -ing or to + verb — Clarification (A2)</footer>
+</div>
+
+<div id="theme-toggle-wrap">
+  <button id="theme-toggle" aria-label="Toggle light/dark mode" title="Toggle light/dark mode">
+    <span id="theme-icon">☀️</span>
+  </button>
+</div>
+<script src="house.js"></script>
+<script>
+const LOOK = [
+  ['I <span class="hl">enjoy painting</span>.', '<div class="big-pic">🎨😊</div>', '<b>enjoy</b> + <b>-ing</b>.'],
+  ['I <span class="hl">want to learn</span> the guitar.', '<div class="big-pic">🎸🎯</div>', '<b>want</b> + <b>to</b> + verb.'],
+  ['I <span class="hl">love painting</span> landscapes. / I’d <span class="hl">love to have</span> a friend in the class.', '<div class="big-pic">❤️</div>', '<b>love</b> + -ing (in general). <b>would love</b> + to (a wish).']
+];
+const MEANING = '<div class="prep-grid">' +
+  '<div><h4>+ -ing</h4><div class="rule">often: feelings and experiences</div><div class="ex">enjoy · don’t mind · can’t stand<br>finish · keep · stop · avoid<br>miss · practice · suggest</div></div>' +
+  '<div><h4>+ to + verb</h4><div class="rule">often: plans, wishes, the future</div><div class="ex">want · need · would like · hope<br>decide · plan · promise · learn<br>agree · refuse · forget</div></div>' +
+  '<div><h4>both, same meaning</h4><div class="rule">in general</div><div class="ex">like · love · hate · start · begin<br><i>I like cooking = I like to cook.</i></div></div></div>' +
+  '<p><strong>Tip:</strong> <b>would like / would love</b> + <b>to</b>: <i>I’d like <s>going</s> to go.</i></p>';
+const CCQ = [
+  { sentence: 'I enjoy painting.', questions: [
+    { q: 'Can we say “I enjoy to paint”?', opts: ['Yes', 'No'], correct: 1, why: 'No. After <b>enjoy</b>, always <b>-ing</b>.' } ] },
+  { sentence: 'I’d like to try the guitar one day.', questions: [
+    { q: 'Is it about the future?', opts: ['Yes', 'No'], correct: 0, why: 'Yes — a wish for one day.' },
+    { q: 'Can we say “I’d like trying the guitar”?', opts: ['Yes', 'No'], correct: 1, why: 'No. <b>would like</b> + <b>to</b> + verb.' } ] },
+  { sentence: 'He stopped playing years ago.', questions: [
+    { q: 'Does he play now?', opts: ['Yes', 'No'], correct: 1, why: 'No. <b>stop + -ing</b> = he doesn’t do it any more.' } ] }
+];
+const FORM_POOL = ['subject', 'verb', 'neg', 'object', 'time'];
+const FORM = [
+  { form: 'aff', parts: [['I', 'subject'], ['enjoy', 'verb'], ['painting', 'verb'], ['landscapes', 'object'], ['.', null]] },
+  { form: 'aff', parts: [['I', 'subject'], ['want', 'verb'], ['to learn', 'verb'], ['the guitar', 'object'], ['.', null]] },
+  { form: 'neg', parts: [['I', 'subject'], ['don’t', 'neg'], ['mind', 'verb'], ['cleaning', 'verb'], ['.', null]] },
+  { form: 'aff', parts: [['He', 'subject'], ['decided', 'verb'], ['to take', 'verb'], ['a class', 'object'], ['this year', 'time'], ['.', null]] }
+];
+const FORM_RULE = '<table class="form-table"><tr><th>verb 1</th><th>verb 2</th><th>example</th></tr>' +
+  '<tr><td>enjoy, mind, can’t stand, finish, keep…</td><td><b>-ing</b></td><td>I don’t mind <b>cleaning</b>.</td></tr>' +
+  '<tr><td>want, need, hope, decide, would like…</td><td><b>to</b> + verb</td><td>I hope <b>to play</b> at the wedding.</td></tr></table>' +
+  '<div class="rule-box"><p><strong>Negative:</strong> the first verb changes: <i>I <b>don’t want</b> to go.</i> — or <b>not</b> before the second verb: <i>I decided <b>not to go</b>.</i></p></div>';
+const MISTAKES = [
+  ['I enjoy to paint.', 'I enjoy painting.'],
+  ['I want learning the guitar.', 'I want to learn the guitar.'],
+  ['He decided taking a class.', 'He decided to take a class.'],
+  ['I don’t mind to clean.', 'I don’t mind cleaning.'],
+  ['I’d like going to the beach.', 'I’d like to go to the beach.']
+];
+const EH_ITEMS = [
+  { words: ['I', 'enjoy', 'to paint', 'landscapes', '.'], error: { type: 'wrong', wordIndex: 2, options: ['painting', 'paint', 'painted'], correct: 'painting' } },
+  { words: ['She', 'wants', 'to', 'learn', 'the', 'guitar', '.'], error: null },
+  { words: ['He', 'decided', 'taking', 'a', 'new', 'class', '.'], error: { type: 'wrong', wordIndex: 2, options: ['to take', 'take', 'took'], correct: 'to take' } },
+  { words: ['I', 'don’t', 'mind', 'to clean', 'the', 'brushes', '.'], error: { type: 'wrong', wordIndex: 3, options: ['cleaning', 'clean', 'cleaned'], correct: 'cleaning' } },
+  { words: ['We', 'hope', 'to', 'see', 'you', 'at', 'the', 'wedding', '.'], error: null },
+  { words: ['I’d', 'like', 'going', 'to', 'the', 'beach', '.'], error: { type: 'wrong', wordIndex: 2, options: ['to go', 'go', 'went'], correct: 'to go' } },
+  { words: ['They', 'can’t', 'stand', 'waiting', 'in', 'long', 'lines', '.'], error: null },
+  { words: ['Keep', 'to practice', 'every', 'day', '!'], error: { type: 'wrong', wordIndex: 1, options: ['practicing', 'practice', 'practiced'], correct: 'practicing' } }
+];
+
+/* LOOK: [the sentence, a picture (HTML) or { timeline: HouseTimeline options }, a note] */
+const look = document.getElementById('look');
+LOOK.forEach(([sent, vis, note], i) => {
+  const card = document.createElement('div');
+  card.className = 'flow-card';
+  card.innerHTML = '<div class="sent">' + sent + '</div>' +
+    (vis && vis.timeline ? '<div id="lookTl' + i + '"></div>' : (vis || '')) + (note ? '<div class="note">' + note + '</div>' : '');
+  look.appendChild(card);
+  if (vis && vis.timeline) HouseTimeline.build(Object.assign({ container: 'lookTl' + i }, vis.timeline));
+});
+document.getElementById('meaning').innerHTML = MEANING;
+HouseCCQ.build({ container: 'ccq', items: CCQ });
+HouseFormClarf.build({ container: 'formClarf', scoreEl: 'fcScore', totalEl: 'fcTotal', pool: FORM_POOL, items: FORM });
+document.getElementById('formRule').innerHTML = FORM_RULE;
+document.getElementById('mistakes').innerHTML = MISTAKES.map(([no, yes]) =>
+  '<div class="pair-card"><div class="pair-line no"><span class="mark">✗</span>' + no + '</div>' +
+  '<div class="pair-line yes"><span class="mark">✓</span>' + yes + '</div></div>').join('');
+HouseErrorHunt.build({ container: 'errorHuntItems', items: EH_ITEMS, scoreEl: 'errorScore', totalEl: 'errorTotal' });
+</script>
+<script>HouseGrammar.init();</script>
+</body>
+</html>

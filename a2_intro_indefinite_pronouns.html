@@ -1,0 +1,132 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<title>I Can’t Find It Anywhere! — somebody, anything, nowhere</title>
+<script>
+(function(){
+  try{
+    var saved = localStorage.getItem('theme-preference');
+    var theme = (saved === 'light' || saved === 'dark')
+      ? saved
+      : ((window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches) ? 'dark' : 'light');
+    document.documentElement.setAttribute('data-theme', theme);
+    var fs = parseFloat(localStorage.getItem('font-size-preference'));
+    if (fs >= 10 && fs <= 28) document.documentElement.style.setProperty('--fs-base', fs + 'px');
+  }catch(e){ /* localStorage/matchMedia unavailable — CSS media query still applies */ }
+})();
+</script>
+<link rel="stylesheet" href="house.css">
+<style>
+.cast-row{ display:flex; flex-wrap:wrap; gap:14px 18px; justify-content:center; align-items:flex-end; margin:0 0 1rem; padding:10px; background:var(--surface-1); border:1px solid var(--border); border-radius:var(--border-radius-lg); font-size:.8667rem; }
+.match-wrap .match-col-label{ text-align:center; }
+#picCol .match-card{ font-size:1.35rem; justify-content:center; }
+</style>
+</head>
+<body>
+<div class="page" id="page">
+  <span class="cefr-tag cefr-a2">A2 · Elementary</span>
+  <h1>I Can’t Find It Anywhere!</h1>
+  <p class="subtitle">The morning after a party. Zoe can’t find her phone. Her roommate Max helps her look.</p>
+
+  <div class="sec-div">Words for this lesson</div>
+  <p class="subtitle">Match the picture and the words. Tap a picture, then tap its words.</p>
+  <div class="score-bar"><span>Matched: <strong id="mScore">0</strong> / <span id="mTotal">0</span></span><button id="mReset">↺ Reset</button></div>
+  <div class="match-grid match-wrap">
+    <div><div class="match-col-label">Picture</div><div class="match-col" id="picCol"></div></div>
+    <div><div class="match-col-label">Words</div><div class="match-col" id="wordCol"></div></div>
+  </div>
+  <div class="win-msg" id="mWin">🎉 Great! You know the words for the conversation.</div>
+  <div class="feedback" id="mFeedback"></div>
+
+  <div class="sec-div">Before you read</div>
+  <div id="preQuestions"></div>
+
+  <div class="sec-div">The people</div>
+  <div class="cast-row" id="castRow"></div>
+
+  <div class="sec-div">The conversation</div>
+  <div class="setting-chip"><span class="section-icon">🛋️</span> Sunday morning — the living room after the party</div>
+  <button class="grammar-toggle-btn" id="grammarToggle">🎨 Show Grammar</button>
+  <div class="pos-legend"></div>
+  <div id="conversation"></div>
+
+  <div class="sec-div">Check your answers</div>
+  <div id="quiz"></div>
+
+  <footer>I Can’t Find It Anywhere! — some-, any-, no-, every- + body / one / thing / where (A2)</footer>
+</div>
+
+<div id="theme-toggle-wrap">
+  <button id="theme-toggle" aria-label="Toggle light/dark mode" title="Toggle light/dark mode">
+    <span id="theme-icon">☀️</span>
+  </button>
+</div>
+<script src="house.js"></script>
+<script src="stick-character.js"></script>
+<script src="stick-sentence.js"></script>
+<script>
+StickSentence.cast({
+  zoe: { base:'woman', colour:'#FF6699', label:'Zoe' },
+  max: { base:'man',   colour:'#6699FF', label:'Max' }
+});
+StickSentence.toggle();
+window.LESSON_DICT = {
+  'on silent': { pos:'phrase', def:'(a phone) set so it makes no sound', ex:'My phone is on silent.', es:'en silencio' },
+  'honest':    { pos:'adjective', def:'a person who tells the truth and doesn’t take things', ex:'All our friends are honest.', es:'honesto/a' },
+  'shine':     { pos:'verb', def:'to give or reflect light', ex:'Something is shining in the grass!', es:'brillar' }
+};
+const WORDS = [['📱', 'a phone'], ['🔇', 'on silent'], ['🛋️', 'a sofa'], ['🍿', 'popcorn'], ['🌳', 'a garden'],
+  ['🌱', 'grass'], ['✨', 'shine'], ['🧥', 'a jacket'], ['🎉', 'a party'], ['🔍', 'look for']];
+document.getElementById('castRow').innerHTML = ['{Zoe|zoe}', '{Max|max}'].map(StickSentence.html).join('');
+const SPEAKERS = {
+  Zoe: { cast: 'zoe', avatar: '👩', av: 'av-b', side: 'left' },
+  Max: { cast: 'max', avatar: '👨', av: 'av-a', side: 'right' }
+};
+const LINES = [
+  ['Zoe', '[Max/noun]! [I/subject] [can’t/neg] [find/verb] [my phone/object] [anywhere/adverb]!'],
+  ['Max', '[Did/aux] [you/subject] [look/verb] [everywhere/adverb]?'],
+  ['Zoe', '[Yes/none]! [I/subject] [looked/verb] [in the kitchen/prep], [in the bathroom/prep]… [It’s/subject] [nowhere/adverb]!'],
+  ['Max', '[Maybe/adverb] [somebody/subject] [took/verb] [it/object] [at the party/prep] [last night/time].'],
+  ['Zoe', '[Nobody/subject] [took/verb] [it/object]! [All our friends/subject] [are/verb] [honest/adj].'],
+  ['Max', '[OK/none], [OK/none]. [Let’s/aux] [call/verb] [it/object]… [I/subject] [can’t/neg] [hear/verb] [anything/object].'],
+  ['Zoe', '[It’s/subject] [on silent/prep]. [Oh no/none]!'],
+  ['Max', '[Is/verb] [there/subject] [anything/object] [under the sofa/prep]?'],
+  ['Zoe', '[No/none], [there’s/subject] [nothing/object] — [just popcorn/none]. [Everybody/subject] [ate/verb] [so much popcorn/object]!'],
+  ['Max', '[Wait/verb]. [Did/aux] [anyone/subject] [go/verb] [to the garden/prep]?'],
+  ['Zoe', '[Yes/none], [somebody/subject] [went/verb] [out/adverb] [to dance/verb]… [Lucas/noun]!'],
+  ['Max', '[Let’s/aux] [look/verb] [somewhere/adverb] [in the garden/prep], [then/adverb].'],
+  ['Zoe', '[Look/verb]! [Something/subject] [is/aux] [shining/verb] [in the grass/prep]!'],
+  ['Max', '[It’s your phone/none]! [And/conj] [there’s a message from Lucas/none]: [“Has/aux] [anyone/subject] [seen/part] [my jacket?”/object]'],
+  ['Zoe', '[Ha/none]! [Everyone/subject] [loses/verb] [something/object] [at a party/prep]!']
+];
+const CQ_ITEMS = [
+  { q: 'What did Zoe lose?', opts: ['Her phone', 'Her jacket', 'Her keys'], correct: 0 },
+  { q: 'What was under the sofa?', opts: ['Only popcorn', 'Zoe’s phone', 'Lucas’s jacket'], correct: 0 },
+  { q: 'Where was the phone?', opts: ['In the grass in the garden', 'In the kitchen', 'Under the sofa'], correct: 0 }
+];
+
+/* ── the conversation ─────────────────────────────────────────────────── */
+const avStyle = s => { const c = (StickSentence.cast()[s.cast] || {}).colour;
+  return c ? 'background:' + c + '40;box-shadow:inset 0 0 0 2px ' + c : ''; };
+const conv = document.getElementById('conversation');
+LINES.forEach(([who, text]) => {
+  const s = SPEAKERS[who], right = s.side === 'right';
+  conv.insertAdjacentHTML('beforeend',
+    '<div class="bubble-wrap' + (right ? ' right' : '') + '">' +
+      '<div class="avatar ' + s.av + '" style="' + avStyle(s) + '">' + s.avatar + '</div>' +
+      '<div class="bubble-col"><div class="bname' + (right ? ' right' : '') + '">' + who + '</div>' +
+      '<div class="bubble ' + (right ? 'right' : 'left') + '">' + StickSentence.html(text) + '</div></div>' +
+    '</div>');
+});
+
+HouseMatching.build({
+  left: 'picCol', right: 'wordCol', scoreEl: 'mScore', totalEl: 'mTotal', winEl: 'mWin', resetBtn: 'mReset', feedbackEl: 'mFeedback',
+  pairs: WORDS.map(([e, w]) => ({ id: w, left: e, right: w }))
+});
+HouseComprehension.build({ pre: 'preQuestions', quiz: 'quiz', items: CQ_ITEMS });
+</script>
+<script>HouseGrammar.init();</script>
+</body>
+</html>

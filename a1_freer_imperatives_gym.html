@@ -1,0 +1,117 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<title>Do This, Don’t Do That! — Imperatives</title>
+<script>
+(function(){
+  try{
+    var saved = localStorage.getItem('theme-preference');
+    var theme = (saved === 'light' || saved === 'dark')
+      ? saved
+      : ((window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches) ? 'dark' : 'light');
+    document.documentElement.setAttribute('data-theme', theme);
+    var fs = parseFloat(localStorage.getItem('font-size-preference'));
+    if (fs >= 10 && fs <= 28) document.documentElement.style.setProperty('--fs-base', fs + 'px');
+  }catch(e){ /* localStorage/matchMedia unavailable — CSS media query still applies */ }
+})();
+</script>
+<link rel="stylesheet" href="house.css">
+<style>
+/* the prompt on the card: a big picture, then the words */
+.cue-main{ font-size:1.25rem; font-weight:700; margin:4px 0 6px; text-align:center; }
+.cue-main .big{ display:block; font-size:2.6rem; line-height:1.1; margin-bottom:4px; }
+.cue-sub{ font-size:.95rem; color:var(--text-secondary); text-align:center; margin:0 0 4px; }
+.chip{ display:inline-block; padding:2px 10px; margin:2px; border-radius:999px; border:1px solid var(--color-border-tertiary); background:var(--surface-2); font-size:1rem; font-weight:700; }
+.chip-wh{ color:var(--pos-wh); border-color:var(--pos-wh); }
+/* two sides: what usually happens · what is different */
+.duo{ display:flex; align-items:stretch; justify-content:center; gap:10px; flex-wrap:wrap; margin:4px 0 6px; }
+.duo .side{ display:flex; flex-direction:column; align-items:center; gap:2px; min-width:9em; padding:6px 10px; border-radius:10px; border:1px solid var(--color-border-tertiary); background:var(--surface-2); font-weight:700; font-size:1rem; }
+.duo .side .when{ font-size:.8667rem; font-weight:600; color:var(--text-secondary); }
+.duo .side .big{ font-size:2.2rem; line-height:1.1; }
+.who{ font-size:1.1rem; font-weight:700; text-align:center; margin:2px 0 4px; }
+/* only Student A looks */
+.q-card details.secret{ margin:4px 0 6px; width:100%; max-width:460px; text-align:center; }
+.q-card details.secret summary{ font-weight:700; }
+.q-card .secret-body{ padding:8px 12px; }
+.q-card details.check{ margin-top:4px; width:100%; max-width:460px; text-align:left; }
+.q-card .check-body{ padding:8px 12px; font-size:.9rem; }
+.q-card .check-body p{ margin:0 0 4px; }
+</style>
+</head>
+<body>
+<div class="page" id="page">
+  <span class="cefr-tag cefr-a1">A1 · Beginner</span>
+  <h1>Do This, Don’t Do That!</h1>
+  <p class="subtitle">Give instructions and rules. Your partner listens — and follows them!</p>
+
+  <div class="rule-box">
+    <p><strong>How to play (pairs, or teacher + student):</strong></p>
+    <p>1. Student A rolls 🎲. There are two kinds of card:</p>
+    <p>📋 <b>How to…:</b> give four steps: “<b>First, put water in the pot. Then…</b>” Student B mimes every step.</p>
+    <p>🪧 <b>Rules:</b> say three rules for the place: “<b>Don’t talk. Turn off your phone…</b>”</p>
+    <p>2. Press 👀 for ideas. Then change: B rolls, A listens.</p>
+  </div>
+
+  <div class="q-card" id="qCard"><span class="q-placeholder">Roll the dice to start.</span></div>
+  <button class="dice-btn" id="diceBtn" aria-label="Roll">🎲</button>
+  <div class="roll-count">Rolls: <strong id="rollCount">0</strong></div>
+
+  <div class="sec-div">Now you</div>
+  <div class="rule-box">
+    <p><strong>Ask your partner about rules and advice.</strong> “<b>What are the rules in your home? How do you make your favorite food? What’s your best advice?</b>” Write the answers.</p>
+    <p>Then say: “<b>In Ana’s home: take off your shoes and don’t sing at dinner!</b>” Another partner? Press <b>➕ Add partner</b>.</p>
+  </div>
+  <div id="interview"></div>
+
+  <footer>Do This, Don’t Do That! — Imperatives (A1)</footer>
+</div>
+
+<div id="theme-toggle-wrap">
+  <button id="theme-toggle" aria-label="Toggle light/dark mode" title="Toggle light/dark mode">
+    <span id="theme-icon">☀️</span>
+  </button>
+</div>
+<script src="house.js"></script>
+<script src="house-interview.js"></script>
+<script>
+const pick = HouseRandomGen.pickFrom;
+const cap = s => s.charAt(0).toUpperCase() + s.slice(1);
+/* one card: a topic line, the cue (hidden from B when it is a secret), what to do, and the 👀 examples */
+const card = o =>
+  '<span class="q-topic">' + o.topic + '</span>' +
+  (o.secret ? '<details class="secret"><summary>' + o.secret + '</summary><div class="secret-body">' : '') +
+  (o.body || '') +
+  (o.pic ? '<div class="cue-main"><span class="big">' + o.pic + '</span>' + (o.cue || '') + '</div>' : (o.cue ? '<div class="cue-main">' + o.cue + '</div>' : '')) +
+  (o.sub ? '<div class="cue-sub">' + o.sub + '</div>' : '') +
+  (o.secret ? '</div></details>' : '') +
+  (o.prompt ? '<span class="q-prompt">' + o.prompt + '</span>' : '') +
+  (o.check ? '<details class="check"><summary>' + (o.checkLabel || '👀 Examples') + '</summary><div class="check-body">' +
+    o.check.map(l => '<p>' + l + '</p>').join('') + '</div></details>' : '');
+const HOWTO = [['☕', 'make a coffee'], ['🧼', 'wash your hands'], ['💬', 'send a text message'], ['🌱', 'plant a tree'], ['🫓', 'make an arepa'],
+  ['📸', 'take a selfie'], ['🦷', 'brush your teeth'], ['🍝', 'cook pasta'], ['👕', 'wash a T-shirt'], ['🎂', 'make a birthday card']];
+const RULES = [['📚', 'a library'], ['🏖️', 'the beach'], ['🏊', 'a swimming pool'], ['🏫', 'a classroom'], ['✈️', 'an airport'],
+  ['🦁', 'a zoo'], ['🏥', 'a hospital'], ['🎬', 'a movie theater'], ['🏠', 'my home'], ['🚌', 'the bus']];
+HouseRandomGen.build({
+  pick: () => Math.random() < 0.5 ? (h => ({ kind: 'h', h, text: h[1] }))(pick(HOWTO)) : (r => ({ kind: 'r', r, text: r[1] }))(pick(RULES)),
+  key: it => it.text,
+  render: it => it.kind === 'h'
+    ? card({ topic: '📋 How to…', pic: it.h[0], cue: 'How to ' + it.h[1], prompt: 'A: give four steps. B: mime every step.',
+        checkLabel: '👀 Help', check: ['“First, … Then, … Next, … Finally, …”', '<span class="text-secondary">verb first: Take… Put… Don’t…</span>'] })
+    : card({ topic: '🪧 Rules', pic: it.r[0], cue: 'Rules for ' + it.r[1], prompt: 'A: say three rules. B: is it a good rule?',
+        checkLabel: '👀 Help', check: ['“Please … · Don’t … · Never … · Always …”'] })
+});
+HouseInterview.build({
+  container: 'interview', storageKey: 'a1-imperatives-gym',
+  fields: [
+    { icon: '🏠', label: 'rules at home', placeholder: 'take off your shoes…' },
+    { icon: '📚', label: 'rules in class', placeholder: 'don’t use your phone…' },
+    { icon: '🍳', label: 'how to make her favorite food', placeholder: 'first, …' },
+    { icon: '💡', label: 'her best advice', placeholder: 'drink a lot of water…' },
+    { icon: '🚫', label: 'a “don’t” for visitors to her city', placeholder: 'don’t drive downtown…' }
+  ]
+});
+</script>
+</body>
+</html>

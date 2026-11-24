@@ -1,0 +1,97 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<title>Present Perfect Continuous — Practice</title>
+<script>
+(function(){
+  try{
+    var saved = localStorage.getItem('theme-preference');
+    var theme = (saved === 'light' || saved === 'dark')
+      ? saved
+      : ((window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches) ? 'dark' : 'light');
+    document.documentElement.setAttribute('data-theme', theme);
+    var fs = parseFloat(localStorage.getItem('font-size-preference'));
+    if (fs >= 10 && fs <= 28) document.documentElement.style.setProperty('--fs-base', fs + 'px');
+  }catch(e){ /* localStorage/matchMedia unavailable — CSS media query still applies */ }
+})();
+</script>
+<link rel="stylesheet" href="house.css">
+<style>
+
+</style>
+</head>
+<body>
+<div class="page" id="page">
+  <span class="cefr-tag cefr-b1">B1 · Intermediate</span>
+  <h1>Present Perfect Continuous — Practice</h1>
+  <p class="subtitle">How long? And what have you been doing?</p>
+
+  <div class="sec-div">Practice 1 — Match the halves</div>
+  <p class="subtitle">What can you see? Tap it, then tap the reason.</p>
+  <div class="score-bar"><span>Matched: <strong id="mScore">0</strong> / <span id="mTotal">0</span></span><button id="mReset">↺ Reset</button></div>
+  <div class="match-grid">
+    <div><div class="match-col-label">What you see</div><div class="match-col" id="leftCol"></div></div>
+    <div><div class="match-col-label">Why</div><div class="match-col" id="rightCol"></div></div>
+  </div>
+  <div class="win-msg" id="mWin">🎉 All matched!</div>
+  <div class="feedback" id="mFeedback"></div>
+
+  <div class="sec-div">Practice 2 — Word order</div>
+  <p class="subtitle">Tap the words to build the sentence. Tap a word again to take it back, or drag to change the order.</p>
+  <button class="grammar-toggle-btn" id="grammarToggle">🎨 Show Grammar</button>
+  <div class="pos-legend"></div>
+  <div class="score-bar"><span>Correct: <strong id="woScore">0</strong> / <span id="woTotal">0</span></span></div>
+  <div id="woItems"></div>
+
+  <div class="sec-div">Practice 3 — Complete the sentences</div>
+  <p class="subtitle">Write the missing words. The bar turns green 🔴→🟢 when you are right.</p>
+  <div id="gfItems"></div>
+
+  <footer>Present perfect continuous — Controlled practice (B1)</footer>
+</div>
+
+<div id="theme-toggle-wrap">
+  <button id="theme-toggle" aria-label="Toggle light/dark mode" title="Toggle light/dark mode">
+    <span id="theme-icon">☀️</span>
+  </button>
+</div>
+<script src="house.js"></script>
+<script>
+const HALVES = [
+  ['Your hands are blue!', 'I’ve been painting the bedroom.'], ['You’re all wet!', 'I’ve been swimming in the pool.'],
+  ['Your eyes are red.', 'I’ve been crying at a sad movie.'], ['You look so tired.', 'I’ve been working night shifts all week.'],
+  ['The kitchen smells amazing!', 'I’ve been baking bread.'], ['You’re out of breath!', 'I’ve been running for the bus.'],
+  ['Your English is so good now!', 'I’ve been taking classes on Saturdays.'], ['The streets are wet.', 'It’s been raining all night.']
+];
+const WO_ITEMS = [
+  { context: '🏥 Work', text: 'I / have / been / working / here / since 2019.', pos: ['subject', 'aux', 'part', 'verb', 'adverb', 'time'] },
+  { context: '⏳ At the bus stop', text: 'How long / have / you / been / waiting?', pos: ['wh', 'aux', 'subject', 'part', 'verb'] },
+  { context: '📚 The test', text: 'She / has / been / studying / for / three months.', pos: ['subject', 'aux', 'part', 'verb', 'prep', 'time'] },
+  { context: '☔ The weather', text: 'It / has / been / raining / all morning.', pos: ['subject', 'aux', 'part', 'verb', 'time'] },
+  { context: '😴 Bad nights', text: 'They / haven’t / been / sleeping / well.', pos: ['subject', 'neg', 'part', 'verb', 'adverb'] },
+  { context: '👋 Long time no see', text: 'What / have / you / been / doing / lately?', pos: ['wh', 'aux', 'subject', 'part', 'verb', 'time'] }
+];
+const GF_LABELS = { dur: 'how long', ev: 'evidence', res: 'result: how many', q: 'question', state: 'state verb' };
+const GF_ITEMS = [
+  { category: 'dur', direct: 'She started in 2019 and still works there.', template: 'She {0} {1} working there since 2019.', hints: [{ accepted: ['has'] }, { accepted: ['been'] }] },
+  { category: 'dur', direct: 'He started three months ago and hasn’t stopped.', template: 'He has been studying {0} three months.', hints: [{ accepted: ['for'] }] },
+  { category: 'dur', direct: 'A starting point: March.', template: 'I’ve been living here {0} March.', hints: [{ accepted: ['since'] }] },
+  { category: 'ev', direct: 'Blue hands and a ladder.', template: 'I’ve been {0} the bedroom.', hints: [{ accepted: ['painting'] }] },
+  { category: 'res', direct: 'A number of finished walls.', template: 'I’ve {0} two walls.', hints: [{ accepted: ['painted'] }] },
+  { category: 'q', direct: 'Ask about the time at the bus stop.', template: 'How long {0} you been {1}?', hints: [{ accepted: ['have'] }, { accepted: ['waiting'] }] },
+  { category: 'ev', direct: 'The streets are wet.', template: 'It’s {0} {1} all morning.', hints: [{ accepted: ['been'] }, { accepted: ['raining'] }] },
+  { category: 'state', direct: 'A state, not an activity: friends for ten years.', template: 'I’ve {0} her for ten years.', hints: [{ accepted: ['known'] }] }
+];
+
+HouseMatching.build({
+  left: 'leftCol', right: 'rightCol', scoreEl: 'mScore', totalEl: 'mTotal', winEl: 'mWin', resetBtn: 'mReset', feedbackEl: 'mFeedback',
+  pairs: HALVES.map(([a, b], i) => ({ id: 'h' + i, left: a, right: b }))
+});
+HouseWordOrder.build({ container: 'woItems', items: WO_ITEMS, scoreEl: 'woScore', totalEl: 'woTotal' });
+HouseGapFill.build({ container: 'gfItems', items: GF_ITEMS, labels: GF_LABELS });
+</script>
+<script>HouseGrammar.init();</script>
+</body>
+</html>

@@ -1,0 +1,133 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<title>I’m Not Used to the Cold! — be / get used to</title>
+<script>
+(function(){
+  try{
+    var saved = localStorage.getItem('theme-preference');
+    var theme = (saved === 'light' || saved === 'dark')
+      ? saved
+      : ((window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches) ? 'dark' : 'light');
+    document.documentElement.setAttribute('data-theme', theme);
+    var fs = parseFloat(localStorage.getItem('font-size-preference'));
+    if (fs >= 10 && fs <= 28) document.documentElement.style.setProperty('--fs-base', fs + 'px');
+  }catch(e){ /* localStorage/matchMedia unavailable — CSS media query still applies */ }
+})();
+</script>
+<link rel="stylesheet" href="house.css">
+<style>
+.cast-row{ display:flex; flex-wrap:wrap; gap:14px 18px; justify-content:center; align-items:flex-end; margin:0 0 1rem; padding:10px; background:var(--surface-1); border:1px solid var(--border); border-radius:var(--border-radius-lg); font-size:.8667rem; }
+.match-wrap .match-col-label{ text-align:center; }
+#picCol .match-card{ font-size:1.35rem; justify-content:center; }
+</style>
+</head>
+<body>
+<div class="page" id="page">
+  <span class="cefr-tag cefr-b1">B1 · Intermediate</span>
+  <h1>I’m Not Used to the Cold!</h1>
+  <p class="subtitle">Elena moved from Venezuela to Canada six months ago. Her sister Ana calls her.</p>
+
+  <div class="sec-div">Words for this lesson</div>
+  <p class="subtitle">Match the picture and the words. Tap a picture, then tap its words.</p>
+  <div class="score-bar"><span>Matched: <strong id="mScore">0</strong> / <span id="mTotal">0</span></span><button id="mReset">↺ Reset</button></div>
+  <div class="match-grid match-wrap">
+    <div><div class="match-col-label">Picture</div><div class="match-col" id="picCol"></div></div>
+    <div><div class="match-col-label">Words</div><div class="match-col" id="wordCol"></div></div>
+  </div>
+  <div class="win-msg" id="mWin">🎉 Great! You know the words for the conversation.</div>
+  <div class="feedback" id="mFeedback"></div>
+
+  <div class="sec-div">Before you read</div>
+  <div id="preQuestions"></div>
+
+  <div class="sec-div">The people</div>
+  <div class="cast-row" id="castRow"></div>
+
+  <div class="sec-div">The conversation</div>
+  <div class="setting-chip"><span class="section-icon">💻</span> Sunday evening — a video call between Maracaibo and Toronto</div>
+  <button class="grammar-toggle-btn" id="grammarToggle">🎨 Show Grammar</button>
+  <div class="pos-legend"></div>
+  <div id="conversation"></div>
+
+  <div class="sec-div">Check your answers</div>
+  <div id="quiz"></div>
+
+  <footer>I’m Not Used to the Cold! — be used to, get used to, used to (B1)</footer>
+</div>
+
+<div id="theme-toggle-wrap">
+  <button id="theme-toggle" aria-label="Toggle light/dark mode" title="Toggle light/dark mode">
+    <span id="theme-icon">☀️</span>
+  </button>
+</div>
+<script src="house.js"></script>
+<script src="stick-character.js"></script>
+<script src="stick-sentence.js"></script>
+<script>
+StickSentence.cast({
+  elena: { base:'woman', colour:'#0099CC', label:'Elena' },
+  ana:   { base:'woman', colour:'#FF9900', label:'Ana' }
+});
+StickSentence.toggle();
+window.LESSON_DICT = {
+  'used to':  { pos:'adjective', def:'(be used to) something is normal for you because you know it well', ex:'I’m not used to this weather.', es:'acostumbrado/a a' },
+  'get used to': { pos:'phrase', def:'slowly start to feel that something is normal', ex:'I’m getting used to the food.', es:'acostumbrarse a' },
+  'minus':    { pos:'preposition', def:'below zero (for temperatures)', ex:'It was minus fifteen this morning!', es:'menos, bajo cero' },
+  'miss':     { pos:'verb', def:'to feel sad because something or someone is not with you', ex:'I miss arepas!', es:'extrañar' },
+  'at first': { pos:'phrase', def:'at the beginning', ex:'I couldn’t get used to it at first.', es:'al principio' }
+};
+const WORDS = [['🥶', 'the cold'], ['🧥', 'a coat'], ['🩴', 'sandals'], ['🍲', 'soup'], ['🫓', 'arepas'],
+  ['🚇', 'the subway'], ['🚗', 'drive everywhere'], ['🕕', 'dinner at six'], ['🏙️', 'Toronto'], ['💻', 'a video call']];
+document.getElementById('castRow').innerHTML = ['{Elena|elena}', '{Ana|ana}'].map(StickSentence.html).join('');
+const SPEAKERS = {
+  Ana:   { cast: 'ana', avatar: '👩‍🦱', av: 'av-a', side: 'left' },
+  Elena: { cast: 'elena', avatar: '👩', av: 'av-b', side: 'right' }
+};
+const LINES = [
+  ['Ana', '[Elena/noun]! [How’s life in Toronto/none]? [Are/verb] [you/subject] [used to/adj] [the cold/object] [yet/time]?'],
+  ['Elena', '[Not at all/none]! [I’m/subject] [not/neg] [used to/adj] [this weather/object]. [It/subject] [was/verb] [minus fifteen/complement] [this morning/time]!'],
+  ['Ana', '[Minus fifteen/none]! [In Maracaibo/prep] [we’re/subject] [used to/adj] [forty degrees/object].'],
+  ['Elena', '[I know/none]! [I/subject] [used to/aux] [wear/verb] [sandals/object] [every day/time]. [Now/time] [I/subject] [have/verb] [three coats/object].'],
+  ['Ana', '[Ha/none]! [What about/none] [the food/object]?'],
+  ['Elena', '[I’m/subject] [getting/verb] [used to/adj] [it/object]. [I/subject] [eat/verb] [a lot of soup/object] [now/time]. [But/conj] [I/subject] [miss/verb] [arepas/object]!'],
+  ['Ana', '[And/conj] [your job/subject]? [Is/verb] [it/subject] [hard/adj]?'],
+  ['Elena', '[A little/none]. [I’m/subject] [not/neg] [used to/adj] [speaking/verb] [English/object] [all day/time]. [I’m always tired at night/none].'],
+  ['Ana', '[But/conj] [you’re/subject] [getting/verb] [used to/adj] [it/object], [right/none]?'],
+  ['Elena', '[Yes/none], [slowly/adverb]. [And/conj] [I’m/subject] [used to/adj] [taking/verb] [the subway/object] [now/time]. [I/subject] [used to/aux] [drive/verb] [everywhere/adverb] [in Venezuela/prep]!'],
+  ['Ana', '[That’s great/none]. [Do/aux] [people/subject] [eat/verb] [dinner/object] [late/adverb], [like us/prep]?'],
+  ['Elena', '[No/none]! [They/subject] [eat/verb] [dinner/object] [at six/time]. [I/subject] [couldn’t/neg] [get/verb] [used to/adj] [that/object] [at first/time], [but/conj] [now/time] [it’s normal/none].'],
+  ['Ana', '[Six/none]! [I/subject] [could/aux] [never/adverb] [get/verb] [used to/adj] [eating/verb] [dinner/object] [so early/time].'],
+  ['Elena', '[You’d/subject] [get/verb] [used to/adj] [it/object]! [Come/verb] [and/conj] [visit/verb] [in summer/time]!']
+];
+const CQ_ITEMS = [
+  { q: 'What isn’t Elena used to?', opts: ['The cold weather', 'Taking the subway', 'Eating soup'], correct: 0 },
+  { q: 'What did Elena use to do in Venezuela?', opts: ['Drive everywhere', 'Take the subway', 'Eat dinner at six'], correct: 0 },
+  { q: 'What was hard for Elena at first?', opts: ['Eating dinner at six', 'Wearing sandals', 'Calling her sister'], correct: 0 }
+];
+
+/* ── the conversation ─────────────────────────────────────────────────── */
+const avStyle = s => { const c = (StickSentence.cast()[s.cast] || {}).colour;
+  return c ? 'background:' + c + '40;box-shadow:inset 0 0 0 2px ' + c : ''; };
+const conv = document.getElementById('conversation');
+LINES.forEach(([who, text]) => {
+  const s = SPEAKERS[who], right = s.side === 'right';
+  conv.insertAdjacentHTML('beforeend',
+    '<div class="bubble-wrap' + (right ? ' right' : '') + '">' +
+      '<div class="avatar ' + s.av + '" style="' + avStyle(s) + '">' + s.avatar + '</div>' +
+      '<div class="bubble-col"><div class="bname' + (right ? ' right' : '') + '">' + who + '</div>' +
+      '<div class="bubble ' + (right ? 'right' : 'left') + '">' + StickSentence.html(text) + '</div></div>' +
+    '</div>');
+});
+
+HouseMatching.build({
+  left: 'picCol', right: 'wordCol', scoreEl: 'mScore', totalEl: 'mTotal', winEl: 'mWin', resetBtn: 'mReset', feedbackEl: 'mFeedback',
+  pairs: WORDS.map(([e, w]) => ({ id: w, left: e, right: w }))
+});
+HouseComprehension.build({ pre: 'preQuestions', quiz: 'quiz', items: CQ_ITEMS });
+</script>
+<script>HouseGrammar.init();</script>
+</body>
+</html>

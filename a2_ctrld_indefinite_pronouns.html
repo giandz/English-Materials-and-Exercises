@@ -1,0 +1,97 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<title>some-, any-, no-, every- — Practice</title>
+<script>
+(function(){
+  try{
+    var saved = localStorage.getItem('theme-preference');
+    var theme = (saved === 'light' || saved === 'dark')
+      ? saved
+      : ((window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches) ? 'dark' : 'light');
+    document.documentElement.setAttribute('data-theme', theme);
+    var fs = parseFloat(localStorage.getItem('font-size-preference'));
+    if (fs >= 10 && fs <= 28) document.documentElement.style.setProperty('--fs-base', fs + 'px');
+  }catch(e){ /* localStorage/matchMedia unavailable — CSS media query still applies */ }
+})();
+</script>
+<link rel="stylesheet" href="house.css">
+<style>
+
+</style>
+</head>
+<body>
+<div class="page" id="page">
+  <span class="cefr-tag cefr-a2">A2 · Elementary</span>
+  <h1>somebody, anything, nowhere, everyone — Practice</h1>
+  <p class="subtitle">People, things and places.</p>
+
+  <div class="sec-div">Practice 1 — Match the halves</div>
+  <p class="subtitle">Tap a question, then tap its answer.</p>
+  <div class="score-bar"><span>Matched: <strong id="mScore">0</strong> / <span id="mTotal">0</span></span><button id="mReset">↺ Reset</button></div>
+  <div class="match-grid">
+    <div><div class="match-col-label">Question</div><div class="match-col" id="leftCol"></div></div>
+    <div><div class="match-col-label">Answer</div><div class="match-col" id="rightCol"></div></div>
+  </div>
+  <div class="win-msg" id="mWin">🎉 All matched!</div>
+  <div class="feedback" id="mFeedback"></div>
+
+  <div class="sec-div">Practice 2 — Word order</div>
+  <p class="subtitle">Tap the words to build the sentence. Tap a word again to take it back, or drag to change the order.</p>
+  <button class="grammar-toggle-btn" id="grammarToggle">🎨 Show Grammar</button>
+  <div class="pos-legend"></div>
+  <div class="score-bar"><span>Correct: <strong id="woScore">0</strong> / <span id="woTotal">0</span></span></div>
+  <div id="woItems"></div>
+
+  <div class="sec-div">Practice 3 — Complete the sentences</div>
+  <p class="subtitle">Write the missing word. The bar turns green 🔴→🟢 when you are right.</p>
+  <div id="gfItems"></div>
+
+  <footer>some-, any-, no-, every- — Controlled practice (A2)</footer>
+</div>
+
+<div id="theme-toggle-wrap">
+  <button id="theme-toggle" aria-label="Toggle light/dark mode" title="Toggle light/dark mode">
+    <span id="theme-icon">☀️</span>
+  </button>
+</div>
+<script src="house.js"></script>
+<script>
+const HALVES = [
+  ['Is anybody home?', 'No, nobody’s here.'], ['Did you buy anything?', 'Yes, I bought something for you!'],
+  ['Where are my keys?', 'I don’t know. They’re somewhere in the house.'], ['Who wants pizza?', 'Everybody! We’re hungry.'],
+  ['What’s in the box?', 'Nothing. It’s empty.'], ['Where did you go on Sunday?', 'Nowhere. I stayed at home.'],
+  ['Can anyone help me?', 'Sure, I can help you.'], ['Is everything OK?', 'Yes, everything’s fine.']
+];
+const WO_ITEMS = [
+  { context: '📱 The phone', text: 'Somebody / took / my phone.', pos: ['subject', 'verb', 'object'] },
+  { context: '🔇 Silence', text: 'I / can’t / hear / anything.', pos: ['subject', 'neg', 'verb', 'object'] },
+  { context: '🌳 The garden', text: 'Nobody / went / to / the garden.', pos: ['subject', 'verb', 'prep', 'object'] },
+  { context: '🧥 Lucas', text: 'Did / anyone / see / my jacket?', pos: ['aux', 'subject', 'verb', 'object'] },
+  { context: '🍿 The party', text: 'Everybody / loves / popcorn.', pos: ['subject', 'verb', 'object'] },
+  { context: '🔑 Lost again', text: 'My keys / are / somewhere / in the house.', pos: ['subject', 'verb', 'adverb', 'prep'] }
+];
+const GF_LABELS = { pos: '✅ positive', neg: '❌ negative', q: '❓ question', all: 'all', zero: 'zero' };
+const GF_ITEMS = [
+  { category: 'pos', direct: 'A person — we don’t know who.', template: '{0} took my phone.', hints: [{ accepted: ['Somebody', 'Someone'] }] },
+  { category: 'neg', direct: 'Silence: not one sound.', template: 'I can’t hear {0}.', hints: [{ accepted: ['anything'] }] },
+  { category: 'q', direct: 'A question about people.', template: 'Did {0} go to the garden?', hints: [{ accepted: ['anyone', 'anybody'] }] },
+  { category: 'all', direct: 'All the people at the party.', template: '{0} ate a lot of popcorn.', hints: [{ accepted: ['Everybody', 'Everyone'] }] },
+  { category: 'zero', direct: 'Zero people — and the verb is positive.', template: '{0} took it!', hints: [{ accepted: ['Nobody', 'No one', 'No-one'] }] },
+  { category: 'pos', direct: 'A place — we don’t know exactly where.', template: 'It’s {0} in the garden.', hints: [{ accepted: ['somewhere'] }] },
+  { category: 'all', direct: 'All the places in the house.', template: 'I looked {0}!', hints: [{ accepted: ['everywhere'] }] },
+  { category: 'zero', direct: 'Zero things — and the verb is positive.', template: 'There’s {0} under the sofa.', hints: [{ accepted: ['nothing'] }] }
+];
+
+HouseMatching.build({
+  left: 'leftCol', right: 'rightCol', scoreEl: 'mScore', totalEl: 'mTotal', winEl: 'mWin', resetBtn: 'mReset', feedbackEl: 'mFeedback',
+  pairs: HALVES.map(([a, b], i) => ({ id: 'h' + i, left: a, right: b }))
+});
+HouseWordOrder.build({ container: 'woItems', items: WO_ITEMS, scoreEl: 'woScore', totalEl: 'woTotal' });
+HouseGapFill.build({ container: 'gfItems', items: GF_ITEMS, labels: GF_LABELS });
+</script>
+<script>HouseGrammar.init();</script>
+</body>
+</html>

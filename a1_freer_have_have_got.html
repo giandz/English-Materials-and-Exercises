@@ -1,0 +1,121 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<title>Have You Got…? — have / have got</title>
+<script>
+(function(){
+  try{
+    var saved = localStorage.getItem('theme-preference');
+    var theme = (saved === 'light' || saved === 'dark')
+      ? saved
+      : ((window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches) ? 'dark' : 'light');
+    document.documentElement.setAttribute('data-theme', theme);
+    var fs = parseFloat(localStorage.getItem('font-size-preference'));
+    if (fs >= 10 && fs <= 28) document.documentElement.style.setProperty('--fs-base', fs + 'px');
+  }catch(e){ /* localStorage/matchMedia unavailable — CSS media query still applies */ }
+})();
+</script>
+<link rel="stylesheet" href="house.css">
+<style>
+/* the prompt on the card: a big picture, then the words */
+.cue-main{ font-size:1.25rem; font-weight:700; margin:4px 0 6px; text-align:center; }
+.cue-main .big{ display:block; font-size:2.6rem; line-height:1.1; margin-bottom:4px; }
+.cue-sub{ font-size:.95rem; color:var(--text-secondary); text-align:center; margin:0 0 4px; }
+.chip{ display:inline-block; padding:2px 10px; margin:2px; border-radius:999px; border:1px solid var(--color-border-tertiary); background:var(--surface-2); font-size:1rem; font-weight:700; }
+.chip-wh{ color:var(--pos-wh); border-color:var(--pos-wh); }
+/* two sides: what usually happens · what is different */
+.duo{ display:flex; align-items:stretch; justify-content:center; gap:10px; flex-wrap:wrap; margin:4px 0 6px; }
+.duo .side{ display:flex; flex-direction:column; align-items:center; gap:2px; min-width:9em; padding:6px 10px; border-radius:10px; border:1px solid var(--color-border-tertiary); background:var(--surface-2); font-weight:700; font-size:1rem; }
+.duo .side .when{ font-size:.8667rem; font-weight:600; color:var(--text-secondary); }
+.duo .side .big{ font-size:2.2rem; line-height:1.1; }
+.who{ font-size:1.1rem; font-weight:700; text-align:center; margin:2px 0 4px; }
+/* only Student A looks */
+.q-card details.secret{ margin:4px 0 6px; width:100%; max-width:460px; text-align:center; }
+.q-card details.secret summary{ font-weight:700; }
+.q-card .secret-body{ padding:8px 12px; }
+.q-card details.check{ margin-top:4px; width:100%; max-width:460px; text-align:left; }
+.q-card .check-body{ padding:8px 12px; font-size:.9rem; }
+.q-card .check-body p{ margin:0 0 4px; }
+</style>
+</head>
+<body>
+<div class="page" id="page">
+  <span class="cefr-tag cefr-a1">A1 · Beginner</span>
+  <h1>Have You Got…?</h1>
+  <p class="subtitle">Find out about your partner’s life and things.</p>
+
+  <div class="rule-box">
+    <p><strong>How to play (pairs, or teacher + student):</strong></p>
+    <p>1. Student A rolls 🎲 and asks the question on the card: “<b>Do you have a pet?</b>” or “<b>Have you got a pet?</b>”</p>
+    <p>2. Student B answers with a short answer and one more detail: “<b>Yes, I do. I have a cat. Her name is Luna.</b>”</p>
+    <p>3. A asks one more question: “<b>What color is she?</b>” Press 👀 to check. Then change.</p>
+  </div>
+
+  <div class="q-card" id="qCard"><span class="q-placeholder">Roll the dice to start.</span></div>
+  <button class="dice-btn" id="diceBtn" aria-label="Roll">🎲</button>
+  <div class="roll-count">Rolls: <strong id="rollCount">0</strong></div>
+
+  <div class="sec-div">Now you</div>
+  <div class="rule-box">
+    <p><strong>Ask your partner about their family and things.</strong> “<b>Have you got any brothers or sisters? Do you have a pet? What color eyes have you got?</b>” Write the answers.</p>
+    <p>Then say: “<b>Ana has got two sisters. She doesn’t have a pet.</b>” Another partner? Press <b>➕ Add partner</b>.</p>
+  </div>
+  <div id="interview"></div>
+
+  <footer>Have You Got…? — have and have got (A1)</footer>
+</div>
+
+<div id="theme-toggle-wrap">
+  <button id="theme-toggle" aria-label="Toggle light/dark mode" title="Toggle light/dark mode">
+    <span id="theme-icon">☀️</span>
+  </button>
+</div>
+<script src="house.js"></script>
+<script src="house-interview.js"></script>
+<script>
+const pick = HouseRandomGen.pickFrom;
+const cap = s => s.charAt(0).toUpperCase() + s.slice(1);
+/* one card: a topic line, the cue (hidden from B when it is a secret), what to do, and the 👀 examples */
+const card = o =>
+  '<span class="q-topic">' + o.topic + '</span>' +
+  (o.secret ? '<details class="secret"><summary>' + o.secret + '</summary><div class="secret-body">' : '') +
+  (o.body || '') +
+  (o.pic ? '<div class="cue-main"><span class="big">' + o.pic + '</span>' + (o.cue || '') + '</div>' : (o.cue ? '<div class="cue-main">' + o.cue + '</div>' : '')) +
+  (o.sub ? '<div class="cue-sub">' + o.sub + '</div>' : '') +
+  (o.secret ? '</div></details>' : '') +
+  (o.prompt ? '<span class="q-prompt">' + o.prompt + '</span>' : '') +
+  (o.check ? '<details class="check"><summary>' + (o.checkLabel || '👀 Examples') + '</summary><div class="check-body">' +
+    o.check.map(l => '<p>' + l + '</p>').join('') + '</div></details>' : '');
+const THINGS = [
+  ['🐾', 'a pet'], ['🚲', 'a bike'], ['🚗', 'a car'], ['👫', 'brothers or sisters'], ['🌻', 'a garden'], ['👓', 'glasses'],
+  ['☕', 'a favorite mug'], ['📺', 'a big TV'], ['💻', 'a laptop'], ['🎸', 'a guitar'], ['💇', 'curly hair'], ['🏷️', 'a nickname'],
+  ['🪴', 'plants at home'], ['🛂', 'a passport'], ['⌚', 'a smartwatch'], ['🌎', 'family in another country'], ['☂️', 'an umbrella'],
+  ['🤧', 'a cold today'], ['👟', 'a lot of shoes'], ['📷', 'a camera']
+];
+HouseRandomGen.build({
+  pick: () => { const t = pick(THINGS), got = Math.random() < 0.5; return { t, got, text: t[1] + got }; },
+  key: it => it.text,
+  render: ({ t: [pic, thing], got }) => card({
+    topic: got ? '❓ have got' : '❓ have', pic,
+    cue: got ? 'Have you got ' + thing + '?' : 'Do you have ' + thing + '?',
+    prompt: 'A: ask the question. B: short answer + one more detail.',
+    checkLabel: '👀 Short answers',
+    check: got ? ['✅ “Yes, I <b>have</b>.” · ❌ “No, I <b>haven’t</b>.”', '“I’ve got …” · “I haven’t got …”']
+               : ['✅ “Yes, I <b>do</b>.” · ❌ “No, I <b>don’t</b>.”', '“I have …” · “I don’t have …”']
+  })
+});
+HouseInterview.build({
+  container: 'interview', storageKey: 'a1-have-have-got',
+  fields: [
+    { icon: '👨‍👩‍👧', label: 'family', placeholder: 'has two sisters…' },
+    { icon: '🐾', label: 'pets', placeholder: 'has a cat — Luna…' },
+    { icon: '🚗', label: 'transport', placeholder: 'hasn’t got a car…' },
+    { icon: '📱', label: 'favorite thing', placeholder: 'has an old guitar…' },
+    { icon: '👀', label: 'looks', placeholder: 'has got long black hair…' }
+  ]
+});
+</script>
+</body>
+</html>

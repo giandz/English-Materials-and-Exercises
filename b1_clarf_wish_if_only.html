@@ -1,0 +1,161 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<title>wish / if only — Clarification</title>
+<script>
+(function(){
+  try{
+    var saved = localStorage.getItem('theme-preference');
+    var theme = (saved === 'light' || saved === 'dark')
+      ? saved
+      : ((window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches) ? 'dark' : 'light');
+    document.documentElement.setAttribute('data-theme', theme);
+    var fs = parseFloat(localStorage.getItem('font-size-preference'));
+    if (fs >= 10 && fs <= 28) document.documentElement.style.setProperty('--fs-base', fs + 'px');
+  }catch(e){ /* localStorage/matchMedia unavailable — CSS media query still applies */ }
+})();
+</script>
+<link rel="stylesheet" href="house.css">
+<style>
+.flow-card{ border:1px solid var(--color-border-tertiary); border-radius:var(--border-radius-lg); background:var(--surface-2); padding:10px 12px; margin-bottom:10px; }
+.flow-card .sent{ font-size:1rem; font-weight:600; margin-bottom:6px; }
+.flow-card .note{ font-size:.8333rem; color:var(--text-secondary); margin-top:4px; }
+.if-part{ color:hsl(217, 70%, 42%); font-weight:700; }
+.res-part{ color:hsl(120, 60%, 32%); font-weight:700; }
+.res-no{ color:hsl(0, 65%, 42%); font-weight:700; }
+[data-theme="dark"] .res-no{ color:hsl(0, 75%, 70%); }
+[data-theme="dark"] .if-part{ color:hsl(217, 80%, 70%); }
+[data-theme="dark"] .res-part{ color:hsl(120, 55%, 65%); }
+.form-table{ width:100%; border-collapse:collapse; margin:0 0 1rem; font-size:.9333rem; }
+.form-table th, .form-table td{ border:1px solid var(--color-border-tertiary); padding:7px 9px; text-align:left; vertical-align:top; }
+.form-table th{ background:var(--surface-1); font-size:.8rem; text-transform:uppercase; letter-spacing:.04em; color:var(--text-secondary); }
+.pct-row{ display:flex; flex-wrap:wrap; gap:6px; margin:0 0 1rem; }
+.pct-row span{ padding:3px 10px; border-radius:999px; font-weight:700; font-size:.8667rem; border:2px solid; }
+.rule-box p{ margin:0 0 6px; }
+.rule-box p:last-child{ margin-bottom:0; }
+</style>
+</head>
+<body>
+<div class="page" id="page">
+  <span class="cefr-tag cefr-b1">B1 · Intermediate</span>
+  <h1>wish / if only</h1>
+  <p class="subtitle">Wishes about now, regrets about the past — and annoying habits.</p>
+
+  <div class="sec-div">Look</div>
+  <p class="subtitle">From the conversation. Blue is the situation. The wish follows the highlighted path — the 📍 path is what is really true.</p>
+  <div id="flowLegend"></div>
+  <div id="look"></div>
+
+  <div class="sec-div">Meaning</div>
+  <div class="rule-box" id="meaning"></div>
+
+  <div class="sec-div">Check the meaning</div>
+  <p class="subtitle">Answer the questions about each sentence.</p>
+  <div id="ccq"></div>
+
+  <div class="sec-div">Look at the form</div>
+  <p class="subtitle">What is each part? Drag a label (or tap a label, then tap a box).</p>
+  <div class="score-bar"><span>Correct: <strong id="fcScore">0</strong> / <span id="fcTotal">0</span></span></div>
+  <div id="formClarf"></div>
+  <div id="formRule"></div>
+
+  <div class="sec-div">Common mistakes</div>
+  <div id="mistakes"></div>
+
+  <div class="sec-div">Error hunt</div>
+  <p class="subtitle">Some sentences have one mistake. Some are correct! Tap a word — or a space between words — to fix it. Then press OK.</p>
+  <div class="score-bar"><span>Done: <strong id="errorScore">0</strong> / <span id="errorTotal">0</span></span></div>
+  <div id="errorHuntItems"></div>
+
+  <footer>wish / if only — Clarification (B1)</footer>
+</div>
+
+<div id="theme-toggle-wrap">
+  <button id="theme-toggle" aria-label="Toggle light/dark mode" title="Toggle light/dark mode">
+    <span id="theme-icon">☀️</span>
+  </button>
+</div>
+<script src="house.js"></script>
+<script src="house-flow.js"></script>
+<script>
+/* a node and a flow: cause → ✔️ / ❌ → results; say = the path the speaker wants;
+   real = the branch that is really true (📍) — a wish is always about the OTHER path */
+const N = (text, icon, p, when) => ({ text, icon, p, when });
+const FL = (cause, yes, no, say, more) => Object.assign({ cause, yes, no, say }, more || {});
+
+const LEGEND = { real: true };
+const LOOK = [
+  ['I wish <span class="if-part">I had a car.</span>',
+    FL(N('I have a car', '🚗'), N('drive to work', '🛣️', 1), N('take two buses', '🚌'), 'yes', { real: 'no' }),
+    '📍 Now: he <b>doesn’t</b> have a car. Wish + <b>past simple</b> = he wants the other path, now.'],
+  ['I wish <span class="if-part">I hadn’t eaten so much cake.</span>',
+    FL(N('I eat so much cake', '🍰', null, 'yesterday'), N('feel sick', '🤢', 1), N('feel fine', '😊'), 'no', { real: 'yes' }),
+    '📍 Yesterday: he <b>ate</b> a lot. Wish + <b>past perfect</b> = a regret. He can’t change it.'],
+  ['I wish <span class="if-part">he would turn it down.</span>',
+    FL(N('Mark turns the music down', '🔉'), N('we can concentrate', '🧠', 1), N('we get a headache', '🤕'), 'yes', { real: 'no' }),
+    '📍 Mark doesn’t stop. Wish + <b>would</b> = another person’s annoying habit.']
+];
+const MEANING = '<p><strong>We use wish / if only for things we want to be different.</strong> The 📍 is what is really true — the wish points to the <b>other</b> path.</p>' +
+  '<table class="form-table"><tr><th>about…</th><th>wish + …</th><th>example</th><th>📍 really</th></tr>' +
+  '<tr><td>now / a situation</td><td>past simple / could</td><td>I wish I <b>lived</b> closer.<br>I wish I <b>could</b> read on the bus.</td><td>I live far. I can’t read.</td></tr>' +
+  '<tr><td>the past (regret)</td><td>past perfect</td><td>I wish I <b>hadn’t eaten</b> so much.</td><td>I ate a lot.</td></tr>' +
+  '<tr><td>someone’s habit (annoyed 😤)</td><td>would + verb</td><td>I wish he <b>would turn</b> it down.</td><td>He doesn’t.</td></tr></table>' +
+  '<p><strong>If only</strong> = I wish, but stronger: <i>If only I had a car!</i></p>' +
+  '<p><strong>Not for yourself with would:</strong> <i>I wish <s>I would</s> live closer</i> → <i>I wish I lived closer</i>.</p>';
+const CCQ = [
+  { sentence: 'I wish I had a car.', questions: [
+    { q: 'Does he have a car?', opts: ['Yes', 'No'], correct: 1, why: 'No. <i>had</i> looks like the past, but it is about <b>now</b> — and it isn’t real.' },
+    { q: 'Is he happy about that?', opts: ['Yes', 'No'], correct: 1, why: 'No. He wants the other path.' } ] },
+  { sentence: 'I wish I hadn’t eaten so much cake.', questions: [
+    { q: 'Did he eat a lot of cake?', opts: ['Yes', 'No'], correct: 0, why: 'Yes — that’s the 📍. He regrets it.' },
+    { q: 'Can he change it now?', opts: ['Yes', 'No'], correct: 1, why: 'No. It’s in the past.' } ] },
+  { sentence: 'I wish he would turn the music down.', questions: [
+    { q: 'Is she annoyed?', opts: ['Yes', 'No'], correct: 0, why: 'Yes. <b>wish + would</b> = an annoying habit of another person.' } ] }
+];
+const FORM_POOL = ['conj', 'subject', 'verb', 'aux', 'neg', 'part', 'object', 'complement', 'prep', 'adverb'];
+const FORM = [
+  { form: 'aff', parts: [['I', 'subject'], ['wish', 'verb'], ['I', 'subject'], ['had', 'verb'], ['a car', 'object'], ['.', null]] },
+  { form: 'aff', parts: [['If only', 'conj'], ['it', 'subject'], ['were', 'verb'], ['Friday', 'complement'], ['!', null]] },
+  { form: 'neg', parts: [['I', 'subject'], ['wish', 'verb'], ['I', 'subject'], ['hadn’t', 'neg'], ['eaten', 'part'], ['so much', 'object'], ['.', null]] },
+  { form: 'aff', parts: [['I', 'subject'], ['wish', 'verb'], ['he', 'subject'], ['would', 'aux'], ['turn', 'verb'], ['it', 'object'], ['down', 'part'], ['.', null]] }
+];
+const FORM_RULE = '<table class="form-table"><tr><th>now</th><th>past</th><th>habit</th></tr>' +
+  '<tr><td>wish + past simple</td><td>wish + had (not) + past participle</td><td>wish + someone + would (not) + verb</td></tr>' +
+  '<tr><td>I wish I <b>knew</b>.</td><td>I wish I <b>had known</b>.</td><td>I wish you <b>wouldn’t</b> shout.</td></tr></table>' +
+  '<div class="rule-box"><p><strong>were</strong> for every person: <i>I wish it <b>were</b> Friday</i> (you also hear <i>was</i> in speech).</p>' +
+  '<p><strong>No would have in the wish:</strong> <i>I wish I <s>would have</s> had finished.</i></p></div>';
+const MISTAKES = [
+  ['I wish I have a car.', 'I wish I had a car.'],
+  ['I wish I didn’t eat so much last night.', 'I wish I hadn’t eaten so much last night.'],
+  ['If only I would have finished the report.', 'If only I had finished the report.'],
+  ['I wish I would live closer.', 'I wish I lived closer.'],
+  ['I wish I can read on the bus.', 'I wish I could read on the bus.']
+];
+const EH_ITEMS = [
+  { words: ['I', 'wish', 'I', 'have', 'a', 'car', '.'], error: { type: 'wrong', wordIndex: 3, options: ['had', 'having', 'has'], correct: 'had' } },
+  { words: ['I', 'wish', 'it', 'were', 'Friday', '.'], error: null },
+  { words: ['I', 'wish', 'I', 'didn’t eat', 'so', 'much', 'last', 'night', '.'], error: { type: 'wrong', wordIndex: 3, options: ['hadn’t eaten', 'don’t eat', 'haven’t eaten'], correct: 'hadn’t eaten' } },
+  { words: ['If', 'only', 'I', 'would have', 'finished', 'the', 'report', '.'], error: { type: 'wrong', wordIndex: 3, options: ['had', 'have', 'has'], correct: 'had' } },
+  { words: ['I', 'wish', 'he', 'would', 'turn', 'the', 'music', 'down', '.'], error: null },
+  { words: ['I', 'wish', 'I', 'can', 'read', 'on', 'the', 'bus', '.'], error: { type: 'wrong', wordIndex: 3, options: ['could', 'will', 'must'], correct: 'could' } },
+  { words: ['I', 'wish', 'I', 'would live', 'closer', 'to', 'work', '.'], error: { type: 'wrong', wordIndex: 3, options: ['lived', 'live', 'living'], correct: 'lived' } },
+  { words: ['If', 'only', 'I', 'had', 'more', 'time', '!'], error: null }
+];
+
+document.getElementById('flowLegend').innerHTML = HouseFlow.legend(LEGEND);
+document.getElementById('look').innerHTML = LOOK.map(([sent, flow, note]) =>
+  '<div class="flow-card"><div class="sent">' + sent + '</div>' + HouseFlow.svg(flow) + (note ? '<div class="note">' + note + '</div>' : '') + '</div>').join('');
+document.getElementById('meaning').innerHTML = MEANING;
+HouseCCQ.build({ container: 'ccq', items: CCQ });
+HouseFormClarf.build({ container: 'formClarf', scoreEl: 'fcScore', totalEl: 'fcTotal', pool: FORM_POOL, items: FORM });
+document.getElementById('formRule').innerHTML = FORM_RULE;
+document.getElementById('mistakes').innerHTML = MISTAKES.map(([no, yes]) =>
+  '<div class="pair-card"><div class="pair-line no"><span class="mark">✗</span>' + no + '</div>' +
+  '<div class="pair-line yes"><span class="mark">✓</span>' + yes + '</div></div>').join('');
+HouseErrorHunt.build({ container: 'errorHuntItems', items: EH_ITEMS, scoreEl: 'errorScore', totalEl: 'errorTotal' });
+</script>
+<script>HouseGrammar.init();</script>
+</body>
+</html>

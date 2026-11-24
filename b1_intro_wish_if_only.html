@@ -1,0 +1,151 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<title>I Wish It Were Friday! — wish / if only</title>
+<script>
+(function(){
+  try{
+    var saved = localStorage.getItem('theme-preference');
+    var theme = (saved === 'light' || saved === 'dark')
+      ? saved
+      : ((window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches) ? 'dark' : 'light');
+    document.documentElement.setAttribute('data-theme', theme);
+    var fs = parseFloat(localStorage.getItem('font-size-preference'));
+    if (fs >= 10 && fs <= 28) document.documentElement.style.setProperty('--fs-base', fs + 'px');
+  }catch(e){ /* localStorage/matchMedia unavailable — CSS media query still applies */ }
+})();
+</script>
+<link rel="stylesheet" href="house.css">
+<style>
+.cast-row{ display:flex; flex-wrap:wrap; gap:14px 18px; justify-content:center; align-items:flex-end; margin:0 0 1rem; padding:10px; background:var(--surface-1); border:1px solid var(--border); border-radius:var(--border-radius-lg); font-size:.8667rem; }
+.match-wrap .match-col-label{ text-align:center; }
+#picCol .match-card{ font-size:1.35rem; justify-content:center; }
+</style>
+</head>
+<body>
+<div class="page" id="page">
+  <span class="cefr-tag cefr-b1">B1 · Intermediate</span>
+  <h1>I Wish It Were Friday!</h1>
+  <p class="subtitle">It’s Monday morning at the office. Nina and Paul aren’t happy about… anything.</p>
+
+  <div class="sec-div">Words for this lesson</div>
+  <p class="subtitle">Match the picture and the words. Tap a picture, then tap its words.</p>
+  <div class="score-bar"><span>Matched: <strong id="mScore">0</strong> / <span id="mTotal">0</span></span><button id="mReset">↺ Reset</button></div>
+  <div class="match-grid match-wrap">
+    <div><div class="match-col-label">Picture</div><div class="match-col" id="picCol"></div></div>
+    <div><div class="match-col-label">Words</div><div class="match-col" id="wordCol"></div></div>
+  </div>
+  <div class="win-msg" id="mWin">🎉 Great! You know the words for the conversation.</div>
+  <div class="feedback" id="mFeedback"></div>
+
+  <div class="sec-div">Before you read</div>
+  <div id="preQuestions"></div>
+
+  <div class="sec-div">The people</div>
+  <div class="cast-row" id="castRow"></div>
+
+  <div class="sec-div">The conversation</div>
+  <div class="setting-chip"><span class="section-icon">🏢</span> Monday, 9 a.m. — the office kitchen</div>
+  <p class="subtitle">The thought bubbles show what they wish for. The 📍 marks what is really true. A wish always points to the other path!</p>
+  <div id="flowLegend"></div>
+  <button class="grammar-toggle-btn" id="grammarToggle">🎨 Show Grammar</button>
+  <div class="pos-legend"></div>
+  <div id="conversation"></div>
+
+  <div class="sec-div">Check your answers</div>
+  <div id="quiz"></div>
+
+  <footer>I Wish It Were Friday! — wish / if only: present, past and annoying habits (B1)</footer>
+</div>
+
+<div id="theme-toggle-wrap">
+  <button id="theme-toggle" aria-label="Toggle light/dark mode" title="Toggle light/dark mode">
+    <span id="theme-icon">☀️</span>
+  </button>
+</div>
+<script src="house.js"></script>
+<script src="house-flow.js"></script>
+<script src="stick-character.js"></script>
+<script src="stick-sentence.js"></script>
+<script>
+/* a node and a flow: cause → ✔️ / ❌ → results; say = the path the speaker wants;
+   real = the branch that is really true (📍) — a wish is always about the OTHER path */
+const N = (text, icon, p, when) => ({ text, icon, p, when });
+const FL = (cause, yes, no, say, more) => Object.assign({ cause, yes, no, say }, more || {});
+
+const LEGEND = { real: true };
+StickSentence.cast({
+  nina: { base:'woman', colour:'#9933CC', label:'Nina' },
+  paul: { base:'man',   colour:'#CC6600', label:'Paul' }
+});
+StickSentence.toggle();
+window.LESSON_DICT = {
+  'commute':   { pos:'noun', def:'the trip from your home to work or school every day', ex:'My commute takes an hour.', es:'trayecto diario' },
+  'turn down': { pos:'phrasal verb', def:'to make the sound of something quieter', ex:'I wish he would turn it down.', es:'bajar (el volumen)' },
+  'deadline':  { pos:'noun', def:'the day or time when you must finish something', ex:'The deadline is at ten.', es:'fecha límite' },
+  'stuffed':   { pos:'adjective', def:'(informal) so full of food that you can’t eat more', ex:'I’m still stuffed from Sunday lunch.', es:'lleno/a, empachado/a' }
+};
+const WORDS = [['📅', 'Monday morning'], ['🚌', 'a long commute'], ['🚗', 'a car'], ['🤢', 'feel sick'], ['🍰', 'eat too much'],
+  ['🔊', 'loud music'], ['🎧', 'headphones'], ['📄', 'a report'], ['⏰', 'a deadline'], ['📖', 'read on the bus']];
+document.getElementById('castRow').innerHTML = ['{Nina|nina}', '{Paul|paul}'].map(StickSentence.html).join('');
+const SPEAKERS = {
+  Nina: { cast: 'nina', avatar: '👩', av: 'av-b', side: 'left' },
+  Paul: { cast: 'paul', avatar: '👨', av: 'av-a', side: 'right' }
+};
+const NOW = { real: 'no' }, DID = { real: 'yes' };
+const LINES = [
+  ['Nina', '[Good morning/none]… [I/subject] [wish/verb] [it/subject] [were/verb] [Friday/complement]!',
+    FL(N('it’s Friday', '🎉'), N('relax all weekend', '🛋️', 1), N('work all week', '💼'), 'yes', NOW)],
+  ['Paul', '[Me too/none]. [My commute/subject] [was/verb] [terrible/adj]. [If only/conj] [I/subject] [had/verb] [a car/object]!',
+    FL(N('I have a car', '🚗'), N('drive to work in 20 minutes', '🛣️', 1), N('take two buses', '🚌'), 'yes', NOW)],
+  ['Nina', '[I/subject] [wish/verb] [I/subject] [lived/verb] [closer/adverb] [to the office/prep]. [It/subject] [takes/verb] [me/object] [an hour/time].',
+    FL(N('I live close to the office', '🏠'), N('walk to work', '🚶', 1), N('travel for an hour', '⏳'), 'yes', NOW)],
+  ['Paul', '[An hour/time]? [Do/aux] [you/subject] [read/verb] [on the bus/prep]?'],
+  ['Nina', '[No/none], [I/subject] [get/verb] [sick/adj]. [I/subject] [wish/verb] [I/subject] [could/aux] [read/verb] [on the bus/prep].',
+    FL(N('I can read on the bus', '📖'), N('finish a book every week', '📚', 1), N('look out of the window', '🪟'), 'yes', NOW)],
+  ['Paul', '[And/conj] [I’m/subject] [still/adverb] [stuffed/adj] [from Sunday lunch/prep]. [I/subject] [wish/verb] [I/subject] [hadn’t/neg] [eaten/part] [so much cake/object]!',
+    FL(N('I eat so much cake', '🍰', null, 'yesterday'), N('feel sick', '🤢', 1), N('feel fine', '😊'), 'no', DID)],
+  ['Nina', '[Ha/none]! [Listen/verb] — [Mark/subject] [is/aux] [playing/verb] [his music/object] [again/adverb].'],
+  ['Paul', '[Every morning/time]! [I/subject] [wish/verb] [he/subject] [would/aux] [turn/verb] [it/object] [down/part].',
+    FL(N('Mark turns the music down', '🔉'), N('we can concentrate', '🧠', 1), N('we get a headache', '🤕'), 'yes', NOW)],
+  ['Nina', '[Or/conj] [I/subject] [wish/verb] [he/subject] [would/aux] [use/verb] [headphones/object]!'],
+  ['Paul', '[Oh no/none]. [The report/subject]! [The deadline/subject] [is/verb] [at ten/time].'],
+  ['Nina', '[Did/aux] [you/subject] [finish/verb] [it/object] [on Friday/time]?'],
+  ['Paul', '[No/none]… [I/subject] [wish/verb] [I/subject] [had/aux] [finished/part] [it/object]. [If only/conj] [I/subject] [hadn’t/neg] [gone/part] [home/adverb] [early/adverb]!',
+    FL(N('I finish the report', '📄', null, 'on Friday'), N('relax now', '😌', 1), N('panic now', '😱'), 'yes', { real: 'no' })],
+  ['Nina', '[Well/none], [I/subject] [wish/verb] [I/subject] [could/aux] [help/verb] [you/object], [but/conj] [I/subject] [have/verb] [a meeting/object].'],
+  ['Paul', '[It’s OK/none]. [I/subject] [wish/verb] [it/subject] [were/verb] [Friday/complement] [too/adverb]!']
+];
+const CQ_ITEMS = [
+  { q: 'Why does Paul wish he had a car?', opts: ['His commute was terrible', 'He lives very close', 'He wants to read'], correct: 0 },
+  { q: 'Why doesn’t Nina read on the bus?', opts: ['She gets sick', 'She doesn’t like books', 'The bus is too loud'], correct: 0 },
+  { q: 'What does Paul regret?', opts: ['Eating so much cake and not finishing the report', 'Buying a car', 'Playing loud music'], correct: 0 }
+];
+
+/* ── the conversation: a line can carry a flowchart in a thought bubble ─── */
+const avStyle = s => { const c = (StickSentence.cast()[s.cast] || {}).colour;
+  return c ? 'background:' + c + '40;box-shadow:inset 0 0 0 2px ' + c : ''; };
+const conv = document.getElementById('conversation');
+LINES.forEach(([who, text, flow]) => {
+  const s = SPEAKERS[who], right = s.side === 'right';
+  conv.insertAdjacentHTML('beforeend',
+    '<div class="bubble-wrap' + (right ? ' right' : '') + '">' +
+      '<div class="avatar ' + s.av + '" style="' + avStyle(s) + '">' + s.avatar + '</div>' +
+      '<div class="bubble-col"><div class="bname' + (right ? ' right' : '') + '">' + who + '</div>' +
+      '<div class="bubble ' + (right ? 'right' : 'left') + '">' + StickSentence.html(text) + '</div>' +
+      (flow ? HouseFlow.html(flow, { label: who + ' thinks' }) : '') + '</div>' +
+    '</div>');
+});
+document.getElementById('flowLegend').innerHTML = HouseFlow.legend(LEGEND);
+
+HouseMatching.build({
+  left: 'picCol', right: 'wordCol', scoreEl: 'mScore', totalEl: 'mTotal', winEl: 'mWin', resetBtn: 'mReset', feedbackEl: 'mFeedback',
+  pairs: WORDS.map(([e, w]) => ({ id: w, left: e, right: w }))
+});
+HouseComprehension.build({ pre: 'preQuestions', quiz: 'quiz', items: CQ_ITEMS });
+</script>
+<script>HouseGrammar.init();</script>
+</body>
+</html>

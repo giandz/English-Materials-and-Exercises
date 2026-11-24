@@ -1,0 +1,156 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<title>in, on, at — Clarification</title>
+<script>
+(function(){
+  try{
+    var saved = localStorage.getItem('theme-preference');
+    var theme = (saved === 'light' || saved === 'dark')
+      ? saved
+      : ((window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches) ? 'dark' : 'light');
+    document.documentElement.setAttribute('data-theme', theme);
+    var fs = parseFloat(localStorage.getItem('font-size-preference'));
+    if (fs >= 10 && fs <= 28) document.documentElement.style.setProperty('--fs-base', fs + 'px');
+  }catch(e){ /* localStorage/matchMedia unavailable — CSS media query still applies */ }
+})();
+</script>
+<link rel="stylesheet" href="house.css">
+<style>
+.flow-card{ border:1px solid var(--color-border-tertiary); border-radius:var(--border-radius-lg); background:var(--surface-2); padding:10px 12px; margin-bottom:10px; }
+.flow-card .sent{ font-size:1rem; font-weight:600; margin-bottom:6px; }
+.flow-card .note{ font-size:.8333rem; color:var(--text-secondary); margin-top:4px; }
+.if-part{ color:hsl(217, 70%, 42%); font-weight:700; }
+.res-part{ color:hsl(120, 60%, 32%); font-weight:700; }
+.res-no{ color:hsl(0, 65%, 42%); font-weight:700; }
+[data-theme="dark"] .res-no{ color:hsl(0, 75%, 70%); }
+[data-theme="dark"] .if-part{ color:hsl(217, 80%, 70%); }
+[data-theme="dark"] .res-part{ color:hsl(120, 55%, 65%); }
+.form-table{ width:100%; border-collapse:collapse; margin:0 0 1rem; font-size:.9333rem; }
+.form-table th, .form-table td{ border:1px solid var(--color-border-tertiary); padding:7px 9px; text-align:left; vertical-align:top; }
+.form-table th{ background:var(--surface-1); font-size:.8rem; text-transform:uppercase; letter-spacing:.04em; color:var(--text-secondary); }
+.pct-row{ display:flex; flex-wrap:wrap; gap:6px; margin:0 0 1rem; }
+.pct-row span{ padding:3px 10px; border-radius:999px; font-weight:700; font-size:.8667rem; border:2px solid; }
+.rule-box p{ margin:0 0 6px; }
+.rule-box p:last-child{ margin-bottom:0; }
+.big-pic{ font-size:1.6rem; letter-spacing:.1em; margin:2px 0 4px; }
+.prep-grid{ display:grid; grid-template-columns:repeat(auto-fill, minmax(200px, 1fr)); gap:8px; margin:0 0 1rem; }
+.prep-grid > div{ border:1px solid var(--color-border-tertiary); border-radius:var(--border-radius-lg); background:var(--surface-2); padding:9px 11px; }
+.prep-grid h4{ margin:0 0 3px; font-size:1.05rem; }
+.prep-grid .rule{ font-size:.8rem; color:var(--text-secondary); margin-bottom:5px; }
+.prep-grid .ex{ font-size:.9rem; line-height:1.6; }
+.hl{ font-weight:700; color:var(--text-accent); }
+</style>
+</head>
+<body>
+<div class="page" id="page">
+  <span class="cefr-tag cefr-a1">A1 · Beginner</span>
+  <h1>in, on, at: Times and Dates</h1>
+  <p class="subtitle">Small time, a day, a big time.</p>
+
+  <div class="sec-div">Look</div>
+  <p class="subtitle">From the conversation. Look at the time words.</p>
+  <div id="look"></div>
+
+  <div class="sec-div">Meaning</div>
+  <div class="rule-box" id="meaning"></div>
+
+  <div class="sec-div">Check the meaning</div>
+  <p class="subtitle">Answer the questions about each sentence.</p>
+  <div id="ccq"></div>
+
+  <div class="sec-div">Look at the form</div>
+  <p class="subtitle">What is each part? Drag a label (or tap a label, then tap a box).</p>
+  <div class="score-bar"><span>Correct: <strong id="fcScore">0</strong> / <span id="fcTotal">0</span></span></div>
+  <div id="formClarf"></div>
+  <div id="formRule"></div>
+
+  <div class="sec-div">Common mistakes</div>
+  <div id="mistakes"></div>
+
+  <div class="sec-div">Error hunt</div>
+  <p class="subtitle">Every sentence has one mistake. Tap a word — or a space between words — to fix it. Then press OK.</p>
+  <div class="score-bar"><span>Done: <strong id="errorScore">0</strong> / <span id="errorTotal">0</span></span></div>
+  <div id="errorHuntItems"></div>
+
+  <footer>Prepositions of time: in, on, at — Clarification (A1)</footer>
+</div>
+
+<div id="theme-toggle-wrap">
+  <button id="theme-toggle" aria-label="Toggle light/dark mode" title="Toggle light/dark mode">
+    <span id="theme-icon">☀️</span>
+  </button>
+</div>
+<script src="house.js"></script>
+<script>
+const LOOK = [
+  ['I start work <span class="hl">at</span> eight thirty.', '<div class="big-pic">🕣</div>', '<b>at</b> + a clock time: a small, exact time.'],
+  ['Can you come <span class="hl">on</span> Monday?', '<div class="big-pic">📅</div>', '<b>on</b> + a day or a date.'],
+  ['The clinic is closed <span class="hl">in</span> August.', '<div class="big-pic">🗓️</div>', '<b>in</b> + a month, a year, a season — a long time.']
+];
+const MEANING = '<p><strong>Small → big:</strong> <b>at</b> a time · <b>on</b> a day · <b>in</b> a month, a year.</p>' +
+  '<div class="prep-grid">' +
+  '<div><h4>⏰ at</h4><div class="rule">clock times · night · holidays</div><div class="ex">at 9 o’clock · at 4:15<br>at night · at noon<br>at Christmas · at lunchtime</div></div>' +
+  '<div><h4>📅 on</h4><div class="rule">days · dates · special days</div><div class="ex">on Monday · on Mondays<br>on May 12th<br>on my birthday · on the weekend</div></div>' +
+  '<div><h4>🗓️ in</h4><div class="rule">months · years · seasons · parts of the day</div><div class="ex">in July · in 1990<br>in winter · in summer<br>in the morning · in the afternoon</div></div></div>' +
+  '<p><strong>Careful:</strong> <b>at</b> night, but <b>in</b> the morning. A day + part of the day = <b>on</b>: <i>on Wednesday afternoon</i>.</p>';
+const CCQ = [
+  { sentence: 'I have an appointment on Wednesday at four fifteen.', questions: [
+    { q: 'Is Wednesday a day or a month?', opts: ['A day', 'A month'], correct: 0, why: 'A day → <b>on</b> Wednesday.' },
+    { q: 'Is four fifteen a clock time?', opts: ['Yes', 'No'], correct: 0, why: 'Yes → <b>at</b> four fifteen.' } ] },
+  { sentence: 'The clinic is closed in August.', questions: [
+    { q: 'Is August a day?', opts: ['Yes', 'No'], correct: 1, why: 'No. It’s a month → <b>in</b> August.' } ] }
+];
+const FORM_POOL = ['subject', 'verb', 'adj', 'object', 'prep', 'time'];
+const FORM = [
+  { form: 'aff', parts: [['I', 'subject'], ['start', 'verb'], ['work', 'object'], ['at', 'prep'], ['eight thirty', 'time'], ['.', null]] },
+  { form: 'aff', parts: [['My birthday', 'subject'], ['is', 'verb'], ['on', 'prep'], ['May 12th', 'time'], ['.', null]] },
+  { form: 'aff', parts: [['The clinic', 'subject'], ['is', 'verb'], ['closed', 'adj'], ['in', 'prep'], ['August', 'time'], ['.', null]] },
+  { form: 'aff', parts: [['See', 'verb'], ['you', 'object'], ['on', 'prep'], ['Wednesday afternoon', 'time'], ['!', null]] }
+];
+const FORM_RULE = '<table class="form-table"><tr><th>at</th><th>on</th><th>in</th></tr>' +
+  '<tr><td>at + time</td><td>on + day / date</td><td>in + month / year / season</td></tr>' +
+  '<tr><td>at 7:30</td><td>on Friday</td><td>in March</td></tr></table>' +
+  '<div class="rule-box"><p><strong>No preposition</strong> with <i>today, tomorrow, yesterday, next week, last year, every day, this morning</i>: <i>See you <s>on</s> next week.</i></p></div>';
+const MISTAKES = [
+  ['I work in Mondays.', 'I work on Mondays.'],
+  ['I drink coffee at the morning.', 'I drink coffee in the morning.'],
+  ['My vacation is on July.', 'My vacation is in July.'],
+  ['The class starts in nine o’clock.', 'The class starts at nine o’clock.'],
+  ['See you on next week!', 'See you next week!']
+];
+const EH_ITEMS = [
+  { words: ['I', 'work', 'in', 'Mondays', '.'], error: { type: 'wrong', wordIndex: 2, options: ['on', 'at', 'to'], correct: 'on' } },
+  { words: ['My', 'appointment', 'is', 'on', 'nine', 'o’clock', '.'], error: { type: 'wrong', wordIndex: 3, options: ['at', 'in', 'by'], correct: 'at' } },
+  { words: ['The', 'clinic', 'is', 'closed', 'at', 'August', '.'], error: { type: 'wrong', wordIndex: 4, options: ['in', 'on', 'to'], correct: 'in' } },
+  { words: ['I', 'was', 'born', 'on', '1990', '.'], error: { type: 'wrong', wordIndex: 3, options: ['in', 'at', 'to'], correct: 'in' } },
+  { words: ['We', 'have', 'English', 'class', 'on', 'the', 'morning', '.'], error: { type: 'wrong', wordIndex: 4, options: ['in', 'at', 'by'], correct: 'in' } },
+  { words: ['See', 'you', 'on', 'next', 'week', '!'], error: { type: 'extra', wordIndex: 2 } },
+  { words: ['My', 'birthday', 'is', 'May', '12th', '.'], error: { type: 'missing', gapIndex: 3, options: ['on', 'in', 'at'], correct: 'on' } },
+  { words: ['I', 'sleep', 'in', 'night', '.'], error: { type: 'wrong', wordIndex: 2, options: ['at', 'on', 'to'], correct: 'at' } }
+];
+
+/* LOOK: [the sentence, a picture (HTML) or { timeline: HouseTimeline options }, a note] */
+const look = document.getElementById('look');
+LOOK.forEach(([sent, vis, note], i) => {
+  const card = document.createElement('div');
+  card.className = 'flow-card';
+  card.innerHTML = '<div class="sent">' + sent + '</div>' +
+    (vis && vis.timeline ? '<div id="lookTl' + i + '"></div>' : (vis || '')) + (note ? '<div class="note">' + note + '</div>' : '');
+  look.appendChild(card);
+  if (vis && vis.timeline) HouseTimeline.build(Object.assign({ container: 'lookTl' + i }, vis.timeline));
+});
+document.getElementById('meaning').innerHTML = MEANING;
+HouseCCQ.build({ container: 'ccq', items: CCQ });
+HouseFormClarf.build({ container: 'formClarf', scoreEl: 'fcScore', totalEl: 'fcTotal', pool: FORM_POOL, items: FORM });
+document.getElementById('formRule').innerHTML = FORM_RULE;
+document.getElementById('mistakes').innerHTML = MISTAKES.map(([no, yes]) =>
+  '<div class="pair-card"><div class="pair-line no"><span class="mark">✗</span>' + no + '</div>' +
+  '<div class="pair-line yes"><span class="mark">✓</span>' + yes + '</div></div>').join('');
+HouseErrorHunt.build({ container: 'errorHuntItems', items: EH_ITEMS, scoreEl: 'errorScore', totalEl: 'errorTotal' });
+</script>
+<script>HouseGrammar.init();</script>
+</body>
+</html>

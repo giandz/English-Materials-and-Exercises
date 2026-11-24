@@ -1,0 +1,133 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<title>She Dances Beautifully! — Adverbs of Manner</title>
+<script>
+(function(){
+  try{
+    var saved = localStorage.getItem('theme-preference');
+    var theme = (saved === 'light' || saved === 'dark')
+      ? saved
+      : ((window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches) ? 'dark' : 'light');
+    document.documentElement.setAttribute('data-theme', theme);
+    var fs = parseFloat(localStorage.getItem('font-size-preference'));
+    if (fs >= 10 && fs <= 28) document.documentElement.style.setProperty('--fs-base', fs + 'px');
+  }catch(e){ /* localStorage/matchMedia unavailable — CSS media query still applies */ }
+})();
+</script>
+<link rel="stylesheet" href="house.css">
+<style>
+.cast-row{ display:flex; flex-wrap:wrap; gap:14px 18px; justify-content:center; align-items:flex-end; margin:0 0 1rem; padding:10px; background:var(--surface-1); border:1px solid var(--border); border-radius:var(--border-radius-lg); font-size:.8667rem; }
+.match-wrap .match-col-label{ text-align:center; }
+#picCol .match-card{ font-size:1.35rem; justify-content:center; }
+</style>
+</head>
+<body>
+<div class="page" id="page">
+  <span class="cefr-tag cefr-a2">A2 · Elementary</span>
+  <h1>She Dances Beautifully!</h1>
+  <p class="subtitle">Nora and Jake are watching a dance competition on TV.</p>
+
+  <div class="sec-div">Words for this lesson</div>
+  <p class="subtitle">Match the picture and the words. Tap a picture, then tap its words.</p>
+  <div class="score-bar"><span>Matched: <strong id="mScore">0</strong> / <span id="mTotal">0</span></span><button id="mReset">↺ Reset</button></div>
+  <div class="match-grid match-wrap">
+    <div><div class="match-col-label">Picture</div><div class="match-col" id="picCol"></div></div>
+    <div><div class="match-col-label">Words</div><div class="match-col" id="wordCol"></div></div>
+  </div>
+  <div class="win-msg" id="mWin">🎉 Great! You know the words for the conversation.</div>
+  <div class="feedback" id="mFeedback"></div>
+
+  <div class="sec-div">Before you read</div>
+  <div id="preQuestions"></div>
+
+  <div class="sec-div">The people</div>
+  <div class="cast-row" id="castRow"></div>
+
+  <div class="sec-div">The conversation</div>
+  <div class="setting-chip"><span class="section-icon">📺</span> Saturday night — on the sofa, in front of the TV</div>
+  <button class="grammar-toggle-btn" id="grammarToggle">🎨 Show Grammar</button>
+  <div class="pos-legend"></div>
+  <div id="conversation"></div>
+
+  <div class="sec-div">Check your answers</div>
+  <div id="quiz"></div>
+
+  <footer>She Dances Beautifully! — Adverbs of manner (A2)</footer>
+</div>
+
+<div id="theme-toggle-wrap">
+  <button id="theme-toggle" aria-label="Toggle light/dark mode" title="Toggle light/dark mode">
+    <span id="theme-icon">☀️</span>
+  </button>
+</div>
+<script src="house.js"></script>
+<script src="stick-character.js"></script>
+<script src="stick-sentence.js"></script>
+<script>
+StickSentence.cast({
+  nora: { base:'woman', colour:'#CC33CC', label:'Nora' },
+  jake: { base:'man',   colour:'#33AA66', label:'Jake' }
+});
+StickSentence.toggle();
+window.LESSON_DICT = {
+  'competition': { pos:'noun', def:'an event where people try to win', ex:'The dance competition is starting!', es:'concurso, competencia' },
+  'judge':       { pos:'noun', def:'a person who decides who wins a competition', ex:'The judges are talking quietly.', es:'juez/a' },
+  'audience':    { pos:'noun', def:'the people who watch a show', ex:'The audience is clapping loudly.', es:'público' },
+  'gracefully':  { pos:'adverb', def:'in a beautiful, smooth way', ex:'They move gracefully.', es:'con gracia' }
+};
+const WORDS = [['💃', 'dance'], ['🏆', 'a competition'], ['🧑‍⚖️', 'the judges'], ['👏', 'clap'], ['🎺', 'a band'],
+  ['🎤', 'an interview'], ['🐢', 'slowly'], ['⚡', 'quickly'], ['🔊', 'loudly'], ['🤫', 'quietly']];
+document.getElementById('castRow').innerHTML = ['{Nora|nora}', '{Jake|jake}'].map(StickSentence.html).join('');
+const SPEAKERS = {
+  Nora: { cast: 'nora', avatar: '👩', av: 'av-b', side: 'left' },
+  Jake: { cast: 'jake', avatar: '👨', av: 'av-a', side: 'right' }
+};
+const LINES = [
+  ['Nora', '[Look/verb], [Jake/noun]! [The dance competition/subject] [is/aux] [starting/verb]!'],
+  ['Jake', '[Who’s first/none]?'],
+  ['Nora', '[Carla and Pedro/subject]. [Wow/none], [they/subject] [dance/verb] [beautifully/adverb]!'],
+  ['Jake', '[Yes/none], [they/subject] [move/verb] [really/adverb] [gracefully/adverb]. [Pedro/subject] [turns/verb] [very/adverb] [quickly/adverb].'],
+  ['Nora', '[Oh no/none]! [Carla/subject] [fell/verb]!'],
+  ['Jake', '[Don’t worry/none], [she/subject] [got up/verb] [fast/adverb]. [She’s/subject] [smiling/verb] [happily/adverb].'],
+  ['Nora', '[Next/adverb] [is/verb] [Tom/noun]. [Hmm/none]… [he/subject] [dances/verb] [badly/adverb].'],
+  ['Jake', '[Ha/none]! [He’s/subject] [moving/verb] [very/adverb] [slowly/adverb]. [And/conj] [he/subject] [isn’t/neg] [listening/verb] [carefully/adverb] [to the music/prep].'],
+  ['Nora', '[But/conj] [he’s/subject] [trying/verb] [hard/adverb]! [I/subject] [like/verb] [him/object].'],
+  ['Jake', '[The judges/subject] [are/aux] [talking/verb] [quietly/adverb]. [What/wh] [are/aux] [they/subject] [saying/verb]?'],
+  ['Nora', '[Now/time] [the band/subject] [is/aux] [playing/verb] [loudly/adverb] — [it’s the final/none]!'],
+  ['Jake', '[Look at/verb] [Sofia/noun]. [She/subject] [dances/verb] [perfectly/adverb]!'],
+  ['Nora', '[She’s the winner/none]! [The audience/subject] [is/aux] [clapping/verb] [loudly/adverb].'],
+  ['Jake', '[She/subject] [speaks/verb] [English/object] [well/adverb], [too/adverb] — [listen to/verb] [her interview/object].'],
+  ['Nora', '[She’s/subject] [speaking/verb] [so/adverb] [fast/adverb]! [Turn it up/none], [please/adverb].']
+];
+const CQ_ITEMS = [
+  { q: 'How do Carla and Pedro dance?', opts: ['Beautifully', 'Badly', 'Slowly'], correct: 0 },
+  { q: 'How does Tom dance?', opts: ['Badly and slowly', 'Perfectly', 'Very fast'], correct: 0 },
+  { q: 'Who is the winner?', opts: ['Sofia', 'Carla', 'Tom'], correct: 0 }
+];
+
+/* ── the conversation ─────────────────────────────────────────────────── */
+const avStyle = s => { const c = (StickSentence.cast()[s.cast] || {}).colour;
+  return c ? 'background:' + c + '40;box-shadow:inset 0 0 0 2px ' + c : ''; };
+const conv = document.getElementById('conversation');
+LINES.forEach(([who, text]) => {
+  const s = SPEAKERS[who], right = s.side === 'right';
+  conv.insertAdjacentHTML('beforeend',
+    '<div class="bubble-wrap' + (right ? ' right' : '') + '">' +
+      '<div class="avatar ' + s.av + '" style="' + avStyle(s) + '">' + s.avatar + '</div>' +
+      '<div class="bubble-col"><div class="bname' + (right ? ' right' : '') + '">' + who + '</div>' +
+      '<div class="bubble ' + (right ? 'right' : 'left') + '">' + StickSentence.html(text) + '</div></div>' +
+    '</div>');
+});
+
+HouseMatching.build({
+  left: 'picCol', right: 'wordCol', scoreEl: 'mScore', totalEl: 'mTotal', winEl: 'mWin', resetBtn: 'mReset', feedbackEl: 'mFeedback',
+  pairs: WORDS.map(([e, w]) => ({ id: w, left: e, right: w }))
+});
+HouseComprehension.build({ pre: 'preQuestions', quiz: 'quiz', items: CQ_ITEMS });
+</script>
+<script>HouseGrammar.init();</script>
+</body>
+</html>
