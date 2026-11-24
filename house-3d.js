@@ -118,15 +118,20 @@
     var n = cross(sub(pts[1], pts[0]), sub(pts[2], pts[0]));
     return dot(n, sub(mean(pts), ref)) < 0 ? pts.slice().reverse() : pts;
   }
-  function boxFaces(e) {
+  /* skip: faces left out ('front' +z, 'back', 'top', 'bottom', 'right' +x, 'left');
+     inside: the faces look in, not out (the walls of a hollow: an oven, a well) */
+  var SIDES = ['front', 'back', 'top', 'bottom', 'right', 'left'];
+  function boxFaces(e, skip, inside) {
     var x0 = e[0], x1 = e[1], y0 = e[2], y1 = e[3], z0 = e[4], z1 = e[5], c = [(x0 + x1) / 2, (y0 + y1) / 2, (z0 + z1) / 2];
     return [
       [[x0, y0, z1], [x1, y0, z1], [x1, y1, z1], [x0, y1, z1]], [[x0, y0, z0], [x0, y1, z0], [x1, y1, z0], [x1, y0, z0]],
       [[x0, y1, z0], [x0, y1, z1], [x1, y1, z1], [x1, y1, z0]], [[x0, y0, z0], [x1, y0, z0], [x1, y0, z1], [x0, y0, z1]],
       [[x1, y0, z0], [x1, y1, z0], [x1, y1, z1], [x1, y0, z1]], [[x0, y0, z0], [x0, y0, z1], [x0, y1, z1], [x0, y1, z0]]
-    ].map(function (f) { return orient(f, c); });
+    ].map(function (f) { f = orient(f, c); return inside ? f.slice().reverse() : f; })
+      .filter(function (f, i) { return !skip || skip.indexOf(SIDES[i]) < 0; });
   }
-  function cylFaces(c, axis, r, len, r2, seg) {
+  /* open: 'top' (the + end) / 'bottom' / 'both' leaves that end open; inside: the faces look in */
+  function cylFaces(c, axis, r, len, r2, seg, open, inside, flat) {
     seg = seg || 20; r2 = r2 == null ? r : r2;
     var map = { x: function (a, b, h) { return [c[0] + h, c[1] + a, c[2] + b]; }, y: function (a, b, h) { return [c[0] + a, c[1] + h, c[2] + b]; }, z: function (a, b, h) { return [c[0] + a, c[1] + b, c[2] + h]; } }[axis];
     var lo = [], hi = [], faces = [];
@@ -134,9 +139,10 @@
       var t = i / seg * Math.PI * 2, ca = Math.cos(t), sa = Math.sin(t);
       lo.push(map(r * ca, r * sa, -len / 2)); hi.push(map(r2 * ca, r2 * sa, len / 2));
     }
-    for (i = 0; i < seg; i++) { var j = (i + 1) % seg; faces.push(orient([lo[i], lo[j], hi[j], hi[i]], c)); }
-    faces.push(orient(lo, c)); faces.push(orient(hi, c));
-    return faces;
+    if (!flat) for (i = 0; i < seg; i++) { var j = (i + 1) % seg; faces.push(orient([lo[i], lo[j], hi[j], hi[i]], c)); }
+    if (open !== 'bottom' && open !== 'both') faces.push(orient(lo, c));
+    if (open !== 'top' && open !== 'both') faces.push(orient(hi, c));
+    return inside ? faces.map(function (f) { return f.slice().reverse(); }) : faces;
   }
   function tubeFaces(pts, r) {
     var faces = [];
@@ -163,15 +169,16 @@
       if (s.t === 'box') return Math.max(s.e[1] - s.e[0], s.e[3] - s.e[2], s.e[5] - s.e[4]);
       if (s.t === 'top') return Math.max(s.e[1] - s.e[0], s.e[4] - s.e[3]);
       if (s.t === 'cyl') return Math.max(2 * s.r, s.len);
+      if (s.t === 'faces') { var lo = [1e9, 1e9, 1e9], hi = [-1e9, -1e9, -1e9]; s.faces.forEach(function (f) { f.forEach(function (q) { for (var i = 0; i < 3; i++) { lo[i] = Math.min(lo[i], q[i]); hi[i] = Math.max(hi[i], q[i]); } }); }); return Math.max(hi[0] - lo[0], hi[1] - lo[1], hi[2] - lo[2]); }
       return 1e9;
     };
     var big = Math.max.apply(null, model.shapes.map(function (s) { return s.t === 'tube' ? 0 : ext(s); }));
     model.shapes.forEach(function (s, si) {
-      var fs = s.t === 'box' ? boxFaces(s.e) : s.t === 'cyl' ? cylFaces(s.c, s.ax, s.r, s.len, s.r2, s.seg)
+      var fs = s.t === 'box' ? boxFaces(s.e, s.skip, s.inside) : s.t === 'cyl' ? cylFaces(s.c, s.ax, s.r, s.len, s.r2, s.seg, s.open, s.inside, s.flat)
         : s.t === 'top' ? [[[s.e[0], s.e[2], s.e[3]], [s.e[0], s.e[2], s.e[4]], [s.e[1], s.e[2], s.e[4]], [s.e[1], s.e[2], s.e[3]]]].map(function (f) { return orient(f, [0, -1e6, 0]); })
-        : s.t === 'tube' ? null : [];
+        : s.t === 'faces' ? s.faces : s.t === 'tube' ? null : [];
       if (s.t === 'tube') { faces.push({ tube: s, shape: si }); return; }
-      fs.forEach(function (f) { faces.push({ pts: f, col: rgb(s.col), part: s.part || null, group: s.group || s.part || null, id: s.id || null, on: s.on || null, layer: s.layer || 1, bias: (s.bias || 0) + (ext(s) < big * 0.3 ? 2.5 : 0), clipY: s.clipY, shape: si }); });
+      fs.forEach(function (f) { faces.push({ pts: f, col: rgb(s.col), part: s.part || null, group: s.group || s.part || null, id: s.id || null, on: s.on || null, layer: s.layer || 1, bias: (s.bias || 0) + (ext(s) < big * 0.3 ? 2.5 : 0), clipY: s.clipY, clipZ: s.clipZ, seamless: s.seamless, key: s.key, shape: si }); });
     });
     model._faces = faces;
     /* bounds: the middle and the size the camera fits */
@@ -181,7 +188,7 @@
     all.forEach(function (p) { for (var i = 0; i < 3; i++) { lo[i] = Math.min(lo[i], p[i]); hi[i] = Math.max(hi[i], p[i]); } });
     model._center = mul(add(lo, hi), 0.5);
     /* the machine itself, without its power cord, plug and socket: what the camera looks at */
-    var POWER = { cord: 1, plug: 1, socket: 1 }, clo = [1e9, 1e9, 1e9], chi = [-1e9, -1e9, -1e9];
+    var POWER = { cord: 1, plug: 1, socket: 1, charger: 1, connector: 1 }, clo = [1e9, 1e9, 1e9], chi = [-1e9, -1e9, -1e9];
     faces.forEach(function (f) { if (f.tube || POWER[f.part]) return; f.pts.forEach(function (p) { for (var i = 0; i < 3; i++) { clo[i] = Math.min(clo[i], p[i]); chi[i] = Math.max(chi[i], p[i]); } }); });
     if (clo[0] < 1e9) model._center = mul(add(clo, chi), 0.5);
     model._radius = Math.max(hi[0] - lo[0], hi[1] - lo[1], hi[2] - lo[2]) * 0.66;
@@ -202,7 +209,23 @@
     this.anim = {};         // motion → { from, to, t0, dur, next }
     this.fx = [];           // finger effects playing
     Object.keys(this.m.motions || {}).forEach(function (k) { this.val[k] = this.m.motions[k].start || 0; }, this);
+    this.state = { ch: 0 };                                                        // e.g. the TV channel
+    this.dtext = (this.m.displays || []).map(function (d) { return d.text; });    // what each 7-segment display says
+    this.sp = (this.m.spins || []).map(function () { return { a: 0, r: 0 }; });   // things that keep turning: angle, speed
+    this.lv = (this.m.lights || []).map(function () { return 0; });               // how bright each light is now (0 … 1)
+    this.dv = (this.m.displays || []).map(function () { return 0; });
+    this.last = null;
+    this.settle();
   }
+  /* lights and displays straight to what they should be now (no fading) */
+  Scene.prototype.settle = function () {
+    var self = this;
+    (this.m.lights || []).forEach(function (l, i) { self.lv[i] = l.when(self) ? 1 : 0; });
+    (this.m.displays || []).forEach(function (d, i) { self.dv[i] = d.when(self) ? 1 : 0; });
+  };
+  Scene.prototype.on = function (k) { return (this.val[k] || 0) > 0.5; };
+  /* plugged in: the plug all the way in (a model with no plug has batteries) */
+  Scene.prototype.plugged = function () { return !this.m.motions.plug || this.val.plug > 0.97; };
   Scene.prototype.ops = function (g) {
     /* the moves on group g (in motion order), then its parent's */
     var out = [], m = this.m, self = this;
@@ -214,6 +237,12 @@
         if (op.move) out.push({ move: mul(op.move, Math.min(v, 1)) });
       });
     });
+    (m.spins || []).forEach(function (sp, i) {
+      if (sp.g !== g) return;
+      var st = self.sp[i];
+      if (sp.wobble) { if (st.r > 0.001) out.push({ move: mul(sp.wobble, Math.sin(st.a * Math.PI / 180) * st.r) }); }
+      else if (st.a) out.push({ rot: { ax: sp.ax, pivot: sp.pivot }, deg: st.a });
+    });
     var par = m.groups && m.groups[g] && m.groups[g].parent;
     return par ? out.concat(this.ops(par)) : out;
   };
@@ -221,25 +250,56 @@
     for (var i = 0; i < ops.length; i++) p = ops[i].rot ? rotate(p, ops[i].rot.ax, ops[i].deg, ops[i].rot.pivot) : add(p, ops[i].move);
     return p;
   };
+  /* → { col, lv } for the brightest light on group g now, or null */
   Scene.prototype.lit = function (g) {
-    var m = this.m, self = this, on = false;
-    Object.keys(m.motions || {}).forEach(function (k) { if (m.motions[k].light === g && self.val[k] > 0.5) on = true; });
-    return on;
+    var self = this, best = null;
+    (this.m.lights || []).forEach(function (l, i) {
+      if (l.g !== g || self.lv[i] < 0.003 || (best && self.lv[i] <= best.lv)) return;
+      best = { lv: self.lv[i], col: typeof l.col === 'function' ? l.col(self) : (l.col || [255, 214, 90]) };
+    });
+    return best;
   };
-  Scene.prototype.world = function () {
+  Scene.prototype.world = function (now) {
     /* every face where it is now */
-    var self = this, cache = {}, out = [];
+    var self = this, cache = {}, litCache = {}, out = [], pressed = this.pressed(now || performance.now());
+    var litOf = function (g) { if (!g) return null; if (!(g in litCache)) litCache[g] = self.lit(g); return litCache[g]; };
     var opsOf = function (g) { if (!g) return []; if (!cache[g]) cache[g] = self.ops(g); return cache[g]; };
     this.m._faces.forEach(function (f) {
       if (f.tube) {
         var t = f.tube, pts = t.pts.slice();
         if (t.endGroup) pts[pts.length - 1] = self.place(pts[pts.length - 1], opsOf(t.endGroup));
+        if (t.startGroup) pts[0] = self.place(pts[0], opsOf(t.startGroup));
         tubeFaces(pts, t.r).forEach(function (q) { out.push({ pts: q, col: rgb(t.col), part: t.part || null, bias: 0 }); });
         return;
       }
       var ops = opsOf(f.group), pts = ops.length ? f.pts.map(function (p) { return self.place(p, ops); }) : f.pts;
       if (f.clipY != null) pts = pts.map(function (p) { return p[1] < f.clipY ? [p[0], f.clipY, p[2]] : p; });
-      out.push({ pts: pts, col: f.group && self.lit(f.group) ? [255, 214, 90] : f.col, glow: f.group && self.lit(f.group), part: f.part, bias: f.bias, id: f.id, on: f.on, layer: f.layer });
+      if (f.clipZ != null) pts = pts.map(function (p) { return p[2] < f.clipZ ? [p[0], p[1], f.clipZ] : p; });
+      var col = f.col, lc = litOf(f.group);
+      if (f.key != null && pressed[f.key]) { var d = pressed[f.key]; pts = pts.map(function (p) { return [p[0], p[1] - 0.3 * d, p[2]]; }); col = mul(col, 1 - 0.35 * d); }
+      out.push({ pts: pts, col: lc ? mix(col, lc.col, lc.lv) : col, glow: lc ? lc.lv : 0, part: f.part, bias: f.bias, id: f.id, on: f.on, layer: f.layer, seamless: f.seamless });
+    });
+    /* 7-segment displays: the lit segments, lying on their screen */
+    (this.m.displays || []).forEach(function (d, i) {
+      var lv = self.dv[i];
+      if (lv < 0.01) return;
+      var ops = opsOf(d.g), u = d.u || [1, 0, 0], v = d.v || [0, 1, 0], col = mix(rgb(d.bg || '#000000'), rgb(d.col), lv);
+      segPolys(self.dtext[i], d.h).forEach(function (poly) {
+        var pts = poly.map(function (q) { var p = add(add(d.at, mul(u, q[0])), mul(v, q[1])); return ops.length ? self.place(p, ops) : p; });
+        out.push({ pts: pts, col: col, glow: lv, part: d.part, bias: 0, id: null, on: d.on, layer: 3 });
+      });
+    });
+    return out;
+  };
+  /* keys going down and up one after another: key number → how far down now (0 … 1) */
+  Scene.prototype.pressed = function (now) {
+    var out = {};
+    this.fx.forEach(function (f) {
+      if (f.act.fx !== 'keys') return;
+      f.seq.forEach(function (q) {
+        var u = (now - f.t0 - q.t) / 170;
+        if (u > 0 && u < 1) out[q.k] = Math.max(out[q.k] || 0, Math.sin(Math.PI * u));
+      });
     });
     return out;
   };
@@ -257,12 +317,34 @@
   function ease(t) { return t < 0 ? 0 : t > 1 ? 1 : t * t * (3 - 2 * t); }
   Scene.prototype.play = function (act, now) {
     now = now || performance.now();
+    var self = this;
+    if (act.also) [].concat(act.also).forEach(function (a) { self.play(a, now); });
+    if (act.fx === 'read') {   /* a 7-segment display shows something new — if it is on */
+      var di = (this.m.displays || []).map(function (d) { return d.id; }).indexOf(act.d), d = this.m.displays[di];
+      if (d && this.dv[di] > 0.5) this.dtext[di] = (RAND[d.kind] || RAND.num2)();
+      return;
+    }
+    if (act.fx === 'channel') { var n = this.m.channels || 4; this.state.ch = (this.state.ch + (act.dir || 1) + n) % n; return; }
+    if (act.fx === 'keys') {   /* random keys, one after another */
+      var n = this.m.keyCount || 0, seq = [], gap = act.gap || 140, last = -1;
+      for (var q = 0; q < (act.count || 6) && n; q++) {
+        var k; do { k = Math.floor(Math.random() * n); } while (k === last && n > 1);
+        last = k; seq.push({ k: k, t: q * gap });
+      }
+      this.fx.push({ act: act, t0: now, seq: seq, dur: (act.count || 6) * gap + 220 });
+      return;
+    }
     if (act.fx) { this.fx.push({ act: act, t0: now, dur: act.fx === 'swipe' ? 900 : 750 }); return; }
     var k = act.m, mo = this.m.motions[k];
     if (!mo) return;
     var v = this.value(k, now), dur = mo.dur || 650, to = act.to;
     if (to === 'toggle') to = v > 0.5 ? 0 : 1;
     if (to === 'step') to = Math.round(v) + 1;
+    if (to === 'cycle') to = (Math.round(v) + 1) % ((act.max || 3) + 1);
+    if (to === 'up' || to === 'down') {   /* a volume: one step up or down, 0 … max */
+      var st = act.step || 0.2, mx = act.max || 1;
+      to = Math.max(0, Math.min(mx, Math.round(v / st + (to === 'up' ? 1 : -1)) * st));
+    }
     if (to === 'bounce') {
       var times = act.times || 1, seq = [];
       for (var i = 0; i < times; i++) seq.push(1, 0);
@@ -274,7 +356,24 @@
   Scene.prototype.value = function (k) { return this.val[k]; };
   /* → true while something is still moving */
   Scene.prototype.tick = function (now) {
-    var busy = false, self = this;
+    var busy = false, self = this, dt = this.last == null ? 16 : Math.max(0, Math.min(100, now - this.last));
+    this.last = now;
+    var fade = function (arr, i, on, inMs, outMs) {
+      var t = on ? 1 : 0, v = arr[i];
+      if (v === t) return;
+      v += (t > v ? 1 : -1) * dt / (t > v ? (inMs || 250) : (outMs || 250));
+      arr[i] = t > arr[i] ? Math.min(t, v) : Math.max(t, v);
+      busy = true;
+    };
+    (this.m.lights || []).forEach(function (l, i) { fade(self.lv, i, l.when(self), l.fadeIn, l.fadeOut); });
+    (this.m.displays || []).forEach(function (d, i) { fade(self.dv, i, d.when(self), d.fadeIn || 300, d.fadeOut || 400); });
+    (this.m.spins || []).forEach(function (sp, i) {
+      var st = self.sp[i], target = sp.wobble ? (sp.when(self) ? (sp.scale ? sp.scale(self) : 1) : 0) : sp.rate(self);
+      st.r += (target - st.r) * Math.min(1, dt / (sp.ease || 700));
+      if (Math.abs(st.r - target) < (sp.wobble ? 0.002 : 0.3)) st.r = target;
+      st.a = sp.wobble ? (st.a + 360 * sp.hz * dt / 1000) % 360 : (st.a + st.r * dt / 1000) % 360;
+      if (st.r || target) busy = true;
+    });
     Object.keys(this.anim).forEach(function (k) {
       var a = self.anim[k], t = (now - a.t0) / a.dur;
       self.val[k] = a.from + (a.to - a.from) * ease(t);
@@ -289,6 +388,40 @@
     return busy || this.fx.length > 0;
   };
   Scene.prototype.busy = function () { return Object.keys(this.anim).length > 0 || this.fx.length > 0; };
+
+  /* ── 7-segment digits ─────────────────────────────────────────────────────
+     text: digits, '-', '°', ' ', ':' and '.' (a decimal point after the digit before it).
+     → polygons in the display's own plane, centred on 0,0; h = the height of a digit */
+  var SEG = { '0': 'abcdef', '1': 'bc', '2': 'abged', '3': 'abgcd', '4': 'fgbc', '5': 'afgcd', '6': 'afgedc', '7': 'abc', '8': 'abcdefg', '9': 'abcdfg', '-': 'g', '°': 'abfg', ' ': '' };
+  function segPolys(text, h) {
+    var w = h * 0.52, t = h * 0.15, gap = h * 0.22, sk = 0.1, glyphs = [];
+    String(text).split('').forEach(function (ch) { if (ch === '.' && glyphs.length) glyphs[glyphs.length - 1].dot = true; else glyphs.push({ ch: ch }); });
+    var widthOf = function (g) { return g.ch === ':' ? t * 2.2 : w; };
+    var total = glyphs.reduce(function (sum, g) { return sum + widthOf(g); }, 0) + gap * (glyphs.length - 1);
+    var x = -total / 2, y0 = -h / 2, out = [];
+    var rect = function (a, b, c, d) { return [[a + b * sk, b], [c + b * sk, b], [c + d * sk, d], [a + d * sk, d]]; };
+    glyphs.forEach(function (g) {
+      if (g.ch === ':') { out.push(rect(x + t * 0.6, y0 + h * 0.22, x + t * 1.6, y0 + h * 0.22 + t)); out.push(rect(x + t * 0.6, y0 + h * 0.66, x + t * 1.6, y0 + h * 0.66 + t)); }
+      else {
+        var m = t * 0.55, X0 = x, X1 = x + w, Ym = y0 + h / 2;
+        var R = { a: [X0 + m, y0 + h - t, X1 - m, y0 + h], d: [X0 + m, y0, X1 - m, y0 + t], g: [X0 + m, Ym - t / 2, X1 - m, Ym + t / 2],
+          f: [X0, Ym + t * 0.25, X0 + t, y0 + h - m], b: [X1 - t, Ym + t * 0.25, X1, y0 + h - m], e: [X0, y0 + m, X0 + t, Ym - t * 0.25], c: [X1 - t, y0 + m, X1, Ym - t * 0.25] };
+        (SEG[g.ch] || '').split('').forEach(function (k) { var r = R[k]; out.push(rect(r[0], r[1], r[2], r[3])); });
+        if (g.dot) out.push(rect(X1 + gap * 0.2, y0, X1 + gap * 0.2 + t, y0 + t));
+      }
+      x += widthOf(g) + gap;
+    });
+    return out;
+  }
+  function rnd(n) { return Math.floor(Math.random() * n); }
+  function two(n) { return (n < 10 ? '0' : '') + n; }
+  /* what "read" shows next: a time, minutes left, a radio station, a freezer temperature */
+  var RAND = {
+    time: function () { return two(1 + rnd(12)) + ':' + two(rnd(60)); },
+    num2: function () { return String(10 + rnd(90)); },
+    freq: function () { return ((875 + rnd(206)) / 10).toFixed(1); },
+    temp: function () { return '-' + (15 + rnd(9)) + '°'; }
+  };
 
   /* ── the camera and the drawing ─────────────────────────────────────────── */
   function Camera(scene, w, h) {
@@ -316,42 +449,49 @@
   function f1(n) { return Math.round(n * 10) / 10; }
 
   /* the faces as SVG paths, back to front; `mark` = the part drawn in the accent colour */
-  function drawFaces(scene, cam, mark) {
+  function drawFaces(scene, cam, mark, now) {
     var D = cam.D(), eye = [0, 0, D], acc = accent(), list = [];
-    scene.world().forEach(function (f) {
+    scene.world(now).forEach(function (f) {
       var cp = f.pts.map(function (p) { return cam.toCam(p); });
       var n = norm(cross(sub(cp[1], cp[0]), sub(cp[2], cp[0])));
       var mid = mean(cp);
       if (dot(n, sub(eye, mid)) <= 0) return;
-      var light = f.glow ? 1.08 : 0.5 + 0.55 * Math.max(0, dot(n, LIGHT)) + 0.08 * Math.max(0, n[2]);
+      var sh = 0.5 + 0.55 * Math.max(0, dot(n, LIGHT)) + 0.08 * Math.max(0, n[2]), light = sh + (1.08 - sh) * (f.glow || 0);
       var col = mul(f.col, light);
       var on = mark && f.part === mark;
       if (on) col = mix(col, acc, 0.38);
-      list.push({ id: f.id, on: f.on, layer: f.layer, n: n, z: mid[2] + f.bias, d: 'M' + cp.map(function (c) { var s = cam.toScreen(c); return f1(s[0]) + ',' + f1(s[1]); }).join('L') + 'Z', fill: css(col), stroke: on ? 'var(--text-accent,#185fa5)' : css(mul(col, 0.8)), sw: on ? 1.4 : 0.6, part: f.part });
+      list.push({ id: f.id, on: f.on, layer: f.layer, n: n, mid: mid, z: mid[2] + f.bias, d: 'M' + cp.map(function (c) { var s = cam.toScreen(c); return f1(s[0]) + ',' + f1(s[1]); }).join('L') + 'Z', fill: css(col), stroke: on ? 'var(--text-accent,#185fa5)' : css(f.seamless ? col : mul(col, 0.8)), sw: on ? 1.4 : 0.6, part: f.part });
     });
     /* a thing lying on a surface ("on") is drawn just after that surface's face that looks the same way */
     var settle = function (x, depth) {
       if (!x.on || x.done || depth > 6) return;
       var best = null;
       list.forEach(function (y) { if (y.id === x.on && y !== x && dot(y.n, x.n) > 0.9 && (!best || y.z > best.z)) best = y; });
-      if (best) { settle(best, depth + 1); x.z = best.z + 0.01 * (x.layer || 1); }
+      if (best) {
+        /* the back of a thing lying on a surface is inside the machine: not drawn */
+        if (dot(sub(x.mid, best.mid), x.n) < -0.001) x.hidden = true;
+        settle(best, depth + 1); x.z = best.z + 0.01 * (x.layer || 1);
+      }
       x.done = true;
     };
     list.forEach(function (x) { settle(x, 0); });
+    list = list.filter(function (x) { return !x.hidden; });
+    /* the glow of a light, sorted in with the faces: walls in front of it hide it */
+    (scene.m.lights || []).forEach(function (l, i) {
+      var lv = scene.lv[i];
+      if (!l.glow || lv < 0.01) return;
+      var p = scene.groupPoint(l.glow, l.g), c = cam.project(p), r = (l.glowR || 9) * cam.scale() * (0.6 + 0.4 * lv);
+      list.push({ z: cam.toCam(p)[2] + (l.glowBias == null ? 1 : l.glowBias), raw: '<circle cx="' + f1(c[0]) + '" cy="' + f1(c[1]) + '" r="' + f1(r) + '" fill="url(#h3dGlow)" opacity="' + f1(lv) + '" pointer-events="none"/>' });
+    });
     list.sort(function (a, b) { return a.z - b.z; });
     return list.map(function (x) {
+      if (x.raw) return x.raw;
       return '<path d="' + x.d + '" fill="' + x.fill + '" stroke="' + x.stroke + '" stroke-width="' + x.sw + '" stroke-linejoin="round"' + (x.part ? ' data-part="' + x.part + '"' : '') + '/>';
     }).join('');
   }
   /* light from a lamp, finger taps and swipes */
   function drawFx(scene, cam, now) {
     var out = '', m = scene.m;
-    Object.keys(m.motions || {}).forEach(function (k) {
-      var mo = m.motions[k];
-      if (!mo.glow || scene.val[k] < 0.5) return;
-      var c = cam.project(scene.groupPoint(mo.glow, mo.light)), r = 9 * cam.scale();
-      out += '<circle cx="' + f1(c[0]) + '" cy="' + f1(c[1]) + '" r="' + f1(r) + '" fill="url(#h3dGlow)" pointer-events="none"/>';
-    });
     scene.fx.forEach(function (f) {
       var t = Math.min(1, (now - f.t0) / f.dur), a = f.act;
       if (a.fx === 'tap') {
@@ -405,7 +545,14 @@
       hover = pinned = null;
       picker.querySelectorAll('.h3d-pick').forEach(function (b) { b.setAttribute('aria-pressed', String(b.dataset.model === id)); });
       svg.setAttribute('aria-label', 'A 3D ' + MODELS[id].name + '. Its parts are listed below.');
-      partsRow.innerHTML = '<span class="h3d-parts-label">Parts</span>' + Object.keys(scene.m.parts).map(function (p) {
+      /* parts with the same name (several buttons…) get one chip: the top-left-most one */
+      var byName = {}, order = [];
+      Object.keys(scene.m.parts).forEach(function (p) {
+        var nm = scene.m.parts[p].name, a = scene.m._partAt[p], b = byName[nm] && scene.m._partAt[byName[nm]];
+        if (!byName[nm]) { byName[nm] = p; order.push(nm); return; }
+        if (a[1] > b[1] + 0.5 || (Math.abs(a[1] - b[1]) <= 0.5 && (a[0] < b[0] - 0.5 || (Math.abs(a[0] - b[0]) <= 0.5 && a[2] < b[2])))) byName[nm] = p;
+      });
+      partsRow.innerHTML = '<span class="h3d-parts-label">Parts</span>' + order.map(function (nm) { return byName[nm]; }).map(function (p) {
         return '<button type="button" class="h3d-part" data-part="' + p + '" aria-pressed="false">' + scene.m.parts[p].name + '</button>';
       }).join('');
       draw();
@@ -415,7 +562,7 @@
       var s = size(); cam.w = s[0]; cam.h = s[1];
       svg.setAttribute('viewBox', '0 0 ' + f1(s[0]) + ' ' + f1(s[1]));
       var now = performance.now(), mark = current();
-      svg.innerHTML = DEFS + '<g>' + drawFaces(scene, cam, mark) + '</g><g>' + drawFx(scene, cam, now) + '</g>' + leader(mark);
+      svg.innerHTML = DEFS + '<g>' + drawFaces(scene, cam, mark, now) + '</g><g>' + drawFx(scene, cam, now) + '</g>' + leader(mark);
       partsRow.querySelectorAll('.h3d-part').forEach(function (b) { b.setAttribute('aria-pressed', String(b.dataset.part === mark)); });
       stage.classList.toggle('h3d-on-part', !!hover);
     }
@@ -550,7 +697,7 @@
     load(o.start || ids[0]);
     return { load: load, select: function (p) { pinned = p; labelFor = null; draw(); }, play: function (part, verb) {
       var a = actionsOf(scene.m, part).filter(function (x) { return x.v === verb; })[0]; if (a) { scene.play(a); kick(); }
-    } };
+    }, view: function (v) { Object.assign(cam, v); draw(); }, scene: function () { return scene; } };
   }
 
   function say(text, el) {
@@ -590,7 +737,8 @@
     var mini = { el: el, sc: sc, part: part, act: act, visible: true, t0: performance.now(), phase: -1, mark: el.dataset.mark !== 'off' ? part : null };
     var p = model.parts[part] || {};
     mini.view = p.view || model.view || {};
-    if (act && act.m && act.to === 0) sc.val[act.m] = 1;   /* "close", "unplug": start from the other state */
+    if (p.pose) { Object.keys(p.pose).forEach(function (k) { sc.val[k] = p.pose[k]; }); sc.settle(); }   /* e.g. the door open to show a shelf */
+    if (act && act.m && (act.to === 0 || act.to === 1)) { sc.val[act.m] = 1 - act.to; sc.settle(); }   /* start from the other state */
     el._h3d = mini;
     minis.push(mini);
     if (ro) ro.observe(el);
@@ -612,7 +760,7 @@
       cam.target = mix(sc.m._center, p, mini.view.focus != null ? mini.view.focus : 0.65);
       cam.zoom = mini.view.zoom || sc.m.parts[mini.part].zoom || 1.7;
     }
-    mini.el.innerHTML = '<svg viewBox="0 0 ' + f1(w) + ' ' + f1(h) + '" aria-hidden="true">' + DEFS + drawFaces(sc, cam, mini.mark) + drawFx(sc, cam, now) + '</svg>';
+    mini.el.innerHTML = '<svg viewBox="0 0 ' + f1(w) + ' ' + f1(h) + '" aria-hidden="true">' + DEFS + drawFaces(sc, cam, mini.mark, now) + drawFx(sc, cam, now) + '</svg>';
   }
   /* one loop for every playing picture: play, rest, play back, rest */
   function cycle(mini, now) {
@@ -627,7 +775,8 @@
       else {
         var mo = sc.m.motions[a.m], base = mo.start || 0;
         var other = a.to === 0 ? 1 : a.to === 1 ? 0 : null;
-        if (other != null) sc.play({ m: a.m, to: phase === 0 ? a.to : other }, now);       /* open ⇄ close, starting with this action */
+        if (a.to === 'up' || a.to === 'down') sc.play({ m: a.m, to: phase === 0 ? a.to : (a.to === 'up' ? 'down' : 'up'), step: a.step, max: a.max, also: a.also }, now);   /* louder ⇄ quieter */
+        else if (other != null) sc.play({ m: a.m, to: phase === 0 ? a.to : other }, now);       /* open ⇄ close, starting with this action */
         else sc.play({ m: a.m, to: phase === 0 ? base + 1 : base }, now);                    /* toggle / step: there and back */
       }
     }
@@ -672,40 +821,107 @@
 
   /* ══ the models ══════════════════════════════════════════════════════════
      Units are about 1 cm. y is up, the front faces +z.
-       box  { t:'box', e:[x0,x1, y0,y1, z0,z1], col, part, group }
-       cyl  { t:'cyl', c:[x,y,z], ax:'x'|'y'|'z', r, len, r2 (the +end's radius: a cone), col, part, group }
-       top  { t:'top', e:[x0,x1, y, z0,z1] }      a flat face looking up (keys)
-       tube { t:'tube', pts:[[x,y,z]…], r, col, part, endGroup }   a cord; its last point moves with endGroup
-     bias pushes a face forward when sorting (things lying on a surface).
-     clipY: nothing of that shape is drawn below this height (bread in a toaster).
+       box   { t:'box', e:[x0,x1, y0,y1, z0,z1], col, part, group }
+       cyl   { t:'cyl', c:[x,y,z], ax:'x'|'y'|'z', r, len, r2 (the +end's radius: a cone), col, part, group }
+       top   { t:'top', e:[x0,x1, y, z0,z1] }      a flat face looking up (keys)
+       tube  { t:'tube', pts:[[x,y,z]…], r, col, part, endGroup, startGroup }   a cord; its last / first point moves with that group
+       faces { t:'faces', faces:[[p,p,p…]…] }      ready-made faces (a box turned at an angle: rotBox)
+       box skip:['top', …] leaves faces out; inside:true turns the faces in (the walls of an oven, a slot, a well)
+       cyl open:'top'|'bottom'|'both' leaves an end open; inside:true (the inside of a kettle, a drum); flat:true = no sides (a disc: water)
+       key:n on a 'top' face makes it key n of a keyboard (an action { fx:'keys', count, gap } presses random keys)
+     bias pushes a face forward when sorting (things lying on a surface); id / on / layer: a thing lying on a surface.
+     seamless: no darker outline (a thing that should melt into its screen).
+     clipY / clipZ: nothing of that shape is drawn below this height / behind this depth (a tray inside a stereo).
      groups: { lid:{ parent:'kettle' } }   — a group moves with its parent.
-     motions: { door:{ do:[{ g:'door', rot:{ ax:'y', pivot:[…], deg:-100 } }, { g:'x', move:[…] }], dur, start, light:'group', glow:[x,y,z] } }
+     motions: { door:{ do:[{ g:'door', rot:{ ax:'y', pivot:[…], deg:-100 } }, { g:'x', move:[…] }], dur, start } }
        the value 0 → 1 runs the moves (a knob's value can keep growing: it keeps turning)
+     lights:   [{ g, col:[r,g,b] | fn(scene), when: fn(scene), fadeIn, fadeOut (ms), glow:[x,y,z], glowR }]
+       the group's faces shine while when() is true. scene.on('motion'), scene.plugged(), scene.val.x, scene.state.ch
+     displays: [{ id, g, on, part, at:[x,y,z], u, v (the display's right and up), h, text, col, bg, kind, when }]
+       7-segment digits; kind = what "read" shows next: 'time' 12:34 · 'num2' 12 · 'freq' 98.5 · 'temp' -18°
+     spins:    [{ g, ax, pivot, rate: fn(scene) → degrees a second }] · [{ g, wobble:[dx,dy,dz], hz, when, scale: fn(scene) → how far }]
      parts: { lid:{ name:'lid', can:[{ v:'open', m:'lid', to:1 }, { v:'close', m:'lid', to:0 }] } }
-       to: 1 · 0 · 'toggle' · 'bounce' (there and back; times:3) · 'step' (one more turn)
+       to: 1 · 0 · 'toggle' · 'bounce' (there and back; times:3) · 'step' (one more turn) · 'cycle' (0 → 1 → … → max → 0)
+           'up' / 'down' (a volume: step 0.2, max 1)
+       also: another action (or a list) played at the same time
        { v:'tap', fx:'tap', at:[x,y,z], g:'lid' } · { v:'swipe', fx:'swipe', from:[…], to:[…], g:'lid' }
-       { v:'read it' } — something you can do that the model doesn't play
-       view: { yaw, pitch, zoom, focus } for the zoomed pictures of that part */
+       { v:'read', fx:'read', d:'display id' } · { v:'change the channel', fx:'channel', dir:1 }
+       { v:'put the bread in' } — something you can do that the model doesn't play
+       view: { yaw, pitch, zoom, focus } for the zoomed pictures of that part
+     Parts with the same name (several buttons) each have their own actions; the parts row shows the top-left one. */
   var MODELS = {};
   function define(id, m) { m.id = id; MODELS[id] = m; return m; }
 
   var B = function (e, col, part, group, more) { return Object.assign({ t: 'box', e: e, col: col, part: part, group: group }, more || {}); };
   var C = function (c, ax, r, len, col, part, group, more) { return Object.assign({ t: 'cyl', c: c, ax: ax, r: r, len: len, col: col, part: part, group: group }, more || {}); };
+  /* a box turned about an axis (a fan blade, a tilted lever) */
+  var rotBox = function (e, ax, deg, pivot, col, part, group, more) {
+    return Object.assign({ t: 'faces', faces: boxFaces(e).map(function (f) { return f.map(function (p) { return rotate(p, ax, deg, pivot); }); }), col: col, part: part, group: group }, more || {});
+  };
+  var ring = function (c, r, n) { var out = []; for (var i = 0; i <= n; i++) { var t = i / n * Math.PI * 2; out.push([c[0] + r * Math.cos(t), c[1] + r * Math.sin(t), c[2]]); } return out; };
   var PLUG = '#2b2b2b', PIN = '#c9a25a', CORD = '#333333';
-  /* a power cord from `pts` to a plug at (px, pz) on the floor, and a socket box beside it */
-  function powered(pts, px, pz) {
-    var last = [px, 1.5, pz];
+  var plugged = function (sc) { return sc.plugged(); };
+
+  /* buttons, each one its own part: 'button' is the top-left one, then 'button2', 'button3'…
+     list: [{ e, col, also, more:[actions], move, parent, view }]; o: the defaults (col, move, prefix, on, layer, zoom, view, parent) */
+  function buttons(list, o) {
+    var out = { shapes: [], motions: {}, parts: {}, groups: {} };
+    list.slice().sort(function (a, b) {
+      if (Math.abs(a.e[3] - b.e[3]) > 0.5) return b.e[3] - a.e[3];
+      if (Math.abs(a.e[0] - b.e[0]) > 0.5) return a.e[0] - b.e[0];
+      return a.e[4] - b.e[4];
+    }).forEach(function (b, k) {
+      var id = k ? 'button' + (k + 1) : 'button', mo = (o.prefix || 'btn') + k, par = b.parent || o.parent;
+      out.shapes.push(B(b.e, b.col || o.col || '#f4f6f8', id, mo, { on: b.on || o.on, layer: o.layer || 2 }));
+      out.motions[mo] = { do: [{ g: mo, move: b.move || o.move }], dur: 160 };
+      if (par) out.groups[mo] = { parent: par };
+      out.parts[id] = { name: 'button', can: [{ v: 'press', m: mo, to: 'bounce', also: b.also }].concat(b.more || []), zoom: b.zoom || o.zoom || 2.4, view: b.view || o.view };
+    });
+    return out;
+  }
+  /* a volume bar on a screen: 10 steps that show for a moment when the volume changes (motions 'vol' 0 … 1 and 'vshow').
+     a = [x0, x1, y0] (bottom-left, right), hMax, z, on: the screen's id, screen: fn(scene) → the screen is on,
+     back: the screen's light colour (array or fn) — a step above the volume looks like the screen */
+  function volumeBar(x0, x1, y0, hMax, z, on, layer, screen, back) {
+    var out = { shapes: [], lights: [] }, w = (x1 - x0) / 10;
+    for (var i = 0; i < 10; i++) {
+      var g = 'vbar' + i, lvl = (i + 0.5) / 10;
+      out.shapes.push(B([x0 + i * w + w * 0.15, x0 + (i + 1) * w - w * 0.15, y0, y0 + hMax * (0.25 + 0.75 * (i + 1) / 10), z, z + 0.02], '#0b0d10', 'screen', g, { on: on, layer: layer, seamless: true }));   /* no outline: an empty step is just screen */
+      out.lights.push({ g: g, col: [248, 248, 248], fadeIn: 80, fadeOut: 250, when: (function (lvl) { return function (sc) { return screen(sc) && sc.val.vshow > 0.05 && sc.val.vol >= lvl; }; })(lvl) });
+      out.lights.push({ g: g, col: back, when: screen, fadeIn: 350, fadeOut: 300 });
+    }
+    return out;
+  }
+  var VOL = { vol: { do: [], dur: 200, start: 0.6 }, vshow: { do: [], dur: 900 } };
+  var louder = [{ m: 'vol', to: 'up' }, { m: 'vshow', to: 'bounce' }], quieter = [{ m: 'vol', to: 'down' }, { m: 'vshow', to: 'bounce' }];
+  function merge(m, x) {
+    m.shapes = m.shapes.concat(x.shapes || []);
+    ['motions', 'parts', 'groups'].forEach(function (k) { if (x[k]) m[k] = Object.assign(m[k] || {}, x[k]); });
+    ['lights', 'displays', 'spins'].forEach(function (k) { if (x[k]) m[k] = (m[k] || []).concat(x[k]); });
+    return m;
+  }
+
+  /* a power cord from `pts` to a plug at (px, pz) on the floor, and a socket beside it. Plugged in to start with.
+     dir: the way the plug points, '-x' (default) or '-z'; the cord goes into its other end.
+     Plugging in pushes it all the way: the plug's face meets the socket, the pins go in. */
+  function powered(pts, px, pz, dir) {
+    var last = [px, 1.5, pz], X = dir !== '-z';
+    /* a box along the plug's direction: a = from, b = to (how far along, pointing in), w = half width, y0, y1 */
+    var along = function (a, b, w, y0, y1, ofs) {
+      ofs = ofs || 0;
+      return X ? [px - b, px - a, y0, y1, pz - w + ofs, pz + w + ofs] : [px - w + ofs, px + w + ofs, y0, y1, pz - b, pz - a];
+    };
     return {
       shapes: [
         { t: 'tube', pts: pts.concat([last]), r: 0.55, col: CORD, part: 'cord', endGroup: 'plug' },
-        B([px - 6, px, 0, 3, pz - 1.6, pz + 1.6], PLUG, 'plug', 'plug'),
-        B([px - 9, px - 6, 1.1, 1.6, pz - 1.0, pz - 0.6], PIN, 'plug', 'plug'),
-        B([px - 9, px - 6, 1.1, 1.6, pz + 0.6, pz + 1.0], PIN, 'plug', 'plug'),
-        B([px - 23, px - 15, 0, 5.5, pz - 4.5, pz + 4.5], '#f1f1ee', 'socket'),
-        B([px - 15, px - 14.85, 1.0, 1.7, pz - 1.1, pz - 0.5], '#3a3a3a', 'socket', null, { bias: 0.3 }),
-        B([px - 15, px - 14.85, 1.0, 1.7, pz + 0.5, pz + 1.1], '#3a3a3a', 'socket', null, { bias: 0.3 })
+        B(along(0, 6, 1.6, 0, 3), PLUG, 'plug', 'plug'),
+        B(along(6, 9, 0.2, 1.1, 1.6, -0.8), PIN, 'plug', 'plug'),
+        B(along(6, 9, 0.2, 1.1, 1.6, 0.8), PIN, 'plug', 'plug'),
+        B(along(15, 23, 4.5, 0, 5.5), '#f1f1ee', 'socket', null, { id: 'sock' + px + pz }),
+        B(along(14.85, 15, 0.3, 1.0, 1.7, -0.8), '#3a3a3a', 'socket', null, { on: 'sock' + px + pz }),
+        B(along(14.85, 15, 0.3, 1.0, 1.7, 0.8), '#3a3a3a', 'socket', null, { on: 'sock' + px + pz })
       ],
-      motion: { do: [{ g: 'plug', move: [-7.5, 0, 0] }], dur: 700 },
+      motion: { do: [{ g: 'plug', move: X ? [-9, 0, 0] : [0, 0, -9] }], dur: 750, start: 1 },
       parts: {
         cord: { name: 'power cord', can: [{ v: 'plug in', m: 'plug', to: 1 }, { v: 'unplug', m: 'plug', to: 0 }], at: pts[Math.min(2, pts.length - 1)], view: { auto: true, pitch: 28 }, zoom: 1.5 },
         plug: { name: 'plug', can: [{ v: 'plug in', m: 'plug', to: 1 }, { v: 'unplug', m: 'plug', to: 0 }], zoom: 2.4, view: { auto: true, pitch: 28 } },
@@ -720,151 +936,217 @@
     return m;
   }
 
-  /* ── microwave ── */
-  withPower(define('microwave', {
-    name: 'microwave', view: { yaw: -28, pitch: 16 },
-    shapes: [
-      B([-25, 25, 0, 30, -18, 18], '#dfe3e8', null, null, { id: 'mbody' }),
-      B([9, 25, 2, 28, 18, 18.6], '#c5cbd2'),
-      B([-23, 8, 3, 27, 18, 18.05], '#2a2f36', null, null, { on: 'mbody' }),
-      B([-24, 9, 2, 28, 18, 19.2], '#46505c', 'door', 'door', { id: 'mdoor', on: 'mbody', layer: 2 }),
-      B([-21, 4, 5, 25, 19.2, 19.45], '#1b222a', 'door', 'door', { on: 'mdoor' }),
-      B([5, 7.4, 8, 22, 19.2, 22.2], '#a2abb5', 'handle', 'door', { on: 'mdoor', layer: 2 }),
-      B([11, 23, 21.5, 26, 18.6, 18.9], '#173b2a', null, null, { bias: 0.3 }),
-      B([11.5, 16, 17, 19.5, 18.6, 19.4], '#f4f6f8', 'button', 'mbtn'), B([18, 22.5, 17, 19.5, 18.6, 19.4], '#f4f6f8', 'button', 'mbtn'),
-      B([11.5, 16, 13.5, 16, 18.6, 19.4], '#f4f6f8', 'button', 'mbtn'), B([18, 22.5, 13.5, 16, 18.6, 19.4], '#f4f6f8', 'button', 'mbtn'),
-      C([17, 6.5, 19.5], 'z', 3, 1.8, '#79848f', 'knob', 'mknob'),
-      B([16.6, 17.4, 7.2, 9.2, 20.35, 20.6], '#f2f4f6', 'knob', 'mknob', { bias: 0.4 })
-    ],
-    motions: {
-      door: { do: [{ g: 'door', rot: { ax: 'y', pivot: [-24, 0, 19.2], deg: -95 } }], dur: 800 },
-      mbtn: { do: [{ g: 'mbtn', move: [0, 0, -0.6] }], dur: 160 },
-      mknob: { do: [{ g: 'mknob', rot: { ax: 'z', pivot: [17, 6.5, 19.5], deg: -90 } }], dur: 600 }
-    },
-    parts: {
-      door: { name: 'door', can: [{ v: 'open', m: 'door', to: 1 }, { v: 'close', m: 'door', to: 0 }], zoom: 1.3 },
-      handle: { name: 'handle', can: [{ v: 'pull', m: 'door', to: 'toggle' }], zoom: 1.6, view: { yaw: -10 } },
-      button: { name: 'button', can: [{ v: 'press', m: 'mbtn', to: 'bounce' }, { v: 'push', m: 'mbtn', to: 'bounce' }], zoom: 2.4, view: { yaw: -10 } },
-      knob: { name: 'knob', can: [{ v: 'turn', m: 'mknob', to: 'step' }], zoom: 2.6, view: { yaw: -10, pitch: 8 } }
-    }
-  }), powered([[20, 4, -18], [20, 1.2, -25], [10, 1.5, -30]], 2, -30));
+  /* ── microwave: a box open at the front, the oven inside, a door over it, a clock ── */
+  (function () {
+    var read = { fx: 'read', d: 'mdisp' };
+    var m = define('microwave', {
+      name: 'microwave', view: { yaw: -28, pitch: 16 },
+      shapes: [
+        B([-25, 25, 0, 30, -18, 18], '#dfe3e8', null, null, { skip: ['front'] }),
+        B([-25, 9, 27, 30, 17.6, 18], '#dfe3e8'), B([-25, 9, 0, 3, 17.6, 18], '#dfe3e8'),
+        B([-25, -23, 3, 27, 17.6, 18], '#dfe3e8'), B([8, 9, 3, 27, 17.6, 18], '#dfe3e8'),
+        B([-23, 8, 3, 27, -16, 18], '#b4bbc3', null, 'mcav', { inside: true, skip: ['front'] }),
+        C([-7.5, 3.5, 1], 'y', 9, 0.5, '#d7e6ec', null, 'mplate', { seg: 24 }),
+        B([-23, -22.75, 19, 25, -9, -1], '#e9e6da', null, 'mlamp', { skip: ['left'], bias: -2.5 }),   /* the lamp in the left wall */
+        B([9, 25, 0, 30, 17.6, 18.6], '#c5cbd2', null, null, { id: 'mpanel' }),
+        B([-24, 9, 2, 28, 18, 19.2], '#46505c', 'door', 'door', { id: 'mdoor', bias: 5 }),
+        B([-21, 4, 5, 25, 19.2, 19.45], '#1b222a', 'door', 'door', { on: 'mdoor' }),
+        B([5, 7.4, 8, 22, 19.2, 22.2], '#a2abb5', 'handle', 'door', { on: 'mdoor', layer: 2 }),
+        B([11, 23, 21.5, 26, 18.6, 18.9], '#173b2a', 'screen', 'mscr', { id: 'mscr', on: 'mpanel' }),
+        C([17, 6.5, 19.5], 'z', 3, 1.8, '#79848f', 'knob', 'mknob'),
+        B([16.6, 17.4, 7.2, 9.2, 20.35, 20.6], '#f2f4f6', 'knob', 'mknob', { bias: 0.4 })
+      ],
+      motions: {
+        door: { do: [{ g: 'door', rot: { ax: 'y', pivot: [-24, 0, 19.2], deg: -95 } }], dur: 800 },
+        mknob: { do: [{ g: 'mknob', rot: { ax: 'z', pivot: [17, 6.5, 19.5], deg: -90 } }], dur: 600 }
+      },
+      lights: [
+        { g: 'mscr', col: [36, 92, 62], when: plugged, fadeIn: 300, fadeOut: 500 },
+        /* the light inside comes on while the door is open (if it is plugged in) */
+        { g: 'mcav', col: [238, 226, 186], when: function (sc) { return sc.val.door > 0.12 && sc.plugged(); }, fadeIn: 150, fadeOut: 300 },
+        { g: 'mplate', col: [246, 244, 230], when: function (sc) { return sc.val.door > 0.12 && sc.plugged(); }, fadeIn: 150, fadeOut: 300 },
+        { g: 'mlamp', col: [255, 250, 225], glow: [-21.5, 22, -5], glowR: 10, glowBias: 3, when: function (sc) { return sc.val.door > 0.12 && sc.plugged(); }, fadeIn: 150, fadeOut: 300 }
+      ],
+      displays: [{ id: 'mdisp', g: 'mscr', on: 'mscr', part: 'screen', at: [17, 23.75, 18.9], h: 2.6, text: '12:34', col: '#63ff8f', bg: '#173b2a', kind: 'time', when: plugged }],
+      parts: {
+        door: { name: 'door', can: [{ v: 'open', m: 'door', to: 1 }, { v: 'close', m: 'door', to: 0 }], zoom: 1.3 },
+        handle: { name: 'handle', can: [{ v: 'pull', m: 'door', to: 'toggle' }], zoom: 1.6, view: { yaw: -10 } },
+        screen: { name: 'screen', can: [{ v: 'read', fx: 'read', d: 'mdisp' }], zoom: 2.6, view: { yaw: -10, pitch: 8 } },
+        knob: { name: 'knob', can: [{ v: 'turn', m: 'mknob', to: 'step', also: read }], zoom: 2.6, view: { yaw: -10, pitch: 8 } }
+      }
+    });
+    merge(m, buttons([
+      { e: [11.5, 16, 17, 19.5, 18.6, 19.4] }, { e: [18, 22.5, 17, 19.5, 18.6, 19.4] },
+      { e: [11.5, 16, 13.5, 16, 18.6, 19.4] }, { e: [18, 22.5, 13.5, 16, 18.6, 19.4] }
+    ].map(function (b) { b.also = read; return b; }), { prefix: 'mbtn', move: [0, 0, -0.6], on: 'mpanel', view: { yaw: -10 } }));
+    withPower(m, powered([[20, 4, -18], [20, 1.2, -25], [10, 1.5, -30]], 2, -30));
+  })();
 
-  /* ── toaster ── */
-  withPower(define('toaster', {
-    name: 'toaster', view: { yaw: -32, pitch: 20 },
-    shapes: [
-      B([-14, 14, 0, 18, -8, 8], '#c94c3c'),
-      B([-11, 11, 18, 18.12, -4.6, -2.0], '#1e1e1e', 'slot', null, { bias: 0.4 }), B([-11, 11, 18, 18.12, 2.0, 4.6], '#1e1e1e', 'slot', null, { bias: 0.4 }),
-      B([-9, 9, 10.5, 21.5, -4.0, -2.6], '#e2b06b', null, 'bread', { clipY: 18.14 }), B([-9, 9, 10.5, 21.5, 2.6, 4.0], '#e2b06b', null, 'bread', { clipY: 18.14 }),
-      B([14, 14.2, 4, 15.5, -0.6, 0.6], '#5a201a', null, null, { bias: 0.3 }),
-      B([14, 17.5, 12.5, 14.5, -1.4, 1.4], '#2b2b2b', 'lever', 'lever'), B([17.5, 19, 12, 15, -2, 2], '#2b2b2b', 'lever', 'lever'),
-      C([7, 6, 8.9], 'z', 2.3, 1.8, '#2b2b2b', 'knob', 'tknob'),
-      B([6.7, 7.3, 6.6, 8.0, 9.8, 10.0], '#eeeeee', 'knob', 'tknob', { bias: 0.4 }),
-      B([-11, -6, 4.5, 7, 8, 8.8], '#f2f2f2', 'button', 'tbtn')
-    ],
-    motions: {
-      lever: { do: [{ g: 'lever', move: [0, -8, 0] }, { g: 'bread', move: [0, -3.6, 0] }], dur: 700 },
-      tknob: { do: [{ g: 'tknob', rot: { ax: 'z', pivot: [7, 6, 8.9], deg: -90 } }], dur: 600 },
-      tbtn: { do: [{ g: 'tbtn', move: [0, 0, -0.6] }], dur: 160 }
-    },
-    parts: {
-      slot: { name: 'slot', can: [{ v: 'put the bread in' }], zoom: 1.8, view: { pitch: 45 } },
-      lever: { name: 'lever', can: [{ v: 'push down', m: 'lever', to: 'toggle' }], zoom: 2, view: { yaw: -55 } },
-      knob: { name: 'knob', can: [{ v: 'turn', m: 'tknob', to: 'step' }], zoom: 2.6, view: { yaw: -15, pitch: 10 } },
-      button: { name: 'button', can: [{ v: 'press', m: 'tbtn', to: 'bounce' }], zoom: 2.6, view: { yaw: -15, pitch: 10 } }
-    }
-  }), powered([[-10, 3, -8], [-10, 1.2, -14], [0, 1.5, -20]], 6, -20));
+  /* ── toaster: two real slots; the heating wires glow while the lever is down (if it is plugged in) ── */
+  (function () {
+    var wires = [];
+    [[-4.6, 1, 'tw1'], [-2, -1, 'tw1'], [2, 1, 'tw2'], [4.6, -1, 'tw2']].forEach(function (w) {
+      /* on each wall of a slot, three hot wires: flat faces looking into the slot */
+      [8.5, 11.5, 14.5].forEach(function (y) {
+        var z = w[0] + 0.02 * w[1];
+        var f = [[-10, y, z], [10, y, z], [10, y + 0.45, z], [-10, y + 0.45, z]];
+        wires.push({ t: 'faces', faces: [w[1] > 0 ? f : f.slice().reverse()], col: '#4d3a30', part: 'slot', group: 'twire', on: w[2], layer: 2 });
+      });
+    });
+    var m = define('toaster', {
+      name: 'toaster', view: { yaw: -32, pitch: 22, zoom: 1.35 },
+      shapes: [
+        B([-14, 14, 0, 18, -8, 8], '#c94c3c', null, null, { skip: ['top'] }),
+        B([-14, 14, 17.7, 18, 4.6, 8], '#c94c3c'), B([-14, 14, 17.7, 18, -2, 2], '#c94c3c'), B([-14, 14, 17.7, 18, -8, -4.6], '#c94c3c'),
+        B([-14, -11, 17.7, 18, -4.6, 4.6], '#c94c3c'), B([11, 14, 17.7, 18, -4.6, 4.6], '#c94c3c'),
+        B([-11, 11, 6, 18, -4.6, -2], '#3b2a22', 'slot', 'twell', { inside: true, skip: ['top'], id: 'tw1' }),
+        B([-11, 11, 6, 18, 2, 4.6], '#3b2a22', 'slot', 'twell', { inside: true, skip: ['top'], id: 'tw2' })
+      ].concat(wires).concat([
+        B([-9, 9, 10.5, 21.5, -4.0, -2.6], '#e2b06b', null, 'bread'), B([-9, 9, 10.5, 21.5, 2.6, 4.0], '#e2b06b', null, 'bread'),
+        B([14, 14.2, 4, 15.5, -0.6, 0.6], '#5a201a', null, null, { bias: 0.3 }),
+        B([14, 17.5, 12.5, 14.5, -1.4, 1.4], '#2b2b2b', 'lever', 'lever'), B([17.5, 19, 12, 15, -2, 2], '#2b2b2b', 'lever', 'lever'),
+        C([7, 6, 8.9], 'z', 2.3, 1.8, '#2b2b2b', 'knob', 'tknob'),
+        B([6.7, 7.3, 6.6, 8.0, 9.8, 10.0], '#eeeeee', 'knob', 'tknob', { bias: 0.4 })
+      ]),
+      motions: {
+        lever: { do: [{ g: 'lever', move: [0, -8, 0] }, { g: 'bread', move: [0, -3.8, 0] }], dur: 700 },
+        tknob: { do: [{ g: 'tknob', rot: { ax: 'z', pivot: [7, 6, 8.9], deg: -90 } }], dur: 600 }
+      },
+      lights: [
+        { g: 'twire', col: [255, 96, 30], when: function (sc) { return sc.on('lever') && sc.plugged(); }, fadeIn: 1800, fadeOut: 1200 },
+        { g: 'twell', col: [190, 70, 22], when: function (sc) { return sc.on('lever') && sc.plugged(); }, fadeIn: 2200, fadeOut: 1400 }
+      ],
+      parts: {
+        slot: { name: 'slot', can: [{ v: 'put the bread in' }], zoom: 1.8, view: { pitch: 50 } },
+        lever: { name: 'lever', can: [{ v: 'push down', m: 'lever', to: 'toggle' }], zoom: 2, view: { yaw: -55 } },
+        knob: { name: 'knob', can: [{ v: 'turn', m: 'tknob', to: 'step' }], zoom: 2.6, view: { yaw: -15, pitch: 10 } }
+      }
+    });
+    merge(m, buttons([{ e: [-11, -6, 4.5, 7, 8, 8.8], col: '#f2f2f2' }], { prefix: 'tbtn', move: [0, 0, -0.6], zoom: 2.6, view: { yaw: -15, pitch: 10 } }));
+    withPower(m, powered([[-10, 3, -8], [-10, 1.2, -13], [-2, 1.5, -15]], 0, -19, '-z'));
+  })();
 
-  /* ── electric kettle ── */
+  /* ── electric kettle: open at the top inside the lid, with water in it ── */
   withPower(define('kettle', {
-    name: 'kettle', view: { yaw: -62, pitch: 14 },
+    name: 'kettle', view: { yaw: -62, pitch: 16, zoom: 1.3 },
     groups: { lid: { parent: 'kettle' }, ksw: { parent: 'kettle' } },
     shapes: [
       C([0, 1, 0], 'y', 9.5, 2, '#2b2b2b'),
-      C([0, 12.5, 0], 'y', 8, 19, '#cfd6dc', null, 'kettle', { r2: 6.6 }),
+      C([0, 12.5, 0], 'y', 8, 19, '#cfd6dc', null, 'kettle', { r2: 6.6, open: 'top' }),
+      C([0, 12.6, 0], 'y', 7.5, 18.8, '#97a2ac', null, 'kettle', { r2: 6.1, open: 'top', inside: true }),
+      C([0, 18, 0], 'y', 6.3, 0.02, '#4f9fe0', null, 'kettle', { seg: 20, flat: true, open: 'bottom' }),
       C([0, 19, 9], 'z', 2.4, 4.5, '#cfd6dc', 'spout', 'kettle', { r2: 1.3, seg: 14 }),
       C([0, 22.5, 0], 'y', 6.5, 1, '#a9b2bb', 'lid', 'lid'),
       C([0, 23.6, 0], 'y', 1.6, 1.2, '#2b2b2b', 'lid', 'lid', { seg: 12 }),
       B([-1.3, 1.3, 6, 20, -12.2, -10.4], '#2b2b2b', 'handle', 'kettle'),
       B([-1.3, 1.3, 18.2, 20, -10.4, -6.2], '#2b2b2b', 'handle', 'kettle'),
       B([-1.3, 1.3, 6, 7.8, -10.4, -7.4], '#2b2b2b', 'handle', 'kettle'),
-      B([-1, 1, 3.9, 6, -12, -10.2], '#ff8a1e', 'switch', 'ksw')
+      B([-1, 1, 3.9, 6, -12, -10.2], '#c8651a', 'switch', 'ksw')
     ],
     motions: {
       lid: { do: [{ g: 'lid', rot: { ax: 'x', pivot: [0, 23, -6.5], deg: -95 } }], dur: 700 },
-      ksw: { do: [{ g: 'ksw', rot: { ax: 'x', pivot: [0, 6, -11.1], deg: -22 } }], dur: 260, light: 'ksw' },
+      ksw: { do: [{ g: 'ksw', rot: { ax: 'x', pivot: [0, 6, -11.1], deg: -22 } }], dur: 260 },
       lift: { do: [{ g: 'kettle', move: [0, 7, 0] }], dur: 700 },
       pour: { do: [{ g: 'kettle', move: [0, 6, 0] }, { g: 'kettle', rot: { ax: 'x', pivot: [0, 3, 8], deg: 38 } }], dur: 800 }
     },
+    /* the switch lights up only on the base, plugged in */
+    lights: [{ g: 'ksw', col: [255, 170, 60], when: function (sc) { return sc.on('ksw') && sc.plugged() && sc.val.lift < 0.05 && sc.val.pour < 0.05; }, fadeIn: 200, fadeOut: 500 }],
     parts: {
-      lid: { name: 'lid', can: [{ v: 'open', m: 'lid', to: 1 }, { v: 'close', m: 'lid', to: 0 }, { v: 'lift', m: 'lid', to: 'toggle' }], zoom: 1.8, view: { pitch: 30 } },
+      lid: { name: 'lid', can: [{ v: 'open', m: 'lid', to: 1 }, { v: 'close', m: 'lid', to: 0 }, { v: 'lift', m: 'lid', to: 'toggle' }], zoom: 1.8, view: { pitch: 34 } },
       handle: { name: 'handle', can: [{ v: 'hold', m: 'lift', to: 'toggle' }, { v: 'pick up', m: 'lift', to: 'toggle' }], zoom: 1.5, view: { yaw: -110 } },
       switch: { name: 'switch', can: [{ v: 'switch on', m: 'ksw', to: 1 }, { v: 'switch off', m: 'ksw', to: 0 }], zoom: 2.4, view: { yaw: -140, pitch: 10 } },
       spout: { name: 'spout', can: [{ v: 'pour', m: 'pour', to: 'bounce' }], zoom: 1.4, view: { yaw: -70, pitch: 8 } }
     }
-  }), powered([[-6, 1.2, -8], [-8, 1.2, -14], [0, 1.5, -20]], 6, -20));
+  }), powered([[-6, 1.2, -8], [-8, 1.2, -13], [-2, 1.5, -15]], 0, -19, '-z'));
 
-  /* ── laptop ── */
+  /* ── laptop: keys with a space bar, a hinge, and a charger (power brick) that unplugs at both ends ── */
   (function () {
-    var keys = [];
-    for (var r = 0; r < 4; r++) for (var c = 0; c < 11; c++) {
-      var x = -13 + c * 2.4, z = -9 + r * 2.3;
-      keys.push({ t: 'top', e: [x + 0.2, x + 2.1, 1.75, z + 0.2, z + 2.0], col: '#4b525b', part: 'keyboard', group: 'keys', on: 'kbd' });
-    }
-    withPower(define('laptop', {
-      name: 'laptop', view: { yaw: -22, pitch: 26 },
+    var keys = [], n = 0;
+    var key = function (x0, x1, z0, z1) { keys.push({ t: 'top', e: [x0, x1, 1.75, z0, z1], col: '#4b525b', part: 'keyboard', group: 'keys', on: 'kbd', key: n++ }); };
+    for (var r = 0; r < 4; r++) for (var c = 0; c < 11; c++) { var x = -13 + c * 2.4, z = -9 + r * 2.3; key(x + 0.2, x + 2.1, z + 0.2, z + 2.0); }
+    var zs = -9 + 4 * 2.3;                                     /* the bottom row: two keys, the space bar, two keys */
+    key(-12.8, -10.9, zs + 0.2, zs + 2.0); key(-10.4, -8.5, zs + 0.2, zs + 2.0);
+    key(-8.0, 8.0, zs + 0.2, zs + 2.0);
+    key(8.5, 10.4, zs + 0.2, zs + 2.0); key(10.9, 12.8, zs + 0.2, zs + 2.0);
+    var m = define('laptop', {
+      name: 'laptop', view: { yaw: -22, pitch: 26, zoom: 1.15 }, keyCount: n,
+      groups: { lscr: { parent: 'lid' } },
       shapes: [
         B([-16, 16, 0, 1.4, -11, 11], '#c3c8cf', null, null, { id: 'base' }),
-        B([-14, 14, 1.4, 1.6, -9.6, 0.4], '#2d3238', 'keyboard', null, { id: 'kbd', on: 'base' })
+        B([-14, 14, 1.4, 1.6, -9.6, 2.6], '#2d3238', 'keyboard', null, { id: 'kbd', on: 'base' })
       ].concat(keys).concat([
-        B([-5.5, 5.5, 1.4, 1.52, 2.5, 9], '#a7aeb6', 'touchpad', null, { on: 'base' }),
-        B([11.5, 14, 1.4, 1.8, -10.7, -10], '#eceff2', 'button', 'pbtn'),
-        B([-16, 16, 1.4, 22, -11, -10.2], '#3b4048', 'lid', 'lid', { id: 'bezel', bias: 1.5 }),
-        B([-14.5, 14.5, 3, 20.5, -10.2, -10.02], '#1f3a5f', 'screen', 'lid', { on: 'bezel' })
+        B([-5.5, 5.5, 1.4, 1.52, 3.4, 9.6], '#a7aeb6', 'touchpad', null, { on: 'base' }),
+        C([-11, 2.3, -10.6], 'x', 0.8, 5, '#2d3238', null, null, { seg: 12 }), C([11, 2.3, -10.6], 'x', 0.8, 5, '#2d3238', null, null, { seg: 12 }),
+        B([-16, 16, 1.6, 24, -11, -10.2], '#3b4048', 'lid', 'lid', { id: 'bezel', bias: 1.5 }),   /* closed, its top edge meets the front of the base */
+        B([-14.5, 14.5, 3.2, 22.5, -10.2, -10.02], '#141a22', 'screen', 'lscr', { on: 'bezel' }),
+        /* the charger: a connector in the laptop's side, a cord, the power brick (its light), and the cord to the wall */
+        B([-16.05, -16, 0.3, 1.1, -0.9, 0.9], '#151515', null, null, { on: 'base' }),
+        B([-19.5, -16, 0.3, 1.1, -0.6, 0.6], '#2b2b2b', 'connector', 'dc'),
+        { t: 'tube', pts: [[-19.5, 0.7, 0], [-22, 0.8, 0.6], [-25, 1.3, 2]], r: 0.4, col: CORD, part: 'cord', startGroup: 'dc' },
+        B([-33, -25, 0, 2.6, -1, 5], '#2b2b2b', 'charger', null, { id: 'brick' }),
+        B([-27.2, -26.2, 2.6, 2.65, 3.6, 4.4], '#1f3527', 'charger', 'led', { on: 'brick' })
       ]),
       motions: {
-        lid: { do: [{ g: 'lid', rot: { ax: 'x', pivot: [0, 1.4, -11], deg: 88 } }], dur: 900 },
-        keys: { do: [{ g: 'keys', move: [0, -0.25, 0] }], dur: 120 },
-        pbtn: { do: [{ g: 'pbtn', move: [0, -0.3, 0] }], dur: 160 }
+        lid: { do: [{ g: 'lid', rot: { ax: 'x', pivot: [0, 2.4, -10.6], deg: 90 } }], dur: 900 },
+        dc: { do: [{ g: 'dc', move: [-4, 0, 0] }], dur: 600 }
       },
+      lights: [
+        /* the charger's light: on only while it is plugged into the wall; it fades out in under two seconds */
+        { g: 'led', col: [61, 220, 132], when: plugged, fadeIn: 300, fadeOut: 1600 },
+        /* the screen runs on the battery: on while the lid is open */
+        { g: 'lscr', col: [52, 110, 190], when: function (sc) { return sc.val.lid < 0.6; }, fadeIn: 400, fadeOut: 300 }
+      ],
       parts: {
         screen: { name: 'screen', can: [{ v: 'tap', fx: 'tap', at: [2, 12, -10], g: 'lid' }, { v: 'swipe', fx: 'swipe', from: [-8, 12, -10], to: [8, 12, -10], g: 'lid' }], zoom: 2.5, view: { yaw: -8, pitch: 10 } },
-        keyboard: { name: 'keyboard', can: [{ v: 'type', m: 'keys', to: 'bounce', times: 3 }, { v: 'press the keys', m: 'keys', to: 'bounce' }], zoom: 2.6, view: { pitch: 50 } },
-        touchpad: { name: 'touchpad', can: [{ v: 'tap', fx: 'tap', at: [0, 1.55, 5.7] }, { v: 'swipe', fx: 'swipe', from: [-4, 1.55, 5.7], to: [4, 1.55, 5.7] }], zoom: 3.2, view: { pitch: 55 } },
-        button: { name: 'button', can: [{ v: 'press', m: 'pbtn', to: 'bounce' }], zoom: 3.8, view: { pitch: 45, yaw: -10 } },
-        lid: { name: 'lid', can: [{ v: 'close', m: 'lid', to: 1 }, { v: 'open', m: 'lid', to: 0 }], zoom: 2 }
+        keyboard: { name: 'keyboard', can: [{ v: 'type', fx: 'keys', count: 9, gap: 120 }, { v: 'press the keys', fx: 'keys', count: 4, gap: 260 }], zoom: 2.6, view: { pitch: 50 } },
+        touchpad: { name: 'touchpad', can: [{ v: 'tap', fx: 'tap', at: [0, 1.55, 6.5] }, { v: 'swipe', fx: 'swipe', from: [-4, 1.55, 6.5], to: [4, 1.55, 6.5] }], zoom: 3.2, view: { pitch: 55 } },
+        lid: { name: 'lid', can: [{ v: 'close', m: 'lid', to: 1 }, { v: 'open', m: 'lid', to: 0 }], zoom: 2 },
+        connector: { name: 'connector', can: [{ v: 'unplug', m: 'dc', to: 1 }, { v: 'plug in', m: 'dc', to: 0 }], zoom: 3.2, view: { yaw: -70, pitch: 22 } },
+        charger: { name: 'charger', can: [{ v: 'plug in', m: 'plug', to: 1 }, { v: 'unplug', m: 'plug', to: 0 }], zoom: 2.2, view: { auto: true, pitch: 30 } }
       }
-    }), powered([[-16, 0.7, 0], [-20, 0.9, 0], [-23, 1.2, -9]], -26, -14));
+    });
+    merge(m, buttons([{ e: [11.5, 14, 1.4, 1.8, -10.7, -10], col: '#eceff2' }], { prefix: 'pbtn', move: [0, -0.3, 0], zoom: 3.8, view: { pitch: 45, yaw: -10 } }));
+    withPower(m, powered([[-29, 1.3, -1], [-29, 1.2, -6]], -29, -10, '-z'));
   })();
 
-  /* ── washing machine (top loader) ── */
-  withPower(define('washer', {
-    name: 'washing machine', view: { yaw: -32, pitch: 22, zoom: 0.84 },
-    shapes: [
-      B([-15, 15, 0, 36, -15, 15], '#eef1f4'),
-      B([-12.5, 12.5, 36.15, 36.9, -9, 11.5], '#cfd6de', 'lid', 'lid'),
-      B([-4, 4, 36.9, 37.6, 8.8, 10.4], '#8d97a3', 'handle', 'lid'),
-      B([-15, 15, 36, 44, -15, -11.5], '#dde2e8', null, null, { id: 'wpanel' }),
-      C([-9, 40, -11.0], 'z', 2.6, 1.2, '#7c8794', 'knob', 'wknob', { on: 'wpanel' }),
-      B([-9.35, -8.65, 41, 42.4, -10.4, -10.2], '#f2f4f6', 'knob', 'wknob', { on: 'wpanel', layer: 2 }),
-      B([-3.5, 4.5, 38.5, 42.5, -11.5, -11.25], '#174a36', 'screen', null, { on: 'wpanel' }),
-      B([7, 10, 39, 41.5, -11.5, -10.9], '#fafafa', 'button', 'wbtn', { on: 'wpanel' }), B([11, 14, 39, 41.5, -11.5, -10.9], '#fafafa', 'button', 'wbtn', { on: 'wpanel' })
-    ],
-    motions: {
-      lid: { do: [{ g: 'lid', rot: { ax: 'x', pivot: [0, 36.9, -9], deg: -92 } }], dur: 900 },
-      wknob: { do: [{ g: 'wknob', rot: { ax: 'z', pivot: [-9, 40, -11], deg: -90 } }], dur: 600 },
-      wbtn: { do: [{ g: 'wbtn', move: [0, 0, -0.45] }], dur: 160 }
-    },
-    parts: {
-      lid: { name: 'lid', can: [{ v: 'open', m: 'lid', to: 1 }, { v: 'close', m: 'lid', to: 0 }], zoom: 1.4, view: { pitch: 35 } },
-      handle: { name: 'handle', can: [{ v: 'lift', m: 'lid', to: 'toggle' }, { v: 'pull', m: 'lid', to: 'toggle' }], zoom: 1.8, view: { pitch: 35 } },
-      knob: { name: 'knob', can: [{ v: 'turn', m: 'wknob', to: 'step' }], zoom: 2.4, view: { yaw: -10, pitch: 12 } },
-      screen: { name: 'screen', can: [{ v: 'tap', fx: 'tap', at: [0.5, 40.5, -11.2] }, { v: 'read' }], zoom: 2.4, view: { yaw: -10, pitch: 12 } },
-      button: { name: 'button', can: [{ v: 'press', m: 'wbtn', to: 'bounce' }], zoom: 2.4, view: { yaw: -15, pitch: 12 } }
-    }
-  }), powered([[10, 4, -15], [10, 1.2, -22], [2, 1.5, -26]], -4, -26));
+  /* ── washing machine (top loader): the drum inside, under the lid; minutes left on the screen ── */
+  (function () {
+    var read = { fx: 'read', d: 'wdisp' };
+    var m = define('washer', {
+      name: 'washing machine', view: { yaw: -32, pitch: 24, zoom: 0.84 },
+      shapes: [
+        B([-15, 15, 0, 36, -15, 15], '#eef1f4', null, null, { skip: ['top'] }),
+        B([-15, 15, 35.6, 36, 10, 15], '#eef1f4'), B([-15, 15, 35.6, 36, -15, -8], '#eef1f4'),
+        B([-15, -11, 35.6, 36, -8, 10], '#eef1f4'), B([11, 15, 35.6, 36, -8, 10], '#eef1f4'),
+        B([-11, 11, 6, 36, -8, 10], '#c9d0d7', null, null, { inside: true, skip: ['top'] }),
+        C([0, 20, 1], 'y', 8.6, 26, '#7d8893', null, null, { open: 'top', inside: true, seg: 24 }),
+        C([0, 14, 1], 'y', 1.6, 14, '#f4f6f8', null, null, { seg: 12 }),
+        B([-12.5, 12.5, 36.15, 36.9, -9, 11.5], '#cfd6de', 'lid', 'lid'),
+        B([-4, 4, 36.9, 37.6, 8.8, 10.4], '#8d97a3', 'handle', 'lid'),
+        B([-15, 15, 36, 44, -15, -11.5], '#dde2e8', null, null, { id: 'wpanel' }),
+        C([-9, 40, -11.0], 'z', 2.6, 1.2, '#7c8794', 'knob', 'wknob', { on: 'wpanel' }),
+        B([-9.35, -8.65, 41, 42.4, -10.4, -10.2], '#f2f4f6', 'knob', 'wknob', { on: 'wpanel', layer: 2 }),
+        B([-3.5, 4.5, 38.5, 42.5, -11.5, -11.25], '#123828', 'screen', 'wscr', { id: 'wscr', on: 'wpanel' })
+      ],
+      motions: {
+        lid: { do: [{ g: 'lid', rot: { ax: 'x', pivot: [0, 36.9, -9], deg: -92 } }], dur: 900 },
+        wknob: { do: [{ g: 'wknob', rot: { ax: 'z', pivot: [-9, 40, -11], deg: -90 } }], dur: 600 }
+      },
+      lights: [{ g: 'wscr', col: [24, 84, 92], when: plugged, fadeIn: 300, fadeOut: 500 }],
+      displays: [{ id: 'wdisp', g: 'wscr', on: 'wscr', part: 'screen', at: [0.5, 40.5, -11.25], h: 2.6, text: '12', col: '#6ff2ff', bg: '#123828', kind: 'num2', when: plugged }],
+      parts: {
+        lid: { name: 'lid', can: [{ v: 'open', m: 'lid', to: 1 }, { v: 'close', m: 'lid', to: 0 }], zoom: 1.4, view: { pitch: 35 } },
+        handle: { name: 'handle', can: [{ v: 'lift', m: 'lid', to: 'toggle' }, { v: 'pull', m: 'lid', to: 'toggle' }], zoom: 1.8, view: { pitch: 35 } },
+        knob: { name: 'knob', can: [{ v: 'turn', m: 'wknob', to: 'step', also: read }], zoom: 2.4, view: { yaw: -10, pitch: 12 } },
+        screen: { name: 'screen', can: [{ v: 'read', fx: 'read', d: 'wdisp' }, { v: 'tap', fx: 'tap', at: [0.5, 40.5, -11.2], also: read }], zoom: 2.4, view: { yaw: -10, pitch: 12 } }
+      }
+    });
+    merge(m, buttons([{ e: [7, 10, 39, 41.5, -11.5, -10.9] }, { e: [11, 14, 39, 41.5, -11.5, -10.9] }].map(function (b) { b.also = read; return b; }),
+      { prefix: 'wbtn', col: '#fafafa', move: [0, 0, -0.45], on: 'wpanel', view: { yaw: -15, pitch: 12 } }));
+    withPower(m, powered([[10, 4, -15], [10, 1.2, -22], [2, 1.5, -26]], -4, -26));
+  })();
 
-  /* ── desk lamp ── */
+  /* ── desk lamp: the bulb shines when it is switched on and plugged in — not while it is being changed ── */
   withPower(define('lamp', {
     name: 'lamp', view: { yaw: -28, pitch: 14 },
     groups: { bulb: { parent: 'shade' } },
@@ -876,16 +1158,264 @@
       C([8, 21.8, 0], 'y', 1.8, 2.4, '#ecece2', 'bulb', 'bulb', { seg: 14 })
     ],
     motions: {
-      lsw: { do: [{ g: 'lsw', rot: { ax: 'x', pivot: [3.75, 2.4, 3.3], deg: 18 } }], dur: 240, light: 'bulb', glow: [8, 21.8, 0] },
+      lsw: { do: [{ g: 'lsw', rot: { ax: 'x', pivot: [3.75, 2.4, 3.3], deg: 18 } }], dur: 240 },
       shade: { do: [{ g: 'shade', rot: { ax: 'z', pivot: [7, 27, -1], deg: 22 } }], dur: 700 },
       bulb: { do: [{ g: 'bulb', move: [0, -3, 0] }], dur: 500 }
     },
+    lights: [{ g: 'bulb', col: [255, 222, 120], glow: [8, 21.8, 0], glowBias: 5, fadeIn: 150, fadeOut: 250,
+      when: function (sc) { return sc.on('lsw') && sc.plugged() && sc.val.bulb < 0.02; } }],
     parts: {
       switch: { name: 'switch', can: [{ v: 'switch on', m: 'lsw', to: 1 }, { v: 'switch off', m: 'lsw', to: 0 }], zoom: 2.8, view: { pitch: 40, yaw: -10 } },
       shade: { name: 'shade', can: [{ v: 'move', m: 'shade', to: 'toggle' }], zoom: 1.6 },
       bulb: { name: 'light bulb', can: [{ v: 'change', m: 'bulb', to: 'bounce' }, { v: 'switch on', m: 'lsw', to: 1 }], zoom: 1.9, view: { pitch: -15 } }
     }
   }), powered([[0, 1, -7], [0, 1, -12], [-5, 1.5, -16]], -9, -16));
+
+  /* ── smartphone on a stand: a touch screen, three buttons, a camera with a flash (it has a battery: no plug) ── */
+  (function () {
+    var icons = [], ICON = ['#3ddc84', '#ff8a3d', '#4fa3ff', '#ffd23f'];
+    for (var r = 0; r < 4; r++) for (var c = 0; c < 4; c++) {
+      var x = -2.85 + c * 1.55, y = 13.6 - r * 1.75;
+      icons.push(B([x, x + 1.05, y, y + 1.05, 0.5, 0.53], '#0d1014', 'screen', 'pic' + ((r + c) % 4), { on: 'pscr', layer: 2 }));
+    }
+    var pon = function (sc) { return sc.on('pon'); };
+    var m = define('phone', {
+      name: 'smartphone', view: { yaw: -24, pitch: 10, zoom: 0.95 },
+      shapes: [
+        B([-5, 5, 0, 0.8, -3.5, 2.5], '#b9c0c8'),
+        B([-5, 5, 0.8, 2.0, 0.55, 1.5], '#b9c0c8'),
+        rotBox([-3, 3, 0.8, 8, -1.4, -0.6], 'x', -12, [0, 0.8, -0.6], '#aab2bb'),
+        B([-3.8, 3.8, 1, 17, -0.45, 0.45], '#22262b', null, null, { id: 'pbody' }),
+        B([-3.4, 3.4, 2.2, 16.2, 0.45, 0.5], '#0d1014', 'screen', 'pscr', { id: 'pscr', on: 'pbody' }),
+        B([-0.9, 0.9, 16.45, 16.65, 0.45, 0.5], '#3a3f46', null, null, { on: 'pbody', layer: 2 }),
+        B([-1.4, 1.4, 1.45, 1.75, 0.45, 0.5], '#3a3f46', 'speaker', null, { on: 'pbody', layer: 2 })
+      ].concat(icons).concat([
+        /* the camera on the back: no faces looking forward, so nothing shows through the screen */
+        B([1.4, 3.3, 14.4, 16.4, -0.5, -0.45], '#15181b', 'camera', null, { id: 'pcam', on: 'pbody', skip: ['front', 'left', 'right', 'top', 'bottom'] }),
+        C([2.35, 15.9, -0.5], 'z', 0.5, 0.02, '#1e3f66', 'camera', null, { on: 'pcam', layer: 2, seg: 14, flat: true, open: 'top' }),
+        C([2.35, 14.9, -0.5], 'z', 0.4, 0.02, '#1e3f66', 'camera', null, { on: 'pcam', layer: 2, seg: 14, flat: true, open: 'top' }),
+        B([0.2, 1.0, 15.6, 16.2, -0.5, -0.45], '#d8d2b8', 'camera', 'flash', { on: 'pbody', skip: ['front', 'left', 'right', 'top', 'bottom'] })
+      ]),
+      motions: {
+        vol: VOL.vol, vshow: VOL.vshow,
+        pon: { do: [], dur: 200, start: 1 },
+        snap: { do: [], dur: 380 }
+      },
+      lights: [
+        { g: 'pscr', col: [44, 92, 168], when: pon, fadeIn: 350, fadeOut: 300 },
+        { g: 'flash', col: [255, 252, 232], when: function (sc) { return sc.val.snap > 0.15; }, fadeIn: 60, fadeOut: 450 }
+      ].concat(ICON.map(function (col, i) { return { g: 'pic' + i, col: rgb(col), when: pon, fadeIn: 350, fadeOut: 300 }; })),
+      parts: {
+        screen: { name: 'screen', can: [{ v: 'tap', fx: 'tap', at: [0.8, 9, 0.55] }, { v: 'swipe', fx: 'swipe', from: [-2.2, 8, 0.55], to: [2.2, 8, 0.55] }], zoom: 1.15, view: { yaw: -8, pitch: 6 } },
+        camera: { name: 'camera', can: [{ v: 'take a photo', m: 'snap', to: 'bounce' }], zoom: 2.2, view: { yaw: 160, pitch: 10 } },
+        speaker: { name: 'speaker', can: [{ v: 'turn up the volume', m: 'vol', to: 'up', also: louder[1] }, { v: 'turn down the volume', m: 'vol', to: 'down', also: quieter[1] }], zoom: 2.4, view: { yaw: -8, pitch: 6 } }
+      }
+    });
+    merge(m, volumeBar(-2.6, 2.6, 4.2, 1.4, 0.5, 'pscr', 2, pon, [44, 92, 168]));
+    merge(m, buttons([
+      { e: [3.8, 4.1, 12, 14, -0.25, 0.25], move: [-0.18, 0, 0], also: { m: 'pon', to: 'toggle' }, more: [{ v: 'switch on', m: 'pon', to: 1 }, { v: 'switch off', m: 'pon', to: 0 }], view: { yaw: 60, pitch: 8 } },
+      { e: [-4.1, -3.8, 13, 14.6, -0.25, 0.25], move: [0.18, 0, 0], also: louder, more: [{ v: 'turn up the volume', m: 'vol', to: 'up', also: louder[1] }], view: { yaw: -70, pitch: 8 } },
+      { e: [-4.1, -3.8, 10.8, 12.4, -0.25, 0.25], move: [0.18, 0, 0], also: quieter, more: [{ v: 'turn down the volume', m: 'vol', to: 'down', also: quieter[1] }], view: { yaw: -70, pitch: 8 } }
+    ], { prefix: 'phb', col: '#3a3f46', zoom: 1.8 }));
+  })();
+
+  /* ── TV and its remote control: the picture changes with the channel; a red light on standby ── */
+  (function () {
+    var PICS = [   /* the picture on each channel: sky / middle / bottom / a spot */
+      [[110, 180, 240], [120, 200, 110], [70, 150, 70], [255, 220, 80]],
+      [[250, 150, 90], [200, 90, 110], [60, 40, 80], [255, 205, 90]],
+      [[30, 60, 120], [220, 225, 235], [200, 40, 40], [255, 255, 255]],
+      [[255, 130, 205], [120, 230, 255], [255, 230, 90], [130, 255, 130]]
+    ];
+    var tvOn = function (sc) { return sc.on('tvon') && sc.plugged(); };
+    var pic = function (i) { return { g: 'pic' + i, col: function (sc) { return PICS[sc.state.ch][i]; }, when: tvOn, fadeIn: 400, fadeOut: 300 }; };
+    var m = define('tv', {
+      name: 'TV', view: { yaw: -22, pitch: 14, zoom: 0.95 }, channels: 4,
+      groups: { remote: {} },
+      shapes: [
+        B([-12, 12, 0, 1.2, -7, 5], '#2a2e33'),
+        B([-3, 3, 1.2, 8, -2.4, -0.8], '#2a2e33'),
+        B([-25, 25, 8, 37, -1.5, 1.5], '#1d2024', null, null, { id: 'tvb' }),
+        B([-17, 17, 12, 33, -2.2, -1.5], '#24282d', null, null, { skip: ['front', 'left', 'right', 'top', 'bottom'], on: 'tvb' }),
+        B([-23.5, 23.5, 9.5, 35.5, 1.5, 1.58], '#0b0d10', 'screen', 'tvs', { id: 'tvs', on: 'tvb' }),
+        B([-23.5, 23.5, 27, 35.5, 1.58, 1.62], '#0b0d10', 'screen', 'pic0', { on: 'tvs', layer: 2 }),
+        B([-23.5, 23.5, 18, 27, 1.58, 1.62], '#0b0d10', 'screen', 'pic1', { on: 'tvs', layer: 2 }),
+        B([-23.5, 23.5, 9.5, 18, 1.58, 1.62], '#0b0d10', 'screen', 'pic2', { on: 'tvs', layer: 2 }),
+        B([12, 18, 28.5, 33.5, 1.62, 1.66], '#0b0d10', 'screen', 'pic3', { on: 'tvs', layer: 3 }),
+        B([20.5, 21.7, 8.5, 9.1, 1.5, 1.6], '#3a1616', null, 'tvled', { on: 'tvb', layer: 2 }),
+        B([-12, 10, 8.35, 9.15, 1.5, 1.56], '#2c3036', 'speaker', null, { on: 'tvb', layer: 2 }),
+        /* the remote control, lying in front of the TV */
+        B([6, 10, 0, 1.4, 8, 22], '#454b54', 'remote', 'remote', { id: 'rbody' }),
+        B([6.6, 9.4, 1.4, 1.43, 17, 21], '#5a616b', 'remote', 'remote', { on: 'rbody', layer: 2 })
+      ],
+      motions: {
+        tvon: { do: [], dur: 200, start: 1 },
+        vol: VOL.vol, vshow: VOL.vshow,
+        rlift: { do: [{ g: 'remote', rot: { ax: 'x', pivot: [8, 0.7, 15], deg: 30 } }, { g: 'remote', move: [4, 9, 10] }], dur: 800 }
+      },
+      lights: [0, 1, 2, 3].map(pic).concat([
+        { g: 'tvs', col: [20, 24, 30], when: tvOn, fadeIn: 400, fadeOut: 300 },
+        { g: 'tvled', col: [255, 40, 40], when: function (sc) { return sc.plugged() && !sc.on('tvon'); }, fadeIn: 200, fadeOut: 800 }
+      ]),
+      parts: {
+        screen: { name: 'screen', can: [{ v: 'watch', m: 'tvon', to: 1 }, { v: 'switch on', m: 'tvon', to: 1 }, { v: 'switch off', m: 'tvon', to: 0 }], zoom: 1.1 },
+        remote: { name: 'remote control', can: [{ v: 'pick up', m: 'rlift', to: 'toggle' }, { v: 'change the channel', fx: 'channel', dir: 1, also: { m: 'tvon', to: 1 } },
+          { v: 'turn up the volume', m: 'vol', to: 'up', also: louder[1] }, { v: 'turn down the volume', m: 'vol', to: 'down', also: quieter[1] }], zoom: 2.2, view: { pitch: 40, yaw: -15 } },
+        speaker: { name: 'speaker', can: [{ v: 'turn up the volume', m: 'vol', to: 'up', also: louder[1] }, { v: 'turn down the volume', m: 'vol', to: 'down', also: quieter[1] }], zoom: 2.4, view: { yaw: -10, pitch: 8 } }
+      }
+    });
+    merge(m, volumeBar(-21, -9, 11, 3.2, 1.62, 'tvs', 3, tvOn, function (sc) { return PICS[sc.state.ch][2]; }));
+    var R = { parent: 'remote', move: [0, -0.25, 0], view: { pitch: 55, yaw: -10 }, zoom: 3 };
+    var rb = function (x, z, col, also, more) { return Object.assign({ e: [x, x + 1.2, 1.4, 1.75, z, z + 1.2], col: col, also: also, more: more }, R); };
+    merge(m, buttons([
+      { e: [15, 18, 8.3, 9.2, 1.5, 1.85], col: '#3a3f46', move: [0, 0, -0.3], also: { m: 'tvon', to: 'toggle' }, more: [{ v: 'switch on', m: 'tvon', to: 1 }, { v: 'switch off', m: 'tvon', to: 0 }], view: { yaw: -10, pitch: 6 }, zoom: 3 },
+      rb(6.6, 9.2, '#d9483b', { m: 'tvon', to: 'toggle' }, [{ v: 'switch on', m: 'tvon', to: 1 }, { v: 'switch off', m: 'tvon', to: 0 }]),
+      rb(8.2, 11.5, '#e9ecef', { fx: 'channel', dir: 1 }, [{ v: 'change the channel', fx: 'channel', dir: 1 }]),
+      rb(8.2, 13.4, '#e9ecef', { fx: 'channel', dir: -1 }, [{ v: 'go back a channel', fx: 'channel', dir: -1 }]),
+      rb(6.6, 11.5, '#9fb0c0', louder, [{ v: 'turn up the volume', m: 'vol', to: 'up', also: louder[1] }]),
+      rb(6.6, 13.4, '#9fb0c0', quieter, [{ v: 'turn down the volume', m: 'vol', to: 'down', also: quieter[1] }])
+    ], { prefix: 'tvb' }));
+    withPower(m, powered([[20, 10, -1.5], [20, 1.2, -6], [12, 1.5, -12]], 6, -12));
+  })();
+
+  /* ── fan: three blades that spin; a toggle switch with 0 · 1 · 2 · 3 ── */
+  (function () {
+    var blades = [];
+    for (var i = 0; i < 3; i++) blades.push(rotBox([-1.8, 1.8, 25.5, 33.5, 3.0, 3.35], 'z', i * 120, [0, 24, 0], '#7cc4c8', 'blade', 'blades'));
+    var guard = [{ t: 'tube', pts: ring([0, 24, 4.6], 10.6, 28), r: 0.2, col: '#b8c0c8' }, { t: 'tube', pts: ring([0, 24, 1.6], 10.6, 28), r: 0.2, col: '#b8c0c8' }];
+    for (i = 0; i < 6; i++) {
+      var a = i / 6 * Math.PI * 2;
+      guard.push({ t: 'tube', pts: [[1.9 * Math.cos(a), 24 + 1.9 * Math.sin(a), 4.8], [10.6 * Math.cos(a), 24 + 10.6 * Math.sin(a), 4.6]], r: 0.16, col: '#b8c0c8' });
+    }
+    var m = define('fan', {
+      name: 'fan', view: { yaw: -30, pitch: 12, zoom: 0.95 },
+      shapes: [
+        C([0, 1, 0], 'y', 9, 2, '#e8ebee'),
+        B([-3, 3, 2, 4.2, 4, 8], '#d5dade', 'switch', null, { id: 'fhous' }),
+        rotBox([-0.35, 0.35, 4.2, 6.2, 5.0, 5.8], 'z', 37.5, [0, 4.2, 5.4], '#2f3338', 'switch', 'fsw'),
+        rotBox([-0.6, 0.6, 6.0, 6.8, 4.9, 5.9], 'z', 37.5, [0, 4.2, 5.4], '#2f3338', 'switch', 'fsw'),
+        C([0, 12, -2], 'y', 0.9, 20, '#cfd5db'),
+        C([0, 24, -1], 'z', 3.2, 7, '#e8ebee'),
+        C([0, 24, 3.2], 'z', 1.6, 1.4, '#cfd5db', 'blade', 'blades', { seg: 14 })
+      ].concat(blades).concat(guard).concat([
+        C([0, 24, 4.85], 'z', 1.9, 0.35, '#2c7a7b', null, null, { seg: 16 })
+      ]),
+      motions: {
+        speed: { do: [{ g: 'fsw', rot: { ax: 'z', pivot: [0, 4.2, 5.4], deg: -25 } }], dur: 220 }
+      },
+      /* the numbers by the switch */
+      displays: [{ id: 'fmarks', on: 'fhous', part: 'switch', at: [0, 4.2, 7.0], u: [1, 0, 0], v: [0, 0, -1], h: 1.4, text: '0123', col: '#3a3f45', bg: '#d5dade', when: function () { return true; } }],
+      spins: [{ g: 'blades', ax: 'z', pivot: [0, 24, 0], ease: 900, rate: function (sc) { return sc.plugged() ? Math.max(0, sc.val.speed) * 400 : 0; } }],
+      parts: {
+        switch: { name: 'switch', can: [{ v: 'switch on', m: 'speed', to: 1 }, { v: 'change the speed', m: 'speed', to: 'cycle', max: 3 }, { v: 'switch off', m: 'speed', to: 0 }], zoom: 3, view: { pitch: 45, yaw: -10 } },
+        blade: { name: 'blade', can: [{ v: 'spin', m: 'speed', to: 1 }], zoom: 1.4, view: { yaw: -15, pitch: 6 } }
+      }
+    });
+    withPower(m, powered([[0, 1, -9], [0, 1, -13], [-5, 1.5, -17]], -9, -17));
+  })();
+
+  /* ── stereo: a radio display, a CD tray, a volume knob, buttons, two speakers that move with the music ── */
+  (function () {
+    var playing = function (sc) { return sc.on('play') && sc.plugged(); };
+    var speaker = function (x, k) {
+      return [
+        B([x - 4.5, x + 4.5, 0, 16, -7, 7], '#3a3f46', null, null, { id: 'spk' + k }),
+        C([x, 9.5, 7.2], 'z', 3.3, 0.4, '#1b1e22', 'speaker' + (k ? '2' : ''), 'cone' + k, { on: 'spk' + k, seg: 22 }),
+        C([x, 9.5, 7.45], 'z', 1.1, 0.3, '#30353c', 'speaker' + (k ? '2' : ''), 'cone' + k, { on: 'spk' + k, layer: 2, seg: 14 }),
+        C([x, 3.6, 7.15], 'z', 1.3, 0.3, '#1b1e22', 'speaker' + (k ? '2' : ''), null, { on: 'spk' + k, seg: 14 })
+      ];
+    };
+    var spk = { name: 'speaker', can: [{ v: 'listen to music', m: 'play', to: 1 }, { v: 'turn up the volume', m: 'vol', to: 'up', also: { m: 'play', to: 1 } }, { v: 'turn down the volume', m: 'vol', to: 'down', also: { m: 'play', to: 1 } }], zoom: 1.8, view: { yaw: -15, pitch: 8 } };
+    var m = define('stereo', {
+      name: 'stereo', view: { yaw: -22, pitch: 16, zoom: 1.05 },
+      shapes: [
+        B([-12, 12, 0, 14, -10, 10], '#2b2f35', null, null, { id: 'sb' }),
+        B([-8, 4, 6.5, 9, 10, 10.15], '#0f2a3a', 'screen', 'sscr', { id: 'sscr', on: 'sb' }),
+        B([-8.2, 4.2, 10.4, 11.9, 10, 10.05], '#17191d', null, null, { on: 'sb' }),
+        /* the CD tray: inside the stereo until it opens (clipZ: nothing behind the front is drawn) */
+        B([-8, 4, 10.5, 11.8, 0, 10.08], '#202328', 'tray', 'tray', { id: 'tray', clipZ: 10, bias: 1 }),
+        C([-2, 11.82, 5], 'y', 4.4, 0.04, '#cfd8e3', 'tray', 'tray', { on: 'tray', layer: 2, clipZ: 10.1, seg: 24, flat: true, open: 'bottom' }),
+        C([-2, 11.86, 5], 'y', 0.8, 0.04, '#8a96a4', 'tray', 'tray', { on: 'tray', layer: 3, clipZ: 10.1, seg: 12, flat: true, open: 'bottom' }),
+        C([8, 7.5, 10.6], 'z', 2.4, 1.2, '#9aa3ad', 'knob', 'sknob', { seg: 22 }),
+        /* the knob's mark: at the volume it starts with (0.6), it points a little to the right of the top */
+        rotBox([7.7, 8.3, 8.6, 9.7, 11.2, 11.35], 'z', 0.6 * 270 - 135, [8, 7.5, 10.6], '#f2f4f6', 'knob', 'sknob', { bias: 0.4 })
+      ].concat(speaker(-19.5, 0)).concat(speaker(19.5, 1)),
+      motions: {
+        tray: { do: [{ g: 'tray', move: [0, 0, 9] }], dur: 900 },
+        vol: { do: [{ g: 'sknob', rot: { ax: 'z', pivot: [8, 7.5, 10.6], deg: -270 } }], dur: 400, start: 0.6 },
+        play: { do: [], dur: 200 }
+      },
+      lights: [{ g: 'sscr', col: [22, 66, 90], when: plugged, fadeIn: 300, fadeOut: 500 }],
+      displays: [{ id: 'sdisp', g: 'sscr', on: 'sscr', part: 'screen', at: [-2, 7.75, 10.15], h: 1.9, text: '98.5', col: '#7fe0ff', bg: '#0f2a3a', kind: 'freq', when: plugged }],
+      spins: [
+        /* the louder, the more the speakers move */
+        { g: 'cone0', wobble: [0, 0, 0.6], hz: 5, when: playing, ease: 200, scale: function (sc) { return sc.val.vol; } },
+        { g: 'cone1', wobble: [0, 0, 0.6], hz: 5, when: playing, ease: 200, scale: function (sc) { return sc.val.vol; } }
+      ],
+      parts: {
+        screen: { name: 'screen', can: [{ v: 'read', fx: 'read', d: 'sdisp' }], zoom: 2.6, view: { yaw: -8, pitch: 8 } },
+        tray: { name: 'CD tray', can: [{ v: 'open', m: 'tray', to: 1 }, { v: 'close', m: 'tray', to: 0 }, { v: 'put a CD in' }], zoom: 2.2, view: { yaw: -20, pitch: 30 }, at: [-2, 11.2, 10.1], pose: { tray: 1 } },
+        knob: { name: 'knob', can: [{ v: 'turn', m: 'vol', to: 'up' }, { v: 'turn up the volume', m: 'vol', to: 'up' }, { v: 'turn down the volume', m: 'vol', to: 'down' }], zoom: 2.8, view: { yaw: -12, pitch: 8 } },
+        speaker: spk, speaker2: spk
+      }
+    });
+    merge(m, buttons([
+      { e: [-8, -5.8, 3, 4.6, 10, 10.5], col: '#5fbf7f', also: [{ m: 'play', to: 1 }], more: [{ v: 'play music', m: 'play', to: 1 }] },
+      { e: [-5, -2.8, 3, 4.6, 10, 10.5], col: '#d9483b', also: [{ m: 'play', to: 0 }], more: [{ v: 'stop the music', m: 'play', to: 0 }] },
+      { e: [-2, 0.2, 3, 4.6, 10, 10.5], col: '#e9ecef', also: [{ m: 'tray', to: 'toggle' }], more: [{ v: 'open the CD tray', m: 'tray', to: 1 }, { v: 'close the CD tray', m: 'tray', to: 0 }] },
+      { e: [1, 3.2, 3, 4.6, 10, 10.5], col: '#e9ecef', also: [{ fx: 'read', d: 'sdisp' }], more: [{ v: 'change the station', fx: 'read', d: 'sdisp' }] }
+    ], { prefix: 'sbt', move: [0, 0, -0.35], on: 'sb', zoom: 3, view: { yaw: -10, pitch: 10 } }));
+    withPower(m, powered([[10, 3, -10], [10, 1.2, -15], [2, 1.5, -18]], -4, -18));
+  })();
+
+  /* ── refrigerator: a fridge and a freezer, shelves with food, a light that comes on when the door opens ── */
+  (function () {
+    var food = function (s) { s.bias = (s.bias || 0) - 2.5; return s; };
+    var m = define('fridge', {
+      name: 'refrigerator', view: { yaw: -32, pitch: 14, zoom: 0.85 },
+      groups: { fscrg: { parent: 'zdoor' } },
+      shapes: [
+        B([-15, 15, 0, 60, -14, 14], '#eef1f4', null, null, { skip: ['front'], bias: 4 }),   /* the outside walls: in front of everything inside */
+        B([-15, -14, 0, 60, 13.6, 14], '#eef1f4'), B([14, 15, 0, 60, 13.6, 14], '#eef1f4'),
+        B([-15, 15, 59, 60, 13.6, 14], '#eef1f4'), B([-15, 15, 0, 2, 13.6, 14], '#eef1f4'), B([-15, 15, 40, 42, 13.6, 14], '#eef1f4'),
+        B([-14, 14, 2, 40, -13, 14], '#dfe6ec', null, null, { inside: true, skip: ['front'], id: 'fin' }),
+        B([-14, 14, 42, 59, -13, 14], '#d3dde6', null, null, { inside: true, skip: ['front'] }),
+        B([-14, 14, 14, 14.5, -13, 12], '#cfe3ef', 'shelf', null, { bias: -2.5 }),
+        B([-14, 14, 27, 27.5, -13, 12], '#cfe3ef', 'shelf2', null, { bias: -2.5 }),
+        B([-4, 4, 39.6, 40, -2, 5], '#e7e5dc', null, 'flight', { on: 'fin', skip: ['top'] }),
+        food(C([-9, 20.5, -5], 'y', 1.6, 12, '#4caf50', null, null, { seg: 14 })),
+        food(B([-3, 2, 14.5, 22, -8, -3], '#f6f6f2')),
+        food(C([7, 3.8, 0], 'y', 2.1, 3.6, '#d9483b', null, null, { seg: 14 })),
+        food(B([3, 10, 27.5, 30, -7, 0], '#f2c94c')),
+        food(B([-8, 4, 42, 44, -9, 6], '#bde3f5')),
+        /* the doors */
+        B([-15, 15, 2, 40, 14, 16], '#e4e8ec', 'door', 'fdoor', { id: 'fd', bias: 5 }),
+        B([11, 12.5, 24, 36, 16, 18.2], '#b9c0c8', 'handle', 'fdoor', { on: 'fd', layer: 2 }),
+        B([-15, 15, 42, 59, 14, 16], '#e4e8ec', 'freezer', 'zdoor', { id: 'zd', bias: 5 }),
+        B([11, 12.5, 45, 55, 16, 18.2], '#b9c0c8', 'handle2', 'zdoor', { on: 'zd', layer: 2 }),
+        B([-10.5, -2.5, 52, 55.6, 16, 16.12], '#102830', 'screen', 'fscrg', { id: 'fscr', on: 'zd', layer: 2 })
+      ],
+      motions: {
+        fdoor: { do: [{ g: 'fdoor', rot: { ax: 'y', pivot: [-15, 0, 14], deg: -100 } }], dur: 900 },
+        zdoor: { do: [{ g: 'zdoor', rot: { ax: 'y', pivot: [-15, 0, 14], deg: -100 } }], dur: 900 }
+      },
+      lights: [
+        { g: 'flight', col: [255, 248, 210], glow: [0, 38.6, 1.5], glowR: 8, glowBias: 6, when: function (sc) { return sc.val.fdoor > 0.15 && sc.plugged(); }, fadeIn: 150, fadeOut: 300 },
+        { g: 'fscrg', col: [22, 70, 84], when: plugged, fadeIn: 300, fadeOut: 500 }
+      ],
+      displays: [{ id: 'fdisp', g: 'fscrg', on: 'fscr', part: 'screen', at: [-6.5, 53.8, 16.12], h: 2.2, text: '-18°', col: '#7fe0ff', bg: '#102830', kind: 'temp', when: plugged }],
+      parts: {
+        door: { name: 'door', can: [{ v: 'open', m: 'fdoor', to: 1 }, { v: 'close', m: 'fdoor', to: 0 }], zoom: 1.1 },
+        freezer: { name: 'freezer door', can: [{ v: 'open', m: 'zdoor', to: 1 }, { v: 'close', m: 'zdoor', to: 0 }], zoom: 1.4, view: { pitch: 18 } },
+        handle: { name: 'handle', can: [{ v: 'pull', m: 'fdoor', to: 'toggle' }], zoom: 2, view: { yaw: -20 } },
+        handle2: { name: 'handle', can: [{ v: 'pull', m: 'zdoor', to: 'toggle' }], zoom: 2, view: { yaw: -20 } },
+        screen: { name: 'screen', can: [{ v: 'read', fx: 'read', d: 'fdisp' }], zoom: 3, view: { yaw: -10, pitch: 8 } },
+        shelf: { name: 'shelf', can: [{ v: 'put food on' }], zoom: 1.5, view: { yaw: -20, pitch: 20 }, pose: { fdoor: 1 } },
+        shelf2: { name: 'shelf', can: [{ v: 'put food on' }], zoom: 1.5, view: { yaw: -20, pitch: 20 }, pose: { fdoor: 1 } }
+      }
+    });
+    withPower(m, powered([[10, 3, -14], [10, 1.2, -19], [2, 1.5, -23]], -4, -23));
+  })();
 
   global.House3D = { viewer: viewer, define: define, models: MODELS, mount: mountMini, scan: scan };
 })(window);
