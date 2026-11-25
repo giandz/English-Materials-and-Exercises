@@ -341,6 +341,11 @@
       if (this.state.src) this.state.src = 0; else this.state.ch = (this.state.ch + (act.dir || 1) + n) % n;
       return;
     }
+    if (act.fx === 'timer') {   /* a countdown: add to it (or set it), between 0 and max seconds */
+      var tv = act.set != null ? act.set : (this.state[act.key] || 0) + (act.add || 0);
+      this.state[act.key] = Math.max(0, Math.min(act.max || 1e9, tv));
+      return;
+    }
     if (act.fx === 'source') { this.state.src = (this.state.src + 1) % (this.m.sources || 3); return; }
     if (act.fx === 'keys') {   /* random keys, one after another */
       var n = this.m.keyCount || 0, seq = [], gap = act.gap || 140, last = -1;
@@ -386,6 +391,7 @@
     (this.m.displays || []).forEach(function (d, i) { fade(self.dv, i, d.when(self), d.fadeIn || 300, d.fadeOut || 400); });
     /* timers: when() has been true for after() ms → play act (once, until when() is false again) */
     if (this.m.alive && this.m.alive(this)) busy = true;   /* a light that keeps going on and off */
+    if (this.m.update && this.m.update(this, dt)) busy = true;   /* the model's own state changing over time (a fridge warming up) */
     (this.m.timers || []).forEach(function (tm, i) {
       if (!tm.when(self)) { self.tm[i] = null; return; }
       if (self.tm[i] == null) self.tm[i] = now;
@@ -505,6 +511,14 @@
 
   var LIGHT = norm([-0.35, 0.7, 0.62]);
   function f1(n) { return Math.round(n * 10) / 10; }
+  /* the flat (affine) transform that takes the triangle p0 p1 p2 to s0 s1 s2, as an SVG matrix */
+  function triMatrix(p0, p1, p2, s0, s1, s2) {
+    var x1 = p1[0] - p0[0], y1 = p1[1] - p0[1], x2 = p2[0] - p0[0], y2 = p2[1] - p0[1], det = x1 * y2 - x2 * y1;
+    var u1 = s1[0] - s0[0], v1 = s1[1] - s0[1], u2 = s2[0] - s0[0], v2 = s2[1] - s0[1];
+    var a = (u1 * y2 - u2 * y1) / det, c = (u2 * x1 - u1 * x2) / det, b = (v1 * y2 - v2 * y1) / det, d = (v2 * x1 - v1 * x2) / det;
+    var e = s0[0] - a * p0[0] - c * p0[1], f = s0[1] - b * p0[0] - d * p0[1];
+    return [a, b, c, d, e, f].map(function (v) { return Math.round(v * 10000) / 10000; }).join(' ');
+  }
 
   /* the faces as SVG paths, back to front; `mark` = the part drawn in the accent colour */
   function drawFaces(scene, cam, mark, now) {
@@ -544,6 +558,34 @@
     };
     list.forEach(function (x) { settle(x, 0); });
     list = list.filter(function (x) { return !x.hidden; });
+    /* pictures shown on a screen (a TV programme): an SVG mapped onto the screen's face, just in front of it */
+    (scene.m.screens || []).forEach(function (s) {
+      if (!s.show(scene)) return;
+      var lv = 1;
+      if (s.fade) { lv = 0; (scene.m.lights || []).forEach(function (l, i) { if (l.g === s.fade) lv = Math.max(lv, scene.lv[i]); }); }
+      if (lv < 0.02) return;
+      var w = s.w || 640, h = s.h || 360, N = 2;
+      /* the grid's corners, in perspective (an SVG transform is flat, so each triangle gets its own exact one) */
+      var C = [];
+      for (var gy = 0; gy <= N; gy++) { C.push([]); for (var gx = 0; gx <= N; gx++) C[gy].push(cam.toCam(scene.groupPoint(add(s.tl, add(mul(s.u, gx / N), mul(s.v, gy / N))), s.g))); }
+      var n = norm(cross(sub(C[1][0], C[0][0]), sub(C[0][1], C[0][0])));
+      if (dot(n, sub(eye, C[0][0])) <= 0) return;
+      var base = null;
+      list.forEach(function (y) { if (y.id === s.on && dot(y.n, n) > 0.9 && (!base || y.z > base.z)) base = y; });
+      if (!base) return;
+      var Sp = C.map(function (row) { return row.map(function (p) { return cam.toScreen(p); }); });
+      var id = s.id(scene), out = '';
+      for (gy = 0; gy < N; gy++) for (gx = 0; gx < N; gx++) {
+        var q = [[gx, gy], [gx + 1, gy], [gx + 1, gy + 1], [gx, gy + 1]];
+        [[0, 1, 2], [0, 2, 3]].forEach(function (t, ti) {
+          var A = q[t[0]], B2 = q[t[1]], C2 = q[t[2]];
+          out += '<g transform="matrix(' + triMatrix(
+            [A[0] * w / N, A[1] * h / N], [B2[0] * w / N, B2[1] * h / N], [C2[0] * w / N, C2[1] * h / N],
+            Sp[A[1]][A[0]], Sp[B2[1]][B2[0]], Sp[C2[1]][C2[0]]) + ')"><use href="#' + id + '" clip-path="url(#' + TV.clipFor(N, gx, gy, ti) + ')"/></g>';
+        });
+      }
+      list.push({ z: base.z + 0.035, raw: '<g pointer-events="none" opacity="' + f1(lv) + '">' + out + '</g>' });
+    });
     /* the glow of a light, sorted in with the faces: walls in front of it hide it */
     (scene.m.lights || []).forEach(function (l, i) {
       var lv = scene.lv[i];
@@ -582,6 +624,310 @@
   function actionsOf(model, id) {
     return (model.parts[id].can || []).map(function (a) { return typeof a === 'string' ? { v: a } : a; });
   }
+
+  /* ══ TV programmes ════════════════════════════════════════════════════════
+     Each TV channel shows a scene: people talking, a band playing, sports, the news. The scenes are made at
+     random when a channel is first shown (who is in them and which programme each channel has), with the
+     characters of house-character.js (load it before this file). Without it, the channels show the scenes
+     with simple figures. A scene is drawn once into a hidden SVG and the TV screen shows it with <use>, so the
+     picture moves on its own without redrawing the 3D view.
+       House3D.tv.programme(channel) → { id, label }   House3D.tv.TYPES → the kinds of programme */
+  var TV = (function () {
+    var W = 640, H = 360, FPS = 8, host = null, chans = {}, timer = 0;
+    var rint = function (n) { return Math.floor(Math.random() * n); };
+    var pickOne = function (a) { return a[rint(a.length)]; };
+    var HC = function () { return global.HouseCharacter || null; };
+    var COLS = ['#CC0000', '#0066CC', '#00CC66', '#FFCC00', '#660066', '#FF6600', '#000066', '#666666', '#FFFFFF', '#000000', '#CC6600', '#00CCCC', '#FF66CC', '#666600'];
+
+    /* someone at random: body, face, hair and clothes */
+    function person(o) {
+      o = o || {};
+      var fem = o.bodyType ? o.bodyType === 'female' : Math.random() < 0.5, hc = HC();
+      var outfits = hc && hc.OUTFITS ? hc.OUTFITS[fem ? 'female' : 'male'].filter(function (x) { return ['swim', 'bikini', 'formal', 'hooded'].indexOf(x.id) < 0; }) : [{}];
+      var out = o.outfit && hc ? hc.OUTFITS[fem ? 'female' : 'male'].filter(function (x) { return x.id === o.outfit; })[0] || pickOne(outfits) : pickOne(outfits);
+      var hair = fem ? ['long', 'bob', 'ponytail', 'bun', 'curly', 'braids', 'ringlets', 'afro', 'pigtails'] : ['short', 'sidepart', 'buzz', 'crew', 'curly', 'afro', 'pompadour', 'dreadlocks', 'bald'];
+      var d = {
+        name: o.name || 'Someone', bodyType: fem ? 'female' : 'male', skin: 1 + rint(6), eyeColor: 1 + rint(16),
+        hairColor: pickOne(['1-0', '3-0', '4-0', '5-0', '6-0', '7-0', '8-0', '5-7', '7-77', 'grey']), hairStyle: pickOne(hair),
+        facialHair: fem ? 'none' : pickOne(['none', 'none', 'none', 'stubble', 'moustache', 'goatee', 'beard']),
+        height: 2 + rint(3), weight: 2 + rint(3), mouth: 'smile',
+        upperGarment: out.upperGarment || 'tshirt', lowerGarment: out.lowerGarment === undefined ? 'jeans' : out.lowerGarment, footwear: out.footwear || 'sneakers',
+        upperColor: pickOne(COLS), lowerColor: pickOne(['#000066', '#666666', '#000000', '#663300', '#CCCC66', '#0066CC']),
+        accessories: out.tie ? ['tie'] : []
+      };
+      return Object.assign(d, o.data || {});
+    }
+    /* a pose from house-character.js's list, on a copy */
+    function posed(d, pose, extra) {
+      var hc = HC(), c = JSON.parse(JSON.stringify(d));
+      if (hc) c = pose ? hc.applyPose(hc.normalize(c), pose) : hc.normalize(c);
+      if (extra) {
+        Object.keys(extra).forEach(function (k) { if (k !== 'joints') c[k] = extra[k]; });
+        if (extra.joints) c.joints = Object.assign({}, c.joints || {}, extra.joints);
+      }
+      return c;
+    }
+    /* one character drawn on the stage (600 × 590, the floor at y 550, the middle at x 300); placed so its feet are at (x, y) */
+    var drawn = {};
+    function figure(d, x, y, k, flip) {
+      var hc = HC(), key = JSON.stringify(d), svg = drawn[key];
+      if (svg == null) {
+        if (hc) { try { svg = hc.render(d).replace(/^<svg[^>]*>/, '').replace(/<\/svg>\s*$/, '').replace(/<title>[\s\S]*?<\/title>/, ''); } catch (e) { svg = ''; } }
+        else svg = stick(d);
+        drawn[key] = svg;
+      }
+      return '<g transform="translate(' + f1(flip ? x + 300 * k : x - 300 * k) + ' ' + f1(y - 550 * k) + ') scale(' + (flip ? -k : k) + ' ' + k + ')">' + svg + '</g>';   /* flip: facing the other way */
+    }
+    /* without house-character.js: a simple figure in the person's colours */
+    function stick(d) {
+      var top = d.upperColor || '#0066CC', leg = d.lowerColor || '#333', skin = ['#f7e0d2', '#f0cdb0', '#deb08a', '#bf8a5e', '#8e5d3d', '#553625'][(d.skin || 3) - 1];
+      return '<rect x="270" y="300" width="60" height="110" rx="20" fill="' + top + '"/><rect x="278" y="400" width="18" height="150" rx="8" fill="' + leg + '"/><rect x="304" y="400" width="18" height="150" rx="8" fill="' + leg + '"/>'
+        + '<circle cx="300" cy="262" r="34" fill="' + skin + '"/><rect x="246" y="306" width="16" height="100" rx="8" fill="' + top + '"/><rect x="338" y="306" width="16" height="100" rx="8" fill="' + top + '"/>';
+    }
+    var MOUTHS = ['ai', 'e', 'o', 'cdg', 'mbp', 'ai', 'u', 'rest'];
+    /* a running stride at phase p (radians): hips swing opposite, each knee folds most as its leg swings through,
+       the foot follows; the arms swing against the legs */
+    function runLegs(p, more) {
+      var sL = Math.sin(p), cL = Math.cos(p), sR = -sL, cR = -cL;
+      var leg = function (s, c) { return { hip: f1(15 + 45 * s), knee: f1(-12 - 78 * (0.5 + 0.5 * c)), ankle: f1(72 + 14 * s) }; };
+      var L = leg(sL, cL), R = leg(sR, cR);
+      return Object.assign({ joints: { torso: -12, hipL: L.hip, kneeL: L.knee, ankleL: L.ankle, hipR: R.hip, kneeR: R.knee, ankleR: R.ankle,
+        shoulderL: f1(-55 * sL), elbowL: 85, shoulderR: f1(55 * sL), elbowR: 85 } }, more || {});
+    }
+
+    /* ── backgrounds ── */
+    var BG = {
+      cafe: '<rect width="640" height="360" fill="#e8d9c0"/><rect y="250" width="640" height="110" fill="#b98a55"/><rect x="40" y="40" width="150" height="120" fill="#bfe3f5" stroke="#8a6a44" stroke-width="8"/><path d="M115,40V160M40,100H190" stroke="#8a6a44" stroke-width="5"/>'
+        + '<rect x="470" y="60" width="120" height="70" fill="#f4f1e8" stroke="#8a6a44" stroke-width="5"/><path d="M485,80h90M485,95h70M485,110h80" stroke="#666" stroke-width="4"/><circle cx="560" cy="230" r="34" fill="#4f9a55"/><rect x="545" y="240" width="30" height="40" fill="#a0522d"/>',
+      stage: '<rect width="640" height="360" fill="#16121f"/><path d="M80,0L20,300H200ZM320,0L240,300H400ZM560,0L440,300H620Z" fill="#ffe9a8" opacity=".12"/><rect y="300" width="640" height="60" fill="#3a2b20"/><path d="M0,300H640" stroke="#6b5240" stroke-width="4"/>'
+        + '<circle cx="80" cy="8" r="10" fill="#ff5a5a"/><circle cx="320" cy="8" r="10" fill="#5ab0ff"/><circle cx="560" cy="8" r="10" fill="#ffd25a"/>',
+      field: '<rect width="640" height="360" fill="#8fd0f5"/><rect y="120" width="640" height="40" fill="#5a6a7a"/><path d="M0,120h640" stroke="#3a4652" stroke-width="3"/><rect y="160" width="640" height="200" fill="#4caf50"/>'
+        + '<path d="M0,200H640M0,250H640M0,310H640" stroke="#58bd5c" stroke-width="22"/><path d="M520,170V285M600,165V285M520,170L600,165" stroke="#fff" stroke-width="6" fill="none"/><path d="M520,170L600,165L600,285L520,285Z" fill="#fff" opacity=".18"/>',
+      court: '<rect width="640" height="360" fill="#3a4a6a"/><rect y="230" width="640" height="130" fill="#d79c5a"/><path d="M0,250H640M0,290H640M0,330H640" stroke="#c98b4a" stroke-width="2"/><path d="M80,360Q320,250 560,360" stroke="#fff" stroke-width="4" fill="none"/>'
+        + '<rect x="555" y="40" width="10" height="200" fill="#555"/><rect x="500" y="50" width="70" height="50" fill="#fff" stroke="#c33" stroke-width="3"/><ellipse cx="520" cy="102" rx="20" ry="5" fill="none" stroke="#ff6a00" stroke-width="4"/><path d="M502,104L510,132H530L538,104" stroke="#fff" fill="none" stroke-width="2"/>',
+      track: '<rect width="640" height="360" fill="#9fd4f2"/><rect y="90" width="640" height="80" fill="#6b7a8a"/><path d="M0,110h640M0,130h640M0,150h640" stroke="#8a98a6" stroke-width="6" stroke-dasharray="6 10"/><rect y="170" width="640" height="190" fill="#c8503c"/>'
+        + '<path d="M0,210H640M0,260H640M0,315H640" stroke="#f2e6dc" stroke-width="3"/>',
+      news: '<rect width="640" height="360" fill="#16325c"/><rect x="390" y="40" width="210" height="130" fill="#0d1f3a" stroke="#6fa8ff" stroke-width="3"/><path d="M400,160V110h20v-30h25v50h20v-70h30v80h25v-40h25v60h20Z" fill="#6fa8ff" opacity=".7"/><circle cx="560" cy="70" r="14" fill="#ffd25a"/>'
+        + '<path d="M0,40H330" stroke="#2c5a9c" stroke-width="40" opacity=".35"/>'
+    };
+    var NEWS_BAR = '<rect y="300" width="640" height="44" fill="#c81e2c"/><rect x="0" y="300" width="120" height="44" fill="#fff"/><text x="60" y="330" font-family="Helvetica, Arial, sans-serif" font-size="24" font-weight="800" text-anchor="middle" fill="#c81e2c">NEWS</text>';
+
+    /* ── programmes: who is in them and how they move (frame i of n) ── */
+    var TYPES = {
+      talk: { label: 'two people talking', n: 32, make: function () {
+        var a = person(), b = person(), A = [], B = [];
+        for (var i = 0; i < 32; i++) {
+          var aTalk = i < 16, m = MOUTHS[i % MOUTHS.length], g = (i >> 2) % 2;
+          A.push(posed(a, null, { torsoOrientation: 30, pelvisOrientation: 30, head: 'right', mouth: aTalk ? m : 'smile', headNod: aTalk ? 0 : (i % 8 < 4 ? 5 : 0),
+            joints: aTalk && g ? { shoulderL: -28, elbowL: 100 } : {} }));
+          B.push(posed(b, null, { torsoOrientation: -30, pelvisOrientation: -30, head: 'left', mouth: aTalk ? 'smile' : m, headNod: aTalk ? (i % 8 < 4 ? 5 : 0) : 0,
+            joints: !aTalk && g ? { shoulderR: 28, elbowR: -100 } : {} }));
+        }
+        return function (i) { return BG.cafe + figure(A[i], 230, 345, 0.52) + figure(B[i], 410, 345, 0.52); };
+      } },
+      band: { label: 'a band playing', n: 16, make: function () {
+        /* the drummer at the back on a riser, out of the singer's way; the others along the front */
+        var G = person({ data: { held: { left: 'electricguitar', right: null }, headwear: 'headband', accessories: [] } });
+        var gJ = { root: 0, pelvis: 4, torso: -17, neck: 23, shoulderL: -3, elbowL: -93, wristL: -95, shoulderR: 31, elbowR: -114, wristR: 17, hipL: -15, kneeL: 22, ankleL: -83, hipR: 9, kneeR: -21, ankleR: 78 };
+        var vJ = { root: 0, pelvis: 3, torso: 2, neck: -7, shoulderL: 14, elbowL: 96, wristL: 22, shoulderR: 49, elbowR: 105, wristR: 65, hipL: -3, kneeL: -1, ankleL: -76, hipR: -1, kneeR: -4, ankleR: 75 };
+        var V = person({ bodyType: 'female', data: { upperGarment: 'gown', lowerGarment: null, footwear: 'heels', held: { left: 'violinbow', right: 'violin' }, heldLeftGrip: -45, heldRightGrip: 45, thumbFlipR: true, accessories: [] } });
+        var D = person({ data: { prop: 'drums', held: { left: 'drumstick', right: 'drumstick' }, accessories: [] } });
+        var S = person({ data: { held: { left: null, right: 'microphone' }, accessories: [] } }), out = { g: [], v: [], d: [], s: [] };
+        for (var i = 0; i < 16; i++) {
+          var p = i / 8 * Math.PI * 2, sn = Math.sin(p), hit = Math.sin(p * 2);
+          out.g.push(posed(G, null, { torsoOrientation: -30, pelvisOrientation: -5, head: 'front', mouth: 'grin', joints: Object.assign({}, gJ, { wristR: f1(8 + 18 * Math.sin(p * 2)), elbowR: f1(-114 + 6 * Math.sin(p * 2)) }) }));
+          /* the bow goes smoothly across the strings and back: the whole arm moves, the wrist leads */
+          out.v.push(posed(V, null, { torsoOrientation: -20, head: 'front', mouth: 'rest', eyes: 'closed', headNod: f1(3 * sn),
+            joints: Object.assign({}, vJ, { shoulderL: f1(14 + 9 * sn), elbowL: f1(81 + 22 * sn), wristL: f1(22 - 14 * Math.cos(p)) }) }));
+          /* sticks up and down, the two hands taking turns */
+          out.d.push(posed(D, 'chair', { mouth: 'grin', joints: { shoulderL: f1(15 + 25 * hit), elbowL: f1(55 + 15 * hit), shoulderR: f1(15 - 25 * hit), elbowR: f1(55 - 15 * hit), neck: f1(4 * hit) } }));
+          out.s.push(posed(S, null, { mouth: MOUTHS[i % MOUTHS.length], eyes: i % 8 < 4 ? 'closed' : 'open', joints: { shoulderR: 22, elbowR: -128, shoulderL: f1(-50 - 12 * sn), elbowL: -20 } }));
+        }
+        var riser = '<rect x="430" y="296" width="170" height="22" fill="#2a2030"/><rect x="430" y="296" width="170" height="4" fill="#54405e"/>';
+        return function (i) { return BG.stage + riser + figure(out.d[i], 528, 298, 0.38) + figure(out.g[i], 90, 345, 0.46) + figure(out.v[i], 400, 348, 0.44) + figure(out.s[i], 240, 352, 0.48); };
+      } },
+      soccer: { label: 'a football (soccer) match', n: 24, make: function () {
+        var a = person({ data: { upperGarment: 'tshirt', lowerGarment: 'shorts', footwear: 'sneakers', upperColor: '#CC0000', accessories: [] } });
+        var k = person({ data: { upperGarment: 'tshirt', lowerGarment: 'shorts', footwear: 'sneakers', upperColor: '#FFCC00', accessories: ['glovesL', 'glovesR'] } });
+        var A = [], K = [];
+        for (var i = 0; i < 24; i++) {
+          A.push(i < 12 ? posed(a, 'running', runLegs(i / 6 * Math.PI * 2)) : posed(a, i < 15 ? 'kick' : 'running', i < 15 ? {} : runLegs(0)));
+          K.push(posed(k, i < 14 ? 'standing' : 'reaching', { head: 'left', mouth: i < 14 ? 'rest' : 'o', joints: i < 14 ? { shoulderL: -40, shoulderR: 40, hipL: -15, hipR: 15 } : {} }));
+        }
+        return function (i) {
+          var ax = Math.min(330, 90 + i * 20), bx = i < 13 ? ax + 40 : Math.min(585, ax + 40 + (i - 13) * 28), by = i < 13 ? 330 : 330 - Math.sin(Math.min(1, (i - 13) / 9) * Math.PI) * 60;
+          return BG.field + figure(K[i], 565, 285, 0.36) + figure(A[i], ax, 335, 0.42, true)   /* facing the goal, on the right */
+            + '<circle cx="' + bx + '" cy="' + f1(by) + '" r="9" fill="#fff" stroke="#222" stroke-width="2"/><path d="M' + (bx - 4) + ',' + f1(by - 3) + 'l4,3l4,-3" stroke="#222" stroke-width="2" fill="none"/>';
+        };
+      } },
+      basketball: { label: 'a basketball game', n: 16, make: function () {
+        var a = person({ data: { upperGarment: 'tank', lowerGarment: 'shorts', footwear: 'sneakers', upperColor: '#0066CC', accessories: [] } });
+        var b = person({ data: { upperGarment: 'tank', lowerGarment: 'shorts', footwear: 'sneakers', upperColor: '#CC0000', accessories: [] } });
+        var A = [], B = [];
+        for (var i = 0; i < 16; i++) {
+          /* dribbling with the left hand (on the right of the picture), the ball under it */
+          var d = Math.cos(i / 4 * Math.PI * 2);
+          A.push(posed(a, null, { torsoOrientation: 30, head: 'right', mouth: 'mbp', joints: { shoulderL: f1(-38 + 10 * d), elbowL: f1(35 + 25 * d), hipL: -10, kneeL: 20, hipR: 10, kneeR: -20 } }));
+          B.push(posed(b, 'em_ecstasy', { torsoOrientation: -30, head: 'left', mouth: 'o', held: { left: null, right: null } }));
+        }
+        return function (i) {
+          var d = Math.cos(i / 4 * Math.PI * 2), by = f1(300 - 50 * (0.5 + 0.5 * d));
+          return BG.court + figure(A[i], 250, 340, 0.5) + figure(B[i], 420, 340, 0.5) + '<circle cx="296" cy="' + by + '" r="14" fill="#ff6a00" stroke="#222" stroke-width="2"/><path d="M282,' + by + 'h28M296,' + f1(by - 14) + 'v28" stroke="#222" stroke-width="1.6"/>';
+        };
+      } },
+      running: { label: 'a running race', n: 24, fps: 12, make: function () {
+        var R = [person({ data: { upperGarment: 'tank', lowerGarment: 'shorts', footwear: 'sneakers', accessories: [] } }), person({ bodyType: 'female', data: { upperGarment: 'sportstop', lowerGarment: 'shorts', footwear: 'sneakers', accessories: [] } })];
+        /* a smooth stride: 8 frames a step cycle, legs and arms swinging opposite, the knee folding as the leg comes through */
+        var F = R.map(function (p, r) { var o = []; for (var i = 0; i < 24; i++) o.push(posed(p, 'running', runLegs((i / 8 + r * 0.37) * Math.PI * 2, { mouth: 'o' }))); return o; });
+        return function (i) {
+          var shift = (i * 26) % 160, marks = '', b = function (r) { return f1(-5 * Math.abs(Math.cos((i / 8 + r * 0.37) * Math.PI * 2))); };
+          for (var x = -shift; x < 640; x += 160) marks += '<rect x="' + (x + 60) + '" y="195" width="6" height="14" fill="#f2e6dc"/><rect x="' + (x + 60) + '" y="300" width="6" height="14" fill="#f2e6dc"/>';
+          return BG.track + marks + figure(F[0][i], 260, 250 + +b(0), 0.42, true) + figure(F[1][i], 380, 345 + +b(1), 0.5, true);   /* running to the right */
+        };
+      } },
+      game: { label: 'a video game', n: 32, make: function () {
+        /* an old-style platform game: a little knight runs through a castle at night, jumps over slimes, coins spin */
+        var px = function (rows, pal, x, y, k, flip) {
+          var o = '', w = rows[0].length;
+          rows.forEach(function (r, j) { for (var i = 0; i < w; i++) { var c = r[i]; if (c === '.') continue;
+            o += '<rect x="' + (x + (flip ? w - 1 - i : i) * k) + '" y="' + (y + j * k) + '" width="' + k + '" height="' + k + '" fill="' + pal[c] + '"/>'; } });
+          return o;
+        };
+        var PAL = { K: '#1a1420', H: '#b8c2cc', h: '#7d8894', V: '#2a2440', S: '#f0c090', R: '#d8343c', B: '#3c64c8', Y: '#f0c838', L: '#6a4a2a', W: '#e8eef4' };
+        var BODY = ['....KKKK....', '...KHHHHK...', '..KHHHHHhK..', '..KHVVVVhK..', '..KHSSVShK..', '...KSSSSK...', '.RRKBBBBK...', 'RRKBBBBBBKW.', 'R..KBYYBK.W.', '...KBBBBKW..', '...KBBBBK...'];
+        var LEGS = [['....LL.LL...', '...LL...LL..', '..KK.....KK.'], ['....LLLL....', '....LLLL....', '....KK.KK...'], ['...LL..LL...', '..LL....L...', '.KK.....KK..']];
+        var SLIME = [['...GGGG...', '..GGGGGG..', '.GgWGGWgG.', '.GgKGGKgG.', 'GGGGGGGGGG', 'GGGGGGGGGG'], ['..........', '...GGGG...', '.GGGGGGGG.', 'GgWGGGGWgG', 'GgKGGGGKgG', 'GGGGGGGGGG']];
+        var SPAL = { G: '#58c048', g: '#2f8a2a', W: '#ffffff', K: '#1a1420' };
+        var COIN = [['.YYYY.', 'YyYYyY', 'YyYYyY', 'YyYYyY', 'YyYYyY', '.YYYY.'], ['.YY.', 'YyyY', 'YyyY', 'YyyY', 'YyyY', '.YY.'], ['YY', 'yy', 'yy', 'yy', 'yy', 'YY']];
+        var CPAL = { Y: '#f8d838', y: '#c89818' };
+        var LOOP = 256, GY = 292;   /* the level repeats every 256 px; the floor */
+        var brick = function (x, y, w, h) {
+          var o = '<rect x="' + x + '" y="' + y + '" width="' + w + '" height="' + h + '" fill="#6a6278"/>';
+          for (var r = 0; r * 12 < h; r++) for (var c = -1; c * 24 < w; c++) {
+            var bx = x + c * 24 + (r % 2 ? 12 : 0); o += '<rect x="' + Math.max(x, bx + 1) + '" y="' + (y + r * 12 + 1) + '" width="' + Math.max(0, Math.min(22, x + w - bx - 1)) + '" height="10" fill="#8a82a0"/>';
+          }
+          return o;
+        };
+        return function (i) {
+          var off = (i * 8) % LOOP, far = (i * 2) % 320, o = '<rect width="640" height="360" fill="#141a3c"/><rect y="150" width="640" height="210" fill="#20285a"/>';
+          o += '<circle cx="520" cy="70" r="30" fill="#f4eccc"/><circle cx="532" cy="62" r="26" fill="#141a3c"/>';   /* the moon */
+          for (var s = 0; s < 18; s++) o += '<rect x="' + ((s * 97) % 640) + '" y="' + ((s * 53) % 140) + '" width="3" height="3" fill="#e8e8ff"/>';
+          for (var c = -1; c < 3; c++) {   /* a castle far away, moving slowly */
+            var cx = c * 320 - far + 60;
+            o += '<path d="M' + cx + ',230V150h20v-12h12v12h16v-40h-6v-14h40v14h-6v40h16v-12h12v12h20v80Z" fill="#2c2452"/><rect x="' + (cx + 76) + '" y="120" width="6" height="10" fill="#f8d060"/>';
+          }
+          for (var t = -1; t < 4; t++) {   /* the level: floor, a raised step and a floating platform, every 256 px */
+            var x = t * LOOP - off;
+            o += brick(x, GY, LOOP, 70) + '<rect x="' + x + '" y="' + GY + '" width="' + LOOP + '" height="4" fill="#b0a8c8"/>';
+            o += brick(x + 150, 210, 72, 24) + '<rect x="' + (x + 150) + '" y="210" width="72" height="3" fill="#b0a8c8"/>';
+            o += '<rect x="' + (x + 40) + '" y="246" width="6" height="46" fill="#5a4a3a"/><rect x="' + (x + 36) + '" y="240" width="14" height="8" fill="#e8c858"/><rect x="' + (x + 41) + '" y="' + (226 + (i % 2) * 2) + '" width="4" height="12" fill="#ff8a2a"/>';   /* a candle */
+            var cf = COIN[[0, 1, 2, 1][i % 4]], cw = cf[0].length * 3;
+            [170, 192].forEach(function (cx2) { o += px(cf, CPAL, x + cx2 - cw / 2 + 9, 180, 3); });
+            o += px(SLIME[(i >> 1) % 2], SPAL, x + 96 - ((i * 2) % 24), GY - 18, 3);
+          }
+          /* the knight: runs, and jumps when a slime comes near */
+          var hx = 180, phase = (i * 8 + 180) % LOOP, jump = phase > 60 && phase < 130, hy = GY - 42;
+          if (jump) hy -= Math.sin((phase - 60) / 70 * Math.PI) * 70;
+          o += px(BODY, PAL, hx, hy, 3) + px(jump ? LEGS[1] : LEGS[[0, 2][(i >> 1) % 2]], PAL, hx, hy + 33, 3);
+          /* the score along the top */
+          o += '<rect width="640" height="30" fill="#000" opacity=".55"/><text x="16" y="21" font-family="Courier New, monospace" font-size="18" font-weight="700" fill="#fff">SCORE ' + ('000000' + (4200 + i * 50)).slice(-6) + '</text>'
+            + '<text x="300" y="21" font-family="Courier New, monospace" font-size="18" font-weight="700" fill="#f8d838">STAGE 1-2</text>'
+            + '<text x="520" y="21" font-family="Courier New, monospace" font-size="18" fill="#ff4a5a">♥ ♥ ♥</text>';
+          return o;
+        };
+      } },
+      news: { label: 'the news', n: 32, make: function () {
+        var a = person({ outfit: 'office', data: { prop: 'desk' } }), A = [];
+        for (var i = 0; i < 32; i++) A.push(posed(a, null, { mouth: i % 16 < 12 ? MOUTHS[i % MOUTHS.length] : 'smile', headNod: i % 16 === 13 ? 6 : 0, joints: i % 16 < 8 ? { shoulderR: 26, elbowR: -97 } : {} }));
+        return function (i) { return BG.news + figure(A[i], 200, 400, 0.62) + NEWS_BAR; };
+      } }
+    };
+    var ORDER = ['talk', 'band', 'soccer', 'basketball', 'running', 'news'];
+    var lineup = null;   /* which programme is on which channel: chosen once, at random */
+    function programme(ch) {
+      if (!lineup) { lineup = ORDER.slice().sort(function () { return Math.random() - 0.5; }); }
+      var id = lineup[ch % lineup.length];
+      return { id: id, label: TYPES[id].label };
+    }
+
+    /* the hidden SVG that holds a picture for each channel */
+    function ensureHost() {
+      if (host && host.isConnected) return host;
+      host = document.createElementNS('http://www.w3.org/2000/svg', 'svg');
+      host.setAttribute('aria-hidden', 'true');
+      host.setAttribute('style', 'position:absolute;width:0;height:0;overflow:hidden;left:-9999px');
+      document.body.appendChild(host);
+      return host;
+    }
+    /* → the id of the picture for this channel (made the first time it is asked for).
+       Each frame is drawn once as SVG, then turned into a flat picture (a canvas → PNG): the screen shows that
+       picture, which costs far less to draw (8 times, in perspective) than the scene's hundreds of shapes. */
+    function idFor(ch) {
+      var id = 'h3dtv' + ch;
+      if (!chans[ch]) {
+        var p = TYPES[ch] ? { id: ch } : programme(ch), T = TYPES[p.id];   /* a channel number, or a kind of picture ('game') */
+        var el = document.createElementNS('http://www.w3.org/2000/svg', 'image');
+        el.setAttribute('id', id); el.setAttribute('width', W); el.setAttribute('height', H); el.setAttribute('preserveAspectRatio', 'none');
+        ensureHost().appendChild(el);
+        var draw = null; try { draw = T.make(); } catch (e) { draw = function () { return '<rect width="640" height="360" fill="#333"/>'; }; }
+        chans[ch] = { el: el, n: T.n, fps: T.fps || FPS, draw: draw, pics: [], busy: false, at: -1 };
+        step(performance.now());
+      }
+      if (!timer) timer = setInterval(function () { if (!document.hidden) step(performance.now()); }, 1000 / 12);
+      return id;
+    }
+    /* frame i of a channel as a PNG data URL (made in the background, one at a time); → it, or null while it is being made */
+    var canvas = null;
+    function picture(c, i) {
+      if (c.pics[i]) return c.pics[i];
+      if (c.busy) return null;
+      var svg; try { svg = c.draw(i); } catch (e) { svg = ''; }
+      var doc = '<svg xmlns="http://www.w3.org/2000/svg" width="' + W + '" height="' + H + '" viewBox="0 0 ' + W + ' ' + H + '">' + svg + '</svg>';
+      var url = 'data:image/svg+xml;charset=utf-8,' + encodeURIComponent(doc), img = new Image();
+      c.busy = true;
+      img.onload = function () {
+        try {
+          canvas = canvas || document.createElement('canvas');
+          canvas.width = W; canvas.height = H;
+          var g = canvas.getContext('2d'); g.clearRect(0, 0, W, H); g.drawImage(img, 0, 0, W, H);
+          c.pics[i] = canvas.toDataURL('image/png');
+        } catch (e) { c.pics[i] = url; }   /* no canvas: the SVG itself, as one picture */
+        c.busy = false;
+        if (c.at === i) c.el.setAttribute('href', c.pics[i]);
+      };
+      img.onerror = function () { c.pics[i] = url; c.busy = false; };
+      img.src = url;
+      return null;
+    }
+    function step(now) {
+      Object.keys(chans).forEach(function (k) {
+        var c = chans[k], i = Math.floor(now / (1000 / c.fps)) % c.n;
+        if (!c.el.isConnected) return;
+        if (i !== c.at) { c.at = i; var pic = picture(c, i); if (pic) c.el.setAttribute('href', pic); }   /* not ready yet: the last frame stays */
+        if (!c.busy) for (var j = 1; j < c.n; j++) { if (!c.pics[(i + j) % c.n]) { picture(c, (i + j) % c.n); break; } }   /* make the next ones meanwhile */
+      });
+    }
+    /* the clip of one triangle of the picture (cell gx, gy of an N × N grid; t = 0 upper right, 1 lower left), made once */
+    var clips = {};
+    function clipFor(N, gx, gy, t) {
+      var id = 'h3dtvc' + N + '_' + gx + '_' + gy + '_' + t;
+      if (!clips[id] || !clips[id].isConnected) {
+        var x0 = gx * W / N, y0 = gy * H / N, x1 = x0 + W / N, y1 = y0 + H / N, e = 3;   /* they overlap a little: no hairline seams */
+        var L = Math.hypot(x1 - x0, y1 - y0), nx = -(y1 - y0) / L * e, ny = (x1 - x0) / L * e;   /* the diagonal, pushed out past the other triangle too */
+        var pts = t === 0 ? [[x0 + nx, y0 + ny], [x0 - e, y0 - e], [x1 + e, y0 - e], [x1 + e, y1 + e], [x1 + nx, y1 + ny]]
+          : [[x0 - nx, y0 - ny], [x1 - nx, y1 - ny], [x1 + e, y1 + e], [x0 - e, y1 + e], [x0 - e, y0 - e]];
+        var cp = document.createElementNS('http://www.w3.org/2000/svg', 'clipPath');
+        cp.setAttribute('id', id);
+        cp.innerHTML = '<polygon points="' + pts.map(function (p) { return p.join(','); }).join(' ') + '"/>';
+        ensureHost().appendChild(cp);
+        clips[id] = cp;
+      }
+      return id;
+    }
+    /* choose which programme is on which channel (before any is shown): House3D.tv.lineup(['news', 'band', …]) */
+    function setLineup(ids) { lineup = ids.filter(function (id) { return TYPES[id]; }); }
+    return { idFor: idFor, clipFor: clipFor, programme: programme, lineup: setLineup, TYPES: TYPES, W: W, H: H };
+  })();
 
   /* ══ the viewer ══════════════════════════════════════════════════════════ */
   function viewer(o) {
@@ -661,7 +1007,7 @@
       labelFor = id;
       var p = scene.m.parts[id], acts = actionsOf(scene.m, id);
       label.innerHTML = (pinned ? '<button type="button" class="h3d-close" aria-label="Close">✕</button>' : '')
-        + '<div class="h3d-name" data-say="' + p.name + '">' + p.name + '</div><div class="h3d-can">You can:</div><ul>'
+        + '<div class="h3d-name" data-say="' + p.name + '">' + p.name + '</div>' + (acts.length ? '<div class="h3d-can">You can:</div>' : '') + '<ul>'
         + acts.map(function (a, i) {
           var moves = a.m || a.fx || a.seq;
           return '<li><button type="button" class="h3d-act' + (moves ? '' : ' h3d-still') + '" data-i="' + i + '">' + (moves ? '▶ ' : '– ') + a.v + '</button></li>';
@@ -809,6 +1155,7 @@
     mini.view = p.view || model.view || {};
     if (p.pose) { Object.keys(p.pose).forEach(function (k) { sc.val[k] = p.pose[k]; }); sc.settle(); }   /* e.g. the door open to show a shelf */
     if (act && act.m && (act.to === 0 || act.to === 1)) { sc.val[act.m] = 1 - act.to; sc.settle(); }   /* start from the other state */
+    if (act && act.seq && act.undo && act.undo.m) { sc.val[act.undo.m] = act.undo.to; sc.settle(); }      /* "close": start open; "pull out": start in */
     el._h3d = mini;
     minis.push(mini);
     if (ro) ro.observe(el);
@@ -836,11 +1183,12 @@
   function cycle(mini, now) {
     var a = mini.act, sc = mini.sc;
     if (!a) return;
-    var period = a.period || (a.fx || a.seq ? 1900 : (a.to === 'bounce' ? 1500 + (a.times || 1) * 400 : 3200));
-    var t = (now - mini.t0) % period, phase = a.fx || a.seq || a.to === 'bounce' ? (t < 200 ? 0 : 1) : (t < period / 2 ? 0 : 1);
+    var period = a.period || (a.seq && a.undo ? 3600 : a.fx || a.seq ? 1900 : (a.to === 'bounce' ? 1500 + (a.times || 1) * 400 : 3200));
+    var t = (now - mini.t0) % period, phase = (a.fx || a.seq || a.to === 'bounce') && !(a.seq && a.undo) ? (t < 200 ? 0 : 1) : (t < period / 2 ? 0 : 1);
     if (phase !== mini.phase) {
       mini.phase = phase;
-      if (a.fx || a.seq) { if (phase === 1) sc.play(a, now); }
+      if (a.seq && a.undo) sc.play(phase === 0 ? a : a.undo, now);   /* "pull out" ⇄ "put in" */
+      else if (a.fx || a.seq) { if (phase === 1) sc.play(a, now); }
       else if (a.to === 'bounce') { if (phase === 1) sc.play(a, now); }
       else {
         var mo = sc.m.motions[a.m], base = mo.start || 0;
@@ -906,10 +1254,13 @@
      groups: { lid:{ parent:'kettle' } }   — a group moves with its parent.
      motions: { door:{ do:[{ g:'door', rot:{ ax:'y', pivot:[…], deg:-100 } }, { g:'x', move:[…] }], dur, start } }
        the value 0 → 1 runs the moves (a knob's value can keep growing: it keeps turning)
+     screens:  [{ on: the screen face's id, tl, u, v (its top-left corner, across, down), g, fade: a light's group, show: fn(scene), id: fn(scene) → an SVG's id }]
+       a picture (an SVG elsewhere on the page) shown on a screen — the TV programmes
      lights:   [{ g, col:[r,g,b] | fn(scene), when: fn(scene), fadeIn, fadeOut (ms), glow:[x,y,z], glowR }]
        the group's faces shine while when() is true. scene.on('motion'), scene.plugged(), scene.val.x, scene.state.ch
      displays: [{ id, g, on, part, at:[x,y,z], u, v (the display's right and up), h, text, col, bg, kind, when }]
        7-segment digits; kind = what "read" shows next: 'time' 12:34 · 'num2' 12 · 'freq' 98.5 · 'temp' -18°
+     update: fn(scene, ms) → true while something is still changing (a temperature in scene.state)
      alive: fn(scene) — keep drawing while true (a light that blinks on a clock: scene.now)
      timers:   [{ when: fn(scene), after: ms | fn(scene), act }]   when() true for that long → play act (a toaster pops up)
      an action can have if: fn(scene) (play it only then), dur (its own speed, ms), wait (play it that much later),
@@ -922,6 +1273,7 @@
        also: another action (or a list) played at the same time
        { v:'tap', fx:'tap', at:[x,y,z], g:'lid' } · { v:'swipe', fx:'swipe', from:[…], to:[…], g:'lid' }
        { v:'read', fx:'read', d:'display id' } · { v:'change the channel', fx:'channel', dir:1 }
+       { v:'set the timer', fx:'timer', key:'mt', add:30 (or set:0), max } — a countdown in scene.state (the model's update runs it)
        { v:'put the bread in' } — something you can do that the model doesn't play
        view: { yaw, pitch, zoom, focus } for the zoomed pictures of that part
      Parts with the same name (several buttons) each have their own actions; the parts row shows the top-left one. */
@@ -960,7 +1312,13 @@
       out.shapes.push(B(b.e, b.col || o.col || '#f4f6f8', id, mo, { on: b.on || o.on, layer: o.layer || 2 }));
       out.motions[mo] = { do: [{ g: mo, move: b.move || o.move }], dur: 160 };
       if (par) out.groups[mo] = { parent: par };
-      out.parts[id] = { name: 'button', can: [{ v: 'press', m: mo, to: 'bounce', also: b.also }].concat(b.more || []), zoom: b.zoom || o.zoom || 2.4, view: b.view || o.view };
+      /* the other things you can do with a button ("start the machine", "add a minute"…) press it too */
+      var press = { m: mo, to: 'bounce' };
+      var more = (b.more || []).map(function (a) {
+        if (a.seq) { var f = a.seq; return Object.assign({}, a, { seq: function (sc) { return [press].concat(f(sc)); } }); }
+        return Object.assign({}, a, { also: [press].concat(a.also ? [].concat(a.also) : []) });
+      });
+      out.parts[id] = { name: 'button', can: [{ v: 'press', m: mo, to: 'bounce', also: b.also }].concat(more), zoom: b.zoom || o.zoom || 2.4, view: b.view || o.view };
     });
     return out;
   }
@@ -986,6 +1344,21 @@
   }
   var VOL = { vol: { do: [], dur: 200, start: 0.6, step: 0.1 }, vshow: { do: [], dur: 900 } };   /* volume: 10 steps */
   var louder = [{ m: 'vol', to: 'up' }, { m: 'vshow', to: 'bounce' }], quieter = [{ m: 'vol', to: 'down' }, { m: 'vshow', to: 'bounce' }];
+  /* a door with things that slide out behind it (an oven rack, fridge shelves): they slide out only with the
+     door open (it opens first), and the door closes only with them pushed back in (they go in first) */
+  function drawers(door, list) {
+    var anyOut = function (sc) { return list.some(function (k) { return sc.val[k] > 0.05; }); };
+    var close = function (sc) {
+      return anyOut(sc) ? list.map(function (k) { return { m: k, to: 0 }; }).concat([{ m: door, to: 0, wait: 750 }]) : [{ m: door, to: 0 }];
+    };
+    return {
+      open: { v: 'open', m: door, to: 1 },
+      close: { v: 'close', seq: close, undo: { m: door, to: 1 } },
+      pull: function (v) { return { v: v || 'pull', seq: function (sc) { return sc.val[door] > 0.5 ? close(sc) : [{ m: door, to: 1 }]; } }; },
+      out: function (k, v) { return { v: v || 'pull out', seq: function (sc) { return sc.val[door] > 0.9 ? [{ m: k, to: 1 }] : [{ m: door, to: 1 }, { m: k, to: 1, wait: 850 }]; }, undo: { m: k, to: 0 } }; },
+      back: function (k, v) { return { v: v || 'put in', m: k, to: 0 }; }
+    };
+  }
   function merge(m, x) {
     m.shapes = m.shapes.concat(x.shapes || []);
     ['motions', 'parts', 'groups'].forEach(function (k) { if (x[k]) m[k] = Object.assign(m[k] || {}, x[k]); });
@@ -1028,49 +1401,70 @@
     return m;
   }
 
-  /* ── microwave: a box open at the front, the oven inside, a door over it, a clock ── */
+  /* ── microwave: a box open at the front, the oven inside, a door over it; a timer.
+        The knob sets the time (it turns back as the time counts down, like a real timer knob); it runs with the
+        door closed: the light comes on, the plate turns, the screen counts down to 0:00 ── */
   (function () {
-    var read = { fx: 'read', d: 'mdisp' };
+    var MAXT = 1800, KP = [17, 6.5, 19.5];
+    var running = function (sc) { return sc.plugged() && sc.val.door < 0.05 && (sc.state.mt || 0) > 0; };
+    var lit = function (sc) { return sc.plugged() && (sc.val.door > 0.12 || running(sc)); };
+    var time = function (k, v) { return { v: v, fx: 'timer', key: 'mt', add: k, max: MAXT }; };
     var m = define('microwave', {
       name: 'microwave', view: { yaw: -28, pitch: 16 },
+      groups: {
+        mknob: { ops: function (sc) { return [{ rot: { ax: 'z', pivot: KP }, deg: -270 * (sc.state.mt || 0) / MAXT }]; } },
+        mmug: { parent: 'mplate' }
+      },
       shapes: [
         B([-25, 25, 0, 30, -18, 18], '#dfe3e8', null, null, { skip: ['front'] }),
         B([-25, 9, 27, 30, 17.6, 18], '#dfe3e8'), B([-25, 9, 0, 3, 17.6, 18], '#dfe3e8'),
         B([-25, -23, 3, 27, 17.6, 18], '#dfe3e8'), B([8, 9, 3, 27, 17.6, 18], '#dfe3e8'),
         B([-23, 8, 3, 27, -16, 18], '#b4bbc3', null, 'mcav', { inside: true, skip: ['front'] }),
         C([-7.5, 3.5, 1], 'y', 9, 0.5, '#d7e6ec', null, 'mplate', { seg: 24 }),
+        /* a mug on the plate: you see the plate turn */
+        C([-3, 6.75, 1], 'y', 2.2, 6, '#c94c3c', null, 'mmug', { seg: 14 }),
+        B([-0.9, -0.3, 5.5, 8.5, 0.6, 1.4], '#c94c3c', null, 'mmug'),
         B([-23, -22.75, 19, 25, -9, -1], '#e9e6da', null, 'mlamp', { skip: ['left'], bias: -2.5 }),   /* the lamp in the left wall */
         B([9, 25, 0, 30, 17.6, 18.6], '#c5cbd2', null, null, { id: 'mpanel' }),
         B([-24, 9, 2, 28, 18, 19.2], '#46505c', 'door', 'door', { id: 'mdoor', bias: 5 }),
         B([-21, 4, 5, 25, 19.2, 19.45], '#1b222a', 'door', 'door', { on: 'mdoor' }),
         B([5, 7.4, 8, 22, 19.2, 22.2], '#a2abb5', 'handle', 'door', { on: 'mdoor', layer: 2 }),
         B([11, 23, 21.5, 26, 18.6, 18.9], '#173b2a', 'screen', 'mscr', { id: 'mscr', on: 'mpanel' }),
-        C([17, 6.5, 19.5], 'z', 3, 1.8, '#79848f', 'knob', 'mknob', { id: 'mk', on: 'mpanel' }),
-        B([16.6, 17.4, 7.2, 9.2, 20.35, 20.6], '#f2f4f6', 'knob', 'mknob', { on: 'mk', layer: 2 })
+        C(KP, 'z', 3, 1.8, '#79848f', 'knob', 'mknob', { id: 'mk', on: 'mpanel' }),
+        rotBox([16.6, 17.4, 7.2, 9.2, 20.35, 20.6], 'z', 135, KP, '#f2f4f6', 'knob', 'mknob', { on: 'mk', layer: 2 })   /* at 0: down-left */
       ],
       motions: {
-        door: { do: [{ g: 'door', rot: { ax: 'y', pivot: [-24, 0, 19.2], deg: -95 } }], dur: 800 },
-        mknob: { do: [{ g: 'mknob', rot: { ax: 'z', pivot: [17, 6.5, 19.5], deg: -90 } }], dur: 600 }
+        door: { do: [{ g: 'door', rot: { ax: 'y', pivot: [-24, 0, 19.2], deg: -95 } }], dur: 800 }
+      },
+      /* the timer: counts down in real seconds while it runs */
+      update: function (sc, ms) {
+        if (!running(sc)) return false;
+        sc.state.mt = Math.max(0, sc.state.mt - ms / 1000);
+        return true;
       },
       lights: [
         { g: 'mscr', col: [36, 92, 62], when: plugged, fadeIn: 300, fadeOut: 500 },
-        /* the light inside comes on while the door is open (if it is plugged in) */
-        { g: 'mcav', col: [238, 226, 186], when: function (sc) { return sc.val.door > 0.12 && sc.plugged(); }, fadeIn: 150, fadeOut: 300 },
-        { g: 'mplate', col: [246, 244, 230], when: function (sc) { return sc.val.door > 0.12 && sc.plugged(); }, fadeIn: 150, fadeOut: 300 },
-        { g: 'mlamp', col: [255, 250, 225], glow: [-21.5, 22, -5], glowR: 10, glowBias: 3, when: function (sc) { return sc.val.door > 0.12 && sc.plugged(); }, fadeIn: 150, fadeOut: 300 }
+        /* the light inside: on while the door is open or the microwave is running (if it is plugged in) */
+        { g: 'mcav', col: [238, 226, 186], when: lit, fadeIn: 150, fadeOut: 300 },
+        { g: 'mplate', col: [246, 244, 230], when: lit, fadeIn: 150, fadeOut: 300 },
+        { g: 'mlamp', col: [255, 250, 225], glow: [-21.5, 22, -5], glowR: 10, glowBias: 3, when: lit, fadeIn: 150, fadeOut: 300 }
       ],
-      displays: [{ id: 'mdisp', g: 'mscr', on: 'mscr', part: 'screen', at: [17, 23.75, 18.9], h: 2.6, text: '12:34', col: '#63ff8f', bg: '#173b2a', kind: 'time', when: plugged }],
+      spins: [{ g: 'mplate', ax: 'y', pivot: [-7.5, 0, 1], ease: 500, rate: function (sc) { return running(sc) ? 45 : 0; } }],
+      displays: [{ id: 'mdisp', g: 'mscr', on: 'mscr', part: 'screen', at: [17, 23.75, 18.9], h: 2.6, text: '0:00', col: '#63ff8f', bg: '#173b2a', when: plugged,
+        textFn: function (sc) { var t = Math.ceil(sc.state.mt || 0); return Math.floor(t / 60) + ':' + two(t % 60); } }],
       parts: {
         door: { name: 'door', can: [{ v: 'open', m: 'door', to: 1 }, { v: 'close', m: 'door', to: 0 }], zoom: 1.3 },
         handle: { name: 'handle', can: [{ v: 'pull', m: 'door', to: 'toggle' }], zoom: 1.6, view: { yaw: -10 } },
-        screen: { name: 'screen', can: [{ v: 'read', fx: 'read', d: 'mdisp' }], zoom: 2.6, view: { yaw: -10, pitch: 8 } },
-        knob: { name: 'knob', can: [{ v: 'turn', m: 'mknob', to: 'step', also: read }], zoom: 2.6, view: { yaw: -10, pitch: 8 } }
+        screen: { name: 'screen', can: [{ v: 'read' }], zoom: 2.6, view: { yaw: -10, pitch: 8 } },
+        knob: { name: 'knob', can: [time(30, 'turn'), time(30, 'set the timer'), time(-30, 'turn back')], zoom: 2.6, view: { yaw: -10, pitch: 8 } }
       }
     });
     merge(m, buttons([
-      { e: [11.5, 16, 17, 19.5, 18.6, 19.4] }, { e: [18, 22.5, 17, 19.5, 18.6, 19.4] },
-      { e: [11.5, 16, 13.5, 16, 18.6, 19.4] }, { e: [18, 22.5, 13.5, 16, 18.6, 19.4] }
-    ].map(function (b) { b.also = read; return b; }), { prefix: 'mbtn', move: [0, 0, -0.6], on: 'mpanel', view: { yaw: -10 } }));
+      { e: [11.5, 16, 17, 19.5, 18.6, 19.4], also: time(30), more: [time(30, 'add 30 seconds')] },
+      { e: [18, 22.5, 17, 19.5, 18.6, 19.4], also: { fx: 'timer', key: 'mt', set: 0 }, more: [{ v: 'stop', fx: 'timer', key: 'mt', set: 0 }] },
+      { e: [11.5, 16, 13.5, 16, 18.6, 19.4], also: time(60), more: [time(60, 'add a minute')] },
+      { e: [18, 22.5, 13.5, 16, 18.6, 19.4], also: time(300), more: [time(300, 'add five minutes')] }
+    ], { prefix: 'mbtn', move: [0, 0, -0.6], on: 'mpanel', view: { yaw: -10 } }));
     withPower(m, powered([[20, 4, -18], [20, 1.2, -25], [10, 1.5, -30]], 2, -30));
   })();
 
@@ -1214,14 +1608,24 @@
   /* ── washing machine (top loader): the drum inside, under the lid; minutes left on the screen.
         Running (the start button, the lid closed, plugged in): the agitator turns and the machine shakes ── */
   (function () {
-    var read = { fx: 'read', d: 'wdisp' };
-    var running = function (sc) { return sc.on('run') && sc.plugged() && sc.val.lid < 0.05; };
+    /* the timer: the knob sets the minutes (up to 90, it turns back as they go); the screen counts them down while it runs
+       (a minute a second, so you can watch it); at 0 the machine stops */
+    var running = function (sc) { return sc.on('run') && sc.plugged() && sc.val.lid < 0.05 && (sc.state.wt || 0) > 0; };
+    var mins = function (k, v) { return { v: v, fx: 'timer', key: 'wt', add: k, max: 90 }; };
+    var start = { seq: function (sc) { return [{ m: 'run', to: 'toggle' }].concat((sc.state.wt || 0) > 0 ? [] : [{ fx: 'timer', key: 'wt', set: 45 }]); } };
     var fins = [];
     for (var k = 0; k < 3; k++) fins.push(rotBox([1.3, 3.0, 8, 19, 0.75, 1.25], 'y', k * 120, [0, 0, 1], '#e3e8ed', null, 'agit', { bias: -2.5 }));
     var W = 'wb';   /* the whole machine: it shakes */
     var m = define('washer', {
       name: 'washing machine', view: { yaw: -32, pitch: 24, zoom: 0.84 },
-      groups: { lid: { parent: W }, wknob: { parent: W }, wscr: { parent: W }, agit: { parent: W } },
+      groups: { lid: { parent: W }, wscr: { parent: W }, agit: { parent: W },
+        wknob: { ops: function (sc) { return [{ rot: { ax: 'z', pivot: [-9, 40, -11] }, deg: -270 * (sc.state.wt || 0) / 90 }].concat(sc.ops(W)); } } },
+      update: function (sc, ms) {
+        if (!running(sc)) return false;
+        sc.state.wt = Math.max(0, sc.state.wt - ms / 1000);
+        if (!sc.state.wt) sc.play({ m: 'run', to: 0 });
+        return true;
+      },
       shapes: [
         B([-15, 15, 0, 36, -15, 15], '#eef1f4', null, W, { skip: ['top'] }),
         B([-15, 15, 35.6, 36, 10, 15], '#eef1f4', null, W), B([-15, 15, 35.6, 36, -15, -8], '#eef1f4', null, W),
@@ -1234,16 +1638,16 @@
         B([-4, 4, 36.9, 37.6, 8.8, 10.4], '#8d97a3', 'handle', 'lid'),
         B([-15, 15, 36, 44, -15, -11.5], '#dde2e8', null, W, { id: 'wpanel' }),
         C([-9, 40, -11.0], 'z', 2.6, 1.2, '#7c8794', 'knob', 'wknob', { on: 'wpanel' }),
-        B([-9.35, -8.65, 41, 42.4, -10.4, -10.2], '#f2f4f6', 'knob', 'wknob', { on: 'wpanel', layer: 2 }),
+        rotBox([-9.35, -8.65, 41, 42.4, -10.4, -10.2], 'z', 135, [-9, 40, -11], '#f2f4f6', 'knob', 'wknob', { on: 'wpanel', layer: 2 }),
         B([-3.5, 4.5, 38.5, 42.5, -11.5, -11.25], '#123828', 'screen', 'wscr', { id: 'wscr', on: 'wpanel' })
       ]),
       motions: {
         lid: { do: [{ g: 'lid', rot: { ax: 'x', pivot: [0, 36.9, -9], deg: -92 } }], dur: 900 },
-        wknob: { do: [{ g: 'wknob', rot: { ax: 'z', pivot: [-9, 40, -11], deg: -90 } }], dur: 600 },
         run: { do: [], dur: 200 }
       },
       lights: [{ g: 'wscr', col: [24, 84, 92], when: plugged, fadeIn: 300, fadeOut: 500 }],
-      displays: [{ id: 'wdisp', g: 'wscr', on: 'wscr', part: 'screen', at: [0.5, 40.5, -11.25], h: 2.6, text: '12', col: '#6ff2ff', bg: '#123828', kind: 'num2', when: plugged }],
+      displays: [{ id: 'wdisp', g: 'wscr', on: 'wscr', part: 'screen', at: [0.5, 40.5, -11.25], h: 2.6, text: '00', col: '#6ff2ff', bg: '#123828', when: plugged,
+        textFn: function (sc) { return two(Math.ceil(sc.state.wt || 0)); } }],
       spins: [
         { g: 'agit', ax: 'y', pivot: [0, 0, 1], ease: 800, rate: function (sc) { return running(sc) ? 220 : 0; } },
         { g: W, wobble: [0.16, 0, 0.11], hz: 9, ease: 500, when: running }
@@ -1251,48 +1655,77 @@
       parts: {
         lid: { name: 'lid', can: [{ v: 'open', m: 'lid', to: 1 }, { v: 'close', m: 'lid', to: 0 }], zoom: 1.4, view: { pitch: 35 } },
         handle: { name: 'handle', can: [{ v: 'lift', m: 'lid', to: 'toggle' }, { v: 'pull', m: 'lid', to: 'toggle' }], zoom: 1.8, view: { pitch: 35 } },
-        knob: { name: 'knob', can: [{ v: 'turn', m: 'wknob', to: 'step', also: read }], zoom: 2.4, view: { yaw: -10, pitch: 12 } },
-        screen: { name: 'screen', can: [{ v: 'read', fx: 'read', d: 'wdisp' }, { v: 'tap', fx: 'tap', at: [0.5, 40.5, -11.2], also: read }], zoom: 2.4, view: { yaw: -10, pitch: 12 } }
+        knob: { name: 'knob', can: [mins(5, 'turn'), mins(5, 'set the timer'), mins(-5, 'turn back')], zoom: 2.4, view: { yaw: -10, pitch: 12 } },
+        screen: { name: 'screen', can: [{ v: 'read' }, { v: 'tap', fx: 'tap', at: [0.5, 40.5, -11.2] }], zoom: 2.4, view: { yaw: -10, pitch: 12 } }
       }
     });
     merge(m, buttons([
-      { e: [7, 10, 39, 41.5, -11.5, -10.9], also: [{ m: 'run', to: 'toggle' }, read], more: [{ v: 'start the machine', m: 'run', to: 1 }, { v: 'stop the machine', m: 'run', to: 0 }] },
-      { e: [11, 14, 39, 41.5, -11.5, -10.9], also: read }
+      { e: [7, 10, 39, 41.5, -11.5, -10.9], also: start, more: [{ v: 'start the machine', seq: function (sc) { return [{ m: 'run', to: 1 }].concat((sc.state.wt || 0) > 0 ? [] : [{ fx: 'timer', key: 'wt', set: 45 }]); } }, { v: 'stop the machine', m: 'run', to: 0 }] },
+      { e: [11, 14, 39, 41.5, -11.5, -10.9], also: { m: 'run', to: 0 }, more: [{ v: 'pause', m: 'run', to: 0 }] }
     ], { prefix: 'wbtn', col: '#fafafa', move: [0, 0, -0.45], on: 'wpanel', parent: W, view: { yaw: -15, pitch: 12 } }));
     withPower(m, powered([[10, 4, -15], [10, 1.2, -22], [2, 1.5, -26]], -4, -26));
   })();
 
-  /* ── clothes dryer (front loader): a round door, a drum with paddles that turns, a timer; it shakes while it runs ── */
+  /* ── clothes dryer (front loader): a round door over a round hole, a drum with paddles that turns, a timer; it shakes while it runs.
+        The knob sets the minutes (up to 90, it turns back as they go); the screen counts them down while it runs
+        (a minute a second, so you can watch it); at 0 it stops ── */
   (function () {
-    var read = { fx: 'read', d: 'ddisp' };
-    var running = function (sc) { return sc.on('drun') && sc.plugged() && sc.val.ddoor < 0.05; };
-    var D = 'db', fins = [];
-    for (var k = 0; k < 3; k++) fins.push(rotBox([-2.6, -1.4, 23.8, 25.5, -12, 12], 'z', k * 120, [-2, 16, 0], '#c9d0d7', 'drum', 'drum', { bias: -2.5 }));
+    var running = function (sc) { return sc.on('drun') && sc.plugged() && sc.val.ddoor < 0.05 && (sc.state.dt || 0) > 0; };
+    var mins = function (k, v) { return { v: v, fx: 'timer', key: 'dt', add: k, max: 90 }; };
+    var startSeq = function (sc, to) { return [{ m: 'drun', to: to }].concat((sc.state.dt || 0) > 0 ? [] : [{ fx: 'timer', key: 'dt', set: 45 }]); };
+    var D = 'db', fins = [], HC = [-2, 16], HR = 9, KP = [-10, 31.5, 15.5];
+    for (var k = 0; k < 3; k++) fins.push(rotBox([-2.6, -1.4, 23.4, 24.9, -12, 12], 'z', k * 120, [-2, 16, 0], '#c9d0d7', 'drum', 'drum', { bias: -8 }));
+    /* the front: one flat face with a round hole in it, cut into pieces from the hole out to the edges */
+    var front = [], N = 36, FZ = 15, X0 = -15, X1 = 15, Y0 = 0, Y1 = 40;
+    var edge = function (t) {
+      var dx = Math.cos(t), dy = Math.sin(t), best = 1e9;
+      [dx > 1e-9 ? (X1 - HC[0]) / dx : 1e9, dx < -1e-9 ? (X0 - HC[0]) / dx : 1e9, dy > 1e-9 ? (Y1 - HC[1]) / dy : 1e9, dy < -1e-9 ? (Y0 - HC[1]) / dy : 1e9].forEach(function (v) { if (v > 0 && v < best) best = v; });
+      return [HC[0] + dx * best, HC[1] + dy * best, FZ];
+    };
+    var corners = [[X1, Y1], [X0, Y1], [X0, Y0], [X1, Y0]].map(function (c) { var t = Math.atan2(c[1] - HC[1], c[0] - HC[0]); return { t: t < 0 ? t + 2 * Math.PI : t, p: [c[0], c[1], FZ] }; });
+    var at = function (r, t) { return [HC[0] + r * Math.cos(t), HC[1] + r * Math.sin(t), FZ]; }, RR = 12.6, pad = 0.012;
+    for (var i = 0; i < N; i++) {
+      /* a ring round the hole (small pieces: they sort well against the door), then out to the edges.
+         Each piece overlaps the next a little: no light seams between them */
+      var t0 = i / N * 2 * Math.PI - pad, t1 = (i + 1) / N * 2 * Math.PI + pad;
+      front.push(orient([at(HR, t0), at(RR, t0), at(RR, t1), at(HR, t1)], [HC[0], HC[1], -100]));
+      var poly = [at(RR, t0), edge(t0)];
+      corners.forEach(function (c) { if (c.t > t0 && c.t < t1) poly.push(c.p); });
+      poly.push(edge(t1), at(RR, t1));
+      front.push(orient(poly, [HC[0], HC[1], -100]));
+    }
     var m = define('dryer', {
       name: 'clothes dryer', view: { yaw: -30, pitch: 18, zoom: 0.86 },
-      groups: { drum: { parent: D }, ddoor: { parent: D }, dknob: { parent: D }, dscrg: { parent: D } },
+      groups: { drum: { parent: D }, ddoor: { parent: D }, dscrg: { parent: D },
+        dknob: { ops: function (sc) { return [{ rot: { ax: 'z', pivot: KP }, deg: -270 * (sc.state.dt || 0) / 90 }].concat(sc.ops(D)); } } },
+      update: function (sc, ms) {
+        if (!running(sc)) return false;
+        sc.state.dt = Math.max(0, sc.state.dt - ms / 1000);
+        if (!sc.state.dt) sc.play({ m: 'drun', to: 0 });
+        return true;
+      },
       shapes: [
         B([-15, 15, 0, 40, -14, 15], '#eef1f4', null, D, { skip: ['front'], bias: 4 }),   /* the outside walls: in front of everything inside */
-        B([-15, 15, 22.5, 40, 14.6, 15], '#eef1f4', null, D, { id: 'dtop' }),
-        B([-15, 15, 0, 9.5, 14.6, 15], '#eef1f4', null, D), B([-15, -8.5, 9.5, 22.5, 14.6, 15], '#eef1f4', null, D), B([4.5, 15, 9.5, 22.5, 14.6, 15], '#eef1f4', null, D),
-        C([-2, 16, -0.5], 'z', 9.5, 27, '#9aa3ad', 'drum', 'drum', { open: 'top', inside: true, seg: 24 })
+        { t: 'faces', faces: front, col: '#eef1f4', group: D, id: 'dtop', bias: 4, seamless: true },
+        C([HC[0], HC[1], 14.8], 'z', HR, 0.4, '#dfe3e8', null, D, { open: 'both', inside: true, seg: 36, bias: 3 }),   /* the rim of the hole */
+        C([-2, 16, 0.3], 'z', HR, 28.6, '#9aa3ad', 'drum', 'drum', { open: 'top', inside: true, seg: 36 })
       ].concat(fins).concat([
         /* the round door with its glass, and a handle */
-        C([-2, 16, 15.6], 'z', 10.5, 1.2, '#e4e8ec', 'door', 'ddoor', { id: 'dd', bias: 5, seg: 30 }),
-        C([-2, 16, 16.25], 'z', 7.6, 0.1, '#41535f', 'door', 'ddoor', { on: 'dd', seg: 28 }),
-        B([6.6, 8.1, 12.5, 19.5, 16.2, 17.4], '#b9c0c8', 'handle', 'ddoor', { on: 'dd', layer: 2 }),
+        C([-2, 16, 15.6], 'z', 11.2, 1.2, '#e4e8ec', 'door', 'ddoor', { id: 'dd', bias: 12, seg: 32 }),
+        C([-2, 16, 16.25], 'z', 8.2, 0.1, '#41535f', 'door', 'ddoor', { on: 'dd', seg: 30 }),
+        B([7.4, 8.9, 12.5, 19.5, 16.2, 17.4], '#b9c0c8', 'handle', 'ddoor', { on: 'dd', layer: 2 }),
         /* the controls */
-        C([-10, 31.5, 15.5], 'z', 2.6, 1.2, '#7c8794', 'knob', 'dknob', { on: 'dtop' }),
-        B([-10.35, -9.65, 32.5, 33.9, 16.1, 16.3], '#f2f4f6', 'knob', 'dknob', { on: 'dtop', layer: 2 }),
+        C(KP, 'z', 2.6, 1.2, '#7c8794', 'knob', 'dknob', { on: 'dtop', id: 'dkn' }),
+        rotBox([-10.35, -9.65, 32.5, 33.9, 16.1, 16.3], 'z', 135, KP, '#f2f4f6', 'knob', 'dknob', { on: 'dkn', layer: 2 }),   /* at 0: down-left */
         B([-4, 4, 29.5, 33.5, 15, 15.25], '#123828', 'screen', 'dscrg', { id: 'dscr', on: 'dtop' })
       ]),
       motions: {
-        ddoor: { do: [{ g: 'ddoor', rot: { ax: 'y', pivot: [-12.5, 0, 15.6], deg: -100 } }], dur: 850 },
-        dknob: { do: [{ g: 'dknob', rot: { ax: 'z', pivot: [-10, 31.5, 15.5], deg: -90 } }], dur: 600 },
+        ddoor: { do: [{ g: 'ddoor', rot: { ax: 'y', pivot: [-13.2, 0, 15.6], deg: -100 } }], dur: 850 },
         drun: { do: [], dur: 200 }
       },
       lights: [{ g: 'dscrg', col: [24, 84, 92], when: plugged, fadeIn: 300, fadeOut: 500 }],
-      displays: [{ id: 'ddisp', g: 'dscrg', on: 'dscr', part: 'screen', at: [0, 31.5, 15.25], h: 2.4, text: '45', col: '#6ff2ff', bg: '#123828', kind: 'num2', when: plugged }],
+      displays: [{ id: 'ddisp', g: 'dscrg', on: 'dscr', part: 'screen', at: [0, 31.5, 15.25], h: 2.4, text: '00', col: '#6ff2ff', bg: '#123828', when: plugged,
+        textFn: function (sc) { return two(Math.ceil(sc.state.dt || 0)); } }],
       spins: [
         { g: 'drum', ax: 'z', pivot: [-2, 16, 0], ease: 900, rate: function (sc) { return running(sc) ? 150 : 0; } },
         { g: D, wobble: [0.14, 0.03, 0.08], hz: 11, ease: 500, when: running }
@@ -1301,13 +1734,14 @@
         door: { name: 'door', can: [{ v: 'open', m: 'ddoor', to: 1 }, { v: 'close', m: 'ddoor', to: 0 }], zoom: 1.4, view: { yaw: -15 } },
         handle: { name: 'handle', can: [{ v: 'pull', m: 'ddoor', to: 'toggle' }], zoom: 2, view: { yaw: -15 } },
         drum: { name: 'drum', can: [{ v: 'put the clothes in' }, { v: 'take the clothes out' }], zoom: 1.6, view: { yaw: 10, pitch: 10 }, pose: { ddoor: 1 } },
-        knob: { name: 'knob', can: [{ v: 'turn', m: 'dknob', to: 'step', also: read }], zoom: 2.6, view: { yaw: -10, pitch: 8 } },
-        screen: { name: 'screen', can: [{ v: 'read', fx: 'read', d: 'ddisp' }], zoom: 2.6, view: { yaw: -10, pitch: 8 } }
+        knob: { name: 'knob', can: [mins(5, 'turn'), mins(5, 'set the timer'), mins(-5, 'turn back')], zoom: 2.6, view: { yaw: -10, pitch: 8 } },
+        screen: { name: 'screen', can: [{ v: 'read' }], zoom: 2.6, view: { yaw: -10, pitch: 8 } }
       }
     });
     merge(m, buttons([
-      { e: [7, 10.5, 30, 33, 15, 15.6], col: '#5fbf7f', also: [{ m: 'drun', to: 'toggle' }, read], more: [{ v: 'start the machine', m: 'drun', to: 1 }, { v: 'stop the machine', m: 'drun', to: 0 }] },
-      { e: [11.5, 14, 30, 33, 15, 15.6], also: read }
+      { e: [7, 10.5, 30, 33, 15, 15.6], col: '#5fbf7f', also: { seq: function (sc) { return startSeq(sc, 'toggle'); } },
+        more: [{ v: 'start the machine', seq: function (sc) { return startSeq(sc, 1); } }, { v: 'stop the machine', m: 'drun', to: 0 }] },
+      { e: [11.5, 14, 30, 33, 15, 15.6], also: { m: 'drun', to: 0 }, more: [{ v: 'pause', m: 'drun', to: 0 }] }
     ], { prefix: 'dbtn', col: '#fafafa', move: [0, 0, -0.45], on: 'dtop', parent: D, zoom: 2.8, view: { yaw: -15, pitch: 8 } }));
     withPower(m, powered([[10, 4, -14], [10, 1.2, -21], [2, 1.5, -25]], -4, -25));
   })();
@@ -1327,23 +1761,30 @@
       groups: { pl2: { parent: 'slid' } },
       alive: function (sc) { return sc.plugged() && sc.val.heat > 0.02; },
       shapes: [
-        B([-12, 12, 0, 5, -11, 11], '#e8ebee', null, null, { id: 'sbase' }),
+        B([-12, 12, 1.5, 5, -11, 11], '#e8ebee', null, null, { id: 'sbase' }),
+        /* four rubber feet */
+        C([-10, 0.75, -9], 'y', 1.1, 1.5, '#2b2b2b', 'legs', null, { seg: 12 }), C([10, 0.75, -9], 'y', 1.1, 1.5, '#2b2b2b', 'legs', null, { seg: 12 }),
+        C([-10, 0.75, 9], 'y', 1.1, 1.5, '#2b2b2b', 'legs', null, { seg: 12 }), C([10, 0.75, 9], 'y', 1.1, 1.5, '#2b2b2b', 'legs', null, { seg: 12 }),
+        /* the hinge at the back: a metal pin through two brackets on the base and one on the lid */
+        B([-8, -5.5, 4, 11.2, -13.2, -11], '#2f3338', 'hinge', null), B([5.5, 8, 4, 11.2, -13.2, -11], '#2f3338', 'hinge', null),
+        C([0, 10, -12.1], 'x', 0.7, 17, '#b9c0c8', 'hinge', null, { seg: 12 }),
         B([-10, 10, 5, 5.05, -9, 9], '#2a2a2a', 'plate', 'pl1', { on: 'sbase', id: 'p1' })
       ].concat(ridges(5.05, 5.3, 'pl1', 'p1')).concat([
-        C([-8, 2.5, 11.06], 'z', 0.55, 0.12, '#4a1a1a', 'light', 'sled1', { on: 'sbase', seg: 12 }),
-        C([-6, 2.5, 11.06], 'z', 0.55, 0.12, '#1a3a22', null, 'sled2', { on: 'sbase', seg: 12 }),
+        C([-8, 3.25, 11.06], 'z', 0.55, 0.12, '#4a1a1a', 'light', 'sled1', { on: 'sbase', seg: 12 }),
+        C([-6, 3.25, 11.06], 'z', 0.55, 0.12, '#1a3a22', null, 'sled2', { on: 'sbase', seg: 12 }),
         /* the thermostat knob */
-        C([7, 2.5, 11.6], 'z', 1.9, 1.2, '#2f3338', 'knob', 'smk', { on: 'sbase', seg: 18, id: 'swk' }),
-        rotBox([6.75, 7.25, 3.0, 4.2, 12.2, 12.35], 'z', 135, [7, 2.5, 11.6], '#f2f4f6', 'knob', 'smk', { on: 'swk', layer: 2 }),
+        C([7, 3.25, 11.6], 'z', 1.55, 1.2, '#2f3338', 'knob', 'smk', { on: 'sbase', seg: 18, id: 'swk' }),
+        rotBox([6.78, 7.22, 3.6, 4.55, 12.2, 12.35], 'z', 135, [7, 3.25, 11.6], '#f2f4f6', 'knob', 'smk', { on: 'swk', layer: 2 }),
         /* the lid */
         B([-12, 12, 5, 10, -11, 11], '#3f8f8a', 'lid', 'slid', { id: 'stop' }),
         B([-10, 10, 4.95, 5, -9, 9], '#2a2a2a', 'plate', 'pl2', { on: 'stop', id: 'p2' })
       ]).concat(ridges(4.75, 4.95, 'pl2', 'p2')).concat([
-        B([-4, 4, 7, 8.6, 11, 14.5], '#2f3338', 'handle', 'slid')
+        B([-4, 4, 7, 8.6, 11, 14.5], '#2f3338', 'handle', 'slid'),
+        B([-5, 5, 8.9, 11.2, -13, -11], '#2f3338', 'hinge', 'slid')   /* the lid's bracket, round the pin */
       ]),
       motions: {
-        slid: { do: [{ g: 'slid', rot: { ax: 'x', pivot: [0, 10, -11], deg: -105 } }], dur: 800 },
-        heat: { do: [{ g: 'smk', rot: { ax: 'z', pivot: [7, 2.5, 11.6], deg: -270 } }], dur: 400, start: 0.6 }
+        slid: { do: [{ g: 'slid', rot: { ax: 'x', pivot: [0, 10, -12.1], deg: -105 } }], dur: 800 },
+        heat: { do: [{ g: 'smk', rot: { ax: 'z', pivot: [7, 3.25, 11.6], deg: -270 } }], dur: 400, start: 0.6 }
       },
       lights: [
         /* the plates get hot slowly; the green light comes on when they are hot */
@@ -1358,6 +1799,8 @@
       ],
       parts: {
         lid: { name: 'lid', can: [{ v: 'open', m: 'slid', to: 1 }, { v: 'close', m: 'slid', to: 0 }], zoom: 1.5 },
+        hinge: { name: 'hinge', can: [{ v: 'open the lid', m: 'slid', to: 1 }], zoom: 2.4, view: { yaw: -150, pitch: 20 } },
+        legs: { name: 'legs', can: [], zoom: 2.2, view: { yaw: -30, pitch: 5 } },
         handle: { name: 'handle', can: [{ v: 'lift', m: 'slid', to: 1 }, { v: 'push down', m: 'slid', to: 0 }], zoom: 2.2, view: { yaw: -20, pitch: 15 } },
         knob: { name: 'knob', can: [{ v: 'turn', m: 'heat', to: 'up' }, { v: 'turn up the heat', m: 'heat', to: 'up' }, { v: 'turn down the heat', m: 'heat', to: 'down' }], zoom: 2.8, view: { yaw: -15, pitch: 12 } },
         plate: { name: 'hot plate', can: [{ v: 'put the bread in' }, { v: 'clean' }], zoom: 1.6, view: { pitch: 50 }, pose: { slid: 1 } },
@@ -1392,11 +1835,13 @@
         r: 0.45, col: '#55575a', part: 'oven element', group: 'ocoil' }
     ];
     /* the rack: wires across, so each one sorts well against the element under it */
-    for (var rz = -18; rz <= 18.5; rz += 3) shapes.push(B([-22.5, 22.5, 13, 13.25, rz - 0.15, rz + 0.15], '#b9c0c8', 'rack', null));
-    shapes.push(B([-22.5, -22, 13, 13.3, -19, 19.5], '#b9c0c8', 'rack', null), B([22, 22.5, 13, 13.3, -19, 19.5], '#b9c0c8', 'rack', null));
+    for (var rz = -18; rz <= 18.5; rz += 3) shapes.push(B([-22.5, 22.5, 13, 13.25, rz - 0.15, rz + 0.15], '#b9c0c8', 'rack', 'rack'));
+    shapes.push(B([-22.5, -22, 13, 13.3, -19, 19.5], '#b9c0c8', 'rack', 'rack'), B([22, 22.5, 13, 13.3, -19, 19.5], '#b9c0c8', 'rack', 'rack'));
+    var OV = drawers('odoor', ['rack']);
     var ovenOn = function (sc) { return sc.plugged() && sc.val.oven > 0.02; };
     var motions = {
       odoor: { do: [{ g: 'odoor', rot: { ax: 'x', pivot: [0, 4, 23.6], deg: 85 } }], dur: 900 },
+      rack: { do: [{ g: 'rack', move: [0, 0, 15] }], dur: 700 },
       oven: { do: [{ g: 'okn', rot: { ax: 'z', pivot: [21, 31, 22.9], deg: -270 } }], dur: 400 }
     };
     var lights = [
@@ -1406,9 +1851,9 @@
     ], parts = {
       'oven knob': { name: 'oven knob', can: [{ v: 'turn', m: 'oven', to: 'up' }, { v: 'turn up the heat', m: 'oven', to: 'up' }, { v: 'turn down the heat', m: 'oven', to: 'down' }, { v: 'turn off', m: 'oven', to: 0 }], zoom: 2.8, view: { yaw: -12, pitch: 14 } },
       'oven element': { name: 'heating element', can: [{ v: 'turn on', m: 'oven', to: 'up' }], zoom: 1.4, view: { yaw: -10, pitch: 35 }, pose: { odoor: 1, oven: 0.6 } },
-      'oven door': { name: 'oven door', can: [{ v: 'open', m: 'odoor', to: 1 }, { v: 'close', m: 'odoor', to: 0 }], zoom: 1.3, view: { yaw: -20, pitch: 15 } },
-      handle: { name: 'handle', can: [{ v: 'pull', m: 'odoor', to: 'toggle' }], zoom: 1.8, view: { yaw: -15, pitch: 10 } },
-      rack: { name: 'rack', can: [{ v: 'put the food in' }, { v: 'pull out' }], zoom: 1.5, view: { yaw: -15, pitch: 25 }, pose: { odoor: 1 } },
+      'oven door': { name: 'oven door', can: [OV.open, OV.close], zoom: 1.3, view: { yaw: -20, pitch: 15 } },
+      handle: { name: 'handle', can: [OV.pull()], zoom: 1.8, view: { yaw: -15, pitch: 10 } },
+      rack: { name: 'rack', can: [OV.out('rack'), OV.back('rack'), { v: 'put the food in' }], zoom: 1.4, view: { yaw: -25, pitch: 28 }, pose: { odoor: 1 } },
       light: { name: 'light', can: [{ v: 'turn on an element', m: 'h4', to: 'up' }], zoom: 3, view: { yaw: -15, pitch: 10 } }
     };
     EL.forEach(function (e, i) {
@@ -1458,6 +1903,7 @@
       return out;
     };
     var beater = [
+      C([0, 19.6, 2], 'y', 0.5, 3.4, '#c9d0d7', 'beater', 'beater', { seg: 10 }),   /* its shaft, that goes up into the head */
       B([-3, -2.4, 7.5, 18, 1.7, 2.3], '#e6e9ec', 'beater', 'beater'),
       B([2.4, 3, 7.5, 18, 1.7, 2.3], '#e6e9ec', 'beater', 'beater'),
       B([-3, 3, 7.5, 8.1, 1.7, 2.3], '#e6e9ec', 'beater', 'beater'),
@@ -1615,7 +2061,7 @@
     ];
     var pal = function (sc) { return sc.state.src ? VIDS[sc.state.src - 1] : PICS[sc.state.ch]; };
     var tvOn = function (sc) { return sc.on('tvon') && sc.plugged(); };
-    var pic = function (i) { return { g: 'pic' + i, col: function (sc) { return pal(sc)[i]; }, when: tvOn, fadeIn: 400, fadeOut: 300 }; };
+    var pic = function (i) { return { g: 'pic' + i, col: function (sc) { return pal(sc)[i]; }, when: function (sc) { return tvOn(sc) && sc.state.src; }, fadeIn: 400, fadeOut: 300 }; };   /* the video sources; the TV channels show a programme */
     var osd = { m: 'osd', to: 'bounce' };
     var m = define('tv', {
       name: 'TV', view: { yaw: -22, pitch: 14, zoom: 0.95 }, channels: 4, sources: 3,
@@ -1626,10 +2072,10 @@
         B([-25, 25, 8, 37, -1.5, 1.5], '#1d2024', null, null, { id: 'tvb' }),
         B([-17, 17, 12, 33, -2.2, -1.5], '#24282d', null, null, { skip: ['front', 'left', 'right', 'top', 'bottom'], on: 'tvb' }),
         B([-23.5, 23.5, 9.5, 35.5, 1.5, 1.58], '#0b0d10', 'screen', 'tvs', { id: 'tvs', on: 'tvb' }),
-        B([-23.5, 23.5, 27, 35.5, 1.58, 1.62], '#0b0d10', 'screen', 'pic0', { on: 'tvs', layer: 2, seamless: true }),
-        B([-23.5, 23.5, 18, 27, 1.58, 1.62], '#0b0d10', 'screen', 'pic1', { on: 'tvs', layer: 2, seamless: true }),
-        B([-23.5, 23.5, 9.5, 18, 1.58, 1.62], '#0b0d10', 'screen', 'pic2', { on: 'tvs', layer: 2, seamless: true }),
-        B([12, 18, 28.5, 33.5, 1.62, 1.66], '#0b0d10', 'screen', 'pic3', { on: 'tvs', layer: 3, seamless: true }),
+        B([-23.5, 23.5, 27, 35.5, 1.58, 1.62], '#0b0d10', 'screen', 'pic0', { on: 'tvs', layer: 2, seamless: true, skip: ['back', 'top', 'bottom', 'left', 'right'] }),
+        B([-23.5, 23.5, 18, 27, 1.58, 1.62], '#0b0d10', 'screen', 'pic1', { on: 'tvs', layer: 2, seamless: true, skip: ['back', 'top', 'bottom', 'left', 'right'] }),
+        B([-23.5, 23.5, 9.5, 18, 1.58, 1.62], '#0b0d10', 'screen', 'pic2', { on: 'tvs', layer: 2, seamless: true, skip: ['back', 'top', 'bottom', 'left', 'right'] }),
+        B([12, 18, 28.5, 33.5, 1.62, 1.66], '#0b0d10', 'screen', 'pic3', { on: 'tvs', layer: 3, seamless: true, skip: ['back', 'top', 'bottom', 'left', 'right'] }),
         B([20.5, 21.7, 8.5, 9.1, 1.5, 1.6], '#3a1616', null, 'tvled', { on: 'tvb', layer: 2 }),
         B([-12, 10, 8.35, 9.15, 1.5, 1.56], '#2c3036', 'speaker', null, { on: 'tvb', layer: 2 }),
         /* the remote control, lying in front of the TV */
@@ -1642,6 +2088,9 @@
         vol: VOL.vol, vshow: VOL.vshow,
         rlift: { do: [{ g: 'remote', rot: { ax: 'x', pivot: [8, 0.7, 15], deg: 30 } }, { g: 'remote', move: [4, 9, 10] }], dur: 800 }
       },
+      /* the programme on the channel (TV source only): a scene drawn on the screen */
+      screens: [{ on: 'tvs', tl: [-23.5, 35.5, 1.66], u: [47, 0, 0], v: [0, -26, 0], fade: 'tvs', w: 640, h: 360,
+        show: function (sc) { return tvOn(sc) && sc.state.src !== 2; }, id: function (sc) { return TV.idFor(sc.state.src === 1 ? 'game' : sc.state.ch); } }],   /* VIDEO-1: a game console */
       /* the on-screen display: the channel or the source, for a moment after it changes */
       displays: [0, 1].map(function (k) {   /* a dark shadow, then the green letters */
         return { id: 'osd' + k, g: 'tvs', on: 'tvs', layer: 4 + k, part: 'screen', at: [-15.5 + (k ? 0 : 0.14), 32.6 - (k ? 0 : 0.14), 1.67], h: 2.3, font: 'pix',
@@ -1798,51 +2247,82 @@
   /* ── refrigerator: a fridge and a freezer, shelves with food, a light that comes on when the door opens ── */
   (function () {
     var food = function (s) { s.bias = (s.bias || 0) - 2.5; return s; };
+    var FD = drawers('fdoor', ['sh1', 'sh2']);
+    var TSET0 = 6 / 21;   /* the knob starts at -18 (of -24 … -3) */
+    /* the freezer's fan, on its back wall behind a grille: it turns while both doors are closed */
+    var FAN = [0, 50.5, -12.9], fan = [C([0, 50.5, -12.9], 'z', 0.9, 0.05, '#5a6470', 'fan', 'ffan', { on: 'zin', layer: 2, flat: true, open: 'bottom', seg: 12 })];
+    for (var fb = 0; fb < 4; fb++) fan.push({ t: 'faces', faces: [[[-0.7, 0, 0], [0.7, 0, 0], [1.1, 4.2, 0], [-1.1, 4.2, 0]].map(function (p) { return add(rotate(p, 'z', fb * 90 + 20, [0, 0, 0]), FAN); })],
+      col: '#7b8794', part: 'fan', group: 'ffan', on: 'zin', layer: 2 });
+    var grille = [];
+    var bar = function (e) { return B(e, '#eef1f4', 'fan', null, { on: 'zin', layer: 3, skip: ['back', 'top', 'bottom', 'left', 'right'] }); };
+    grille.push(bar([-5.6, 5.6, 55.6, 56.2, -12.95, -12.75]), bar([-5.6, 5.6, 44.8, 45.4, -12.95, -12.75]), bar([-5.6, -5, 45.4, 55.6, -12.95, -12.75]), bar([5, 5.6, 45.4, 55.6, -12.95, -12.75]));
+    for (var gy2 = 46.6; gy2 < 55; gy2 += 1.3) grille.push(bar([-5, 5, gy2, gy2 + 0.35, -12.95, -12.75]));
     var m = define('fridge', {
       name: 'refrigerator', view: { yaw: -32, pitch: 14, zoom: 0.85 },
       groups: { fscrg: { parent: 'zdoor' } },
+      /* the freezer temperature: up while a door is open, back down to the knob's setting when they are closed */
+      update: function (sc, ms) {
+        var st = sc.state, set = -24 + 21 * sc.val.tset, dt = ms / 1000;
+        if (st.temp == null) st.temp = set;
+        var t0 = st.temp, open = sc.val.zdoor + sc.val.fdoor / 4;
+        if (!sc.plugged()) st.temp = Math.min(20, st.temp + 0.15 * dt);
+        else if (open > 0.02) st.temp = Math.min(20, st.temp + 1.6 * open * dt);
+        else if (st.temp > set) st.temp = Math.max(set, st.temp - 0.7 * dt);
+        else st.temp = Math.min(set, st.temp + 0.3 * dt);
+        return st.temp !== t0;
+      },
       shapes: [
         B([-15, 15, 0, 60, -14, 14], '#eef1f4', null, null, { skip: ['front'], bias: 4 }),   /* the outside walls: in front of everything inside */
         B([-15, -14, 0, 60, 13.6, 14], '#eef1f4'), B([14, 15, 0, 60, 13.6, 14], '#eef1f4'),
         B([-15, 15, 59, 60, 13.6, 14], '#eef1f4'), B([-15, 15, 0, 2, 13.6, 14], '#eef1f4'), B([-15, 15, 40, 42, 13.6, 14], '#eef1f4'),
         B([-14, 14, 2, 40, -13, 14], '#dfe6ec', null, null, { inside: true, skip: ['front'], id: 'fin' }),
-        B([-14, 14, 42, 59, -13, 14], '#d3dde6', null, null, { inside: true, skip: ['front'] }),
-        B([-14, 14, 14, 14.5, -13, 12], '#cfe3ef', 'shelf', null, { bias: -2.5 }),
-        B([-14, 14, 27, 27.5, -13, 12], '#cfe3ef', 'shelf2', null, { bias: -2.5 }),
+        B([-14, 14, 42, 59, -13, 14], '#d3dde6', null, null, { inside: true, skip: ['front'], id: 'zin' }),
+        B([-14, 14, 14, 14.5, -13, 12], '#cfe3ef', 'shelf', 'sh1', { bias: -2.5 }),
+        B([-14, 14, 27, 27.5, -13, 12], '#cfe3ef', 'shelf2', 'sh2', { bias: -2.5 }),
         B([-4, 4, 39.6, 40, -2, 5], '#e7e5dc', null, 'flight', { on: 'fin', skip: ['top'] }),
-        food(C([-9, 20.5, -5], 'y', 1.6, 12, '#4caf50', null, null, { seg: 14 })),
-        food(B([-3, 2, 14.5, 22, -8, -3], '#f6f6f2')),
+        food(C([-9, 20.5, -5], 'y', 1.6, 12, '#4caf50', null, 'sh1', { seg: 14 })),
+        food(B([-3, 2, 14.5, 22, -8, -3], '#f6f6f2', null, 'sh1')),
         food(C([7, 3.8, 0], 'y', 2.1, 3.6, '#d9483b', null, null, { seg: 14 })),
-        food(B([3, 10, 27.5, 30, -7, 0], '#f2c94c')),
+        food(B([3, 10, 27.5, 30, -7, 0], '#f2c94c', null, 'sh2')),
         food(B([-8, 4, 42, 44, -9, 6], '#bde3f5')),
         /* the doors */
         B([-15, 15, 2, 40, 14, 16], '#e4e8ec', 'door', 'fdoor', { id: 'fd', bias: 5 }),
         B([11, 12.5, 24, 36, 16, 18.2], '#b9c0c8', 'handle', 'fdoor', { on: 'fd', layer: 2 }),
         B([-15, 15, 42, 59, 14, 16], '#e4e8ec', 'freezer', 'zdoor', { id: 'zd', bias: 5 }),
         B([11, 12.5, 45, 55, 16, 18.2], '#b9c0c8', 'handle2', 'zdoor', { on: 'zd', layer: 2 }),
-        B([-10.5, -2.5, 52, 55.6, 16, 16.12], '#102830', 'screen', 'fscrg', { id: 'fscr', on: 'zd', layer: 2 })
-      ],
+        B([-10.5, -2.5, 52, 55.6, 16, 16.12], '#102830', 'screen', 'fscrg', { id: 'fscr', on: 'zd', layer: 2 }),
+        /* the thermostat knob, on the back wall of the fridge, upper left */
+        C([-10, 36, -12.4], 'z', 1.8, 1.2, '#8d97a3', 'knob', 'tkn', { on: 'fin', seg: 18, id: 'tk2' }),
+        rotBox([-10.25, -9.75, 36.4, 37.6, -11.8, -11.7], 'z', 135 - 270 * TSET0, [-10, 36, -12.4], '#f4f6f8', 'knob', 'tkn', { on: 'tk2', layer: 2 })
+      ].concat(fan).concat(grille),
       motions: {
         fdoor: { do: [{ g: 'fdoor', rot: { ax: 'y', pivot: [-15, 0, 14], deg: -100 } }], dur: 900 },
-        zdoor: { do: [{ g: 'zdoor', rot: { ax: 'y', pivot: [-15, 0, 14], deg: -100 } }], dur: 900 }
+        sh1: { do: [{ g: 'sh1', move: [0, 0, 11] }], dur: 700 },
+        sh2: { do: [{ g: 'sh2', move: [0, 0, 11] }], dur: 700 },
+        zdoor: { do: [{ g: 'zdoor', rot: { ax: 'y', pivot: [-15, 0, 14], deg: -100 } }], dur: 900 },
+        tset: { do: [{ g: 'tkn', rot: { ax: 'z', pivot: [-10, 36, -12.4], deg: -270 } }], dur: 300, start: TSET0, step: 1 / 21 }
       },
       lights: [
         { g: 'flight', col: [255, 248, 210], glow: [0, 38.6, 1.5], glowR: 8, glowBias: 6, when: function (sc) { return sc.val.fdoor > 0.15 && sc.plugged(); }, fadeIn: 150, fadeOut: 300 },
         { g: 'fscrg', col: [22, 70, 84], when: plugged, fadeIn: 300, fadeOut: 500 }
       ],
-      displays: [{ id: 'fdisp', g: 'fscrg', on: 'fscr', part: 'screen', at: [-6.5, 53.8, 16.12], h: 2.2, text: '-18°', col: '#7fe0ff', bg: '#102830', kind: 'temp', when: plugged }],
+      displays: [{ id: 'fdisp', g: 'fscrg', on: 'fscr', part: 'screen', at: [-6.5, 53.8, 16.12], h: 2.2, text: '-18°', col: '#7fe0ff', bg: '#102830', when: plugged,
+        textFn: function (sc) { var t = Math.round(sc.state.temp == null ? -24 + 21 * sc.val.tset : sc.state.temp); return (t < 0 ? '-' : '') + Math.abs(t) + '°'; } }],
+      spins: [{ g: 'ffan', ax: 'z', pivot: FAN, ease: 1200, rate: function (sc) { return sc.plugged() && sc.val.fdoor < 0.02 && sc.val.zdoor < 0.02 ? 720 : 0; } }],
       parts: {
-        door: { name: 'door', can: [{ v: 'open', m: 'fdoor', to: 1 }, { v: 'close', m: 'fdoor', to: 0 }], zoom: 1.1 },
+        door: { name: 'door', can: [FD.open, FD.close], zoom: 1.1 },
         freezer: { name: 'freezer door', can: [{ v: 'open', m: 'zdoor', to: 1 }, { v: 'close', m: 'zdoor', to: 0 }], zoom: 1.4, view: { pitch: 18 } },
-        handle: { name: 'handle', can: [{ v: 'pull', m: 'fdoor', to: 'toggle' }], zoom: 2, view: { yaw: -20 } },
+        handle: { name: 'handle', can: [FD.pull()], zoom: 2, view: { yaw: -20 } },
         handle2: { name: 'handle', can: [{ v: 'pull', m: 'zdoor', to: 'toggle' }], zoom: 2, view: { yaw: -20 } },
-        screen: { name: 'screen', can: [{ v: 'read', fx: 'read', d: 'fdisp' }], zoom: 3, view: { yaw: -10, pitch: 8 } },
-        shelf: { name: 'shelf', can: [{ v: 'put food on' }], zoom: 1.5, view: { yaw: -20, pitch: 20 }, pose: { fdoor: 1 } },
-        shelf2: { name: 'shelf', can: [{ v: 'put food on' }], zoom: 1.5, view: { yaw: -20, pitch: 20 }, pose: { fdoor: 1 } }
+        screen: { name: 'screen', can: [{ v: 'read' }], zoom: 3, view: { yaw: -10, pitch: 8 } },
+        knob: { name: 'knob', can: [{ v: 'raise the temperature', m: 'tset', to: 'up' }, { v: 'lower the temperature', m: 'tset', to: 'down' }, { v: 'turn', m: 'tset', to: 'up' }], zoom: 2.6, view: { yaw: -20, pitch: 15 }, pose: { fdoor: 1 } },
+        fan: { name: 'fan', can: [{ v: 'spin' }, { v: 'cool the freezer' }], zoom: 2.2, view: { yaw: -15, pitch: 15 }, pose: { zdoor: 1 } },
+        shelf: { name: 'shelf', can: [FD.out('sh1'), FD.back('sh1'), { v: 'put food on' }], zoom: 1.4, view: { yaw: -25, pitch: 20 }, pose: { fdoor: 1 } },
+        shelf2: { name: 'shelf', can: [FD.out('sh2'), FD.back('sh2'), { v: 'put food on' }], zoom: 1.4, view: { yaw: -25, pitch: 20 }, pose: { fdoor: 1 } }
       }
     });
     withPower(m, powered([[10, 3, -14], [10, 1.2, -19], [2, 1.5, -23]], -4, -23));
   })();
 
-  global.House3D = { viewer: viewer, define: define, models: MODELS, mount: mountMini, scan: scan };
+  global.House3D = { tv: TV, viewer: viewer, define: define, models: MODELS, mount: mountMini, scan: scan };
 })(window);
