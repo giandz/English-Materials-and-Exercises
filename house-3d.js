@@ -346,6 +346,11 @@
       this.state[act.key] = Math.max(0, Math.min(act.max || 1e9, tv));
       return;
     }
+    if (act.fx === 'next') {   /* the next picture: a photo on the laptop, a page of the phone's home screen */
+      var nn = act.n || 2;
+      this.state[act.key] = ((this.state[act.key] || 0) + (act.dir || 1) + nn) % nn;
+      return;
+    }
     if (act.fx === 'source') { this.state.src = (this.state.src + 1) % (this.m.sources || 3); return; }
     if (act.fx === 'keys') {   /* random keys, one after another */
       var n = this.m.keyCount || 0, seq = [], gap = act.gap || 140, last = -1;
@@ -451,6 +456,9 @@
   }
   /* a small dot-matrix font (5 × 7) for on-screen text: CH 2, VIDEO-1 */
   var PIX = {
+    'S': ['01111', '10000', '10000', '01110', '00001', '00001', '11110'], 'R': ['11110', '10001', '10001', '11110', '10100', '10010', '10001'],
+    'T': ['11111', '00100', '00100', '00100', '00100', '00100', '00100'], 'A': ['01110', '10001', '10001', '11111', '10001', '10001', '10001'],
+    'G': ['01110', '10001', '10000', '10111', '10001', '10001', '01111'], '♥': ['01010', '11111', '11111', '11111', '01110', '00100', '00000'],
     'C': ['01110', '10001', '10000', '10000', '10000', '10001', '01110'], 'H': ['10001', '10001', '10001', '11111', '10001', '10001', '10001'],
     'V': ['10001', '10001', '10001', '10001', '10001', '01010', '00100'], 'I': ['01110', '00100', '00100', '00100', '00100', '00100', '01110'],
     'D': ['11110', '10001', '10001', '10001', '10001', '10001', '11110'], 'E': ['11111', '10000', '10000', '11110', '10000', '10000', '11111'],
@@ -581,7 +589,7 @@
           var A = q[t[0]], B2 = q[t[1]], C2 = q[t[2]];
           out += '<g transform="matrix(' + triMatrix(
             [A[0] * w / N, A[1] * h / N], [B2[0] * w / N, B2[1] * h / N], [C2[0] * w / N, C2[1] * h / N],
-            Sp[A[1]][A[0]], Sp[B2[1]][B2[0]], Sp[C2[1]][C2[0]]) + ')"><use href="#' + id + '" clip-path="url(#' + TV.clipFor(N, gx, gy, ti) + ')"/></g>';
+            Sp[A[1]][A[0]], Sp[B2[1]][B2[0]], Sp[C2[1]][C2[0]]) + ')"><use href="#' + id + '" clip-path="url(#' + TV.clipFor(N, gx, gy, ti, w, h) + ')"/></g>';
         });
       }
       list.push({ z: base.z + 0.035, raw: '<g pointer-events="none" opacity="' + f1(lv) + '">' + out + '</g>' });
@@ -785,7 +793,7 @@
           return BG.track + marks + figure(F[0][i], 260, 250 + +b(0), 0.42, true) + figure(F[1][i], 380, 345 + +b(1), 0.5, true);   /* running to the right */
         };
       } },
-      game: { label: 'a video game', n: 32, make: function () {
+      game: { label: 'a video game', n: 64, fps: 12, make: function () {
         /* an old-style platform game: a little knight runs through a castle at night, jumps over slimes, coins spin */
         var px = function (rows, pal, x, y, k, flip) {
           var o = '', w = rows[0].length;
@@ -800,7 +808,15 @@
         var SPAL = { G: '#58c048', g: '#2f8a2a', W: '#ffffff', K: '#1a1420' };
         var COIN = [['.YYYY.', 'YyYYyY', 'YyYYyY', 'YyYYyY', 'YyYYyY', '.YYYY.'], ['.YY.', 'YyyY', 'YyyY', 'YyyY', 'YyyY', '.YY.'], ['YY', 'yy', 'yy', 'yy', 'yy', 'YY']];
         var CPAL = { Y: '#f8d838', y: '#c89818' };
-        var LOOP = 256, GY = 292;   /* the level repeats every 256 px; the floor */
+        var LOOP = 256, GY = 292;
+        /* text in the 5 × 7 pixel font (PIX): k = the size of one pixel */
+        var pixText = function (t, x, y, k, col) {
+          var o = '<g fill="' + col + '">';
+          String(t).split('').forEach(function (ch, n) {
+            (PIX[ch] || PIX[' ']).forEach(function (row, r) { for (var c = 0; c < 5; c++) if (row[c] === '1') o += '<rect x="' + (x + (n * 6 + c) * k) + '" y="' + (y + r * k) + '" width="' + k + '" height="' + k + '"/>'; });
+          });
+          return o + '</g>';
+        };   /* the level repeats every 256 px; the floor */
         var brick = function (x, y, w, h) {
           var o = '<rect x="' + x + '" y="' + y + '" width="' + w + '" height="' + h + '" fill="#6a6278"/>';
           for (var r = 0; r * 12 < h; r++) for (var c = -1; c * 24 < w; c++) {
@@ -809,11 +825,11 @@
           return o;
         };
         return function (i) {
-          var off = (i * 8) % LOOP, far = (i * 2) % 320, o = '<rect width="640" height="360" fill="#141a3c"/><rect y="150" width="640" height="210" fill="#20285a"/>';
+          var off = (i * 8) % LOOP, far = (i * 4) % 256, o = '<rect width="640" height="360" fill="#141a3c"/><rect y="150" width="640" height="210" fill="#20285a"/>';
           o += '<circle cx="520" cy="70" r="30" fill="#f4eccc"/><circle cx="532" cy="62" r="26" fill="#141a3c"/>';   /* the moon */
           for (var s = 0; s < 18; s++) o += '<rect x="' + ((s * 97) % 640) + '" y="' + ((s * 53) % 140) + '" width="3" height="3" fill="#e8e8ff"/>';
-          for (var c = -1; c < 3; c++) {   /* a castle far away, moving slowly */
-            var cx = c * 320 - far + 60;
+          for (var c = -1; c < 4; c++) {   /* a castle far away, moving slowly (every 256 px: the loop has no jump) */
+            var cx = c * 256 - far + 60;
             o += '<path d="M' + cx + ',230V150h20v-12h12v12h16v-40h-6v-14h40v14h-6v40h16v-12h12v12h20v80Z" fill="#2c2452"/><rect x="' + (cx + 76) + '" y="120" width="6" height="10" fill="#f8d060"/>';
           }
           for (var t = -1; t < 4; t++) {   /* the level: floor, a raised step and a floating platform, every 256 px */
@@ -823,18 +839,88 @@
             o += '<rect x="' + (x + 40) + '" y="246" width="6" height="46" fill="#5a4a3a"/><rect x="' + (x + 36) + '" y="240" width="14" height="8" fill="#e8c858"/><rect x="' + (x + 41) + '" y="' + (226 + (i % 2) * 2) + '" width="4" height="12" fill="#ff8a2a"/>';   /* a candle */
             var cf = COIN[[0, 1, 2, 1][i % 4]], cw = cf[0].length * 3;
             [170, 192].forEach(function (cx2) { o += px(cf, CPAL, x + cx2 - cw / 2 + 9, 180, 3); });
-            o += px(SLIME[(i >> 1) % 2], SPAL, x + 96 - ((i * 2) % 24), GY - 18, 3);
+            o += px(SLIME[(i >> 1) % 2], SPAL, x + 96 - ((i * 2) % 16), GY - 18, 3);
           }
           /* the knight: runs, and jumps when a slime comes near */
           var hx = 180, phase = (i * 8 + 180) % LOOP, jump = phase > 60 && phase < 130, hy = GY - 42;
           if (jump) hy -= Math.sin((phase - 60) / 70 * Math.PI) * 70;
           o += px(BODY, PAL, hx, hy, 3) + px(jump ? LEGS[1] : LEGS[[0, 2][(i >> 1) % 2]], PAL, hx, hy + 33, 3);
           /* the score along the top */
-          o += '<rect width="640" height="30" fill="#000" opacity=".55"/><text x="16" y="21" font-family="Courier New, monospace" font-size="18" font-weight="700" fill="#fff">SCORE ' + ('000000' + (4200 + i * 50)).slice(-6) + '</text>'
-            + '<text x="300" y="21" font-family="Courier New, monospace" font-size="18" font-weight="700" fill="#f8d838">STAGE 1-2</text>'
-            + '<text x="520" y="21" font-family="Courier New, monospace" font-size="18" fill="#ff4a5a">♥ ♥ ♥</text>';
+          o += '<rect width="640" height="30" fill="#000" opacity=".6"/>' + pixText('SCORE 004200', 16, 8, 2, '#ffffff') + pixText('STAGE 1-2', 290, 8, 2, '#f8d838') + pixText('♥ ♥ ♥', 540, 8, 2, '#ff4a5a');
           return o;
         };
+      } },
+
+      /* photos (the laptop): someone on holiday at a beach, in the mountains, in a city… one picture each */
+      photo: { label: 'a photo', n: 1, still: true, make: function (k) {
+        var sky = function (a, b) { return '<defs><linearGradient id="sky" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="' + a + '"/><stop offset="1" stop-color="' + b + '"/></linearGradient></defs><rect width="640" height="360" fill="url(#sky)"/>'; };
+        var pine = function (x, y, h, col) { return '<path d="M' + x + ',' + (y - h) + 'L' + (x - h * 0.35) + ',' + y + 'H' + (x + h * 0.35) + 'Z" fill="' + col + '"/><rect x="' + (x - 3) + '" y="' + y + '" width="6" height="' + (h * 0.15) + '" fill="#5a3a22"/>'; };
+        var PLACES = [
+          function () { return sky('#5fb7ec', '#bfe6f7') + '<circle cx="540" cy="70" r="34" fill="#fff3b0"/><rect y="170" width="640" height="70" fill="#2a8fc9"/><path d="M0,190h640M0,210h640" stroke="#6cc0ea" stroke-width="3" stroke-dasharray="40 30"/>'
+            + '<path d="M0,240Q320,220 640,240V360H0Z" fill="#f2d79b"/><path d="M90,330Q100,250 80,170" stroke="#8a5a32" stroke-width="12" fill="none"/>'
+            + '<path d="M80,170q-60,0-80,30M80,170q-40-30-90-20M80,170q30-40 80-30M80,170q50,0 70,40M80,170q0-40 20-60" stroke="#2f8a3a" stroke-width="12" fill="none" stroke-linecap="round"/>'
+            + '<path d="M520,330V250" stroke="#666" stroke-width="4"/><path d="M460,252Q520,200 580,252Z" fill="#e8543c"/><path d="M490,252Q520,214 550,252" fill="#fff" opacity=".5"/>'; },
+          function () { return sky('#7cc2f0', '#dff1fb') + '<path d="M-20,250L120,90L200,190L320,60L470,230L560,120L680,250Z" fill="#7d8fa6"/>'
+            + '<path d="M120,90L95,120H145ZM320,60L290,96H352ZM560,120L540,145H582Z" fill="#fff"/><path d="M0,260Q200,200 400,250T640,240V360H0Z" fill="#5aa84a"/>'
+            + pine(500, 300, 90, '#2f6b35') + pine(560, 310, 70, '#2f6b35') + pine(80, 310, 80, '#2f6b35'); },
+          function () { return sky('#f59a5a', '#f6d38c') + '<circle cx="320" cy="230" r="70" fill="#ffd27a" opacity=".8"/>'
+            + [[20, 120, 90], [120, 80, 140], [230, 100, 60], [420, 90, 170], [520, 120, 110]].map(function (b) {
+                var o = '<rect x="' + b[0] + '" y="' + (300 - b[2]) + '" width="' + b[1] + '" height="' + (b[2] + 60) + '" fill="#3a3550"/>';
+                for (var wy = 310 - b[2]; wy < 290; wy += 22) for (var wx = b[0] + 10; wx < b[0] + b[1] - 14; wx += 22) o += '<rect x="' + wx + '" y="' + wy + '" width="10" height="12" fill="' + ((wx * 7 + wy) % 3 ? '#ffd76a' : '#5a5470') + '"/>';
+                return o; }).join('') + '<rect y="300" width="640" height="60" fill="#555"/><path d="M0,330H640" stroke="#eee" stroke-width="4" stroke-dasharray="30 24"/>'; },
+          function () { var o = sky('#cfe3f5', '#f4f9fe') + '<path d="M0,240Q320,210 640,245V360H0Z" fill="#fff"/>' + pine(90, 250, 120, '#2e5d3a') + pine(160, 260, 90, '#2e5d3a') + pine(560, 250, 110, '#2e5d3a');
+            o += '<path d="M90,130l-42,40h84ZM560,140l-38,36h76Z" fill="#fff"/><circle cx="480" cy="300" r="34" fill="#fff" stroke="#ccd" stroke-width="2"/><circle cx="480" cy="250" r="24" fill="#fff" stroke="#ccd" stroke-width="2"/><path d="M480,250l14,4-14,4Z" fill="#f28c28"/>';
+            for (var f = 0; f < 40; f++) o += '<circle cx="' + ((f * 89) % 640) + '" cy="' + ((f * 47) % 230) + '" r="3" fill="#fff"/>';
+            return o; },
+          function () { return sky('#8fd0f5', '#e2f4fc') + '<path d="M0,170H640V230H0Z" fill="#3e8f4a"/>' + [40, 110, 180, 470, 540, 610].map(function (x, n) { return pine(x, 210, 70 + (n % 3) * 20, '#2a6b32'); }).join('')
+            + '<rect y="215" width="640" height="80" fill="#3c8fd0"/><path d="M60,240h80M300,262h120M480,240h90" stroke="#a5d6f7" stroke-width="3"/><path d="M0,295H640V360H0Z" fill="#8a6a44"/><path d="M0,300H640" stroke="#6e5234" stroke-width="3"/>'; },
+          function () { return sky('#f7c46a', '#fbe9b8') + '<circle cx="500" cy="80" r="40" fill="#fff6c4"/><path d="M0,250Q160,200 320,240T640,230V360H0Z" fill="#e7b36a"/>'
+            + '<path d="M120,320V220a14,14 0 0 1 28,0V320M120,270h-22v-30M148,260h22v-26" stroke="#3f8a4a" stroke-width="16" fill="none" stroke-linecap="round"/>'
+            + '<path d="M380,240L460,140L540,240Z" fill="#d9a25a"/><path d="M460,140L540,240H500Z" fill="#c08848"/>'; }
+        ];
+        var order = PHOTO_ORDER || (PHOTO_ORDER = PLACES.map(function (_, i) { return i; }).sort(function () { return Math.random() - 0.5; }));
+        var place = PLACES[order[k % PLACES.length]], two = Math.random() < 0.4;
+        var A = person({ data: { accessories: [] } }), B = person({ data: { accessories: [] } });
+        var pa = posed(A, Math.random() < 0.5 ? 'em_ecstasy' : null, { mouth: 'grin' }), pb = posed(B, null, { mouth: 'grin' });
+        var date = '2026/0' + (3 + (k % 6)) + '/' + (10 + k * 3);
+        return function () {
+          return place() + (two ? figure(pb, 250, 350, 0.5) + figure(pa, 390, 352, 0.5) : figure(pa, 320, 352, 0.52))
+            + '<text x="620" y="345" font-family="Courier New, monospace" font-size="16" font-weight="700" fill="#ff9a3c" text-anchor="end">' + date + '</text>';
+        };
+      } },
+      /* the phone's home screen: pages of apps and widgets */
+      home: { label: 'a home screen', n: 1, still: true, w: 360, h: 740, make: function (k) {
+        var FONT = 'font-family="Helvetica, Arial, sans-serif"', EMOJI = 'font-family="Apple Color Emoji, Segoe UI Emoji, Noto Color Emoji, sans-serif"';
+        var WALL = [['#3a3f8f', '#c05a8a'], ['#1f6f8b', '#99d4c8'], ['#5b3a8f', '#f0a35c']][k % 3];
+        var app = function (x, y, e, name, col) {
+          return '<rect x="' + x + '" y="' + y + '" width="62" height="62" rx="15" fill="' + col + '"/><text x="' + (x + 31) + '" y="' + (y + 33) + '" font-size="34" text-anchor="middle" dominant-baseline="central" ' + EMOJI + '>' + e + '</text>'
+            + (name ? '<text x="' + (x + 31) + '" y="' + (y + 80) + '" font-size="12" fill="#fff" text-anchor="middle" ' + FONT + '>' + name + '</text>' : '');
+        };
+        var grid = function (apps, y0) { return apps.map(function (a, n) { return app(27 + (n % 4) * 80, y0 + Math.floor(n / 4) * 100, a[0], a[1], a[2]); }).join(''); };
+        var widget = function (x, y, w, h, inner) { return '<rect x="' + x + '" y="' + y + '" width="' + w + '" height="' + h + '" rx="22" fill="#fff" fill-opacity=".22"/>' + inner; };
+        var o = '<defs><linearGradient id="wall" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="' + WALL[0] + '"/><stop offset="1" stop-color="' + WALL[1] + '"/></linearGradient></defs>'
+          + '<rect width="360" height="740" fill="url(#wall)"/>'
+          + '<text x="28" y="34" font-size="16" font-weight="700" fill="#fff" ' + FONT + '>9:41</text>'
+          + '<rect x="290" y="22" width="30" height="14" rx="4" fill="none" stroke="#fff" stroke-width="2"/><rect x="293" y="25" width="20" height="8" rx="2" fill="#fff"/><rect x="321" y="26" width="3" height="6" fill="#fff"/>'
+          + '<path d="M258,36h4v-4h-4zM265,36h4v-8h-4zM272,36h4v-12h-4z" fill="#fff"/>';
+        var P = [
+          [['📧', 'Mail', '#4a8cf0'], ['📅', 'Calendar', '#ffffff'], ['🖼️', 'Photos', '#ffffff'], ['🗺️', 'Maps', '#8fd48a'], ['⛅', 'Weather', '#5aa8f0'], ['⏰', 'Clock', '#222222'], ['📝', 'Notes', '#ffd84a'], ['🎵', 'Music', '#f0506e'],
+            ['🎬', 'Videos', '#333333'], ['📚', 'Books', '#f08a3a'], ['🧮', 'Calculator', '#555555'], ['⚙️', 'Settings', '#9aa0a8'], ['📁', 'Files', '#3a7ad8'], ['🎙️', 'Podcasts', '#9a4ad8'], ['📰', 'News', '#e84a4a'], ['🛒', 'Shopping', '#2fb07a']],
+          null,
+          [['🎮', 'Games', '#6a4ad8'], ['🧩', 'Puzzles', '#f0c04a'], ['♟️', 'Chess', '#d8d0c0'], ['🏃', 'Fitness', '#3ac06a'], ['❤️', 'Health', '#ffffff'], ['🍳', 'Recipes', '#f0a04a'], ['📖', 'Dictionary', '#2a5ab0'], ['🌐', 'Translate', '#4a9af0'],
+            ['🏦', 'Bank', '#1a4a8a'], ['🚕', 'Taxi', '#f8d030'], ['✈️', 'Travel', '#4ac0e8'], ['🎟️', 'Tickets', '#e85a8a']]
+        ][k % 3];
+        if (P) o += grid(P, 70);
+        else {   /* widgets: a clock, the weather, the calendar, then some apps */
+          o += widget(24, 60, 312, 150, '<text x="180" y="135" font-size="72" font-weight="300" fill="#fff" text-anchor="middle" ' + FONT + '>10:08</text><text x="180" y="180" font-size="17" fill="#fff" text-anchor="middle" ' + FONT + '>Wednesday, November 25</text>')
+            + widget(24, 228, 148, 148, '<text x="54" y="285" font-size="44" text-anchor="middle" dominant-baseline="central" ' + EMOJI + '>☀️</text><text x="150" y="292" font-size="38" font-weight="600" fill="#fff" text-anchor="end" ' + FONT + '>24°</text><text x="44" y="345" font-size="15" fill="#fff" ' + FONT + '>Sunny · Miami</text>')
+            + widget(188, 228, 148, 148, '<text x="206" y="262" font-size="14" font-weight="700" fill="#ffd0d0" ' + FONT + '>WED 25</text><text x="206" y="300" font-size="15" fill="#fff" ' + FONT + '>English class</text><text x="206" y="322" font-size="13" fill="#fff" fill-opacity=".8" ' + FONT + '>6:30 – 8:00 PM</text><text x="206" y="352" font-size="13" fill="#fff" fill-opacity=".8" ' + FONT + '>+ 2 more</text>')
+            + grid([['📷', 'Camera', '#555555'], ['💬', 'Messages', '#3ac06a'], ['🖼️', 'Photos', '#ffffff'], ['🗺️', 'Maps', '#8fd48a']], 400);
+        }
+        o += [0, 1, 2].map(function (d) { return '<circle cx="' + (164 + d * 16) + '" cy="610" r="4.5" fill="#fff" fill-opacity="' + (d === k % 3 ? 1 : 0.4) + '"/>'; }).join('')
+          + '<rect x="14" y="630" width="332" height="94" rx="30" fill="#fff" fill-opacity=".25"/>'
+          + [['📞', '#3ac06a'], ['💬', '#3ac06a'], ['🌐', '#4a8cf0'], ['📷', '#555555']].map(function (a, n) { return app(37 + n * 76, 646, a[0], '', a[1]); }).join('');
+        return function () { return o; };
       } },
       news: { label: 'the news', n: 32, make: function () {
         var a = person({ outfit: 'office', data: { prop: 'desk' } }), A = [];
@@ -842,10 +928,10 @@
         return function (i) { return BG.news + figure(A[i], 200, 400, 0.62) + NEWS_BAR; };
       } }
     };
-    var ORDER = ['talk', 'band', 'soccer', 'basketball', 'running', 'news'];
-    var lineup = null;   /* which programme is on which channel: chosen once, at random */
+    var ORDER = ['talk', 'band', 'soccer', 'basketball', 'running', 'news'];   /* every programme has its own channel, always in this order */
+    var lineup = null, PHOTO_ORDER = null;
     function programme(ch) {
-      if (!lineup) { lineup = ORDER.slice().sort(function () { return Math.random() - 0.5; }); }
+      if (!lineup) lineup = ORDER.slice();
       var id = lineup[ch % lineup.length];
       return { id: id, label: TYPES[id].label };
     }
@@ -865,16 +951,17 @@
     function idFor(ch) {
       var id = 'h3dtv' + ch;
       if (!chans[ch]) {
-        var p = TYPES[ch] ? { id: ch } : programme(ch), T = TYPES[p.id];   /* a channel number, or a kind of picture ('game') */
+        /* a channel number, a kind of picture ('game'), or one still picture of a kind ('photo:2', 'home:1') */
+        var key = String(ch).split(':'), p = TYPES[key[0]] ? { id: key[0] } : programme(ch), T = TYPES[p.id], w = T.w || W, h = T.h || H;
         var el = document.createElementNS('http://www.w3.org/2000/svg', 'image');
-        el.setAttribute('id', id); el.setAttribute('width', W); el.setAttribute('height', H); el.setAttribute('preserveAspectRatio', 'none');
+        el.setAttribute('id', id.replace(':', '_')); el.setAttribute('width', w); el.setAttribute('height', h); el.setAttribute('preserveAspectRatio', 'none');
         ensureHost().appendChild(el);
-        var draw = null; try { draw = T.make(); } catch (e) { draw = function () { return '<rect width="640" height="360" fill="#333"/>'; }; }
-        chans[ch] = { el: el, n: T.n, fps: T.fps || FPS, draw: draw, pics: [], busy: false, at: -1 };
+        var draw = null; try { draw = T.make(+key[1] || 0); } catch (e) { draw = function () { return '<rect width="' + w + '" height="' + h + '" fill="#333"/>'; }; }
+        chans[ch] = { el: el, n: T.n, fps: T.fps || FPS, w: w, h: h, draw: draw, pics: [], busy: false, at: -1, due: 0 };
         step(performance.now());
       }
-      if (!timer) timer = setInterval(function () { if (!document.hidden) step(performance.now()); }, 1000 / 12);
-      return id;
+      if (!timer) timer = setInterval(function () { if (!document.hidden) step(performance.now()); }, 1000 / 30);
+      return id.replace(':', '_');
     }
     /* frame i of a channel as a PNG data URL (made in the background, one at a time); → it, or null while it is being made */
     var canvas = null;
@@ -882,7 +969,7 @@
       if (c.pics[i]) return c.pics[i];
       if (c.busy) return null;
       var svg; try { svg = c.draw(i); } catch (e) { svg = ''; }
-      var doc = '<svg xmlns="http://www.w3.org/2000/svg" width="' + W + '" height="' + H + '" viewBox="0 0 ' + W + ' ' + H + '">' + svg + '</svg>';
+      var W = c.w, H = c.h, doc = '<svg xmlns="http://www.w3.org/2000/svg" width="' + W + '" height="' + H + '" viewBox="0 0 ' + W + ' ' + H + '">' + svg + '</svg>';
       var url = 'data:image/svg+xml;charset=utf-8,' + encodeURIComponent(doc), img = new Image();
       c.busy = true;
       img.onload = function () {
@@ -894,23 +981,35 @@
         } catch (e) { c.pics[i] = url; }   /* no canvas: the SVG itself, as one picture */
         c.busy = false;
         if (c.at === i) c.el.setAttribute('href', c.pics[i]);
+        setTimeout(function () { fill(c); }, 0);   /* the next frame at once: the whole loop is ready quickly */
       };
       img.onerror = function () { c.pics[i] = url; c.busy = false; };
       img.src = url;
       return null;
     }
+    /* make the next frame that isn't ready yet (after the one shown) */
+    function fill(c) {
+      if (c.busy || !c.el.isConnected) return;
+      for (var j = 0; j < c.n; j++) { var q = (Math.max(0, c.at) + j) % c.n; if (!c.pics[q]) { picture(c, q); return; } }
+    }
+    /* every frame in turn, never skipping one: when the next frame is due but not ready yet, the picture waits for it */
     function step(now) {
       Object.keys(chans).forEach(function (k) {
-        var c = chans[k], i = Math.floor(now / (1000 / c.fps)) % c.n;
+        var c = chans[k], period = 1000 / c.fps;
         if (!c.el.isConnected) return;
-        if (i !== c.at) { c.at = i; var pic = picture(c, i); if (pic) c.el.setAttribute('href', pic); }   /* not ready yet: the last frame stays */
-        if (!c.busy) for (var j = 1; j < c.n; j++) { if (!c.pics[(i + j) % c.n]) { picture(c, (i + j) % c.n); break; } }   /* make the next ones meanwhile */
+        if (c.at < 0) { if (c.pics[0]) { c.at = 0; c.el.setAttribute('href', c.pics[0]); c.due = now + period; } }
+        else if (c.n > 1 && now >= c.due) {
+          var nx = (c.at + 1) % c.n;
+          if (c.pics[nx]) { c.at = nx; c.el.setAttribute('href', c.pics[nx]); c.due = now - c.due > 2 * period ? now + period : c.due + period; }
+        }
+        fill(c);
       });
     }
     /* the clip of one triangle of the picture (cell gx, gy of an N × N grid; t = 0 upper right, 1 lower left), made once */
     var clips = {};
-    function clipFor(N, gx, gy, t) {
-      var id = 'h3dtvc' + N + '_' + gx + '_' + gy + '_' + t;
+    function clipFor(N, gx, gy, t, W, H) {
+      W = W || 640; H = H || 360;
+      var id = 'h3dtvc' + N + '_' + gx + '_' + gy + '_' + t + '_' + W + 'x' + H;
       if (!clips[id] || !clips[id].isConnected) {
         var x0 = gx * W / N, y0 = gy * H / N, x1 = x0 + W / N, y1 = y0 + H / N, e = 3;   /* they overlap a little: no hairline seams */
         var L = Math.hypot(x1 - x0, y1 - y0), nx = -(y1 - y0) / L * e, ny = (x1 - x0) / L * e;   /* the diagonal, pushed out past the other triangle too */
@@ -1331,11 +1430,12 @@
        the steps that are off go just behind the screen (out of sight) */
     var slide = function (i) { return function (sc) {
       var n = Math.round(sc.val.vol * 10);
+      if (sc.val.vshow < 0.02) return [{ move: [0, 0, -0.3] }];   /* not showing: all of it behind the screen (the home screen picture shows) */
       return i < n ? (n < 10 ? [{ move: [(10 - n) * w / 2, 0, 0] }] : []) : [{ move: [0, 0, -0.3] }];
     }; };
     for (var i = 0; i < 10; i++) {
       var g = 'vbar' + i, lvl = (i + 0.5) / 10;
-      out.shapes.push(B([x0 + i * w + w * 0.15, x0 + (i + 1) * w - w * 0.15, y0, y0 + hMax * (0.25 + 0.75 * (i + 1) / 10), z, z + 0.02], '#0b0d10', 'screen', g, { on: on, layer: layer, seamless: true }));   /* no outline: an empty step is just screen */
+      out.shapes.push(B([x0 + i * w + w * 0.15, x0 + (i + 1) * w - w * 0.15, y0, y0 + hMax * (0.25 + 0.75 * (i + 1) / 10), z, z + 0.02], '#0b0d10', 'screen', g, { on: on, layer: layer, seamless: true, skip: ['back', 'top', 'bottom', 'left', 'right'] }));   /* no outline: an empty step is just screen */
       out.groups[g] = { ops: slide(i) };
       out.lights.push({ g: g, col: [248, 248, 248], fadeIn: 80, fadeOut: 250, when: (function (lvl) { return function (sc) { return screen(sc) && sc.val.vshow > 0.05 && sc.val.vol >= lvl; }; })(lvl) });
       out.lights.push({ g: g, col: back, when: screen, fadeIn: 350, fadeOut: 300 });
@@ -1555,6 +1655,7 @@
     }
   }), powered([[-6, 1.2, -8], [-8, 1.2, -13], [-2, 1.5, -15]], 0, -19, '-z'));
 
+  var NEXTPHOTO = { fx: 'next', key: 'photo', n: 6, wait: 420 };
   /* ── laptop: keys with a space bar, a hinge, and a charger (power brick) that unplugs at both ends ── */
   (function () {
     var keys = [], n = 0;
@@ -1567,6 +1668,9 @@
     var m = define('laptop', {
       name: 'laptop', view: { yaw: -22, pitch: 26, zoom: 1.15 }, keyCount: n,
       groups: { lscr: { parent: 'lid' } },
+      /* the photo on the screen, in a photo viewer (16:9, with dark bars above and below) */
+      screens: [{ on: 'lscrf', g: 'lscr', tl: [-14.5, 21.0, -10.02], u: [29, 0, 0], v: [0, -16.31, 0], fade: 'lscr', w: 640, h: 360,
+        show: function (sc) { return sc.val.lid < 0.6; }, id: function (sc) { return TV.idFor('photo:' + (sc.state.photo || 0)); } }],
       shapes: [
         B([-16, 16, 0, 1.4, -11, 11], '#c3c8cf', null, null, { id: 'base' }),
         B([-14, 14, 1.4, 1.6, -9.6, 2.6], '#2d3238', 'keyboard', null, { id: 'kbd', on: 'base' })
@@ -1574,7 +1678,7 @@
         B([-5.5, 5.5, 1.4, 1.52, 3.4, 9.6], '#a7aeb6', 'touchpad', null, { on: 'base' }),
         C([-11, 2.3, -10.6], 'x', 0.8, 5, '#2d3238', null, null, { seg: 12 }), C([11, 2.3, -10.6], 'x', 0.8, 5, '#2d3238', null, null, { seg: 12 }),
         B([-16, 16, 1.6, 24, -11, -10.2], '#3b4048', 'lid', 'lid', { id: 'bezel', bias: 1.5 }),   /* closed, its top edge meets the front of the base */
-        B([-14.5, 14.5, 3.2, 22.5, -10.2, -10.02], '#141a22', 'screen', 'lscr', { on: 'bezel' }),
+        B([-14.5, 14.5, 3.2, 22.5, -10.2, -10.02], '#141a22', 'screen', 'lscr', { on: 'bezel', id: 'lscrf' }),
         /* the charger: a connector in the laptop's side, a cord, the power brick (its light), and the cord to the wall */
         B([-16.05, -16, 0.3, 1.1, -0.9, 0.9], '#151515', null, null, { on: 'base' }),
         B([-19.5, -16, 0.3, 1.1, -0.6, 0.6], '#2b2b2b', 'connector', 'dc'),
@@ -1590,12 +1694,12 @@
         /* the charger's light: on only while it is plugged into the wall; it fades out in under two seconds */
         { g: 'led', col: [61, 220, 132], when: plugged, fadeIn: 300, fadeOut: 1600 },
         /* the screen runs on the battery: on while the lid is open */
-        { g: 'lscr', col: [52, 110, 190], when: function (sc) { return sc.val.lid < 0.6; }, fadeIn: 400, fadeOut: 300 }
+        { g: 'lscr', col: [22, 24, 30], when: function (sc) { return sc.val.lid < 0.6; }, fadeIn: 400, fadeOut: 300 }
       ],
       parts: {
-        screen: { name: 'screen', can: [{ v: 'tap', fx: 'tap', at: [2, 12, -10], g: 'lid' }, { v: 'swipe', fx: 'swipe', from: [-8, 12, -10], to: [8, 12, -10], g: 'lid' }], zoom: 2.5, view: { yaw: -8, pitch: 10 } },
+        screen: { name: 'screen', can: [{ v: 'tap', fx: 'tap', at: [2, 12, -10], g: 'lid' }, { v: 'swipe', fx: 'swipe', from: [8, 12, -10], to: [-8, 12, -10], g: 'lid', also: NEXTPHOTO }], zoom: 2.5, view: { yaw: -8, pitch: 10 } },
         keyboard: { name: 'keyboard', can: [{ v: 'type', fx: 'keys', count: 9, gap: 120 }, { v: 'press the keys', fx: 'keys', count: 4, gap: 260 }], zoom: 2.6, view: { pitch: 50 } },
-        touchpad: { name: 'touchpad', can: [{ v: 'tap', fx: 'tap', at: [0, 1.55, 6.5] }, { v: 'swipe', fx: 'swipe', from: [-4, 1.55, 6.5], to: [4, 1.55, 6.5] }], zoom: 3.2, view: { pitch: 55 } },
+        touchpad: { name: 'touchpad', can: [{ v: 'tap', fx: 'tap', at: [0, 1.55, 6.5] }, { v: 'swipe', fx: 'swipe', from: [4, 1.55, 6.5], to: [-4, 1.55, 6.5], also: NEXTPHOTO }], zoom: 3.2, view: { pitch: 55 } },
         lid: { name: 'lid', can: [{ v: 'close', m: 'lid', to: 1 }, { v: 'open', m: 'lid', to: 0 }], zoom: 2 },
         connector: { name: 'connector', can: [{ v: 'unplug', m: 'dc', to: 1 }, { v: 'plug in', m: 'dc', to: 0 }], zoom: 3.2, view: { yaw: -70, pitch: 22 } },
         charger: { name: 'charger', can: [{ v: 'plug in', m: 'plug', to: 1 }, { v: 'unplug', m: 'plug', to: 0 }], zoom: 2.2, view: { auto: true, pitch: 30 } }
@@ -1996,14 +2100,9 @@
 
   /* ── smartphone on a stand: a touch screen, three buttons, a camera with a flash (it has a battery: no plug) ── */
   (function () {
-    var icons = [], ICON = ['#3ddc84', '#ff8a3d', '#4fa3ff', '#ffd23f'];
-    for (var r = 0; r < 4; r++) for (var c = 0; c < 4; c++) {
-      var x = -2.85 + c * 1.55, y = 13.6 - r * 1.75;
-      icons.push(B([x, x + 1.05, y, y + 1.05, 0.5, 0.53], '#0d1014', 'screen', 'pic' + ((r + c) % 4), { on: 'pscr', layer: 2 }));
-    }
     var pon = function (sc) { return sc.on('pon'); };
     /* taking a photo: the screen flashes white for a moment */
-    var shutter = ['pscr', 'pic0', 'pic1', 'pic2', 'pic3'].concat([0, 1, 2, 3, 4, 5, 6, 7, 8, 9].map(function (i) { return 'vbar' + i; })).map(function (g) {
+    var shutter = ['pscr'].concat([0, 1, 2, 3, 4, 5, 6, 7, 8, 9].map(function (i) { return 'vbar' + i; })).map(function (g) {
       return { g: g, col: [255, 255, 255], when: function (sc) { return sc.on('pon') && sc.val.snap > 0.35; }, fadeIn: 40, fadeOut: 260 };
     });
     var m = define('phone', {
@@ -2016,7 +2115,7 @@
         B([-3.4, 3.4, 2.2, 16.2, 0.45, 0.5], '#0d1014', 'screen', 'pscr', { id: 'pscr', on: 'pbody' }),
         B([-0.9, 0.9, 16.45, 16.65, 0.45, 0.5], '#3a3f46', null, null, { on: 'pbody', layer: 2 }),
         B([-1.4, 1.4, 1.45, 1.75, 0.45, 0.5], '#3a3f46', 'speaker', null, { on: 'pbody', layer: 2 })
-      ].concat(icons).concat([
+      ].concat([
         /* the camera on the back: no faces looking forward, so nothing shows through the screen */
         B([1.4, 3.3, 14.4, 16.4, -0.5, -0.45], '#15181b', 'camera', null, { id: 'pcam', on: 'pbody', skip: ['front', 'left', 'right', 'top', 'bottom'] }),
         C([2.35, 15.9, -0.5], 'z', 0.5, 0.02, '#1e3f66', 'camera', null, { on: 'pcam', layer: 2, seg: 14, flat: true, open: 'top' }),
@@ -2032,14 +2131,17 @@
         { g: 'pscr', col: [44, 92, 168], when: pon, fadeIn: 350, fadeOut: 300 },
         /* the flash: very bright, with a big white glow behind the phone */
         { g: 'flash', col: [255, 255, 255], glow: [0.6, 15.9, -0.9], glowR: 18, glowCol: 'white', glowBias: 0.3, when: function (sc) { return sc.val.snap > 0.12; }, fadeIn: 30, fadeOut: 500 }
-      ]).concat(ICON.map(function (col, i) { return { g: 'pic' + i, col: rgb(col), when: pon, fadeIn: 350, fadeOut: 300 }; })),
+      ]),
+      /* the home screen: three pages (apps, widgets, more apps); hidden while the screen flashes for a photo */
+      screens: [{ on: 'pscr', tl: [-3.4, 16.2, 0.5], u: [6.8, 0, 0], v: [0, -14, 0], fade: 'pscr', w: 360, h: 740,
+        show: function (sc) { return sc.on('pon') && sc.val.snap < 0.3; }, id: function (sc) { return TV.idFor('home:' + (sc.state.home || 0)); } }],
       parts: {
-        screen: { name: 'screen', can: [{ v: 'tap', fx: 'tap', at: [0.8, 9, 0.55] }, { v: 'swipe', fx: 'swipe', from: [-2.2, 8, 0.55], to: [2.2, 8, 0.55] }], zoom: 1.15, view: { yaw: -8, pitch: 6 } },
+        screen: { name: 'screen', can: [{ v: 'tap', fx: 'tap', at: [0.8, 9, 0.55] }, { v: 'swipe', fx: 'swipe', from: [2.2, 8, 0.55], to: [-2.2, 8, 0.55], also: { fx: 'next', key: 'home', n: 3, wait: 380 } }], zoom: 1.15, view: { yaw: -8, pitch: 6 } },
         camera: { name: 'camera', can: [{ v: 'take a photo', m: 'snap', to: 'bounce' }], zoom: 2.2, view: { yaw: 160, pitch: 10 } },
         speaker: { name: 'speaker', can: [{ v: 'turn up the volume', m: 'vol', to: 'up', also: louder[1] }, { v: 'turn down the volume', m: 'vol', to: 'down', also: quieter[1] }], zoom: 2.4, view: { yaw: -8, pitch: 6 } }
       }
     });
-    merge(m, volumeBar(-2.6, 2.6, 4.2, 1.4, 0.5, 'pscr', 2, pon, [44, 92, 168]));
+    merge(m, volumeBar(-2.6, 2.6, 4.2, 1.4, 0.5, 'pscr', 5, pon, [44, 92, 168]));   /* above the home screen picture */
     merge(m, buttons([
       { e: [3.8, 4.1, 12, 14, -0.25, 0.25], move: [-0.18, 0, 0], also: { m: 'pon', to: 'toggle' }, more: [{ v: 'switch on', m: 'pon', to: 1 }, { v: 'switch off', m: 'pon', to: 0 }], view: { yaw: 60, pitch: 8 } },
       { e: [-4.1, -3.8, 13, 14.6, -0.25, 0.25], move: [0.18, 0, 0], also: louder, more: [{ v: 'turn up the volume', m: 'vol', to: 'up', also: louder[1] }], view: { yaw: -70, pitch: 8 } },
@@ -2059,12 +2161,12 @@
       [[24, 22, 48], [70, 200, 95], [44, 40, 70], [240, 70, 70]],
       [[30, 70, 210], [30, 70, 210], [30, 70, 210], [30, 70, 210]]
     ];
-    var pal = function (sc) { return sc.state.src ? VIDS[sc.state.src - 1] : PICS[sc.state.ch]; };
+    var pal = function (sc) { return sc.state.src ? VIDS[sc.state.src - 1] : PICS[sc.state.ch % PICS.length]; };
     var tvOn = function (sc) { return sc.on('tvon') && sc.plugged(); };
     var pic = function (i) { return { g: 'pic' + i, col: function (sc) { return pal(sc)[i]; }, when: function (sc) { return tvOn(sc) && sc.state.src; }, fadeIn: 400, fadeOut: 300 }; };   /* the video sources; the TV channels show a programme */
     var osd = { m: 'osd', to: 'bounce' };
     var m = define('tv', {
-      name: 'TV', view: { yaw: -22, pitch: 14, zoom: 0.95 }, channels: 4, sources: 3,
+      name: 'TV', view: { yaw: -22, pitch: 14, zoom: 0.95 }, channels: 6, sources: 3,
       groups: { remote: {} },
       shapes: [
         B([-12, 12, 0, 1.2, -7, 5], '#2a2e33'),
