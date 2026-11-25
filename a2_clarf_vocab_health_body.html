@@ -1,0 +1,196 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<title>Health and the Body — Clarification</title>
+<script>
+(function(){
+  try{
+    var saved = localStorage.getItem('theme-preference');
+    var theme = (saved === 'light' || saved === 'dark')
+      ? saved
+      : ((window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches) ? 'dark' : 'light');
+    document.documentElement.setAttribute('data-theme', theme);
+    var fs = parseFloat(localStorage.getItem('font-size-preference'));
+    if (fs >= 10 && fs <= 28) document.documentElement.style.setProperty('--fs-base', fs + 'px');
+  }catch(e){ /* localStorage/matchMedia unavailable — CSS media query still applies */ }
+})();
+</script>
+<link rel="stylesheet" href="house.css">
+<style>
+.flow-card{ border:1px solid var(--color-border-tertiary); border-radius:var(--border-radius-lg); background:var(--surface-2); padding:10px 12px; margin-bottom:10px; }
+.flow-card .sent{ font-size:1rem; font-weight:600; margin-bottom:6px; }
+.flow-card .note{ font-size:.8333rem; color:var(--text-secondary); margin-top:4px; }
+.if-part{ color:hsl(217, 70%, 42%); font-weight:700; }
+.res-part{ color:hsl(120, 60%, 32%); font-weight:700; }
+.res-no{ color:hsl(0, 65%, 42%); font-weight:700; }
+[data-theme="dark"] .res-no{ color:hsl(0, 75%, 70%); }
+[data-theme="dark"] .if-part{ color:hsl(217, 80%, 70%); }
+[data-theme="dark"] .res-part{ color:hsl(120, 55%, 65%); }
+.form-table{ width:100%; border-collapse:collapse; margin:0 0 1rem; font-size:.9333rem; }
+.form-table th, .form-table td{ border:1px solid var(--color-border-tertiary); padding:7px 9px; text-align:left; vertical-align:top; }
+.form-table th{ background:var(--surface-1); font-size:.8rem; text-transform:uppercase; letter-spacing:.04em; color:var(--text-secondary); }
+.pct-row{ display:flex; flex-wrap:wrap; gap:6px; margin:0 0 1rem; }
+.pct-row span{ padding:3px 10px; border-radius:999px; font-weight:700; font-size:.8667rem; border:2px solid; }
+.rule-box p{ margin:0 0 6px; }
+.rule-box p:last-child{ margin-bottom:0; }
+.big-pic{ font-size:1.6rem; letter-spacing:.1em; margin:2px 0 4px; }
+.hl{ font-weight:700; color:var(--text-accent); }
+</style>
+</head>
+<body>
+<div class="page" id="page">
+  <span class="cefr-tag cefr-a2">A2 · Elementary</span>
+  <h1>Health and the Body</h1>
+  <p class="subtitle">Parts of the body, health problems — and what you should or must do.</p>
+
+  <div class="sec-div">Look</div>
+  <p class="subtitle">From the conversation. Look at the highlighted words.</p>
+  <div id="look"></div>
+
+  <div class="sec-div">Meaning 1 — The body</div>
+  <p class="subtitle">Drag each word to its box, or tap a word and then tap a box.</p>
+  <div class="score-bar"><span>Done: <strong id="lbScore">0</strong> / <span id="lbTotal">0</span></span></div>
+  <div id="pictures"></div>
+
+  <div class="sec-div">Meaning 2 — Who can help?</div>
+  <p class="subtitle">What should you do? Put each problem in its group. Drag it, or tap it and then tap a group.</p>
+  <div class="score-bar"><span>Done: <strong id="soScore">0</strong> / <span id="soTotal">0</span></span></div>
+  <div id="sorts"></div>
+
+  <div class="rule-box" id="meaning"></div>
+
+  <div class="sec-div">Check the meaning</div>
+  <p class="subtitle">Answer the questions about each sentence.</p>
+  <div id="ccq"></div>
+
+  <div class="sec-div">Use — Words that go together</div>
+  <p class="subtitle">Which words go with the word in the box? Tap all the right ones.</p>
+  <div class="score-bar"><span>Done: <strong id="coScore">0</strong> / <span id="coTotal">0</span></span></div>
+  <div id="forks"></div>
+
+  <div class="sec-div">Form — Word families</div>
+  <p class="subtitle">Write the missing words. The bar goes green 🔴→🟢 when you are right. Then use one word in the sentence.</p>
+  <div class="score-bar"><span>Done: <strong id="wfScore">0</strong> / <span id="wfTotal">0</span></span></div>
+  <div id="families"></div>
+
+  <div class="rule-box" id="formRule"></div>
+
+  <div class="sec-div">Common mistakes</div>
+  <div id="mistakes"></div>
+
+  <div class="sec-div">Error hunt</div>
+  <p class="subtitle">Some sentences have one mistake. Some are correct! Tap a word — or a space between words — to fix it. Then press OK.</p>
+  <div class="score-bar"><span>Done: <strong id="errorScore">0</strong> / <span id="errorTotal">0</span></span></div>
+  <div id="errorHuntItems"></div>
+  <footer>Health and the body — Vocabulary clarification (A2)</footer>
+</div>
+
+<div id="theme-toggle-wrap">
+  <button id="theme-toggle" aria-label="Toggle light/dark mode" title="Toggle light/dark mode">
+    <span id="theme-icon">☀️</span>
+  </button>
+</div>
+<script src="house.js"></script>
+<script src="house-vocab.js"></script>
+<script>
+const LOOK = [
+  ['I have a <span class="hl">pain</span> in my <span class="hl">stomach</span>.', '<div class="big-pic">🤢 → 🫃</div>', 'a <b>pain in</b> my stomach / my back / my foot = it hurts there'],
+  ['You <span class="hl">should</span> stay in bed. You <span class="hl">must</span> drink a lot of water.', '<div class="big-pic">🛌 · 💧</div>',
+    '<b>should</b> = it’s a good idea · <b>must</b> = it’s very important'],
+  ['You <span class="hl">mustn’t</span> go to work.', '<div class="big-pic">🚫🏢</div>', '<b>mustn’t</b> = don’t do it!']
+];
+const PICTURES = [
+  { title: 'The body', svg: '<svg viewBox="0 0 200 400" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="a person"><rect x="74" y="238" width="22" height="138" rx="10" fill="#e8b88f"/><rect x="104" y="238" width="22" height="138" rx="10" fill="#e8b88f"/><path d="M78 306q7 5 14 0M108 306q7 5 14 0" stroke="#b9875f" stroke-width="2" fill="none" stroke-linecap="round"/><ellipse cx="78" cy="380" rx="19" ry="9" fill="#e8b88f"/><ellipse cx="122" cy="380" rx="19" ry="9" fill="#e8b88f"/><g fill="#dca37a"><circle cx="61" cy="377" r="3.5"/><circle cx="61" cy="384" r="3"/><circle cx="139" cy="377" r="3.5"/><circle cx="139" cy="384" r="3"/></g><path d="M66 196h68l4 64h-32l-6-30-6 30h-32z" fill="#2f5d8a"/><path d="M64 104L46 242M136 104L154 242" stroke="#e8b88f" stroke-width="18" stroke-linecap="round"/><circle cx="45" cy="252" r="11" fill="#e8b88f"/><circle cx="155" cy="252" r="11" fill="#e8b88f"/><path d="M39 260v12M45 262v12M51 260v11M149 260v11M155 262v12M161 260v12" stroke="#e8b88f" stroke-width="4.5" stroke-linecap="round"/><path d="M62 96h76l20 36-17 9-7-13v72H66v-72l-7 13-17-9z" fill="#e0574c"/><rect x="90" y="76" width="20" height="24" fill="#e8b88f"/><ellipse cx="68" cy="54" rx="5" ry="8" fill="#e8b88f"/><ellipse cx="132" cy="54" rx="5" ry="8" fill="#e8b88f"/><circle cx="100" cy="50" r="32" fill="#f0c8a0"/><path d="M68 48q2-34 32-34t32 34q-8-15-32-17-24 2-32 17z" fill="#4a3426"/><circle cx="88" cy="50" r="3" fill="#333"/><circle cx="112" cy="50" r="3" fill="#333"/><path d="M100 52q-5 9 1 11M90 68q10 8 20 0" stroke="#9a6b4a" stroke-width="2.5" fill="none" stroke-linecap="round"/></svg>', w: 200, h: 400, width: '13rem', spots: [
+    { x: 100, y: 20, word: 'head', side: 'left' }, { x: 137, y: 100, word: 'shoulder', side: 'right' },
+    { x: 55, y: 165, word: 'arm', side: 'left' }, { x: 100, y: 172, word: 'stomach', side: 'right' },
+    { x: 155, y: 252, word: 'hand', side: 'right' }, { x: 44, y: 262, word: 'finger', side: 'left' },
+    { x: 85, y: 316, word: 'knee', side: 'left' }, { x: 115, y: 338, word: 'leg', side: 'right' },
+    { x: 80, y: 382, word: 'foot', side: 'left' }, { x: 139, y: 380, word: 'toe', side: 'right' }] },
+  { title: 'The face', svg: '<svg viewBox="0 0 200 200" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="a face"><ellipse cx="30" cy="110" rx="11" ry="20" fill="#e8b88f"/><ellipse cx="170" cy="110" rx="11" ry="20" fill="#e8b88f"/><ellipse cx="100" cy="108" rx="70" ry="80" fill="#f0c8a0"/><path d="M30 92q0-72 70-72t70 72q-14-40-70-44-56 4-70 44z" fill="#4a3426"/><path d="M62 74q13-8 26 0M112 74q13-8 26 0" stroke="#4a3426" stroke-width="5" fill="none" stroke-linecap="round"/><ellipse cx="75" cy="90" rx="11" ry="7" fill="#fff"/><circle cx="75" cy="90" r="5" fill="#3b6b9c"/><ellipse cx="125" cy="90" rx="11" ry="7" fill="#fff"/><circle cx="125" cy="90" r="5" fill="#3b6b9c"/><path d="M100 96l-9 30q9 5 18 0" stroke="#b9875f" stroke-width="3" fill="none" stroke-linejoin="round" stroke-linecap="round"/><circle cx="62" cy="126" r="10" fill="#f2a7a0" opacity=".6"/><circle cx="138" cy="126" r="10" fill="#f2a7a0" opacity=".6"/><path d="M72 143q28 34 56 0z" fill="#8a2a2a"/><rect x="84" y="143" width="32" height="9" rx="2" fill="#fff"/><path d="M100 143v9" stroke="#ddd" stroke-width="1.5"/></svg>', w: 200, h: 200, width: '15rem', spots: [
+    { x: 75, y: 90, word: 'eye', side: 'left' }, { x: 170, y: 110, word: 'ear', side: 'right' },
+    { x: 95, y: 124, word: 'nose', side: 'left' }, { x: 108, y: 148, word: 'tooth', side: 'right' },
+    { x: 100, y: 180, word: 'chin', side: 'left' }] }
+];
+const SORTS = [
+  { title: 'What should you do?', groups: [{ label: 'Call an ambulance (911)', icon: '🚑' }, { label: 'See a doctor', icon: '🩺' }, { label: 'See a dentist', icon: '🦷' }, { label: 'Stay home and rest', icon: '🛌' }],
+    words: [['a terrible pain in your chest', 0, 'A bad pain in the chest can be the heart: <b>call 911</b>.'], ['a lot of blood', 0, 'A lot of blood is an emergency: <b>call an ambulance</b>.'],
+      ['a cough for three weeks', 1, 'A cough for a long time — <b>see a doctor</b>.'], ['a strange rash on your skin', 1, 'A rash you don’t know — <b>see a doctor</b>.'],
+      ['toothache', 2, 'A tooth hurts → the <b>dentist</b>.'], ['a broken tooth', 2, 'Teeth → the <b>dentist</b>.'],
+      ['a cold', 3, 'A cold: <b>stay home</b>, drink water and rest.'], ['a small headache', 3, 'A small headache: <b>rest</b>, drink water.'], ['the flu', 3, 'The flu: <b>stay in bed</b> — and don’t go to work.']],
+    note: 'An emergency → 911 · teeth → the dentist · a long or strange problem → the doctor · a cold → rest' }
+];
+const MEANING = '<p><strong>should</strong> / <strong>shouldn’t</strong> = it’s a good idea / a bad idea: <i>You <b>should</b> rest. You <b>shouldn’t</b> eat big meals.</i></p>' +
+  '<p><strong>must</strong> = it’s very important (the doctor says): <i>You <b>must</b> take this medicine.</i></p>' +
+  '<p><strong>mustn’t</strong> = don’t do it! <i>You <b>mustn’t</b> go to work.</i> ⚠️ <i>don’t have to</i> is different: it isn’t necessary.</p>' +
+  '<p><strong>I have</strong> + a problem: <i>I have <b>a</b> cough / <b>a</b> cold / <b>a</b> fever / <b>a</b> headache / <b>a pain in</b> my back · I have <b>the</b> flu.</i></p>';
+const CCQ = [
+  { sentence: 'You should stay in bed.', questions: [
+    { q: 'Is it a good idea?', opts: ['Yes', 'No'], correct: 0, why: 'Yes. <b>should</b> = a good idea.' } ] },
+  { sentence: 'You mustn’t go to work.', questions: [
+    { q: 'Can she go to work?', opts: ['Yes', 'No'], correct: 1, why: 'No. <b>mustn’t</b> = don’t do it.' } ] },
+  { sentence: 'I have a pain in my stomach.', questions: [
+    { q: 'Does her stomach hurt?', opts: ['Yes', 'No'], correct: 0, why: 'Yes. A <b>pain</b> = it hurts.' } ] },
+  { sentence: 'Call an ambulance!', questions: [
+    { q: 'Is it a small problem?', opts: ['Yes', 'No'], correct: 1, why: 'No — it’s an emergency. An <b>ambulance</b> takes you to the hospital fast.' } ] }
+];
+const FORKS = [
+  { word: 'have', icon: '🤒', side: 'after', options: [
+    { text: 'a cough', ok: true }, { text: 'a headache', ok: true }, { text: 'a fever', ok: true }, { text: 'the flu', ok: true },
+    { text: 'a flu', ok: false, why: 'We say <b>the flu</b> (or just <i>flu</i>), not <i>a flu</i>.' }, { text: 'a pain on my back', ok: false, why: 'a pain <b>in</b> my back.' } ] },
+  { word: 'take', icon: '💊', side: 'after', options: [
+    { text: 'medicine', ok: true }, { text: 'a pill', ok: true }, { text: 'your temperature', ok: true },
+    { text: 'a doctor', ok: false, why: 'You <b>see</b> a doctor.' } ] },
+  { word: 'feel', icon: '🤢', side: 'after', options: [
+    { text: 'ill', ok: true }, { text: 'sick', ok: true }, { text: 'better', ok: true },
+    { text: 'illness', ok: false, why: '<b>feel</b> + an adjective: <i>feel ill</i>. <i>Illness</i> is a noun.' } ] },
+  { word: 'a doctor', icon: '🩺', side: 'before', options: [
+    { text: 'see', ok: true }, { text: 'call', ok: true },
+    { text: 'visit to', ok: false, why: 'You <b>see</b> or <b>visit</b> a doctor (no <i>to</i>).' }, { text: 'make', ok: false, why: 'You <b>make an appointment</b> with a doctor.' } ] }
+];
+const FAMILY_COLUMNS = ['noun', 'adj', 'adverb'];
+const FAMILIES = [
+  { forms: { noun: 'health', adj: 'healthy', adverb: 'healthily' }, given: 'noun', use: { template: 'Fruit and vegetables are very {0}.', accepted: ['healthy'] } },
+  { forms: { noun: 'pain', adj: 'painful', adverb: 'painfully' }, given: 'noun', use: { template: 'My broken foot is very {0}.', accepted: ['painful'] } },
+  { forms: { noun: 'illness', adj: 'ill', adverb: null }, given: 'adj' },
+  { forms: { noun: 'sickness', adj: 'sick', adverb: null }, given: 'adj' },
+  { forms: { noun: 'care', adj: 'careful', adverb: 'carefully' }, given: 'noun', use: { template: 'Take this medicine {0} — read the label first.', accepted: ['carefully'] } }
+];
+const FORM_RULE = '<p><strong>-y:</strong> health → health<b>y</b> → health<b>ily</b> · <strong>-ful:</strong> pain → pain<b>ful</b>, care → care<b>ful</b> → care<b>fully</b></p>' +
+  '<p><strong>-ness:</strong> ill → ill<b>ness</b> · sick → sick<b>ness</b></p>' +
+  '<p><strong>Plurals:</strong> one tooth → two <b>teeth</b> · one foot → two <b>feet</b></p>';
+const MISTAKES = [
+  ['I have a pain on my back.', 'I have a pain in my back.'],
+  ['You should to rest.', 'You should rest.'],
+  ['My tooths hurt.', 'My teeth hurt.'],
+  ['I have a flu.', 'I have the flu. / I have flu.'],
+  ['You must not to eat sugar.', 'You mustn’t eat sugar. / You must not eat sugar.']
+];
+const EH_ITEMS = [
+  { words: ['I', 'have', 'a', 'pain', 'on', 'my', 'back', '.'], error: { type: 'wrong', wordIndex: 4, options: ['in', 'at', 'of'], correct: 'in' } },
+  { words: ['You', 'should', 'to', 'rest', '.'], error: { type: 'extra', wordIndex: 2 } },
+  { words: ['My', 'tooths', 'hurt', '.'], error: { type: 'wrong', wordIndex: 1, options: ['teeth', 'toothes', 'tooth'], correct: 'teeth' } },
+  { words: ['You', 'must', 'take', 'this', 'medicine', 'twice', 'a', 'day', '.'], error: null },
+  { words: ['I', 'have', 'a', 'flu', '.'], error: { type: 'wrong', wordIndex: 2, options: ['the', 'an', 'some'], correct: 'the' } },
+  { words: ['Call', 'an', 'ambulance', '!'], error: null },
+  { words: ['Vegetables', 'are', 'very', 'health', '.'], error: { type: 'wrong', wordIndex: 3, options: ['healthy', 'healthily', 'healthful'], correct: 'healthy' } },
+  { words: ['You', 'go', 'shouldn’t', 'to', 'work', '.'], error: { type: 'misplaced', wordIndex: 2, targetGapIndex: 1 } }
+];
+
+document.getElementById('look').innerHTML = LOOK.map(([sent, vis, note]) =>
+  '<div class="flow-card"><div class="sent">' + sent + '</div>' + (vis || '') + (note ? '<div class="note">' + note + '</div>' : '') + '</div>').join('');
+HouseLabel.build({ container: 'pictures', items: PICTURES, scoreEl: 'lbScore', totalEl: 'lbTotal' });
+HouseSort.build({ container: 'sorts', items: SORTS, scoreEl: 'soScore', totalEl: 'soTotal' });
+document.getElementById('meaning').innerHTML = MEANING;
+HouseCCQ.build({ container: 'ccq', items: CCQ });
+HouseCollocate.build({ container: 'forks', items: FORKS, scoreEl: 'coScore', totalEl: 'coTotal' });
+HouseWordFamily.build({ container: 'families', columns: FAMILY_COLUMNS, labels: typeof FAMILY_LABELS === 'undefined' ? null : FAMILY_LABELS, pos: typeof FAMILY_POS === 'undefined' ? null : FAMILY_POS, items: FAMILIES, scoreEl: 'wfScore', totalEl: 'wfTotal' });
+document.getElementById('formRule').innerHTML = FORM_RULE;
+document.getElementById('mistakes').innerHTML = MISTAKES.map(([no, yes]) =>
+  '<div class="pair-card"><div class="pair-line no"><span class="mark">✗</span>' + no + '</div>' +
+  '<div class="pair-line yes"><span class="mark">✓</span>' + yes + '</div></div>').join('');
+HouseErrorHunt.build({ container: 'errorHuntItems', items: EH_ITEMS, scoreEl: 'errorScore', totalEl: 'errorTotal' });
+</script>
+</body>
+</html>

@@ -1,0 +1,172 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<title>People and Jobs — Clarification</title>
+<script>
+(function(){
+  try{
+    var saved = localStorage.getItem('theme-preference');
+    var theme = (saved === 'light' || saved === 'dark')
+      ? saved
+      : ((window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches) ? 'dark' : 'light');
+    document.documentElement.setAttribute('data-theme', theme);
+    var fs = parseFloat(localStorage.getItem('font-size-preference'));
+    if (fs >= 10 && fs <= 28) document.documentElement.style.setProperty('--fs-base', fs + 'px');
+  }catch(e){ /* localStorage/matchMedia unavailable — CSS media query still applies */ }
+})();
+</script>
+<link rel="stylesheet" href="house.css">
+<style>
+.flow-card{ border:1px solid var(--color-border-tertiary); border-radius:var(--border-radius-lg); background:var(--surface-2); padding:10px 12px; margin-bottom:10px; }
+.flow-card .sent{ font-size:1rem; font-weight:600; margin-bottom:6px; }
+.flow-card .note{ font-size:.8333rem; color:var(--text-secondary); margin-top:4px; }
+.if-part{ color:hsl(217, 70%, 42%); font-weight:700; }
+.res-part{ color:hsl(120, 60%, 32%); font-weight:700; }
+.res-no{ color:hsl(0, 65%, 42%); font-weight:700; }
+[data-theme="dark"] .res-no{ color:hsl(0, 75%, 70%); }
+[data-theme="dark"] .if-part{ color:hsl(217, 80%, 70%); }
+[data-theme="dark"] .res-part{ color:hsl(120, 55%, 65%); }
+.form-table{ width:100%; border-collapse:collapse; margin:0 0 1rem; font-size:.9333rem; }
+.form-table th, .form-table td{ border:1px solid var(--color-border-tertiary); padding:7px 9px; text-align:left; vertical-align:top; }
+.form-table th{ background:var(--surface-1); font-size:.8rem; text-transform:uppercase; letter-spacing:.04em; color:var(--text-secondary); }
+.pct-row{ display:flex; flex-wrap:wrap; gap:6px; margin:0 0 1rem; }
+.pct-row span{ padding:3px 10px; border-radius:999px; font-weight:700; font-size:.8667rem; border:2px solid; }
+.rule-box p{ margin:0 0 6px; }
+.rule-box p:last-child{ margin-bottom:0; }
+.big-pic{ font-size:1.6rem; letter-spacing:.1em; margin:2px 0 4px; }
+.hl{ font-weight:700; color:var(--text-accent); }
+</style>
+</head>
+<body>
+<div class="page" id="page">
+  <span class="cefr-tag cefr-a2">A2 · Elementary</span>
+  <h1>People and Jobs</h1>
+  <p class="subtitle">Jobs and family words — and how to say who someone is: a person who…</p>
+
+  <div class="sec-div">Look</div>
+  <p class="subtitle">From the conversation. Look at the highlighted words.</p>
+  <div id="look"></div>
+
+  <div class="sec-div">Meaning 1 — Who is it?</div>
+  <p class="subtitle">The same word is behind every ❓. Type it! The first clue gives ⭐⭐⭐ — every new clue or wrong guess costs a star.</p>
+  <div class="score-bar"><span>Stars: <strong id="myScore">0</strong> / <span id="myTotal">0</span> ⭐</span></div>
+  <div id="mystery"></div>
+
+  <div class="sec-div">Meaning 2 — Groups</div>
+  <p class="subtitle">Put each word in its group. Drag it, or tap it and then tap a group.</p>
+  <div class="score-bar"><span>Done: <strong id="soScore">0</strong> / <span id="soTotal">0</span></span></div>
+  <div id="sorts"></div>
+
+  <div class="rule-box" id="meaning"></div>
+
+  <div class="sec-div">Check the meaning</div>
+  <p class="subtitle">Answer the questions about each sentence.</p>
+  <div id="ccq"></div>
+
+  <div class="sec-div">Form — Verb → person → activity</div>
+  <p class="subtitle">Write the missing words. The bar goes green 🔴→🟢 when you are right. Then use one word in the sentence.</p>
+  <div class="score-bar"><span>Done: <strong id="wfScore">0</strong> / <span id="wfTotal">0</span></span></div>
+  <div id="families"></div>
+
+  <div class="rule-box" id="formRule"></div>
+
+  <div class="sec-div">Common mistakes</div>
+  <div id="mistakes"></div>
+
+  <div class="sec-div">Error hunt</div>
+  <p class="subtitle">Some sentences have one mistake. Some are correct! Tap a word — or a space between words — to fix it. Then press OK.</p>
+  <div class="score-bar"><span>Done: <strong id="errorScore">0</strong> / <span id="errorTotal">0</span></span></div>
+  <div id="errorHuntItems"></div>
+  <footer>People and jobs — Vocabulary clarification (A2)</footer>
+</div>
+
+<div id="theme-toggle-wrap">
+  <button id="theme-toggle" aria-label="Toggle light/dark mode" title="Toggle light/dark mode">
+    <span id="theme-icon">☀️</span>
+  </button>
+</div>
+<script src="house.js"></script>
+<script src="house-vocab.js"></script>
+<script>
+const LOOK = [
+  ['The man <span class="hl">who’s dancing</span> with the bride is my uncle.', '<div class="big-pic">🕺 = 👨 uncle Tom</div>',
+    '<b>who</b> + a verb tells you <b>which person</b>: the man who’s dancing'],
+  ['He’s a <span class="hl">firefighter</span>. She’s a <span class="hl">writer</span>.', '<div class="big-pic">🧑‍🚒 · ✍️</div>', 'write → writ<b>er</b> · fight fires → firefight<b>er</b>'],
+  ['That’s my <span class="hl">twin</span> sister.', '<div class="big-pic">👯 🎂🎂</div>', '<b>twins</b>: born to the same mother on the same day']
+];
+const MYSTERY = [
+  { answer: 'firefighter', pic: '🧑‍🚒', clues: ['A ❓ is a person who puts out fires.', 'A ❓ wears a helmet and drives a big red truck.', 'A ❓ sometimes saves cats from trees!'] },
+  { answer: 'photographer', pic: '📸', clues: ['A ❓ is a person who takes pictures.', 'At a wedding, the ❓ tells everybody “Smile!”', 'A ❓ uses a camera all day.'] },
+  { answer: ['twin', 'twins'], pic: '👯', clues: ['Your ❓ has the same birthday as you.', 'A ❓ is a brother or sister who was born on the same day, to the same mother.', 'Some ❓s look exactly the same!'] },
+  { answer: ['grandchild', 'grandson', 'granddaughter'], pic: '👵👶', clues: ['Grandma loves her ❓ very much.', 'A ❓ is the child of your son or daughter.', 'Lily is the ❓ of Nina’s grandma.'] }
+];
+const SORTS = [
+  { title: 'Jobs and family', groups: [{ label: 'art and shows', icon: '🎭' }, { label: 'in an office', icon: '💼' }, { label: 'keeping us safe', icon: '🚨' }, { label: 'family', icon: '👨‍👩‍👧' }],
+    words: [['actress', 0, 'An actress works in films and plays — <b>shows</b>.'], ['dancer', 0, 'A dancer performs in <b>shows</b>.'], ['painter', 0, 'A painter makes <b>art</b>.'], ['writer', 0, 'A writer writes books: <b>art</b>.'],
+      ['businessman', 1, 'A businessman usually works <b>in an office</b>.'], ['secretary', 1, 'A secretary works <b>in an office</b>: phones, letters, meetings.'], ['assistant', 1, 'An office assistant helps people <b>in an office</b>.'],
+      ['firefighter', 2, 'A firefighter <b>keeps us safe</b> from fires.'], ['police officer', 2, 'A police officer <b>keeps us safe</b>.'],
+      ['daughter', 3, 'A daughter is a <b>family</b> word, not a job.'], ['grandchild', 3, 'A grandchild is <b>family</b>.'], ['twin', 3, 'A twin is <b>family</b>.']],
+    note: '“Police officer” is the word to use today — for men and women.' }
+];
+const MEANING = '<p><strong>who</strong> — for people: <i>A writer is a person <b>who</b> writes books.</i> · <i>The man <b>who’s</b> dancing is my uncle.</i></p>' +
+  '<p><strong>that / which</strong> — for things: <i>A camera is a thing <b>that</b> takes photos.</i></p>' +
+  '<p><strong>where</strong> — for places: <i>A theater is a place <b>where</b> you watch plays.</i></p>' +
+  '<p>Jobs: <b>a</b> / <b>an</b> + job: <i>She’s <b>an</b> actress. He works <b>as a</b> firefighter.</i></p>';
+const CCQ = [
+  { sentence: 'My sister is a waitress.', questions: [
+    { q: 'Does she work in a restaurant?', opts: ['Yes', 'No'], correct: 0, why: 'Yes. A <b>waitress</b> brings food to the tables.' } ] },
+  { sentence: 'Ana and Nina are twins.', questions: [
+    { q: 'Do they have the same birthday?', opts: ['Yes', 'No'], correct: 0, why: 'Yes. <b>Twins</b> are born on the same day.' } ] },
+  { sentence: 'The woman who’s taking photos is the photographer.', questions: [
+    { q: 'Is she taking photos now?', opts: ['Yes', 'No'], correct: 0, why: 'Yes. <b>who’s taking</b> = who is taking — now.' },
+    { q: 'Are we talking about two women?', opts: ['Yes', 'No'], correct: 1, why: 'No. <b>who</b> tells us <b>which</b> woman — one woman.' } ] }
+];
+const FAMILY_COLUMNS = ['verb', 'person', 'noun'];
+const FAMILY_LABELS = { verb: 'Verb', person: 'The person', noun: 'The activity' };
+const FAMILIES = [
+  { forms: { verb: 'dance', person: 'dancer', noun: 'dancing' }, given: 'verb' },
+  { forms: { verb: 'paint', person: 'painter', noun: 'painting' }, given: 'verb' },
+  { forms: { verb: 'write', person: 'writer', noun: 'writing' }, given: 'verb', use: { template: 'My mom is a {0}. She writes children’s books.', accepted: ['writer'] } },
+  { forms: { verb: 'sing', person: 'singer', noun: 'singing' }, given: 'verb' },
+  { forms: { verb: 'act', person: 'actor/actress', noun: 'acting' }, given: 'verb' },
+  { forms: { verb: 'photograph', person: 'photographer', noun: 'photography' }, given: 'verb', use: { template: 'She studied {0} in college.', accepted: ['photography'] } },
+  { forms: { verb: 'travel', person: 'traveler/traveller', noun: 'travel/traveling/travelling' }, given: 'verb' }
+];
+const FORM_RULE = '<p><strong>+ er:</strong> dance → danc<b>er</b> · paint → paint<b>er</b> · write → writ<b>er</b> · photograph → photograph<b>er</b> · travel → travel<b>er</b></p>' +
+  '<p><strong>+ or / + ist / + ant:</strong> act → act<b>or</b> · art → art<b>ist</b> · assist → assist<b>ant</b></p>' +
+  '<p><strong>+ ess</strong> (a woman): actress, waitress. Many people now say <b>actor</b> and <b>server</b> for everybody.</p>';
+const MISTAKES = [
+  ['She is a person which helps people.', 'She is a person who helps people.'],
+  ['He is policeman.', 'He’s a police officer.'],
+  ['My sister works of a waitress.', 'My sister works as a waitress.'],
+  ['The man who he is dancing is my uncle.', 'The man who is dancing is my uncle.'],
+  ['A theater is a place who you watch plays.', 'A theater is a place where you watch plays.']
+];
+const EH_ITEMS = [
+  { words: ['She', 'is', 'a', 'person', 'which', 'helps', 'people', '.'], error: { type: 'wrong', wordIndex: 4, options: ['who', 'where', 'what'], correct: 'who' } },
+  { words: ['He', 'is', 'police', 'officer', '.'], error: { type: 'missing', gapIndex: 2, options: ['a', 'the', 'one'], correct: 'a' } },
+  { words: ['My', 'sister', 'works', 'as', 'a', 'waitress', '.'], error: null },
+  { words: ['The', 'man', 'who', 'he', 'is', 'dancing', 'is', 'my', 'uncle', '.'], error: { type: 'extra', wordIndex: 3 } },
+  { words: ['A', 'writer', 'is', 'a', 'person', 'who', 'writes', 'books', '.'], error: null },
+  { words: ['A', 'theater', 'is', 'a', 'place', 'who', 'you', 'watch', 'plays', '.'], error: { type: 'wrong', wordIndex: 5, options: ['where', 'which', 'what'], correct: 'where' } },
+  { words: ['My', 'brother', 'is', 'a', 'businessmen', '.'], error: { type: 'wrong', wordIndex: 4, options: ['businessman', 'business', 'businessmans'], correct: 'businessman' } },
+  { words: ['She', 'has', 'three', 'grandchilds', '.'], error: { type: 'wrong', wordIndex: 3, options: ['grandchildren', 'grandchildrens', 'grandchild'], correct: 'grandchildren' } }
+];
+
+document.getElementById('look').innerHTML = LOOK.map(([sent, vis, note]) =>
+  '<div class="flow-card"><div class="sent">' + sent + '</div>' + (vis || '') + (note ? '<div class="note">' + note + '</div>' : '') + '</div>').join('');
+HouseMystery.build({ container: 'mystery', items: MYSTERY, scoreEl: 'myScore', totalEl: 'myTotal' });
+HouseSort.build({ container: 'sorts', items: SORTS, scoreEl: 'soScore', totalEl: 'soTotal' });
+document.getElementById('meaning').innerHTML = MEANING;
+HouseCCQ.build({ container: 'ccq', items: CCQ });
+HouseWordFamily.build({ container: 'families', columns: FAMILY_COLUMNS, labels: typeof FAMILY_LABELS === 'undefined' ? null : FAMILY_LABELS, pos: typeof FAMILY_POS === 'undefined' ? null : FAMILY_POS, items: FAMILIES, scoreEl: 'wfScore', totalEl: 'wfTotal' });
+document.getElementById('formRule').innerHTML = FORM_RULE;
+document.getElementById('mistakes').innerHTML = MISTAKES.map(([no, yes]) =>
+  '<div class="pair-card"><div class="pair-line no"><span class="mark">✗</span>' + no + '</div>' +
+  '<div class="pair-line yes"><span class="mark">✓</span>' + yes + '</div></div>').join('');
+HouseErrorHunt.build({ container: 'errorHuntItems', items: EH_ITEMS, scoreEl: 'errorScore', totalEl: 'errorTotal' });
+</script>
+</body>
+</html>

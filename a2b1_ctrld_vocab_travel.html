@@ -1,0 +1,97 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<title>Travel and Getting Around — Practice</title>
+<script>
+(function(){
+  try{
+    var saved = localStorage.getItem('theme-preference');
+    var theme = (saved === 'light' || saved === 'dark')
+      ? saved
+      : ((window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches) ? 'dark' : 'light');
+    document.documentElement.setAttribute('data-theme', theme);
+    var fs = parseFloat(localStorage.getItem('font-size-preference'));
+    if (fs >= 10 && fs <= 28) document.documentElement.style.setProperty('--fs-base', fs + 'px');
+  }catch(e){ /* localStorage/matchMedia unavailable — CSS media query still applies */ }
+})();
+</script>
+<link rel="stylesheet" href="house.css">
+<style>
+
+</style>
+</head>
+<body>
+<div class="page" id="page">
+  <span class="cefr-tag cefr-a2b1">A2/B1 · Pre-intermediate</span>
+  <h1>Travel and Getting Around — Practice</h1>
+  <p class="subtitle">Ask polite questions and talk about trips.</p>
+
+  <div class="sec-div">Practice 1 — Match the halves</div>
+  <p class="subtitle">Tap the start of a sentence, then tap its end.</p>
+  <div class="score-bar"><span>Matched: <strong id="mScore">0</strong> / <span id="mTotal">0</span></span><button id="mReset">↺ Reset</button></div>
+  <div class="match-grid">
+    <div><div class="match-col-label">Start</div><div class="match-col" id="leftCol"></div></div>
+    <div><div class="match-col-label">End</div><div class="match-col" id="rightCol"></div></div>
+  </div>
+  <div class="win-msg" id="mWin">🎉 All matched!</div>
+  <div class="feedback" id="mFeedback"></div>
+
+  <div class="sec-div">Practice 2 — Word order</div>
+  <p class="subtitle">Tap the words to build the sentence. Tap a word again to take it back, or drag to change the order.</p>
+  <button class="grammar-toggle-btn" id="grammarToggle">🎨 Show Grammar</button>
+  <div class="pos-legend"></div>
+  <div class="score-bar"><span>Correct: <strong id="woScore">0</strong> / <span id="woTotal">0</span></span></div>
+  <div id="woItems"></div>
+
+  <div class="sec-div">Practice 3 — Complete the sentences</div>
+  <p class="subtitle">Write the missing word. The bar turns green 🔴→🟢 when you are right.</p>
+  <div id="gfItems"></div>
+
+  <footer>Travel and getting around — Vocabulary practice (A2/B1)</footer>
+</div>
+
+<div id="theme-toggle-wrap">
+  <button id="theme-toggle" aria-label="Toggle light/dark mode" title="Toggle light/dark mode">
+    <span id="theme-icon">☀️</span>
+  </button>
+</div>
+<script src="house.js"></script>
+<script>
+const HALVES = [
+  ['Excuse me, where', 'are the restrooms?'], ['Could you tell me', 'when the next train leaves?'], ['I have a lot of luggage —', 'is there an elevator?'],
+  ['The journey takes', 'about two hours.'], ['We took a boat', 'to the islands.'], ['Take the highway', 'and get off at exit 19.'],
+  ['The international airport is', 'an hour away by taxi.'], ['I sent my grandma', 'a postcard from Paris.']
+];
+const WO_ITEMS = [
+  { context: '🚪 At the station', text: 'Could / you / tell me / where / the exit / is?', pos: ['aux', 'subject', 'verb', 'wh', 'subject', 'verb'] },
+  { context: '🗺️ At the tourist office', text: 'Do / you / know / when / the tour / starts?', pos: ['aux', 'subject', 'verb', 'wh', 'subject', 'verb'] },
+  { context: '🚤 At the harbor', text: 'Do / you / know / if / the boats / run / on Sundays?', pos: ['aux', 'subject', 'verb', 'conj', 'subject', 'verb', 'time'] },
+  { context: '🏍️ A trip', text: 'We / traveled / by motorcycle / along the coast.', pos: ['subject', 'verb', 'prep', 'prep'] },
+  { context: '⏱️ A question', text: 'How long / does / the journey / take?', pos: ['wh', 'aux', 'subject', 'verb'] },
+  { context: '🧳 At the airport', text: 'I / have / a lot of / luggage.', pos: ['subject', 'verb', 'det', 'object'] }
+];
+const GF_LABELS = { trav: 'travel', place: 'places and signs', ind: 'polite questions' };
+const GF_ITEMS = [
+  { category: 'trav', direct: 'The bags and suitcases you take on a trip.', template: 'How much {0} do you have?', hints: [{ accepted: ['luggage'] }] },
+  { category: 'trav', direct: 'A list of the times when trains leave.', template: 'Check the train {0} online.', hints: [{ accepted: ['timetable'] }] },
+  { category: 'trav', direct: 'From another country.', template: 'There are a lot of {0} students in my class.', hints: [{ accepted: ['foreign', 'international'] }] },
+  { category: 'trav', direct: 'A picture card you send from a trip.', template: 'Send me a {0} from Rome!', hints: [{ accepted: ['postcard'] }] },
+  { category: 'place', direct: 'A big, fast road between cities.', template: 'Take the {0} — it’s faster.', hints: [{ accepted: ['highway'] }] },
+  { category: 'place', direct: 'The way out of a building.', template: 'Where’s the {0}? I want to leave.', hints: [{ accepted: ['exit'] }] },
+  { category: 'ind', direct: 'leave → ? (no “does”)', template: 'Do you know when the bus {0}?', hints: [{ accepted: ['leaves'] }] },
+  { category: 'ind', direct: 'A yes / no question inside a question.', template: 'Do you know {0} the museum is open today?', hints: [{ accepted: ['if', 'whether'] }] },
+  { category: 'ind', direct: 'The verb goes at the end.', template: 'Could you tell me where the station {0}?', hints: [{ accepted: ['is'] }] }
+];
+
+HouseMatching.build({
+  left: 'leftCol', right: 'rightCol', scoreEl: 'mScore', totalEl: 'mTotal', winEl: 'mWin', resetBtn: 'mReset', feedbackEl: 'mFeedback',
+  pairs: HALVES.map(([a, b], i) => ({ id: 'h' + i, left: a, right: b }))
+});
+HouseWordOrder.build({ container: 'woItems', items: WO_ITEMS, scoreEl: 'woScore', totalEl: 'woTotal' });
+HouseGapFill.build({ container: 'gfItems', items: GF_ITEMS, labels: GF_LABELS });
+</script>
+<script>HouseGrammar.init();</script>
+</body>
+</html>

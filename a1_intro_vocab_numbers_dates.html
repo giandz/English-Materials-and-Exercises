@@ -1,0 +1,135 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<title>The English Class — Numbers, Dates and Months</title>
+<script>
+(function(){
+  try{
+    var saved = localStorage.getItem('theme-preference');
+    var theme = (saved === 'light' || saved === 'dark')
+      ? saved
+      : ((window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches) ? 'dark' : 'light');
+    document.documentElement.setAttribute('data-theme', theme);
+    var fs = parseFloat(localStorage.getItem('font-size-preference'));
+    if (fs >= 10 && fs <= 28) document.documentElement.style.setProperty('--fs-base', fs + 'px');
+  }catch(e){ /* localStorage/matchMedia unavailable — CSS media query still applies */ }
+})();
+</script>
+<link rel="stylesheet" href="house.css">
+<style>
+.cast-row{ display:flex; flex-wrap:wrap; gap:14px 18px; justify-content:center; align-items:flex-end; margin:0 0 1rem; padding:10px; background:var(--surface-1); border:1px solid var(--border); border-radius:var(--border-radius-lg); font-size:.8667rem; }
+.match-wrap .match-col-label{ text-align:center; }
+#picCol .match-card{ font-size:1.35rem; justify-content:center; }
+</style>
+</head>
+<body>
+<div class="page" id="page">
+  <span class="cefr-tag cefr-a1">A1 · Beginner</span>
+  <h1>The English Class</h1>
+  <p class="subtitle">Lucy calls the community center. She wants to join the English class.</p>
+
+  <div class="sec-div">Words for this lesson</div>
+  <p class="subtitle">Match the picture and the words. Tap a picture, then tap its words.</p>
+  <div class="score-bar"><span>Matched: <strong id="mScore">0</strong> / <span id="mTotal">0</span></span><button id="mReset">↺ Reset</button></div>
+  <div class="match-grid match-wrap">
+    <div><div class="match-col-label">Picture</div><div class="match-col" id="picCol"></div></div>
+    <div><div class="match-col-label">Words</div><div class="match-col" id="wordCol"></div></div>
+  </div>
+  <div class="win-msg" id="mWin">🎉 Great! You know the words for the conversation.</div>
+  <div class="feedback" id="mFeedback"></div>
+
+  <div class="sec-div">Before you read</div>
+  <div id="preQuestions"></div>
+
+  <div class="sec-div">The people</div>
+  <div class="cast-row" id="castRow"></div>
+
+  <div class="sec-div">The conversation</div>
+  <div class="setting-chip"><span class="section-icon">📞</span> Monday morning — a phone call to the Riverside Community Center</div>
+  <button class="grammar-toggle-btn" id="grammarToggle">🎨 Show Grammar</button>
+  <div class="pos-legend"></div>
+  <div id="conversation"></div>
+
+  <div class="sec-div">Check your answers</div>
+  <div id="quiz"></div>
+
+  <footer>The English Class — Vocabulary: numbers, dates and months (A1)</footer>
+</div>
+
+<div id="theme-toggle-wrap">
+  <button id="theme-toggle" aria-label="Toggle light/dark mode" title="Toggle light/dark mode">
+    <span id="theme-icon">☀️</span>
+  </button>
+</div>
+<script src="house.js"></script>
+<script src="stick-character.js"></script>
+<script src="stick-sentence.js"></script>
+<script>
+StickSentence.cast({
+  lucy: { base:'woman', colour:'#CC6600', label:'Lucy' },
+  ortiz: { base:'man', colour:'#336699', label:'Mr. Ortiz' }
+});
+StickSentence.toggle();
+window.LESSON_DICT = {
+  'join':          { pos:'verb', def:'to become one of a group or a class', ex:'I want to join the English class.', es:'unirse, inscribirse' },
+  'date of birth': { pos:'phrase', def:'the day, month and year you were born', ex:'What’s your date of birth?', es:'fecha de nacimiento' },
+  'weekday':       { pos:'noun', def:'Monday, Tuesday, Wednesday, Thursday or Friday', ex:'The class is on weekdays.', es:'día entre semana' },
+  'closed':        { pos:'adjective', def:'not open', ex:'The center is closed in December.', es:'cerrado' },
+  'free':          { pos:'adjective', def:'you don’t pay for it', ex:'The class is free!', es:'gratis' }
+};
+const WORDS = [['🌸', 'spring'], ['🍂', 'autumn (fall)'], ['❄️', 'winter'], ['📅', 'a calendar'], ['🏖️', 'a holiday'],
+  ['🎂', 'a birthday'], ['13', 'thirteen'], ['30', 'thirty'], ['90', 'ninety'], ['1,000', 'a thousand']];
+document.getElementById('castRow').innerHTML = ['{Lucy|lucy}', '{Mr. Ortiz|ortiz}'].map(StickSentence.html).join('');
+const SPEAKERS = {
+  'Mr. Ortiz': { cast: 'ortiz', avatar: '👨🏽‍💼', av: 'av-a', side: 'left' },
+  Lucy:        { cast: 'lucy', avatar: '👩🏻', av: 'av-b', side: 'right' }
+};
+const LINES = [
+  ['Mr. Ortiz', '[Hello/none], [Riverside Community Center/none]. [How/wh] [can/aux] [I/subject] [help/verb] [you/object]?'],
+  ['Lucy', '[Hi/none]! [I/subject] [want/verb] [to join/verb] [the English class/object].'],
+  ['Mr. Ortiz', '[Great/adj]! [What’s/wh] [your name/subject], [please/adverb]?'],
+  ['Lucy', '[Lucy Moreno/noun]. [M-O-R-E-N-O/noun].'],
+  ['Mr. Ortiz', '[And/conj] [what’s/wh] [your date of birth/subject]?'],
+  ['Lucy', '[April/time] [thirteenth/time], [nineteen ninety/time].'],
+  ['Mr. Ortiz', '[Thirteen/det] [or/conj] [thirty/det]?'],
+  ['Lucy', '[Thirteen/det]. [One/det], [three/det].'],
+  ['Mr. Ortiz', '[OK/none]. [The class/subject] [is/verb] [on Tuesdays/time] [and/conj] [Thursdays/time], [at six thirty/time].'],
+  ['Lucy', '[On weekdays/time]. [Good/adj]! [When/wh] [does/aux] [it/subject] [start/verb]?'],
+  ['Mr. Ortiz', '[It/subject] [starts/verb] [in September/time], [on the second/time].'],
+  ['Lucy', '[How much/wh] [is/verb] [it/subject]?'],
+  ['Mr. Ortiz', '[It’s/subject] [free/adj]! [There are/verb] [fifteen students/object] [in the class/prep].'],
+  ['Lucy', '[Is/verb] [there/subject] [a class/object] [in December/time]?'],
+  ['Mr. Ortiz', '[No/none]. [The center/subject] [is/verb] [closed/adj] [for the holidays/prep]. [Classes/subject] [start/verb] [again/adverb] [in January/time].'],
+  ['Lucy', '[Perfect/adj]! [I’m/subject] [writing/verb] [it/object] [on my calendar/prep] [now/time].']
+];
+const CQ_ITEMS = [
+  { q: 'When is Lucy’s birthday?', opts: ['April 13', 'April 30', 'September 2'], correct: 0 },
+  { q: 'When is the class?', opts: ['On Tuesdays and Thursdays', 'On weekends', 'On Mondays'], correct: 0 },
+  { q: 'When is the center closed?', opts: ['In December', 'In September', 'In April'], correct: 0 }
+];
+
+/* ── the conversation ─────────────────────────────────────────────────── */
+const avStyle = s => { const c = (StickSentence.cast()[s.cast] || {}).colour;
+  return c ? 'background:' + c + '40;box-shadow:inset 0 0 0 2px ' + c : ''; };
+const conv = document.getElementById('conversation');
+LINES.forEach(([who, text]) => {
+  const s = SPEAKERS[who], right = s.side === 'right';
+  conv.insertAdjacentHTML('beforeend',
+    '<div class="bubble-wrap' + (right ? ' right' : '') + '">' +
+      '<div class="avatar ' + s.av + '" style="' + avStyle(s) + '">' + s.avatar + '</div>' +
+      '<div class="bubble-col"><div class="bname' + (right ? ' right' : '') + '">' + who + '</div>' +
+      '<div class="bubble ' + (right ? 'right' : 'left') + '">' + StickSentence.html(text) + '</div></div>' +
+    '</div>');
+});
+
+HouseMatching.build({
+  left: 'picCol', right: 'wordCol', scoreEl: 'mScore', totalEl: 'mTotal', winEl: 'mWin', resetBtn: 'mReset', feedbackEl: 'mFeedback',
+  pairs: WORDS.map(([e, w]) => ({ id: w, left: e, right: w }))
+});
+HouseComprehension.build({ pre: 'preQuestions', quiz: 'quiz', items: CQ_ITEMS });
+</script>
+<script>HouseGrammar.init();</script>
+</body>
+</html>

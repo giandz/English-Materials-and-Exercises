@@ -1,0 +1,133 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<title>A Weekend Plan — Free Time and Places</title>
+<script>
+(function(){
+  try{
+    var saved = localStorage.getItem('theme-preference');
+    var theme = (saved === 'light' || saved === 'dark')
+      ? saved
+      : ((window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches) ? 'dark' : 'light');
+    document.documentElement.setAttribute('data-theme', theme);
+    var fs = parseFloat(localStorage.getItem('font-size-preference'));
+    if (fs >= 10 && fs <= 28) document.documentElement.style.setProperty('--fs-base', fs + 'px');
+  }catch(e){ /* localStorage/matchMedia unavailable — CSS media query still applies */ }
+})();
+</script>
+<link rel="stylesheet" href="house.css">
+<style>
+.cast-row{ display:flex; flex-wrap:wrap; gap:14px 18px; justify-content:center; align-items:flex-end; margin:0 0 1rem; padding:10px; background:var(--surface-1); border:1px solid var(--border); border-radius:var(--border-radius-lg); font-size:.8667rem; }
+.match-wrap .match-col-label{ text-align:center; }
+#picCol .match-card{ font-size:1.35rem; justify-content:center; }
+</style>
+</head>
+<body>
+<div class="page" id="page">
+  <span class="cefr-tag cefr-a2">A2 · Elementary</span>
+  <h1>A Weekend Plan</h1>
+  <p class="subtitle">Jake and Mei want to do something fun this weekend. But they like different things!</p>
+
+  <div class="sec-div">Words for this lesson</div>
+  <p class="subtitle">Match the picture and the words. Tap a picture, then tap its words.</p>
+  <div class="score-bar"><span>Matched: <strong id="mScore">0</strong> / <span id="mTotal">0</span></span><button id="mReset">↺ Reset</button></div>
+  <div class="match-grid match-wrap">
+    <div><div class="match-col-label">Picture</div><div class="match-col" id="picCol"></div></div>
+    <div><div class="match-col-label">Words</div><div class="match-col" id="wordCol"></div></div>
+  </div>
+  <div class="win-msg" id="mWin">🎉 Great! You know the words for the conversation.</div>
+  <div class="feedback" id="mFeedback"></div>
+
+  <div class="sec-div">Before you read</div>
+  <div id="preQuestions"></div>
+
+  <div class="sec-div">The people</div>
+  <div class="cast-row" id="castRow"></div>
+
+  <div class="sec-div">The conversation</div>
+  <div class="setting-chip"><span class="section-icon">🗓️</span> Friday afternoon — after class</div>
+  <button class="grammar-toggle-btn" id="grammarToggle">🎨 Show Grammar</button>
+  <div class="pos-legend"></div>
+  <div id="conversation"></div>
+
+  <div class="sec-div">Check your answers</div>
+  <div id="quiz"></div>
+
+  <footer>A Weekend Plan — Vocabulary: free time and places (A2)</footer>
+</div>
+
+<div id="theme-toggle-wrap">
+  <button id="theme-toggle" aria-label="Toggle light/dark mode" title="Toggle light/dark mode">
+    <span id="theme-icon">☀️</span>
+  </button>
+</div>
+<script src="house.js"></script>
+<script src="stick-character.js"></script>
+<script src="stick-sentence.js"></script>
+<script>
+StickSentence.cast({
+  jake: { base:'man', colour:'#FF6600', label:'Jake' },
+  mei: { base:'woman', colour:'#6600CC', label:'Mei' }
+});
+StickSentence.toggle();
+window.LESSON_DICT = {
+  'cave':        { pos:'noun', def:'a big hole in a mountain or under the ground', ex:'You can walk inside the caves with a guide.', es:'cueva' },
+  'castle':      { pos:'noun', def:'a very big, old, strong building where kings and queens lived', ex:'There’s an old castle on the hill.', es:'castillo' },
+  'competition': { pos:'noun', def:'an event where people try to win', ex:'There’s a kite competition in the park.', es:'concurso, competencia' },
+  'album':       { pos:'noun', def:'a book for photos (or a group of songs on one record)', ex:'I can make a photo album.', es:'álbum' },
+  'magic':       { pos:'noun', def:'tricks that look impossible, done to surprise people', ex:'A man does magic tricks at the circus.', es:'magia' }
+};
+const WORDS = [['🏰', 'a castle'], ['🗼', 'a tower'], ['🌲', 'a forest'], ['🕳️', 'a cave'], ['🎣', 'fishing'],
+  ['🪁', 'a kite'], ['🎪', 'a circus'], ['🏟️', 'a stadium'], ['🎻', 'a violin'], ['🎩', 'magic']];
+document.getElementById('castRow').innerHTML = ['{Jake|jake}', '{Mei|mei}'].map(StickSentence.html).join('');
+const SPEAKERS = {
+  Jake: { cast: 'jake', avatar: '👨🏼', av: 'av-a', side: 'left' },
+  Mei:  { cast: 'mei', avatar: '👩🏻', av: 'av-b', side: 'right' }
+};
+const LINES = [
+  ['Jake', '[Mei/noun], [what/wh] [are/aux] [you/subject] [doing/verb] [this weekend/time]?'],
+  ['Mei', '[I/subject] [don’t know/verb]. [What/wh] [do/aux] [you/subject] [enjoy/verb] [doing/object] [on weekends/time]?'],
+  ['Jake', '[I/subject] [love/verb] [fishing/object]. [There’s/verb] [a lake/subject] [in the forest/prep] [near my grandpa’s house/prep].'],
+  ['Mei', '[Fishing/subject]? [I/subject] [hate/verb] [waiting/object]! [I/subject] [prefer/verb] [doing/object] [something active/object].'],
+  ['Jake', '[Then/adverb] [how about/wh] [the caves/object]? [You/subject] [can/aux] [walk/verb] [inside them/prep] [with a guide/prep].'],
+  ['Mei', '[Hmm/none], [I/subject] [don’t like/verb] [being/object] [in dark places/prep].'],
+  ['Jake', '[OK/none]… [There’s/verb] [an old castle/subject] [on the hill/prep], [with a tall tower/prep]. [You/subject] [can/aux] [see/verb] [the whole city/object] [from the top/prep].'],
+  ['Mei', '[That/subject] [sounds/verb] [great/adj]! [I/subject] [enjoy/verb] [taking/object] [photos/object] — [I/subject] [can/aux] [make/verb] [an album/object].'],
+  ['Jake', '[And/conj] [on Saturday afternoon/time] [there’s/verb] [a kite competition/subject] [in the park/prep].'],
+  ['Mei', '[I’m/subject] [not good at/adj] [flying/object] [kites/object], [but/conj] [I/subject] [love/verb] [watching/object] [them/object].'],
+  ['Jake', '[In the evening/time] [the circus/subject] [is/verb] [in town/prep]. [There’s/verb] [a man/subject] [who does/verb] [magic tricks/object]!'],
+  ['Mei', '[I/subject] [don’t mind/verb] [magic/object], [but/conj] [I/subject] [hate/verb] [clowns/object]. [Let’s/aux] [go/verb] [to the theater/prep] [instead/adverb]. [My sister/subject] [plays/verb] [the violin/object] [there/adverb].'],
+  ['Jake', '[OK/none], [but/conj] [only/adverb] [if/conj] [you/subject] [laugh/verb] [at my jokes/prep] [all day/time].'],
+  ['Mei', '[Deal/none]! [And/conj] [on Sunday/time] [we/subject] [go/verb] [to the stadium/prep] — [the big game/noun]!']
+];
+const CQ_ITEMS = [
+  { q: 'What does Jake love doing?', opts: ['Fishing', 'Flying kites', 'Playing the violin'], correct: 0 },
+  { q: 'Why doesn’t Mei want to go to the caves?', opts: ['She doesn’t like being in dark places', 'She hates waiting', 'She hates clowns'], correct: 0 },
+  { q: 'Who plays the violin?', opts: ['Mei’s sister', 'Jake', 'A man at the circus'], correct: 0 }
+];
+
+/* ── the conversation ─────────────────────────────────────────────────── */
+const avStyle = s => { const c = (StickSentence.cast()[s.cast] || {}).colour;
+  return c ? 'background:' + c + '40;box-shadow:inset 0 0 0 2px ' + c : ''; };
+const conv = document.getElementById('conversation');
+LINES.forEach(([who, text]) => {
+  const s = SPEAKERS[who], right = s.side === 'right';
+  conv.insertAdjacentHTML('beforeend',
+    '<div class="bubble-wrap' + (right ? ' right' : '') + '">' +
+      '<div class="avatar ' + s.av + '" style="' + avStyle(s) + '">' + s.avatar + '</div>' +
+      '<div class="bubble-col"><div class="bname' + (right ? ' right' : '') + '">' + who + '</div>' +
+      '<div class="bubble ' + (right ? 'right' : 'left') + '">' + StickSentence.html(text) + '</div></div>' +
+    '</div>');
+});
+
+HouseMatching.build({
+  left: 'picCol', right: 'wordCol', scoreEl: 'mScore', totalEl: 'mTotal', winEl: 'mWin', resetBtn: 'mReset', feedbackEl: 'mFeedback',
+  pairs: WORDS.map(([e, w]) => ({ id: w, left: e, right: w }))
+});
+HouseComprehension.build({ pre: 'preQuestions', quiz: 'quiz', items: CQ_ITEMS });
+</script>
+<script>HouseGrammar.init();</script>
+</body>
+</html>

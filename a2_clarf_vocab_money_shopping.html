@@ -1,0 +1,212 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<title>Money, Shopping and Materials — Clarification</title>
+<script>
+(function(){
+  try{
+    var saved = localStorage.getItem('theme-preference');
+    var theme = (saved === 'light' || saved === 'dark')
+      ? saved
+      : ((window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches) ? 'dark' : 'light');
+    document.documentElement.setAttribute('data-theme', theme);
+    var fs = parseFloat(localStorage.getItem('font-size-preference'));
+    if (fs >= 10 && fs <= 28) document.documentElement.style.setProperty('--fs-base', fs + 'px');
+  }catch(e){ /* localStorage/matchMedia unavailable — CSS media query still applies */ }
+})();
+</script>
+<link rel="stylesheet" href="house.css">
+<style>
+.flow-card{ border:1px solid var(--color-border-tertiary); border-radius:var(--border-radius-lg); background:var(--surface-2); padding:10px 12px; margin-bottom:10px; }
+.flow-card .sent{ font-size:1rem; font-weight:600; margin-bottom:6px; }
+.flow-card .note{ font-size:.8333rem; color:var(--text-secondary); margin-top:4px; }
+.if-part{ color:hsl(217, 70%, 42%); font-weight:700; }
+.res-part{ color:hsl(120, 60%, 32%); font-weight:700; }
+.res-no{ color:hsl(0, 65%, 42%); font-weight:700; }
+[data-theme="dark"] .res-no{ color:hsl(0, 75%, 70%); }
+[data-theme="dark"] .if-part{ color:hsl(217, 80%, 70%); }
+[data-theme="dark"] .res-part{ color:hsl(120, 55%, 65%); }
+.form-table{ width:100%; border-collapse:collapse; margin:0 0 1rem; font-size:.9333rem; }
+.form-table th, .form-table td{ border:1px solid var(--color-border-tertiary); padding:7px 9px; text-align:left; vertical-align:top; }
+.form-table th{ background:var(--surface-1); font-size:.8rem; text-transform:uppercase; letter-spacing:.04em; color:var(--text-secondary); }
+.pct-row{ display:flex; flex-wrap:wrap; gap:6px; margin:0 0 1rem; }
+.pct-row span{ padding:3px 10px; border-radius:999px; font-weight:700; font-size:.8667rem; border:2px solid; }
+.rule-box p{ margin:0 0 6px; }
+.rule-box p:last-child{ margin-bottom:0; }
+.big-pic{ font-size:1.6rem; letter-spacing:.1em; margin:2px 0 4px; }
+.hl{ font-weight:700; color:var(--text-accent); }
+</style>
+</head>
+<body>
+<div class="page" id="page">
+  <span class="cefr-tag cefr-a2">A2 · Elementary</span>
+  <h1>Money, Shopping and Materials</h1>
+  <p class="subtitle">Prices, paying, what things are made of — and a / some / a pair of.</p>
+
+  <div class="sec-div">Look</div>
+  <p class="subtitle">From the conversation. Look at the highlighted words.</p>
+  <div id="look"></div>
+
+  <div class="sec-div">Listen — How much is it?</div>
+  <p class="subtitle">Tap 🔊 and listen to the price. Then tap the price you hear.</p>
+  <div class="score-bar"><span>Done: <strong id="liScore">0</strong> / <span id="liTotal">0</span></span></div>
+  <div id="listen"></div>
+
+  <div class="sec-div">Meaning 1 — Groups</div>
+  <p class="subtitle">Put each word in its group. Drag a word, or tap a word and then tap a group.</p>
+  <div class="score-bar"><span>Done: <strong id="soScore">0</strong> / <span id="soTotal">0</span></span></div>
+  <div id="sorts"></div>
+
+  <div class="sec-div">Meaning 2 — Small to big</div>
+  <p class="subtitle">Put the words in order. Drag a word to its place, or tap a word and then tap a place.</p>
+  <div class="score-bar"><span>Done: <strong id="scScore">0</strong> / <span id="scTotal">0</span></span></div>
+  <div id="scales"></div>
+
+  <div class="rule-box" id="meaning"></div>
+
+  <div class="sec-div">Check the meaning</div>
+  <p class="subtitle">Answer the questions about each sentence.</p>
+  <div id="ccq"></div>
+
+  <div class="sec-div">Form — Materials</div>
+  <p class="subtitle">Write the missing words. The bar goes green 🔴→🟢 when you are right. Then use one word in the sentence.</p>
+  <div class="score-bar"><span>Done: <strong id="wfScore">0</strong> / <span id="wfTotal">0</span></span></div>
+  <div id="families"></div>
+
+  <div class="rule-box" id="formRule"></div>
+
+  <div class="sec-div">Use — Words that go together</div>
+  <p class="subtitle">Which words go with the word in the box? Tap all the right ones.</p>
+  <div class="score-bar"><span>Done: <strong id="coScore">0</strong> / <span id="coTotal">0</span></span></div>
+  <div id="forks"></div>
+
+  <div class="sec-div">Common mistakes</div>
+  <div id="mistakes"></div>
+
+  <div class="sec-div">Error hunt</div>
+  <p class="subtitle">Some sentences have one mistake. Some are correct! Tap a word — or a space between words — to fix it. Then press OK.</p>
+  <div class="score-bar"><span>Done: <strong id="errorScore">0</strong> / <span id="errorTotal">0</span></span></div>
+  <div id="errorHuntItems"></div>
+  <footer>Money, shopping and materials — Vocabulary clarification (A2)</footer>
+</div>
+
+<div id="theme-toggle-wrap">
+  <button id="theme-toggle" aria-label="Toggle light/dark mode" title="Toggle light/dark mode">
+    <span id="theme-icon">☀️</span>
+  </button>
+</div>
+<script src="house.js"></script>
+<script src="house-vocab.js"></script>
+<script>
+const LOOK = [
+  ['They’re <span class="hl">made of</span> leather. … It’s <span class="hl">plastic</span>.', '<div class="big-pic">👛 = 🐄 · 🧴</div>',
+    '<b>made of</b> + the material: <i>made of leather, made of cotton</i>.'],
+  ['Can I pay <span class="hl">by</span> credit card? … You can pay <span class="hl">in</span> cash.', '<div class="big-pic">💳 · 💵</div>',
+    'pay <b>by</b> credit card · pay <b>in</b> cash · pay <b>for</b> something'],
+  ['I have <span class="hl">some</span> coins. … <span class="hl">the</span> pants', '<div class="big-pic">🪙🪙 · 👖</div>',
+    '<b>a</b> coin → <b>some</b> coins. <b>pants</b> are always plural: <i>my pants are…</i>']
+];
+const LISTEN = [
+  { say: 'fifteen dollars', options: ['$15', '$50'], correct: 0 },
+  { say: 'sixty dollars', options: ['$16', '$60'], correct: 1 },
+  { say: 'twenty-five dollars', options: ['$25', '$52'], correct: 0 },
+  { say: 'nine ninety-nine', options: ['$9.99', '$99.90'], correct: 0, note: '“nine ninety-nine” = $9.99' },
+  { say: 'twelve fifty', options: ['$12.50', '$15.20'], correct: 0, note: '“twelve fifty” = $12.50' },
+  { say: 'a hundred and forty dollars', options: ['$114', '$140'], correct: 1 },
+  { say: 'two kilograms', options: ['2 kg', '2 g'], correct: 0, note: 'kg = kilogram (a kilo)' },
+  { say: 'half a liter', options: ['½ l', '5 l'], correct: 0 },
+  { say: 'seventy-five cents', options: ['75¢', '$75'], correct: 0, note: '100 cents = 1 dollar' },
+  { say: 'three meters', options: ['3 m', '3 km'], correct: 0 }
+];
+const SORTS = [
+  { title: 'What is it made of?', groups: [{ label: 'metal', icon: '🔩' }, { label: 'fabric (for clothes)', icon: '🧵' }, { label: 'other', icon: '📦' }],
+    words: [['gold', 0, 'Gold is a metal — for rings and jewelry.'], ['silver', 0, 'Silver is a metal.'], ['steel', 0, 'Steel is a strong metal.'],
+      ['cotton', 1, 'Cotton comes from a plant — for T-shirts and jeans.'], ['wool', 1, 'Wool comes from sheep — for sweaters.'], ['silk', 1, 'Silk is a soft fabric.'],
+      ['plastic', 2, 'Plastic isn’t a metal or a fabric.'], ['wood', 2, 'Wood comes from trees.'], ['glass', 2, 'Glass is for windows and bottles.'], ['leather', 2, 'Leather is animal skin — for shoes, belts and bags.']] },
+  { title: 'a … · some … · a pair of …', groups: [{ label: 'a / an … (one)', icon: '1️⃣' }, { label: 'some … (no plural)', icon: '🫙' }, { label: 'a pair of … (always plural)', icon: '👖' }],
+    words: [['coin', 0, 'One coin, two coins: <b>a</b> coin.'], ['wallet', 0, '<b>a</b> wallet → two wallets.'], ['credit card', 0, '<b>a</b> credit card.'], ['raincoat', 0, '<b>a</b> raincoat.'],
+      ['money', 1, '<b>money</b> has no plural: <i>some money</i> (not <s>a money</s>).'], ['cash', 1, '<b>cash</b> has no plural: <i>some cash</i>.'], ['jewelry', 1, '<b>jewelry</b> has no plural: <i>some jewelry</i>, <i>a ring</i>.'],
+      ['pants', 2, 'Two legs → <b>pants</b> are plural: <i>a pair of pants</i>.'], ['jeans', 2, '<b>a pair of</b> jeans.'], ['scissors', 2, '<b>a pair of</b> scissors.']],
+    note: 'a coin · some money · a pair of pants' }
+];
+const SCALES = [
+  { title: 'How heavy?', low: { label: 'light', icon: '🪶' }, high: { label: 'heavy', icon: '🏋️' }, words: ['a gram', 'a kilogram', 'a ton'], hues: [180, 280], note: '1,000 grams = 1 kilogram (kilo) · 1,000 kilos = 1 ton' },
+  { title: 'How long?', low: { label: 'short', icon: '🐜' }, high: { label: 'long', icon: '🛣️' }, words: ['a centimeter', 'a meter', 'a kilometer', 'a mile'], hues: [150, 30], note: '100 cm = 1 m · 1,000 m = 1 km · 1 mile = 1.6 km' },
+  { title: 'How much money?', low: { label: '$0', icon: '🆓' }, high: { label: '$$$$', icon: '💎' }, words: ['free', 'cheap', 'not bad', 'expensive', 'very expensive'], hues: [120, 0], note: 'free → cheap → not bad → expensive → very expensive' }
+];
+const MEANING = '<p><strong>Paying:</strong> pay <b>by</b> credit card · pay <b>in</b> cash · pay <b>for</b> the belt · <i>How much is it? — It’s $25.</i></p>' +
+  '<p><strong>Prices:</strong> $12.50 = “twelve dollars fifty” or “twelve fifty”. 100 <b>cents</b> = 1 dollar.</p>' +
+  '<p><strong>No plural:</strong> money, cash, jewelry, clothing → <i>some money</i>, <i>a lot of jewelry</i>. <strong>Always plural:</strong> pants, jeans, shorts, scissors → <i>a pair of pants</i>.</p>';
+const CCQ = [
+  { sentence: 'These belts are on sale.', questions: [
+    { q: 'Are they cheaper than usual?', opts: ['Yes', 'No'], correct: 0, why: 'Yes. <b>On sale</b> = cheaper for a short time.' } ] },
+  { sentence: 'The wallet is made of plastic.', questions: [
+    { q: 'Is it leather?', opts: ['Yes', 'No'], correct: 1, why: 'No. It’s plastic — the material.' } ] },
+  { sentence: 'I’ll pay in cash.', questions: [
+    { q: 'Is she using a credit card?', opts: ['Yes', 'No'], correct: 1, why: 'No. <b>Cash</b> = bills and coins.' } ] },
+  { sentence: 'I need a new pair of pants.', questions: [
+    { q: 'How many pants does she want?', opts: ['One', 'Two'], correct: 0, why: 'One! <b>a pair of pants</b> = one thing with two legs.' } ] }
+];
+const FAMILY_COLUMNS = ['noun', 'adj'];
+const FAMILY_LABELS = { noun: 'Material (noun)', adj: 'a … box (adjective)' };
+const FAMILIES = [
+  { forms: { noun: 'wood', adj: 'wooden' }, given: 'noun', use: { template: 'Dad made a beautiful {0} table.', accepted: ['wooden'] } },
+  { forms: { noun: 'wool', adj: 'woolen/wool' }, given: 'noun' },
+  { forms: { noun: 'gold', adj: 'golden' }, given: 'noun', use: { template: 'She has a {0} ring from her grandma.', accepted: ['gold', 'golden'] } },
+  { forms: { noun: 'silver', adj: 'silver' }, given: 'noun' },
+  { forms: { noun: 'plastic', adj: 'plastic' }, given: 'adj' },
+  { forms: { noun: 'cotton', adj: 'cotton' }, given: 'noun', use: { template: 'I like {0} T-shirts in summer.', accepted: ['cotton'] } }
+];
+const FORM_RULE = '<p><strong>-en:</strong> wood → wood<b>en</b> · wool → wool<b>en</b> · gold → gold<b>en</b> (but <i>a gold ring</i> is more usual).</p>' +
+  '<p><strong>The same word:</strong> a <b>plastic</b> bag · a <b>silver</b> ring · a <b>cotton</b> shirt · a <b>leather</b> belt.</p>' +
+  '<p>Or say <b>made of</b>: <i>The table is made of wood.</i></p>';
+const FORKS = [
+  { word: 'pay', icon: '💳', side: 'after', options: [
+    { text: 'by credit card', ok: true }, { text: 'in cash', ok: true }, { text: 'for the belt', ok: true },
+    { text: 'with cash', ok: false, why: 'We say pay <b>in</b> cash (or just <i>pay cash</i>).' }, { text: 'by cash', ok: false, why: 'pay <b>by</b> credit card, but pay <b>in</b> cash.' } ] },
+  { word: 'made', icon: '🧶', side: 'after', options: [
+    { text: 'of wool', ok: true }, { text: 'from wool', ok: false, why: 'For the material you can see, say <b>made of</b>: <i>made of wool</i>.' }, { text: 'with wool', ok: false, why: 'Say <b>made of</b> wool.' } ] },
+  { word: 'money', icon: '💰', side: 'before', options: [
+    { text: 'spend', ok: true }, { text: 'save', ok: true }, { text: 'waste', ok: true },
+    { text: 'expend', ok: false, why: 'We <b>spend</b> money. (<i>expend</i> isn’t used like this.)' } ] },
+  { word: 'a pair of', icon: '👟', side: 'after', options: [
+    { text: 'jeans', ok: true }, { text: 'shoes', ok: true }, { text: 'scissors', ok: true },
+    { text: 'shirt', ok: false, why: 'A shirt is one thing: <b>a shirt</b>.' }, { text: 'jewelry', ok: false, why: '<b>jewelry</b> has no plural: <i>some jewelry</i>.' } ] }
+];
+const MISTAKES = [
+  ['I need a new pant.', 'I need new pants. / I need a new pair of pants.'],
+  ['She has a lot of jewelries.', 'She has a lot of jewelry.'],
+  ['Can I pay with cash?', 'Can I pay in cash? / Can I pay cash?'],
+  ['It’s made from silver.', 'It’s made of silver.'],
+  ['The shoes are very cheaps.', 'The shoes are very cheap.']
+];
+const EH_ITEMS = [
+  { words: ['I', 'need', 'a', 'new', 'pant', '.'], error: { type: 'wrong', wordIndex: 4, options: ['pair of pants', 'pants', 'pantses'], correct: 'pair of pants' } },
+  { words: ['She', 'has', 'a', 'lot', 'of', 'jewelries', '.'], error: { type: 'wrong', wordIndex: 5, options: ['jewelry', 'jewels', 'a jewelry'], correct: 'jewelry' } },
+  { words: ['Can', 'I', 'pay', 'by', 'credit', 'card', '?'], error: null },
+  { words: ['It’s', 'made', 'from', 'silver', '.'], error: { type: 'wrong', wordIndex: 2, options: ['of', 'with', 'by'], correct: 'of' } },
+  { words: ['These', 'belts', 'are', 'on', 'sale', '.'], error: null },
+  { words: ['The', 'shoes', 'are', 'very', 'cheaps', '.'], error: { type: 'wrong', wordIndex: 4, options: ['cheap', 'cheaper', 'cheaply'], correct: 'cheap' } },
+  { words: ['I', 'paid', 'the', 'belt', 'in', 'cash', '.'], error: { type: 'missing', gapIndex: 2, options: ['for', 'by', 'of'], correct: 'for' } },
+  { words: ['I', 'don’t', 'have', 'a', 'money', '.'], error: { type: 'extra', wordIndex: 3 } }
+];
+
+document.getElementById('look').innerHTML = LOOK.map(([sent, vis, note]) =>
+  '<div class="flow-card"><div class="sent">' + sent + '</div>' + (vis || '') + (note ? '<div class="note">' + note + '</div>' : '') + '</div>').join('');
+HouseListen.build({ container: 'listen', items: LISTEN, scoreEl: 'liScore', totalEl: 'liTotal' });
+HouseSort.build({ container: 'sorts', items: SORTS, scoreEl: 'soScore', totalEl: 'soTotal' });
+HouseScale.build({ container: 'scales', items: SCALES, scoreEl: 'scScore', totalEl: 'scTotal' });
+document.getElementById('meaning').innerHTML = MEANING;
+HouseCCQ.build({ container: 'ccq', items: CCQ });
+HouseWordFamily.build({ container: 'families', columns: FAMILY_COLUMNS, labels: typeof FAMILY_LABELS === 'undefined' ? null : FAMILY_LABELS, pos: typeof FAMILY_POS === 'undefined' ? null : FAMILY_POS, items: FAMILIES, scoreEl: 'wfScore', totalEl: 'wfTotal' });
+document.getElementById('formRule').innerHTML = FORM_RULE;
+HouseCollocate.build({ container: 'forks', items: FORKS, scoreEl: 'coScore', totalEl: 'coTotal' });
+document.getElementById('mistakes').innerHTML = MISTAKES.map(([no, yes]) =>
+  '<div class="pair-card"><div class="pair-line no"><span class="mark">✗</span>' + no + '</div>' +
+  '<div class="pair-line yes"><span class="mark">✓</span>' + yes + '</div></div>').join('');
+HouseErrorHunt.build({ container: 'errorHuntItems', items: EH_ITEMS, scoreEl: 'errorScore', totalEl: 'errorTotal' });
+</script>
+</body>
+</html>

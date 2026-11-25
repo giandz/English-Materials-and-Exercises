@@ -1,0 +1,135 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<title>At the Zoo — Animals</title>
+<script>
+(function(){
+  try{
+    var saved = localStorage.getItem('theme-preference');
+    var theme = (saved === 'light' || saved === 'dark')
+      ? saved
+      : ((window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches) ? 'dark' : 'light');
+    document.documentElement.setAttribute('data-theme', theme);
+    var fs = parseFloat(localStorage.getItem('font-size-preference'));
+    if (fs >= 10 && fs <= 28) document.documentElement.style.setProperty('--fs-base', fs + 'px');
+  }catch(e){ /* localStorage/matchMedia unavailable — CSS media query still applies */ }
+})();
+</script>
+<link rel="stylesheet" href="house.css">
+<style>
+.cast-row{ display:flex; flex-wrap:wrap; gap:14px 18px; justify-content:center; align-items:flex-end; margin:0 0 1rem; padding:10px; background:var(--surface-1); border:1px solid var(--border); border-radius:var(--border-radius-lg); font-size:.8667rem; }
+.match-wrap .match-col-label{ text-align:center; }
+#picCol .match-card{ font-size:1.35rem; justify-content:center; }
+</style>
+</head>
+<body>
+<div class="page" id="page">
+  <span class="cefr-tag cefr-a1">A1 · Beginner</span>
+  <h1>At the Zoo</h1>
+  <p class="subtitle">Emma and her dad are at the zoo. Emma has a lot of questions!</p>
+
+  <div class="sec-div">Words for this lesson</div>
+  <p class="subtitle">Match the picture and the words. Tap a picture, then tap its words.</p>
+  <div class="score-bar"><span>Matched: <strong id="mScore">0</strong> / <span id="mTotal">0</span></span><button id="mReset">↺ Reset</button></div>
+  <div class="match-grid match-wrap">
+    <div><div class="match-col-label">Picture</div><div class="match-col" id="picCol"></div></div>
+    <div><div class="match-col-label">Words</div><div class="match-col" id="wordCol"></div></div>
+  </div>
+  <div class="win-msg" id="mWin">🎉 Great! You know the words for the conversation.</div>
+  <div class="feedback" id="mFeedback"></div>
+
+  <div class="sec-div">Before you read</div>
+  <div id="preQuestions"></div>
+
+  <div class="sec-div">The people</div>
+  <div class="cast-row" id="castRow"></div>
+
+  <div class="sec-div">The conversation</div>
+  <div class="setting-chip"><span class="section-icon">🦁</span> Saturday morning — the city zoo</div>
+  <button class="grammar-toggle-btn" id="grammarToggle">🎨 Show Grammar</button>
+  <div class="pos-legend"></div>
+  <div id="conversation"></div>
+
+  <div class="sec-div">Check your answers</div>
+  <div id="quiz"></div>
+
+  <footer>At the Zoo — Vocabulary: animals (A1)</footer>
+</div>
+
+<div id="theme-toggle-wrap">
+  <button id="theme-toggle" aria-label="Toggle light/dark mode" title="Toggle light/dark mode">
+    <span id="theme-icon">☀️</span>
+  </button>
+</div>
+<script src="house.js"></script>
+<script src="stick-character.js"></script>
+<script src="stick-sentence.js"></script>
+<script>
+StickSentence.cast({
+  emma: { base:'girl', colour:'#FF66CC', label:'Emma' },
+  dad: { base:'man', colour:'#0066CC', label:'Dad' }
+});
+StickSentence.toggle();
+window.LESSON_DICT = {
+  'zoo':     { pos:'noun', def:'a place where people go to see wild animals', ex:'We went to the zoo on Saturday.', es:'zoológico' },
+  'wing':    { pos:'noun', def:'one of the two parts of a bird or an insect that it uses to fly', ex:'A duck has got two wings.', es:'ala' },
+  'insect':  { pos:'noun', def:'a very small animal with six legs, like an ant or a bee', ex:'Ants are insects.', es:'insecto' },
+  'climb':   { pos:'verb', def:'to go up something, using your hands and feet', ex:'Monkeys can climb trees.', es:'trepar' },
+  'fast':    { pos:'adverb', def:'quickly', ex:'A cheetah can run very fast.', es:'rápido' }
+};
+const WORDS = [['🦆', 'a duck'], ['🦁', 'a lion'], ['🐒', 'a monkey'], ['🐧', 'a penguin'], ['🐄', 'a cow'],
+  ['🐸', 'a frog'], ['🐇', 'a rabbit'], ['🐑', 'a sheep'], ['🐅', 'a tiger'], ['🐋', 'a whale']];
+document.getElementById('castRow').innerHTML = ['{Emma|emma}', '{Dad|dad}'].map(StickSentence.html).join('');
+const SPEAKERS = {
+  Emma: { cast: 'emma', avatar: '👧🏽', av: 'av-b', side: 'right' },
+  Dad:  { cast: 'dad', avatar: '👨🏽', av: 'av-a', side: 'left' }
+};
+const LINES = [
+  ['Emma', '[Dad/noun], [look/verb]! [The penguins/subject]! [They’ve got/verb] [wings/object].'],
+  ['Dad', '[Yes/none], [but/conj] [penguins/subject] [can’t/aux] [fly/verb]. [They/subject] [can/aux] [swim/verb] [very fast/adverb].'],
+  ['Emma', '[Can/aux] [ducks/subject] [fly/verb]?'],
+  ['Dad', '[Yes/none], [they/subject] [can/aux]. [Ducks/subject] [can/aux] [fly/verb] [and/conj] [swim/verb].'],
+  ['Emma', '[Oh/none], [look/verb] [at the monkeys/prep]! [They/subject] [can/aux] [climb/verb] [trees/object].'],
+  ['Dad', '[And/conj] [they/subject] [can/aux] [jump/verb] [a lot/adverb]. [That/subject] [one/none] [has got/verb] [a baby/object] [on its back/prep].'],
+  ['Emma', '[Where/wh] [are/verb] [the lions/subject]?'],
+  ['Dad', '[Over there/adverb]. [The lion/subject] [is/verb] [asleep/adj]. [Lions/subject] [sleep/verb] [twenty hours/time] [a day/time]!'],
+  ['Emma', '[Can/aux] [tigers/subject] [swim/verb]?'],
+  ['Dad', '[Yes/none]! [Tigers/subject] [love/verb] [water/object]. [They/subject] [can/aux] [swim/verb] [very well/adverb].'],
+  ['Emma', '[Is/verb] [there/subject] [a whale/object] [at the zoo/prep]?'],
+  ['Dad', '[No/none], [whales/subject] [are/verb] [too big/adj]. [They/subject] [live/verb] [in the sea/prep].'],
+  ['Emma', '[What’s/wh] [in that small house/prep]?'],
+  ['Dad', '[Insects/subject]. [Ants/subject], [bees/subject], [butterflies/subject] … [Insects/subject] [have got/verb] [six legs/object].'],
+  ['Emma', '[Yuck/none]! [Can/aux] [we/subject] [see/verb] [the farm animals/object]? [I/subject] [want/verb] [to touch/verb] [a rabbit/object]!'],
+  ['Dad', '[OK/none]. [The cows/subject], [the goats/subject] [and/conj] [the sheep/subject] [are/verb] [next to the café/prep]. [Let’s/aux] [go/verb]!']
+];
+const CQ_ITEMS = [
+  { q: 'What can penguins do?', opts: ['Swim very fast', 'Fly', 'Climb trees'], correct: 0 },
+  { q: 'Why is there no whale at the zoo?', opts: ['It’s too big', 'It’s asleep', 'It can’t swim'], correct: 0 },
+  { q: 'What does Emma want to touch?', opts: ['A rabbit', 'A lion', 'An insect'], correct: 0 }
+];
+
+/* ── the conversation ─────────────────────────────────────────────────── */
+const avStyle = s => { const c = (StickSentence.cast()[s.cast] || {}).colour;
+  return c ? 'background:' + c + '40;box-shadow:inset 0 0 0 2px ' + c : ''; };
+const conv = document.getElementById('conversation');
+LINES.forEach(([who, text]) => {
+  const s = SPEAKERS[who], right = s.side === 'right';
+  conv.insertAdjacentHTML('beforeend',
+    '<div class="bubble-wrap' + (right ? ' right' : '') + '">' +
+      '<div class="avatar ' + s.av + '" style="' + avStyle(s) + '">' + s.avatar + '</div>' +
+      '<div class="bubble-col"><div class="bname' + (right ? ' right' : '') + '">' + who + '</div>' +
+      '<div class="bubble ' + (right ? 'right' : 'left') + '">' + StickSentence.html(text) + '</div></div>' +
+    '</div>');
+});
+
+HouseMatching.build({
+  left: 'picCol', right: 'wordCol', scoreEl: 'mScore', totalEl: 'mTotal', winEl: 'mWin', resetBtn: 'mReset', feedbackEl: 'mFeedback',
+  pairs: WORDS.map(([e, w]) => ({ id: w, left: e, right: w }))
+});
+HouseComprehension.build({ pre: 'preQuestions', quiz: 'quiz', items: CQ_ITEMS });
+</script>
+<script>HouseGrammar.init();</script>
+</body>
+</html>

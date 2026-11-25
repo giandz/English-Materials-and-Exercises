@@ -1,0 +1,131 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<title>At the Doctor’s — Health and the Body</title>
+<script>
+(function(){
+  try{
+    var saved = localStorage.getItem('theme-preference');
+    var theme = (saved === 'light' || saved === 'dark')
+      ? saved
+      : ((window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches) ? 'dark' : 'light');
+    document.documentElement.setAttribute('data-theme', theme);
+    var fs = parseFloat(localStorage.getItem('font-size-preference'));
+    if (fs >= 10 && fs <= 28) document.documentElement.style.setProperty('--fs-base', fs + 'px');
+  }catch(e){ /* localStorage/matchMedia unavailable — CSS media query still applies */ }
+})();
+</script>
+<link rel="stylesheet" href="house.css">
+<style>
+/* the prompt on the card: a big picture, then the words */
+.cue-main{ font-size:1.25rem; font-weight:700; margin:4px 0 6px; text-align:center; }
+.cue-main .big{ display:block; font-size:2.6rem; line-height:1.1; margin-bottom:4px; }
+.cue-sub{ font-size:.95rem; color:var(--text-secondary); text-align:center; margin:0 0 4px; }
+.chip{ display:inline-block; padding:2px 10px; margin:2px; border-radius:999px; border:1px solid var(--color-border-tertiary); background:var(--surface-2); font-size:1rem; font-weight:700; }
+.chip-wh{ color:var(--pos-wh); border-color:var(--pos-wh); }
+/* two sides: what usually happens · what is different */
+.duo{ display:flex; align-items:stretch; justify-content:center; gap:10px; flex-wrap:wrap; margin:4px 0 6px; }
+.duo .side{ display:flex; flex-direction:column; align-items:center; gap:2px; min-width:9em; padding:6px 10px; border-radius:10px; border:1px solid var(--color-border-tertiary); background:var(--surface-2); font-weight:700; font-size:1rem; }
+.duo .side .when{ font-size:.8667rem; font-weight:600; color:var(--text-secondary); }
+.duo .side .big{ font-size:2.2rem; line-height:1.1; }
+.who{ font-size:1.1rem; font-weight:700; text-align:center; margin:2px 0 4px; }
+/* only Student A looks */
+.q-card details.secret{ margin:4px 0 6px; width:100%; max-width:460px; text-align:center; }
+.q-card details.secret summary{ font-weight:700; }
+.q-card .secret-body{ padding:8px 12px; }
+.q-card details.check{ margin-top:4px; width:100%; max-width:460px; text-align:left; }
+.q-card .check-body{ padding:8px 12px; font-size:.9rem; }
+.q-card .check-body p{ margin:0 0 4px; }
+</style>
+</head>
+<body>
+<div class="page" id="page">
+  <span class="cefr-tag cefr-a2">A2 · Elementary</span>
+  <h1>What’s the Matter?</h1>
+  <p class="subtitle">Play the doctor and the patient — and talk about staying healthy.</p>
+
+  <div class="rule-box">
+    <p><strong>How to play (pairs, or teacher + student):</strong></p>
+    <p>1. Student A rolls 🎲. There are two kinds of card:</p>
+    <p>🩺 <b>Role-play:</b> open 🤫 — only A looks! A is the <b>patient</b>: say what’s wrong. B is the <b>doctor</b>: ask questions and give advice with <b>should / shouldn’t / must / mustn’t</b>.</p>
+    <p>💬 <b>Talk:</b> answer the question. Then ask your partner.</p>
+    <p>2. Press 👀 for useful phrases. Then change roles.</p>
+  </div>
+
+  <div class="q-card" id="qCard"><span class="q-placeholder">Roll the dice to start.</span></div>
+  <button class="dice-btn" id="diceBtn" aria-label="Roll">🎲</button>
+  <div class="roll-count">Rolls: <strong id="rollCount">0</strong></div>
+
+  <div class="sec-div">Now you</div>
+  <div class="rule-box">
+    <p><strong>Ask your partner about staying healthy.</strong> “<b>What do you do when you have a cold? How many hours do you sleep? What do you do to stay healthy?</b>” Write the answers.</p>
+    <p>Then say: “<b>When Ana has a cold, she drinks hot tea with honey.</b>” Another partner? Press <b>➕ Add partner</b>.</p>
+  </div>
+  <div id="interview"></div>
+
+  <footer>What’s the Matter? — Health and the body (A2)</footer>
+</div>
+
+<div id="theme-toggle-wrap">
+  <button id="theme-toggle" aria-label="Toggle light/dark mode" title="Toggle light/dark mode">
+    <span id="theme-icon">☀️</span>
+  </button>
+</div>
+<script src="house.js"></script>
+<script src="house-interview.js"></script>
+<script>
+const pick = HouseRandomGen.pickFrom;
+const cap = s => s.charAt(0).toUpperCase() + s.slice(1);
+/* one card: a topic line, the cue (hidden from B when it is a secret), what to do, and the 👀 examples */
+const card = o =>
+  '<span class="q-topic">' + o.topic + '</span>' +
+  (o.secret ? '<details class="secret"><summary>' + o.secret + '</summary><div class="secret-body">' : '') +
+  (o.body || '') +
+  (o.pic ? '<div class="cue-main"><span class="big">' + o.pic + '</span>' + (o.cue || '') + '</div>' : (o.cue ? '<div class="cue-main">' + o.cue + '</div>' : '')) +
+  (o.sub ? '<div class="cue-sub">' + o.sub + '</div>' : '') +
+  (o.secret ? '</div></details>' : '') +
+  (o.prompt ? '<span class="q-prompt">' + o.prompt + '</span>' : '') +
+  (o.check ? '<details class="check"><summary>' + (o.checkLabel || '👀 Examples') + '</summary><div class="check-body">' +
+    o.check.map(l => '<p>' + l + '</p>').join('') + '</div></details>' : '');
+/* [picture, problem, when, extra] */
+const PROBLEMS = [
+  ['🤧', 'a bad cold — your nose is running', 'since Monday'], ['🤒', 'a fever — 38.5', 'since last night'], ['😷', 'the flu: a fever and your body hurts', 'for two days'],
+  ['🤢', 'a pain in your stomach', 'after dinner'], ['🦷', 'toothache', 'for a week'], ['🤕', 'a headache', 'every afternoon'],
+  ['🦶', 'a pain in your foot — you fell', 'yesterday'], ['😮‍💨', 'a cough', 'for three weeks'], ['😴', 'you can’t sleep', 'for a month'],
+  ['🦵', 'a pain in your knee — you play soccer', 'since Saturday']
+];
+const TALK = [
+  ['🍵', 'What do you do when you have a cold?', 'I drink hot tea with honey and I …'],
+  ['😴', 'How many hours do you sleep?', 'I usually sleep … hours.'],
+  ['🥦', 'What healthy food do you like?', 'I like … · I should eat more …'],
+  ['🏃', 'What do you do to stay healthy?', 'I walk every day / I …'],
+  ['🍫', 'What unhealthy thing do you love?', 'I love chocolate — I shouldn’t eat so much!'],
+  ['👵', 'What did your grandma do when you were ill?', 'She made me soup / She …'],
+  ['💡', 'Give advice: your friend is always tired.', 'You should … · You shouldn’t …'],
+  ['🦷', 'How often should you see a dentist?', 'You should see a dentist …']
+];
+HouseRandomGen.build({
+  pick: () => Math.random() < 0.6 ? (p => ({ kind: 'p', p, text: p[1] }))(pick(PROBLEMS)) : (t => ({ kind: 't', t, text: t[1] }))(pick(TALK)),
+  key: it => it.text,
+  render: it => it.kind === 'p'
+    ? card({ topic: '🩺 Role-play', secret: '🤫 Patient (A): tap to look', pic: it.p[0], cue: it.p[1], sub: it.p[2],
+        prompt: 'A = patient · B = doctor.',
+        checkLabel: '👀 Useful phrases', check: ['🙋 “I feel ill. · I have a pain in my … · I’ve got a … · It started …”',
+          '🩺 “What’s the matter? · When did it start? · You should … · You shouldn’t … · You must … · You mustn’t … · Get well soon!”'] })
+    : card({ topic: '💬 Talk', pic: it.t[0], cue: it.t[1], prompt: 'Answer. Then ask your partner.', checkLabel: '👀 Help', check: [it.t[2]] })
+});
+HouseInterview.build({
+  container: 'interview', storageKey: 'a2-vocab-health-body',
+  fields: [
+    { icon: '🍵', label: 'when she has a cold', placeholder: 'hot tea with honey…' },
+    { icon: '😴', label: 'hours of sleep', placeholder: 'seven…' },
+    { icon: '🥦', label: 'a healthy food she likes', placeholder: 'spinach…' },
+    { icon: '🏃', label: 'what she does to stay healthy', placeholder: 'walks every day…' },
+    { icon: '💡', label: 'her advice for you', placeholder: 'you should sleep more…' }
+  ]
+});
+</script>
+</body>
+</html>

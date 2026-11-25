@@ -1,0 +1,131 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<title>What’s My Job? — People and Jobs</title>
+<script>
+(function(){
+  try{
+    var saved = localStorage.getItem('theme-preference');
+    var theme = (saved === 'light' || saved === 'dark')
+      ? saved
+      : ((window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches) ? 'dark' : 'light');
+    document.documentElement.setAttribute('data-theme', theme);
+    var fs = parseFloat(localStorage.getItem('font-size-preference'));
+    if (fs >= 10 && fs <= 28) document.documentElement.style.setProperty('--fs-base', fs + 'px');
+  }catch(e){ /* localStorage/matchMedia unavailable — CSS media query still applies */ }
+})();
+</script>
+<link rel="stylesheet" href="house.css">
+<style>
+/* the prompt on the card: a big picture, then the words */
+.cue-main{ font-size:1.25rem; font-weight:700; margin:4px 0 6px; text-align:center; }
+.cue-main .big{ display:block; font-size:2.6rem; line-height:1.1; margin-bottom:4px; }
+.cue-sub{ font-size:.95rem; color:var(--text-secondary); text-align:center; margin:0 0 4px; }
+.chip{ display:inline-block; padding:2px 10px; margin:2px; border-radius:999px; border:1px solid var(--color-border-tertiary); background:var(--surface-2); font-size:1rem; font-weight:700; }
+.chip-wh{ color:var(--pos-wh); border-color:var(--pos-wh); }
+/* two sides: what usually happens · what is different */
+.duo{ display:flex; align-items:stretch; justify-content:center; gap:10px; flex-wrap:wrap; margin:4px 0 6px; }
+.duo .side{ display:flex; flex-direction:column; align-items:center; gap:2px; min-width:9em; padding:6px 10px; border-radius:10px; border:1px solid var(--color-border-tertiary); background:var(--surface-2); font-weight:700; font-size:1rem; }
+.duo .side .when{ font-size:.8667rem; font-weight:600; color:var(--text-secondary); }
+.duo .side .big{ font-size:2.2rem; line-height:1.1; }
+.who{ font-size:1.1rem; font-weight:700; text-align:center; margin:2px 0 4px; }
+/* only Student A looks */
+.q-card details.secret{ margin:4px 0 6px; width:100%; max-width:460px; text-align:center; }
+.q-card details.secret summary{ font-weight:700; }
+.q-card .secret-body{ padding:8px 12px; }
+.q-card details.check{ margin-top:4px; width:100%; max-width:460px; text-align:left; }
+.q-card .check-body{ padding:8px 12px; font-size:.9rem; }
+.q-card .check-body p{ margin:0 0 4px; }
+</style>
+</head>
+<body>
+<div class="page" id="page">
+  <span class="cefr-tag cefr-a2">A2 · Elementary</span>
+  <h1>What’s My Job?</h1>
+  <p class="subtitle">Guess the job — and talk about the jobs in your life.</p>
+
+  <div class="rule-box">
+    <p><strong>How to play (pairs, or teacher + student):</strong></p>
+    <p>1. Student A rolls 🎲. There are two kinds of card:</p>
+    <p>🤫 <b>Guess:</b> only A looks at the job. A says: “<b>It’s a person who…</b>” — but not the job! B guesses. B can ask: “<b>Do you work outside? Do you wear a uniform?</b>”</p>
+    <p>💬 <b>Talk:</b> answer the question. Then ask your partner.</p>
+    <p>2. Press 👀 for help. Then change: B rolls.</p>
+  </div>
+
+  <div class="q-card" id="qCard"><span class="q-placeholder">Roll the dice to start.</span></div>
+  <button class="dice-btn" id="diceBtn" aria-label="Roll">🎲</button>
+  <div class="roll-count">Rolls: <strong id="rollCount">0</strong></div>
+
+  <div class="sec-div">Now you</div>
+  <div class="rule-box">
+    <p><strong>Ask your partner about work.</strong> “<b>What do you do? What’s your dream job? What jobs do people in your family do?</b>” Write the answers.</p>
+    <p>Then say: “<b>Ana is an assistant. Her dream job is photographer. Her brother is a firefighter.</b>” Another partner? Press <b>➕ Add partner</b>.</p>
+  </div>
+  <div id="interview"></div>
+
+  <footer>What’s My Job? — People and jobs (A2)</footer>
+</div>
+
+<div id="theme-toggle-wrap">
+  <button id="theme-toggle" aria-label="Toggle light/dark mode" title="Toggle light/dark mode">
+    <span id="theme-icon">☀️</span>
+  </button>
+</div>
+<script src="house.js"></script>
+<script src="house-interview.js"></script>
+<script>
+const pick = HouseRandomGen.pickFrom;
+const cap = s => s.charAt(0).toUpperCase() + s.slice(1);
+/* one card: a topic line, the cue (hidden from B when it is a secret), what to do, and the 👀 examples */
+const card = o =>
+  '<span class="q-topic">' + o.topic + '</span>' +
+  (o.secret ? '<details class="secret"><summary>' + o.secret + '</summary><div class="secret-body">' : '') +
+  (o.body || '') +
+  (o.pic ? '<div class="cue-main"><span class="big">' + o.pic + '</span>' + (o.cue || '') + '</div>' : (o.cue ? '<div class="cue-main">' + o.cue + '</div>' : '')) +
+  (o.sub ? '<div class="cue-sub">' + o.sub + '</div>' : '') +
+  (o.secret ? '</div></details>' : '') +
+  (o.prompt ? '<span class="q-prompt">' + o.prompt + '</span>' : '') +
+  (o.check ? '<details class="check"><summary>' + (o.checkLabel || '👀 Examples') + '</summary><div class="check-body">' +
+    o.check.map(l => '<p>' + l + '</p>').join('') + '</div></details>' : '');
+/* [picture, job, help] */
+const JOBS = [
+  ['🧑‍🚒', 'a firefighter', 'puts out fires'], ['📸', 'a photographer', 'takes pictures'], ['🎭', 'an actor / actress', 'acts in films and plays'],
+  ['💃', 'a dancer', 'dances in shows'], ['✍️', 'a writer', 'writes books'], ['🎨', 'a painter', 'paints pictures — or houses!'],
+  ['🍽️', 'a waiter / waitress', 'brings food to the tables'], ['👮', 'a police officer', 'keeps people safe'], ['🗂️', 'a secretary', 'answers the phone and writes emails in an office'],
+  ['💼', 'a businessman / businesswoman', 'works in business'], ['👩‍🏫', 'a teacher', 'helps people learn'], ['🧑‍🍳', 'a chef', 'cooks in a restaurant'],
+  ['🧑‍⚕️', 'a nurse', 'looks after sick people'], ['🧑‍✈️', 'a pilot', 'flies planes'], ['🧑‍🌾', 'a farmer', 'grows food and has animals'], ['💇', 'a hairdresser', 'cuts hair']
+];
+const TALK = [
+  ['💼', 'What do you do? Do you like it?', 'I’m a / an … · I work as a … · I like it because …'],
+  ['🌟', 'What’s your dream job? Why?', 'My dream job is … because …'],
+  ['👨‍👩‍👧', 'What jobs do people in your family do?', 'My mother is a … · My brother works as a …'],
+  ['🙅', 'What job would you never do? Why?', 'I’d never be a … because …'],
+  ['🧒', 'What did you want to be when you were a child?', 'I wanted to be a …'],
+  ['💪', 'Who’s the hardest-working person you know?', 'It’s my … — a person who …'],
+  ['👯', 'Do you know any twins? Are they the same?', 'Yes, my … are twins. / No, I don’t.'],
+  ['🏆', 'Describe a famous person: “It’s a person who…”', 'It’s a person who sings / acts / plays …']
+];
+HouseRandomGen.build({
+  pick: () => Math.random() < 0.6 ? (j => ({ kind: 'g', j, text: j[1] }))(pick(JOBS)) : (t => ({ kind: 't', t, text: t[1] }))(pick(TALK)),
+  key: it => it.text,
+  render: it => it.kind === 'g'
+    ? card({ topic: '🤫 Guess', secret: '🤫 Student A: tap to look (B: don’t look!)', pic: it.j[0], cue: it.j[1], sub: 'a person who ' + it.j[2],
+        prompt: 'A: “It’s a person who…” B: guess.',
+        checkLabel: '👀 Questions', check: ['Do you work outside / in an office / at night?', 'Do you wear a uniform? · Do you work with people / animals / food?', 'Is it dangerous? · Do you need to go to college?'] })
+    : card({ topic: '💬 Talk', pic: it.t[0], cue: it.t[1], prompt: 'Answer. Then ask your partner.', checkLabel: '👀 Help', check: [it.t[2]] })
+});
+HouseInterview.build({
+  container: 'interview', storageKey: 'a2-vocab-people-jobs',
+  fields: [
+    { icon: '💼', label: 'job', placeholder: 'an assistant…' },
+    { icon: '🌟', label: 'dream job', placeholder: 'a photographer…' },
+    { icon: '👨‍👩‍👧', label: 'jobs in the family', placeholder: 'brother: a firefighter…' },
+    { icon: '🙅', label: 'a job she would never do', placeholder: 'a dentist…' },
+    { icon: '🧒', label: 'as a child, she wanted to be…', placeholder: 'a dancer…' }
+  ]
+});
+</script>
+</body>
+</html>

@@ -1,0 +1,97 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<title>Money, Shopping and Materials — Practice</title>
+<script>
+(function(){
+  try{
+    var saved = localStorage.getItem('theme-preference');
+    var theme = (saved === 'light' || saved === 'dark')
+      ? saved
+      : ((window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches) ? 'dark' : 'light');
+    document.documentElement.setAttribute('data-theme', theme);
+    var fs = parseFloat(localStorage.getItem('font-size-preference'));
+    if (fs >= 10 && fs <= 28) document.documentElement.style.setProperty('--fs-base', fs + 'px');
+  }catch(e){ /* localStorage/matchMedia unavailable — CSS media query still applies */ }
+})();
+</script>
+<link rel="stylesheet" href="house.css">
+<style>
+
+</style>
+</head>
+<body>
+<div class="page" id="page">
+  <span class="cefr-tag cefr-a2">A2 · Elementary</span>
+  <h1>Money, Shopping and Materials — Practice</h1>
+  <p class="subtitle">Shop, pay — and say what things are made of.</p>
+
+  <div class="sec-div">Practice 1 — Match the halves</div>
+  <p class="subtitle">Tap the start of a sentence, then tap its end.</p>
+  <div class="score-bar"><span>Matched: <strong id="mScore">0</strong> / <span id="mTotal">0</span></span><button id="mReset">↺ Reset</button></div>
+  <div class="match-grid">
+    <div><div class="match-col-label">Start</div><div class="match-col" id="leftCol"></div></div>
+    <div><div class="match-col-label">End</div><div class="match-col" id="rightCol"></div></div>
+  </div>
+  <div class="win-msg" id="mWin">🎉 All matched!</div>
+  <div class="feedback" id="mFeedback"></div>
+
+  <div class="sec-div">Practice 2 — Word order</div>
+  <p class="subtitle">Tap the words to build the sentence. Tap a word again to take it back, or drag to change the order.</p>
+  <button class="grammar-toggle-btn" id="grammarToggle">🎨 Show Grammar</button>
+  <div class="pos-legend"></div>
+  <div class="score-bar"><span>Correct: <strong id="woScore">0</strong> / <span id="woTotal">0</span></span></div>
+  <div id="woItems"></div>
+
+  <div class="sec-div">Practice 3 — Complete the sentences</div>
+  <p class="subtitle">Write the missing word. The bar turns green 🔴→🟢 when you are right.</p>
+  <div id="gfItems"></div>
+
+  <footer>Money, shopping and materials — Vocabulary practice (A2)</footer>
+</div>
+
+<div id="theme-toggle-wrap">
+  <button id="theme-toggle" aria-label="Toggle light/dark mode" title="Toggle light/dark mode">
+    <span id="theme-icon">☀️</span>
+  </button>
+</div>
+<script src="house.js"></script>
+<script>
+const HALVES = [
+  ['Can I pay', 'by credit card?'], ['These belts are', 'on sale this week.'], ['My grandma’s ring is', 'made of gold.'],
+  ['I need a new pair of', 'jeans for work.'], ['Here’s your receipt.', 'Have a nice day!'], ['Raincoats are', 'on the second floor.'],
+  ['Sorry, I don’t have', 'any cash — only my card.'], ['This bag of rice', 'weighs two kilograms.']
+];
+const WO_ITEMS = [
+  { context: '💳 At the checkout', text: 'Can / I / pay / in / cash?', pos: ['aux', 'subject', 'verb', 'prep', 'object'] },
+  { context: '🧶 A sweater', text: 'It’s / made / of / wool.', pos: ['subject', 'verb', 'prep', 'noun'] },
+  { context: '🏷️ A good price', text: 'These / jeans / are / on sale.', pos: ['det', 'subject', 'verb', 'adj'] },
+  { context: '🪙 In my pocket', text: 'I / have / some / coins / for the bus.', pos: ['subject', 'verb', 'det', 'object', 'prep'] },
+  { context: '👖 Shopping list', text: 'I / need / a pair of / black pants.', pos: ['subject', 'verb', 'det', 'object'] },
+  { context: '💸 How much?', text: 'How much / is / this wooden box?', pos: ['wh', 'verb', 'subject'] }
+];
+const GF_LABELS = { money: 'money', mat: 'materials', shop: 'shopping' };
+const GF_ITEMS = [
+  { category: 'money', direct: 'Bills and coins — not a card.', template: 'Can I pay in {0}?', hints: [{ accepted: ['cash'] }] },
+  { category: 'money', direct: 'You keep your money and cards in it.', template: 'I can’t find my {0}! My cards are in it.', hints: [{ accepted: ['wallet'] }] },
+  { category: 'money', direct: 'Small round money made of metal.', template: 'I have some {0} for the parking meter.', hints: [{ accepted: ['coins'] }] },
+  { category: 'mat', direct: 'It comes from sheep.', template: 'This sweater is made of {0}.', hints: [{ accepted: ['wool'] }] },
+  { category: 'mat', direct: 'An adjective — from trees.', template: 'We have a big {0} table in the kitchen.', hints: [{ accepted: ['wooden'] }] },
+  { category: 'mat', direct: 'A metal — not gold.', template: 'She wears a {0} ring.', hints: [{ accepted: ['silver'] }] },
+  { category: 'shop', direct: 'A big building with many stores.', template: 'Let’s go to the {0} on Saturday.', hints: [{ accepted: ['mall'] }] },
+  { category: 'shop', direct: 'Cheaper than usual for a short time.', template: 'Everything is on {0} this week!', hints: [{ accepted: ['sale'] }] },
+  { category: 'shop', direct: 'The paper that shows what you paid.', template: 'Keep the {0} — you can return it.', hints: [{ accepted: ['receipt'] }] }
+];
+
+HouseMatching.build({
+  left: 'leftCol', right: 'rightCol', scoreEl: 'mScore', totalEl: 'mTotal', winEl: 'mWin', resetBtn: 'mReset', feedbackEl: 'mFeedback',
+  pairs: HALVES.map(([a, b], i) => ({ id: 'h' + i, left: a, right: b }))
+});
+HouseWordOrder.build({ container: 'woItems', items: WO_ITEMS, scoreEl: 'woScore', totalEl: 'woTotal' });
+HouseGapFill.build({ container: 'gfItems', items: GF_ITEMS, labels: GF_LABELS });
+</script>
+<script>HouseGrammar.init();</script>
+</body>
+</html>

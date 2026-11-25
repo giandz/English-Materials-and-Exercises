@@ -1,0 +1,188 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<title>Free Time and Places — Clarification</title>
+<script>
+(function(){
+  try{
+    var saved = localStorage.getItem('theme-preference');
+    var theme = (saved === 'light' || saved === 'dark')
+      ? saved
+      : ((window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches) ? 'dark' : 'light');
+    document.documentElement.setAttribute('data-theme', theme);
+    var fs = parseFloat(localStorage.getItem('font-size-preference'));
+    if (fs >= 10 && fs <= 28) document.documentElement.style.setProperty('--fs-base', fs + 'px');
+  }catch(e){ /* localStorage/matchMedia unavailable — CSS media query still applies */ }
+})();
+</script>
+<link rel="stylesheet" href="house.css">
+<style>
+.flow-card{ border:1px solid var(--color-border-tertiary); border-radius:var(--border-radius-lg); background:var(--surface-2); padding:10px 12px; margin-bottom:10px; }
+.flow-card .sent{ font-size:1rem; font-weight:600; margin-bottom:6px; }
+.flow-card .note{ font-size:.8333rem; color:var(--text-secondary); margin-top:4px; }
+.if-part{ color:hsl(217, 70%, 42%); font-weight:700; }
+.res-part{ color:hsl(120, 60%, 32%); font-weight:700; }
+.res-no{ color:hsl(0, 65%, 42%); font-weight:700; }
+[data-theme="dark"] .res-no{ color:hsl(0, 75%, 70%); }
+[data-theme="dark"] .if-part{ color:hsl(217, 80%, 70%); }
+[data-theme="dark"] .res-part{ color:hsl(120, 55%, 65%); }
+.form-table{ width:100%; border-collapse:collapse; margin:0 0 1rem; font-size:.9333rem; }
+.form-table th, .form-table td{ border:1px solid var(--color-border-tertiary); padding:7px 9px; text-align:left; vertical-align:top; }
+.form-table th{ background:var(--surface-1); font-size:.8rem; text-transform:uppercase; letter-spacing:.04em; color:var(--text-secondary); }
+.pct-row{ display:flex; flex-wrap:wrap; gap:6px; margin:0 0 1rem; }
+.pct-row span{ padding:3px 10px; border-radius:999px; font-weight:700; font-size:.8667rem; border:2px solid; }
+.rule-box p{ margin:0 0 6px; }
+.rule-box p:last-child{ margin-bottom:0; }
+.big-pic{ font-size:1.6rem; letter-spacing:.1em; margin:2px 0 4px; }
+.hl{ font-weight:700; color:var(--text-accent); }
+</style>
+</head>
+<body>
+<div class="page" id="page">
+  <span class="cefr-tag cefr-a2">A2 · Elementary</span>
+  <h1>Free Time and Places</h1>
+  <p class="subtitle">Hobbies and places to go — and how to say what you enjoy doing.</p>
+
+  <div class="sec-div">Look</div>
+  <p class="subtitle">From the conversation. Look at the highlighted words.</p>
+  <div id="look"></div>
+
+  <div class="sec-div">Meaning 1 — How much do you like it?</div>
+  <p class="subtitle">Put the words in order. Drag a word to its place, or tap a word and then tap a place.</p>
+  <div class="score-bar"><span>Done: <strong id="scScore">0</strong> / <span id="scTotal">0</span></span></div>
+  <div id="scales"></div>
+
+  <div class="sec-div">Meaning 2 — Words that go together</div>
+  <p class="subtitle">Which words go with the word in the box? Tap all the right ones.</p>
+  <div class="score-bar"><span>Done: <strong id="coScore">0</strong> / <span id="coTotal">0</span></span></div>
+  <div id="forks"></div>
+
+  <div class="sec-div">Meaning 3 — Groups</div>
+  <p class="subtitle">Put each word in its group. Drag it, or tap it and then tap a group.</p>
+  <div class="score-bar"><span>Done: <strong id="soScore">0</strong> / <span id="soTotal">0</span></span></div>
+  <div id="sorts"></div>
+
+  <div class="sec-div">Mystery places</div>
+  <p class="subtitle">The same place is behind every ❓. Type it! The first clue gives ⭐⭐⭐ — every new clue or wrong guess costs a star.</p>
+  <div class="score-bar"><span>Stars: <strong id="myScore">0</strong> / <span id="myTotal">0</span> ⭐</span></div>
+  <div id="mystery"></div>
+
+  <div class="rule-box" id="meaning"></div>
+
+  <div class="sec-div">Check the meaning</div>
+  <p class="subtitle">Answer the questions about each sentence.</p>
+  <div id="ccq"></div>
+
+  <div class="sec-div">Form — verb + -ing</div>
+  <div class="rule-box" id="formRule"></div>
+
+  <div class="sec-div">Common mistakes</div>
+  <div id="mistakes"></div>
+
+  <div class="sec-div">Error hunt</div>
+  <p class="subtitle">Some sentences have one mistake. Some are correct! Tap a word — or a space between words — to fix it. Then press OK.</p>
+  <div class="score-bar"><span>Done: <strong id="errorScore">0</strong> / <span id="errorTotal">0</span></span></div>
+  <div id="errorHuntItems"></div>
+  <footer>Free time and places — Vocabulary clarification (A2)</footer>
+</div>
+
+<div id="theme-toggle-wrap">
+  <button id="theme-toggle" aria-label="Toggle light/dark mode" title="Toggle light/dark mode">
+    <span id="theme-icon">☀️</span>
+  </button>
+</div>
+<script src="house.js"></script>
+<script src="house-vocab.js"></script>
+<script>
+const LOOK = [
+  ['I <span class="hl">love fishing</span>. … I <span class="hl">hate waiting</span>!', '<div class="big-pic">😍🎣 · 😖⏳</div>',
+    '<b>love / like / enjoy / don’t mind / hate</b> + verb<b>-ing</b>'],
+  ['I’m not good at <span class="hl">flying kites</span>, but I love <span class="hl">watching</span> them.', '<div class="big-pic">🪁</div>',
+    'we <b>fly</b> a kite · <b>good at</b> + -ing'],
+  ['There’s an old <span class="hl">castle</span> on the hill, with a tall <span class="hl">tower</span>.', '<div class="big-pic">🏰 · 🗼</div>', 'places to visit']
+];
+const SCALES = [
+  { title: 'How much do you like it?', low: { label: 'not at all', icon: '😖' }, high: { label: 'a lot!', icon: '😍' },
+    words: ['hate', 'don’t like', 'don’t mind', 'like', 'love'], hues: [0, 120], note: 'I hate → I don’t like → I don’t mind (it’s OK) → I like → I love … fishing' }
+];
+const FORKS = [
+  { word: 'go', icon: '🚶', side: 'after', options: [
+    { text: 'fishing', ok: true }, { text: 'swimming', ok: true }, { text: 'to the theater', ok: true },
+    { text: 'to fishing', ok: false, why: '<b>go</b> + -ing, with no <i>to</i>: <i>go fishing, go swimming</i>.' }, { text: 'fish', ok: false, why: 'We say <b>go fishing</b>.' } ] },
+  { word: 'play', icon: '🎻', side: 'after', options: [
+    { text: 'the violin', ok: true }, { text: 'chess', ok: true }, { text: 'soccer', ok: true },
+    { text: 'magic', ok: false, why: 'We <b>do</b> magic (tricks).' }, { text: 'a kite', ok: false, why: 'We <b>fly</b> a kite.' } ] },
+  { word: 'a joke', icon: '😂', side: 'before', options: [
+    { text: 'tell', ok: true }, { text: 'make', ok: true }, { text: 'laugh at', ok: true },
+    { text: 'say', ok: false, why: 'We <b>tell</b> a joke (not <i>say</i> a joke).' } ] },
+  { word: 'enjoy', icon: '😊', side: 'after', options: [
+    { text: 'swimming', ok: true }, { text: 'taking photos', ok: true }, { text: 'the show', ok: true },
+    { text: 'to swim', ok: false, why: '<b>enjoy</b> + -ing: <i>I enjoy swimming</i>.' } ] }
+];
+const SORTS = [
+  { title: 'Places to go', groups: [{ label: 'see a show or a game', icon: '🎟️' }, { label: 'visit old buildings', icon: '🏛️' }, { label: 'be in nature', icon: '🌲' }],
+    words: [['theater', 0, 'At the <b>theater</b> you see plays: a show.'], ['circus', 0, 'At the <b>circus</b> you see a show: clowns, magic…'], ['stadium', 0, 'At the <b>stadium</b> you watch a game or a concert.'],
+      ['castle', 1, 'A <b>castle</b> is a very old building.'], ['tower', 1, 'Many old <b>towers</b> are hundreds of years old.'], ['museum', 1, 'Many <b>museums</b> are in old buildings.'],
+      ['forest', 2, 'A <b>forest</b> is a lot of trees: nature.'], ['cave', 2, 'A <b>cave</b> is a big hole in a mountain: nature.'], ['lake', 2, 'A <b>lake</b> is nature.']] },
+  { title: 'Which verbs take -ing?', groups: [{ label: '+ -ing', icon: '🔁' }, { label: '+ to …', icon: '➡️' }, { label: 'both are OK', icon: '✌️' }],
+    words: [['enjoy', 0, 'I <b>enjoy fishing</b> (not <s>to fish</s>).'], ['don’t mind', 0, 'I <b>don’t mind waiting</b>.'], ['finish', 0, 'I <b>finished reading</b>.'],
+      ['want', 1, 'I <b>want to go</b> (not <s>going</s>).'], ['would like', 1, 'I’d <b>like to go</b>.'], ['decide', 1, 'We <b>decided to stay</b>.'],
+      ['love', 2, 'I <b>love swimming</b> = I <b>love to swim</b>.'], ['like', 2, 'I <b>like dancing</b> = I <b>like to dance</b>.'], ['hate', 2, 'I <b>hate waiting</b> = I <b>hate to wait</b>.']],
+    note: 'enjoy / don’t mind + -ing · want / would like + to · love / like / hate: both' }
+];
+const MYSTERY = [
+  { answer: 'stadium', pic: '🏟️', clues: ['A ❓ is a place where you watch soccer games.', 'A ❓ is very big — it has thousands of seats.', 'Sometimes there are concerts in a ❓, too.'] },
+  { answer: 'cave', pic: '🕳️', clues: ['A ❓ is dark inside.', 'Bats often live in a ❓.', 'A ❓ is a big hole in a mountain or under the ground.'] },
+  { answer: 'circus', pic: '🎪', clues: ['At the ❓ you can see clowns.', 'The ❓ has a big tent.', 'At the ❓ people do magic tricks and fly through the air!'] }
+];
+const MEANING = '<p><strong>love · enjoy · like · don’t mind · don’t like · hate</strong> + <b>-ing</b>: <i>I enjoy <b>taking</b> photos. I don’t mind <b>waiting</b>.</i></p>' +
+  '<p><strong>be good at</strong> + -ing: <i>I’m good at <b>telling</b> jokes.</i> · <strong>How about</strong> + -ing? <i>How about <b>visiting</b> the castle?</i></p>' +
+  '<p><strong>go</strong> + -ing for activities: <i>go fishing, go swimming, go dancing</i> — but <i>go <b>to</b> the theater</i>.</p>';
+const CCQ = [
+  { sentence: 'I don’t mind magic.', questions: [
+    { q: 'Is magic OK for her?', opts: ['Yes', 'No'], correct: 0, why: 'Yes. <b>don’t mind</b> = it’s OK.' },
+    { q: 'Does she love it?', opts: ['Yes', 'No'], correct: 1, why: 'No — it’s just OK.' } ] },
+  { sentence: 'There’s a kite competition in the park.', questions: [
+    { q: 'Do people try to win?', opts: ['Yes', 'No'], correct: 0, why: 'Yes. In a <b>competition</b>, people try to win.' } ] },
+  { sentence: 'I’m not good at flying kites.', questions: [
+    { q: 'Can he fly a kite well?', opts: ['Yes', 'No'], correct: 1, why: 'No. <b>not good at</b> = he can’t do it well.' } ] }
+];
+const FORM_RULE = '<p><strong>Most verbs:</strong> + ing → fish<b>ing</b>, play<b>ing</b>, watch<b>ing</b></p>' +
+  '<p><strong>-e:</strong> take → tak<b>ing</b> · dance → danc<b>ing</b> · <strong>double:</strong> swim → swim<b>ming</b> · run → run<b>ning</b> · <strong>-ie:</strong> lie → l<b>ying</b></p>' +
+  '<p><strong>The -ing word is the thing you like:</strong> <i>I love <b>fishing</b>. <b>Fishing</b> is fun.</i></p>';
+const MISTAKES = [
+  ['I enjoy to fish.', 'I enjoy fishing.'],
+  ['Let’s go to fishing.', 'Let’s go fishing.'],
+  ['I’m good in flying kites.', 'I’m good at flying kites.'],
+  ['He likes play the violin.', 'He likes playing the violin. / He likes to play the violin.'],
+  ['She said a very funny joke.', 'She told a very funny joke.']
+];
+const EH_ITEMS = [
+  { words: ['I', 'enjoy', 'fish', '.'], error: { type: 'wrong', wordIndex: 2, options: ['fishing', 'to fish', 'fished'], correct: 'fishing' } },
+  { words: ['Let’s', 'go', 'to', 'fishing', '.'], error: { type: 'extra', wordIndex: 2 } },
+  { words: ['I’m', 'good', 'in', 'flying', 'kites', '.'], error: { type: 'wrong', wordIndex: 2, options: ['at', 'on', 'for'], correct: 'at' } },
+  { words: ['My', 'sister', 'plays', 'the', 'violin', '.'], error: null },
+  { words: ['She', 'told', 'a', 'very', 'funny', 'joke', '.'], error: null },
+  { words: ['He', 'doesn’t', 'mind', 'wait', 'for', 'the', 'bus', '.'], error: { type: 'wrong', wordIndex: 3, options: ['waiting', 'to wait', 'waits'], correct: 'waiting' } },
+  { words: ['How', 'about', 'visit', 'the', 'castle', '?'], error: { type: 'wrong', wordIndex: 2, options: ['visiting', 'to visit', 'visited'], correct: 'visiting' } },
+  { words: ['We', 'swiming', 'in', 'the', 'lake', 'every', 'summer', '.'], error: { type: 'wrong', wordIndex: 1, options: ['go swimming', 'swimming go', 'go swim'], correct: 'go swimming' } }
+];
+
+document.getElementById('look').innerHTML = LOOK.map(([sent, vis, note]) =>
+  '<div class="flow-card"><div class="sent">' + sent + '</div>' + (vis || '') + (note ? '<div class="note">' + note + '</div>' : '') + '</div>').join('');
+HouseScale.build({ container: 'scales', items: SCALES, scoreEl: 'scScore', totalEl: 'scTotal' });
+HouseCollocate.build({ container: 'forks', items: FORKS, scoreEl: 'coScore', totalEl: 'coTotal' });
+HouseSort.build({ container: 'sorts', items: SORTS, scoreEl: 'soScore', totalEl: 'soTotal' });
+HouseMystery.build({ container: 'mystery', items: MYSTERY, scoreEl: 'myScore', totalEl: 'myTotal' });
+document.getElementById('meaning').innerHTML = MEANING;
+HouseCCQ.build({ container: 'ccq', items: CCQ });
+document.getElementById('formRule').innerHTML = FORM_RULE;
+document.getElementById('mistakes').innerHTML = MISTAKES.map(([no, yes]) =>
+  '<div class="pair-card"><div class="pair-line no"><span class="mark">✗</span>' + no + '</div>' +
+  '<div class="pair-line yes"><span class="mark">✓</span>' + yes + '</div></div>').join('');
+HouseErrorHunt.build({ container: 'errorHuntItems', items: EH_ITEMS, scoreEl: 'errorScore', totalEl: 'errorTotal' });
+</script>
+</body>
+</html>

@@ -1,0 +1,200 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<title>School and Study — Clarification</title>
+<script>
+(function(){
+  try{
+    var saved = localStorage.getItem('theme-preference');
+    var theme = (saved === 'light' || saved === 'dark')
+      ? saved
+      : ((window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches) ? 'dark' : 'light');
+    document.documentElement.setAttribute('data-theme', theme);
+    var fs = parseFloat(localStorage.getItem('font-size-preference'));
+    if (fs >= 10 && fs <= 28) document.documentElement.style.setProperty('--fs-base', fs + 'px');
+  }catch(e){ /* localStorage/matchMedia unavailable — CSS media query still applies */ }
+})();
+</script>
+<link rel="stylesheet" href="house.css">
+<style>
+.flow-card{ border:1px solid var(--color-border-tertiary); border-radius:var(--border-radius-lg); background:var(--surface-2); padding:10px 12px; margin-bottom:10px; }
+.flow-card .sent{ font-size:1rem; font-weight:600; margin-bottom:6px; }
+.flow-card .note{ font-size:.8333rem; color:var(--text-secondary); margin-top:4px; }
+.if-part{ color:hsl(217, 70%, 42%); font-weight:700; }
+.res-part{ color:hsl(120, 60%, 32%); font-weight:700; }
+.res-no{ color:hsl(0, 65%, 42%); font-weight:700; }
+[data-theme="dark"] .res-no{ color:hsl(0, 75%, 70%); }
+[data-theme="dark"] .if-part{ color:hsl(217, 80%, 70%); }
+[data-theme="dark"] .res-part{ color:hsl(120, 55%, 65%); }
+.form-table{ width:100%; border-collapse:collapse; margin:0 0 1rem; font-size:.9333rem; }
+.form-table th, .form-table td{ border:1px solid var(--color-border-tertiary); padding:7px 9px; text-align:left; vertical-align:top; }
+.form-table th{ background:var(--surface-1); font-size:.8rem; text-transform:uppercase; letter-spacing:.04em; color:var(--text-secondary); }
+.pct-row{ display:flex; flex-wrap:wrap; gap:6px; margin:0 0 1rem; }
+.pct-row span{ padding:3px 10px; border-radius:999px; font-weight:700; font-size:.8667rem; border:2px solid; }
+.rule-box p{ margin:0 0 6px; }
+.rule-box p:last-child{ margin-bottom:0; }
+.big-pic{ font-size:1.6rem; letter-spacing:.1em; margin:2px 0 4px; }
+.hl{ font-weight:700; color:var(--text-accent); }
+</style>
+</head>
+<body>
+<div class="page" id="page">
+  <span class="cefr-tag cefr-a1a2">A1/A2 · Elementary</span>
+  <h1>School and Study</h1>
+  <p class="subtitle">Things for studying — and classroom instructions: Open your books! Don’t talk!</p>
+
+  <div class="sec-div">Look</div>
+  <p class="subtitle">From the conversation. Look at the highlighted words.</p>
+  <div id="look"></div>
+
+  <div class="sec-div">Meaning 1 — On the desk</div>
+  <p class="subtitle">Drag each word to its box, or tap a word and then tap a box.</p>
+  <div class="score-bar"><span>Done: <strong id="lbScore">0</strong> / <span id="lbTotal">0</span></span></div>
+  <div id="pictures"></div>
+
+  <div class="sec-div">Listen — The teacher says…</div>
+  <p class="subtitle">Tap 🔊. What does the teacher say? Tap the answer.</p>
+  <div class="score-bar"><span>Done: <strong id="liScore">0</strong> / <span id="liTotal">0</span></span></div>
+  <div id="listen"></div>
+
+  <div class="sec-div">Meaning 2 — Groups</div>
+  <p class="subtitle">Put each word in its group. Drag it, or tap it and then tap a group.</p>
+  <div class="score-bar"><span>Done: <strong id="soScore">0</strong> / <span id="soTotal">0</span></span></div>
+  <div id="sorts"></div>
+
+  <div class="sec-div">Mystery things</div>
+  <p class="subtitle">Read the clue. What is it? Fewer clues = more ⭐.</p>
+  <div class="score-bar"><span>Stars: <strong id="myScore">0</strong> / <span id="myTotal">0</span> ⭐</span></div>
+  <div id="mystery"></div>
+
+  <div class="sec-div">Use — Words that go together</div>
+  <p class="subtitle">Which words go with the word in the box? Tap all the right ones.</p>
+  <div class="score-bar"><span>Done: <strong id="coScore">0</strong> / <span id="coTotal">0</span></span></div>
+  <div id="forks"></div>
+
+  <div class="rule-box" id="meaning"></div>
+
+  <div class="sec-div">Check the meaning</div>
+  <p class="subtitle">Answer the questions about each sentence.</p>
+  <div id="ccq"></div>
+
+  <div class="sec-div">Form — Two words, one word</div>
+  <div class="rule-box" id="formRule"></div>
+
+  <div class="sec-div">Common mistakes</div>
+  <div id="mistakes"></div>
+
+  <div class="sec-div">Error hunt</div>
+  <p class="subtitle">Every sentence has one mistake. Tap a word — or a space between words — to fix it. Then press OK.</p>
+  <div class="score-bar"><span>Done: <strong id="errorScore">0</strong> / <span id="errorTotal">0</span></span></div>
+  <div id="errorHuntItems"></div>
+  <footer>School and study — Vocabulary clarification (A1/A2)</footer>
+</div>
+
+<div id="theme-toggle-wrap">
+  <button id="theme-toggle" aria-label="Toggle light/dark mode" title="Toggle light/dark mode">
+    <span id="theme-icon">☀️</span>
+  </button>
+</div>
+<script src="house.js"></script>
+<script src="house-vocab.js"></script>
+<script>
+const LOOK = [
+  ['<span class="hl">Open</span> your textbooks to page 10.', '<div class="big-pic">📖 → 10</div>', 'an instruction: start with the <b>verb</b> — <i>Open… Read… Write…</i>'],
+  ['<span class="hl">Don’t use</span> your phone dictionary yet.', '<div class="big-pic">🚫📱</div>', '<b>Don’t</b> + verb = don’t do it'],
+  ['<span class="hl">Underline</span> the words you don’t know.', '<div class="big-pic"><u>word</u></div>', '<b>underline</b> = draw a line under a word']
+];
+const PICTURES = [
+  { title: 'On the desk', svg: '<svg viewBox="0 0 300 200" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="things on a desk"><rect x="6" y="8" width="288" height="184" rx="14" fill="#c99b6b"/><rect x="16" y="18" width="268" height="164" rx="10" fill="#d8ae80"/><text x="70" y="45" font-size="38" text-anchor="middle" dominant-baseline="central" font-family="\'Apple Color Emoji\',\'Segoe UI Emoji\',\'Noto Color Emoji\',sans-serif">✏️</text><text x="110" y="100" font-size="38" text-anchor="middle" dominant-baseline="central" font-family="\'Apple Color Emoji\',\'Segoe UI Emoji\',\'Noto Color Emoji\',sans-serif">✂️</text><text x="70" y="158" font-size="38" text-anchor="middle" dominant-baseline="central" font-family="\'Apple Color Emoji\',\'Segoe UI Emoji\',\'Noto Color Emoji\',sans-serif">🧮</text><text x="230" y="45" font-size="38" text-anchor="middle" dominant-baseline="central" font-family="\'Apple Color Emoji\',\'Segoe UI Emoji\',\'Noto Color Emoji\',sans-serif">📓</text><text x="250" y="100" font-size="38" text-anchor="middle" dominant-baseline="central" font-family="\'Apple Color Emoji\',\'Segoe UI Emoji\',\'Noto Color Emoji\',sans-serif">🖍️</text><text x="232" y="158" font-size="42" text-anchor="middle" dominant-baseline="central" font-family="\'Apple Color Emoji\',\'Segoe UI Emoji\',\'Noto Color Emoji\',sans-serif">📕</text></svg>', w: 300, h: 200, width: '18rem', spots: [
+    { x: 70, y: 45, word: 'pencil', side: 'left' }, { x: 110, y: 100, word: 'scissors', side: 'left' }, { x: 70, y: 158, word: 'calculator', side: 'left' },
+    { x: 230, y: 45, word: 'notebook', side: 'right' }, { x: 250, y: 100, word: 'crayon', side: 'right' }, { x: 232, y: 158, word: 'textbook', side: 'right' }] }
+];
+const LISTEN = [
+  { say: 'Underline the word.', options: ['✏️ underline', '⭕ circle', '❌ cross out'], correct: 0 },
+  { say: 'Circle the right answer.', options: ['✏️ underline', '⭕ circle', '❌ cross out'], correct: 1 },
+  { say: 'Cross out the wrong word.', options: ['✏️ underline', '⭕ circle', '❌ cross out'], correct: 2 },
+  { say: 'Open your books to page fifteen.', options: ['page 15', 'page 50'], correct: 0 },
+  { say: 'Close your notebooks.', options: ['📕 close', '📖 open'], correct: 0 },
+  { say: 'Work in pairs.', options: ['👥 in pairs', '👤 alone'], correct: 0 },
+  { say: 'Don’t use a calculator.', options: ['🚫 🧮', '✅ 🧮'], correct: 0 },
+  { say: 'Right-click on the picture.', options: ['🖱️ right-click', '🖱️ left-click'], correct: 0 }
+];
+const SORTS = [
+  { title: 'Paper, screen or tool?', groups: [{ label: 'paper', icon: '📄' }, { label: 'on a screen', icon: '💻' }, { label: 'tools', icon: '🧰' }],
+    words: [['textbook', 0, 'A textbook is a <b>paper</b> book.'], ['workbook', 0, 'You write in a workbook: <b>paper</b>.'], ['notebook', 0, 'A notebook is <b>paper</b>.'], ['flashcard', 0, 'A flashcard is a small <b>paper</b> card.'],
+      ['webpage', 1, 'You see a webpage <b>on a screen</b>.'], ['e-book', 1, 'An e-book is a book <b>on a screen</b>.'], ['app', 1, 'An app is <b>on a screen</b>.'],
+      ['pencil', 2, 'You write with a pencil: a <b>tool</b>.'], ['crayon', 2, 'You color with crayons: a <b>tool</b>.'], ['scissors', 2, 'You cut with scissors: a <b>tool</b>.'], ['calculator', 2, 'A calculator does math: a <b>tool</b>.']] }
+];
+const MYSTERY = [
+  { answer: 'scissors', pic: '✂️', options: ['scissors', 'pencil', 'crayon', 'calculator'],
+    clues: ['You use ❓ in art class.', '❓ have two parts that open and close.', 'You cut paper with ❓.'] },
+  { answer: 'calculator', pic: '🧮', options: ['calculator', 'notebook', 'flashcard', 'e-book'],
+    clues: ['A ❓ has a lot of buttons.', 'There’s a ❓ on your phone, too.', 'A ❓ does math for you: 25 × 4 = 100!'] },
+  { answer: 'flashcard', pic: '🗂️', options: ['flashcard', 'textbook', 'webpage', 'scissors'],
+    clues: ['A ❓ is small.', 'A ❓ has a word on one side and a picture on the other.', 'You learn new words with a ❓.'] }
+];
+const FORKS = [
+  { word: 'open', icon: '📖', side: 'after', options: [
+    { text: 'your book', ok: true }, { text: 'the webpage', ok: true }, { text: 'the window', ok: true },
+    { text: 'the light', ok: false, why: 'We <b>turn on</b> the light.' } ] },
+  { word: 'write', icon: '✍️', side: 'after', options: [
+    { text: 'a paragraph', ok: true }, { text: 'a poem', ok: true }, { text: 'your name', ok: true },
+    { text: 'a photo', ok: false, why: 'We <b>take</b> a photo.' } ] },
+  { word: 'click', icon: '🖱️', side: 'after', options: [
+    { text: 'on the link', ok: true }, { text: 'the button', ok: true },
+    { text: 'in the link', ok: false, why: 'click <b>on</b> the link (or just <i>click the link</i>).' } ] },
+  { word: 'a mistake', icon: '❌', side: 'before', options: [
+    { text: 'make', ok: true }, { text: 'correct', ok: true },
+    { text: 'do', ok: false, why: 'We <b>make</b> a mistake (not <i>do</i>).' } ] }
+];
+const MEANING = '<p><strong>Instructions</strong> start with the verb: <i><b>Open</b> your books. <b>Read</b> the poem. <b>Write</b> your name.</i></p>' +
+  '<p><strong>Don’t</strong> + verb: <i><b>Don’t</b> talk. <b>Don’t</b> use a calculator.</i></p>' +
+  '<p><strong>More polite:</strong> <i><b>Please</b> close the door. · <b>Could you</b> close the door, please?</i></p>';
+const CCQ = [
+  { sentence: 'Underline the verbs.', questions: [
+    { q: 'Do you draw a line under the verbs?', opts: ['Yes', 'No'], correct: 0, why: 'Yes. <b>under</b> + <b>line</b>.' } ] },
+  { sentence: 'Don’t use a calculator.', questions: [
+    { q: 'Can you use a calculator?', opts: ['Yes', 'No'], correct: 1, why: 'No. <b>Don’t</b> = don’t do it.' } ] },
+  { sentence: 'Work in pairs.', questions: [
+    { q: 'Do you work alone?', opts: ['Yes', 'No'], correct: 1, why: 'No. A <b>pair</b> = two people.' } ] }
+];
+const FORM_RULE = '<p><strong>Two words → one word:</strong> note + book = <b>notebook</b> · text + book = <b>textbook</b> · work + book = <b>workbook</b> · flash + card = <b>flashcard</b> · web + page = <b>webpage</b></p>' +
+  '<p><strong>With a hyphen (-):</strong> <b>e-book</b> · <b>right-click</b></p>' +
+  '<p><strong>Always plural:</strong> <b>scissors</b> → <i>a pair of scissors</i>, <i>the scissors are…</i></p>';
+const MISTAKES = [
+  ['Open your books in page 10.', 'Open your books to page 10.'],
+  ['Don’t to talk.', 'Don’t talk.'],
+  ['Can I borrow your scissor?', 'Can I borrow your scissors?'],
+  ['I did a mistake.', 'I made a mistake.'],
+  ['Click in the link.', 'Click on the link.']
+];
+const EH_ITEMS = [
+  { words: ['Open', 'your', 'books', 'in', 'page', '10', '.'], error: { type: 'wrong', wordIndex: 3, options: ['to', 'at', 'of'], correct: 'to' } },
+  { words: ['Don’t', 'to', 'talk', '.'], error: { type: 'extra', wordIndex: 1 } },
+  { words: ['Can', 'I', 'borrow', 'your', 'scissor', '?'], error: { type: 'wrong', wordIndex: 4, options: ['scissors', 'scissores', 'a scissor'], correct: 'scissors' } },
+  { words: ['I', 'did', 'a', 'mistake', '.'], error: { type: 'wrong', wordIndex: 1, options: ['made', 'had', 'got'], correct: 'made' } },
+  { words: ['Click', 'in', 'the', 'link', '.'], error: { type: 'wrong', wordIndex: 1, options: ['on', 'at', 'to'], correct: 'on' } },
+  { words: ['Underline', 'the', 'verbs', 'in', 'paragraph', '.'], error: { type: 'missing', gapIndex: 4, options: ['the', 'a', 'an'], correct: 'the' } },
+  { words: ['Write', 'a', 'poem', 'about', 'you', 'city', '.'], error: { type: 'wrong', wordIndex: 4, options: ['your', 'you’re', 'yours'], correct: 'your' } },
+  { words: ['Please', 'close', 'your', 'notebook', 'and', 'listen', 'me', '.'], error: { type: 'missing', gapIndex: 6, options: ['to', 'at', 'for'], correct: 'to' } }
+];
+
+document.getElementById('look').innerHTML = LOOK.map(([sent, vis, note]) =>
+  '<div class="flow-card"><div class="sent">' + sent + '</div>' + (vis || '') + (note ? '<div class="note">' + note + '</div>' : '') + '</div>').join('');
+HouseLabel.build({ container: 'pictures', items: PICTURES, scoreEl: 'lbScore', totalEl: 'lbTotal' });
+HouseListen.build({ container: 'listen', items: LISTEN, scoreEl: 'liScore', totalEl: 'liTotal' });
+HouseSort.build({ container: 'sorts', items: SORTS, scoreEl: 'soScore', totalEl: 'soTotal' });
+HouseMystery.build({ container: 'mystery', items: MYSTERY, scoreEl: 'myScore', totalEl: 'myTotal' });
+HouseCollocate.build({ container: 'forks', items: FORKS, scoreEl: 'coScore', totalEl: 'coTotal' });
+document.getElementById('meaning').innerHTML = MEANING;
+HouseCCQ.build({ container: 'ccq', items: CCQ });
+document.getElementById('formRule').innerHTML = FORM_RULE;
+document.getElementById('mistakes').innerHTML = MISTAKES.map(([no, yes]) =>
+  '<div class="pair-card"><div class="pair-line no"><span class="mark">✗</span>' + no + '</div>' +
+  '<div class="pair-line yes"><span class="mark">✓</span>' + yes + '</div></div>').join('');
+HouseErrorHunt.build({ container: 'errorHuntItems', items: EH_ITEMS, scoreEl: 'errorScore', totalEl: 'errorTotal' });
+</script>
+</body>
+</html>

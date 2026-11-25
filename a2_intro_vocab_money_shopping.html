@@ -1,0 +1,138 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<title>A Present for Dad — Money, Shopping and Materials</title>
+<script>
+(function(){
+  try{
+    var saved = localStorage.getItem('theme-preference');
+    var theme = (saved === 'light' || saved === 'dark')
+      ? saved
+      : ((window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches) ? 'dark' : 'light');
+    document.documentElement.setAttribute('data-theme', theme);
+    var fs = parseFloat(localStorage.getItem('font-size-preference'));
+    if (fs >= 10 && fs <= 28) document.documentElement.style.setProperty('--fs-base', fs + 'px');
+  }catch(e){ /* localStorage/matchMedia unavailable — CSS media query still applies */ }
+})();
+</script>
+<link rel="stylesheet" href="house.css">
+<style>
+.cast-row{ display:flex; flex-wrap:wrap; gap:14px 18px; justify-content:center; align-items:flex-end; margin:0 0 1rem; padding:10px; background:var(--surface-1); border:1px solid var(--border); border-radius:var(--border-radius-lg); font-size:.8667rem; }
+.match-wrap .match-col-label{ text-align:center; }
+#picCol .match-card{ font-size:1.35rem; justify-content:center; }
+</style>
+</head>
+<body>
+<div class="page" id="page">
+  <span class="cefr-tag cefr-a2">A2 · Elementary</span>
+  <h1>A Present for Dad</h1>
+  <p class="subtitle">It’s Dad’s birthday on Saturday. Rosa and her son Leo go to the mall to buy him a present.</p>
+
+  <div class="sec-div">Words for this lesson</div>
+  <p class="subtitle">Match the picture and the words. Tap a picture, then tap its words.</p>
+  <div class="score-bar"><span>Matched: <strong id="mScore">0</strong> / <span id="mTotal">0</span></span><button id="mReset">↺ Reset</button></div>
+  <div class="match-grid match-wrap">
+    <div><div class="match-col-label">Picture</div><div class="match-col" id="picCol"></div></div>
+    <div><div class="match-col-label">Words</div><div class="match-col" id="wordCol"></div></div>
+  </div>
+  <div class="win-msg" id="mWin">🎉 Great! You know the words for the conversation.</div>
+  <div class="feedback" id="mFeedback"></div>
+
+  <div class="sec-div">Before you read</div>
+  <div id="preQuestions"></div>
+
+  <div class="sec-div">The people</div>
+  <div class="cast-row" id="castRow"></div>
+
+  <div class="sec-div">The conversation</div>
+  <div class="setting-chip"><span class="section-icon">🛍️</span> Thursday afternoon — a clothes store at the mall</div>
+  <button class="grammar-toggle-btn" id="grammarToggle">🎨 Show Grammar</button>
+  <div class="pos-legend"></div>
+  <div id="conversation"></div>
+
+  <div class="sec-div">Check your answers</div>
+  <div id="quiz"></div>
+
+  <footer>A Present for Dad — Vocabulary: money, shopping and materials (A2)</footer>
+</div>
+
+<div id="theme-toggle-wrap">
+  <button id="theme-toggle" aria-label="Toggle light/dark mode" title="Toggle light/dark mode">
+    <span id="theme-icon">☀️</span>
+  </button>
+</div>
+<script src="house.js"></script>
+<script src="stick-character.js"></script>
+<script src="stick-sentence.js"></script>
+<script>
+StickSentence.cast({
+  rosa: { base:'woman', colour:'#993366', label:'Rosa' },
+  leo: { base:'boy', colour:'#339966', label:'Leo' },
+  assistant: { base:'woman', colour:'#666666', label:'Assistant' }
+});
+StickSentence.toggle();
+window.LESSON_DICT = {
+  'mall':      { pos:'noun', def:'a big building with a lot of stores inside', ex:'Let’s go to the mall.', es:'centro comercial' },
+  'leather':   { pos:'noun', def:'the skin of an animal, used to make shoes, bags, belts…', ex:'a leather wallet', es:'cuero' },
+  'on sale':   { pos:'phrase', def:'cheaper than usual for a short time', ex:'These belts are on sale.', es:'en oferta, rebajado' },
+  'made of':   { pos:'phrase', def:'what material something is', ex:'What’s it made of? — Cotton.', es:'hecho de' },
+  'receipt':   { pos:'noun', def:'the paper that shows what you bought and how much you paid', ex:'Here’s your receipt.', es:'recibo' },
+  'gift-wrap': { pos:'verb', def:'to put pretty paper around a present', ex:'Can you gift-wrap it?', es:'envolver para regalo' }
+};
+const WORDS = [['💵', 'cash'], ['💳', 'a credit card'], ['🪙', 'a coin'], ['👛', 'a wallet'], ['💍', 'jewelry'],
+  ['🧥', 'a raincoat'], ['👖', 'pants'], ['🧶', 'wool'], ['🏬', 'a mall'], ['🧾', 'a receipt']];
+document.getElementById('castRow').innerHTML = ['{Rosa|rosa}', '{Leo|leo}', '{Assistant|assistant}'].map(StickSentence.html).join('');
+const SPEAKERS = {
+  Assistant: { cast: 'assistant', avatar: '👩🏾‍💼', av: 'av-c', side: 'left' },
+  Leo:       { cast: 'leo', avatar: '👦🏻', av: 'av-a', side: 'left' },
+  Rosa:      { cast: 'rosa', avatar: '👩🏻', av: 'av-b', side: 'right' }
+};
+const LINES = [
+  ['Leo', '[Mom/noun], [look/verb] [at this belt/prep]! [Dad/subject] [needs/verb] [a new one/object].'],
+  ['Rosa', '[Hmm/none], [it’s/subject] [nice/adj]. [But/conj] [it’s/subject] [sixty dollars/complement]. [That’s/subject] [expensive/adj].'],
+  ['Assistant', '[Hi/none]! [Can/aux] [I/subject] [help/verb] [you/object]?'],
+  ['Rosa', '[Yes/none], [please/adverb]. [Do/aux] [you/subject] [have/verb] [any cheaper belts/object]?'],
+  ['Assistant', '[These ones/subject] [are/verb] [on sale/adj] — [twenty-five dollars/complement]. [They’re/subject] [made of/adj] [leather/noun], [too/adverb].'],
+  ['Leo', '[And/conj] [this wallet/subject] [is/verb] [only/adverb] [fifteen dollars/complement]! [What’s/wh] [it/subject] [made of/adj]?'],
+  ['Assistant', '[It’s/subject] [plastic/adj], [I’m afraid/none]. [The leather wallets/subject] [are/verb] [over there/prep].'],
+  ['Rosa', '[Let’s/aux] [just/adverb] [get/verb] [the belt/object]. [And/conj] [Leo/noun], [you/subject] [need/verb] [a raincoat/object] [for school/prep].'],
+  ['Assistant', '[Raincoats/subject] [are/verb] [on the second floor/prep], [next to the pants/prep].'],
+  ['Leo', '[Can/aux] [I/subject] [get/verb] [a green one/object]?'],
+  ['Rosa', '[Sure/none]. [Excuse me/none], [can/aux] [I/subject] [pay/verb] [by credit card/prep]?'],
+  ['Assistant', '[Of course/none]. [Or/conj] [you/subject] [can/aux] [pay/verb] [in cash/prep].'],
+  ['Leo', '[Wait/verb]! [I/subject] [have/verb] [some coins/object] [in my pocket/prep]. [I/subject] [want/verb] [to pay/verb] [for Dad’s present/prep]!'],
+  ['Rosa', '[Aww/none]. [OK/none], [you/subject] [pay/verb] [two dollars/object], [and/conj] [I/subject] [pay/verb] [the rest/object].'],
+  ['Assistant', '[Here’s/verb] [your receipt/subject]. [Do/aux] [you/subject] [want/verb] [me/object] [to gift-wrap/verb] [the belt/object]?'],
+  ['Leo', '[Yes/none], [please/adverb]! [In/prep] [the gold paper/object]!']
+];
+const CQ_ITEMS = [
+  { q: 'How much is the belt on sale?', opts: ['$25', '$60', '$15'], correct: 0 },
+  { q: 'What is the cheap wallet made of?', opts: ['Plastic', 'Leather', 'Cotton'], correct: 0 },
+  { q: 'How does Leo pay?', opts: ['With coins from his pocket', 'By credit card', 'He doesn’t pay'], correct: 0 }
+];
+
+/* ── the conversation ─────────────────────────────────────────────────── */
+const avStyle = s => { const c = (StickSentence.cast()[s.cast] || {}).colour;
+  return c ? 'background:' + c + '40;box-shadow:inset 0 0 0 2px ' + c : ''; };
+const conv = document.getElementById('conversation');
+LINES.forEach(([who, text]) => {
+  const s = SPEAKERS[who], right = s.side === 'right';
+  conv.insertAdjacentHTML('beforeend',
+    '<div class="bubble-wrap' + (right ? ' right' : '') + '">' +
+      '<div class="avatar ' + s.av + '" style="' + avStyle(s) + '">' + s.avatar + '</div>' +
+      '<div class="bubble-col"><div class="bname' + (right ? ' right' : '') + '">' + who + '</div>' +
+      '<div class="bubble ' + (right ? 'right' : 'left') + '">' + StickSentence.html(text) + '</div></div>' +
+    '</div>');
+});
+
+HouseMatching.build({
+  left: 'picCol', right: 'wordCol', scoreEl: 'mScore', totalEl: 'mTotal', winEl: 'mWin', resetBtn: 'mReset', feedbackEl: 'mFeedback',
+  pairs: WORDS.map(([e, w]) => ({ id: w, left: e, right: w }))
+});
+HouseComprehension.build({ pre: 'preQuestions', quiz: 'quiz', items: CQ_ITEMS });
+</script>
+<script>HouseGrammar.init();</script>
+</body>
+</html>

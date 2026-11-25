@@ -1,0 +1,97 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<title>Numbers, Dates and Months — Practice</title>
+<script>
+(function(){
+  try{
+    var saved = localStorage.getItem('theme-preference');
+    var theme = (saved === 'light' || saved === 'dark')
+      ? saved
+      : ((window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches) ? 'dark' : 'light');
+    document.documentElement.setAttribute('data-theme', theme);
+    var fs = parseFloat(localStorage.getItem('font-size-preference'));
+    if (fs >= 10 && fs <= 28) document.documentElement.style.setProperty('--fs-base', fs + 'px');
+  }catch(e){ /* localStorage/matchMedia unavailable — CSS media query still applies */ }
+})();
+</script>
+<link rel="stylesheet" href="house.css">
+<style>
+
+</style>
+</head>
+<body>
+<div class="page" id="page">
+  <span class="cefr-tag cefr-a1">A1 · Beginner</span>
+  <h1>Numbers, Dates and Months — Practice</h1>
+  <p class="subtitle">Days, dates, times — with in, on and at.</p>
+
+  <div class="sec-div">Practice 1 — Match the halves</div>
+  <p class="subtitle">Tap the start of a sentence, then tap its end.</p>
+  <div class="score-bar"><span>Matched: <strong id="mScore">0</strong> / <span id="mTotal">0</span></span><button id="mReset">↺ Reset</button></div>
+  <div class="match-grid">
+    <div><div class="match-col-label">Start</div><div class="match-col" id="leftCol"></div></div>
+    <div><div class="match-col-label">End</div><div class="match-col" id="rightCol"></div></div>
+  </div>
+  <div class="win-msg" id="mWin">🎉 All matched!</div>
+  <div class="feedback" id="mFeedback"></div>
+
+  <div class="sec-div">Practice 2 — Word order</div>
+  <p class="subtitle">Tap the words to build the sentence. Tap a word again to take it back, or drag to change the order.</p>
+  <button class="grammar-toggle-btn" id="grammarToggle">🎨 Show Grammar</button>
+  <div class="pos-legend"></div>
+  <div class="score-bar"><span>Correct: <strong id="woScore">0</strong> / <span id="woTotal">0</span></span></div>
+  <div id="woItems"></div>
+
+  <div class="sec-div">Practice 3 — Complete the sentences</div>
+  <p class="subtitle">Write the missing word. The bar turns green 🔴→🟢 when you are right.</p>
+  <div id="gfItems"></div>
+
+  <footer>Numbers, dates and months — Vocabulary practice (A1)</footer>
+</div>
+
+<div id="theme-toggle-wrap">
+  <button id="theme-toggle" aria-label="Toggle light/dark mode" title="Toggle light/dark mode">
+    <span id="theme-icon">☀️</span>
+  </button>
+</div>
+<script src="house.js"></script>
+<script>
+const HALVES = [
+  ['My birthday is', 'on April 13th.'], ['The class is', 'on Tuesdays and Thursdays.'], ['The class starts', 'at six thirty.'],
+  ['Classes start again', 'in January, after the holidays.'], ['It’s very cold here', 'in winter — wear a coat!'],
+  ['The center is closed', 'on the weekend.'], ['There are twelve months', 'in a year.'], ['There are seven days', 'in a week.']
+];
+const WO_ITEMS = [
+  { context: '🎂 Birthday', text: 'My birthday / is / on / April 13th.', pos: ['subject', 'verb', 'prep', 'time'] },
+  { context: '🕡 Time', text: 'The class / starts / at / six thirty.', pos: ['subject', 'verb', 'prep', 'time'] },
+  { context: '📅 Days', text: 'The class / is / on / Tuesdays / and / Thursdays.', pos: ['subject', 'verb', 'prep', 'time', 'conj', 'time'] },
+  { context: '❄️ Holidays', text: 'The center / is / closed / in / December.', pos: ['subject', 'verb', 'adj', 'prep', 'time'] },
+  { context: '👶 Born', text: 'I / was / born / in / 1990.', pos: ['subject', 'verb', 'verb', 'prep', 'time'] },
+  { context: '❓ A question', text: 'When / is / your / birthday?', pos: ['wh', 'verb', 'det', 'noun'] }
+];
+const GF_LABELS = { num: 'numbers', month: 'months and days', prep: 'in · on · at' };
+const GF_ITEMS = [
+  { category: 'num', direct: '13 — write the word.', template: 'My son is {0} years old.', hints: [{ accepted: ['thirteen'] }] },
+  { category: 'num', direct: '90 — write the word.', template: 'My grandma is {0}!', hints: [{ accepted: ['ninety'] }] },
+  { category: 'num', direct: '1,000 — write the word.', template: 'There are a {0} students in this school.', hints: [{ accepted: ['thousand'] }] },
+  { category: 'month', direct: 'The month after March.', template: 'My birthday is in {0}.', hints: [{ accepted: ['April'] }] },
+  { category: 'month', direct: 'The day after Wednesday.', template: 'The class is on {0}.', hints: [{ accepted: ['Thursday'] }] },
+  { category: 'month', direct: 'The 9th month.', template: 'School starts in {0}.', hints: [{ accepted: ['September'] }] },
+  { category: 'prep', direct: 'A day of the week.', template: 'See you {0} Tuesday!', hints: [{ accepted: ['on'] }] },
+  { category: 'prep', direct: 'A time on the clock.', template: 'The class starts {0} six thirty.', hints: [{ accepted: ['at'] }] },
+  { category: 'prep', direct: 'A month.', template: 'The center is closed {0} December.', hints: [{ accepted: ['in'] }] }
+];
+
+HouseMatching.build({
+  left: 'leftCol', right: 'rightCol', scoreEl: 'mScore', totalEl: 'mTotal', winEl: 'mWin', resetBtn: 'mReset', feedbackEl: 'mFeedback',
+  pairs: HALVES.map(([a, b], i) => ({ id: 'h' + i, left: a, right: b }))
+});
+HouseWordOrder.build({ container: 'woItems', items: WO_ITEMS, scoreEl: 'woScore', totalEl: 'woTotal' });
+HouseGapFill.build({ container: 'gfItems', items: GF_ITEMS, labels: GF_LABELS });
+</script>
+<script>HouseGrammar.init();</script>
+</body>
+</html>

@@ -1,0 +1,133 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<title>At the Station — Travel and Getting Around</title>
+<script>
+(function(){
+  try{
+    var saved = localStorage.getItem('theme-preference');
+    var theme = (saved === 'light' || saved === 'dark')
+      ? saved
+      : ((window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches) ? 'dark' : 'light');
+    document.documentElement.setAttribute('data-theme', theme);
+    var fs = parseFloat(localStorage.getItem('font-size-preference'));
+    if (fs >= 10 && fs <= 28) document.documentElement.style.setProperty('--fs-base', fs + 'px');
+  }catch(e){ /* localStorage/matchMedia unavailable — CSS media query still applies */ }
+})();
+</script>
+<link rel="stylesheet" href="house.css">
+<style>
+.cast-row{ display:flex; flex-wrap:wrap; gap:14px 18px; justify-content:center; align-items:flex-end; margin:0 0 1rem; padding:10px; background:var(--surface-1); border:1px solid var(--border); border-radius:var(--border-radius-lg); font-size:.8667rem; }
+.match-wrap .match-col-label{ text-align:center; }
+#picCol .match-card{ font-size:1.35rem; justify-content:center; }
+</style>
+</head>
+<body>
+<div class="page" id="page">
+  <span class="cefr-tag cefr-a2b1">A2/B1 · Pre-intermediate</span>
+  <h1>At the Station</h1>
+  <p class="subtitle">Mr. Adeyemi is on vacation. He has a lot of questions for the woman at the information desk.</p>
+
+  <div class="sec-div">Words for this lesson</div>
+  <p class="subtitle">Match the picture and the words. Tap a picture, then tap its words.</p>
+  <div class="score-bar"><span>Matched: <strong id="mScore">0</strong> / <span id="mTotal">0</span></span><button id="mReset">↺ Reset</button></div>
+  <div class="match-grid match-wrap">
+    <div><div class="match-col-label">Picture</div><div class="match-col" id="picCol"></div></div>
+    <div><div class="match-col-label">Words</div><div class="match-col" id="wordCol"></div></div>
+  </div>
+  <div class="win-msg" id="mWin">🎉 Great! You know the words for the conversation.</div>
+  <div class="feedback" id="mFeedback"></div>
+
+  <div class="sec-div">Before you read</div>
+  <div id="preQuestions"></div>
+
+  <div class="sec-div">The people</div>
+  <div class="cast-row" id="castRow"></div>
+
+  <div class="sec-div">The conversation</div>
+  <div class="setting-chip"><span class="section-icon">🚉</span> Sunday morning — the information desk at the central train station</div>
+  <button class="grammar-toggle-btn" id="grammarToggle">🎨 Show Grammar</button>
+  <div class="pos-legend"></div>
+  <div id="conversation"></div>
+
+  <div class="sec-div">Check your answers</div>
+  <div id="quiz"></div>
+
+  <footer>At the Station — Vocabulary: travel and getting around (A2/B1)</footer>
+</div>
+
+<div id="theme-toggle-wrap">
+  <button id="theme-toggle" aria-label="Toggle light/dark mode" title="Toggle light/dark mode">
+    <span id="theme-icon">☀️</span>
+  </button>
+</div>
+<script src="house.js"></script>
+<script src="stick-character.js"></script>
+<script src="stick-sentence.js"></script>
+<script>
+StickSentence.cast({
+  adeyemi: { base:'man', colour:'#663300', label:'Mr. Adeyemi' },
+  lopez: { base:'woman', colour:'#0066CC', label:'Ms. Lopez' }
+});
+StickSentence.toggle();
+window.LESSON_DICT = {
+  'timetable': { pos:'noun', def:'a list of the times when trains, buses, etc. leave and arrive', ex:'Let me check the timetable.', es:'horario' },
+  'platform':  { pos:'noun', def:'the place in a station where you get on and off a train', ex:'The train leaves from platform 4.', es:'andén' },
+  'journey':   { pos:'noun', def:'the time and distance when you travel from one place to another', ex:'How long is the journey?', es:'viaje, trayecto' },
+  'luggage':   { pos:'noun', def:'the bags and suitcases you take on a trip (no plural)', ex:'I have a lot of luggage.', es:'equipaje' },
+  'harbor':    { pos:'noun', def:'a place on the coast where boats stay', ex:'The boats leave from the harbor.', es:'puerto' }
+};
+const WORDS = [['🚤', 'a boat'], ['🏍️', 'a motorcycle'], ['✈️', 'an airplane'], ['🛣️', 'a highway'], ['🧳', 'luggage'],
+  ['🚻', 'restrooms'], ['🛗', 'an elevator'], ['🚪', 'an exit'], ['🗺️', 'a tour'], ['🌍', 'international']];
+document.getElementById('castRow').innerHTML = ['{Mr. Adeyemi|adeyemi}', '{Ms. Lopez|lopez}'].map(StickSentence.html).join('');
+const SPEAKERS = {
+  'Mr. Adeyemi': { cast: 'adeyemi', avatar: '👨🏿', av: 'av-a', side: 'left' },
+  'Ms. Lopez':   { cast: 'lopez', avatar: '👩🏽‍💼', av: 'av-b', side: 'right' }
+};
+const LINES = [
+  ['Mr. Adeyemi', '[Excuse me/none], [could/aux] [you/subject] [tell/verb] [me/object] [where/wh] [the restrooms/subject] [are/verb]?'],
+  ['Ms. Lopez', '[Sure/none]. [They’re/subject] [next to the elevator/prep], [past the ticket office/prep].'],
+  ['Mr. Adeyemi', '[Thanks/none]. [And/conj] [do/aux] [you/subject] [know/verb] [when/wh] [the next train to the coast/subject] [leaves/verb]?'],
+  ['Ms. Lopez', '[Let me/verb] [check/verb] [the timetable/object]… [The next one/subject] [leaves/verb] [at 10:45/time] [from platform 4/prep].'],
+  ['Mr. Adeyemi', '[How long/wh] [is/verb] [the journey/subject]?'],
+  ['Ms. Lopez', '[About two hours/time]. [It’s/subject] [a hundred and twenty miles/complement].'],
+  ['Mr. Adeyemi', '[I/subject] [have/verb] [a lot of luggage/object]. [Is/verb] [there/subject] [an elevator/object] [to the platform/prep]?'],
+  ['Ms. Lopez', '[Yes/none], [on your left/prep]. [Are/aux] [you/subject] [traveling/verb] [for work/prep]?'],
+  ['Mr. Adeyemi', '[No/none], [I’m/subject] [on vacation/prep]. [I’m/subject] [doing/verb] [a tour of the coast/object]. [Do/aux] [you/subject] [know/verb] [if/conj] [the boats to the islands/subject] [run/verb] [on Sundays/time]?'],
+  ['Ms. Lopez', '[I’m/subject] [not sure/adj]. [Ask/verb] [at the tourist office/prep] [by the harbor/prep]. [They/subject] [sell/verb] [maps/object] [and/conj] [postcards/object], [too/adverb].'],
+  ['Mr. Adeyemi', '[Great/adj]. [I/subject] [fly/verb] [home/adverb] [on Friday/time]. [Is/verb] [the airport/subject] [far/adj]?'],
+  ['Ms. Lopez', '[The international airport/subject]? [About an hour/time] [by taxi/prep] [on the highway/prep].'],
+  ['Mr. Adeyemi', '[One more question/noun]: [could/aux] [you/subject] [tell/verb] [me/object] [where/wh] [I/subject] [can/aux] [buy/verb] [a ticket/object]? [The machines/subject] [are/verb] [confusing/adj].'],
+  ['Ms. Lopez', '[The ticket office/subject] [is/verb] [right there/adverb], [opposite the exit/prep]. [Have/verb] [a good trip/object]!']
+];
+const CQ_ITEMS = [
+  { q: 'When does the next train to the coast leave?', opts: ['At 10:45', 'At 4:10', 'On Friday'], correct: 0 },
+  { q: 'How long is the journey?', opts: ['About two hours', 'About an hour', 'A hundred and twenty minutes'], correct: 0 },
+  { q: 'Where is the ticket office?', opts: ['Opposite the exit', 'Next to the restrooms', 'At the harbor'], correct: 0 }
+];
+
+/* ── the conversation ─────────────────────────────────────────────────── */
+const avStyle = s => { const c = (StickSentence.cast()[s.cast] || {}).colour;
+  return c ? 'background:' + c + '40;box-shadow:inset 0 0 0 2px ' + c : ''; };
+const conv = document.getElementById('conversation');
+LINES.forEach(([who, text]) => {
+  const s = SPEAKERS[who], right = s.side === 'right';
+  conv.insertAdjacentHTML('beforeend',
+    '<div class="bubble-wrap' + (right ? ' right' : '') + '">' +
+      '<div class="avatar ' + s.av + '" style="' + avStyle(s) + '">' + s.avatar + '</div>' +
+      '<div class="bubble-col"><div class="bname' + (right ? ' right' : '') + '">' + who + '</div>' +
+      '<div class="bubble ' + (right ? 'right' : 'left') + '">' + StickSentence.html(text) + '</div></div>' +
+    '</div>');
+});
+
+HouseMatching.build({
+  left: 'picCol', right: 'wordCol', scoreEl: 'mScore', totalEl: 'mTotal', winEl: 'mWin', resetBtn: 'mReset', feedbackEl: 'mFeedback',
+  pairs: WORDS.map(([e, w]) => ({ id: w, left: e, right: w }))
+});
+HouseComprehension.build({ pre: 'preQuestions', quiz: 'quiz', items: CQ_ITEMS });
+</script>
+<script>HouseGrammar.init();</script>
+</body>
+</html>

@@ -1,0 +1,195 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<title>Travel and Getting Around — Clarification</title>
+<script>
+(function(){
+  try{
+    var saved = localStorage.getItem('theme-preference');
+    var theme = (saved === 'light' || saved === 'dark')
+      ? saved
+      : ((window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches) ? 'dark' : 'light');
+    document.documentElement.setAttribute('data-theme', theme);
+    var fs = parseFloat(localStorage.getItem('font-size-preference'));
+    if (fs >= 10 && fs <= 28) document.documentElement.style.setProperty('--fs-base', fs + 'px');
+  }catch(e){ /* localStorage/matchMedia unavailable — CSS media query still applies */ }
+})();
+</script>
+<link rel="stylesheet" href="house.css">
+<style>
+.flow-card{ border:1px solid var(--color-border-tertiary); border-radius:var(--border-radius-lg); background:var(--surface-2); padding:10px 12px; margin-bottom:10px; }
+.flow-card .sent{ font-size:1rem; font-weight:600; margin-bottom:6px; }
+.flow-card .note{ font-size:.8333rem; color:var(--text-secondary); margin-top:4px; }
+.if-part{ color:hsl(217, 70%, 42%); font-weight:700; }
+.res-part{ color:hsl(120, 60%, 32%); font-weight:700; }
+.res-no{ color:hsl(0, 65%, 42%); font-weight:700; }
+[data-theme="dark"] .res-no{ color:hsl(0, 75%, 70%); }
+[data-theme="dark"] .if-part{ color:hsl(217, 80%, 70%); }
+[data-theme="dark"] .res-part{ color:hsl(120, 55%, 65%); }
+.form-table{ width:100%; border-collapse:collapse; margin:0 0 1rem; font-size:.9333rem; }
+.form-table th, .form-table td{ border:1px solid var(--color-border-tertiary); padding:7px 9px; text-align:left; vertical-align:top; }
+.form-table th{ background:var(--surface-1); font-size:.8rem; text-transform:uppercase; letter-spacing:.04em; color:var(--text-secondary); }
+.pct-row{ display:flex; flex-wrap:wrap; gap:6px; margin:0 0 1rem; }
+.pct-row span{ padding:3px 10px; border-radius:999px; font-weight:700; font-size:.8667rem; border:2px solid; }
+.rule-box p{ margin:0 0 6px; }
+.rule-box p:last-child{ margin-bottom:0; }
+.big-pic{ font-size:1.6rem; letter-spacing:.1em; margin:2px 0 4px; }
+.hl{ font-weight:700; color:var(--text-accent); }
+</style>
+</head>
+<body>
+<div class="page" id="page">
+  <span class="cefr-tag cefr-a2b1">A2/B1 · Pre-intermediate</span>
+  <h1>Travel and Getting Around</h1>
+  <p class="subtitle">Signs, transport and trips — and how to ask polite questions: Could you tell me where…?</p>
+
+  <div class="sec-div">Look</div>
+  <p class="subtitle">From the conversation. Look at the highlighted words.</p>
+  <div id="look"></div>
+
+  <div class="sec-div">Meaning 1 — Signs</div>
+  <p class="subtitle">What does each sign say? Drag a word to its box, or tap a word and then tap a box.</p>
+  <div class="score-bar"><span>Done: <strong id="lbScore">0</strong> / <span id="lbTotal">0</span></span></div>
+  <div id="pictures"></div>
+
+  <div class="sec-div">Listen — Announcements</div>
+  <p class="subtitle">Tap 🔊 and listen to the announcement. Then tap what you hear.</p>
+  <div class="score-bar"><span>Done: <strong id="liScore">0</strong> / <span id="liTotal">0</span></span></div>
+  <div id="listen"></div>
+
+  <div class="sec-div">Meaning 2 — Groups</div>
+  <p class="subtitle">Put each word in its group. Drag it, or tap it and then tap a group.</p>
+  <div class="score-bar"><span>Done: <strong id="soScore">0</strong> / <span id="soTotal">0</span></span></div>
+  <div id="sorts"></div>
+
+  <div class="sec-div">Use — Words that go together</div>
+  <p class="subtitle">Which words go with the word in the box? Tap all the right ones.</p>
+  <div class="score-bar"><span>Done: <strong id="coScore">0</strong> / <span id="coTotal">0</span></span></div>
+  <div id="forks"></div>
+
+  <div class="rule-box" id="meaning"></div>
+
+  <div class="sec-div">Check the meaning</div>
+  <p class="subtitle">Answer the questions about each sentence.</p>
+  <div id="ccq"></div>
+
+  <div class="sec-div">Form — Polite questions</div>
+  <div class="rule-box" id="formRule"></div>
+
+  <div class="sec-div">Common mistakes</div>
+  <div id="mistakes"></div>
+
+  <div class="sec-div">Error hunt</div>
+  <p class="subtitle">Some sentences have one mistake. Some are correct! Tap a word — or a space between words — to fix it. Then press OK.</p>
+  <div class="score-bar"><span>Done: <strong id="errorScore">0</strong> / <span id="errorTotal">0</span></span></div>
+  <div id="errorHuntItems"></div>
+  <footer>Travel and getting around — Vocabulary clarification (A2/B1)</footer>
+</div>
+
+<div id="theme-toggle-wrap">
+  <button id="theme-toggle" aria-label="Toggle light/dark mode" title="Toggle light/dark mode">
+    <span id="theme-icon">☀️</span>
+  </button>
+</div>
+<script src="house.js"></script>
+<script src="house-vocab.js"></script>
+<script>
+const LOOK = [
+  ['Could you tell me <span class="hl">where the restrooms are</span>?', '<div class="big-pic">🙋 → 🚻</div>',
+    'not <s>where are the restrooms</s>: after <b>Could you tell me…</b> the subject comes before the verb'],
+  ['Do you know <span class="hl">if</span> the boats run on Sundays?', '<div class="big-pic">🚤 📅 ?</div>', 'a yes / no question → <b>if</b>'],
+  ['I have a lot of <span class="hl">luggage</span>. How long is the <span class="hl">journey</span>?', '<div class="big-pic">🧳🧳 · 🚆⏱️</div>',
+    '<b>luggage</b> has no plural · a <b>journey</b> = the time and distance you travel']
+];
+const PICTURES = [
+  { title: 'Signs at the station', svg: '<svg viewBox="0 0 300 220" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="signs at a station"><rect width="300" height="220" fill="#e9edf2"/><rect y="200" width="300" height="20" fill="#b8c0ca"/><rect x="110" y="70" width="80" height="80" rx="6" fill="#222"/><g fill="#f5c542" font-family="Courier New, monospace" font-size="9" font-weight="700"><text x="116" y="88">10:45  4</text><text x="116" y="104">11:20  2</text><text x="116" y="120">12:05  4</text><text x="116" y="136">13:30  1</text></g><rect x="31.0" y="16" width="58" height="48" rx="7" fill="#1f4e8c"/><text x="60" y="41" font-size="30" text-anchor="middle" dominant-baseline="central" font-family="\'Apple Color Emoji\',\'Segoe UI Emoji\',\'Noto Color Emoji\',sans-serif">🚻</text><rect x="31.0" y="86" width="58" height="48" rx="7" fill="#1f4e8c"/><text x="60" y="111" font-size="30" text-anchor="middle" dominant-baseline="central" font-family="\'Apple Color Emoji\',\'Segoe UI Emoji\',\'Noto Color Emoji\',sans-serif">🎫</text><rect x="31.0" y="154" width="58" height="48" rx="7" fill="#1f4e8c"/><text x="60" y="179" font-size="30" text-anchor="middle" dominant-baseline="central" font-family="\'Apple Color Emoji\',\'Segoe UI Emoji\',\'Noto Color Emoji\',sans-serif">🚕</text><rect x="211.0" y="16" width="58" height="48" rx="7" fill="#1f4e8c"/><text x="240" y="41" font-size="30" text-anchor="middle" dominant-baseline="central" font-family="\'Apple Color Emoji\',\'Segoe UI Emoji\',\'Noto Color Emoji\',sans-serif">🛗</text><rect x="211.0" y="86" width="58" height="48" rx="7" fill="#1f4e8c"/><text x="240" y="111" font-size="30" text-anchor="middle" dominant-baseline="central" font-family="\'Apple Color Emoji\',\'Segoe UI Emoji\',\'Noto Color Emoji\',sans-serif">🧳</text><rect x="207.0" y="154" width="66" height="48" rx="7" fill="#1f4e8c"/><text x="240" y="179" font-size="24" text-anchor="middle" dominant-baseline="central" font-family="\'Apple Color Emoji\',\'Segoe UI Emoji\',\'Noto Color Emoji\',sans-serif">🚪➡️</text></svg>', w: 300, h: 220, width: '18rem', spots: [
+    { x: 60, y: 40, word: 'restrooms', side: 'left' }, { x: 60, y: 110, word: 'tickets', side: 'left' }, { x: 60, y: 178, word: 'taxis', side: 'left' },
+    { x: 240, y: 40, word: 'elevator', side: 'right' }, { x: 240, y: 110, word: 'baggage claim', side: 'right' }, { x: 240, y: 178, word: 'exit', side: 'right' }],
+    note: 'Baggage claim = where you get your luggage after a flight.' }
+];
+const LISTEN = [
+  { say: 'The train to Boston leaves at ten forty-five.', options: ['10:45', '10:54'], correct: 0 },
+  { say: 'Flight two oh six is now boarding at gate fourteen.', options: ['Gate 14', 'Gate 40'], correct: 0 },
+  { say: 'The next train leaves from platform three.', options: ['Platform 3', 'Platform 13'], correct: 0 },
+  { say: 'The bus leaves at half past seven.', options: ['7:30', '6:30'], correct: 0, note: 'half past seven = 7:30' },
+  { say: 'The tour starts at a quarter to nine.', options: ['8:45', '9:15'], correct: 0, note: 'a quarter to nine = 8:45' },
+  { say: 'It is fifty miles to the airport.', options: ['15 miles', '50 miles'], correct: 1 },
+  { say: 'For the city center, take exit nineteen.', options: ['Exit 19', 'Exit 90'], correct: 0 },
+  { say: 'The journey takes about two hours.', options: ['about 2 hours', 'about 12 hours'], correct: 0 }
+];
+const SORTS = [
+  { title: 'How do you travel?', groups: [{ label: 'by land', icon: '🛣️' }, { label: 'by sea', icon: '🌊' }, { label: 'by air', icon: '☁️' }],
+    words: [['motorcycle', 0, 'A motorcycle goes on the road: <b>by land</b>.'], ['bus', 0, '<b>by land</b>.'], ['subway', 0, 'The subway goes under the city: <b>by land</b>.'], ['train', 0, '<b>by land</b>.'],
+      ['boat', 1, 'A boat goes on the water: <b>by sea</b>.'], ['ferry', 1, 'A ferry is a big boat for people and cars: <b>by sea</b>.'], ['ship', 1, '<b>by sea</b>.'],
+      ['airplane', 2, 'An airplane flies: <b>by air</b>.'], ['helicopter', 2, 'A helicopter flies: <b>by air</b>.']],
+    note: 'We say <b>by</b> bus / train / boat / air — but <b>on foot</b>.' },
+  { title: 'Where do you see it?', groups: [{ label: 'at the airport', icon: '✈️' }, { label: 'at the train station', icon: '🚉' }, { label: 'on the highway', icon: '🛣️' }],
+    words: [['gate 14', 0, 'You get on a plane at a <b>gate</b>.'], ['boarding pass', 0, 'You need a <b>boarding pass</b> to get on a plane.'], ['baggage claim', 0, 'You get your bags after a flight at <b>baggage claim</b>.'],
+      ['platform 4', 1, 'Trains stop at a <b>platform</b>.'], ['the 10:45 to Boston', 1, 'That’s a train: <b>the 10:45 to Boston</b>.'], ['ticket office', 1, 'You buy train tickets at the <b>ticket office</b>.'],
+      ['exit 19', 2, 'Highways have numbered <b>exits</b>.'], ['speed limit', 2, 'The <b>speed limit</b> tells you how fast you can drive.'], ['gas station', 2, 'You buy gas at a <b>gas station</b>.']] }
+];
+const FORKS = [
+  { word: 'take', icon: '🚕', side: 'after', options: [
+    { text: 'a tour', ok: true }, { text: 'a boat', ok: true }, { text: 'the elevator', ok: true }, { text: 'a taxi', ok: true },
+    { text: 'a travel', ok: false, why: '<b>travel</b> is usually a verb. Say <i>take a trip</i> or <i>go on a journey</i>.' } ] },
+  { word: 'travel', icon: '🌍', side: 'after', options: [
+    { text: 'abroad', ok: true }, { text: 'by boat', ok: true }, { text: 'alone', ok: true },
+    { text: 'to abroad', ok: false, why: '<b>abroad</b> doesn’t take <i>to</i>: <i>travel abroad</i>.' }, { text: 'on boat', ok: false, why: '<b>by</b> boat (or <i>on a boat</i>).' } ] },
+  { word: 'get', icon: '🚌', side: 'after', options: [
+    { text: 'on the bus', ok: true }, { text: 'off the plane', ok: true }, { text: 'lost', ok: true },
+    { text: 'in the plane', ok: false, why: 'Buses, trains and planes: <b>get on / get off</b>. Cars and taxis: <i>get in / get out of</i>.' } ] },
+  { word: 'luggage', icon: '🧳', side: 'before', options: [
+    { text: 'a lot of', ok: true }, { text: 'a piece of', ok: true }, { text: 'too much', ok: true },
+    { text: 'two', ok: false, why: '<b>luggage</b> has no plural: <i>two bags</i> or <i>two pieces of luggage</i>.' }, { text: 'many', ok: false, why: 'No plural, so: <i>a lot of / much</i> luggage.' } ] }
+];
+const MEANING = '<p><strong>Direct:</strong> <i>Where <b>are</b> the restrooms?</i> → <strong>Polite (indirect):</strong> <i>Could you tell me where the restrooms <b>are</b>?</i></p>' +
+  '<p><strong>Start with:</strong> <i>Could you tell me…? · Do you know…? · Can you tell me…? · I’d like to know…</i></p>' +
+  '<p><strong>Yes / no questions → if:</strong> <i>Do the boats run on Sundays?</i> → <i>Do you know <b>if</b> the boats run on Sundays?</i></p>';
+const CCQ = [
+  { sentence: 'Could you tell me where the exit is?', questions: [
+    { q: 'Is it a question?', opts: ['Yes', 'No'], correct: 0, why: 'Yes — a polite question. It ends with <b>?</b>' },
+    { q: 'Is it more polite than “Where’s the exit?”', opts: ['Yes', 'No'], correct: 0, why: 'Yes. Indirect questions are softer and more polite.' } ] },
+  { sentence: 'The journey takes two hours.', questions: [
+    { q: 'Are we talking about the time you travel?', opts: ['Yes', 'No'], correct: 0, why: 'Yes. A <b>journey</b> = the travel from A to B.' } ] },
+  { sentence: 'I have a lot of luggage.', questions: [
+    { q: 'Can we say “two luggages”?', opts: ['Yes', 'No'], correct: 1, why: 'No. <b>luggage</b> has no plural: <i>two bags / two pieces of luggage</i>.' } ] }
+];
+const FORM_RULE = '<p><strong>Word order:</strong> question word + <b>subject</b> + <b>verb</b>: <i>…where <b>the exit is</b>? · …when <b>the train leaves</b>?</i></p>' +
+  '<p><strong>No do / does / did:</strong> <i>When <s>does</s> the train leave?</i> → <i>Do you know when the train <b>leaves</b>?</i></p>' +
+  '<p><strong>Yes / no:</strong> <i>Do you know <b>if</b> the museum is open?</i></p>';
+const MISTAKES = [
+  ['Could you tell me where is the exit?', 'Could you tell me where the exit is?'],
+  ['Do you know when does the train leave?', 'Do you know when the train leaves?'],
+  ['I have two luggages.', 'I have two bags. / I have two pieces of luggage.'],
+  ['We traveled to abroad last year.', 'We traveled abroad last year.'],
+  ['Do you know the boats run on Sundays?', 'Do you know if the boats run on Sundays?']
+];
+const EH_ITEMS = [
+  { words: ['Could', 'you', 'tell', 'me', 'where', 'is', 'the', 'exit', '?'], error: { type: 'misplaced', wordIndex: 5, targetGapIndex: 8 } },
+  { words: ['Do', 'you', 'know', 'when', 'the', 'train', 'leave', '?'], error: { type: 'wrong', wordIndex: 6, options: ['leaves', 'does leave', 'leaving'], correct: 'leaves' } },
+  { words: ['I', 'have', 'two', 'luggages', '.'], error: { type: 'wrong', wordIndex: 3, options: ['bags', 'luggage', 'luggages'], correct: 'bags' } },
+  { words: ['Could', 'you', 'tell', 'me', 'what', 'time', 'the', 'tour', 'starts', '?'], error: null },
+  { words: ['We', 'traveled', 'to', 'abroad', 'last', 'year', '.'], error: { type: 'extra', wordIndex: 2 } },
+  { words: ['Do', 'you', 'know', 'the', 'boats', 'run', 'on', 'Sundays', '?'], error: { type: 'missing', gapIndex: 3, options: ['if', 'that', 'what'], correct: 'if' } },
+  { words: ['The', 'journey', 'takes', 'about', 'two', 'hours', '.'], error: null },
+  { words: ['Excuse', 'me', ',', 'where', 'the', 'elevator', 'is', '?'], error: { type: 'misplaced', wordIndex: 6, targetGapIndex: 4 } }
+];
+
+document.getElementById('look').innerHTML = LOOK.map(([sent, vis, note]) =>
+  '<div class="flow-card"><div class="sent">' + sent + '</div>' + (vis || '') + (note ? '<div class="note">' + note + '</div>' : '') + '</div>').join('');
+HouseLabel.build({ container: 'pictures', items: PICTURES, scoreEl: 'lbScore', totalEl: 'lbTotal' });
+HouseListen.build({ container: 'listen', items: LISTEN, scoreEl: 'liScore', totalEl: 'liTotal' });
+HouseSort.build({ container: 'sorts', items: SORTS, scoreEl: 'soScore', totalEl: 'soTotal' });
+HouseCollocate.build({ container: 'forks', items: FORKS, scoreEl: 'coScore', totalEl: 'coTotal' });
+document.getElementById('meaning').innerHTML = MEANING;
+HouseCCQ.build({ container: 'ccq', items: CCQ });
+document.getElementById('formRule').innerHTML = FORM_RULE;
+document.getElementById('mistakes').innerHTML = MISTAKES.map(([no, yes]) =>
+  '<div class="pair-card"><div class="pair-line no"><span class="mark">✗</span>' + no + '</div>' +
+  '<div class="pair-line yes"><span class="mark">✓</span>' + yes + '</div></div>').join('');
+HouseErrorHunt.build({ container: 'errorHuntItems', items: EH_ITEMS, scoreEl: 'errorScore', totalEl: 'errorTotal' });
+</script>
+</body>
+</html>

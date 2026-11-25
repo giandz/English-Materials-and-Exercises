@@ -1,0 +1,192 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<title>Animals — Clarification</title>
+<script>
+(function(){
+  try{
+    var saved = localStorage.getItem('theme-preference');
+    var theme = (saved === 'light' || saved === 'dark')
+      ? saved
+      : ((window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches) ? 'dark' : 'light');
+    document.documentElement.setAttribute('data-theme', theme);
+    var fs = parseFloat(localStorage.getItem('font-size-preference'));
+    if (fs >= 10 && fs <= 28) document.documentElement.style.setProperty('--fs-base', fs + 'px');
+  }catch(e){ /* localStorage/matchMedia unavailable — CSS media query still applies */ }
+})();
+</script>
+<link rel="stylesheet" href="house.css">
+<style>
+.flow-card{ border:1px solid var(--color-border-tertiary); border-radius:var(--border-radius-lg); background:var(--surface-2); padding:10px 12px; margin-bottom:10px; }
+.flow-card .sent{ font-size:1rem; font-weight:600; margin-bottom:6px; }
+.flow-card .note{ font-size:.8333rem; color:var(--text-secondary); margin-top:4px; }
+.if-part{ color:hsl(217, 70%, 42%); font-weight:700; }
+.res-part{ color:hsl(120, 60%, 32%); font-weight:700; }
+.res-no{ color:hsl(0, 65%, 42%); font-weight:700; }
+[data-theme="dark"] .res-no{ color:hsl(0, 75%, 70%); }
+[data-theme="dark"] .if-part{ color:hsl(217, 80%, 70%); }
+[data-theme="dark"] .res-part{ color:hsl(120, 55%, 65%); }
+.form-table{ width:100%; border-collapse:collapse; margin:0 0 1rem; font-size:.9333rem; }
+.form-table th, .form-table td{ border:1px solid var(--color-border-tertiary); padding:7px 9px; text-align:left; vertical-align:top; }
+.form-table th{ background:var(--surface-1); font-size:.8rem; text-transform:uppercase; letter-spacing:.04em; color:var(--text-secondary); }
+.pct-row{ display:flex; flex-wrap:wrap; gap:6px; margin:0 0 1rem; }
+.pct-row span{ padding:3px 10px; border-radius:999px; font-weight:700; font-size:.8667rem; border:2px solid; }
+.rule-box p{ margin:0 0 6px; }
+.rule-box p:last-child{ margin-bottom:0; }
+.big-pic{ font-size:1.6rem; letter-spacing:.1em; margin:2px 0 4px; }
+.hl{ font-weight:700; color:var(--text-accent); }
+</style>
+</head>
+<body>
+<div class="page" id="page">
+  <span class="cefr-tag cefr-a1">A1 · Beginner</span>
+  <h1>Animals</h1>
+  <p class="subtitle">What can animals do? What have they got? Where do they live?</p>
+
+  <div class="sec-div">Look</div>
+  <p class="subtitle">From the conversation. Look at the highlighted words.</p>
+  <div id="look"></div>
+
+  <div class="sec-div">Meaning 1 — Can or can’t? Has got or hasn’t got?</div>
+  <p class="subtitle">Tap ✓ (yes) or ✗ (no) in every box. — = we don’t ask.</p>
+  <div class="score-bar"><span>Done: <strong id="grScore">0</strong> / <span id="grTotal">0</span></span></div>
+  <div id="grids"></div>
+
+  <div class="rule-box" id="meaning"></div>
+
+  <div class="sec-div">Meaning 2 — Groups</div>
+  <p class="subtitle">Put each animal in its group. Drag it, or tap it and then tap a group.</p>
+  <div class="score-bar"><span>Done: <strong id="soScore">0</strong> / <span id="soTotal">0</span></span></div>
+  <div id="sorts"></div>
+
+  <div class="sec-div">Mystery animals</div>
+  <p class="subtitle">Read the clue. Which animal is it? Fewer clues = more ⭐.</p>
+  <div class="score-bar"><span>Stars: <strong id="myScore">0</strong> / <span id="myTotal">0</span> ⭐</span></div>
+  <div id="mystery"></div>
+
+  <div class="sec-div">Check the meaning</div>
+  <p class="subtitle">Answer the questions about each sentence.</p>
+  <div id="ccq"></div>
+
+  <div class="sec-div">Form — One animal, two animals</div>
+  <div class="rule-box" id="formRule"></div>
+
+  <div class="sec-div">Common mistakes</div>
+  <div id="mistakes"></div>
+
+  <div class="sec-div">Error hunt</div>
+  <p class="subtitle">Every sentence has one mistake. Tap a word — or a space between words — to fix it. Then press OK.</p>
+  <div class="score-bar"><span>Done: <strong id="errorScore">0</strong> / <span id="errorTotal">0</span></span></div>
+  <div id="errorHuntItems"></div>
+  <footer>Animals — Vocabulary clarification (A1)</footer>
+</div>
+
+<div id="theme-toggle-wrap">
+  <button id="theme-toggle" aria-label="Toggle light/dark mode" title="Toggle light/dark mode">
+    <span id="theme-icon">☀️</span>
+  </button>
+</div>
+<script src="house.js"></script>
+<script src="house-vocab.js"></script>
+<script>
+const LOOK = [
+  ['Penguins <span class="hl">can’t</span> fly. They <span class="hl">can</span> swim very fast.', '<div class="big-pic">🐧 🚫🕊️ · ✅🏊</div>',
+    '<b>can</b> ✅ · <b>can’t</b> 🚫 + a verb: <i>can swim, can’t fly</i>'],
+  ['They’ve <span class="hl">got</span> wings.', '<div class="big-pic">🐧🪽</div>', '<b>have got / has got</b> = have: <i>A penguin <b>has got</b> wings.</i>'],
+  ['<span class="hl">Insects</span> have got six legs.', '<div class="big-pic">🐜 🐝 🦋</div>', 'ants, bees and butterflies are <b>insects</b>']
+];
+const COLS = [{ icon: '🕊️', label: 'fly' }, { icon: '🏊', label: 'swim' }, { icon: '💨', label: 'run fast' },
+  { icon: '🌳', label: 'climb trees' }, { icon: '⤴️', label: 'jump' }, { icon: '🐛', label: 'crawl' }];
+const GRIDS = [
+  { title: 'What can they do?', yes: 'can', no: 'can’t', cols: COLS, rows: [
+    { icon: '🐧', label: 'penguin', subject: 'A penguin', cells: [0, 1, 0, 0, null, null], why: { 0: 'Penguins have got wings, but they <b>can’t</b> fly. They use their wings to swim!' } },
+    { icon: '🐆', label: 'cheetah', subject: 'A cheetah', cells: [0, null, 1, null, 1, null], why: { 2: 'Cheetahs are the fastest animals on land — 100 km an hour!' } },
+    { icon: '🐒', label: 'monkey', subject: 'A monkey', cells: [0, null, null, 1, 1, null] },
+    { icon: '🐸', label: 'frog', subject: 'A frog', cells: [0, 1, 0, null, 1, null], why: { 2: 'Frogs <b>can’t</b> run — they jump.' } },
+    { icon: '🦆', label: 'duck', subject: 'A duck', cells: [1, 1, 0, 0, null, null], why: { 3: 'Ducks <b>can’t</b> climb trees — they haven’t got hands.' } },
+    { icon: '🐋', label: 'whale', subject: 'A whale', cells: [0, 1, 0, 0, null, null] },
+    { icon: '🐜', label: 'ant', subject: 'An ant', cells: [null, null, null, 1, null, 1], why: { 3: 'Ants <b>can</b> climb trees — and walls!' } },
+    { icon: '🐌', label: 'snail', subject: 'A snail', cells: [0, null, 0, null, 0, 1], why: { 2: 'Snails are very, very slow!', 5: 'Yes — a snail <b>can</b> crawl. It moves on its body.' } },
+    { icon: '🐅', label: 'tiger', subject: 'A tiger', cells: [0, 1, 1, null, 1, null], why: { 1: 'Tigers love water — they <b>can</b> swim very well!' } }
+  ], note: 'Now you know what they can and can’t do!' },
+  { title: 'What have they got?', yes: 'has got', no: 'hasn’t got',
+    cols: [{ icon: '🪽', label: 'wings' }, { icon: '🪶', label: 'feathers' }, { icon: '🦵', label: 'four legs' }, { icon: '🐰', label: 'long ears' }],
+    rows: [
+      { icon: '🦆', label: 'duck', subject: 'A duck', cells: [1, 1, 0, 0] },
+      { icon: '🐧', label: 'penguin', subject: 'A penguin', cells: [1, 1, 0, 0], why: { 0: 'Yes! Penguins <b>have got</b> wings — small ones.', 1: 'Yes! Penguins <b>have got</b> feathers — very short ones.' } },
+      { icon: '🐄', label: 'cow', subject: 'A cow', cells: [0, 0, 1, 0] },
+      { icon: '🐸', label: 'frog', subject: 'A frog', cells: [0, 0, 1, 0], why: { 2: 'Yes! A frog <b>has got</b> four legs — two short ones and two long ones.' } },
+      { icon: '🐇', label: 'rabbit', subject: 'A rabbit', cells: [0, 0, 1, 1] },
+      { icon: '🐝', label: 'bee', subject: 'A bee', cells: [1, 0, 0, 0], why: { 0: 'Yes! Insects like bees <b>have got</b> wings.', 2: 'No — insects have got <b>six</b> legs.' } }
+    ] }
+];
+const MEANING = '<p><strong>can</strong> ✅ / <strong>can’t</strong> 🚫 + verb: <i>A duck <b>can</b> fly. A penguin <b>can’t</b> fly.</i></p>' +
+  '<p><strong>has got</strong> / <strong>hasn’t got</strong>: <i>A duck <b>has got</b> wings. A cow <b>hasn’t got</b> wings.</i></p>' +
+  '<p><strong>Questions:</strong> <i><b>Can</b> a penguin fly? — No, it <b>can’t</b>.</i> · <i><b>Has</b> a frog <b>got</b> a tail? — No, it <b>hasn’t</b>.</i></p>';
+const SORTS = [
+  { title: 'Where do they live?', groups: [{ label: 'on a farm', icon: '🚜' }, { label: 'in the wild', icon: '🌳' }, { label: 'in the sea', icon: '🌊' }],
+    words: [['cow', 0, 'Cows live <b>on a farm</b>.'], ['pig', 0, 'Pigs live <b>on a farm</b>.'], ['goat', 0, 'Goats live <b>on a farm</b>.'], ['sheep', 0, 'Sheep live <b>on a farm</b>.'],
+      ['lion', 1, 'Lions live <b>in the wild</b> — in Africa.'], ['tiger', 1, 'Tigers live <b>in the wild</b> — in Asia.'], ['monkey', 1, 'Monkeys live <b>in the wild</b> — in trees.'],
+      ['whale', 2, 'Whales live <b>in the sea</b>.'], ['dolphin', 2, 'Dolphins live <b>in the sea</b>.'], ['shark', 2, 'Sharks live <b>in the sea</b>.']] },
+  { title: 'What are they?', groups: [{ label: 'birds', icon: '🐦' }, { label: 'insects', icon: '🐞' }, { label: 'other animals', icon: '🐾' }],
+    words: [['duck', 0, 'A duck has got feathers: it’s a <b>bird</b>.'], ['penguin', 0, 'A penguin has got feathers and wings: it’s a <b>bird</b> — but it can’t fly!'], ['owl', 0, 'An owl is a <b>bird</b>.'],
+      ['ant', 1, 'An ant has got six legs: it’s an <b>insect</b>.'], ['bee', 1, 'A bee has got six legs: it’s an <b>insect</b>.'], ['butterfly', 1, 'A butterfly has got six legs: it’s an <b>insect</b>.'],
+      ['frog', 2, 'A frog hasn’t got feathers or six legs.'], ['whale', 2, 'A whale isn’t a fish or a bird.'], ['rabbit', 2, 'A rabbit hasn’t got feathers or six legs.']],
+    note: 'Birds and insects have got wings.' }
+];
+const MYSTERY = [
+  { answer: 'penguin', pic: '🐧', options: ['penguin', 'duck', 'whale', 'owl'],
+    clues: ['The ❓ has got wings, but it can’t fly.', 'The ❓ lives in very cold places.', 'The ❓ is black and white, and it can swim very fast.'] },
+  { answer: 'monkey', pic: '🐒', options: ['monkey', 'tiger', 'frog', 'rabbit'],
+    clues: ['The ❓ can climb trees very well.', 'The ❓ has got long arms and a long tail.', 'The ❓ loves bananas!'] },
+  { answer: 'sheep', pic: '🐑', options: ['sheep', 'goat', 'cow', 'pig'],
+    clues: ['The ❓ lives on a farm.', 'We get wool from the ❓.', 'The ❓ is white and it says “baa”.'] }
+];
+const CCQ = [
+  { sentence: 'Penguins have got wings, but they can’t fly.', questions: [
+    { q: 'Have penguins got wings?', opts: ['Yes', 'No'], correct: 0, why: 'Yes — <b>have got</b> wings.' },
+    { q: 'Can they fly?', opts: ['Yes', 'No'], correct: 1, why: 'No — <b>can’t</b> fly.' } ] },
+  { sentence: 'A cheetah can run very fast.', questions: [
+    { q: 'Is a cheetah slow?', opts: ['Yes', 'No'], correct: 1, why: 'No. <b>Fast</b> is the opposite of slow.' } ] },
+  { sentence: 'Ants are insects.', questions: [
+    { q: 'Have ants got six legs?', opts: ['Yes', 'No'], correct: 0, why: 'Yes. All insects have got six legs.' } ] }
+];
+const FORM_RULE = '<p><strong>+ s:</strong> a duck → two duck<b>s</b> · a monkey → monkey<b>s</b> · <strong>+ es:</strong> a fox → fox<b>es</b></p>' +
+  '<p><strong>The same:</strong> a sheep → two <b>sheep</b> · a fish → two <b>fish</b> · a deer → two <b>deer</b></p>' +
+  '<p><strong>Different:</strong> a mouse → two <b>mice</b> · a goose → two <b>geese</b> · a butterfly → butterfl<b>ies</b></p>';
+const MISTAKES = [
+  ['A penguin can’t flies.', 'A penguin can’t fly.'],
+  ['A duck have got wings.', 'A duck has got wings.'],
+  ['Can a fish to swim?', 'Can a fish swim?'],
+  ['Monkeys can climbing trees.', 'Monkeys can climb trees.'],
+  ['Has a cow got wings? — No, it can’t.', 'Has a cow got wings? — No, it hasn’t.'],
+  ['There are ten sheeps on the farm.', 'There are ten sheep on the farm.']
+];
+const EH_ITEMS = [
+  { words: ['A', 'penguin', 'can’t', 'flies', '.'], error: { type: 'wrong', wordIndex: 3, options: ['fly', 'flying', 'to fly'], correct: 'fly' } },
+  { words: ['A', 'duck', 'have', 'got', 'wings', '.'], error: { type: 'wrong', wordIndex: 2, options: ['has', 'is', 'can'], correct: 'has' } },
+  { words: ['Can', 'a', 'fish', 'to', 'swim', '?'], error: { type: 'extra', wordIndex: 3 } },
+  { words: ['Monkeys', 'can', 'climbing', 'trees', '.'], error: { type: 'wrong', wordIndex: 2, options: ['climb', 'climbs', 'to climb'], correct: 'climb' } },
+  { words: ['Insects', 'have', 'got', 'six', 'leg', '.'], error: { type: 'wrong', wordIndex: 4, options: ['legs', 'leges', 'a leg'], correct: 'legs' } },
+  { words: ['A', 'cheetah', 'can', 'run', 'very', 'slow', '.'], error: { type: 'wrong', wordIndex: 5, options: ['fast', 'fastly', 'faster'], correct: 'fast' } },
+  { words: ['A', 'frog', 'can', 'jump', 'and', 'it', 'swim', '.'], error: { type: 'missing', gapIndex: 6, options: ['can', 'is', 'has'], correct: 'can' } },
+  { words: ['Whales', 'live', 'in', 'a', 'farm', '.'], error: { type: 'wrong', wordIndex: 4, options: ['the sea', 'a tree', 'the sky'], correct: 'the sea' } }
+];
+
+document.getElementById('look').innerHTML = LOOK.map(([sent, vis, note]) =>
+  '<div class="flow-card"><div class="sent">' + sent + '</div>' + (vis || '') + (note ? '<div class="note">' + note + '</div>' : '') + '</div>').join('');
+HouseGrid.build({ container: 'grids', items: GRIDS, scoreEl: 'grScore', totalEl: 'grTotal' });
+document.getElementById('meaning').innerHTML = MEANING;
+HouseSort.build({ container: 'sorts', items: SORTS, scoreEl: 'soScore', totalEl: 'soTotal' });
+HouseMystery.build({ container: 'mystery', items: MYSTERY, scoreEl: 'myScore', totalEl: 'myTotal' });
+HouseCCQ.build({ container: 'ccq', items: CCQ });
+document.getElementById('formRule').innerHTML = FORM_RULE;
+document.getElementById('mistakes').innerHTML = MISTAKES.map(([no, yes]) =>
+  '<div class="pair-card"><div class="pair-line no"><span class="mark">✗</span>' + no + '</div>' +
+  '<div class="pair-line yes"><span class="mark">✓</span>' + yes + '</div></div>').join('');
+HouseErrorHunt.build({ container: 'errorHuntItems', items: EH_ITEMS, scoreEl: 'errorScore', totalEl: 'errorTotal' });
+</script>
+</body>
+</html>

@@ -1,0 +1,134 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<title>The First Class — School and Study</title>
+<script>
+(function(){
+  try{
+    var saved = localStorage.getItem('theme-preference');
+    var theme = (saved === 'light' || saved === 'dark')
+      ? saved
+      : ((window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches) ? 'dark' : 'light');
+    document.documentElement.setAttribute('data-theme', theme);
+    var fs = parseFloat(localStorage.getItem('font-size-preference'));
+    if (fs >= 10 && fs <= 28) document.documentElement.style.setProperty('--fs-base', fs + 'px');
+  }catch(e){ /* localStorage/matchMedia unavailable — CSS media query still applies */ }
+})();
+</script>
+<link rel="stylesheet" href="house.css">
+<style>
+.cast-row{ display:flex; flex-wrap:wrap; gap:14px 18px; justify-content:center; align-items:flex-end; margin:0 0 1rem; padding:10px; background:var(--surface-1); border:1px solid var(--border); border-radius:var(--border-radius-lg); font-size:.8667rem; }
+.match-wrap .match-col-label{ text-align:center; }
+#picCol .match-card{ font-size:1.35rem; justify-content:center; }
+</style>
+</head>
+<body>
+<div class="page" id="page">
+  <span class="cefr-tag cefr-a1a2">A1/A2 · Elementary</span>
+  <h1>The First Class</h1>
+  <p class="subtitle">It’s Omar’s first English class. The teacher, Ms. Ruiz, gives a lot of instructions!</p>
+
+  <div class="sec-div">Words for this lesson</div>
+  <p class="subtitle">Match the picture and the words. Tap a picture, then tap its words.</p>
+  <div class="score-bar"><span>Matched: <strong id="mScore">0</strong> / <span id="mTotal">0</span></span><button id="mReset">↺ Reset</button></div>
+  <div class="match-grid match-wrap">
+    <div><div class="match-col-label">Picture</div><div class="match-col" id="picCol"></div></div>
+    <div><div class="match-col-label">Words</div><div class="match-col" id="wordCol"></div></div>
+  </div>
+  <div class="win-msg" id="mWin">🎉 Great! You know the words for the conversation.</div>
+  <div class="feedback" id="mFeedback"></div>
+
+  <div class="sec-div">Before you read</div>
+  <div id="preQuestions"></div>
+
+  <div class="sec-div">The people</div>
+  <div class="cast-row" id="castRow"></div>
+
+  <div class="sec-div">The conversation</div>
+  <div class="setting-chip"><span class="section-icon">🏫</span> Monday evening — an English class at the community center</div>
+  <button class="grammar-toggle-btn" id="grammarToggle">🎨 Show Grammar</button>
+  <div class="pos-legend"></div>
+  <div id="conversation"></div>
+
+  <div class="sec-div">Check your answers</div>
+  <div id="quiz"></div>
+
+  <footer>The First Class — Vocabulary: school and study (A1/A2)</footer>
+</div>
+
+<div id="theme-toggle-wrap">
+  <button id="theme-toggle" aria-label="Toggle light/dark mode" title="Toggle light/dark mode">
+    <span id="theme-icon">☀️</span>
+  </button>
+</div>
+<script src="house.js"></script>
+<script src="stick-character.js"></script>
+<script src="stick-sentence.js"></script>
+<script>
+StickSentence.cast({
+  ruiz: { base:'woman', colour:'#CC0000', label:'Ms. Ruiz' },
+  omar: { base:'man', colour:'#00CC66', label:'Omar' }
+});
+StickSentence.toggle();
+window.LESSON_DICT = {
+  'textbook':  { pos:'noun', def:'a book that you use to study a subject', ex:'Open your textbooks to page 10.', es:'libro de texto' },
+  'workbook':  { pos:'noun', def:'a book with exercises that you write in', ex:'Do exercise 3 in your workbook.', es:'cuaderno de ejercicios' },
+  'underline': { pos:'verb', def:'to draw a line under a word', ex:'Underline the new words.', es:'subrayar' },
+  'paragraph': { pos:'noun', def:'a short part of a text, with a few sentences about one idea', ex:'Write a short paragraph about your family.', es:'párrafo' },
+  'flashcard': { pos:'noun', def:'a small card with a word or a picture, to help you learn', ex:'Practice with your flashcards.', es:'tarjeta de vocabulario' }
+};
+const WORDS = [['✏️', 'a pencil'], ['🖍️', 'a crayon'], ['📓', 'a notebook'], ['📕', 'a textbook'], ['✂️', 'scissors'],
+  ['🧮', 'a calculator'], ['🗂️', 'flashcards'], ['💻', 'a webpage'], ['📱', 'an e-book'], ['🖱️', 'right-click']];
+document.getElementById('castRow').innerHTML = ['{Ms. Ruiz|ruiz}', '{Omar|omar}'].map(StickSentence.html).join('');
+const SPEAKERS = {
+  'Ms. Ruiz': { cast: 'ruiz', avatar: '👩🏻‍🏫', av: 'av-a', side: 'left' },
+  Omar:       { cast: 'omar', avatar: '👨🏽', av: 'av-b', side: 'right' }
+};
+const LINES = [
+  ['Ms. Ruiz', '[Good evening/none], [everybody/noun]! [Please/adverb] [open/verb] [your textbooks/object] [to page 10/prep].'],
+  ['Omar', '[Sorry/none], [I/subject] [don’t have/verb] [a textbook/object]. [I/subject] [only/adverb] [have/verb] [a notebook/object].'],
+  ['Ms. Ruiz', '[That’s OK/none]. [Look/verb] [at the computer/prep]. [Go/verb] [to our class webpage/prep]. [The e-book/subject] [is/verb] [there/adverb].'],
+  ['Omar', '[OK/none]… [Where/wh] [do/aux] [I/subject] [click/verb]?'],
+  ['Ms. Ruiz', '[Right-click/verb] [on “Unit 1”/prep] [and/conj] [open/verb] [it/object] [in a new tab/prep].'],
+  ['Omar', '[Got it/none]. [Now what/wh]?'],
+  ['Ms. Ruiz', '[Read/verb] [the poem/object] [on page 10/prep]. [Then/adverb] [underline/verb] [the words/object] [you don’t know/none].'],
+  ['Omar', '[Can/aux] [I/subject] [use/verb] [a pencil/object]?'],
+  ['Ms. Ruiz', '[Yes/none], [of course/none]. [But/conj] [don’t use/verb] [your phone dictionary/object] [yet/adverb] — [guess/verb] [first/adverb]!'],
+  ['Omar', '[Do/aux] [we/subject] [need/verb] [a calculator/object] [today/time]?'],
+  ['Ms. Ruiz', '[No/none], [Omar/noun]! [This/subject] [is/verb] [English class/complement], [not math/complement]! [Now/time], [in your workbook/prep], [write/verb] [a short paragraph/object] [about your family/prep].'],
+  ['Omar', '[How many/wh] [sentences/object]?'],
+  ['Ms. Ruiz', '[Five or six/det]. [And/conj] [here are/verb] [some flashcards/subject] [for the new words/prep]. [Take/verb] [them/object] [home/adverb] [and/conj] [practice/verb].'],
+  ['Omar', '[Can/aux] [I/subject] [take/verb] [some crayons/object] [for my daughter/prep]? [She/subject] [loves/verb] [drawing/object]!'],
+  ['Ms. Ruiz', '[Sure/none]! [But/conj] [not/neg] [the scissors/object] — [they/subject] [stay/verb] [here/adverb]!']
+];
+const CQ_ITEMS = [
+  { q: 'What doesn’t Omar have?', opts: ['A textbook', 'A notebook', 'A pencil'], correct: 0 },
+  { q: 'What should he underline?', opts: ['The words he doesn’t know', 'The verbs', 'His name'], correct: 0 },
+  { q: 'What does he write in his workbook?', opts: ['A paragraph about his family', 'A poem', 'Math exercises'], correct: 0 }
+];
+
+/* ── the conversation ─────────────────────────────────────────────────── */
+const avStyle = s => { const c = (StickSentence.cast()[s.cast] || {}).colour;
+  return c ? 'background:' + c + '40;box-shadow:inset 0 0 0 2px ' + c : ''; };
+const conv = document.getElementById('conversation');
+LINES.forEach(([who, text]) => {
+  const s = SPEAKERS[who], right = s.side === 'right';
+  conv.insertAdjacentHTML('beforeend',
+    '<div class="bubble-wrap' + (right ? ' right' : '') + '">' +
+      '<div class="avatar ' + s.av + '" style="' + avStyle(s) + '">' + s.avatar + '</div>' +
+      '<div class="bubble-col"><div class="bname' + (right ? ' right' : '') + '">' + who + '</div>' +
+      '<div class="bubble ' + (right ? 'right' : 'left') + '">' + StickSentence.html(text) + '</div></div>' +
+    '</div>');
+});
+
+HouseMatching.build({
+  left: 'picCol', right: 'wordCol', scoreEl: 'mScore', totalEl: 'mTotal', winEl: 'mWin', resetBtn: 'mReset', feedbackEl: 'mFeedback',
+  pairs: WORDS.map(([e, w]) => ({ id: w, left: e, right: w }))
+});
+HouseComprehension.build({ pre: 'preQuestions', quiz: 'quiz', items: CQ_ITEMS });
+</script>
+<script>HouseGrammar.init();</script>
+</body>
+</html>

@@ -1,0 +1,97 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<title>Free Time and Places — Practice</title>
+<script>
+(function(){
+  try{
+    var saved = localStorage.getItem('theme-preference');
+    var theme = (saved === 'light' || saved === 'dark')
+      ? saved
+      : ((window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches) ? 'dark' : 'light');
+    document.documentElement.setAttribute('data-theme', theme);
+    var fs = parseFloat(localStorage.getItem('font-size-preference'));
+    if (fs >= 10 && fs <= 28) document.documentElement.style.setProperty('--fs-base', fs + 'px');
+  }catch(e){ /* localStorage/matchMedia unavailable — CSS media query still applies */ }
+})();
+</script>
+<link rel="stylesheet" href="house.css">
+<style>
+
+</style>
+</head>
+<body>
+<div class="page" id="page">
+  <span class="cefr-tag cefr-a2">A2 · Elementary</span>
+  <h1>Free Time and Places — Practice</h1>
+  <p class="subtitle">Say what you enjoy doing — and where you like to go.</p>
+
+  <div class="sec-div">Practice 1 — Match the halves</div>
+  <p class="subtitle">Tap the start of a sentence, then tap its end.</p>
+  <div class="score-bar"><span>Matched: <strong id="mScore">0</strong> / <span id="mTotal">0</span></span><button id="mReset">↺ Reset</button></div>
+  <div class="match-grid">
+    <div><div class="match-col-label">Start</div><div class="match-col" id="leftCol"></div></div>
+    <div><div class="match-col-label">End</div><div class="match-col" id="rightCol"></div></div>
+  </div>
+  <div class="win-msg" id="mWin">🎉 All matched!</div>
+  <div class="feedback" id="mFeedback"></div>
+
+  <div class="sec-div">Practice 2 — Word order</div>
+  <p class="subtitle">Tap the words to build the sentence. Tap a word again to take it back, or drag to change the order.</p>
+  <button class="grammar-toggle-btn" id="grammarToggle">🎨 Show Grammar</button>
+  <div class="pos-legend"></div>
+  <div class="score-bar"><span>Correct: <strong id="woScore">0</strong> / <span id="woTotal">0</span></span></div>
+  <div id="woItems"></div>
+
+  <div class="sec-div">Practice 3 — Complete the sentences</div>
+  <p class="subtitle">Write the missing word. The bar turns green 🔴→🟢 when you are right.</p>
+  <div id="gfItems"></div>
+
+  <footer>Free time and places — Vocabulary practice (A2)</footer>
+</div>
+
+<div id="theme-toggle-wrap">
+  <button id="theme-toggle" aria-label="Toggle light/dark mode" title="Toggle light/dark mode">
+    <span id="theme-icon">☀️</span>
+  </button>
+</div>
+<script src="house.js"></script>
+<script>
+const HALVES = [
+  ['I really enjoy', 'going fishing with my grandpa.'], ['We flew a kite', 'in the park on Sunday.'], ['My sister plays the violin', 'in the city orchestra.'],
+  ['There’s a castle on the hill', 'with a very tall tower.'], ['Let’s go to the circus —', 'there’s a man who does magic!'], ['My dad always tells', 'really bad jokes.'],
+  ['Don’t go into the cave', 'without a flashlight!'], ['She won first prize', 'in a photo competition.']
+];
+const WO_ITEMS = [
+  { context: '🪁 Hobbies', text: 'I / love / flying / kites.', pos: ['subject', 'verb', 'object', 'object'] },
+  { context: '🎭 A question', text: 'Do / you / enjoy / going / to the theater?', pos: ['aux', 'subject', 'verb', 'object', 'prep'] },
+  { context: '⏳ Waiting', text: 'She / doesn’t mind / waiting / for the bus.', pos: ['subject', 'verb', 'object', 'prep'] },
+  { context: '🎣 Last weekend', text: 'We / went / fishing / in the forest.', pos: ['subject', 'verb', 'object', 'prep'] },
+  { context: '😂 Jokes', text: 'My brother / is / good at / telling / jokes.', pos: ['subject', 'verb', 'adj', 'object', 'object'] },
+  { context: '🏰 An idea', text: 'How about / visiting / the castle?', pos: ['wh', 'verb', 'object'] }
+];
+const GF_LABELS = { place: 'places', hobby: 'free time', ing: 'verb + -ing' };
+const GF_ITEMS = [
+  { category: 'place', direct: 'A lot of trees, together.', template: 'We walked in the {0} all day.', hints: [{ accepted: ['forest'] }] },
+  { category: 'place', direct: 'A very old, big building — kings lived there.', template: 'We visited a {0} in Scotland.', hints: [{ accepted: ['castle'] }] },
+  { category: 'place', direct: 'A very big place to watch sports.', template: 'The {0} was full — 60,000 people!', hints: [{ accepted: ['stadium'] }] },
+  { category: 'place', direct: 'A dark hole in a mountain.', template: 'Bats live in the {0}.', hints: [{ accepted: ['cave'] }] },
+  { category: 'hobby', direct: '🎻 A musical instrument.', template: 'She plays the {0} beautifully.', hints: [{ accepted: ['violin'] }] },
+  { category: 'hobby', direct: 'You sit by a lake and wait with a rod.', template: 'My dad loves {0}.', hints: [{ accepted: ['fishing'] }] },
+  { category: 'hobby', direct: 'A short, funny story.', template: 'He told a {0}, and everybody laughed.', hints: [{ accepted: ['joke'] }] },
+  { category: 'ing', direct: 'swim → ?', template: 'I enjoy {0} in the sea.', hints: [{ accepted: ['swimming'] }] },
+  { category: 'ing', direct: 'wait → ?', template: 'I don’t mind {0} for the bus.', hints: [{ accepted: ['waiting'] }] }
+];
+
+HouseMatching.build({
+  left: 'leftCol', right: 'rightCol', scoreEl: 'mScore', totalEl: 'mTotal', winEl: 'mWin', resetBtn: 'mReset', feedbackEl: 'mFeedback',
+  pairs: HALVES.map(([a, b], i) => ({ id: 'h' + i, left: a, right: b }))
+});
+HouseWordOrder.build({ container: 'woItems', items: WO_ITEMS, scoreEl: 'woScore', totalEl: 'woTotal' });
+HouseGapFill.build({ container: 'gfItems', items: GF_ITEMS, labels: GF_LABELS });
+</script>
+<script>HouseGrammar.init();</script>
+</body>
+</html>

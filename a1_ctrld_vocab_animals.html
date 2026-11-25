@@ -1,0 +1,97 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<title>Animals — Practice</title>
+<script>
+(function(){
+  try{
+    var saved = localStorage.getItem('theme-preference');
+    var theme = (saved === 'light' || saved === 'dark')
+      ? saved
+      : ((window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches) ? 'dark' : 'light');
+    document.documentElement.setAttribute('data-theme', theme);
+    var fs = parseFloat(localStorage.getItem('font-size-preference'));
+    if (fs >= 10 && fs <= 28) document.documentElement.style.setProperty('--fs-base', fs + 'px');
+  }catch(e){ /* localStorage/matchMedia unavailable — CSS media query still applies */ }
+})();
+</script>
+<link rel="stylesheet" href="house.css">
+<style>
+
+</style>
+</head>
+<body>
+<div class="page" id="page">
+  <span class="cefr-tag cefr-a1">A1 · Beginner</span>
+  <h1>Animals — Practice</h1>
+  <p class="subtitle">What can animals do? What have they got?</p>
+
+  <div class="sec-div">Practice 1 — Match the halves</div>
+  <p class="subtitle">Tap the start of a sentence, then tap its end.</p>
+  <div class="score-bar"><span>Matched: <strong id="mScore">0</strong> / <span id="mTotal">0</span></span><button id="mReset">↺ Reset</button></div>
+  <div class="match-grid">
+    <div><div class="match-col-label">Start</div><div class="match-col" id="leftCol"></div></div>
+    <div><div class="match-col-label">End</div><div class="match-col" id="rightCol"></div></div>
+  </div>
+  <div class="win-msg" id="mWin">🎉 All matched!</div>
+  <div class="feedback" id="mFeedback"></div>
+
+  <div class="sec-div">Practice 2 — Word order</div>
+  <p class="subtitle">Tap the words to build the sentence. Tap a word again to take it back, or drag to change the order.</p>
+  <button class="grammar-toggle-btn" id="grammarToggle">🎨 Show Grammar</button>
+  <div class="pos-legend"></div>
+  <div class="score-bar"><span>Correct: <strong id="woScore">0</strong> / <span id="woTotal">0</span></span></div>
+  <div id="woItems"></div>
+
+  <div class="sec-div">Practice 3 — Complete the sentences</div>
+  <p class="subtitle">Write the missing word. The bar turns green 🔴→🟢 when you are right.</p>
+  <div id="gfItems"></div>
+
+  <footer>Animals — Vocabulary practice (A1)</footer>
+</div>
+
+<div id="theme-toggle-wrap">
+  <button id="theme-toggle" aria-label="Toggle light/dark mode" title="Toggle light/dark mode">
+    <span id="theme-icon">☀️</span>
+  </button>
+</div>
+<script src="house.js"></script>
+<script>
+const HALVES = [
+  ['A penguin has got wings,', 'but it can’t fly.'], ['A cheetah can run', 'faster than a car!'], ['Monkeys can climb', 'trees with their hands and feet.'],
+  ['Ants and bees are', 'insects — they’ve got six legs.'], ['A whale lives', 'in the sea.'], ['We get wool', 'from sheep.'],
+  ['A duck can fly', 'and swim.'], ['A frog can’t run,', 'but it can jump very well.']
+];
+const WO_ITEMS = [
+  { context: '🐧 Penguins', text: 'A penguin / can’t / fly.', pos: ['subject', 'aux', 'verb'] },
+  { context: '🐒 Monkeys', text: 'Monkeys / can / climb / trees.', pos: ['subject', 'aux', 'verb', 'object'] },
+  { context: '🦆 Ducks', text: 'A duck / has got / two / wings.', pos: ['subject', 'verb', 'det', 'object'] },
+  { context: '🐐 On the farm', text: 'Goats / and / sheep / live / on a farm.', pos: ['subject', 'conj', 'subject', 'verb', 'prep'] },
+  { context: '❓ A question', text: 'Can / a / tiger / swim?', pos: ['aux', 'det', 'subject', 'verb'] },
+  { context: '❓ A question', text: 'Has / a cow / got / wings?', pos: ['aux', 'subject', 'verb', 'object'] }
+];
+const GF_LABELS = { an: 'animals', can: 'can · can’t', got: 'has got' };
+const GF_ITEMS = [
+  { category: 'an', direct: '🐄 It lives on a farm and gives us milk.', template: 'A {0} says “moo”.', hints: [{ accepted: ['cow'] }] },
+  { category: 'an', direct: '🐸 A small green animal. It can jump.', template: 'The {0} is in the water.', hints: [{ accepted: ['frog'] }] },
+  { category: 'an', direct: '🐋 A very big animal in the sea.', template: 'A {0} is bigger than a bus.', hints: [{ accepted: ['whale'] }] },
+  { category: 'an', direct: '🐜 🐝 Small animals with six legs.', template: 'Ants and bees are {0}.', hints: [{ accepted: ['insects'] }] },
+  { category: 'can', direct: '✅ Yes, it is possible.', template: 'Ducks {0} swim.', hints: [{ accepted: ['can'] }] },
+  { category: 'can', direct: '🚫 No, it isn’t possible.', template: 'A penguin {0} fly.', hints: [{ accepted: ['can’t', "can't", 'cannot'] }] },
+  { category: 'got', direct: 'It has them — for flying.', template: 'A bird has got two {0}.', hints: [{ accepted: ['wings'] }] },
+  { category: 'got', direct: 'One animal — yes.', template: 'A rabbit {0} got long ears.', hints: [{ accepted: ['has'] }] },
+  { category: 'got', direct: 'One animal — no.', template: 'A fish {0} got legs.', hints: [{ accepted: ['hasn’t', "hasn't", 'has not'] }] }
+];
+
+HouseMatching.build({
+  left: 'leftCol', right: 'rightCol', scoreEl: 'mScore', totalEl: 'mTotal', winEl: 'mWin', resetBtn: 'mReset', feedbackEl: 'mFeedback',
+  pairs: HALVES.map(([a, b], i) => ({ id: 'h' + i, left: a, right: b }))
+});
+HouseWordOrder.build({ container: 'woItems', items: WO_ITEMS, scoreEl: 'woScore', totalEl: 'woTotal' });
+HouseGapFill.build({ container: 'gfItems', items: GF_ITEMS, labels: GF_LABELS });
+</script>
+<script>HouseGrammar.init();</script>
+</body>
+</html>

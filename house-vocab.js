@@ -7,6 +7,10 @@
                       (do ✔ / make ✘ + homework)
      HouseWordFamily  word family grid: noun / verb / adjective / adverb,
                       then use one form in a sentence
+     HouseSort        sort words into groups
+     HouseListen      listen, then tap what you heard
+     HouseGrid        a yes / no table: can ✓ / can’t ✗, has got / hasn’t got
+     HouseLabel       label a picture: words to the boxes beside it
      HouseMystery     mystery word: a ❓ hides the same word in three clues;
                       fewer clues = more ⭐
 
@@ -37,9 +41,40 @@
      item: { forms:{ noun:'success', verb:'succeed', adj:'successful', adverb:'successfully' },
              given:'noun',                 // or ['noun','adj']; default: the first form
              use:{ template:'She passed the test {0}.', accepted:['successfully'] } }   // optional
+     labels: optional { column: 'Header' } for columns of your own (e.g. { num:'Number', ord:'1st, 2nd…' });
+     pos:    optional { column: 'noun' | 'verb' | 'adj' | 'adverb' | 'prep' | 'det' } — the colour of a column of your own.
      A form may list alternatives with '/' ('happiness'), or be null for "no word" (shown as —).
      Inputs correct themselves as you type (bar 🔴→🟢), like HouseGapFill. When the row is
      complete, the `use` sentence appears. A family scores when everything in it is done.
+
+   ── HouseSort.build({ container, items, scoreEl, totalEl })
+     item: { title, groups:[{ label:'Metal', icon:'🪙' }, …],
+             words:[['gold', 0], ['cotton', 1, 'Cotton comes from a plant — it’s a fabric.'], …],   // [word, group index, why if wrong]
+             note:'…' }                                       // optional; shown when every word is in its group
+     Drag a word into a group, or tap a word then tap a group. Right: it stays there.
+     Wrong: it shakes and goes back (and the why, if there is one, is shown). One point for each item sorted.
+
+   ── HouseListen.build({ container, items, scoreEl, totalEl, title, hint })
+     item: { say:'thirteen', options:['13','30'], correct:0, note:'thir<b>TEEN</b>' }   // note: optional, shown when right
+     Tap 🔊 to hear it (HouseSpeak, or the browser's voice), then tap what you heard.
+     Right: green, and it says it again. Wrong: red and crossed out — try again. One point for each item.
+
+   ── HouseGrid.build({ container, items, scoreEl, totalEl })
+     item: { title, yes:'can', no:'can’t', pronoun:'It',
+             cols:[{ icon:'🕊️', label:'fly' }, …],                       // label = the words after yes / no
+             rows:[{ icon:'🐧', label:'penguin', subject:'A penguin',
+                     cells:[0, 1, null, …],                              // 1 yes · 0 no · null not asked
+                     why:{ 0:'Penguins have wings, but they can’t fly.' } }, …],   // optional, shown on a wrong answer
+             note:'…' }
+     Every cell has ✓ and ✗. Right: it stays (green ✓ or red ✗). Wrong: it shakes and the why is shown.
+     A finished row writes its sentence under the table: “A penguin can swim. It can’t fly or run fast.”
+     One point for each row.
+
+   ── HouseLabel.build({ container, items, scoreEl, totalEl })
+     item: { title, svg:'<svg viewBox="0 0 200 400">…</svg>', w:200, h:400, width:'15rem',
+             spots:[{ x:100, y:30, word:'head', side:'left' }, …] }       // x, y in the svg's units
+     A label box on each side of the picture, joined to its dot by a line. Drag a word to a box (or to its
+     dot), or tap a word and then tap a box. Right: the word stays. One point for each picture.
 
    ── HouseMystery.build({ container, items, points, scoreEl, totalEl })
      item: { answer:'oven' | ['oven','ovens'], pic:'🔥',
@@ -54,8 +89,8 @@
   'use strict';
 
   var STYLE_ID = 'house-vocab-css';
-  var POS = { noun: 'noun', verb: 'verb', adj: 'adj', adverb: 'adverb', person: 'noun', prep: 'prep', opposite: 'adj' };
-  var POS_HEX = { noun: '#ea580c', verb: '#f59e0b', adj: '#c026d3', adverb: '#0891b2', prep: '#65a30d' };
+  var POS = { noun: 'noun', verb: 'verb', adj: 'adj', adverb: 'adverb', person: 'noun', prep: 'prep', opposite: 'adj', det: 'det', time: 'time' };
+  var POS_HEX = { noun: '#ea580c', verb: '#f59e0b', adj: '#c026d3', adverb: '#0891b2', prep: '#65a30d', det: '#6366f1', time: '#0d9488' };
   function posVars(c) { var k = POS[c] || 'det'; return '--hv-pos:var(--pos-' + k + ',' + (POS_HEX[k] || '#6366f1') + ');--hv-pos-bg:var(--pos-' + k + '-bg,color-mix(in srgb,' + (POS_HEX[k] || '#6366f1') + ' 14%,transparent))'; }
   var LABEL = { noun: 'Noun', verb: 'Verb', adj: 'Adjective', adverb: 'Adverb', person: 'Person', prep: 'Preposition', opposite: 'Opposite' };
 
@@ -121,6 +156,58 @@
     + '.hv-phrase{ font-size:.8667rem; font-weight:600; padding:3px 11px; border-radius:20px; background:var(--bg-pos,#eaf3de); color:var(--text-pos,#27500a); cursor:pointer; }'
     + '.hv-why{ font-size:.8rem; line-height:1.55; margin-top:6px; min-height:0; color:var(--color-text-danger,#791f1f); }'
     + '.hv-why:not(:empty){ background:var(--color-background-danger,#fcebeb); border-radius:var(--border-radius-md,8px); padding:6px 10px; }'
+    /* ── HouseSort ── */
+    + '.hv-bins{ display:grid; grid-template-columns:repeat(auto-fit,minmax(min(100%,9.5rem),1fr)); gap:8px; }'
+    + '.hv-bin{ --h:210; min-height:6.5rem; border-radius:var(--border-radius-md,8px); border:1.5px dashed hsl(var(--h) 55% 55%); background:hsl(var(--h) 70% 50% / .07); padding:6px; display:flex; flex-direction:column; gap:5px; transition:background .15s, border-color .15s; cursor:pointer; }'
+    + '.hv-bin.hv-over{ background:hsl(var(--h) 70% 50% / .22); border-style:solid; }'
+    + '.hv-bin-head{ display:flex; align-items:center; justify-content:center; gap:.35em; font-size:.8667rem; font-weight:700; color:color-mix(in srgb, hsl(var(--h) 70% 38%) 75%, var(--color-text-primary,#1a1a1a)); text-align:center; line-height:1.2; padding:2px 0 4px; }'
+    + '.hv-bin-head .hv-bin-icon{ font-size:1.4rem; line-height:1; }'
+    + '.hv-bin-body{ display:flex; flex-wrap:wrap; gap:5px; justify-content:center; }'
+    + '.hv-bin .hv-chip{ min-height:2.1rem; padding:3px 10px; font-size:.8667rem; }'
+    /* ── HouseGrid ── */
+    + '.hv-grid-wrap{ overflow-x:auto; margin:0 -4px; padding:0 4px; }'
+    + '.hv-grid{ border-collapse:separate; border-spacing:4px; margin:0 auto; }'
+    + '.hv-grid th{ font-size:.7667rem; font-weight:600; color:var(--text-secondary,#5b5b60); text-align:center; vertical-align:bottom; padding:2px; line-height:1.2; }'
+    + '.hv-grid th .hv-gicon{ display:block; font-size:1.5rem; line-height:1.1; }'
+    + '.hv-grid th.hv-rowh{ text-align:left; white-space:nowrap; font-size:.8667rem; color:var(--text-primary,#1a1a1a); vertical-align:middle; }'
+    + '.hv-grid th.hv-rowh .hv-gicon{ display:inline; font-size:1.4rem; margin-right:.3em; vertical-align:middle; }'
+    + '.hv-grid tr.hv-row-done th.hv-rowh{ color:var(--good,#2f7d3a); }'
+    + '.hv-cell{ text-align:center; vertical-align:middle; min-width:2.7rem; padding:3px; border-radius:var(--border-radius-md,8px); background:var(--surface-1,#f7f7f8); }'
+    + '.hv-cell.hv-skip{ background:none; color:var(--text-muted,#8b8b90); }'
+    + '.hv-yn{ display:flex; flex-direction:column; gap:3px; align-items:center; }'
+    + '.hv-yn button{ width:2.2rem; height:1.7rem; padding:0; border-radius:999px; font-size:.85rem; line-height:1; cursor:pointer; font-family:inherit; border:1.5px solid var(--color-border-secondary,#e3e3e6); background:var(--surface-2,#fff); color:var(--text-primary,#1a1a1a); }'
+    + '.hv-yn button:hover{ border-color:var(--text-accent,#185fa5); }'
+    + '.hv-cell.hv-set-yes{ background:var(--good-bg,#e8f4ea); } .hv-cell.hv-set-no{ background:var(--bad-bg,#fbebe9); }'
+    + '.hv-mark{ font-size:1.3rem; line-height:1; font-weight:700; } .hv-set-yes .hv-mark{ color:var(--good,#2f7d3a); } .hv-set-no .hv-mark{ color:var(--bad,#b0392f); }'
+    + '.hv-sents{ list-style:none; margin:10px 0 0; padding:0; display:flex; flex-direction:column; gap:4px; }'
+    + '.hv-sents li{ font-size:.9rem; padding:5px 10px; border-radius:var(--border-radius-md,8px); background:var(--bg-pos,#eaf3de); color:var(--text-pos,#27500a); cursor:pointer; animation:hv-pop .25s ease; }'
+    + '.hv-sents li b{ font-weight:700; }'
+    /* ── HouseLabel ── */
+    + '.hv-lab{ position:relative; display:grid; grid-template-columns:minmax(4.5rem,8rem) minmax(0,var(--hv-w,15rem)) minmax(4.5rem,8rem); justify-content:center; column-gap:clamp(.8rem,4vw,2rem); }'
+    + '.hv-lab-pic{ position:relative; grid-column:2; border-radius:var(--border-radius-lg,12px); background:var(--surface-1,#f7f7f8); }'
+    + '.hv-lab-pic > svg{ display:block; width:100%; height:auto; }'
+    + '.hv-lab-col{ position:relative; }'
+    + '.hv-lab-col.hv-l{ grid-column:1; grid-row:1; } .hv-lab-col.hv-r{ grid-column:3; grid-row:1; }'
+    + '.hv-box{ position:absolute; left:0; right:0; transform:translateY(-50%); min-height:1.9rem; display:flex; align-items:center; justify-content:center; border-radius:999px; border:1.5px dashed var(--color-border-primary,#d4d4d8); background:var(--surface-2,#fff); font-size:.8667rem; font-weight:600; padding:2px 6px; cursor:pointer; text-align:center; line-height:1.1; z-index:1; transition:background .15s, border-color .15s; }'
+    + '.hv-box.hv-over{ border-color:var(--text-accent,#185fa5); background:var(--color-background-info,#e6f1fb); border-style:solid; }'
+    + '.hv-box.hv-filled{ border-style:solid; border-color:var(--good,#2f7d3a); background:var(--good-bg,#e8f4ea); color:var(--good,#2f7d3a); cursor:pointer; }'
+    + '.hv-lab-lines{ position:absolute; inset:0; width:100%; height:100%; pointer-events:none; overflow:visible; z-index:0; }'
+    + '.hv-lab-lines line{ stroke:var(--color-border-primary,#d4d4d8); stroke-width:1.5; stroke-dasharray:4 4; }'
+    + '.hv-lab-lines line.hv-ok{ stroke:var(--good,#2f7d3a); stroke-dasharray:none; }'
+    + '.hv-lab-lines circle{ fill:var(--text-accent,#185fa5); stroke:var(--surface-2,#fff); stroke-width:1.5; }'
+    + '.hv-lab-lines circle.hv-ok{ fill:var(--good,#2f7d3a); }'
+    + '.hv-dot{ position:absolute; width:1.6rem; height:1.6rem; transform:translate(-50%,-50%); border-radius:50%; cursor:pointer; z-index:2; }'
+    /* ── HouseListen ── */
+    + '.hv-listen{ display:grid; grid-template-columns:repeat(auto-fill,minmax(min(100%,15rem),1fr)); gap:8px; }'
+    + '.hv-lrow{ display:flex; align-items:center; gap:7px; flex-wrap:wrap; padding:7px 9px; border-radius:var(--border-radius-md,8px); border:.5px solid var(--color-border-tertiary,#ebebee); background:var(--surface-1,#f7f7f8); transition:background .15s, border-color .15s; }'
+    + '.hv-lrow.hv-row-done{ border-color:var(--good,#2f7d3a); background:var(--good-bg,#e8f4ea); }'
+    + '.hv-lnum{ font-size:.7667rem; font-weight:600; color:var(--text-muted,#8b8b90); min-width:1.2em; }'
+    + '.hv-play{ width:2.5rem; height:2.5rem; padding:0; border-radius:50%; font-size:1.15rem; line-height:1; border:1.5px solid var(--text-accent,#185fa5); background:var(--color-background-info,#e6f1fb); color:var(--color-text-info,#0c447c); cursor:pointer; flex-shrink:0; }'
+    + '.hv-play.is-speaking{ animation:hv-pulse .6s ease-in-out infinite alternate; }'
+    + '@keyframes hv-pulse{ to{ transform:scale(1.12); } }'
+    + '.hv-lrow .hv-chip{ min-height:2.3rem; padding:4px 12px; }'
+    + '.hv-lnote{ flex-basis:100%; font-size:.8rem; color:var(--good,#2f7d3a); padding-left:3.2rem; }'
+    + '.hv-lnote:empty{ display:none; }'
     /* ── HouseWordFamily ── */
     + '.hv-wf-wrap{ overflow-x:auto; }'
     + '.hv-wf{ width:100%; border-collapse:separate; border-spacing:6px; table-layout:fixed; min-width:30rem; margin:-6px; }'
@@ -389,9 +476,11 @@
     injectStyles();
     var box = $(o.container), items = o.items || [], cols = o.columns || ['noun', 'verb', 'adj', 'adverb'];
     var sc = counter(o.scoreEl, o.totalEl, items.length);
+    var colLabel = function (c) { return (o.labels && o.labels[c]) || LABEL[c] || c; };
+    var colVars = function (c) { return posVars(o.pos && o.pos[c] ? o.pos[c] : c); };
     box.innerHTML = '';
     var card = el('div', 'hv-card hv-wfam'), wrap = el('div', 'hv-wf-wrap'), table = el('table', 'hv-wf');
-    var head = '<thead><tr>' + cols.map(function (c) { return '<th style="' + posVars(c) + '">' + (LABEL[c] || c) + '</th>'; }).join('') + '<th class="hv-row-tick" aria-label="done"></th></tr></thead>';
+    var head = '<thead><tr>' + cols.map(function (c) { return '<th style="' + colVars(c) + '">' + colLabel(c) + '</th>'; }).join('') + '<th class="hv-row-tick" aria-label="done"></th></tr></thead>';
     table.innerHTML = head;
     var body = el('tbody');
     table.appendChild(body); wrap.appendChild(table); card.appendChild(wrap);
@@ -429,10 +518,10 @@
       }
       cols.forEach(function (c) {
         var td = el('td'), v = it.forms[c];
-        td.setAttribute('style', posVars(c));
+        td.setAttribute('style', colVars(c));
         if (v == null || v === '' || v === '—') { td.innerHTML = '<span class="hv-none" title="no word">—</span>'; }
         else if (given.indexOf(c) >= 0) { var g = el('span', 'hv-given', esc(list(v)[0])); g.dataset.say = list(v)[0]; td.appendChild(g); }
-        else { open++; var li = liveInput(list(v), function () { ok++; check(); }); li.input.setAttribute('aria-label', (LABEL[c] || c) + ' of ' + list(it.forms[given[0]])[0]); td.appendChild(li.cell); }
+        else { open++; var li = liveInput(list(v), function () { ok++; check(); }); li.input.setAttribute('aria-label', colLabel(c).replace(/<[^>]+>/g, '') + ' of ' + list(it.forms[given[0]])[0]); td.appendChild(li.cell); }
         tr.appendChild(td);
       });
       tr.appendChild(tick);
@@ -533,7 +622,227 @@
     });
   }
 
+
+  /* ══ HouseSort ════════════════════════════════════════════════════════ */
+  function buildSort(o) {
+    injectStyles();
+    var box = $(o.container), items = o.items || [], sc = counter(o.scoreEl, o.totalEl, items.length);
+    var HUES = [210, 30, 140, 280, 0, 180, 60];
+    box.innerHTML = '';
+    items.forEach(function (it) {
+      var card = el('div', 'hv-card hv-sort'), bins = el('div', 'hv-bins'), tray = el('div', 'hv-tray'), why = el('div', 'hv-why');
+      if (it.title) card.appendChild(el('div', 'hv-title', it.title));
+      it.groups.forEach(function (g, i) {
+        var b = el('div', 'hv-bin'); b.dataset.g = i; b.style.setProperty('--h', g.hue != null ? g.hue : HUES[i % HUES.length]);
+        b.innerHTML = '<div class="hv-bin-head">' + (g.icon ? '<span class="hv-bin-icon">' + g.icon + '</span>' : '') + '<span>' + g.label + '</span></div><div class="hv-bin-body"></div>';
+        b.setAttribute('aria-label', String(g.label).replace(/<[^>]+>/g, ''));
+        bins.appendChild(b);
+      });
+      card.appendChild(bins); card.appendChild(tray); card.appendChild(why);
+      card.appendChild(el('div', 'hv-done', '✓ ' + (it.note || 'Well done — every word is in its group!')));
+      box.appendChild(card);
+      var sel = null, placed = 0, state = {};
+      function select(c) { if (sel) sel.classList.remove('hv-sel'); sel = (sel === c) ? null : c; if (sel) sel.classList.add('hv-sel'); }
+      function tryPlace(chip, bin) {
+        if (!bin) return;
+        var w = it.words[+chip.dataset.k];
+        if (sel) { sel.classList.remove('hv-sel'); sel = null; }
+        if (+bin.dataset.g === w[1]) {
+          chip.classList.add('hv-lock'); chip.style.setProperty('--h', bin.style.getPropertyValue('--h'));
+          chip.dataset.say = w[0]; chip.removeAttribute('tabindex');
+          bin.querySelector('.hv-bin-body').appendChild(chip); why.innerHTML = '';
+          if (++placed === it.words.length) { card.classList.add('hv-complete'); sc.add(); }
+        } else {
+          flashWrong(chip, bin);
+          why.innerHTML = w[2] || '';
+        }
+      }
+      shuffle(it.words.map(function (w, k) { return k; }), true).forEach(function (k) {
+        var c = el('button', 'hv-chip', esc(it.words[k][0])); c.type = 'button'; c.dataset.k = k; c.dataset.w = it.words[k][0];
+        draggable(c, { targetSel: '.hv-bin', state: state,
+          onDrop: function (chip, t) { if (t && bins.contains(t)) tryPlace(chip, t); },
+          onTap: function (chip) { if (!chip.classList.contains('hv-lock')) select(chip); } });
+        tray.appendChild(c);
+      });
+      bins.addEventListener('click', function (e) {
+        var b = e.target.closest('.hv-bin'); if (!b || !sel || state.dragging) return;
+        tryPlace(sel, b);
+      });
+    });
+  }
+
+  /* ══ HouseListen ══════════════════════════════════════════════════════ */
+  function speak(text, btn) {
+    try {
+      if (global.HouseSpeak && global.HouseSpeak.speak) return global.HouseSpeak.speak(text, btn);
+      if (global.speechSynthesis) { var u = new SpeechSynthesisUtterance(text); u.lang = 'en-US'; u.rate = 0.85; speechSynthesis.cancel(); speechSynthesis.speak(u); }
+    } catch (e) { /* no speech */ }
+  }
+  function buildListen(o) {
+    injectStyles();
+    var box = $(o.container), items = o.items || [], sc = counter(o.scoreEl, o.totalEl, items.length);
+    box.innerHTML = '';
+    var card = el('div', 'hv-card hv-lcard'), grid = el('div', 'hv-listen'), done = 0;
+    if (o.title) card.appendChild(el('div', 'hv-title', o.title));
+    if (o.hint) card.appendChild(el('div', 'hv-hint', o.hint));
+    card.appendChild(grid);
+    card.appendChild(el('div', 'hv-done', '✓ ' + (o.note || 'Great listening!')));
+    box.appendChild(card);
+    items.forEach(function (it, k) {
+      var row = el('div', 'hv-lrow'), play = el('button', 'hv-play', '🔊'), note = el('div', 'hv-lnote');
+      play.type = 'button'; play.setAttribute('aria-label', 'Listen to number ' + (k + 1));
+      row.appendChild(el('span', 'hv-lnum', (k + 1) + '.'));
+      row.appendChild(play);
+      play.addEventListener('click', function () { speak(it.say, play); });
+      it.options.forEach(function (op, i) {
+        var c = el('button', 'hv-chip hv-opt', esc(op)); c.type = 'button';
+        c.addEventListener('click', function () {
+          if (row.classList.contains('hv-row-done') || c.classList.contains('hv-no')) return;
+          if (i === it.correct) {
+            c.classList.add('hv-ok'); row.classList.add('hv-row-done'); note.innerHTML = it.note || '';
+            speak(it.say, play); sc.add();
+            if (++done === items.length) card.classList.add('hv-complete');
+          } else { c.classList.add('hv-no'); flashWrong(c); }
+        });
+        row.appendChild(c);
+      });
+      row.appendChild(note);
+      grid.appendChild(row);
+    });
+  }
+
+
+  /* ══ HouseGrid ════════════════════════════════════════════════════════ */
+  function joinList(a, word) { return a.length < 2 ? (a[0] || '') : a.slice(0, -1).join(', ') + ' ' + word + ' ' + a[a.length - 1]; }
+  function buildGrid(o) {
+    injectStyles();
+    var box = $(o.container), items = o.items || [];
+    var total = items.reduce(function (n, it) { return n + it.rows.length; }, 0), sc = counter(o.scoreEl, o.totalEl, total);
+    box.innerHTML = '';
+    items.forEach(function (it) {
+      var yes = it.yes || 'can', no = it.no || 'can’t', pron = it.pronoun || 'It', rowsDone = 0;
+      var card = el('div', 'hv-card hv-gridcard'), wrap = el('div', 'hv-grid-wrap'), t = el('table', 'hv-grid'), why = el('div', 'hv-why'), sents = el('ul', 'hv-sents');
+      if (it.title) card.appendChild(el('div', 'hv-title', it.title));
+      t.innerHTML = '<thead><tr><th></th>' + it.cols.map(function (c) { return '<th>' + (c.icon ? '<span class="hv-gicon">' + c.icon + '</span>' : '') + esc(c.label) + '</th>'; }).join('') + '</tr></thead>';
+      var tb = el('tbody');
+      it.rows.forEach(function (r) {
+        var tr = el('tr'), left = 0;
+        tr.innerHTML = '<th class="hv-rowh" data-say="' + esc(r.subject || r.label) + '">' + (r.icon ? '<span class="hv-gicon">' + r.icon + '</span>' : '') + esc(r.label) + '</th>';
+        r.cells.forEach(function (v, c) {
+          var td = el('td', 'hv-cell');
+          if (v == null) { td.classList.add('hv-skip'); td.textContent = '—'; tr.appendChild(td); return; }
+          left++;
+          var yn = el('div', 'hv-yn'), by = el('button', null, '✓'), bn = el('button', null, '✗');
+          by.type = bn.type = 'button';
+          by.setAttribute('aria-label', (r.subject || r.label) + ' ' + yes + ' ' + it.cols[c].label);
+          bn.setAttribute('aria-label', (r.subject || r.label) + ' ' + no + ' ' + it.cols[c].label);
+          yn.appendChild(by); yn.appendChild(bn); td.appendChild(yn);
+          var pick = function (ans, btn) {
+            if (ans === !!v) {
+              td.className = 'hv-cell ' + (v ? 'hv-set-yes' : 'hv-set-no');
+              td.innerHTML = '<span class="hv-mark">' + (v ? '✓' : '✗') + '</span>';
+              td.dataset.say = (r.subject || r.label) + ' ' + (v ? yes : no) + ' ' + it.cols[c].label + '.';
+              why.innerHTML = '';
+              if (--left === 0) {
+                tr.classList.add('hv-row-done');
+                var ys = [], ns = [];
+                r.cells.forEach(function (x, k) { if (x === 1 || x === true) ys.push(it.cols[k].label); else if (x === 0 || x === false) ns.push(it.cols[k].label); });
+                var s1 = ys.length ? (r.subject || r.label) + ' <b>' + yes + '</b> ' + joinList(ys, 'and') + '.' : '';
+                var s2 = ns.length ? (ys.length ? pron : (r.subject || r.label)) + ' <b>' + no + '</b> ' + joinList(ns, 'or') + '.' : '';
+                var li = el('li', null, (s1 + ' ' + s2).trim()); li.dataset.say = li.textContent; sents.appendChild(li);
+                sc.add();
+                if (++rowsDone === it.rows.length) card.classList.add('hv-complete');
+              }
+            } else {
+              flashWrong(btn);
+              why.innerHTML = (r.why && r.why[c]) || '';
+            }
+          };
+          by.addEventListener('click', function () { pick(true, by); });
+          bn.addEventListener('click', function () { pick(false, bn); });
+          tr.appendChild(td);
+        });
+        tb.appendChild(tr);
+      });
+      t.appendChild(tb); wrap.appendChild(t);
+      card.appendChild(wrap); card.appendChild(why); card.appendChild(sents);
+      card.appendChild(el('div', 'hv-done', '✓ ' + (it.note || 'The table is complete!')));
+      box.appendChild(card);
+    });
+  }
+
+  /* ══ HouseLabel ═══════════════════════════════════════════════════════ */
+  function buildLabel(o) {
+    injectStyles();
+    var box = $(o.container), items = o.items || [], sc = counter(o.scoreEl, o.totalEl, items.length);
+    box.innerHTML = '';
+    items.forEach(function (it) {
+      var card = el('div', 'hv-card hv-labcard'), lab = el('div', 'hv-lab'), pic = el('div', 'hv-lab-pic', it.svg);
+      var colL = el('div', 'hv-lab-col hv-l'), colR = el('div', 'hv-lab-col hv-r'), tray = el('div', 'hv-tray');
+      var lines = document.createElementNS('http://www.w3.org/2000/svg', 'svg'); lines.setAttribute('class', 'hv-lab-lines');
+      if (it.title) card.appendChild(el('div', 'hv-title', it.title));
+      lab.style.setProperty('--hv-w', it.width || '15rem');
+      lab.appendChild(colL); lab.appendChild(pic); lab.appendChild(colR); lab.appendChild(lines);
+      card.appendChild(lab); card.appendChild(tray);
+      card.appendChild(el('div', 'hv-done', '✓ ' + (it.note || 'Every label is in the right place!')));
+      box.appendChild(card);
+      var spots = it.spots.map(function (s, i) {
+        var b = el('div', 'hv-box', '&nbsp;'); b.dataset.i = i; b.setAttribute('aria-label', 'label ' + (i + 1));
+        (s.side === 'right' ? colR : colL).appendChild(b);
+        var d = el('div', 'hv-dot'); d.dataset.i = i; d.style.left = (100 * s.x / it.w) + '%'; d.style.top = (100 * s.y / it.h) + '%'; pic.appendChild(d);
+        var ln = document.createElementNS('http://www.w3.org/2000/svg', 'line'), c = document.createElementNS('http://www.w3.org/2000/svg', 'circle');
+        c.setAttribute('r', 5); lines.appendChild(ln); lines.appendChild(c);
+        return { s: s, box: b, dot: d, line: ln, circle: c, done: false };
+      });
+      function layout() {
+        var L = lab.getBoundingClientRect(), P = pic.getBoundingClientRect();
+        if (!P.width) return;
+        lines.setAttribute('viewBox', '0 0 ' + L.width + ' ' + L.height);
+        spots.forEach(function (sp) {
+          var py = P.top - L.top + P.height * sp.s.y / it.h, px = P.left - L.left + P.width * sp.s.x / it.w;
+          sp.box.style.top = py + 'px';
+          var B = sp.box.getBoundingClientRect(), bx = sp.s.side === 'right' ? B.left - L.left : B.right - L.left;
+          sp.line.setAttribute('x1', bx); sp.line.setAttribute('y1', py); sp.line.setAttribute('x2', px); sp.line.setAttribute('y2', py);
+          sp.circle.setAttribute('cx', px); sp.circle.setAttribute('cy', py);
+        });
+      }
+      var sel = null, placed = 0, state = {};
+      function select(c) { if (sel) sel.classList.remove('hv-sel'); sel = (sel === c) ? null : c; if (sel) sel.classList.add('hv-sel'); }
+      function tryPlace(chip, target) {
+        if (!target) return;
+        var sp = spots[+target.dataset.i];
+        if (sel) { sel.classList.remove('hv-sel'); sel = null; }
+        if (sp.done) return;
+        if (norm(chip.dataset.w) === norm(sp.s.word)) {
+          sp.done = true; sp.box.classList.add('hv-filled'); sp.box.textContent = sp.s.word; sp.box.dataset.say = sp.s.word;
+          sp.line.setAttribute('class', 'hv-ok'); sp.circle.setAttribute('class', 'hv-ok');
+          chip.remove();
+          if (++placed === spots.length) { card.classList.add('hv-complete'); sc.add(); }
+        } else flashWrong(chip, sp.box);
+      }
+      shuffle(it.spots.map(function (s) { return s.word; }), true).forEach(function (w) {
+        var c = el('button', 'hv-chip', esc(w)); c.type = 'button'; c.dataset.w = w;
+        draggable(c, { targetSel: '.hv-box, .hv-dot', state: state,
+          onDrop: function (chip, t) { if (t && lab.contains(t)) tryPlace(chip, t); },
+          onTap: function (chip) { select(chip); } });
+        tray.appendChild(c);
+      });
+      lab.addEventListener('click', function (e) {
+        var t = e.target.closest('.hv-box, .hv-dot'); if (!t || !sel || state.dragging) return;
+        tryPlace(sel, t);
+      });
+      layout();
+      if (global.ResizeObserver) new ResizeObserver(layout).observe(lab);
+      window.addEventListener('resize', layout);
+      if (document.fonts && document.fonts.ready) document.fonts.ready.then(layout);
+    });
+  }
+
   global.HouseScale = { build: buildScale };
+  global.HouseGrid = { build: buildGrid };
+  global.HouseLabel = { build: buildLabel };
+  global.HouseSort = { build: buildSort };
+  global.HouseListen = { build: buildListen };
   global.HouseCollocate = { build: buildCollocate };
   global.HouseWordFamily = { build: buildWordFamily };
   global.HouseMystery = { build: buildMystery };
