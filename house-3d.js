@@ -56,6 +56,8 @@
     + '.h3d-act:hover{ background:var(--color-background-info,#e6f1fb); border-color:var(--text-accent,#185fa5); }'
     + '.h3d-act.h3d-still{ cursor:default; background:none; border-color:transparent; padding-left:0; }'
     + '.h3d-act.h3d-still:hover{ background:none; border-color:transparent; }'
+    + '.h3d-act:disabled{ opacity:.42; cursor:default; }'
+    + '.h3d-act:disabled:hover{ background:var(--surface-1,#f7f7f8); border-color:var(--border,#ebebee); }'
     + '.h3d-close{ position:absolute; top:2px; right:4px; font-size:.8rem; padding:0 5px; border:none; background:none; color:var(--text-muted,#8b8b90); cursor:pointer; }'
     + '.h3d-tools{ position:absolute; right:8px; bottom:8px; z-index:3; display:flex; gap:5px; }'
     + '.h3d-tools button{ width:34px; height:34px; padding:0; border-radius:50%; font-size:1rem; line-height:1; border:1px solid var(--border,#ebebee); background:var(--surface-2,#fff); color:var(--text-primary,#1a1a1a); cursor:pointer; box-shadow:0 1px 4px rgba(0,0,0,.1); }'
@@ -629,6 +631,26 @@
   var DEFS = '<defs><radialGradient id="h3dGlow"><stop offset="0" stop-color="#ffe27a" stop-opacity=".85"/><stop offset=".45" stop-color="#ffd24a" stop-opacity=".35"/><stop offset="1" stop-color="#ffd24a" stop-opacity="0"/></radialGradient>'
     + '<radialGradient id="h3dGlowW"><stop offset="0" stop-color="#ffffff" stop-opacity="1"/><stop offset=".3" stop-color="#f4f8ff" stop-opacity=".75"/><stop offset="1" stop-color="#e8f0ff" stop-opacity="0"/></radialGradient></defs>';
 
+  /* what a motion's value will be once it stops moving */
+  function willBe(sc, k) { var a = sc.anim[k]; if (!a) return sc.val[k]; return a.next && a.next.length ? a.next[a.next.length - 1] : a.to; }
+  /* → true when doing this action now would change nothing: it is already open / plugged in / at the top… */
+  function noEffect(sc, a) {
+    if (a.noop) return a.noop(sc);
+    if (a.if && !a.if(sc)) return true;
+    if (a.m && sc.m.motions[a.m]) {
+      var v = willBe(sc, a.m);
+      if (a.to === 0 || a.to === 1) return Math.abs(v - a.to) < 0.02;
+      if (a.to === 'up') return v >= (a.max || 1) - 1e-6;
+      if (a.to === 'down') return v <= 1e-6;
+    }
+    if (a.fx === 'timer') {
+      var t = sc.state[a.key] || 0;
+      if (a.set != null) return Math.abs(t - a.set) < 0.5;
+      if (a.add < 0) return t <= 0;
+      if (a.add > 0) return t >= (a.max || 1e9);
+    }
+    return false;
+  }
   function actionsOf(model, id) {
     return (model.parts[id].can || []).map(function (a) { return typeof a === 'string' ? { v: a } : a; });
   }
@@ -1094,6 +1116,7 @@
       if (!id) { label.hidden = true; labelFor = null; return ''; }
       if (labelFor !== id) fillLabel(id);
       label.hidden = false;
+      refreshActs(id);
       var a = cam.project(scene.partPoint(id)), W = cam.w, H = cam.h;
       var lw = label.offsetWidth, lh = label.offsetHeight, left = a[0] < W / 2 + cam.pan[0];
       var lx = left ? 10 : W - lw - 10, ly = Math.max(10, Math.min(H - lh - 52, a[1] - lh / 2 - 34));
@@ -1112,9 +1135,19 @@
           return '<li><button type="button" class="h3d-act' + (moves ? '' : ' h3d-still') + '" data-i="' + i + '">' + (moves ? '▶ ' : '– ') + a.v + '</button></li>';
         }).join('') + '</ul>';
     }
+    /* the actions that would change nothing right now are greyed out */
+    function refreshActs(id) {
+      var acts = actionsOf(scene.m, id);
+      label.querySelectorAll('.h3d-act[data-i]').forEach(function (b) {
+        var a = acts[+b.dataset.i];
+        if (!a || !(a.m || a.fx || a.seq)) return;
+        var off = noEffect(scene, a);
+        if (b.disabled !== off) { b.disabled = off; b.title = off ? 'Nothing to do now' : ''; }
+      });
+    }
     label.addEventListener('click', function (e) {
       var b = e.target.closest('button');
-      if (!b) return;
+      if (!b || b.disabled) return;
       if (b.classList.contains('h3d-close')) { pinned = null; hover = null; draw(); return; }
       var id = labelFor, a = actionsOf(scene.m, id)[+b.dataset.i];
       if (a && (a.m || a.fx || a.seq)) { scene.play(a); kick(); }
@@ -1453,9 +1486,10 @@
     };
     return {
       open: { v: 'open', m: door, to: 1 },
-      close: { v: 'close', seq: close, undo: { m: door, to: 1 } },
+      close: { v: 'close', seq: close, undo: { m: door, to: 1 }, noop: function (sc) { return willBe(sc, door) < 0.02 && !anyOut(sc); } },
       pull: function (v) { return { v: v || 'pull', seq: function (sc) { return sc.val[door] > 0.5 ? close(sc) : [{ m: door, to: 1 }]; } }; },
-      out: function (k, v) { return { v: v || 'pull out', seq: function (sc) { return sc.val[door] > 0.9 ? [{ m: k, to: 1 }] : [{ m: door, to: 1 }, { m: k, to: 1, wait: 850 }]; }, undo: { m: k, to: 0 } }; },
+      out: function (k, v) { return { v: v || 'pull out', seq: function (sc) { return sc.val[door] > 0.9 ? [{ m: k, to: 1 }] : [{ m: door, to: 1 }, { m: k, to: 1, wait: 850 }]; }, undo: { m: k, to: 0 },
+        noop: function (sc) { return willBe(sc, k) > 0.98; } }; },
       back: function (k, v) { return { v: v || 'put in', m: k, to: 0 }; }
     };
   }
@@ -1682,9 +1716,11 @@
         /* the charger: a connector in the laptop's side, a cord, the power brick (its light), and the cord to the wall */
         B([-16.05, -16, 0.3, 1.1, -0.9, 0.9], '#151515', null, null, { on: 'base' }),
         B([-19.5, -16, 0.3, 1.1, -0.6, 0.6], '#2b2b2b', 'connector', 'dc'),
-        { t: 'tube', pts: [[-19.5, 0.7, 0], [-22, 0.8, 0.6], [-25, 1.3, 2]], r: 0.4, col: CORD, part: 'cord', startGroup: 'dc' },
-        B([-33, -25, 0, 2.6, -1, 5], '#2b2b2b', 'charger', null, { id: 'brick' }),
-        B([-27.2, -26.2, 2.6, 2.65, 3.6, 4.4], '#1f3527', 'charger', 'led', { on: 'brick' })
+        /* the charger (the power brick) lies behind the laptop: the cord to the laptop comes out of one end, the cord to the wall out of the other */
+        { t: 'tube', pts: finely([[-19.5, 0.7, 0], [-22, 0.8, 0], [-22.5, 0.9, -8], [-21, 1.1, -17], [-13.2, 1.3, -17]], 2), r: 0.4, col: CORD, part: 'cord', startGroup: 'dc' },
+        B([-12, -4, 0, 2.6, -19, -15], '#2b2b2b', 'charger', null, { id: 'brick' }),
+        C([-12.6, 1.3, -17], 'x', 0.6, 1.2, '#202020', 'charger', null, { seg: 10 }), C([-3.4, 1.3, -17], 'x', 0.6, 1.2, '#202020', 'charger', null, { seg: 10 }),
+        B([-8.5, -7.5, 2.6, 2.65, -17.4, -16.6], '#1f3527', 'charger', 'led', { on: 'brick' })
       ]),
       motions: {
         lid: { do: [{ g: 'lid', rot: { ax: 'x', pivot: [0, 2.4, -10.6], deg: 90 } }], dur: 900 },
@@ -1706,7 +1742,7 @@
       }
     });
     merge(m, buttons([{ e: [11.5, 14, 1.4, 1.8, -10.7, -10], col: '#eceff2' }], { prefix: 'pbtn', move: [0, -0.3, 0], zoom: 3.8, view: { pitch: 45, yaw: -10 } }));
-    withPower(m, powered([[-29, 1.3, -1], [-29, 1.2, -6]], -29, -10, '-z'));
+    withPower(m, powered(finely([[-2.8, 1.3, -17], [3, 1.2, -17], [6, 1.2, -20]], 2), 6, -25, '-z'));
   })();
 
   /* ── washing machine (top loader): the drum inside, under the lid; minutes left on the screen.
@@ -2033,7 +2069,7 @@
     };
     var m = define('mixer', {
       name: 'stand mixer', view: { yaw: -40, pitch: 16, zoom: 1.0 },
-      groups: { msw: { parent: 'head' }, beater: { ops: function (sc) { return placeOps(sc, 'dB'); } }, whisk: { ops: function (sc) { return placeOps(sc, 'dW'); } } },
+      groups: { beater: { ops: function (sc) { return placeOps(sc, 'dB'); } }, whisk: { ops: function (sc) { return placeOps(sc, 'dW'); } } },
       shapes: [
         B([-9, 9, 0, 3, -14, 10], BODY, null, null, { id: 'mbase' }),
         C([0, 3.3, 2], 'y', 6, 0.6, '#b9c0c8', null, null, { seg: 24, on: 'mbase' }),
@@ -2044,18 +2080,18 @@
         B([-4.5, 4.5, 20, 29, -13.5, 8], BODY, 'arm', 'head', { id: 'mhead' }),
         C([0, 24.5, 8.6], 'z', 2.6, 1.2, '#b9c0c8', 'arm', 'head', { seg: 18, on: 'mhead' }),
         C([0, 19.2, 2], 'y', 0.45, 2.6, '#b9c0c8', 'arm', 'head', { seg: 10, on: 'mhead' }),
-        /* the speed lever on the right side of the head */
-        rotBox([4.5, 5.0, 24, 25.9, -7.3, -6.7], 'x', 37.5, [4.75, 24, -7], '#2f3338', 'knob', 'msw', { on: 'mhead' }),
-        rotBox([4.5, 5.3, 25.7, 26.5, -7.45, -6.55], 'x', 37.5, [4.75, 24, -7], '#2f3338', 'knob', 'msw', { on: 'mhead' })
+        /* the speed lever on the right side of the stand (the column): it stays put when the arm lifts */
+        rotBox([4.0, 4.5, 14, 15.9, -10.3, -9.7], 'x', 37.5, [4.25, 14, -10], '#2f3338', 'knob', 'msw', { on: 'mcol' }),
+        rotBox([4.0, 4.8, 15.7, 16.5, -10.45, -9.55], 'x', 37.5, [4.25, 14, -10], '#2f3338', 'knob', 'msw', { on: 'mcol' })
       ].concat(beater).concat(whisk),
       motions: {
         arm: { do: [{ g: 'head', rot: { ax: 'x', pivot: PIVOT, deg: ARM } }], dur: 800 },
-        speed: { do: [{ g: 'msw', rot: { ax: 'x', pivot: [4.75, 24, -7], deg: -25 } }], dur: 220 },
+        speed: { do: [{ g: 'msw', rot: { ax: 'x', pivot: [4.25, 14, -10], deg: -25 } }], dur: 220 },
         dB: { do: [], dur: 1500, start: 0 },   /* the beater: on the mixer */
         dW: { do: [], dur: 1500, start: 1 }    /* the whisk: on the table */
       },
-      /* the numbers by the lever (they go round with the head) */
-      displays: [{ id: 'mmarks', g: 'head', on: 'mhead', part: 'knob', at: [4.5, 27.8, -7], u: [0, 0, -1], v: [0, 1, 0], h: 1.4, text: '0123', col: '#fbe3e5', bg: BODY, when: function () { return true; } }],
+      /* the numbers by the lever */
+      displays: [{ id: 'mmarks', on: 'mcol', part: 'knob', at: [4, 17.8, -10], u: [0, 0, -1], v: [0, 1, 0], h: 1.4, text: '0123', col: '#fbe3e5', bg: BODY, when: function () { return true; } }],
       spins: [
         { g: 'beater', ax: 'y', pivot: SHAFT, ease: 600, rate: function (sc) { return running(sc) && sc.val.dB < 0.01 ? sc.val.speed * 220 : 0; } },
         { g: 'whisk', ax: 'y', pivot: SHAFT, ease: 600, rate: function (sc) { return running(sc) && sc.val.dW < 0.01 ? sc.val.speed * 300 : 0; } }
@@ -2063,7 +2099,7 @@
       /* lifting the arm turns the mixer off */
       timers: [{ when: function (sc) { return sc.val.arm > 0.05 && sc.val.speed > 0.02; }, after: 0, act: { m: 'speed', to: 0 } }],
       parts: {
-        knob: { name: 'knob', can: [{ v: 'switch on', m: 'speed', to: 1 }, { v: 'change the speed', m: 'speed', to: 'cycle', max: 3 }, { v: 'switch off', m: 'speed', to: 0 }], zoom: 2.8, view: { yaw: -80, pitch: 12 } },
+        knob: { name: 'knob', can: [{ v: 'switch on', m: 'speed', to: 1 }, { v: 'change the speed', m: 'speed', to: 'cycle', max: 3 }, { v: 'switch off', m: 'speed', to: 0 }], zoom: 2.6, view: { yaw: -80, pitch: 12 } },
         arm: { name: 'arm', can: [{ v: 'lift', m: 'arm', to: 1 }, { v: 'lower', m: 'arm', to: 0 }], zoom: 1.2, view: { yaw: -70, pitch: 10 } },
         beater: { name: 'beater', can: [{ v: 'mix', m: 'speed', to: 1, if: function (sc) { return sc.val.dB < 0.5; } }, change], zoom: 1.2, view: { yaw: -30, pitch: 20 } },
         whisk: { name: 'whisk', can: [{ v: 'whisk', m: 'speed', to: 1, if: function (sc) { return sc.val.dW < 0.5; } }, change], zoom: 1.2, view: { yaw: -30, pitch: 20 } },
@@ -2181,14 +2217,14 @@
         B([20.5, 21.7, 8.5, 9.1, 1.5, 1.6], '#3a1616', null, 'tvled', { on: 'tvb', layer: 2 }),
         B([-12, 10, 8.35, 9.15, 1.5, 1.56], '#2c3036', 'speaker', null, { on: 'tvb', layer: 2 }),
         /* the remote control, lying in front of the TV */
-        B([6, 10, 0, 1.4, 8, 22], '#454b54', 'remote', 'remote', { id: 'rbody' }),
-        B([6.6, 9.4, 1.4, 1.43, 17, 21], '#5a616b', 'remote', 'remote', { on: 'rbody', layer: 2 })
+        B([6, 10, 0, 1.4, 14.75, 28.75], '#454b54', 'remote', 'remote', { id: 'rbody' }),
+        B([6.6, 9.4, 1.4, 1.43, 23.75, 27.75], '#5a616b', 'remote', 'remote', { on: 'rbody', layer: 2 })
       ],
       motions: {
         tvon: { do: [], dur: 200, start: 1 },
         osd: { do: [], dur: 1100 },
         vol: VOL.vol, vshow: VOL.vshow,
-        rlift: { do: [{ g: 'remote', rot: { ax: 'x', pivot: [8, 0.7, 15], deg: 30 } }, { g: 'remote', move: [4, 9, 10] }], dur: 800 }
+        rlift: { do: [{ g: 'remote', rot: { ax: 'x', pivot: [8, 0.7, 21.75], deg: 30 } }, { g: 'remote', move: [4, 9, 6] }], dur: 800 }
       },
       /* the programme on the channel (TV source only): a scene drawn on the screen */
       screens: [{ on: 'tvs', tl: [-23.5, 35.5, 1.66], u: [47, 0, 0], v: [0, -26, 0], fade: 'tvs', w: 640, h: 360,
@@ -2205,7 +2241,7 @@
       ]),
       parts: {
         screen: { name: 'screen', can: [{ v: 'watch', m: 'tvon', to: 1 }, { v: 'switch on', m: 'tvon', to: 1 }, { v: 'switch off', m: 'tvon', to: 0 }, { v: 'change the source', fx: 'source', also: [{ m: 'tvon', to: 1 }, osd] }], zoom: 1.1 },
-        remote: { name: 'remote control', can: [{ v: 'pick up', m: 'rlift', to: 'toggle' }, { v: 'change the channel', fx: 'channel', dir: 1, also: [{ m: 'tvon', to: 1 }, osd] },
+        remote: { name: 'remote control', can: [{ v: 'pick up', m: 'rlift', to: 1 }, { v: 'put down', m: 'rlift', to: 0 }, { v: 'change the channel', fx: 'channel', dir: 1, also: [{ m: 'tvon', to: 1 }, osd] },
           { v: 'change the source', fx: 'source', also: [{ m: 'tvon', to: 1 }, osd] },
           { v: 'turn up the volume', m: 'vol', to: 'up', also: louder[1] }, { v: 'turn down the volume', m: 'vol', to: 'down', also: quieter[1] }], zoom: 2.2, view: { pitch: 40, yaw: -15 } },
         speaker: { name: 'speaker', can: [{ v: 'turn up the volume', m: 'vol', to: 'up', also: louder[1] }, { v: 'turn down the volume', m: 'vol', to: 'down', also: quieter[1] }], zoom: 2.4, view: { yaw: -10, pitch: 8 } }
@@ -2219,7 +2255,7 @@
         textFn: function (sc) { var n = Math.round(sc.val.vol * 10); return 'VOLUME ' + new Array(n + 1).join('|') + new Array(11 - n).join('-'); } };
     }));
     var R = { parent: 'remote', move: [0, -0.25, 0], view: { pitch: 55, yaw: -10 }, zoom: 3 };
-    var rb = function (x, z, col, also, more) { return Object.assign({ e: [x, x + 1.2, 1.4, 1.75, z, z + 1.2], col: col, also: also, more: more }, R); };
+    var rb = function (x, z, col, also, more) { z += 6.75; return Object.assign({ e: [x, x + 1.2, 1.4, 1.75, z, z + 1.2], col: col, also: also, more: more }, R); };
     merge(m, buttons([
       { e: [15, 18, 8.3, 9.2, 1.5, 1.85], col: '#3a3f46', move: [0, 0, -0.3], also: { m: 'tvon', to: 'toggle' }, more: [{ v: 'switch on', m: 'tvon', to: 1 }, { v: 'switch off', m: 'tvon', to: 0 }], view: { yaw: -10, pitch: 6 }, zoom: 3 },
       rb(6.6, 9.2, '#d9483b', { m: 'tvon', to: 'toggle' }, [{ v: 'switch on', m: 'tvon', to: 1 }, { v: 'switch off', m: 'tvon', to: 0 }]),
