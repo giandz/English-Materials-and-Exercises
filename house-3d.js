@@ -301,7 +301,7 @@
       if (lv < 0.01) return;
       var ops = opsOf(d.g), u = d.u || [1, 0, 0], v = d.v || [0, 1, 0], col = mix(rgb(d.bg || '#000000'), rgb(d.col), lv);
       var text = d.textFn ? d.textFn(self) : self.dtext[i];
-      (d.font === 'pix' ? pixPolys(text, d.h) : d.font === 'seg16' ? seg16Polys(text, d.h) : segPolys(text, d.h)).forEach(function (poly) {
+      (d.font === 'pix' ? pixPolys(text, d.h) : d.font === 'seg16' ? seg16Polys(text, d.h, d.cells) : segPolys(text, d.h)).forEach(function (poly) {
         var pts = poly.map(function (q) { var p = add(add(d.at, mul(u, q[0])), mul(v, q[1])); return ops.length ? self.place(p, ops) : p; });
         out.push({ pts: pts, col: col, glow: lv, part: d.part, bias: 0, id: null, on: d.on, layer: d.layer || 3 });
       });
@@ -498,11 +498,12 @@
     'K': 'f e g1 j m', 'L': 'f e d1 d2', 'M': 'f e b c h j', 'N': 'f e h m b c', 'O': 'a1 a2 b c d1 d2 e f', 'P': 'a1 a2 b f e g1 g2',
     'R': 'a1 a2 b f e g1 g2 m', 'S': 'a1 a2 f g1 g2 c d1 d2', 'T': 'a1 a2 i l', 'U': 'f e d1 d2 b c', '-': 'g1 g2', ' ': ''
   };
-  function seg16Polys(text, h) {
+  function seg16Polys(text, h, cells) {
     var w = h * 0.58, t = h * 0.13, gap = h * 0.3, sk = 0.08, glyphs = [], out = [];
     String(text).toUpperCase().split('').forEach(function (ch) { if (ch === '.' && glyphs.length) glyphs[glyphs.length - 1].dot = true; else glyphs.push({ ch: ch }); });
     var widthOf = function (g) { return g.ch === ':' ? t * 2.4 : w; };
-    var total = glyphs.reduce(function (sum, g) { return sum + widthOf(g); }, 0) + gap * (glyphs.length - 1), x = -total / 2, y0 = -h / 2;
+    var total = glyphs.reduce(function (sum, g) { return sum + widthOf(g); }, 0) + gap * (glyphs.length - 1), y0 = -h / 2;
+    var x = cells ? -(cells * w + (cells - 1) * gap) / 2 : -total / 2;   /* cells: a row of that many places, the text from the left (like a real display) */
     var P = { TL: [0, 1], TC: [0.5, 1], TR: [1, 1], ML: [0, 0.5], MC: [0.5, 0.5], MR: [1, 0.5], BL: [0, 0], BC: [0.5, 0], BR: [1, 0] };
     var L = { a1: 'TL TC', a2: 'TC TR', b: 'TR MR', c: 'MR BR', d1: 'BL BC', d2: 'BC BR', e: 'ML BL', f: 'TL ML', g1: 'ML MC', g2: 'MC MR', h: 'TL MC', i: 'TC MC', j: 'TR MC', k: 'BL MC', l: 'MC BC', m: 'BR MC' };
     var sq = function (pts) { return pts.map(function (q) { return [q[0] + q[1] * sk, q[1]]; }); };
@@ -1488,6 +1489,20 @@
     }
     return out;
   };
+  /* a round thing turned like a pot: prof = [[radius, height]…] from the bottom up, round a vertical axis at c = [x, z].
+     A closed bottom; inside: the faces look in (the inside of a bowl) */
+  var lathe = function (c, prof, seg, inside, col, part, more) {
+    var faces = [], pt = function (r, y, j) { var t = j / seg * Math.PI * 2; return [c[0] + r * Math.cos(t), y, c[1] + r * Math.sin(t)]; };
+    for (var i = 0; i < prof.length - 1; i++) for (var j = 0; j < seg; j++) {
+      var a = prof[i], b = prof[i + 1], f = [pt(a[0], a[1], j), pt(a[0], a[1], j + 1), pt(b[0], b[1], j + 1), pt(b[0], b[1], j)];
+      var flat = Math.abs(a[1] - b[1]) < 1e-6;   /* a flat ring (a rim): it looks up */
+      f = orient(f, flat ? [c[0], a[1] - 1, c[1]] : [c[0], (a[1] + b[1]) / 2, c[1]]);
+      faces.push(inside && !flat ? f.slice().reverse() : f);
+    }
+    var bot = []; for (j = 0; j < seg; j++) bot.push(pt(prof[0][0], prof[0][1], j));
+    faces.push(orient(bot, [c[0], prof[0][1] + (inside ? -1 : 1), c[1]]));   /* outside: it looks down; inside: up */
+    return Object.assign({ t: 'faces', faces: faces, col: col, part: part }, more || {});
+  };
   var ring = function (c, r, n) { var out = []; for (var i = 0; i <= n; i++) { var t = i / n * Math.PI * 2; out.push([c[0] + r * Math.cos(t), c[1] + r * Math.sin(t), c[2]]); } return out; };
   var PLUG = '#2b2b2b', PIN = '#c9a25a', CORD = '#333333';
   var plugged = function (sc) { return sc.plugged(); };
@@ -2103,20 +2118,21 @@
   })();
 
   /* ── stand mixer: a bowl, an arm (the head) that lifts, a speed lever 0 · 1 · 2 · 3, and two attachments:
-        a flat beater and a wire whisk. One is on the mixer, the other lies on the table beside it.
+        a flat beater (the paddle), a wire whisk and a dough hook. One is on the mixer, the others lie on the table beside it.
         The attachment turns only with the arm down; lifting the arm turns the mixer off (the lever goes back to 0).
         "Change the attachment": the arm goes up, the attachment comes off and goes to the table, the other one goes on, the arm comes down ── */
   (function () {
     var BODY = '#d64550', ARM = -55, PIVOT = [0, 22, -10], SHAFT = [0, 0, 2];
     var running = function (sc) { return sc.plugged() && sc.val.speed > 0.5 && sc.val.arm < 0.02; };
     /* where an attachment is: d = 0 on the mixer … 0.3 pulled down off the shaft … 1 lying on the table (left of the mixer) */
+    var SPOT = { dB: -7, dW: 0, dH: 8 };   /* where each one lies on the table (how far forward) */
     var placeOps = function (sc, k) {
       var d = sc.val[k], pull = Math.min(1, d / 0.3), u = d <= 0.3 ? 0 : ease((d - 0.3) / 0.7);
       var out = [{ move: [0, -3 * pull, 0] }];
       if (sc.val.arm && u < 1) out.push({ rot: { ax: 'x', pivot: PIVOT }, deg: ARM * sc.val.arm * (1 - u) });   /* it goes with the head, less and less */
       if (u) {
         out.push({ rot: { ax: 'z', pivot: [0, 9.75, 2] }, deg: 90 * u });   /* it lies down… */
-        out.push({ move: add(mul([-15, -6.45, 2], u), [0, 7 * Math.sin(Math.PI * u), 0]) });   /* …on the table (up over the bowl on the way) */
+        out.push({ move: add(mul([-15, -6.45, 2 + SPOT[k]], u), [0, 7 * Math.sin(Math.PI * u), 0]) });   /* …on the table (up over the bowl on the way) */
       }
       return out;
     };
@@ -2137,23 +2153,30 @@
       for (i = 13; i >= 0; i--) pts.push(at(i / 14, -1));
       whisk.push({ t: 'tube', pts: pts, r: 0.13, col: '#dfe4e8', part: 'whisk', group: 'whisk' });
     }
+    /* the dough hook: a shaft, then a hook that curls round and down */
+    var hookPts = [[0, 17, 2], [0, 15.6, 2], [0, 14.6, 2]];
+    for (i = 1; i <= 16; i++) { var q = i / 16, an = q * 1.55 * Math.PI, rr = 0.3 + 2.3 * q; hookPts.push([rr * Math.cos(an), 14.6 - 6.2 * q, 2 + rr * Math.sin(an)]); }
+    var lastH = hookPts[hookPts.length - 1]; hookPts.push([lastH[0] * 1.05, lastH[1] + 0.9, lastH[2] * 1.05 - 0.05]);
+    var hook = [C([0, 17.6, 2], 'y', 0.95, 2, '#c9d0d7', 'hook', 'hook', { seg: 14 }), { t: 'tube', pts: hookPts, r: 0.4, col: '#e6e9ec', part: 'hook', group: 'hook' }];
+    var ORDER = ['dB', 'dW', 'dH'];
     var change = {
       v: 'change the attachment', period: 6800,
       seq: function (sc) {
-        var on = sc.val.dB < 0.5 ? 'dB' : 'dW', off = on === 'dB' ? 'dW' : 'dB', up = sc.val.arm > 0.9 ? 0 : 850;
+        var on = ORDER.filter(function (k) { return sc.val[k] < 0.5; })[0] || 'dB', off = ORDER[(ORDER.indexOf(on) + 1) % 3], up = sc.val.arm > 0.9 ? 0 : 850;
         return [{ m: 'speed', to: 0 }, { m: 'arm', to: 1 },
           { m: on, to: 1, wait: up, dur: 1500 }, { m: off, to: 0, wait: up + 1700, dur: 1500 }, { m: 'arm', to: 0, wait: up + 3400 }];
       }
     };
     var m = define('mixer', {
       name: 'stand mixer', view: { yaw: -40, pitch: 16, zoom: 1.0 },
-      groups: { beater: { ops: function (sc) { return placeOps(sc, 'dB'); } }, whisk: { ops: function (sc) { return placeOps(sc, 'dW'); } } },
+      groups: { beater: { ops: function (sc) { return placeOps(sc, 'dB'); } }, whisk: { ops: function (sc) { return placeOps(sc, 'dW'); } }, hook: { ops: function (sc) { return placeOps(sc, 'dH'); } } },
       shapes: [
         B([-9, 9, 0, 3, -14, 10], BODY, null, null, { id: 'mbase' }),
         C([0, 3.3, 2], 'y', 6, 0.6, '#b9c0c8', null, null, { seg: 24, on: 'mbase' }),
-        C([0, 9.1, 2], 'y', 4.5, 11, '#d5dce2', 'bowl', null, { r2: 7.5, open: 'top', seg: 26, seamless: true }),
-        C([0, 9.2, 2], 'y', 4.1, 10.8, '#9aa3ad', 'bowl', null, { r2: 7.1, open: 'top', inside: true, seg: 26, seamless: true }),
-        { t: 'tube', pts: [[6.6, 12.6, 2], [8.3, 12.6, 2], [9.3, 11.9, 2], [9.6, 10.4, 2], [9.3, 8.9, 2], [8.2, 7.9, 2], [5.4, 7.5, 2]], r: 0.55, col: '#c3cad1', part: 'bowl' },   /* the handle */
+        /* the bowl: round, wider in the middle than at the bottom, a little narrower at the top (turned like a pot) */
+        lathe([0, 2], [[3.9, 3.6], [5.4, 4.1], [6.6, 5.2], [7.4, 6.8], [7.9, 8.8], [8.0, 10.9], [7.9, 12.9], [7.6, 14.6], [7.2, 14.6]], 28, false, '#d5dce2', 'bowl', { seamless: true }),
+        lathe([0, 2], [[3.4, 3.9], [5.0, 4.4], [6.2, 5.5], [7.0, 7.0], [7.5, 8.9], [7.6, 10.9], [7.5, 12.9], [7.2, 14.55]], 28, true, '#9aa3ad', 'bowl', { seamless: true }),
+        { t: 'tube', pts: [[7.8, 12.6, 2], [9.2, 12.6, 2], [10.2, 11.9, 2], [10.5, 10.4, 2], [10.2, 8.9, 2], [9.2, 7.9, 2], [7.4, 7.5, 2]], r: 0.55, col: '#c3cad1', part: 'bowl' },   /* the handle */
         B([-4, 4, 3, 22, -13, -7], BODY, null, null, { id: 'mcol' }),
         /* the head (the arm), on a hinge at the top of the column, and the shaft the attachments go on */
         B([-4.5, 4.5, 20, 29, -13.5, 8], BODY, 'arm', 'head', { id: 'mhead' }),
@@ -2162,26 +2185,29 @@
         /* the speed lever on the right side of the stand (the column): it stays put when the arm lifts */
         rotBox([4.0, 4.5, 14, 15.9, -10.3, -9.7], 'x', 37.5, [4.25, 14, -10], '#2f3338', 'knob', 'msw', { on: 'mcol' }),
         rotBox([4.0, 4.8, 15.7, 16.5, -10.45, -9.55], 'x', 37.5, [4.25, 14, -10], '#2f3338', 'knob', 'msw', { on: 'mcol' })
-      ].concat(beater).concat(whisk),
+      ].concat(beater).concat(whisk).concat(hook),
       motions: {
         arm: { do: [{ g: 'head', rot: { ax: 'x', pivot: PIVOT, deg: ARM } }], dur: 800 },
         speed: { do: [{ g: 'msw', rot: { ax: 'x', pivot: [4.25, 14, -10], deg: -25 } }], dur: 220 },
         dB: { do: [], dur: 1500, start: 0 },   /* the beater: on the mixer */
-        dW: { do: [], dur: 1500, start: 1 }    /* the whisk: on the table */
+        dW: { do: [], dur: 1500, start: 1 },   /* the whisk: on the table */
+        dH: { do: [], dur: 1500, start: 1 }    /* the dough hook: on the table */
       },
       /* the numbers by the lever */
       displays: [{ id: 'mmarks', on: 'mcol', part: 'knob', at: [4, 17.8, -10], u: [0, 0, -1], v: [0, 1, 0], h: 1.4, text: '0123', col: '#fbe3e5', bg: BODY, when: function () { return true; } }],
       spins: [
         { g: 'beater', ax: 'y', pivot: SHAFT, ease: 600, rate: function (sc) { return running(sc) && sc.val.dB < 0.01 ? sc.val.speed * 220 : 0; } },
-        { g: 'whisk', ax: 'y', pivot: SHAFT, ease: 600, rate: function (sc) { return running(sc) && sc.val.dW < 0.01 ? sc.val.speed * 300 : 0; } }
+        { g: 'whisk', ax: 'y', pivot: SHAFT, ease: 600, rate: function (sc) { return running(sc) && sc.val.dW < 0.01 ? sc.val.speed * 300 : 0; } },
+        { g: 'hook', ax: 'y', pivot: SHAFT, ease: 600, rate: function (sc) { return running(sc) && sc.val.dH < 0.01 ? sc.val.speed * 160 : 0; } }
       ],
       /* lifting the arm turns the mixer off */
       timers: [{ when: function (sc) { return sc.val.arm > 0.05 && sc.val.speed > 0.02; }, after: 0, act: { m: 'speed', to: 0 } }],
       parts: {
         knob: { name: 'knob', can: [{ v: 'switch on', m: 'speed', to: 1 }, { v: 'change the speed', m: 'speed', to: 'cycle', max: 3 }, { v: 'switch off', m: 'speed', to: 0 }], zoom: 2.6, view: { yaw: -80, pitch: 12 } },
         arm: { name: 'arm', can: [{ v: 'lift', m: 'arm', to: 1 }, { v: 'lower', m: 'arm', to: 0 }], zoom: 1.2, view: { yaw: -70, pitch: 10 } },
-        beater: { name: 'beater', can: [{ v: 'mix', m: 'speed', to: 1, if: function (sc) { return sc.val.dB < 0.5; } }, change], zoom: 1.2, view: { yaw: -30, pitch: 20 } },
+        beater: { name: 'paddle', can: [{ v: 'mix', m: 'speed', to: 1, if: function (sc) { return sc.val.dB < 0.5; } }, change], zoom: 1.2, view: { yaw: -30, pitch: 20 } },
         whisk: { name: 'whisk', can: [{ v: 'whisk', m: 'speed', to: 1, if: function (sc) { return sc.val.dW < 0.5; } }, change], zoom: 1.2, view: { yaw: -30, pitch: 20 } },
+        hook: { name: 'dough hook', can: [{ v: 'knead', m: 'speed', to: 1, if: function (sc) { return sc.val.dH < 0.5; } }, change], zoom: 1.2, view: { yaw: -30, pitch: 20 } },
         bowl: { name: 'bowl', can: [{ v: 'put the ingredients in' }], zoom: 1.6, view: { yaw: -30, pitch: 35 } }
       }
     });
@@ -2319,9 +2345,9 @@
         { g: 'tvled', col: [255, 40, 40], when: function (sc) { return sc.plugged() && !sc.on('tvon'); }, fadeIn: 200, fadeOut: 800 }
       ]),
       parts: {
-        screen: { name: 'screen', can: [{ v: 'watch', m: 'tvon', to: 1 }, { v: 'switch on', m: 'tvon', to: 1 }, { v: 'switch off', m: 'tvon', to: 0 }, { v: 'change the source', fx: 'source', also: [{ m: 'tvon', to: 1 }, osd] }], zoom: 1.1 },
+        screen: { name: 'screen', can: [{ v: 'watch', m: 'tvon', to: 1 }, { v: 'switch on', m: 'tvon', to: 1 }, { v: 'switch off', m: 'tvon', to: 0 }, { v: 'change the input/source', fx: 'source', also: [{ m: 'tvon', to: 1 }, osd] }], zoom: 1.1 },
         remote: { name: 'remote control', can: [{ v: 'pick up', m: 'rlift', to: 1 }, { v: 'put down', m: 'rlift', to: 0 }, { v: 'change the channel', fx: 'channel', dir: 1, also: [{ m: 'tvon', to: 1 }, osd] },
-          { v: 'change the source', fx: 'source', also: [{ m: 'tvon', to: 1 }, osd] },
+          { v: 'change the input/source', fx: 'source', also: [{ m: 'tvon', to: 1 }, osd] },
           { v: 'turn up the volume', m: 'vol', to: 'up', also: louder[1] }, { v: 'turn down the volume', m: 'vol', to: 'down', also: quieter[1] }], zoom: 2.2, view: { pitch: 40, yaw: -15 } },
         speaker: { name: 'speaker', can: [{ v: 'turn up the volume', m: 'vol', to: 'up', also: louder[1] }, { v: 'turn down the volume', m: 'vol', to: 'down', also: quieter[1] }], zoom: 2.4, view: { yaw: -10, pitch: 8 } }
       }
@@ -2338,7 +2364,7 @@
     merge(m, buttons([
       { e: [15, 18, 8.3, 9.2, 1.5, 1.85], col: '#3a3f46', move: [0, 0, -0.3], also: { m: 'tvon', to: 'toggle' }, more: [{ v: 'switch on', m: 'tvon', to: 1 }, { v: 'switch off', m: 'tvon', to: 0 }], view: { yaw: -10, pitch: 6 }, zoom: 3 },
       rb(6.6, 9.2, '#d9483b', { m: 'tvon', to: 'toggle' }, [{ v: 'switch on', m: 'tvon', to: 1 }, { v: 'switch off', m: 'tvon', to: 0 }]),
-      rb(8.2, 9.2, '#5fa8d3', [{ fx: 'source' }, osd], [{ v: 'change the source', fx: 'source', also: osd }]),
+      rb(8.2, 9.2, '#5fa8d3', [{ fx: 'source' }, osd], [{ v: 'change the input/source', fx: 'source', also: osd }]),
       rb(8.2, 11.5, '#e9ecef', [{ fx: 'channel', dir: 1 }, osd], [{ v: 'change the channel', fx: 'channel', dir: 1, also: osd }]),
       rb(8.2, 13.4, '#e9ecef', [{ fx: 'channel', dir: -1 }, osd], [{ v: 'go back a channel', fx: 'channel', dir: -1, also: osd }]),
       rb(6.6, 11.5, '#9fb0c0', louder, [{ v: 'turn up the volume', m: 'vol', to: 'up', also: louder[1] }]),
@@ -2415,16 +2441,28 @@
     var fresh = function (st) { st.kCount = 0; st.kNext = st.hNext = null; };
     /* the CD: 6 … 10 tracks of about three minutes; after the last one it starts again */
     var cd = function (st) { if (!st.tracks) { st.tracks = 6 + rnd(5); st.track = 1; st.tpos = 0; st.tlen = 160 + rnd(41); st.cprof = song(); } return st; };
-    var nextTrack = function (st) { cd(st); st.track = st.track % st.tracks + 1; st.tpos = 0; st.tlen = 160 + rnd(41); st.cprof = song(); fresh(st); };
+    /* pauses of a second, with no sound: changing the input (the screen says TUNER or CD), and before a track starts
+       playing (the screen shows only the track number). The track's pause comes after the input's */
+    var trackPause = function (st, now) { st.p2 = Math.max(st.p1 || 0, now) + 1000; };
+    var nextTrack = function (st, now) { cd(st); st.track = st.track % st.tracks + 1; st.tpos = 0; st.tlen = 160 + rnd(41); st.cprof = song(); fresh(st); if (now != null) trackPause(st, now); };
     var radio = function (st) { if (!st.freq) { st.freq = (87.9 + 0.2 * rnd(101)).toFixed(1); st.rprof = song(); } return st; };
     var nextStation = function (st) { var f; do { f = (87.9 + 0.2 * rnd(101)).toFixed(1); } while (f === st.freq); st.freq = f; st.rprof = song(); fresh(st); };
-    var NEXT = { fx: 'do', fn: function (sc) { if (sc.state.smode) nextTrack(sc.state); else nextStation(radio(sc.state)); } };
-    var SOURCE = { fx: 'do', fn: function (sc) { sc.state.smode = sc.state.smode ? 0 : 1; fresh(sc.state); } };
+    var NEXT = { fx: 'do', fn: function (sc, now) { if (sc.state.smode) nextTrack(sc.state, playing(sc) ? now : null); else nextStation(radio(sc.state)); } };
+    var SOURCE = { fx: 'do', fn: function (sc, now) {
+      var st = sc.state; st.smode = st.smode ? 0 : 1; fresh(st);
+      st.p1 = now + 1000; st.p1t = st.smode ? 'CD' : 'TUNER'; st.p2 = 0;
+      if (st.smode && playing(sc)) trackPause(st, now);
+    } };
     var STOP = { fx: 'do', fn: function (sc) { if (sc.state.smode) cd(sc.state).tpos = 0; } };
     var beat = function (sc, ms) {
       var st = sc.state, now = sc.now, on = playing(sc), P = st.smode ? cd(st).cprof : radio(st).rprof;
-      if (on) {
-        if (st.smode) { st.tpos += ms / 1000; if (st.tpos >= st.tlen) { nextTrack(st); P = st.cprof; } }   /* the CD's clock */
+      if (on && !st.wasOn && st.smode) trackPause(st, now);   /* play pressed on a CD: the track number first */
+      st.wasOn = on;
+      var hold = now < Math.max(st.p1 || 0, st.p2 || 0);
+      st.paused = hold;
+      if (hold) { st.kNext = st.hNext = null; st.kAt = st.hAt = null; }   /* silence: the beat starts again after the pause */
+      if (on && !hold) {
+        if (st.smode) { st.tpos += ms / 1000; if (st.tpos >= st.tlen) { nextTrack(st, now); P = st.cprof; } }   /* the CD's clock */
         var chorus = (st.kCount || 0) % (P.verse + P.chorus) >= P.verse;
         st.chorus = chorus;
         if (st.kNext == null || st.kNext < now - 1000) st.kNext = now;
@@ -2441,13 +2479,14 @@
       }
       st.kEnv = env(st.kAt == null ? null : now - st.kAt, 130) * (st.kA || 1);
       st.hEnv = env(st.hAt == null ? null : now - st.hAt, 45) * (st.hAmp || 1);
-      return on || st.kEnv > 0.01 || st.hEnv > 0.01;
+      return on || hold || st.kEnv > 0.01 || st.hEnv > 0.01;
     };
     /* the graphic equalizer: 7 bands × 8 steps that dance with the music — higher when it is louder */
     var EQ = { shapes: [], lights: [] }, BANDS = 7, STEPS = 8;
     /* the bands follow the speakers: the low bands (left) jump with the big speaker, the high bands (right) with the small one */
     var level = function (sc, b) {
       var st = sc.state, k = st.kEnv || 0, h = st.hEnv || 0, amp = st.kAmp ? st.kAmp[b] : 1;
+      if (st.paused) return 0;
       var lo = Math.max(0, 1 - b / 4), hi = Math.max(0, (b - 2) / 4), mid = Math.max(0, 1 - Math.abs(b - 3) / 3);
       var v = 0.08 + lo * k * amp + hi * h + 0.35 * mid * (0.6 * k + 0.4 * h);
       return Math.min(1, v * sc.val.vol * 1.35);
@@ -2485,8 +2524,14 @@
       },
       lights: [{ g: 'sscr', col: [22, 66, 90], when: plugged, fadeIn: 300, fadeOut: 500 }],
       /* the display (16 segments): the radio station (FM 99.9), or the CD's track and time (01 2:22) */
-      displays: [{ id: 'sdisp', g: 'sscr', on: 'sscr', part: 'screen', at: [-2, 7.75, 10.15], h: 1.6, font: 'seg16', text: 'FM 98.5', col: '#7fe0ff', bg: '#0f2a3a', when: plugged,
-        textFn: function (sc) { var st = sc.state; if (!st.smode) return 'FM ' + radio(st).freq; cd(st); var t = Math.floor(st.tpos); return two(st.track) + ' ' + Math.floor(t / 60) + ':' + two(t % 60); } }],
+      displays: [{ id: 'sdisp', g: 'sscr', on: 'sscr', part: 'screen', at: [-2, 7.75, 10.15], h: 1.6, font: 'seg16', cells: 8, text: 'FM 98.5', col: '#7fe0ff', bg: '#0f2a3a', when: plugged,
+        textFn: function (sc) {
+          var st = sc.state;
+          if (sc.now < (st.p1 || 0)) return st.p1t;   /* changing the input: TUNER / CD */
+          if (!st.smode) return 'FM ' + radio(st).freq;
+          cd(st); if (sc.now < (st.p2 || 0)) return two(st.track);   /* before the track plays: its number only */
+          var t = Math.floor(st.tpos); return two(st.track) + ' ' + Math.floor(t / 60) + ':' + two(t % 60);
+        } }],
       parts: {
         screen: { name: 'screen', can: [{ v: 'read' }], zoom: 2.6, view: { yaw: -8, pitch: 8 } },
         screen2: { name: 'equalizer', can: [{ v: 'watch', m: 'play', to: 1 }, { v: 'turn up the volume', m: 'vol', to: 'up', also: { m: 'play', to: 1 } }, { v: 'turn down the volume', m: 'vol', to: 'down', also: { m: 'play', to: 1 } }], zoom: 2.6, view: { yaw: -8, pitch: 8 } },
@@ -2500,9 +2545,9 @@
       { e: [-5.75, -3.85, 3, 4.6, 10, 10.5], col: '#d9483b', also: [{ m: 'play', to: 0 }, STOP], more: [{ v: 'stop the music', m: 'play', to: 0, also: STOP }] },
       { e: [-3.5, -1.6, 3, 4.6, 10, 10.5], col: '#e9ecef', also: [{ m: 'tray', to: 'toggle' }], more: [{ v: 'open the CD tray', m: 'tray', to: 1 }, { v: 'close the CD tray', m: 'tray', to: 0 }] },
       { e: [-1.25, 0.65, 3, 4.6, 10, 10.5], col: '#e9ecef', also: NEXT, more: [{ v: 'change the station', fx: 'do', fn: NEXT.fn, noop: function (sc) { return !!sc.state.smode; } }, { v: 'skip a track', fx: 'do', fn: NEXT.fn, noop: function (sc) { return !sc.state.smode; } }] },
-      { e: [1.0, 2.9, 3, 4.6, 10, 10.5], col: '#5fa8d3', also: SOURCE, more: [{ v: 'change the source', fx: 'do', fn: SOURCE.fn },
-        { v: 'listen to the radio', fx: 'do', fn: function (sc) { if (sc.state.smode) SOURCE.fn(sc); }, also: { m: 'play', to: 1 }, noop: function (sc) { return !sc.state.smode && sc.val.play > 0.5; } },
-        { v: 'play a CD', fx: 'do', fn: function (sc) { if (!sc.state.smode) SOURCE.fn(sc); }, also: { m: 'play', to: 1 }, noop: function (sc) { return !!sc.state.smode && sc.val.play > 0.5; } }] }
+      { e: [1.0, 2.9, 3, 4.6, 10, 10.5], col: '#5fa8d3', also: SOURCE, more: [{ v: 'change the input/source', fx: 'do', fn: SOURCE.fn },
+        { v: 'listen to the radio', fx: 'do', fn: function (sc, now) { if (sc.state.smode) SOURCE.fn(sc, now); }, also: { m: 'play', to: 1 }, noop: function (sc) { return !sc.state.smode && sc.val.play > 0.5; } },
+        { v: 'play a CD', fx: 'do', fn: function (sc, now) { if (!sc.state.smode) SOURCE.fn(sc, now); }, also: { m: 'play', to: 1 }, noop: function (sc) { return !!sc.state.smode && sc.val.play > 0.5; } }] }
     ], { prefix: 'sbt', move: [0, 0, -0.35], on: 'sb', zoom: 3, view: { yaw: -10, pitch: 10 } }));
     merge(m, EQ);
     withPower(m, powered([[10, 3, -10], [10, 1.2, -15], [2, 1.5, -18]], -4, -18));

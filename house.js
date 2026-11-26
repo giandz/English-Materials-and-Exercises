@@ -2830,6 +2830,12 @@
      { words: [...], error: { type:'extra',     wordIndex } }
      { words: [...], error: { type:'misplaced', wordIndex, targetGapIndex } }
      { words: [...], error: { type:'wrong',     wordIndex, options, correct } }
+     { words: [...], errors: [ <error>, <error>, ... ] }   // several mistakes
+
+   Several mistakes: list them in `errors`, each in the same shape as `error`
+   above, with indexes into the ORIGINAL words (they never shift as other
+   mistakes are fixed). They can be fixed in any order; OK says "Not yet" until
+   every one is fixed. The single `error` shape works as before.
    ══════════════════════════════════════════════════════════════════════════ */
 (function (global) {
   'use strict';
@@ -2960,7 +2966,10 @@
       wrap.appendChild(verdictEl);
       listEl.appendChild(wrap);
 
-      var resolved = !item.error; // error-free sentences start already "solved"
+      // `error` (one mistake, or null) and `errors` (a list) both end up here.
+      var errors = item.errors || (item.error ? [item.error] : []);
+      var fixed = [];             // fixed[n] is true once errors[n] is corrected
+      var resolved = !errors.length; // error-free sentences start already "solved"
       var activeTarget = null;    // { kind: 'word'|'gap', index }
       var pickingDestination = false;
       var moveSrc = null;         // index of the word being moved (tap-to-move)
@@ -2977,16 +2986,42 @@
       }
       function lowerUnlessKept(w) { return keepsCaps(w) ? w : decapitalizeFirst(w); }
 
+      function pending() { return errors.filter(function (e, n) { return !fixed[n]; }); }
+      function firstPending(test) { var p = pending(); for (var n = 0; n < p.length; n++) if (test(p[n])) return p[n]; return null; }
+
+      function markFixed(e) {
+        fixed[errors.indexOf(e)] = true;
+        resolved = errors.every(function (x, n) { return fixed[n]; });
+        fixCapitals();
+      }
+
+      // After every fix: whatever word is first in the sentence gets a capital,
+      // and a word that used to be first but no longer is loses it (unless it
+      // always keeps it: I, names, keepCaps…). Done from the live sentence, so
+      // it stays right whatever order several fixes are made in.
+      function fixCapitals() {
+        var chips = sentEl.querySelectorAll('.eh2-word');
+        for (var n = 0; n < chips.length; n++) {
+          var c = chips[n];
+          if (n === 0) { c.textContent = capitalizeFirst(c.textContent); c.dataset.wasFirst = '1'; }
+          else if (c.dataset.wasFirst) c.textContent = lowerUnlessKept(c.textContent);
+        }
+      }
+
       // Which words can start the move, and where each must go. Normally only
       // the misplaced word itself; when it is just ONE word away from its
       // right place, the neighbour it swaps with is an equally good start
       // ("Where I can…": move "can" to before "I", or "I" to after "can").
-      function moveSolutions() {
-        var e = item.error, sols = {};
-        if (!e || e.type !== 'misplaced') return sols;
-        sols[e.wordIndex] = e.targetGapIndex;
-        if (e.targetGapIndex === e.wordIndex + 2) sols[e.wordIndex + 1] = e.wordIndex;
-        else if (e.targetGapIndex === e.wordIndex - 1) sols[e.wordIndex - 1] = e.wordIndex + 1;
+      // → { wordIndex: [{ gap, e }, …] } for every misplaced mistake not yet fixed.
+      function moveSolutions(except) {
+        var sols = {};
+        function add(w, g, e) { (sols[w] = sols[w] || []).push({ gap: g, e: e }); }
+        pending().forEach(function (e) {
+          if (e.type !== 'misplaced' || e === except) return;
+          add(e.wordIndex, e.targetGapIndex, e);
+          if (e.targetGapIndex === e.wordIndex + 2) add(e.wordIndex + 1, e.wordIndex, e);
+          else if (e.targetGapIndex === e.wordIndex - 1) add(e.wordIndex - 1, e.wordIndex + 1, e);
+        });
         return sols;
       }
 
@@ -3018,18 +3053,15 @@
             }
           })(i);
         }
+        if (wordEls[0]) wordEls[0].dataset.wasFirst = '1';
       }
 
       function isErrorWord(i) {
-        var e = item.error;
-        if (!e) return false;
-        return (e.type === 'extra' && e.wordIndex === i) ||
-               (e.type === 'misplaced' && moveSolutions().hasOwnProperty(i)) ||
-               (e.type === 'wrong' && e.wordIndex === i);
+        return !!firstPending(function (e) { return (e.type === 'extra' || e.type === 'wrong') && e.wordIndex === i; }) ||
+               moveSolutions().hasOwnProperty(i);
       }
       function isErrorGap(i) {
-        var e = item.error;
-        return !!e && e.type === 'missing' && e.gapIndex === i;
+        return !!firstPending(function (e) { return e.type === 'missing' && e.gapIndex === i; });
       }
 
       function closeMenu() {
@@ -3127,15 +3159,15 @@
       }
 
       function handleAction(action) {
-        var e = item.error;
         var t = activeTarget;
         if (!t) return;
         var targetEl = t.kind === 'word' ? wordEls[t.index] : gapEls[t.index];
+        var e;
 
         if (action === 'insert') {
-          if (e.type === 'missing' && t.kind === 'gap' && t.index === e.gapIndex) {
+          if (t.kind === 'gap' && (e = firstPending(function (x) { return x.type === 'missing' && x.gapIndex === t.index; }))) {
             showInsertOptions(e, 'gap');
-          } else if (e.type === 'wrong' && t.kind === 'word' && t.index === e.wordIndex) {
+          } else if (t.kind === 'word' && (e = firstPending(function (x) { return x.type === 'wrong' && x.wordIndex === t.index; }))) {
             showInsertOptions(e, 'word');
           } else {
             flashWrong([targetEl]);
@@ -3144,11 +3176,9 @@
           return;
         }
         if (action === 'delete') {
-          if (e.type === 'extra' && t.kind === 'word' && t.index === e.wordIndex) {
+          if (t.kind === 'word' && (e = firstPending(function (x) { return x.type === 'extra' && x.wordIndex === t.index; }))) {
             removeWordAndGaps(t.index);
-            // the first word was deleted: the next one now starts the sentence
-            if (t.index === 0 && wordEls[1]) wordEls[1].textContent = capitalizeFirst(wordEls[1].textContent);
-            resolved = true;
+            markFixed(e);   // fixCapitals(): if the first word went, the next one starts the sentence
             closeMenu();
           } else {
             flashWrong([targetEl]);
@@ -3157,7 +3187,7 @@
           return;
         }
         if (action === 'move') {
-          if (e.type === 'misplaced' && t.kind === 'word' && moveSolutions().hasOwnProperty(t.index)) {
+          if (t.kind === 'word' && moveSolutions().hasOwnProperty(t.index)) {
             startDestinationPick(t.index);
           } else {
             flashWrong([targetEl]);
@@ -3181,7 +3211,7 @@
             if (opt === e.correct) {
               if (mode === 'gap') insertWordAt(e.gapIndex, opt);
               else replaceWordAt(e.wordIndex, opt);
-              resolved = true;
+              markFixed(e);
               closeMenu();
             } else {
               var el = mode === 'gap' ? gapEls[e.gapIndex] : wordEls[e.wordIndex];
@@ -3218,10 +3248,11 @@
 
       // One check for both tap-to-move and drag-to-move.
       function tryMove(src, gapIndex) {
-        var sols = moveSolutions();
-        if (!resolved && sols.hasOwnProperty(src) && sols[src] === gapIndex) {
-          performMove(src, gapIndex);
-          resolved = true;
+        var sols = moveSolutions(), hit = null;
+        (sols[src] || []).forEach(function (s) { if (!hit && s.gap === gapIndex) hit = s; });
+        if (!resolved && hit) {
+          performMove(src, gapIndex, hit.e);
+          markFixed(hit.e);
         } else {
           flashWrong([wordEls[src], gapEls[gapIndex]]);
         }
@@ -3300,15 +3331,11 @@
       function insertWordAt(gapIndex, word) {
         var chip = document.createElement('span');
         chip.className = 'eh2-word inserted';
-        chip.dataset.eh = idx + '.in';
-        // A word inserted in front of the sentence starts it: capital letter,
-        // and the old first word loses its own (unless it always keeps it).
-        if (gapIndex === 0) {
-          chip.textContent = capitalizeFirst(word);
-          if (wordEls[0]) wordEls[0].textContent = lowerUnlessKept(wordEls[0].textContent);
-        } else {
-          chip.textContent = word;
-        }
+        chip.dataset.eh = idx + '.in' + gapIndex;
+        // A word inserted in front of the sentence starts it: fixCapitals(),
+        // run straight after, gives it the capital and takes the old first
+        // word's away (unless that one always keeps it).
+        chip.textContent = word;
         gapEls[gapIndex].insertAdjacentElement('afterend', chip);
 
         var dot = document.createElement('span');
@@ -3321,6 +3348,7 @@
         chip.className = 'eh2-word inserted';
         chip.dataset.eh = idx + '.w' + i;
         chip.textContent = word;
+        if (wordEls[i].dataset.wasFirst) chip.dataset.wasFirst = '1';
         wordEls[i].parentNode.insertBefore(chip, wordEls[i]);
         wordEls[i].parentNode.removeChild(wordEls[i]);
         wordEls[i] = chip;
@@ -3332,65 +3360,54 @@
       // the single permanently-highlighted "·" that replaces the word. That
       // highlight matches the green an inserted or moved-in word gets, so
       // the vacated spot reads as a resolved part of the sentence.
-      function removeWordAndGaps(i) {
+      // Gaps another mistake still needs (a word to insert there, or a move
+      // destination) stay, so fixes can be made in any order.
+      function gapNeeded(g, except) {
+        if (firstPending(function (x) { return x !== except && x.type === 'missing' && x.gapIndex === g; })) return true;
+        var sols = moveSolutions(except);
+        return Object.keys(sols).some(function (w) { return sols[w].some(function (s) { return s.gap === g; }); });
+      }
+      function removeWordAndGaps(i, except) {
         var wordEl = wordEls[i];
         if (!wordEl) return;
 
         var dot = document.createElement('span');
         dot.className = 'eh2-gap deleted-ok';
-        dot.dataset.eh = idx + '.del';
+        dot.dataset.eh = idx + '.del' + i;
         dot.textContent = '·';
         wordEl.parentNode.insertBefore(dot, wordEl);
 
         var gapBefore = gapEls[i];
         var gapAfter = gapEls[i + 1];
-        if (gapAfter && gapAfter.parentNode) gapAfter.parentNode.removeChild(gapAfter);
-        if (gapBefore && gapBefore.parentNode) gapBefore.parentNode.removeChild(gapBefore);
+        if (gapAfter && gapAfter.parentNode && !gapNeeded(i + 1, except)) gapAfter.parentNode.removeChild(gapAfter);
+        if (gapBefore && gapBefore.parentNode && !gapNeeded(i, except)) gapBefore.parentNode.removeChild(gapBefore);
         wordEl.parentNode.removeChild(wordEl);
       }
 
-      function performMove(wordIndex, targetGapIndex) {
-        var originalWord = item.words[wordIndex];
-        var wasFirst = wordIndex === 0;
-        var willBeFirst = targetGapIndex === 0;
-        // Capture whichever word currently sits at the start of the
-        // sentence, in case the move displaces it from that spot.
-        var currentFirstWordEl = wasFirst ? null : wordEls[0];
+      function performMove(wordIndex, targetGapIndex, e) {
+        // The word as it is now (another fix may have changed it), not as written.
+        var word = wordEls[wordIndex].textContent;
+        var wasFirst = wordEls[wordIndex].dataset.wasFirst;
 
-        removeWordAndGaps(wordIndex);
-
-        // A word moving into (or out of) the very first slot needs its
-        // capitalization updated to match: sentence-initial words are
-        // capitalized, everything else isn't.
-        var displayWord = willBeFirst
-          ? capitalizeFirst(originalWord)
-          : (wasFirst ? lowerUnlessKept(originalWord) : originalWord);
+        removeWordAndGaps(wordIndex, e);
 
         var chip = document.createElement('span');
         chip.className = 'eh2-word moved-in';
-        chip.dataset.eh = idx + '.mv';
-        chip.textContent = displayWord;
+        chip.dataset.eh = idx + '.mv' + wordIndex;
+        chip.textContent = word;
+        if (wasFirst) chip.dataset.wasFirst = '1';
         gapEls[targetGapIndex].insertAdjacentElement('afterend', chip);
 
         var dot = document.createElement('span');
         dot.className = 'eh2-gap';
         chip.insertAdjacentElement('afterend', dot);
-
-        if (willBeFirst && currentFirstWordEl && currentFirstWordEl.parentNode) {
-          // Another word used to be first — it no longer is, so it loses
-          // its capital letter.
-          currentFirstWordEl.textContent = lowerUnlessKept(currentFirstWordEl.textContent);
-        } else if (wasFirst && !willBeFirst) {
-          // The moved word WAS first and has left; whichever word is now
-          // at the front of the sentence needs to gain a capital letter.
-          var newFirstEl = sentEl.querySelector('.eh2-word');
-          if (newFirstEl) newFirstEl.textContent = capitalizeFirst(newFirstEl.textContent);
-        }
+        // Capitals for a word moved into or out of first place: markFixed()
+        // runs fixCapitals() straight after this.
       }
 
       okBtn.addEventListener('click', function () {
         if (resolved) {
-          verdictEl.textContent = item.error ? '✓ Fixed!' : '✓ Correct — nothing was wrong!';
+          verdictEl.textContent = errors.length ? '✓ Fixed!' : '✓ Correct — nothing was wrong!';
           verdictEl.className = 'eh2-verdict correct';
           wrap.classList.add('correct');
           if (!counted.has(idx)) {
@@ -3407,7 +3424,8 @@
 
       resetBtn.addEventListener('click', function () {
         closeMenu();
-        resolved = !item.error;
+        fixed = [];
+        resolved = !errors.length;
         verdictEl.textContent = '';
         verdictEl.className = 'eh2-verdict';
         wrap.classList.remove('correct');
@@ -3417,6 +3435,18 @@
           if (scoreEl) scoreEl.textContent = fixedCount;
         }
         buildSentenceDOM();
+      });
+
+      // A tap anywhere outside the open popover closes it. pointerdown, because
+      // iOS Safari doesn't send `click` to the document from plain page content.
+      // While choosing where to move a word, taps in the sentence are left to
+      // the gaps (and to dragging the word).
+      document.addEventListener('pointerdown', function (ev) {
+        if (!menuEl.classList.contains('open')) return;
+        var t = ev.target;
+        if (menuEl.contains(t) || (anchorEl && anchorEl.contains(t))) return;
+        if (pickingDestination && sentEl.contains(t)) return;
+        closeMenu();
       });
 
       buildSentenceDOM();
