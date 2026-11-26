@@ -68,6 +68,10 @@
     + '.h3d-part[aria-pressed="true"]{ border-color:var(--text-accent,#185fa5); background:var(--color-background-info,#e6f1fb); color:var(--color-text-info,#0c447c); }'
     + '.h3d-mini{ display:block; width:100%; min-width:96px; height:var(--h3d-h,104px); border-radius:var(--border-radius-md,8px); background:var(--surface-1,#f7f7f8); overflow:hidden; }'
     + '.h3d-mini > svg{ display:block; width:100%; height:100%; }'
+    /* the part in a small picture (the matching games): a thick outline going round the colours of the rainbow */
+    + '@keyframes h3dHue{ 0%{ stroke:#ff2a2a } 16.7%{ stroke:#ffd000 } 33.3%{ stroke:#22d64a } 50%{ stroke:#00d2ff } 66.7%{ stroke:#2a5bff } 83.3%{ stroke:#d22aff } 100%{ stroke:#ff2a2a } }'
+    + '.h3d-mark{ animation:h3dHue 2.4s linear infinite; animation-delay:var(--h3d-t,0s); }'
+    + '@media (prefers-reduced-motion: reduce){ .h3d-mark{ animation:none; stroke:#ff2a8a; } }'
     + '.h3d-leader{ fill:none; stroke:var(--text-accent,#185fa5); stroke-width:1.5; }'
     + '.h3d-dot{ fill:var(--text-accent,#185fa5); stroke:var(--surface-2,#fff); stroke-width:1.5; }'
     + '.h3d-finger{ fill:rgba(255,255,255,.75); stroke:var(--text-accent,#185fa5); stroke-width:2; }'
@@ -180,7 +184,7 @@
         : s.t === 'top' ? [[[s.e[0], s.e[2], s.e[3]], [s.e[0], s.e[2], s.e[4]], [s.e[1], s.e[2], s.e[4]], [s.e[1], s.e[2], s.e[3]]]].map(function (f) { return orient(f, [0, -1e6, 0]); })
         : s.t === 'faces' ? s.faces : s.t === 'tube' ? null : [];
       if (s.t === 'tube') { faces.push({ tube: s, shape: si }); return; }
-      fs.forEach(function (f) { faces.push({ pts: f, col: rgb(s.col), part: s.part || null, group: s.group || s.part || null, id: s.id || null, on: s.on || null, layer: s.layer || 1, bias: (s.bias || 0) + (ext(s) < big * 0.3 ? 2.5 : 0), clipY: s.clipY, clipZ: s.clipZ, seamless: s.seamless, key: s.key, shape: si }); });
+      fs.forEach(function (f) { faces.push({ pts: f, col: rgb(s.col), part: s.part || null, group: s.group || s.part || null, id: s.id || null, on: s.on || null, layer: s.layer || 1, bias: (s.bias || 0) + (ext(s) < big * 0.3 ? 2.5 : 0), clipY: s.clipY, clipZ: s.clipZ, seamless: s.seamless, alpha: s.alpha, key: s.key, shape: si }); });
     });
     model._faces = faces;
     /* bounds: the middle and the size the camera fits */
@@ -218,6 +222,8 @@
     this.lv = (this.m.lights || []).map(function () { return 0; });               // how bright each light is now (0 … 1)
     this.dv = (this.m.displays || []).map(function () { return 0; });
     this.tm = (this.m.timers || []).map(function () { return null; });
+    this.puffs = [];                                                                // steam puffs in the air: { s, p, t0, seed }
+    this.pnext = (this.m.steam || []).map(function () { return 0; });
     this.queue = [];                                                                // steps waiting to be played: { t, act }            // when each timer started (-1: it has fired)
     this.last = null;
     this.settle();
@@ -287,7 +293,7 @@
       if (f.clipZ != null) pts = pts.map(function (p) { return p[2] < f.clipZ ? [p[0], p[1], f.clipZ] : p; });
       var col = f.col, lc = litOf(f.group);
       if (f.key != null && pressed[f.key]) { var d = pressed[f.key]; pts = pts.map(function (p) { return [p[0], p[1] - 0.3 * d, p[2]]; }); col = mul(col, 1 - 0.35 * d); }
-      out.push({ pts: pts, col: lc ? mix(col, lc.col, lc.lv) : col, glow: lc ? lc.lv : 0, part: f.part, bias: f.bias, id: f.id, on: f.on, layer: f.layer, seamless: f.seamless });
+      out.push({ pts: pts, col: lc ? mix(col, lc.col, lc.lv) : col, glow: lc ? lc.lv : 0, part: f.part, bias: f.bias, id: f.id, on: f.on, layer: f.layer, seamless: f.seamless, alpha: f.alpha });
     });
     /* 7-segment displays: the lit segments, lying on their screen */
     (this.m.displays || []).forEach(function (d, i) {
@@ -295,7 +301,7 @@
       if (lv < 0.01) return;
       var ops = opsOf(d.g), u = d.u || [1, 0, 0], v = d.v || [0, 1, 0], col = mix(rgb(d.bg || '#000000'), rgb(d.col), lv);
       var text = d.textFn ? d.textFn(self) : self.dtext[i];
-      (d.font === 'pix' ? pixPolys(text, d.h) : segPolys(text, d.h)).forEach(function (poly) {
+      (d.font === 'pix' ? pixPolys(text, d.h) : d.font === 'seg16' ? seg16Polys(text, d.h) : segPolys(text, d.h)).forEach(function (poly) {
         var pts = poly.map(function (q) { var p = add(add(d.at, mul(u, q[0])), mul(v, q[1])); return ops.length ? self.place(p, ops) : p; });
         out.push({ pts: pts, col: col, glow: lv, part: d.part, bias: 0, id: null, on: d.on, layer: d.layer || 3 });
       });
@@ -353,6 +359,7 @@
       this.state[act.key] = ((this.state[act.key] || 0) + (act.dir || 1) + nn) % nn;
       return;
     }
+    if (act.fx === 'do') { act.fn(this, now); return; }   /* the model's own step (the next track on a CD) */
     if (act.fx === 'source') { this.state.src = (this.state.src + 1) % (this.m.sources || 3); return; }
     if (act.fx === 'keys') {   /* random keys, one after another */
       var n = this.m.keyCount || 0, seq = [], gap = act.gap || 140, last = -1;
@@ -399,6 +406,14 @@
     /* timers: when() has been true for after() ms → play act (once, until when() is false again) */
     if (this.m.alive && this.m.alive(this)) busy = true;   /* a light that keeps going on and off */
     if (this.m.update && this.m.update(this, dt)) busy = true;   /* the model's own state changing over time (a fridge warming up) */
+    /* steam: a new puff now and then (at a slightly random interval) while when() is true; old puffs go */
+    (this.m.steam || []).forEach(function (st, i) {
+      if (!st.when(self)) return;
+      busy = true;
+      if (now >= self.pnext[i]) { self.pnext[i] = now + (st.every || 300) * (0.6 + 0.8 * Math.random()); self.puffs.push({ s: st, p: self.groupPoint(st.at, st.g), t0: now, seed: Math.random() }); }
+    });
+    this.puffs = this.puffs.filter(function (q) { return now - q.t0 < (q.s.life || 1600); });
+    if (this.puffs.length) busy = true;
     (this.m.timers || []).forEach(function (tm, i) {
       if (!tm.when(self)) { self.tm[i] = null; return; }
       if (self.tm[i] == null) self.tm[i] = now;
@@ -474,6 +489,37 @@
     'M': ['10001', '11011', '10101', '10101', '10001', '10001', '10001'], '|': ['00100', '00100', '00100', '00100', '00100', '00100', '00100'],
     ' ': ['00000', '00000', '00000', '00000', '00000', '00000', '00000']
   };
+  /* 16-segment letters and digits (a radio's display: FM 99.9, 01 2:22). Each segment is a thick line between two of
+     the glyph's nine points: corners, middles of the sides, the centre */
+  var SEG16 = {
+    '0': 'a1 a2 b c d1 d2 e f', '1': 'b c j', '2': 'a1 a2 b g1 g2 e d1 d2', '3': 'a1 a2 b g2 c d1 d2', '4': 'f g1 g2 b c',
+    '5': 'a1 a2 f g1 g2 c d1 d2', '6': 'a1 a2 f e d1 d2 c g1 g2', '7': 'a1 a2 b c', '8': 'a1 a2 b c d1 d2 e f g1 g2', '9': 'a1 a2 b c d1 d2 f g1 g2',
+    'A': 'a1 a2 b c e f g1 g2', 'C': 'a1 a2 f e d1 d2', 'D': 'a1 a2 b c d1 d2 i l', 'E': 'a1 a2 f e g1 d1 d2', 'F': 'a1 a2 f e g1', 'I': 'a1 a2 i l d1 d2',
+    'K': 'f e g1 j m', 'L': 'f e d1 d2', 'M': 'f e b c h j', 'N': 'f e h m b c', 'O': 'a1 a2 b c d1 d2 e f', 'P': 'a1 a2 b f e g1 g2',
+    'R': 'a1 a2 b f e g1 g2 m', 'S': 'a1 a2 f g1 g2 c d1 d2', 'T': 'a1 a2 i l', 'U': 'f e d1 d2 b c', '-': 'g1 g2', ' ': ''
+  };
+  function seg16Polys(text, h) {
+    var w = h * 0.58, t = h * 0.13, gap = h * 0.3, sk = 0.08, glyphs = [], out = [];
+    String(text).toUpperCase().split('').forEach(function (ch) { if (ch === '.' && glyphs.length) glyphs[glyphs.length - 1].dot = true; else glyphs.push({ ch: ch }); });
+    var widthOf = function (g) { return g.ch === ':' ? t * 2.4 : w; };
+    var total = glyphs.reduce(function (sum, g) { return sum + widthOf(g); }, 0) + gap * (glyphs.length - 1), x = -total / 2, y0 = -h / 2;
+    var P = { TL: [0, 1], TC: [0.5, 1], TR: [1, 1], ML: [0, 0.5], MC: [0.5, 0.5], MR: [1, 0.5], BL: [0, 0], BC: [0.5, 0], BR: [1, 0] };
+    var L = { a1: 'TL TC', a2: 'TC TR', b: 'TR MR', c: 'MR BR', d1: 'BL BC', d2: 'BC BR', e: 'ML BL', f: 'TL ML', g1: 'ML MC', g2: 'MC MR', h: 'TL MC', i: 'TC MC', j: 'TR MC', k: 'BL MC', l: 'MC BC', m: 'BR MC' };
+    var sq = function (pts) { return pts.map(function (q) { return [q[0] + q[1] * sk, q[1]]; }); };
+    var bar = function (X, a, b2) {
+      var A = [X + P[a][0] * w, y0 + P[a][1] * h], B2 = [X + P[b2][0] * w, y0 + P[b2][1] * h], dx = B2[0] - A[0], dy = B2[1] - A[1], len = Math.hypot(dx, dy);
+      var ux = dx / len, uy = dy / len, cut = t * (Math.abs(ux) > 0.2 && Math.abs(uy) > 0.2 ? 0.95 : 0.4), nx = -uy * t / 2, ny = ux * t / 2;
+      var a0 = [A[0] + ux * cut, A[1] + uy * cut], b0 = [B2[0] - ux * cut, B2[1] - uy * cut];
+      return sq([[a0[0] - nx, a0[1] - ny], [b0[0] - nx, b0[1] - ny], [b0[0] + nx, b0[1] + ny], [a0[0] + nx, a0[1] + ny]]);   /* counter-clockwise, like the 7-segment ones */
+    };
+    glyphs.forEach(function (g) {
+      if (g.ch === ':') { [0.27, 0.7].forEach(function (f) { out.push(sq([[x + t * 0.7, y0 + h * f], [x + t * 1.7, y0 + h * f], [x + t * 1.7, y0 + h * f + t], [x + t * 0.7, y0 + h * f + t]])); }); }
+      else (SEG16[g.ch] || '').split(' ').forEach(function (k) { if (k) { var e = L[k].split(' '); out.push(bar(x, e[0], e[1])); } });
+      if (g.dot) { var dx0 = x + w + gap * 0.5 - t * 0.7, dt = t * 1.4; out.push(sq([[dx0, y0], [dx0 + dt, y0], [dx0 + dt, y0 + dt], [dx0, y0 + dt]])); }
+      x += widthOf(g) + gap;
+    });
+    return out;
+  }
   function pixPolys(text, h) {
     var px = h / 7, chars = String(text).toUpperCase().split(''), w = chars.length * 6 * px - px, out = [];
     chars.forEach(function (ch, k) {
@@ -531,7 +577,7 @@
   }
 
   /* the faces as SVG paths, back to front; `mark` = the part drawn in the accent colour */
-  function drawFaces(scene, cam, mark, now) {
+  function drawFaces(scene, cam, mark, now, rainbow) {
     var D = cam.D(), eye = [0, 0, D], list = [];
     scene.world(now).forEach(function (f) {
       var cp = f.pts.map(function (p) { return cam.toCam(p); });
@@ -547,7 +593,7 @@
         edge = Math.abs(lum(inv) - lum(c2)) > 90 ? inv : lum(c2) > 128 ? [0, 0, 0] : [255, 255, 255];
         col = mix(col, inv, 0.1);
       }
-      list.push({ id: f.id, on: f.on, layer: f.layer, n: n, mid: mid, z: mid[2] + f.bias, d: 'M' + cp.map(function (c) { var s = cam.toScreen(c); return f1(s[0]) + ',' + f1(s[1]); }).join('L') + 'Z', fill: css(col), stroke: on ? css(edge) : css(f.seamless ? col : edge), sw: on ? 1.8 : 0.6, part: f.part });
+      list.push({ id: f.id, on: f.on, layer: f.layer, n: n, mid: mid, z: mid[2] + f.bias, d: 'M' + cp.map(function (c) { var s = cam.toScreen(c); return f1(s[0]) + ',' + f1(s[1]); }).join('L') + 'Z', fill: css(col), stroke: on ? css(edge) : css(f.seamless ? col : edge), sw: on ? (rainbow ? 2.8 : 1.8) : 0.6, part: f.part, alpha: f.alpha, cls: on && rainbow ? 'h3d-mark' : null });
     });
     /* a thing lying on a surface ("on") is drawn just after that surface's face that looks the same way */
     var settle = function (x, depth) {
@@ -596,6 +642,20 @@
       }
       list.push({ z: base.z + 0.035, raw: '<g pointer-events="none" opacity="' + f1(lv) + '">' + out + '</g>' });
     });
+    /* steam puffs: soft round clouds that rise, grow and fade */
+    var tnow = now || performance.now();
+    (scene.puffs || []).forEach(function (q) {
+      var s = q.s, life = s.life || 1600, secs = Math.max(0, tnow - q.t0) / 1000, a = Math.min(1, secs * 1000 / life);
+      var sway = Math.sin(secs * 3 + q.seed * 6.28) * 0.7 * a;
+      var p = add(q.p, add(mul(s.rise || [0, 6, 0], secs * (1 - 0.35 * a)), [sway, 0, 0]));
+      var c = cam.toCam(p), sp = cam.toScreen(c), k = D / Math.max(D - c[2], D * 0.15) * cam.scale();
+      var r0 = s.r0 || 0.8, r = (r0 + ((s.r1 || 3.5) - r0) * Math.sqrt(a)) * k, op = (s.op || 0.75) * (1 - a) * Math.min(1, 0.25 + a * 6), g = '';
+      for (var j = 0; j < 3; j++) {
+        var an = q.seed * 6.28 + j * 2.09, rr = r * (0.65 + 0.12 * j);
+        g += '<circle cx="' + f1(sp[0] + Math.cos(an) * r * 0.45) + '" cy="' + f1(sp[1] + Math.sin(an) * r * 0.3) + '" r="' + f1(rr) + '" fill="url(#h3dSteam)"/>';
+      }
+      list.push({ z: c[2] + (s.bias == null ? 2 : s.bias), raw: '<g pointer-events="none" opacity="' + f1(op * 100) / 100 + '">' + g + '</g>' });
+    });
     /* the glow of a light, sorted in with the faces: walls in front of it hide it */
     (scene.m.lights || []).forEach(function (l, i) {
       var lv = scene.lv[i];
@@ -606,7 +666,7 @@
     list.sort(function (a, b) { return a.z - b.z; });
     return list.map(function (x) {
       if (x.raw) return x.raw;
-      return '<path d="' + x.d + '" fill="' + x.fill + '" stroke="' + x.stroke + '" stroke-width="' + x.sw + '" stroke-linejoin="round"' + (x.part ? ' data-part="' + x.part + '"' : '') + '/>';
+      return '<path d="' + x.d + '" fill="' + x.fill + '" stroke="' + x.stroke + '" stroke-width="' + x.sw + '" stroke-linejoin="round"' + (x.cls ? ' class="' + x.cls + '"' : '') + (x.alpha != null ? ' fill-opacity="' + x.alpha + '" stroke-opacity="' + f1(Math.min(1, x.alpha + 0.3)) + '"' : '') + (x.part ? ' data-part="' + x.part + '"' : '') + '/>';
     }).join('');
   }
   /* light from a lamp, finger taps and swipes */
@@ -628,7 +688,7 @@
     });
     return out;
   }
-  var DEFS = '<defs><radialGradient id="h3dGlow"><stop offset="0" stop-color="#ffe27a" stop-opacity=".85"/><stop offset=".45" stop-color="#ffd24a" stop-opacity=".35"/><stop offset="1" stop-color="#ffd24a" stop-opacity="0"/></radialGradient>'
+  var DEFS = '<defs><radialGradient id="h3dSteam"><stop offset="0" stop-color="#c9d0d7" stop-opacity=".95"/><stop offset=".6" stop-color="#bcc4cc" stop-opacity=".6"/><stop offset="1" stop-color="#b4bcc5" stop-opacity="0"/></radialGradient><radialGradient id="h3dGlow"><stop offset="0" stop-color="#ffe27a" stop-opacity=".85"/><stop offset=".45" stop-color="#ffd24a" stop-opacity=".35"/><stop offset="1" stop-color="#ffd24a" stop-opacity="0"/></radialGradient>'
     + '<radialGradient id="h3dGlowW"><stop offset="0" stop-color="#ffffff" stop-opacity="1"/><stop offset=".3" stop-color="#f4f8ff" stop-opacity=".75"/><stop offset="1" stop-color="#e8f0ff" stop-opacity="0"/></radialGradient></defs>';
 
   /* what a motion's value will be once it stops moving */
@@ -1309,7 +1369,8 @@
       cam.target = mix(sc.m._center, p, mini.view.focus != null ? mini.view.focus : 0.65);
       cam.zoom = mini.view.zoom || sc.m.parts[mini.part].zoom || 1.7;
     }
-    mini.el.innerHTML = '<svg viewBox="0 0 ' + f1(w) + ' ' + f1(h) + '" aria-hidden="true">' + DEFS + drawFaces(sc, cam, mini.mark, now) + drawFx(sc, cam, now) + '</svg>';
+    /* the rainbow outline goes on where it was when the picture is drawn again (every frame of an animation) */
+    mini.el.innerHTML = '<svg viewBox="0 0 ' + f1(w) + ' ' + f1(h) + '" aria-hidden="true" style="--h3d-t:-' + Math.round(performance.now() % 2400) + 'ms">' + DEFS + drawFaces(sc, cam, mini.mark, now, true) + drawFx(sc, cam, now) + '</svg>';
   }
   /* one loop for every playing picture: play, rest, play back, rest */
   function cycle(mini, now) {
@@ -1560,8 +1621,10 @@
         B([-0.9, -0.3, 5.5, 8.5, 0.6, 1.4], '#c94c3c', null, 'mmug'),
         B([-23, -22.75, 19, 25, -9, -1], '#e9e6da', null, 'mlamp', { skip: ['left'], bias: -2.5 }),   /* the lamp in the left wall */
         B([9, 25, 0, 30, 17.6, 18.6], '#c5cbd2', null, null, { id: 'mpanel' }),
-        B([-24, 9, 2, 28, 18, 19.2], '#46505c', 'door', 'door', { id: 'mdoor', bias: 5 }),
-        B([-21, 4, 5, 25, 19.2, 19.45], '#1b222a', 'door', 'door', { on: 'mdoor' }),
+        /* the door: a frame round a window you can see through (tinted glass) */
+        B([-24, 9, 25, 28, 18, 19.2], '#46505c', 'door', 'door', { id: 'mdoor', bias: 5 }), B([-24, 9, 2, 5, 18, 19.2], '#46505c', 'door', 'door', { id: 'mdoor', bias: 5 }),
+        B([-24, -21, 5, 25, 18, 19.2], '#46505c', 'door', 'door', { id: 'mdoor', bias: 5 }), B([4, 9, 5, 25, 18, 19.2], '#46505c', 'door', 'door', { id: 'mdoor', bias: 5 }),
+        B([-21, 4, 5, 25, 18.5, 18.7], '#1b2630', 'door', 'door', { alpha: 0.42, bias: 5, skip: ['top', 'bottom', 'left', 'right'] }),
         B([5, 7.4, 8, 22, 19.2, 22.2], '#a2abb5', 'handle', 'door', { on: 'mdoor', layer: 2 }),
         B([11, 23, 21.5, 26, 18.6, 18.9], '#173b2a', 'screen', 'mscr', { id: 'mscr', on: 'mpanel' }),
         C(KP, 'z', 3, 1.8, '#79848f', 'knob', 'mknob', { id: 'mk', on: 'mpanel' }),
@@ -1656,9 +1719,20 @@
     withPower(m, powered([[-10, 3, -8], [-10, 1.2, -13], [-2, 1.5, -15]], 0, -19, '-z'));
   })();
 
-  /* ── electric kettle: open at the top inside the lid, with water in it ── */
+  /* ── electric kettle: open at the top inside the lid, with water in it.
+        Switched on (on its base, plugged in) the water heats up; after a while it boils: puffs of steam come out
+        of the spout and the light blinks. Switched off, the steam stops soon after ── */
+  var KBOIL = 5000;   /* ms on before it boils */
+  var kOn = function (sc) { return sc.on('ksw') && sc.plugged() && sc.val.lift < 0.05 && sc.val.pour < 0.05; };
   withPower(define('kettle', {
     name: 'kettle', view: { yaw: -62, pitch: 16, zoom: 1.3 },
+    update: function (sc, ms) {
+      var st = sc.state, on = kOn(sc);
+      st.kheat = Math.max(0, Math.min(KBOIL + 1500, (st.kheat || 0) + (on ? ms : -1.5 * ms)));
+      if (on && st.kheat >= KBOIL) st.ksteam = sc.now + 1200;   /* still steaming a little after it is switched off */
+      return on || st.kheat > 0 || (st.ksteam || 0) > sc.now;
+    },
+    steam: [{ at: [0, 19.5, 11.6], g: 'kettle', every: 230, life: 1700, rise: [0, 8, 2.6], r0: 0.7, r1: 4.2, op: 0.8, when: function (sc) { return (sc.state.ksteam || 0) > sc.now; } }],
     groups: { lid: { parent: 'kettle' }, ksw: { parent: 'kettle' } },
     shapes: [
       C([0, 1, 0], 'y', 9.5, 2, '#2b2b2b'),
@@ -1680,7 +1754,9 @@
       pour: { do: [{ g: 'kettle', move: [0, 6, 0] }, { g: 'kettle', rot: { ax: 'x', pivot: [0, 3, 8], deg: 38 } }], dur: 800 }
     },
     /* the switch lights up only on the base, plugged in */
-    lights: [{ g: 'ksw', col: [255, 170, 60], when: function (sc) { return sc.on('ksw') && sc.plugged() && sc.val.lift < 0.05 && sc.val.pour < 0.05; }, fadeIn: 200, fadeOut: 500 }],
+    lights: [{ g: 'ksw', col: [255, 170, 60], fadeIn: 120, fadeOut: 220, when: function (sc) {
+      return kOn(sc) && ((sc.state.kheat || 0) < KBOIL || (sc.now / 800) % 1 < 0.5);   /* boiling: it blinks */
+    } }],
     parts: {
       lid: { name: 'lid', can: [{ v: 'open', m: 'lid', to: 1 }, { v: 'close', m: 'lid', to: 0 }, { v: 'lift', m: 'lid', to: 'toggle' }], zoom: 1.8, view: { pitch: 34 } },
       handle: { name: 'handle', can: [{ v: 'hold', m: 'lift', to: 'toggle' }, { v: 'pick up', m: 'lift', to: 'toggle' }], zoom: 1.5, view: { yaw: -110 } },
@@ -1963,8 +2039,10 @@
       B([-23, 23, 4.5, 25.5, -20, 22], '#3a3f46', null, null, { inside: true, skip: ['front', 'bottom'] }),
       B([-23, 23, 4.4, 4.5, -20, 22], '#33383e', null, null, { skip: ['front', 'back', 'left', 'right', 'bottom'], bias: -12 }),   /* the oven floor: under everything in the oven */
       /* the oven door */
-      B([-24, 24, 4, 26, 22, 23.6], '#e4e8ec', 'oven door', 'odoor', { id: 'od', bias: 5 }),
-      B([-17, 17, 9, 21, 23.6, 23.75], '#2a2f36', 'oven door', 'owin', { on: 'od' }),
+      /* the oven door: a frame round a window you can see through */
+      B([-24, 24, 21, 26, 22, 23.6], '#e4e8ec', 'oven door', 'odoor', { id: 'od', bias: 5 }), B([-24, 24, 4, 9, 22, 23.6], '#e4e8ec', 'oven door', 'odoor', { id: 'od', bias: 5 }),
+      B([-24, -17, 9, 21, 22, 23.6], '#e4e8ec', 'oven door', 'odoor', { id: 'od', bias: 5 }), B([17, 24, 9, 21, 22, 23.6], '#e4e8ec', 'oven door', 'odoor', { id: 'od', bias: 5 }),
+      B([-17, 17, 9, 21, 22.7, 22.9], '#2a2f36', 'oven door', 'owin', { alpha: 0.45, bias: 5, skip: ['top', 'bottom', 'left', 'right'] }),
       B([-15, 15, 22.5, 23.7, 23.6, 26], '#b9c0c8', 'handle', 'odoor', { on: 'od', layer: 2 }),
       /* the light for all the elements */
       C([12, 31, 22.1], 'z', 0.7, 0.2, '#4a2a14', 'light', 'slight', { on: 'spanel', seg: 12 }),
@@ -2020,7 +2098,7 @@
       for (var i = 0; i < 5; i++) if (sc.val['h' + i] > 0.02) return true;
       return false;
     } });
-    var m = define('stove', { name: 'stove', view: { yaw: -26, pitch: 28, zoom: 0.8 }, shapes: shapes, motions: motions, lights: lights, parts: parts });
+    var m = define('stove', { name: 'stove', view: { yaw: -26, pitch: 28, zoom: 0.8 }, groups: { owin: { parent: 'odoor' } }, shapes: shapes, motions: motions, lights: lights, parts: parts });
     withPower(m, powered([[20, 5, -22], [20, 1.2, -28], [10, 1.5, -32]], 4, -32));
   })();
 
@@ -2075,6 +2153,7 @@
         C([0, 3.3, 2], 'y', 6, 0.6, '#b9c0c8', null, null, { seg: 24, on: 'mbase' }),
         C([0, 9.1, 2], 'y', 4.5, 11, '#d5dce2', 'bowl', null, { r2: 7.5, open: 'top', seg: 26, seamless: true }),
         C([0, 9.2, 2], 'y', 4.1, 10.8, '#9aa3ad', 'bowl', null, { r2: 7.1, open: 'top', inside: true, seg: 26, seamless: true }),
+        { t: 'tube', pts: [[6.6, 12.6, 2], [8.3, 12.6, 2], [9.3, 11.9, 2], [9.6, 10.4, 2], [9.3, 8.9, 2], [8.2, 7.9, 2], [5.4, 7.5, 2]], r: 0.55, col: '#c3cad1', part: 'bowl' },   /* the handle */
         B([-4, 4, 3, 22, -13, -7], BODY, null, null, { id: 'mcol' }),
         /* the head (the arm), on a hinge at the top of the column, and the shaft the attachments go on */
         B([-4.5, 4.5, 20, 29, -13.5, 8], BODY, 'arm', 'head', { id: 'mhead' }),
@@ -2320,15 +2399,58 @@
         B([x - 4.5, x + 4.5, 0, 16, -7, 7], '#3a3f46', null, null, { id: 'spk' + k }),
         C([x, 9.5, 7.2], 'z', 3.3, 0.4, '#1b1e22', 'speaker' + (k ? '2' : ''), 'cone' + k, { on: 'spk' + k, seg: 22 }),
         C([x, 9.5, 7.45], 'z', 1.1, 0.3, '#30353c', 'speaker' + (k ? '2' : ''), 'cone' + k, { on: 'spk' + k, layer: 2, seg: 14 }),
-        C([x, 3.6, 7.15], 'z', 1.3, 0.3, '#1b1e22', 'speaker' + (k ? '2' : ''), null, { on: 'spk' + k, seg: 14 })
+        C([x, 3.6, 7.15], 'z', 1.3, 0.3, '#1b1e22', 'speaker' + (k ? '2' : ''), 'tw' + k, { on: 'spk' + k, seg: 14 })
       ];
+    };
+    /* the music's beat: the big speaker (the woofer) thumps at about 120 beats a minute, each gap a little different;
+       the small one (the tweeter) ticks about four times as often. Each hit: out quickly, back slowly */
+    var env = function (t, d) { return t == null || t < 0 ? 0 : t < 18 ? t / 18 : Math.exp(-(t - 18) / d); };
+    /* every song (a CD track, a radio station) has its own beat: a tempo for the bass, a rate for the treble, and
+       verses and choruses of so many beats (the chorus louder, with more treble) */
+    var rnd = function (n) { return Math.floor(Math.random() * n); };
+    var song = function () {
+      var k = 60000 / (92 + 48 * Math.random());
+      return { k: k, h: k / [2, 3, 4][rnd(3)], verse: [16, 24, 32][rnd(3)], chorus: [8, 12, 16][rnd(3)], bass: 0.8 + 0.25 * Math.random(), treble: 0.65 + 0.35 * Math.random() };
+    };
+    var fresh = function (st) { st.kCount = 0; st.kNext = st.hNext = null; };
+    /* the CD: 6 … 10 tracks of about three minutes; after the last one it starts again */
+    var cd = function (st) { if (!st.tracks) { st.tracks = 6 + rnd(5); st.track = 1; st.tpos = 0; st.tlen = 160 + rnd(41); st.cprof = song(); } return st; };
+    var nextTrack = function (st) { cd(st); st.track = st.track % st.tracks + 1; st.tpos = 0; st.tlen = 160 + rnd(41); st.cprof = song(); fresh(st); };
+    var radio = function (st) { if (!st.freq) { st.freq = (87.9 + 0.2 * rnd(101)).toFixed(1); st.rprof = song(); } return st; };
+    var nextStation = function (st) { var f; do { f = (87.9 + 0.2 * rnd(101)).toFixed(1); } while (f === st.freq); st.freq = f; st.rprof = song(); fresh(st); };
+    var NEXT = { fx: 'do', fn: function (sc) { if (sc.state.smode) nextTrack(sc.state); else nextStation(radio(sc.state)); } };
+    var SOURCE = { fx: 'do', fn: function (sc) { sc.state.smode = sc.state.smode ? 0 : 1; fresh(sc.state); } };
+    var STOP = { fx: 'do', fn: function (sc) { if (sc.state.smode) cd(sc.state).tpos = 0; } };
+    var beat = function (sc, ms) {
+      var st = sc.state, now = sc.now, on = playing(sc), P = st.smode ? cd(st).cprof : radio(st).rprof;
+      if (on) {
+        if (st.smode) { st.tpos += ms / 1000; if (st.tpos >= st.tlen) { nextTrack(st); P = st.cprof; } }   /* the CD's clock */
+        var chorus = (st.kCount || 0) % (P.verse + P.chorus) >= P.verse;
+        st.chorus = chorus;
+        if (st.kNext == null || st.kNext < now - 1000) st.kNext = now;
+        if (now >= st.kNext) {
+          st.kAt = now; st.kNext = now + P.k * (0.92 + 0.16 * Math.random()); st.kCount = (st.kCount || 0) + 1;
+          st.kA = P.bass * (chorus ? 1 : 0.62) * (0.9 + 0.2 * Math.random());
+          st.kAmp = [0, 1, 2, 3, 4, 5, 6].map(function () { return 0.8 + 0.3 * Math.random(); });
+        }
+        if (st.hNext == null || st.hNext < now - 1000) st.hNext = now + 60;
+        if (now >= st.hNext) {   /* the verse: the treble half as often, and softer */
+          st.hAt = now; st.hNext = now + P.h * (chorus ? 1 : 2) * (0.85 + 0.3 * Math.random());
+          st.hAmp = P.treble * (chorus ? 1 : 0.7) * (0.6 + 0.4 * Math.random());
+        }
+      }
+      st.kEnv = env(st.kAt == null ? null : now - st.kAt, 130) * (st.kA || 1);
+      st.hEnv = env(st.hAt == null ? null : now - st.hAt, 45) * (st.hAmp || 1);
+      return on || st.kEnv > 0.01 || st.hEnv > 0.01;
     };
     /* the graphic equalizer: 7 bands × 8 steps that dance with the music — higher when it is louder */
     var EQ = { shapes: [], lights: [] }, BANDS = 7, STEPS = 8;
+    /* the bands follow the speakers: the low bands (left) jump with the big speaker, the high bands (right) with the small one */
     var level = function (sc, b) {
-      var t = sc.now / 1000;
-      var v = 0.35 + 0.65 * Math.abs(Math.sin(t * (2.1 + 0.83 * b) + b * 1.7)) * (0.55 + 0.45 * Math.sin(t * (0.9 + 0.31 * b) + b));
-      return v * sc.val.vol * (1 - 0.06 * Math.abs(b - 2));
+      var st = sc.state, k = st.kEnv || 0, h = st.hEnv || 0, amp = st.kAmp ? st.kAmp[b] : 1;
+      var lo = Math.max(0, 1 - b / 4), hi = Math.max(0, (b - 2) / 4), mid = Math.max(0, 1 - Math.abs(b - 3) / 3);
+      var v = 0.08 + lo * k * amp + hi * h + 0.35 * mid * (0.6 * k + 0.4 * h);
+      return Math.min(1, v * sc.val.vol * 1.35);
     };
     for (var b = 0; b < BANDS; b++) for (var j = 0; j < STEPS; j++) {
       var x = -7.6 + b * 1.6, y = 13.1 + j * 0.46, g = 'eq' + b + '_' + j;
@@ -2337,8 +2459,12 @@
         when: (function (b, j) { return function (sc) { return playing(sc) && level(sc, b) * STEPS > j + 0.5; }; })(b, j) });
     }
     var spk = { name: 'speaker', can: [{ v: 'listen to music', m: 'play', to: 1 }, { v: 'turn up the volume', m: 'vol', to: 'up', also: { m: 'play', to: 1 } }, { v: 'turn down the volume', m: 'vol', to: 'down', also: { m: 'play', to: 1 } }], zoom: 1.8, view: { yaw: -15, pitch: 8 } };
+    var woof = function (sc) { return [{ move: [0, 0, 0.8 * (sc.state.kEnv || 0) * sc.val.vol] }]; };
+    var tweet = function (sc) { return [{ move: [0, 0, 0.4 * (sc.state.hEnv || 0) * sc.val.vol] }]; };
     var m = define('stereo', {
       name: 'stereo', view: { yaw: -22, pitch: 16, zoom: 1.05 },
+      update: beat,
+      groups: { cone0: { ops: woof }, cone1: { ops: woof }, tw0: { ops: tweet }, tw1: { ops: tweet } },
       shapes: [
         B([-12, 12, 0, 18, -10, 10], '#2b2f35', null, null, { id: 'sb' }),
         B([-8.2, 4.2, 12.8, 17, 10, 10.15], '#0c1318', 'screen2', null, { id: 'eqs', on: 'sb' }),
@@ -2358,14 +2484,11 @@
         play: { do: [], dur: 200 }
       },
       lights: [{ g: 'sscr', col: [22, 66, 90], when: plugged, fadeIn: 300, fadeOut: 500 }],
-      displays: [{ id: 'sdisp', g: 'sscr', on: 'sscr', part: 'screen', at: [-2, 7.75, 10.15], h: 1.9, text: '98.5', col: '#7fe0ff', bg: '#0f2a3a', kind: 'freq', when: plugged }],
-      spins: [
-        /* the louder, the more the speakers move */
-        { g: 'cone0', wobble: [0, 0, 0.6], hz: 5, when: playing, ease: 200, scale: function (sc) { return sc.val.vol; } },
-        { g: 'cone1', wobble: [0, 0, 0.6], hz: 5, when: playing, ease: 200, scale: function (sc) { return sc.val.vol; } }
-      ],
+      /* the display (16 segments): the radio station (FM 99.9), or the CD's track and time (01 2:22) */
+      displays: [{ id: 'sdisp', g: 'sscr', on: 'sscr', part: 'screen', at: [-2, 7.75, 10.15], h: 1.6, font: 'seg16', text: 'FM 98.5', col: '#7fe0ff', bg: '#0f2a3a', when: plugged,
+        textFn: function (sc) { var st = sc.state; if (!st.smode) return 'FM ' + radio(st).freq; cd(st); var t = Math.floor(st.tpos); return two(st.track) + ' ' + Math.floor(t / 60) + ':' + two(t % 60); } }],
       parts: {
-        screen: { name: 'screen', can: [{ v: 'read', fx: 'read', d: 'sdisp' }], zoom: 2.6, view: { yaw: -8, pitch: 8 } },
+        screen: { name: 'screen', can: [{ v: 'read' }], zoom: 2.6, view: { yaw: -8, pitch: 8 } },
         screen2: { name: 'equalizer', can: [{ v: 'watch', m: 'play', to: 1 }, { v: 'turn up the volume', m: 'vol', to: 'up', also: { m: 'play', to: 1 } }, { v: 'turn down the volume', m: 'vol', to: 'down', also: { m: 'play', to: 1 } }], zoom: 2.6, view: { yaw: -8, pitch: 8 } },
         tray: { name: 'CD tray', can: [{ v: 'open', m: 'tray', to: 1 }, { v: 'close', m: 'tray', to: 0 }, { v: 'put a CD in' }], zoom: 2.2, view: { yaw: -20, pitch: 30 }, at: [-2, 11.2, 10.1], pose: { tray: 1 } },
         knob: { name: 'knob', can: [{ v: 'turn', m: 'vol', to: 'up' }, { v: 'turn up the volume', m: 'vol', to: 'up' }, { v: 'turn down the volume', m: 'vol', to: 'down' }], zoom: 2.8, view: { yaw: -12, pitch: 8 } },
@@ -2373,10 +2496,13 @@
       }
     });
     merge(m, buttons([
-      { e: [-8, -5.8, 3, 4.6, 10, 10.5], col: '#5fbf7f', also: [{ m: 'play', to: 1 }], more: [{ v: 'play music', m: 'play', to: 1 }] },
-      { e: [-5, -2.8, 3, 4.6, 10, 10.5], col: '#d9483b', also: [{ m: 'play', to: 0 }], more: [{ v: 'stop the music', m: 'play', to: 0 }] },
-      { e: [-2, 0.2, 3, 4.6, 10, 10.5], col: '#e9ecef', also: [{ m: 'tray', to: 'toggle' }], more: [{ v: 'open the CD tray', m: 'tray', to: 1 }, { v: 'close the CD tray', m: 'tray', to: 0 }] },
-      { e: [1, 3.2, 3, 4.6, 10, 10.5], col: '#e9ecef', also: [{ fx: 'read', d: 'sdisp' }], more: [{ v: 'change the station', fx: 'read', d: 'sdisp' }] }
+      { e: [-8, -6.1, 3, 4.6, 10, 10.5], col: '#5fbf7f', also: [{ m: 'play', to: 1 }], more: [{ v: 'play music', m: 'play', to: 1 }] },
+      { e: [-5.75, -3.85, 3, 4.6, 10, 10.5], col: '#d9483b', also: [{ m: 'play', to: 0 }, STOP], more: [{ v: 'stop the music', m: 'play', to: 0, also: STOP }] },
+      { e: [-3.5, -1.6, 3, 4.6, 10, 10.5], col: '#e9ecef', also: [{ m: 'tray', to: 'toggle' }], more: [{ v: 'open the CD tray', m: 'tray', to: 1 }, { v: 'close the CD tray', m: 'tray', to: 0 }] },
+      { e: [-1.25, 0.65, 3, 4.6, 10, 10.5], col: '#e9ecef', also: NEXT, more: [{ v: 'change the station', fx: 'do', fn: NEXT.fn, noop: function (sc) { return !!sc.state.smode; } }, { v: 'skip a track', fx: 'do', fn: NEXT.fn, noop: function (sc) { return !sc.state.smode; } }] },
+      { e: [1.0, 2.9, 3, 4.6, 10, 10.5], col: '#5fa8d3', also: SOURCE, more: [{ v: 'change the source', fx: 'do', fn: SOURCE.fn },
+        { v: 'listen to the radio', fx: 'do', fn: function (sc) { if (sc.state.smode) SOURCE.fn(sc); }, also: { m: 'play', to: 1 }, noop: function (sc) { return !sc.state.smode && sc.val.play > 0.5; } },
+        { v: 'play a CD', fx: 'do', fn: function (sc) { if (!sc.state.smode) SOURCE.fn(sc); }, also: { m: 'play', to: 1 }, noop: function (sc) { return !!sc.state.smode && sc.val.play > 0.5; } }] }
     ], { prefix: 'sbt', move: [0, 0, -0.35], on: 'sb', zoom: 3, view: { yaw: -10, pitch: 10 } }));
     merge(m, EQ);
     withPower(m, powered([[10, 3, -10], [10, 1.2, -15], [2, 1.5, -18]], -4, -18));
