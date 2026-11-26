@@ -57,6 +57,8 @@
 .mw-new{ font-weight:600; }
 .mw-seg[hidden]{ display:none; }
 .mw-game .hv-card{ margin-top:.2rem; }
+.mw-game .hv-hub.mw-mine span:last-child::after{ content:" ★"; font-size:.85em; color:var(--color-text-warning, #b7791f); }
+.mw-game .hv-chip.mw-mine:not(.hv-ok):not(.hv-no)::after{ content:"★"; margin-left:.3em; font-size:.85em; color:var(--color-text-warning, #b7791f); }
 .mw-note{ font-size:.8667rem; color:var(--color-text-warning); background:var(--color-background-warning); border-radius:var(--border-radius-md); padding:7px 10px; margin-bottom:.8rem; }
 .mw-note[hidden]{ display:none; }
 
@@ -121,6 +123,8 @@
       <button type="button" data-game="listen" aria-pressed="false">👂 Listen</button>
       <button type="button" data-game="mystery" aria-pressed="false">❓ Mystery</button>
       <button type="button" data-game="sort" aria-pressed="false">🗂️ Sort</button>
+      <button type="button" data-game="scale" aria-pressed="false">📏 Scale</button>
+      <button type="button" data-game="colloc" aria-pressed="false">🤝 Go together</button>
     </div>
     <div class="mw-seg" role="group" aria-label="Match the words with" data-for="match memory">
       <span class="mw-seg-label">With:</span>
@@ -222,7 +226,7 @@
   let withWhat = store.get('my-words-with', 'pics');
   let answerBy = store.get('my-words-answer', 'choose');
   let sortBy = store.get('my-words-sortby', 'grammar');
-  if (!['match', 'memory', 'listen', 'mystery', 'sort'].includes(game)) game = 'match';
+  if (!['match', 'memory', 'listen', 'mystery', 'sort', 'scale', 'colloc'].includes(game)) game = 'match';
 
   async function load() {
     const saved = (window.HouseDict ? HouseDict.saved() : store.get('house-dict-saved', [])).filter(s => s && s.key);
@@ -289,7 +293,9 @@
     memory: 'Turn over two cards. Find the word and its <strong>picture</strong> or <strong>meaning</strong>. Press 🔄 for new words.',
     listen: 'Press 🔊 and listen. Then tap the word you heard. The two words sound almost the same, so listen carefully!',
     mystery: 'Find the mystery word ❓. It is one of your words. The fewer clues you need, the more ⭐ you get.',
-    sort: 'Put each word in its group. Drag it, or tap the word and then tap the group.'
+    sort: 'Put each word in its group. Drag it, or tap the word and then tap the group.',
+    colloc: 'Which words go with the word in the blue box? Tap every one that fits. A wrong one turns red and says why. Your words have a ★.',
+    scale: 'Put the words in order on the line, from one end to the other. Drag a word, or tap it and then tap its place. Your words have a ★.'
   };
   function pressed() {
     document.querySelectorAll('.mw-controls [data-game]').forEach(b => b.setAttribute('aria-pressed', String(b.dataset.game === game)));
@@ -301,14 +307,17 @@
   }
   function note(text) { const n = $('mwNote'); n.hidden = !text; n.textContent = text || ''; }
 
-  /* ── house-vocab.js and learner-dict/practice/words.json load the first time a new game is chosen ── */
+  /* ── house-vocab.js and learner-dict/practice/ (words.json, scales.json) load the first time a new game is chosen;
+        colloc.json (25 KB) only when Go together is ── */
   const HOUSE_SRC = (document.querySelector('script[src$="house.js"]') || {}).src || 'house.js';
   const from = file => new URL(file, HOUSE_SRC).href;
-  let vocabP = null, practiceP = null, P = {};
+  let vocabP = null, P = {}, SCALES = [], COLLOC = null;
+  const getJson = file => fetch(from(file)).then(r => { if (!r.ok) throw new Error('no ' + file); return r.json(); });
   function needVocab() {
     if (!vocabP) vocabP = Promise.all([
       window.HouseMystery ? Promise.resolve() : new Promise((ok, bad) => { const s = document.createElement('script'); s.src = from('house-vocab.js'); s.onload = ok; s.onerror = () => bad(new Error('no house-vocab.js')); document.head.appendChild(s); }),
-      practiceP = fetch(from('learner-dict/practice/words.json')).then(r => { if (!r.ok) throw new Error('no practice data'); return r.json(); }).then(j => { P = j.w || {}; })
+      getJson('learner-dict/practice/words.json').then(j => { P = j.w || {}; }),
+      getJson('learner-dict/practice/scales.json').then(j => { SCALES = j.scales || []; }).catch(() => { SCALES = []; })
     ]).catch(e => { vocabP = null; throw e; });
     return vocabP;
   }
@@ -339,7 +348,8 @@
     const which = game;
     needVocab().then(() => {
       if (which !== game) return;
-      return ({ listen: roundListen, mystery: roundMystery, sort: roundSort })[which]();
+      if (which === 'colloc' && !COLLOC) return getJson('learner-dict/practice/colloc.json').then(j => { COLLOC = j.colloc || []; if (which === game) roundColloc(); });
+      return ({ listen: roundListen, mystery: roundMystery, sort: roundSort, scale: roundScale, colloc: roundColloc })[which]();
     }).catch(() => { game$.innerHTML = '<p class="mw-empty">This game could not load. Check your connection and press 🔄.</p>'; });
   }
   function tooFew(n, need, what) {
@@ -494,6 +504,53 @@
     if (added.length) note('Some words are new: ' + added.join(', ') + '. They come from the dictionary, so the groups have 2 words or more.');
     $('mwGame').innerHTML = '<div id="vBox"></div>';
     HouseSort.build({ container: 'vBox', items: [{ title: S.title, groups, words: list, note: 'Well done — every word is in its group! Press 🔄 for new words.' }] });
+  }
+
+
+  /* ── 📏 Scale: the scales that have a saved word (freezing > cold > … > hot), up to 3 a round ── */
+  function roundScale() {
+    const mine = new Set(words.map(w => w.key));
+    const withMine = SCALES.map(sc => ({ sc, n: sc.w.filter(k => mine.has(k)).length })).filter(x => x.n);
+    let round;
+    if (withMine.length) {
+      round = shuffle(withMine).sort((a, b) => b.n - a.n).slice(0, 3).map(x => x.sc);
+      if (withMine.length > 3) note(withMine.length + ' scales have your words. Press 🔄 to see the others.');
+    } else {
+      const lv = myLevel() + 1, easy = SCALES.filter(sc => sc.l <= lv);
+      round = shuffle(easy.length >= 2 ? easy : SCALES).slice(0, 2);
+      note('None of your words is on a scale yet, so here are two to try. Save words like warm, often or huge, and their scales will come here.');
+    }
+    if (!round.length) return tooFew(0, 1, 'There are no scales yet.');
+    const items = round.map(sc => ({ title: esc(sc.t), low: { label: sc.lo[0], icon: sc.lo[1] }, high: { label: sc.hi[0], icon: sc.hi[1] },
+      words: sc.w.map(shown), hues: sc.h, note: sc.n ? esc(sc.n) : '' }));
+    $('mwGame').innerHTML = scoreBar('Scales in order');
+    HouseScale.build({ container: 'vBox', items, scoreEl: 'vScore', totalEl: 'vTotal' });
+    const mineShown = new Set(words.map(w => String(shown(w.key)).toLowerCase()));
+    document.querySelectorAll('#vBox .hv-chip').forEach(c => { if (mineShown.has(String(c.dataset.w).toLowerCase())) { c.classList.add('mw-mine'); c.title = 'One of your words'; } });
+  }
+
+  /* ── 🤝 Go together (HouseCollocate): the saved word's own entry first (make → a mistake, a cake…),
+        then entries where it is one of the right partners (homework → do homework), up to 4 a round ── */
+  function roundColloc() {
+    const mine = new Set(words.map(w => w.key));
+    const bare = t => String(t).toLowerCase().replace(/^(a|an|the)\s+/, '');
+    const scored = COLLOC.map(c => ({ c, n: mine.has(c.k) ? 2 : (c.ok.some(t => mine.has(bare(t))) ? 1 : 0) })).filter(x => x.n);
+    let round;
+    if (scored.length) {
+      round = shuffle(scored).sort((a, b) => b.n - a.n).slice(0, 4).map(x => x.c);
+      if (scored.length > 4) note(scored.length + ' sets have your words. Press 🔄 to see the others.');
+    } else {
+      const lv = myLevel() + 1, easy = COLLOC.filter(c => c.l <= lv);
+      round = shuffle(easy.length >= 3 ? easy : COLLOC).slice(0, 3);
+      note('None of your words is in a set yet, so here are three to try. Save words like make, homework or depend, and their sets will come here.');
+    }
+    if (!round.length) return tooFew(0, 1, 'There are no sets yet.');
+    const items = round.map(c => ({ word: c.w, side: c.s,
+      options: shuffle(c.ok.slice(0, 4).map(t => ({ text: t, ok: true })).concat(c.no.slice(0, 3).map(([t, why]) => ({ text: t, ok: false, why })))) }));
+    $('mwGame').innerHTML = scoreBar('Sets done');
+    HouseCollocate.build({ container: 'vBox', items, scoreEl: 'vScore', totalEl: 'vTotal' });
+    document.querySelectorAll('#vBox .hv-hub').forEach((h, i) => { if (mine.has(round[i].k)) h.classList.add('mw-mine'); });
+    document.querySelectorAll('#vBox .hv-opt').forEach(o => { if (mine.has(bare(o.textContent))) o.classList.add('mw-mine'); });
   }
 
   /* HouseMatching and HouseMemory keep listeners on their elements, so every round gets fresh markup */
