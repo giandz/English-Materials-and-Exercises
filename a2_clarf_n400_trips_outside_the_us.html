@@ -1,0 +1,231 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<title>N-400: Trips Outside the U.S. — Clarification</title>
+<script>
+(function(){
+  try{
+    var saved = localStorage.getItem('theme-preference');
+    var theme = (saved === 'light' || saved === 'dark')
+      ? saved
+      : ((window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches) ? 'dark' : 'light');
+    document.documentElement.setAttribute('data-theme', theme);
+    var fs = parseFloat(localStorage.getItem('font-size-preference'));
+    if (fs >= 10 && fs <= 28) document.documentElement.style.setProperty('--fs-base', fs + 'px');
+  }catch(e){ /* localStorage/matchMedia unavailable — CSS media query still applies */ }
+})();
+</script>
+<link rel="stylesheet" href="house.css">
+<style>
+.rule-box p{ margin:0 0 6px; }
+.rule-box p:last-child{ margin-bottom:0; }
+.qa{ display:grid; grid-template-columns:repeat(auto-fill, minmax(12rem, 1fr)); gap:6px; margin:0 0 1rem; }
+.qa > div{ padding:7px 10px; border-radius:8px; background:var(--surface-2); border:1px solid var(--color-border-tertiary); font-size:.8667rem; line-height:1.5; }
+.qa .k{ font-weight:700; color:var(--text-accent); display:block; }
+.qa .a{ color:var(--good); font-weight:600; }
+.qa [data-line]{ cursor:pointer; }
+.pair-ctx{ font-size:.8rem; color:var(--text-secondary); font-style:italic; }
+.legal-note{ font-size:.7333rem; color:var(--text-muted); text-align:center; margin-top:.4rem; }
+</style>
+</head>
+<body>
+<div class="page" id="page">
+  <span class="cefr-tag cefr-a2">A2 · Pre-intermediate</span>
+  <h1>N-400: Trips Outside the U.S.</h1>
+  <p class="subtitle">Questions and answers about your trips: <b>When did you leave?</b> — <b>I left on March 2nd.</b></p>
+
+  <div class="sec-div">Marcos’s trips</div>
+  <div id="timeline"></div>
+
+  <div class="sec-div">Check the meaning</div>
+  <p class="subtitle">Read the sentence. Answer the questions.</p>
+  <div id="ccq"></div>
+
+  <div class="sec-div">Look at the form</div>
+  <p class="subtitle">What is each part of the sentence? Drag a label (or tap a label, then tap a box).</p>
+  <div class="score-bar"><span>Correct: <strong id="fcScore">0</strong> / <span id="fcTotal">0</span></span></div>
+  <div id="formClarf"></div>
+
+  <div class="rule-box">
+    <p><strong>Questions:</strong> question word + <b>did</b> + you + base verb. <em>When <b>did</b> you <b>leave</b>?</em> (not <em>When did you left?</em>)</p>
+    <p><strong>Answers:</strong> past form. <em>I <b>left</b> on March 2nd. I <b>came back</b> on March 23rd.</em></p>
+    <p><strong>No:</strong> <em>I <b>didn’t</b> take any long trips.</em> — <em>No, I didn’t.</em></p>
+    <p><strong>Always tell the truth.</strong> The officer can check your passport stamps and the travel records.</p>
+  </div>
+
+  <div class="sec-div">The officer’s questions</div>
+  <p class="subtitle">Tap a question to hear it. The green line is one good answer.</p>
+  <div class="qa" id="questions"></div>
+
+  <div class="sec-div">Verbs for trips</div>
+  <div class="qa" id="verbs"></div>
+
+  <div class="sec-div">When? How long?</div>
+  <div class="qa" id="time"></div>
+
+  <div class="sec-div">Dates on U.S. forms</div>
+  <div class="rule-box">
+    <p><strong>The month comes first:</strong> 03/02/2025 = <b>March 2nd</b>, 2025 (not February 3rd).</p>
+    <p><strong>Say it:</strong> “March second, twenty twenty-five.”</p>
+    <p><strong>Not sure?</strong> Look at your passport stamps before the interview. You can say: <em>“I think it was in March. Let me check my passport.”</em></p>
+  </div>
+  <div id="ccqDates"></div>
+
+  <div class="sec-div">Common mistakes</div>
+  <div id="mistakes"></div>
+
+  <div class="sec-div">Error hunt</div>
+  <p class="subtitle">Some sentences have a mistake. Some are correct! Tap a word — or a space between words — to fix it. Then press OK.</p>
+  <div class="score-bar"><span>Done: <strong id="errorScore">0</strong> / <span id="errorTotal">0</span></span></div>
+  <div id="errorHuntItems"></div>
+
+  <footer>N-400: Trips Outside the U.S. — Clarification (A2)</footer>
+  <p class="legal-note">English practice only. This page is not legal advice.</p>
+</div>
+
+<div id="theme-toggle-wrap">
+  <button id="theme-toggle" aria-label="Toggle light/dark mode" title="Toggle light/dark mode">
+    <span id="theme-icon">☀️</span>
+  </button>
+</div>
+<script src="house.js"></script>
+<script>
+/* what the hard words mean in this lesson (the learner's dictionary shows these first) */
+window.LESSON_DICT = {
+  'trip': { pos: 'noun', def: 'you go to a place and then you come back', ex: 'My last trip was to Colombia.', es: 'viaje' },
+  'leave': { pos: 'verb', def: 'to go away from a place', ex: 'I left the U.S. on March 2nd.', es: 'salir, irse' },
+  'come back': { pos: 'phrasal verb', def: 'to return to a place', ex: 'I came back on March 23rd.', es: 'regresar, volver' },
+  'stay': { pos: 'verb', def: 'to be in a place for some time', ex: 'We stayed there for four days.', es: 'quedarse' },
+  'stamp': { pos: 'noun', def: 'a mark in your passport with the date you entered or left a country', es: 'sello' }
+};
+function sayIt(text){ if (window.HouseDict && HouseDict.say) HouseDict.say(String(text).replace(/\s+/g, ' ').trim()); }
+
+/* ── Marcos's trips on a line: finished trips at definite times → past simple ── */
+HouseTimeline.build({
+  container: 'timeline',
+  startLabel: '5 years ago',
+  nowLabel: 'NOW',
+  nowNote: 'the interview',
+  events: [
+    { at: 0.16, emoji: '🇨🇦', label: 'Canada · 4 days', kind: 'point' },
+    { at: 0.44, emoji: '🇲🇽', label: 'Mexico · 1 week', kind: 'point' },
+    { at: 0.70, emoji: '🇨🇴', label: 'Colombia · 3 weeks', kind: 'point' }
+  ],
+  caption: 'Finished trips, at a definite time: past simple.'
+});
+
+/* ── concept checking questions ────────────────────────────────────────── */
+HouseCCQ.build({
+  container: 'ccq',
+  items: [
+    { sentence: '“I left on March 2nd and I came back on March 23rd.”',
+      questions: [
+        { q: 'Was Marcos in the U.S. on March 10th?', opts: ['Yes', 'No'], correct: 1,
+          why: 'No. He <b>left</b> (went away) on March 2nd. He <b>came back</b> on March 23rd.' },
+        { q: 'Is the trip finished?', opts: ['Yes', 'No'], correct: 0,
+          why: 'Yes. It is in the past, so: past simple — <b>left</b>, <b>came back</b>.' }
+      ] },
+    { sentence: '“How long did you stay?”',
+      questions: [
+        { q: 'Does the officer want a date?', opts: ['Yes', 'No'], correct: 1,
+          why: 'No. <b>How long</b> = how much time. “<b>For</b> three weeks.”' }
+      ] },
+    { sentence: '“I went to Mexico two years ago.”',
+      questions: [
+        { q: 'Did the trip start two years before today?', opts: ['Yes', 'No'], correct: 0,
+          why: 'Yes. <b>Two years ago</b> = two years before now.' },
+        { q: 'Was the trip two years long?', opts: ['Yes', 'No'], correct: 1,
+          why: 'No. “Ago” tells you <b>when</b>, not <b>how long</b>.' }
+      ] }
+  ]
+});
+HouseCCQ.build({
+  container: 'ccqDates',
+  items: [
+    { sentence: 'Your application says: <b>left the U.S. 12/05/2023</b>',
+      questions: [
+        { q: 'Did you leave in May?', opts: ['Yes', 'No'], correct: 1,
+          why: 'No. On U.S. forms the month comes first: <b>12</b> = December. You left on <b>December 5th</b>.' }
+      ] }
+  ]
+});
+
+/* ── form ──────────────────────────────────────────────────────────────── */
+HouseFormClarf.build({
+  container: 'formClarf', scoreEl: 'fcScore', totalEl: 'fcTotal',
+  pool: ['wh', 'aux', 'subject', 'verb', 'neg', 'object', 'time'],
+  items: [
+    { form: 'wh', parts: [['When', 'wh'], ['did', 'aux'], ['you', 'subject'], ['leave', 'verb'], ['?', null]] },
+    { form: 'aff', parts: [['I', 'subject'], ['left', 'verb'], ['on March 2nd', 'time'], ['.', null]] },
+    { form: 'wh', parts: [['How long', 'wh'], ['did', 'aux'], ['you', 'subject'], ['stay', 'verb'], ['?', null]] },
+    { form: 'neg', parts: [['I', 'subject'], ['didn’t', 'neg'], ['take', 'verb'], ['any long trips', 'object'], ['.', null]] }
+  ]
+});
+
+/* ── the officer's questions ───────────────────────────────────────────── */
+const grid = (id, rows, f) => { document.getElementById(id).innerHTML = rows.map(f).join(''); };
+grid('questions', [
+  ['How many trips have you taken in the last five years?', 'Three trips.'],
+  ['Where did you go?', 'I went to Colombia.'],
+  ['When did you leave?', 'I left on March 2nd, 2025.'],
+  ['When did you come back?', 'I came back on March 23rd.'],
+  ['How long were you there?', 'For three weeks.'],
+  ['Why did you go?', 'To visit my mother. She was sick.'],
+  ['Who did you go with?', 'I went alone.'],
+  ['Did you take any trips of six months or more?', 'No, I didn’t.']
+], ([q, a]) => '<div data-line="' + q + '" role="button" tabindex="0"><span class="k">🔊 ' + q + '</span><span class="a">' + a + '</span></div>');
+document.getElementById('questions').addEventListener('click', e => {
+  const d = e.target.closest('[data-line]');
+  if (d) sayIt(d.dataset.line);
+});
+
+grid('verbs', [
+  ['go', 'went'], ['leave', 'left'], ['come back', 'came back'], ['fly', 'flew'], ['drive', 'drove'], ['take a trip', 'took a trip'],
+  ['stay', 'stayed'], ['visit', 'visited'], ['return', 'returned'], ['travel', 'traveled']
+], ([b, p]) => '<div><span class="k">' + b + '</span><span class="a">' + p + '</span></div>');
+
+grid('time', [
+  ['on + a date', 'on March 2nd · on December 5th'],
+  ['in + a month or a year', 'in March · in 2023 · in December 2023'],
+  ['for + how long', 'for four days · for three weeks'],
+  ['from … to …', 'from March 2nd to March 23rd'],
+  ['… ago', 'two years ago · six months ago'],
+  ['last …', 'last year · last summer · last December']
+], ([k, v]) => '<div><span class="k">' + k + '</span>' + v + '</div>');
+
+/* ── common mistakes: [context, ✗, ✓] ──────────────────────────────────── */
+const MISTAKES = [
+  ['(the officer asks)', 'When you left?', 'When did you leave?'],
+  ['(the officer asks)', 'Where did you went?', 'Where did you go?'],
+  ['When did you leave?', 'I leaved on March 2nd.', 'I left on March 2nd.'],
+  ['How long were you there?', 'During three weeks.', 'For three weeks.'],
+  ['When did you go to Mexico?', 'Before two years.', 'Two years ago.'],
+  ['When did you come back?', 'I came back in March 23rd.', 'I came back on March 23rd.']
+];
+document.getElementById('mistakes').innerHTML = MISTAKES.map(([ctx, no, yes]) =>
+  '<div class="pair-card"><div class="pair-ctx">' + ctx + '</div><div class="pair-line no"><span class="mark">✗</span>' + no + '</div>' +
+  '<div class="pair-line yes"><span class="mark">✓</span>' + yes + '</div></div>').join('');
+
+/* ── error hunt (A2: some sentences are correct) ───────────────────────── */
+const EH_ITEMS = [
+  { words: ['I', 'flyed', 'to', 'Mexico', 'in', 'December', '.'],
+    error: { type: 'wrong', wordIndex: 1, options: ['flew', 'flown', 'fly'], correct: 'flew' } },
+  { words: ['We', 'stayed', 'there', 'for', 'four', 'days', '.'], error: null },
+  { words: ['Why', 'you', 'did', 'go', 'to', 'Colombia', '?'], error: { type: 'misplaced', wordIndex: 2, targetGapIndex: 1 } },
+  { words: ['I', 'came', 'back', 'on', 'March', '23rd', '.'], error: null },
+  { words: ['I', 'didn’t', 'took', 'any', 'long', 'trips', '.'],
+    error: { type: 'wrong', wordIndex: 2, options: ['take', 'taking', 'takes'], correct: 'take' } },
+  { words: ['How', 'long', 'you', 'stay', 'in', 'Canada', '?'],
+    error: { type: 'missing', gapIndex: 2, options: ['did', 'were', 'do'], correct: 'did' } },
+  { words: ['I', 'went', 'to', 'there', 'for', 'a', 'wedding', '.'], error: { type: 'extra', wordIndex: 2 } },
+  { words: ['My', 'wife', 'stayed', 'here', 'with', 'the', 'kids', '.'], error: null },
+  { words: ['I', 'visited', 'my', 'mother', 'three', 'months', 'before', '.'],
+    error: { type: 'wrong', wordIndex: 6, options: ['ago', 'last', 'since'], correct: 'ago' } }
+];
+HouseErrorHunt.build({ container: 'errorHuntItems', items: EH_ITEMS, scoreEl: 'errorScore', totalEl: 'errorTotal' });
+</script>
+<script>HouseGrammar.init();</script>
+</body>
+</html>

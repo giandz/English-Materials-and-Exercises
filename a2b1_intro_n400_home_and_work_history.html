@@ -1,0 +1,159 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<title>N-400: Home and Work History — Introduction</title>
+<script>
+(function(){
+  try{
+    var saved = localStorage.getItem('theme-preference');
+    var theme = (saved === 'light' || saved === 'dark')
+      ? saved
+      : ((window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches) ? 'dark' : 'light');
+    document.documentElement.setAttribute('data-theme', theme);
+    var fs = parseFloat(localStorage.getItem('font-size-preference'));
+    if (fs >= 10 && fs <= 28) document.documentElement.style.setProperty('--fs-base', fs + 'px');
+  }catch(e){ /* localStorage/matchMedia unavailable — CSS media query still applies */ }
+})();
+</script>
+<link rel="stylesheet" href="house.css">
+<style>
+#wRight .match-card{ font-weight:400; font-size:.8667rem; line-height:1.45; }
+#wLeft .match-card{ font-weight:700; }
+.match-row{ display:flex; align-items:center; gap:10px; flex-wrap:wrap; margin-top:.75rem; }
+.say-btn{ font-size:.7rem; padding:1px 8px; margin-top:3px; }
+.legal-note{ font-size:.7333rem; color:var(--text-muted); text-align:center; margin-top:.4rem; }
+</style>
+</head>
+<body>
+<div class="page" id="page">
+  <span class="cefr-tag cefr-a2b1">A2–B1 · Pre-intermediate</span>
+  <h1>N-400: Home and Work History</h1>
+  <p class="subtitle">The N-400 asks where you lived and where you worked in the last five years. At the interview, the officer checks these answers with you.</p>
+
+  <div class="sec-div">Words for work</div>
+  <p class="subtitle">Tap a word, then tap its meaning.</p>
+  <div class="score-bar"><span>Matched: <strong id="vScore">0</strong> / <span id="vTotal">0</span></span></div>
+  <div class="win-msg" id="vWin">🎉 All matched! Well done!</div>
+  <div class="match-grid">
+    <div><div class="match-col-label">Words</div><div class="match-col" id="wLeft"></div></div>
+    <div><div class="match-col-label">Meanings</div><div class="match-col" id="wRight"></div></div>
+  </div>
+  <div class="match-row"><button id="vReset">↺ Reset</button><span class="feedback" id="vFeedback" style="margin-top:0"></span></div>
+
+  <div class="sec-div">Before you read</div>
+  <p class="subtitle">Read these three questions first. Then look for the answers in the conversation.</p>
+  <div id="preQuestions" class="prequiz"></div>
+
+  <div class="sec-div">Conversation</div>
+  <div class="setting-chip">🏛️ Officer Lin’s office · checking the N-400</div>
+  <p class="subtitle">Tap 🔊 to hear the officer.</p>
+  <button id="grammarToggle" class="grammar-toggle-btn">🎨 Show Grammar</button>
+  <div class="pos-legend"></div>
+  <div id="chat"></div>
+
+  <div class="sec-div">Check your answers</div>
+  <p class="subtitle">The same three questions. Now choose the correct answer.</p>
+  <div id="quiz"></div>
+
+  <footer>N-400: Home and Work History — Introduction (A2–B1)</footer>
+  <p class="legal-note">English practice only. This page is not legal advice.</p>
+</div>
+
+<div id="theme-toggle-wrap">
+  <button id="theme-toggle" aria-label="Toggle light/dark mode" title="Toggle light/dark mode">
+    <span id="theme-icon">☀️</span>
+  </button>
+</div>
+<script src="house.js"></script>
+<script>
+/* what the hard words mean in this lesson (the learner's dictionary shows these first) */
+window.LESSON_DICT = {
+  'employer': { pos: 'noun', def: 'the company or person you work for', ex: 'My employer is Sunshine Home Care.', es: 'empleador' },
+  'self-employed': { pos: 'adjective', def: 'you work for yourself, not for a company', es: 'trabajador independiente' },
+  'unemployed': { pos: 'adjective', def: 'you don’t have a job', es: 'desempleado' },
+  'laid off': { pos: 'verb', def: 'the company stopped your job because it didn’t need you (not because you did something wrong)', es: 'despedido (por recorte)' },
+  'quit': { pos: 'verb', def: 'to leave a job because you decide to', es: 'renunciar' },
+  'home health aide': { pos: 'noun', def: 'a person who helps old or sick people in their homes', es: 'asistente de salud a domicilio' },
+  'current': { pos: 'adjective', def: 'now, at this time', ex: 'my current address', es: 'actual' },
+  'previous': { pos: 'adjective', def: 'before this one', ex: 'my previous job', es: 'anterior' }
+};
+function sayIt(text){ if (window.HouseDict && HouseDict.say) HouseDict.say(String(text).replace(/\s+/g, ' ').trim()); }
+
+/* ── words ↔ meanings ──────────────────────────────────────────────────── */
+const WORDS = [
+  ['employer', 'the company or person you work for'],
+  ['job title', 'the name of your job: cook, nurse, driver…'],
+  ['full-time', 'you work about 40 hours a week'],
+  ['part-time', 'you work only some hours a week'],
+  ['self-employed', 'you work for yourself'],
+  ['unemployed', 'you don’t have a job'],
+  ['retired', 'you stopped working because you are older'],
+  ['laid off', 'the company stopped your job'],
+  ['quit', 'you decided to leave your job'],
+  ['current', 'now'],
+  ['previous', 'before this one'],
+  ['move', 'to go and live in a new home']
+];
+HouseMatching.build({
+  left: 'wLeft', right: 'wRight',
+  pairs: WORDS.map(([w, m], i) => ({ id: 'v' + i, left: w, right: m })),
+  scoreEl: 'vScore', totalEl: 'vTotal', resetBtn: 'vReset', winEl: 'vWin', feedbackEl: 'vFeedback'
+});
+
+/* ── conversation: O = Officer Lin, R = Rosa ───────────────────────────── */
+const P = (k, t) => '<span class="pos-hl pos-' + k + '">' + t + '</span>';
+const LINES = [
+  ['O', 'Let’s check your addresses for the last five years. What is your current address?'],
+  ['R', 'It’s 4410 Pine Avenue, Apartment 2B, Orlando, Florida.'],
+  ['O', P('wh', 'How long') + ' ' + P('aux', 'have') + ' ' + P('subject', 'you') + ' ' + P('part', 'lived') + ' there?'],
+  ['R', P('subject', 'I') + P('aux', '’ve') + ' ' + P('part', 'lived') + ' there ' + P('time', 'since June 2023') + '.'],
+  ['O', 'And before that?'],
+  ['R', 'Before that, ' + P('subject', 'I') + ' ' + P('verb', 'lived') + ' on Lake Street in Kissimmee. I lived there ' + P('time', 'for three years') + '.'],
+  ['O', 'Why did you move?'],
+  ['R', 'We had a baby, so we needed a bigger apartment.'],
+  ['O', 'Congratulations! Now your work. Who is your current employer?'],
+  ['R', 'Sunshine Home Care. I’m a home health aide.'],
+  ['O', 'Is that full-time or part-time?'],
+  ['R', 'Full-time.'],
+  ['O', 'How long have you worked there?'],
+  ['R', P('subject', 'I') + P('aux', '’ve') + ' ' + P('part', 'worked') + ' there ' + P('time', 'for two years') + '. I started in October 2024.'],
+  ['O', 'And where did you work before that?'],
+  ['R', P('subject', 'I') + ' ' + P('verb', 'worked') + ' at a restaurant, Casa Linda. I was a cook there from 2022 to 2024.'],
+  ['O', 'When did you leave that job?'],
+  ['R', 'In August 2024. The restaurant closed, so I was laid off.'],
+  ['O', 'So what did you do between August and October 2024?'],
+  ['R', 'I was unemployed for two months. I was looking for a new job.'],
+  ['O', 'I see. ' + P('aux', 'Have') + ' ' + P('subject', 'you') + ' ' + P('adverb', 'ever') + ' ' + P('part', 'been') + ' ' + P('complement', 'self-employed') + '?'],
+  ['R', 'Yes, I have. In 2021, I cleaned houses. I worked for myself.'],
+  ['O', 'OK. Everything matches your application. Thank you.']
+];
+const WHO = { O: ['Officer Lin', '👩‍💼', 'left', 'av-a'], R: ['Rosa', '👩', 'right', 'av-b'] };
+document.getElementById('chat').innerHTML = LINES.map(([w, t]) => {
+  const [name, av, side, cls] = WHO[w];
+  return '<div class="bubble-wrap ' + side + '"><div class="avatar ' + cls + '">' + av + '</div><div><div class="bname' + (side === 'right' ? ' right' : '') + '">' + name +
+    '</div><div class="bubble ' + side + '">' + t + '</div></div></div>';
+}).join('');
+document.querySelectorAll('#chat .bubble-wrap.left').forEach(w => {
+  const bubble = w.querySelector('.bubble');
+  const btn = document.createElement('button');
+  btn.type = 'button'; btn.className = 'say-btn'; btn.textContent = '🔊';
+  btn.setAttribute('aria-label', 'Listen'); btn.setAttribute('data-dict', 'off');
+  btn.addEventListener('click', () => sayIt(bubble.textContent));
+  bubble.insertAdjacentElement('afterend', btn);
+});
+
+const CQ_ITEMS = [
+  { q: 'Why did Rosa move to Pine Avenue?',
+    opts: ['She needed a bigger apartment for the baby', 'The restaurant closed', 'She got a job at Sunshine Home Care'], correct: 0 },
+  { q: 'Why did Rosa leave Casa Linda?',
+    opts: ['She quit because she had a baby', 'The restaurant closed and she was laid off', 'She started cleaning houses'], correct: 1 },
+  { q: 'What did Rosa do between August and October 2024?',
+    opts: ['She worked as a cook', 'She cleaned houses', 'She looked for a new job'], correct: 2 }
+];
+HouseComprehension.build({ pre: 'preQuestions', quiz: 'quiz', items: CQ_ITEMS });
+</script>
+<script>HouseGrammar.init();</script>
+</body>
+</html>

@@ -1,0 +1,225 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<title>N-400: Home and Work History — Clarification</title>
+<script>
+(function(){
+  try{
+    var saved = localStorage.getItem('theme-preference');
+    var theme = (saved === 'light' || saved === 'dark')
+      ? saved
+      : ((window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches) ? 'dark' : 'light');
+    document.documentElement.setAttribute('data-theme', theme);
+    var fs = parseFloat(localStorage.getItem('font-size-preference'));
+    if (fs >= 10 && fs <= 28) document.documentElement.style.setProperty('--fs-base', fs + 'px');
+  }catch(e){ /* localStorage/matchMedia unavailable — CSS media query still applies */ }
+})();
+</script>
+<link rel="stylesheet" href="house.css">
+<style>
+.rule-box p{ margin:0 0 6px; }
+.rule-box p:last-child{ margin-bottom:0; }
+.qa{ display:grid; grid-template-columns:repeat(auto-fill, minmax(13rem, 1fr)); gap:6px; margin:0 0 1rem; }
+.qa > div{ padding:7px 10px; border-radius:8px; background:var(--surface-2); border:1px solid var(--color-border-tertiary); font-size:.8667rem; line-height:1.5; }
+.qa .k{ font-weight:700; color:var(--text-accent); display:block; }
+.qa .a{ color:var(--good); font-weight:600; }
+.qa [data-line]{ cursor:pointer; }
+.pair-ctx{ font-size:.8rem; color:var(--text-secondary); font-style:italic; }
+.tl-label{ font-size:.8rem; font-weight:700; color:var(--text-secondary); margin:.2rem 0 .3rem; }
+.legal-note{ font-size:.7333rem; color:var(--text-muted); text-align:center; margin-top:.4rem; }
+</style>
+</head>
+<body>
+<div class="page" id="page">
+  <span class="cefr-tag cefr-a2b1">A2–B1 · Pre-intermediate</span>
+  <h1>N-400: Home and Work History</h1>
+  <p class="subtitle"><b>I’ve lived here since 2023.</b> (still true now) · <b>I lived on Lake Street for three years.</b> (finished)</p>
+
+  <div class="sec-div">Rosa’s history</div>
+  <div class="tl-label">🏠 Where she lived</div>
+  <div id="tlHome"></div>
+  <div class="tl-label">💼 Where she worked</div>
+  <div id="tlWork"></div>
+
+  <div class="sec-div">Check the meaning</div>
+  <p class="subtitle">Read the sentence. Answer the questions.</p>
+  <div id="ccq"></div>
+
+  <div class="sec-div">Look at the form</div>
+  <p class="subtitle">What is each part of the sentence? Drag a label (or tap a label, then tap a box).</p>
+  <div class="score-bar"><span>Correct: <strong id="fcScore">0</strong> / <span id="fcTotal">0</span></span></div>
+  <div id="formClarf"></div>
+
+  <div class="rule-box">
+    <p><strong>Still true now → present perfect:</strong> have / has + past participle. <em>I<b>’ve lived</b> here since 2023. I<b>’ve worked</b> there for two years.</em></p>
+    <p><strong>Finished → past simple:</strong> <em>I <b>lived</b> on Lake Street for three years. I <b>worked</b> at Casa Linda from 2022 to 2024.</em></p>
+    <p><strong>The question:</strong> <em>How long <b>have</b> you <b>lived</b> there?</em> (now) · <em>How long <b>did</b> you <b>live</b> there?</em> (finished)</p>
+    <p><strong>for</strong> + a length of time (for two years) · <strong>since</strong> + the start (since 2023, since June) · <strong>from … to …</strong> for finished times.</p>
+  </div>
+
+  <div class="sec-div">The officer’s questions</div>
+  <p class="subtitle">Tap a question to hear it. The green line is one good answer.</p>
+  <div class="qa" id="questions"></div>
+
+  <div class="sec-div">Talking about your history</div>
+  <div class="qa" id="phrases"></div>
+
+  <div class="sec-div">A time with no job?</div>
+  <div class="rule-box">
+    <p><strong>The officer asks about every month.</strong> If you didn’t work for some time, say what you did, and say it clearly:</p>
+    <p><em>Between August and October 2024, I wasn’t working. I was looking for a new job.</em></p>
+    <p><em>From 2020 to 2022, I stayed at home with my children.</em> · <em>In 2023, I was a student. I studied English at the community college.</em></p>
+  </div>
+
+  <div class="sec-div">Common mistakes</div>
+  <div id="mistakes"></div>
+
+  <div class="sec-div">Error hunt</div>
+  <p class="subtitle">Some sentences have a mistake. Some are correct! Tap a word — or a space between words — to fix it. Then press OK.</p>
+  <div class="score-bar"><span>Done: <strong id="errorScore">0</strong> / <span id="errorTotal">0</span></span></div>
+  <div id="errorHuntItems"></div>
+
+  <footer>N-400: Home and Work History — Clarification (A2–B1)</footer>
+  <p class="legal-note">English practice only. This page is not legal advice.</p>
+</div>
+
+<div id="theme-toggle-wrap">
+  <button id="theme-toggle" aria-label="Toggle light/dark mode" title="Toggle light/dark mode">
+    <span id="theme-icon">☀️</span>
+  </button>
+</div>
+<script src="house.js"></script>
+<script>
+/* what the hard words mean in this lesson (the learner's dictionary shows these first) */
+window.LESSON_DICT = {
+  'employer': { pos: 'noun', def: 'the company or person you work for', es: 'empleador' },
+  'self-employed': { pos: 'adjective', def: 'you work for yourself, not for a company', es: 'trabajador independiente' },
+  'unemployed': { pos: 'adjective', def: 'you don’t have a job', es: 'desempleado' },
+  'laid off': { pos: 'verb', def: 'the company stopped your job because it didn’t need you', es: 'despedido (por recorte)' },
+  'quit': { pos: 'verb', def: 'to leave a job because you decide to', es: 'renunciar' },
+  'current': { pos: 'adjective', def: 'now, at this time', es: 'actual' },
+  'previous': { pos: 'adjective', def: 'before this one', es: 'anterior' }
+};
+function sayIt(text){ if (window.HouseDict && HouseDict.say) HouseDict.say(String(text).replace(/\s+/g, ' ').trim()); }
+
+/* ── Rosa's history on two lines (2020/2021 → now, November 2026) ─────── */
+HouseTimeline.build({
+  container: 'tlHome', startLabel: '2020', nowLabel: 'NOW',
+  bands: [{ from: 0.02, to: 0.49, label: 'Lake Street · 3 years' }, { from: 0.51, to: 1, label: 'Pine Avenue · since June 2023' }],
+  events: [{ at: 0.5, emoji: '📦', label: 'moved (June 2023)', kind: 'point' }],
+  caption: 'Lake Street is finished: lived. Pine Avenue is still true: have lived.'
+});
+HouseTimeline.build({
+  container: 'tlWork', startLabel: '2021', nowLabel: 'NOW',
+  bands: [{ from: 0.01, to: 0.16, label: 'cleaned houses' }, { from: 0.18, to: 0.6, label: 'Casa Linda · cook' }, { from: 0.65, to: 1, label: 'Sunshine Home Care' }],
+  events: [{ at: 0.625, emoji: '🔎', label: 'unemployed · 2 months', kind: 'point' }],
+  caption: 'Finished jobs: worked. The job now: have worked … since October 2024.'
+});
+
+/* ── concept checking questions ────────────────────────────────────────── */
+HouseCCQ.build({
+  container: 'ccq',
+  items: [
+    { sentence: '“I’ve lived on Pine Avenue since June 2023.”',
+      questions: [
+        { q: 'Does Rosa live on Pine Avenue now?', opts: ['Yes', 'No'], correct: 0,
+          why: 'Yes. Present perfect (<b>have lived</b>) = it started in the past and it is still true now.' }
+      ] },
+    { sentence: '“I lived on Lake Street for three years.”',
+      questions: [
+        { q: 'Does Rosa live on Lake Street now?', opts: ['Yes', 'No'], correct: 1,
+          why: 'No. Past simple (<b>lived</b>) = finished. She doesn’t live there now.' }
+      ] },
+    { sentence: '“I was laid off.”',
+      questions: [
+        { q: 'Did Rosa decide to leave the job?', opts: ['Yes', 'No'], correct: 1,
+          why: 'No. The company decided. If <b>you</b> decide to leave, you <b>quit</b>.' }
+      ] },
+    { sentence: '“Who is your current employer?”',
+      questions: [
+        { q: 'Does the officer want your job title (cook, nurse…)?', opts: ['Yes', 'No'], correct: 1,
+          why: 'No. The officer wants the <b>company</b> you work for now: “Sunshine Home Care.”' },
+        { q: 'Is it about your job now?', opts: ['Yes', 'No'], correct: 0,
+          why: 'Yes. <b>Current</b> = now. <b>Previous</b> = before.' }
+      ] }
+  ]
+});
+
+/* ── form ──────────────────────────────────────────────────────────────── */
+HouseFormClarf.build({
+  container: 'formClarf', scoreEl: 'fcScore', totalEl: 'fcTotal',
+  pool: ['wh', 'aux', 'subject', 'part', 'verb', 'adverb', 'time', 'prep', 'noun'],
+  items: [
+    { form: 'wh', parts: [['How long', 'wh'], ['have', 'aux'], ['you', 'subject'], ['lived', 'part'], ['here', 'adverb'], ['?', null]] },
+    { form: 'aff', parts: [['I', 'subject'], ['have', 'aux'], ['worked', 'part'], ['there', 'adverb'], ['since 2024', 'time'], ['.', null]] },
+    { form: 'wh', parts: [['Where', 'wh'], ['did', 'aux'], ['you', 'subject'], ['work', 'verb'], ['before that', 'time'], ['?', null]] },
+    { form: 'aff', parts: [['I', 'subject'], ['worked', 'verb'], ['at', 'prep'], ['a restaurant', 'noun'], ['for three years', 'time'], ['.', null]] }
+  ]
+});
+
+/* ── the officer's questions ───────────────────────────────────────────── */
+const grid = (id, rows, f) => { document.getElementById(id).innerHTML = rows.map(f).join(''); };
+grid('questions', [
+  ['What is your current address?', 'It’s 4410 Pine Avenue, Apartment 2B.'],
+  ['How long have you lived there?', 'Since June 2023. / For three years.'],
+  ['Where did you live before that?', 'On Lake Street, in Kissimmee.'],
+  ['Why did you move?', 'We needed a bigger apartment.'],
+  ['Who is your current employer?', 'Sunshine Home Care.'],
+  ['What do you do there?', 'I’m a home health aide.'],
+  ['How long have you worked there?', 'For two years. I started in October 2024.'],
+  ['Where did you work before that?', 'At a restaurant. I was a cook.'],
+  ['Why did you leave that job?', 'The restaurant closed. I was laid off.'],
+  ['Have you ever been self-employed?', 'Yes, I have. I cleaned houses in 2021.'],
+  ['Were you working between August and October?', 'No, I wasn’t. I was looking for a job.'],
+  ['Are you working now?', 'Yes, I am. / No, I’m retired.']
+], ([q, a]) => '<div data-line="' + q + '" role="button" tabindex="0"><span class="k">🔊 ' + q + '</span><span class="a">' + a + '</span></div>');
+document.getElementById('questions').addEventListener('click', e => {
+  const d = e.target.closest('[data-line]');
+  if (d) sayIt(d.dataset.line);
+});
+
+grid('phrases', [
+  ['The start', 'I started working there in 2024. · I moved there in June.'],
+  ['Up to now', 'I’ve been there since 2024. · I’ve worked there for two years.'],
+  ['Before', 'Before that, I worked at … · My previous job was …'],
+  ['The end', 'I left that job in 2024. · I moved out in 2023.'],
+  ['Why you left', 'I was laid off. · I quit. · The company closed. · I found a better job.'],
+  ['No job', 'I’m retired. · I’m a stay-at-home mom / dad. · I’m self-employed.']
+], ([k, v]) => '<div><span class="k">' + k + '</span>' + v + '</div>');
+
+/* ── common mistakes ───────────────────────────────────────────────────── */
+const MISTAKES = [
+  ['How long have you lived there?', 'I live here since 2023.', 'I’ve lived here since 2023.'],
+  ['(the officer asks)', 'How long do you work there?', 'How long have you worked there?'],
+  ['How long have you worked there?', 'Since two years.', 'For two years. / Since 2024.'],
+  ['(about a finished job)', 'I have worked at Casa Linda from 2022 to 2024.', 'I worked at Casa Linda from 2022 to 2024.'],
+  ['Who is your employer?', 'My employer is a cook.', 'Sunshine Home Care. I’m a cook there.'],
+  ['What do you do?', 'I work in Sunshine Home Care.', 'I work for Sunshine Home Care.']
+];
+document.getElementById('mistakes').innerHTML = MISTAKES.map(([ctx, no, yes]) =>
+  '<div class="pair-card"><div class="pair-ctx">' + ctx + '</div><div class="pair-line no"><span class="mark">✗</span>' + no + '</div>' +
+  '<div class="pair-line yes"><span class="mark">✓</span>' + yes + '</div></div>').join('');
+
+/* ── error hunt (some sentences are correct) ───────────────────────────── */
+const EH_ITEMS = [
+  { words: ['I', 'have', 'live', 'here', 'since', '2023', '.'],
+    error: { type: 'wrong', wordIndex: 2, options: ['lived', 'living', 'lives'], correct: 'lived' } },
+  { words: ['Before', 'that', ',', 'I', 'lived', 'in', 'Kissimmee', '.'], error: null },
+  { words: ['I', 'have', 'worked', 'there', 'since', 'two', 'years', '.'],
+    error: { type: 'wrong', wordIndex: 4, options: ['for', 'from', 'ago'], correct: 'for' } },
+  { words: ['How', 'long', 'you', 'have', 'worked', 'there', '?'], error: { type: 'misplaced', wordIndex: 3, targetGapIndex: 2 } },
+  { words: ['I', 'was', 'unemployed', 'for', 'two', 'months', '.'], error: null },
+  { words: ['I', 'have', 'worked', 'at', 'a', 'bakery', 'in', '2020', '.'], error: { type: 'extra', wordIndex: 1 } },
+  { words: ['The', 'company', 'closed', ',', 'so', 'I', 'laid', 'off', '.'],
+    error: { type: 'missing', gapIndex: 6, options: ['was', 'have', 'did'], correct: 'was' } },
+  { words: ['She', 'has', 'been', 'self-employed', 'since', 'March', '.'], error: null },
+  { words: ['Where', 'did', 'you', 'worked', 'before', 'that', '?'],
+    error: { type: 'wrong', wordIndex: 3, options: ['work', 'working', 'works'], correct: 'work' } }
+];
+HouseErrorHunt.build({ container: 'errorHuntItems', items: EH_ITEMS, scoreEl: 'errorScore', totalEl: 'errorTotal' });
+</script>
+<script>HouseGrammar.init();</script>
+</body>
+</html>

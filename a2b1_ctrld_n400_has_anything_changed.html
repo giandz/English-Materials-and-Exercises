@@ -1,0 +1,178 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<title>N-400: Has Anything Changed? — Controlled Practice</title>
+<script>
+(function(){
+  try{
+    var saved = localStorage.getItem('theme-preference');
+    var theme = (saved === 'light' || saved === 'dark')
+      ? saved
+      : ((window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches) ? 'dark' : 'light');
+    document.documentElement.setAttribute('data-theme', theme);
+    var fs = parseFloat(localStorage.getItem('font-size-preference'));
+    if (fs >= 10 && fs <= 28) document.documentElement.style.setProperty('--fs-base', fs + 'px');
+  }catch(e){ /* localStorage/matchMedia unavailable — CSS media query still applies */ }
+})();
+</script>
+<link rel="stylesheet" href="house.css">
+<style>
+#dLeft .match-card, #dRight .match-card{ font-weight:400; font-size:.8667rem; line-height:1.45; }
+.match-row{ display:flex; align-items:center; gap:10px; flex-wrap:wrap; margin-top:.75rem; }
+.bank{ display:flex; flex-wrap:wrap; gap:6px; margin-bottom:1rem; }
+.bank-chip{ font-family:inherit; font-size:.8667rem; padding:4px 11px; border-radius:20px; background:var(--surface-2);
+  border:.5px solid var(--color-border-secondary); color:var(--text-primary); cursor:pointer; user-select:none; -webkit-user-select:none; }
+.bank-chip[aria-pressed="true"]{ text-decoration:line-through; color:var(--text-muted); }
+.ak{ margin-top:1.25rem; border:.5px solid var(--color-border-tertiary); border-radius:var(--border-radius-md); overflow:hidden; }
+.ak summary{ padding:9px 14px; cursor:pointer; font-size:.9333rem; font-weight:500; background:var(--surface-2); }
+.ak-body{ padding:10px 14px; display:flex; flex-direction:column; gap:2px; }
+.ak-row{ display:flex; gap:10px; align-items:baseline; padding:4px 0; border-bottom:.5px solid var(--color-border-tertiary); font-size:.8667rem; }
+.ak-row:last-child{ border-bottom:none; }
+.ak-num{ color:var(--text-secondary); min-width:20px; }
+.ak-word{ font-weight:600; min-width:90px; color:var(--text-accent); }
+.ak-note{ color:var(--text-secondary); }
+.legal-note{ font-size:.7333rem; color:var(--text-muted); text-align:center; margin-top:.4rem; }
+</style>
+</head>
+<body>
+<div class="page" id="page">
+  <span class="cefr-tag cefr-a2b1">A2–B1 · Pre-intermediate</span>
+  <h1>N-400: Has Anything Changed? — Practice</h1>
+  <p class="subtitle">The news: <b>I’ve changed jobs.</b> The details: <b>I started at the bank in July.</b></p>
+
+  <div class="sec-div">1 · Which paper?</div>
+  <p class="subtitle">Tap a change, then tap the paper that shows it.</p>
+  <div class="score-bar"><span>Matched: <strong id="mScore">0</strong> / <span id="mTotal">0</span></span></div>
+  <div class="win-msg" id="mWin">🎉 All matched! Well done!</div>
+  <div class="match-grid">
+    <div><div class="match-col-label">The change</div><div class="match-col" id="dLeft"></div></div>
+    <div><div class="match-col-label">Here is …</div><div class="match-col" id="dRight"></div></div>
+  </div>
+  <div class="match-row"><button id="mReset">↺ Reset</button><span class="feedback" id="mFeedback" style="margin-top:0"></span></div>
+
+  <div class="sec-div">2 · News or details?</div>
+  <p class="subtitle">Choose the best answer.</p>
+  <div id="pcItems"></div>
+
+  <div class="sec-div">3 · Put the words in order</div>
+  <p class="subtitle">Drag the words into the line. You can also tap a word to add it, and tap it again to send it back.</p>
+  <button class="grammar-toggle-btn" id="grammarToggle">🎨 Hide Grammar</button>
+  <div class="pos-legend"></div>
+  <div class="score-bar"><span>Correct: <strong id="woScore">0</strong> / <span id="woTotal">0</span></span></div>
+  <div id="woItems"></div>
+
+  <div class="sec-div">4 · Write the missing words</div>
+  <p class="subtitle">Choose a word from the box and write it in the gap. Tap a word in the box to cross it out. The bar goes from red to green 🔴→🟢. Green = correct!</p>
+  <div class="bank" id="bank"></div>
+  <div id="gfItems"></div>
+
+  <details class="ak">
+    <summary>Answer key</summary>
+    <div class="ak-body" id="akBody"></div>
+  </details>
+
+  <footer>N-400: Has Anything Changed? — Controlled Practice (A2–B1)</footer>
+  <p class="legal-note">English practice only. This page is not legal advice.</p>
+</div>
+
+<div id="theme-toggle-wrap">
+  <button id="theme-toggle" aria-label="Toggle light/dark mode" title="Toggle light/dark mode">
+    <span id="theme-icon">☀️</span>
+  </button>
+</div>
+<script src="house.js"></script>
+<script>
+/* what the hard words mean in this lesson (the learner's dictionary shows these first) */
+window.LESSON_DICT = {
+  'file': { pos: 'verb', def: 'to send an official form', es: 'presentar (un formulario)' },
+  'lease': { pos: 'noun', def: 'the paper you sign when you rent a home', es: 'contrato de arrendamiento' },
+  'receipt': { pos: 'noun', def: 'a paper that shows you paid', es: 'recibo' },
+  'pay stub': { pos: 'noun', def: 'the paper you get with your pay; it shows the company and how much you got', es: 'talón de pago' },
+  'divorce decree': { pos: 'noun', def: 'the paper from the court that says you are divorced', es: 'sentencia de divorcio' }
+};
+function sayIt(text){ if (window.HouseDict && HouseDict.say) HouseDict.say(String(text).replace(/\s+/g, ' ').trim()); }
+
+/* ── 1 · change ↔ document ─────────────────────────────────────────────── */
+const DOCS = [
+  ['📦 I’ve moved.', 'my new lease'],
+  ['💼 I’ve changed jobs.', 'a letter from my new employer'],
+  ['💍 I’ve gotten married.', 'my marriage certificate'],
+  ['💔 I’ve gotten divorced.', 'my divorce decree'],
+  ['👶 We’ve had a baby.', 'my son’s birth certificate'],
+  ['✈️ I’ve traveled to Peru.', 'my passport, with the stamps'],
+  ['🧾 I’ve paid a parking ticket.', 'the receipt'],
+  ['🪪 I’ve changed my name by court order.', 'the court order']
+];
+HouseMatching.build({
+  left: 'dLeft', right: 'dRight',
+  pairs: DOCS.map(([c, d], i) => ({ id: 'd' + i, left: c, right: d })),
+  scoreEl: 'mScore', totalEl: 'mTotal', resetBtn: 'mReset', winEl: 'mWin', feedbackEl: 'mFeedback'
+});
+
+/* ── 2 · choose (easiest first) ────────────────────────────────────────── */
+HouseComprehension.build({
+  quiz: 'pcItems',
+  items: [
+    { q: 'Has anything ___ since you filed?', opts: ['change', 'changed', 'changing'], correct: 1 },
+    { q: '___ you traveled outside the U.S. since January?', opts: ['Have', 'Did', 'Are'], correct: 0 },
+    { q: 'Officer: “Have you moved?”', opts: ['Yes, I did.', 'Yes, I have.', 'Yes, I am.'], correct: 1 },
+    { q: 'News: “I’ve moved.” Details: “I ___ in March.”', opts: ['have moved', 'moved', 'move'], correct: 1 },
+    { q: 'I ___ jobs. Now I work at a hotel.', opts: ['’ve changed', 'change', 'was changed'], correct: 0 },
+    { q: 'I left on June 2nd and I ___ back on June 20th.', opts: ['have come', 'come', 'came'], correct: 2 },
+    { q: 'My wife ___ a baby since I filed my application.', opts: ['have had', 'has had', 'has have'], correct: 1 },
+    { q: 'Have you ___ married since you applied?', opts: ['gotten', 'got', 'get'], correct: 0 },
+    { q: 'Officer: “Is everything the same?” Nothing has changed.', opts: ['Yes, nothing has changed.', 'Yes, everything changed.', 'No, nothing.'], correct: 0 },
+    { q: 'Officer: “Has anything changed?” Lucía has a new phone number.', opts: ['No, nothing has changed.', 'Yes, I’ve changed my phone number.', 'Yes, I changed my phone number since.'], correct: 1 },
+    { q: 'You want to tell the officer about a new job. How do you start?', opts: ['I’d like to tell you about a change.', 'I have a change, no?', 'Change, I have one.'], correct: 0 }
+  ]
+});
+
+/* ── 3 · word order (short first) ──────────────────────────────────────── */
+const O = { speaker: 'Officer', avatar: '👨‍💼' }, Y = { speaker: 'You', avatar: '🙋' };
+HouseWordOrder.build({
+  container: 'woItems', scoreEl: 'woScore', totalEl: 'woTotal',
+  items: [
+    { ...Y, text: 'I’ve / changed / jobs / .', pos: ['subject', 'part', 'object', 'none'] },
+    { ...Y, text: 'No, / nothing / has / changed / .', pos: ['none', 'subject', 'aux', 'part', 'none'] },
+    { ...O, text: 'Has / anything / changed / since / you / filed / ?', pos: ['aux', 'subject', 'part', 'conj', 'subject', 'verb', 'none'] },
+    { ...O, text: 'Have / you / traveled / outside / the U.S. / ?', pos: ['aux', 'subject', 'part', 'prep', 'noun', 'none'] },
+    { ...Y, text: 'I / moved / to / a new apartment / in / April / .', pos: ['subject', 'verb', 'prep', 'object', 'prep', 'time', 'none'] },
+    { ...Y, text: 'Here / is / a letter / from / my new employer / .', pos: ['adverb', 'verb', 'subject', 'prep', 'noun', 'none'] },
+    { ...O, text: 'Have / you / gotten / married / or / divorced / ?', pos: ['aux', 'subject', 'part', 'complement', 'conj', 'complement', 'none'] },
+    { ...Y, text: 'I’d / like / to tell / you / about / a change / .', pos: ['subject', 'verb', 'verb', 'object', 'prep', 'noun', 'none'] }
+  ]
+});
+
+/* ── 4 · gap fill with the word box ────────────────────────────────────── */
+const GAPS = [
+  ['Has anything changed {0} you filed?', ['since'], 'from that day until now'],
+  ['Yes. I’ve {0}. My new address is 9 Pine Road.', ['moved'], 'past participle of move'],
+  ['I moved {0} April.', ['in'], 'in + a month'],
+  ['Have you {0} outside the U.S.? — Yes, I went to Haiti.', ['traveled', 'travelled'], 'past participle of travel'],
+  ['We have {0} a baby. She was born in June.', ['had'], 'past participle of have'],
+  ['I have {0} married. My husband is a U.S. citizen.', ['gotten'], 'get → got → gotten (American English)'],
+  ['I got a ticket, but I’ve {0} paid it.', ['already'], 'it is done, before now'],
+  ['{0} you changed jobs? — Yes, I’ve started at a hotel.', ['Have', 'have'], 'present perfect question'],
+  ['My sister has {0} a U.S. citizen. She took the oath in May.', ['become'], 'become → became → become'],
+  ['No, nothing has changed. Everything is the {0}.', ['same'], 'not different'],
+  ['Here is the {0}. It shows that I paid the ticket.', ['receipt'], 'a paper that shows you paid'],
+  ['Here is my new {0}. I signed it when I rented the apartment.', ['lease'], 'the paper for renting a home']
+];
+const BANK = GAPS.map(g => g[1][0]).sort((a, b) => a.localeCompare(b));
+document.getElementById('bank').innerHTML = BANK.map(w => '<button type="button" class="bank-chip" aria-pressed="false">' + w + '</button>').join('');
+document.getElementById('bank').addEventListener('click', e => {
+  const b = e.target.closest('.bank-chip');
+  if (b) b.setAttribute('aria-pressed', String(b.getAttribute('aria-pressed') !== 'true'));
+});
+HouseGapFill.build({
+  container: 'gfItems',
+  items: GAPS.map(([t, acc], i) => ({ template: (i + 1) + '. ' + t, hints: [{ accepted: acc }] }))
+});
+document.getElementById('akBody').innerHTML = GAPS.map(([, acc, why], i) =>
+  '<div class="ak-row"><span class="ak-num">' + (i + 1) + '.</span><span class="ak-word">' + acc[0] + '</span><span class="ak-note">' + why + '</span></div>').join('');
+</script>
+<script>HouseGrammar.init();</script>
+</body>
+</html>

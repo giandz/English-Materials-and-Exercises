@@ -1,0 +1,151 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<title>N-400: Trips Outside the U.S. — Role Play</title>
+<script>
+(function(){
+  try{
+    var saved = localStorage.getItem('theme-preference');
+    var theme = (saved === 'light' || saved === 'dark')
+      ? saved
+      : ((window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches) ? 'dark' : 'light');
+    document.documentElement.setAttribute('data-theme', theme);
+    var fs = parseFloat(localStorage.getItem('font-size-preference'));
+    if (fs >= 10 && fs <= 28) document.documentElement.style.setProperty('--fs-base', fs + 'px');
+  }catch(e){ /* localStorage/matchMedia unavailable — CSS media query still applies */ }
+})();
+</script>
+<link rel="stylesheet" href="house.css">
+<style>
+.phrase-box{ background:var(--surface-2); border-radius:var(--border-radius-md); padding:10px 14px; margin-bottom:1rem; border:.5px solid var(--color-border-tertiary); }
+.phrase-title{ font-size:.7333rem; font-weight:500; text-transform:uppercase; letter-spacing:.05em; color:var(--text-secondary); margin-bottom:8px; }
+.phrase-grid{ display:flex; flex-wrap:wrap; gap:6px; }
+.phrase-chip{ font-size:.8667rem; padding:4px 10px; border-radius:20px; background:var(--surface-1); border:.5px solid var(--color-border-secondary); color:var(--text-primary); }
+.trip-list{ text-align:left; display:flex; flex-direction:column; gap:6px; width:100%; max-width:26rem; }
+.trip-row{ display:grid; grid-template-columns:2rem 1fr; gap:4px 8px; align-items:center; background:var(--surface-1); border:1px solid var(--border); border-radius:10px; padding:6px 10px; font-size:.9333rem; }
+.trip-row .e{ font-size:1.4rem; text-align:center; }
+.trip-row small{ display:block; color:var(--text-secondary); font-size:.8rem; }
+.dice-tools{ display:flex; justify-content:center; flex-wrap:wrap; gap:8px; margin-bottom:.8rem; }
+.legal-note{ font-size:.7333rem; color:var(--text-muted); text-align:center; margin-top:.4rem; }
+</style>
+</head>
+<body>
+<div class="page" id="page">
+  <span class="cefr-tag cefr-a2">A2 · Pre-intermediate</span>
+  <h1>N-400: Trips Outside the U.S. — Role Play</h1>
+  <p class="subtitle">Work with a partner. One person is the officer. One person is the applicant. Then change!</p>
+
+  <div class="phrase-box">
+    <div class="phrase-title">The officer asks</div>
+    <div class="phrase-grid">
+      <span class="phrase-chip">How many trips have you taken in the last five years?</span>
+      <span class="phrase-chip">Where did you go?</span>
+      <span class="phrase-chip">When did you leave?</span>
+      <span class="phrase-chip">When did you come back?</span>
+      <span class="phrase-chip">How long were you there?</span>
+      <span class="phrase-chip">Why did you go?</span>
+      <span class="phrase-chip">Who did you go with?</span>
+      <span class="phrase-chip">Did you take any trips of six months or more?</span>
+    </div>
+  </div>
+
+  <div class="sec-div">1 · Role cards</div>
+  <p class="subtitle">The applicant rolls the dice and gets a card with their trips. Don’t show it to the officer! The officer asks the questions above and writes the answers. Then compare.</p>
+  <div class="q-card" id="qCard"><span class="q-placeholder">Press the dice to get your trips.</span></div>
+  <button class="dice-btn" id="diceBtn" aria-label="Roll the dice">🎲</button>
+  <div class="roll-count">Cards: <strong id="rollCount">0</strong></div>
+
+  <div class="sec-div">2 · Follow-up questions</div>
+  <p class="subtitle">Roll the dice. Your partner hears the question and answers about a trip on their card. Then pass the dice.</p>
+  <div class="q-card" id="qCard2"><span class="q-placeholder">Press the dice to start.</span></div>
+  <div class="dice-tools"><button type="button" id="again">🔊 Again</button></div>
+  <button class="dice-btn" id="diceBtn2" aria-label="Roll the dice">🎲</button>
+  <div class="roll-count">Questions: <strong id="rollCount2">0</strong></div>
+
+  <div class="sec-div">3 · A trip you took</div>
+  <p class="subtitle">Ask your partners about a real trip they took (in the U.S. or to another country). Write their answers.</p>
+  <div id="interview"></div>
+
+  <footer>N-400: Trips Outside the U.S. — Freer Practice (A2)</footer>
+  <p class="legal-note">English practice only. This page is not legal advice.</p>
+</div>
+
+<div id="theme-toggle-wrap">
+  <button id="theme-toggle" aria-label="Toggle light/dark mode" title="Toggle light/dark mode">
+    <span id="theme-icon">☀️</span>
+  </button>
+</div>
+<script src="house.js"></script>
+<script src="house-interview.js"></script>
+<script>
+/* what the hard words mean in this lesson (the learner's dictionary shows these first) */
+window.LESSON_DICT = {
+  'trip': { pos: 'noun', def: 'you go to a place and then you come back', es: 'viaje' },
+  'leave': { pos: 'verb', def: 'to go away from a place', es: 'salir, irse' },
+  'come back': { pos: 'phrasal verb', def: 'to return to a place', es: 'regresar, volver' }
+};
+function sayIt(text){ if (window.HouseDict && HouseDict.say) HouseDict.say(String(text).replace(/\s+/g, ' ').trim()); }
+
+const pick = HouseRandomGen.pickFrom;
+/* ── 1 · role cards: two or three invented trips, in date order ─────────── */
+const PLACES = [['🇲🇽', 'Mexico'], ['🇨🇴', 'Colombia'], ['🇵🇪', 'Peru'], ['🇩🇴', 'the Dominican Republic'], ['🇨🇦', 'Canada'],
+  ['🇬🇹', 'Guatemala'], ['🇻🇪', 'Venezuela'], ['🇪🇸', 'Spain'], ['🇭🇳', 'Honduras'], ['🇨🇺', 'Cuba'], ['🇪🇨', 'Ecuador'], ['🇯🇲', 'Jamaica']];
+const WHY = ['for a wedding', 'for a funeral', 'to visit your parents', 'on vacation', 'for work', 'to visit your sick grandmother',
+  'for your sister’s graduation', 'to sell your old house', 'for a family party'];
+const WITH = ['alone', 'with your wife', 'with your husband', 'with your kids', 'with your mother', 'with two friends'];
+const DRIVE = ['Mexico', 'Canada'];   /* you can only drive to these */
+const MONTHS = ['January', 'February', 'March', 'April', 'May', 'June', 'July', 'August', 'September', 'October', 'November', 'December'];
+const DAYS = [4, 5, 7, 10, 12, 14, 18, 21, 30];
+const ord = n => n + ((n % 100 > 10 && n % 100 < 14) ? 'th' : ({ 1: 'st', 2: 'nd', 3: 'rd' }[n % 10] || 'th'));
+function trip(year) {
+  const m = Math.floor(Math.random() * 12), d = 1 + Math.floor(Math.random() * 20), len = pick(DAYS);
+  const end = new Date(year, m, d + len);
+  const place = pick(PLACES);
+  return { place, why: pick(WHY), with: pick(WITH), how: DRIVE.includes(place[1]) && Math.random() < .5 ? 'drove' : 'flew',
+    left: MONTHS[m] + ' ' + ord(d) + ', ' + year, back: MONTHS[end.getMonth()] + ' ' + ord(end.getDate()) + ', ' + end.getFullYear(), len };
+}
+const now = new Date().getFullYear();
+HouseRandomGen.build({
+  pick: () => {
+    const years = [now - 4, now - 3, now - 2, now - 1].sort(() => Math.random() - .5).slice(0, 2 + Math.floor(Math.random() * 2)).sort();
+    return { trips: years.map(trip), id: Math.random() };
+  },
+  key: x => x.id,
+  render: x => '<span class="q-topic">🧳 Your trips (last five years)</span><div class="trip-list">' + x.trips.map(t =>
+    '<div class="trip-row"><span class="e">' + t.place[0] + '</span><span><b>' + t.place[1] + '</b> · you ' + t.how + ' · ' + t.with +
+    '<small>left ' + t.left + ' · came back ' + t.back + ' (' + (t.len % 7 ? t.len + ' days' : t.len / 7 + ' week' + (t.len > 7 ? 's' : '')) + ')</small><small>' + t.why + '</small></span></div>').join('') +
+    '</div><span class="q-placeholder">No trips of six months or more.</span>'
+});
+
+/* ── 2 · follow-up questions ───────────────────────────────────────────── */
+const FOLLOW = ['Where did you stay?', 'Did you fly or drive?', 'Who did you visit?', 'Did you go with anyone?', 'Why did you go?',
+  'How long were you there?', 'When exactly did you leave?', 'When did you come back to the United States?', 'Which trip was the longest?',
+  'Which trip was the shortest?', 'How many trips have you taken in the last five years?', 'Where did you go on your last trip?',
+  'Did you take any trips of six months or more?', 'Have you traveled outside the U.S. since you applied?', 'Was it a work trip or a family trip?',
+  'Did anyone in your family go with you?', 'How many days were you in Canada or Mexico?', 'Do you have your passport with you today?'];
+let lastQ = '';
+HouseRandomGen.build({
+  card: 'qCard2', button: 'diceBtn2', countEl: 'rollCount2',
+  items: FOLLOW.map(text => ({ icon: '👨‍💼', label: 'The officer asks', text })),
+  render: x => { lastQ = x.text; sayIt(x.text); return '<span class="q-topic">' + x.icon + ' ' + x.label + '</span><span class="q-text">' + x.text + '</span>'; }
+});
+document.getElementById('again').addEventListener('click', () => { if (lastQ) sayIt(lastQ); });
+
+/* ── 3 · a real trip ───────────────────────────────────────────────────── */
+HouseInterview.build({
+  container: 'interview',
+  storageKey: 'n400-trips',
+  fields: [
+    { icon: '📍', label: 'went to', placeholder: 'Miami, Mexico…' },
+    { icon: '🛫', label: 'left', placeholder: 'in May, on May 3rd…' },
+    { icon: '⏳', label: 'how long', placeholder: 'for a week…' },
+    { icon: '❓', label: 'why', placeholder: 'for a wedding…' },
+    { icon: '👥', label: 'with', placeholder: 'alone, with family…' }
+  ]
+});
+</script>
+<script>HouseGrammar.init();</script>
+</body>
+</html>

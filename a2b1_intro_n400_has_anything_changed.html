@@ -1,0 +1,142 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<title>N-400: Has Anything Changed? — Introduction</title>
+<script>
+(function(){
+  try{
+    var saved = localStorage.getItem('theme-preference');
+    var theme = (saved === 'light' || saved === 'dark')
+      ? saved
+      : ((window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches) ? 'dark' : 'light');
+    document.documentElement.setAttribute('data-theme', theme);
+    var fs = parseFloat(localStorage.getItem('font-size-preference'));
+    if (fs >= 10 && fs <= 28) document.documentElement.style.setProperty('--fs-base', fs + 'px');
+  }catch(e){ /* localStorage/matchMedia unavailable — CSS media query still applies */ }
+})();
+</script>
+<link rel="stylesheet" href="house.css">
+<style>
+#cRight .match-card{ justify-content:center; font-size:1.5rem; letter-spacing:.08em; padding:6px 10px; }
+.match-row{ display:flex; align-items:center; gap:10px; flex-wrap:wrap; margin-top:.75rem; }
+.say-btn{ font-size:.7rem; padding:1px 8px; margin-top:3px; }
+.legal-note{ font-size:.7333rem; color:var(--text-muted); text-align:center; margin-top:.4rem; }
+</style>
+</head>
+<body>
+<div class="page" id="page">
+  <span class="cefr-tag cefr-a2b1">A2–B1 · Pre-intermediate</span>
+  <h1>N-400: Has Anything Changed?</h1>
+  <p class="subtitle">You sent your N-400 months ago. Maybe your life is different now. At the interview, the officer asks: <b>“Has anything changed since you filed your application?”</b></p>
+
+  <div class="sec-div">Changes in your life</div>
+  <p class="subtitle">Tap a change, then tap its picture.</p>
+  <div class="score-bar"><span>Matched: <strong id="vScore">0</strong> / <span id="vTotal">0</span></span></div>
+  <div class="win-msg" id="vWin">🎉 All matched! Well done!</div>
+  <div class="match-grid">
+    <div><div class="match-col-label">Changes</div><div class="match-col" id="cLeft"></div></div>
+    <div><div class="match-col-label">Pictures</div><div class="match-col" id="cRight"></div></div>
+  </div>
+  <div class="match-row"><button id="vReset">↺ Reset</button><span class="feedback" id="vFeedback" style="margin-top:0"></span></div>
+
+  <div class="sec-div">Before you read</div>
+  <p class="subtitle">Read these three questions first. Then look for the answers in the conversation.</p>
+  <div id="preQuestions" class="prequiz"></div>
+
+  <div class="sec-div">Conversation</div>
+  <div class="setting-chip">🏛️ Officer Harris’s office · after the oath</div>
+  <p class="subtitle">Tap 🔊 to hear the officer.</p>
+  <button id="grammarToggle" class="grammar-toggle-btn">🎨 Show Grammar</button>
+  <div class="pos-legend"></div>
+  <div id="chat"></div>
+
+  <div class="sec-div">Check your answers</div>
+  <p class="subtitle">The same three questions. Now choose the correct answer.</p>
+  <div id="quiz"></div>
+
+  <footer>N-400: Has Anything Changed? — Introduction (A2–B1)</footer>
+  <p class="legal-note">English practice only. This page is not legal advice.</p>
+</div>
+
+<div id="theme-toggle-wrap">
+  <button id="theme-toggle" aria-label="Toggle light/dark mode" title="Toggle light/dark mode">
+    <span id="theme-icon">☀️</span>
+  </button>
+</div>
+<script src="house.js"></script>
+<script>
+/* what the hard words mean in this lesson (the learner's dictionary shows these first) */
+window.LESSON_DICT = {
+  'file': { pos: 'verb', def: 'to send an official form', ex: 'I filed my application in January.', es: 'presentar (un formulario)' },
+  'lease': { pos: 'noun', def: 'the paper you sign when you rent a home', es: 'contrato de arrendamiento' },
+  'receipt': { pos: 'noun', def: 'a paper that shows you paid', es: 'recibo' },
+  'ticket': { pos: 'noun', def: 'a paper from the police: you need to pay money because you broke a traffic or parking rule', es: 'multa' },
+  'warehouse': { pos: 'noun', def: 'a big building where a company keeps things', es: 'almacén' },
+  'security guard': { pos: 'noun', def: 'a person whose job is to protect a building', es: 'guardia de seguridad' }
+};
+function sayIt(text){ if (window.HouseDict && HouseDict.say) HouseDict.say(String(text).replace(/\s+/g, ' ').trim()); }
+
+/* ── changes ↔ pictures ────────────────────────────────────────────────── */
+const CHANGES = [
+  ['moved', '📦🏠'], ['changed jobs', '💼🔄'], ['got married', '💍'], ['got divorced', '💔📄'], ['had a baby', '👶🍼'],
+  ['traveled outside the U.S.', '✈️🌎'], ['changed my name', '🪪✏️'], ['got a traffic ticket', '🚗🧾'], ['retired', '🧓🏖️'], ['changed my phone number', '📱🔢']
+];
+HouseMatching.build({
+  left: 'cLeft', right: 'cRight',
+  pairs: CHANGES.map(([w, p], i) => ({ id: 'v' + i, left: w, right: p })),
+  scoreEl: 'vScore', totalEl: 'vTotal', resetBtn: 'vReset', winEl: 'vWin', feedbackEl: 'vFeedback'
+});
+
+/* ── conversation: O = Officer Harris, T = Tomás ───────────────────────── */
+const P = (k, t) => '<span class="pos-hl pos-' + k + '">' + t + '</span>';
+const LINES = [
+  ['O', 'You filed your application in January. ' + P('aux', 'Has') + ' ' + P('subject', 'anything') + ' ' + P('part', 'changed') + ' ' + P('time', 'since then') + '?'],
+  ['T', 'Yes, a few things ' + P('aux', 'have') + ' ' + P('part', 'changed') + '. I’d like to tell you about them.'],
+  ['O', 'Good. Go ahead.'],
+  ['T', 'First, ' + P('subject', 'I') + P('aux', '’ve') + ' ' + P('part', 'moved') + '. Here is a copy of my new lease.'],
+  ['O', 'Thank you. ' + P('wh', 'When') + ' ' + P('aux', 'did') + ' ' + P('subject', 'you') + ' ' + P('verb', 'move') + '?'],
+  ['T', P('subject', 'I') + ' ' + P('verb', 'moved') + ' ' + P('time', 'in May') + '. My new address is 18 Cedar Road, Apartment 5.'],
+  ['O', 'Did you change your address with USCIS?'],
+  ['T', 'Yes, I did. I changed it online.'],
+  ['O', 'OK. What else?'],
+  ['T', P('subject', 'I') + P('aux', '’ve') + ' ' + P('part', 'changed') + ' ' + P('object', 'jobs') + '. I left the warehouse in July. Now I’m a security guard at a bank. Here’s a letter from my new employer.'],
+  ['O', P('aux', 'Have') + ' ' + P('subject', 'you') + ' ' + P('part', 'traveled') + ' outside the United States ' + P('time', 'since January') + '?'],
+  ['T', 'Yes, I have. I went to Ecuador for my sister’s wedding.'],
+  ['O', 'When did you leave, and when did you come back?'],
+  ['T', 'I left on August 4th and I came back on August 14th.'],
+  ['O', 'Have you gotten married or divorced? Have you had any children?'],
+  ['T', P('neg', 'No') + ', nothing like that. Oh — I got a parking ticket in September. ' + P('subject', 'I') + P('aux', '’ve') + ' ' + P('adverb', 'already') + ' ' + P('part', 'paid') + ' ' + P('object', 'it') + '.'],
+  ['O', 'Thank you for telling me. Do you have the receipt?'],
+  ['T', 'Yes, here it is.'],
+  ['O', 'Perfect. I’ll update your application now.']
+];
+const WHO = { O: ['Officer Harris', '👨‍💼', 'left', 'av-a'], T: ['Tomás', '🧔', 'right', 'av-b'] };
+document.getElementById('chat').innerHTML = LINES.map(([w, t]) => {
+  const [name, av, side, cls] = WHO[w];
+  return '<div class="bubble-wrap ' + side + '"><div class="avatar ' + cls + '">' + av + '</div><div><div class="bname' + (side === 'right' ? ' right' : '') + '">' + name +
+    '</div><div class="bubble ' + side + '">' + t + '</div></div></div>';
+}).join('');
+document.querySelectorAll('#chat .bubble-wrap.left').forEach(w => {
+  const bubble = w.querySelector('.bubble');
+  const btn = document.createElement('button');
+  btn.type = 'button'; btn.className = 'say-btn'; btn.textContent = '🔊';
+  btn.setAttribute('aria-label', 'Listen'); btn.setAttribute('data-dict', 'off');
+  btn.addEventListener('click', () => sayIt(bubble.textContent));
+  bubble.insertAdjacentElement('afterend', btn);
+});
+
+const CQ_ITEMS = [
+  { q: 'What is Tomás’s job now?',
+    opts: ['He is a security guard at a bank', 'He works at a warehouse', 'He works at a wedding company in Ecuador'], correct: 0 },
+  { q: 'Why did Tomás go to Ecuador?',
+    opts: ['To move to a new apartment', 'For his sister’s wedding', 'To get married'], correct: 1 },
+  { q: 'What did Tomás show the officer for the parking ticket?',
+    opts: ['His new lease', 'A letter from his employer', 'The receipt'], correct: 2 }
+];
+HouseComprehension.build({ pre: 'preQuestions', quiz: 'quiz', items: CQ_ITEMS });
+</script>
+<script>HouseGrammar.init();</script>
+</body>
+</html>

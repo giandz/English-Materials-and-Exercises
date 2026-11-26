@@ -1,0 +1,177 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<title>N-400: Home and Work History — Controlled Practice</title>
+<script>
+(function(){
+  try{
+    var saved = localStorage.getItem('theme-preference');
+    var theme = (saved === 'light' || saved === 'dark')
+      ? saved
+      : ((window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches) ? 'dark' : 'light');
+    document.documentElement.setAttribute('data-theme', theme);
+    var fs = parseFloat(localStorage.getItem('font-size-preference'));
+    if (fs >= 10 && fs <= 28) document.documentElement.style.setProperty('--fs-base', fs + 'px');
+  }catch(e){ /* localStorage/matchMedia unavailable — CSS media query still applies */ }
+})();
+</script>
+<link rel="stylesheet" href="house.css">
+<style>
+#qLeft .match-card, #aRight .match-card{ font-weight:400; font-size:.8667rem; line-height:1.45; }
+.match-row{ display:flex; align-items:center; gap:10px; flex-wrap:wrap; margin-top:.75rem; }
+.bank{ display:flex; flex-wrap:wrap; gap:6px; margin-bottom:1rem; }
+.bank-chip{ font-family:inherit; font-size:.8667rem; padding:4px 11px; border-radius:20px; background:var(--surface-2);
+  border:.5px solid var(--color-border-secondary); color:var(--text-primary); cursor:pointer; user-select:none; -webkit-user-select:none; }
+.bank-chip[aria-pressed="true"]{ text-decoration:line-through; color:var(--text-muted); }
+.ak{ margin-top:1.25rem; border:.5px solid var(--color-border-tertiary); border-radius:var(--border-radius-md); overflow:hidden; }
+.ak summary{ padding:9px 14px; cursor:pointer; font-size:.9333rem; font-weight:500; background:var(--surface-2); }
+.ak-body{ padding:10px 14px; display:flex; flex-direction:column; gap:2px; }
+.ak-row{ display:flex; gap:10px; align-items:baseline; padding:4px 0; border-bottom:.5px solid var(--color-border-tertiary); font-size:.8667rem; }
+.ak-row:last-child{ border-bottom:none; }
+.ak-num{ color:var(--text-secondary); min-width:20px; }
+.ak-word{ font-weight:600; min-width:90px; color:var(--text-accent); }
+.ak-note{ color:var(--text-secondary); }
+.legal-note{ font-size:.7333rem; color:var(--text-muted); text-align:center; margin-top:.4rem; }
+</style>
+</head>
+<body>
+<div class="page" id="page">
+  <span class="cefr-tag cefr-a2b1">A2–B1 · Pre-intermediate</span>
+  <h1>N-400: Home and Work History — Practice</h1>
+  <p class="subtitle">Still true now: <b>I’ve worked there since 2024.</b> Finished: <b>I worked there from 2022 to 2024.</b></p>
+
+  <div class="sec-div">1 · Question and answer</div>
+  <p class="subtitle">Tap a question, then tap its answer.</p>
+  <div class="score-bar"><span>Matched: <strong id="mScore">0</strong> / <span id="mTotal">0</span></span></div>
+  <div class="win-msg" id="mWin">🎉 All matched! Well done!</div>
+  <div class="match-grid">
+    <div><div class="match-col-label">The officer</div><div class="match-col" id="qLeft"></div></div>
+    <div><div class="match-col-label">You</div><div class="match-col" id="aRight"></div></div>
+  </div>
+  <div class="match-row"><button id="mReset">↺ Reset</button><span class="feedback" id="mFeedback" style="margin-top:0"></span></div>
+
+  <div class="sec-div">2 · Choose</div>
+  <p class="subtitle">Choose the best answer.</p>
+  <div id="pcItems"></div>
+
+  <div class="sec-div">3 · Put the words in order</div>
+  <p class="subtitle">Drag the words into the line. You can also tap a word to add it, and tap it again to send it back.</p>
+  <button class="grammar-toggle-btn" id="grammarToggle">🎨 Hide Grammar</button>
+  <div class="pos-legend"></div>
+  <div class="score-bar"><span>Correct: <strong id="woScore">0</strong> / <span id="woTotal">0</span></span></div>
+  <div id="woItems"></div>
+
+  <div class="sec-div">4 · Write the missing words</div>
+  <p class="subtitle">Choose a word from the box and write it in the gap. Tap a word in the box to cross it out. The bar goes from red to green 🔴→🟢. Green = correct!</p>
+  <div class="bank" id="bank"></div>
+  <div id="gfItems"></div>
+
+  <details class="ak">
+    <summary>Answer key</summary>
+    <div class="ak-body" id="akBody"></div>
+  </details>
+
+  <footer>N-400: Home and Work History — Controlled Practice (A2–B1)</footer>
+  <p class="legal-note">English practice only. This page is not legal advice.</p>
+</div>
+
+<div id="theme-toggle-wrap">
+  <button id="theme-toggle" aria-label="Toggle light/dark mode" title="Toggle light/dark mode">
+    <span id="theme-icon">☀️</span>
+  </button>
+</div>
+<script src="house.js"></script>
+<script>
+/* what the hard words mean in this lesson (the learner's dictionary shows these first) */
+window.LESSON_DICT = {
+  'employer': { pos: 'noun', def: 'the company or person you work for', es: 'empleador' },
+  'laid off': { pos: 'verb', def: 'the company stopped your job because it didn’t need you', es: 'despedido (por recorte)' },
+  'quit': { pos: 'verb', def: 'to leave a job because you decide to', es: 'renunciar' }
+};
+function sayIt(text){ if (window.HouseDict && HouseDict.say) HouseDict.say(String(text).replace(/\s+/g, ' ').trim()); }
+
+/* ── 1 · question ↔ answer ─────────────────────────────────────────────── */
+const QA = [
+  ['What is your current address?', '15 Elm Street, Apartment 3.'],
+  ['How long have you lived there?', 'Since last March.'],
+  ['Where did you live before that?', 'In an apartment in Tampa.'],
+  ['Why did you move?', 'The rent was too high.'],
+  ['Who is your current employer?', 'Walmart.'],
+  ['What do you do there?', 'I’m a cashier.'],
+  ['How long have you worked there?', 'For three years.'],
+  ['Why did you leave your previous job?', 'I found a better job.'],
+  ['Have you ever been unemployed?', 'Yes, for a few months in 2022.']
+];
+HouseMatching.build({
+  left: 'qLeft', right: 'aRight',
+  pairs: QA.map(([q, a], i) => ({ id: 'm' + i, left: q, right: a })),
+  scoreEl: 'mScore', totalEl: 'mTotal', resetBtn: 'mReset', winEl: 'mWin', feedbackEl: 'mFeedback'
+});
+
+/* ── 2 · choose (easiest first) ────────────────────────────────────────── */
+HouseComprehension.build({
+  quiz: 'pcItems',
+  items: [
+    { q: 'I’ve lived in Orlando ___ 2021.', opts: ['since', 'for', 'from'], correct: 0 },
+    { q: 'I’ve worked at the hospital ___ five years.', opts: ['since', 'for', 'ago'], correct: 1 },
+    { q: 'How long ___ you lived at your current address?', opts: ['did', 'are', 'have'], correct: 2 },
+    { q: 'I ___ in Miami from 2019 to 2022. Now I live in Tampa.', opts: ['lived', 'have lived', 'live'], correct: 0 },
+    { q: 'I ___ for this company since 2023. I like it!', opts: ['worked', 'have worked', 'work'], correct: 1 },
+    { q: 'Where did you work ___ that?', opts: ['before', 'ago', 'since'], correct: 0 },
+    { q: 'I didn’t like my boss, so I ___.', opts: ['was laid off', 'retired', 'quit'], correct: 2 },
+    { q: 'The factory closed, and 200 workers ___.', opts: ['quit', 'were laid off', 'were self-employed'], correct: 1 },
+    { q: 'Officer: “Who is your current employer?”', opts: ['I’m a nurse.', 'Mercy Hospital.', 'Since 2020.'], correct: 1 },
+    { q: 'Officer: “Are you working now?” (Ana stopped working at 66.)', opts: ['No, I’m retired.', 'No, I’m self-employed.', 'No, I was laid off.'], correct: 0 },
+    { q: 'Officer: “You didn’t work in 2022. What did you do?”', opts: ['I’ve worked in 2022.', 'I stayed at home with my baby.', 'I’m staying at home.'], correct: 1 }
+  ]
+});
+
+/* ── 3 · word order (short first) ──────────────────────────────────────── */
+const O = { speaker: 'Officer', avatar: '👩‍💼' }, Y = { speaker: 'You', avatar: '🙋' };
+HouseWordOrder.build({
+  container: 'woItems', scoreEl: 'woScore', totalEl: 'woTotal',
+  items: [
+    { ...Y, text: 'I / work / for / a hotel / .', pos: ['subject', 'verb', 'prep', 'noun', 'none'] },
+    { ...O, text: 'Who / is / your / current employer / ?', pos: ['wh', 'verb', 'det', 'noun', 'none'] },
+    { ...O, text: 'How long / have / you / lived / there / ?', pos: ['wh', 'aux', 'subject', 'part', 'adverb', 'none'] },
+    { ...Y, text: 'I’ve / lived / there / since / 2022 / .', pos: ['subject', 'part', 'adverb', 'prep', 'time', 'none'] },
+    { ...O, text: 'Where / did / you / work / before that / ?', pos: ['wh', 'aux', 'subject', 'verb', 'time', 'none'] },
+    { ...Y, text: 'I / was / a driver / for / four years / .', pos: ['subject', 'verb', 'complement', 'prep', 'time', 'none'] },
+    { ...O, text: 'Have / you / ever / been / self-employed / ?', pos: ['aux', 'subject', 'adverb', 'part', 'complement', 'none'] },
+    { ...Y, text: 'I / was / laid off / when / the store / closed / .', pos: ['subject', 'aux', 'part', 'conj', 'subject', 'verb', 'none'] }
+  ]
+});
+
+/* ── 4 · gap fill with the word box ────────────────────────────────────── */
+const GAPS = [
+  ['I’ve lived here {0} 2020.', ['since'], 'since + the start'],
+  ['I’ve worked there {0} six years.', ['for'], 'for + how long'],
+  ['How long {0} you worked there?', ['have'], 'present perfect question'],
+  ['I {0} in Texas from 2018 to 2021.', ['lived'], 'finished → past simple'],
+  ['{0} that, I lived in Houston.', ['Before', 'before'], 'the time earlier'],
+  ['My {0} address is 22 Bay Road. I moved there last year.', ['current'], 'now'],
+  ['My {0} job was at a gas station.', ['previous'], 'the job before this one'],
+  ['I work for myself. I’m {0}.', ['self-employed'], 'you are your own boss'],
+  ['I didn’t have a job for six months. I was {0}.', ['unemployed'], 'no job'],
+  ['The company didn’t need me, so I was laid {0}.', ['off'], 'laid off = the company stopped your job'],
+  ['I found a better job, so I {0} my old one.', ['quit'], 'you decided to leave'],
+  ['I stopped working in 2023. Now I’m {0}.', ['retired'], 'you stopped working because you are older']
+];
+const BANK = GAPS.map(g => g[1][0]).sort((a, b) => a.localeCompare(b));
+document.getElementById('bank').innerHTML = BANK.map(w => '<button type="button" class="bank-chip" aria-pressed="false">' + w + '</button>').join('');
+document.getElementById('bank').addEventListener('click', e => {
+  const b = e.target.closest('.bank-chip');
+  if (b) b.setAttribute('aria-pressed', String(b.getAttribute('aria-pressed') !== 'true'));
+});
+HouseGapFill.build({
+  container: 'gfItems',
+  items: GAPS.map(([t, acc], i) => ({ template: (i + 1) + '. ' + t, hints: [{ accepted: acc }] }))
+});
+document.getElementById('akBody').innerHTML = GAPS.map(([, acc, why], i) =>
+  '<div class="ak-row"><span class="ak-num">' + (i + 1) + '.</span><span class="ak-word">' + acc[0] + '</span><span class="ak-note">' + why + '</span></div>').join('');
+</script>
+<script>HouseGrammar.init();</script>
+</body>
+</html>

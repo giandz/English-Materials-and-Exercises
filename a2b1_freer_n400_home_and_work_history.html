@@ -1,0 +1,176 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<title>N-400: Home and Work History — Role Play</title>
+<script>
+(function(){
+  try{
+    var saved = localStorage.getItem('theme-preference');
+    var theme = (saved === 'light' || saved === 'dark')
+      ? saved
+      : ((window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches) ? 'dark' : 'light');
+    document.documentElement.setAttribute('data-theme', theme);
+    var fs = parseFloat(localStorage.getItem('font-size-preference'));
+    if (fs >= 10 && fs <= 28) document.documentElement.style.setProperty('--fs-base', fs + 'px');
+  }catch(e){ /* localStorage/matchMedia unavailable — CSS media query still applies */ }
+})();
+</script>
+<link rel="stylesheet" href="house.css">
+<style>
+.phrase-box{ background:var(--surface-2); border-radius:var(--border-radius-md); padding:10px 14px; margin-bottom:1rem; border:.5px solid var(--color-border-tertiary); }
+.phrase-title{ font-size:.7333rem; font-weight:500; text-transform:uppercase; letter-spacing:.05em; color:var(--text-secondary); margin-bottom:8px; }
+.phrase-grid{ display:flex; flex-wrap:wrap; gap:6px; }
+.phrase-chip{ font-size:.8667rem; padding:4px 10px; border-radius:20px; background:var(--surface-1); border:.5px solid var(--color-border-secondary); color:var(--text-primary); }
+.hist{ text-align:left; width:100%; max-width:27rem; display:flex; flex-direction:column; gap:5px; }
+.hist-h{ font-size:.7333rem; font-weight:700; text-transform:uppercase; letter-spacing:.05em; color:var(--text-secondary); margin-top:4px; }
+.hist-row{ background:var(--surface-1); border:1px solid var(--border); border-radius:10px; padding:5px 10px; font-size:.9rem; }
+.hist-row small{ display:block; color:var(--text-secondary); font-size:.8rem; }
+.hist-row.now{ border-color:var(--text-accent); }
+.dice-tools{ display:flex; justify-content:center; flex-wrap:wrap; gap:8px; margin-bottom:.8rem; }
+.legal-note{ font-size:.7333rem; color:var(--text-muted); text-align:center; margin-top:.4rem; }
+</style>
+</head>
+<body>
+<div class="page" id="page">
+  <span class="cefr-tag cefr-a2b1">A2–B1 · Pre-intermediate</span>
+  <h1>N-400: Home and Work History — Role Play</h1>
+  <p class="subtitle">Work with a partner. One person is the officer. One person is the applicant. Then change!</p>
+
+  <div class="phrase-box">
+    <div class="phrase-title">You can say</div>
+    <div class="phrase-grid">
+      <span class="phrase-chip">I’ve lived there since …</span>
+      <span class="phrase-chip">I’ve worked there for …</span>
+      <span class="phrase-chip">Before that, I …</span>
+      <span class="phrase-chip">I lived / worked there from … to …</span>
+      <span class="phrase-chip">I left that job because …</span>
+      <span class="phrase-chip">I was laid off. / I quit.</span>
+      <span class="phrase-chip">Between … and …, I wasn’t working. I was …</span>
+    </div>
+  </div>
+
+  <div class="sec-div">1 · Role cards</div>
+  <p class="subtitle">The applicant rolls the dice and gets a card with a five-year history. Don’t show it to the officer! The officer asks about every home and every job, and writes the answers. Then compare: are there any missing months?</p>
+  <div class="q-card" id="qCard"><span class="q-placeholder">Press the dice to get your history.</span></div>
+  <button class="dice-btn" id="diceBtn" aria-label="Roll the dice">🎲</button>
+  <div class="roll-count">Cards: <strong id="rollCount">0</strong></div>
+
+  <div class="sec-div">2 · The officer’s questions</div>
+  <p class="subtitle">Roll the dice. Your partner hears the question and answers about their card. Then pass the dice.</p>
+  <div class="q-card" id="qCard2"><span class="q-placeholder">Press the dice to start.</span></div>
+  <div class="dice-tools"><button type="button" id="again">🔊 Again</button></div>
+  <button class="dice-btn" id="diceBtn2" aria-label="Roll the dice">🎲</button>
+  <div class="roll-count">Questions: <strong id="rollCount2">0</strong></div>
+  <div class="topic-legend" id="topics"></div>
+
+  <div class="sec-div">3 · Your partners’ homes and jobs</div>
+  <p class="subtitle">Now talk about real life. Ask your partners and write the answers. Only share what you want to share!</p>
+  <div id="interview"></div>
+
+  <footer>N-400: Home and Work History — Freer Practice (A2–B1)</footer>
+  <p class="legal-note">English practice only. This page is not legal advice.</p>
+</div>
+
+<div id="theme-toggle-wrap">
+  <button id="theme-toggle" aria-label="Toggle light/dark mode" title="Toggle light/dark mode">
+    <span id="theme-icon">☀️</span>
+  </button>
+</div>
+<script src="house.js"></script>
+<script src="house-interview.js"></script>
+<script>
+/* what the hard words mean in this lesson (the learner's dictionary shows these first) */
+window.LESSON_DICT = {
+  'employer': { pos: 'noun', def: 'the company or person you work for', es: 'empleador' },
+  'laid off': { pos: 'verb', def: 'the company stopped your job because it didn’t need you', es: 'despedido (por recorte)' },
+  'quit': { pos: 'verb', def: 'to leave a job because you decide to', es: 'renunciar' }
+};
+function sayIt(text){ if (window.HouseDict && HouseDict.say) HouseDict.say(String(text).replace(/\s+/g, ' ').trim()); }
+
+const pick = HouseRandomGen.pickFrom;
+const shuffle = a => a.slice().sort(() => Math.random() - .5);
+/* ── 1 · role cards: two homes and two or three jobs, covering five years ── */
+const STREETS = ['Oak Street', 'Palm Avenue', 'Lake Road', 'Maple Drive', 'Sunset Boulevard', 'River Street', 'Cedar Lane', 'Bay Road'];
+const CITIES = ['Orlando, FL', 'Houston, TX', 'Newark, NJ', 'Miami, FL', 'Phoenix, AZ', 'Chicago, IL', 'Charlotte, NC', 'Kissimmee, FL'];
+const WHY_MOVE = ['the rent went up', 'we needed more space', 'it was closer to my new job', 'I bought a house', 'I got married'];
+const JOBS = [['cook', 'a restaurant'], ['cashier', 'a supermarket'], ['driver', 'a delivery company'], ['nurse’s aide', 'a hospital'],
+  ['cleaner', 'a hotel'], ['construction worker', 'a building company'], ['security guard', 'a bank'], ['warehouse worker', 'a warehouse'], ['hair stylist', 'a salon']];
+const NAMES = ['Sunny', 'Star', 'Blue Sky', 'Golden', 'Prime', 'Coastal', 'Liberty', 'Green Leaf'];
+const WHY_LEAVE = ['I was laid off', 'I quit — I found a better job', 'the company closed', 'I moved to a new city'];
+const GAPS = ['looking for a job', 'at home with my new baby', 'taking care of my mother', 'studying English'];
+const MON = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
+const Y = new Date().getFullYear(), M = new Date().getMonth();
+const cap = s => s.charAt(0).toUpperCase() + s.slice(1);
+const place = (j, n) => j[0] + ' at ' + n + ' ' + cap(j[1].split(' ').pop());
+const fmt = n => MON[((n % 12) + 12) % 12] + ' ' + (Y + Math.floor(n / 12));   /* n = months from January of this year */
+function history() {
+  const now = M, start = now - 60;
+  const move = start + 14 + Math.floor(Math.random() * 30);
+  const cities = shuffle(CITIES);
+  const homes = [
+    { t: (1 + Math.floor(Math.random() * 900)) + ' ' + pick(STREETS) + ', ' + cities[0], from: 'before ' + fmt(start), to: fmt(move) },
+    { t: (1 + Math.floor(Math.random() * 900)) + ' ' + pick(STREETS) + ', Apt. ' + (1 + Math.floor(Math.random() * 9)) + 'B, ' + cities[1], from: fmt(move), now: true, why: pick(WHY_MOVE) }
+  ];
+  const jobs = shuffle(JOBS).slice(0, 3), names = shuffle(NAMES);
+  const j1end = start + 10 + Math.floor(Math.random() * 18), gap = Math.random() < .6 ? 2 + Math.floor(Math.random() * 5) : 0;
+  const j2end = j1end + gap + 12 + Math.floor(Math.random() * 12);
+  const rows = [
+    { t: place(jobs[0], names[0]), from: 'before ' + fmt(start), to: fmt(j1end), why: pick(WHY_LEAVE) }
+  ];
+  if (gap) rows.push({ t: 'no job — ' + pick(GAPS), from: fmt(j1end), to: fmt(j1end + gap), gap: true });
+  if (j2end < now - 3) {
+    rows.push({ t: place(jobs[1], names[1]), from: fmt(j1end + gap), to: fmt(j2end), why: pick(WHY_LEAVE) });
+    rows.push({ t: place(jobs[2], names[2]) + ' · ' + pick(['full-time', 'part-time']), from: fmt(j2end), now: true });
+  } else {
+    rows.push({ t: place(jobs[1], names[1]) + ' · ' + pick(['full-time', 'part-time']), from: fmt(j1end + gap), now: true });
+  }
+  return { homes, jobs: rows, id: Math.random() };
+}
+const row = r => '<div class="hist-row' + (r.now ? ' now' : '') + '">' + r.t + '<small>' + (r.now ? 'since ' + r.from + ' — now' : r.from + ' → ' + r.to) +
+  (r.why ? ' · why: ' + r.why : '') + '</small></div>';
+HouseRandomGen.build({
+  pick: history, key: x => x.id,
+  render: x => '<span class="q-topic">📄 Your history (last five years)</span><div class="hist"><div class="hist-h">🏠 Homes</div>' + x.homes.map(row).join('') +
+    '<div class="hist-h">💼 Work</div>' + x.jobs.map(row).join('') + '</div>'
+});
+
+/* ── 2 · the officer's questions ───────────────────────────────────────── */
+const TOPICS = [
+  ['🏠', 'Home', ['What is your current address?', 'How long have you lived at your current address?', 'Where did you live before that?',
+    'When did you move to your current address?', 'Why did you move?', 'How long did you live at your previous address?', 'Do you rent or own your home?',
+    'Who lives with you?']],
+  ['💼', 'Work', ['Who is your current employer?', 'What do you do there?', 'How long have you worked there?', 'Is it full-time or part-time?',
+    'Where did you work before that?', 'When did you start your current job?', 'Why did you leave your previous job?', 'Have you ever been self-employed?',
+    'Have you ever been unemployed?', 'What was your job title at your previous job?']],
+  ['🔎', 'Check', ['Were you working in ' + (Y - 3) + '?', 'What did you do between your two jobs?', 'Are there any months with no job?',
+    'Is that the same address as on your application?', 'Could you spell the name of your employer?', 'What is your employer’s address?']]
+];
+const ROLLS = [];
+TOPICS.forEach(([icon, label, qs]) => qs.forEach(text => ROLLS.push({ icon, label, text })));
+document.getElementById('topics').innerHTML = TOPICS.map(([i, l]) => '<span class="topic-pill">' + i + ' ' + l + '</span>').join('');
+let lastQ = '';
+HouseRandomGen.build({
+  card: 'qCard2', button: 'diceBtn2', countEl: 'rollCount2', items: ROLLS,
+  render: x => { lastQ = x.text; sayIt(x.text); return '<span class="q-topic">' + x.icon + ' ' + x.label + '</span><span class="q-text">' + x.text + '</span>'; }
+});
+document.getElementById('again').addEventListener('click', () => { if (lastQ) sayIt(lastQ); });
+
+/* ── 3 · real life ─────────────────────────────────────────────────────── */
+HouseInterview.build({
+  container: 'interview',
+  storageKey: 'n400-history',
+  fields: [
+    { icon: '🏠', label: 'lives in', placeholder: 'city or area' },
+    { icon: '⏳', label: 'there since / for', placeholder: 'since 2022, for 3 years…' },
+    { icon: '🏘️', label: 'lived before', placeholder: 'in Miami, in Peru…' },
+    { icon: '💼', label: 'job now', placeholder: 'cook at …, retired…' },
+    { icon: '⏳', label: 'job since / for', placeholder: 'since …, for …' },
+    { icon: '🔙', label: 'job before', placeholder: 'driver, student…' }
+  ]
+});
+</script>
+<script>HouseGrammar.init();</script>
+</body>
+</html>

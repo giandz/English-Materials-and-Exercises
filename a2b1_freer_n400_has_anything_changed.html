@@ -1,0 +1,148 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<title>N-400: Has Anything Changed? — Role Play</title>
+<script>
+(function(){
+  try{
+    var saved = localStorage.getItem('theme-preference');
+    var theme = (saved === 'light' || saved === 'dark')
+      ? saved
+      : ((window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches) ? 'dark' : 'light');
+    document.documentElement.setAttribute('data-theme', theme);
+    var fs = parseFloat(localStorage.getItem('font-size-preference'));
+    if (fs >= 10 && fs <= 28) document.documentElement.style.setProperty('--fs-base', fs + 'px');
+  }catch(e){ /* localStorage/matchMedia unavailable — CSS media query still applies */ }
+})();
+</script>
+<link rel="stylesheet" href="house.css">
+<style>
+.phrase-box{ background:var(--surface-2); border-radius:var(--border-radius-md); padding:10px 14px; margin-bottom:1rem; border:.5px solid var(--color-border-tertiary); }
+.phrase-title{ font-size:.7333rem; font-weight:500; text-transform:uppercase; letter-spacing:.05em; color:var(--text-secondary); margin-bottom:8px; }
+.phrase-grid{ display:flex; flex-wrap:wrap; gap:6px; }
+.phrase-chip{ font-size:.8667rem; padding:4px 10px; border-radius:20px; background:var(--surface-1); border:.5px solid var(--color-border-secondary); color:var(--text-primary); }
+.ch-list{ text-align:left; width:100%; max-width:26rem; display:flex; flex-direction:column; gap:6px; }
+.ch-row{ display:grid; grid-template-columns:2rem 1fr; gap:2px 8px; align-items:center; background:var(--surface-1); border:1px solid var(--border); border-radius:10px; padding:6px 10px; font-size:.9333rem; }
+.ch-row .e{ font-size:1.4rem; text-align:center; }
+.ch-row small{ display:block; color:var(--text-secondary); font-size:.8rem; }
+.dice-tools{ display:flex; justify-content:center; flex-wrap:wrap; gap:8px; margin-bottom:.8rem; }
+.legal-note{ font-size:.7333rem; color:var(--text-muted); text-align:center; margin-top:.4rem; }
+</style>
+</head>
+<body>
+<div class="page" id="page">
+  <span class="cefr-tag cefr-a2b1">A2–B1 · Pre-intermediate</span>
+  <h1>N-400: Has Anything Changed? — Role Play</h1>
+  <p class="subtitle">Work with a partner. One person is the officer. One person is the applicant. Then change!</p>
+
+  <div class="phrase-box">
+    <div class="phrase-title">You can say</div>
+    <div class="phrase-grid">
+      <span class="phrase-chip">I’d like to tell you about a change.</span>
+      <span class="phrase-chip">Two things have changed.</span>
+      <span class="phrase-chip">I’ve moved / changed jobs / …</span>
+      <span class="phrase-chip">I moved in … / I left on … / I started in …</span>
+      <span class="phrase-chip">Here is …</span>
+      <span class="phrase-chip">No, nothing has changed.</span>
+      <span class="phrase-chip">Nothing else has changed.</span>
+    </div>
+  </div>
+
+  <div class="sec-div">1 · Role cards</div>
+  <p class="subtitle">The applicant rolls the dice and gets a card. It shows what has changed since you filed. Don’t show it to the officer! The officer starts: “Has anything changed since you filed your application?” Then the officer asks for the details and the papers.</p>
+  <div class="q-card" id="qCard"><span class="q-placeholder">Press the dice to get your card.</span></div>
+  <button class="dice-btn" id="diceBtn" aria-label="Roll the dice">🎲</button>
+  <div class="roll-count">Cards: <strong id="rollCount">0</strong></div>
+
+  <div class="sec-div">2 · The officer’s questions</div>
+  <p class="subtitle">Roll the dice. Your partner hears the question and answers about their card: first the news, then the details. Then pass the dice.</p>
+  <div class="q-card" id="qCard2"><span class="q-placeholder">Press the dice to start.</span></div>
+  <div class="dice-tools"><button type="button" id="again">🔊 Again</button></div>
+  <button class="dice-btn" id="diceBtn2" aria-label="Roll the dice">🎲</button>
+  <div class="roll-count">Questions: <strong id="rollCount2">0</strong></div>
+
+  <div class="sec-div">3 · What has changed this year?</div>
+  <p class="subtitle">Now talk about real life. Ask your partners: “What has changed in your life this year?” Write the news and one detail. Only share what you want to share!</p>
+  <div id="interview"></div>
+
+  <footer>N-400: Has Anything Changed? — Freer Practice (A2–B1)</footer>
+  <p class="legal-note">English practice only. This page is not legal advice.</p>
+</div>
+
+<div id="theme-toggle-wrap">
+  <button id="theme-toggle" aria-label="Toggle light/dark mode" title="Toggle light/dark mode">
+    <span id="theme-icon">☀️</span>
+  </button>
+</div>
+<script src="house.js"></script>
+<script src="house-interview.js"></script>
+<script>
+/* what the hard words mean in this lesson (the learner's dictionary shows these first) */
+window.LESSON_DICT = {
+  'file': { pos: 'verb', def: 'to send an official form', es: 'presentar (un formulario)' },
+  'lease': { pos: 'noun', def: 'the paper you sign when you rent a home', es: 'contrato de arrendamiento' },
+  'receipt': { pos: 'noun', def: 'a paper that shows you paid', es: 'recibo' },
+  'pay stub': { pos: 'noun', def: 'the paper you get with your pay; it shows the company and how much you got', es: 'talón de pago' }
+};
+function sayIt(text){ if (window.HouseDict && HouseDict.say) HouseDict.say(String(text).replace(/\s+/g, ' ').trim()); }
+
+const pick = HouseRandomGen.pickFrom;
+const shuffle = a => a.slice().sort(() => Math.random() - .5);
+/* ── 1 · role cards: none to three changes since filing (filed in January) ── */
+const MON = ['February', 'March', 'April', 'May', 'June', 'July', 'August', 'September'];
+const CHANGES = [
+  () => ['📦', 'You’ve moved.', 'in ' + pick(MON) + ' · new address: ' + (10 + Math.floor(Math.random() * 990)) + ' ' + pick(['Oak', 'Palm', 'River', 'Hill']) + ' Street', 'your new lease'],
+  () => ['💼', 'You’ve changed jobs.', 'you started at ' + pick(['a hospital', 'a school', 'a hotel', 'a bank', 'a supermarket']) + ' in ' + pick(MON), 'a letter from your new employer'],
+  () => { const m = pick(MON.slice(0, 6)), c = pick([['🇩🇴', 'the Dominican Republic'], ['🇲🇽', 'Mexico'], ['🇨🇴', 'Colombia'], ['🇵🇪', 'Peru'], ['🇭🇹', 'Haiti']]);
+    const d = 2 + Math.floor(Math.random() * 15); return [c[0], 'You’ve traveled to ' + c[1] + '.', 'you left on ' + m + ' ' + d + ' and came back on ' + m + ' ' + (d + 7 + Math.floor(Math.random() * 6)) + ' · ' + pick(['for a funeral', 'for a wedding', 'to visit your parents', 'on vacation']), 'your passport']; },
+  () => ['👶', 'You’ve had a baby.', 'a ' + pick(['boy', 'girl']) + ', born in ' + pick(MON), 'the birth certificate'],
+  () => ['💍', 'You’ve gotten married.', 'in ' + pick(MON) + ' · your spouse is ' + pick(['a U.S. citizen', 'a permanent resident']), 'your marriage certificate'],
+  () => ['🧾', 'You’ve gotten a ' + pick(['parking', 'speeding']) + ' ticket.', 'in ' + pick(MON) + ' · you paid it ' + pick(['two weeks later', 'last month']), 'the receipt'],
+  () => ['📱', 'You’ve changed your phone number.', 'in ' + pick(MON) + ' · new number: (407) 555-0' + (100 + Math.floor(Math.random() * 899)), '—'],
+  () => ['🧓', 'You’ve retired.', 'you stopped working in ' + pick(MON), 'a letter from your old employer']
+];
+HouseRandomGen.build({
+  pick: () => {
+    const n = pick([0, 1, 2, 2, 3, 3]);
+    return { items: shuffle(CHANGES).slice(0, n).map(f => f()), id: Math.random() };
+  },
+  key: x => x.id,
+  render: x => '<span class="q-topic">📄 You filed in January. Since then…</span>' + (x.items.length
+    ? '<div class="ch-list">' + x.items.map(([e, n, d, doc]) => '<div class="ch-row"><span class="e">' + e + '</span><span><b>' + n + '</b><small>' + d + '</small>' +
+      (doc !== '—' ? '<small>📎 bring: ' + doc + '</small>' : '') + '</span></div>').join('') + '</div>'
+    : '<span class="q-text">Nothing has changed.</span><span class="q-placeholder">Answer: “No, nothing has changed.”</span>')
+});
+
+/* ── 2 · the officer's questions ───────────────────────────────────────── */
+const QS = ['Has anything changed since you filed your application?', 'Is your address the same as on your application?', 'Have you moved?',
+  'When did you move?', 'Do you have a paper with your new address?', 'Have you changed jobs?', 'When did you start your new job?',
+  'Have you traveled outside the United States since you applied?', 'When did you leave, and when did you come back?', 'Why did you go?',
+  'Have you gotten married or divorced?', 'Have you had any more children?', 'Have you changed your name?', 'Have you gotten any tickets?',
+  'Have you paid the ticket?', 'Is your phone number the same?', 'Has your spouse become a U.S. citizen?', 'Is everything else the same?',
+  'Did you tell USCIS about your new address?', 'Do you have any papers for me?'];
+let lastQ = '';
+HouseRandomGen.build({
+  card: 'qCard2', button: 'diceBtn2', countEl: 'rollCount2',
+  items: QS.map(text => ({ icon: '👨‍💼', label: 'The officer asks', text })),
+  render: x => { lastQ = x.text; sayIt(x.text); return '<span class="q-topic">' + x.icon + ' ' + x.label + '</span><span class="q-text">' + x.text + '</span>' +
+    '<span class="q-placeholder">News (I’ve …) → details (I … in …)</span>'; }
+});
+document.getElementById('again').addEventListener('click', () => { if (lastQ) sayIt(lastQ); });
+
+/* ── 3 · real life ─────────────────────────────────────────────────────── */
+HouseInterview.build({
+  container: 'interview',
+  storageKey: 'n400-changes',
+  fields: [
+    { icon: '📰', label: 'the news', placeholder: 'She’s moved / He’s started…' },
+    { icon: '🔎', label: 'the details', placeholder: 'in March, to Tampa…' },
+    { icon: '📰', label: 'more news', placeholder: '…' },
+    { icon: '🔎', label: 'the details', placeholder: '…' }
+  ]
+});
+</script>
+<script>HouseGrammar.init();</script>
+</body>
+</html>

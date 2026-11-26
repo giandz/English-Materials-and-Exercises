@@ -1,0 +1,148 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<title>N-400: Trips Outside the U.S. — Controlled Practice</title>
+<script>
+(function(){
+  try{
+    var saved = localStorage.getItem('theme-preference');
+    var theme = (saved === 'light' || saved === 'dark')
+      ? saved
+      : ((window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches) ? 'dark' : 'light');
+    document.documentElement.setAttribute('data-theme', theme);
+    var fs = parseFloat(localStorage.getItem('font-size-preference'));
+    if (fs >= 10 && fs <= 28) document.documentElement.style.setProperty('--fs-base', fs + 'px');
+  }catch(e){ /* localStorage/matchMedia unavailable — CSS media query still applies */ }
+})();
+</script>
+<link rel="stylesheet" href="house.css">
+<style>
+.bank{ display:flex; flex-wrap:wrap; gap:6px; margin-bottom:1rem; }
+.bank-chip{ font-family:inherit; font-size:.8667rem; padding:4px 11px; border-radius:20px; background:var(--surface-2);
+  border:.5px solid var(--color-border-secondary); color:var(--text-primary); cursor:pointer; user-select:none; -webkit-user-select:none; }
+.bank-chip[aria-pressed="true"]{ text-decoration:line-through; color:var(--text-muted); }
+.ak{ margin-top:1.25rem; border:.5px solid var(--color-border-tertiary); border-radius:var(--border-radius-md); overflow:hidden; }
+.ak summary{ padding:9px 14px; cursor:pointer; font-size:.9333rem; font-weight:500; background:var(--surface-2); }
+.ak-body{ padding:10px 14px; display:flex; flex-direction:column; gap:2px; }
+.ak-row{ display:flex; gap:10px; align-items:baseline; padding:4px 0; border-bottom:.5px solid var(--color-border-tertiary); font-size:.8667rem; }
+.ak-row:last-child{ border-bottom:none; }
+.ak-num{ color:var(--text-secondary); min-width:20px; }
+.ak-word{ font-weight:600; min-width:80px; color:var(--text-accent); }
+.ak-note{ color:var(--text-secondary); }
+.legal-note{ font-size:.7333rem; color:var(--text-muted); text-align:center; margin-top:.4rem; }
+</style>
+</head>
+<body>
+<div class="page" id="page">
+  <span class="cefr-tag cefr-a2">A2 · Pre-intermediate</span>
+  <h1>N-400: Trips Outside the U.S. — Practice</h1>
+  <p class="subtitle">Ask and answer about trips: past simple, dates and how long.</p>
+
+  <div class="sec-div">1 · Choose</div>
+  <p class="subtitle">Choose the best answer.</p>
+  <div id="pcItems"></div>
+
+  <div class="sec-div">2 · Put the words in order</div>
+  <p class="subtitle">Drag the words into the line. You can also tap a word to add it, and tap it again to send it back.</p>
+  <button class="grammar-toggle-btn" id="grammarToggle">🎨 Hide Grammar</button>
+  <div class="pos-legend"></div>
+  <div class="score-bar"><span>Correct: <strong id="woScore">0</strong> / <span id="woTotal">0</span></span></div>
+  <div id="woItems"></div>
+
+  <div class="sec-div">3 · Write the missing words</div>
+  <p class="subtitle">Choose a word from the box and write it in the gap. Tap a word in the box to cross it out. The bar goes from red to green 🔴→🟢. Green = correct!</p>
+  <div class="bank" id="bank"></div>
+  <div id="gfItems"></div>
+
+  <details class="ak">
+    <summary>Answer key</summary>
+    <div class="ak-body" id="akBody"></div>
+  </details>
+
+  <footer>N-400: Trips Outside the U.S. — Controlled Practice (A2)</footer>
+  <p class="legal-note">English practice only. This page is not legal advice.</p>
+</div>
+
+<div id="theme-toggle-wrap">
+  <button id="theme-toggle" aria-label="Toggle light/dark mode" title="Toggle light/dark mode">
+    <span id="theme-icon">☀️</span>
+  </button>
+</div>
+<script src="house.js"></script>
+<script>
+/* what the hard words mean in this lesson (the learner's dictionary shows these first) */
+window.LESSON_DICT = {
+  'trip': { pos: 'noun', def: 'you go to a place and then you come back', es: 'viaje' },
+  'leave': { pos: 'verb', def: 'to go away from a place', ex: 'I left the U.S. on March 2nd.', es: 'salir, irse' },
+  'come back': { pos: 'phrasal verb', def: 'to return to a place', es: 'regresar, volver' }
+};
+function sayIt(text){ if (window.HouseDict && HouseDict.say) HouseDict.say(String(text).replace(/\s+/g, ' ').trim()); }
+
+/* ── 1 · choose (easiest first) ────────────────────────────────────────── */
+HouseComprehension.build({
+  quiz: 'pcItems',
+  items: [
+    { q: 'Last year I ___ to Peru.', opts: ['go', 'went', 'gone'], correct: 1 },
+    { q: 'Where ___ you go?', opts: ['did', 'were', 'do'], correct: 0 },
+    { q: 'When did you ___?', opts: ['left', 'leaving', 'leave'], correct: 2 },
+    { q: 'I came back ___ June 10th.', opts: ['in', 'on', 'at'], correct: 1 },
+    { q: 'We were in Canada ___ four days.', opts: ['for', 'during', 'since'], correct: 0 },
+    { q: 'I visited my sister three years ___.', opts: ['before', 'last', 'ago'], correct: 2 },
+    { q: 'Officer: “How long were you there?”', opts: ['On May 5th.', 'For two weeks.', 'To Mexico.'], correct: 1 },
+    { q: 'Officer: “Why did you go?”', opts: ['By plane.', 'Last summer.', 'For my brother’s wedding.'], correct: 2 },
+    { q: 'Officer: “Did you take any trips of six months or more?”', opts: ['No, I didn’t.', 'No, I don’t.', 'No, I wasn’t.'], correct: 0 },
+    { q: 'Answer: “I went with my husband.” What was the question?', opts: ['Who did you go with?', 'Where did you go?', 'How did you go?'], correct: 0 },
+    { q: 'Your form says 04/08/2024. When did you leave?', opts: ['April 8th, 2024', 'August 4th, 2024', 'April 2024, for 8 days'], correct: 0 }
+  ]
+});
+
+/* ── 2 · word order (short first) ──────────────────────────────────────── */
+const O = { speaker: 'Officer', avatar: '👨‍💼' }, Y = { speaker: 'You', avatar: '🙋' };
+HouseWordOrder.build({
+  container: 'woItems', scoreEl: 'woScore', totalEl: 'woTotal',
+  items: [
+    { ...O, text: 'Where / did / you / go / ?', pos: ['wh', 'aux', 'subject', 'verb', 'none'] },
+    { ...Y, text: 'I / went / to / Guatemala / .', pos: ['subject', 'verb', 'prep', 'noun', 'none'] },
+    { ...O, text: 'When / did / you / come back / ?', pos: ['wh', 'aux', 'subject', 'verb', 'none'] },
+    { ...Y, text: 'I / came back / on / July 9th / .', pos: ['subject', 'verb', 'prep', 'time', 'none'] },
+    { ...O, text: 'How long / did / you / stay / there / ?', pos: ['wh', 'aux', 'subject', 'verb', 'adverb', 'none'] },
+    { ...Y, text: 'We / stayed / with / my parents / for / ten days / .', pos: ['subject', 'verb', 'prep', 'object', 'prep', 'time', 'none'] },
+    { ...O, text: 'Why / did / you / go / to / Haiti / ?', pos: ['wh', 'aux', 'subject', 'verb', 'prep', 'noun', 'none'] },
+    { ...Y, text: 'I / didn’t / take / any / trips / last year / .', pos: ['subject', 'neg', 'verb', 'det', 'object', 'time', 'none'] }
+  ]
+});
+
+/* ── 3 · gap fill with the word box ────────────────────────────────────── */
+/* [sentence, accepted answers, why] — the word box and the answer key come from the same rows */
+const GAPS = [
+  ['I {0} to Cuba in 2024.', ['went', 'flew', 'traveled', 'travelled'], 'past of go / fly / travel'],
+  ['I {0} the U.S. on May 3rd.', ['left'], 'past of leave'],
+  ['I came {0} on May 20th.', ['back'], 'come back = return'],
+  ['We {0} to Canada. It was a long way in the car!', ['drove'], 'past of drive (by car)'],
+  ['I was there {0} two weeks.', ['for'], 'for + how long'],
+  ['I visited my aunt {0} July.', ['in'], 'in + a month'],
+  ['I left {0} December 18th.', ['on'], 'on + a date'],
+  ['When {0} you come back?', ['did'], 'question: did + base verb'],
+  ['My last trip was six months {0}.', ['ago'], '… ago = before now'],
+  ['I {0} take any trips last year.', ['didn’t', "didn't"], 'negative: didn’t + base verb'],
+  ['I stayed in Lima {0} April 2nd to April 16th.', ['from'], 'from … to …'],
+  ['I {0} a trip to Ecuador for my father’s funeral.', ['took'], 'past of take']
+];
+const BANK = GAPS.map(g => g[1][0]).sort();
+document.getElementById('bank').innerHTML = BANK.map(w => '<button type="button" class="bank-chip" aria-pressed="false">' + w + '</button>').join('');
+document.getElementById('bank').addEventListener('click', e => {
+  const b = e.target.closest('.bank-chip');
+  if (b) b.setAttribute('aria-pressed', String(b.getAttribute('aria-pressed') !== 'true'));
+});
+HouseGapFill.build({
+  container: 'gfItems',
+  items: GAPS.map(([t, acc], i) => ({ template: (i + 1) + '. ' + t, hints: [{ accepted: acc }] }))
+});
+document.getElementById('akBody').innerHTML = GAPS.map(([, acc, why], i) =>
+  '<div class="ak-row"><span class="ak-num">' + (i + 1) + '.</span><span class="ak-word">' + acc[0] + '</span><span class="ak-note">' + why + '</span></div>').join('');
+</script>
+<script>HouseGrammar.init();</script>
+</body>
+</html>

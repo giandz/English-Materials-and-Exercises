@@ -1,0 +1,143 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<title>N-400: Trips Outside the U.S. — Introduction</title>
+<script>
+(function(){
+  try{
+    var saved = localStorage.getItem('theme-preference');
+    var theme = (saved === 'light' || saved === 'dark')
+      ? saved
+      : ((window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches) ? 'dark' : 'light');
+    document.documentElement.setAttribute('data-theme', theme);
+    var fs = parseFloat(localStorage.getItem('font-size-preference'));
+    if (fs >= 10 && fs <= 28) document.documentElement.style.setProperty('--fs-base', fs + 'px');
+  }catch(e){ /* localStorage/matchMedia unavailable — CSS media query still applies */ }
+})();
+</script>
+<link rel="stylesheet" href="house.css">
+<style>
+#tripRight .match-card{ justify-content:center; font-size:1.5rem; letter-spacing:.08em; padding:6px 10px; }
+.match-row{ display:flex; align-items:center; gap:10px; flex-wrap:wrap; margin-top:.75rem; }
+.say-btn{ font-size:.7rem; padding:1px 8px; margin-top:3px; }
+.legal-note{ font-size:.7333rem; color:var(--text-muted); text-align:center; margin-top:.4rem; }
+</style>
+</head>
+<body>
+<div class="page" id="page">
+  <span class="cefr-tag cefr-a2">A2 · Pre-intermediate</span>
+  <h1>N-400: Trips Outside the U.S.</h1>
+  <p class="subtitle">At the interview, the officer asks about your trips outside the United States. Marcos talks about his trips.</p>
+
+  <div class="sec-div">Words for trips</div>
+  <p class="subtitle">Tap a word, then tap its picture.</p>
+  <div class="score-bar"><span>Matched: <strong id="vScore">0</strong> / <span id="vTotal">0</span></span></div>
+  <div class="win-msg" id="vWin">🎉 All matched! Well done!</div>
+  <div class="match-grid">
+    <div><div class="match-col-label">Words</div><div class="match-col" id="tripLeft"></div></div>
+    <div><div class="match-col-label">Pictures</div><div class="match-col" id="tripRight"></div></div>
+  </div>
+  <div class="match-row"><button id="vReset">↺ Reset</button><span class="feedback" id="vFeedback" style="margin-top:0"></span></div>
+
+  <div class="sec-div">Before you read</div>
+  <p class="subtitle">Read these three questions first. Then look for the answers in the conversation.</p>
+  <div id="preQuestions" class="prequiz"></div>
+
+  <div class="sec-div">Conversation</div>
+  <div class="setting-chip">🏛️ Officer Harris’s office · the N-400 interview</div>
+  <p class="subtitle">Tap 🔊 to hear the officer.</p>
+  <button id="grammarToggle" class="grammar-toggle-btn">🎨 Show Grammar</button>
+  <div class="pos-legend"></div>
+  <div id="chat"></div>
+
+  <div class="sec-div">Check your answers</div>
+  <p class="subtitle">The same three questions. Now choose the correct answer.</p>
+  <div id="quiz"></div>
+
+  <footer>N-400: Trips Outside the U.S. — Introduction (A2)</footer>
+  <p class="legal-note">English practice only. This page is not legal advice.</p>
+</div>
+
+<div id="theme-toggle-wrap">
+  <button id="theme-toggle" aria-label="Toggle light/dark mode" title="Toggle light/dark mode">
+    <span id="theme-icon">☀️</span>
+  </button>
+</div>
+<script src="house.js"></script>
+<script>
+/* what the hard words mean in this lesson (the learner's dictionary shows these first) */
+window.LESSON_DICT = {
+  'trip': { pos: 'noun', def: 'you go to a place and then you come back', ex: 'My last trip was to Colombia.', es: 'viaje' },
+  'leave': { pos: 'verb', def: 'to go away from a place', ex: 'I left the U.S. on March 2nd.', es: 'salir, irse' },
+  'come back': { pos: 'phrasal verb', def: 'to return to a place', ex: 'I came back on March 23rd.', es: 'regresar, volver' },
+  'stay': { pos: 'verb', def: 'to be in a place for some time', ex: 'We stayed there for four days.', es: 'quedarse' },
+  'abroad': { pos: 'adverb', def: 'in or to another country', es: 'en el extranjero' },
+  'outside': { pos: 'preposition', def: 'not in a place', ex: 'trips outside the United States', es: 'fuera de' }
+};
+function sayIt(text){ if (window.HouseDict && HouseDict.say) HouseDict.say(String(text).replace(/\s+/g, ' ').trim()); }
+
+/* ── words ↔ pictures ──────────────────────────────────────────────────── */
+const WORDS = [
+  ['leave the U.S.', '🇺🇸🛫'], ['come back', '🛬🏠'], ['fly', '✈️'], ['drive', '🚗'],
+  ['stay with family', '👵🏠'], ['a wedding', '💒'], ['a funeral', '🕯️⚫'], ['a vacation', '🏖️'],
+  ['a work trip', '💼🧳'], ['visit someone in the hospital', '🏥💐'], ['a passport stamp', '🛂📕'], ['a week', '7️⃣📅']
+];
+HouseMatching.build({
+  left: 'tripLeft', right: 'tripRight',
+  pairs: WORDS.map(([w, p], i) => ({ id: 'v' + i, left: w, right: p })),
+  scoreEl: 'vScore', totalEl: 'vTotal', resetBtn: 'vReset', winEl: 'vWin', feedbackEl: 'vFeedback'
+});
+
+/* ── the conversation: [who, line] — O = Officer Harris, M = Marcos ──────── */
+const P = (k, t) => '<span class="pos-hl pos-' + k + '">' + t + '</span>';
+const LINES = [
+  ['O', 'Now let’s talk about your trips outside the United States. ' + P('wh', 'How many trips') + ' ' + P('aux', 'have') + ' ' + P('subject', 'you') + ' ' + P('part', 'taken') + ' in the last five years?'],
+  ['M', 'Three trips.'],
+  ['O', 'OK. Tell me about your last trip. ' + P('wh', 'Where') + ' ' + P('aux', 'did') + ' ' + P('subject', 'you') + ' ' + P('verb', 'go') + '?'],
+  ['M', 'I went to Colombia, to Medellín.'],
+  ['O', P('wh', 'When') + ' ' + P('aux', 'did') + ' ' + P('subject', 'you') + ' ' + P('verb', 'leave') + '?'],
+  ['M', P('subject', 'I') + ' ' + P('verb', 'left') + ' ' + P('time', 'on March 2nd, 2025') + '.'],
+  ['O', 'And when did you come back?'],
+  ['M', 'I came back on March 23rd.'],
+  ['O', 'So you were there ' + P('time', 'for three weeks') + '. ' + P('wh', 'Why') + ' ' + P('aux', 'did') + ' ' + P('subject', 'you') + ' ' + P('verb', 'go') + '?'],
+  ['M', 'My mother was sick. I visited her in the hospital.'],
+  ['O', 'I’m sorry to hear that. Is she OK now?'],
+  ['M', 'Yes, she’s better now, thank you.'],
+  ['O', 'Did you go with anyone?'],
+  ['M', 'No, I went alone. My wife stayed here with the kids.'],
+  ['O', 'And the other two trips?'],
+  ['M', 'In December 2023, I flew to Mexico for my cousin’s wedding. I was there for one week. And in 2022, I drove to Canada with my family. We stayed there for four days.'],
+  ['O', P('aux', 'Did') + ' ' + P('subject', 'you') + ' ' + P('verb', 'take') + ' ' + P('object', 'any trips') + ' of six months or more?'],
+  ['M', P('neg', 'No, I didn’t') + '. My longest trip was three weeks.'],
+  ['O', 'Good. That matches your application. Thank you.']
+];
+const WHO = { O: ['Officer Harris', '👨‍💼', 'left', 'av-a'], M: ['Marcos', '👨‍🦱', 'right', 'av-b'] };
+document.getElementById('chat').innerHTML = LINES.map(([w, t]) => {
+  const [name, av, side, cls] = WHO[w];
+  return '<div class="bubble-wrap ' + side + '"><div class="avatar ' + cls + '">' + av + '</div><div><div class="bname' + (side === 'right' ? ' right' : '') + '">' + name +
+    '</div><div class="bubble ' + side + '">' + t + '</div></div></div>';
+}).join('');
+document.querySelectorAll('#chat .bubble-wrap.left').forEach(w => {
+  const bubble = w.querySelector('.bubble');
+  const btn = document.createElement('button');
+  btn.type = 'button'; btn.className = 'say-btn'; btn.textContent = '🔊';
+  btn.setAttribute('aria-label', 'Listen'); btn.setAttribute('data-dict', 'off');
+  btn.addEventListener('click', () => sayIt(bubble.textContent));
+  bubble.insertAdjacentElement('afterend', btn);
+});
+
+const CQ_ITEMS = [
+  { q: 'Why did Marcos go to Colombia?',
+    opts: ['His mother was sick', 'For his cousin’s wedding', 'For a vacation with his family'], correct: 0 },
+  { q: 'How long was Marcos in Mexico?',
+    opts: ['Three weeks', 'One week', 'Four days'], correct: 1 },
+  { q: 'Who went to Canada?',
+    opts: ['Marcos, alone', 'Marcos’s wife and the kids', 'Marcos and his family'], correct: 2 }
+];
+HouseComprehension.build({ pre: 'preQuestions', quiz: 'quiz', items: CQ_ITEMS });
+</script>
+<script>HouseGrammar.init();</script>
+</body>
+</html>
