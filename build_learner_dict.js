@@ -1,6 +1,6 @@
 /* ═══════════════════════════════════════════════════════════════════════════
-   build_learner_dict.js — makes learner-dict/ for house-dict.js.
-   Node 18+, no packages. Run it in the repo folder (next to house-dict.js):
+   build_learner_dict.js — makes learner-dict/ for the dictionary in house.js (HouseDict).
+   Node 18+, no packages. Run it in the repo folder (next to house.js):
 
      node build_learner_dict.js --cmu cmudict.dict --wordnet english-wordnet-2025.xml.gz
 
@@ -12,6 +12,9 @@
      --out DIR         where the data goes                              (default learner-dict)
      --wn-senses N     WordNet meanings for a word with no simple one   (default 3, 0 = never use WordNet)
      --wn-extra N      WordNet meanings added under a simple one        (default 0)
+     --core FILES      frequency lists, one word per line, comma-separated: each entry gets its rank (default dict-src/core-1000.txt,dict-src/core-2000.txt)
+     --emoji FILE      word<TAB>emoji: the picture for a word, on the card and in My Words (default dict-src/emoji.tsv)
+     --variants FILE   British<TAB>American spellings: an entry is filed under both (default dict-src/spelling-variants.tsv)
 
    Every source is optional. Without WordNet, only words in simple-defs.tsv get meanings;
    without CMU, only words with an ipa column get pronunciations.
@@ -25,6 +28,8 @@
      learner-dict/a.json … z.json, _.json   entries, one file per first letter
      learner-dict/_phrases.json             phrases to look for around a word
      learner-dict/_meta.json                when, from what, how many
+     learner-dict/practice/words.json       for the My Words games only: part of speech, level, syllables,
+                                            stress and sounds-alike words (ship / sheep) for each word
      dict-src/report.md                     what to do next (read this)
      dict-src/todo-defs.tsv                 lesson words with no simple definition yet, most used
                                             first, with the lesson sentence and WordNet's meaning
@@ -39,11 +44,18 @@
    ═══════════════════════════════════════════════════════════════════════════ */
 'use strict';
 const fs = require('fs'), path = require('path'), zlib = require('zlib');
-const core = require(path.join(__dirname, 'house-dict.js'));
+/* the lemmatiser is shared with the pages: run the DICT CORE part of house.js */
+const core = (function loadCore() {
+  const src = fs.readFileSync(path.join(__dirname, 'house.js'), 'utf8');
+  const a = src.indexOf('/* ══ DICT CORE START'), b = src.indexOf('/* ══ DICT CORE END');
+  if (a < 0 || b < a) throw new Error('house.js has no DICT CORE START … DICT CORE END block');
+  return new Function(src.slice(a, b) + '\nreturn CORE;')();
+})();
 const { candidates, norm, wordRe, CONTRACTIONS } = core;
 
 /* ── options ── */
-const opt = { lessons: '.', defs: 'dict-src/simple-defs.tsv', out: 'learner-dict', cmu: null, wordnet: null, 'wn-senses': 3, 'wn-extra': 0 };
+const opt = { lessons: '.', defs: 'dict-src/simple-defs.tsv', out: 'learner-dict', cmu: null, wordnet: null, 'wn-senses': 3, 'wn-extra': 0,
+  core: 'dict-src/core-1000.txt,dict-src/core-2000.txt,dict-src/core-3000.txt,dict-src/core-4000.txt,dict-src/core-5000.txt,dict-src/core-6000.txt', variants: 'dict-src/spelling-variants.tsv', emoji: 'dict-src/emoji.tsv' };
 for (let i = 2; i < process.argv.length; i++) {
   const a = process.argv[i];
   if (!a.startsWith('--')) continue;
@@ -216,6 +228,8 @@ function lessonFiles(dir) {
 /* ══ 4. build ═════════════════════════════════════════════════════════════ */
 if (require.main !== module) { module.exports = { toIpa, toSay, syllabify, lessonText }; return; }   /* required for its helpers only */
 const defs = readDefs(opt.defs), cmu = readCmu(opt.cmu), wn = readWordNet(opt.wordnet);
+/* a hand-written file in the CMU format (core-pron.dict) is not the CMU dictionary: credit it as the course's own */
+const cmuIsHouse = !!opt.cmu && /^;;; Pronunciations of the 1000 core words/.test(readText(opt.cmu));
 const hasMeaning = k => defs.has(k) || wn.lemmas.has(k);
 const isPhrase = k => k.indexOf(' ') > 0 && hasMeaning(k);
 
@@ -312,6 +326,16 @@ function pron(key) {
   return { ipa: [], say: [] };
 }
 
+const rank = new Map();
+if (opt.core) opt.core.split(',').filter(f => fs.existsSync(f)).map(readText).join('\n').split(/\r?\n/).filter(l => l.trim() && !l.startsWith('#')).forEach((w, i) => { if (!rank.has(norm(w))) rank.set(norm(w), i + 1); });
+const emoji = new Map();
+if (opt.emoji && fs.existsSync(opt.emoji)) readText(opt.emoji).split(/\r?\n/).forEach(l => { if (!l.trim() || l.startsWith('#')) return; const [w, e] = l.split('\t'); if (w && e) emoji.set(norm(w), e.trim()); });
+const variants = [];
+if (opt.variants && fs.existsSync(opt.variants)) readText(opt.variants).split(/\r?\n/).forEach(l => {
+  if (!l.trim() || l.startsWith('#')) return;
+  const [uk, us] = l.split('\t').map(x => norm(x || ''));
+  if (uk && us) variants.push([uk, us]);
+});
 const shards = {}, phrases = [];
 let nHouse = 0, nWn = 0, nSound = 0;
 for (const [key, u] of used) {
@@ -322,10 +346,31 @@ for (const [key, u] of used) {
   const p = pron(key);
   if (!senses.length && !p.ipa.length && !CONTRACTIONS[key]) continue;
   if (!senses.length) nSound++;
-  const e = clean({ display: d && d.display, ipa: p.ipa.length ? p.ipa : null, say: p.say.length ? p.say : null, short: CONTRACTIONS[key], senses: senses.length ? senses : null });
+  const e = clean({ display: d && d.display, rank: rank.get(key), emoji: emoji.get(key), psrc: p.ipa.length && cmuIsHouse && !(d && d.ipa) ? 'house' : null, ipa: p.ipa.length ? p.ipa : null, say: p.say.length ? p.say : null, short: CONTRACTIONS[key], senses: senses.length ? senses : null });
   const shard = /[a-z]/.test(key[0]) ? key[0] : '_';
   (shards[shard] = shards[shard] || {})[key] = e;
   if (key.indexOf(' ') > 0) phrases.push(key);
+}
+
+/* British and American spellings: the course uses American spelling, so the American form is the
+   headword. The entry is also filed under the British form (with us: the American key, so a saved
+   "colour" is saved as "color"), and the card says "British spelling: colour". */
+const shardKey = k => (/[a-z]/.test(k[0]) ? k[0] : '_');
+const getE = k => (shards[shardKey(k)] || {})[k];
+const put = (k, e) => { (shards[shardKey(k)] = shards[shardKey(k)] || {})[k] = e; };
+for (const [uk, us] of variants) {
+  const a = getE(uk), b = getE(us);
+  if (!a && !b) continue;
+  const base = Object.assign({}, a || {}, b || {});
+  if (!(b && b.senses) && a && a.senses) base.senses = a.senses;
+  if (!(b && b.ipa) && a && a.ipa) { base.ipa = a.ipa; base.say = a.say; }
+  const r = [a && a.rank, b && b.rank].filter(Boolean);
+  base.rank = r.length ? Math.min.apply(null, r) : undefined;
+  base.emoji = (b && b.emoji) || (a && a.emoji);
+  base.variant = 'British: ' + uk;
+  delete base.us;
+  put(us, clean(base));
+  put(uk, clean(Object.assign({}, base, { display: base.display || us, us })));
 }
 
 fs.mkdirSync(opt.out, { recursive: true });
@@ -339,11 +384,71 @@ fs.writeFileSync(path.join(opt.out, '_meta.json'), JSON.stringify({
   built: new Date().toISOString(),
   sources: {
     house: 'Simple definitions written for this course (dict-src/simple-defs.tsv)',
-    cmu: opt.cmu ? 'CMU Pronouncing Dictionary, Copyright (C) 1993-2015 Carnegie Mellon University. BSD 2-clause licence.' : null,
+    cmu: !opt.cmu ? null : cmuIsHouse ? 'Pronunciations written for this course in the CMU ARPAbet format (' + path.basename(opt.cmu) + ')' : 'CMU Pronouncing Dictionary, Copyright (C) 1993-2015 Carnegie Mellon University. BSD 2-clause licence.',
     wn: opt.wordnet ? 'Open English WordNet (https://en-word.net/), CC BY 4.0. Definitions used unchanged.' : null
   },
+  core: opt.core && rank.size ? 'New General Service List 1.2 and its sister lists NGSL-Spoken, TSL, BSL, NGSL-Graded Reader and the New Dolch List (Browne, Culligan & Phillips), CC BY-SA 4.0: rank field' : null,
   counts: { entries: nHouse + nWn + nSound, simple: nHouse, wordnet: nWn, soundOnly: nSound, phrases: phrases.length, lessons: files.length }
 }, null, 1));
+
+
+/* ══ 4b. practice data for My Words: learner-dict/practice/words.json ═════════
+   Only My Words loads it (HouseListen, HouseMystery and HouseSort rounds), so the lookup stays small.
+   w: key → [pos, level, syllables, stressed syllable (0 = first), sounds-alike words or 0, display?]
+     pos: one letter for each part of speech the word has, first meaning first ('nv' = noun and verb):
+          n noun · v verb · a adjective · r adverb · p phrase · o other      level: 1 A1 … 5 C1
+   Sounds-alike: same number of sounds, one sound different (ship / sheep), headwords with a meaning only.
+   A vowel change in a weak syllable is left out: a browser voice can't make it heard. Contrasts that are
+   hard for Spanish speakers come first, then the commoner word. */
+(function practice() {
+  const POSC = { noun: 'n', verb: 'v', 'modal verb': 'v', 'phrasal verb': 'v', adjective: 'a', adverb: 'r', phrase: 'p' };
+  const LV = { A1: 1, A2: 2, B1: 3, B2: 4, C1: 5, C2: 5 };
+  const HARD = new Set(['IY IH', 'AE EH', 'AE AH', 'AA AH', 'UW UH', 'IH EH', 'AE AA', 'B V', 'SH CH', 'CH JH', 'Y JH', 'S Z', 'TH T', 'TH S', 'DH D', 'M N', 'S SH', 'R L', 'ER AA', 'OW AO']
+    .flatMap(p => [p, p.split(' ').reverse().join(' ')]));
+  const out = {}, phon = new Map();
+  for (const s of Object.keys(shards)) for (const [k, e] of Object.entries(shards[s])) {
+    if (!e.senses || e.us || e.short) continue;
+    const sn = e.senses[0], arpa = k.indexOf(' ') < 0 && (cmu.get(k) || [])[0];
+    let syl = 0, st = 0;
+    if (arpa) {
+      const sy = syllabify(arpa); syl = sy.length;
+      st = Math.max(0, sy.findIndex(x => x.stress === 1));
+      phon.set(k, arpa.split(/\s+/));
+    }
+    const pos = [...new Set(e.senses.map(x => POSC[x.pos] || 'o'))].join('');
+    out[k] = [pos, LV[String(sn.level).slice(0, 2)] || 3, syl, st, 0];
+    if (e.display && e.display !== k) out[k][5] = e.display;
+  }
+  const buckets = new Map();
+  for (const [k, ph] of phon) ph.forEach((_, i) => {
+    const b = ph.map((p, j) => (j === i ? '*' : p.replace(/\d/, ''))).join(' ');
+    if (!buckets.has(b)) buckets.set(b, []);
+    buckets.get(b).push([k, i]);
+  });
+  const near = new Map();
+  for (const ws of buckets.values()) {
+    if (ws.length < 2) continue;
+    for (const [a, i] of ws) for (const [b] of ws) {
+      if (a === b) continue;
+      const pa = phon.get(a)[i], pb = phon.get(b)[i];
+      if (pa.replace(/\d/, '') === pb.replace(/\d/, '')) continue;            /* stress only */
+      if (/0$/.test(pa) && /0$/.test(pb)) continue;                           /* weak vowels */
+      const pair = pa.replace(/\d/, '') + ' ' + pb.replace(/\d/, '');
+      if (!near.has(a)) near.set(a, new Map());
+      near.get(a).set(b, HARD.has(pair) ? 0 : 1);
+    }
+  }
+  let nNear = 0;
+  for (const [a, m] of near) {
+    const list = [...m].sort((x, y) => x[1] - y[1] || (rank.get(x[0]) || 1e5) - (rank.get(y[0]) || 1e5)).slice(0, 4).map(x => x[0]);
+    if (out[a]) { out[a][4] = list; nNear++; }
+  }
+  const dir = path.join(opt.out, 'practice');
+  fs.mkdirSync(dir, { recursive: true });
+  const body = JSON.stringify({ v: 1, w: out });
+  fs.writeFileSync(path.join(dir, 'words.json'), body);
+  console.log('practice/words.json: ' + Object.keys(out).length + ' words, ' + nNear + ' with sounds-alike words, ' + Math.round(body.length / 1024) + ' KB');
+})();
 
 /* ══ 5. report: what to write next, and what to check ═════════════════════ */
 const FUNCTION = new Set(('a an the and or but if so because to of in on at for with from by about as into than then that this these those there here ' +

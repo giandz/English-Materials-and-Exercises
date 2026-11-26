@@ -55,6 +55,8 @@
 .mw-seg-label{ margin-right:2px; }
 .mw-seg button[aria-pressed="true"]{ background:var(--color-background-info); border-color:var(--text-accent); color:var(--color-text-info); font-weight:600; }
 .mw-new{ font-weight:600; }
+.mw-seg[hidden]{ display:none; }
+.mw-game .hv-card{ margin-top:.2rem; }
 .mw-note{ font-size:.8667rem; color:var(--color-text-warning); background:var(--color-background-warning); border-radius:var(--border-radius-md); padding:7px 10px; margin-bottom:.8rem; }
 .mw-note[hidden]{ display:none; }
 
@@ -110,17 +112,31 @@
   <div id="mwList"><p class="mw-empty">Loading your words…</p></div>
 
   <div class="sec-div">Practice</div>
-  <div class="rule-box">Choose a game. Then choose: match the words with <strong>pictures</strong> or with their <strong>meanings</strong>. Press 🔄 for new words.</div>
+  <div class="rule-box" id="mwHow">Choose a game. Press 🔄 for new words.</div>
   <div class="mw-controls">
     <div class="mw-seg" role="group" aria-label="Game">
       <span class="mw-seg-label">Game:</span>
-      <button type="button" id="gMatch" data-game="match" aria-pressed="true">🔗 Match</button>
-      <button type="button" id="gMemory" data-game="memory" aria-pressed="false">🃏 Memory</button>
+      <button type="button" data-game="match" aria-pressed="true">🔗 Match</button>
+      <button type="button" data-game="memory" aria-pressed="false">🃏 Memory</button>
+      <button type="button" data-game="listen" aria-pressed="false">👂 Listen</button>
+      <button type="button" data-game="mystery" aria-pressed="false">❓ Mystery</button>
+      <button type="button" data-game="sort" aria-pressed="false">🗂️ Sort</button>
     </div>
-    <div class="mw-seg" role="group" aria-label="Match the words with">
+    <div class="mw-seg" role="group" aria-label="Match the words with" data-for="match memory">
       <span class="mw-seg-label">With:</span>
-      <button type="button" id="wPics" data-with="pics" aria-pressed="true">🖼️ Pictures</button>
-      <button type="button" id="wDefs" data-with="defs" aria-pressed="false">📝 Meanings</button>
+      <button type="button" data-with="pics" aria-pressed="true">🖼️ Pictures</button>
+      <button type="button" data-with="defs" aria-pressed="false">📝 Meanings</button>
+    </div>
+    <div class="mw-seg" role="group" aria-label="Answer by" data-for="mystery">
+      <span class="mw-seg-label">Answer:</span>
+      <button type="button" data-answer="choose" aria-pressed="true">👆 Choose</button>
+      <button type="button" data-answer="type" aria-pressed="false">⌨️ Type</button>
+    </div>
+    <div class="mw-seg" role="group" aria-label="Sort the words by" data-for="sort">
+      <span class="mw-seg-label">Sort by:</span>
+      <button type="button" data-sortby="grammar" aria-pressed="true">🔤 Word type</button>
+      <button type="button" data-sortby="syllables" aria-pressed="false">👏 Syllables</button>
+      <button type="button" data-sortby="stress" aria-pressed="false">🎯 Stress</button>
     </div>
     <button type="button" class="mw-new" id="mwNew">🔄 New round</button>
   </div>
@@ -192,6 +208,7 @@
   /* "a1_intro_rooms_vocabulary.html" → { level:'A1', title:'Rooms vocabulary' } */
   function lessonName(file) {
     if (!file) return { level: '', title: examples ? 'Examples' : 'Imported or added on this page', file: '' };
+    if (/^dictionary\.html?$/i.test(file)) return { level: '', title: 'From the dictionary', file };
     const m = file.replace(/\.html?$/i, '').match(/^([a-c][12](?:[a-c][12])?)_(?:intro|clarf|ctrld|freer|extra)_(.+)$/i);
     if (!m) return { level: '', title: file.replace(/\.html?$/i, '').replace(/[_-]+/g, ' '), file };
     const lv = m[1].toUpperCase().replace(/^([A-C][12])([A-C][12])$/, '$1/$2');
@@ -203,6 +220,9 @@
   let examples = false;
   let game = store.get('my-words-game', 'match');
   let withWhat = store.get('my-words-with', 'pics');
+  let answerBy = store.get('my-words-answer', 'choose');
+  let sortBy = store.get('my-words-sortby', 'grammar');
+  if (!['match', 'memory', 'listen', 'mystery', 'sort'].includes(game)) game = 'match';
 
   async function load() {
     const saved = (window.HouseDict ? HouseDict.saved() : store.get('house-dict-saved', [])).filter(s => s && s.key);
@@ -264,31 +284,216 @@
   }
 
   /* ── the games ── */
+  const HOW = {
+    match: 'Match each word with its <strong>picture</strong> or its <strong>meaning</strong>. Press 🔄 for new words.',
+    memory: 'Turn over two cards. Find the word and its <strong>picture</strong> or <strong>meaning</strong>. Press 🔄 for new words.',
+    listen: 'Press 🔊 and listen. Then tap the word you heard. The two words sound almost the same, so listen carefully!',
+    mystery: 'Find the mystery word ❓. It is one of your words. The fewer clues you need, the more ⭐ you get.',
+    sort: 'Put each word in its group. Drag it, or tap the word and then tap the group.'
+  };
   function pressed() {
-    ['gMatch', 'gMemory'].forEach(id => $(id).setAttribute('aria-pressed', String($(id).dataset.game === game)));
-    ['wPics', 'wDefs'].forEach(id => $(id).setAttribute('aria-pressed', String($(id).dataset.with === withWhat)));
+    document.querySelectorAll('.mw-controls [data-game]').forEach(b => b.setAttribute('aria-pressed', String(b.dataset.game === game)));
+    document.querySelectorAll('.mw-controls [data-with]').forEach(b => b.setAttribute('aria-pressed', String(b.dataset.with === withWhat)));
+    document.querySelectorAll('.mw-controls [data-answer]').forEach(b => b.setAttribute('aria-pressed', String(b.dataset.answer === answerBy)));
+    document.querySelectorAll('.mw-controls [data-sortby]').forEach(b => b.setAttribute('aria-pressed', String(b.dataset.sortby === sortBy)));
+    document.querySelectorAll('.mw-controls [data-for]').forEach(s => { s.hidden = !s.dataset.for.split(' ').includes(game); });
+    $('mwHow').innerHTML = HOW[game] || HOW.match;
   }
   function note(text) { const n = $('mwNote'); n.hidden = !text; n.textContent = text || ''; }
 
+  /* ── house-vocab.js and learner-dict/practice/words.json load the first time a new game is chosen ── */
+  const HOUSE_SRC = (document.querySelector('script[src$="house.js"]') || {}).src || 'house.js';
+  const from = file => new URL(file, HOUSE_SRC).href;
+  let vocabP = null, practiceP = null, P = {};
+  function needVocab() {
+    if (!vocabP) vocabP = Promise.all([
+      window.HouseMystery ? Promise.resolve() : new Promise((ok, bad) => { const s = document.createElement('script'); s.src = from('house-vocab.js'); s.onload = ok; s.onerror = () => bad(new Error('no house-vocab.js')); document.head.appendChild(s); }),
+      practiceP = fetch(from('learner-dict/practice/words.json')).then(r => { if (!r.ok) throw new Error('no practice data'); return r.json(); }).then(j => { P = j.w || {}; })
+    ]).catch(e => { vocabP = null; throw e; });
+    return vocabP;
+  }
+  /* saved words, newest first: a round takes them from the newest 16, so it has the words being learned now */
+  const recent = (list, n) => shuffle(list.slice().sort((a, b) => (b.time || 0) - (a.time || 0)).slice(0, Math.max(n, 16))).slice(0, n);
+  const pick = a => a[Math.floor(Math.random() * a.length)];
+  const posOf = k => (P[k] ? P[k][0] : '');
+  const shown = k => (P[k] && P[k][5]) || k;
+  /* the student's level: the middle level of the saved words */
+  function myLevel() {
+    const l = words.map(w => P[w.key] && P[w.key][1]).filter(Boolean).sort();
+    return l.length ? l[Math.floor(l.length / 2)] : 2;
+  }
+  /* words from the dictionary, to fill a round: not saved, one part of speech, at or below the student's level + 1 */
+  function extras(test, n) {
+    const have = new Set(words.map(w => w.key)), top = myLevel() + 1;
+    /* no names, titles or short forms (Monday, Mr): only plain lowercase words of 3 letters or more */
+    const pool = Object.keys(P).filter(k => !have.has(k) && k.length > 2 && /^[a-z]+(?: [a-z]+)*$/.test(k) && !P[k][5] && P[k][0].length === 1 && P[k][1] <= top && test(k, P[k]));
+    return shuffle(pool).slice(0, n);
+  }
+
   function newRound() {
     pressed();
+    note('');
+    const game$ = $('mwGame');
+    if (game === 'match' || game === 'memory') return roundMatch();
+    game$.innerHTML = '<p class="mw-empty">Getting the game ready…</p>';
+    const which = game;
+    needVocab().then(() => {
+      if (which !== game) return;
+      return ({ listen: roundListen, mystery: roundMystery, sort: roundSort })[which]();
+    }).catch(() => { game$.innerHTML = '<p class="mw-empty">This game could not load. Check your connection and press 🔄.</p>'; });
+  }
+  function tooFew(n, need, what) {
+    $('mwGame').innerHTML = '<p class="mw-empty">' + what + ' You have ' + n + '.</p>';
+  }
+  function scoreBar(label) {
+    return '<div class="score-bar"><span>' + label + ': <strong id="vScore">0</strong> / <span id="vTotal">0</span></span></div><div id="vBox"></div>';
+  }
+
+  function roundMatch() {
     const pics = words.filter(w => w.emoji), defs = words.filter(w => w.def);
     let pool = withWhat === 'pics' ? pics : defs, using = withWhat;
-    note('');
     if (withWhat === 'pics' && pics.length < 3) {
       if (defs.length >= 3) {
         pool = defs; using = 'defs';
         note(pics.length ? 'Only ' + pics.length + ' of your words ' + (pics.length === 1 ? 'has' : 'have') + ' a picture. This round uses meanings.' : 'None of your words has a picture yet. This round uses meanings.');
       }
     }
-    const game$ = $('mwGame');
-    if (pool.length < 3) {
-      game$.innerHTML = '<p class="mw-empty">Save 3 or more words to play. You have ' + pool.length + '.</p>';
-      return;
-    }
+    if (pool.length < 3) return tooFew(pool.length, 3, 'Save 3 or more words to play.');
     const round = shuffle(pool).slice(0, MAX_PAIRS);
     const pairs = round.map((w, i) => ({ id: 'w' + i, word: w.display, pic: '', emoji: using === 'pics' ? w.emoji : '', def: using === 'pics' ? '' : w.def }));
     if (game === 'match') buildMatch(pairs, using); else buildMemory(pairs, using);
+  }
+
+  /* ── 👂 Listen: the saved word or a word one sound away (ship / sheep). Either one can be the answer. ── */
+  async function roundListen() {
+    const ok = words.filter(w => P[w.key] && P[w.key][4]);
+    if (ok.length < 3) return tooFew(ok.length, 3, 'Listen needs 3 words that sound almost like another word, like ship and sheep.');
+    if (ok.length < words.length) note(ok.length + ' of your ' + words.length + ' words sound almost like another word. Listen uses those.');
+    const D = await whenDict();
+    const round = recent(ok, 8);
+    const items = await Promise.all(round.map(async w => {
+      const other = pick(P[w.key][4].slice(0, 2));
+      const e2 = await D.get(other).catch(() => null);
+      const a = w.display, b = (e2 && e2.display) || shown(other);
+      const options = shuffle([a, b]), sayIt = pick([a, b]);
+      const ipa = (t, i) => (i ? ' <span class="mw-ipa">/' + esc(i) + '/</span>' : '');
+      return { say: sayIt, options, correct: options.indexOf(sayIt), note: '<b>' + esc(a) + '</b>' + ipa(a, w.ipa) + ' · <b>' + esc(b) + '</b>' + ipa(b, e2 && e2.ipa && e2.ipa[0]) };
+    }));
+    $('mwGame').innerHTML = scoreBar('Right');
+    HouseListen.build({ container: 'vBox', items, scoreEl: 'vScore', totalEl: 'vTotal', note: 'Great listening! Press 🔄 for new words.' });
+  }
+
+  /* ── ❓ Mystery: meaning → example with the word hidden → Spanish or the first letter ── */
+  const core = () => (window.HouseDict && HouseDict.core) || null;
+  const BAD_TAG = { ly: 1 };
+  /* hide the word and its forms (swim, swam, swimming…) in a text; returns { text, forms } */
+  function hideWord(text, w) {
+    const C = core(); if (!C || !text) return { text: text || '', forms: [] };
+    const parts = String(w.key).split(' '), uk = w.entry && w.entry.variant ? w.entry.variant.replace(/^British:\s*/, '').toLowerCase() : '';
+    const adj = /^(adjective|adverb)$/.test(w.pos || '');
+    const toks = []; let m; const re = C.wordRe();
+    while ((m = re.exec(text))) toks.push({ s: m.index, e: m.index + m[0].length, t: m[0] });
+    const same = (tok, key) => {
+      const n = C.norm(tok);
+      if (n === key || (uk && n === uk)) return true;
+      return C.candidates(tok).some(c => c.key === key && !BAD_TAG[c.tag] && (adj || !/^(er|est)$/.test(c.tag || '')));
+    };
+    const spans = [];
+    for (let i = 0; i + parts.length <= toks.length; i++) {
+      if (parts.every((p, j) => same(toks[i + j].t, p))) { spans.push([toks[i].s, toks[i + parts.length - 1].e]); i += parts.length - 1; }
+    }
+    let out = '', at = 0; const forms = [];
+    spans.forEach(([s, e]) => { out += text.slice(at, s) + '❓'; forms.push(text.slice(s, e)); at = e; });
+    return { text: out + text.slice(at), forms };
+  }
+  function letters(w) {
+    const d = String(w.display), n = d.split(' ');
+    return n.length > 1 ? 'It has ' + n.length + ' words. The first one starts with “' + d[0] + '”.' : 'It starts with “' + d[0] + '” and has ' + d.length + ' letters.';
+  }
+  async function roundMystery() {
+    const ok = words.filter(w => w.entry && w.def);
+    if (ok.length < 1) return tooFew(0, 1, 'Save a word to play.');
+    const es = store.get('house-dict-es', false);
+    const round = recent(ok, 5);
+    const roundKeys = new Set(round.map(w => w.key));
+    const items = round.map(w => {
+      const sense = w.entry.senses[0];
+      const def = hideWord(sense.def, w), ex = hideWord(sense.ex, w);
+      const clues = ['It means: ' + def.text];
+      if (ex.forms.length) clues.push('Example: ' + ex.text);
+      if (es && sense.es) clues.push('In Spanish: ' + sense.es);
+      if (clues.length < 3) clues.push(letters(w));
+      const form = ex.forms.find(f => f.toLowerCase() !== String(w.display).toLowerCase());
+      const answer = [w.display].concat(ex.forms, w.word && w.word !== w.display ? [w.word] : []);
+      const uk = w.entry.variant ? w.entry.variant.replace(/^British:\s*/, '') : '';
+      if (uk) answer.push(uk);
+      const it = { answer: [...new Set(answer)], pic: w.emoji || '', clues: clues.slice(0, 3),
+        note: form ? 'In the example: <b>' + esc(form) + '</b>, a form of <b>' + esc(w.display) + '</b>.' : '' };
+      if (answerBy === 'choose') {
+        const p = posOf(w.key)[0] || 'n', lv = (P[w.key] || [0, 2])[1];
+        const fromList = shuffle(words.filter(x => x.key !== w.key && posOf(x.key)[0] === p).map(x => x.display));
+        const fromDict = extras((k, r) => r[0] === p && Math.abs(r[1] - lv) <= 1 && !roundKeys.has(k), 6).map(shown);
+        const wrong = [...new Set(fromList.concat(fromDict))].filter(x => x.toLowerCase() !== String(w.display).toLowerCase()).slice(0, 3);
+        it.options = [w.display].concat(wrong);
+      }
+      return it;
+    });
+    $('mwGame').innerHTML = scoreBar('⭐');
+    HouseMystery.build({ container: 'vBox', items, scoreEl: 'vScore', totalEl: 'vTotal' });
+  }
+
+  /* ── 🗂️ Sort: by word type, number of syllables, or the stressed syllable ── */
+  const SORTS = {
+    grammar: {
+      title: 'What type of word is it?',
+      groups: [{ k: 'n', label: 'Noun', icon: '📦', hue: 25, why: 'a thing, a person, a place or an idea' }, { k: 'v', label: 'Verb', icon: '🏃', hue: 45, why: 'something you do or something that happens' },
+               { k: 'a', label: 'Adjective', icon: '🎨', hue: 300, why: 'it tells you about a noun' }, { k: 'r', label: 'Adverb', icon: '⏱️', hue: 190, why: 'it tells you how, when or where' }],
+      /* only words with one part of speech: "help" (noun and verb) would be right in two groups */
+      of: k => (P[k] && P[k][0].length === 1 ? P[k][0] : null),
+      why: (w, g) => '“' + esc(w) + '” is ' + (g.k === 'a' ? 'an ' : 'a ') + g.label.toLowerCase() + ': ' + g.why + '.'
+    },
+    syllables: {
+      title: 'How many syllables? Say the word and clap 👏',
+      groups: [{ k: 1, label: '1 syllable', icon: '👏' }, { k: 2, label: '2 syllables', icon: '👏👏' }, { k: 3, label: '3 syllables', icon: '👏👏👏' }, { k: 4, label: '4 or more', icon: '👏👏👏👏' }],
+      of: k => (P[k] && P[k][2] ? Math.min(P[k][2], 4) : null),
+      why: (w, g, say) => '“' + esc(w) + '”' + (say ? ' sounds like <b>' + esc(say) + '</b>' : '') + ': ' + (g.k === 1 ? '1 syllable' : g.k === 4 ? '4 or more syllables' : g.k + ' syllables') + '.'
+    },
+    stress: {
+      title: 'Which syllable is strong? Say the word 🎯',
+      groups: [{ k: 0, label: '1st syllable ●○', icon: '' }, { k: 1, label: '2nd syllable ○●', icon: '' }, { k: 2, label: '3rd or later ○○●', icon: '' }],
+      of: k => (P[k] && P[k][2] > 1 ? Math.min(P[k][3], 2) : null),
+      why: (w, g, say) => '“' + esc(w) + '”' + (say ? ' sounds like <b>' + esc(say) + '</b>' : '') + ': the strong syllable is the ' + ['1st', '2nd', '3rd or a later'][g.k] + ' one.'
+    }
+  };
+  async function roundSort() {
+    const S = SORTS[sortBy] || SORTS.grammar, D = await whenDict();
+    const mine = recent(words.filter(w => S.of(w.key) != null && S.groups.some(g => g.k === S.of(w.key))), 8);
+    if (mine.length < 2) return tooFew(mine.length, 2, sortBy === 'stress' ? 'Sort by stress needs 2 or more words with 2 or more syllables.' : 'Save 2 or more words to play.');
+    const byG = new Map(S.groups.map(g => [g.k, []]));
+    mine.forEach(w => byG.get(S.of(w.key)).push({ word: w.display, say: w.entry && w.entry.say && w.entry.say[0], mine: true }));
+    /* every group in the round gets 2 or more words; at least 2 groups; extra words come from the dictionary */
+    let used = S.groups.filter(g => byG.get(g.k).length);
+    if (used.length < 2) {
+      const want = S.groups.filter(g => !used.includes(g));
+      used = used.concat(sortBy === 'grammar' ? want.slice(0, 1) : [want.sort((a, b) => Math.abs(a.k - used[0].k) - Math.abs(b.k - used[0].k))[0]]);
+    }
+    const added = [];
+    for (const g of used) {
+      const need = 2 - byG.get(g.k).length;
+      if (need > 0) {
+        for (const k of extras(k => S.of(k) === g.k, need)) {
+          const e = await D.get(k).catch(() => null);
+          byG.get(g.k).push({ word: (e && e.display) || shown(k), say: e && e.say && e.say[0] }); added.push(shown(k));
+        }
+      }
+    }
+    used = used.filter(g => byG.get(g.k).length);
+    const groups = used.map(g => ({ label: g.label, icon: g.icon, hue: g.hue }));
+    const list = [];
+    used.forEach((g, i) => byG.get(g.k).forEach(x => list.push([x.word, i, S.why(x.word, g, x.say)])));
+    if (added.length) note('Some words are new: ' + added.join(', ') + '. They come from the dictionary, so the groups have 2 words or more.');
+    $('mwGame').innerHTML = '<div id="vBox"></div>';
+    HouseSort.build({ container: 'vBox', items: [{ title: S.title, groups, words: list, note: 'Well done — every word is in its group! Press 🔄 for new words.' }] });
   }
 
   /* HouseMatching and HouseMemory keep listeners on their elements, so every round gets fresh markup */
@@ -328,6 +533,8 @@
     if (!b) return;
     if (b.dataset.game) { game = b.dataset.game; store.set('my-words-game', game); }
     if (b.dataset.with) { withWhat = b.dataset.with; store.set('my-words-with', withWhat); }
+    if (b.dataset.answer) { answerBy = b.dataset.answer; store.set('my-words-answer', answerBy); }
+    if (b.dataset.sortby) { sortBy = b.dataset.sortby; store.set('my-words-sortby', sortBy); }
     newRound();
   });
   $('mwSort').addEventListener('change', () => { store.set('my-words-sort', $('mwSort').value); drawList(); });
@@ -337,6 +544,8 @@
     const d = e.target.closest('[data-del]');
     if (d && window.HouseDict) { HouseDict.unsave(d.getAttribute('data-del')); }
   });
+  /* tap a finished word in Listen, Mystery or Sort: hear it */
+  $('mwGame').addEventListener('click', e => { const t = e.target.closest('[data-say]'); if (t && !t.closest('.match-col')) say(t.getAttribute('data-say')); });
   /* the ☆ on a card on this page, or another tab, changed the list */
   let reloading = 0;
   const reload = () => { clearTimeout(reloading); reloading = setTimeout(() => load().catch(fail), 60); };
@@ -347,7 +556,7 @@
      A code is "MYWORDS1:" + base64 of the JSON {app:'my-words', v:1, words:[{word, key, page, time}]}.
      The file is the same JSON. Import also takes that JSON, or plain words ("apple, umbrella"). */
   const CODE_TAG = 'MYWORDS1:';
-  const MAX_IMPORT = 3000;
+  const MAX_IMPORT = 4000;
   const savedNow = () => (window.HouseDict ? HouseDict.saved() : store.get('house-dict-saved', [])).filter(s => s && s.key);
   const toB64 = t => btoa(unescape(encodeURIComponent(t)));
   const fromB64 = t => decodeURIComponent(escape(atob(t.replace(/\s+/g, ''))));
