@@ -70,8 +70,11 @@
     + '.h3d-mini > svg{ display:block; width:100%; height:100%; }'
     /* the part in a small picture (the matching games): a thick outline going round the colours of the rainbow */
     + '@keyframes h3dHue{ 0%{ stroke:#ff2a2a } 16.7%{ stroke:#ffd000 } 33.3%{ stroke:#22d64a } 50%{ stroke:#00d2ff } 66.7%{ stroke:#2a5bff } 83.3%{ stroke:#d22aff } 100%{ stroke:#ff2a2a } }'
+    + '@keyframes h3dHueF{ 0%{ fill:#ff2a2a } 16.7%{ fill:#ffd000 } 33.3%{ fill:#22d64a } 50%{ fill:#00d2ff } 66.7%{ fill:#2a5bff } 83.3%{ fill:#d22aff } 100%{ fill:#ff2a2a } }'
     + '.h3d-mark{ animation:h3dHue 2.4s linear infinite; animation-delay:var(--h3d-t,0s); }'
-    + '@media (prefers-reduced-motion: reduce){ .h3d-mark{ animation:none; stroke:#ff2a8a; } }'
+    /* …and its faces tinted in the same colour (a see-through layer over them: the shading still shows) */
+    + '.h3d-markfill{ fill-opacity:.5; stroke:none; pointer-events:none; animation:h3dHueF 2.4s linear infinite; animation-delay:var(--h3d-t,0s); }'
+    + '@media (prefers-reduced-motion: reduce){ .h3d-mark{ animation:none; stroke:#ff2a8a; } .h3d-markfill{ animation:none; fill:#ff2a8a; } }'
     + '.h3d-leader{ fill:none; stroke:var(--text-accent,#185fa5); stroke-width:1.5; }'
     + '.h3d-dot{ fill:var(--text-accent,#185fa5); stroke:var(--surface-2,#fff); stroke-width:1.5; }'
     + '.h3d-finger{ fill:rgba(255,255,255,.75); stroke:var(--text-accent,#185fa5); stroke-width:2; }'
@@ -594,7 +597,7 @@
         edge = Math.abs(lum(inv) - lum(c2)) > 90 ? inv : lum(c2) > 128 ? [0, 0, 0] : [255, 255, 255];
         col = mix(col, inv, 0.1);
       }
-      list.push({ id: f.id, on: f.on, layer: f.layer, n: n, mid: mid, z: mid[2] + f.bias, d: 'M' + cp.map(function (c) { var s = cam.toScreen(c); return f1(s[0]) + ',' + f1(s[1]); }).join('L') + 'Z', fill: css(col), stroke: on ? css(edge) : css(f.seamless ? col : edge), sw: on ? (rainbow ? 2.8 : 1.8) : 0.6, part: f.part, alpha: f.alpha, cls: on && rainbow ? 'h3d-mark' : null });
+      list.push({ id: f.id, on: f.on, layer: f.layer, n: n, mid: mid, z: mid[2] + f.bias, d: 'M' + cp.map(function (c) { var s = cam.toScreen(c); return f1(s[0]) + ',' + f1(s[1]); }).join('L') + 'Z', fill: css(col), stroke: on ? css(edge) : css(f.seamless ? col : edge), sw: on ? (rainbow ? 1.3 : 1.8) : 0.6, part: f.part, alpha: f.alpha, cls: on && rainbow ? 'h3d-mark' : null });
     });
     /* a thing lying on a surface ("on") is drawn just after that surface's face that looks the same way */
     var settle = function (x, depth) {
@@ -667,7 +670,8 @@
     list.sort(function (a, b) { return a.z - b.z; });
     return list.map(function (x) {
       if (x.raw) return x.raw;
-      return '<path d="' + x.d + '" fill="' + x.fill + '" stroke="' + x.stroke + '" stroke-width="' + x.sw + '" stroke-linejoin="round"' + (x.cls ? ' class="' + x.cls + '"' : '') + (x.alpha != null ? ' fill-opacity="' + x.alpha + '" stroke-opacity="' + f1(Math.min(1, x.alpha + 0.3)) + '"' : '') + (x.part ? ' data-part="' + x.part + '"' : '') + '/>';
+      return '<path d="' + x.d + '" fill="' + x.fill + '" stroke="' + x.stroke + '" stroke-width="' + x.sw + '" stroke-linejoin="round"' + (x.cls ? ' class="' + x.cls + '"' : '') + (x.alpha != null ? ' fill-opacity="' + x.alpha + '" stroke-opacity="' + f1(Math.min(1, x.alpha + 0.3)) + '"' : '') + (x.part ? ' data-part="' + x.part + '"' : '') + '/>'
+        + (x.cls ? '<path d="' + x.d + '" class="h3d-markfill"/>' : '');
     }).join('');
   }
   /* light from a lamp, finger taps and swipes */
@@ -2125,10 +2129,18 @@
     var BODY = '#d64550', ARM = -55, PIVOT = [0, 22, -10], SHAFT = [0, 0, 2];
     var running = function (sc) { return sc.plugged() && sc.val.speed > 0.5 && sc.val.arm < 0.02; };
     /* where an attachment is: d = 0 on the mixer … 0.3 pulled down off the shaft … 1 lying on the table (left of the mixer) */
-    var SPOT = { dB: -7, dW: 0, dH: 8 };   /* where each one lies on the table (how far forward) */
+    var SPOT = { dB: -7, dW: 0, dH: 8 };
+    /* planetary action: the shaft goes round the bowl (a circle 2.2 from its middle) while the attachment turns the other
+       way on the shaft, so it reaches every part of the bowl. The orbit's angle is the 'mplanet' spin's */
+    var ORBIT = 2.2;
+    var orbit = function (sc) {
+      var i = 0; sc.m.spins.forEach(function (sp, k) { if (sp.g === 'mplanet') i = k; });
+      var a = sc.sp[i].a * Math.PI / 180; return [ORBIT * Math.sin(a), 0, -ORBIT * Math.cos(a)];
+    };   /* where each one lies on the table (how far forward) */
     var placeOps = function (sc, k) {
       var d = sc.val[k], pull = Math.min(1, d / 0.3), u = d <= 0.3 ? 0 : ease((d - 0.3) / 0.7);
       var out = [{ move: [0, -3 * pull, 0] }];
+      if (pull < 1) out.unshift({ move: mul(orbit(sc), 1 - pull) });   /* on the shaft, it goes round with it (back to the middle as it comes off) */
       if (sc.val.arm && u < 1) out.push({ rot: { ax: 'x', pivot: PIVOT }, deg: ARM * sc.val.arm * (1 - u) });   /* it goes with the head, less and less */
       if (u) {
         out.push({ rot: { ax: 'z', pivot: [0, 9.75, 2] }, deg: 90 * u });   /* it lies down… */
@@ -2159,17 +2171,22 @@
     var lastH = hookPts[hookPts.length - 1]; hookPts.push([lastH[0] * 1.05, lastH[1] + 0.9, lastH[2] * 1.05 - 0.05]);
     var hook = [C([0, 17.6, 2], 'y', 0.95, 2, '#c9d0d7', 'hook', 'hook', { seg: 14 }), { t: 'tube', pts: hookPts, r: 0.4, col: '#e6e9ec', part: 'hook', group: 'hook' }];
     var ORDER = ['dB', 'dW', 'dH'];
-    var change = {
+    /* "change the attachment" on the paddle, the whisk or the dough hook: that one goes on the mixer (the one on it goes
+       to the table). Nothing to do when it is already on */
+    var change = function (want) { return {
       v: 'change the attachment', period: 6800,
+      noop: function (sc) { return willBe(sc, want) < 0.02; },
       seq: function (sc) {
-        var on = ORDER.filter(function (k) { return sc.val[k] < 0.5; })[0] || 'dB', off = ORDER[(ORDER.indexOf(on) + 1) % 3], up = sc.val.arm > 0.9 ? 0 : 850;
+        var on = ORDER.filter(function (k) { return sc.val[k] < 0.5; })[0] || 'dB', off = want, up = sc.val.arm > 0.9 ? 0 : 850;
+        if (on === off) return [];
         return [{ m: 'speed', to: 0 }, { m: 'arm', to: 1 },
           { m: on, to: 1, wait: up, dur: 1500 }, { m: off, to: 0, wait: up + 1700, dur: 1500 }, { m: 'arm', to: 0, wait: up + 3400 }];
       }
-    };
+    }; };
     var m = define('mixer', {
       name: 'stand mixer', view: { yaw: -40, pitch: 16, zoom: 1.0 },
-      groups: { beater: { ops: function (sc) { return placeOps(sc, 'dB'); } }, whisk: { ops: function (sc) { return placeOps(sc, 'dW'); } }, hook: { ops: function (sc) { return placeOps(sc, 'dH'); } } },
+      groups: { beater: { ops: function (sc) { return placeOps(sc, 'dB'); } }, whisk: { ops: function (sc) { return placeOps(sc, 'dW'); } }, hook: { ops: function (sc) { return placeOps(sc, 'dH'); } },
+        mhub: { ops: function (sc) { return [{ move: orbit(sc) }].concat(sc.ops('head')); } } },
       shapes: [
         B([-9, 9, 0, 3, -14, 10], BODY, null, null, { id: 'mbase' }),
         C([0, 3.3, 2], 'y', 6, 0.6, '#b9c0c8', null, null, { seg: 24, on: 'mbase' }),
@@ -2181,7 +2198,7 @@
         /* the head (the arm), on a hinge at the top of the column, and the shaft the attachments go on */
         B([-4.5, 4.5, 20, 29, -13.5, 8], BODY, 'arm', 'head', { id: 'mhead' }),
         C([0, 24.5, 8.6], 'z', 2.6, 1.2, '#b9c0c8', 'arm', 'head', { seg: 18, on: 'mhead' }),
-        C([0, 19.2, 2], 'y', 0.45, 2.6, '#b9c0c8', 'arm', 'head', { seg: 10, on: 'mhead' }),
+        C([0, 19.2, 2], 'y', 0.45, 2.6, '#b9c0c8', 'arm', 'mhub', { seg: 10, on: 'mhead' }),   /* the shaft: it goes round (planetary) */
         /* the speed lever on the right side of the stand (the column): it stays put when the arm lifts */
         rotBox([4.0, 4.5, 14, 15.9, -10.3, -9.7], 'x', 37.5, [4.25, 14, -10], '#2f3338', 'knob', 'msw', { on: 'mcol' }),
         rotBox([4.0, 4.8, 15.7, 16.5, -10.45, -9.55], 'x', 37.5, [4.25, 14, -10], '#2f3338', 'knob', 'msw', { on: 'mcol' })
@@ -2196,6 +2213,7 @@
       /* the numbers by the lever */
       displays: [{ id: 'mmarks', on: 'mcol', part: 'knob', at: [4, 17.8, -10], u: [0, 0, -1], v: [0, 1, 0], h: 1.4, text: '0123', col: '#fbe3e5', bg: BODY, when: function () { return true; } }],
       spins: [
+        { g: 'mplanet', ax: 'y', pivot: SHAFT, ease: 600, rate: function (sc) { return running(sc) ? -sc.val.speed * 75 : 0; } },   /* the orbit, the other way */
         { g: 'beater', ax: 'y', pivot: SHAFT, ease: 600, rate: function (sc) { return running(sc) && sc.val.dB < 0.01 ? sc.val.speed * 220 : 0; } },
         { g: 'whisk', ax: 'y', pivot: SHAFT, ease: 600, rate: function (sc) { return running(sc) && sc.val.dW < 0.01 ? sc.val.speed * 300 : 0; } },
         { g: 'hook', ax: 'y', pivot: SHAFT, ease: 600, rate: function (sc) { return running(sc) && sc.val.dH < 0.01 ? sc.val.speed * 160 : 0; } }
@@ -2205,9 +2223,9 @@
       parts: {
         knob: { name: 'knob', can: [{ v: 'switch on', m: 'speed', to: 1 }, { v: 'change the speed', m: 'speed', to: 'cycle', max: 3 }, { v: 'switch off', m: 'speed', to: 0 }], zoom: 2.6, view: { yaw: -80, pitch: 12 } },
         arm: { name: 'arm', can: [{ v: 'lift', m: 'arm', to: 1 }, { v: 'lower', m: 'arm', to: 0 }], zoom: 1.2, view: { yaw: -70, pitch: 10 } },
-        beater: { name: 'paddle', can: [{ v: 'mix', m: 'speed', to: 1, if: function (sc) { return sc.val.dB < 0.5; } }, change], zoom: 1.2, view: { yaw: -30, pitch: 20 } },
-        whisk: { name: 'whisk', can: [{ v: 'whisk', m: 'speed', to: 1, if: function (sc) { return sc.val.dW < 0.5; } }, change], zoom: 1.2, view: { yaw: -30, pitch: 20 } },
-        hook: { name: 'dough hook', can: [{ v: 'knead', m: 'speed', to: 1, if: function (sc) { return sc.val.dH < 0.5; } }, change], zoom: 1.2, view: { yaw: -30, pitch: 20 } },
+        beater: { name: 'paddle', can: [{ v: 'mix', m: 'speed', to: 1, if: function (sc) { return sc.val.dB < 0.5; } }, change('dB')], zoom: 1.2, view: { yaw: -30, pitch: 20 } },
+        whisk: { name: 'whisk', can: [{ v: 'whisk', m: 'speed', to: 1, if: function (sc) { return sc.val.dW < 0.5; } }, change('dW')], zoom: 1.2, view: { yaw: -30, pitch: 20 } },
+        hook: { name: 'dough hook', can: [{ v: 'knead', m: 'speed', to: 1, if: function (sc) { return sc.val.dH < 0.5; } }, change('dH')], zoom: 1.2, view: { yaw: -30, pitch: 20 } },
         bowl: { name: 'bowl', can: [{ v: 'put the ingredients in' }], zoom: 1.6, view: { yaw: -30, pitch: 35 } }
       }
     });
@@ -2465,15 +2483,16 @@
         if (st.smode) { st.tpos += ms / 1000; if (st.tpos >= st.tlen) { nextTrack(st, now); P = st.cprof; } }   /* the CD's clock */
         var chorus = (st.kCount || 0) % (P.verse + P.chorus) >= P.verse;
         st.chorus = chorus;
+        /* a steady tempo all through the song: each beat is due exactly one beat after the last one (on the clock, not
+           when the frame came), and the treble ticks fall on the same grid, starting on the beat */
         if (st.kNext == null || st.kNext < now - 1000) st.kNext = now;
         if (now >= st.kNext) {
-          st.kAt = now; st.kNext = now + P.k * (0.92 + 0.16 * Math.random()); st.kCount = (st.kCount || 0) + 1;
+          st.kAt = st.kNext; st.hNext = st.kNext; st.kNext += P.k; st.kCount = (st.kCount || 0) + 1;
           st.kA = P.bass * (chorus ? 1 : 0.62) * (0.9 + 0.2 * Math.random());
           st.kAmp = [0, 1, 2, 3, 4, 5, 6].map(function () { return 0.8 + 0.3 * Math.random(); });
         }
-        if (st.hNext == null || st.hNext < now - 1000) st.hNext = now + 60;
-        if (now >= st.hNext) {   /* the verse: the treble half as often, and softer */
-          st.hAt = now; st.hNext = now + P.h * (chorus ? 1 : 2) * (0.85 + 0.3 * Math.random());
+        if (st.hNext != null && now >= st.hNext && st.hNext < st.kNext - 1) {   /* the verse: the treble half as often, and softer */
+          st.hAt = st.hNext; st.hNext += P.h * (chorus ? 1 : 2);
           st.hAmp = P.treble * (chorus ? 1 : 0.7) * (0.6 + 0.4 * Math.random());
         }
       }
