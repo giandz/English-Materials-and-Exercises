@@ -4745,9 +4745,9 @@
   const SHIP_SPEED = 20, SHIP_LANE = RIVER_ARM_W * 0.22, SHIP_TURN = 1.6; // turn rate, radians/second
   // Sizes on the same scale as the cars (a car, 13 units, is about 4.5 m):
   //  · boat  ~7 m, ferry ~13 m — keep to the right, may call at a pier
-  //  · tow   ~30 m: a pusher tug and two container barges, jointed like a
-  //          train (with room between the sections to swing on bends);
-  //          only passes through, fits any river
+  //  · tow   ~33 m: a tug towing two container barges on a towline, the
+  //          barges lashed one behind the other (with room between them to
+  //          swing on bends); only passes through, fits any river
   //  · cargo ~30 m × 7 m container ship. Follows train rules: sails down the
   //          middle of each square, and only through "open water" — squares
   //          with water on all eight sides — or a pier, so it never enters
@@ -4757,7 +4757,7 @@
   const SHIP_KINDS = {
     boat:  { len: 20, wid: 7,  speed: 1.25, turn: 0.9,  helm: 1.1 },
     ferry: { len: 36, wid: 13, speed: 1,    turn: 0.35, helm: 0.6 },
-    tow:   { len: 30, wid: 14, speed: 0.75, barges: 2, tugLen: 16, tugWid: 12, gap: 7 },
+    tow:   { len: 30, wid: 14, speed: 0.75, barges: 2, tugLen: 16, tugWid: 12, gap: 7, towLine: 14 },
     cargo: { len: 86, wid: 20, speed: 0.7,  turn: 0.2,  helm: 0.35, openWater: true }
   };
   const TRAIL_LIFE = 4;   // seconds a ship's trail takes to fade away
@@ -4911,14 +4911,17 @@
   }
   function drawTug(hull) {
     const K = SHIP_KINDS.tow, L = K.tugLen, W = K.tugWid, g = svgEl('g', {});
-    // square pushing front (+x) with rubber knees, rounded stern
-    const d = `M${L / 2} ${-W / 2}L${L / 2} ${W / 2}L${-L / 2 + 4} ${W / 2}Q${-L / 2} ${W / 2} ${-L / 2} 0Q${-L / 2} ${-W / 2} ${-L / 2 + 4} ${-W / 2}Z`;
+    // a towing tug: pointed bow (+x) with a fender, wheelhouse forward, and an
+    // open after deck with the towing bitt the line is made fast to
+    const d = hullPath(L, W, 6);
     g.appendChild(hullShadow(d));
     g.appendChild(svgEl('path', { d, fill: hull, stroke: 'rgba(0,0,0,0.5)', 'stroke-width': 0.6 }));
-    [-1, 1].forEach(sd => g.appendChild(svgEl('rect', { x: L / 2 - 0.6, y: sd * (W / 2 - 2.5) - 1.5, width: 1.4, height: 3, rx: 0.4, fill: '#111' })));
-    g.appendChild(svgEl('rect', { x: -2.5, y: -W / 2 + 2, width: 8, height: W - 4, rx: 1.2, fill: '#fafafa', stroke: 'rgba(0,0,0,0.3)', 'stroke-width': 0.5 })); // wheelhouse
-    g.appendChild(svgEl('rect', { x: 4.2, y: -W / 2 + 2.8, width: 1, height: W - 5.6, fill: '#90caf9' }));
-    g.appendChild(svgEl('circle', { cx: -4.6, cy: 0, r: 1.3, fill: '#212121' }));                                          // stack
+    g.appendChild(svgEl('path', { d: `M${L / 2 - 4.2} ${-W / 2 + 1.6}Q${L / 2 + 0.4} 0 ${L / 2 - 4.2} ${W / 2 - 1.6}`, fill: 'none', stroke: '#111', 'stroke-width': 1.4, 'stroke-linecap': 'round' })); // bow fender
+    g.appendChild(svgEl('rect', { x: -L / 2 + 1.2, y: -W / 2 + 1.2, width: 6.4, height: W - 2.4, rx: 1, fill: 'rgba(0,0,0,0.18)' }));           // after deck
+    g.appendChild(svgEl('rect', { x: -1.2, y: -W / 2 + 2, width: 7, height: W - 4, rx: 1.2, fill: '#fafafa', stroke: 'rgba(0,0,0,0.3)', 'stroke-width': 0.5 })); // wheelhouse
+    g.appendChild(svgEl('rect', { x: 4.6, y: -W / 2 + 2.8, width: 1, height: W - 5.6, fill: '#90caf9' }));                                   // windows, looking ahead
+    g.appendChild(svgEl('circle', { cx: -2.6, cy: 0, r: 1.2, fill: '#212121' }));                                                             // stack
+    g.appendChild(svgEl('rect', { x: -L / 2 + 2.2, y: -1.6, width: 1.6, height: 3.2, rx: 0.4, fill: '#ffb300', stroke: '#5d4037', 'stroke-width': 0.4 })); // towing bitt
     return g;
   }
   function drawCargoShip() {
@@ -4938,9 +4941,9 @@
     if (kind === 'boat') return drawBoat();
     if (kind === 'ferry') return drawFerry();
     if (kind === 'cargo') return drawCargoShip();
-    const K = SHIP_KINDS.tow, hull = pick(HULLS), parts = [];
-    for (let i = 0; i < K.barges; i++) parts.push([K.len, K.wid, drawBarge(i === 0, hull, i === 1), i ? K.gap : 0]);
-    parts.push([K.tugLen, K.tugWid, drawTug(pick(HULLS)), K.gap]);
+    // the tug leads; the barges follow on the towline, lashed nose to tail
+    const K = SHIP_KINDS.tow, hull = pick(HULLS), parts = [[K.tugLen, K.tugWid, drawTug(pick(HULLS)), 0]];
+    for (let i = 0; i < K.barges; i++) parts.push([K.len, K.wid, drawBarge(i === 0, hull, i === 1), i ? K.gap : K.towLine]);
     return parts;
   }
 
@@ -4969,22 +4972,32 @@
   function makeShip(kind, sm, cells, extra) {
     const units = chain(makeShipParts(kind));
     const el = svgEl('g', {});
+    let rope = null;
+    if (kind === 'tow') { rope = svgEl('path', { fill: 'none', stroke: '#4e3b2a', 'stroke-width': 0.7, 'stroke-linecap': 'round', 'stroke-linejoin': 'round' }); el.appendChild(rope); }
     units.slice().reverse().forEach(u => el.appendChild(u.el));
     shipLayer.appendChild(el);
     const last = units[units.length - 1], total = units[0].len / 2 + last.back + last.len / 2;
     const v = Object.assign({
       type: 'ship', domain: 'water', kind, units, sm, el, s: 0, waited: 0,
       speed: SHIP_SPEED * SHIP_KINDS[kind].speed * (0.9 + Math.random() * 0.2),
-      half: units[0].len / 2, wid: units[0].wid, length: last.back + last.len / 2, cells, pos: sm[0],
+      half: units[0].len / 2, wid: Math.max(...units.map(u => u.wid)), length: last.back + last.len / 2, cells, pos: sm[0], rope,
       ...inertiaFor(total, true), vel: SHIP_SPEED * SHIP_KINDS[kind].speed,
       angle: Math.atan2(sm[0].hy, sm[0].hx), docked: 0, leg: 'out', trailFrom: null,
-      bodies() { return this.units.filter(u => u.solid).map(u => ({ x: u.x, y: u.y, hx: u.hx, hy: u.hy, half: u.len / 2, wid: u.wid })); }
+      bodies() {
+        const b = this.units.filter(u => u.solid).map(u => ({ x: u.x, y: u.y, hx: u.hx, hy: u.hy, half: u.len / 2, wid: u.wid }));
+        // a tow's towline counts too: nobody cuts in between the tug and its barges
+        if (this.rope && this.ropeEnds) {
+          const [a, c] = this.ropeEnds, l = Math.hypot(c.x - a.x, c.y - a.y) || 1;
+          b.push({ x: (a.x + c.x) / 2, y: (a.y + c.y) / 2, hx: (a.x - c.x) / l, hy: (a.y - c.y) / l, half: l / 2, wid: 3 });
+        }
+        return b;
+      }
     }, extra || {});
     vehicles.push(v);
     return v;
   }
-  const shipTotalLen = kind => kind === 'tow'
-    ? SHIP_KINDS.tow.len * SHIP_KINDS.tow.barges + SHIP_KINDS.tow.tugLen + SHIP_KINDS.tow.gap * SHIP_KINDS.tow.barges : SHIP_KINDS[kind].len;
+  const shipTotalLen = kind => { const K = SHIP_KINDS[kind];
+    return kind === 'tow' ? K.tugLen + K.towLine + K.len * K.barges + K.gap * (K.barges - 1) : K.len; };
   const cellsOf = keys => keys.map(k => { const [r, c] = rcOf(k.slice(2)); return [r, c, grid[r][c].kind]; });
 
   // the water a new ship comes in over — off the map and into the first square — must be empty
@@ -5054,7 +5067,7 @@
     if (!keys) { removeVehicle(v); return; }
     const pts = [v.offBerth].concat(keys.slice(1).map(k => { const [r, c] = rcOf(k.slice(2)); return cellCenter(r, c); }), [outerWaterPt(to)]);
     v.sm = tripSamples(pts, pts.map(() => false), v.lane, { start: true });
-    v.s = 0; v.leg = 'out'; v.casting = true; v.cells = cellsOf(keys); v.override = null; v.side = 0; v.sideWant = 0; v.yawOff = 0;
+    v.s = 0; v.leg = 'out'; v.casting = true; v.cells = cellsOf(keys); v.override = null; v.side = 0; v.sideWant = 0; v.yawOff = 0; v.yawRate = 0;
   }
 
   // Ships keep their distance: a following gap of 12 units plus a quarter of
@@ -5225,9 +5238,8 @@
     //  swayOut  — slide sideways back off the berth, then cast off
     if (v.leg === 'aligning') {
       const before = { s: v.s, side: v.side || 0, angle: v.angle, yawOff: v.yawOff || 0, leg: v.leg, clear: shipClearance(v) };
-      const d = angleDiff(v.angle, v.berthAngle), step = SHIP_KINDS[v.kind].turn * dt;
-      v.angle += Math.max(-step, Math.min(step, d));
-      if (Math.abs(d) < 0.01) { v.angle = v.berthAngle; v.leg = 'swayIn'; v.swayT = 0; }
+      yawToward(v, v.berthAngle, SHIP_KINDS[v.kind].turn, dt);
+      if (yawSettled(v, v.berthAngle)) { v.angle = v.berthAngle; v.yawRate = 0; v.leg = 'swayIn'; v.swayT = 0; }
       shipGuardedPlace(v, dt, false, true, before);
       return;
     }
@@ -5237,7 +5249,7 @@
       // sway speed: a gentle push that eases in and out (smaller ships move a bit quicker)
       const top = 24 / Math.sqrt(shipTotalLen(v.kind));   // boat ≈5.4, ferry 4, cargo ≈2.6 units/s at most
       v.swayT = Math.min(1, v.swayT + Math.max(0.25, top * Math.sin(Math.PI * Math.min(0.97, Math.max(0.03, v.swayT)))) * dt / dist);
-      v.override = { x: a.x + (b.x - a.x) * v.swayT, y: a.y + (b.y - a.y) * v.swayT };
+      v.override = { x: a.x + (b.x - a.x) * v.swayT, y: a.y + (b.y - a.y) * v.swayT }; v.yawRate = 0;
       if (v.swayT >= 1) {
         if (v.leg === 'swayIn') { v.leg = 'docked'; v.docked = 4 + Math.random() * 5; v.override = { x: v.berth.x, y: v.berth.y }; }
         else departShip(v);
@@ -5264,10 +5276,7 @@
     // the final approach: from 1.5 ship lengths out, yaw round so the port
     // side comes to face the pier (at the ship's helm rate)
     const yawing = v.leg === 'toDock' && total - v.s <= 1.5 * shipTotalLen(v.kind);
-    if (yawing) {
-      const d = angleDiff(v.angle, v.berthAngle), step = SHIP_KINDS[v.kind].helm * dt;
-      v.angle += Math.max(-step, Math.min(step, d));
-    }
+    if (yawing) yawToward(v, v.berthAngle, SHIP_KINDS[v.kind].helm, dt);
     // otherwise hold back while the hull is still swinging round to its course,
     // so it never slides along sideways (one-piece ships; tows follow the course)
     if (v.units.length === 1 && !v.casting && !yawing) {
@@ -5292,12 +5301,31 @@
     v.s = target;
     if (v.leg === 'toDock' && v.s >= total - 0.3) {
       v.s = total; v.vel = 0; v.side = 0; v.sideWant = 0; v.yawOff = 0;
-      if (Math.abs(angleDiff(v.angle, v.berthAngle)) < 0.01) { v.angle = v.berthAngle; v.leg = 'swayIn'; v.swayT = 0; }
-      else v.leg = 'aligning';
+      if (yawSettled(v, v.berthAngle)) { v.angle = v.berthAngle; v.yawRate = 0; v.leg = 'swayIn'; v.swayT = 0; }
+      else v.leg = 'aligning';                            // (still swinging, or not round yet: finish turning in place)
     }
     else if (v.s >= total + v.length + 4) { removeVehicle(v); return; }
     shipGuardedPlace(v, dt, moving || v.casting, yawing, before);
   }
+  // Yaw with inertia: the turn rate (v.yawRate) builds up and dies away at an
+  // angular acceleration that's lower the bigger the ship, and the helm eases
+  // off early enough to come to rest on the new heading without overshooting.
+  const shipSpinUp = v => 0.5 + shipTotalLen(v.kind) / 30;   // s to reach full turn rate: boat ≈1.2, ferry 1.7, cargo 3.4
+  function yawToward(v, target, maxRate, dt) {
+    const d = angleDiff(v.angle, target), alpha = maxRate / shipSpinUp(v);
+    const rateWant = Math.sign(d) * Math.min(maxRate, Math.sqrt(2 * alpha * Math.abs(d)));
+    const r = v.yawRate || 0, step = alpha * dt;
+    v.yawRate = r + Math.max(-step, Math.min(step, rateWant - r));
+    v.angle += v.yawRate * dt;
+    if (Math.abs(angleDiff(v.angle, target)) < 0.004 && Math.abs(v.yawRate) < 0.02) { v.angle = target; v.yawRate = 0; }
+  }
+  // no helm: a swing in progress dies away
+  function yawCoast(v, maxRate, dt) {
+    const r = v.yawRate || 0; if (!r) return;
+    const step = maxRate / shipSpinUp(v) * dt, nr = Math.abs(r) <= step ? 0 : r - Math.sign(r) * step;
+    v.angle += (r + nr) / 2 * dt; v.yawRate = nr;
+  }
+  const yawSettled = (v, target) => Math.abs(angleDiff(v.angle, target)) < 0.01 && Math.abs(v.yawRate || 0) < 0.03;
   // Last safeguard: never make a move — ahead, sideways or turning — that
   // brings the hull nearer another ship once they are almost touching.
   // (A move that opens the gap is always allowed.)
@@ -5307,15 +5335,32 @@
     const now = shipClearance(v);
     if (now >= SHIP_TOUCH || now >= before.clear - 1e-3 || v.waited >= GIVE_UP_AFTER) return;
     v.waited += dt;                                       // held back: counts as a jam (it may then steer round)
-    Object.assign(v, { s: before.s, side: before.side, angle: before.angle, yawOff: before.yawOff, vel: 0, leg: before.leg });
+    Object.assign(v, { s: before.s, side: before.side, angle: before.angle, yawOff: before.yawOff, vel: 0, leg: before.leg, yawRate: 0 });
     placeShip(v, dt, false, true);
+  }
+  // The towline, from the tug's bitt to a bridle on the lead barge's bow, and
+  // the short lashings between the barges' corners.
+  function drawTowLines(v) {
+    const at = (u, along, across) => ({ x: u.x + u.hx * along - u.hy * across, y: u.y + u.hy * along + u.hx * across });
+    const tug = v.units[0], K = SHIP_KINDS.tow, f = n => n.toFixed(2);
+    const bitt = at(tug, -tug.len / 2 + 3, 0), b0 = v.units[1];
+    const apex = at(b0, b0.len / 2 + 4, 0), cA = at(b0, b0.len / 2 - 2.5, -K.wid / 2 + 2), cB = at(b0, b0.len / 2 - 2.5, K.wid / 2 - 2);
+    let d = `M${f(bitt.x)} ${f(bitt.y)}L${f(apex.x)} ${f(apex.y)}M${f(cA.x)} ${f(cA.y)}L${f(apex.x)} ${f(apex.y)}L${f(cB.x)} ${f(cB.y)}`;
+    for (let i = 1; i + 1 < v.units.length; i++) {
+      const a = v.units[i], b = v.units[i + 1];
+      [-1, 1].forEach(sd => { const p = at(a, -a.len / 2 + 0.5, sd * (K.wid / 2 - 1.2)), q = at(b, b.len / 2 - 0.5, sd * (K.wid / 2 - 1.2)); d += `M${f(p.x)} ${f(p.y)}L${f(q.x)} ${f(q.y)}`; });
+    }
+    v.rope.setAttribute('d', d);
+    v.ropeEnds = tug.solid && b0.solid ? [bitt, apex] : null;
   }
   function placeShip(v, dt, underWay, keepAngle) {
     if (v.units.length === 1) {
       const p = v.override || shipPoint(v, v.s, v.side || 0), u = v.units[0];
       const want = Math.atan2(p.hy, p.hx) + (v.override ? 0 : (v.yawOff || 0));
       const rate = v.casting ? SHIP_KINDS[v.kind].turn : SHIP_KINDS[v.kind].helm;
-      if (underWay && !keepAngle) { const d = angleDiff(v.angle, want); v.angle += Math.max(-rate * dt, Math.min(rate * dt, d)); }
+      if (v.override) v.yawRate = 0;                                    // alongside / sliding on to the berth
+      else if (underWay && !keepAngle) yawToward(v, want, rate, dt);
+      else if (!keepAngle) yawCoast(v, rate, dt);
       const hx = Math.cos(v.angle), hy = Math.sin(v.angle);
       Object.assign(u, { x: p.x, y: p.y, hx, hy, on: true, solid: true });
       v.pos = { x: p.x, y: p.y, hx, hy };
@@ -5327,12 +5372,14 @@
         if (i === 0) v.pos = p;
         u.el.setAttribute('transform', `translate(${p.x.toFixed(2)} ${p.y.toFixed(2)}) rotate(${(Math.atan2(p.hy, p.hx) * 180 / Math.PI).toFixed(1)})`);
       });
+      if (v.rope) drawTowLines(v);
     }
     // leave a trail on the water while under way. It is laid from a point
     // under the hull (just aft of the last unit's middle), so each new piece
     // is born hidden beneath the ship and slides out from under the stern
     // instead of popping into view behind it.
-    const st = v.units[v.units.length - 1], sx = st.x - st.hx * st.len * 0.15, sy = st.y - st.hy * st.len * 0.15;
+    // (a tow's wash comes from the tug, and the barges ride over it)
+    const st = v.units[0], sx = st.x - st.hx * st.len * 0.15, sy = st.y - st.hy * st.len * 0.15;
     if (underWay && v.vel > 1 && !v.casting) {
       if (!v.trailFrom) v.trailFrom = { x: sx, y: sy };
       else if (Math.hypot(sx - v.trailFrom.x, sy - v.trailFrom.y) >= 3) {
