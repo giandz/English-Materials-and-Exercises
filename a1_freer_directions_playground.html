@@ -74,7 +74,48 @@
      scroll and cancel the pointer events after the first square. Path
      and Pin only use taps, so the map scrolls normally with those. */
   #mapSvg{ touch-action:none; -webkit-touch-callout:none; }
-  body.map-pannable #mapSvg{ touch-action:manipulation; }
+  body.map-pannable #mapSvg{ touch-action:pan-y; }
+  #mapSvg.zoomed{ overflow:hidden; touch-action:none; }
+  #mapSvg.panning{ cursor:grabbing; }
+  body.space-pan #mapSvg{ cursor:grab; }
+
+  /* ═══════════ Pan / zoom buttons and full screen ═══════════ */
+  .map-wrap{ position:relative; }
+  .map-tools{
+    position:absolute; z-index:5; top:8px; left:8px;
+    display:flex; flex-direction:column; gap:4px;
+  }
+  .map-tools button{
+    width:36px; height:36px; padding:0; border-radius:10px; cursor:pointer;
+    display:flex; align-items:center; justify-content:center;
+    font-family:inherit; font-size:20px; font-weight:600; line-height:1; color:var(--color-text-primary);
+    background:color-mix(in srgb, var(--color-background-primary) 88%, transparent);
+    border:1px solid var(--color-border-secondary);
+    box-shadow:0 2px 8px rgba(0,0,0,.15);
+  }
+  .map-tools button:hover{ border-color:var(--slot-accent); }
+  .map-tools button:focus-visible{ outline:2px solid var(--slot-accent); outline-offset:1px; }
+  .map-tools button:disabled{ opacity:.4; cursor:default; }
+  .map-tools svg{ width:18px; height:18px; fill:none; stroke:currentColor; stroke-width:2; stroke-linecap:round; stroke-linejoin:round; }
+  .map-tools .zoom-pct{
+    font-size:0.7143rem; font-weight:600; text-align:center; color:var(--text-secondary);
+    background:color-mix(in srgb, var(--color-background-primary) 80%, transparent); border-radius:6px; padding:1px 0;
+  }
+  @media (max-width:520px){ .map-tools{ top:5px; left:5px; gap:3px; } .map-tools button{ width:30px; height:30px; font-size:17px; } .map-tools svg{ width:15px; height:15px; } }
+  .map-tools .fs-exit{ display:none; }
+  body.map-full .map-tools .fs-enter{ display:none; }
+  body.map-full .map-tools .fs-exit{ display:block; }
+
+  body.map-full{ overflow:hidden; }
+  body.map-full .page > :not(.map-wrap){ display:none; }
+  body.map-full .map-wrap{
+    position:fixed; inset:0; z-index:800; margin:0;
+    border:0; border-radius:0; overflow:hidden;
+    background:var(--color-background-primary);
+    padding-bottom:var(--dock-h, 90px);
+  }
+  body.map-full #mapSvg{ width:100%; height:100%; }
+  body.map-full .map-tools{ top:calc(10px + env(safe-area-inset-top, 0px)); left:calc(10px + env(safe-area-inset-left, 0px)); }
   .building-symbol{ font-size:30px; pointer-events:none; user-select:none; }
   .pin-symbol{ font-size:64px; pointer-events:none; user-select:none; cursor:pointer; }
 
@@ -330,6 +371,8 @@
   .opt-section{ border-top:1px solid var(--color-border-secondary); padding-top:12px; margin-top:12px; }
   .opt-title{ font-size:0.9286rem; font-weight:650; margin:0 0 8px; color:var(--text-primary); }
   .opt-note{ font-size:0.8929rem; line-height:1.45; color:var(--text-secondary); margin:0 0 10px; }
+  .opt-check{ display:flex; align-items:center; gap:8px; font-size:0.9286rem; cursor:pointer; }
+  .opt-check input{ width:16px; height:16px; margin:0; accent-color:var(--slot-accent); }
   .opt-row{ display:flex; flex-wrap:wrap; gap:8px; margin-top:10px; }
   .opt-status{ font-size:0.8929rem; margin:8px 0 0; color:var(--slot-accent); min-height:1em; }
   .opt-status.is-error{ color:#c62828; }
@@ -379,6 +422,18 @@
 
   <div class="map-wrap">
     <svg id="mapSvg" viewBox="0 0 480 480" xmlns="http://www.w3.org/2000/svg"></svg>
+    <div class="map-tools" role="toolbar" aria-label="Map view">
+      <button type="button" id="zoomInBtn" aria-label="Zoom in" title="Zoom in (+)">+</button>
+      <div class="zoom-pct" id="zoomPct" aria-live="polite">100%</div>
+      <button type="button" id="zoomOutBtn" aria-label="Zoom out" title="Zoom out (−)">−</button>
+      <button type="button" id="zoomFitBtn" aria-label="Show the whole map" title="Show the whole map (0)">
+        <svg viewBox="0 0 24 24" aria-hidden="true"><rect x="4" y="4" width="16" height="16" rx="2"/><path d="M9 4v16M15 4v16M4 9h16M4 15h16" stroke-width="1.2"/></svg>
+      </button>
+      <button type="button" id="fullBtn" aria-label="Full screen" title="Full screen (F)">
+        <svg class="fs-enter" viewBox="0 0 24 24" aria-hidden="true"><path d="M4 9V4h5M15 4h5v5M20 15v5h-5M9 20H4v-5"/></svg>
+        <svg class="fs-exit" viewBox="0 0 24 24" aria-hidden="true"><path d="M9 4v5H4M20 9h-5V4M15 20v-5h5M4 15h5v5"/></svg>
+      </button>
+    </div>
   </div>
 
   <footer>Free Practice — Giving Directions (A1)</footer>
@@ -483,6 +538,8 @@
     <li><strong>⚓ Ferry</strong>: put it next to water. Routes can sail from one ferry to another.</li>
     <li><strong>🚇 Subway</strong>: routes can go from one station to any other station.</li>
     <li><strong>🧭 Path</strong>, <strong>🏷️ Label</strong> and <strong>📍 Pin</strong> open a drawer with options. Tap the tool again to hide it.</li>
+    <li><strong>🚗 Cars</strong>, <strong>🚌 buses</strong>, vans, <strong>🏍️ motorcycles</strong>, trucks, <strong>🚆 trains</strong> and <strong>🚢 ships</strong> move around by themselves. Traffic stops at red <strong>🚦 lights</strong> and at railroad crossings when the red lights flash. Trains obey <strong>rail signals</strong> beside the track (green go, yellow a train is coming, red stop); the signals with a white frame are <strong>chain signals</strong> in front of junctions, and blue on them means only some ways out are free. You can turn it off in <strong>⚙️ Options</strong>.</li>
+    <li><strong>🔍 Zoom</strong>: use <strong>+</strong> and <strong>−</strong> at the top left of the map, the mouse wheel, or pinch with two fingers. To move around, drag with two fingers, with the right mouse button, or hold <strong>Space</strong> and drag. The square button shows the whole map again, and the corner button makes the map full screen (<strong>F</strong>).</li>
     <li><strong>⚙️ Options</strong>: change the grid size, save your city to a file or open a saved one, or clear the grid.</li>
   </ul>
   <div class="size-actions" style="justify-content:flex-end;">
@@ -516,6 +573,12 @@
       <input type="file" id="loadInput" accept=".json,application/json" hidden>
     </div>
     <p class="opt-status" id="fileStatus" role="status" aria-live="polite"></p>
+  </section>
+
+  <section class="opt-section" aria-labelledby="optTrafficTitle">
+    <h3 class="opt-title" id="optTrafficTitle">Traffic</h3>
+    <label class="opt-check"><input type="checkbox" id="trafficToggle"> 🚗 Traffic, 🚆 trains, 🚢 ships and 🚦 signals</label>
+    <p class="opt-note" style="margin-top:6px;">Cars, vans, pickups and motorcycles drive on the right between places and roads at the edge of the map; buses run between the edges and big places like the 🏫 school or 🏥 hospital, and semis only cross from one edge to another. If you change the streets, they look for another way, or turn round and go back. They stop at red lights and at flashing railroad crossings. Trains run between stations and track at the edge of the map; the track is split into blocks with rail signals, and chain signals (white frame) guard the junctions, so trains never crash or block each other. Ships sail along the water, under bridges, and call at ⚓ ferry terminals; when two meet head-on they both steer to starboard, and they go round ships that are stopped or in the way. It's only decoration.</p>
   </section>
 
   <section class="opt-section" aria-labelledby="optClearTitle">
@@ -744,6 +807,7 @@
   function buildGridDOM() {
     svg.innerHTML = "";
     svg.setAttribute("viewBox", `0 0 ${COLS * CELL} ${ROWS * CELL}`);
+    resetMapView();   // a new or resized grid starts fully in view
 
     buildGreenBg();
 
@@ -1044,6 +1108,80 @@
     });
   }
 
+  // ── Curved roads (bends, T-junctions, crossroads) ──
+  // Built like a railroad junction: every pair of open edges gets its own
+  // band — a straight strip for opposite edges, a quarter ring around the
+  // tile corner for neighbouring ones (centre radius CELL/2, so it meets
+  // each edge midpoint exactly like a straight arm). The sidewalk is the
+  // same set of bands, only wider, drawn first. A bend becomes one smooth
+  // curve; a junction gets rounded inside corners instead of square ones.
+  function quarterRingD(px, py, d1, d2, r, c, rIn, rOut) {
+    const m1 = edgeMid(r, c, d1), m2 = edgeMid(r, c, d2);
+    const t0 = Math.atan2(m1.y - py, m1.x - px);
+    let dt = Math.atan2(m2.y - py, m2.x - px) - t0;
+    while (dt > Math.PI) dt -= 2 * Math.PI; while (dt < -Math.PI) dt += 2 * Math.PI;
+    const N = 16, outer = [], inner = [];
+    for (let i = 0; i <= N; i++) {
+      const t = t0 + dt * i / N;
+      outer.push([px + rOut * Math.cos(t), py + rOut * Math.sin(t)]);
+      inner.push([px + Math.max(0, rIn) * Math.cos(t), py + Math.max(0, rIn) * Math.sin(t)]);
+    }
+    return 'M' + outer.concat(inner.reverse()).map(p => p[0].toFixed(2) + ' ' + p[1].toFixed(2)).join('L') + 'Z';
+  }
+  const CURVE_PAIRS = [['N', 'E'], ['E', 'S'], ['S', 'W'], ['W', 'N']];
+  function curveCorner(r, c, d1, d2) { // the tile corner a d1–d2 curve pivots on
+    const ds = [d1, d2];
+    return { x: (ds.includes('E') ? c + 1 : c) * CELL, y: (ds.includes('S') ? r + 1 : r) * CELL };
+  }
+  function drawCurvedBands(art, r, c, on, width, color) {
+    const x0 = c * CELL, y0 = r * CELL, cx = x0 + CELL / 2, cy = y0 + CELL / 2, h = width / 2;
+    // a hairline outline in the same colour hides seams between pieces
+    const paint = { fill: color, stroke: color, 'stroke-width': 0.6 };
+    if (on.N && on.S) art.appendChild(svgEl('rect', Object.assign({ x: cx - h, y: y0, width: width, height: CELL }, paint)));
+    if (on.E && on.W) art.appendChild(svgEl('rect', Object.assign({ x: x0, y: cy - h, width: CELL, height: width }, paint)));
+    CURVE_PAIRS.forEach(([d1, d2]) => {
+      if (!on[d1] || !on[d2]) return;
+      const p = curveCorner(r, c, d1, d2);
+      art.appendChild(svgEl('path', Object.assign({ d: quarterRingD(p.x, p.y, d1, d2, r, c, CELL / 2 - h, CELL / 2 + h) }, paint)));
+    });
+  }
+  function isRoadBend(on) {
+    const n = ['N', 'S', 'E', 'W'].filter(k => on[k]).length;
+    return n === 2 && !(on.N && on.S) && !(on.E && on.W);
+  }
+
+  function drawCurvedRoad(art, r, c, on, armW, color, opts) {
+    const x0 = c * CELL, y0 = r * CELL, cx = x0 + CELL / 2, cy = y0 + CELL / 2;
+    const n = ['N', 'S', 'E', 'W'].filter(k => on[k]).length;
+    if (opts.sidewalk) drawCurvedBands(art, r, c, on, armW + SIDEWALK_EXTRA * 2, SIDEWALK_COLOR);
+    drawCurvedBands(art, r, c, on, armW, color);
+
+    // lane line: a bend gets a dashed centre line along its curve; a
+    // junction leaves the middle unpainted, like a real intersection
+    if (opts.laneLines && n === 2) {
+      const [d1, d2] = CURVE_PAIRS.find(([a, b]) => on[a] && on[b]);
+      const p = curveCorner(r, c, d1, d2), m1 = edgeMid(r, c, d1), m2 = edgeMid(r, c, d2);
+      const R = CELL / 2;
+      const sweep = ((m1.x - p.x) * (m2.y - p.y) - (m1.y - p.y) * (m2.x - p.x)) > 0 ? 1 : 0;
+      art.appendChild(svgEl('path', { d: `M${m1.x} ${m1.y}A${R} ${R} 0 0 ${sweep} ${m2.x} ${m2.y}`,
+        fill: 'none', stroke: LANE_COLOR, 'stroke-width': 2, 'stroke-dasharray': '5 5' }));
+    }
+
+    // zebra crossings at the mouth of each arm of a junction
+    if (opts.crossings && n >= 3) {
+      const stripeCount = 4, stripeGap = armW / (stripeCount * 2 - 1), inset = 3, depth = 4;
+      ['N', 'S', 'E', 'W'].forEach(k => {
+        if (!on[k]) return;
+        for (let i = 0; i < stripeCount; i++) {
+          const along = -armW / 2 + i * stripeGap * 2;
+          art.appendChild(svgEl('rect', (k === 'N' || k === 'S')
+            ? { x: cx + along, y: k === 'N' ? y0 + inset : y0 + CELL - inset - depth, width: stripeGap, height: depth, fill: '#ffffff' }
+            : { y: cy + along, x: k === 'W' ? x0 + inset : x0 + CELL - inset - depth, height: stripeGap, width: depth, fill: '#ffffff' }));
+        }
+      });
+    }
+  }
+
   function drawArmSet(art, cx, cy, r, c, on, armW, color, opts) {
     opts = opts || {};
     const x0 = c * CELL, y0 = r * CELL;
@@ -1096,6 +1234,12 @@
         fillRect.setAttribute("fill", opts.sidewalk ? SIDEWALK_COLOR : color);
         art.appendChild(fillRect);
       });
+    }
+
+    // bends and junctions on ordinary road tiles are drawn curved
+    if (opts.curved && (isRoadBend(on) || connectedCount >= 3)) {
+      drawCurvedRoad(art, r, c, on, armW, color, opts);
+      return;
     }
 
     // sidewalk band underneath each connected arm (roads only)
@@ -1209,11 +1353,11 @@
   const BALLAST_COLOR = "#b3a896";
   const TIE_COLOR = "#7a5534";
   const RAIL_COLOR = "#4f545b";
-  const BALLAST_W = CELL * 0.40;
-  const RAIL_GAUGE = CELL * 0.22;   // distance between the two rails
-  const TIE_LEN = CELL * 0.36;
-  const TIE_W = 3.5;
-  const TIE_SPACING = CELL / 6;
+  const BALLAST_W = CELL * 0.26;   // track kept narrow so trains look in scale with the cars
+  const RAIL_GAUGE = CELL * 0.12;   // distance between the two rails
+  const TIE_LEN = CELL * 0.22;
+  const TIE_W = 2.4;
+  const TIE_SPACING = CELL / 8;
 
   function svgEl(tag, attrs) {
     const el = document.createElementNS(SVG_NS, tag);
@@ -1262,7 +1406,7 @@
       }
       [-1, 1].forEach(side => {
         const off = pts.map((p, i) => { const n = normalAt(pts, i); return { x: p.x + n.x * side * RAIL_GAUGE / 2, y: p.y + n.y * side * RAIL_GAUGE / 2 }; });
-        art.appendChild(svgEl('path', { d: polyD(off), fill: 'none', stroke: RAIL_COLOR, 'stroke-width': 2.5, 'stroke-linecap': 'butt' }));
+        art.appendChild(svgEl('path', { d: polyD(off), fill: 'none', stroke: RAIL_COLOR, 'stroke-width': 1.7, 'stroke-linecap': 'butt' }));
       });
     });
   }
@@ -1425,7 +1569,7 @@
       const on = roadNeighbors(r, c);
       extendStraightToGridEdge(r, c, on);
       drawBuildingSidewalks(art, r, c, on);
-      drawArmSet(art, cx, cy, r, c, on, ARM_W, ROAD_COLOR, { sidewalk: true, laneLines: true, crossings: true, cornerFillKind: 'road' });
+      drawArmSet(art, cx, cy, r, c, on, ARM_W, ROAD_COLOR, { sidewalk: true, laneLines: true, crossings: true, cornerFillKind: 'road', curved: true });
       return;
     }
 
@@ -1459,6 +1603,31 @@
   function drawBuildingSidewalks(art, r, c, on) {
     const x0 = c * CELL, y0 = r * CELL, cx = x0 + CELL / 2, cy = y0 + CELL / 2;
     const sw = ARM_W + SIDEWALK_EXTRA * 2;
+    if (isRoadBend(on)) {
+      const outside = ['N', 'S', 'E', 'W'].filter(k => !on[k]).some(k => {
+        const nr = r + DIRVEC[k][0], nc = c + DIRVEC[k][1];
+        return nr >= 0 && nr < ROWS && nc >= 0 && nc < COLS && isPavedNeighbor(grid[nr][nc]);
+      });
+      if (outside) {
+        const [d1, d2] = CURVE_PAIRS.find(([a, b]) => on[a] && on[b]);
+        const p = curveCorner(r, c, d1, d2), m1 = edgeMid(r, c, d1), m2 = edgeMid(r, c, d2);
+        const rIn = CELL / 2 - sw / 2;
+        // the three tile corners other than the pivot, in order around the tile
+        const corners = [[x0, y0], [x0 + CELL, y0], [x0 + CELL, y0 + CELL], [x0, y0 + CELL]];
+        const pi = corners.findIndex(q => q[0] === p.x && q[1] === p.y);
+        const a1 = [p.x + (m1.x - p.x) / (CELL / 2) * rIn, p.y + (m1.y - p.y) / (CELL / 2) * rIn];
+        const a2 = [p.x + (m2.x - p.x) / (CELL / 2) * rIn, p.y + (m2.y - p.y) / (CELL / 2) * rIn];
+        // walk the tile outline from the corner after the pivot round to the one before it
+        const ring = [1, 2, 3].map(k => corners[(pi + k) % 4]);
+        // start/end on the pivot's two edges at radius rIn, joined by an arc
+        const nextEdgePt = (Math.abs(a1[0] - ring[0][0]) < 0.01 || Math.abs(a1[1] - ring[0][1]) < 0.01) ? a1 : a2;
+        const prevEdgePt = nextEdgePt === a1 ? a2 : a1;
+        const sweep = ((nextEdgePt[0] - p.x) * (prevEdgePt[1] - p.y) - (nextEdgePt[1] - p.y) * (prevEdgePt[0] - p.x)) > 0 ? 0 : 1;
+        const d = `M${prevEdgePt[0]} ${prevEdgePt[1]}A${rIn} ${rIn} 0 0 ${sweep} ${nextEdgePt[0]} ${nextEdgePt[1]}` +
+                  ring.map(q => `L${q[0]} ${q[1]}`).join('') + 'Z';
+        art.appendChild(svgEl('path', { d, fill: SIDEWALK_COLOR }));
+      }
+    }
     ['N', 'S', 'E', 'W'].forEach(dir => {
       const [dr, dc] = DIRVEC[dir];
       const nr = r + dr, nc = c + dc;
@@ -1661,7 +1830,7 @@
       g.appendChild(svgEl('line', { x1: cx, x2: cx, y1: y0, y2: cy - gap, stroke: LANE_COLOR, 'stroke-width': 2, 'stroke-dasharray': '5 5' }));
       g.appendChild(svgEl('line', { x1: cx, x2: cx, y1: y0 + CELL, y2: cy + gap, stroke: LANE_COLOR, 'stroke-width': 2, 'stroke-dasharray': '5 5' }));
       [-1, 1].forEach(s => g.appendChild(svgEl('rect', { x: cx - ARM_W / 2, y: cy + s * (BALLAST_W / 2 + 3) - 1.5, width: ARM_W, height: 3, fill: '#ffffff' })));
-      [-1, 1].forEach(s => g.appendChild(svgEl('line', { x1: x0, x2: x0 + CELL, y1: cy + s * RAIL_GAUGE / 2, y2: cy + s * RAIL_GAUGE / 2, stroke: RAIL_COLOR, 'stroke-width': 2.5 })));
+      [-1, 1].forEach(s => g.appendChild(svgEl('line', { x1: x0, x2: x0 + CELL, y1: cy + s * RAIL_GAUGE / 2, y2: cy + s * RAIL_GAUGE / 2, stroke: RAIL_COLOR, 'stroke-width': 1.7 })));
       return;
     }
 
@@ -2529,6 +2698,224 @@
     return { x: svgPt.x, y: svgPt.y };
   }
 
+  /* ═══════════ Pan, zoom and full screen ═══════════
+     The view is the SVG's viewBox: a zoom factor (1 = whole grid fits) and
+     the grid point at the centre of the screen. Hit-testing works through
+     elementsFromPoint and getScreenCTM, which both follow the viewBox, so the
+     tools need no changes.
+       · mouse: wheel zooms at the pointer; right/middle button or Space +
+         drag pans; Shift + wheel (or a sideways trackpad swipe) pans
+       · touch: two fingers pinch and pan. A first finger is held back for
+         a moment so a second one can join without painting a road; with
+         Path or Pin a one-finger drag pans while zoomed in. */
+  var mapView = null;
+  const ZOOM_MAX = 6, TOUCH_HOLD = 120;
+  function viewSize(z) {
+    const W = COLS * CELL, H = ROWS * CELL, full = document.body.classList.contains('map-full');
+    const r = svg.getBoundingClientRect();
+    const ew = r.width || W, eh = full ? (r.height || H) : ew * H / W;
+    const ppu = Math.min(ew / W, eh / H) * z;     // screen pixels per map unit
+    return { w: ew / ppu, h: eh / ppu, ppu, W, H };
+  }
+  function resetMapView() { if (mapView) { mapView.z = 1; mapView.cx = null; mapView.cy = null; applyMapView(); } }
+  function applyMapView() {
+    if (!mapView) return;
+    const full = document.body.classList.contains('map-full');
+    svg.style.aspectRatio = full ? '' : `${COLS} / ${ROWS}`;
+    const v = mapView, { w, h, W, H } = viewSize(v.z);
+    if (v.cx == null) { v.cx = W / 2; v.cy = H / 2; }
+    v.cx = w >= W ? W / 2 : Math.max(w / 2, Math.min(W - w / 2, v.cx));
+    v.cy = h >= H ? H / 2 : Math.max(h / 2, Math.min(H - h / 2, v.cy));
+    svg.setAttribute('viewBox', `${(v.cx - w / 2).toFixed(2)} ${(v.cy - h / 2).toFixed(2)} ${w.toFixed(2)} ${h.toFixed(2)}`);
+    svg.classList.toggle('zoomed', v.z > 1.001 || full);
+    const pct = document.getElementById('zoomPct'); if (pct) pct.textContent = Math.round(v.z * 100) + '%';
+    const zi = document.getElementById('zoomInBtn'), zo = document.getElementById('zoomOutBtn');
+    if (zi) zi.disabled = v.z >= ZOOM_MAX - 1e-3;
+    if (zo) zo.disabled = v.z <= 1 + 1e-3;
+  }
+  const isZoomed = () => mapView && mapView.z > 1.001;
+  // zoom to z keeping map point pt under the screen point (clientX, clientY)
+  function zoomAt(pt, clientX, clientY, z) {
+    z = Math.max(1, Math.min(ZOOM_MAX, z));
+    const r = svg.getBoundingClientRect(), { w, h } = viewSize(z);
+    const fx = r.width ? (clientX - r.left) / r.width : 0.5, fy = r.height ? (clientY - r.top) / r.height : 0.5;
+    mapView.z = z; mapView.cx = pt.x - fx * w + w / 2; mapView.cy = pt.y - fy * h + h / 2;
+    applyMapView();
+  }
+  function zoomCentre(f) {
+    const r = svg.getBoundingClientRect(), x = r.left + r.width / 2, y = r.top + r.height / 2;
+    zoomAt(screenToSvgPoint(x, y), x, y, mapView.z * f);
+  }
+  function panBy(dxPx, dyPx) {
+    const { ppu } = viewSize(mapView.z);
+    mapView.cx -= dxPx / ppu; mapView.cy -= dyPx / ppu; applyMapView();
+  }
+
+  // full screen: the page's own map-only layout, plus the browser's real
+  // full screen where it is allowed (not on iPhone, where only the layout applies)
+  let fsViaApi = false;
+  function setMapFull(on) {
+    if (on === document.body.classList.contains('map-full')) return;
+    if (on) {
+      const hb = document.querySelector('.hotbar');
+      document.documentElement.style.setProperty('--dock-h', ((hb ? hb.getBoundingClientRect().height : 70) + 24) + 'px');
+      document.body.classList.add('map-full');
+      const el = document.documentElement;
+      if (el.requestFullscreen && !document.fullscreenElement) {
+        fsViaApi = true; el.requestFullscreen().catch(() => { fsViaApi = false; });
+      }
+    } else {
+      document.body.classList.remove('map-full');
+      if (fsViaApi && document.fullscreenElement && document.exitFullscreen) document.exitFullscreen().catch(() => {});
+      fsViaApi = false;
+    }
+    const b = document.getElementById('fullBtn');
+    if (b) { b.setAttribute('aria-label', on ? 'Leave full screen' : 'Full screen'); b.title = on ? 'Leave full screen (F)' : 'Full screen (F)'; }
+    requestAnimationFrame(applyMapView);
+  }
+  document.addEventListener('fullscreenchange', () => {
+    if (!document.fullscreenElement && fsViaApi) { fsViaApi = false; setMapFull(false); }
+    else requestAnimationFrame(applyMapView);
+  });
+  window.addEventListener('resize', () => requestAnimationFrame(applyMapView));
+
+  document.getElementById('zoomInBtn').addEventListener('click', () => zoomCentre(1.5));
+  document.getElementById('zoomOutBtn').addEventListener('click', () => zoomCentre(1 / 1.5));
+  document.getElementById('zoomFitBtn').addEventListener('click', () => resetMapView());
+  document.getElementById('fullBtn').addEventListener('click', () => setMapFull(!document.body.classList.contains('map-full')));
+
+  // mouse wheel / trackpad
+  svg.addEventListener('wheel', (e) => {
+    const unit = e.deltaMode === 1 ? 16 : e.deltaMode === 2 ? 400 : 1;
+    const dx = e.deltaX * unit, dy = e.deltaY * unit;
+    if (!e.ctrlKey && isZoomed() && (e.shiftKey || Math.abs(dx) > Math.abs(dy) * 0.5)) {
+      e.preventDefault(); panBy(-(e.shiftKey && !dx ? dy : dx), -(e.shiftKey && !dx ? 0 : dy)); return;
+    }
+    // zooming out of a map that's already whole lets the page scroll as usual
+    if (!e.ctrlKey && dy > 0 && !isZoomed() && !document.body.classList.contains('map-full')) return;
+    e.preventDefault();
+    zoomAt(screenToSvgPoint(e.clientX, e.clientY), e.clientX, e.clientY, mapView.z * Math.exp(-dy * (e.ctrlKey ? 0.01 : 0.0018)));
+  }, { passive: false });
+
+  // keyboard: + − 0 F, and Space held for dragging
+  let spaceDown = false;
+  document.addEventListener('keydown', (e) => {
+    const t = e.target;
+    if (t && (t.tagName === 'INPUT' || t.tagName === 'SELECT' || t.tagName === 'TEXTAREA' || t.isContentEditable)) return;
+    if (document.querySelector('dialog[open]') || e.ctrlKey || e.metaKey || e.altKey) return;
+    if (e.key === ' ') { if (!spaceDown) { spaceDown = true; document.body.classList.add('space-pan'); } if (t === document.body || !t.closest('button')) e.preventDefault(); return; }
+    if (e.key === '+' || e.key === '=') { e.preventDefault(); zoomCentre(1.5); }
+    else if (e.key === '-' || e.key === '_') { e.preventDefault(); zoomCentre(1 / 1.5); }
+    else if (e.key === '0') { e.preventDefault(); resetMapView(); }
+    else if (e.key === 'f' || e.key === 'F') { e.preventDefault(); setMapFull(!document.body.classList.contains('map-full')); }
+    else if (e.key === 'Escape' && document.body.classList.contains('map-full') && !drawerOpen) setMapFull(false);
+  });
+  document.addEventListener('keyup', (e) => { if (e.key === ' ') { spaceDown = false; document.body.classList.remove('space-pan'); } });
+  window.addEventListener('blur', () => { spaceDown = false; document.body.classList.remove('space-pan'); });
+  svg.addEventListener('contextmenu', (e) => e.preventDefault());
+
+  // pointer gestures, caught on the way down (capture) before any tile sees them
+  const touches = new Map(), swallow = new Set();
+  let held = null, pinch = null, drag = null;
+  function replay(type, h, x, y) {
+    const ev = new PointerEvent(type, { bubbles: true, cancelable: true, composed: true, clientX: x, clientY: y,
+      pointerId: h.id, pointerType: 'touch', isPrimary: true, button: type === 'pointerdown' ? 0 : -1, buttons: type === 'pointerdown' ? 1 : 0 });
+    ev.__replay = true;
+    if (h.target.isConnected) h.target.dispatchEvent(ev);
+  }
+  function releaseHeld() {
+    if (!held || held.released) return;
+    clearTimeout(held.timer); held.released = true;
+    replay('pointerdown', held, held.x, held.y);
+  }
+  function startPinch() {
+    const [a, b] = [...touches.values()];
+    const mx = (a.x + b.x) / 2, my = (a.y + b.y) / 2;
+    pinch = { d0: Math.max(1, Math.hypot(a.x - b.x, a.y - b.y)), z0: mapView.z, pt: screenToSvgPoint(mx, my) };
+  }
+  function movePinch() {
+    const [a, b] = [...touches.values()];
+    const mx = (a.x + b.x) / 2, my = (a.y + b.y) / 2;
+    zoomAt(pinch.pt, mx, my, pinch.z0 * Math.hypot(a.x - b.x, a.y - b.y) / pinch.d0);
+  }
+  const tapOnlyTool = () => currentTool === 'path' || currentTool === 'pin';
+
+  svg.addEventListener('pointerdown', (e) => {
+    if (e.__replay) return;
+    if (e.pointerType === 'touch') {
+      touches.set(e.pointerId, { x: e.clientX, y: e.clientY });
+      e.stopImmediatePropagation();
+      if (touches.size === 1) {
+        held = { id: e.pointerId, target: e.target, x: e.clientX, y: e.clientY, released: false };
+        held.timer = setTimeout(releaseHeld, TOUCH_HOLD);
+      } else if (touches.size === 2 && !drag) {
+        e.preventDefault();
+        if (held) {
+          clearTimeout(held.timer);
+          if (held.released) replay('pointercancel', held, held.x, held.y);   // stop a stroke that had already begun
+          held = null;
+        }
+        touches.forEach((_, id) => swallow.add(id));
+        startPinch();
+      } else swallow.add(e.pointerId);
+      return;
+    }
+    // mouse or pen: right / middle button, or Space + left, pans
+    if (e.button === 1 || e.button === 2 || (e.button === 0 && spaceDown)) {
+      e.preventDefault(); e.stopImmediatePropagation();
+      drag = { id: e.pointerId, x: e.clientX, y: e.clientY };
+      svg.classList.add('panning');
+      try { svg.setPointerCapture(e.pointerId); } catch (_) {}
+    }
+  }, true);
+
+  svg.addEventListener('pointermove', (e) => {
+    if (e.__replay) return;
+    if (drag && e.pointerId === drag.id) {
+      e.stopImmediatePropagation();
+      panBy(e.clientX - drag.x, e.clientY - drag.y); drag.x = e.clientX; drag.y = e.clientY;
+      return;
+    }
+    if (e.pointerType !== 'touch' || !touches.has(e.pointerId)) return;
+    touches.set(e.pointerId, { x: e.clientX, y: e.clientY });
+    if (pinch && touches.size >= 2) { e.stopImmediatePropagation(); movePinch(); return; }
+    if (swallow.has(e.pointerId)) { e.stopImmediatePropagation(); return; }
+    if (held && held.id === e.pointerId && !held.released) {
+      if (Math.hypot(e.clientX - held.x, e.clientY - held.y) < 8) { e.stopImmediatePropagation(); return; }
+      if (tapOnlyTool() && isZoomed()) {                 // Path / Pin: one finger drags the zoomed map
+        clearTimeout(held.timer); held = null; swallow.add(e.pointerId);
+        drag = { id: e.pointerId, x: e.clientX, y: e.clientY, touch: true };
+        e.stopImmediatePropagation(); return;
+      }
+      releaseHeld();                                     // a road stroke: start it where the finger first landed
+    }
+  }, true);
+
+  function endPointer(e) {
+    if (e.__replay) return;
+    if (drag && e.pointerId === drag.id) {
+      drag = null; svg.classList.remove('panning');
+      e.stopImmediatePropagation();
+    }
+    if (e.pointerType !== 'touch') return;
+    touches.delete(e.pointerId);
+    if (touches.size < 2) pinch = null;
+    if (held && held.id === e.pointerId) {
+      if (!held.released) {
+        clearTimeout(held.timer);
+        if (e.type === 'pointerup') releaseHeld();       // a tap: deliver it, then let this pointerup through
+        else { held = null; return; }
+      }
+      held = null;
+    }
+    if (swallow.has(e.pointerId)) { swallow.delete(e.pointerId); e.stopImmediatePropagation(); }
+  }
+  svg.addEventListener('pointerup', endPointer, true);
+  svg.addEventListener('pointercancel', endPointer, true);
+
+  mapView = { z: 1, cx: null, cy: null };
+  applyMapView();
+
   function placeLabelAtCell(r, c) {
     const text = labelTextInput.value.trim();
     if (!text) {
@@ -2712,6 +3099,12 @@
   // square and a route can't hop between them mid-crossing. The only
   // way on or off the railroad is through a 🚉 station node.
   function railKey(r, c) { return 'R:' + r + ',' + c; }
+  // a plain road square: routes turning there follow the road's curve
+  function isCurvedRoadKey(k) {
+    if (k.indexOf('R:') === 0) return false;
+    const [rr, cc] = k.split(',').map(Number);
+    return !!(grid[rr] && grid[rr][cc] && grid[rr][cc].kind === 'road');
+  }
   function keyToRC(k) { return k.replace(/^R:/, '').split(',').map(Number); }
 
   function buildRoadGraph() {
@@ -3106,7 +3499,7 @@
           const [rr, cc] = keyToRC(k);
           return cellCenter(rr, cc);
         });
-        railPoints = routeKeys.map(k => k.indexOf('R:') === 0);
+        railPoints = routeKeys.map(k => k.indexOf('R:') === 0 || isCurvedRoadKey(k));
         tunnelFlags = routeTunnelFlags;
         ferryFlags = routeFerryFlags;
         ferryMeta = routeFerryDirs;
@@ -3125,7 +3518,7 @@
             const [rr, cc] = keyToRC(k);
             return cellCenter(rr, cc);
           });
-          railPoints = routeKeys.map(k => k.indexOf('R:') === 0);
+          railPoints = routeKeys.map(k => k.indexOf('R:') === 0 || isCurvedRoadKey(k));
           tunnelFlags = routeTunnelFlags;
           ferryFlags = routeFerryFlags;
           ferryMeta = routeFerryDirs;
@@ -3440,6 +3833,1819 @@
   }
 
   document.getElementById('clearPathsBtn').addEventListener('click', clearAllPaths);
+
+  /* ═══════════════ TRAFFIC (cosmetic vehicles and signals) ═══════════════ */
+  // Decorative traffic. Nothing here ever changes the map or a saved city.
+  //
+  //  · Road vehicles — cars, pickups and semis — appear where a place meets a
+  //    road, or where a road runs off the map, and drive to another such spot
+  //    (semis only from one map edge to another). They route on the 🧭 Path
+  //    tool's graph, road part only (roads, bridges, tunnels, level crossings,
+  //    parking lots), keep to the right-hand lane, follow the road curves,
+  //    vanish inside tunnels and queue behind whatever is in front.
+  //  · Trains appear at a 🚉 station or where track runs off the map and run to
+  //    another station or off the map, on the track part of the same graph.
+  //    They don't stop for signals, but wait for anything on the track.
+  //  · Every vehicle is a chain of units (a car is one; a semi is a tractor and
+  //    a trailer; a train is a locomotive and wagons), each riding the route
+  //    at its own distance behind the front.
+  //  · Junctions (3+ arms) have traffic lights cycling between the north–south
+  //    and east–west arms. Level crossings have crossbuck signals whose two red
+  //    lamps flash while a train is within three squares and heading for the
+  //    crossing, or on it. Road vehicles stop for red and flashing signals, and
+  //    for yellow unless already at the line. Jams are allowed to happen.
+  const CAR_COLORS = ['#e53935', '#1e88e5', '#fdd835', '#f5f5f5', '#263238', '#43a047', '#fb8c00', '#00897b', '#9e9e9e', '#8e24aa'];
+  const CAB_COLORS = ['#c62828', '#1565c0', '#2e7d32', '#f9a825', '#37474f', '#ef6c00', '#6a1b9a', '#eceff1'];
+  const TRAILER_COLORS = [['#eceff1', '#1e88e5'], ['#cfd8dc', '#e53935'], ['#fff8e1', '#2e7d32'], ['#e3f2fd', '#fb8c00'], ['#f5f5f5', '#6a1b9a']];
+  const TRAIN_LIVERIES = [
+    { body: '#c62828', roof: '#8e1c1c', stripe: '#ffe082' },
+    { body: '#1565c0', roof: '#0d3c75', stripe: '#ffffff' },
+    { body: '#2e7d32', roof: '#1b4d1e', stripe: '#ffd54f' },
+    { body: '#eceff1', roof: '#90a4ae', stripe: '#e53935' }
+  ];
+  const ROAD_SPEED = 42, SEMI_SPEED = 34, TRAIN_SPEED = 50;   // map units per second (a square is 60)
+  const CAR_LANE = ARM_W / 4;                  // centre line → middle of the right-hand lane
+  const CAR_LEN = 13, CAR_WID = 7.4;
+  const PICKUP_LEN = 15.5, PICKUP_WID = 7.8;
+  const VAN_LEN = 15.5, VAN_WID = 7.9;          // ~5.3 m panel van
+  const BUS_LEN = 34, BUS_WID = 8.6, BUS_SPEED = 32;   // ~12 m city bus
+  const MOTO_LEN = 6.6, MOTO_WID = 3.2;         // ~2.2 m motorcycle with its rider
+  const BUS_PLACES = new Set(['🏫', '🏥', '🚉', '🏢', '⚓', '🚇']);   // buses only call at these, or run edge to edge
+  const BUS_LIVERIES = [['#fbc02d', '#5d4a00'], ['#e53935', '#7f1d1b'], ['#1e88e5', '#0d47a1'], ['#43a047', '#1b5e20'], ['#f5f5f5', '#546e7a']];
+  const VAN_COLORS = ['#f5f5f5', '#eceff1', '#cfd8dc', '#1e88e5', '#fdd835', '#e53935', '#263238'];
+  const UTURN_SPEED = 9;                        // crawl through a U-turn
+  const UTURN_REACH = 11;                       // a U-turn swings this far on past its turning point
+  const TRACTOR_LEN = 11.5, TRAILER_LEN = 30, SEMI_WID = 8.4, HITCH_GAP = 1.2;
+  const LOCO_LEN = 20, WAGON_LEN = 26, TRAIN_GAP = 2.4, TRAIN_WID = 9;
+  const NO_CAR_PLACES = new Set(['🌳']);        // a park is a place, but cars don't drive into trees
+  // Following distance, in car lengths (one car = CAR_LEN): a vehicle starts
+  // braking when the gap to whatever is ahead drops to half a car length, and
+  // never closes it below a quarter of a car length.
+  const BRAKE_GAP = 0.5 * 13, MIN_GAP = 0.25 * 13;
+  // Inertia grows with size: acceleration falls off with total length, so a
+  // car pulls away briskly, a semi or a train gathers speed slowly, and ships
+  // slower still. Braking is about twice as strong as accelerating.
+  function inertiaFor(totalLen, water) {
+    // ships: much heavier for their size, and they can't brake hard either
+    const accel = 30 * Math.pow(13 / totalLen, 0.9) * (water ? 0.18 : 1);
+    return { accel, brake: accel * (water ? 1.6 : 2.2) };
+  }
+  const GIVE_UP_AFTER = 15;                    // seconds stuck before a vehicle squeezes past (never-ending gridlock guard)
+  // Patience (0 = very impatient … 1 = very patient), one per road vehicle.
+  // Impatient drivers go faster and give up waiting sooner: any road vehicle
+  // stuck behind another for patienceTime() seconds backs up a little (semis
+  // more slowly, the trailer tracking back along the cab's own path)
+  // (if nothing is right behind it) to untangle the jam, then tries again.
+  const REVERSE_SPEED = 12, SEMI_REVERSE_SPEED = 7;
+  const speedFactor = p => 1.2 - 0.4 * p;          // ×1.2 (impatient) … ×0.8 (patient)
+  const patienceTime = p => 2 + 5 * p;             // 2 s … 7 s before backing up
+  const CROSSING_RANGE = 3 * CELL;             // crossing signals start flashing when a train is this close
+  // junction light cycle (seconds): NS green, NS yellow, all red, EW green, EW yellow, all red
+  const CYCLE = [5, 1.5, 1, 5, 1.5, 1], CYCLE_LEN = CYCLE.reduce((a, b) => a + b, 0);
+  const LAMP_ON = { r: '#ff3b30', y: '#ffcc00', g: '#34c759' }, LAMP_OFF = { r: '#4a2323', y: '#4a4123', g: '#22432a' };
+  const TAIL = { off: '#7a2a26', brake: '#ff2d1a', rev: '#ffffff' }; // rear lamps: driving, stopped, backing up
+
+  let trafficOn = true, vehicles = [], vehLayer = null, sigLayer = null, signals = [];
+  let rafId = 0, lastT = 0, clock = 0, roadSpawnIn = 0.6, trainSpawnIn = 1.5;
+  let netSig = '', carGraph = null, trainGraph = null, junctions = new Set();
+  try {
+    const saved = localStorage.getItem('city-playground-traffic');
+    if (saved === 'off') trafficOn = false;
+    else if (saved === null && window.matchMedia && matchMedia('(prefers-reduced-motion: reduce)').matches) trafficOn = false;
+  } catch (e) { /* storage blocked — keep the default */ }
+
+  const inGrid = (r, c) => r >= 0 && r < ROWS && c >= 0 && c < COLS;
+  const rcOf = k => keyToRC(k);
+  const pick = arr => arr[Math.floor(Math.random() * arr.length)];
+  function gridSignature() {
+    let sig = COLS + 'x' + ROWS + ':';
+    for (let r = 0; r < ROWS; r++) for (let c = 0; c < COLS; c++) {
+      const g = grid[r][c];
+      sig += (g.kind || '.') + (g.special || '') + (g.kind === 'building' ? g.symbol : '') + ';';
+    }
+    return sig;
+  }
+
+  // The Path tool's graph, split into its road part and its track part.
+  function rebuildNetwork() {
+    const full = buildRoadGraph();
+    const isRoadKey = k => { if (k.indexOf('R:') === 0) return false; const [r, c] = rcOf(k); return inGrid(r, c) && isRoadCarrier(grid[r][c]); };
+    const isRailKey = k => k.indexOf('R:') === 0;
+    carGraph = {}; trainGraph = {};
+    Object.keys(full).forEach(k => {
+      if (isRoadKey(k)) carGraph[k] = full[k].filter(e => !e.ferry && !e.subway && isRoadKey(e.to));
+      if (isRailKey(k)) trainGraph[k] = full[k].filter(e => isRailKey(e.to));
+    });
+    junctions = new Set();
+    for (let r = 0; r < ROWS; r++) for (let c = 0; c < COLS; c++) {
+      if (grid[r][c].kind !== 'road') continue;
+      const on = roadNeighbors(r, c);
+      if (['N', 'S', 'E', 'W'].filter(d => on[d]).length >= 3) junctions.add(cellKey(r, c));
+    }
+    buildSignals();
+    buildRailBlocks();
+    buildWaterGraph();
+    shipWaterInfo();
+    buildBridgeOverlay();
+  }
+
+  // ── endpoints ──
+  // { kind:'outlet'|'edge', r, c (the place/station, or the border square),
+  //   node (graph key of the first square driven on), nrc:[r,c] of that square,
+  //   dir (outlet: place → its road/track · edge: the off-map side) }
+  function offMapSides(r, c) {
+    const out = [];
+    if (r === 0) out.push('N'); if (r === ROWS - 1) out.push('S');
+    if (c === 0) out.push('W'); if (c === COLS - 1) out.push('E');
+    return out;
+  }
+  function roadEndpoints() {
+    const pts = [];
+    for (let r = 0; r < ROWS; r++) for (let c = 0; c < COLS; c++) {
+      const cell = grid[r][c];
+      if (cell.kind === 'building' && !NO_CAR_PLACES.has(cell.symbol)) {
+        ['N', 'S', 'E', 'W'].forEach(dir => {
+          const nr = r + DIRVEC[dir][0], nc = c + DIRVEC[dir][1];
+          if (!inGrid(nr, nc)) return;
+          const n = grid[nr][nc];
+          if (n.kind === 'road' || (n.kind === 'special' && roadConnectsToward(n, OPPOSITE[dir])))
+            pts.push({ kind: 'outlet', r, c, node: cellKey(nr, nc), nrc: [nr, nc], dir });
+        });
+      }
+      if (cell.kind === 'road') {
+        const on = roadNeighbors(r, c);
+        extendStraightToGridEdge(r, c, on);
+        offMapSides(r, c).forEach(d => { if (on[d]) pts.push({ kind: 'edge', r, c, node: cellKey(r, c), nrc: [r, c], dir: d }); });
+      }
+    }
+    return pts;
+  }
+  function trainEndpoints() {
+    const pts = [];
+    for (let r = 0; r < ROWS; r++) for (let c = 0; c < COLS; c++) {
+      const cell = grid[r][c];
+      if (isTrainStation(cell)) {
+        ['N', 'S', 'E', 'W'].forEach(dir => {
+          const nr = r + DIRVEC[dir][0], nc = c + DIRVEC[dir][1];
+          if (!inGrid(nr, nc)) return;
+          const n = grid[nr][nc];
+          if (isRailCarrier(n) && railConnectsToward(n, OPPOSITE[dir]))
+            pts.push({ kind: 'outlet', r, c, node: railKey(nr, nc), nrc: [nr, nc], dir });
+        });
+      }
+      if (isRailCarrier(cell)) {
+        let on = { N: false, S: false, E: false, W: false };
+        if (cell.kind === 'rail') { on = railNeighbors(r, c); extendStraightToGridEdge(r, c, on); }
+        offMapSides(r, c).forEach(d => {
+          if (cell.kind === 'rail' ? on[d] : railConnectsToward(cell, d))
+            pts.push({ kind: 'edge', r, c, node: railKey(r, c), nrc: [r, c], dir: d });
+        });
+      }
+    }
+    return pts;
+  }
+
+  // ── trip geometry ──
+  // Centre-line points: outer end (shared edge with the place/station, or a
+  // square beyond the border), every square's centre, then the far end.
+  function tripPolyline(from, rcs, tunnelInto, to) {
+    const pts = [], hidden = [];
+    const outerPt = e => {
+      const p = cellCenter(e.r, e.c);
+      if (e.kind === 'outlet') { const q = cellCenter(e.nrc[0], e.nrc[1]); return { x: (p.x + q.x) / 2, y: (p.y + q.y) / 2 }; }
+      const [dr, dc] = DIRVEC[e.dir];
+      return { x: p.x + dc * CELL, y: p.y + dr * CELL };
+    };
+    pts.push(outerPt(from)); hidden.push(false);
+    rcs.forEach((rc, i) => { pts.push(cellCenter(rc[0], rc[1])); hidden.push(!!tunnelInto[i]); });
+    pts.push(outerPt(to)); hidden.push(false);
+    return { pts, hidden }; // hidden[i]: the segment ending at pts[i] runs underground
+  }
+
+  // Fine samples along the trip, 90° turns rounded into arcs of radius CELL/2
+  // (the same curve the roads and tracks are drawn with), shifted sideways by
+  // `lane`. Each sample remembers which square its centre line passes through.
+  function tripSamples(pts, hidden, lane, taper) {
+    const R = CELL / 2, raw = [];
+    const unit = (a, b) => { const l = Math.hypot(b.x - a.x, b.y - a.y) || 1; return { x: (b.x - a.x) / l, y: (b.y - a.y) / l, l }; };
+    const curved = pts.map((p, k) => {
+      if (k === 0 || k === pts.length - 1 || hidden[k] || hidden[k + 1]) return false;
+      const a = unit(pts[k - 1], p), b = unit(p, pts[k + 1]);
+      return Math.abs(a.x * b.x + a.y * b.y) < 0.01 && a.l >= R - 0.5 && b.l >= R - 0.5;
+    });
+    // a route that doubles back on itself (rerouted after the streets changed)
+    // makes a U-turn there: a half circle across to the other lane
+    const uturn = pts.map((p, k) => {
+      if (k === 0 || k === pts.length - 1) return false;
+      const a = unit(pts[k - 1], p), b = unit(p, pts[k + 1]);
+      return a.x * b.x + a.y * b.y < -0.99;
+    });
+    const push = (x, y, hid, ut) => raw.push({ x, y, hid, ut });
+    const vRaw = [0];                              // raw index where the route passes each vertex
+    for (let i = 0; i < pts.length - 1; i++) {
+      const a = pts[i], b = pts[i + 1], u = unit(a, b);
+      const s0 = curved[i] ? R : 0, s1 = u.l - (curved[i + 1] ? R : 0);
+      if (i > 0 && !curved[i]) vRaw[i] = raw.length;
+      for (let t = s0; t <= s1; t += 2) push(a.x + u.x * t, a.y + u.y * t, !!hidden[i + 1], t === s0 && uturn[i]);
+      if (curved[i + 1]) {
+        const nb = unit(b, pts[i + 2]);
+        const from = { x: b.x - u.x * R, y: b.y - u.y * R };
+        const ctr = { x: from.x + nb.x * R, y: from.y + nb.y * R };
+        const a0 = Math.atan2(from.y - ctr.y, from.x - ctr.x), cross = u.x * nb.y - u.y * nb.x;
+        for (let j = 1; j <= 12; j++) {
+          const th = a0 + (cross > 0 ? 1 : -1) * (Math.PI / 2) * j / 12;
+          if (j === 6) vRaw[i + 1] = raw.length;
+          push(ctr.x + R * Math.cos(th), ctr.y + R * Math.sin(th), false);
+        }
+      }
+    }
+    vRaw[pts.length - 1] = raw.length;
+    push(pts[pts.length - 1].x, pts[pts.length - 1].y, false);
+    // optional taper: the lane offset eases to 0 over the first/last 24 units
+    const rs = [0];
+    for (let i = 1; i < raw.length; i++) rs.push(rs[i - 1] + Math.hypot(raw[i].x - raw[i - 1].x, raw[i].y - raw[i - 1].y));
+    const rTot = rs[rs.length - 1];
+    const laneAt = i => lane * Math.min(1, taper && taper.start ? rs[i] / 24 : 1, taper && taper.end ? (rTot - rs[i]) / 24 : 1);
+    const out = [], rawOut = [], utIdx = [];
+    for (let i = 0; i < raw.length; i++) {
+      rawOut[i] = out.length;
+      const ln = laneAt(i);
+      if (raw[i].ut && i > 0) {
+        // U-turn: a long half loop swinging left from this lane, on past the
+        // turning point and back into the other lane
+        let j = i - 1; while (j > 0 && Math.hypot(raw[j].x - raw[i].x, raw[j].y - raw[i].y) < 0.5) j--;
+        const u = unit(raw[j], raw[i]), rx = -u.y, ry = u.x, first = out.length, A = Math.max(UTURN_REACH, Math.abs(ln));
+        for (let k = 0; k <= 16; k++) {
+          const ph = Math.PI * k / 16, cs = Math.cos(ph), sn = Math.sin(ph);
+          const x = raw[i].x + rx * ln * cs + u.x * A * sn, y = raw[i].y + ry * ln * cs + u.y * A * sn;
+          let hx = -rx * ln * sn + u.x * A * cs, hy = -ry * ln * sn + u.y * A * cs; const hl = Math.hypot(hx, hy) || 1; hx /= hl; hy /= hl;
+          out.push({ x, y, hx, hy, hid: false, r: Math.floor(raw[i].y / CELL), c: Math.floor(raw[i].x / CELL), ut: true });
+        }
+        utIdx.push([first, out.length - 1]);
+        continue;
+      }
+      const p = raw[Math.max(0, i - 1)], n = raw[Math.min(raw.length - 1, i + 1)];
+      const l = Math.hypot(n.x - p.x, n.y - p.y) || 1, hx = (n.x - p.x) / l, hy = (n.y - p.y) / l;
+      out.push({ x: raw[i].x - hy * ln, y: raw[i].y + hx * ln, hx, hy, hid: raw[i].hid,
+                 r: Math.floor(raw[i].y / CELL), c: Math.floor(raw[i].x / CELL) });
+    }
+    let acc = 0;
+    out.forEach((q, i) => { if (i) acc += Math.hypot(q.x - out[i - 1].x, q.y - out[i - 1].y); q.s = acc; });
+    out.vertexS = vRaw.map(ri => out[Math.min(out.length - 1, rawOut[Math.min(raw.length - 1, ri)])].s);
+    out.uturns = utIdx.map(([a, b]) => ({ s0: out[a].s, s1: out[b].s }));
+    return out;
+  }
+  function sampleAt(sm, s) { // position + heading at arc length s (clamped)
+    if (s <= 0) return sm[0];
+    if (s >= sm[sm.length - 1].s) return sm[sm.length - 1];
+    let lo = 0, hi = sm.length - 1;
+    while (hi - lo > 1) { const m = (lo + hi) >> 1; if (sm[m].s <= s) lo = m; else hi = m; }
+    const a = sm[lo], b = sm[hi], f = (s - a.s) / ((b.s - a.s) || 1);
+    return { x: a.x + (b.x - a.x) * f, y: a.y + (b.y - a.y) * f, hx: a.hx + (b.hx - a.hx) * f, hy: a.hy + (b.hy - a.hy) * f, hid: a.hid && b.hid };
+  }
+
+  // Stop lines on a road trip: wherever it drives into a junction or a level
+  // crossing from one of the sides that has a signal. `frontHalf` is half the
+  // front unit's length, so its nose (not its middle) stops at the line.
+  function signalSidesAt(r, c) {
+    if (!inGrid(r, c)) return null;
+    const cell = grid[r][c];
+    if (junctions.has(cellKey(r, c))) { const on = roadNeighbors(r, c); return ['N', 'S', 'E', 'W'].filter(d => on[d]); }
+    if (cell.kind === 'special' && cell.special === 'railcross-h') return ['N', 'S'];
+    if (cell.kind === 'special' && cell.special === 'railcross-v') return ['E', 'W'];
+    return null;
+  }
+  function roadStops(sm, frontHalf) {
+    const stops = [];
+    for (let i = 1; i < sm.length; i++) {
+      const a = sm[i - 1], b = sm[i];
+      if (a.r === b.r && a.c === b.c) continue;
+      const sides = signalSidesAt(b.r, b.c);
+      if (!sides) continue;
+      const side = b.r < a.r ? 'S' : b.r > a.r ? 'N' : b.c < a.c ? 'E' : 'W'; // the side of the square we came in through
+      if (sides.includes(side)) stops.push({ s: b.s - frontHalf - 1.5, r: b.r, c: b.c, side });
+    }
+    return stops;
+  }
+
+  // ── drawing (every unit drawn pointing along +x, centred on 0,0) ──
+  const shadow = (L, W, rx) => svgEl('rect', { x: -L / 2 + 0.8, y: -W / 2 + 0.9, width: L, height: W, rx, fill: 'rgba(0,0,0,0.22)' });
+  function lights(g, L, W) {
+    [-1, 1].forEach(sd => {
+      g.appendChild(svgEl('rect', { x: L / 2 - 1.1, y: sd * (W / 2 - 1.5) - 0.6, width: 1, height: 1.2, rx: 0.3, fill: '#fff6b0' }));
+      g.appendChild(svgEl('rect', { x: -L / 2 + 0.1, y: sd * (W / 2 - 1.5) - 0.6, width: 0.9, height: 1.2, rx: 0.3, fill: TAIL.off, 'data-tail': '1' }));
+    });
+  }
+  function makeCarEl(color) {
+    const L = CAR_LEN, W = CAR_WID, g = svgEl('g', {});
+    const dark = color === '#263238' ? '#11181c' : 'rgba(0,0,0,0.35)', glass = '#bcd9ec';
+    g.appendChild(shadow(L, W, 2.4));
+    g.appendChild(svgEl('rect', { x: -L / 2, y: -W / 2, width: L, height: W, rx: 2.4, fill: color, stroke: dark, 'stroke-width': 0.6 }));
+    g.appendChild(svgEl('rect', { x: 1.2, y: -W / 2 + 0.9, width: 2.6, height: W - 1.8, rx: 0.9, fill: glass }));
+    g.appendChild(svgEl('rect', { x: -3.6, y: -W / 2 + 0.8, width: 4.8, height: W - 1.6, rx: 1.1, fill: color, stroke: dark, 'stroke-width': 0.35 }));
+    g.appendChild(svgEl('rect', { x: -5.4, y: -W / 2 + 1.1, width: 1.6, height: W - 2.2, rx: 0.7, fill: glass }));
+    lights(g, L, W);
+    return g;
+  }
+  function makePickupEl(color) {
+    const L = PICKUP_LEN, W = PICKUP_WID, g = svgEl('g', {});
+    const dark = color === '#263238' ? '#11181c' : 'rgba(0,0,0,0.35)', glass = '#bcd9ec';
+    g.appendChild(shadow(L, W, 2));
+    g.appendChild(svgEl('rect', { x: -L / 2, y: -W / 2, width: L, height: W, rx: 2, fill: color, stroke: dark, 'stroke-width': 0.6 }));
+    // cab at the front: windscreen, roof, small rear window
+    g.appendChild(svgEl('rect', { x: 3.2, y: -W / 2 + 0.9, width: 2.3, height: W - 1.8, rx: 0.8, fill: glass }));
+    g.appendChild(svgEl('rect', { x: -0.4, y: -W / 2 + 0.8, width: 3.8, height: W - 1.6, rx: 1, fill: color, stroke: dark, 'stroke-width': 0.35 }));
+    g.appendChild(svgEl('rect', { x: -1.5, y: -W / 2 + 1.3, width: 1, height: W - 2.6, rx: 0.4, fill: glass }));
+    // open bed behind the cab
+    g.appendChild(svgEl('rect', { x: -L / 2 + 0.9, y: -W / 2 + 0.9, width: L / 2 - 3.1, height: W - 1.8, rx: 0.6, fill: 'rgba(0,0,0,0.42)' }));
+    g.appendChild(svgEl('line', { x1: -L / 2 + 2.6, x2: -2.4, y1: 0, y2: 0, stroke: 'rgba(255,255,255,0.18)', 'stroke-width': 0.6 }));
+    lights(g, L, W);
+    return g;
+  }
+  function makeVanEl(color) {
+    const L = VAN_LEN, W = VAN_WID, g = svgEl('g', {});
+    const dark = color === '#263238' ? '#11181c' : 'rgba(0,0,0,0.35)', glass = '#bcd9ec';
+    g.appendChild(shadow(L, W, 1.8));
+    g.appendChild(svgEl('rect', { x: -L / 2, y: -W / 2, width: L, height: W, rx: 1.8, fill: color, stroke: dark, 'stroke-width': 0.6 }));
+    g.appendChild(svgEl('path', { d: `M${L / 2 - 3.6} ${-W / 2 + 0.9}L${L / 2 - 1.6} ${-W / 2 + 1.4}L${L / 2 - 1.6} ${W / 2 - 1.4}L${L / 2 - 3.6} ${W / 2 - 0.9}Z`, fill: glass })); // sloping windscreen
+    g.appendChild(svgEl('rect', { x: -L / 2 + 0.8, y: -W / 2 + 0.8, width: L - 5.2, height: W - 1.6, rx: 0.8, fill: 'rgba(255,255,255,0.10)', stroke: dark, 'stroke-width': 0.3 })); // high box roof
+    for (const x of [-3, 2]) g.appendChild(svgEl('line', { x1: x, x2: x, y1: -W / 2 + 1.2, y2: W / 2 - 1.2, stroke: 'rgba(0,0,0,0.14)', 'stroke-width': 0.5 }));     // roof ribs
+    lights(g, L, W);
+    return g;
+  }
+  function makeBusEl([body, trim]) {
+    const L = BUS_LEN, W = BUS_WID, g = svgEl('g', {});
+    g.appendChild(shadow(L, W, 2));
+    g.appendChild(svgEl('rect', { x: -L / 2, y: -W / 2, width: L, height: W, rx: 2, fill: body, stroke: 'rgba(0,0,0,0.4)', 'stroke-width': 0.6 }));
+    g.appendChild(svgEl('rect', { x: L / 2 - 2.2, y: -W / 2 + 0.8, width: 1.6, height: W - 1.6, rx: 0.6, fill: '#bcd9ec' }));            // big windscreen
+    [-1, 1].forEach(sd => g.appendChild(svgEl('rect', { x: -L / 2 + 2, y: sd > 0 ? W / 2 - 1.5 : -W / 2 + 0.5, width: L - 5, height: 1, rx: 0.4, fill: '#9cc3dc', opacity: 0.85 }))); // side windows
+    g.appendChild(svgEl('rect', { x: -L / 2 + 1.6, y: -W / 2 + 1.8, width: L - 4.6, height: W - 3.6, rx: 1, fill: 'rgba(255,255,255,0.16)' })); // roof
+    g.appendChild(svgEl('rect', { x: -4, y: -2, width: 8, height: 4, rx: 0.8, fill: '#cfd8dc', stroke: trim, 'stroke-width': 0.4 }));       // air-conditioning unit
+    for (const x of [-L / 2 + 5, L / 2 - 9]) g.appendChild(svgEl('rect', { x, y: -1.3, width: 3, height: 2.6, rx: 0.5, fill: 'rgba(0,0,0,0.22)' })); // roof hatches
+    g.appendChild(svgEl('rect', { x: -L / 2 + 0.6, y: -W / 2 + 1.4, width: 0.8, height: W - 2.8, fill: trim }));                           // rear trim
+    lights(g, L, W);
+    return g;
+  }
+  function makeMotoEl(color) {
+    const L = MOTO_LEN, g = svgEl('g', {});
+    g.appendChild(svgEl('ellipse', { cx: 0.6, cy: 0.7, rx: L / 2, ry: 1.6, fill: 'rgba(0,0,0,0.22)' }));
+    g.appendChild(svgEl('rect', { x: L / 2 - 1.8, y: -0.55, width: 1.8, height: 1.1, rx: 0.5, fill: '#212121' }));      // front tyre
+    g.appendChild(svgEl('rect', { x: -L / 2, y: -0.6, width: 1.9, height: 1.2, rx: 0.5, fill: '#212121' }));           // rear tyre
+    g.appendChild(svgEl('rect', { x: -L / 2 + 1.2, y: -0.9, width: L - 2.6, height: 1.8, rx: 0.9, fill: color, stroke: 'rgba(0,0,0,0.4)', 'stroke-width': 0.3 })); // tank and seat
+    g.appendChild(svgEl('line', { x1: 1.9, x2: 1.9, y1: -1.6, y2: 1.6, stroke: '#424242', 'stroke-width': 0.5, 'stroke-linecap': 'round' }));        // handlebars
+    g.appendChild(svgEl('ellipse', { cx: -0.5, cy: 0, rx: 1.1, ry: 1.6, fill: '#37474f' }));                            // rider's shoulders
+    g.appendChild(svgEl('circle', { cx: 0.1, cy: 0, r: 0.95, fill: pick(['#fafafa', '#212121', '#e53935', '#1e88e5', '#fdd835']), stroke: 'rgba(0,0,0,0.4)', 'stroke-width': 0.25 })); // helmet
+    g.appendChild(svgEl('circle', { cx: L / 2 - 0.2, cy: 0, r: 0.45, fill: '#fff6b0' }));
+    g.appendChild(svgEl('rect', { x: -L / 2 - 0.1, y: -0.45, width: 0.6, height: 0.9, rx: 0.2, fill: TAIL.off, 'data-tail': '1' }));
+    return g;
+  }
+  function makeTractorEl(color) {
+    const L = TRACTOR_LEN, W = SEMI_WID, g = svgEl('g', {});
+    g.appendChild(shadow(L, W, 1.6));
+    g.appendChild(svgEl('rect', { x: -L / 2, y: -W / 2, width: L, height: W, rx: 1.6, fill: '#3b3f44' }));                    // chassis
+    g.appendChild(svgEl('rect', { x: -0.6, y: -W / 2, width: L / 2 + 0.6, height: W, rx: 1.6, fill: color, stroke: 'rgba(0,0,0,0.4)', 'stroke-width': 0.5 })); // cab
+    g.appendChild(svgEl('rect', { x: L / 2 - 2.1, y: -W / 2 + 0.9, width: 1.6, height: W - 1.8, rx: 0.6, fill: '#bcd9ec' }));                   // windscreen
+    g.appendChild(svgEl('rect', { x: 0.4, y: -W / 2 + 1.1, width: L / 2 - 3, height: W - 2.2, rx: 0.8, fill: 'rgba(255,255,255,0.18)' }));      // roof fairing
+    [-1, 1].forEach(sd => g.appendChild(svgEl('circle', { cx: -1.6, cy: sd * (W / 2 - 1.1), r: 0.8, fill: '#9e9e9e' })));                       // exhaust stacks
+    g.appendChild(svgEl('circle', { cx: -L / 2 + 2.6, cy: 0, r: 1.5, fill: '#25282b' }));                                                       // fifth wheel
+    [-1, 1].forEach(sd => g.appendChild(svgEl('rect', { x: L / 2 - 0.9, y: sd * (W / 2 - 1.4) - 0.6, width: 0.8, height: 1.2, rx: 0.3, fill: '#fff6b0' })));
+    return g;
+  }
+  function makeTrailerEl(colors) {
+    const [box, stripe] = colors, L = TRAILER_LEN, W = SEMI_WID, g = svgEl('g', {});
+    g.appendChild(shadow(L, W, 1));
+    g.appendChild(svgEl('rect', { x: -L / 2, y: -W / 2, width: L, height: W, rx: 1, fill: box, stroke: 'rgba(0,0,0,0.35)', 'stroke-width': 0.6 }));
+    for (let x = -L / 2 + 3; x < L / 2 - 1; x += 3) g.appendChild(svgEl('line', { x1: x, x2: x, y1: -W / 2 + 0.5, y2: W / 2 - 0.5, stroke: 'rgba(0,0,0,0.10)', 'stroke-width': 0.5 })); // roof ribs
+    g.appendChild(svgEl('rect', { x: -L / 2 + 4, y: -1, width: L - 8, height: 2, rx: 1, fill: stripe }));
+    [-1, 1].forEach(sd => g.appendChild(svgEl('rect', { x: -L / 2 + 0.1, y: sd * (W / 2 - 1.5) - 0.6, width: 0.9, height: 1.2, rx: 0.3, fill: TAIL.off, 'data-tail': '1' })));
+    return g;
+  }
+  function makeTrainUnitEl(liv, isLoco) {
+    const L = isLoco ? LOCO_LEN : WAGON_LEN, W = TRAIN_WID, g = svgEl('g', {});
+    g.appendChild(shadow(L, W, 2));
+    if (isLoco) {
+      // rounded nose at the front (+x), windscreen, roof grille, headlight
+      g.appendChild(svgEl('path', { d: `M${-L / 2} ${-W / 2 + 1.2}Q${-L / 2} ${-W / 2} ${-L / 2 + 1.2} ${-W / 2}L${L / 2 - 4.5} ${-W / 2}Q${L / 2} ${-W / 2} ${L / 2} 0Q${L / 2} ${W / 2} ${L / 2 - 4.5} ${W / 2}L${-L / 2 + 1.2} ${W / 2}Q${-L / 2} ${W / 2} ${-L / 2} ${W / 2 - 1.2}Z`, fill: liv.body, stroke: 'rgba(0,0,0,0.4)', 'stroke-width': 0.6 }));
+      g.appendChild(svgEl('path', { d: `M${L / 2 - 5.5} ${-W / 2 + 1.2}Q${L / 2 - 1.3} ${-W / 2 + 1.6} ${L / 2 - 1.3} 0Q${L / 2 - 1.3} ${W / 2 - 1.6} ${L / 2 - 5.5} ${W / 2 - 1.2}Z`, fill: '#bcd9ec' }));
+      g.appendChild(svgEl('rect', { x: -L / 2 + 2, y: -W / 2 + 2, width: L - 10, height: W - 4, rx: 1, fill: liv.roof }));
+      for (let x = -L / 2 + 3.5; x < L / 2 - 9; x += 2.4) g.appendChild(svgEl('line', { x1: x, x2: x, y1: -W / 2 + 2.6, y2: W / 2 - 2.6, stroke: 'rgba(0,0,0,0.35)', 'stroke-width': 0.6 }));
+      g.appendChild(svgEl('rect', { x: L / 2 - 1.3, y: -0.7, width: 1.1, height: 1.4, rx: 0.4, fill: '#fff6b0' }));
+    } else {
+      // passenger coach: roof with a centre stripe and a row of vents
+      g.appendChild(svgEl('rect', { x: -L / 2, y: -W / 2, width: L, height: W, rx: 1.6, fill: liv.body, stroke: 'rgba(0,0,0,0.4)', 'stroke-width': 0.6 }));
+      g.appendChild(svgEl('rect', { x: -L / 2 + 1.2, y: -W / 2 + 1.6, width: L - 2.4, height: W - 3.2, rx: 1, fill: liv.roof }));
+      g.appendChild(svgEl('line', { x1: -L / 2 + 1.2, x2: L / 2 - 1.2, y1: 0, y2: 0, stroke: liv.stripe, 'stroke-width': 0.9 }));
+      for (let x = -L / 2 + 4; x < L / 2 - 3; x += 6) g.appendChild(svgEl('rect', { x: x - 1, y: -W / 2 + 2.2, width: 2, height: 1.3, rx: 0.3, fill: 'rgba(0,0,0,0.3)' }));
+    }
+    return g;
+  }
+
+  function ensureLayers() {
+    if (vehLayer && vehLayer.isConnected && sigLayer && sigLayer.isConnected && shipLayer && shipLayer.isConnected) return;
+    // the map was rebuilt (resize, open file…): everything moving goes with it
+    vehicles = []; signals = []; netSig = '';
+    let defs = svg.querySelector('#carDefs');
+    if (!defs) { defs = svgEl('defs', { id: 'carDefs' }); svg.insertBefore(defs, svg.firstChild); }
+    defs.innerHTML = '';
+    const clip = svgEl('clipPath', { id: 'carClip' });
+    clip.appendChild(svgEl('rect', { x: 0, y: 0, width: COLS * CELL, height: ROWS * CELL }));
+    defs.appendChild(clip);
+    trailLayer = svgEl('g', { id: 'trailLayer', 'clip-path': 'url(#carClip)' }); trails = [];
+    shipLayer = svgEl('g', { id: 'shipLayer', 'clip-path': 'url(#carClip)' });
+    bridgeLayer = svgEl('g', { id: 'bridgeDeckLayer' });
+    vehLayer = svgEl('g', { id: 'carLayer', 'clip-path': 'url(#carClip)' });
+    sigLayer = svgEl('g', { id: 'signalLayer' });
+    [trailLayer, shipLayer, bridgeLayer, vehLayer, sigLayer].forEach(l => { l.style.pointerEvents = 'none'; });
+    // above the roads, water and places, below labels and routes
+    const before = svg.querySelector('#labelLayer') || svg.querySelector('#pathLayer');
+    [trailLayer, shipLayer, bridgeLayer, vehLayer, sigLayer].forEach(l => { if (before) svg.insertBefore(l, before); else svg.appendChild(l); });
+  }
+
+  // Signals stand on the right-hand corner of each approach. Junctions get a
+  // three-lamp head pointing at the oncoming lane; level crossings get an
+  // upright crossbuck (the white X) over a bar with two red lamps.
+  function buildSignals() {
+    if (!sigLayer) return;
+    sigLayer.innerHTML = ''; signals = [];
+    for (let r = 0; r < ROWS; r++) for (let c = 0; c < COLS; c++) {
+      const sides = signalSidesAt(r, c);
+      if (!sides) continue;
+      const crossing = grid[r][c].kind === 'special';
+      sides.forEach(side => {
+        const [dr, dc] = DIRVEC[side];
+        const hx = -dc, hy = -dr;                 // direction of a vehicle coming in through `side`
+        const m = edgeMid(r, c, side);
+        const lat = ARM_W / 2 + (crossing ? 6.6 : 4.6);
+        const x = m.x + hx * 6 + (-hy) * lat, y = m.y + hy * 6 + hx * lat;
+        if (crossing) {
+          const g = svgEl('g', { transform: `translate(${x.toFixed(2)} ${y.toFixed(2)})` });
+          // crossbuck
+          [35, -35].forEach(a => g.appendChild(svgEl('rect', { x: -6.2, y: -5.1, width: 12.4, height: 2.2, rx: 0.4, fill: '#ffffff', stroke: '#c62828', 'stroke-width': 0.55, transform: `rotate(${a} 0 -4)` })));
+          // lamp bar with its two red lamps side by side
+          g.appendChild(svgEl('rect', { x: -6.3, y: 0.6, width: 12.6, height: 4.4, rx: 2.2, fill: '#1d1f22', stroke: '#000', 'stroke-width': 0.4 }));
+          const left = svgEl('circle', { cx: -3.3, cy: 2.8, r: 1.6, fill: LAMP_OFF.r });
+          const right = svgEl('circle', { cx: 3.3, cy: 2.8, r: 1.6, fill: LAMP_OFF.r });
+          g.appendChild(left); g.appendChild(right);
+          sigLayer.appendChild(g);
+          signals.push({ r, c, side, crossing: true, lamps: { left, right }, shown: '' });
+        } else {
+          const g = svgEl('g', { transform: `translate(${x.toFixed(2)} ${y.toFixed(2)}) rotate(${Math.atan2(hy, hx) * 180 / Math.PI})` });
+          g.appendChild(svgEl('rect', { x: -5.6, y: -2.4, width: 11.2, height: 4.8, rx: 1.6, fill: '#1d1f22', stroke: '#000', 'stroke-width': 0.4 }));
+          const lamps = {};
+          [['g', -3.5], ['y', 0], ['r', 3.5]].forEach(([k, lx]) => { lamps[k] = svgEl('circle', { cx: lx, cy: 0, r: 1.35, fill: LAMP_OFF[k] }); g.appendChild(lamps[k]); });
+          sigLayer.appendChild(g);
+          signals.push({ r, c, side, crossing: false, lamps, shown: '' });
+        }
+      });
+    }
+  }
+
+  // ── signal states ──
+  function junctionLight(r, c, side) {
+    const t = (clock + ((r * 7 + c * 13) % CYCLE_LEN)) % CYCLE_LEN;
+    let phase = 0, acc = 0;
+    while (t >= acc + CYCLE[phase]) { acc += CYCLE[phase]; phase++; }
+    const ns = side === 'N' || side === 'S';
+    if (phase === 0) return ns ? 'g' : 'r';
+    if (phase === 1) return ns ? 'y' : 'r';
+    if (phase === 3) return ns ? 'r' : 'g';
+    if (phase === 4) return ns ? 'r' : 'y';
+    return 'r';
+  }
+  // A level crossing is active while any part of a train is on it, or is
+  // within three squares and heading towards it.
+  function crossingActive(r, c) {
+    const ctr = cellCenter(r, c);
+    for (const v of vehicles) {
+      if (v.type !== 'train') continue;
+      for (const u of v.units) {
+        if (!u.on) continue;
+        const dx = ctr.x - u.x, dy = ctr.y - u.y, d = Math.hypot(dx, dy);
+        if (d < CELL / 2 + u.len / 2) return true;                          // on the crossing
+        if (d < CROSSING_RANGE && dx * u.hx + dy * u.hy > 0) return true;   // on its way to it
+      }
+    }
+    return false;
+  }
+  // what a road vehicle at this stop line is told: 'g' go, 'y' yellow, 'r' stop
+  function signalFor(r, c, side) {
+    return grid[r][c].kind === 'special' ? (crossingActive(r, c) ? 'r' : 'g') : junctionLight(r, c, side);
+  }
+
+  // ── vehicles ──
+  // A vehicle: { type:'road'|'train', units:[{len, wid, back, el, …}], sm,
+  //   s (arc length of the front unit's centre), speed, stops, … }
+  function makeVehicle(type, units, sm, trip, speed) {
+    const g = svgEl('g', {});
+    // rear units first, so the front one sits on top where they touch
+    units.slice().reverse().forEach(u => g.appendChild(u.el));
+    if (type === 'train') vehLayer.insertBefore(g, vehLayer.firstChild); // under road traffic, so cars at a crossing stay visible
+    else vehLayer.appendChild(g);
+    const last = units[units.length - 1];
+    const v = {
+      type, units, sm, el: g, s: 0, speed, waited: 0, stopIdx: 0, domain: 'land', trip,
+      length: last.back + last.len / 2,                          // front unit's centre → rear bumper
+      ...inertiaFor(units[0].len / 2 + last.back + last.len / 2, false),
+      // already moving when coming in from off the map; rolling out slowly from a place or station
+      vel: trip.from.kind === 'edge' ? speed : speed * 0.4,
+      half: units[0].len / 2, wid: units[0].wid,
+      stops: type === 'road' ? roadStops(sm, units[0].len / 2) : [],
+      fade: type === 'train' ? 6 : 10,
+      fadeIn: trip.from.kind === 'outlet', fadeOut: trip.to.kind === 'outlet',
+      cells: trip.keys.map(k => { const [r, c] = rcOf(k); return [r, c, grid[r][c].kind]; }),
+      pos: sm[0],
+      bodies() { return this.units.filter(u => u.solid).map(u => ({ x: u.x, y: u.y, hx: u.hx, hy: u.hy, half: u.len / 2, wid: u.wid })); }
+    };
+    vehicles.push(v);
+    return v;
+  }
+  function chain(parts) { // [[len, wid, el], …] → units spaced along the route
+    let back = 0;
+    return parts.map(([len, wid, el, gap], i) => {
+      if (i > 0) back += parts[i - 1][0] / 2 + (gap || 0) + len / 2;
+      return { len, wid, el, back, on: false };
+    });
+  }
+
+  function pickTrip(graph, fromEnds, toEnds) {
+    if (!fromEnds.length || !toEnds.length) return null;
+    const from = pick(fromEnds);
+    if (!graph[from.node]) return null;
+    const { dist, prev, prevTunnel } = dijkstra(graph, from.node);
+    const options = toEnds.filter(e => e !== from && dist[e.node] < Infinity &&
+      !(e.kind === from.kind && e.r === from.r && e.c === from.c) &&
+      !(e.kind === 'edge' && from.kind === 'edge' && e.node === from.node));
+    if (!options.length) return null;
+    const to = pick(options);
+    const keys = [to.node], tun = [];
+    while (keys[0] !== from.node) { tun.unshift(!!prevTunnel[keys[0]]); keys.unshift(prev[keys[0]]); }
+    tun.unshift(false);
+    return { from, to, keys, tun };
+  }
+  // Points along a vehicle unit's centre line, at most ~4.5 units apart, so
+  // collision tests can't slip between the ends of a long trailer or wagon.
+  function bodyPoints(b) {
+    const n = Math.max(1, Math.ceil((2 * b.half - 2) / 4.5)), pts = [];
+    for (let i = 0; i <= n; i++) {
+      const t = -(b.half - 1) + (2 * b.half - 2) * i / n;
+      pts.push([b.x + b.hx * t, b.y + b.hy * t, Math.abs(t)]);
+    }
+    return pts;
+  }
+  const tooClose = (x, y, d, domain = 'land') => vehicles.some(v => v.domain === domain && v.bodies().some(b => bodyPoints(b).some(([px, py]) => Math.hypot(px - x, py - y) < d)));
+
+  function spawnRoadVehicle() {
+    const ends = roadEndpoints();
+    const maxRoad = Math.min(18, Math.round(ends.length * 1.3));
+    if (vehicles.filter(v => v.type === 'road').length >= maxRoad) return;
+    const edges = ends.filter(e => e.kind === 'edge'), busEnds = ends.filter(busEnd);
+    // semis only come in from one map edge and leave by another; buses run
+    // between the edges and big places (school, hospital, stations…)
+    const roll = Math.random();
+    const kind = edges.length >= 2 && roll < 0.15 ? 'semi'
+               : busEnds.length >= 2 && roll < 0.25 ? 'bus'
+               : roll < 0.37 ? 'moto' : roll < 0.51 ? 'van' : roll < 0.73 ? 'pickup' : 'car';
+    const trip = kind === 'semi' ? pickTrip(carGraph, edges, edges) : kind === 'bus' ? pickTrip(carGraph, busEnds, busEnds) : pickTrip(carGraph, ends, ends);
+    if (!trip) return;
+    const { pts, hidden } = tripPolyline(trip.from, trip.keys.map(rcOf), trip.tun, trip.to);
+    const sm = tripSamples(pts, hidden, CAR_LANE);
+    Object.assign(trip, { pts, hidden, pIdx: trip.keys.map((_, i) => i + 1) });
+    let parts, speed;
+    const patience = Math.random();
+    if (kind === 'semi') {
+      parts = [[TRACTOR_LEN, SEMI_WID, makeTractorEl(pick(CAB_COLORS))], [TRAILER_LEN, SEMI_WID, makeTrailerEl(pick(TRAILER_COLORS)), HITCH_GAP - 4.5]];
+      speed = SEMI_SPEED * (1.1 - 0.2 * patience);
+    } else if (kind === 'bus') {
+      parts = [[BUS_LEN, BUS_WID, makeBusEl(pick(BUS_LIVERIES))]];
+      speed = BUS_SPEED * (1.1 - 0.2 * patience);
+    } else if (kind === 'moto') {
+      parts = [[MOTO_LEN, MOTO_WID, makeMotoEl(pick(CAR_COLORS))]];
+      speed = ROAD_SPEED * 1.1 * speedFactor(patience);
+    } else if (kind === 'van') {
+      parts = [[VAN_LEN, VAN_WID, makeVanEl(pick(VAN_COLORS))]];
+      speed = ROAD_SPEED * 0.95 * speedFactor(patience);
+    } else if (kind === 'pickup') {
+      parts = [[PICKUP_LEN, PICKUP_WID, makePickupEl(pick(CAR_COLORS))]];
+      speed = ROAD_SPEED * speedFactor(patience);
+    } else {
+      parts = [[CAR_LEN, CAR_WID, makeCarEl(pick(CAR_COLORS))]];
+      speed = ROAD_SPEED * speedFactor(patience);
+    }
+    const wantSemi = kind === 'semi';
+    // don't appear on top of someone, or pull out right in front of them
+    const room = parts.reduce((a, p) => a + p[0], 0);
+    if (tooClose(sm[0].x, sm[0].y, CAR_LEN * 1.4) || [14, 28, room + 6].some(d => { const q = sampleAt(sm, d); return tooClose(q.x, q.y, CAR_LEN * 1.1); })) return;
+    const v = makeVehicle('road', chain(parts), sm, trip, speed);
+    v.patience = patience; v.rkind = kind;
+    v.canReverse = true;
+    v.reverseSpeed = wantSemi || kind === 'bus' ? SEMI_REVERSE_SPEED : REVERSE_SPEED;
+    v.stuckFor = 0; v.reversing = 0; v.cooldown = 0;
+    if (wantSemi) v.el.appendChild(v.units[1].el); // the trailer rests on top of the tractor's fifth wheel
+  }
+
+  function spawnTrain() {
+    const ends = trainEndpoints();
+    const maxTrains = Math.min(4, Math.floor(ends.length / 2));
+    if (vehicles.filter(v => v.type === 'train').length >= maxTrains) return;
+    const trip = pickTrip(trainGraph, ends, ends);
+    if (!trip) return;
+    const { pts, hidden } = tripPolyline(trip.from, trip.keys.map(rcOf), trip.tun, trip.to);
+    const sm = tripSamples(pts, hidden, 0);
+    if (tooClose(sm[0].x, sm[0].y, CELL * 1.5)) return;
+    const liv = pick(TRAIN_LIVERIES), n = 4 + Math.floor(Math.random() * 13);   // 4 to 16 wagons
+    const parts = [[LOCO_LEN, TRAIN_WID, makeTrainUnitEl(liv, true)]];
+    for (let k = 0; k < n; k++) parts.push([WAGON_LEN, TRAIN_WID, makeTrainUnitEl(liv, false), TRAIN_GAP]);
+    Object.assign(trip, { pts, hidden, pIdx: trip.keys.map((_, i) => i + 1) });
+    const v = makeVehicle('train', chain(parts), sm, trip, TRAIN_SPEED);
+    if (!signalTrain(v, true)) removeVehicle(v);    // its way isn't clear: try again later
+  }
+
+  function removeVehicle(v) { v.el.remove(); vehicles = vehicles.filter(o => o !== v); if (v.type === 'train') releaseTrain(v); }
+
+  /* ── rail signalling ──
+     The track is cut into blocks, as in Factorio:
+       · each junction (touching junction squares together) is one block;
+       · each stretch of line between junctions is cut into blocks of at
+         most RAIL_BLOCK squares.
+     A rail signal stands at every block boundary, one for each direction.
+     The signal in front of a junction is a chain signal: a train may go in
+     only if it can also get into the block after the junction, so trains
+     never stop inside a junction and block it for everyone else.
+     A train holds (reserves) a block from the moment its signal clears until
+     its last wagon has left it. And two trains whose routes would meet head
+     on along the same stretch of line are never let out together: the second
+     waits at its station (or off the map) until the first has cleared it.
+     Lamps — rail signal: green free · yellow reserved for a train on its way ·
+     red occupied. Chain signal: green clear right through · blue the junction
+     is free but only some exits are · red don't go. */
+  const RAIL_BLOCK = 4, TRAIN_GIVE_UP = 40;
+  const LAMP_B = { on: '#40c4ff', off: '#163241' };
+  let blockOf = {}, blocks = [], lineOf = {}, linePos = {}, lines = [], railSigs = {}, resv = {}, occ = {};
+
+  function buildRailBlocks() {
+    blockOf = {}; blocks = []; lineOf = {}; linePos = {}; lines = []; railSigs = {}; resv = {};
+    if (!trainGraph) return;
+    const nb = k => [...new Set((trainGraph[k] || []).map(e => e.to).filter(t => trainGraph[t]))];
+    const isJ = k => nb(k).length >= 3;
+    const keys = Object.keys(trainGraph);
+    keys.forEach(k => {
+      if (blockOf[k] !== undefined || !isJ(k)) return;
+      const b = { id: blocks.length, junction: true, cells: [] }; blocks.push(b);
+      const st = [k]; blockOf[k] = b.id;
+      while (st.length) { const x = st.pop(); b.cells.push(x); nb(x).forEach(y => { if (blockOf[y] === undefined && isJ(y)) { blockOf[y] = b.id; st.push(y); } }); }
+    });
+    keys.forEach(k => {
+      if (blockOf[k] !== undefined) return;
+      const run = new Set([k]), st = [k];
+      while (st.length) { const x = st.pop(); nb(x).forEach(y => { if (!isJ(y) && !run.has(y)) { run.add(y); st.push(y); } }); }
+      const inRun = x => nb(x).filter(y => run.has(y));
+      const start = [...run].find(x => inRun(x).length < 2) || k;
+      const order = [start], seen = new Set([start]);
+      for (;;) { const nx = inRun(order[order.length - 1]).find(y => !seen.has(y)); if (!nx) break; seen.add(nx); order.push(nx); }
+      [...run].forEach(x => { if (!seen.has(x)) order.push(x); });      // (a closed loop: anything left over)
+      const line = { id: lines.length, cells: order };
+      const outsA = nb(order[0]).filter(y => !run.has(y)), outsB = nb(order[order.length - 1]).filter(y => !run.has(y));
+      if (order.length === 1) { line.lowOut = outsA.slice(0, 1); line.highOut = outsA.slice(1); }
+      else { line.lowOut = outsA; line.highOut = outsB; }
+      lines.push(line);
+      order.forEach((x, i) => { lineOf[x] = line.id; linePos[x] = i; });
+      const n = Math.ceil(order.length / RAIL_BLOCK), size = Math.ceil(order.length / n);
+      for (let i = 0; i < order.length; i += size) {
+        const b = { id: blocks.length, junction: false, cells: order.slice(i, i + size), line: line.id }; blocks.push(b);
+        b.cells.forEach(x => { blockOf[x] = b.id; });
+      }
+    });
+    // a pair of signals at every boundary, on the right of the track for each direction
+    keys.forEach(a => nb(a).forEach(b => {
+      if (blockOf[a] === blockOf[b]) return;
+      const [ra, ca] = rcOf(a), [rb, cb] = rcOf(b), dr = rb - ra, dc = cb - ca;
+      if (Math.abs(dr) + Math.abs(dc) !== 1) return;                 // a tunnel: nothing to show
+      const side = dr ? (dr > 0 ? 'S' : 'N') : (dc > 0 ? 'E' : 'W');
+      const chain = blocks[blockOf[b]].junction, m = edgeMid(ra, ca, side), lat = BALLAST_W / 2 + 4.6;
+      const x = m.x - dc * 5 + (-dr) * lat, y = m.y - dr * 5 + dc * lat;
+      const g = svgEl('g', { transform: `translate(${x.toFixed(2)} ${y.toFixed(2)}) rotate(${Math.atan2(dr, dc) * 180 / Math.PI})` });
+      g.appendChild(svgEl('line', { x1: 0, y1: 0, x2: 0, y2: -lat + BALLAST_W / 2 + 0.6, stroke: '#3a3f45', 'stroke-width': 0.9 }));   // bracket to the track
+      g.appendChild(svgEl('rect', { x: -4.9, y: -2.1, width: 9.8, height: 4.2, rx: 2.1, fill: '#1d1f22',
+        stroke: chain ? '#cfd8dc' : '#000', 'stroke-width': chain ? 0.8 : 0.4 }));
+      const lamps = {};
+      (chain ? [['g', -2.9], ['b', 0], ['r', 2.9]] : [['g', -2.9], ['y', 0], ['r', 2.9]]).forEach(([k, lx]) => {
+        lamps[k] = svgEl('circle', { cx: lx, cy: 0, r: 1.15, fill: k === 'b' ? LAMP_B.off : LAMP_OFF[k] }); g.appendChild(lamps[k]);
+      });
+      if (sigLayer) sigLayer.appendChild(g);
+      const exits = chain ? [...new Set(blocks[blockOf[b]].cells.flatMap(x => nb(x)).map(y => blockOf[y]))].filter(id => id !== blockOf[b] && id !== blockOf[a]) : [];
+      railSigs[a + '>' + b] = { from: a, to: b, block: blockOf[b], chain, exits, lamps, shown: '', grantedTo: null };
+    }));
+  }
+
+  // which blocks each train's units are in right now
+  function railOccupancy() {
+    occ = {};
+    vehicles.forEach(v => {
+      if (v.type !== 'train') return;
+      v.units.forEach(u => {
+        if (!u.on) return;
+        bodyPoints({ x: u.x, y: u.y, hx: u.hx, hy: u.hy, half: u.len / 2 }).forEach(([px, py]) => {
+          const b = blockOf[railKey(Math.floor(py / CELL), Math.floor(px / CELL))];
+          if (b !== undefined) (occ[b] || (occ[b] = new Set())).add(v);
+        });
+      });
+    });
+    // a block is let go once its train has been in it and has now left
+    Object.keys(resv).forEach(b => {
+      const v = resv[b];
+      if (!vehicles.includes(v)) { delete resv[b]; return; }
+      if (occ[b] && occ[b].has(v)) v.entered.add(+b);
+      else if (v.entered.has(+b)) { delete resv[b]; v.entered.delete(+b); }
+    });
+  }
+  const blockFree = (b, v) => (!resv[b] || resv[b] === v) && (!occ[b] || [...occ[b]].every(o => o === v));
+  const canReserve = (v, bl) => bl.every(b => blockFree(b, v));
+  const reserveAll = (v, bl) => bl.forEach(b => { resv[b] = v; });
+  function releaseTrain(v) {
+    Object.keys(resv).forEach(b => { if (resv[b] === v) delete resv[b]; });
+    Object.values(railSigs).forEach(sg => { if (sg.grantedTo === v) sg.grantedTo = null; });
+  }
+
+  // the signals along a train's route, and the blocks each one asks for
+  function trainSignals(v) {
+    const keys = v.trip.keys, S = i => v.sm.vertexS[i + 1], list = [];
+    const holdFrom = i => {          // the block entered at keys[i], plus — through junctions — the block after
+      const out = []; let j = i, b = blockOf[keys[j]];
+      while (b !== undefined) {
+        if (!out.includes(b)) out.push(b);
+        if (!blocks[b].junction) break;
+        while (j < keys.length && blockOf[keys[j]] === b) j++;
+        if (j >= keys.length) break;
+        b = blockOf[keys[j]];
+      }
+      return out;
+    };
+    for (let i = 0; i + 1 < keys.length; i++) {
+      const a = blockOf[keys[i]], b = blockOf[keys[i + 1]];
+      if (b === undefined || a === b) continue;
+      list.push({ s: (S(i) + S(i + 1)) / 2 - v.half - 4, key: keys[i] + '>' + keys[i + 1], blocks: holdFrom(i + 1), granted: false });
+    }
+    return { first: holdFrom(0), list };
+  }
+  // the stretches of line a train runs along, and which way
+  function lineRuns(v) {
+    const keys = v.trip.keys, runs = [];
+    for (let i = 0; i < keys.length;) {
+      const L = lineOf[keys[i]];
+      if (L === undefined) { i++; continue; }
+      let j = i; while (j + 1 < keys.length && lineOf[keys[j + 1]] === L) j++;
+      const ln = lines[L];
+      const pos = k => lineOf[k] === L ? linePos[k] : ln.lowOut.includes(k) ? -1 : ln.highOut.includes(k) ? ln.cells.length : null;
+      let a = i > 0 ? pos(keys[i - 1]) : null, b = j + 1 < keys.length ? pos(keys[j + 1]) : null;
+      if (a === null) a = linePos[keys[i]];
+      if (b === null) b = linePos[keys[j]];
+      runs.push({ line: L, dir: Math.sign(b - a), sOut: v.sm.vertexS[j + 1] + CELL / 2 });
+      i = j + 1;
+    }
+    return runs;
+  }
+  function headOnConflict(v) {
+    return vehicles.some(o => o !== v && o.type === 'train' && o.runs && o.runs.some(r =>
+      r.dir && r.sOut > o.s - o.length && v.runs.some(n => n.line === r.line && n.dir && n.dir !== r.dir)));
+  }
+  const stopReach = v => v.vel * v.vel / (2 * v.brake) + 8;
+  // set a train up for signalling; false if it can't safely start now
+  function signalTrain(v, starting) {
+    const T = trainSignals(v);
+    v.sigs = T.list; v.sigIdx = 0; v.entered = v.entered || new Set(); v.sigWait = 0; v.runs = lineRuns(v);
+    if (!starting) {
+      v.sigs.forEach(sg => { if (sg.s < v.s + 0.5) sg.granted = true; });
+      reserveAll(v, Object.keys(occ).filter(b => occ[b].has(v)).map(Number));
+      return true;
+    }
+    const need = [...T.first];
+    for (const sg of v.sigs) { if (sg.s < stopReach(v)) { need.push(...sg.blocks); sg.granted = true; } else break; }
+    if (!canReserve(v, need) || headOnConflict(v)) return false;
+    reserveAll(v, need);
+    return true;
+  }
+  // per frame: how fast may this train go, given the signals ahead?
+  function trainSignalLimit(v) {
+    while (v.sigIdx < v.sigs.length && v.s > v.sigs[v.sigIdx].s + 0.5) {
+      const sg = v.sigs[v.sigIdx];
+      if (!sg.granted) { reserveAll(v, sg.blocks); sg.granted = true; }     // (ran past: claim it anyway)
+      const rs = railSigs[sg.key]; if (rs && rs.grantedTo === v) rs.grantedTo = null;
+      v.sigIdx++;
+    }
+    const reach = stopReach(v);
+    for (let i = v.sigIdx; i < v.sigs.length; i++) {
+      const sg = v.sigs[i];
+      if (sg.s - v.s > reach) break;
+      if (sg.granted) continue;
+      if (canReserve(v, sg.blocks)) {
+        reserveAll(v, sg.blocks); sg.granted = true;
+        const rs = railSigs[sg.key]; if (rs) rs.grantedTo = v;
+        continue;
+      }
+      return { s: Math.max(v.s, sg.s), sig: sg };
+    }
+    return null;
+  }
+  function updateRailSignals() {
+    const busy = b => !!(occ[b] && occ[b].size) || !!resv[b];
+    Object.values(railSigs).forEach(sg => {
+      if (sg.grantedTo && !vehicles.includes(sg.grantedTo)) sg.grantedTo = null;
+      let st;
+      if (!sg.chain) st = occ[sg.block] && occ[sg.block].size ? 'r' : resv[sg.block] ? 'y' : 'g';
+      else if (sg.grantedTo) st = 'g';
+      else if (busy(sg.block)) st = 'r';
+      else {
+        const free = sg.exits.filter(b => !busy(b)).length;
+        st = !sg.exits.length || free === sg.exits.length ? 'g' : free ? 'b' : 'r';
+      }
+      if (st === sg.shown) return;
+      sg.shown = st;
+      Object.keys(sg.lamps).forEach(k => sg.lamps[k].setAttribute('fill', k === st ? (k === 'b' ? LAMP_B.on : LAMP_ON[k]) : (k === 'b' ? LAMP_B.off : LAMP_OFF[k])));
+    });
+  }
+
+  // ── rerouting after the streets change ──
+  // A road vehicle whose way ahead is broken looks for another route to the
+  // same destination from the first square it can still turn at; if there is
+  // none it heads back to where it came from instead (a U-turn if need be).
+  // Buses and semis fall back to any edge (or bus stop) they can reach; a car
+  // with nowhere at all to go, or whose road was erased right under it, goes.
+  const busEnd = e => e.kind === 'edge' || BUS_PLACES.has(grid[e.r][e.c].symbol);
+  function rerouteRoad(v, ends) {
+    const T = v.trip, keys = T.keys, R = CELL / 2;
+    const sameEnd = e => e && ends.find(x => x.kind === e.kind && x.r === e.r && x.c === e.c && x.dir === e.dir);
+    const pass = k => k === 0 ? !!carGraph[keys[0]] : !!(carGraph[keys[k - 1]] || []).some(e => e.to === keys[k]);
+    const dest = sameEnd(T.to);
+    const brokenAt = keys.findIndex((_, k) => !pass(k));
+    if (dest && brokenAt < 0) return true;                       // nothing on our way changed
+    const sAt = k => v.sm.vertexS[T.pIdx[k]];
+    // erased from under the vehicle?
+    const rear = v.s - v.length - 2, front = v.s + v.half + 2;
+    for (let k = 0; k < keys.length; k++) if (!pass(k) && sAt(k) + R > rear && sAt(k) - R < front) return false;
+    if (v.retreating) return true;
+    // where may it still choose a new way? at the first square ahead whose
+    // turn it hasn't started yet — or, if its road ends just ahead, at the
+    // near edge of the gap, with a U-turn
+    for (let k = 0; k < keys.length; k++) {
+      if (!pass(k)) return false;
+      if (sAt(k) - R - 2 > v.s) return planFrom(v, ends, k, false);
+      const nextBroken = k + 1 < keys.length ? !pass(k + 1) : !dest;
+      if (nextBroken) return planFrom(v, ends, k, true);
+    }
+    return false;
+  }
+  function planFrom(v, ends, k, edgeTurn) {
+    const T = v.trip, start = T.keys[k];
+    const { dist, prev, prevTunnel } = dijkstra(carGraph, start);
+    const sameEnd = e => e && ends.find(x => x.kind === e.kind && x.r === e.r && x.c === e.c && x.dir === e.dir);
+    const reach = e => e && dist[e.node] < Infinity && !(edgeTurn && e.node === start && e === sameEnd(T.to));
+    let target = [sameEnd(T.to), sameEnd(T.from)].find(reach);
+    if (!target) {
+      const pool = ends.filter(e => reach(e) && (v.rkind === 'semi' ? e.kind === 'edge' : v.rkind === 'bus' ? busEnd(e) : true));
+      if (!pool.length) return false;
+      target = pick(pool);
+    }
+    const path = [target.node], ptun = [];
+    while (path[0] !== start) { ptun.unshift(!!prevTunnel[path[0]]); path.unshift(prev[path[0]]); }
+    ptun.unshift(false);
+    const keys = T.keys.slice(0, k + 1).concat(path.slice(1)), tun = T.tun.slice(0, k + 1).concat(ptun.slice(1));
+    const cut = T.pIdx[k];                                        // keep the route driven so far exactly as it was
+    const pts = T.pts.slice(0, cut + 1), hidden = T.hidden.slice(0, cut + 1), pIdx = T.pIdx.slice(0, k + 1);
+    const ctr = pts[cut];
+    if (edgeTurn) {
+      // turn round half a square on, just short of the gap
+      const nx = T.pts[cut + 1] || ctr, l = Math.hypot(nx.x - ctr.x, nx.y - ctr.y);
+      if (l < 1) return false;
+      // on a straight, turn short of the end (the half circle stays on the road);
+      // coming round a bend, keep the bend's full arm so its curve is kept
+      const pv = pts[cut - 1], inBend = pv && Math.abs(((ctr.x - pv.x) * (nx.x - ctr.x) + (ctr.y - pv.y) * (nx.y - ctr.y)) /
+                 ((Math.hypot(ctr.x - pv.x, ctr.y - pv.y) || 1) * l)) < 0.01;
+      const d = Math.min(l, inBend ? R - 0.4 : R - UTURN_REACH - 1.5);
+      pts.push({ x: ctr.x + (nx.x - ctr.x) / l * d, y: ctr.y + (nx.y - ctr.y) / l * d }, { x: ctr.x, y: ctr.y }); hidden.push(false, false);
+    }
+    const tail = tripPolyline(T.from, path.slice(1).map(rcOf), ptun.slice(1), target);
+    for (let i = 1; i < tail.pts.length; i++) { pts.push(tail.pts[i]); hidden.push(tail.hidden[i]); if (i < tail.pts.length - 1) pIdx.push(pts.length - 1); }
+    const sm = tripSamples(pts, hidden, CAR_LANE);
+    // the new way must still lie ahead of the vehicle
+    if (sm.uturns.some(u => u.s0 >= sm.vertexS[cut] - 1 && u.s0 < v.s + 1) || (!edgeTurn && sm.vertexS[cut] - CELL / 2 - 2 <= v.s)) return false;
+    v.trip = { from: T.from, to: target, keys, tun, pts, hidden, pIdx };
+    v.sm = sm; v.stops = roadStops(sm, v.half); v.stopIdx = 0;
+    v.fadeOut = target.kind === 'outlet';
+    v.cells = keys.map(key => { const [r, c] = rcOf(key); return [r, c, grid[r][c].kind]; });
+    return true;
+  }
+
+  /* ── ships ── */
+  // Ships come in from a random point where water runs off the map and either
+  // sail out at another edge (preferably right across the map) or call at a
+  // ⚓ ferry terminal: they berth beside its pier, wait a while, turn and
+  // sail out again. They keep to the right on rivers and pass under bridges:
+  // each bridge deck is redrawn above the ship layer, clipped to the deck,
+  // so a ship slides beneath the road while cars drive over the top.
+  const SHIP_SPEED = 20, SHIP_LANE = RIVER_ARM_W * 0.22, SHIP_TURN = 1.6; // turn rate, radians/second
+  // Sizes on the same scale as the cars (a car, 13 units, is about 4.5 m):
+  //  · boat  ~7 m, ferry ~13 m — keep to the right, may call at a pier
+  //  · tow   ~30 m: a pusher tug and two container barges, jointed like a
+  //          train (with room between the sections to swing on bends);
+  //          only passes through, fits any river
+  //  · cargo ~30 m × 7 m container ship. Follows train rules: sails down the
+  //          middle of each square, and only through "open water" — squares
+  //          with water on all eight sides — or a pier, so it never enters
+  //          rivers one or two squares wide.
+  // `turn` is how fast (radians/second) it can swing round on the spot, and
+  // `helm` how fast it can change heading while under way.
+  const SHIP_KINDS = {
+    boat:  { len: 20, wid: 7,  speed: 1.25, turn: 0.9,  helm: 1.1 },
+    ferry: { len: 36, wid: 13, speed: 1,    turn: 0.35, helm: 0.6 },
+    tow:   { len: 30, wid: 14, speed: 0.75, barges: 2, tugLen: 16, tugWid: 12, gap: 7 },
+    cargo: { len: 86, wid: 20, speed: 0.7,  turn: 0.2,  helm: 0.35, openWater: true }
+  };
+  const TRAIL_LIFE = 4;   // seconds a ship's trail takes to fade away
+  const HULLS = ['#263238', '#1b5e20', '#8d1c1c', '#0d47a1', '#4e342e'];
+  const BOX_COLORS = ['#e53935', '#1e88e5', '#fdd835', '#43a047', '#fb8c00', '#8e24aa', '#00897b', '#eceff1'];
+  let shipLayer = null, bridgeLayer = null, trailLayer = null, waterGraph = null, shipSpawnIn = 2, trails = [];
+
+  const waterKey = (r, c) => 'W:' + r + ',' + c;
+  let deepGraph = null;
+  // a square with water on all eight sides (off the map counts as water)
+  function isOpenWater(r, c) {
+    if (!carriesWater(r, c)) return false;
+    for (let dr = -1; dr <= 1; dr++) for (let dc = -1; dc <= 1; dc++) {
+      if (!dr && !dc) continue;
+      if (inGrid(r + dr, c + dc) && !carriesWater(r + dr, c + dc)) return false;
+    }
+    return true;
+  }
+  function buildWaterGraph() {
+    waterGraph = {}; deepGraph = {};
+    const dockSquares = new Set(shipDocks().map(d => d.node));
+    const deepOk = (r, c) => isOpenWater(r, c) || dockSquares.has(waterKey(r, c));
+    for (let r = 0; r < ROWS; r++) for (let c = 0; c < COLS; c++) {
+      if (!carriesWater(r, c)) continue;
+      const cell = grid[r][c], k = waterKey(r, c), deep = deepOk(r, c);
+      waterGraph[k] = [];
+      if (deep) deepGraph[k] = [];
+      ['N', 'S', 'E', 'W'].forEach(d => {
+        const nr = r + DIRVEC[d][0], nc = c + DIRVEC[d][1];
+        if (!carriesWater(nr, nc)) return;
+        if (!(riverConnectsToward(cell, d) && riverConnectsToward(grid[nr][nc], OPPOSITE[d]))) return;
+        // small craft would rather keep near a bank than the open-water channel
+        waterGraph[k].push({ to: waterKey(nr, nc), weight: isOpenWater(nr, nc) ? 1.25 : 1 });
+        if (deep && deepOk(nr, nc)) deepGraph[k].push({ to: waterKey(nr, nc), weight: 1 });
+      });
+    }
+  }
+  function shipEdges(openOnly) {
+    const out = [];
+    for (let r = 0; r < ROWS; r++) for (let c = 0; c < COLS; c++) {
+      if (!carriesWater(r, c) || (openOnly && !isOpenWater(r, c))) continue;
+      offMapSides(r, c).forEach(d => { if (riverConnectsToward(grid[r][c], d)) out.push({ r, c, node: waterKey(r, c), dir: d }); });
+    }
+    return out;
+  }
+  // Every pier: the water square beside a ferry terminal, and the berth where
+  // a ship lies alongside the end of the pier (same geometry as drawFerryDocks).
+  function shipDocks() {
+    const out = [];
+    for (let r = 0; r < ROWS; r++) for (let c = 0; c < COLS; c++) {
+      if (grid[r][c].kind !== 'river') continue;
+      const on = riverNeighbors(r, c); extendWaterToGridEdges(r, c, on);
+      const x0 = c * CELL, y0 = r * CELL, cx = x0 + CELL / 2, cy = y0 + CELL / 2;
+      ['N', 'S', 'E', 'W'].forEach(dir => {
+        const nr = r + DIRVEC[dir][0], nc = c + DIRVEC[dir][1];
+        if (!inGrid(nr, nc) || !isFerryTerminal(grid[nr][nc])) return;
+        const along = t => ({ N: [cx, y0 + t], S: [cx, y0 + CELL - t], W: [x0 + t, cy], E: [x0 + CELL - t, cy] })[dir];
+        let bank = CELL / 2;
+        for (let t = 0; t <= CELL; t++) { const [px, py] = along(t); if (riverWaterAt(r, c, on, px, py)) { bank = t; break; } }
+        const depth = Math.min(CELL - 4, Math.max(CELL * 0.3, bank + CELL * 0.22));
+        // how far out from the terminal's edge open water reaches (for swaying in)
+        const or = r - DIRVEC[dir][0], oc = c - DIRVEC[dir][1];
+        const farWater = carriesWater(or, oc) || !inGrid(or, oc) ? CELL * 1.6 : CELL - bank;
+        out.push({ r, c, node: waterKey(r, c), dir, key: r + ',' + c + dir, depth, along, farWater });
+      });
+    }
+    return out;
+  }
+  // Where a ship lies, parallel to the pier, before swaying in sideways: as
+  // far out as about its own width (plus a little), but never past the far bank.
+  function offBerthPoint(dock, kind, berth) {
+    const K = SHIP_KINDS[kind], [dr, dc] = DIRVEC[dock.dir];
+    const along = Math.min(CELL - K.wid / 2 - 1, dock.depth + K.wid / 2 + 1.5);       // berth's distance from the terminal edge
+    const room = dock.farWater - (along + K.wid / 2) - 1;
+    const sway = Math.max(3, Math.min(K.wid * 0.8 + 6, room));
+    return { x: berth.x - dc * sway, y: berth.y - dr * sway };
+  }
+  function berthPoint(dock, kind) {
+    const [x, y] = dock.along(Math.min(CELL - SHIP_KINDS[kind].wid / 2 - 1, dock.depth + SHIP_KINDS[kind].wid / 2 + 1.5));
+    return { x, y };
+  }
+  // a point beyond the map edge — `extra` further out for long ships, so they appear whole
+  const outerWaterPt = (e, extra = 0) => { const p = cellCenter(e.r, e.c), [dr, dc] = DIRVEC[e.dir]; return { x: p.x + dc * (CELL + extra), y: p.y + dr * (CELL + extra) }; };
+  function waterPath(fromNode, toNode, graph) {
+    const { dist, prev } = dijkstra(graph, fromNode);
+    if (!(dist[toNode] < Infinity)) return null;
+    const keys = [toNode];
+    while (keys[0] !== fromNode) keys.unshift(prev[keys[0]]);
+    return keys;
+  }
+  function graphWithout(graph, node) { // the same graph with one square closed
+    const g = {};
+    Object.keys(graph).forEach(k => { if (k !== node) g[k] = graph[k].filter(e => e.to !== node); });
+    return g;
+  }
+  // a far-away exit, so most ships sail right across the map
+  function farExit(fromNode, exclude, graph, openOnly) {
+    const { dist } = dijkstra(graph, fromNode);
+    const opts = shipEdges(openOnly).filter(e => dist[e.node] < Infinity && !(exclude && e.node === exclude.node && e.dir === exclude.dir));
+    if (!opts.length) return null;
+    opts.sort((a, b) => dist[b.node] - dist[a.node]);
+    return pick(opts.slice(0, Math.max(1, Math.ceil(opts.length / 3))));
+  }
+  // Port side to the pier: the heading that puts the pier on the ship's left,
+  // and the squares just "behind" and "ahead" of the pier along that heading.
+  function dockHeading(dock) {
+    const [dr, dc] = DIRVEC[dock.dir];          // from the water square towards the terminal
+    const hx = -dr, hy = dc;                     // rotate a quarter turn: pier ends up on the left
+    return { hx, hy, angle: Math.atan2(hy, hx),
+             behind: waterKey(dock.r - hy, dock.c - hx), ahead: waterKey(dock.r + hy, dock.c + hx) };
+  }
+
+  // Ship drawings, each pointing along +x and centred on 0,0. Returns the
+  // chain of parts, front first: [[length, width, element, gap before], …]
+  const hullPath = (L, W, bow) => `M${-L / 2} ${-W / 2 + 1}Q${-L / 2} ${-W / 2} ${-L / 2 + 1} ${-W / 2}L${L / 2 - bow} ${-W / 2}Q${L / 2} ${-W / 2} ${L / 2} 0Q${L / 2} ${W / 2} ${L / 2 - bow} ${W / 2}L${-L / 2 + 1} ${W / 2}Q${-L / 2} ${W / 2} ${-L / 2} ${W / 2 - 1}Z`;
+  const hullShadow = d => svgEl('path', { d, fill: 'rgba(0,0,0,0.25)', transform: 'translate(1.2 1.4)' });
+  function drawBoat() {
+    const L = SHIP_KINDS.boat.len, W = SHIP_KINDS.boat.wid, g = svgEl('g', {}), d = hullPath(L, W, W * 0.9);
+    g.appendChild(hullShadow(d));
+    g.appendChild(svgEl('path', { d, fill: pick(['#e53935', '#fb8c00', '#fdd835', '#43a047', '#f5f5f5', '#1e88e5']), stroke: 'rgba(0,0,0,0.45)', 'stroke-width': 0.6 }));
+    g.appendChild(svgEl('path', { d: hullPath(L - 3, W - 2.4, W * 0.7), fill: 'rgba(255,255,255,0.22)', transform: 'translate(-0.6 0)' })); // deck
+    g.appendChild(svgEl('rect', { x: -L / 2 + 4, y: -W / 2 + 1.3, width: 6, height: W - 2.6, rx: 1.2, fill: '#fafafa', stroke: 'rgba(0,0,0,0.3)', 'stroke-width': 0.4 })); // cabin
+    g.appendChild(svgEl('rect', { x: -L / 2 + 8.6, y: -W / 2 + 1.7, width: 1.1, height: W - 3.4, fill: '#90caf9' }));   // windscreen
+    g.appendChild(svgEl('rect', { x: -L / 2 + 0.2, y: -1.2, width: 1.6, height: 2.4, rx: 0.5, fill: '#37474f' }));      // outboard
+    return [[L, W, g]];
+  }
+  function drawFerry() {
+    const L = SHIP_KINDS.ferry.len, W = SHIP_KINDS.ferry.wid, g = svgEl('g', {}), d = hullPath(L, W, W * 0.75);
+    g.appendChild(hullShadow(d));
+    g.appendChild(svgEl('path', { d, fill: '#fafafa', stroke: '#1565c0', 'stroke-width': 1.3 }));
+    g.appendChild(svgEl('rect', { x: -L / 2 + 3, y: -W / 2 + 2, width: L - 12, height: W - 4, rx: 2, fill: '#e3f2fd', stroke: 'rgba(0,0,0,0.2)', 'stroke-width': 0.5 })); // passenger deck
+    for (let x = -L / 2 + 4.5; x < L / 2 - 10; x += 2.6)                                                                    // window rows
+      [-1, 1].forEach(sd => g.appendChild(svgEl('rect', { x, y: sd * (W / 2 - 3) - 0.6, width: 1.6, height: 1.2, rx: 0.3, fill: '#1565c0' })));
+    g.appendChild(svgEl('rect', { x: L / 2 - 11, y: -W / 2 + 3, width: 3.4, height: W - 6, rx: 1, fill: '#fafafa', stroke: '#1565c0', 'stroke-width': 0.5 })); // wheelhouse
+    g.appendChild(svgEl('rect', { x: L / 2 - 8.6, y: -W / 2 + 3.6, width: 0.9, height: W - 7.2, fill: '#90caf9' }));
+    [-1, 1].forEach(sd => g.appendChild(svgEl('circle', { cx: -L / 2 + 8, cy: sd * 2.4, r: 1.6, fill: '#e53935', stroke: '#212121', 'stroke-width': 0.5 }))); // funnels
+    return [[L, W, g]];
+  }
+  function drawBarge(front, hull, shortLoad) {
+    const L = SHIP_KINDS.tow.len, W = SHIP_KINDS.tow.wid, g = svgEl('g', {});
+    const d = front ? hullPath(L, W, 6) : `M${-L / 2} ${-W / 2}L${L / 2} ${-W / 2}L${L / 2} ${W / 2}L${-L / 2} ${W / 2}Z`;
+    g.appendChild(hullShadow(d));
+    g.appendChild(svgEl('path', { d, fill: hull, stroke: 'rgba(0,0,0,0.5)', 'stroke-width': 0.6 }));
+    g.appendChild(svgEl('rect', { x: -L / 2 + 1.2, y: -W / 2 + 1.2, width: L - (front ? 6.5 : 2.4), height: W - 2.4, fill: '#55595e' })); // hold
+    const cols = [];
+    for (let x = -L / 2 + 1.8; x < L / 2 - (front ? 6.5 : 2); x += 6.2) cols.push(x);
+    if (shortLoad) cols.pop();                                       // second barge: front pair of boxes left off, the hold shows there
+    for (const x of cols)                                                                                                  // two rows of containers
+      [-1, 1].forEach(sd => g.appendChild(svgEl('rect', { x, y: sd > 0 ? 0.3 : -W / 2 + 1.8, width: 5.8, height: W / 2 - 2.1, rx: 0.3, fill: pick(BOX_COLORS), stroke: 'rgba(0,0,0,0.3)', 'stroke-width': 0.35 })));
+    return g;
+  }
+  function drawTug(hull) {
+    const K = SHIP_KINDS.tow, L = K.tugLen, W = K.tugWid, g = svgEl('g', {});
+    // square pushing front (+x) with rubber knees, rounded stern
+    const d = `M${L / 2} ${-W / 2}L${L / 2} ${W / 2}L${-L / 2 + 4} ${W / 2}Q${-L / 2} ${W / 2} ${-L / 2} 0Q${-L / 2} ${-W / 2} ${-L / 2 + 4} ${-W / 2}Z`;
+    g.appendChild(hullShadow(d));
+    g.appendChild(svgEl('path', { d, fill: hull, stroke: 'rgba(0,0,0,0.5)', 'stroke-width': 0.6 }));
+    [-1, 1].forEach(sd => g.appendChild(svgEl('rect', { x: L / 2 - 0.6, y: sd * (W / 2 - 2.5) - 1.5, width: 1.4, height: 3, rx: 0.4, fill: '#111' })));
+    g.appendChild(svgEl('rect', { x: -2.5, y: -W / 2 + 2, width: 8, height: W - 4, rx: 1.2, fill: '#fafafa', stroke: 'rgba(0,0,0,0.3)', 'stroke-width': 0.5 })); // wheelhouse
+    g.appendChild(svgEl('rect', { x: 4.2, y: -W / 2 + 2.8, width: 1, height: W - 5.6, fill: '#90caf9' }));
+    g.appendChild(svgEl('circle', { cx: -4.6, cy: 0, r: 1.3, fill: '#212121' }));                                          // stack
+    return g;
+  }
+  function drawCargoShip() {
+    const L = SHIP_KINDS.cargo.len, W = SHIP_KINDS.cargo.wid, g = svgEl('g', {}), d = hullPath(L, W, W * 1.1);
+    g.appendChild(hullShadow(d));
+    g.appendChild(svgEl('path', { d, fill: pick(HULLS), stroke: 'rgba(0,0,0,0.5)', 'stroke-width': 0.8 }));
+    g.appendChild(svgEl('path', { d: hullPath(L - 3, W - 3, W * 0.95), fill: '#55595e', transform: 'translate(-0.5 0)' }));  // deck
+    for (let x = -L / 2 + 15; x < L / 2 - 16; x += 6.4)                                                                    // three rows of containers
+      [-1, 0, 1].forEach(row => g.appendChild(svgEl('rect', { x, y: row * 5.4 - 2.5, width: 6, height: 5, rx: 0.3, fill: pick(BOX_COLORS), stroke: 'rgba(0,0,0,0.3)', 'stroke-width': 0.35 })));
+    g.appendChild(svgEl('rect', { x: -L / 2 + 3, y: -W / 2 + 2.5, width: 10, height: W - 5, rx: 1.2, fill: '#fafafa', stroke: 'rgba(0,0,0,0.35)', 'stroke-width': 0.5 })); // bridge
+    g.appendChild(svgEl('rect', { x: -L / 2 + 11.2, y: -W / 2 + 3.4, width: 1.2, height: W - 6.8, fill: '#90caf9' }));      // bridge windows
+    g.appendChild(svgEl('rect', { x: -L / 2 + 4.5, y: -2, width: 3.4, height: 4, rx: 0.8, fill: '#e53935', stroke: '#212121', 'stroke-width': 0.4 })); // funnel
+    g.appendChild(svgEl('circle', { cx: L / 2 - 9, cy: 0, r: 1.1, fill: '#37474f' }));                                     // forecastle bollard
+    return [[L, W, g]];
+  }
+  function makeShipParts(kind) {
+    if (kind === 'boat') return drawBoat();
+    if (kind === 'ferry') return drawFerry();
+    if (kind === 'cargo') return drawCargoShip();
+    const K = SHIP_KINDS.tow, hull = pick(HULLS), parts = [];
+    for (let i = 0; i < K.barges; i++) parts.push([K.len, K.wid, drawBarge(i === 0, hull, i === 1), i ? K.gap : 0]);
+    parts.push([K.tugLen, K.tugWid, drawTug(pick(HULLS)), K.gap]);
+    return parts;
+  }
+
+  // Bridge decks redrawn above the ships, each clipped to its own deck.
+  function buildBridgeOverlay() {
+    if (!bridgeLayer) return;
+    bridgeLayer.innerHTML = '';
+    const defs = svg.querySelector('#carDefs');
+    defs.querySelectorAll('[data-bclip]').forEach(n => n.remove());
+    for (let r = 0; r < ROWS; r++) for (let c = 0; c < COLS; c++) {
+      const cell = grid[r][c];
+      if (!isWaterBridge(cell)) continue;
+      const x0 = c * CELL, y0 = r * CELL, cx = x0 + CELL / 2, cy = y0 + CELL / 2;
+      const half = cell.special.indexOf('rail') === 0 ? (BALLAST_W + 6) / 2 + 1.6 : (ARM_W + SIDEWALK_EXTRA * 2) / 2;
+      const across = cell.special.endsWith('-h'); // deck runs E-W
+      const id = 'bclip-' + r + '-' + c;
+      const clip = svgEl('clipPath', { id, 'data-bclip': '1' });
+      clip.appendChild(svgEl('rect', across ? { x: x0, y: cy - half, width: CELL, height: half * 2 } : { x: cx - half, y: y0, width: half * 2, height: CELL }));
+      defs.appendChild(clip);
+      const g = svgEl('g', { 'clip-path': `url(#${id})` });
+      g.appendChild(cellRoadArt(r, c).cloneNode(true));
+      bridgeLayer.appendChild(g);
+    }
+  }
+
+  function makeShip(kind, sm, cells, extra) {
+    const units = chain(makeShipParts(kind));
+    const el = svgEl('g', {});
+    units.slice().reverse().forEach(u => el.appendChild(u.el));
+    shipLayer.appendChild(el);
+    const last = units[units.length - 1], total = units[0].len / 2 + last.back + last.len / 2;
+    const v = Object.assign({
+      type: 'ship', domain: 'water', kind, units, sm, el, s: 0, waited: 0,
+      speed: SHIP_SPEED * SHIP_KINDS[kind].speed * (0.9 + Math.random() * 0.2),
+      half: units[0].len / 2, wid: units[0].wid, length: last.back + last.len / 2, cells, pos: sm[0],
+      ...inertiaFor(total, true), vel: SHIP_SPEED * SHIP_KINDS[kind].speed,
+      angle: Math.atan2(sm[0].hy, sm[0].hx), docked: 0, leg: 'out', trailFrom: null,
+      bodies() { return this.units.filter(u => u.solid).map(u => ({ x: u.x, y: u.y, hx: u.hx, hy: u.hy, half: u.len / 2, wid: u.wid })); }
+    }, extra || {});
+    vehicles.push(v);
+    return v;
+  }
+  const shipTotalLen = kind => kind === 'tow'
+    ? SHIP_KINDS.tow.len * SHIP_KINDS.tow.barges + SHIP_KINDS.tow.tugLen + SHIP_KINDS.tow.gap * SHIP_KINDS.tow.barges : SHIP_KINDS[kind].len;
+  const cellsOf = keys => keys.map(k => { const [r, c] = rcOf(k.slice(2)); return [r, c, grid[r][c].kind]; });
+
+  // the water a new ship comes in over — off the map and into the first square — must be empty
+  function spawnClear(sm, kind) {
+    const K = SHIP_KINDS[kind], len = shipTotalLen(kind) + CELL;
+    for (let d = 0; d <= len; d += 6) { const q = sampleAt(sm, d); if (tooClose(q.x, q.y, Math.max(K.wid || 0, 14) / 2 + 16, 'water')) return false; }
+    return true;
+  }
+  function spawnShip(forceKind) {   // forceKind: optional, for trying out one kind
+    const allEdges = shipEdges(false);
+    if (!allEdges.length) return;
+    const maxShips = Math.min(5, Math.max(1, Math.floor(allEdges.length / 2)));
+    if (vehicles.filter(v => v.type === 'ship').length >= maxShips) return;
+    const openEdges = shipEdges(true);
+    let kind = forceKind || pick(['tow', 'tow', 'cargo', 'cargo', 'ferry', 'ferry', 'boat', 'boat']);
+    if (kind === 'cargo' && !openEdges.length) { if (forceKind) return; kind = pick(['tow', 'ferry', 'boat']); }
+    const K = SHIP_KINDS[kind], open = !!K.openWater;
+    const graph = open ? deepGraph : waterGraph, edges = open ? openEdges : allEdges;
+    const lane = open ? 0 : SHIP_LANE;            // cargo ships keep to the middle of the square
+    const from = pick(edges);
+    const first = cellCenter(from.r, from.c);
+    if (tooClose(first.x, first.y, CELL + K.len / 2, 'water')) return;
+    const start = outerWaterPt(from, shipTotalLen(kind));
+    const centres = keys => keys.map(k => { const [r, c] = rcOf(k.slice(2)); return cellCenter(r, c); });
+
+    // a pier call (not for tows): approach from the square behind the pier, so
+    // the ship arrives heading along it with the pier on its port side
+    if (kind !== 'tow' && Math.random() < 0.45) {
+      const busy = new Set(vehicles.filter(v => v.type === 'ship' && v.dock && v.leg !== 'out').map(v => v.dock.key));
+      const plans = shipDocks().filter(d => !busy.has(d.key) && graph[d.node]).map(dock => {
+        const h = dockHeading(dock);
+        const viaBehind = graph[h.behind] ? waterPath(from.node, h.behind, graphWithout(graph, dock.node)) : null;
+        if (viaBehind) return { dock, keys: viaBehind.concat([dock.node]) };
+        // otherwise come in from open water and swing round on the spot to lie
+        // port side to (a cargo ship can only ever do this: the squares along
+        // the bank beside a pier are too close to land for it)
+        const direct = waterPath(from.node, dock.node, graph);
+        return direct ? { dock, keys: direct } : null;
+      }).filter(Boolean);
+      if (plans.length) {
+        const { dock, keys } = pick(plans);
+        const pts = [start].concat(centres(keys));
+        const berth = berthPoint(dock, kind), off = offBerthPoint(dock, kind, berth);
+        pts[pts.length - 1] = off;
+        const sm = tripSamples(pts, pts.map(() => false), lane, { end: true });
+        if (!spawnClear(sm, kind)) return;
+        makeShip(kind, sm, cellsOf(keys), { leg: 'toDock', dock, berth, offBerth: off, berthAngle: dockHeading(dock).angle, lane, open });
+        return;
+      }
+    }
+    const to = farExit(from.node, from, graph, open);
+    if (!to) return;
+    const keys = waterPath(from.node, to.node, graph);
+    const pts = [start].concat(centres(keys), [outerWaterPt(to)]);
+    const sm = tripSamples(pts, pts.map(() => false), lane);
+    if (!spawnClear(sm, kind)) return;
+    makeShip(kind, sm, cellsOf(keys), { lane, open });
+  }
+
+  // After the stay at the pier: plot a course to a far exit and cast off.
+  function departShip(v) {
+    const graph = v.open ? deepGraph : waterGraph, h = dockHeading(v.dock);
+    // prefer an exit reached by carrying straight on (no turning round)
+    let to = graph[h.ahead] ? farExit(v.dock.node, null, graphWithout(graph, h.behind), v.open) : null;
+    let keys = to ? waterPath(v.dock.node, to.node, graphWithout(graph, h.behind)) : null;
+    if (!keys) { to = farExit(v.dock.node, null, graph, v.open); keys = to ? waterPath(v.dock.node, to.node, graph) : null; }
+    if (!keys) { removeVehicle(v); return; }
+    const pts = [v.offBerth].concat(keys.slice(1).map(k => { const [r, c] = rcOf(k.slice(2)); return cellCenter(r, c); }), [outerWaterPt(to)]);
+    v.sm = tripSamples(pts, pts.map(() => false), v.lane, { start: true });
+    v.s = 0; v.leg = 'out'; v.casting = true; v.cells = cellsOf(keys); v.override = null; v.side = 0; v.sideWant = 0; v.yawOff = 0;
+  }
+
+  // Ships keep their distance: a following gap of 12 units plus a quarter of
+  // their own length, and they start braking early enough to hold it with
+  // their weak brakes. Passing ships keep a little extra room abeam.
+  const SHIP_SIDE_ROOM = 2;
+  const shipMinGap = v => 12 + 0.25 * shipTotalLen(v.kind);
+  // Probes the course ahead — shifted sideways the way this ship is steering
+  // (see shipOffsetAt) — for any other ship. `want` tries out another offset.
+  function otherShipPoints(v) {
+    const pts = [];
+    vehicles.forEach(o => { if (o !== v && o.domain === 'water') o.bodies().forEach(b => bodyPoints(b).forEach(q => pts.push([q[0], q[1], b.wid, o]))); });
+    return pts;
+  }
+  const shipReach = v => shipMinGap(v) + v.vel * v.vel / (2 * v.brake) + 20;
+  function shipGapAhead(v, want, pts, from = 0, reach = shipReach(v), extra = 0) {
+    pts = pts || otherShipPoints(v);
+    if (!pts.length) return null;
+    for (let d = from; d <= reach; d += 2) {
+      const q = shipPoint(v, v.s + v.half + d, shipOffsetAt(v, v.half + d, want));
+      for (const [px, py, bw, o] of pts) if (Math.hypot(px - q.x, py - q.y) < v.wid / 2 + bw / 2 - 0.6 + SHIP_SIDE_ROOM + extra) return { gap: d, veh: o };
+    }
+    return null;
+  }
+
+  /* ── giving way ──
+     A ship can stand off its course to one side (v.side, + = starboard, the
+     right). It changes only as it goes ahead — about one unit sideways for
+     every three forward, so it shows as a steady sheer — or, when it's at a
+     standstill, slowly, as if on its bow thrusters. It steers off when:
+       · a ship is coming the other way on its course (both turn to starboard,
+         as the rules of the road say, so they pass port to port);
+       · it's closing on a ship that is stopped or much slower;
+       · it has been held up for a couple of seconds (a jam).
+     It picks the nearest offset that is clear of other ships and has water
+     under the whole hull (starboard first), and goes back to its course once
+     the other ship is past. */
+  const SHEER_SLOPE = 3, SHEER_CRAB = 0.8, SHIP_PAD = 1.5, MAX_SIDE = 50;   // (the water under the hull is what really limits it)
+  function shipOffsetAt(v, d, want) {
+    const w = want === undefined ? (v.sideWant || 0) : want, cur = v.side || 0, dl = w - cur;
+    return cur + Math.sign(dl) * Math.min(Math.abs(dl), Math.max(0, d) / SHEER_SLOPE);
+  }
+  function shipPoint(v, s, off) {
+    const q = sampleAt(v.sm, s);
+    return { x: q.x - q.hy * off, y: q.y + q.hx * off, hx: q.hx, hy: q.hy };
+  }
+  // is this point open water a hull can be over (not bank, not a pier)?
+  let waterOn = {}, pierBoxes = [];
+  function shipWaterInfo() {
+    waterOn = {}; pierBoxes = [];
+    for (let r = 0; r < ROWS; r++) for (let c = 0; c < COLS; c++) if (grid[r][c].kind === 'river') {
+      const on = riverNeighbors(r, c); extendWaterToGridEdges(r, c, on); waterOn[r + ',' + c] = on;
+    }
+    shipDocks().forEach(d => {
+      const [x1, y1] = d.along(0), [x2, y2] = d.along(d.depth + 2), [dr, dc] = DIRVEC[d.dir];
+      const w = 8;   // half the pier's width, with a little room
+      pierBoxes.push({ x0: Math.min(x1, x2) - (dr ? w : 0), x1: Math.max(x1, x2) + (dr ? w : 0), y0: Math.min(y1, y2) - (dc ? w : 0), y1: Math.max(y1, y2) + (dc ? w : 0) });
+    });
+  }
+  function navigable(x, y) {
+    const r = Math.floor(y / CELL), c = Math.floor(x / CELL);
+    if (!inGrid(r, c)) return true;                       // off the map: where ships come and go
+    if (pierBoxes.some(b => x >= b.x0 && x <= b.x1 && y >= b.y0 && y <= b.y1)) return false;
+    const n = grid[r][c];
+    if (n.kind === 'river') return riverWaterAt(r, c, waterOn[r + ',' + c] || {}, x, y);
+    if (!isWaterBridge(n)) return false;
+    // under a bridge: the river's strip across the deck, or all of it over wide water
+    const deckH = /-h$/.test(n.special || ''), cx = c * CELL + CELL / 2, cy = r * CELL + CELL / 2;
+    const wide = deckH ? (carriesWater(r, c - 1) && carriesWater(r, c + 1)) : (carriesWater(r - 1, c) && carriesWater(r + 1, c));
+    return wide || (deckH ? Math.abs(x - cx) : Math.abs(y - cy)) <= RIVER_ARM_W / 2;
+  }
+  // water under the whole hull all along the way to offset `want`?
+  function roomFor(v, want) {
+    const span = v.half + SHEER_SLOPE * Math.abs(want - (v.side || 0)) + 24, edge = v.wid / 2 + SHIP_PAD + 0.12 * v.half;   // (+ the swing of an angled hull)
+    for (let d = -v.length; d <= span; d += 3) {
+      const p = shipPoint(v, v.s + d, d < 0 ? (v.side || 0) : shipOffsetAt(v, d, want));
+      if (!navigable(p.x - p.hy * edge, p.y + p.hx * edge) || !navigable(p.x + p.hy * edge, p.y - p.hx * edge)) return false;
+    }
+    return true;
+  }
+  function planDodge(v, total) {
+    v.planIn = (v.planIn || 0) - 1;
+    if (v.planIn > 0) return;
+    v.planIn = 6;                                           // re-plan about ten times a second
+    const cur = v.sideWant || 0;
+    // nearly at the pier: back onto the course for the berthing
+    if (v.leg === 'toDock' && total - v.s < 2 * shipTotalLen(v.kind) + 20) { v.sideWant = 0; return; }
+    // plan with room to spare: a hull angled into its sheer swings its stern out a little
+    const pts = otherShipPoints(v), reach = shipReach(v) + 25, spare = 3 + 0.12 * shipTotalLen(v.kind);
+    const g = shipGapAhead(v, cur, pts, 0, reach);
+    if (g) {
+      const o = g.veh, oncoming = v.pos.hx * o.pos.hx + v.pos.hy * o.pos.hy < -0.3;
+      const slow = o.vel < 0.5 || o.vel < v.speed * 0.5 || !!o.docked || ['aligning', 'swayIn', 'swayOut', 'docked'].includes(o.leg);
+      if (!(oncoming || slow || v.waited > 2)) return;     // just following someone: keep station behind it
+      const cands = [];
+      for (let off = -MAX_SIDE; off <= MAX_SIDE; off += 2.5) if (Math.abs(off - cur) > 0.1) cands.push(off);
+      const sideNow = v.side || 0;
+      cands.sort((a, b) => (Math.abs(a - sideNow) + (a < sideNow ? 6 : 0)) - (Math.abs(b - sideNow) + (b < sideNow ? 6 : 0)));
+      // stopped and jammed: it can step straight across on its thrusters first,
+      // so try each offset as if already there (it won't go ahead till it is)
+      const jammed = v.vel < 0.5 && v.waited > 1.5, sv = v.side;
+      const tryOff = off => {
+        if (jammed) v.side = off;
+        // (jammed: a tight squeeze past is fine — the hull isn't swinging into a sheer)
+        const ok = roomFor(v, off), h = ok ? shipGapAhead(v, off, pts, jammed ? -v.half - v.length : 0, reach, jammed ? 1 : spare) : null;
+        v.side = sv;
+        return { ok, h };
+      };
+      let best = null, bestGap = g.gap;
+      for (const off of cands) {
+        const { ok, h } = tryOff(off);
+        if (!ok) continue;
+        if (!h) { best = off; break; }
+        if (v.waited > 2 && h.gap > bestGap + 6) { bestGap = h.gap; best = off; }   // jammed: anything that opens the way
+      }
+      if (best !== null) v.sideWant = best;
+      return;
+    }
+    // clear ahead: drift back to the course once nothing is alongside or ahead of it
+    if (cur !== 0) {
+      const sv = v.side; v.side = 0;                      // try the course itself, alongside the whole hull and ahead
+      const clear = !shipGapAhead(v, 0, pts, -v.half - v.length - 4, reach, spare);
+      v.side = sv;
+      if (clear) v.sideWant = 0;
+    }
+  }
+  // How close this ship's hull is to any other ship (negative = touching).
+  // Hulls are treated as capsules round each unit's centre line.
+  function shipClearance(v) {
+    let best = Infinity;
+    const others = otherShipPoints(v);
+    if (!others.length) return best;
+    v.units.forEach(u => {
+      if (!u.solid) return;
+      const L = Math.max(0, u.len / 2 - u.wid / 2);
+      others.forEach(([px, py, bw]) => {
+        const dx = px - u.x, dy = py - u.y, t = Math.max(-L, Math.min(L, dx * u.hx + dy * u.hy));
+        best = Math.min(best, Math.hypot(dx - u.hx * t, dy - u.hy * t) - u.wid / 2 - bw / 2);
+      });
+    });
+    return best;
+  }
+  // move the actual offset towards the wanted one
+  function steerSide(v, dt, moved) {
+    const want = v.sideWant || 0, cur = v.side || 0, dl = want - cur;
+    const step = moved / SHEER_SLOPE + (v.vel < 0.5 ? SHEER_CRAB * dt : 0);
+    const nx = cur + Math.sign(dl) * Math.min(Math.abs(dl), step);
+    // the hull swings a little towards the side it's sheering to
+    const yaw = moved > 0.01 ? 0.6 * Math.atan2(nx - cur, moved) : 0;
+    v.yawOff = (v.yawOff || 0) + (yaw - (v.yawOff || 0)) * Math.min(1, dt * 4);
+    v.side = nx;
+  }
+  // how much of the course ahead bends away (0 = straight … 1 = a right angle or more)
+  function bendAhead(v) {
+    const a = sampleAt(v.sm, v.s), b = sampleAt(v.sm, v.s + v.half * 2 + 30);
+    return Math.min(1, Math.abs(Math.atan2(a.hx * b.hy - a.hy * b.hx, a.hx * b.hx + a.hy * b.hy)) / (Math.PI / 2));
+  }
+
+  const angleDiff = (a, b) => { let d = b - a; while (d > Math.PI) d -= 2 * Math.PI; while (d < -Math.PI) d += 2 * Math.PI; return d; };
+  function stepShip(v, dt) {
+    const total = v.sm[v.sm.length - 1].s;
+    // Berthing, port side to:
+    //  toDock   — on the approach; from 1.5 ship lengths out it yaws round to
+    //             line its port side up with the pier as it slows
+    //  aligning — stopped abreast of the berth but not quite lined up: finish the yaw
+    //  swayIn   — lined up: slide sideways onto the berth
+    //  docked   — lying at the pier
+    //  swayOut  — slide sideways back off the berth, then cast off
+    if (v.leg === 'aligning') {
+      const before = { s: v.s, side: v.side || 0, angle: v.angle, yawOff: v.yawOff || 0, leg: v.leg, clear: shipClearance(v) };
+      const d = angleDiff(v.angle, v.berthAngle), step = SHIP_KINDS[v.kind].turn * dt;
+      v.angle += Math.max(-step, Math.min(step, d));
+      if (Math.abs(d) < 0.01) { v.angle = v.berthAngle; v.leg = 'swayIn'; v.swayT = 0; }
+      shipGuardedPlace(v, dt, false, true, before);
+      return;
+    }
+    if (v.leg === 'swayIn' || v.leg === 'swayOut') {
+      const a = v.leg === 'swayIn' ? v.offBerth : v.berth, b = v.leg === 'swayIn' ? v.berth : v.offBerth;
+      const dist = Math.hypot(b.x - a.x, b.y - a.y) || 1;
+      // sway speed: a gentle push that eases in and out (smaller ships move a bit quicker)
+      const top = 24 / Math.sqrt(shipTotalLen(v.kind));   // boat ≈5.4, ferry 4, cargo ≈2.6 units/s at most
+      v.swayT = Math.min(1, v.swayT + Math.max(0.25, top * Math.sin(Math.PI * Math.min(0.97, Math.max(0.03, v.swayT)))) * dt / dist);
+      v.override = { x: a.x + (b.x - a.x) * v.swayT, y: a.y + (b.y - a.y) * v.swayT };
+      if (v.swayT >= 1) {
+        if (v.leg === 'swayIn') { v.leg = 'docked'; v.docked = 4 + Math.random() * 5; v.override = { x: v.berth.x, y: v.berth.y }; }
+        else departShip(v);
+      }
+      placeShip(v, dt, false, true);
+      return;
+    }
+    if (v.docked > 0) {                                   // lying at the pier
+      v.docked -= dt;
+      if (v.docked <= 0) { v.leg = 'swayOut'; v.swayT = 0; }
+      placeShip(v, dt, false, true);
+      return;
+    }
+    let desired = v.speed, mustMeet = false;
+    const before = { s: v.s, side: v.side || 0, angle: v.angle, yawOff: v.yawOff || 0, leg: v.leg, clear: shipClearance(v) };
+    const want = Math.atan2(sampleAt(v.sm, v.s + 6).hy, sampleAt(v.sm, v.s + 6).hx);
+    // casting off: swing round to the new heading before getting under way
+    if (v.casting) { if (Math.abs(angleDiff(v.angle, want)) > 0.45) desired = 0; else v.casting = false; }
+    // coming in to the pier: slow down early enough to stop alongside it
+    // (gently: about a third of full braking, so it glides in alongside)
+    if (v.leg === 'toDock') desired = Math.min(desired, Math.max(1.5, Math.sqrt(2 * v.brake * 0.35 * Math.max(0, total - v.s))));
+    // ease off before a bend: down to about half speed for a right-angle turn
+    desired *= 1 - 0.45 * bendAhead(v);
+    // the final approach: from 1.5 ship lengths out, yaw round so the port
+    // side comes to face the pier (at the ship's helm rate)
+    const yawing = v.leg === 'toDock' && total - v.s <= 1.5 * shipTotalLen(v.kind);
+    if (yawing) {
+      const d = angleDiff(v.angle, v.berthAngle), step = SHIP_KINDS[v.kind].helm * dt;
+      v.angle += Math.max(-step, Math.min(step, d));
+    }
+    // otherwise hold back while the hull is still swinging round to its course,
+    // so it never slides along sideways (one-piece ships; tows follow the course)
+    if (v.units.length === 1 && !v.casting && !yawing) {
+      const p = sampleAt(v.sm, v.s), lag = Math.abs(angleDiff(v.angle, Math.atan2(p.hy, p.hx) + (v.yawOff || 0)));
+      desired *= Math.max(0.12, 1 - lag / (Math.PI / 4));
+    }
+    // give way: stand off to one side of the course if a ship is in the way
+    if ((!v.casting || v.waited > 2) && !yawing) planDodge(v, total); else if (yawing) v.sideWant = 0;
+    // the ship ahead: brake (gently) to hold the following gap; match its speed if it's going our way
+    const g = shipGapAhead(v), squeeze = v.waited >= GIVE_UP_AFTER, minGap = shipMinGap(v);
+    if (g && !squeeze) {
+      const sameWay = v.pos.hx * g.veh.pos.hx + v.pos.hy * g.veh.pos.hy > 0.7;
+      desired = Math.min(desired, (sameWay ? g.veh.vel : 0) + Math.sqrt(2 * v.brake * Math.max(0, g.gap - minGap - 2))); // 2 units in hand
+    }
+    applyInertia(v, desired, dt, v.casting);
+    let target = v.s + v.vel * dt;
+    if (g && !squeeze) target = Math.min(target, v.s + Math.max(0, g.gap - 2));   // last-ditch: never touch
+    if (target - v.s < v.vel * dt - 1e-6) v.vel = Math.max(0, (target - v.s) / dt);
+    if (g && !squeeze && g.gap <= minGap + 2 && v.vel < 0.5) v.waited += dt; else if (v.vel > 0.5) v.waited = 0;
+    const moving = v.vel > 0.3;
+    steerSide(v, dt, target - v.s);
+    v.s = target;
+    if (v.leg === 'toDock' && v.s >= total - 0.3) {
+      v.s = total; v.vel = 0; v.side = 0; v.sideWant = 0; v.yawOff = 0;
+      if (Math.abs(angleDiff(v.angle, v.berthAngle)) < 0.01) { v.angle = v.berthAngle; v.leg = 'swayIn'; v.swayT = 0; }
+      else v.leg = 'aligning';
+    }
+    else if (v.s >= total + v.length + 4) { removeVehicle(v); return; }
+    shipGuardedPlace(v, dt, moving || v.casting, yawing, before);
+  }
+  // Last safeguard: never make a move — ahead, sideways or turning — that
+  // brings the hull nearer another ship once they are almost touching.
+  // (A move that opens the gap is always allowed.)
+  const SHIP_TOUCH = 1.5;
+  function shipGuardedPlace(v, dt, underWay, keepAngle, before) {
+    placeShip(v, dt, underWay, keepAngle);
+    const now = shipClearance(v);
+    if (now >= SHIP_TOUCH || now >= before.clear - 1e-3 || v.waited >= GIVE_UP_AFTER) return;
+    v.waited += dt;                                       // held back: counts as a jam (it may then steer round)
+    Object.assign(v, { s: before.s, side: before.side, angle: before.angle, yawOff: before.yawOff, vel: 0, leg: before.leg });
+    placeShip(v, dt, false, true);
+  }
+  function placeShip(v, dt, underWay, keepAngle) {
+    if (v.units.length === 1) {
+      const p = v.override || shipPoint(v, v.s, v.side || 0), u = v.units[0];
+      const want = Math.atan2(p.hy, p.hx) + (v.override ? 0 : (v.yawOff || 0));
+      const rate = v.casting ? SHIP_KINDS[v.kind].turn : SHIP_KINDS[v.kind].helm;
+      if (underWay && !keepAngle) { const d = angleDiff(v.angle, want); v.angle += Math.max(-rate * dt, Math.min(rate * dt, d)); }
+      const hx = Math.cos(v.angle), hy = Math.sin(v.angle);
+      Object.assign(u, { x: p.x, y: p.y, hx, hy, on: true, solid: true });
+      v.pos = { x: p.x, y: p.y, hx, hy };
+      u.el.setAttribute('transform', `translate(${p.x.toFixed(2)} ${p.y.toFixed(2)}) rotate(${(v.angle * 180 / Math.PI).toFixed(1)})`);
+    } else {
+      v.units.forEach((u, i) => {
+        const p = shipPoint(v, v.s - u.back, v.side || 0);
+        Object.assign(u, { x: p.x, y: p.y, hx: p.hx, hy: p.hy, on: true, solid: true });
+        if (i === 0) v.pos = p;
+        u.el.setAttribute('transform', `translate(${p.x.toFixed(2)} ${p.y.toFixed(2)}) rotate(${(Math.atan2(p.hy, p.hx) * 180 / Math.PI).toFixed(1)})`);
+      });
+    }
+    // leave a trail on the water while under way. It is laid from a point
+    // under the hull (just aft of the last unit's middle), so each new piece
+    // is born hidden beneath the ship and slides out from under the stern
+    // instead of popping into view behind it.
+    const st = v.units[v.units.length - 1], sx = st.x - st.hx * st.len * 0.15, sy = st.y - st.hy * st.len * 0.15;
+    if (underWay && v.vel > 1 && !v.casting) {
+      if (!v.trailFrom) v.trailFrom = { x: sx, y: sy };
+      else if (Math.hypot(sx - v.trailFrom.x, sy - v.trailFrom.y) >= 3) {
+        const el = svgEl('line', { x1: v.trailFrom.x.toFixed(2), y1: v.trailFrom.y.toFixed(2), x2: sx.toFixed(2), y2: sy.toFixed(2),
+                                   stroke: '#ffffff', 'stroke-linecap': 'butt' }); // flat ends: pieces meet without doubling up
+        trailLayer.appendChild(el);
+        trails.push({ el, born: clock, w: st.wid });
+        v.trailFrom = { x: sx, y: sy };
+      }
+    } else v.trailFrom = null;
+  }
+  // Trails spread out and fade over TRAIL_LIFE seconds, even after their ship has gone.
+  function updateTrails() {
+    trails = trails.filter(t => {
+      const a = (clock - t.born) / TRAIL_LIFE;
+      if (a >= 1) { t.el.remove(); return false; }
+      t.el.setAttribute('stroke-width', (t.w * (0.45 + 0.6 * a)).toFixed(2));
+      t.el.setAttribute('stroke-opacity', (0.55 * (1 - a) * (1 - a)).toFixed(3));
+      return true;
+    });
+  }
+
+  // Is anything just ahead of this vehicle's nose? Tests the back, middle and
+  // front of every other unit, so something pulling out across the lane (or a
+  // train across a crossing) is seen, not just its centre.
+  function blockedAhead(v) {
+    const me = v.pos;
+    for (const o of vehicles) {
+      if (o === v || o.domain !== v.domain) continue;
+      for (const b of o.bodies()) {
+        for (const [px, py] of bodyPoints(b)) {
+          const dx = px - me.x, dy = py - me.y;
+          const ahead = dx * me.hx + dy * me.hy, side = Math.abs(dx * me.hy - dy * me.hx);
+          if (ahead > 0 && ahead < v.half + 4 && side < v.wid / 2 + b.wid / 2 - 0.6) return o;
+        }
+      }
+    }
+    return null;
+  }
+  // Distance from this vehicle's front bumper to the nearest thing in its
+  // path — { gap, veh } or null. It probes along the vehicle's own route ahead
+  // (not a straight line off the nose), so on a bend it reacts to what is in
+  // its lane around the curve and ignores traffic in the other lane.
+  function gapAhead(v) {
+    const pts = [];
+    vehicles.forEach(o => {
+      if (o === v || o.domain !== v.domain) return;
+      o.bodies().forEach(b => bodyPoints(b).forEach(q => pts.push([q[0], q[1], b.wid, o])));
+    });
+    if (!pts.length) return null;
+    const reach = BRAKE_GAP + 3;
+    for (let d = 0; d <= reach; d += 1) {
+      const q = sampleAt(v.sm, v.s + v.half + d);
+      for (const [px, py, bw, o] of pts) {
+        if (Math.hypot(px - q.x, py - q.y) < v.wid / 2 + bw / 2 - 0.6) return { gap: Math.max(0, d - 1), veh: o };
+      }
+    }
+    return null;
+  }
+  // Speed allowed by the gap ahead: full speed beyond the braking distance,
+  // easing to a stop at the minimum clearance.
+  function gapSpeed(v, g) {
+    if (!g) return v.speed;
+    if (g.gap <= MIN_GAP) return 0;
+    if (g.gap >= BRAKE_GAP) return v.speed;
+    return v.speed * Math.sqrt((g.gap - MIN_GAP) / (BRAKE_GAP - MIN_GAP));
+  }
+  // Move the velocity towards `desired` at this vehicle's own rates. Inside the
+  // braking zone it may brake as hard as it must, so the clearance is never lost.
+  function applyInertia(v, desired, dt, mustMeet) {
+    if (desired > v.vel) v.vel = Math.min(desired, v.vel + v.accel * dt);
+    else v.vel = mustMeet ? desired : Math.max(desired, v.vel - v.brake * dt);
+  }
+
+  // Is this vehicle simply in a queue at a light (or level crossing)? Follows
+  // the chain of who-is-waiting-for-whom to its head.
+  function queuedAtSignal(v) {
+    for (let o = v, n = 0; o && n < 30; o = o.waitingFor, n++) if (o.atSignal) return true;
+    return false;
+  }
+
+  // Is anything right behind this vehicle's rear bumper?
+  function blockedBehind(v) {
+    const u = v.units[v.units.length - 1];
+    const rx = u.x - u.hx * u.len / 2, ry = u.y - u.hy * u.len / 2;
+    for (const o of vehicles) {
+      if (o === v || o.domain !== v.domain) continue;
+      for (const b of o.bodies()) {
+        for (const [px, py] of bodyPoints(b)) {
+          const dx = px - rx, dy = py - ry;
+          const behind = -(dx * u.hx + dy * u.hy), side = Math.abs(dx * u.hy - dy * u.hx);
+          if (behind > -1 && behind < 6 && side < u.wid / 2 + b.wid / 2 - 0.6) return true;
+        }
+      }
+    }
+    return false;
+  }
+
+  // "Don't block the box": even on green, only drive into a junction or onto
+  // a level crossing when the way through it — and this vehicle's length
+  // beyond — is clear, so the queue waits behind the stop line instead of
+  // gridlocking the junction (or stopping on the tracks).
+  function boxClear(v, st) {
+    const pts = [];
+    vehicles.forEach(o => { if (o !== v && o.domain === v.domain) o.bodies().forEach(b => bodyPoints(b).forEach(q => pts.push(q))); });
+    if (!pts.length) return true;
+    for (let d = st.s + v.half + 2; d <= st.s + CELL + v.length + v.half + 6; d += 4) {
+      const q = sampleAt(v.sm, d);
+      if (pts.some(([x, y]) => Math.hypot(x - q.x, y - q.y) < 5.5)) return false;
+    }
+    return true;
+  }
+
+  function stepTraffic(t) {
+    rafId = 0;
+    if (!trafficOn) return;
+    const dt = Math.min(0.05, lastT ? (t - lastT) / 1000 : 0); lastT = t; clock += dt;
+    ensureLayers();
+
+    // map edited? vehicles whose route changed leave; signals and graphs are rebuilt
+    const sig = gridSignature();
+    if (sig !== netSig) {
+      rebuildNetwork(); netSig = sig;
+      const ends = roadEndpoints();
+      vehicles.slice().forEach(v => {
+        if (v.type === 'road' && v.trip && v.trip.pts) { if (!rerouteRoad(v, ends)) removeVehicle(v); }
+        else if (v.cells.some(([r, c, k]) => !inGrid(r, c) || grid[r][c].kind !== k)) removeVehicle(v);
+      });
+      // the blocks were redrawn: trains still running pick up the new signals
+      railOccupancy();
+      vehicles.forEach(v => { if (v.type === 'train' && v.trip) signalTrain(v, false); });
+    }
+
+    roadSpawnIn -= dt; trainSpawnIn -= dt;
+    if (roadSpawnIn <= 0) { roadSpawnIn = 0.6 + Math.random() * 1.4; spawnRoadVehicle(); }
+    if (trainSpawnIn <= 0) { trainSpawnIn = 3 + Math.random() * 4; spawnTrain(); }
+    shipSpawnIn -= dt;
+    if (shipSpawnIn <= 0) { shipSpawnIn = 4 + Math.random() * 5; spawnShip(); }
+
+    railOccupancy();
+    vehicles.slice().forEach(v => {
+      if (v.type === 'ship') { stepShip(v, dt); return; }
+      const total = v.sm[v.sm.length - 1].s;
+      if (v.cooldown > 0) v.cooldown -= dt;
+
+      // backing up: slowly, for a short way, never past a stop line it has
+      // already crossed (or out of the place it came from), and stopping at
+      // once if anything comes up behind
+      if (v.reversing > 0) {
+        const minS = Math.max(v.fadeIn ? v.fade : 0, v.stopIdx > 0 ? v.stops[v.stopIdx - 1].s + 1 : 0);
+        const step = Math.min(v.reverseSpeed * dt, v.reversing, v.s - minS);
+        if (step <= 0 || blockedBehind(v)) v.reversing = 0;
+        else { v.s -= step; v.reversing -= step; }
+        v.vel = 0;
+        if (v.reversing <= 0) {          // done backing up: stand still a while before going on
+          v.reversing = 0;
+          v.holdFor = patienceTime(v.patience) / 2;
+          v.cooldown = v.holdFor + 1.2;
+        }
+        v.stopped = false;
+        placeUnits(v, total);
+        return;
+      }
+
+      // pulling out of a place but the way is blocked: go back in and try another time,
+      // instead of waiting half-faded in the doorway
+      if (v.retreating || (v.fadeIn && v.s < v.fade && v.type === 'road' && v.s > 0 && blockedAhead(v))) {
+        v.retreating = true;
+        v.s = Math.max(0, v.s - REVERSE_SPEED * 1.5 * dt);
+        if (v.s <= 0) { removeVehicle(v); return; }
+        v.stopped = false;
+        placeUnits(v, total);
+        return;
+      }
+
+      // standing still after backing up
+      if (v.holdFor > 0) {
+        v.holdFor -= dt;
+        v.vel = 0;
+        v.stopped = true;
+        placeUnits(v, total);
+        return;
+      }
+
+      let desired = v.speed, limitS = Infinity, mustMeet = false;
+      v.atSignal = false;
+      // road vehicles: brake smoothly for a stop line whose signal says stop
+      // (looking ahead far enough to stop from full speed at its own braking rate)
+      if (v.type === 'road') {
+        while (v.stopIdx < v.stops.length && v.s > v.stops[v.stopIdx].s + 0.5) v.stopIdx++;
+        const st = v.stops[v.stopIdx];
+        const lookAhead = v.vel * v.vel / (2 * v.brake) + 4;
+        if (st && st.s - v.s < lookAhead + 1) {
+          const light = signalFor(st.r, st.c, st.side);
+          const atLine = st.s - v.s < Math.max(2.5, v.vel * v.vel / (2 * v.brake * 1.6)); // too close to stop for a yellow
+          if (light === 'r' || (light === 'y' && !atLine) || !boxClear(v, st)) {
+            const d = Math.max(0, st.s - v.s);
+            desired = Math.min(desired, Math.sqrt(2 * v.brake * d));
+            limitS = Math.max(v.s, st.s);
+            v.atSignal = d < 0.5;
+          }
+        }
+      }
+      // trains: stop at a signal that won't clear (and give up if it never does)
+      if (v.type === 'train' && v.sigs) {
+        const lim = trainSignalLimit(v);
+        if (lim) {
+          desired = Math.min(desired, Math.sqrt(2 * v.brake * Math.max(0, lim.s - v.s)));
+          limitS = Math.min(limitS, lim.s);
+          v.sigWait = v.vel < 0.5 ? v.sigWait + dt : 0;
+          if (v.sigWait > TRAIN_GIVE_UP) { removeVehicle(v); return; }
+        } else v.sigWait = 0;
+      }
+      // crawl round a U-turn, braking for it in good time
+      if (v.sm.uturns) for (const u of v.sm.uturns) {
+        if (v.s > u.s1) continue;
+        desired = Math.min(desired, Math.sqrt(UTURN_SPEED * UTURN_SPEED + 2 * v.brake * 0.8 * Math.max(0, u.s0 - v.s)));
+        break;
+      }
+      // whatever is ahead: ease off inside half a car length, stop at a quarter
+      const arriving = v.fadeOut && total - v.s < v.fade;
+      const g = arriving ? null : gapAhead(v);
+      const squeeze = v.waited >= GIVE_UP_AFTER;               // stuck for ages: nudge through
+      if (g && !squeeze) {
+        desired = Math.min(desired, gapSpeed(v, g));
+        mustMeet = g.gap < BRAKE_GAP;
+      }
+      applyInertia(v, desired, dt, mustMeet);
+      let target = Math.min(v.s + v.vel * dt, limitS);
+      if (g && !squeeze) target = Math.min(target, v.s + Math.max(0, g.gap - MIN_GAP));
+      if (target - v.s < v.vel * dt - 1e-6) v.vel = Math.max(0, (target - v.s) / dt);   // a hard limit took over
+      const stuck = !!(g && !squeeze && g.gap <= MIN_GAP + 0.6 && v.vel < 0.5);
+      v.waitingFor = stuck ? g.veh : null;
+      if (stuck) v.waited += dt;
+      else if (v.vel > 0.5) v.waited = 0;
+      // stuck behind someone (not just waiting at a light) for too long → back up a bit
+      if (v.canReverse) {
+        v.stuckFor = (stuck && !queuedAtSignal(v)) ? v.stuckFor + dt : 0;
+        if (v.stuckFor > patienceTime(v.patience) && v.cooldown <= 0 && !blockedBehind(v)) {
+          v.reversing = 6 + Math.random() * 8;
+          v.stuckFor = 0; v.waited = 0;
+        }
+      }
+      v.stopped = v.vel < 0.3;
+      v.s = target;
+      if (v.s >= total + v.length) { removeVehicle(v); return; }
+
+      placeUnits(v, total);
+    });
+    updateSignals();
+    updateRailSignals();
+    updateTrails();
+    rafId = requestAnimationFrame(stepTraffic);
+  }
+
+  // each unit rides the route at its own distance behind the front;
+  // units not yet out of (or already into) a place, station or tunnel are hidden
+  function placeUnits(v, total) {
+      v.units.forEach((u, i) => {
+        const su = v.s - u.back, p = sampleAt(v.sm, su);
+        Object.assign(u, { x: p.x, y: p.y, hx: p.hx, hy: p.hy });
+        let op = (su < 0 || su > total || p.hid) ? 0 : 1;
+        if (op) { if (v.fadeIn) op = Math.min(op, su / v.fade); if (v.fadeOut) op = Math.min(op, (total - su) / v.fade); }
+        op = Math.max(0, Math.min(1, op));
+        u.on = op > 0.05;
+        u.solid = op > 0.99;
+        if (i === 0) v.pos = p;
+        u.el.setAttribute('opacity', op.toFixed(2));
+        u.el.setAttribute('transform', `translate(${p.x.toFixed(2)} ${p.y.toFixed(2)}) rotate(${(Math.atan2(p.hy, p.hx) * 180 / Math.PI).toFixed(1)})`);
+      });
+      // rear lamps: white while backing up, bright red while standing still, dim while driving
+      const lamp = v.reversing > 0 ? 'rev' : v.stopped ? 'brake' : 'off';
+      if (v.type === 'road' && v.tailShown !== lamp) {
+        v.tailShown = lamp;
+        v.el.querySelectorAll('[data-tail]').forEach(t => t.setAttribute('fill', TAIL[lamp]));
+      }
+  }
+
+  function updateSignals() {
+    // update the lamps that changed
+    const flash = Math.floor(clock * 2) % 2; // level-crossing lamps alternate twice a second
+    signals.forEach(sg => {
+      if (sg.crossing) {
+        const st = crossingActive(sg.r, sg.c) ? 'f' + flash : 'off';
+        if (st === sg.shown) return;
+        sg.shown = st;
+        sg.lamps.left.setAttribute('fill', st === 'f0' ? LAMP_ON.r : LAMP_OFF.r);
+        sg.lamps.right.setAttribute('fill', st === 'f1' ? LAMP_ON.r : LAMP_OFF.r);
+        return;
+      }
+      const st = junctionLight(sg.r, sg.c, sg.side);
+      if (st === sg.shown) return;
+      sg.shown = st;
+      ['r', 'y', 'g'].forEach(k => sg.lamps[k].setAttribute('fill', k === st ? LAMP_ON[k] : LAMP_OFF[k]));
+    });
+  }
+
+  function setTraffic(on) {
+    trafficOn = on;
+    try { localStorage.setItem('city-playground-traffic', on ? 'on' : 'off'); } catch (e) { /* ignore */ }
+    if (on) { lastT = 0; netSig = ''; if (!rafId) rafId = requestAnimationFrame(stepTraffic); }
+    else {
+      if (rafId) cancelAnimationFrame(rafId); rafId = 0;
+      vehicles.forEach(v => v.el.remove()); vehicles = [];
+      if (sigLayer) sigLayer.innerHTML = ''; signals = []; railSigs = {}; resv = {}; occ = {};
+      if (bridgeLayer) bridgeLayer.innerHTML = '';
+      if (trailLayer) trailLayer.innerHTML = ''; trails = [];
+    }
+  }
+  const trafficToggle = document.getElementById('trafficToggle');
+  trafficToggle.checked = trafficOn;
+  trafficToggle.addEventListener('change', () => setTraffic(trafficToggle.checked));
+  if (trafficOn) rafId = requestAnimationFrame(stepTraffic);
 
   /* ═══════════════ HOTBAR (bottom toolbar) ═══════════════ */
   // Six tool slots plus 🤏 Size. Build, Path, Label and Pin each own a
